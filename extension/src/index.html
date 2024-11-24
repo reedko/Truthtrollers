@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Chrome Extension Popup</title>
+    <style>
+      /* Ensure the body has no constraints on width/height */
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden; /* Avoid unnecessary scrolls in popup */
+      }
+      
+    </style>
+  
+  </head>
+  <body>
+    <div id="root"></div> <!-- This is where React renders the popup -->
+    <script src="popup.js"></script>
+  </body>
+</html>
