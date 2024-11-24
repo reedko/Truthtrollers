@@ -146,19 +146,6 @@ app.post("/api/reset-password", (req, res) => {
   );
 });
 
-// Task results endpoint (simplified)
-/* app.get('/api/tasks', (req, res) => {
-    console.log('got here0wer');
-    const sql = 'SELECT * FROM tasks'; // Your query to get all tasks
-    pool.query(sql, (err, results) => {
-        if (err) {
-            console.error('Error fetching tasks:', err);
-            return res.status(500).json({ error: 'Database query failed' });
-        }
-        res.json(results);
-    });
-}); */
-
 app.get("/api/tasks", (req, res) => {
   console.log("API call received for tasks");
   const sql = "SELECT * FROM tasks";
