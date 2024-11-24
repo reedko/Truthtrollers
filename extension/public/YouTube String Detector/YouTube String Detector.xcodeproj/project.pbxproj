@@ -1,0 +1,974 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		BCAEA9FD2CB4078700CEB695 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCAEA9FC2CB4078700CEB695 /* AppDelegate.swift */; };
+		BCAEA9FF2CB4078700CEB695 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCAEA9FE2CB4078700CEB695 /* SceneDelegate.swift */; };
+		BCAEAA022CB4078700CEB695 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA002CB4078700CEB695 /* LaunchScreen.storyboard */; };
+		BCAEAA052CB4078700CEB695 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA032CB4078700CEB695 /* Main.storyboard */; };
+		BCAEAA0E2CB4078700CEB695 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCAEAA0D2CB4078700CEB695 /* AppDelegate.swift */; };
+		BCAEAA112CB4078700CEB695 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA0F2CB4078700CEB695 /* Main.storyboard */; };
+		BCAEAA192CB4078700CEB695 /* YouTube String Detector Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BCAEAA182CB4078700CEB695 /* YouTube String Detector Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BCAEAA232CB4078700CEB695 /* YouTube String Detector Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BCAEAA222CB4078700CEB695 /* YouTube String Detector Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BCAEAA292CB4078700CEB695 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = BCAEA9EC2CB4078600CEB695 /* Main.html */; };
+		BCAEAA2A2CB4078700CEB695 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = BCAEA9EC2CB4078600CEB695 /* Main.html */; };
+		BCAEAA2B2CB4078700CEB695 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = BCAEA9EE2CB4078600CEB695 /* Icon.png */; };
+		BCAEAA2C2CB4078700CEB695 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = BCAEA9EE2CB4078600CEB695 /* Icon.png */; };
+		BCAEAA2D2CB4078800CEB695 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = BCAEA9EF2CB4078600CEB695 /* Style.css */; };
+		BCAEAA2E2CB4078800CEB695 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = BCAEA9EF2CB4078600CEB695 /* Style.css */; };
+		BCAEAA2F2CB4078800CEB695 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = BCAEA9F02CB4078600CEB695 /* Script.js */; };
+		BCAEAA302CB4078800CEB695 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = BCAEA9F02CB4078600CEB695 /* Script.js */; };
+		BCAEAA312CB4078800CEB695 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCAEA9F12CB4078600CEB695 /* ViewController.swift */; };
+		BCAEAA322CB4078800CEB695 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCAEA9F12CB4078600CEB695 /* ViewController.swift */; };
+		BCAEAA332CB4078800CEB695 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BCAEA9F22CB4078700CEB695 /* Assets.xcassets */; };
+		BCAEAA342CB4078800CEB695 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BCAEA9F22CB4078700CEB695 /* Assets.xcassets */; };
+		BCAEAA352CB4078800CEB695 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCAEA9F42CB4078700CEB695 /* SafariWebExtensionHandler.swift */; };
+		BCAEAA362CB4078800CEB695 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCAEA9F42CB4078700CEB695 /* SafariWebExtensionHandler.swift */; };
+		BCAEAA512CB4078800CEB695 /* popup.js in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA482CB4078800CEB695 /* popup.js */; };
+		BCAEAA522CB4078800CEB695 /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA492CB4078800CEB695 /* index.html */; };
+		BCAEAA532CB4078800CEB695 /* popup.js.LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA4A2CB4078800CEB695 /* popup.js.LICENSE.txt */; };
+		BCAEAA542CB4078800CEB695 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA4B2CB4078800CEB695 /* background.js */; };
+		BCAEAA552CB4078800CEB695 /* images in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA4C2CB4078800CEB695 /* images */; };
+		BCAEAA562CB4078800CEB695 /* YouTube String Detector in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA4D2CB4078800CEB695 /* YouTube String Detector */; };
+		BCAEAA572CB4078800CEB695 /* vite.svg in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA4E2CB4078800CEB695 /* vite.svg */; };
+		BCAEAA582CB4078800CEB695 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA4F2CB4078800CEB695 /* manifest.json */; };
+		BCAEAA592CB4078800CEB695 /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA502CB4078800CEB695 /* content.js */; };
+		BCAEAA5A2CB4078800CEB695 /* popup.js in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA482CB4078800CEB695 /* popup.js */; };
+		BCAEAA5B2CB4078800CEB695 /* index.html in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA492CB4078800CEB695 /* index.html */; };
+		BCAEAA5C2CB4078800CEB695 /* popup.js.LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA4A2CB4078800CEB695 /* popup.js.LICENSE.txt */; };
+		BCAEAA5D2CB4078800CEB695 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA4B2CB4078800CEB695 /* background.js */; };
+		BCAEAA5E2CB4078800CEB695 /* images in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA4C2CB4078800CEB695 /* images */; };
+		BCAEAA5F2CB4078800CEB695 /* YouTube String Detector in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA4D2CB4078800CEB695 /* YouTube String Detector */; };
+		BCAEAA602CB4078800CEB695 /* vite.svg in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA4E2CB4078800CEB695 /* vite.svg */; };
+		BCAEAA612CB4078800CEB695 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA4F2CB4078800CEB695 /* manifest.json */; };
+		BCAEAA622CB4078800CEB695 /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = BCAEAA502CB4078800CEB695 /* content.js */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		BCAEAA1A2CB4078700CEB695 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BCAEA9E62CB4078500CEB695 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BCAEAA172CB4078700CEB695;
+			remoteInfo = "YouTube String Detector Extension (iOS)";
+		};
+		BCAEAA242CB4078700CEB695 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BCAEA9E62CB4078500CEB695 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BCAEAA212CB4078700CEB695;
+			remoteInfo = "YouTube String Detector Extension (macOS)";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		BCAEAA3C2CB4078800CEB695 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				BCAEAA192CB4078700CEB695 /* YouTube String Detector Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCAEAA432CB4078800CEB695 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				BCAEAA232CB4078700CEB695 /* YouTube String Detector Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		BCAEA9ED2CB4078600CEB695 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = ../Base.lproj/Main.html; sourceTree = "<group>"; };
+		BCAEA9EE2CB4078600CEB695 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		BCAEA9EF2CB4078600CEB695 /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
+		BCAEA9F02CB4078600CEB695 /* Script.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Script.js; sourceTree = "<group>"; };
+		BCAEA9F12CB4078600CEB695 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		BCAEA9F22CB4078700CEB695 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BCAEA9F42CB4078700CEB695 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		BCAEA9F92CB4078700CEB695 /* YouTube String Detector.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "YouTube String Detector.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BCAEA9FC2CB4078700CEB695 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		BCAEA9FE2CB4078700CEB695 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		BCAEAA012CB4078700CEB695 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		BCAEAA042CB4078700CEB695 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		BCAEAA062CB4078700CEB695 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BCAEAA0B2CB4078700CEB695 /* YouTube String Detector.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "YouTube String Detector.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BCAEAA0D2CB4078700CEB695 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		BCAEAA102CB4078700CEB695 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		BCAEAA122CB4078700CEB695 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BCAEAA132CB4078700CEB695 /* YouTube String Detector.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "YouTube String Detector.entitlements"; sourceTree = "<group>"; };
+		BCAEAA182CB4078700CEB695 /* YouTube String Detector Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "YouTube String Detector Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BCAEAA1D2CB4078700CEB695 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BCAEAA222CB4078700CEB695 /* YouTube String Detector Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "YouTube String Detector Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BCAEAA272CB4078700CEB695 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BCAEAA282CB4078700CEB695 /* YouTube String Detector.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "YouTube String Detector.entitlements"; sourceTree = "<group>"; };
+		BCAEAA482CB4078800CEB695 /* popup.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = popup.js; path = ../../popup.js; sourceTree = "<group>"; };
+		BCAEAA492CB4078800CEB695 /* index.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = index.html; path = ../../index.html; sourceTree = "<group>"; };
+		BCAEAA4A2CB4078800CEB695 /* popup.js.LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = popup.js.LICENSE.txt; path = ../../popup.js.LICENSE.txt; sourceTree = "<group>"; };
+		BCAEAA4B2CB4078800CEB695 /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = background.js; path = ../../background.js; sourceTree = "<group>"; };
+		BCAEAA4C2CB4078800CEB695 /* images */ = {isa = PBXFileReference; lastKnownFileType = folder; name = images; path = ../../images; sourceTree = "<group>"; };
+		BCAEAA4D2CB4078800CEB695 /* YouTube String Detector */ = {isa = PBXFileReference; lastKnownFileType = text; name = "YouTube String Detector"; sourceTree = SOURCE_ROOT; };
+		BCAEAA4E2CB4078800CEB695 /* vite.svg */ = {isa = PBXFileReference; lastKnownFileType = text; name = vite.svg; path = ../../vite.svg; sourceTree = "<group>"; };
+		BCAEAA4F2CB4078800CEB695 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../../manifest.json; sourceTree = "<group>"; };
+		BCAEAA502CB4078800CEB695 /* content.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = content.js; path = ../../content.js; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		BCAEA9F62CB4078700CEB695 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCAEAA082CB4078700CEB695 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCAEAA152CB4078700CEB695 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCAEAA1F2CB4078700CEB695 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		BCAEA9E52CB4078500CEB695 = {
+			isa = PBXGroup;
+			children = (
+				BCAEA9EA2CB4078600CEB695 /* Shared (App) */,
+				BCAEA9F32CB4078700CEB695 /* Shared (Extension) */,
+				BCAEA9FB2CB4078700CEB695 /* iOS (App) */,
+				BCAEAA0C2CB4078700CEB695 /* macOS (App) */,
+				BCAEAA1C2CB4078700CEB695 /* iOS (Extension) */,
+				BCAEAA262CB4078700CEB695 /* macOS (Extension) */,
+				BCAEA9FA2CB4078700CEB695 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		BCAEA9EA2CB4078600CEB695 /* Shared (App) */ = {
+			isa = PBXGroup;
+			children = (
+				BCAEA9F12CB4078600CEB695 /* ViewController.swift */,
+				BCAEA9F22CB4078700CEB695 /* Assets.xcassets */,
+				BCAEA9EB2CB4078600CEB695 /* Resources */,
+			);
+			path = "Shared (App)";
+			sourceTree = "<group>";
+		};
+		BCAEA9EB2CB4078600CEB695 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				BCAEA9EC2CB4078600CEB695 /* Main.html */,
+				BCAEA9EE2CB4078600CEB695 /* Icon.png */,
+				BCAEA9EF2CB4078600CEB695 /* Style.css */,
+				BCAEA9F02CB4078600CEB695 /* Script.js */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		BCAEA9F32CB4078700CEB695 /* Shared (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				BCAEAA472CB4078800CEB695 /* Resources */,
+				BCAEA9F42CB4078700CEB695 /* SafariWebExtensionHandler.swift */,
+			);
+			path = "Shared (Extension)";
+			sourceTree = "<group>";
+		};
+		BCAEA9FA2CB4078700CEB695 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BCAEA9F92CB4078700CEB695 /* YouTube String Detector.app */,
+				BCAEAA0B2CB4078700CEB695 /* YouTube String Detector.app */,
+				BCAEAA182CB4078700CEB695 /* YouTube String Detector Extension.appex */,
+				BCAEAA222CB4078700CEB695 /* YouTube String Detector Extension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		BCAEA9FB2CB4078700CEB695 /* iOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				BCAEA9FC2CB4078700CEB695 /* AppDelegate.swift */,
+				BCAEA9FE2CB4078700CEB695 /* SceneDelegate.swift */,
+				BCAEAA002CB4078700CEB695 /* LaunchScreen.storyboard */,
+				BCAEAA032CB4078700CEB695 /* Main.storyboard */,
+				BCAEAA062CB4078700CEB695 /* Info.plist */,
+			);
+			path = "iOS (App)";
+			sourceTree = "<group>";
+		};
+		BCAEAA0C2CB4078700CEB695 /* macOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				BCAEAA0D2CB4078700CEB695 /* AppDelegate.swift */,
+				BCAEAA0F2CB4078700CEB695 /* Main.storyboard */,
+				BCAEAA122CB4078700CEB695 /* Info.plist */,
+				BCAEAA132CB4078700CEB695 /* YouTube String Detector.entitlements */,
+			);
+			path = "macOS (App)";
+			sourceTree = "<group>";
+		};
+		BCAEAA1C2CB4078700CEB695 /* iOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				BCAEAA1D2CB4078700CEB695 /* Info.plist */,
+			);
+			path = "iOS (Extension)";
+			sourceTree = "<group>";
+		};
+		BCAEAA262CB4078700CEB695 /* macOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				BCAEAA272CB4078700CEB695 /* Info.plist */,
+				BCAEAA282CB4078700CEB695 /* YouTube String Detector.entitlements */,
+			);
+			path = "macOS (Extension)";
+			sourceTree = "<group>";
+		};
+		BCAEAA472CB4078800CEB695 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				BCAEAA482CB4078800CEB695 /* popup.js */,
+				BCAEAA492CB4078800CEB695 /* index.html */,
+				BCAEAA4A2CB4078800CEB695 /* popup.js.LICENSE.txt */,
+				BCAEAA4B2CB4078800CEB695 /* background.js */,
+				BCAEAA4C2CB4078800CEB695 /* images */,
+				BCAEAA4D2CB4078800CEB695 /* YouTube String Detector */,
+				BCAEAA4E2CB4078800CEB695 /* vite.svg */,
+				BCAEAA4F2CB4078800CEB695 /* manifest.json */,
+				BCAEAA502CB4078800CEB695 /* content.js */,
+			);
+			name = Resources;
+			path = "Shared (Extension)";
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		BCAEA9F82CB4078700CEB695 /* YouTube String Detector (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BCAEAA3D2CB4078800CEB695 /* Build configuration list for PBXNativeTarget "YouTube String Detector (iOS)" */;
+			buildPhases = (
+				BCAEA9F52CB4078700CEB695 /* Sources */,
+				BCAEA9F62CB4078700CEB695 /* Frameworks */,
+				BCAEA9F72CB4078700CEB695 /* Resources */,
+				BCAEAA3C2CB4078800CEB695 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BCAEAA1B2CB4078700CEB695 /* PBXTargetDependency */,
+			);
+			name = "YouTube String Detector (iOS)";
+			productName = "YouTube String Detector (iOS)";
+			productReference = BCAEA9F92CB4078700CEB695 /* YouTube String Detector.app */;
+			productType = "com.apple.product-type.application";
+		};
+		BCAEAA0A2CB4078700CEB695 /* YouTube String Detector (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BCAEAA442CB4078800CEB695 /* Build configuration list for PBXNativeTarget "YouTube String Detector (macOS)" */;
+			buildPhases = (
+				BCAEAA072CB4078700CEB695 /* Sources */,
+				BCAEAA082CB4078700CEB695 /* Frameworks */,
+				BCAEAA092CB4078700CEB695 /* Resources */,
+				BCAEAA432CB4078800CEB695 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BCAEAA252CB4078700CEB695 /* PBXTargetDependency */,
+			);
+			name = "YouTube String Detector (macOS)";
+			productName = "YouTube String Detector (macOS)";
+			productReference = BCAEAA0B2CB4078700CEB695 /* YouTube String Detector.app */;
+			productType = "com.apple.product-type.application";
+		};
+		BCAEAA172CB4078700CEB695 /* YouTube String Detector Extension (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BCAEAA392CB4078800CEB695 /* Build configuration list for PBXNativeTarget "YouTube String Detector Extension (iOS)" */;
+			buildPhases = (
+				BCAEAA142CB4078700CEB695 /* Sources */,
+				BCAEAA152CB4078700CEB695 /* Frameworks */,
+				BCAEAA162CB4078700CEB695 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "YouTube String Detector Extension (iOS)";
+			productName = "YouTube String Detector Extension (iOS)";
+			productReference = BCAEAA182CB4078700CEB695 /* YouTube String Detector Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		BCAEAA212CB4078700CEB695 /* YouTube String Detector Extension (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BCAEAA402CB4078800CEB695 /* Build configuration list for PBXNativeTarget "YouTube String Detector Extension (macOS)" */;
+			buildPhases = (
+				BCAEAA1E2CB4078700CEB695 /* Sources */,
+				BCAEAA1F2CB4078700CEB695 /* Frameworks */,
+				BCAEAA202CB4078700CEB695 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "YouTube String Detector Extension (macOS)";
+			productName = "YouTube String Detector Extension (macOS)";
+			productReference = BCAEAA222CB4078700CEB695 /* YouTube String Detector Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BCAEA9E62CB4078500CEB695 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1520;
+				LastUpgradeCheck = 1520;
+				TargetAttributes = {
+					BCAEA9F82CB4078700CEB695 = {
+						CreatedOnToolsVersion = 15.2;
+					};
+					BCAEAA0A2CB4078700CEB695 = {
+						CreatedOnToolsVersion = 15.2;
+					};
+					BCAEAA172CB4078700CEB695 = {
+						CreatedOnToolsVersion = 15.2;
+					};
+					BCAEAA212CB4078700CEB695 = {
+						CreatedOnToolsVersion = 15.2;
+					};
+				};
+			};
+			buildConfigurationList = BCAEA9E92CB4078500CEB695 /* Build configuration list for PBXProject "YouTube String Detector" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = BCAEA9E52CB4078500CEB695;
+			productRefGroup = BCAEA9FA2CB4078700CEB695 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				BCAEA9F82CB4078700CEB695 /* YouTube String Detector (iOS) */,
+				BCAEAA0A2CB4078700CEB695 /* YouTube String Detector (macOS) */,
+				BCAEAA172CB4078700CEB695 /* YouTube String Detector Extension (iOS) */,
+				BCAEAA212CB4078700CEB695 /* YouTube String Detector Extension (macOS) */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		BCAEA9F72CB4078700CEB695 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BCAEAA2B2CB4078700CEB695 /* Icon.png in Resources */,
+				BCAEAA022CB4078700CEB695 /* LaunchScreen.storyboard in Resources */,
+				BCAEAA292CB4078700CEB695 /* Main.html in Resources */,
+				BCAEAA2F2CB4078800CEB695 /* Script.js in Resources */,
+				BCAEAA332CB4078800CEB695 /* Assets.xcassets in Resources */,
+				BCAEAA052CB4078700CEB695 /* Main.storyboard in Resources */,
+				BCAEAA2D2CB4078800CEB695 /* Style.css in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCAEAA092CB4078700CEB695 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BCAEAA2C2CB4078700CEB695 /* Icon.png in Resources */,
+				BCAEAA2E2CB4078800CEB695 /* Style.css in Resources */,
+				BCAEAA112CB4078700CEB695 /* Main.storyboard in Resources */,
+				BCAEAA302CB4078800CEB695 /* Script.js in Resources */,
+				BCAEAA342CB4078800CEB695 /* Assets.xcassets in Resources */,
+				BCAEAA2A2CB4078700CEB695 /* Main.html in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCAEAA162CB4078700CEB695 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BCAEAA5E2CB4078800CEB695 /* images in Resources */,
+				BCAEAA5D2CB4078800CEB695 /* background.js in Resources */,
+				BCAEAA5C2CB4078800CEB695 /* popup.js.LICENSE.txt in Resources */,
+				BCAEAA5A2CB4078800CEB695 /* popup.js in Resources */,
+				BCAEAA612CB4078800CEB695 /* manifest.json in Resources */,
+				BCAEAA5B2CB4078800CEB695 /* index.html in Resources */,
+				BCAEAA622CB4078800CEB695 /* content.js in Resources */,
+				BCAEAA602CB4078800CEB695 /* vite.svg in Resources */,
+				BCAEAA5F2CB4078800CEB695 /* YouTube String Detector in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCAEAA202CB4078700CEB695 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BCAEAA552CB4078800CEB695 /* images in Resources */,
+				BCAEAA542CB4078800CEB695 /* background.js in Resources */,
+				BCAEAA532CB4078800CEB695 /* popup.js.LICENSE.txt in Resources */,
+				BCAEAA512CB4078800CEB695 /* popup.js in Resources */,
+				BCAEAA582CB4078800CEB695 /* manifest.json in Resources */,
+				BCAEAA522CB4078800CEB695 /* index.html in Resources */,
+				BCAEAA592CB4078800CEB695 /* content.js in Resources */,
+				BCAEAA572CB4078800CEB695 /* vite.svg in Resources */,
+				BCAEAA562CB4078800CEB695 /* YouTube String Detector in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BCAEA9F52CB4078700CEB695 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BCAEAA312CB4078800CEB695 /* ViewController.swift in Sources */,
+				BCAEA9FD2CB4078700CEB695 /* AppDelegate.swift in Sources */,
+				BCAEA9FF2CB4078700CEB695 /* SceneDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCAEAA072CB4078700CEB695 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BCAEAA322CB4078800CEB695 /* ViewController.swift in Sources */,
+				BCAEAA0E2CB4078700CEB695 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCAEAA142CB4078700CEB695 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BCAEAA352CB4078800CEB695 /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCAEAA1E2CB4078700CEB695 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BCAEAA362CB4078800CEB695 /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BCAEAA1B2CB4078700CEB695 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BCAEAA172CB4078700CEB695 /* YouTube String Detector Extension (iOS) */;
+			targetProxy = BCAEAA1A2CB4078700CEB695 /* PBXContainerItemProxy */;
+		};
+		BCAEAA252CB4078700CEB695 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BCAEAA212CB4078700CEB695 /* YouTube String Detector Extension (macOS) */;
+			targetProxy = BCAEAA242CB4078700CEB695 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		BCAEA9EC2CB4078600CEB695 /* Main.html */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BCAEA9ED2CB4078600CEB695 /* Base */,
+			);
+			name = Main.html;
+			sourceTree = "<group>";
+		};
+		BCAEAA002CB4078700CEB695 /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BCAEAA012CB4078700CEB695 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		BCAEAA032CB4078700CEB695 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BCAEAA042CB4078700CEB695 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		BCAEAA0F2CB4078700CEB695 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BCAEAA102CB4078700CEB695 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		BCAEAA372CB4078800CEB695 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		BCAEAA382CB4078800CEB695 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		BCAEAA3A2CB4078800CEB695 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "YouTube String Detector Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.YouTube-String-Detector.Extension";
+				PRODUCT_NAME = "YouTube String Detector Extension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BCAEAA3B2CB4078800CEB695 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "YouTube String Detector Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.YouTube-String-Detector.Extension";
+				PRODUCT_NAME = "YouTube String Detector Extension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		BCAEAA3E2CB4078800CEB695 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "YouTube String Detector";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.YouTube-String-Detector";
+				PRODUCT_NAME = "YouTube String Detector";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BCAEAA3F2CB4078800CEB695 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "YouTube String Detector";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.YouTube-String-Detector";
+				PRODUCT_NAME = "YouTube String Detector";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		BCAEAA412CB4078800CEB695 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/YouTube String Detector.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "YouTube String Detector Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.YouTube-String-Detector.Extension";
+				PRODUCT_NAME = "YouTube String Detector Extension";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		BCAEAA422CB4078800CEB695 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/YouTube String Detector.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "YouTube String Detector Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.YouTube-String-Detector.Extension";
+				PRODUCT_NAME = "YouTube String Detector Extension";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		BCAEAA452CB4078800CEB695 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "macOS (App)/YouTube String Detector.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "YouTube String Detector";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.YouTube-String-Detector";
+				PRODUCT_NAME = "YouTube String Detector";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		BCAEAA462CB4078800CEB695 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "macOS (App)/YouTube String Detector.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "YouTube String Detector";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.YouTube-String-Detector";
+				PRODUCT_NAME = "YouTube String Detector";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		BCAEA9E92CB4078500CEB695 /* Build configuration list for PBXProject "YouTube String Detector" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BCAEAA372CB4078800CEB695 /* Debug */,
+				BCAEAA382CB4078800CEB695 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BCAEAA392CB4078800CEB695 /* Build configuration list for PBXNativeTarget "YouTube String Detector Extension (iOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BCAEAA3A2CB4078800CEB695 /* Debug */,
+				BCAEAA3B2CB4078800CEB695 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BCAEAA3D2CB4078800CEB695 /* Build configuration list for PBXNativeTarget "YouTube String Detector (iOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BCAEAA3E2CB4078800CEB695 /* Debug */,
+				BCAEAA3F2CB4078800CEB695 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BCAEAA402CB4078800CEB695 /* Build configuration list for PBXNativeTarget "YouTube String Detector Extension (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BCAEAA412CB4078800CEB695 /* Debug */,
+				BCAEAA422CB4078800CEB695 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BCAEAA442CB4078800CEB695 /* Build configuration list for PBXNativeTarget "YouTube String Detector (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BCAEAA452CB4078800CEB695 /* Debug */,
+				BCAEAA462CB4078800CEB695 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = BCAEA9E62CB4078500CEB695 /* Project object */;
+}

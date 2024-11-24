@@ -1,0 +1,33 @@
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+
+# Virtual environments
+venv/
+.venv/
+
+# Pip environment
+pip-selfcheck.json
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Python-specific logs and files
+*.log
+*.env
+*.ini
+*.cfg
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Other Python-related system files
+*.pyo
+*.pyc
+.env
+*.env
+popup.js
+*.log
+/node_modules
