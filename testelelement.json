@@ -1,0 +1,149 @@
+[
+  {
+    "@type": "Person",
+    "name": "OpenTheBooks",
+    "url": "https://substack.com/@openthebooks",
+    "description": "Our Mission: Every Dime. Online. In Real Time!",
+    "identifier": "user:24758236",
+    "sameAs": ["https://twitter.com/open_the_books"],
+    "image": {
+      "@type": "ImageObject",
+      "contentUrl": "https://substackcdn.com/image/fetch/f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Ff26ee192-5e42-40ab-a61a-5c83f14526a0_157x157.jpeg",
+      "thumbnailUrl": "https://substackcdn.com/image/fetch/w_128,h_128,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Ff26ee192-5e42-40ab-a61a-5c83f14526a0_157x157.jpeg"
+    }
+  },
+  {
+    "@type": "Person",
+    "name": "Jordan Schachtel",
+    "url": "https://substack.com/@dossier",
+    "description": "Investigative journalist.",
+    "identifier": "user:10549335",
+    "sameAs": ["https://twitter.com/JordanSchachtel"],
+    "image": {
+      "@type": "ImageObject",
+      "contentUrl": "https://substackcdn.com/image/fetch/f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2F588c8656-e0dc-4023-ad05-60c165397b72_1004x800.png",
+      "thumbnailUrl": "https://substackcdn.com/image/fetch/w_128,h_128,c_limit,f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fsubstack-post-media.s3.amazonaws.com%2Fpublic%2Fimages%2Ff26ee192-5e42-40ab-a61a-5c83f14526a0_157x157.jpeg"
+    }
+  }
+]
+<script>
+	
+		(function() {
+
+			var chd_ga4 = (function() {
+				var chd_ga4_data = {"event":"pageView","pageViewType":"conventional","hostname":"childrenshealthdefense.org","pageURL":"https:\/\/childrenshealthdefense.org\/defender\/undeclared-chemicals-heavy-metals-covid-vaccines","pageURLLocal":"https:\/\/childrenshealthdefense.org\/defender\/undeclared-chemicals-heavy-metals-covid-vaccines","pagePath":"\/defender\/undeclared-chemicals-heavy-metals-covid-vaccines","pagePathLocal":"\/defender\/undeclared-chemicals-heavy-metals-covid-vaccines","pageTitle":"55 Undeclared Chemical Elements — Including Heavy Metals — Found in COVID Vaccines • Children's Health Defense","langCode":"en","langName":"English","siteSection1":"The Defender","siteSection2":"COVID","siteSection3":"","contentAuthor":"Brenda Baletti","contentAuthorTitle":"Ph.D.","contentPublisher":"","contentPublishDt":"20241015","contentUpdateDt":"20241107","contentPublishDtF":"2024-10-15","contentUpdateDtF":"2024-11-07","contentTopics":"Agency Capture|Big Pharma|CDC|COVID|COVID Vaccines|COVID-19 Vaccine|Cancer-causing Chemicals|Children's Health|Corporate Greed|Drugs\/Vaccines|Global Threats|News|Pharmaceutical Industry|Toxic Exposures|Vaccine Injury","contentTitle":"55 Undeclared Chemical Elements — Including Heavy Metals — Found in COVID Vaccines","contentDaysSincePublishDt":"","contentDaysSinceUpdateDt":"","contentLengthTitle":11,"contentLengthBody":1317,"contentComments":0};
+				var chd_ga4_data_parsed;
+
+				function init() {
+					contentDaysSincePublish();
+					contentDaysSinceUpdate();
+					chd_ga4_data_parsed = parseData(chd_ga4_data);
+					window.dataLayer = window.dataLayer || [];
+					window.dataLayer.push(chd_ga4_data_parsed);
+	
+					if (
+						window.location.hostname.includes('chd-shop.local') 
+						|| window.location.hostname.includes('chdstaging.org')
+					) {
+						console.log(chd_ga4_data_parsed);
+					}
+				}
+
+				function parseData(data) {
+					for (var prop in data) {
+						if (Object.hasOwn(data, prop) && !data[prop]) {
+							data[prop] = undefined;
+						}
+					}
+					return data;
+				}
+	
+				/**
+				 * Calculate contentDaysSincePublishDt in JS to bypass page cache
+				 *
+				 * @return void
+				 */
+				function contentDaysSincePublish() {
+					var datePublish  = chd_ga4_data['contentPublishDt'],
+						datePublishF = chd_ga4_data['contentPublishDtF'];
+	
+					if (datePublish == '') {
+						delete chd_ga4_data['contentPublishDtF'];
+						return;
+					}
+
+					chd_ga4_data['contentDaysSincePublishDt'] = daysBetween(datePublishF, Date.now());
+	
+					delete chd_ga4_data['contentPublishDtF'];
+				}
+
+				/**
+				 * Calculate contentDaysSinceUpdateDt in JS to bypass page cache
+				 *
+				 * @return void
+				 */
+				function contentDaysSinceUpdate() {
+					var dateUpdate  = chd_ga4_data['contentUpdateDt'],
+						dateUpdateF = chd_ga4_data['contentUpdateDtF'];
+	
+					if (dateUpdate == '') {
+						delete chd_ga4_data['contentUpdateDtF'];
+						return;
+					}
+	
+					chd_ga4_data['contentDaysSinceUpdateDt'] = daysBetween(dateUpdateF, Date.now());
+
+					delete chd_ga4_data['contentUpdateDtF'];
+				}
+
+				function treatAsUtc(date) {
+					var result = new Date(date);
+					result.setMinutes(result.getMinutes() - result.getTimezoneOffset());
+					return result;
+				}
+
+				function daysBetween(startDate, endDate) {
+					var millisecondsPerDay = 24 * 60 * 60 * 1000;
+					return Math.floor((treatAsUtc(endDate) - treatAsUtc(startDate)) / millisecondsPerDay);
+				}
+
+				return {
+					init: init
+				};
+			})()
+
+			chd_ga4.init();
+
+		})()
+	
+	</script>
+var chd_ga4_data =
+{
+    "event": "pageView",
+    "pageViewType": "conventional",
+    "hostname": "childrenshealthdefense.org",
+    "pageURL": "https://childrenshealthdefense.org/defender/undeclared-chemicals-heavy-metals-covid-vaccines",
+    "pageURLLocal": "https://childrenshealthdefense.org/defender/undeclared-chemicals-heavy-metals-covid-vaccines",
+    "pagePath": "/defender/undeclared-chemicals-heavy-metals-covid-vaccines",
+    "pagePathLocal": "/defender/undeclared-chemicals-heavy-metals-covid-vaccines",
+    "pageTitle": "55 Undeclared Chemical Elements — Including Heavy Metals — Found in COVID Vaccines • Children's Health Defense",
+    "langCode": "en",
+    "langName": "English",
+    "siteSection1": "The Defender",
+    "siteSection2": "COVID",
+    "siteSection3": "",
+    "contentAuthor": "Brenda Baletti",
+    "contentAuthorTitle": "Ph.D.",
+    "contentPublisher": "",
+    "contentPublishDt": "20241015",
+    "contentUpdateDt": "20241107",
+    "contentPublishDtF": "2024-10-15",
+    "contentUpdateDtF": "2024-11-07",
+    "contentTopics": "Agency Capture|Big Pharma|CDC|COVID|COVID Vaccines|COVID-19 Vaccine|Cancer-causing Chemicals|Children's Health|Corporate Greed|Drugs/Vaccines|Global Threats|News|Pharmaceutical Industry|Toxic Exposures|Vaccine Injury",
+    "contentTitle": "55 Undeclared Chemical Elements — Including Heavy Metals — Found in COVID Vaccines",
+    "contentDaysSincePublishDt": "",
+    "contentDaysSinceUpdateDt": "",
+    "contentLengthTitle": 11,
+    "contentLengthBody": 1317,
+    "contentComments": 0
+  }
