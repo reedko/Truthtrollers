@@ -66,7 +66,36 @@ function getRelativePath(absolutePath) {
   // If 'public/' is not found, return the original path (or handle as needed)
   return absolutePath;
 }
-//setup proxy access
+
+//publisaher and author info
+app.post("/api/extract-metadata", async (req, res) => {
+  const { url } = req.body;
+
+  try {
+    const metadata = await extractMetadataFromWebPage(url);
+
+    // Save publisher and author
+    const [publisherId] = await query(
+      "CALL InsertOrGetPublisher(?, ?, ?, @publisherId)",
+      [metadata.publisherName, null, null]
+    );
+
+    const [authorId] = await query(
+      "CALL InsertOrGetAuthor(?, ?, ?, ?, @authorId)",
+      [
+        metadata.authorName.split(" ")[0],
+        metadata.authorName.split(" ")[1],
+        null,
+        null,
+        null,
+      ]
+    );
+
+    res.status(200).send({ publisherId, authorId });
+  } catch (err) {
+    res.status(500).send({ error: "Failed to extract metadata" });
+  }
+});
 
 app.get("/api/scrapecontent", async (req, res) => {
   const { url } = req.query;
