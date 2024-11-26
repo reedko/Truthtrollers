@@ -22,7 +22,8 @@ interface TaskCardProps {
   onSelect: (taskId: number) => void;
   isSelected: boolean;
 }
-const BASE_URL = process.env.BASE_URL || "http://localhost:5001";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onSelect, isSelected }) => {
   const navigate = useNavigate();
@@ -60,7 +61,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onSelect, isSelected }) => {
         cursor="pointer" // Change cursor to pointer
       >
         <Image
-          src={`${BASE_URL}${task.thumbnail}${task.task_id}.png`} // Assuming thumbnail images are named as task_id_x.png
+          src={`${API_BASE_URL}/${task.thumbnail}`} // Assuming thumbnail images are named as task_id_x.png
           alt="Thumbnail"
           borderRadius="md"
           boxSize="200px"

@@ -1,52 +1,33 @@
+// ./src/components/TopicList.tsx
 import {
   Button,
   HStack,
   Heading,
-  Image,
   List,
   ListItem,
-  Spinner,
+  Image,
 } from "@chakra-ui/react";
-import { useState } from "react";
-const BASE_URL = process.env.BASE_URL || "http://localhost:5001";
+import { useTopicsStore } from "../store/useTopicStore";
 
-interface TopicListProps {
-  topics: string[];
-  subtopics: string[];
-  onTopicSelect: (topic: string | undefined, subtopic?: string) => void; // Callback for selection
-}
-const TopicList: React.FC<TopicListProps> = ({
-  topics,
-  subtopics,
-  onTopicSelect,
-}) => {
-  const [selectedTopic, setSelectedTopic] = useState<string | undefined>(
-    undefined
-  );
-  const [selectedSubtopic, setSelectedSubtopic] = useState<string | undefined>(
-    undefined
+const TopicList: React.FC = () => {
+  const topics = useTopicsStore((state) => state.topics);
+  const subtopics = useTopicsStore((state) => state.subtopics);
+  const setSelectedTopic = useTopicsStore((state) => state.setSelectedTopic);
+  const setSelectedSubtopic = useTopicsStore(
+    (state) => state.setSelectedSubtopic
   );
 
   const handleTopicClick = (topic: string) => {
     setSelectedTopic(topic);
-    onTopicSelect(topic); // Call parent function
+    setSelectedSubtopic(undefined); // Reset subtopic
   };
 
   const handleReset = () => {
-    setSelectedTopic(undefined); // Reset the selection
-    onTopicSelect(undefined); // Notify parent to reset tasks display
+    setSelectedTopic(undefined);
+    setSelectedSubtopic(undefined);
   };
-
-  const handleSubtopicChange = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    const subtopic = event.target.value;
-    setSelectedSubtopic(subtopic);
-    if (selectedTopic) {
-      onTopicSelect(selectedTopic, subtopic); // Call parent function
-    }
-  };
-
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
   return (
     <>
       <Heading fontSize="2xl" marginBottom={3}>
@@ -56,28 +37,26 @@ const TopicList: React.FC<TopicListProps> = ({
         <ListItem>
           <Button onClick={handleReset} variant="outline" colorScheme="red">
             All Topics
-          </Button>{" "}
-          {/* Reset Button */}
+          </Button>
         </ListItem>
-        {topics.map((topic, index) => (
-          <ListItem key={index} paddingY="5px">
+        {topics.map((topic) => (
+          <ListItem key={topic.topic_id} paddingY="5px">
             <HStack>
               <Image
-                src={`{`${BASE_URL}${topics.thumbnail}${topic}.png`} // Assuming thumbnail images are named as topic.webp
-                alt="Thumbnail"
+                src={`${API_BASE_URL}/${topic.thumbnail}`}
+                alt={topic.topic_name.toUpperCase()}
+                backgroundColor="teal"
                 borderRadius="md"
                 boxSize="50px"
-                objectFit="cover"
               />
               <Button
-                whiteSpace={"normal"}
-                textAlign={"left"}
-                fontWeight={topic === selectedTopic ? "bold" : "normal"}
-                onClick={() => handleTopicClick(topic)}
-                fontSize="lg"
-                variant="link"
+                height={10}
+                whiteSpace="normal"
+                textAlign="left"
+                fontWeight="bold"
+                onClick={() => handleTopicClick(topic.topic_name)}
               >
-                {topic}
+                {topic.topic_name.toUpperCase()}
               </Button>
             </HStack>
           </ListItem>
