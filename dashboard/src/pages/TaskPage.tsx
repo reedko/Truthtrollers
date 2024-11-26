@@ -1,3 +1,4 @@
+// ./src/pages/TaskPage.tsx
 import {
   Grid,
   Show,
@@ -8,40 +9,41 @@ import {
   Heading,
 } from "@chakra-ui/react";
 import TaskGrid from "../components/TaskGrid";
-
 import TopicList from "../components/TopicList";
 import { Task } from "../entities/useTask";
 import useFetchTasks from "../hooks/useFetchTasks";
-import useTopics from "../hooks/useTopics";
-import { useState } from "react";
-import useTaskManagement from "../hooks/useTaskManagement";
+import { useTopicsStore } from "../store/useTopicStore";
+import { useSearchStore } from "../store/useSearchStore"; // Import the search store
+
+import { useEffect, useState } from "react";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 export const TaskPage = () => {
   const {
     data: allTasks,
     loading,
     error,
-  } = useFetchTasks("http://localhost:5001/api/tasks") as {
+  } = useFetchTasks(`${API_BASE_URL}/api/tasks`) as {
     data: Task[];
     loading: boolean;
     error: string | null;
   };
-  const currentUserId = "reedko@gmail.com"; // Placeholder value for currentUserId
-  const [selectedTasks, setSelectedTasks] = useState<number[]>([]); // Track selected task IDs
-  const { topics, subtopics } = useTopics(allTasks); // Use the custom hook
 
-  const [selectedTopic, setSelectedTopic] = useState<string | undefined>(
-    undefined
-  );
-  const [selectedSubtopic, setSelectedSubtopic] = useState<string | undefined>(
-    undefined
-  );
-
-  const filteredTasks = useTaskManagement(
-    allTasks,
+  const {
+    topics,
+    subtopics,
     selectedTopic,
-    selectedSubtopic
-  ); // Use the new hook
+    selectedSubtopic,
+    setSelectedTopic,
+    setSelectedSubtopic,
+    fetchTopics,
+  } = useTopicsStore();
+
+  const { searchQuery } = useSearchStore(); // Get the search query from the store
+
+  const [selectedTasks, setSelectedTasks] = useState<number[]>([]); // Track selected task ID
 
   const handleCheckboxChange = (taskId: number) => {
     setSelectedTasks((prev) => {
@@ -52,16 +54,20 @@ export const TaskPage = () => {
       }
     });
   };
+  useEffect(() => {
+    fetchTopics(); // Fetch topics and subtopics on mount
+  }, [fetchTopics]);
 
-  const unassignedTasks = filteredTasks.filter(
-    (task: Task) =>
-      task.assigned === "unassigned" || !task.users.includes(currentUserId)
-  );
-
-  const userTasks = filteredTasks.filter(
-    (task: Task) =>
-      task.assigned === "assigned" && task.users.includes(currentUserId)
-  );
+  const filteredTasks = allTasks.filter((task) => {
+    const matchesTopic = selectedTopic ? task.topic === selectedTopic : true;
+    const matchesSubtopic = selectedSubtopic
+      ? task.subtopic === selectedSubtopic
+      : true;
+    const matchesSearch =
+      task.task_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      task.topic.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesTopic && matchesSubtopic && matchesSearch;
+  });
 
   return (
     <Grid
@@ -76,43 +82,23 @@ export const TaskPage = () => {
     >
       <Show above="lg">
         <GridItem area="aside" paddingX={5}>
-          <TopicList
-            topics={topics}
-            subtopics={subtopics}
-            onTopicSelect={(topic, subtopic) => {
-              setSelectedTopic(topic);
-              setSelectedSubtopic(subtopic);
-            }}
-          />
+          <TopicList />
         </GridItem>
       </Show>
 
       <GridItem area="main">
-        <Box paddingLeft={2}>
-          <Flex marginBottom={5}>
-            <Box marginRight={5}></Box>
-          </Flex>
-        </Box>
         <Heading size="lg" textAlign="left">
-          Unassigned or Other Users' Tasks
+          Active Tasks {selectedTopic ? "regarding: " + selectedTopic : ""}
         </Heading>
         {loading && <Text>Loading...</Text>}
         {error && <Text color="red.500">{error}</Text>}
         {!loading && !error && (
           <TaskGrid
-            tasks={unassignedTasks}
+            tasks={filteredTasks}
             selectedTasks={selectedTasks}
             onCheckboxChange={handleCheckboxChange}
           />
         )}
-        <Heading size="lg" textAlign="left">
-          Your Assigned Tasks
-        </Heading>
-        <TaskGrid
-          tasks={userTasks}
-          selectedTasks={selectedTasks}
-          onCheckboxChange={handleCheckboxChange}
-        />
       </GridItem>
     </Grid>
   );

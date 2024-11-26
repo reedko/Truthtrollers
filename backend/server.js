@@ -188,6 +188,32 @@ app.get("/api/tasks", (req, res) => {
   });
 });
 
+app.get("/api/task_topics", (req, res) => {
+  console.log("API call received for task_topics");
+  const sql = "SELECT * FROM task_topics";
+  pool.query(sql, (err, results) => {
+    if (err) {
+      console.error("Error fetching task_topics:", err);
+      return res.status(500).json({ error: "Database query failed" });
+    }
+    console.log("Fetched task_topics:", results); // Log the results
+    res.json(results);
+  });
+});
+
+app.get("/api/topics", (req, res) => {
+  console.log("API call received for topics");
+  const sql = "SELECT * FROM topics";
+  pool.query(sql, (err, results) => {
+    if (err) {
+      console.error("Error fetching topics:", err);
+      return res.status(500).json({ error: "Database query failed" });
+    }
+    console.log("Fetched topics:", results); // Log the results
+    res.json(results);
+  });
+});
+
 app.get("/api/test-connection", (req, res) => {
   pool.query("SELECT 1 + 1 AS solution", (err, results) => {
     if (err) {
