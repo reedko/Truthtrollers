@@ -7,6 +7,8 @@ import {
   Flex,
   Text,
   Heading,
+  HStack,
+  Center,
 } from "@chakra-ui/react";
 import TaskGrid from "../components/TaskGrid";
 import TopicList from "../components/TopicList";
@@ -77,18 +79,25 @@ export const TaskPage = () => {
       }}
       templateColumns={{
         base: "2fr",
-        lg: "150px 2fr",
+        lg: "200px 2fr",
       }}
+      gap={4}
     >
+      {" "}
       <Show above="lg">
         <GridItem area="aside" paddingX={5}>
-          <TopicList />
+          <TopicList
+            onTopicSelect={(topic: string | undefined, subtopic?: string) => {
+              setSelectedTopic(topic || undefined);
+              setSelectedSubtopic(subtopic || undefined);
+            }}
+          />
         </GridItem>
       </Show>
-
-      <GridItem area="main">
-        <Heading size="lg" textAlign="left">
-          Active Tasks {selectedTopic ? "regarding: " + selectedTopic : ""}
+      <GridItem area="main" paddingLeft={20}>
+        <Heading size="lg" textAlign="left" paddingBottom={14}>
+          Active Tasks{" "}
+          {selectedTopic ? "regarding: " + selectedTopic.toUpperCase() : ""}
         </Heading>
         {loading && <Text>Loading...</Text>}
         {error && <Text color="red.500">{error}</Text>}
