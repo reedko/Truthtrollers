@@ -121,43 +121,40 @@ app.get("/api/scrapecontent", async (req, res) => {
 app.post("/api/register", (req, res) => {
   const { username, password, email } = req.body;
   const hashedPassword = bcrypt.hashSync(password, 10);
+  const sql = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
+  const params = [username, hashedPassword, email];
 
-  db.query(
-    "INSERT INTO users (username, password, email) VALUES (?, ?, ?)",
-    [username, hashedPassword, email],
-    (err, result) => {
-      if (err) return res.status(500).send(err);
-      res.status(200).send("User registered!");
+  pool.query(sql, params, (err, result) => {
+    if (err) {
+      console.error("Error registering user:", err);
+      return res.status(500).json({ error: "Database query failed" });
     }
-  );
+    res.status(200).send("User registered!");
+  });
 });
 
 // Login endpoint
 app.post("/api/login", (req, res) => {
   const { username, password } = req.body;
-  console.log("got here0");
-
-  db.query(
-    "SELECT * FROM users WHERE username = ?",
-    [username],
-    (err, results) => {
-      if (err) {
-        console.error("Database query error:", err); // Log the error for better insight
-        return res.status(500).send("Internal server error");
-      }
-      if (results.length === 0) return res.status(404).send("User not found.");
-
-      const user = results[0];
-      if (bcrypt.compareSync(password, user.password)) {
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-          expiresIn: "1h",
-        });
-        res.status(200).json({ auth: true, token });
-      } else {
-        res.status(401).send("Invalid credentials.");
-      }
+  const sql = "SELECT * FROM users WHERE username = ?";
+  const params = [username, password];
+  pool.query(sql, params, (err, results) => {
+    if (err) {
+      console.error("Error logging in user:", err);
+      return res.status(500).json({ error: "Database query failed" });
     }
-  );
+    if (results.length === 0) return res.status(404).send("User not found.");
+
+    const user = results[0];
+    if (bcrypt.compareSync(password, user.password)) {
+      const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+        expiresIn: "1h",
+      });
+      res.status(200).json({ auth: true, token });
+    } else {
+      res.status(401).send("Invalid credentials.");
+    }
+  });
 });
 
 // Password reset endpoint (simplified)
@@ -183,7 +180,7 @@ app.get("/api/tasks", (req, res) => {
       console.error("Error fetching tasks:", err);
       return res.status(500).json({ error: "Database query failed" });
     }
-    console.log("Fetched tasks:", results); // Log the results
+
     res.json(results);
   });
 });
@@ -196,9 +193,69 @@ app.get("/api/task_topics", (req, res) => {
       console.error("Error fetching task_topics:", err);
       return res.status(500).json({ error: "Database query failed" });
     }
-    console.log("Fetched task_topics:", results); // Log the results
     res.json(results);
   });
+});
+
+app.get("/api/users", async (req, res) => {
+  console.log("API call received for users");
+  const sql = "SELECT * FROM users";
+  pool.query(sql, (err, results) => {
+    if (err) {
+      console.error("Error fetching task_topics:", err);
+      return res.status(500).json({ error: "Database query failed" });
+    }
+    res.json(results);
+  });
+});
+
+app.post("/api/tasks/:taskId/assign", async (req, res) => {
+  const { taskId } = req.params;
+  const { userId } = req.body;
+
+  try {
+    await db.query(`INSERT INTO task_users (task_id, user_id) VALUES (?, ?)`, [
+      taskId,
+      userId,
+    ]);
+    res.status(200).send("User assigned successfully");
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error assigning user to task");
+  }
+});
+
+app.get("/api/tasks/:taskId/users", async (req, res) => {
+  const { taskId } = req.params;
+  const sql = `SELECT u.username 
+       FROM users u
+       JOIN task_users tu ON u.user_id = tu.user_id
+       WHERE tu.task_id = ?`;
+  pool.query(sql, taskId, (err, rows) => {
+    if (err) {
+      console.error("Error fetching task_topics:", err);
+      return res.status(500).json({ error: "Database query failed" });
+    }
+    if (rows && rows[0]) {
+      console.log("Fetched task users:", rows[0].username);
+
+      res.json(rows.map((row) => row.username));
+    }
+  });
+});
+
+app.get("/api/tasks/:taskId/references", async (req, res) => {
+  const { taskId } = req.params;
+  try {
+    const [rows] = await db.query(
+      `SELECT * FROM lit_references WHERE task_id = ?`,
+      [taskId]
+    );
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error fetching references");
+  }
 });
 
 app.get("/api/topics", (req, res) => {
@@ -209,7 +266,7 @@ app.get("/api/topics", (req, res) => {
       console.error("Error fetching topics:", err);
       return res.status(500).json({ error: "Database query failed" });
     }
-    console.log("Fetched topics:", results); // Log the results
+
     res.json(results);
   });
 });

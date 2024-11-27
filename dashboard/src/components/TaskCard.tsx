@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Image,
@@ -9,28 +9,48 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
-  GridItem,
   Grid,
+  GridItem,
   Center,
+  useDisclosure,
 } from "@chakra-ui/react";
-import { Task } from "../entities/useTask"; // Import the Task type
 import { BiChevronDown } from "react-icons/bi";
+import { Task } from "../entities/useTask"; // Import Task type
 import { useNavigate } from "react-router-dom";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 interface TaskCardProps {
   task: Task;
   onSelect: (taskId: number) => void;
   isSelected: boolean;
 }
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onSelect, isSelected }) => {
   const navigate = useNavigate();
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const [assignedUsers, setAssignedUsers] = useState<string[]>([]);
+
+  // Fetch assigned users for the task
+  useEffect(() => {
+    const fetchAssignedUsers = async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/tasks/${task.task_id}/users`
+        );
+        const data = await response.json();
+        console.log(data);
+        setAssignedUsers(data); // Assuming data is an array of usernames
+      } catch (err) {
+        console.error("Error fetching assigned users:", err);
+      }
+    };
+    fetchAssignedUsers();
+  }, [task.task_id]);
 
   const handleCardClick = () => {
-    // Navigate and pass task data as state
-    navigate("/tasks/" + task.task_id, { state: { task } });
+    navigate(`/tasks/${task.task_id}`, { state: { task } });
   };
 
   const getProgressColor = (progress: string) => {
@@ -42,7 +62,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onSelect, isSelected }) => {
       case "Awaiting Evaluation":
         return "blue";
       default:
-        return "red"; // For Assigned/Started states
+        return "red";
     }
   };
 
@@ -57,17 +77,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onSelect, isSelected }) => {
         width="250px"
         margin="10px"
         bg="teal"
-        onClick={handleCardClick} // Navigate on click
-        cursor="pointer" // Change cursor to pointer
       >
         <Image
-          src={`${API_BASE_URL}/${task.thumbnail}`} // Assuming thumbnail images are named as task_id_x.png
+          src={`${API_BASE_URL}/${task.thumbnail}`}
           alt="Thumbnail"
           borderRadius="md"
           boxSize="200px"
           objectFit="cover"
         />
-
         <Text fontWeight="bold" mt={2} noOfLines={2}>
           {task.task_name}
         </Text>
@@ -88,20 +105,15 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onSelect, isSelected }) => {
           <GridItem>
             <Text>{task.progress}</Text>
           </GridItem>
-
           <GridItem>
             <Menu>
               <MenuButton as={Button} rightIcon={<BiChevronDown />}>
                 Users
               </MenuButton>
               <MenuList>
-                {task.users
-                  ? task.users
-                      .split(",")
-                      .map((user, index) => (
-                        <MenuItem key={index}>{user.trim()}</MenuItem>
-                      ))
-                  : ""}
+                {assignedUsers.map((user, index) => (
+                  <MenuItem key={index}>{user}</MenuItem>
+                ))}
               </MenuList>
             </Menu>
           </GridItem>
@@ -114,8 +126,8 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onSelect, isSelected }) => {
                 <MenuItem onClick={() => onSelect(task.task_id)}>
                   Assign
                 </MenuItem>
-                <MenuItem>View Details</MenuItem>
-                <MenuItem>Source List</MenuItem>
+                <MenuItem onClick={handleCardClick}>View Details</MenuItem>
+                <MenuItem onClick={onOpen}>Source List</MenuItem>
               </MenuList>
             </Menu>
           </GridItem>

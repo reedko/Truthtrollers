@@ -1,4 +1,4 @@
-import { HStack, Image, Input } from "@chakra-ui/react";
+import { Flex, HStack, Image, Input, Spacer } from "@chakra-ui/react";
 import ColorModeSwitch from "./ColorModeSwitch";
 import SearchInput from "./SearchInput";
 import { Link } from "react-router-dom";
@@ -14,17 +14,20 @@ const NavBar = () => {
     setSearchQuery(event.target.value);
   };
   return (
-    <HStack padding="10px">
+    <Flex as="nav" align="center" padding="10px" width="100%" boxShadow="sm">
       <Link to="/">
         <Image src={`${API_BASE_URL}/assets/ttlogo11.png`} boxSize="80px" />
       </Link>
       <Input
         placeholder="Search tasks..."
         onChange={handleSearchChange}
-        width="300px"
+        marginLeft="20px"
+        maxWidth="400px"
+        flex="1"
       />
+      <Spacer />
       <ColorModeSwitch />
-    </HStack>
+    </Flex>
   );
 };
 
