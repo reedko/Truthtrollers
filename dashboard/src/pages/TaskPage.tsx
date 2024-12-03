@@ -1,75 +1,95 @@
-// ./src/pages/TaskPage.tsx
-import {
-  Grid,
-  Show,
-  GridItem,
-  Box,
-  Flex,
-  Text,
-  Heading,
-  HStack,
-  Center,
-} from "@chakra-ui/react";
+import React, { useState, useEffect } from "react";
+import { Grid, GridItem, Show, Heading, Text } from "@chakra-ui/react";
 import TaskGrid from "../components/TaskGrid";
 import TopicList from "../components/TopicList";
+import axios from "axios";
 import { Task } from "../entities/useTask";
-import useFetchTasks from "../hooks/useFetchTasks";
-import { useTopicsStore } from "../store/useTopicStore";
-import { useSearchStore } from "../store/useSearchStore"; // Import the search store
-
-import { useEffect, useState } from "react";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
-export const TaskPage = () => {
-  const {
-    data: allTasks,
-    loading,
-    error,
-  } = useFetchTasks(`${API_BASE_URL}/api/tasks`) as {
-    data: Task[];
-    loading: boolean;
-    error: string | null;
-  };
+export const TaskPage: React.FC<{
+  taskUsers: { [taskId: number]: string[] };
+  setTaskUsers: React.Dispatch<
+    React.SetStateAction<{ [taskId: number]: string[] }>
+  >;
+}> = ({ taskUsers, setTaskUsers }) => {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
+  const [selectedTopic, setSelectedTopic] = useState<string | undefined>(
+    undefined
+  );
 
-  const {
-    topics,
-    subtopics,
-    selectedTopic,
-    selectedSubtopic,
-    setSelectedTopic,
-    setSelectedSubtopic,
-    fetchTopics,
-  } = useTopicsStore();
-
-  const { searchQuery } = useSearchStore(); // Get the search query from the store
-
-  const [selectedTasks, setSelectedTasks] = useState<number[]>([]); // Track selected task ID
-
-  const handleCheckboxChange = (taskId: number) => {
-    setSelectedTasks((prev) => {
-      if (prev.includes(taskId)) {
-        return prev.filter((id) => id !== taskId); // Unselect
-      } else {
-        return [...prev, taskId]; // Select
-      }
-    });
-  };
+  // Fetch tasks on load
   useEffect(() => {
-    fetchTopics(); // Fetch topics and subtopics on mount
-  }, [fetchTopics]);
+    const fetchTasks = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/tasks`);
+        setTasks(response.data);
+        setFilteredTasks(response.data);
+      } catch (error) {
+        console.error("Error fetching tasks:", error);
+      }
+    };
 
-  const filteredTasks = allTasks.filter((task) => {
-    const matchesTopic = selectedTopic ? task.topic === selectedTopic : true;
-    const matchesSubtopic = selectedSubtopic
-      ? task.subtopic === selectedSubtopic
-      : true;
-    const matchesSearch =
-      task.task_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      task.topic.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesTopic && matchesSubtopic && matchesSearch;
-  });
+    fetchTasks();
+  }, []);
+
+  // Handle topic selection
+  const handleTopicSelect = (topicName: string | undefined) => {
+    setSelectedTopic(topicName);
+    setFilteredTasks(
+      topicName ? tasks.filter((task) => task.topic === topicName) : tasks
+    );
+  };
+
+  // Fetch assigned users
+  const fetchAssignedUsers = async (taskId: number): Promise<string[]> => {
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/api/tasks/${taskId}/get-users`
+      );
+      const usernames = response.data.map(
+        (user: { user_id: number; username: string }) => user.username
+      );
+      setTaskUsers((prev) => ({
+        ...prev,
+        [taskId]: usernames, // Add or update the entry for this taskId
+      }));
+      return usernames;
+    } catch (err) {
+      console.error("Error fetching assigned users:", err);
+      return [];
+    }
+  };
+
+  // Fetch references
+  const fetchReferences = async (taskId: number): Promise<string[]> => {
+    try {
+      console.log("Something");
+      /*       const response = await axios.get(
+        `${API_BASE_URL}/api/tasks/${taskId}/get-users`
+      ); */
+      const response = await axios.get(
+        `${API_BASE_URL}/api/tasks/${taskId}/source-references`
+      );
+      return response.data;
+    } catch (err) {
+      console.error("Error fetching references:", err);
+      return [];
+    }
+  };
+
+  // Assign user to task
+  const assignUserToTask = async (taskId: number, userId: number) => {
+    try {
+      await axios.post(`${API_BASE_URL}/api/tasks/${taskId}/assign`, {
+        userId,
+      });
+    } catch (err) {
+      console.error("Error assigning user:", err);
+    }
+  };
 
   return (
     <Grid
@@ -83,29 +103,28 @@ export const TaskPage = () => {
       }}
       gap={4}
     >
-      {" "}
       <Show above="lg">
         <GridItem area="aside" paddingX={5}>
           <TopicList
-            onTopicSelect={(topic: string | undefined, subtopic?: string) => {
-              setSelectedTopic(topic || undefined);
-              setSelectedSubtopic(subtopic || undefined);
-            }}
+            selectedTopic={selectedTopic}
+            onTopicSelect={handleTopicSelect}
           />
         </GridItem>
       </Show>
       <GridItem area="main" paddingLeft={20}>
         <Heading size="lg" textAlign="left" paddingBottom={14}>
-          Active Tasks{" "}
-          {selectedTopic ? "regarding: " + selectedTopic.toUpperCase() : ""}
+          Active Tasks
         </Heading>
-        {loading && <Text>Loading...</Text>}
-        {error && <Text color="red.500">{error}</Text>}
-        {!loading && !error && (
+        {filteredTasks.length === 0 ? (
+          <Text>No tasks match the selected criteria.</Text>
+        ) : (
           <TaskGrid
             tasks={filteredTasks}
-            selectedTasks={selectedTasks}
-            onCheckboxChange={handleCheckboxChange}
+            taskUsers={taskUsers} // Pass current assigned users
+            setTaskUsers={setTaskUsers} // Pass callback to update assigned users
+            fetchAssignedUsers={fetchAssignedUsers}
+            fetchReferences={fetchReferences}
+            assignUserToTask={assignUserToTask}
           />
         )}
       </GridItem>

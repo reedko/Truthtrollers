@@ -30,8 +30,8 @@ app.use(express.json());
 // Serve static files from the assets directory
 const BASE_URL = process.env.BASE_URL || "http://localhost:5001";
 const assetsPath = path.join(__dirname, "assets");
-app.use("/assets", express.static(assetsPath));
 
+app.use("/assets", express.static(assetsPath));
 // MySQL connection
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -67,6 +67,11 @@ function getRelativePath(absolutePath) {
   return absolutePath;
 }
 
+app.use((req, res, next) => {
+  console.log(`Incoming request: ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 //publisaher and author info
 app.post("/api/extract-metadata", async (req, res) => {
   const { url } = req.body;
@@ -95,6 +100,42 @@ app.post("/api/extract-metadata", async (req, res) => {
   } catch (err) {
     res.status(500).send({ error: "Failed to extract metadata" });
   }
+});
+
+app.post("/api/tasks/:taskId/remove-sources", async (req, res) => {
+  const { taskId } = req.params;
+  const { sources } = req.body;
+  const sql = `DELETE FROM task_references WHERE task_id = ? AND lit_reference_id IN (?)`;
+  pool.query(sql, [taskId, sources], (err) => {
+    if (err) return res.status(500).send("Error removing sources");
+    res.send("Sources removed");
+  });
+});
+
+app.post("/api/tasks/:taskId/add-source", async (req, res) => {
+  const { taskId } = req.params;
+  const { name } = req.body;
+  const sql = `INSERT INTO lit_references (name) VALUES (?)`;
+  pool.query(sql, [name], (err, result) => {
+    if (err) return res.status(500).send("Error adding source");
+    const referenceId = result.insertId;
+    const linkSql = `INSERT INTO task_references (task_id, lit_reference_id) VALUES (?, ?)`;
+    pool.query(linkSql, [taskId, referenceId], (linkErr) => {
+      if (linkErr) return res.status(500).send("Error linking source");
+      res.json({ id: referenceId, name });
+    });
+  });
+});
+
+app.post("/api/tasks/:taskId/unassign-user", async (req, res) => {
+  const { taskId } = req.params;
+  const { userId } = req.body;
+  const sql = `DELETE FROM task_users WHERE task_id = ? AND user_id = ?`;
+  console.log(sql);
+  pool.query(sql, [taskId, userId], (err) => {
+    if (err) return res.status(500).send("Error unassigning user");
+    res.send("User unassigned");
+  });
 });
 
 app.get("/api/scrapecontent", async (req, res) => {
@@ -197,7 +238,7 @@ app.get("/api/task_topics", (req, res) => {
   });
 });
 
-app.get("/api/users", async (req, res) => {
+app.get("/api/all-users", async (req, res) => {
   console.log("API call received for users");
   const sql = "SELECT * FROM users";
   pool.query(sql, (err, results) => {
@@ -209,25 +250,23 @@ app.get("/api/users", async (req, res) => {
   });
 });
 
-app.post("/api/tasks/:taskId/assign", async (req, res) => {
+app.post("/api/tasks/:taskId/assign-user", async (req, res) => {
   const { taskId } = req.params;
   const { userId } = req.body;
-
-  try {
-    await db.query(`INSERT INTO task_users (task_id, user_id) VALUES (?, ?)`, [
-      taskId,
-      userId,
-    ]);
+  const sql = `INSERT INTO task_users (task_id, user_id) VALUES (?, ?)`;
+  const params = [taskId, userId];
+  pool.query(sql, params, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Error assigning user to task");
+    }
     res.status(200).send("User assigned successfully");
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Error assigning user to task");
-  }
+  });
 });
 
-app.get("/api/tasks/:taskId/users", async (req, res) => {
+app.get("/api/tasks/:taskId/get-users", async (req, res) => {
   const { taskId } = req.params;
-  const sql = `SELECT u.username 
+  const sql = `SELECT u.username,u.user_id
        FROM users u
        JOIN task_users tu ON u.user_id = tu.user_id
        WHERE tu.task_id = ?`;
@@ -237,30 +276,32 @@ app.get("/api/tasks/:taskId/users", async (req, res) => {
       return res.status(500).json({ error: "Database query failed" });
     }
     if (rows && rows[0]) {
-      console.log("Fetched task users:", rows[0].username);
-
-      res.json(rows.map((row) => row.username));
+      console.log("Fetched task users:", rows);
+      res.json(rows);
     }
   });
 });
 
-app.get("/api/tasks/:taskId/references", async (req, res) => {
+app.get("/api/tasks/:taskId/source-references", async (req, res) => {
+  console.log(":OUIFGHD", req.params);
   const { taskId } = req.params;
-  try {
-    const [rows] = await db.query(
-      `SELECT * FROM lit_references WHERE task_id = ?`,
-      [taskId]
-    );
-    res.json(rows);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Error fetching references");
-  }
+  const sql = `SELECT * FROM lit_references lr join task_references tr 
+  on lr.lit_reference_id = tr.lit_reference_id WHERE task_id = ?`;
+  pool.query(sql, taskId, (err, rows) => {
+    if (err) {
+      console.log(rows, taskId);
+      console.error(err);
+      return res.status(500).send("Error fetching references");
+    }
+    console.log("POIUJHG", rows);
+    return res.json(rows);
+  });
 });
 
 app.get("/api/topics", (req, res) => {
   console.log("API call received for topics");
-  const sql = "SELECT * FROM topics";
+  const sql =
+    "SELECT * FROM topics where topic_id in (SELECT distinct(topic_id) FROM task_topics where topic_order=1) ";
   pool.query(sql, (err, results) => {
     if (err) {
       console.error("Error fetching topics:", err);

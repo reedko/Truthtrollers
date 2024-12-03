@@ -7,40 +7,36 @@ import {
   ListItem,
   VStack,
 } from "@chakra-ui/react";
-import { useTopicsStore } from "../store/useTopicStore";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
-interface TopicListProps {
-  onTopicSelect: (topic: string | undefined, subtopic?: string) => void;
+interface Topic {
+  topic_id: number;
+  topic_name: string;
+  thumbnail: string;
 }
 
-const TopicList: React.FC<TopicListProps> = ({ onTopicSelect }) => {
-  const {
-    topics,
-    subtopics,
-    selectedTopic,
-    setSelectedTopic,
-    setSelectedSubtopic,
-  } = useTopicsStore();
+const TopicList: React.FC<{
+  selectedTopic: string | undefined;
+  onTopicSelect: (topicName: string | undefined) => void;
+}> = ({ selectedTopic, onTopicSelect }) => {
+  const [topics, setTopics] = useState<Topic[]>([]);
 
-  const handleTopicClick = (topic: string) => {
-    setSelectedTopic(topic);
-    setSelectedSubtopic(undefined); // Clear subtopic selection
-    onTopicSelect(topic); // Notify parent about the selection
-  };
+  useEffect(() => {
+    const fetchTopics = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/api/topics`);
+        setTopics(response.data);
+      } catch (error) {
+        console.error("Error fetching topics:", error);
+      }
+    };
 
-  const handleSubtopicClick = (subtopic: string) => {
-    setSelectedSubtopic(subtopic);
-    onTopicSelect(selectedTopic, subtopic); // Notify parent about the subtopic selection
-  };
-
-  const handleReset = () => {
-    setSelectedTopic(undefined);
-    setSelectedSubtopic(undefined);
-    onTopicSelect(undefined); // Reset selection in the parent
-  };
+    fetchTopics();
+  }, []);
 
   return (
     <VStack align="stretch" spacing={3} width="100%" maxWidth="300px">
@@ -49,7 +45,11 @@ const TopicList: React.FC<TopicListProps> = ({ onTopicSelect }) => {
       </Heading>
       <List spacing={3}>
         <ListItem>
-          <Button onClick={handleReset} variant="outline" colorScheme="red">
+          <Button
+            onClick={() => onTopicSelect(undefined)}
+            variant="outline"
+            colorScheme="red"
+          >
             All Topics
           </Button>
         </ListItem>
@@ -57,7 +57,7 @@ const TopicList: React.FC<TopicListProps> = ({ onTopicSelect }) => {
           <ListItem key={topic.topic_id}>
             <HStack alignItems="start" spacing={2}>
               <Image
-                src={`${API_BASE_URL}/${topic.thumbnail}`} // Simplified image source
+                src={`${API_BASE_URL}/${topic.thumbnail}`}
                 alt={`${topic.topic_name} Thumbnail`}
                 borderRadius="md"
                 boxSize="50px"
@@ -70,7 +70,7 @@ const TopicList: React.FC<TopicListProps> = ({ onTopicSelect }) => {
                 fontWeight={
                   topic.topic_name === selectedTopic ? "bold" : "normal"
                 }
-                onClick={() => handleTopicClick(topic.topic_name)}
+                onClick={() => onTopicSelect(topic.topic_name)}
                 fontSize="lg"
                 variant="ghost"
                 flex="1"
@@ -81,7 +81,6 @@ const TopicList: React.FC<TopicListProps> = ({ onTopicSelect }) => {
                 {topic.topic_name.toUpperCase()}
               </Button>
             </HStack>
-            {/* Display subtopics if this topic is selected */}
           </ListItem>
         ))}
       </List>

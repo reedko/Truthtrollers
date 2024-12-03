@@ -1,18 +1,24 @@
 import React from "react";
 import { SimpleGrid } from "@chakra-ui/react";
-import TaskCard from "./TaskCard"; // Import the TaskCard component
-import { Task } from "../entities/useTask"; // Import the Task type
+import TaskCard from "./TaskCard";
+import { Task } from "../entities/useTask";
 
-interface TaskGridProps {
+const TaskGrid: React.FC<{
   tasks: Task[];
-  selectedTasks: number[];
-  onCheckboxChange: (taskId: number) => void; // Callback for checkbox selection
-}
-
-const TaskGrid: React.FC<TaskGridProps> = ({
+  taskUsers: { [taskId: number]: string[] };
+  setTaskUsers: React.Dispatch<
+    React.SetStateAction<{ [taskId: number]: string[] }>
+  >;
+  fetchAssignedUsers: (taskId: number) => Promise<string[]>;
+  fetchReferences: (taskId: number) => Promise<string[]>;
+  assignUserToTask: (taskId: number, userId: number) => Promise<void>;
+}> = ({
   tasks,
-  selectedTasks,
-  onCheckboxChange,
+  taskUsers,
+  setTaskUsers,
+  fetchAssignedUsers,
+  fetchReferences,
+  assignUserToTask,
 }) => {
   return (
     <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
@@ -20,8 +26,12 @@ const TaskGrid: React.FC<TaskGridProps> = ({
         <TaskCard
           key={task.task_id}
           task={task}
-          onSelect={onCheckboxChange}
-          isSelected={selectedTasks.includes(task.task_id)}
+          taskUsers={taskUsers}
+          assignedUsers={taskUsers[task.task_id] || []}
+          setTaskUsers={setTaskUsers} // Pass setTaskUsers to TaskCard
+          onFetchAssignedUsers={() => fetchAssignedUsers(task.task_id)}
+          onFetchReferences={fetchReferences}
+          onAssignUserToTask={assignUserToTask}
         />
       ))}
     </SimpleGrid>
