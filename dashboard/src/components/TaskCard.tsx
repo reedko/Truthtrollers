@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Box,
   Image,
@@ -9,60 +10,60 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
-  Grid,
-  GridItem,
   Center,
   useDisclosure,
+  Link,
 } from "@chakra-ui/react";
 import { BiChevronDown } from "react-icons/bi";
-import { Task } from "../entities/useTask"; // Import Task type
-import { useNavigate } from "react-router-dom";
+import AssignUserModal from "./AssignUserModal";
+import SourceListModal from "./SourceListModal";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
-interface TaskCardProps {
-  task: Task;
-  onSelect: (taskId: number) => void;
-  isSelected: boolean;
-}
-
-const TaskCard: React.FC<TaskCardProps> = ({ task, onSelect, isSelected }) => {
+const TaskCard: React.FC<{
+  task: any;
+  taskUsers: { [taskId: number]: string[] };
+  assignedUsers: string[];
+  setTaskUsers: React.Dispatch<
+    React.SetStateAction<{ [taskId: number]: string[] }>
+  >;
+  onFetchAssignedUsers: (taskId: number) => Promise<string[]>;
+  onFetchReferences: (taskId: number) => Promise<string[]>;
+  onAssignUserToTask: (taskId: number, userId: number) => Promise<void>;
+}> = ({
+  task,
+  taskUsers,
+  assignedUsers,
+  setTaskUsers,
+  onFetchAssignedUsers,
+}) => {
   const navigate = useNavigate();
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [assignedUsers, setAssignedUsers] = useState<string[]>([]);
 
-  // Fetch assigned users for the task
-  useEffect(() => {
-    const fetchAssignedUsers = async () => {
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/tasks/${task.task_id}/users`
-        );
-        const data = await response.json();
-        console.log(data);
-        setAssignedUsers(data); // Assuming data is an array of usernames
-      } catch (err) {
-        console.error("Error fetching assigned users:", err);
-      }
-    };
-    fetchAssignedUsers();
-  }, [task.task_id]);
-
-  const handleCardClick = () => {
+  const handleDrillDown = () => {
+    console.log(`Navigating to /tasks/${task.task_id}`);
     navigate(`/tasks/${task.task_id}`, { state: { task } });
   };
+  const [users, setUsers] = useState<string[]>([]); // Assigned users
 
-  const getProgressColor = (progress: string) => {
-    switch (progress) {
-      case "Completed":
-        return "green";
-      case "Partially Complete":
-        return "yellow";
-      case "Awaiting Evaluation":
-        return "blue";
-      default:
-        return "red";
+  const {
+    isOpen: isAssignOpen,
+    onOpen: onAssignOpen,
+    onClose: onAssignClose,
+  } = useDisclosure();
+  const {
+    isOpen: isReferencesOpen,
+    onOpen: onReferencesOpen,
+    onClose: onReferencesClose,
+  } = useDisclosure();
+
+  const handleAssignedUsersOpen = async () => {
+    try {
+      const fetchedUsers = await onFetchAssignedUsers(task.task_id);
+
+      setUsers(fetchedUsers); // Update the assigned users list
+    } catch (err) {
+      console.error("Error fetching assigned users:", err);
     }
   };
 
@@ -86,52 +87,80 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onSelect, isSelected }) => {
           objectFit="cover"
         />
         <Text fontWeight="bold" mt={2} noOfLines={2}>
-          {task.task_name}
+          <Link href={task.url} target="_blank">
+            {task.task_name}
+          </Link>
         </Text>
-        <Grid templateRows="repeat(2, 1fr)" templateColumns="repeat(2, 1fr)">
-          <GridItem>
-            <Progress
-              value={
-                task.progress === "Completed"
-                  ? 100
-                  : task.progress === "Partially Complete"
-                  ? 50
-                  : 25
-              }
-              colorScheme={getProgressColor(task.progress)}
-              mt={2}
-            />
-          </GridItem>
-          <GridItem>
-            <Text>{task.progress}</Text>
-          </GridItem>
-          <GridItem>
-            <Menu>
-              <MenuButton as={Button} rightIcon={<BiChevronDown />}>
-                Users
-              </MenuButton>
-              <MenuList>
-                {assignedUsers.map((user, index) => (
-                  <MenuItem key={index}>{user}</MenuItem>
-                ))}
-              </MenuList>
-            </Menu>
-          </GridItem>
-          <GridItem>
-            <Menu>
-              <MenuButton as={Button} colorScheme="teal">
-                Actions
-              </MenuButton>
-              <MenuList>
-                <MenuItem onClick={() => onSelect(task.task_id)}>
-                  Assign
-                </MenuItem>
-                <MenuItem onClick={handleCardClick}>View Details</MenuItem>
-                <MenuItem onClick={onOpen}>Source List</MenuItem>
-              </MenuList>
-            </Menu>
-          </GridItem>
-        </Grid>
+        <Progress
+          value={
+            task.progress === "Completed"
+              ? 100
+              : task.progress === "Partially Complete"
+              ? 50
+              : 25
+          }
+          colorScheme={
+            task.progress === "Completed"
+              ? "green"
+              : task.progress === "Partially Complete"
+              ? "yellow"
+              : "red"
+          }
+          mt={2}
+        />
+        <Menu onOpen={handleAssignedUsersOpen}>
+          <MenuButton as={Button} rightIcon={<BiChevronDown />}>
+            Users
+          </MenuButton>
+          <MenuList>
+            {assignedUsers.length > 0 ? (
+              assignedUsers.map((user, index) => (
+                <MenuItem key={index}>{user}</MenuItem>
+              ))
+            ) : (
+              <MenuItem>No Users Assigned</MenuItem>
+            )}
+          </MenuList>
+        </Menu>
+        <Menu>
+          <MenuButton as={Button} colorScheme="teal">
+            Actions
+          </MenuButton>
+          <MenuList>
+            <MenuItem
+              onClick={() => {
+                onAssignOpen(); // Open the assign modal
+              }}
+            >
+              Assign User
+            </MenuItem>
+            <MenuItem
+              onClick={() => {
+                onReferencesOpen();
+              }}
+            >
+              Source List
+            </MenuItem>
+            <MenuItem onClick={handleDrillDown}>Drill Down</MenuItem>
+          </MenuList>
+        </Menu>
+        {/* Assign User Modal */}
+        <AssignUserModal
+          isOpen={isAssignOpen}
+          onClose={onAssignClose}
+          taskId={task.task_id}
+          onUpdateAssignedUsers={(updatedUsers) =>
+            setTaskUsers((prev) => ({
+              ...prev,
+              [task.task_id]: updatedUsers, // Update assigned users for this taskId
+            }))
+          }
+        />
+        <SourceListModal
+          isOpen={isReferencesOpen}
+          onClose={onReferencesClose}
+          taskId={task.task_id}
+        />
       </Box>
     </Center>
   );

@@ -1,16 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { Box, Grid, Heading, Text, Link, Divider } from "@chakra-ui/react";
 import TaskCard from "../components/TaskCard";
-import { useLocation } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import axios from "axios";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
-const TaskDetail = () => {
+const TaskDetail: React.FC<{
+  taskUsers: { [taskId: number]: string[] };
+  setTaskUsers: React.Dispatch<
+    React.SetStateAction<{ [taskId: number]: string[] }>
+  >;
+}> = ({ taskUsers, setTaskUsers }) => {
   const location = useLocation();
+  const { taskId } = useParams();
   const task = location.state?.task;
-
+  if (!taskId) return <div>Error: Task ID not provided</div>;
   if (!task) return <Text>Task not found</Text>;
 
   const [references, setReferences] = useState<any[]>([]); // Source references
@@ -34,7 +40,7 @@ const TaskDetail = () => {
   const fetchAssignedUsers = async (taskId: number): Promise<string[]> => {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/api/tasks/${taskId}/users`
+        `${API_BASE_URL}/api/tasks/${taskId}/get-users`
       );
       return response.data;
     } catch (err) {
@@ -76,8 +82,12 @@ const TaskDetail = () => {
         <Box>
           <Heading size="lg">{task.task_name}</Heading>
           <TaskCard
+            key={task.task_id}
             task={task}
-            onFetchAssignedUsers={fetchAssignedUsers}
+            taskUsers={taskUsers}
+            assignedUsers={taskUsers[task.task_id] || []}
+            setTaskUsers={setTaskUsers} // Pass setTaskUsers to TaskCard
+            onFetchAssignedUsers={() => fetchAssignedUsers(task.task_id)}
             onFetchReferences={fetchReferences}
             onAssignUserToTask={assignUserToTask}
           />
@@ -113,7 +123,9 @@ const TaskDetail = () => {
             {references.map((ref, index) => (
               <Box key={index} borderWidth="1px" borderRadius="lg" p={4}>
                 <Text fontWeight="bold">
-                  {ref.title || `Reference ${index + 1}`}
+                  <Link href={ref.lit_reference_link} target="_blank">
+                    {ref.lit_reference_link}
+                  </Link>
                 </Text>
                 <Link
                   href={ref.url}
