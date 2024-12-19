@@ -72,7 +72,28 @@ app.use((req, res, next) => {
   next();
 });
 
-//publisaher and author info
+app.get("/proxy", async (req, res) => {
+  const { url } = req.query; // Pass the target URL as a query parameter
+  if (!url) return res.status(400).send("URL is required");
+
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+        "Accept-Language": "en-US,en;q=0.9", // Optional: Set additional headers
+      },
+    });
+    res.send(response.data);
+  } catch (error) {
+    console.error("Error fetching the URL:", error);
+    res.status(500).send("Failed to fetch data");
+  }
+});
+
+app.listen(3000, () => console.log("Proxy server running on port 3000"));
+
+//publisher and author info
 app.post("/api/extract-metadata", async (req, res) => {
   const { url } = req.body;
 
@@ -102,6 +123,200 @@ app.post("/api/extract-metadata", async (req, res) => {
   }
 });
 
+//Get Authors
+app.get("/api/tasks/:taskId/authors", async (req, res) => {
+  console.log("API call received for authors");
+  const { taskId } = req.params;
+  const sql = `SELECT * FROM authors a join task_authors ta 
+  on a.author_id = ta.author_id WHERE task_id = ?`;
+  pool.query(sql, taskId, (err, rows) => {
+    if (err) {
+      console.log(rows, taskId);
+      console.error(err);
+      return res.status(500).send("Error fetching authors");
+    }
+
+    return res.json(rows);
+  });
+});
+
+//Get task_Authors
+app.get("/api/tasks/:taskId/task_authors", async (req, res) => {
+  console.log("API call received for authors");
+  const { taskId } = req.params;
+  const sql = `SELECT * FROM  task_authors ta 
+  where  WHERE task_id = ?`;
+  pool.query(sql, taskId, (err, rows) => {
+    if (err) {
+      console.log(rows, taskId);
+      console.error(err);
+      return res.status(500).send("Error fetching authors");
+    }
+
+    return res.json(rows);
+  });
+});
+
+//Add Authors
+app.post("/api/tasks/:taskId/authors", async (req, res) => {
+  const { taskId } = req.params;
+  const authors = req.body.authors; // Expect an array of authors
+  const sql = `CALL InsertOrGetAuthor(?, ?, ?, ?, NULL, @authorId)`;
+
+  try {
+    for (const author of authors) {
+      const nameParts = author.name.split(" ");
+
+      const [firstName, ...rest] = nameParts;
+      const lastName = rest.pop() || ""; // Get the last element or an empty string if the array is empty
+      const middleNames = rest.join(" "); // Join the remaining names as middle names
+
+      console.log("First Name:", firstName);
+      console.log("Middle Name(s):", middleNames);
+      console.log("Last Name:", lastName);
+
+      const title = author.title || null;
+      console.log(authors, ":authrs");
+      const result = await query(sql, [
+        firstName,
+        lastName,
+        middleNames,
+        title,
+      ]);
+      const authorId = result[0][0].authorId;
+
+      if (authorId) {
+        const insertTaskAuthor = `INSERT INTO task_authors (task_id, author_id) VALUES (?, ?)`;
+        await pool.query(insertTaskAuthor, [taskId, authorId]);
+      }
+    }
+    res.status(200).send("Authors added successfully");
+  } catch (error) {
+    console.error("Error inserting authors:", error);
+    res.status(500).send("Error adding authors");
+  }
+});
+
+//Get publishers
+app.get("/api/tasks/:taskId/publishers", async (req, res) => {
+  const { taskId } = req.params;
+  const sql = `SELECT * FROM publishers a join task_publishers ta 
+  on a.publisher_id = ta.publisher_id WHERE task_id = ?`;
+  pool.query(sql, taskId, (err, rows) => {
+    if (err) {
+      console.log(rows, taskId);
+      console.error(err);
+      return res.status(500).send("Error fetching publishers");
+    }
+
+    return res.json(rows);
+  });
+});
+
+//Add publishers
+app.post("/api/tasks/:taskId/publishers", async (req, res) => {
+  const { taskId } = req.params;
+  const publisher = req.body.publisher; // Expect a single publisher object
+
+  const sql = `CALL InsertOrGetPublisher(?, NULL, NULL, @publisherId)`;
+
+  try {
+    const result = await query(sql, [publisher.name]);
+    const publisherId = result[0][0].publisherId;
+
+    if (publisherId) {
+      const insertTaskPublisher = `INSERT INTO task_publishers (task_id, publisher_id) VALUES (?, ?)`;
+      await pool.query(insertTaskPublisher, [taskId, publisherId]);
+    }
+    res.status(200).send("Publisher added successfully");
+  } catch (error) {
+    console.error("Error inserting publisher:", error);
+    res.status(500).send("Error adding publisher");
+  }
+});
+
+//Get auth_references
+app.get("/api/tasks/:taskId/auth_references", async (req, res) => {
+  console.log("API call received for auth_references");
+  const { taskId } = req.params;
+  const sql = `
+  select * from auth_references where 
+  (auth_id in (select author_id from task_authors where task_id=?)) 
+  or 
+  (lit_reference_id in 
+  (select lit_reference_id from task_references where task_id=?))
+`;
+  pool.query(sql, taskId, (err, rows) => {
+    if (err) {
+      console.log(rows, taskId);
+      console.error(err);
+      return res.status(500).send("Error auth_references");
+    }
+
+    return res.json(rows);
+  });
+});
+//Get References, aka source because reference is a reserved word
+app.get("/api/tasks/:taskId/source-references", async (req, res) => {
+  console.log(":OUIFGHD", req.params);
+  const { taskId } = req.params;
+  const sql = `SELECT * FROM lit_references lr join task_references tr 
+  on lr.lit_reference_id = tr.lit_reference_id WHERE task_id = ?`;
+  pool.query(sql, taskId, (err, rows) => {
+    if (err) {
+      console.log(rows, taskId);
+      console.error(err);
+      return res.status(500).send("Error fetching references");
+    }
+    console.log("POIUJHG", rows);
+    return res.json(rows);
+  });
+});
+
+//Get task_references
+app.get("/api/tasks/:taskId/task_references", async (req, res) => {
+  console.log("API call received for task_references");
+  const { taskId } = req.params;
+  const sql = `SELECT * FROM  task_references ta 
+  where  WHERE task_id = ?`;
+  pool.query(sql, taskId, (err, rows) => {
+    if (err) {
+      console.log(rows, taskId);
+      console.error(err);
+      return res.status(500).send("Error fetching referenceieseses");
+    }
+
+    return res.json(rows);
+  });
+});
+
+//Add References
+app.post("/api/tasks/:taskId/add-source", async (req, res) => {
+  const { taskId } = req.params;
+  const reference = req.body.lit_reference; // Expect an array of reference URLs
+  console.log(reference, ":passsin");
+  const link = reference.lit_reference_link;
+  const title = reference.lit_reference_title;
+
+  const sql = `CALL InsertOrGetReference(?, ?,@litReferenceId)`;
+  console.log(link, title, "link title");
+  try {
+    const result = await query(sql, [link, title]);
+    console.log(result, ": return from add source insert");
+    const litReferenceId = result[0][0].litReferenceId;
+
+    if (litReferenceId) {
+      const insertTaskReference = `INSERT INTO task_references (task_id, lit_reference_id) VALUES (?, ?)`;
+      await pool.query(insertTaskReference, [taskId, litReferenceId]);
+    }
+
+    res.status(200).send("References added successfully");
+  } catch (error) {
+    console.error("Error inserting references:", error);
+    res.status(500).send("Error adding references");
+  }
+});
+
 app.post("/api/tasks/:taskId/remove-sources", async (req, res) => {
   const { taskId } = req.params;
   const { sources } = req.body;
@@ -112,7 +327,7 @@ app.post("/api/tasks/:taskId/remove-sources", async (req, res) => {
   });
 });
 
-app.post("/api/tasks/:taskId/add-source", async (req, res) => {
+app.post("/api/tasks/:taskId/add-sourcex", async (req, res) => {
   const { taskId } = req.params;
   const { name } = req.body;
   const sql = `INSERT INTO lit_references (name) VALUES (?)`;
@@ -127,6 +342,51 @@ app.post("/api/tasks/:taskId/add-source", async (req, res) => {
   });
 });
 
+//Users
+//all users
+app.get("/api/all-users", async (req, res) => {
+  console.log("API call received for users");
+  const sql = "SELECT * FROM users";
+  pool.query(sql, (err, results) => {
+    if (err) {
+      console.error("Error fetching task_topics:", err);
+      return res.status(500).json({ error: "Database query failed" });
+    }
+    res.json(results);
+  });
+});
+//Users assigned to a task
+app.get("/api/tasks/:taskId/get-users", async (req, res) => {
+  const { taskId } = req.params;
+  const sql = `SELECT u.username,u.user_id
+       FROM users u
+       JOIN task_users tu ON u.user_id = tu.user_id
+       WHERE tu.task_id = ?`;
+  pool.query(sql, taskId, (err, rows) => {
+    if (err) {
+      console.error("Error fetching task_topics:", err);
+      return res.status(500).json({ error: "Database query failed" });
+    }
+    if (rows && rows[0]) {
+      console.log("Fetched task users:", rows);
+      res.json(rows);
+    }
+  });
+});
+
+app.post("/api/tasks/:taskId/assign-user", async (req, res) => {
+  const { taskId } = req.params;
+  const { userId } = req.body;
+  const sql = `INSERT INTO task_users (task_id, user_id) VALUES (?, ?)`;
+  const params = [taskId, userId];
+  pool.query(sql, params, (err, result) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Error assigning user to task");
+    }
+    res.status(200).send("User assigned successfully");
+  });
+});
 app.post("/api/tasks/:taskId/unassign-user", async (req, res) => {
   const { taskId } = req.params;
   const { userId } = req.body;
@@ -213,6 +473,7 @@ app.post("/api/reset-password", (req, res) => {
   );
 });
 
+//Tasks
 app.get("/api/tasks", (req, res) => {
   console.log("API call received for tasks");
   const sql = "SELECT * FROM tasks";
@@ -226,6 +487,7 @@ app.get("/api/tasks", (req, res) => {
   });
 });
 
+//task_topics?
 app.get("/api/task_topics", (req, res) => {
   console.log("API call received for task_topics");
   const sql = "SELECT * FROM task_topics";
@@ -238,66 +500,7 @@ app.get("/api/task_topics", (req, res) => {
   });
 });
 
-app.get("/api/all-users", async (req, res) => {
-  console.log("API call received for users");
-  const sql = "SELECT * FROM users";
-  pool.query(sql, (err, results) => {
-    if (err) {
-      console.error("Error fetching task_topics:", err);
-      return res.status(500).json({ error: "Database query failed" });
-    }
-    res.json(results);
-  });
-});
-
-app.post("/api/tasks/:taskId/assign-user", async (req, res) => {
-  const { taskId } = req.params;
-  const { userId } = req.body;
-  const sql = `INSERT INTO task_users (task_id, user_id) VALUES (?, ?)`;
-  const params = [taskId, userId];
-  pool.query(sql, params, (err, result) => {
-    if (err) {
-      console.error(err);
-      return res.status(500).send("Error assigning user to task");
-    }
-    res.status(200).send("User assigned successfully");
-  });
-});
-
-app.get("/api/tasks/:taskId/get-users", async (req, res) => {
-  const { taskId } = req.params;
-  const sql = `SELECT u.username,u.user_id
-       FROM users u
-       JOIN task_users tu ON u.user_id = tu.user_id
-       WHERE tu.task_id = ?`;
-  pool.query(sql, taskId, (err, rows) => {
-    if (err) {
-      console.error("Error fetching task_topics:", err);
-      return res.status(500).json({ error: "Database query failed" });
-    }
-    if (rows && rows[0]) {
-      console.log("Fetched task users:", rows);
-      res.json(rows);
-    }
-  });
-});
-
-app.get("/api/tasks/:taskId/source-references", async (req, res) => {
-  console.log(":OUIFGHD", req.params);
-  const { taskId } = req.params;
-  const sql = `SELECT * FROM lit_references lr join task_references tr 
-  on lr.lit_reference_id = tr.lit_reference_id WHERE task_id = ?`;
-  pool.query(sql, taskId, (err, rows) => {
-    if (err) {
-      console.log(rows, taskId);
-      console.error(err);
-      return res.status(500).send("Error fetching references");
-    }
-    console.log("POIUJHG", rows);
-    return res.json(rows);
-  });
-});
-
+//Topics
 app.get("/api/topics", (req, res) => {
   console.log("API call received for topics");
   const sql =
@@ -392,12 +595,20 @@ app.post("/api/scrape", async (req, res) => {
   }
   const imageFilename = `task_id_${taskId}.png`;
 
-  const imagePath = `./assets/images/tasks/${imageFilename}`;
+  const imagePath = `assets/images/tasks/${imageFilename}`;
   console.log("image", imageFilename);
   try {
     // Step 2: Download and resize the image
+    console.log(thumbnail_url);
     const response = await axios.get(thumbnail_url, {
       responseType: "arraybuffer",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        Referer: thumbnail_url, // Optional: Helps if the server checks the origin
+        Accept:
+          "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      },
     });
 
     const buffer = Buffer.from(response.data, "binary");

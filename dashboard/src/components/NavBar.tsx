@@ -1,18 +1,18 @@
 import { Flex, HStack, Image, Input, Spacer } from "@chakra-ui/react";
 import ColorModeSwitch from "./ColorModeSwitch";
-import SearchInput from "./SearchInput";
 import { Link } from "react-router-dom";
-import { useSearchStore } from "../store/useSearchStore";
+import { useTaskStore } from "../store/useTaskStore";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 const NavBar = () => {
-  const { setSearchQuery } = useSearchStore();
+  const setSearchQuery = useTaskStore((state) => state.setSearchQuery);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
   };
+
   return (
     <Flex as="nav" align="center" padding="10px" width="100%" boxShadow="sm">
       <Link to="/">
