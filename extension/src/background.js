@@ -135,7 +135,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         useTaskStore.getState().setCurrentUrl(url);
         useTaskStore.getState().setContentDetected(isDetected);
         console.log(
-          "Updated task in background:",
+          "Updated task'[;plokjh] in background:",
           useTaskStore.getState().task
         );
         console.log(

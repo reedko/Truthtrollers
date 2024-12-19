@@ -1,3 +1,4 @@
+///Users/reedko/React/Truthtrollers demo/TruthTrollers_root/extension/src/hooks/useTaskScraper.ts
 import { useState } from "react";
 import { getMainHeadline } from "../services/getMainHeadline"; // New headline extraction function
 import { extractUrlDetails } from "../services/urlDetailsExtraction"; // Content extraction logic
@@ -5,6 +6,7 @@ import { getTopicsFromText } from "../services/openaiTopics";
 import createTask from "../services/createTask"; // Task creation service
 import { extractVideoIdFromUrl } from "../services/parseYoutubeUrl"; // Helper for YouTube video IDs
 import checkAndDownloadTopicIcon from "../services/checkAndDownloadTopicIcon";
+
 export const useTaskScraper = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +79,7 @@ export const useTaskScraper = () => {
       };
 
       // Step 6: Create task in the database
-      await createTask(taskData);
+      const taskId = await createTask(taskData);
 
       // Step 7: Notify `checkContent` for TaskCard visibility
       chrome.runtime.sendMessage({

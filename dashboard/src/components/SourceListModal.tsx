@@ -12,6 +12,9 @@ import {
   Input,
   VStack,
   Text,
+  Link,
+  Box,
+  Center,
 } from "@chakra-ui/react";
 import axios from "axios";
 
@@ -21,9 +24,15 @@ const SourceListModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   taskId: number;
-}> = ({ isOpen, onClose, taskId }) => {
+  taskName: string;
+  position: any; // Pass the task name
+}> = ({ isOpen, onClose, taskId, taskName, position }) => {
   const [sources, setSources] = useState<
-    { lit_reference_id: number; lit_reference_link: string }[]
+    {
+      lit_reference_id: number;
+      lit_reference_link: string;
+      lit_reference_title: string;
+    }[]
   >([]);
   const [selectedSources, setSelectedSources] = useState<number[]>([]);
   const [newSource, setNewSource] = useState("");
@@ -83,37 +92,69 @@ const SourceListModal: React.FC<{
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Manage Sources</ModalHeader>
-        <ModalCloseButton />
-        <ModalBody>
-          <VStack align="start">
-            {sources.map((source) => (
-              <Checkbox
-                key={source.lit_reference_id}
-                isChecked={selectedSources.includes(source.lit_reference_id)}
-                onChange={() => handleToggleSource(source.lit_reference_id)}
-              >
-                {source.lit_reference_link}
-              </Checkbox>
-            ))}
-          </VStack>
-          <Input
-            placeholder="Add a new source"
-            value={newSource}
-            onChange={(e) => setNewSource(e.target.value)}
-            mt={4}
-          />
-        </ModalBody>
-        <ModalFooter>
-          <Button onClick={handleAddSource} colorScheme="blue" mr={3}>
-            Add Source
-          </Button>
-          <Button onClick={handleRemoveSources} colorScheme="red" mr={3}>
-            Remove Selected
-          </Button>
-          <Button onClick={onClose}>Close</Button>
-        </ModalFooter>
+      <ModalContent
+        bg="transparent"
+        boxShadow="none"
+        position="absolute"
+        top={`${position.top}px`}
+        left={`${position.left}px`}
+        transform="translate(-50%, -50%)"
+      >
+        <Box
+          borderWidth="1px"
+          borderRadius="lg"
+          overflow="hidden"
+          boxShadow="md"
+          p={4}
+          width="400px"
+          margin="10px auto"
+          bg="blue.600"
+        >
+          <ModalHeader>
+            Manage Sources for{" "}
+            <Text as="span" fontStyle="italic" color="yellow.200">
+              {taskName}
+            </Text>
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack align="start">
+              {sources.map((source) => (
+                <Checkbox
+                  color={"blue"}
+                  key={source.lit_reference_id}
+                  isChecked={selectedSources.includes(source.lit_reference_id)}
+                  onChange={() => handleToggleSource(source.lit_reference_id)}
+                >
+                  <Link
+                    href={source.lit_reference_link}
+                    isExternal
+                    color="black"
+                  >
+                    {source.lit_reference_title}
+                  </Link>
+                </Checkbox>
+              ))}
+            </VStack>
+            <Input
+              placeholder="Add a new source"
+              value={newSource}
+              onChange={(e) => setNewSource(e.target.value)}
+              mt={4}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button onClick={handleAddSource} colorScheme="blue" mr={3}>
+              Add Source
+            </Button>
+            <Button onClick={handleRemoveSources} colorScheme="red" mr={3}>
+              Remove Selected
+            </Button>
+            <Button colorScheme="red" onClick={onClose}>
+              Close
+            </Button>
+          </ModalFooter>
+        </Box>
       </ModalContent>
     </Modal>
   );

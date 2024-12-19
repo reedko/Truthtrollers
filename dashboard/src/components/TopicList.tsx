@@ -7,8 +7,10 @@ import {
   ListItem,
   VStack,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import axios from "axios";
+import { useTaskStore } from "../store/useTaskStore";
+import { useShallow } from "zustand/react/shallow";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
@@ -19,13 +21,18 @@ interface Topic {
   thumbnail: string;
 }
 
-const TopicList: React.FC<{
-  selectedTopic: string | undefined;
-  onTopicSelect: (topicName: string | undefined) => void;
-}> = ({ selectedTopic, onTopicSelect }) => {
+const TopicList: React.FC = () => {
+  const selectedTopic = useTaskStore((state) => state.selectedTopic);
+  const setSelectedTopic = useTaskStore(
+    useShallow((state) => state.setSelectedTopic)
+  );
   const [topics, setTopics] = useState<Topic[]>([]);
 
+  const hasFetched = useRef(false); // Prevent multiple fetches
+
   useEffect(() => {
+    if (hasFetched.current) return; // Skip if already fetched
+    hasFetched.current = true;
     const fetchTopics = async () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/api/topics`);
@@ -46,7 +53,7 @@ const TopicList: React.FC<{
       <List spacing={3}>
         <ListItem>
           <Button
-            onClick={() => onTopicSelect(undefined)}
+            onClick={() => setSelectedTopic(undefined)}
             variant="outline"
             colorScheme="red"
           >
@@ -70,7 +77,11 @@ const TopicList: React.FC<{
                 fontWeight={
                   topic.topic_name === selectedTopic ? "bold" : "normal"
                 }
-                onClick={() => onTopicSelect(topic.topic_name)}
+                onClick={() => {
+                  if (topic.topic_name !== selectedTopic) {
+                    setSelectedTopic(topic.topic_name);
+                  }
+                }}
                 fontSize="lg"
                 variant="ghost"
                 flex="1"
@@ -88,4 +99,4 @@ const TopicList: React.FC<{
   );
 };
 
-export default TopicList;
+export default memo(TopicList);

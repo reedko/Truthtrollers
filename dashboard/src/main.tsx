@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import "./index.css";
 import { RouterProvider } from "react-router-dom";
-import RouterWithState from "./routes";
+import AppRouter from "./routes";
 
 const queryClient = new QueryClient();
 
@@ -14,7 +14,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <ChakraProvider>
       <ColorModeScript initialColorMode={"dark"} />
       <QueryClientProvider client={queryClient}>
-        <RouterWithState />
+        <AppRouter />
 
         <ReactQueryDevtools />
       </QueryClientProvider>
