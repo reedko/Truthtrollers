@@ -1,8 +1,15 @@
 export const getMainHeadline = async (url: string): Promise<string | null> => {
   try {
-    const response = await fetch(url);
+    // const response = await fetch(url.trim());
+    const proxyUrl = `http://localhost:3000/proxy?url=${encodeURIComponent(
+      url
+    )}`;
+    const response = await fetch(proxyUrl);
+
     const text = await response.text();
+
     const parser = new DOMParser();
+
     const doc = parser.parseFromString(text, "text/html");
 
     let mainHeadline: string | null = null;
@@ -32,7 +39,9 @@ export const getMainHeadline = async (url: string): Promise<string | null> => {
     // Step 2: If no valid H1 or H2, check headline divs
     if (!mainHeadline) {
       const headlineDivs = Array.from(
-        doc.querySelectorAll('div[class*="headline"], div[id*="headline"]')
+        doc.querySelectorAll(
+          '*[class*="headline"], *[id*="headline"], *[data-testid*="headline"]'
+        )
       ).filter((div) => {
         const hasNavigateOrHidden =
           div.classList.toString().toLowerCase().includes("navigat") ||

@@ -1,3 +1,4 @@
+///Users/reedko/React/Truthtrollers demo/TruthTrollers_root/extension/src/components/TaskCard.tsx
 import React from "react";
 import {
   Box,
@@ -34,11 +35,11 @@ const TaskCard: React.FC = () => {
   const { task, currentUrl } = useTaskStore(); // Hook to access the store values
   const { loading, error, scrapeTask } = useTaskScraper(); // Use scraper hook
 
-  console.log("Updated task:", task);
   console.log("Updated currentUrl:", currentUrl);
-
+  console.log("URL:", `${BASE_URL}/${task?.thumbnail}`);
   const imageUrl =
     task && task.thumbnail ? `${BASE_URL}/${task.thumbnail}` : "";
+  console.log("URL:", imageUrl);
   const meter = `${BASE_URL}/assets/images/meter3.png`;
   const logo = `${BASE_URL}/assets/images/miniLogo.png`;
 
