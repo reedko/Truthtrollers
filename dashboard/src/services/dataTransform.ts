@@ -63,36 +63,13 @@ export const transformData = (
       group: 2,
     });
 
-    // Validate publisher_id
-    const publisherExists = data.publishers.some(
-      (pub) => pub.publisher_id === currentTask.publisher_id
-    );
-
-    if (!publisherExists) {
-      console.warn(
-        `Current Task ID ${currentTask.task_id} has an invalid publisher_id: ${currentTask.publisher_id}`
-      );
-      // Assign to 'publisher-unknown' to prevent 'publisher-undefined'
-      addNode({
-        id: `publisher-unknown`,
-        label: "Unknown Publisher",
-        group: 3,
-      });
-      links.push({
-        source: `task-${currentTask.task_id}`,
-        target: `publisher-unknown`,
-        type: "published_by",
-        value: 1,
-      });
-    } else {
-      // Link Task to Publisher
-      links.push({
-        source: `task-${currentTask.task_id}`,
-        target: `publisher-${currentTask.publisher_id}`,
-        type: "published_by",
-        value: 1,
-      });
-    }
+    // Link Task to Publisher
+    links.push({
+      source: `task-${currentTask.task_id}`,
+      target: `publisher-${data.publishers[0].publisher_id}`,
+      type: "published_by",
+      value: 1,
+    });
   } else {
     console.error(`Task with ID ${currentTaskId} not found.`);
     return { nodes, links };
@@ -136,7 +113,9 @@ export const transformData = (
   });
 
   // 5. Link Task to Authors via Task_Authors
+  console.log("any authors", data.task_authors);
   data.task_authors.forEach((ta) => {
+    console.log("any authors", { ta });
     if (ta.task_id === currentTaskId) {
       const authorExists = data.authors.some(
         (author) => author.author_id === ta.author_id

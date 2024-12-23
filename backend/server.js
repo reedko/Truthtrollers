@@ -28,8 +28,10 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
 // Serve static files from the assets directory
-const BASE_URL = process.env.BASE_URL || "http://localhost:5001";
+
 const assetsPath = path.join(__dirname, "assets");
+const DIFFBOT_TOKEN = process.env.REACT_APP_DIFFBOT_TOKEN;
+const DIFFBOT_BASE_URL = process.env.REACT_APP_DIFFBOT_BASE_URL;
 
 app.use("/assets", express.static(assetsPath));
 // MySQL connection
@@ -56,6 +58,9 @@ db.connect((err) => {
   if (err) throw err;
   console.log("MySQL connected!");
 });
+
+app.listen(3000, () => console.log("Proxy server running on port 3000"));
+
 function getRelativePath(absolutePath) {
   // Assuming 'public/' is the part of the path that precedes the relative path
   const index = absolutePath.indexOf("public/");
@@ -67,10 +72,10 @@ function getRelativePath(absolutePath) {
   return absolutePath;
 }
 
-app.use((req, res, next) => {
+/* app.use((req, res, next) => {
   console.log(`Incoming request: ${req.method} ${req.originalUrl}`);
   next();
-});
+}); */
 
 app.get("/proxy", async (req, res) => {
   const { url } = req.query; // Pass the target URL as a query parameter
@@ -84,14 +89,13 @@ app.get("/proxy", async (req, res) => {
         "Accept-Language": "en-US,en;q=0.9", // Optional: Set additional headers
       },
     });
+    //console.log("respose:", response);
     res.send(response.data);
   } catch (error) {
-    console.error("Error fetching the URL:", error);
+    console.error("Error fetching the URL:");
     res.status(500).send("Failed to fetch data");
   }
 });
-
-app.listen(3000, () => console.log("Proxy server running on port 3000"));
 
 //publisher and author info
 app.post("/api/extract-metadata", async (req, res) => {
@@ -125,13 +129,11 @@ app.post("/api/extract-metadata", async (req, res) => {
 
 //Get Authors
 app.get("/api/tasks/:taskId/authors", async (req, res) => {
-  console.log("API call received for authors");
   const { taskId } = req.params;
   const sql = `SELECT * FROM authors a join task_authors ta 
   on a.author_id = ta.author_id WHERE task_id = ?`;
   pool.query(sql, taskId, (err, rows) => {
     if (err) {
-      console.log(rows, taskId);
       console.error(err);
       return res.status(500).send("Error fetching authors");
     }
@@ -142,13 +144,11 @@ app.get("/api/tasks/:taskId/authors", async (req, res) => {
 
 //Get task_Authors
 app.get("/api/tasks/:taskId/task_authors", async (req, res) => {
-  console.log("API call received for authors");
   const { taskId } = req.params;
-  const sql = `SELECT * FROM  task_authors ta 
-  where  WHERE task_id = ?`;
+  const sql = `SELECT * FROM  task_authors
+  WHERE task_id = ?`;
   pool.query(sql, taskId, (err, rows) => {
     if (err) {
-      console.log(rows, taskId);
       console.error(err);
       return res.status(500).send("Error fetching authors");
     }
@@ -171,12 +171,8 @@ app.post("/api/tasks/:taskId/authors", async (req, res) => {
       const lastName = rest.pop() || ""; // Get the last element or an empty string if the array is empty
       const middleNames = rest.join(" "); // Join the remaining names as middle names
 
-      console.log("First Name:", firstName);
-      console.log("Middle Name(s):", middleNames);
-      console.log("Last Name:", lastName);
-
       const title = author.title || null;
-      console.log(authors, ":authrs");
+
       const result = await query(sql, [
         firstName,
         lastName,
@@ -204,7 +200,7 @@ app.get("/api/tasks/:taskId/publishers", async (req, res) => {
   on a.publisher_id = ta.publisher_id WHERE task_id = ?`;
   pool.query(sql, taskId, (err, rows) => {
     if (err) {
-      console.log(rows, taskId);
+      // console.log(rows, taskId);
       console.error(err);
       return res.status(500).send("Error fetching publishers");
     }
@@ -237,7 +233,6 @@ app.post("/api/tasks/:taskId/publishers", async (req, res) => {
 
 //Get auth_references
 app.get("/api/tasks/:taskId/auth_references", async (req, res) => {
-  console.log("API call received for auth_references");
   const { taskId } = req.params;
   const sql = `
   select * from auth_references where 
@@ -248,7 +243,6 @@ app.get("/api/tasks/:taskId/auth_references", async (req, res) => {
 `;
   pool.query(sql, taskId, (err, rows) => {
     if (err) {
-      console.log(rows, taskId);
       console.error(err);
       return res.status(500).send("Error auth_references");
     }
@@ -258,30 +252,28 @@ app.get("/api/tasks/:taskId/auth_references", async (req, res) => {
 });
 //Get References, aka source because reference is a reserved word
 app.get("/api/tasks/:taskId/source-references", async (req, res) => {
-  console.log(":OUIFGHD", req.params);
   const { taskId } = req.params;
   const sql = `SELECT * FROM lit_references lr join task_references tr 
   on lr.lit_reference_id = tr.lit_reference_id WHERE task_id = ?`;
   pool.query(sql, taskId, (err, rows) => {
     if (err) {
-      console.log(rows, taskId);
+      //(rows, taskId);
       console.error(err);
       return res.status(500).send("Error fetching references");
     }
-    console.log("POIUJHG", rows);
+
     return res.json(rows);
   });
 });
 
 //Get task_references
 app.get("/api/tasks/:taskId/task_references", async (req, res) => {
-  console.log("API call received for task_references");
   const { taskId } = req.params;
   const sql = `SELECT * FROM  task_references ta 
-  where  WHERE task_id = ?`;
+  WHERE task_id = ?`;
   pool.query(sql, taskId, (err, rows) => {
     if (err) {
-      console.log(rows, taskId);
+      //console.log(rows, taskId);
       console.error(err);
       return res.status(500).send("Error fetching referenceieseses");
     }
@@ -294,15 +286,15 @@ app.get("/api/tasks/:taskId/task_references", async (req, res) => {
 app.post("/api/tasks/:taskId/add-source", async (req, res) => {
   const { taskId } = req.params;
   const reference = req.body.lit_reference; // Expect an array of reference URLs
-  console.log(reference, ":passsin");
+
   const link = reference.lit_reference_link;
   const title = reference.lit_reference_title;
 
   const sql = `CALL InsertOrGetReference(?, ?,@litReferenceId)`;
-  console.log(link, title, "link title");
+
   try {
     const result = await query(sql, [link, title]);
-    console.log(result, ": return from add source insert");
+
     const litReferenceId = result[0][0].litReferenceId;
 
     if (litReferenceId) {
@@ -345,7 +337,6 @@ app.post("/api/tasks/:taskId/add-sourcex", async (req, res) => {
 //Users
 //all users
 app.get("/api/all-users", async (req, res) => {
-  console.log("API call received for users");
   const sql = "SELECT * FROM users";
   pool.query(sql, (err, results) => {
     if (err) {
@@ -368,7 +359,6 @@ app.get("/api/tasks/:taskId/get-users", async (req, res) => {
       return res.status(500).json({ error: "Database query failed" });
     }
     if (rows && rows[0]) {
-      console.log("Fetched task users:", rows);
       res.json(rows);
     }
   });
@@ -391,7 +381,7 @@ app.post("/api/tasks/:taskId/unassign-user", async (req, res) => {
   const { taskId } = req.params;
   const { userId } = req.body;
   const sql = `DELETE FROM task_users WHERE task_id = ? AND user_id = ?`;
-  console.log(sql);
+
   pool.query(sql, [taskId, userId], (err) => {
     if (err) return res.status(500).send("Error unassigning user");
     res.send("User unassigned");
@@ -410,7 +400,7 @@ app.get("/api/scrapecontent", async (req, res) => {
 
     // Extract specific elements, e.g., article text
     const articleContent = $("article").html(); // Adjust selector as needed
-    console.log(articleContent);
+
     res.send(articleContent); // Return the extracted HTML
   } catch (error) {
     console.error("Error fetching the URL:", error);
@@ -475,7 +465,6 @@ app.post("/api/reset-password", (req, res) => {
 
 //Tasks
 app.get("/api/tasks", (req, res) => {
-  console.log("API call received for tasks");
   const sql = "SELECT * FROM tasks";
   pool.query(sql, (err, results) => {
     if (err) {
@@ -489,7 +478,6 @@ app.get("/api/tasks", (req, res) => {
 
 //task_topics?
 app.get("/api/task_topics", (req, res) => {
-  console.log("API call received for task_topics");
   const sql = "SELECT * FROM task_topics";
   pool.query(sql, (err, results) => {
     if (err) {
@@ -502,7 +490,6 @@ app.get("/api/task_topics", (req, res) => {
 
 //Topics
 app.get("/api/topics", (req, res) => {
-  console.log("API call received for topics");
   const sql =
     "SELECT * FROM topics where topic_id in (SELECT distinct(topic_id) FROM task_topics where topic_order=1) ";
   pool.query(sql, (err, results) => {
@@ -588,7 +575,6 @@ app.post("/api/scrape", async (req, res) => {
     }
 
     taskId = results[0].task_id;
-    console.log("Task successfully inserted with ID:", taskId);
   } catch (err) {
     console.log("Detailed Catch Error:", JSON.stringify(err, null, 2));
     res.status(500).send("Database error during task ID fetch.");
@@ -596,10 +582,10 @@ app.post("/api/scrape", async (req, res) => {
   const imageFilename = `task_id_${taskId}.png`;
 
   const imagePath = `assets/images/tasks/${imageFilename}`;
-  console.log("image", imageFilename);
+
   try {
     // Step 2: Download and resize the image
-    console.log(thumbnail_url);
+
     const response = await axios.get(thumbnail_url, {
       responseType: "arraybuffer",
       headers: {
@@ -615,7 +601,6 @@ app.post("/api/scrape", async (req, res) => {
 
     try {
       await sharp(buffer).resize({ width: 300 }).toFile(imagePath);
-      console.log("Image resized and saved to:", imagePath);
     } catch (error) {
       console.error("Error resizing image:", error);
     }
@@ -637,6 +622,72 @@ app.post("/api/scrape", async (req, res) => {
   }
 });
 
+// Endpoint to fetch article data using Diffbot
+// server.js
+
+// server.js
+
+app.post("/api/pre-scrape", async (req, res) => {
+  const { articleUrl } = req.body;
+  console.log("Received articleUrl:", articleUrl); // Debugging line
+
+  if (!articleUrl) {
+    return res.status(400).json({ error: "articleUrl is required" });
+  }
+
+  try {
+    const diffbotResponse = await axios.get(`${DIFFBOT_BASE_URL}/article`, {
+      params: {
+        token: DIFFBOT_TOKEN,
+        url: articleUrl,
+        fields:
+          "title,text,author,keywords,images,links,meta,articleType,robots",
+      },
+    });
+
+    console.log(
+      "Diffbot response data:",
+      JSON.stringify(diffbotResponse.data, null, 2)
+    ); // Detailed log
+
+    // Check if 'objects' exists and is an array with at least one element
+    if (
+      !diffbotResponse.data.objects ||
+      !Array.isArray(diffbotResponse.data.objects) ||
+      diffbotResponse.data.objects.length === 0
+    ) {
+      throw new Error("No objects returned from Diffbot");
+    }
+
+    const diffbotData = diffbotResponse.data.objects[0];
+    console.log("Diffbot Data:", JSON.stringify(diffbotData, null, 2)); // Detailed log
+
+    const { title, text, author, keywords, images, links } = diffbotData;
+
+    res
+      .status(200)
+      .json({ success: true, title, author, keywords, images, links });
+  } catch (error) {
+    console.error("Error in /api/pre-scrape:", error.message);
+    if (error.response) {
+      // Diffbot-specific error
+      console.error(
+        "Diffbot Error Response Data:",
+        JSON.stringify(error.response.data, null, 2)
+      );
+      res.status(500).json({
+        error: "Error during scraping and task creation",
+        details: error.response.data,
+      });
+    } else {
+      // General error
+      res
+        .status(500)
+        .json({ error: "Error during scraping and task creation" });
+    }
+  }
+});
+
 app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
   const { generalTopic } = req.body;
 
@@ -649,7 +700,7 @@ app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
       WHERE topics.topic_name = ? OR topic_aliases.alias_name = ?
     `;
     const results = await query(topicQuery, [generalTopic, generalTopic]);
-    console.log("RAWR:", results);
+
     if (results.length > 0) {
       // Topic or alias exists, return null for the thumbnail
       return res.status(200).send({ exists: true, thumbnail_url: null });
@@ -657,7 +708,7 @@ app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
 
     // If not found, fetch icon
     const icon = await fetchIconForTopic(generalTopic); // Fetch the icon from the Noun Project
-    console.log("ICON RETURN", icon);
+
     if (!icon) {
       throw new Error(`Failed to fetch icon for topic: ${generalTopic}`);
     }

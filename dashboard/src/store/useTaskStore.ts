@@ -123,6 +123,7 @@ export const useTaskStore = create<TaskStoreState>()(
         console.error("Error fetching tasks:", error);
       }
     },
+
     fetchAllData: async (taskId) => {
       if (get().tasks.length > 0) return; // Prevent redundant fetch
       try {
@@ -133,17 +134,6 @@ export const useTaskStore = create<TaskStoreState>()(
         console.error("Error fetching tasks:", error);
       }
     },
-
-    /*    setSelectedTopic: (topicName) => {
-      if (get().selectedTopic === topicName) return; // No update if the topic hasn't changed
-
-      const tasks = get().tasks;
-      const filteredTasks = topicName
-        ? tasks.filter((task) => task.topic === topicName)
-        : tasks;
-
-      set({ selectedTopic: topicName, filteredTasks });
-    }, */
 
     setSelectedTopic: (topicName) => {
       const { tasks, searchQuery } = get();

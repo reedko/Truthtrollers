@@ -4,13 +4,29 @@ import {
   extractPublisher,
   extractReferences,
 } from "../services/extractMetaData";
+import { fetchArticleData } from "../services/diffbotService";
 
 import axios from "axios";
+
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 
 let taskId = "";
+
 const createTask = async (taskData: any) => {
-  console.log("lets try");
+  const articleUrl = taskData.url;
+  console.log(articleUrl);
+  try {
+    const diffbotResponse = await fetch(`${BASE_URL}/api/pre-scrape`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ articleUrl }),
+    });
+    const content = await diffbotResponse.json();
+    console.log(content, "contet after ru");
+  } catch (error) {
+    console.log(error, "contet after ru");
+  }
+
   try {
     const response = await fetch(`${BASE_URL}/api/scrape`, {
       method: "POST",
