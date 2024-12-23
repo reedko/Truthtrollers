@@ -12,7 +12,7 @@ export const getTopicsFromText = async (content: string) => {
           { role: "system", content: "You are a content analysis assistant." },
           {
             role: "user",
-            content: `Identify the most general topic for this text. Then, provide a list of more specific topics that fall under this general topic. Format your response as follows:
+            content: `Identify the most general topic for this text. The topic can be at most two words. Then, provide a list of more specific topics that fall under this general topic. Format your response as follows:
             General Topic: [general topic]
             Specific Topics:
             - [specific topic 1]

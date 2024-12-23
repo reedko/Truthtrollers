@@ -46,6 +46,9 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   const [iframeUrl, setIframeUrl] = useState<string>(task.url || "");
   const [editorContent, setEditorContent] = useState("");
 
+  const proxyUrl = `http://localhost:3000/proxy?url=${encodeURIComponent(
+    iframeUrl
+  )}`;
   // Prepare data for the network graph
   const { nodes, links } = transformData(
     {
@@ -129,7 +132,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
 
             {iframeUrl ? (
               <iframe
-                src={iframeUrl}
+                src={proxyUrl}
                 title="Content Viewer"
                 style={{ width: "100%", height: "95%", border: "none" }}
               />
