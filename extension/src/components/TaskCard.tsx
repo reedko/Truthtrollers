@@ -17,7 +17,7 @@ import useTaskStore from "../store/useTaskStore"; // Import Zustand store
 import resizeImage from "../services/image-url";
 import { useTaskScraper } from "../hooks/useTaskScraper"; // Import useTask here
 
-const BASE_URL = process.env.BASE_URL || "http://localhost:5001";
+const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 const getProgressColor = (progress: string | null) => {
   switch (progress) {
     case "Completed":
