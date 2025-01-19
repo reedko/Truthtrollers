@@ -641,7 +641,7 @@ app.post("/api/pre-scrape", async (req, res) => {
         token: DIFFBOT_TOKEN,
         url: articleUrl,
         fields:
-          "title,text,author,keywords,images,links,meta,articleType,robots",
+          "publisher,title,text,author,keywords,images,links,meta,articleType,robots",
       },
     });
 
@@ -662,7 +662,8 @@ app.post("/api/pre-scrape", async (req, res) => {
     const diffbotData = diffbotResponse.data.objects[0];
     console.log("Diffbot Data:", JSON.stringify(diffbotData, null, 2)); // Detailed log
 
-    const { title, text, author, keywords, images, links } = diffbotData;
+    const { title, publisher, text, author, keywords, images, links } =
+      diffbotData;
 
     res
       .status(200)

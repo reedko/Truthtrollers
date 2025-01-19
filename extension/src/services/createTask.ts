@@ -22,7 +22,7 @@ const createTask = async (taskData: any) => {
       body: JSON.stringify({ articleUrl }),
     });
     const content = await diffbotResponse.json();
-    console.log(content, "contet after ru");
+    console.log(content.publisherName, "contet after ru");
   } catch (error) {
     console.log(error, "contet after ru");
   }
