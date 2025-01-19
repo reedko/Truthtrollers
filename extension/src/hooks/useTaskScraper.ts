@@ -43,9 +43,6 @@ export const useTaskScraper = () => {
         console.log(`Topic "${generalTopic}" already exists. No icon fetched.`);
       }
 
-      console.log("topics:", generalTopic);
-      console.log("locations:", specificTopics);
-
       // Step 4: Capture image (if applicable)
       let imageUrl = "";
       await new Promise<void>((resolve) => {
