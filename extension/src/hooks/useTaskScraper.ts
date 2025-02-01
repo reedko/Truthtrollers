@@ -12,6 +12,7 @@ export const useTaskScraper = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Main function to handle scraping and task creation
+  //getting ready to
   const scrapeTask = async (url: string) => {
     setLoading(true);
     setError(null);
