@@ -12,7 +12,7 @@ export const useTaskScraper = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Main function to handle scraping and task creation
-  //getting ready tonope that didin't
+  //getting ready tonope that didin't commit
   const scrapeTask = async (url: string) => {
     setLoading(true);
     setError(null);
