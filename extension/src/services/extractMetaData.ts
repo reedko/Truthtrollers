@@ -234,7 +234,6 @@ export const extractReferences = async (
             lit_reference_link: link.trim(),
             lit_reference_title: Lit_ref_title,
           });
-          console.log(lit_references.length, ":lit ref leng1");
         })
         .catch((err) => {
           console.error(`Error fetching headline for link ${link}:`, err);
@@ -264,7 +263,6 @@ export const extractReferences = async (
                     lit_reference_link: ref.url,
                     lit_reference_title: Lit_ref_title,
                   });
-                  console.log(lit_references.length, ":lit ref leng2");
                 })
                 .catch((err) => {
                   console.error(
@@ -312,7 +310,6 @@ export const extractReferences = async (
               lit_reference_link: pubMedLink,
               lit_reference_title: Lit_ref_title,
             });
-            console.log(lit_references.length, ":lit ref leng3");
           })
           .catch((err) => {
             console.error(
@@ -326,7 +323,7 @@ export const extractReferences = async (
   });
 
   await Promise.all(promises);
-  console.log(lit_references.length, ":lit ref lengexit");
+
   return lit_references;
 };
 
