@@ -20,7 +20,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-
+// Increase payload size limit (e.g., 50MB)
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 // Configure environment variables
 dotenv.config();
 
@@ -629,7 +631,7 @@ app.post("/api/scrape", async (req, res) => {
 
 app.post("/api/pre-scrape", async (req, res) => {
   const { articleUrl } = req.body;
-  console.log("Received articleUrl:", articleUrl); // Debugging line
+  //console.log("Received articleUrl:", articleUrl); // Debugging line
 
   if (!articleUrl) {
     return res.status(400).json({ error: "articleUrl is required" });
@@ -647,7 +649,16 @@ app.post("/api/pre-scrape", async (req, res) => {
 
     console.log(
       "Diffbot response data:",
-      JSON.stringify(diffbotResponse.data, null, 2)
+      "author",
+      JSON.stringify(diffbotResponse.data.objects[0].author, null, 2),
+      "title",
+      JSON.stringify(diffbotResponse.data.objects[0].title, null, 2),
+      "meta",
+      JSON.stringify(
+        diffbotResponse.data.objects[0].meta.microdata.publisher.name,
+        null,
+        2
+      )
     ); // Detailed log
 
     // Check if 'objects' exists and is an array with at least one element
@@ -660,22 +671,36 @@ app.post("/api/pre-scrape", async (req, res) => {
     }
 
     const diffbotData = diffbotResponse.data.objects[0];
-    console.log("Diffbot Data:", JSON.stringify(diffbotData, null, 2)); // Detailed log
+    //console.log("Diffbot Data:", JSON.stringify(diffbotData, null, 2)); // Detailed log
 
-    const { title, publisher, text, author, keywords, images, links } =
-      diffbotData;
+    const {
+      title,
+      text,
+      author,
+      keywords,
+      images,
+      links,
+      siteName, // Backup, may be useful
+      meta = {}, // Default empty object to prevent errors if meta is missing
+    } = diffbotData;
 
-    res
-      .status(200)
-      .json({ success: true, title, author, keywords, images, links });
+    const publisher =
+      meta.microdata?.publisher?.name || siteName || "Unknown Publisher";
+
+    res.status(200).json({
+      success: true,
+      publisher,
+      title,
+      author,
+      keywords,
+      images,
+      links,
+    });
   } catch (error) {
-    console.error("Error in /api/pre-scrape:", error.message);
+    //console.error("Error in /api/pre-scrape:", error.message);
     if (error.response) {
       // Diffbot-specific error
-      console.error(
-        "Diffbot Error Response Data:",
-        JSON.stringify(error.response.data, null, 2)
-      );
+      console.error("Diffbot Error Response Data:");
       res.status(500).json({
         error: "Error during scraping and task creation",
         details: error.response.data,

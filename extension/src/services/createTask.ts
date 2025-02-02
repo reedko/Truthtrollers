@@ -22,7 +22,7 @@ const createTask = async (taskData: any) => {
       body: JSON.stringify({ articleUrl }),
     });
     const content = await diffbotResponse.json();
-    console.log(content.publisherName, "contet after ru");
+    console.log(content.publisher, "contet after ru");
   } catch (error) {
     console.log(error, "contet after ru");
   }
@@ -62,12 +62,10 @@ const createTask = async (taskData: any) => {
   }
 
   // Step 4: Add Sources (References)
-  console.log([...lit_references], ":from createtask before");
-  console.log(lit_references.length, ":lit ref lengexit"); // Should log: true
+  // Should log: true
   if (Array.isArray(lit_references)) {
     try {
       for (const lit_reference of lit_references) {
-        console.log(lit_reference, ":from createtask");
         await axios.post(`${BASE_URL}/api/tasks/${taskId}/add-source`, {
           lit_reference,
         });
