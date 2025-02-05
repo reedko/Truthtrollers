@@ -11,7 +11,7 @@ export const useTaskScraper = () => {
     setError(null);
 
     try {
-      const taskData = await orchestrateScraping(url);
+      const taskData = await orchestrateScraping();
 
       const taskId = await createTask(taskData);
       console.log("Task created with ID:", taskId);

@@ -1,31 +1,16 @@
-import {
-  fetchPageContent,
-  extractAuthors,
-  extractPublisher,
-  extractReferences,
-} from "../services/extractMetaData";
-import { fetchArticleData } from "../services/diffbotService";
-
 import axios from "axios";
-
+import { TaskData } from "../entities/Task";
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 
 let taskId = "";
 
-const createTask = async (taskData: any) => {
+const createTask = async (taskData: TaskData) => {
   const articleUrl = taskData.url;
+  const authors = taskData.authors;
+  const publisher = taskData.publisherName;
+  const lit_references = taskData.lit_references;
+
   console.log(articleUrl);
-  try {
-    const diffbotResponse = await fetch(`${BASE_URL}/api/pre-scrape`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ articleUrl }),
-    });
-    const content = await diffbotResponse.json();
-    console.log(content.publisher, "contet after ru");
-  } catch (error) {
-    console.log(error, "contet after ru");
-  }
 
   try {
     const response = await fetch(`${BASE_URL}/api/scrape`, {
@@ -41,11 +26,6 @@ const createTask = async (taskData: any) => {
   } catch (error) {
     console.error("Error adding task:", error);
   }
-  const url = taskData.url;
-  const $ = await fetchPageContent(url);
-  const authors = await extractAuthors($);
-  const publisher = await extractPublisher($, url);
-  const lit_references = await extractReferences($);
 
   // Step 2: Add Authors
 
@@ -74,6 +54,7 @@ const createTask = async (taskData: any) => {
       console.error("Error in createTask:", error);
     }
   }
+  return { taskId };
 };
 
 export default createTask;
