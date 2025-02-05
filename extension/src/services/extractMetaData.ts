@@ -1,22 +1,6 @@
 import * as cheerio from "cheerio";
-import axios from "axios";
-import { getMainHeadline } from "./getMainHeadline";
+import { Author, Lit_references, Publisher } from "../entities/Task";
 
-export interface Author {
-  name: string;
-  title?: string | null;
-  description?: string | null;
-  image?: string | null;
-}
-
-export interface Lit_references {
-  lit_reference_link: string;
-  lit_reference_title: string;
-}
-
-export interface Publisher {
-  name: string;
-}
 const isValidReference = (link: any) => {
   const excludedPatterns = [
     "ads",
@@ -33,13 +17,8 @@ const isValidReference = (link: any) => {
   );
 };
 
-export const fetchPageContent = async (
-  url: string
-): Promise<cheerio.CheerioAPI> => {
-  const { data } = await axios.get(url, {
-    headers: {},
-  });
-  return cheerio.load(data);
+export const fetchPageContent = (): cheerio.CheerioAPI => {
+  return cheerio.load(document.documentElement.outerHTML);
 };
 
 export const extractAuthors = async (
@@ -140,8 +119,7 @@ export const extractAuthors = async (
   return authorCandidates;
 };
 export const extractPublisher = async (
-  $: cheerio.CheerioAPI,
-  url: string
+  $: cheerio.CheerioAPI
 ): Promise<Publisher> => {
   // Step 1: Extract from meta tags
   let publisherName =
@@ -154,7 +132,7 @@ export const extractPublisher = async (
   if (publisherName === "Unknown Publisher") {
     const ldJsonScripts = $('script[type="application/ld+json"]');
 
-    ldJsonScripts.each((i, elem) => {
+    ldJsonScripts.each((_, elem) => {
       try {
         const jsonText = $(elem).contents().text();
         const jsonData = JSON.parse(jsonText);
@@ -184,31 +162,34 @@ export const extractPublisher = async (
         const publisherFromJson = findPublisherInJson(jsonData);
         if (publisherFromJson) {
           publisherName = publisherFromJson;
-          // Exit the loop early if publisher is found
-          return false; // Equivalent to 'break' in jQuery's each
+          return false; // Break out of `.each()`
         }
       } catch (err) {
-        // Log JSON parsing errors and continue
         console.warn(`Failed to parse ld+json script: ${err}`);
       }
     });
   }
 
-  // Step 3: Handle special cases (e.g., Substack)
-  if (publisherName === "Unknown Publisher" && url.includes("substack.com")) {
+  // Step 3: Handle special cases (e.g., Substack) **without using URL**
+  if (publisherName === "Unknown Publisher") {
     const title = $("title").text();
-    const match = title.match(/^(.*?)(?: on Substack)?$/i);
-    publisherName = match ? match[1].trim() : "Unknown Publisher";
+    if (title.includes("on Substack")) {
+      const match = title.match(/^(.*?)(?: on Substack)?$/i);
+      publisherName = match ? match[1].trim() : "Unknown Publisher";
+    }
   }
 
   return { name: publisherName };
 };
+
+const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 
 export const extractReferences = async (
   $: cheerio.CheerioAPI
 ): Promise<Lit_references[]> => {
   const lit_references: Lit_references[] = [];
   const promises: Promise<void>[] = [];
+
   // Target main content areas, including ref-list
   const mainContent = $(
     "article, .content, .post-body, .entry-content, .ref-list"
@@ -225,18 +206,19 @@ export const extractReferences = async (
       text.length > 2 &&
       !isNavigationLink(link)
     ) {
-      // Step 1: Fetch the main headline
-
-      const p = getMainHeadline(link)
-        .then((linkHeadline) => {
-          const Lit_ref_title = linkHeadline ?? ""; // Use nullish coalescing to handle null or undefined
+      const p = fetchTitleFromDiffbot(link)
+        .then((title) => {
           lit_references.push({
             lit_reference_link: link.trim(),
-            lit_reference_title: Lit_ref_title,
+            lit_reference_title: title || formatUrlForTitle(link), // Fallback if title fails
           });
         })
         .catch((err) => {
-          console.error(`Error fetching headline for link ${link}:`, err);
+          console.error(`Error fetching title for ${link}:`, err);
+          lit_references.push({
+            lit_reference_link: link.trim(),
+            lit_reference_title: formatUrlForTitle(link),
+          });
         });
 
       promises.push(p);
@@ -253,23 +235,27 @@ export const extractReferences = async (
           const refs = Array.isArray(metadata.references)
             ? metadata.references
             : [metadata.references];
+
           refs.forEach((ref: any) => {
             if (ref.url && isValidReference(ref.url)) {
-              //references.push(ref.url);
-              const p = getMainHeadline(ref.url)
-                .then((linkHeadline) => {
-                  const Lit_ref_title = linkHeadline ?? ""; // Use nullish coalescing to handle null or undefined
+              const p = fetchTitleFromDiffbot(ref.url)
+                .then((title) => {
                   lit_references.push({
                     lit_reference_link: ref.url,
-                    lit_reference_title: Lit_ref_title,
+                    lit_reference_title: title || formatUrlForTitle(ref.url),
                   });
                 })
                 .catch((err) => {
                   console.error(
-                    `Error fetching headline for reference ${ref.url}:`,
+                    `Error fetching title for reference ${ref.url}:`,
                     err
                   );
+                  lit_references.push({
+                    lit_reference_link: ref.url,
+                    lit_reference_title: formatUrlForTitle(ref.url),
+                  });
                 });
+
               promises.push(p);
             }
           });
@@ -282,7 +268,6 @@ export const extractReferences = async (
 
   // Look specifically for unordered lists with the class "ref-list"
   $(".ref-list li cite").each((_, citeEl) => {
-    // Extract content of <cite> tag and look for references
     const citationText = $(citeEl).text().trim();
     if (citationText) {
       const doiLink = $(citeEl).siblings('a[href*="doi.org"]').attr("href");
@@ -290,33 +275,25 @@ export const extractReferences = async (
         .siblings('a[href*="pubmed.ncbi.nlm.nih.gov"]')
         .attr("href");
 
-      // Add any valid links found in the citation
-      /* if (doiLink && isValidReference(doiLink)) {
-        getMainHeadline(doiLink).then((linkHeadline) => {
-          const Lit_ref_title = linkHeadline ?? ""; // Use nullish coalescing to handle null or undefined
-          console.log(Lit_ref_title);
-          references.push({
-            lit_reference_link: doiLink,
-            lit_reference_title: Lit_ref_title,
-          });
-        });
-      } */
-
       if (pubMedLink && isValidReference(pubMedLink)) {
-        const p = getMainHeadline(pubMedLink)
-          .then((linkHeadline) => {
-            const Lit_ref_title = linkHeadline ?? ""; // Use nullish coalescing to handle null or undefined
+        const p = fetchTitleFromDiffbot(pubMedLink)
+          .then((title) => {
             lit_references.push({
               lit_reference_link: pubMedLink,
-              lit_reference_title: Lit_ref_title,
+              lit_reference_title: title || formatUrlForTitle(pubMedLink),
             });
           })
           .catch((err) => {
             console.error(
-              `Error fetching headline for reference ${pubMedLink}:`,
+              `Error fetching title for reference ${pubMedLink}:`,
               err
             );
+            lit_references.push({
+              lit_reference_link: pubMedLink,
+              lit_reference_title: formatUrlForTitle(pubMedLink),
+            });
           });
+
         promises.push(p);
       }
     }
@@ -325,6 +302,37 @@ export const extractReferences = async (
   await Promise.all(promises);
 
   return lit_references;
+};
+
+// ✅ Use Diffbot API to fetch the title for a given URL
+const fetchTitleFromDiffbot = async (url: string) => {
+  const response = await fetch(`${BASE_URL}/api/get-title`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+
+  if (!response.ok) {
+    console.error("Error fetching title from Diffbot:", response.statusText);
+    return null;
+  }
+
+  const responseData = await response.json();
+  console.log(responseData, "<-string title");
+  return responseData || null;
+};
+
+// ✅ Fallback: Convert a URL into a readable title-like string
+const formatUrlForTitle = (url: string): string => {
+  try {
+    const { hostname, pathname } = new URL(url);
+    const readablePart = pathname.split("/").filter((part) => part.length > 3); // Ignore short fragments
+    return readablePart.length
+      ? readablePart.join(" ").replace(/-/g, " ")
+      : hostname;
+  } catch (err) {
+    return url; // Fallback to full URL if parsing fails
+  }
 };
 
 const isNavigationLink = (link: string): boolean => {
