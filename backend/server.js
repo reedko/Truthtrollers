@@ -628,10 +628,32 @@ app.post("/api/scrape", async (req, res) => {
 // server.js
 
 // server.js
+app.post("/api/get-title", async (req, res) => {
+  try {
+    const { url } = req.body; // ✅ Fix: Use `url` instead of `Aurl`
+
+    if (!url) {
+      return res.status(400).json({ error: "Missing URL in request body" });
+    }
+    const response = await axios.get(`${DIFFBOT_BASE_URL}/article`, {
+      params: {
+        token: DIFFBOT_TOKEN,
+        url,
+        fields: "title",
+      },
+    });
+
+    const title = response.data.objects?.[0]?.title || {};
+    console.log(title, "<-object title");
+    return res.status(200).json({ title });
+  } catch (err) {
+    console.error(`Diffbot API failed for title:`, err);
+    return null;
+  }
+});
 
 app.post("/api/pre-scrape", async (req, res) => {
   const { articleUrl } = req.body;
-  //console.log("Received articleUrl:", articleUrl); // Debugging line
 
   if (!articleUrl) {
     return res.status(400).json({ error: "articleUrl is required" });
@@ -643,45 +665,36 @@ app.post("/api/pre-scrape", async (req, res) => {
         token: DIFFBOT_TOKEN,
         url: articleUrl,
         fields:
-          "publisher,title,text,author,keywords,images,links,meta,articleType,robots",
+          "publisher,categories,title,author,images,meta,articleType,robots",
       },
     });
 
-    console.log(
-      "Diffbot response data:",
-      "author",
-      JSON.stringify(diffbotResponse.data.objects[0].author, null, 2),
-      "title",
-      JSON.stringify(diffbotResponse.data.objects[0].title, null, 2),
-      "meta",
-      JSON.stringify(
-        diffbotResponse.data.objects[0].meta.microdata.publisher.name,
-        null,
-        2
-      )
-    ); // Detailed log
-
-    // Check if 'objects' exists and is an array with at least one element
+    // Ensure 'objects' exists and contains at least one item
     if (
       !diffbotResponse.data.objects ||
       !Array.isArray(diffbotResponse.data.objects) ||
       diffbotResponse.data.objects.length === 0
     ) {
-      throw new Error("No objects returned from Diffbot");
+      console.warn("Diffbot returned no objects, sending empty data.");
+      return res.status(200).json({
+        success: true,
+        publisher: "Unknown Publisher",
+        title: "",
+        author: "",
+        categories: [],
+        images: [],
+      });
     }
 
     const diffbotData = diffbotResponse.data.objects[0];
-    //console.log("Diffbot Data:", JSON.stringify(diffbotData, null, 2)); // Detailed log
 
     const {
-      title,
-      text,
-      author,
-      keywords,
-      images,
-      links,
-      siteName, // Backup, may be useful
-      meta = {}, // Default empty object to prevent errors if meta is missing
+      title = "",
+      author = "",
+      categories = [],
+      images = [],
+      siteName, // Backup publisher name
+      meta = {}, // Default empty object
     } = diffbotData;
 
     const publisher =
@@ -692,25 +705,21 @@ app.post("/api/pre-scrape", async (req, res) => {
       publisher,
       title,
       author,
-      keywords,
+      categories,
       images,
-      links,
     });
   } catch (error) {
-    //console.error("Error in /api/pre-scrape:", error.message);
-    if (error.response) {
-      // Diffbot-specific error
-      console.error("Diffbot Error Response Data:");
-      res.status(500).json({
-        error: "Error during scraping and task creation",
-        details: error.response.data,
-      });
-    } else {
-      // General error
-      res
-        .status(500)
-        .json({ error: "Error during scraping and task creation" });
-    }
+    console.warn("Diffbot request failed. Returning empty data.");
+
+    // Return a 200 response even if Diffbot fails
+    res.status(200).json({
+      success: false,
+      publisher: "Unknown Publisher",
+      title: "",
+      author: "",
+      categories: [],
+      images: [],
+    });
   }
 });
 
