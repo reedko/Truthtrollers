@@ -287,27 +287,54 @@ app.get("/api/tasks/:taskId/task_references", async (req, res) => {
 //Add References
 app.post("/api/tasks/:taskId/add-source", async (req, res) => {
   const { taskId } = req.params;
-  const reference = req.body.lit_reference; // Expect an array of reference URLs
+  const reference = req.body.lit_reference;
 
-  const link = reference.lit_reference_link;
-  const title = reference.lit_reference_title;
-
-  const sql = `CALL InsertOrGetReference(?, ?,@litReferenceId)`;
+  const link = reference.lit_reference_link.trim();
+  const title = reference.lit_reference_title?.trim() || "";
 
   try {
-    const result = await query(sql, [link, title]);
+    // Step 1: Check if the reference already exists in lit_references
+    const checkExistingRef = `SELECT lit_reference_id FROM lit_references WHERE lit_reference_link = ?`;
+    const existingRefs = await query(checkExistingRef, [link]);
 
-    const litReferenceId = result[0][0].litReferenceId;
+    let litReferenceId =
+      existingRefs.length > 0 ? existingRefs[0].lit_reference_id : null;
 
-    if (litReferenceId) {
-      const insertTaskReference = `INSERT INTO task_references (task_id, lit_reference_id) VALUES (?, ?)`;
-      await pool.query(insertTaskReference, [taskId, litReferenceId]);
+    // Step 2: If reference does not exist, insert it
+    if (!litReferenceId) {
+      const result = await query(
+        `CALL InsertOrGetReference(?, ?, @litReferenceId)`,
+        [link, title]
+      );
+      litReferenceId = result[0][0].litReferenceId;
     }
 
-    res.status(200).send("References added successfully");
+    // Step 3: Check if this task-reference pair already exists
+    const checkExistingTaskRef = `SELECT 1 FROM task_references WHERE task_id = ? AND lit_reference_id = ?`;
+    const existingTaskRefs = await query(checkExistingTaskRef, [
+      taskId,
+      litReferenceId,
+    ]);
+
+    if (existingTaskRefs.length === 0) {
+      // Step 4: Insert task-reference if it doesn't exist
+      await query(
+        `INSERT INTO task_references (task_id, lit_reference_id) VALUES (?, ?)`,
+        [taskId, litReferenceId]
+      );
+      console.log(`Reference ${litReferenceId} linked to task ${taskId}`);
+    } else {
+      console.log(
+        `Reference ${litReferenceId} already linked to task ${taskId}, skipping insert.`
+      );
+    }
+
+    res
+      .status(200)
+      .json({ message: "Reference added successfully", litReferenceId });
   } catch (error) {
     console.error("Error inserting references:", error);
-    res.status(500).send("Error adding references");
+    res.status(500).json({ error: "Error adding references" });
   }
 });
 
@@ -624,17 +651,38 @@ app.post("/api/scrape", async (req, res) => {
   }
 });
 
-// Endpoint to fetch article data using Diffbot
-// server.js
+app.post("/api/check-reference", async (req, res) => {
+  const { url } = req.body;
 
-// server.js
-app.post("/api/get-title", async (req, res) => {
+  if (!url) return res.status(400).json({ error: "Missing URL" });
+
   try {
-    const { url } = req.body; // ✅ Fix: Use `url` instead of `Aurl`
+    const sql =
+      "SELECT lit_reference_title FROM lit_references WHERE lit_reference_link = ?";
+    const [result] = await query(sql, [url]);
+
+    if (result.length > 0) {
+      return res.status(200).json({ title: result[0].lit_reference_title });
+    } else {
+      return res.status(200).json({ title: null }); // Reference not found
+    }
+  } catch (error) {
+    console.error("Database error:", error);
+    return res.status(500).json({ error: "Database lookup failed" });
+  }
+});
+
+// Endpoint to fetch article data using Diffbot
+app.post("/api/get-title", async (req, res) => {
+  let url = ""; // Declare `url` before the try block
+
+  try {
+    url = req.body.url; // Assign the value inside try
 
     if (!url) {
       return res.status(400).json({ error: "Missing URL in request body" });
     }
+
     const response = await axios.get(`${DIFFBOT_BASE_URL}/article`, {
       params: {
         token: DIFFBOT_TOKEN,
@@ -643,12 +691,29 @@ app.post("/api/get-title", async (req, res) => {
       },
     });
 
-    const title = response.data.objects?.[0]?.title || {};
-    console.log(title, "<-object title");
+    const title = response.data.objects?.[0]?.title || null;
+    console.log(`✅ Diffbot title for ${url}: ${title}`);
+
     return res.status(200).json({ title });
   } catch (err) {
-    console.error(`Diffbot API failed for title:`, err);
-    return null;
+    const status = err.response?.status;
+
+    if (status === 429) {
+      console.warn(`⚠️ Diffbot rate limit exceeded for ${url}. Skipping.`);
+      return res.status(200).json({
+        title: null,
+        error: "Rate limit exceeded",
+      });
+    }
+
+    console.error(
+      `❌ Diffbot API failed for ${url}:`,
+      err?.response?.data || err.message
+    );
+    return res.status(200).json({
+      title: null,
+      error: "Diffbot lookup failed",
+    });
   }
 });
 

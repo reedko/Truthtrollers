@@ -190,136 +190,153 @@ export const extractReferences = async (
   const lit_references: Lit_references[] = [];
   const promises: Promise<void>[] = [];
 
-  // Target main content areas, including ref-list
-  const mainContent = $(
-    "article, .content, .post-body, .entry-content, .ref-list"
-  );
+  const processReference = async (url: string, potentialTitle?: string) => {
+    url = url.trim();
+    if (!isValidReference(url)) return;
 
-  // Extract hyperlinks from the main content
-  mainContent.find("a[href]").each((_, el) => {
-    const link = $(el).attr("href");
-    const text = $(el).text().trim();
-
-    if (
-      link &&
-      link.startsWith("http") &&
-      text.length > 2 &&
-      !isNavigationLink(link)
-    ) {
-      const p = fetchTitleFromDiffbot(link)
-        .then((title) => {
-          lit_references.push({
-            lit_reference_link: link.trim(),
-            lit_reference_title: title || formatUrlForTitle(link), // Fallback if title fails
-          });
-        })
-        .catch((err) => {
-          console.error(`Error fetching title for ${link}:`, err);
-          lit_references.push({
-            lit_reference_link: link.trim(),
-            lit_reference_title: formatUrlForTitle(link),
-          });
-        });
-
-      promises.push(p);
+    // Step 1: Check the database first
+    const storedTitle = await checkDatabaseForReference(url);
+    if (storedTitle) {
+      lit_references.push({
+        lit_reference_link: url,
+        lit_reference_title: storedTitle,
+      });
+      return;
     }
-  });
 
-  // Parse <script type="application/ld+json"> for structured data
+    // Step 2: Fetch title from Diffbot (Highest Priority)
+    try {
+      const title = await fetchTitleFromDiffbot(url);
+      if (title && title.trim().length > 3) {
+        lit_references.push({
+          lit_reference_link: url,
+          lit_reference_title: title,
+        });
+        return;
+      }
+    } catch (err) {
+      console.error(`Error fetching title for ${url}:`, err);
+    }
+
+    // Step 3: Use potential inline title as a fallback
+    if (potentialTitle && potentialTitle.length > 3) {
+      lit_references.push({
+        lit_reference_link: url,
+        lit_reference_title: potentialTitle,
+      });
+      return;
+    }
+
+    // Step 4: Final fallback – Format URL into a readable title
+    lit_references.push({
+      lit_reference_link: url,
+      lit_reference_title: formatUrlForTitle(url),
+    });
+  };
+
+  // **Extract from Main Content**
+  $("article, .content, .post-body, .entry-content, .ref-list")
+    .find("a[href]")
+    .each((_, el) => {
+      const link = $(el).attr("href")?.trim();
+      const inlineText = $(el).text().trim(); // Extract inline text normally
+
+      if (link && link.startsWith("http") && !isNavigationLink(link)) {
+        promises.push(processReference(link, inlineText));
+      }
+    });
+
+  // **Extract from JSON-LD structured data**
   $('script[type="application/ld+json"]').each((_, scriptTag) => {
     try {
       const rawJson = $(scriptTag).html();
       if (rawJson) {
         const metadata = JSON.parse(rawJson);
-        if (metadata.citation || metadata.references) {
-          const refs = Array.isArray(metadata.references)
-            ? metadata.references
-            : [metadata.references];
+        const refs = Array.isArray(metadata.references)
+          ? metadata.references
+          : [metadata.references];
 
-          refs.forEach((ref: any) => {
-            if (ref.url && isValidReference(ref.url)) {
-              const p = fetchTitleFromDiffbot(ref.url)
-                .then((title) => {
-                  lit_references.push({
-                    lit_reference_link: ref.url,
-                    lit_reference_title: title || formatUrlForTitle(ref.url),
-                  });
-                })
-                .catch((err) => {
-                  console.error(
-                    `Error fetching title for reference ${ref.url}:`,
-                    err
-                  );
-                  lit_references.push({
-                    lit_reference_link: ref.url,
-                    lit_reference_title: formatUrlForTitle(ref.url),
-                  });
-                });
+        refs.forEach((ref: any) => {
+          const refUrl = ref.url?.trim();
+          const refTitle = ref.name?.trim();
 
-              promises.push(p);
-            }
-          });
-        }
+          if (refUrl) {
+            promises.push(processReference(refUrl, refTitle));
+          }
+        });
       }
     } catch (err) {
       console.error("Error parsing ld+json:", err);
     }
   });
 
-  // Look specifically for unordered lists with the class "ref-list"
+  // **Extract from Citation Lists (PubMed, DOI, etc.)**
   $(".ref-list li cite").each((_, citeEl) => {
     const citationText = $(citeEl).text().trim();
-    if (citationText) {
-      const doiLink = $(citeEl).siblings('a[href*="doi.org"]').attr("href");
-      const pubMedLink = $(citeEl)
-        .siblings('a[href*="pubmed.ncbi.nlm.nih.gov"]')
-        .attr("href");
+    const doiLink = $(citeEl)
+      .siblings('a[href*="doi.org"]')
+      .attr("href")
+      ?.trim();
+    const pubMedLink = $(citeEl)
+      .siblings('a[href*="pubmed.ncbi.nlm.nih.gov"]')
+      .attr("href")
+      ?.trim();
 
-      if (pubMedLink && isValidReference(pubMedLink)) {
-        const p = fetchTitleFromDiffbot(pubMedLink)
-          .then((title) => {
-            lit_references.push({
-              lit_reference_link: pubMedLink,
-              lit_reference_title: title || formatUrlForTitle(pubMedLink),
-            });
-          })
-          .catch((err) => {
-            console.error(
-              `Error fetching title for reference ${pubMedLink}:`,
-              err
-            );
-            lit_references.push({
-              lit_reference_link: pubMedLink,
-              lit_reference_title: formatUrlForTitle(pubMedLink),
-            });
-          });
-
-        promises.push(p);
-      }
-    }
+    if (doiLink) promises.push(processReference(doiLink, citationText));
+    if (pubMedLink) promises.push(processReference(pubMedLink, citationText));
   });
 
   await Promise.all(promises);
-
   return lit_references;
 };
 
 // ✅ Use Diffbot API to fetch the title for a given URL
 const fetchTitleFromDiffbot = async (url: string) => {
-  const response = await fetch(`${BASE_URL}/api/get-title`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
-  });
+  console.log(`🛠 Fetching title from Diffbot for: ${url}`);
+  try {
+    const response = await fetch(`${BASE_URL}/api/get-title`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
 
-  if (!response.ok) {
-    console.error("Error fetching title from Diffbot:", response.statusText);
+    if (!response.ok) {
+      console.warn(`⚠️ Diffbot request failed: ${response.status}`);
+      return null;
+    }
+
+    const responseData = await response.json();
+    let title = responseData.title || null;
+
+    // ✅ Remove duplicate phrases like "published at..."
+    if (title) {
+      title = title.replace(/,?\s*published at.*/i, "").trim();
+    }
+
+    console.log(`✅ Cleaned Diffbot title: ${title}`);
+    return title;
+  } catch (err) {
+    console.error(`❌ Diffbot API failed for ${url}:`, err);
     return null;
   }
+};
 
-  const responseData = await response.json();
-  console.log(responseData, "<-string title");
-  return responseData || null;
+const checkDatabaseForReference = async (
+  url: string
+): Promise<string | null> => {
+  try {
+    const response = await fetch(`${BASE_URL}/api/check-reference`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+
+    const data = await response.json();
+    return data.title; // Returns title if found, or null
+  } catch (error) {
+    console.error(`Database lookup failed for ${url}:`, error);
+    return null;
+  }
 };
 
 // ✅ Fallback: Convert a URL into a readable title-like string
