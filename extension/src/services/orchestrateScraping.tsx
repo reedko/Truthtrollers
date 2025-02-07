@@ -83,12 +83,7 @@ export const orchestrateScraping = async () => {
     : await extractAuthors($);
 
   // Get References (Diffbot or fallback)
-  const lit_references: Lit_references[] = diffbotData.links?.length
-    ? diffbotData.links.map((link) => ({
-        lit_reference_link: link,
-        lit_reference_title: "", // Title unknown for now
-      }))
-    : await extractReferences($);
+  const lit_references: Lit_references[] = await extractReferences($);
 
   // Get Video ID (if applicable)
   const videoId = extractVideoIdFromUrl(window.location.href);
