@@ -348,21 +348,6 @@ app.post("/api/tasks/:taskId/remove-sources", async (req, res) => {
   });
 });
 
-app.post("/api/tasks/:taskId/add-sourcex", async (req, res) => {
-  const { taskId } = req.params;
-  const { name } = req.body;
-  const sql = `INSERT INTO lit_references (name) VALUES (?)`;
-  pool.query(sql, [name], (err, result) => {
-    if (err) return res.status(500).send("Error adding source");
-    const referenceId = result.insertId;
-    const linkSql = `INSERT INTO task_references (task_id, lit_reference_id) VALUES (?, ?)`;
-    pool.query(linkSql, [taskId, referenceId], (linkErr) => {
-      if (linkErr) return res.status(500).send("Error linking source");
-      res.json({ id: referenceId, name });
-    });
-  });
-});
-
 //Users
 //all users
 app.get("/api/all-users", async (req, res) => {
