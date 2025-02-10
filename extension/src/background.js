@@ -312,3 +312,208 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 });
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "addTask") {
+    createTaskInServer(message.taskData)
+      .then((taskId) => sendResponse({ taskId }))
+      .catch(() => sendResponse({ error: "Failed to create task" }));
+
+    return true; // Keep async connection open
+  }
+
+  if (message.action === "addAuthors") {
+    addAuthorsToServer(message.taskId, message.authors)
+      .then(() => sendResponse({ success: true }))
+      .catch(() => sendResponse({ success: false }));
+
+    return true;
+  }
+
+  if (message.action === "addPublisher") {
+    addPublisherToServer(message.taskId, message.publisher)
+      .then(() => sendResponse({ success: true }))
+      .catch(() => sendResponse({ success: false }));
+
+    return true;
+  }
+
+  if (message.action === "addSources") {
+    addSourcesToServer(message.taskId, message.lit_references)
+      .then(() => sendResponse({ success: true }))
+      .catch(() => sendResponse({ success: false }));
+
+    return true;
+  }
+
+  if (message.action === "fetchTitleFromDiffbot") {
+    fetchTitleFromDiffbot(message.url)
+      .then((title) => sendResponse(title))
+      .catch(() => sendResponse(null));
+
+    return true; // Keeps the message channel open for async response
+  }
+  if (message.action === "fetchDiffbotData") {
+    fetchDiffbotData(message.articleUrl)
+      .then((data) => sendResponse(data))
+      .catch(() => sendResponse(null));
+
+    return true; // Keeps the message channel open for async response
+  }
+
+  if (message.action === "checkContent") {
+    checkContent(message.url)
+      .then((contentData) => sendResponse(contentData))
+      .catch(() => sendResponse(null));
+
+    return true; // Keeps the message channel open for async response
+  }
+});
+
+// ✅ Create Task
+const createTaskInServer = async (taskData) => {
+  try {
+    const response = await fetch("http://localhost:5001/api/scrape", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(taskData),
+    });
+
+    const responseData = await response.json();
+    return responseData.task_id || null;
+  } catch (error) {
+    console.error("Error adding task:", error);
+    return null;
+  }
+};
+
+// ✅ Add Authors
+const addAuthorsToServer = async (taskId, authors) => {
+  try {
+    await fetch(`http://localhost:5001/api/tasks/${taskId}/authors`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ authors }),
+    });
+    console.log("authors");
+    return true;
+  } catch (error) {
+    console.error("Error adding authors:", error);
+    return false;
+  }
+};
+
+// ✅ Add Publisher
+const addPublisherToServer = async (taskId, publisher) => {
+  try {
+    await fetch(`http://localhost:5001/api/tasks/${taskId}/publishers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ publisher }),
+    });
+
+    return true;
+  } catch (error) {
+    console.error("Error adding publisher:", error);
+    return false;
+  }
+};
+
+// ✅ Add Sources (References)
+const addSourcesToServer = async (taskId, lit_references) => {
+  try {
+    for (const lit_reference of lit_references) {
+      await fetch(`http://localhost:5001/api/tasks/${taskId}/add-source`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lit_reference }),
+      });
+    }
+    return true;
+  } catch (error) {
+    console.error("Error adding sources:", error);
+    return false;
+  }
+};
+
+// ✅ Fetch title from Diffbot
+const fetchTitleFromDiffbot = async (url) => {
+  console.log(`🛠 Fetching title from Diffbot for: ${url}`);
+
+  try {
+    const response = await fetch("http://localhost:5001/api/get-title", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+
+    if (!response.ok) {
+      console.warn(`⚠️ Diffbot request failed: ${response.status}`);
+      return null;
+    }
+
+    const responseData = await response.json();
+    let title = responseData?.title || null;
+
+    if (title) {
+      title = title.replace(/,?\s*published at.*/i, "").trim();
+    }
+
+    console.log(`✅ Cleaned Diffbot title: ${title}`);
+    return title;
+  } catch (err) {
+    console.error(`❌ Diffbot API failed for ${url}:`, err);
+    return null;
+  }
+};
+
+// ✅ Fetch Diffbot pre-scrape data
+const fetchDiffbotData = async (articleUrl) => {
+  console.log(`🛠 Fetching Diffbot pre-scrape data for: ${articleUrl}`);
+
+  try {
+    const response = await fetch("http://localhost:5001/api/pre-scrape", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ articleUrl }),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Diffbot pre-scrape failed with status: ${response.status}`
+      );
+    }
+
+    const diffbotData = await response.json();
+    console.log("✅ Diffbot pre-scrape data received:", diffbotData);
+    return diffbotData;
+  } catch (error) {
+    console.warn("⚠️ Diffbot pre-scrape fetch failed:", error);
+    return null;
+  }
+};
+// ✅ Check if content exists in the database
+const checkContent = async (url) => {
+  console.log(`🔍 Checking content in DB for: ${url}`);
+
+  try {
+    const response = await fetch("http://localhost:5001/api/check-content", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Check-content API failed with status: ${response.status}`
+      );
+    }
+
+    const data = await response.json();
+    console.log(`📖 Content check result:`, data);
+    return data;
+  } catch (error) {
+    console.error(`❌ Error checking content for ${url}:`, error);
+    return null;
+  }
+};
