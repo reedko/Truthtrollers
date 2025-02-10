@@ -13,29 +13,33 @@ import { Author, Lit_references, Publisher } from "../entities/Task";
 
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 
+const fetchDiffbotData = async (articleUrl: string): Promise<any> => {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(
+      { action: "fetchDiffbotData", articleUrl },
+      (response) => {
+        resolve(response);
+      }
+    );
+  });
+};
+
 export const orchestrateScraping = async () => {
   let diffbotData: DiffbotData = {};
   let generalTopic = "";
   let specificTopics: string[] = [];
 
   try {
-    // Fetch Diffbot Data
-    const diffbotResponse = await fetch(`${BASE_URL}/api/pre-scrape`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ articleUrl: window.location.href }), // Use the current page URL
-    });
+    // ✅ Fetch Diffbot data through background.js instead of direct API call
+    diffbotData = await fetchDiffbotData(window.location.href);
 
-    if (!diffbotResponse.ok) {
-      throw new Error(
-        `Diffbot call failed with status: ${diffbotResponse.status}`
-      );
+    if (!diffbotData) {
+      throw new Error("Diffbot fetch returned null.");
     }
 
-    diffbotData = await diffbotResponse.json();
-    console.log("Diffbot data received:", diffbotData);
+    console.log("✅ Diffbot data received:", diffbotData);
   } catch (error) {
-    console.warn("Diffbot fetch failed:", error);
+    console.warn("⚠️ Diffbot fetch failed:", error);
   }
 
   // ✅ Use our existing function to get the DOM via Cheerio

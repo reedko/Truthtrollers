@@ -1,5 +1,5 @@
 import axios from "axios";
-import { TaskData } from "../entities/Task";
+import { TaskData, Author, Lit_references, Publisher } from "../entities/Task";
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 
 let taskId = "";
@@ -10,51 +10,99 @@ const createTask = async (taskData: TaskData) => {
   const publisher = taskData.publisherName;
   const lit_references = taskData.lit_references;
 
-  console.log(articleUrl);
+  console.log("Creating task for:", articleUrl);
 
-  try {
-    const response = await fetch(`${BASE_URL}/api/scrape`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(taskData),
+  // Step 1: Add Task and get taskId
+  const addTask = async (taskData: TaskData): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { action: "addTask", taskData },
+        (response) => {
+          if (response?.taskId) {
+            console.log("Task created with ID:", response.taskId);
+            resolve(response.taskId);
+          } else {
+            reject("Failed to create task");
+          }
+        }
+      );
     });
-
-    const responseData = await response.json();
-    console.log("Task creation response:", responseData);
-    // Return the task_id from the response
-    taskId = responseData.task_id || null;
-  } catch (error) {
-    console.error("Error adding task:", error);
-  }
+  };
 
   // Step 2: Add Authors
-
-  if (authors.length > 0) {
-    // Call stored procedure to insert or fetch author
-    await axios.post(`${BASE_URL}/api/tasks/${taskId}/authors`, { authors });
-  }
+  const addAuthors = async (
+    taskId: string,
+    authors: Author[]
+  ): Promise<void> => {
+    if (authors.length === 0) return;
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { action: "addAuthors", taskId, authors },
+        (response) => {
+          if (response?.success) {
+            console.log("Authors added successfully.");
+            resolve();
+          } else {
+            reject("Failed to add authors");
+          }
+        }
+      );
+    });
+  };
 
   // Step 3: Add Publisher
-  if (publisher) {
-    await axios.post(`${BASE_URL}/api/tasks/${taskId}/publishers`, {
-      publisher,
+  const addPublisher = async (
+    taskId: string,
+    publisher: Publisher
+  ): Promise<void> => {
+    if (!publisher) return;
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { action: "addPublisher", taskId, publisher },
+        (response) => {
+          if (response?.success) {
+            console.log("Publisher added successfully.");
+            resolve();
+          } else {
+            reject("Failed to add publisher");
+          }
+        }
+      );
     });
-  }
+  };
 
   // Step 4: Add Sources (References)
-  // Should log: true
-  if (Array.isArray(lit_references)) {
-    try {
-      for (const lit_reference of lit_references) {
-        await axios.post(`${BASE_URL}/api/tasks/${taskId}/add-source`, {
-          lit_reference,
-        });
-      }
-    } catch (error) {
-      console.error("Error in createTask:", error);
-    }
+  const addSources = async (
+    taskId: string,
+    lit_references: Lit_references[]
+  ): Promise<void> => {
+    if (!Array.isArray(lit_references) || lit_references.length === 0) return;
+    return new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { action: "addSources", taskId, lit_references },
+        (response) => {
+          if (response?.success) {
+            console.log("References added successfully.");
+            resolve();
+          } else {
+            reject("Failed to add references");
+          }
+        }
+      );
+    });
+  };
+
+  try {
+    const taskId = await addTask(taskData); // Ensure task is created first
+    await addAuthors(taskId, authors); // Add authors
+    await addPublisher(taskId, publisher); // Add publisher
+    await addSources(taskId, lit_references); // Add references
+
+    return { taskId };
+  } catch (error) {
+    console.error("Error in createTask workflow:", error);
+    return { taskId: null };
   }
-  return { taskId };
 };
 
 export default createTask;

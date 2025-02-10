@@ -291,52 +291,28 @@ export const extractReferences = async (
 };
 
 // ✅ Use Diffbot API to fetch the title for a given URL
-const fetchTitleFromDiffbot = async (url: string) => {
-  console.log(`🛠 Fetching title from Diffbot for: ${url}`);
-  try {
-    const response = await fetch(`${BASE_URL}/api/get-title`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    });
-
-    if (!response.ok) {
-      console.warn(`⚠️ Diffbot request failed: ${response.status}`);
-      return null;
-    }
-
-    const responseData = await response.json();
-    let title = responseData.title || null;
-
-    // ✅ Remove duplicate phrases like "published at..."
-    if (title) {
-      title = title.replace(/,?\s*published at.*/i, "").trim();
-    }
-
-    console.log(`✅ Cleaned Diffbot title: ${title}`);
-    return title;
-  } catch (err) {
-    console.error(`❌ Diffbot API failed for ${url}:`, err);
-    return null;
-  }
+const fetchTitleFromDiffbot = async (url: string): Promise<string | null> => {
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(
+      { action: "fetchTitleFromDiffbot", url },
+      (response) => {
+        resolve(response);
+      }
+    );
+  });
 };
 
 const checkDatabaseForReference = async (
   url: string
 ): Promise<string | null> => {
-  try {
-    const response = await fetch(`${BASE_URL}/api/check-reference`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    });
-
-    const data = await response.json();
-    return data.title; // Returns title if found, or null
-  } catch (error) {
-    console.error(`Database lookup failed for ${url}:`, error);
-    return null;
-  }
+  return new Promise((resolve) => {
+    chrome.runtime.sendMessage(
+      { action: "checkDatabaseForReference", url },
+      (response) => {
+        resolve(response);
+      }
+    );
+  });
 };
 
 // ✅ Fallback: Convert a URL into a readable title-like string
