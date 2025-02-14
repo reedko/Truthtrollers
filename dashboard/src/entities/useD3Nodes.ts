@@ -2,16 +2,39 @@
 
 import * as d3 from "d3";
 
-// Extend SimulationNodeDatum to include custom properties
-export interface Node extends d3.SimulationNodeDatum {
+export class GraphNode implements d3.SimulationNodeDatum {
   id: string;
   label: string;
-  group: number; // 1: Author, 2: Task, 3: Publisher, 4: Lit_Reference
+  type: string;
+  url?: string;
+  x?: number;
+  y?: number;
+  fx?: number | null;
+  fy?: number | null;
+
+  // Hard-set group based on type
+  get group(): number {
+    return this.type === "author"
+      ? 1
+      : this.type === "task"
+      ? 2
+      : this.type === "publisher"
+      ? 3
+      : 4; // Default to 4 for lit_reference or unknown types
+  }
+
+  constructor(id: string, label: string, type: string, url?: string) {
+    this.id = id;
+    this.label = label;
+    this.type = type;
+    this.url = url;
+  }
 }
 
-// Extend SimulationLinkDatum to include custom properties
-export interface Link extends d3.SimulationLinkDatum<Node> {
-  type: string; // "authored", "published_by", "references", "auth_referenced"
+export interface Link extends d3.SimulationLinkDatum<GraphNode> {
+  source: string | GraphNode;
+  target: string | GraphNode;
+  type: string; // e.g., "authored", "published_by", "references"
   value?: number;
 }
 
@@ -70,20 +93,4 @@ export interface AuthReference {
   auth_reference_id: number;
   auth_id: number;
   lit_reference_id: number;
-}
-
-// D3.js Node and Link Interfaces
-export interface Node {
-  id: string;
-  label: string;
-  group: number; // Authors:1, Tasks:2, Publishers:3, Lit_References:4
-  x?: number; // Position - optional as D3 assigns
-  y?: number; // Position - optional as D3 assigns
-}
-
-export interface Link {
-  source: string | Node;
-  target: string | Node;
-  type: string; // e.g., "authored", "published_by", "references"
-  value?: number;
 }
