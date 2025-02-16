@@ -22,7 +22,7 @@ export const fetchNewGraphData = async (
     const data = await response.json();
     // ✅ Convert raw node objects into proper `GraphNode` instances
     const nodes = data.nodes.map(
-      (node: any) => new GraphNode(node.id, node.label, node.type)
+      (node: any) => new GraphNode(node.id, node.label, node.type, node.url)
     );
 
     return { nodes, links: data.links };

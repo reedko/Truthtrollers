@@ -102,7 +102,15 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   // Handle node click (show details & reframe option)
   const handleNodeClick = async (node: GraphNode) => {
     console.log("🔵 Node Clicked:", node);
-    setSelectedNode(node);
+    setSelectedNode(null); // Force re-render
+    setTimeout(() => {
+      setSelectedNode(node);
+    }, 0);
+    setSelectedNode({
+      ...node,
+      url: node.url ?? undefined, // Ensure URL persists
+      group: node.group,
+    });
   };
 
   // Fetch new graph data when "Reframe" is clicked
