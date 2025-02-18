@@ -15,6 +15,10 @@ import {
 } from "@chakra-ui/react";
 import { useTaskStore } from "../store/useTaskStore";
 import { useShallow } from "zustand/react/shallow";
+import axios from "axios";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 const AssignUserModal: React.FC<{
   isOpen: boolean;
@@ -26,10 +30,7 @@ const AssignUserModal: React.FC<{
   const fetchInitiated = useRef(false);
   const fetchUsers = useTaskStore((state) => state.fetchUsers);
   const fetchAssignedUsers = useTaskStore((state) => state.fetchAssignedUsers);
-  const assignUserToTask = useTaskStore((state) => state.assignUserToTask);
-  const unassignUserFromTask = useTaskStore(
-    (state) => state.unassignUserFromTask
-  );
+
   const users = useTaskStore((state) => state.users);
 
   const assignedUsers = useTaskStore(
@@ -53,12 +54,15 @@ const AssignUserModal: React.FC<{
 
   const handleToggleUser = async (userId: number) => {
     const isAssigned = assignedUsers.some((user) => user.user_id === userId);
-
     try {
       if (isAssigned) {
-        await unassignUserFromTask(taskId, userId);
+        await axios.post(`${API_BASE_URL}/api/tasks/${taskId}/unassign-user`, {
+          userId,
+        });
       } else {
-        await assignUserToTask(taskId, userId);
+        await axios.post(`${API_BASE_URL}/api/tasks/${taskId}/assign-user`, {
+          userId,
+        });
       }
       await fetchAssignedUsers(taskId); // Refresh the assigned users list
     } catch (error) {
