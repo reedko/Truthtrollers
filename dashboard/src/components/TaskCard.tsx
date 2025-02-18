@@ -24,22 +24,16 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 const TaskCard: React.FC<{ task: any }> = ({ task }) => {
-  const fetchAuthors = useTaskStore((state) => state.fetchAuthors);
-  const fetchPublishers = useTaskStore((state) => state.fetchPublishers);
-  const author = useTaskStore((state) => state.authors[task.task_id]);
-  const publisher = useTaskStore((state) => state.publishers[task.task_id]);
+  const author = useTaskStore((state) => state.authors[task.task_id] || []);
+  const publisher = useTaskStore(
+    (state) => state.publishers[task.task_id] || []
+  );
+
   const navigate = useNavigate();
   const fetchAssignedUsers = useTaskStore((state) => state.fetchAssignedUsers);
   const cardRef = useRef<HTMLDivElement | null>(null);
 
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
-
-  useEffect(() => {
-    // Fetch author and publisher for the task
-    if (!author) fetchAuthors(task.task_id);
-
-    if (!publisher) fetchPublishers(task.task_id);
-  }, [task.task_id, fetchAuthors, fetchPublishers, author, publisher]);
 
   const assignedUsers = useTaskStore(
     useShallow((state) => state.assignedUsers[task.task_id] || [])
@@ -109,15 +103,22 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
             {task.task_name}
           </Link>
         </Text>
-        {author && (
+        {author.length > 0 && (
           <Text fontSize="sm" mt={1}>
             <strong>Author:</strong>{" "}
-            {`${author[0]?.author_first_name} ${author[0]?.author_last_name}`}
+            {author
+              .map(
+                (a) =>
+                  `${a.author_first_name} ${a.author_other_name} ${a.author_last_name} ${a.author_title}`
+              )
+              .join(", ")}
           </Text>
         )}
-        {publisher && (
+
+        {publisher.length > 0 && (
           <Text fontSize="sm" mt={1}>
-            <strong>Publisher:</strong> {publisher[0]?.publisher_name}
+            <strong>Publisher:</strong>{" "}
+            {publisher.map((p) => p.publisher_name).join(", ")}
           </Text>
         )}
         <Progress

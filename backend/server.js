@@ -520,13 +520,44 @@ app.post("/api/reset-password", (req, res) => {
 
 //Tasks
 app.get("/api/tasks", (req, res) => {
-  const sql = "SELECT * FROM tasks";
+  const sql = `
+   SELECT 
+  t.*, 
+    COALESCE(
+        JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'author_id', a.author_id, 
+                'author_first_name', IFNULL(a.author_first_name,' '), 
+                'author_other_name', IFNULL(a.author_other_name, ''),
+                'author_last_name', IFNULL(a.author_last_name, ' '),
+                'author_title', IFNULL(a.author_title, ' ')
+            )
+        ), 
+        JSON_ARRAY()
+    ) AS authors,
+    COALESCE(
+        JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'publisher_id', p.publisher_id, 
+                'publisher_name', p.publisher_name
+            )
+        ), 
+        JSON_ARRAY()
+    ) AS publishers
+FROM tasks t
+LEFT JOIN task_authors ta ON t.task_id = ta.task_id
+LEFT JOIN authors a ON ta.author_id = a.author_id
+LEFT JOIN task_publishers tp ON t.task_id = tp.task_id
+LEFT JOIN publishers p ON tp.publisher_id = p.publisher_id
+GROUP BY t.task_id;
+
+  `;
+
   pool.query(sql, (err, results) => {
     if (err) {
       console.error("Error fetching tasks:", err);
       return res.status(500).json({ error: "Database query failed" });
     }
-
     res.json(results);
   });
 });

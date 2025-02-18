@@ -1,128 +1,118 @@
 import React, { useEffect, useState, useRef } from "react";
-import {
-  Box,
-  Grid,
-  Heading,
-  Input,
-  Text,
-  Tooltip,
-  Button,
-} from "@chakra-ui/react";
-import {
-  Task,
-  User,
-  GraphNode,
-  Link,
-  Reference,
-  Author,
-  Publisher,
-  LitReference,
-  TaskAuthor,
-  TaskReference,
-  AuthReference,
-} from "../entities/useD3Nodes";
+import { Box, Grid, Heading, Input, Text, Button } from "@chakra-ui/react";
+import { Task, User, LitReference, GraphNode, Link } from "../entities/types";
+import TaskCard from "../components/TaskCard";
 import { EditorFrame } from "../components/EditorFrame";
 import NetworkGraph from "../components/NetworkGraph";
-import { transformData } from "../services/dataTransform";
-import { fetchNewGraphData } from "../services/api"; // API call for reframe
-import TaskCard from "../components/TaskCard";
+import { fetchNewGraphData } from "../services/api"; // typed to accept a GraphNode
 
 interface TaskDetailLayoutProps {
   task: Task;
-  references: Reference[];
   assignedUsers: User[];
-  authors: Author[];
-  publishers: Publisher[];
   lit_references?: LitReference[];
-  task_authors: TaskAuthor[];
-  task_references: TaskReference[];
-  auth_references: AuthReference[];
 }
 
 const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   task,
-  references,
   assignedUsers,
-  authors,
-  publishers,
   lit_references = [],
-  task_authors = [],
-  task_references = [],
-  auth_references = [],
 }) => {
-  const [iframeUrl, setIframeUrl] = useState<string>(task.url || "");
-  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+  // Local state for the graph
   const [graphData, setGraphData] = useState<{
     nodes: GraphNode[];
     links: Link[];
-  }>({
-    nodes: [],
-    links: [],
-  });
+  }>({ nodes: [], links: [] });
+
+  // For showing details of a selected node
+  const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+
+  // For the Content Viewer
+  const [iframeUrl, setIframeUrl] = useState<string>(task.url || "");
+
+  // Ref used to detect outside clicks and hide the node popup
   const cardRef = useRef<HTMLDivElement | null>(null);
 
-  // Close the node card when clicking outside
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 1) CREATE A MOCK “TASK NODE” FOR INITIAL LOAD
+  //    We'll treat the entire Task as a "task" node in the graph.
+  // ─────────────────────────────────────────────────────────────────────────────
+  const buildTaskNode = (): GraphNode => {
+    return {
+      // The 'id' might be something like "task-5" or just the numeric ID in string form
+      id: task.task_id.toString(),
+      label: task.task_name,
+      type: "task", // Distinguish that this node is a task
+      url: task.url,
+      group: 2,
+    };
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 2) FETCH INITIAL GRAPH DATA ON MOUNT (OR WHEN THE TASK CHANGES)
+  // ─────────────────────────────────────────────────────────────────────────────
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (cardRef.current && !(event.target as HTMLElement).closest(".node")) {
-        setSelectedNode(null); // Hide the node card
+    const loadInitialGraph = async () => {
+      try {
+        // Build the "task" node
+        const initialNode = buildTaskNode();
+        // Pass it to the same fetch function we use for reframe
+        const initialGraph = await fetchNewGraphData(initialNode);
+        setGraphData(initialGraph);
+      } catch (err) {
+        console.error("Error fetching initial graph data:", err);
       }
     };
 
+    if (task?.task_id) {
+      loadInitialGraph();
+    }
+  }, [task?.task_id]);
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 3) CLOSE THE NODE CARD IF CLICKING OUTSIDE
+  // ─────────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        cardRef.current &&
+        !cardRef.current.contains(event.target as Node) // <-- changed
+      ) {
+        setSelectedNode(null);
+      }
+    };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Transform stored data into graph nodes/links
-  useEffect(() => {
-    const { nodes, links } = transformData(
-      {
-        authors,
-        publishers,
-        tasks: [task],
-        lit_references,
-        task_authors,
-        task_references,
-        auth_references,
-      },
-      task.task_id
-    );
-    console.log("🔗 Initial Graph Data:", { nodes, links });
-    setGraphData({ nodes, links });
-  }, [
-    task,
-    authors,
-    publishers,
-    lit_references,
-    task_authors,
-    task_references,
-    auth_references,
-  ]);
-
-  // Handle node click (show details & reframe option)
-  const handleNodeClick = async (node: GraphNode) => {
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 4) NODE CLICK HANDLER
+  // ─────────────────────────────────────────────────────────────────────────────
+  const handleNodeClick = (node: GraphNode) => {
     console.log("🔵 Node Clicked:", node);
-    setSelectedNode(null); // Force re-render
+    // Hide any old selection first, then show the new one
+    setSelectedNode(null);
     setTimeout(() => {
       setSelectedNode(node);
     }, 0);
-    setSelectedNode({
-      ...node,
-      url: node.url ?? undefined, // Ensure URL persists
-      group: node.group,
-    });
   };
 
-  // Fetch new graph data when "Reframe" is clicked
+  // ─────────────────────────────────────────────────────────────────────────────
+  // 5) REFRAME: FETCH NEW GRAPH DATA BASED ON THE SELECTED NODE
+  // ─────────────────────────────────────────────────────────────────────────────
   const handleReframeClick = async () => {
     if (!selectedNode) return;
-    console.log("📡 Fetching new graph data for:", selectedNode);
-
-    const newGraphData = await fetchNewGraphData(selectedNode);
-    console.log("🔄 Updated Graph Data:", newGraphData);
-    setGraphData(newGraphData);
+    try {
+      console.log("📡 Fetching new graph data for:", selectedNode);
+      const newGraph = await fetchNewGraphData(selectedNode);
+      setGraphData(newGraph);
+    } catch (err) {
+      console.error("Error reframing graph:", err);
+    }
   };
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // RENDER
+  // ─────────────────────────────────────────────────────────────────────────────
   return (
     <Box w="100%" p={4} overflow="auto">
       <Grid
@@ -139,7 +129,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
           `,
           md: `
             "taskCard frameA"
-            "editor editor" 
+            "editor editor"
             "relationFlow relationFlow"
             "references references"
             "users users"
@@ -203,11 +193,11 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
             onNodeClick={handleNodeClick}
           />
 
-          {/* Selected Node Card - Position Below the Graph */}
+          {/* Selected Node Popup */}
           {selectedNode && (
             <Box
               position="absolute"
-              top="100%" // Places below the graph
+              top="100%"
               left="50%"
               transform="translateX(-50%)"
               bg="teal"
@@ -219,12 +209,13 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
               zIndex="10"
               width="250px"
               textAlign="center"
+              ref={cardRef}
             >
               <Text fontWeight="bold" textDecoration="underline">
                 {selectedNode.type}
               </Text>
               <Text fontWeight="bold">{selectedNode.label}</Text>
-              {selectedNode.url && selectedNode ? (
+              {selectedNode.url && (
                 <Text fontSize="sm">
                   <a
                     href={selectedNode.url}
@@ -234,7 +225,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
                     Open Link 🔗
                   </a>
                 </Text>
-              ) : null}
+              )}
               <Button mt={2} colorScheme="blue" onClick={handleReframeClick}>
                 Reframe Graph
               </Button>
@@ -247,7 +238,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
           <Heading size="md" mb={2}>
             Source References
           </Heading>
-          {references.map((ref) => (
+          {lit_references.map((ref) => (
             <Text key={ref.lit_reference_id}>{ref.lit_reference_title}</Text>
           ))}
         </Box>
@@ -258,7 +249,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
             Assigned Users
           </Heading>
           {assignedUsers.length > 0 ? (
-            <Text>{assignedUsers.map((user) => user.username).join(", ")}</Text>
+            <Text>{assignedUsers.map((u) => u.username).join(", ")}</Text>
           ) : (
             <Text>No users assigned to this task.</Text>
           )}

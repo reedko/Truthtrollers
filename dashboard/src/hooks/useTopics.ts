@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Task } from "../entities/useTask"; // Adjust the import as necessary
 
 import axios from "axios";
 const API_URL = process.env.VITE_API_BASE_URL || "http://localhost:5001";
