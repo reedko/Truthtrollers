@@ -10,7 +10,7 @@ import {
   AuthReference,
   GraphNode,
   Link,
-} from "../entities/useD3Nodes";
+} from "../entities/types.ts";
 
 interface Data {
   authors: Author[];
@@ -36,8 +36,10 @@ export const transformData = (
     }
   };
 
+  const authors = Array.isArray(data.authors) ? data.authors : [];
+  const publishers = Array.isArray(data.publishers) ? data.publishers : [];
   // 1. Add Authors
-  data.authors.forEach((author) => {
+  authors.forEach((author) => {
     addNode({
       id: String(author.author_id), // Store only the raw ID
       label: `${author.author_first_name} ${author.author_last_name}`,
@@ -47,7 +49,7 @@ export const transformData = (
   });
 
   // 2. Add Publishers
-  data.publishers.forEach((publisher) => {
+  publishers.forEach((publisher) => {
     addNode({
       id: String(publisher.publisher_id),
       label: publisher.publisher_name,
@@ -68,7 +70,7 @@ export const transformData = (
     });
 
     // Link Task to Publisher(s)
-    data.publishers.forEach((publisher) => {
+    publishers.forEach((publisher) => {
       links.push({
         source: String(currentTask.task_id),
         target: String(publisher.publisher_id),
