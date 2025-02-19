@@ -9,13 +9,13 @@ import { fetchNewGraphData } from "../services/api"; // typed to accept a GraphN
 interface TaskDetailLayoutProps {
   task: Task;
   assignedUsers: User[];
-  lit_references?: LitReference[];
+  content?: LitReference[];
 }
 
 const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   task,
   assignedUsers,
-  lit_references = [],
+  content = [],
 }) => {
   // Local state for the graph
   const [graphData, setGraphData] = useState<{
@@ -39,8 +39,8 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   const buildTaskNode = (): GraphNode => {
     return {
       // The 'id' might be something like "task-5" or just the numeric ID in string form
-      id: task.task_id.toString(),
-      label: task.task_name,
+      id: task.content_id.toString(),
+      label: task.content_name,
       type: "task", // Distinguish that this node is a task
       url: task.url,
       group: 2,
@@ -63,10 +63,10 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
       }
     };
 
-    if (task?.task_id) {
+    if (task?.content_id) {
       loadInitialGraph();
     }
-  }, [task?.task_id]);
+  }, [task?.content_id]);
 
   // ─────────────────────────────────────────────────────────────────────────────
   // 3) CLOSE THE NODE CARD IF CLICKING OUTSIDE
@@ -147,7 +147,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
           <Heading size="md" mb={2}>
             Task Details
           </Heading>
-          <TaskCard key={task.task_id} task={task} />
+          <TaskCard key={task.content_id} task={task} />
         </Box>
 
         {/* Content Viewer */}
@@ -238,8 +238,12 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
           <Heading size="md" mb={2}>
             Source References
           </Heading>
-          {lit_references.map((ref) => (
-            <Text key={ref.lit_reference_id}>{ref.lit_reference_title}</Text>
+          {content.map((ref) => (
+            <Text key={ref.reference_content_id}>
+              <a href={ref.url} target="_blank" rel="noopener noreferrer">
+                🔗 {ref.content_name}
+              </a>
+            </Text>
           ))}
         </Box>
 

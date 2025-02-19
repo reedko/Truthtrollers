@@ -339,7 +339,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === "addSources") {
-    addSourcesToServer(message.taskId, message.lit_references)
+    addSourcesToServer(message.taskId, message.content)
       .then(() => sendResponse({ success: true }))
       .catch(() => sendResponse({ success: false }));
 
@@ -380,7 +380,7 @@ const createTaskInServer = async (taskData) => {
     });
 
     const responseData = await response.json();
-    return responseData.task_id || null;
+    return responseData.content_id || null;
   } catch (error) {
     console.error("Error adding task:", error);
     return null;
@@ -390,7 +390,7 @@ const createTaskInServer = async (taskData) => {
 // ✅ Add Authors
 const addAuthorsToServer = async (taskId, authors) => {
   try {
-    await fetch(`http://localhost:5001/api/tasks/${taskId}/authors`, {
+    await fetch(`http://localhost:5001/api/content/${taskId}/authors`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ authors }),
@@ -406,7 +406,7 @@ const addAuthorsToServer = async (taskId, authors) => {
 // ✅ Add Publisher
 const addPublisherToServer = async (taskId, publisher) => {
   try {
-    await fetch(`http://localhost:5001/api/tasks/${taskId}/publishers`, {
+    await fetch(`http://localhost:5001/api/content/${taskId}/publishers`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ publisher }),
@@ -420,10 +420,10 @@ const addPublisherToServer = async (taskId, publisher) => {
 };
 
 // ✅ Add Sources (References)
-const addSourcesToServer = async (taskId, lit_references) => {
+const addSourcesToServer = async (taskId, content) => {
   try {
-    for (const lit_reference of lit_references) {
-      await fetch(`http://localhost:5001/api/tasks/${taskId}/add-source`, {
+    for (const lit_reference of content) {
+      await fetch(`http://localhost:5001/api/content/${taskId}/add-source`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lit_reference }),

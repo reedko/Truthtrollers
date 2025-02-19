@@ -15,10 +15,10 @@ import {
 interface Data {
   authors: Author[];
   publishers: Publisher[];
-  tasks: Task[];
-  lit_references: LitReference[];
-  task_authors: TaskAuthor[];
-  task_references: TaskReference[];
+  content: Task[];
+  reference: LitReference[];
+  content_authors: TaskAuthor[];
+  content_relations: TaskReference[];
   auth_references: AuthReference[];
 }
 
@@ -59,11 +59,11 @@ export const transformData = (
   });
 
   // 3. Add Current Task
-  const currentTask = data.tasks.find((t) => t.task_id === currentTaskId);
+  const currentTask = data.content.find((t) => t.content_id === currentTaskId);
   if (currentTask) {
     addNode({
-      id: String(currentTask.task_id),
-      label: currentTask.task_name,
+      id: String(currentTask.content_id),
+      label: currentTask.content_name,
       group: 2,
       type: "task",
       url: currentTask.url,
@@ -72,7 +72,7 @@ export const transformData = (
     // Link Task to Publisher(s)
     publishers.forEach((publisher) => {
       links.push({
-        source: String(currentTask.task_id),
+        source: String(currentTask.content_id),
         target: String(publisher.publisher_id),
         type: "published_by",
         value: 1,
@@ -84,28 +84,28 @@ export const transformData = (
   }
 
   // 4. Add Lit_References and Link to Task
-  data.lit_references.forEach((ref) => {
+  data.content.forEach((ref) => {
     addNode({
-      id: String(ref.lit_reference_id),
-      label: ref.lit_reference_title,
+      id: String(ref.content_id),
+      label: ref.content_name,
       group: 4,
-      type: "lit_reference",
-      url: ref.lit_reference_link,
+      type: "reference",
+      url: ref.url,
     });
 
     // Link Lit_Reference to Task
     links.push({
       source: String(currentTaskId),
-      target: String(ref.lit_reference_id),
+      target: String(ref.content_id),
       type: "references",
       value: 1,
     });
 
     // Link Lit_Reference to Author (if exists)
-    if (ref.lit_reference_author_id) {
+    if (ref.authors) {
       links.push({
-        source: String(ref.lit_reference_id),
-        target: String(ref.lit_reference_author_id),
+        source: String(ref.content_id),
+        target: String(ref.authors),
         type: "authored",
         value: 1,
       });
@@ -113,20 +113,20 @@ export const transformData = (
   });
 
   // 5. Link Task to Authors
-  data.task_authors.forEach((ta) => {
+  data.content_authors.forEach((ta) => {
     links.push({
-      source: String(ta.task_id),
+      source: String(ta.content_id),
       target: String(ta.author_id),
       type: "authored",
       value: 1,
     });
   });
 
-  // 6. Link Task to Lit_References via Task_References
-  data.task_references.forEach((tr) => {
+  // 6. Link Task to Lit_References via content_relations
+  data.content_relations.forEach((tr) => {
     links.push({
-      source: String(tr.task_id),
-      target: String(tr.lit_reference_id),
+      source: String(tr.content_id),
+      target: String(tr.reference_content_id),
       type: "references",
       value: 1,
     });

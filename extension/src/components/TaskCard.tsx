@@ -74,7 +74,7 @@ const TaskCard: React.FC = () => {
         {imageUrl ? (
           <Box width="280px">
             <Text fontWeight="bold" fontSize="l" wrap="yes">
-              {task?.task_name}
+              {task?.content_name}
             </Text>
             <Grid templateRows="repeat(2, 1fr)">
               <GridItem>
@@ -132,7 +132,7 @@ const TaskCard: React.FC = () => {
         ) : (
           <Box width="280px">
             <Text fontWeight="bold" fontSize="l" wrap="yes">
-              {task?.task_name}
+              {task?.content_name}
             </Text>
             <Grid templateRows="repeat(2, 1fr)">
               <GridItem>

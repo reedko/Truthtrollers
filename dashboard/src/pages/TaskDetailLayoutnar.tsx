@@ -26,9 +26,9 @@ interface TaskDetailLayoutProps {
   assignedUsers: User[];
   authors: Author[];
   publishers: Publisher[];
-  lit_references?: LitReference[];
-  task_authors: TaskAuthor[];
-  task_references: TaskReference[];
+  content?: LitReference[];
+  content_authors: TaskAuthor[];
+  content_relations: TaskReference[];
   auth_references: AuthReference[];
 }
 
@@ -38,9 +38,9 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   assignedUsers,
   authors,
   publishers,
-  lit_references = [],
-  task_authors = [],
-  task_references = [],
+  content = [],
+  content_authors = [],
+  content_relations = [],
   auth_references = [],
 }) => {
   const [iframeUrl, setIframeUrl] = useState<string>(task.url || "");
@@ -103,7 +103,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
               Task Details
             </Heading>
             {task ? (
-              <TaskCard key={task.task_id} task={task} />
+              <TaskCard key={task.content_id} task={task} />
             ) : (
               <Text>Loading or Task Not Found</Text>
             )}
@@ -180,7 +180,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
               <Grid templateColumns="repeat(3, 1fr)" gap={4}>
                 {references.map((ref) => (
                   <Box
-                    key={ref.lit_reference_id}
+                    key={ref.reference_content_id}
                     borderWidth="1px"
                     borderRadius="lg"
                     p={4}
@@ -188,8 +188,8 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
                     <Text
                       fontWeight="bold"
                       mb={1}
-                    >{`Reference ${ref.lit_reference_id}`}</Text>
-                    <Tooltip label={ref.lit_reference_link}>
+                    >{`Reference ${ref.reference_content_id}`}</Text>
+                    <Tooltip label={ref.url}>
                       <Text
                         fontSize="sm"
                         noOfLines={1}
@@ -197,9 +197,9 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
                         textOverflow="ellipsis"
                         whiteSpace="nowrap"
                         cursor="pointer"
-                        onClick={() => setIframeUrl(ref.lit_reference_link)}
+                        onClick={() => setIframeUrl(ref.url)}
                       >
-                        {ref.lit_reference_link}
+                        {ref.url}
                       </Text>
                     </Tooltip>
                   </Box>

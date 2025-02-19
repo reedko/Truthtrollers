@@ -18,7 +18,7 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 interface TaskStoreState {
-  tasks: Task[];
+  content: Task[];
   filteredTasks: Task[];
   selectedTopic: string | undefined;
   searchQuery: string;
@@ -27,8 +27,8 @@ interface TaskStoreState {
   authors: { [taskId: number]: Author[] };
   publishers: { [taskId: number]: Publisher[] };
   assignedUsers: { [taskId: number]: User[] };
-  task_authors: TaskAuthor[];
-  task_references: TaskReference[];
+  content_authors: TaskAuthor[];
+  content_relations: TaskReference[];
   auth_references: AuthReference[];
   setSearchQuery: (query: string) => void;
   setSelectedTopic: (topicName: string | undefined) => void;
@@ -42,7 +42,7 @@ interface TaskStoreState {
 
 export const useTaskStore = create<TaskStoreState>()(
   devtools((set, get) => ({
-    tasks: [],
+    content: [],
     filteredTasks: [],
     selectedTopic: undefined,
     searchQuery: "",
@@ -51,45 +51,45 @@ export const useTaskStore = create<TaskStoreState>()(
     authors: {},
     publishers: {},
     assignedUsers: {},
-    task_authors: [],
-    task_references: [],
+    content_authors: [],
+    content_relations: [],
     auth_references: [],
 
     fetchTasks: async () => {
-      if (get().tasks.length > 0) return;
+      if (get().content.length > 0) return;
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/tasks`);
-        const tasks: Task[] = response.data;
+        const response = await axios.get(`${API_BASE_URL}/api/content`);
+        const content: Task[] = response.data;
 
         const authorsMap: Record<number, Author[]> = {};
         const publishersMap: Record<number, Publisher[]> = {};
 
-        tasks.forEach((task) => {
-          authorsMap[task.task_id] =
+        content.forEach((task) => {
+          authorsMap[task.content_id] =
             typeof task.authors === "string" ? JSON.parse(task.authors) : [];
-          publishersMap[task.task_id] =
+          publishersMap[task.content_id] =
             typeof task.publishers === "string"
               ? JSON.parse(task.publishers)
               : [];
         });
 
         set({
-          tasks,
-          filteredTasks: tasks,
+          content,
+          filteredTasks: content,
           authors: authorsMap,
           publishers: publishersMap,
         });
       } catch (error) {
-        console.error("Error fetching tasks:", error);
+        console.error("Error fetching content:", error);
       }
     },
 
     setSelectedTopic: (topicName) => {
-      const { tasks, searchQuery } = get();
-      const filteredTasks = tasks.filter((task) => {
+      const { content, searchQuery } = get();
+      const filteredTasks = content.filter((task) => {
         const matchesTopic = topicName ? task.topic === topicName : true;
         const matchesSearch = searchQuery
-          ? task.task_name.toLowerCase().includes(searchQuery.toLowerCase())
+          ? task.content_name.toLowerCase().includes(searchQuery.toLowerCase())
           : true;
         return matchesTopic && matchesSearch;
       });
@@ -97,13 +97,13 @@ export const useTaskStore = create<TaskStoreState>()(
     },
 
     setSearchQuery: (query) => {
-      const { tasks, selectedTopic } = get();
-      const filteredTasks = tasks.filter((task) => {
+      const { content, selectedTopic } = get();
+      const filteredTasks = content.filter((task) => {
         const matchesTopic = selectedTopic
           ? task.topic === selectedTopic
           : true;
         const matchesSearch = query
-          ? task.task_name.toLowerCase().includes(query.toLowerCase())
+          ? task.content_name.toLowerCase().includes(query.toLowerCase())
           : true;
         return matchesTopic && matchesSearch;
       });
@@ -118,7 +118,7 @@ export const useTaskStore = create<TaskStoreState>()(
     fetchAssignedUsers: async (taskId) => {
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/api/tasks/${taskId}/get-users`
+          `${API_BASE_URL}/api/content/${taskId}/get-users`
         );
         set((state) => ({
           assignedUsers: { ...state.assignedUsers, [taskId]: response.data },
@@ -130,7 +130,7 @@ export const useTaskStore = create<TaskStoreState>()(
 
     fetchReferences: async (taskId) => {
       const response = await axios.get(
-        `${API_BASE_URL}/api/tasks/${taskId}/source-references`
+        `${API_BASE_URL}/api/content/${taskId}/source-references`
       );
       set((state) => ({
         references: { ...state.references, [taskId]: response.data },
@@ -139,7 +139,7 @@ export const useTaskStore = create<TaskStoreState>()(
 
     fetchAuthors: async (taskId) => {
       const response = await axios.get(
-        `${API_BASE_URL}/api/tasks/${taskId}/authors`
+        `${API_BASE_URL}/api/content/${taskId}/authors`
       );
       set((state) => ({
         authors: { ...state.authors, [taskId]: response.data },
@@ -148,7 +148,7 @@ export const useTaskStore = create<TaskStoreState>()(
 
     fetchPublishers: async (taskId) => {
       const response = await axios.get(
-        `${API_BASE_URL}/api/tasks/${taskId}/publishers`
+        `${API_BASE_URL}/api/content/${taskId}/publishers`
       );
       set((state) => ({
         publishers: { ...state.publishers, [taskId]: response.data },

@@ -8,7 +8,7 @@ const createTask = async (taskData: TaskData) => {
   const articleUrl = taskData.url;
   const authors = taskData.authors;
   const publisher = taskData.publisherName;
-  const lit_references = taskData.lit_references;
+  const content = taskData.content;
 
   console.log("Creating task for:", articleUrl);
 
@@ -74,12 +74,12 @@ const createTask = async (taskData: TaskData) => {
   // Step 4: Add Sources (References)
   const addSources = async (
     taskId: string,
-    lit_references: Lit_references[]
+    content: Lit_references[]
   ): Promise<void> => {
-    if (!Array.isArray(lit_references) || lit_references.length === 0) return;
+    if (!Array.isArray(content) || content.length === 0) return;
     return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage(
-        { action: "addSources", taskId, lit_references },
+        { action: "addSources", taskId, content },
         (response) => {
           if (response?.success) {
             console.log("References added successfully.");
@@ -96,7 +96,7 @@ const createTask = async (taskData: TaskData) => {
     const taskId = await addTask(taskData); // Ensure task is created first
     await addAuthors(taskId, authors); // Add authors
     await addPublisher(taskId, publisher); // Add publisher
-    await addSources(taskId, lit_references); // Add references
+    await addSources(taskId, content); // Add references
 
     return { taskId };
   } catch (error) {

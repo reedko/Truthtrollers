@@ -24,9 +24,9 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 const TaskCard: React.FC<{ task: any }> = ({ task }) => {
-  const author = useTaskStore((state) => state.authors[task.task_id] || []);
+  const author = useTaskStore((state) => state.authors[task.content_id] || []);
   const publisher = useTaskStore(
-    (state) => state.publishers[task.task_id] || []
+    (state) => state.publishers[task.content_id] || []
   );
 
   const navigate = useNavigate();
@@ -36,7 +36,7 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
 
   const assignedUsers = useTaskStore(
-    useShallow((state) => state.assignedUsers[task.task_id] || [])
+    useShallow((state) => state.assignedUsers[task.content_id] || [])
   );
 
   const {
@@ -52,12 +52,12 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
   } = useDisclosure();
 
   const handleDrillDown = () => {
-    navigate(`/tasks/${task.task_id}`, { state: { task } });
+    navigate(`/tasks/${task.content_id}`, { state: { task } });
   };
   const handleAssignedUsersOpen = async () => {
     try {
-      console.log(`Fetching assigned users for task ${task.task_id}`);
-      await fetchAssignedUsers(task.task_id); // This updates the store
+      console.log(`Fetching assigned users for task ${task.content_id}`);
+      await fetchAssignedUsers(task.content_id); // This updates the store
     } catch (err) {
       console.error("Error fetching assigned users:", err);
     }
@@ -100,7 +100,7 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
         />
         <Text fontWeight="bold" mt={2} noOfLines={2}>
           <Link href={task.url} target="_blank">
-            {task.task_name}
+            {task.content_name}
           </Link>
         </Text>
         {author.length > 0 && (
@@ -173,8 +173,8 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
           <AssignUserModal
             isOpen={isAssignOpen}
             onClose={onAssignClose}
-            taskId={task.task_id}
-            taskName={task.task_name}
+            taskId={task.content_id}
+            taskName={task.content_name}
             position={modalPosition} // Pass modal position
           />
         )}
@@ -184,8 +184,8 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
           <SourceListModal
             isOpen={isReferencesOpen}
             onClose={onReferencesClose}
-            taskId={task.task_id}
-            taskName={task.task_name}
+            taskId={task.content_id}
+            taskName={task.content_name}
             position={modalPosition} // Pass modal position
           />
         )}

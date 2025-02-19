@@ -2,11 +2,11 @@ import { SimpleGrid } from "@chakra-ui/react";
 import React, { memo } from "react";
 import TaskCard from "./TaskCard";
 
-const TaskGrid: React.FC<{ tasks: any }> = memo(({ tasks }) => {
+const TaskGrid: React.FC<{ content: any }> = memo(({ content }) => {
   return (
     <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
-      {tasks.map((task: any) => (
-        <TaskCard key={task.task_id} task={task} />
+      {content.map((task: any) => (
+        <TaskCard key={task.content_id} task={task} />
       ))}
     </SimpleGrid>
   );

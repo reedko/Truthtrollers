@@ -10,8 +10,8 @@ type TaskProgress =
   | "Completed";
 
 export interface Task {
-  task_id: number;
-  task_name: string;
+  content_id: number;
+  content_name: string;
   thumbnail: string;
   media_source?: string; // From extension
   url: string;
@@ -45,10 +45,10 @@ export interface Publisher {
 
 // References
 export interface LitReference {
-  lit_reference_id: number;
-  lit_reference_link: string;
-  lit_reference_author_id?: number;
-  lit_reference_title: string;
+  reference_content_id: number;
+  url: string;
+  author_id?: number;
+  content_name: string;
 }
 
 // User Interface
@@ -59,21 +59,21 @@ export interface User {
 
 // Relationships
 export interface TaskAuthor {
-  task_author_id: number;
-  task_id: number;
+  content_author_id: number;
+  content_id: number;
   author_id: number;
 }
 
 export interface TaskReference {
-  task_reference_id: number;
-  task_id: number;
-  lit_reference_id: number;
+  content_relation_id: number;
+  content_id: number;
+  reference_content_id: number;
 }
 
 export interface AuthReference {
   auth_reference_id: number;
   auth_id: number;
-  lit_reference_id: number;
+  reference_content_id: number;
 }
 
 // D3 Graph Node Interface (Extending Task for Visualization Needs)

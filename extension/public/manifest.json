@@ -35,7 +35,7 @@
     {
       "resources": [
         "assets/images/*",
-        "assets/images/tasks/*",
+        "assets/images/content/*",
         "assets/icons/icon-16.png",
         "assets/icons/icon-48.png",
         "assets/icons/icon-128.png",

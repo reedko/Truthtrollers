@@ -56,41 +56,41 @@ export interface Publisher {
 
 export interface Task {
   url: string;
-  task_id: number;
+  content_id: number;
   publisher_id: number;
-  task_name: string;
+  content_name: string;
   // Add other relevant fields related to the scraped content
 }
 
 export interface LitReference {
-  lit_reference_id: number;
-  lit_reference_link: string;
-  lit_reference_author_id?: number;
-  lit_reference_title: string;
+  reference_content_id: number;
+  url: string;
+  author_id?: number;
+  content_name: string;
 }
 
 export interface TaskAuthor {
-  task_author_id: number;
-  task_id: number;
+  content_author_id: number;
+  content_id: number;
   author_id: number;
 }
 
 export interface TaskReference {
-  task_reference_id: number;
-  task_id: number;
-  lit_reference_id: number;
+  content_relation_id: number;
+  content_id: number;
+  reference_content_id: number;
 }
 export interface User {
   user_id: number;
   username: string;
 }
 export interface Reference {
-  lit_reference_id: number;
-  lit_reference_link: string;
-  lit_reference_title: string;
+  reference_content_id: number;
+  url: string;
+  content_name: string;
 }
 export interface AuthReference {
   auth_reference_id: number;
   auth_id: number;
-  lit_reference_id: number;
+  reference_content_id: number;
 }

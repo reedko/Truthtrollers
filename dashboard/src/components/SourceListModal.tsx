@@ -29,9 +29,9 @@ const SourceListModal: React.FC<{
 }> = ({ isOpen, onClose, taskId, taskName, position }) => {
   const [sources, setSources] = useState<
     {
-      lit_reference_id: number;
-      lit_reference_link: string;
-      lit_reference_title: string;
+      reference_content_id: number;
+      url: string;
+      content_name: string;
     }[]
   >([]);
   const [selectedSources, setSelectedSources] = useState<number[]>([]);
@@ -41,7 +41,7 @@ const SourceListModal: React.FC<{
     const fetchSources = async () => {
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/api/tasks/${taskId}/source-references`
+          `${API_BASE_URL}/api/content/${taskId}/source-references`
         );
         setSources(response.data);
       } catch (error) {
@@ -62,12 +62,12 @@ const SourceListModal: React.FC<{
 
   const handleRemoveSources = async () => {
     try {
-      await axios.post(`${API_BASE_URL}/api/tasks/${taskId}/remove-sources`, {
+      await axios.post(`${API_BASE_URL}/api/content/${taskId}/remove-sources`, {
         sources: selectedSources,
       });
       setSources((prev) =>
         prev.filter(
-          (source) => !selectedSources.includes(source.lit_reference_id)
+          (source) => !selectedSources.includes(source.reference_content_id)
         )
       );
       setSelectedSources([]);
@@ -79,7 +79,7 @@ const SourceListModal: React.FC<{
   const handleAddSource = async () => {
     try {
       const response = await axios.post(
-        `${API_BASE_URL}/api/tasks/${taskId}/add-source`,
+        `${API_BASE_URL}/api/content/${taskId}/add-source`,
         { name: newSource }
       );
       setSources((prev) => [...prev, response.data]);
@@ -122,16 +122,16 @@ const SourceListModal: React.FC<{
               {sources.map((source) => (
                 <Checkbox
                   color={"blue"}
-                  key={source.lit_reference_id}
-                  isChecked={selectedSources.includes(source.lit_reference_id)}
-                  onChange={() => handleToggleSource(source.lit_reference_id)}
+                  key={source.reference_content_id}
+                  isChecked={selectedSources.includes(
+                    source.reference_content_id
+                  )}
+                  onChange={() =>
+                    handleToggleSource(source.reference_content_id)
+                  }
                 >
-                  <Link
-                    href={source.lit_reference_link}
-                    isExternal
-                    color="black"
-                  >
-                    {source.lit_reference_title}
+                  <Link href={source.url} isExternal color="black">
+                    {source.content_name}
                   </Link>
                 </Checkbox>
               ))}

@@ -7,7 +7,7 @@ import { useTaskStore } from "../store/useTaskStore";
 const TaskDetail = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const task = useTaskStore((state) =>
-    state.tasks.find((t) => t.task_id === Number(taskId))
+    state.content.find((t) => t.content_id === Number(taskId))
   );
   const fetchTasks = useTaskStore((state) => state.fetchTasks);
   const fetchReferences = useTaskStore((state) => state.fetchReferences);
@@ -24,7 +24,7 @@ const TaskDetail = () => {
     console.log("Task ID:", taskId);
     console.log("Task:", task);
     if (!task) {
-      fetchTasks(); // Fetch tasks if not already in the store
+      fetchTasks(); // Fetch content if not already in the store
     }
     if (taskId) {
       fetchReferences(Number(taskId));
@@ -41,7 +41,7 @@ const TaskDetail = () => {
       <Grid templateColumns={{ base: "1fr", md: "1fr 2fr" }} gap={4}>
         {/* Task Details */}
         <Box>
-          <Heading size="lg">{task.task_name}</Heading>
+          <Heading size="lg">{task.content_name}</Heading>
           <TaskCard task={task} />
         </Box>
 
@@ -74,21 +74,21 @@ const TaskDetail = () => {
           <Grid templateColumns="repeat(3, 1fr)" gap={4}>
             {references.map((ref) => (
               <Box
-                key={ref.lit_reference_id}
+                key={ref.reference_content_id}
                 borderWidth="1px"
                 borderRadius="lg"
                 p={4}
               >
-                <Text fontWeight="bold">{`Reference ${ref.lit_reference_id}`}</Text>
+                <Text fontWeight="bold">{`Reference ${ref.reference_content_id}`}</Text>
                 <Link
-                  href={ref.lit_reference_link}
+                  href={ref.url}
                   isExternal
                   onClick={(e) => {
                     e.preventDefault();
-                    setIframeUrl(ref.lit_reference_link); // Load URL into iframe
+                    setIframeUrl(ref.url); // Load URL into iframe
                   }}
                 >
-                  {ref.lit_reference_link}
+                  {ref.url}
                 </Link>
               </Box>
             ))}
