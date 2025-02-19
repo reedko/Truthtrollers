@@ -1,7 +1,7 @@
 export interface Task {
-  task_id: number;
+  content_id: number;
   thumbnail: string;
-  task_name: string;
+  content_name: string;
   media_source: string;
   url: string;
   assigned: "assigned" | "unassigned";
@@ -27,8 +27,8 @@ export interface Author {
 }
 
 export interface Lit_references {
-  lit_reference_link: string;
-  lit_reference_title: string;
+  url: string;
+  content_name: string;
 }
 
 export interface Publisher {
@@ -36,7 +36,7 @@ export interface Publisher {
 }
 
 export interface TaskData {
-  task_name: string | null;
+  content_name: string | null;
   media_source: string;
   url: string;
   assigned: string;
@@ -48,6 +48,6 @@ export interface TaskData {
   thumbnail_url: string;
   iconThumbnailUrl: string | null;
   authors: Author[];
-  lit_references: Lit_references[];
+  content: Lit_references[];
   publisherName: Publisher;
 }

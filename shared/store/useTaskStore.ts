@@ -7,8 +7,8 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 export interface Task {
-  task_id: number;
-  task_name: string;
+  content_id: number;
+  content_name: string;
   progress: string;
   thumbnail: string;
   url: string;
@@ -36,30 +36,30 @@ interface Publisher {
 }
 
 interface TaskAuthor {
-  task_author_id: number;
-  task_id: number;
+  content_author_id: number;
+  content_id: number;
   author_id: number;
 }
 
 interface TaskReference {
-  task_reference_id: number;
-  task_id: number;
-  lit_reference_id: number;
+  content_relation_id: number;
+  content_id: number;
+  reference_content_id: number;
 }
 
 interface AuthReference {
   auth_reference_id: number;
   auth_id: number;
-  lit_reference_id: number;
+  reference_content_id: number;
 }
 export interface Reference {
-  lit_reference_id: number;
-  lit_reference_link: string;
-  lit_reference_title: string;
+  reference_content_id: number;
+  url: string;
+  content_name: string;
 }
 
 interface TaskStoreState {
-  tasks: Task[];
+  content: Task[];
   filteredTasks: Task[];
   selectedTopic: string | undefined;
   searchQuery: string;
@@ -68,8 +68,8 @@ interface TaskStoreState {
   authors: { [taskId: number]: Author[] };
   publishers: { [taskId: number]: Publisher[] };
   assignedUsers: { [taskId: number]: User[] };
-  task_authors: TaskAuthor[];
-  task_references: TaskReference[];
+  content_authors: TaskAuthor[];
+  content_relations: TaskReference[];
   auth_references: AuthReference[];
   setSearchQuery: (query: string) => void;
   setSelectedTopic: (topicName: string | undefined) => void;
@@ -101,7 +101,7 @@ interface TaskStoreState {
 
 export const useTaskStore = create<TaskStoreState>()(
   devtools((set, get) => ({
-    tasks: [],
+    content: [],
     filteredTasks: [],
     selectedTopic: undefined,
     searchQuery: "",
@@ -110,37 +110,37 @@ export const useTaskStore = create<TaskStoreState>()(
     authors: [],
     publishers: [],
     assignedUsers: {},
-    task_authors: [],
-    task_references: [],
+    content_authors: [],
+    content_relations: [],
     auth_references: [],
     fetchTasks: async () => {
-      if (get().tasks.length > 0) return; // Prevent redundant fetch
+      if (get().content.length > 0) return; // Prevent redundant fetch
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/tasks`);
-        const tasks = response.data;
-        set({ tasks, filteredTasks: tasks });
+        const response = await axios.get(`${API_BASE_URL}/api/content`);
+        const content = response.data;
+        set({ content, filteredTasks: content });
       } catch (error) {
-        console.error("Error fetching tasks:", error);
+        console.error("Error fetching content:", error);
       }
     },
 
     fetchAllData: async (taskId) => {
-      if (get().tasks.length > 0) return; // Prevent redundant fetch
+      if (get().content.length > 0) return; // Prevent redundant fetch
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/tasks`);
-        const tasks = response.data;
-        set({ tasks, filteredTasks: tasks });
+        const response = await axios.get(`${API_BASE_URL}/api/content`);
+        const content = response.data;
+        set({ content, filteredTasks: content });
       } catch (error) {
-        console.error("Error fetching tasks:", error);
+        console.error("Error fetching content:", error);
       }
     },
 
     setSelectedTopic: (topicName) => {
-      const { tasks, searchQuery } = get();
-      const filteredTasks = tasks.filter((task) => {
+      const { content, searchQuery } = get();
+      const filteredTasks = content.filter((task) => {
         const matchesTopic = topicName ? task.topic === topicName : true;
         const matchesSearch = searchQuery
-          ? task.task_name.toLowerCase().includes(searchQuery.toLowerCase())
+          ? task.content_name.toLowerCase().includes(searchQuery.toLowerCase())
           : true;
         return matchesTopic && matchesSearch;
       });
@@ -148,24 +148,24 @@ export const useTaskStore = create<TaskStoreState>()(
     },
 
     setSearchQuery: (query: any) => {
-      const { tasks, selectedTopic } = get();
-      const filteredTasks = tasks.filter((task) => {
+      const { content, selectedTopic } = get();
+      const filteredTasks = content.filter((task) => {
         const matchesTopic = selectedTopic
           ? task.topic === selectedTopic
           : true;
         const matchesSearch = query
-          ? task.task_name.toLowerCase().includes(query.toLowerCase())
+          ? task.content_name.toLowerCase().includes(query.toLowerCase())
           : true;
         return matchesTopic && matchesSearch;
       });
       set({ searchQuery: query, filteredTasks });
     },
 
-    // Fetch all tasks
+    // Fetch all content
     fetchAllTasks: async () => {
-      const response = await axios.get(`${API_BASE_URL}/api/tasks`);
+      const response = await axios.get(`${API_BASE_URL}/api/content`);
       console.log("AAASSS");
-      set({ tasks: response.data });
+      set({ content: response.data });
     },
 
     // Fetch all users
@@ -180,7 +180,7 @@ export const useTaskStore = create<TaskStoreState>()(
       console.log(`fetchAssignedUsers called for taskId: ${taskId}`);
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/api/tasks/${taskId}/get-users`
+          `${API_BASE_URL}/api/content/${taskId}/get-users`
         );
         /*      console.log("assusers updated:", response.data);
         set({ assignedUsers: response.data }); */
@@ -200,7 +200,7 @@ export const useTaskStore = create<TaskStoreState>()(
     // Fetch references for a task
     fetchReferences: async (taskId) => {
       const response = await axios.get(
-        `${API_BASE_URL}/api/tasks/${taskId}/source-references`
+        `${API_BASE_URL}/api/content/${taskId}/source-references`
       );
       set((state) => ({
         references: { ...state.references, [taskId]: response.data },
@@ -210,7 +210,7 @@ export const useTaskStore = create<TaskStoreState>()(
     // Fetch authors for a task
     fetchAuthors: async (taskId) => {
       const response = await axios.get(
-        `${API_BASE_URL}/api/tasks/${taskId}/authors`
+        `${API_BASE_URL}/api/content/${taskId}/authors`
       );
       set((state) => ({
         authors: { ...state.authors, [taskId]: response.data },
@@ -220,7 +220,7 @@ export const useTaskStore = create<TaskStoreState>()(
     // Fetch publishers for a task
     fetchPublishers: async (taskId) => {
       const response = await axios.get(
-        `${API_BASE_URL}/api/tasks/${taskId}/publishers`
+        `${API_BASE_URL}/api/content/${taskId}/publishers`
       );
       set((state) => ({
         publishers: { ...state.publishers, [taskId]: response.data },
@@ -230,14 +230,17 @@ export const useTaskStore = create<TaskStoreState>()(
     fetchTaskAuthors: async (taskId: number) => {
       try {
         const response = await axios.get<TaskAuthor[]>(
-          `${API_BASE_URL}/api/tasks/${taskId}/task_authors`
+          `${API_BASE_URL}/api/content/${taskId}/content_authors`
         );
         console.log(`Fetched Task Authors for Task ${taskId}:`, response.data);
         set((state) => ({
-          task_authors: [...state.task_authors, ...response.data],
+          content_authors: [...state.content_authors, ...response.data],
         }));
       } catch (error) {
-        console.error(`Error fetching task_authors for Task ${taskId}:`, error);
+        console.error(
+          `Error fetching content_authors for Task ${taskId}:`,
+          error
+        );
       }
     },
 
@@ -245,18 +248,18 @@ export const useTaskStore = create<TaskStoreState>()(
     fetchTaskReferences: async (taskId: number) => {
       try {
         const response = await axios.get<TaskReference[]>(
-          `${API_BASE_URL}/api/tasks/${taskId}/task_references`
+          `${API_BASE_URL}/api/content/${taskId}/content_relations`
         );
         console.log(
           `Fetched Task References for Task ${taskId}:`,
           response.data
         );
         set((state) => ({
-          task_references: [...state.task_references, ...response.data],
+          content_relations: [...state.content_relations, ...response.data],
         }));
       } catch (error) {
         console.error(
-          `Error fetching task_references for Task ${taskId}:`,
+          `Error fetching content_relations for Task ${taskId}:`,
           error
         );
       }
@@ -276,7 +279,7 @@ export const useTaskStore = create<TaskStoreState>()(
     },
     // Assign a user to a task
     assignUserToTask: async (taskId, userId) => {
-      await axios.post(`${API_BASE_URL}/api/tasks/${taskId}/assign-user`, {
+      await axios.post(`${API_BASE_URL}/api/content/${taskId}/assign-user`, {
         userId,
       });
       await get().fetchUsers(); // Refresh users
@@ -284,7 +287,7 @@ export const useTaskStore = create<TaskStoreState>()(
 
     // Unassign a user from a task
     unassignUserFromTask: async (taskId, userId) => {
-      await axios.post(`${API_BASE_URL}/api/tasks/${taskId}/unassign-user`, {
+      await axios.post(`${API_BASE_URL}/api/content/${taskId}/unassign-user`, {
         userId,
       });
       await get().fetchUsers(); // Refresh users
@@ -292,7 +295,7 @@ export const useTaskStore = create<TaskStoreState>()(
 
     // Add an author to a task
     addAuthorToTask: async (taskId, authorId) => {
-      await axios.post(`${API_BASE_URL}/api/tasks/${taskId}/add-author`, {
+      await axios.post(`${API_BASE_URL}/api/content/${taskId}/add-author`, {
         authorId,
       });
       await get().fetchAuthors(taskId); // Refresh authors for this task
@@ -300,7 +303,7 @@ export const useTaskStore = create<TaskStoreState>()(
 
     // Remove an author from a task
     removeAuthorFromTask: async (taskId, authorId) => {
-      await axios.post(`${API_BASE_URL}/api/tasks/${taskId}/remove-author`, {
+      await axios.post(`${API_BASE_URL}/api/content/${taskId}/remove-author`, {
         authorId,
       });
       await get().fetchAuthors(taskId); // Refresh authors for this task
@@ -308,7 +311,7 @@ export const useTaskStore = create<TaskStoreState>()(
 
     // Add a publisher to a task
     addPublisherToTask: async (taskId, publisherId) => {
-      await axios.post(`${API_BASE_URL}/api/tasks/${taskId}/add-publisher`, {
+      await axios.post(`${API_BASE_URL}/api/content/${taskId}/add-publisher`, {
         publisherId,
       });
       await get().fetchPublishers(taskId); // Refresh publishers for this task
@@ -316,15 +319,18 @@ export const useTaskStore = create<TaskStoreState>()(
 
     // Remove a publisher from a task
     removePublisherFromTask: async (taskId, publisherId) => {
-      await axios.post(`${API_BASE_URL}/api/tasks/${taskId}/remove-publisher`, {
-        publisherId,
-      });
+      await axios.post(
+        `${API_BASE_URL}/api/content/${taskId}/remove-publisher`,
+        {
+          publisherId,
+        }
+      );
       await get().fetchPublishers(taskId); // Refresh publishers for this task
     },
 
     // Add a reference to a task
     addReferenceToTask: async (taskId, referenceId) => {
-      await axios.post(`${API_BASE_URL}/api/tasks/${taskId}/add-source`, {
+      await axios.post(`${API_BASE_URL}/api/content/${taskId}/add-source`, {
         referenceId,
       });
       await get().fetchReferences(taskId);
@@ -332,7 +338,7 @@ export const useTaskStore = create<TaskStoreState>()(
 
     // Remove a reference from a task
     removeReferenceFromTask: async (taskId, referenceId) => {
-      await axios.post(`${API_BASE_URL}/api/tasks/${taskId}/remove-sources`, {
+      await axios.post(`${API_BASE_URL}/api/content/${taskId}/remove-sources`, {
         referenceId,
       });
       await get().fetchReferences(taskId);

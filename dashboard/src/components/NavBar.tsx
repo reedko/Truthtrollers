@@ -19,7 +19,7 @@ const NavBar = () => {
         <Image src={`${API_BASE_URL}/assets/ttlogo11.png`} boxSize="80px" />
       </Link>
       <Input
-        placeholder="Search tasks..."
+        placeholder="Search content..."
         onChange={handleSearchChange}
         marginLeft="20px"
         maxWidth="400px"

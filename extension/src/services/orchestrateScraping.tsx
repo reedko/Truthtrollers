@@ -87,7 +87,7 @@ export const orchestrateScraping = async () => {
     : await extractAuthors($);
 
   // Get References (Diffbot or fallback)
-  const lit_references: Lit_references[] = await extractReferences($);
+  const content: Lit_references[] = await extractReferences($);
 
   // Get Video ID (if applicable)
   const videoId = extractVideoIdFromUrl(window.location.href);
@@ -111,7 +111,7 @@ export const orchestrateScraping = async () => {
 
   // Prepare Task Data
   const taskData = {
-    task_name: mainHeadline,
+    content_name: mainHeadline,
     media_source: videoId ? "YouTube" : "Web",
     url: window.location.href,
     assigned: "unassigned",
@@ -123,7 +123,7 @@ export const orchestrateScraping = async () => {
     thumbnail_url: imageUrl,
     iconThumbnailUrl: iconThumbnailUrl || null,
     authors,
-    lit_references,
+    content,
     publisherName,
   };
 

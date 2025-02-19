@@ -1,7 +1,7 @@
 export interface Task {
-  task_id: number;
+  content_id: number;
   thumbnail: string;
-  task_name: string;
+  content_name: string;
   media_source: string;
   url: string;
   assigned: "assigned" | "unassigned";

@@ -6,7 +6,7 @@ export const useTaskDescription = (taskId: number) => {
   useEffect(() => {
     const fetchDescription = async () => {
       try {
-        const response = await fetch(`/api/tasks/${taskId}/description`); // Adjust the endpoint as needed
+        const response = await fetch(`/api/content/${taskId}/description`); // Adjust the endpoint as needed
         const data = await response.json();
         setDescription(data.description); // Assuming the API returns a description field
       } catch (error) {

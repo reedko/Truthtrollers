@@ -56,11 +56,14 @@ const AssignUserModal: React.FC<{
     const isAssigned = assignedUsers.some((user) => user.user_id === userId);
     try {
       if (isAssigned) {
-        await axios.post(`${API_BASE_URL}/api/tasks/${taskId}/unassign-user`, {
-          userId,
-        });
+        await axios.post(
+          `${API_BASE_URL}/api/content/${taskId}/unassign-user`,
+          {
+            userId,
+          }
+        );
       } else {
-        await axios.post(`${API_BASE_URL}/api/tasks/${taskId}/assign-user`, {
+        await axios.post(`${API_BASE_URL}/api/content/${taskId}/assign-user`, {
           userId,
         });
       }

@@ -7,23 +7,23 @@ import { useShallow } from "zustand/react/shallow";
 import { useTaskStore } from "../store/useTaskStore";
 
 export const TaskPage: React.FC = () => {
-  const tasks = useTaskStore(
+  const content = useTaskStore(
     useShallow(
       (state) => state.filteredTasks // Zustand's shallow comparison utility
     )
   );
   const fetchTasks = useTaskStore(useShallow((state) => state.fetchTasks));
 
-  // Fetch tasks on component mount
+  // Fetch content on component mount
   const fetchInitiated = useRef(false);
 
   useEffect(() => {
     if (fetchInitiated.current) return;
     fetchInitiated.current = true;
-    if (tasks.length === 0) {
+    if (content.length === 0) {
       fetchTasks();
     }
-  }, [tasks.length, fetchTasks]);
+  }, [content.length, fetchTasks]);
 
   return (
     <Grid
@@ -46,10 +46,10 @@ export const TaskPage: React.FC = () => {
         <Heading size="lg" textAlign="left" paddingBottom={14}>
           Active Tasks
         </Heading>
-        {tasks.length === 0 ? (
-          <Text>No tasks match the selected criteria.</Text>
+        {content.length === 0 ? (
+          <Text>No content match the selected criteria.</Text>
         ) : (
-          <TaskGrid tasks={tasks} />
+          <TaskGrid content={content} />
         )}
       </GridItem>
     </Grid>

@@ -1,2 +1,888 @@
 /*! For license information please see background.js.LICENSE.txt */
-(()=>{"use strict";var e={15287:(e,t)=>{var r=Symbol.for("react.element"),n=Symbol.for("react.portal"),o=Symbol.for("react.fragment"),c=Symbol.for("react.strict_mode"),s=Symbol.for("react.profiler"),a=Symbol.for("react.provider"),u=Symbol.for("react.context"),i=Symbol.for("react.forward_ref"),l=Symbol.for("react.suspense"),f=Symbol.for("react.memo"),d=Symbol.for("react.lazy"),p=Symbol.iterator,h={isMounted:function(){return!1},enqueueForceUpdate:function(){},enqueueReplaceState:function(){},enqueueSetState:function(){}},y=Object.assign,g={};function m(e,t,r){this.props=e,this.context=t,this.refs=g,this.updater=r||h}function b(){}function S(e,t,r){this.props=e,this.context=t,this.refs=g,this.updater=r||h}m.prototype.isReactComponent={},m.prototype.setState=function(e,t){if("object"!=typeof e&&"function"!=typeof e&&null!=e)throw Error("setState(...): takes an object of state variables to update or a function which returns an object of state variables.");this.updater.enqueueSetState(this,e,t,"setState")},m.prototype.forceUpdate=function(e){this.updater.enqueueForceUpdate(this,e,"forceUpdate")},b.prototype=m.prototype;var v=S.prototype=new b;v.constructor=S,y(v,m.prototype),v.isPureReactComponent=!0;var k=Array.isArray,E=Object.prototype.hasOwnProperty,C={current:null},w={key:!0,ref:!0,__self:!0,__source:!0};function _(e,t,n){var o,c={},s=null,a=null;if(null!=t)for(o in void 0!==t.ref&&(a=t.ref),void 0!==t.key&&(s=""+t.key),t)E.call(t,o)&&!w.hasOwnProperty(o)&&(c[o]=t[o]);var u=arguments.length-2;if(1===u)c.children=n;else if(1<u){for(var i=Array(u),l=0;l<u;l++)i[l]=arguments[l+2];c.children=i}if(e&&e.defaultProps)for(o in u=e.defaultProps)void 0===c[o]&&(c[o]=u[o]);return{$$typeof:r,type:e,key:s,ref:a,props:c,_owner:C.current}}function j(e){return"object"==typeof e&&null!==e&&e.$$typeof===r}var O=/\/+/g;function $(e,t){return"object"==typeof e&&null!==e&&null!=e.key?function(e){var t={"=":"=0",":":"=2"};return"$"+e.replace(/[=:]/g,(function(e){return t[e]}))}(""+e.key):t.toString(36)}function T(e,t,o,c,s){var a=typeof e;"undefined"!==a&&"boolean"!==a||(e=null);var u=!1;if(null===e)u=!0;else switch(a){case"string":case"number":u=!0;break;case"object":switch(e.$$typeof){case r:case n:u=!0}}if(u)return s=s(u=e),e=""===c?"."+$(u,0):c,k(s)?(o="",null!=e&&(o=e.replace(O,"$&/")+"/"),T(s,t,o,"",(function(e){return e}))):null!=s&&(j(s)&&(s=function(e,t){return{$$typeof:r,type:e.type,key:t,ref:e.ref,props:e.props,_owner:e._owner}}(s,o+(!s.key||u&&u.key===s.key?"":(""+s.key).replace(O,"$&/")+"/")+e)),t.push(s)),1;if(u=0,c=""===c?".":c+":",k(e))for(var i=0;i<e.length;i++){var l=c+$(a=e[i],i);u+=T(a,t,o,l,s)}else if(l=function(e){return null===e||"object"!=typeof e?null:"function"==typeof(e=p&&e[p]||e["@@iterator"])?e:null}(e),"function"==typeof l)for(e=l.call(e),i=0;!(a=e.next()).done;)u+=T(a=a.value,t,o,l=c+$(a,i++),s);else if("object"===a)throw t=String(e),Error("Objects are not valid as a React child (found: "+("[object Object]"===t?"object with keys {"+Object.keys(e).join(", ")+"}":t)+"). If you meant to render a collection of children, use an array instead.");return u}function R(e,t,r){if(null==e)return e;var n=[],o=0;return T(e,n,"","",(function(e){return t.call(r,e,o++)})),n}function U(e){if(-1===e._status){var t=e._result;(t=t()).then((function(t){0!==e._status&&-1!==e._status||(e._status=1,e._result=t)}),(function(t){0!==e._status&&-1!==e._status||(e._status=2,e._result=t)})),-1===e._status&&(e._status=0,e._result=t)}if(1===e._status)return e._result.default;throw e._result}var P={current:null},D={transition:null},x={ReactCurrentDispatcher:P,ReactCurrentBatchConfig:D,ReactCurrentOwner:C};function I(){throw Error("act(...) is not supported in production builds of React.")}t.Children={map:R,forEach:function(e,t,r){R(e,(function(){t.apply(this,arguments)}),r)},count:function(e){var t=0;return R(e,(function(){t++})),t},toArray:function(e){return R(e,(function(e){return e}))||[]},only:function(e){if(!j(e))throw Error("React.Children.only expected to receive a single React element child.");return e}},t.Component=m,t.Fragment=o,t.Profiler=s,t.PureComponent=S,t.StrictMode=c,t.Suspense=l,t.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED=x,t.act=I,t.cloneElement=function(e,t,n){if(null==e)throw Error("React.cloneElement(...): The argument must be a React element, but you passed "+e+".");var o=y({},e.props),c=e.key,s=e.ref,a=e._owner;if(null!=t){if(void 0!==t.ref&&(s=t.ref,a=C.current),void 0!==t.key&&(c=""+t.key),e.type&&e.type.defaultProps)var u=e.type.defaultProps;for(i in t)E.call(t,i)&&!w.hasOwnProperty(i)&&(o[i]=void 0===t[i]&&void 0!==u?u[i]:t[i])}var i=arguments.length-2;if(1===i)o.children=n;else if(1<i){u=Array(i);for(var l=0;l<i;l++)u[l]=arguments[l+2];o.children=u}return{$$typeof:r,type:e.type,key:c,ref:s,props:o,_owner:a}},t.createContext=function(e){return(e={$$typeof:u,_currentValue:e,_currentValue2:e,_threadCount:0,Provider:null,Consumer:null,_defaultValue:null,_globalName:null}).Provider={$$typeof:a,_context:e},e.Consumer=e},t.createElement=_,t.createFactory=function(e){var t=_.bind(null,e);return t.type=e,t},t.createRef=function(){return{current:null}},t.forwardRef=function(e){return{$$typeof:i,render:e}},t.isValidElement=j,t.lazy=function(e){return{$$typeof:d,_payload:{_status:-1,_result:e},_init:U}},t.memo=function(e,t){return{$$typeof:f,type:e,compare:void 0===t?null:t}},t.startTransition=function(e){var t=D.transition;D.transition={};try{e()}finally{D.transition=t}},t.unstable_act=I,t.useCallback=function(e,t){return P.current.useCallback(e,t)},t.useContext=function(e){return P.current.useContext(e)},t.useDebugValue=function(){},t.useDeferredValue=function(e){return P.current.useDeferredValue(e)},t.useEffect=function(e,t){return P.current.useEffect(e,t)},t.useId=function(){return P.current.useId()},t.useImperativeHandle=function(e,t,r){return P.current.useImperativeHandle(e,t,r)},t.useInsertionEffect=function(e,t){return P.current.useInsertionEffect(e,t)},t.useLayoutEffect=function(e,t){return P.current.useLayoutEffect(e,t)},t.useMemo=function(e,t){return P.current.useMemo(e,t)},t.useReducer=function(e,t,r){return P.current.useReducer(e,t,r)},t.useRef=function(e){return P.current.useRef(e)},t.useState=function(e){return P.current.useState(e)},t.useSyncExternalStore=function(e,t,r){return P.current.useSyncExternalStore(e,t,r)},t.useTransition=function(){return P.current.useTransition()},t.version="18.3.1"},96540:(e,t,r)=>{e.exports=r(15287)},3507:(e,t,r)=>{const n=(0,r(42341).create)((e=>(chrome.storage.local.get(["task","currentUrl","isContentDetected"],(t=>{e({task:t.task||null,currentUrl:t.currentUrl||null,isContentDetected:t.isContentDetected||!1})})),{task:null,currentUrl:null,isContentDetected:!1,setTask:t=>{e({task:t}),chrome.storage.local.set({task:t})},setCurrentUrl:t=>{e({currentUrl:t}),chrome.storage.local.set({currentUrl:t})},setContentDetected:t=>{e({isContentDetected:t}),chrome.storage.local.set({isContentDetected:t})}})));t.default=n},42341:(e,t,r)=>{var n=r(7978),o=r(71778);Object.keys(n).forEach((function(e){"default"===e||Object.prototype.hasOwnProperty.call(t,e)||Object.defineProperty(t,e,{enumerable:!0,get:function(){return n[e]}})})),Object.keys(o).forEach((function(e){"default"===e||Object.prototype.hasOwnProperty.call(t,e)||Object.defineProperty(t,e,{enumerable:!0,get:function(){return o[e]}})}))},71778:(e,t,r)=>{var n=r(96540),o=r(7978);const c=e=>e;function s(e,t=c){const r=n.useSyncExternalStore(e.subscribe,(()=>t(e.getState())),(()=>t(e.getInitialState())));return n.useDebugValue(r),r}const a=e=>{const t=o.createStore(e),r=e=>s(t,e);return Object.assign(r,t),r};t.create=e=>e?a(e):a,t.useStore=s},7978:(e,t)=>{const r=e=>{let t;const r=new Set,n=(e,n)=>{const o="function"==typeof e?e(t):e;if(!Object.is(o,t)){const e=t;t=(null!=n?n:"object"!=typeof o||null===o)?o:Object.assign({},t,o),r.forEach((r=>r(t,e)))}},o=()=>t,c={setState:n,getState:o,getInitialState:()=>s,subscribe:e=>(r.add(e),()=>r.delete(e))},s=t=e(n,o,c);return c};t.createStore=e=>e?r(e):r}},t={},r=function r(n){var o=t[n];if(void 0!==o)return o.exports;var c=t[n]={exports:{}};return e[n](c,c.exports,r),c.exports}(3507);function n(e,t,r=5,o=500){chrome.tabs.sendMessage(e,t,(c=>{chrome.runtime.lastError?(console.error("Error sending message:",chrome.runtime.lastError.message),r>0?(console.log(`Retrying... attempts left: ${r}`),setTimeout((()=>n(e,t,r-1,o)),o)):console.error("Failed to send message after retries.")):console.log("Message successfully sent and received:",c)}))}chrome.tabs.onUpdated.addListener(((e,t,r)=>{r.url.startsWith("chrome://")||"complete"===t.status&&r.url&&async function(e){return new Promise(((t,r)=>{chrome.tabs.sendMessage(e,{action:"ping"},(n=>{chrome.runtime.lastError||!n?chrome.scripting.executeScript({target:{tabId:e},files:["content.js"]},(()=>{chrome.runtime.lastError?(console.error("Error injecting content script:",chrome.runtime.lastError.message),r(chrome.runtime.lastError)):(console.log("Content script injected successfully."),t())})):(console.log("Content script already loaded."),t())}))}))}(e).then((()=>{n(e,{action:"triggerCheckContent",forceVisible:!1})})).catch((e=>{console.error("Error ensuring content script is loaded:",e)}))})),chrome.action.onClicked.addListener((e=>{chrome.tabs.sendMessage(e.id,{action:"toggleTaskCard"})})),chrome.runtime.onMessage.addListener(((e,t,r)=>{if("getCurrentTabUrl"===e.action)return chrome.tabs.query({active:!0,currentWindow:!0},(e=>{e.length>0&&e[0].url?r({url:e[0].url}):(console.error("No active tab or URL found"),r({error:"No active tab or URL found"}))})),!0})),chrome.runtime.onMessage.addListener(((e,t,n)=>{if("checkContent"===e.action){const{forceVisible:n}=e;return console.log("fv1",n),chrome.tabs.query({active:!0,currentWindow:!0},(async e=>{if(chrome.runtime.lastError)return void console.error("Error querying tabs:",chrome.runtime.lastError.message);if(0===e.length||!e[0].url)return void console.error("No active tab or URL found.");const o=e[0]?.url;if(o)try{const e=await fetch("http://localhost:5001/api/check-content",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:o})}),c=await e.json(),s=c.exists&&"Completed"===c.task.progress,a=c.exists?c.task:null;console.log("isdet",s),r.default.getState().setTask(a),console.log("GETTING STATE",a),r.default.getState().setCurrentUrl(o),r.default.getState().setContentDetected(s),console.log("Updated task'[;plokjh] in background:",r.default.getState().task),console.log("Updated URL in background:",r.default.getState().currentUrl),chrome.scripting.executeScript({target:{tabId:t.tab.id},func:(e,t)=>{let r=document.getElementById("popup-root");r&&r.remove(),r=document.getElementById("popup-root"),r||(r=document.createElement("div"),r.id="popup-root",document.body.appendChild(r)),console.log("fv2",t),console.log("isDetected:",e),console.log("forceVisible:",t),e||t?(r.className="task-card-visible",console.log("fv3",e),console.log("fv31",e||t)):(r.className="task-card-hidden",console.log("fv4",e))},args:[s,n]},(()=>{chrome.runtime.lastError?console.error("Error during executeScript:",chrome.runtime.lastError.message):(console.log("Globals set and popup-root created if needed"),chrome.scripting.executeScript({target:{tabId:t.tab.id},files:["popup.js"]}))}))}catch(e){console.error("Error checking content:",e)}})),!0}})),chrome.runtime.onMessage.addListener(((e,t,r)=>{if("captureImage"===e.action)return chrome.tabs.query({active:!0,currentWindow:!0},(async e=>{const t=e[0].url;if(console.log("test1"),e[0].id){if(console.log("Current URL:",t),!t)return console.error("Current URL is undefined"),void r({error:"Current URL is undefined"});try{console.log("test2"),chrome.scripting.executeScript({target:{tabId:e[0].id},func:e=>{console.log("test3");let t=0,r=null;if(!e)return console.error("Passed URL is undefined inside func"),null;if(-1!==e.indexOf("youtube.com")&&-1!==e.indexOf("/watch")){const t=new URL(e).searchParams.get("v");if(console.log(t),t)return`https://img.youtube.com/vi/${t}/maxresdefault.jpg`}return document.querySelectorAll("img").forEach((e=>{const n=e.offsetHeight*e.offsetWidth;if(e.src&&n>t)t=n,r=e.src;else if(e.srcset&&n>t){const o=(e=>{if(!e)return null;const t=/\.(jpg|jpeg|png|gif|webp)$/i;return e.split(",").map((e=>{let r=e.trim().split(" ")[0];if(r.includes("?")){const e=r.split("?src=")[1]||r;r=e}return r=r.split("&")[0],t.test(r)?r:null})).find((e=>e))||null})(e.srcset);o&&(t=n,r=o)}})),r||null},args:[t]},(e=>{const t=e[0]?.result;t?(console.log("Captured Image URL:",t),r({imageUrl:t})):(console.error("No valid image found."),r({error:"No valid image found."}))}))}catch(e){console.error("Error during script execution:",e)}}})),!0})),chrome.runtime.onMessage.addListener(((e,t,r)=>"addTask"===e.action?(o(e.taskData).then((e=>r({taskId:e}))).catch((()=>r({error:"Failed to create task"}))),!0):"addAuthors"===e.action?(c(e.taskId,e.authors).then((()=>r({success:!0}))).catch((()=>r({success:!1}))),!0):"addPublisher"===e.action?(s(e.taskId,e.publisher).then((()=>r({success:!0}))).catch((()=>r({success:!1}))),!0):"addSources"===e.action?(a(e.taskId,e.lit_references).then((()=>r({success:!0}))).catch((()=>r({success:!1}))),!0):"fetchTitleFromDiffbot"===e.action?(u(e.url).then((e=>r(e))).catch((()=>r(null))),!0):"fetchDiffbotData"===e.action?(i(e.articleUrl).then((e=>r(e))).catch((()=>r(null))),!0):"checkContent"===e.action?(l(e.url).then((e=>r(e))).catch((()=>r(null))),!0):void 0));const o=async e=>{try{const t=await fetch("http://localhost:5001/api/scrape",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(e)});return(await t.json()).task_id||null}catch(e){return console.error("Error adding task:",e),null}},c=async(e,t)=>{try{return await fetch(`http://localhost:5001/api/tasks/${e}/authors`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({authors:t})}),console.log("authors"),!0}catch(e){return console.error("Error adding authors:",e),!1}},s=async(e,t)=>{try{return await fetch(`http://localhost:5001/api/tasks/${e}/publishers`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({publisher:t})}),!0}catch(e){return console.error("Error adding publisher:",e),!1}},a=async(e,t)=>{try{for(const r of t)await fetch(`http://localhost:5001/api/tasks/${e}/add-source`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({lit_reference:r})});return!0}catch(e){return console.error("Error adding sources:",e),!1}},u=async e=>{console.log(`🛠 Fetching title from Diffbot for: ${e}`);try{const t=await fetch("http://localhost:5001/api/get-title",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:e})});if(!t.ok)return console.warn(`⚠️ Diffbot request failed: ${t.status}`),null;const r=await t.json();let n=r?.title||null;return n&&(n=n.replace(/,?\s*published at.*/i,"").trim()),console.log(`✅ Cleaned Diffbot title: ${n}`),n}catch(t){return console.error(`❌ Diffbot API failed for ${e}:`,t),null}},i=async e=>{console.log(`🛠 Fetching Diffbot pre-scrape data for: ${e}`);try{const t=await fetch("http://localhost:5001/api/pre-scrape",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({articleUrl:e})});if(!t.ok)throw new Error(`Diffbot pre-scrape failed with status: ${t.status}`);const r=await t.json();return console.log("✅ Diffbot pre-scrape data received:",r),r}catch(e){return console.warn("⚠️ Diffbot pre-scrape fetch failed:",e),null}},l=async e=>{console.log(`🔍 Checking content in DB for: ${e}`);try{const t=await fetch("http://localhost:5001/api/check-content",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({url:e})});if(!t.ok)throw new Error(`Check-content API failed with status: ${t.status}`);const r=await t.json();return console.log("📖 Content check result:",r),r}catch(t){return console.error(`❌ Error checking content for ${e}:`,t),null}}})();
+(() => {
+  "use strict";
+  var e = {
+      15287: (e, t) => {
+        var r = Symbol.for("react.element"),
+          n = Symbol.for("react.portal"),
+          o = Symbol.for("react.fragment"),
+          c = Symbol.for("react.strict_mode"),
+          s = Symbol.for("react.profiler"),
+          a = Symbol.for("react.provider"),
+          u = Symbol.for("react.context"),
+          i = Symbol.for("react.forward_ref"),
+          l = Symbol.for("react.suspense"),
+          f = Symbol.for("react.memo"),
+          d = Symbol.for("react.lazy"),
+          p = Symbol.iterator,
+          h = {
+            isMounted: function () {
+              return !1;
+            },
+            enqueueForceUpdate: function () {},
+            enqueueReplaceState: function () {},
+            enqueueSetState: function () {},
+          },
+          y = Object.assign,
+          g = {};
+        function m(e, t, r) {
+          (this.props = e),
+            (this.context = t),
+            (this.refs = g),
+            (this.updater = r || h);
+        }
+        function b() {}
+        function S(e, t, r) {
+          (this.props = e),
+            (this.context = t),
+            (this.refs = g),
+            (this.updater = r || h);
+        }
+        (m.prototype.isReactComponent = {}),
+          (m.prototype.setState = function (e, t) {
+            if ("object" != typeof e && "function" != typeof e && null != e)
+              throw Error(
+                "setState(...): takes an object of state variables to update or a function which returns an object of state variables."
+              );
+            this.updater.enqueueSetState(this, e, t, "setState");
+          }),
+          (m.prototype.forceUpdate = function (e) {
+            this.updater.enqueueForceUpdate(this, e, "forceUpdate");
+          }),
+          (b.prototype = m.prototype);
+        var v = (S.prototype = new b());
+        (v.constructor = S), y(v, m.prototype), (v.isPureReactComponent = !0);
+        var k = Array.isArray,
+          E = Object.prototype.hasOwnProperty,
+          C = { current: null },
+          w = { key: !0, ref: !0, __self: !0, __source: !0 };
+        function _(e, t, n) {
+          var o,
+            c = {},
+            s = null,
+            a = null;
+          if (null != t)
+            for (o in (void 0 !== t.ref && (a = t.ref),
+            void 0 !== t.key && (s = "" + t.key),
+            t))
+              E.call(t, o) && !w.hasOwnProperty(o) && (c[o] = t[o]);
+          var u = arguments.length - 2;
+          if (1 === u) c.children = n;
+          else if (1 < u) {
+            for (var i = Array(u), l = 0; l < u; l++) i[l] = arguments[l + 2];
+            c.children = i;
+          }
+          if (e && e.defaultProps)
+            for (o in (u = e.defaultProps)) void 0 === c[o] && (c[o] = u[o]);
+          return {
+            $$typeof: r,
+            type: e,
+            key: s,
+            ref: a,
+            props: c,
+            _owner: C.current,
+          };
+        }
+        function j(e) {
+          return "object" == typeof e && null !== e && e.$$typeof === r;
+        }
+        var O = /\/+/g;
+        function $(e, t) {
+          return "object" == typeof e && null !== e && null != e.key
+            ? (function (e) {
+                var t = { "=": "=0", ":": "=2" };
+                return (
+                  "$" +
+                  e.replace(/[=:]/g, function (e) {
+                    return t[e];
+                  })
+                );
+              })("" + e.key)
+            : t.toString(36);
+        }
+        function T(e, t, o, c, s) {
+          var a = typeof e;
+          ("undefined" !== a && "boolean" !== a) || (e = null);
+          var u = !1;
+          if (null === e) u = !0;
+          else
+            switch (a) {
+              case "string":
+              case "number":
+                u = !0;
+                break;
+              case "object":
+                switch (e.$$typeof) {
+                  case r:
+                  case n:
+                    u = !0;
+                }
+            }
+          if (u)
+            return (
+              (s = s((u = e))),
+              (e = "" === c ? "." + $(u, 0) : c),
+              k(s)
+                ? ((o = ""),
+                  null != e && (o = e.replace(O, "$&/") + "/"),
+                  T(s, t, o, "", function (e) {
+                    return e;
+                  }))
+                : null != s &&
+                  (j(s) &&
+                    (s = (function (e, t) {
+                      return {
+                        $$typeof: r,
+                        type: e.type,
+                        key: t,
+                        ref: e.ref,
+                        props: e.props,
+                        _owner: e._owner,
+                      };
+                    })(
+                      s,
+                      o +
+                        (!s.key || (u && u.key === s.key)
+                          ? ""
+                          : ("" + s.key).replace(O, "$&/") + "/") +
+                        e
+                    )),
+                  t.push(s)),
+              1
+            );
+          if (((u = 0), (c = "" === c ? "." : c + ":"), k(e)))
+            for (var i = 0; i < e.length; i++) {
+              var l = c + $((a = e[i]), i);
+              u += T(a, t, o, l, s);
+            }
+          else if (
+            ((l = (function (e) {
+              return null === e || "object" != typeof e
+                ? null
+                : "function" == typeof (e = (p && e[p]) || e["@@iterator"])
+                ? e
+                : null;
+            })(e)),
+            "function" == typeof l)
+          )
+            for (e = l.call(e), i = 0; !(a = e.next()).done; )
+              u += T((a = a.value), t, o, (l = c + $(a, i++)), s);
+          else if ("object" === a)
+            throw (
+              ((t = String(e)),
+              Error(
+                "Objects are not valid as a React child (found: " +
+                  ("[object Object]" === t
+                    ? "object with keys {" + Object.keys(e).join(", ") + "}"
+                    : t) +
+                  "). If you meant to render a collection of children, use an array instead."
+              ))
+            );
+          return u;
+        }
+        function R(e, t, r) {
+          if (null == e) return e;
+          var n = [],
+            o = 0;
+          return (
+            T(e, n, "", "", function (e) {
+              return t.call(r, e, o++);
+            }),
+            n
+          );
+        }
+        function U(e) {
+          if (-1 === e._status) {
+            var t = e._result;
+            (t = t()).then(
+              function (t) {
+                (0 !== e._status && -1 !== e._status) ||
+                  ((e._status = 1), (e._result = t));
+              },
+              function (t) {
+                (0 !== e._status && -1 !== e._status) ||
+                  ((e._status = 2), (e._result = t));
+              }
+            ),
+              -1 === e._status && ((e._status = 0), (e._result = t));
+          }
+          if (1 === e._status) return e._result.default;
+          throw e._result;
+        }
+        var P = { current: null },
+          D = { transition: null },
+          x = {
+            ReactCurrentDispatcher: P,
+            ReactCurrentBatchConfig: D,
+            ReactCurrentOwner: C,
+          };
+        function I() {
+          throw Error(
+            "act(...) is not supported in production builds of React."
+          );
+        }
+        (t.Children = {
+          map: R,
+          forEach: function (e, t, r) {
+            R(
+              e,
+              function () {
+                t.apply(this, arguments);
+              },
+              r
+            );
+          },
+          count: function (e) {
+            var t = 0;
+            return (
+              R(e, function () {
+                t++;
+              }),
+              t
+            );
+          },
+          toArray: function (e) {
+            return (
+              R(e, function (e) {
+                return e;
+              }) || []
+            );
+          },
+          only: function (e) {
+            if (!j(e))
+              throw Error(
+                "React.Children.only expected to receive a single React element child."
+              );
+            return e;
+          },
+        }),
+          (t.Component = m),
+          (t.Fragment = o),
+          (t.Profiler = s),
+          (t.PureComponent = S),
+          (t.StrictMode = c),
+          (t.Suspense = l),
+          (t.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED = x),
+          (t.act = I),
+          (t.cloneElement = function (e, t, n) {
+            if (null == e)
+              throw Error(
+                "React.cloneElement(...): The argument must be a React element, but you passed " +
+                  e +
+                  "."
+              );
+            var o = y({}, e.props),
+              c = e.key,
+              s = e.ref,
+              a = e._owner;
+            if (null != t) {
+              if (
+                (void 0 !== t.ref && ((s = t.ref), (a = C.current)),
+                void 0 !== t.key && (c = "" + t.key),
+                e.type && e.type.defaultProps)
+              )
+                var u = e.type.defaultProps;
+              for (i in t)
+                E.call(t, i) &&
+                  !w.hasOwnProperty(i) &&
+                  (o[i] = void 0 === t[i] && void 0 !== u ? u[i] : t[i]);
+            }
+            var i = arguments.length - 2;
+            if (1 === i) o.children = n;
+            else if (1 < i) {
+              u = Array(i);
+              for (var l = 0; l < i; l++) u[l] = arguments[l + 2];
+              o.children = u;
+            }
+            return {
+              $$typeof: r,
+              type: e.type,
+              key: c,
+              ref: s,
+              props: o,
+              _owner: a,
+            };
+          }),
+          (t.createContext = function (e) {
+            return (
+              ((e = {
+                $$typeof: u,
+                _currentValue: e,
+                _currentValue2: e,
+                _threadCount: 0,
+                Provider: null,
+                Consumer: null,
+                _defaultValue: null,
+                _globalName: null,
+              }).Provider = { $$typeof: a, _context: e }),
+              (e.Consumer = e)
+            );
+          }),
+          (t.createElement = _),
+          (t.createFactory = function (e) {
+            var t = _.bind(null, e);
+            return (t.type = e), t;
+          }),
+          (t.createRef = function () {
+            return { current: null };
+          }),
+          (t.forwardRef = function (e) {
+            return { $$typeof: i, render: e };
+          }),
+          (t.isValidElement = j),
+          (t.lazy = function (e) {
+            return {
+              $$typeof: d,
+              _payload: { _status: -1, _result: e },
+              _init: U,
+            };
+          }),
+          (t.memo = function (e, t) {
+            return { $$typeof: f, type: e, compare: void 0 === t ? null : t };
+          }),
+          (t.startTransition = function (e) {
+            var t = D.transition;
+            D.transition = {};
+            try {
+              e();
+            } finally {
+              D.transition = t;
+            }
+          }),
+          (t.unstable_act = I),
+          (t.useCallback = function (e, t) {
+            return P.current.useCallback(e, t);
+          }),
+          (t.useContext = function (e) {
+            return P.current.useContext(e);
+          }),
+          (t.useDebugValue = function () {}),
+          (t.useDeferredValue = function (e) {
+            return P.current.useDeferredValue(e);
+          }),
+          (t.useEffect = function (e, t) {
+            return P.current.useEffect(e, t);
+          }),
+          (t.useId = function () {
+            return P.current.useId();
+          }),
+          (t.useImperativeHandle = function (e, t, r) {
+            return P.current.useImperativeHandle(e, t, r);
+          }),
+          (t.useInsertionEffect = function (e, t) {
+            return P.current.useInsertionEffect(e, t);
+          }),
+          (t.useLayoutEffect = function (e, t) {
+            return P.current.useLayoutEffect(e, t);
+          }),
+          (t.useMemo = function (e, t) {
+            return P.current.useMemo(e, t);
+          }),
+          (t.useReducer = function (e, t, r) {
+            return P.current.useReducer(e, t, r);
+          }),
+          (t.useRef = function (e) {
+            return P.current.useRef(e);
+          }),
+          (t.useState = function (e) {
+            return P.current.useState(e);
+          }),
+          (t.useSyncExternalStore = function (e, t, r) {
+            return P.current.useSyncExternalStore(e, t, r);
+          }),
+          (t.useTransition = function () {
+            return P.current.useTransition();
+          }),
+          (t.version = "18.3.1");
+      },
+      96540: (e, t, r) => {
+        e.exports = r(15287);
+      },
+      3507: (e, t, r) => {
+        const n = (0, r(42341).create)(
+          (e) => (
+            chrome.storage.local.get(
+              ["task", "currentUrl", "isContentDetected"],
+              (t) => {
+                e({
+                  task: t.task || null,
+                  currentUrl: t.currentUrl || null,
+                  isContentDetected: t.isContentDetected || !1,
+                });
+              }
+            ),
+            {
+              task: null,
+              currentUrl: null,
+              isContentDetected: !1,
+              setTask: (t) => {
+                e({ task: t }), chrome.storage.local.set({ task: t });
+              },
+              setCurrentUrl: (t) => {
+                e({ currentUrl: t }),
+                  chrome.storage.local.set({ currentUrl: t });
+              },
+              setContentDetected: (t) => {
+                e({ isContentDetected: t }),
+                  chrome.storage.local.set({ isContentDetected: t });
+              },
+            }
+          )
+        );
+        t.default = n;
+      },
+      42341: (e, t, r) => {
+        var n = r(7978),
+          o = r(71778);
+        Object.keys(n).forEach(function (e) {
+          "default" === e ||
+            Object.prototype.hasOwnProperty.call(t, e) ||
+            Object.defineProperty(t, e, {
+              enumerable: !0,
+              get: function () {
+                return n[e];
+              },
+            });
+        }),
+          Object.keys(o).forEach(function (e) {
+            "default" === e ||
+              Object.prototype.hasOwnProperty.call(t, e) ||
+              Object.defineProperty(t, e, {
+                enumerable: !0,
+                get: function () {
+                  return o[e];
+                },
+              });
+          });
+      },
+      71778: (e, t, r) => {
+        var n = r(96540),
+          o = r(7978);
+        const c = (e) => e;
+        function s(e, t = c) {
+          const r = n.useSyncExternalStore(
+            e.subscribe,
+            () => t(e.getState()),
+            () => t(e.getInitialState())
+          );
+          return n.useDebugValue(r), r;
+        }
+        const a = (e) => {
+          const t = o.createStore(e),
+            r = (e) => s(t, e);
+          return Object.assign(r, t), r;
+        };
+        (t.create = (e) => (e ? a(e) : a)), (t.useStore = s);
+      },
+      7978: (e, t) => {
+        const r = (e) => {
+          let t;
+          const r = new Set(),
+            n = (e, n) => {
+              const o = "function" == typeof e ? e(t) : e;
+              if (!Object.is(o, t)) {
+                const e = t;
+                (t = (null != n ? n : "object" != typeof o || null === o)
+                  ? o
+                  : Object.assign({}, t, o)),
+                  r.forEach((r) => r(t, e));
+              }
+            },
+            o = () => t,
+            c = {
+              setState: n,
+              getState: o,
+              getInitialState: () => s,
+              subscribe: (e) => (r.add(e), () => r.delete(e)),
+            },
+            s = (t = e(n, o, c));
+          return c;
+        };
+        t.createStore = (e) => (e ? r(e) : r);
+      },
+    },
+    t = {},
+    r = (function r(n) {
+      var o = t[n];
+      if (void 0 !== o) return o.exports;
+      var c = (t[n] = { exports: {} });
+      return e[n](c, c.exports, r), c.exports;
+    })(3507);
+  function n(e, t, r = 5, o = 500) {
+    chrome.tabs.sendMessage(e, t, (c) => {
+      chrome.runtime.lastError
+        ? (console.error(
+            "Error sending message:",
+            chrome.runtime.lastError.message
+          ),
+          r > 0
+            ? (console.log(`Retrying... attempts left: ${r}`),
+              setTimeout(() => n(e, t, r - 1, o), o))
+            : console.error("Failed to send message after retries."))
+        : console.log("Message successfully sent and received:", c);
+    });
+  }
+  chrome.tabs.onUpdated.addListener((e, t, r) => {
+    r.url.startsWith("chrome://") ||
+      ("complete" === t.status &&
+        r.url &&
+        (async function (e) {
+          return new Promise((t, r) => {
+            chrome.tabs.sendMessage(e, { action: "ping" }, (n) => {
+              chrome.runtime.lastError || !n
+                ? chrome.scripting.executeScript(
+                    { target: { tabId: e }, files: ["content.js"] },
+                    () => {
+                      chrome.runtime.lastError
+                        ? (console.error(
+                            "Error injecting content script:",
+                            chrome.runtime.lastError.message
+                          ),
+                          r(chrome.runtime.lastError))
+                        : (console.log("Content script injected successfully."),
+                          t());
+                    }
+                  )
+                : (console.log("Content script already loaded."), t());
+            });
+          });
+        })(e)
+          .then(() => {
+            n(e, { action: "triggerCheckContent", forceVisible: !1 });
+          })
+          .catch((e) => {
+            console.error("Error ensuring content script is loaded:", e);
+          }));
+  }),
+    chrome.action.onClicked.addListener((e) => {
+      chrome.tabs.sendMessage(e.id, { action: "toggleTaskCard" });
+    }),
+    chrome.runtime.onMessage.addListener((e, t, r) => {
+      if ("getCurrentTabUrl" === e.action)
+        return (
+          chrome.tabs.query({ active: !0, currentWindow: !0 }, (e) => {
+            e.length > 0 && e[0].url
+              ? r({ url: e[0].url })
+              : (console.error("No active tab or URL found"),
+                r({ error: "No active tab or URL found" }));
+          }),
+          !0
+        );
+    }),
+    chrome.runtime.onMessage.addListener((e, t, n) => {
+      if ("checkContent" === e.action) {
+        const { forceVisible: n } = e;
+        return (
+          console.log("fv1", n),
+          chrome.tabs.query({ active: !0, currentWindow: !0 }, async (e) => {
+            if (chrome.runtime.lastError)
+              return void console.error(
+                "Error querying tabs:",
+                chrome.runtime.lastError.message
+              );
+            if (0 === e.length || !e[0].url)
+              return void console.error("No active tab or URL found.");
+            const o = e[0]?.url;
+            if (o)
+              try {
+                const e = await fetch(
+                    "http://localhost:5001/api/check-content",
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ url: o }),
+                    }
+                  ),
+                  c = await e.json(),
+                  s = c.exists && "Completed" === c.task.progress,
+                  a = c.exists ? c.task : null;
+                console.log("isdet", s),
+                  r.default.getState().setTask(a),
+                  console.log("GETTING STATE", a),
+                  r.default.getState().setCurrentUrl(o),
+                  r.default.getState().setContentDetected(s),
+                  console.log(
+                    "Updated task'[;plokjh] in background:",
+                    r.default.getState().task
+                  ),
+                  console.log(
+                    "Updated URL in background:",
+                    r.default.getState().currentUrl
+                  ),
+                  chrome.scripting.executeScript(
+                    {
+                      target: { tabId: t.tab.id },
+                      func: (e, t) => {
+                        let r = document.getElementById("popup-root");
+                        r && r.remove(),
+                          (r = document.getElementById("popup-root")),
+                          r ||
+                            ((r = document.createElement("div")),
+                            (r.id = "popup-root"),
+                            document.body.appendChild(r)),
+                          console.log("fv2", t),
+                          console.log("isDetected:", e),
+                          console.log("forceVisible:", t),
+                          e || t
+                            ? ((r.className = "task-card-visible"),
+                              console.log("fv3", e),
+                              console.log("fv31", e || t))
+                            : ((r.className = "task-card-hidden"),
+                              console.log("fv4", e));
+                      },
+                      args: [s, n],
+                    },
+                    () => {
+                      chrome.runtime.lastError
+                        ? console.error(
+                            "Error during executeScript:",
+                            chrome.runtime.lastError.message
+                          )
+                        : (console.log(
+                            "Globals set and popup-root created if needed"
+                          ),
+                          chrome.scripting.executeScript({
+                            target: { tabId: t.tab.id },
+                            files: ["popup.js"],
+                          }));
+                    }
+                  );
+              } catch (e) {
+                console.error("Error checking content:", e);
+              }
+          }),
+          !0
+        );
+      }
+    }),
+    chrome.runtime.onMessage.addListener((e, t, r) => {
+      if ("captureImage" === e.action)
+        return (
+          chrome.tabs.query({ active: !0, currentWindow: !0 }, async (e) => {
+            const t = e[0].url;
+            if ((console.log("test1"), e[0].id)) {
+              if ((console.log("Current URL:", t), !t))
+                return (
+                  console.error("Current URL is undefined"),
+                  void r({ error: "Current URL is undefined" })
+                );
+              try {
+                console.log("test2"),
+                  chrome.scripting.executeScript(
+                    {
+                      target: { tabId: e[0].id },
+                      func: (e) => {
+                        console.log("test3");
+                        let t = 0,
+                          r = null;
+                        if (!e)
+                          return (
+                            console.error(
+                              "Passed URL is undefined inside func"
+                            ),
+                            null
+                          );
+                        if (
+                          -1 !== e.indexOf("youtube.com") &&
+                          -1 !== e.indexOf("/watch")
+                        ) {
+                          const t = new URL(e).searchParams.get("v");
+                          if ((console.log(t), t))
+                            return `https://img.youtube.com/vi/${t}/maxresdefault.jpg`;
+                        }
+                        return (
+                          document.querySelectorAll("img").forEach((e) => {
+                            const n = e.offsetHeight * e.offsetWidth;
+                            if (e.src && n > t) (t = n), (r = e.src);
+                            else if (e.srcset && n > t) {
+                              const o = ((e) => {
+                                if (!e) return null;
+                                const t = /\.(jpg|jpeg|png|gif|webp)$/i;
+                                return (
+                                  e
+                                    .split(",")
+                                    .map((e) => {
+                                      let r = e.trim().split(" ")[0];
+                                      if (r.includes("?")) {
+                                        const e = r.split("?src=")[1] || r;
+                                        r = e;
+                                      }
+                                      return (
+                                        (r = r.split("&")[0]),
+                                        t.test(r) ? r : null
+                                      );
+                                    })
+                                    .find((e) => e) || null
+                                );
+                              })(e.srcset);
+                              o && ((t = n), (r = o));
+                            }
+                          }),
+                          r || null
+                        );
+                      },
+                      args: [t],
+                    },
+                    (e) => {
+                      const t = e[0]?.result;
+                      t
+                        ? (console.log("Captured Image URL:", t),
+                          r({ imageUrl: t }))
+                        : (console.error("No valid image found."),
+                          r({ error: "No valid image found." }));
+                    }
+                  );
+              } catch (e) {
+                console.error("Error during script execution:", e);
+              }
+            }
+          }),
+          !0
+        );
+    }),
+    chrome.runtime.onMessage.addListener((e, t, r) =>
+      "addTask" === e.action
+        ? (o(e.taskData)
+            .then((e) => r({ taskId: e }))
+            .catch(() => r({ error: "Failed to create task" })),
+          !0)
+        : "addAuthors" === e.action
+        ? (c(e.taskId, e.authors)
+            .then(() => r({ success: !0 }))
+            .catch(() => r({ success: !1 })),
+          !0)
+        : "addPublisher" === e.action
+        ? (s(e.taskId, e.publisher)
+            .then(() => r({ success: !0 }))
+            .catch(() => r({ success: !1 })),
+          !0)
+        : "addSources" === e.action
+        ? (a(e.taskId, e.content)
+            .then(() => r({ success: !0 }))
+            .catch(() => r({ success: !1 })),
+          !0)
+        : "fetchTitleFromDiffbot" === e.action
+        ? (u(e.url)
+            .then((e) => r(e))
+            .catch(() => r(null)),
+          !0)
+        : "fetchDiffbotData" === e.action
+        ? (i(e.articleUrl)
+            .then((e) => r(e))
+            .catch(() => r(null)),
+          !0)
+        : "checkContent" === e.action
+        ? (l(e.url)
+            .then((e) => r(e))
+            .catch(() => r(null)),
+          !0)
+        : void 0
+    );
+  const o = async (e) => {
+      try {
+        const t = await fetch("http://localhost:5001/api/scrape", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(e),
+        });
+        return (await t.json()).content_id || null;
+      } catch (e) {
+        return console.error("Error adding task:", e), null;
+      }
+    },
+    c = async (e, t) => {
+      try {
+        return (
+          await fetch(`http://localhost:5001/api/content/${e}/authors`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ authors: t }),
+          }),
+          console.log("authors"),
+          !0
+        );
+      } catch (e) {
+        return console.error("Error adding authors:", e), !1;
+      }
+    },
+    s = async (e, t) => {
+      try {
+        return (
+          await fetch(`http://localhost:5001/api/content/${e}/publishers`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ publisher: t }),
+          }),
+          !0
+        );
+      } catch (e) {
+        return console.error("Error adding publisher:", e), !1;
+      }
+    },
+    a = async (e, t) => {
+      try {
+        for (const r of t)
+          await fetch(`http://localhost:5001/api/content/${e}/add-source`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ lit_reference: r }),
+          });
+        return !0;
+      } catch (e) {
+        return console.error("Error adding sources:", e), !1;
+      }
+    },
+    u = async (e) => {
+      console.log(`🛠 Fetching title from Diffbot for: ${e}`);
+      try {
+        const t = await fetch("http://localhost:5001/api/get-title", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: e }),
+        });
+        if (!t.ok)
+          return console.warn(`⚠️ Diffbot request failed: ${t.status}`), null;
+        const r = await t.json();
+        let n = r?.title || null;
+        return (
+          n && (n = n.replace(/,?\s*published at.*/i, "").trim()),
+          console.log(`✅ Cleaned Diffbot title: ${n}`),
+          n
+        );
+      } catch (t) {
+        return console.error(`❌ Diffbot API failed for ${e}:`, t), null;
+      }
+    },
+    i = async (e) => {
+      console.log(`🛠 Fetching Diffbot pre-scrape data for: ${e}`);
+      try {
+        const t = await fetch("http://localhost:5001/api/pre-scrape", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ articleUrl: e }),
+        });
+        if (!t.ok)
+          throw new Error(`Diffbot pre-scrape failed with status: ${t.status}`);
+        const r = await t.json();
+        return console.log("✅ Diffbot pre-scrape data received:", r), r;
+      } catch (e) {
+        return console.warn("⚠️ Diffbot pre-scrape fetch failed:", e), null;
+      }
+    },
+    l = async (e) => {
+      console.log(`🔍 Checking content in DB for: ${e}`);
+      try {
+        const t = await fetch("http://localhost:5001/api/check-content", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: e }),
+        });
+        if (!t.ok)
+          throw new Error(`Check-content API failed with status: ${t.status}`);
+        const r = await t.json();
+        return console.log("📖 Content check result:", r), r;
+      } catch (t) {
+        return console.error(`❌ Error checking content for ${e}:`, t), null;
+      }
+    };
+})();

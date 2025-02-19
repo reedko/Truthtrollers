@@ -134,7 +134,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
       .attr("text-anchor", "middle")
       .style("font-size", "12px")
       .style("fill", (d) => (d.group === 2 ? "white" : "white")) // Tasks get black text
-      .style("font-weight", (d) => (d.group === 2 ? "bold" : "normal")) // Bold for tasks
+      .style("font-weight", (d) => (d.group === 2 ? "bold" : "normal")) // Bold for content
       .style("pointer-events", "none")
       .each(function (d) {
         const text = d3.select(this);

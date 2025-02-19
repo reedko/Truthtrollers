@@ -2,32 +2,32 @@ import React, { useEffect, useState } from 'react';
 import { Task } from "../entities/useTask";
 
 interface TaskGridProps {
-  tasks: Task[];
+  content: Task[];
 }
-const loadThumbnails:React.FC<TaskGridProps> = ({ tasks }) {
+const loadThumbnails:React.FC<TaskGridProps> = ({ content }) {
  
     const [thumbnails, setThumbnails] = useState<{ [key: number]: string }>({});
 
     useEffect(() => {
       const loadThumbnails = async () => {
         const loadedThumbnails: { [key: number]: string } = {};
-        for (const task of tasks) {
+        for (const task of content) {
           try {
-            const image = await import(`../assets/task_id_${task.task_id}.png`);
-            loadedThumbnails[task.task_id] = image.default;
+            const image = await import(`../assets/content_id_${task.content_id}.png`);
+            loadedThumbnails[task.content_id] = image.default;
           } catch (error) {
             console.error(
-              `Error loading image for task_id_${task.task_id}:`,
+              `Error loading image for content_id_${task.content_id}:`,
               error
             );
-            loadedThumbnails[task.task_id] = ""; // Handle missing images
+            loadedThumbnails[task.content_id] = ""; // Handle missing images
           }
         }
         setThumbnails(loadedThumbnails);
       };
   
       loadThumbnails();
-    }, [tasks]);
+    }, [content]);
     
   
 }

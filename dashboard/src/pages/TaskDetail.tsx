@@ -11,7 +11,7 @@ const TaskDetail = () => {
 
   // Find the task from the store (fallback if not passed in location)
   const storeTask = useTaskStore((state) =>
-    state.tasks.find((t) => t.task_id === Number(taskId))
+    state.content.find((t) => t.content_id === Number(taskId))
   );
   const task = passedTask || storeTask;
 
@@ -53,7 +53,7 @@ const TaskDetail = () => {
     <TaskDetailLayout
       task={task}
       assignedUsers={assignedUsers}
-      lit_references={references}
+      content={references}
     />
   );
 };
