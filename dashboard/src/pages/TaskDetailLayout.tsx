@@ -1,6 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Box, Grid, Heading, Input, Text, Button } from "@chakra-ui/react";
-import { Task, User, LitReference, GraphNode, Link } from "../entities/types";
+import {
+  Task,
+  User,
+  LitReference,
+  GraphNode,
+  Link,
+} from "../../../shared/entities/types";
 import TaskCard from "../components/TaskCard";
 import { EditorFrame } from "../components/EditorFrame";
 import NetworkGraph from "../components/NetworkGraph";

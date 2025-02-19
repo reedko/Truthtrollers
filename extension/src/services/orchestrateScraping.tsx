@@ -1,5 +1,7 @@
+// orchestrateScraping.tsx
 import {
-  fetchPageContent, // ✅ Importing our existing function
+  fetchPageContent,
+  fetchExternalPageContent,
   extractAuthors,
   extractPublisher,
   extractReferences,
@@ -9,48 +11,45 @@ import { DiffbotData } from "../entities/diffbotData";
 import { getTopicsFromText } from "../services/openaiTopics";
 import { extractVideoIdFromUrl } from "../services/parseYoutubeUrl";
 import checkAndDownloadTopicIcon from "../services/checkAndDownloadTopicIcon";
-import { Author, Lit_references, Publisher } from "../entities/Task";
-
-const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
+import { Lit_references } from "../entities/Task";
 
 const fetchDiffbotData = async (articleUrl: string): Promise<any> => {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage(
       { action: "fetchDiffbotData", articleUrl },
-      (response) => {
-        resolve(response);
-      }
+      (response) => resolve(response)
     );
   });
 };
 
-export const orchestrateScraping = async () => {
+export const orchestrateScraping = async (
+  url: string,
+  content_name: string,
+  contentType: "task" | "reference"
+) => {
   let diffbotData: DiffbotData = {};
   let generalTopic = "";
   let specificTopics: string[] = [];
+  let extractedReferences: Lit_references[] = [];
 
   try {
-    // ✅ Fetch Diffbot data through background.js instead of direct API call
-    diffbotData = await fetchDiffbotData(window.location.href);
-
-    if (!diffbotData) {
-      throw new Error("Diffbot fetch returned null.");
-    }
-
+    diffbotData = await fetchDiffbotData(url);
+    if (!diffbotData) throw new Error("Diffbot fetch returned null.");
     console.log("✅ Diffbot data received:", diffbotData);
   } catch (error) {
     console.warn("⚠️ Diffbot fetch failed:", error);
   }
 
-  // ✅ Use our existing function to get the DOM via Cheerio
-  const $ = fetchPageContent();
+  // Fetch page content
+  const $ =
+    contentType === "task"
+      ? fetchPageContent()
+      : await fetchExternalPageContent(url); // ✅ Use correct fetch function
 
-  // Determine Topics (from Diffbot or OpenAI)
-  if (diffbotData.categories && Array.isArray(diffbotData.categories)) {
+  // Extract topics
+  if (diffbotData.categories?.length) {
     generalTopic = diffbotData.categories[0]?.name || "General";
-    specificTopics = diffbotData.categories
-      .slice(1)
-      .map((category) => category.name);
+    specificTopics = diffbotData.categories.slice(1).map((c) => c.name);
   } else {
     const contentText = $("body").text().trim();
     const topics = await getTopicsFromText(contentText);
@@ -58,50 +57,32 @@ export const orchestrateScraping = async () => {
     specificTopics = topics.specificTopics;
   }
 
-  // Get Headline (Diffbot or fallback)
-  const mainHeadline = diffbotData.title || (await getMainHeadline($));
+  // Get headline
 
-  // Get Publisher (Diffbot or fallback)
-  const publisherName: Publisher | null = diffbotData.publisher
-    ? { name: diffbotData.publisher.trim() }
-    : await extractPublisher($);
+  const mainHeadline =
+    content_name.length > 5
+      ? content_name
+      : diffbotData.title || (await getMainHeadline($));
 
-  // Get Authors (Diffbot or fallback)
-  const titleRegex = /^(Dr\.|Sir|Prof\.|Mr\.|Ms\.|Mrs\.)\s*/i;
-  const postNominalRegex = /,\s*(PhD|MD|Esq|MBA|DDS|JD|DO|DVM)\b/i;
+  // Fetch authors and publisher in parallel
+  const [authors, publisherName] = await Promise.all([
+    diffbotData.author
+      ? diffbotData.author.split(/[,&]/).map((name) => ({ name: name.trim() }))
+      : extractAuthors($),
+    diffbotData.publisher
+      ? { name: diffbotData.publisher.trim() }
+      : extractPublisher($),
+  ]);
 
-  const authors: Author[] = diffbotData.author
-    ? diffbotData.author.split(/[,&]/).map((raw) => {
-        let name = raw.trim();
-        let titleMatch = name.match(titleRegex);
-        let postNominalMatch = name.match(postNominalRegex);
+  // Get video ID if applicable
+  const videoId = extractVideoIdFromUrl(url);
 
-        let title = titleMatch ? titleMatch[1] : null;
-        if (title) name = name.replace(title, "").trim();
-
-        let postNominal = postNominalMatch ? postNominalMatch[1] : null;
-        if (postNominal) name = name.replace(postNominal, "").trim();
-
-        return { name, title, postNominal };
-      })
-    : await extractAuthors($);
-
-  // Get References (Diffbot or fallback)
-  const content: Lit_references[] = await extractReferences($);
-
-  // Get Video ID (if applicable)
-  const videoId = extractVideoIdFromUrl(window.location.href);
-
-  // Capture Image (Diffbot's largest image or fallback)
+  // Capture thumbnail image
   let imageUrl = diffbotData.images?.[0]?.url || "";
   if (!imageUrl) {
-    await new Promise<void>((resolve) => {
-      chrome.runtime.sendMessage(
-        { action: "captureImage" },
-        (response: { imageUrl?: string }) => {
-          imageUrl = response.imageUrl || "";
-          resolve();
-        }
+    imageUrl = await new Promise<string>((resolve) => {
+      chrome.runtime.sendMessage({ action: "captureImage" }, (res) =>
+        resolve(res.imageUrl || "")
       );
     });
   }
@@ -109,23 +90,26 @@ export const orchestrateScraping = async () => {
   // Fetch icon for topic
   const iconThumbnailUrl = await checkAndDownloadTopicIcon(generalTopic);
 
-  // Prepare Task Data
-  const taskData = {
-    content_name: mainHeadline,
+  // Extract references only if processing as "reference" content type
+  if (contentType === "task") {
+    extractedReferences = await extractReferences($);
+  }
+
+  return {
+    content_name: mainHeadline ? mainHeadline : "",
     media_source: videoId ? "YouTube" : "Web",
-    url: window.location.href,
+    url,
     assigned: "unassigned",
     progress: "Unassigned",
     users: "",
-    details: window.location.href,
+    details: url,
     topic: generalTopic,
     subtopics: specificTopics,
-    thumbnail_url: imageUrl,
+    thumbnail: imageUrl,
     iconThumbnailUrl: iconThumbnailUrl || null,
     authors,
-    content,
+    content: extractedReferences,
     publisherName,
+    content_type: contentType,
   };
-
-  return taskData;
 };
