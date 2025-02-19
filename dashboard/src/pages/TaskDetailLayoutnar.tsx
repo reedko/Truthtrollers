@@ -12,7 +12,7 @@ import {
   TaskAuthor,
   TaskReference,
   AuthReference,
-} from "../entities/types.ts";
+} from "../../../shared/entities/types.ts";
 
 import { EditorFrame } from "../components/EditorFrame";
 import NetworkGraph from "../components/NetworkGraph";

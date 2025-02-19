@@ -28,10 +28,11 @@ export const getMainHeadline = ($: cheerio.CheerioAPI): string | null => {
     // Step 2: If no valid H1 or H2, check headline divs
     if (!mainHeadline) {
       const headlineDivs = $(
-        '*[class*="headline"], *[id*="headline"], *[data-testid*="headline"]'
+        '*[class*="headline"], *[id*="headline"], *[data-testid*="headline"], *[class*="title"]'
       ).filter((_, div) => {
-        const classes = $(div).attr("class") || "";
-        const id = $(div).attr("id") || "";
+        const element = $(div);
+        const classes = element.attr("class") || "";
+        const id = element.attr("id") || "";
         return (
           !classes.toLowerCase().includes("navigat") &&
           !id.toLowerCase().includes("navigat") &&
