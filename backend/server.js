@@ -134,10 +134,10 @@ app.post("/api/extract-metadata", async (req, res) => {
 });
 
 //Get Authors
-app.get("/api/tasks/:taskId/authors", async (req, res) => {
+app.get("/api/content/:taskId/authors", async (req, res) => {
   const { taskId } = req.params;
-  const sql = `SELECT * FROM authors a join task_authors ta 
-  on a.author_id = ta.author_id WHERE task_id = ?`;
+  const sql = `SELECT * FROM authors a join content_authors ta 
+  on a.author_id = ta.author_id WHERE content_id = ?`;
   pool.query(sql, taskId, (err, rows) => {
     if (err) {
       console.error(err);
@@ -148,11 +148,11 @@ app.get("/api/tasks/:taskId/authors", async (req, res) => {
   });
 });
 
-//Get task_Authors
-app.get("/api/tasks/:taskId/task_authors", async (req, res) => {
+//Get content_authors
+app.get("/api/content/:taskId/content_authors", async (req, res) => {
   const { taskId } = req.params;
-  const sql = `SELECT * FROM  task_authors
-  WHERE task_id = ?`;
+  const sql = `SELECT * FROM  content_authors
+  WHERE content_id = ?`;
   pool.query(sql, taskId, (err, rows) => {
     if (err) {
       console.error(err);
@@ -164,7 +164,7 @@ app.get("/api/tasks/:taskId/task_authors", async (req, res) => {
 });
 
 //Add Authors
-app.post("/api/tasks/:taskId/authors", async (req, res) => {
+app.post("/api/content/:taskId/authors", async (req, res) => {
   const { taskId } = req.params;
   const authors = req.body.authors; // Expect an array of authors
   const sql = `CALL InsertOrGetAuthor(?, ?, ?, ?, NULL, @authorId)`;
@@ -188,7 +188,7 @@ app.post("/api/tasks/:taskId/authors", async (req, res) => {
       const authorId = result[0][0].authorId;
 
       if (authorId) {
-        const insertTaskAuthor = `INSERT INTO task_authors (task_id, author_id) VALUES (?, ?)`;
+        const insertTaskAuthor = `INSERT INTO content_authors (content_id, author_id) VALUES (?, ?)`;
         await pool.query(insertTaskAuthor, [taskId, authorId]);
       }
     }
@@ -200,10 +200,10 @@ app.post("/api/tasks/:taskId/authors", async (req, res) => {
 });
 
 //Get publishers
-app.get("/api/tasks/:taskId/publishers", async (req, res) => {
+app.get("/api/content/:taskId/publishers", async (req, res) => {
   const { taskId } = req.params;
-  const sql = `SELECT * FROM publishers a join task_publishers ta 
-  on a.publisher_id = ta.publisher_id WHERE task_id = ?`;
+  const sql = `SELECT * FROM publishers a join content_publishers ta 
+  on a.publisher_id = ta.publisher_id WHERE content_id = ?`;
   pool.query(sql, taskId, (err, rows) => {
     if (err) {
       // console.log(rows, taskId);
@@ -216,7 +216,7 @@ app.get("/api/tasks/:taskId/publishers", async (req, res) => {
 });
 
 //Add publishers
-app.post("/api/tasks/:taskId/publishers", async (req, res) => {
+app.post("/api/content/:taskId/publishers", async (req, res) => {
   const { taskId } = req.params;
   const publisher = req.body.publisher; // Expect a single publisher object
 
@@ -227,7 +227,7 @@ app.post("/api/tasks/:taskId/publishers", async (req, res) => {
     const publisherId = result[0][0].publisherId;
 
     if (publisherId) {
-      const insertTaskPublisher = `INSERT INTO task_publishers (task_id, publisher_id) VALUES (?, ?)`;
+      const insertTaskPublisher = `INSERT INTO content_publishers (content_id, publisher_id) VALUES (?, ?)`;
       await pool.query(insertTaskPublisher, [taskId, publisherId]);
     }
     res.status(200).send("Publisher added successfully");
@@ -238,14 +238,14 @@ app.post("/api/tasks/:taskId/publishers", async (req, res) => {
 });
 
 //Get auth_references
-app.get("/api/tasks/:taskId/auth_references", async (req, res) => {
+app.get("/api/content/:taskId/auth_references", async (req, res) => {
   const { taskId } = req.params;
   const sql = `
   select * from auth_references where 
-  (auth_id in (select author_id from task_authors where task_id=?)) 
+  (author_id in (select author_id from content_authors where content_id=?)) 
   or 
-  (lit_reference_id in 
-  (select lit_reference_id from task_references where task_id=?))
+  (reference_content_id in 
+  (select reference_content_id from content_relations where content_id=?))
 `;
   pool.query(sql, taskId, (err, rows) => {
     if (err) {
@@ -294,10 +294,10 @@ app.get("/api/get-graph-data", async (req, res) => {
 });
 
 //Get References, aka source because reference is a reserved word
-app.get("/api/tasks/:taskId/source-references", async (req, res) => {
+app.get("/api/content/:taskId/source-references", async (req, res) => {
   const { taskId } = req.params;
-  const sql = `SELECT * FROM lit_references lr join task_references tr 
-  on lr.lit_reference_id = tr.lit_reference_id WHERE task_id = ?`;
+  const sql = `SELECT * FROM content c join content_relations cr 
+  on c.content_id = cr.reference_content_id WHERE cr.content_id =?`;
   pool.query(sql, taskId, (err, rows) => {
     if (err) {
       //(rows, taskId);
@@ -309,11 +309,11 @@ app.get("/api/tasks/:taskId/source-references", async (req, res) => {
   });
 });
 
-//Get task_references
-app.get("/api/tasks/:taskId/task_references", async (req, res) => {
+//Get content_relations
+app.get("/api/content/:taskId/content_relations", async (req, res) => {
   const { taskId } = req.params;
-  const sql = `SELECT * FROM  task_references ta 
-  WHERE task_id = ?`;
+  const sql = `SELECT * FROM  content_relations ta 
+  WHERE content_id = ?`;
   pool.query(sql, taskId, (err, rows) => {
     if (err) {
       //console.log(rows, taskId);
@@ -326,20 +326,20 @@ app.get("/api/tasks/:taskId/task_references", async (req, res) => {
 });
 
 //Add References
-app.post("/api/tasks/:taskId/add-source", async (req, res) => {
+app.post("/api/content/:taskId/add-source", async (req, res) => {
   const { taskId } = req.params;
   const reference = req.body.lit_reference;
 
-  const link = reference.lit_reference_link.trim();
-  const title = reference.lit_reference_title?.trim() || "";
+  const link = reference.url.trim();
+  const title = reference.content_name?.trim() || "";
 
   try {
-    // Step 1: Check if the reference already exists in lit_references
-    const checkExistingRef = `SELECT lit_reference_id FROM lit_references WHERE lit_reference_link = ?`;
+    // Step 1: Check if the reference already exists in content
+    const checkExistingRef = `SELECT content_id FROM content WHERE url = ?`;
     const existingRefs = await query(checkExistingRef, [link]);
 
     let litReferenceId =
-      existingRefs.length > 0 ? existingRefs[0].lit_reference_id : null;
+      existingRefs.length > 0 ? existingRefs[0].reference_content_id : null;
 
     // Step 2: If reference does not exist, insert it
     if (!litReferenceId) {
@@ -351,7 +351,7 @@ app.post("/api/tasks/:taskId/add-source", async (req, res) => {
     }
 
     // Step 3: Check if this task-reference pair already exists
-    const checkExistingTaskRef = `SELECT 1 FROM task_references WHERE task_id = ? AND lit_reference_id = ?`;
+    const checkExistingTaskRef = `SELECT 1 FROM content_relations WHERE content_id = ? AND reference_content_id = ?`;
     const existingTaskRefs = await query(checkExistingTaskRef, [
       taskId,
       litReferenceId,
@@ -360,7 +360,7 @@ app.post("/api/tasks/:taskId/add-source", async (req, res) => {
     if (existingTaskRefs.length === 0) {
       // Step 4: Insert task-reference if it doesn't exist
       await query(
-        `INSERT INTO task_references (task_id, lit_reference_id) VALUES (?, ?)`,
+        `INSERT INTO content_relations (content_id, reference_content_id) VALUES (?, ?)`,
         [taskId, litReferenceId]
       );
       console.log(`Reference ${litReferenceId} linked to task ${taskId}`);
@@ -379,10 +379,10 @@ app.post("/api/tasks/:taskId/add-source", async (req, res) => {
   }
 });
 
-app.post("/api/tasks/:taskId/remove-sources", async (req, res) => {
+app.post("/api/content/:taskId/remove-sources", async (req, res) => {
   const { taskId } = req.params;
   const { sources } = req.body;
-  const sql = `DELETE FROM task_references WHERE task_id = ? AND lit_reference_id IN (?)`;
+  const sql = `DELETE FROM content_relations WHERE content_id = ? AND reference_content_id IN (?)`;
   pool.query(sql, [taskId, sources], (err) => {
     if (err) return res.status(500).send("Error removing sources");
     res.send("Sources removed");
@@ -395,22 +395,22 @@ app.get("/api/all-users", async (req, res) => {
   const sql = "SELECT * FROM users";
   pool.query(sql, (err, results) => {
     if (err) {
-      console.error("Error fetching task_topics:", err);
+      console.error("Error fetching content_topics:", err);
       return res.status(500).json({ error: "Database query failed" });
     }
     res.json(results);
   });
 });
 //Users assigned to a task
-app.get("/api/tasks/:taskId/get-users", async (req, res) => {
+app.get("/api/content/:taskId/get-users", async (req, res) => {
   const { taskId } = req.params;
   const sql = `SELECT u.username,u.user_id
        FROM users u
-       JOIN task_users tu ON u.user_id = tu.user_id
-       WHERE tu.task_id = ?`;
+       JOIN content_users tu ON u.user_id = tu.user_id
+       WHERE tu.content_id = ?`;
   pool.query(sql, taskId, (err, rows) => {
     if (err) {
-      console.error("Error fetching task_topics:", err);
+      console.error("Error fetching content_topics:", err);
       return res.status(500).json({ error: "Database query failed" });
     }
     if (rows && rows[0]) {
@@ -419,10 +419,10 @@ app.get("/api/tasks/:taskId/get-users", async (req, res) => {
   });
 });
 
-app.post("/api/tasks/:taskId/assign-user", async (req, res) => {
+app.post("/api/content/:taskId/assign-user", async (req, res) => {
   const { taskId } = req.params;
   const { userId } = req.body;
-  const sql = `INSERT INTO task_users (task_id, user_id) VALUES (?, ?)`;
+  const sql = `INSERT INTO content_users (content_id, user_id) VALUES (?, ?)`;
   const params = [taskId, userId];
   pool.query(sql, params, (err, result) => {
     if (err) {
@@ -432,10 +432,10 @@ app.post("/api/tasks/:taskId/assign-user", async (req, res) => {
     res.status(200).send("User assigned successfully");
   });
 });
-app.post("/api/tasks/:taskId/unassign-user", async (req, res) => {
+app.post("/api/content/:taskId/unassign-user", async (req, res) => {
   const { taskId } = req.params;
   const { userId } = req.body;
-  const sql = `DELETE FROM task_users WHERE task_id = ? AND user_id = ?`;
+  const sql = `DELETE FROM content_users WHERE content_id = ? AND user_id = ?`;
 
   pool.query(sql, [taskId, userId], (err) => {
     if (err) return res.status(500).send("Error unassigning user");
@@ -519,7 +519,7 @@ app.post("/api/reset-password", (req, res) => {
 });
 
 //Tasks
-app.get("/api/tasks", (req, res) => {
+app.get("/api/content", (req, res) => {
   const sql = `
    SELECT 
   t.*, 
@@ -544,30 +544,31 @@ app.get("/api/tasks", (req, res) => {
         ), 
         JSON_ARRAY()
     ) AS publishers
-FROM tasks t
-LEFT JOIN task_authors ta ON t.task_id = ta.task_id
+FROM content t
+LEFT JOIN content_authors ta ON t.content_id = ta.content_id
 LEFT JOIN authors a ON ta.author_id = a.author_id
-LEFT JOIN task_publishers tp ON t.task_id = tp.task_id
+LEFT JOIN content_publishers tp ON t.content_id = tp.content_id
 LEFT JOIN publishers p ON tp.publisher_id = p.publisher_id
-GROUP BY t.task_id;
+WHERE content_type='task'
+GROUP BY t.content_id ;
 
   `;
 
   pool.query(sql, (err, results) => {
     if (err) {
-      console.error("Error fetching tasks:", err);
+      console.error("Error fetching content:", err);
       return res.status(500).json({ error: "Database query failed" });
     }
     res.json(results);
   });
 });
 
-//task_topics?
-app.get("/api/task_topics", (req, res) => {
-  const sql = "SELECT * FROM task_topics";
+//content_topics?
+app.get("/api/content_topics", (req, res) => {
+  const sql = "SELECT * FROM content_topics";
   pool.query(sql, (err, results) => {
     if (err) {
-      console.error("Error fetching task_topics:", err);
+      console.error("Error fetching content_topics:", err);
       return res.status(500).json({ error: "Database query failed" });
     }
     res.json(results);
@@ -577,7 +578,7 @@ app.get("/api/task_topics", (req, res) => {
 //Topics
 app.get("/api/topics", (req, res) => {
   const sql =
-    "SELECT * FROM topics where topic_id in (SELECT distinct(topic_id) FROM task_topics where topic_order=1) ";
+    "SELECT * FROM topics where topic_id in (SELECT distinct(topic_id) FROM content_topics where topic_order=1) ";
   pool.query(sql, (err, results) => {
     if (err) {
       console.error("Error fetching topics:", err);
@@ -603,7 +604,7 @@ app.get("/api/test-connection", (req, res) => {
 
 app.post("/api/check-content", (req, res) => {
   const { url } = req.body;
-  const query = "SELECT * FROM tasks WHERE url = ?";
+  const query = "SELECT * FROM content WHERE url = ?";
   db.query(query, [url], (err, results) => {
     if (err) return res.status(500).send({ error: err });
     if (results.length > 0) {
@@ -616,7 +617,7 @@ app.post("/api/check-content", (req, res) => {
 
 app.post("/api/scrape", async (req, res) => {
   const {
-    task_name,
+    content_name,
     url,
     media_source,
     topic,
@@ -630,10 +631,10 @@ app.post("/api/scrape", async (req, res) => {
   } = req.body;
 
   // Step 1: Insert the task without the thumbnail path
-  const callQuery = `CALL InsertTaskAndTopics(?, ?, ?, ?, ?, ?, ?, ?, ?, ?,@taskId);`;
+  const callQuery = `CALL InsertContentAndTopics(?, ?, ?, ?, ?, ?, ?, ?, ?, ?,@taskId);`;
 
   const params = [
-    task_name, // Task name
+    content_name, // Task name
     url, // URL
     media_source, // Media source
     topic, // Main topic
@@ -654,20 +655,20 @@ app.post("/api/scrape", async (req, res) => {
   }
   let taskId = null;
   try {
-    const fetchTaskIdQuery = "SELECT task_id FROM tasks WHERE url = ?";
+    const fetchTaskIdQuery = "SELECT content_id FROM content WHERE url = ?";
     const results = await query(fetchTaskIdQuery, [url]);
     if (results.length === 0) {
       throw new Error("Task ID not found");
     }
 
-    taskId = results[0].task_id;
+    taskId = results[0].content_id;
   } catch (err) {
     console.log("Detailed Catch Error:", JSON.stringify(err, null, 2));
     res.status(500).send("Database error during task ID fetch.");
   }
-  const imageFilename = `task_id_${taskId}.png`;
+  const imageFilename = `content_id_${taskId}.png`;
 
-  const imagePath = `assets/images/tasks/${imageFilename}`;
+  const imagePath = `assets/images/content/${imageFilename}`;
 
   try {
     // Step 2: Download and resize the image
@@ -693,14 +694,14 @@ app.post("/api/scrape", async (req, res) => {
     // Step 3: Update the task with the thumbnail path
     //change thumbnail path from absolute to relative
     const relativeImagePath = getRelativePath(imagePath);
-    const updateQuery = "UPDATE tasks SET thumbnail = ? WHERE task_id = ?";
+    const updateQuery = "UPDATE content SET thumbnail = ? WHERE content_id = ?";
     db.query(updateQuery, [relativeImagePath, taskId], (updateErr) => {
       if (updateErr) {
         console.error("Error updating task with thumbnail:", updateErr);
         return res.status(500).send("Database update error");
       }
 
-      res.status(200).send({ success: true, task_id: taskId });
+      res.status(200).send({ success: true, content_id: taskId });
     });
   } catch (imageError) {
     console.error("Error handling image:", imageError);
@@ -714,12 +715,11 @@ app.post("/api/check-reference", async (req, res) => {
   if (!url) return res.status(400).json({ error: "Missing URL" });
 
   try {
-    const sql =
-      "SELECT lit_reference_title FROM lit_references WHERE lit_reference_link = ?";
+    const sql = "SELECT content_name FROM content WHERE url = ?";
     const [result] = await query(sql, [url]);
 
     if (result.length > 0) {
-      return res.status(200).json({ title: result[0].lit_reference_title });
+      return res.status(200).json({ title: result[0].content_name });
     } else {
       return res.status(200).json({ title: null }); // Reference not found
     }

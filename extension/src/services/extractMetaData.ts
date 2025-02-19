@@ -187,7 +187,7 @@ const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 export const extractReferences = async (
   $: cheerio.CheerioAPI
 ): Promise<Lit_references[]> => {
-  const lit_references: Lit_references[] = [];
+  const content: Lit_references[] = [];
   const promises: Promise<void>[] = [];
 
   const processReference = async (url: string, potentialTitle?: string) => {
@@ -197,9 +197,9 @@ export const extractReferences = async (
     // Step 1: Check the database first
     const storedTitle = await checkDatabaseForReference(url);
     if (storedTitle) {
-      lit_references.push({
-        lit_reference_link: url,
-        lit_reference_title: storedTitle,
+      content.push({
+        url: url,
+        content_name: storedTitle,
       });
       return;
     }
@@ -208,9 +208,9 @@ export const extractReferences = async (
     try {
       const title = await fetchTitleFromDiffbot(url);
       if (title && title.trim().length > 3) {
-        lit_references.push({
-          lit_reference_link: url,
-          lit_reference_title: title,
+        content.push({
+          url: url,
+          content_name: title,
         });
         return;
       }
@@ -220,17 +220,17 @@ export const extractReferences = async (
 
     // Step 3: Use potential inline title as a fallback
     if (potentialTitle && potentialTitle.length > 3) {
-      lit_references.push({
-        lit_reference_link: url,
-        lit_reference_title: potentialTitle,
+      content.push({
+        url: url,
+        content_name: potentialTitle,
       });
       return;
     }
 
     // Step 4: Final fallback – Format URL into a readable title
-    lit_references.push({
-      lit_reference_link: url,
-      lit_reference_title: formatUrlForTitle(url),
+    content.push({
+      url: url,
+      content_name: formatUrlForTitle(url),
     });
   };
 
@@ -287,7 +287,7 @@ export const extractReferences = async (
   });
 
   await Promise.all(promises);
-  return lit_references;
+  return content;
 };
 
 // ✅ Use Diffbot API to fetch the title for a given URL

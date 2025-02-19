@@ -10,7 +10,7 @@ interface Topic {
 }
 
 interface TaskTopic {
-  task_id: number;
+  content_id: number;
   topic_id: number;
   topic_order: number;
 }
@@ -22,10 +22,10 @@ const useTopics = () => {
   useEffect(() => {
     const fetchTopics = async () => {
       try {
-        // Fetch all topics and task_topics
+        // Fetch all topics and content_topics
         const [topicsResponse, taskTopicsResponse] = await Promise.all([
           axios.get<Topic[]>(`${API_URL}/api/topics`), // Fetch topics from the `topics` table
-          axios.get<TaskTopic[]>(`${API_URL}/api/task_topics`), // Fetch task_topics table
+          axios.get<TaskTopic[]>(`${API_URL}/api/content_topics`), // Fetch content_topics table
         ]);
 
         const allTopics = topicsResponse.data;
@@ -34,7 +34,7 @@ const useTopics = () => {
         const mainTopics: Topic[] = [];
         const subtopicsByTask: { [taskId: number]: Topic[] } = {};
 
-        // Process task_topics to split main topics and subtopics
+        // Process content_topics to split main topics and subtopics
         allTaskTopics.forEach((taskTopic) => {
           const topic = allTopics.find(
             (t) => t.topic_id === taskTopic.topic_id
@@ -43,10 +43,10 @@ const useTopics = () => {
             if (taskTopic.topic_order === 1) {
               mainTopics.push(topic);
             } else {
-              if (!subtopicsByTask[taskTopic.task_id]) {
-                subtopicsByTask[taskTopic.task_id] = [];
+              if (!subtopicsByTask[taskTopic.content_id]) {
+                subtopicsByTask[taskTopic.content_id] = [];
               }
-              subtopicsByTask[taskTopic.task_id].push(topic);
+              subtopicsByTask[taskTopic.content_id].push(topic);
             }
           }
         });

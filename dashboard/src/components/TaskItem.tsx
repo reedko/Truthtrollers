@@ -7,11 +7,11 @@ interface TaskItemProps {
 }
 
 export const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
-  const description = useTaskDescription(task.task_id);
+  const description = useTaskDescription(task.content_id);
 
   return (
     <Box borderWidth="1px" borderRadius="lg" p={4} mb={4} bg="gray.50">
-      <Text fontWeight="bold">{task.task_name}</Text>
+      <Text fontWeight="bold">{task.content_name}</Text>
       <Text>Media Source: {task.media_source}</Text>
       <Text>
         URL:{" "}
@@ -23,7 +23,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
       <Text>Progress: {task.progress}</Text>
       <Text>Users: {task.users}</Text>
       <Text>Description: {description}</Text> {/* Displaying the description */}
-      <Link href={`/task-details/${task.task_id}`} color="blue.500">
+      <Link href={`/task-details/${task.content_id}`} color="blue.500">
         View Details
       </Link>
     </Box>
