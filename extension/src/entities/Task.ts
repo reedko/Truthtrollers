@@ -36,7 +36,7 @@ export interface Publisher {
 }
 
 export interface TaskData {
-  content_name: string | null;
+  content_name: string;
   media_source: string;
   url: string;
   assigned: string;
@@ -45,9 +45,27 @@ export interface TaskData {
   details: string;
   topic: string;
   subtopics: string[];
-  thumbnail_url: string;
+  thumbnail: string;
   iconThumbnailUrl: string | null;
   authors: Author[];
   content: Lit_references[];
-  publisherName: Publisher;
+  publisherName: Publisher | null;
+  content_type: string; // Added this to support both types
 }
+
+/*    content_name: mainHeadline?mainHeadline:"",
+    media_source: videoId ? "YouTube" : "Web",
+    url,
+    assigned: "unassigned",
+    progress: "Unassigned",
+    users: "",
+    details: url,
+    topic: generalTopic,
+    subtopics: specificTopics,
+    thumbnail: imageUrl,
+    iconThumbnailUrl: iconThumbnailUrl || null,
+    authors,
+    content: extractedReferences,
+    publisherName,
+    content_type: contentType,
+*/

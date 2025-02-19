@@ -1,6 +1,6 @@
 // src/hooks/useGraphInteractions.ts
 import { useState } from "react";
-import { GraphNode } from "../entities/types.ts";
+import { GraphNode } from "../../../shared/entities/types.ts";
 import { transformData } from "../services/dataTransform";
 import { fetchNewGraphData } from "../services/api";
 

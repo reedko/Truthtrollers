@@ -1,7 +1,8 @@
+// extractMetaData.ts
 import * as cheerio from "cheerio";
-import { Author, Lit_references, Publisher } from "../entities/Task";
+import { Author, TaskData, Lit_references, Publisher } from "../entities/Task";
 
-const isValidReference = (link: any) => {
+const isValidReference = (link: string): boolean => {
   const excludedPatterns = [
     "ads",
     "sponsored",
@@ -21,40 +22,57 @@ export const fetchPageContent = (): cheerio.CheerioAPI => {
   return cheerio.load(document.documentElement.outerHTML);
 };
 
+export const fetchExternalPageContent = async (
+  url: string
+): Promise<cheerio.CheerioAPI> => {
+  try {
+    const response = await fetch(url, { method: "GET" });
+    if (!response.ok)
+      throw new Error(`Failed to fetch page: ${response.status}`);
+    const html = await response.text();
+    return cheerio.load(html); // Return Cheerio instance
+  } catch (error) {
+    console.error(`Error fetching external page: ${error}`);
+    return cheerio.load(""); // Return an empty Cheerio instance if error
+  }
+};
+
+// Extract Authors
 export const extractAuthors = async (
   $: cheerio.CheerioAPI
 ): Promise<Author[]> => {
-  const authorCandidates: Author[] = [];
+  const authors: Author[] = [];
 
-  // Step 1: Extract from JSON-LD
+  // Extract from JSON-LD
   $('script[type="application/ld+json"]').each((_, scriptTag) => {
     try {
       const metadata = JSON.parse($(scriptTag).html() || "");
+      const authorData = Array.isArray(metadata) ? metadata : [metadata];
 
-      if (Array.isArray(metadata)) {
-        metadata.forEach((entry) => {
-          if (entry["@type"] === "Person" && entry.name) {
-            authorCandidates.push({
-              name: entry.name,
-              description: entry.description || null,
-              image: entry.image?.contentUrl || null,
-            });
-          }
-        });
-      } else if (metadata.author) {
-        const authors = Array.isArray(metadata.author)
+      authorData.forEach((entry) => {
+        if (entry["@type"] === "Person" && entry.name) {
+          authors.push({
+            name: entry.name,
+            description: entry.description || null,
+            image: entry.image?.contentUrl || null,
+          });
+        }
+      });
+
+      if (metadata.author) {
+        (Array.isArray(metadata.author)
           ? metadata.author
-          : [metadata.author];
-        authors.forEach((author: any) => {
-          if (typeof author === "object" && author.name) {
-            authorCandidates.push({
-              name: author.name,
-              description: author.description || null,
-              image: author.image?.contentUrl || null,
-            });
-          } else if (typeof author === "string") {
-            authorCandidates.push({ name: author });
-          }
+          : [metadata.author]
+        ).forEach((author: any) => {
+          authors.push(
+            typeof author === "object"
+              ? {
+                  name: author.name,
+                  description: author.description || null,
+                  image: author.image?.contentUrl || null,
+                }
+              : { name: author }
+          );
         });
       }
     } catch (err) {
@@ -62,39 +80,34 @@ export const extractAuthors = async (
     }
   });
 
-  // Step 2: Extract from meta tags
-  if (authorCandidates.length === 0) {
+  // Extract from meta tags
+  if (!authors.length) {
     const rawAuthorNames =
       $('meta[name="author"]').attr("content") ||
-      $('meta[property="article:author"]').attr("content") ||
-      null;
-
+      $('meta[property="article:author"]').attr("content");
     if (rawAuthorNames) {
-      const splitAuthors = rawAuthorNames.split(/\s*and\s*|,\s*/);
-      splitAuthors.forEach((name) => {
-        authorCandidates.push({ name: name.trim() });
-      });
+      rawAuthorNames
+        .split(/\s*and\s*|,\s*/)
+        .forEach((name) => authors.push({ name: name.trim() }));
     }
   }
-  // Step 2: Extract from meta citation tags
-  if (authorCandidates.length === 0) {
-    // Find all relevant meta tags for authors
+
+  // Extract from citation meta tags
+  if (!authors.length) {
     $(
       'meta[name="citation_author"], meta[property="article:citation_author"]'
     ).each((_, metaTag) => {
       const rawAuthorName = $(metaTag).attr("content");
       if (rawAuthorName) {
-        // Split names if multiple authors are listed in a single tag
-        const splitAuthors = rawAuthorName.split(/\s*and\s*|,\s*/);
-        splitAuthors.forEach((name) => {
-          authorCandidates.push({ name: name.trim() });
-        });
+        rawAuthorName
+          .split(/\s*and\s*|,\s*/)
+          .forEach((name) => authors.push({ name: name.trim() }));
       }
     });
   }
 
-  // Step 3: Fallback for specific cases (e.g., Children's Health Defense)
-  if (authorCandidates.length === 0) {
+  // Special case handling for certain sites (e.g., Children's Health Defense)
+  if (!authors.length) {
     $("script").each((_, scriptTag) => {
       const scriptContent = $(scriptTag).html();
       if (scriptContent?.includes("var chd_ga4_data =")) {
@@ -103,7 +116,7 @@ export const extractAuthors = async (
           if (match && match[1]) {
             const chdData = JSON.parse(match[1]);
             if (chdData.contentAuthor) {
-              authorCandidates.push({
+              authors.push({
                 name: chdData.contentAuthor,
                 title: chdData.contentAuthorTitle || null,
               });
@@ -115,62 +128,47 @@ export const extractAuthors = async (
       }
     });
   }
-  console.log(authorCandidates, ":AC");
-  return authorCandidates;
+
+  return authors;
 };
+
+// Extract Publisher
 export const extractPublisher = async (
   $: cheerio.CheerioAPI
 ): Promise<Publisher> => {
-  // Step 1: Extract from meta tags
   let publisherName =
     $('meta[property="og:site_name"]').attr("content") ||
     $('meta[name="publisher"]').attr("content") ||
     $('meta[name="citation_journal_title"]').attr("content") ||
     "Unknown Publisher";
 
-  // Step 2: If not found, attempt to extract from ld+json scripts
+  // Extract from JSON-LD
   if (publisherName === "Unknown Publisher") {
-    const ldJsonScripts = $('script[type="application/ld+json"]');
-
-    ldJsonScripts.each((_, elem) => {
+    $('script[type="application/ld+json"]').each((_, elem) => {
       try {
-        const jsonText = $(elem).contents().text();
-        const jsonData = JSON.parse(jsonText);
-
-        // Helper function to recursively search for NewsMediaOrganization
-        const findPublisherInJson = (data: any): string | null => {
-          if (Array.isArray(data)) {
-            for (const item of data) {
-              const result = findPublisherInJson(item);
-              if (result) return result;
-            }
-          } else if (typeof data === "object" && data !== null) {
-            if (data["@type"] === "NewsMediaOrganization" && data.name) {
+        const jsonData = JSON.parse($(elem).contents().text());
+        const findPublisher = (data: any): string | null => {
+          if (Array.isArray(data))
+            return data.map(findPublisher).find((name) => name) || null;
+          if (typeof data === "object" && data) {
+            if (data["@type"] === "NewsMediaOrganization" && data.name)
               return data.name;
-            }
-            // Recursively search in all properties
-            for (const key in data) {
-              if (data.hasOwnProperty(key)) {
-                const result = findPublisherInJson(data[key]);
-                if (result) return result;
-              }
-            }
+            return (
+              Object.values(data)
+                .map(findPublisher)
+                .find((name) => name) || null
+            );
           }
           return null;
         };
-
-        const publisherFromJson = findPublisherInJson(jsonData);
-        if (publisherFromJson) {
-          publisherName = publisherFromJson;
-          return false; // Break out of `.each()`
-        }
+        publisherName = findPublisher(jsonData) || publisherName;
       } catch (err) {
         console.warn(`Failed to parse ld+json script: ${err}`);
       }
     });
   }
 
-  // Step 3: Handle special cases (e.g., Substack) **without using URL**
+  // Handle Substack
   if (publisherName === "Unknown Publisher") {
     const title = $("title").text();
     if (title.includes("on Substack")) {
@@ -182,71 +180,47 @@ export const extractPublisher = async (
   return { name: publisherName };
 };
 
-const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
-
+// Extract References
 export const extractReferences = async (
   $: cheerio.CheerioAPI
 ): Promise<Lit_references[]> => {
-  const content: Lit_references[] = [];
+  const references: Lit_references[] = [];
   const promises: Promise<void>[] = [];
 
   const processReference = async (url: string, potentialTitle?: string) => {
     url = url.trim();
     if (!isValidReference(url)) return;
 
-    // Step 1: Check the database first
-    const storedTitle = await checkDatabaseForReference(url);
-    if (storedTitle) {
-      content.push({
-        url: url,
-        content_name: storedTitle,
-      });
-      return;
-    }
+    let content_name: string | null = await checkDatabaseForReference(url);
 
-    // Step 2: Fetch title from Diffbot (Highest Priority)
-    try {
-      const title = await fetchTitleFromDiffbot(url);
-      if (title && title.trim().length > 3) {
-        content.push({
-          url: url,
-          content_name: title,
-        });
-        return;
+    if (!content_name) {
+      try {
+        content_name = await fetchTitleFromDiffbot(url);
+      } catch (err) {
+        console.error(`Error fetching title from Diffbot for ${url}:`, err);
       }
-    } catch (err) {
-      console.error(`Error fetching title for ${url}:`, err);
     }
 
-    // Step 3: Use potential inline title as a fallback
-    if (potentialTitle && potentialTitle.length > 3) {
-      content.push({
-        url: url,
-        content_name: potentialTitle,
-      });
-      return;
-    }
+    content_name = content_name || potentialTitle || formatUrlForTitle(url);
 
-    // Step 4: Final fallback – Format URL into a readable title
-    content.push({
-      url: url,
-      content_name: formatUrlForTitle(url),
+    references.push({
+      url,
+      content_name,
     });
   };
 
-  // **Extract from Main Content**
+  // Extract references from inline links
   $("article, .content, .post-body, .entry-content, .ref-list")
     .find("a[href]")
     .each((_, el) => {
       const link = $(el).attr("href")?.trim();
-      const inlineText = $(el).text().trim(); // Extract inline text normally
-
+      const inlineText = $(el).text().trim();
       if (link && link.startsWith("http") && !isNavigationLink(link)) {
         promises.push(processReference(link, inlineText));
       }
     });
 
-  // **Extract from JSON-LD structured data**
+  // Extract references from JSON-LD structured data
   $('script[type="application/ld+json"]').each((_, scriptTag) => {
     try {
       const rawJson = $(scriptTag).html();
@@ -259,38 +233,21 @@ export const extractReferences = async (
         refs.forEach((ref: any) => {
           const refUrl = ref.url?.trim();
           const refTitle = ref.name?.trim();
-
           if (refUrl) {
             promises.push(processReference(refUrl, refTitle));
           }
         });
       }
     } catch (err) {
-      console.error("Error parsing ld+json:", err);
+      console.error("Error parsing ld+json for references:", err);
     }
   });
 
-  // **Extract from Citation Lists (PubMed, DOI, etc.)**
-  $(".ref-list li cite").each((_, citeEl) => {
-    const citationText = $(citeEl).text().trim();
-    const doiLink = $(citeEl)
-      .siblings('a[href*="doi.org"]')
-      .attr("href")
-      ?.trim();
-    const pubMedLink = $(citeEl)
-      .siblings('a[href*="pubmed.ncbi.nlm.nih.gov"]')
-      .attr("href")
-      ?.trim();
-
-    if (doiLink) promises.push(processReference(doiLink, citationText));
-    if (pubMedLink) promises.push(processReference(pubMedLink, citationText));
-  });
-
   await Promise.all(promises);
-  return content;
+  return references;
 };
 
-// ✅ Use Diffbot API to fetch the title for a given URL
+// Helpers
 const fetchTitleFromDiffbot = async (url: string): Promise<string | null> => {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage(
@@ -315,25 +272,20 @@ const checkDatabaseForReference = async (
   });
 };
 
-// ✅ Fallback: Convert a URL into a readable title-like string
 const formatUrlForTitle = (url: string): string => {
   try {
     const { hostname, pathname } = new URL(url);
-    const readablePart = pathname.split("/").filter((part) => part.length > 3); // Ignore short fragments
+    const readablePart = pathname.split("/").filter((part) => part.length > 3);
     return readablePart.length
       ? readablePart.join(" ").replace(/-/g, " ")
       : hostname;
   } catch (err) {
-    return url; // Fallback to full URL if parsing fails
+    return url;
   }
 };
 
 const isNavigationLink = (link: string): boolean => {
-  const patterns = [
-    /#/, // Fragments
-    /twitter\.com|facebook\.com|linkedin\.com|instagram\.com/, // Social media
-    /subscribe|comment|share/, // Call-to-action links
-  ];
-
-  return patterns.some((pattern) => pattern.test(link));
+  return /#|twitter\.com|facebook\.com|linkedin\.com|instagram\.com|subscribe|comment|share/.test(
+    link
+  );
 };

@@ -10,7 +10,7 @@ import {
   AuthReference,
   GraphNode,
   Link,
-} from "../entities/types.ts";
+} from "../../../shared/entities/types.ts";
 
 interface Data {
   authors: Author[];

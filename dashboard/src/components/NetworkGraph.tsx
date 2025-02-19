@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect } from "react";
 import * as d3 from "d3";
-import { GraphNode, Link } from "../entities/types.ts";
+import { GraphNode, Link } from "../../../shared/entities/types.ts";
 
 interface NetworkGraphProps {
   nodes: GraphNode[];
