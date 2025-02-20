@@ -326,53 +326,37 @@ app.get("/api/content/:taskId/content_relations", async (req, res) => {
 });
 
 //Add References
-app.post("/api/content/:taskId/add-source", async (req, res) => {
-  const { taskId } = req.params;
-  const reference = req.body.lit_reference;
-
-  const link = reference.url.trim();
-  const title = reference.content_name?.trim() || "";
+app.post("/api/add-content-relation", async (req, res) => {
+  const taskContentId = req.body.taskContentId;
+  const referenceContentId = req.body.referenceContentId;
 
   try {
-    // Step 1: Check if the reference already exists in content
-    const checkExistingRef = `SELECT content_id FROM content WHERE url = ?`;
-    const existingRefs = await query(checkExistingRef, [link]);
-
-    let litReferenceId =
-      existingRefs.length > 0 ? existingRefs[0].reference_content_id : null;
-
-    // Step 2: If reference does not exist, insert it
-    if (!litReferenceId) {
-      const result = await query(
-        `CALL InsertOrGetReference(?, ?, @litReferenceId)`,
-        [link, title]
-      );
-      litReferenceId = result[0][0].litReferenceId;
-    }
-
     // Step 3: Check if this task-reference pair already exists
     const checkExistingTaskRef = `SELECT 1 FROM content_relations WHERE content_id = ? AND reference_content_id = ?`;
     const existingTaskRefs = await query(checkExistingTaskRef, [
-      taskId,
-      litReferenceId,
+      taskContentId,
+      referenceContentId,
     ]);
 
     if (existingTaskRefs.length === 0) {
       // Step 4: Insert task-reference if it doesn't exist
       await query(
         `INSERT INTO content_relations (content_id, reference_content_id) VALUES (?, ?)`,
-        [taskId, litReferenceId]
+        [taskContentId, referenceContentId]
       );
-      console.log(`Reference ${litReferenceId} linked to task ${taskId}`);
+      console.log(
+        `Reference ${referenceContentId} linked to task ${taskContentId}`
+      );
     } else {
       console.log(
-        `Reference ${litReferenceId} already linked to task ${taskId}, skipping insert.`
+        `Reference ${referenceContentId} already linked to task ${taskContentId}, skipping insert.`
       );
     }
 
-    res
-      .status(200)
-      .json({ message: "Reference added successfully", litReferenceId });
+    res.status(200).json({
+      message: "Reference relation added successfully",
+      referenceContentId,
+    });
   } catch (error) {
     console.error("Error inserting references:", error);
     res.status(500).json({ error: "Error adding references" });
@@ -615,7 +599,7 @@ app.post("/api/check-content", (req, res) => {
   });
 });
 
-app.post("/api/scrape", async (req, res) => {
+app.post("/api/addContent", async (req, res) => {
   const {
     content_name,
     url,
@@ -624,14 +608,15 @@ app.post("/api/scrape", async (req, res) => {
     subtopics,
     users,
     details,
-    thumbnail_url,
+    thumbnail,
     assigned,
     progress,
     iconThumbnailUrl,
+    content_type,
   } = req.body;
 
   // Step 1: Insert the task without the thumbnail path
-  const callQuery = `CALL InsertContentAndTopics(?, ?, ?, ?, ?, ?, ?, ?, ?, ?,@taskId);`;
+  const callQuery = `CALL InsertContentAndTopics(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @contentId);`;
 
   const params = [
     content_name, // Task name
@@ -644,6 +629,7 @@ app.post("/api/scrape", async (req, res) => {
     assigned, // Assigned status
     progress, // Progress status
     iconThumbnailUrl ? iconThumbnailUrl : "",
+    content_type,
   ];
 
   try {
@@ -653,32 +639,33 @@ app.post("/api/scrape", async (req, res) => {
     console.error("Error inserting task:", err);
     return res.status(500).send("Database error during task insertion");
   }
-  let taskId = null;
+  let contentId = null;
   try {
-    const fetchTaskIdQuery = "SELECT content_id FROM content WHERE url = ?";
-    const results = await query(fetchTaskIdQuery, [url]);
+    const fetchContentIdQuery = "SELECT content_id FROM content WHERE url = ?";
+    const results = await query(fetchContentIdQuery, [url]);
     if (results.length === 0) {
-      throw new Error("Task ID not found");
+      throw new Error("Content ID not found");
     }
 
-    taskId = results[0].content_id;
+    contentId = results[0].content_id;
+    console.log("TASKID:", contentId);
   } catch (err) {
     console.log("Detailed Catch Error:", JSON.stringify(err, null, 2));
     res.status(500).send("Database error during task ID fetch.");
   }
-  const imageFilename = `content_id_${taskId}.png`;
+  const imageFilename = `content_id_${contentId}.png`;
 
   const imagePath = `assets/images/content/${imageFilename}`;
-
+  console.log("IMAGEFILENAME:", imagePath);
   try {
     // Step 2: Download and resize the image
 
-    const response = await axios.get(thumbnail_url, {
+    const response = await axios.get(thumbnail, {
       responseType: "arraybuffer",
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        Referer: thumbnail_url, // Optional: Helps if the server checks the origin
+        Referer: thumbnail, // Optional: Helps if the server checks the origin
         Accept:
           "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
       },
@@ -695,13 +682,16 @@ app.post("/api/scrape", async (req, res) => {
     //change thumbnail path from absolute to relative
     const relativeImagePath = getRelativePath(imagePath);
     const updateQuery = "UPDATE content SET thumbnail = ? WHERE content_id = ?";
-    db.query(updateQuery, [relativeImagePath, taskId], (updateErr) => {
+    db.query(updateQuery, [relativeImagePath, contentId], (updateErr) => {
       if (updateErr) {
         console.error("Error updating task with thumbnail:", updateErr);
         return res.status(500).send("Database update error");
       }
-
-      res.status(200).send({ success: true, content_id: taskId });
+      console.log("✅ Server Response:", {
+        success: true,
+        content_id: contentId,
+      });
+      res.status(200).send({ success: true, content_id: contentId });
     });
   } catch (imageError) {
     console.error("Error handling image:", imageError);
@@ -715,11 +705,13 @@ app.post("/api/check-reference", async (req, res) => {
   if (!url) return res.status(400).json({ error: "Missing URL" });
 
   try {
-    const sql = "SELECT content_name FROM content WHERE url = ?";
+    const sql = "SELECT content_name, content_id FROM content WHERE url = ?";
     const [result] = await query(sql, [url]);
 
     if (result.length > 0) {
-      return res.status(200).json({ title: result[0].content_name });
+      return res
+        .status(200)
+        .json({ title: result[0].content_name, id: result[0].content_id });
     } else {
       return res.status(200).json({ title: null }); // Reference not found
     }

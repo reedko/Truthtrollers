@@ -65,6 +65,7 @@ export const orchestrateScraping = async (
       : diffbotData.title || (await getMainHeadline($));
 
   // Fetch authors and publisher in parallel
+  console.log("HEEEEEEEED:", mainHeadline);
   const [authors, publisherName] = await Promise.all([
     diffbotData.author
       ? diffbotData.author.split(/[,&]/).map((name) => ({ name: name.trim() }))
@@ -86,9 +87,11 @@ export const orchestrateScraping = async (
       );
     });
   }
+  console.log(":IIIIIIMMMMMMAMMMMAMAMMAA:", imageUrl);
 
   // Fetch icon for topic
   const iconThumbnailUrl = await checkAndDownloadTopicIcon(generalTopic);
+  console.log(":iconThumbnailUrl:", iconThumbnailUrl);
 
   // Extract references only if processing as "reference" content type
   if (contentType === "task") {
