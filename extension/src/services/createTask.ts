@@ -3,7 +3,7 @@ import { TaskData, Author, Publisher } from "../entities/Task";
 
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 
-const createTask = async (taskData: TaskData) => {
+const createTask = async (taskData: TaskData): Promise<string | null> => {
   console.log("Creating content:", taskData.url, "as", taskData.content_type);
 
   try {
@@ -16,6 +16,10 @@ const createTask = async (taskData: TaskData) => {
             console.log("✅ Content created with ID:", response.contentId);
             resolve(response.contentId);
           } else {
+            console.error(
+              "❌ No contentId returned from addContent:",
+              response
+            );
             reject("Failed to create content");
           }
         }
@@ -32,10 +36,10 @@ const createTask = async (taskData: TaskData) => {
         : Promise.resolve(),
     ]);
 
-    return { contentId };
+    return contentId;
   } catch (error) {
     console.error("❌ Error in createTask workflow:", error);
-    return { contentId: null };
+    return null;
   }
 };
 

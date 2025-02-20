@@ -19,7 +19,9 @@ const isValidReference = (link: string): boolean => {
 };
 
 export const fetchPageContent = (): cheerio.CheerioAPI => {
-  return cheerio.load(document.documentElement.outerHTML);
+  const loadedCheerio = cheerio.load(document.documentElement.outerHTML);
+  console.log(loadedCheerio, ":from cheerio");
+  return loadedCheerio;
 };
 
 export const fetchExternalPageContent = async (
@@ -191,15 +193,7 @@ export const extractReferences = async (
     url = url.trim();
     if (!isValidReference(url)) return;
 
-    let content_name: string | null = await checkDatabaseForReference(url);
-
-    if (!content_name) {
-      try {
-        content_name = await fetchTitleFromDiffbot(url);
-      } catch (err) {
-        console.error(`Error fetching title from Diffbot for ${url}:`, err);
-      }
-    }
+    let content_name = await fetchTitleFromDiffbot(url);
 
     content_name = content_name || potentialTitle || formatUrlForTitle(url);
 
@@ -226,6 +220,10 @@ export const extractReferences = async (
       const rawJson = $(scriptTag).html();
       if (rawJson) {
         const metadata = JSON.parse(rawJson);
+        // ✅ Make sure metadata.references exists and is an array
+        if (!metadata.references || !Array.isArray(metadata.references)) {
+          return; // Skip this JSON-LD entry if no references are found
+        }
         const refs = Array.isArray(metadata.references)
           ? metadata.references
           : [metadata.references];
@@ -252,19 +250,6 @@ const fetchTitleFromDiffbot = async (url: string): Promise<string | null> => {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage(
       { action: "fetchTitleFromDiffbot", url },
-      (response) => {
-        resolve(response);
-      }
-    );
-  });
-};
-
-const checkDatabaseForReference = async (
-  url: string
-): Promise<string | null> => {
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage(
-      { action: "checkDatabaseForReference", url },
       (response) => {
         resolve(response);
       }
