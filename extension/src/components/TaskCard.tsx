@@ -36,7 +36,7 @@ const TaskCard: React.FC = () => {
   const { loading, error, scrapeTask } = useTaskScraper(); // Use scraper hook
 
   console.log("Updated currentUrl:", currentUrl);
-  console.log("URL:", `${BASE_URL}/${task?.thumbnail}`);
+  console.log("thumbnail URL:", `${BASE_URL}/${task?.thumbnail}`);
   const imageUrl =
     task && task.thumbnail ? `${BASE_URL}/${task.thumbnail}` : "";
   console.log("URL:", imageUrl);

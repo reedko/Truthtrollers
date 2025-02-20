@@ -314,10 +314,18 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "addTask") {
-    createTaskInServer(message.taskData)
-      .then((taskId) => sendResponse({ taskId }))
-      .catch(() => sendResponse({ error: "Failed to create task" }));
+  if (message.action === "addContent") {
+    addContent(message.taskData)
+      .then((contentId) => {
+        console.log("✅ Background: Received taskId from backend:", contentId);
+        const responsePayload = { contentId: contentId };
+        console.log("🚀 Sending response to createTask.ts:", responsePayload);
+        sendResponse(responsePayload); // Make sure we're sending back `contentId`
+      })
+      .catch((err) => {
+        console.error("❌ Background: Failed to create content:", err);
+        sendResponse({ error: "Failed to create content" });
+      });
 
     return true; // Keep async connection open
   }
@@ -371,16 +379,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // ✅ Create Task
-const createTaskInServer = async (taskData) => {
+const addContent = async (taskData) => {
   try {
-    const response = await fetch("http://localhost:5001/api/scrape", {
+    const response = await fetch("http://localhost:5001/api/addContent", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(taskData),
     });
 
     const responseData = await response.json();
-    return responseData.content_id || null;
+    console.log(responseData, ":REPSODFJKG");
+    return responseData.content_id;
   } catch (error) {
     console.error("Error adding task:", error);
     return null;
@@ -517,3 +526,42 @@ const checkContent = async (url) => {
     return null;
   }
 };
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "checkDatabaseForReference") {
+    fetch("http://localhost:5001/api/check-reference", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: message.url }),
+    })
+      .then((response) => response.json())
+      .then((data) => sendResponse(data.id ? data.id : null))
+      .catch((error) => {
+        console.error("Error checking reference in DB:", error);
+        sendResponse(null);
+      });
+
+    return true; // Keeps the message channel open for async response
+  }
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "addContentRelation") {
+    fetch("http://localhost:5001/api/add-content-relation", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        taskContentId: message.taskContentId,
+        referenceContentId: message.referenceContentId,
+      }),
+    })
+      .then((response) => response.json())
+      .then((data) => sendResponse({ success: true }))
+      .catch((error) => {
+        console.error("Error adding content relation:", error);
+        sendResponse({ success: false });
+      });
+
+    return true;
+  }
+});
