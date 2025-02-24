@@ -65,7 +65,7 @@ export const orchestrateScraping = async (
       : diffbotData.title || (await getMainHeadline($));
 
   // Fetch authors and publisher in parallel
-  console.log("HEEEEEEEED:", mainHeadline);
+
   const [authors, publisherName] = await Promise.all([
     diffbotData.author
       ? diffbotData.author.split(/[,&]/).map((name) => ({ name: name.trim() }))
@@ -77,7 +77,7 @@ export const orchestrateScraping = async (
 
   // Get video ID if applicable
   const videoId = extractVideoIdFromUrl(url);
-
+  console.log("✅ Extracted Publisher:", publisherName);
   // Capture thumbnail image
   let imageUrl = diffbotData.images?.[0]?.url || "";
   if (!imageUrl) {

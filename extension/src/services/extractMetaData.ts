@@ -145,39 +145,58 @@ export const extractPublisher = async (
     "Unknown Publisher";
 
   // Extract from JSON-LD
-  if (publisherName === "Unknown Publisher") {
-    $('script[type="application/ld+json"]').each((_, elem) => {
-      try {
-        const jsonData = JSON.parse($(elem).contents().text());
-        const findPublisher = (data: any): string | null => {
-          if (Array.isArray(data))
-            return data.map(findPublisher).find((name) => name) || null;
-          if (typeof data === "object" && data) {
-            if (data["@type"] === "NewsMediaOrganization" && data.name)
-              return data.name;
-            return (
-              Object.values(data)
-                .map(findPublisher)
-                .find((name) => name) || null
-            );
-          }
-          return null;
-        };
-        publisherName = findPublisher(jsonData) || publisherName;
-      } catch (err) {
-        console.warn(`Failed to parse ld+json script: ${err}`);
-      }
-    });
-  }
+  $('script[type="application/ld+json"]').each((_, scriptTag) => {
+    try {
+      const metadata = JSON.parse($(scriptTag).text().trim());
 
-  // Handle Substack
-  if (publisherName === "Unknown Publisher") {
-    const title = $("title").text();
-    if (title.includes("on Substack")) {
-      const match = title.match(/^(.*?)(?: on Substack)?$/i);
-      publisherName = match ? match[1].trim() : "Unknown Publisher";
+      // Check if publisher exists as an object
+
+      if (
+        metadata.publisher &&
+        typeof metadata.publisher === "object" &&
+        metadata.publisher.name
+      ) {
+        publisherName = metadata.publisher.name;
+        console.log("✅ Publisher Found (Direct):", publisherName);
+        return false; // Exit early if found
+      }
+
+      // If `publisher` is nested within another structure (e.g., `isPartOf`)
+      if (
+        metadata.isPartOf &&
+        typeof metadata.isPartOf === "object" &&
+        metadata.isPartOf.name
+      ) {
+        publisherName = metadata.isPartOf.name;
+        console.log("✅ Publisher Found (isPartOf):", publisherName);
+        return false;
+      }
+
+      // Recursive fallback for complex structures
+      const findPublisher = (data: any): string | null => {
+        if (Array.isArray(data))
+          return data.map(findPublisher).find((name) => name) || null;
+        if (typeof data === "object" && data) {
+          if (data["@type"] === "NewsMediaOrganization" && data.name)
+            return data.name;
+          return (
+            Object.values(data)
+              .map(findPublisher)
+              .find((name) => name) || null
+          );
+        }
+        return null;
+      };
+
+      const foundPublisher = findPublisher(metadata);
+      if (foundPublisher) {
+        publisherName = foundPublisher;
+        console.log("✅ Publisher Found (Recursive):", publisherName);
+      }
+    } catch (err) {
+      console.warn(`⚠️ Failed to parse ld+json script: ${err}`);
     }
-  }
+  });
 
   return { name: publisherName };
 };

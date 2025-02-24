@@ -331,7 +331,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === "addAuthors") {
-    addAuthorsToServer(message.taskId, message.authors)
+    addAuthorsToServer(message.contentId, message.authors)
       .then(() => sendResponse({ success: true }))
       .catch(() => sendResponse({ success: false }));
 
@@ -339,7 +339,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 
   if (message.action === "addPublisher") {
-    addPublisherToServer(message.taskId, message.publisher)
+    addPublisherToServer(message.contentId, message.publisher)
       .then(() => sendResponse({ success: true }))
       .catch(() => sendResponse({ success: false }));
 
@@ -397,12 +397,12 @@ const addContent = async (taskData) => {
 };
 
 // ✅ Add Authors
-const addAuthorsToServer = async (taskId, authors) => {
+const addAuthorsToServer = async (contentId, authors) => {
   try {
-    await fetch(`http://localhost:5001/api/content/${taskId}/authors`, {
+    await fetch(`http://localhost:5001/api/content/${contentId}/authors`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ authors }),
+      body: JSON.stringify({ contentId, authors }),
     });
     console.log("authors");
     return true;
@@ -413,12 +413,12 @@ const addAuthorsToServer = async (taskId, authors) => {
 };
 
 // ✅ Add Publisher
-const addPublisherToServer = async (taskId, publisher) => {
+const addPublisherToServer = async (contentId, publisher) => {
   try {
-    await fetch(`http://localhost:5001/api/content/${taskId}/publishers`, {
+    await fetch(`http://localhost:5001/api/content/${contentId}/publishers`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ publisher }),
+      body: JSON.stringify({ contentId, publisher }),
     });
 
     return true;

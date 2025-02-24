@@ -62,10 +62,8 @@ const pool = mysql.createPool({
 
 db.connect((err) => {
   if (err) throw err;
-  console.log("MySQL connected!");
+  //console.log("MySQL connected!");
 });
-
-app.listen(3000, () => console.log("Proxy server running on port 3000"));
 
 function getRelativePath(absolutePath) {
   // Assuming 'public/' is the part of the path that precedes the relative path
@@ -78,8 +76,25 @@ function getRelativePath(absolutePath) {
   return absolutePath;
 }
 
+app.listen(
+  3000,
+  () =>
+    //console.log("Proxy server running on port 3000"));
+
+    function getRelativePath(absolutePath) {
+      // Assuming 'public/' is the part of the path that precedes the relative path
+      const index = absolutePath.indexOf("public/");
+      if (index !== -1) {
+        // Return the path after 'public/'
+        return absolutePath.slice(index + "public/".length);
+      }
+      // If 'public/' is not found, return the original path (or handle as needed)
+      return absolutePath;
+    }
+);
+
 /* app.use((req, res, next) => {
-  console.log(`Incoming request: ${req.method} ${req.originalUrl}`);
+  //console.log(`Incoming request: ${req.method} ${req.originalUrl}`);
   next();
 }); */
 
@@ -95,7 +110,7 @@ app.get("/proxy", async (req, res) => {
         "Accept-Language": "en-US,en;q=0.9", // Optional: Set additional headers
       },
     });
-    //console.log("respose:", response);
+    ////console.log("respose:", response);
     res.send(response.data);
   } catch (error) {
     console.error("Error fetching the URL:");
@@ -164,9 +179,10 @@ app.get("/api/content/:taskId/content_authors", async (req, res) => {
 });
 
 //Add Authors
-app.post("/api/content/:taskId/authors", async (req, res) => {
-  const { taskId } = req.params;
+app.post("/api/content/:contentId/authors", async (req, res) => {
+  const contentId = req.body.contentId;
   const authors = req.body.authors; // Expect an array of authors
+
   const sql = `CALL InsertOrGetAuthor(?, ?, ?, ?, NULL, @authorId)`;
 
   try {
@@ -189,7 +205,7 @@ app.post("/api/content/:taskId/authors", async (req, res) => {
 
       if (authorId) {
         const insertTaskAuthor = `INSERT INTO content_authors (content_id, author_id) VALUES (?, ?)`;
-        await pool.query(insertTaskAuthor, [taskId, authorId]);
+        await pool.query(insertTaskAuthor, [contentId, authorId]);
       }
     }
     res.status(200).send("Authors added successfully");
@@ -206,7 +222,7 @@ app.get("/api/content/:taskId/publishers", async (req, res) => {
   on a.publisher_id = ta.publisher_id WHERE content_id = ?`;
   pool.query(sql, taskId, (err, rows) => {
     if (err) {
-      // console.log(rows, taskId);
+      console.log(rows, taskId);
       console.error(err);
       return res.status(500).send("Error fetching publishers");
     }
@@ -216,8 +232,8 @@ app.get("/api/content/:taskId/publishers", async (req, res) => {
 });
 
 //Add publishers
-app.post("/api/content/:taskId/publishers", async (req, res) => {
-  const { taskId } = req.params;
+app.post("/api/content/:contentId/publishers", async (req, res) => {
+  const contentId = req.body.contentId;
   const publisher = req.body.publisher; // Expect a single publisher object
 
   const sql = `CALL InsertOrGetPublisher(?, NULL, NULL, @publisherId)`;
@@ -228,7 +244,7 @@ app.post("/api/content/:taskId/publishers", async (req, res) => {
 
     if (publisherId) {
       const insertTaskPublisher = `INSERT INTO content_publishers (content_id, publisher_id) VALUES (?, ?)`;
-      await pool.query(insertTaskPublisher, [taskId, publisherId]);
+      await pool.query(insertTaskPublisher, [contentId, publisherId]);
     }
     res.status(200).send("Publisher added successfully");
   } catch (error) {
@@ -266,7 +282,7 @@ app.get("/api/get-graph-data", async (req, res) => {
       .json({ error: "Missing entity or entityType parameter" });
   }
 
-  console.log("🔍 Received Graph Data Request:", { entity, entityType });
+  //console.log("🔍 Received Graph Data Request:", { entity, entityType });
 
   const nodeSql = getNodesForEntity(entityType);
   const linkSql = getLinksForEntity(entityType);
@@ -279,8 +295,8 @@ app.get("/api/get-graph-data", async (req, res) => {
     const nodes = await query(nodeSql, [entity, entity, entity, entity]);
     const links = await query(linkSql, [entity, entity, entity]);
 
-    console.log("📌 Nodes Retrieved:", nodes);
-    console.log("🔗 Links Retrieved:", links);
+    //console.log("📌 Nodes Retrieved:", nodes);
+    //console.log("🔗 Links Retrieved:", links);
 
     // Ensure JSON-safe response
     res.json({
@@ -316,7 +332,7 @@ app.get("/api/content/:taskId/content_relations", async (req, res) => {
   WHERE content_id = ?`;
   pool.query(sql, taskId, (err, rows) => {
     if (err) {
-      //console.log(rows, taskId);
+      console.log(rows, taskId);
       console.error(err);
       return res.status(500).send("Error fetching referenceieseses");
     }
@@ -650,13 +666,13 @@ app.post("/api/addContent", async (req, res) => {
     contentId = results[0].content_id;
     console.log("TASKID:", contentId);
   } catch (err) {
-    console.log("Detailed Catch Error:", JSON.stringify(err, null, 2));
+    //console.log("Detailed Catch Error:", JSON.stringify(err, null, 2));
     res.status(500).send("Database error during task ID fetch.");
   }
   const imageFilename = `content_id_${contentId}.png`;
 
   const imagePath = `assets/images/content/${imageFilename}`;
-  console.log("IMAGEFILENAME:", imagePath);
+  //console.log("IMAGEFILENAME:", imagePath);
   try {
     // Step 2: Download and resize the image
 
@@ -792,7 +808,7 @@ app.post("/api/pre-scrape", async (req, res) => {
       console.warn("Diffbot returned no objects, sending empty data.");
       return res.status(200).json({
         success: true,
-        publisher: "Unknown Publisher",
+        publisher: "",
         title: "",
         author: "",
         categories: [],
@@ -828,7 +844,7 @@ app.post("/api/pre-scrape", async (req, res) => {
     // Return a 200 response even if Diffbot fails
     res.status(200).json({
       success: false,
-      publisher: "Unknown Publisher",
+      publisher: "",
       title: "",
       author: "",
       categories: [],
@@ -891,5 +907,5 @@ app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
 // Start the server
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  //console.log(`Server running on port ${PORT}`);
 });
