@@ -64,11 +64,11 @@ export const scrapeContent = async (
       content_name,
       contentType
     );
-    console.log("AFTERORCH:", contentData);
+
     // Step 2: Store references separately (only for tasks)
     const references: Lit_references[] =
       contentType === "task" ? [...contentData.content] : [];
-    console.log("REFSINSCRAPE:", references);
+
     // Step 3: Save content to DB
     const contentId = await createTask(contentData);
     if (!contentId) {

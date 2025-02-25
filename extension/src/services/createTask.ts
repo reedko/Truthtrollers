@@ -1,8 +1,6 @@
 import axios from "axios";
 import { TaskData, Author, Publisher } from "../entities/Task";
 
-const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
-
 const createTask = async (taskData: TaskData): Promise<string | null> => {
   console.log("Creating content:", taskData.url, "as", taskData.content_type);
 
@@ -36,6 +34,11 @@ const createTask = async (taskData: TaskData): Promise<string | null> => {
         : Promise.resolve(),
     ]);
 
+    // 3) If we have claims from ClaimBuster, store them in DB
+    if (taskData.claimbusterClaims && taskData.claimbusterClaims.length > 0) {
+      await storeClaimsInDB(contentId, taskData.claimbusterClaims);
+    }
+
     return contentId;
   } catch (error) {
     console.error("❌ Error in createTask workflow:", error);
@@ -67,4 +70,30 @@ const addPublisher = async (contentId: string, publisher: Publisher) => {
   });
 };
 
+// C) Store the claims by sending a message to background => server
+async function storeClaimsInDB(
+  contentId: string,
+  claims: any[]
+): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    chrome.runtime.sendMessage(
+      {
+        action: "storeClaims",
+        data: {
+          contentId,
+          claims,
+        },
+      },
+      (response) => {
+        if (response?.success) {
+          console.log("✅ Claims stored successfully");
+          resolve();
+        } else {
+          console.error("❌ Error storing claims:", response);
+          reject(response?.error || "storeClaims failed");
+        }
+      }
+    );
+  });
+}
 export default createTask;
