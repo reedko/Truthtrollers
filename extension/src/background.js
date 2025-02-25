@@ -1,6 +1,7 @@
 // Listen for messages from content.js
 // background.js
 import useTaskStore from "../src/store/useTaskStore";
+const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (!tab.url.startsWith("chrome://")) {
@@ -110,14 +111,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
       // Call the backend to check if content exists
       try {
-        const response = await fetch(
-          "http://localhost:5001/api/check-content",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ url }),
-          }
-        );
+        const response = await fetch(`${BASE_URL}/api/check-content`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        });
 
         const data = await response.json();
 
@@ -354,13 +352,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
-  if (message.action === "fetchTitleFromDiffbot") {
-    fetchTitleFromDiffbot(message.url)
-      .then((title) => sendResponse(title))
-      .catch(() => sendResponse(null));
-
-    return true; // Keeps the message channel open for async response
-  }
   if (message.action === "fetchDiffbotData") {
     fetchDiffbotData(message.articleUrl)
       .then((data) => sendResponse(data))
@@ -381,7 +372,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // ✅ Create Task
 const addContent = async (taskData) => {
   try {
-    const response = await fetch("http://localhost:5001/api/addContent", {
+    const response = await fetch(`${BASE_URL}/api/addContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(taskData),
@@ -399,7 +390,7 @@ const addContent = async (taskData) => {
 // ✅ Add Authors
 const addAuthorsToServer = async (contentId, authors) => {
   try {
-    await fetch(`http://localhost:5001/api/content/${contentId}/authors`, {
+    await fetch(`${BASE_URL}/api/content/${contentId}/authors`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contentId, authors }),
@@ -415,7 +406,7 @@ const addAuthorsToServer = async (contentId, authors) => {
 // ✅ Add Publisher
 const addPublisherToServer = async (contentId, publisher) => {
   try {
-    await fetch(`http://localhost:5001/api/content/${contentId}/publishers`, {
+    await fetch(`${BASE_URL}/api/content/${contentId}/publishers`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ contentId, publisher }),
@@ -432,7 +423,7 @@ const addPublisherToServer = async (contentId, publisher) => {
 const addSourcesToServer = async (taskId, content) => {
   try {
     for (const lit_reference of content) {
-      await fetch(`http://localhost:5001/api/content/${taskId}/add-source`, {
+      await fetch(`${BASE_URL}/api/content/${taskId}/add-source`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ lit_reference }),
@@ -445,43 +436,12 @@ const addSourcesToServer = async (taskId, content) => {
   }
 };
 
-// ✅ Fetch title from Diffbot
-const fetchTitleFromDiffbot = async (url) => {
-  console.log(`🛠 Fetching title from Diffbot for: ${url}`);
-
-  try {
-    const response = await fetch("http://localhost:5001/api/get-title", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    });
-
-    if (!response.ok) {
-      console.warn(`⚠️ Diffbot request failed: ${response.status}`);
-      return null;
-    }
-
-    const responseData = await response.json();
-    let title = responseData?.title || null;
-
-    if (title) {
-      title = title.replace(/,?\s*published at.*/i, "").trim();
-    }
-
-    console.log(`✅ Cleaned Diffbot title: ${title}`);
-    return title;
-  } catch (err) {
-    console.error(`❌ Diffbot API failed for ${url}:`, err);
-    return null;
-  }
-};
-
 // ✅ Fetch Diffbot pre-scrape data
 const fetchDiffbotData = async (articleUrl) => {
   console.log(`🛠 Fetching Diffbot pre-scrape data for: ${articleUrl}`);
 
   try {
-    const response = await fetch("http://localhost:5001/api/pre-scrape", {
+    const response = await fetch(`${BASE_URL}/api/pre-scrape`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ articleUrl }),
@@ -506,7 +466,7 @@ const checkContent = async (url) => {
   console.log(`🔍 Checking content in DB for: ${url}`);
 
   try {
-    const response = await fetch("http://localhost:5001/api/check-content", {
+    const response = await fetch(`${BASE_URL}/api/check-content`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url }),
@@ -529,7 +489,7 @@ const checkContent = async (url) => {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "checkDatabaseForReference") {
-    fetch("http://localhost:5001/api/check-reference", {
+    fetch(`${BASE_URL}/api/check-reference`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url: message.url }),
@@ -547,7 +507,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "addContentRelation") {
-    fetch("http://localhost:5001/api/add-content-relation", {
+    fetch(`${BASE_URL}/api/add-content-relation`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -565,3 +525,94 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 });
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  const { action, url, text } = request;
+
+  switch (action) {
+    case "extractText": {
+      // request.url has the page URL
+      handleExtractText(url)
+        .then((resp) => sendResponse({ success: true, pageText: resp }))
+        .catch((err) => {
+          console.error("Error extracting text:", err);
+          sendResponse({ success: false, error: err.message });
+        });
+      return true; // Must return true for async
+    }
+    case "claimBuster": {
+      // request.text is the text to analyze
+      handleClaimBuster(text)
+        .then((resp) => sendResponse({ success: true, claims: resp }))
+        .catch((err) => {
+          console.error("Error calling ClaimBuster:", err);
+          sendResponse({ success: false, error: err.message });
+        });
+      return true;
+    }
+    // ... other actions (like addContent, addAuthors, etc.)
+    case "storeClaims": {
+      const { contentId, claims } = data;
+      storeClaimsOnServer(contentId, claims)
+        .then(() => {
+          sendResponse({ success: true });
+        })
+        .catch((err) => {
+          console.error("Error storing claims:", err);
+          sendResponse({ success: false, error: err.message });
+        });
+      return true; // async response
+    }
+
+    default:
+      break;
+  }
+});
+
+// 1) Extract Text from Node server (/api/extractText)
+async function handleExtractText(url) {
+  const response = await fetch(`${BASE_URL}/api/extractText`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+  if (!response.ok) {
+    throw new Error(`extractText failed with status ${response.status}`);
+  }
+  const data = await response.json(); // should be { pageText: "..." } or { error: "..." }
+  if (data.error) {
+    throw new Error(`extractText error: ${data.error}`);
+  }
+  // otherwise data.pageText should exist
+  return data.pageText;
+}
+
+// 2) Call ClaimBuster (/api/claimbuster)
+async function handleClaimBuster(text) {
+  const response = await fetch(`${BASE_URL}/api/claimbuster`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+  const data = await response.json();
+
+  if (!data.success) {
+    // You can throw or handle
+    throw new Error(data.error || "No success from claimbuster");
+  }
+
+  // Here data.results should exist
+  return data.results;
+}
+
+async function storeClaimsOnServer(contentId, claims) {
+  // We'll call a new route /api/claims/add
+  // The server will do the dedup & insert for us
+  const response = await fetch(`${BASE_URL}/api/claims/add`, {
+    content_id: contentId,
+    claims, // array of { text, score, etc. } from ClaimBuster
+  });
+  if (!response.data.success) {
+    throw new Error("Server responded with an error storing claims");
+  }
+  return;
+}
