@@ -5,6 +5,8 @@ import {
   extractAuthors,
   extractPublisher,
   extractReferences,
+  getClaimsFromBackground,
+  getExtractedTextFromBackground,
 } from "../services/extractMetaData";
 import { getMainHeadline } from "../services/getMainHeadline";
 import { DiffbotData } from "../entities/diffbotData";
@@ -33,7 +35,7 @@ export const orchestrateScraping = async (
   let extractedReferences: Lit_references[] = [];
 
   try {
-    diffbotData = await fetchDiffbotData(url);
+    diffbotData = {}; //await fetchDiffbotData(url);
     if (!diffbotData) throw new Error("Diffbot fetch returned null.");
     console.log("✅ Diffbot data received:", diffbotData);
   } catch (error) {
@@ -79,7 +81,7 @@ export const orchestrateScraping = async (
   const videoId = extractVideoIdFromUrl(url);
   console.log("✅ Extracted Publisher:", publisherName);
   // Capture thumbnail image
-  let imageUrl = diffbotData.images?.[0]?.url || "";
+  let imageUrl = diffbotData.images?.[0]?.url || null;
   if (!imageUrl) {
     imageUrl = await new Promise<string>((resolve) => {
       chrome.runtime.sendMessage({ action: "captureImage" }, (res) =>
@@ -87,17 +89,37 @@ export const orchestrateScraping = async (
       );
     });
   }
-  console.log(":IIIIIIMMMMMMAMMMMAMAMMAA:", imageUrl);
 
   // Fetch icon for topic
   const iconThumbnailUrl = await checkAndDownloadTopicIcon(generalTopic);
-  console.log(":iconThumbnailUrl:", iconThumbnailUrl);
 
   // Extract references only if processing as "reference" content type
   if (contentType === "task") {
     extractedReferences = await extractReferences($);
   }
 
+  // I) Now call the server to get "clean text" (this is optional if you trust your local text)
+  //    but let's do it for consistency with your /api/extractText approach:
+  let extractedText = "";
+  try {
+    console.log(url, ":extracttext from this");
+    extractedText = await getExtractedTextFromBackground(url);
+    console.log("✅ Extracted text from server for URL:", url);
+  } catch (err) {
+    console.warn("Failed to extract text from server:", err);
+    // fallback to local text if needed
+    extractedText = $("body").text().trim();
+  }
+
+  /*   // J) Next, call ClaimBuster on that text
+  let claimsFromCB: any[] = [];
+  try {
+    claimsFromCB = await getClaimsFromBackground(extractedText);
+    console.log("✅ ClaimBuster returned claims:", claimsFromCB);
+  } catch (err) {
+    console.warn("⚠️ ClaimBuster call failed:", err);
+  }
+ */
   return {
     content_name: mainHeadline ? mainHeadline : "",
     media_source: videoId ? "YouTube" : "Web",
@@ -114,5 +136,8 @@ export const orchestrateScraping = async (
     content: extractedReferences,
     publisherName,
     content_type: contentType,
+    // L) Include the extracted TEXT & claims so we can store them in the DB
+    raw_text: extractedText, // <--- new
+    claimbusterClaims: [], // <--- new
   };
 };

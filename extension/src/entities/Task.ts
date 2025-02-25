@@ -51,21 +51,7 @@ export interface TaskData {
   content: Lit_references[];
   publisherName: Publisher | null;
   content_type: string; // Added this to support both types
+  // new:
+  raw_text?: string; // the text from /api/extractText
+  claimbusterClaims?: any[];
 }
-
-/*    content_name: mainHeadline?mainHeadline:"",
-    media_source: videoId ? "YouTube" : "Web",
-    url,
-    assigned: "unassigned",
-    progress: "Unassigned",
-    users: "",
-    details: url,
-    topic: generalTopic,
-    subtopics: specificTopics,
-    thumbnail: imageUrl,
-    iconThumbnailUrl: iconThumbnailUrl || null,
-    authors,
-    content: extractedReferences,
-    publisherName,
-    content_type: contentType,
-*/

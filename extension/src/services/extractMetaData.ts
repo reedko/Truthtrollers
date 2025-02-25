@@ -18,6 +18,34 @@ const isValidReference = (link: string): boolean => {
   );
 };
 
+// A) Utility to get text from server via the background
+export async function getExtractedTextFromBackground(
+  url: string
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({ action: "extractText", url }, (response) => {
+      if (response?.success) {
+        resolve(response.pageText);
+      } else {
+        reject(response?.error || "Failed to extract text");
+      }
+    });
+  });
+}
+
+// B) Utility to get claims from ClaimBuster via the background
+export async function getClaimsFromBackground(text: string): Promise<any[]> {
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage({ action: "claimBuster", text }, (response) => {
+      if (response?.success) {
+        resolve(response.claims);
+      } else {
+        reject(response?.error || "Failed to call ClaimBuster");
+      }
+    });
+  });
+}
+
 export const fetchPageContent = (): cheerio.CheerioAPI => {
   const loadedCheerio = cheerio.load(document.documentElement.outerHTML);
   console.log(loadedCheerio, ":from cheerio");
@@ -212,9 +240,9 @@ export const extractReferences = async (
     url = url.trim();
     if (!isValidReference(url)) return;
 
-    let content_name = await fetchTitleFromDiffbot(url);
+    // let content_name = await fetchTitleFromDiffbot(url);
 
-    content_name = content_name || potentialTitle || formatUrlForTitle(url);
+    let content_name = potentialTitle || formatUrlForTitle(url);
 
     references.push({
       url,
@@ -264,7 +292,7 @@ export const extractReferences = async (
   return references;
 };
 
-// Helpers
+/* // Helpers
 const fetchTitleFromDiffbot = async (url: string): Promise<string | null> => {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage(
@@ -275,7 +303,7 @@ const fetchTitleFromDiffbot = async (url: string): Promise<string | null> => {
     );
   });
 };
-
+ */
 const formatUrlForTitle = (url: string): string => {
   try {
     const { hostname, pathname } = new URL(url);

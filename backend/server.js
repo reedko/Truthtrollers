@@ -7,11 +7,10 @@ import cors from "cors";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import axios from "axios";
-import fs from "fs";
 import path from "path";
 import sharp from "sharp";
 import dotenv from "dotenv";
-import "cheerio";
+import * as cheerio from "cheerio";
 import { promisify } from "util";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
@@ -19,6 +18,9 @@ import {
   getNodesForEntity,
   getLinksForEntity,
 } from "./database/graphQueries.js";
+
+import { JSDOM } from "jsdom";
+import { Readability } from "@mozilla/readability";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -737,51 +739,6 @@ app.post("/api/check-reference", async (req, res) => {
   }
 });
 
-// Endpoint to fetch article data using Diffbot
-app.post("/api/get-title", async (req, res) => {
-  let url = ""; // Declare `url` before the try block
-
-  try {
-    url = req.body.url; // Assign the value inside try
-
-    if (!url) {
-      return res.status(400).json({ error: "Missing URL in request body" });
-    }
-
-    const response = await axios.get(`${DIFFBOT_BASE_URL}/article`, {
-      params: {
-        token: DIFFBOT_TOKEN,
-        url,
-        fields: "title",
-      },
-    });
-
-    const title = response.data.objects?.[0]?.title || null;
-    console.log(`✅ Diffbot title for ${url}: ${title}`);
-
-    return res.status(200).json({ title });
-  } catch (err) {
-    const status = err.response?.status;
-
-    if (status === 429) {
-      console.warn(`⚠️ Diffbot rate limit exceeded for ${url}. Skipping.`);
-      return res.status(200).json({
-        title: null,
-        error: "Rate limit exceeded",
-      });
-    }
-
-    console.error(
-      `❌ Diffbot API failed for ${url}:`,
-      err?.response?.data || err.message
-    );
-    return res.status(200).json({
-      title: null,
-      error: "Diffbot lookup failed",
-    });
-  }
-});
-
 app.post("/api/pre-scrape", async (req, res) => {
   const { articleUrl } = req.body;
 
@@ -904,8 +861,134 @@ app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
   }
 });
 
+app.post("/api/extractText", async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url) {
+      return res.status(400).json({ error: "No URL provided" });
+    }
+
+    // 1) Fetch HTML from the URL
+    const { data: html } = await axios.get(url);
+
+    // 2) Create a JSDOM instance from the HTML
+    const dom = new JSDOM(html, { url });
+
+    // 3) Use Mozilla's Readability to parse the "main article" content
+    const reader = new Readability(dom.window.document);
+    const article = reader.parse();
+    // article might be null if Readability can't parse
+
+    // 4) Get the cleaned-up text content, or fallback to an empty string
+    let pageText = article?.textContent?.trim() || "";
+
+    // (Optional) Truncate if you want to limit size:
+    // if (pageText.length > 20000) {
+    //   pageText = pageText.slice(0, 20000);
+    // }
+
+    // 5) Return to the client
+    return res.json({ pageText });
+  } catch (error) {
+    console.error("Error extracting text:", error.message);
+    return res
+      .status(500)
+      .json({ error: "Error extracting text from the URL" });
+  }
+});
+
+// POST /api/claimbuster
+app.post("/api/claimbuster", async (req, res) => {
+  try {
+    const { text } = req.body;
+    if (!text) {
+      return res.status(400).json({ error: "No text provided" });
+    }
+
+    // Read API key from .env
+
+    const apiKey = process.env.REACT_APP_CLAIMBUSTER_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({ error: "No API key on server" });
+    }
+
+    // Call ClaimBuster with that key
+    const response = await axios.post(
+      "https://idir.uta.edu/claimbuster/api/v2/score/text/",
+      { text },
+      {
+        headers: {
+          "x-api-key": apiKey,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return res.json(response.data);
+  } catch (err) {
+    console.error("Error calling ClaimBuster:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.post("/api/claims/add", async (req, res) => {
+  try {
+    const { content_id, claims } = req.body;
+    if (!content_id || !claims) {
+      return res.status(400).json({ error: "content_id and claims required" });
+    }
+
+    let insertedCount = 0;
+
+    // For each claim from ClaimBuster: { text, score, etc. }
+    for (const claimObj of claims) {
+      const claimText = (claimObj.text || "").trim();
+      if (!claimText) continue;
+
+      // 1) Check if we already have this claim in DB
+      const [rows] = await db.query(
+        "SELECT claim_id FROM claims WHERE claim_text = ?",
+        [claimText]
+      );
+
+      let claimId;
+      if (rows.length > 0) {
+        // Already exists
+        claimId = rows[0].claim_id;
+      } else {
+        // Insert new claim
+        const [result] = await db.query(
+          "INSERT INTO claims (claim_text) VALUES (?)",
+          [claimText]
+        );
+        claimId = result.insertId;
+      }
+
+      // 2) Link content & claim in content_claims
+      // Check if link already exists
+      const [linkRows] = await db.query(
+        "SELECT cc_id FROM content_claims WHERE content_id = ? AND claim_id = ?",
+        [content_id, claimId]
+      );
+      if (linkRows.length === 0) {
+        await db.query(
+          "INSERT INTO content_claims (content_id, claim_id, relationship_type) VALUES (?,?,?)",
+          [content_id, claimId, "claimbuster"] // or "task"/"reference" if you prefer
+        );
+        insertedCount++;
+      }
+    }
+
+    return res.json({ success: true, insertedCount });
+  } catch (error) {
+    console.error("Error in /api/claims/add:", error);
+    return res.status(500).json({ error: "Server error storing claims" });
+  }
+});
+
 // Start the server
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
-  //console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

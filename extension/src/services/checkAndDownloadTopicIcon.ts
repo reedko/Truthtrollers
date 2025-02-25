@@ -1,15 +1,14 @@
+const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
+
 const checkAndDownloadTopicIcon = async (
   generalTopic: string
 ): Promise<string | null> => {
   try {
-    const response = await fetch(
-      "http://localhost:5001/api/checkAndDownloadTopicIcon",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ generalTopic }),
-      }
-    );
+    const response = await fetch(`${BASE_URL}/api/checkAndDownloadTopicIcon`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ generalTopic }),
+    });
 
     if (!response.ok) {
       throw new Error(
