@@ -1,27 +1,25 @@
-const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
-
+// checkAndDownloadTopicIcon.ts
 const checkAndDownloadTopicIcon = async (
   generalTopic: string
 ): Promise<string | null> => {
-  try {
-    const response = await fetch(`${BASE_URL}/api/checkAndDownloadTopicIcon`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ generalTopic }),
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `Failed to check/download topic icon: ${response.statusText}`
-      );
-    }
-
-    const { thumbnail_url } = await response.json();
-    return thumbnail_url; // Can be null if the topic already exists
-  } catch (error) {
-    console.error("Error in checkAndDownloadTopicIcon:", error);
-    throw error;
-  }
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(
+      {
+        action: "checkAndDownloadTopicIcon",
+        generalTopic,
+      },
+      (response) => {
+        if (response && response.success) {
+          resolve(response.thumbnail_url || null);
+        } else {
+          const errMsg =
+            response?.error || "Failed to check and download topic icon";
+          console.error("Error in checkAndDownloadTopicIcon:", errMsg);
+          reject(new Error(errMsg));
+        }
+      }
+    );
+  });
 };
 
 export default checkAndDownloadTopicIcon;

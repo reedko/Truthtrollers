@@ -18,7 +18,7 @@ const oauth = new OAuth.OAuth(
 );
 
 const fetchIconForTopic = async (query) => {
-  const queryUrl = `https://api.thenounproject.com/v2/icon?query=${encodeURIComponent(
+  const queryUrl = `https://api.thenounproject.com/v2/icons?query=${encodeURIComponent(
     query
   )}&limit_to_public_domain=yes&thumbnail_size=84&limit=1`;
 
@@ -27,7 +27,7 @@ const fetchIconForTopic = async (query) => {
       queryUrl,
       "", // Access token (empty string here)
       "", // Access token secret (empty string here)
-      (e, data, res) => {
+      (e, data) => {
         if (e) {
           console.error("Error fetching from Noun Project API:", e);
           reject(e);
