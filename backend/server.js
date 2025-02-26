@@ -822,7 +822,7 @@ app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
       WHERE topics.topic_name = ? OR topic_aliases.alias_name = ?
     `;
     const results = await query(topicQuery, [generalTopic, generalTopic]);
-
+    console.log(results, generalTopic, ":results for check topi");
     if (results.length > 0) {
       // Topic or alias exists, return null for the thumbnail
       return res.status(200).send({ exists: true, thumbnail_url: null });

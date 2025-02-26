@@ -2,6 +2,7 @@
 // background.js
 import useTaskStore from "../src/store/useTaskStore";
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
+const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (!tab.url.startsWith("chrome://")) {
@@ -616,3 +617,205 @@ async function storeClaimsOnServer(contentId, claims) {
   }
   return;
 }
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "checkAndDownloadTopicIcon") {
+    const { generalTopic } = request;
+
+    fetch(`${BASE_URL}/api/checkAndDownloadTopicIcon`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ generalTopic }),
+    })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Failed to check/download icon: ${res.statusText}`);
+        }
+        return res.json();
+      })
+      .then((data) => {
+        // Suppose the server returns { thumbnail_url: string | null }
+        sendResponse({ success: true, thumbnail_url: data.thumbnail_url });
+      })
+      .catch((err) => {
+        console.error("Error in checkAndDownloadTopicIcon request:", err);
+        sendResponse({ success: false, error: err.message });
+      });
+
+    // Must return true for async response
+    return true;
+  }
+});
+
+// background.js (Manifest V3 service worker or background script)
+
+async function analyzeContent(content) {
+  // 1) Make the request
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4-turbo", // or "gpt-3.5-turbo"
+      messages: [
+        {
+          role: "system",
+          content: "You are a content analysis assistant.",
+        },
+        {
+          role: "user",
+          content: `
+Identify the most general topic (at most two words) for this text, then provide a list of more specific topics that fall under this general topic, 
+and also extract every distinct factual assertion or claim from the text (where a claim is a statement that can be tested or verified for truth).
+
+Return your answer in valid JSON only, exactly in the format:
+{
+  "generalTopic": "<string>",
+  "specificTopics": ["<string>", "<string>", ...],
+  "claims": ["<claim1>", "<claim2>", ...]
+}
+
+Text:
+${content}
+          `,
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenAI request failed: ${response.statusText}`);
+  }
+
+  // 2) Parse the JSON result
+  const data = await response.json();
+  if (!data.choices || data.choices.length === 0) {
+    throw new Error("No completion returned from OpenAI");
+  }
+
+  // GPT’s reply (hopefully a valid JSON string)
+  const rawReply = data.choices[0].message.content.trim();
+
+  // 3) Attempt to parse the JSON the model returned
+  let parsed;
+  try {
+    parsed = JSON.parse(rawReply);
+  } catch (err) {
+    console.error("GPT did not return valid JSON:", rawReply);
+    throw new Error("Invalid JSON from GPT");
+  }
+
+  // Expecting parsed to have keys: generalTopic, specificTopics, claims
+  // Provide some defaults if GPT missed them
+  const generalTopic = parsed.generalTopic || "Unknown";
+  const specificTopics = Array.isArray(parsed.specificTopics)
+    ? parsed.specificTopics
+    : [];
+  const claims = Array.isArray(parsed.claims) ? parsed.claims : [];
+
+  return { generalTopic, specificTopics, claims };
+}
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "analyzeContent") {
+    // We handle the call asynchronously
+    callOpenAiAnalyze(request.content)
+      .then((result) => {
+        // 'result' should be { generalTopic, specificTopics, claims }
+        sendResponse({ success: true, data: result });
+      })
+      .catch((err) => {
+        sendResponse({ success: false, error: err.message });
+      });
+    // Return true to indicate async response
+    return true;
+  }
+});
+
+// Example function that calls OpenAI for both topics & claims
+async function callOpenAiAnalyze(content) {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "You are a combined topic and claim extraction assistant.",
+        },
+        {
+          role: "user",
+          content: `
+Identify the most general topic (at most two words) for this text, then provide a list of more specific topics under that general topic.
+Additionally, extract every distinct factual assertion or claim (statements that can be tested or verified for truth).
+Return your answer in valid JSON exactly like this:
+{
+  "generalTopic": "<string>",
+  "specificTopics": ["<string>", "<string>"],
+  "claims": ["<claim1>", "<claim2>", ...]
+}
+
+Text:
+${content}
+          `,
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`OpenAI request failed: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  if (!data.choices || data.choices.length === 0) {
+    throw new Error("No completion returned from OpenAI");
+  }
+
+  const rawReply = data.choices[0].message.content.trim();
+
+  // Attempt to parse the JSON
+  let parsed;
+  try {
+    parsed = JSON.parse(rawReply);
+  } catch (err) {
+    console.error("Invalid JSON from GPT:", rawReply);
+    throw new Error("GPT returned invalid JSON");
+  }
+
+  const generalTopic = parsed.generalTopic || "Unknown";
+  const specificTopics = Array.isArray(parsed.specificTopics)
+    ? parsed.specificTopics
+    : [];
+  const claims = Array.isArray(parsed.claims) ? parsed.claims : [];
+  console.log(claims, ":::CLAIMS");
+  return { generalTopic, specificTopics, claims };
+}
+
+// The message listener
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "getTopicsFromText") {
+    const { content } = request;
+
+    callOpenAiForTopics(content)
+      .then((result) => {
+        // result = { generalTopic, specificTopics }
+        sendResponse({ success: true, data: result });
+      })
+      .catch((err) => {
+        console.error("Error calling OpenAI in background:", err);
+        sendResponse({ success: false, error: err.message });
+      });
+
+    // IMPORTANT: return true to indicate we will send async response
+    return true;
+  }
+
+  // ... other actions ...
+});

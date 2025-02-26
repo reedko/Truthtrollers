@@ -5,12 +5,11 @@ import {
   extractAuthors,
   extractPublisher,
   extractReferences,
-  getClaimsFromBackground,
   getExtractedTextFromBackground,
 } from "../services/extractMetaData";
 import { getMainHeadline } from "../services/getMainHeadline";
 import { DiffbotData } from "../entities/diffbotData";
-import { getTopicsFromText } from "../services/openaiTopics";
+import { analyzeContent } from "./openaiTopicsAndClaims";
 import { extractVideoIdFromUrl } from "../services/parseYoutubeUrl";
 import checkAndDownloadTopicIcon from "../services/checkAndDownloadTopicIcon";
 import { Lit_references } from "../entities/Task";
@@ -31,11 +30,15 @@ export const orchestrateScraping = async (
 ) => {
   let diffbotData: DiffbotData = {};
   let generalTopic = "";
+  let claims: string[] = [];
   let specificTopics: string[] = [];
   let extractedReferences: Lit_references[] = [];
 
   try {
-    diffbotData = {}; //await fetchDiffbotData(url);
+    contentType === "task"
+      ? (diffbotData = await fetchDiffbotData(url))
+      : (diffbotData = {});
+
     if (!diffbotData) throw new Error("Diffbot fetch returned null.");
     console.log("✅ Diffbot data received:", diffbotData);
   } catch (error) {
@@ -47,17 +50,6 @@ export const orchestrateScraping = async (
     contentType === "task"
       ? fetchPageContent()
       : await fetchExternalPageContent(url); // ✅ Use correct fetch function
-
-  // Extract topics
-  if (diffbotData.categories?.length) {
-    generalTopic = diffbotData.categories[0]?.name || "General";
-    specificTopics = diffbotData.categories.slice(1).map((c) => c.name);
-  } else {
-    const contentText = $("body").text().trim();
-    const topics = await getTopicsFromText(contentText);
-    generalTopic = topics.generalTopic;
-    specificTopics = topics.specificTopics;
-  }
 
   // Get headline
 
@@ -90,9 +82,6 @@ export const orchestrateScraping = async (
     });
   }
 
-  // Fetch icon for topic
-  const iconThumbnailUrl = await checkAndDownloadTopicIcon(generalTopic);
-
   // Extract references only if processing as "reference" content type
   if (contentType === "task") {
     extractedReferences = await extractReferences($);
@@ -102,7 +91,6 @@ export const orchestrateScraping = async (
   //    but let's do it for consistency with your /api/extractText approach:
   let extractedText = "";
   try {
-    console.log(url, ":extracttext from this");
     extractedText = await getExtractedTextFromBackground(url);
     console.log("✅ Extracted text from server for URL:", url);
   } catch (err) {
@@ -110,6 +98,15 @@ export const orchestrateScraping = async (
     // fallback to local text if needed
     extractedText = $("body").text().trim();
   }
+
+  // Extract topics and claims
+  const topicsAndClaims = await analyzeContent(extractedText);
+  generalTopic = topicsAndClaims.generalTopic;
+  specificTopics = topicsAndClaims.specificTopics;
+  claims = topicsAndClaims.claims;
+
+  // Fetch icon for topic
+  const iconThumbnailUrl = await checkAndDownloadTopicIcon(generalTopic);
 
   /*   // J) Next, call ClaimBuster on that text
   let claimsFromCB: any[] = [];
@@ -138,6 +135,6 @@ export const orchestrateScraping = async (
     content_type: contentType,
     // L) Include the extracted TEXT & claims so we can store them in the DB
     raw_text: extractedText, // <--- new
-    claimbusterClaims: [], // <--- new
+    Claims: claims, // <--- new
   };
 };

@@ -1,7 +1,7 @@
 import axios from "axios";
 
-const API_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
-
+//const API_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
+const API_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5001";
 export const register = async (
   username: string,
   password: string,
