@@ -11,6 +11,8 @@ export class GraphNode implements d3.SimulationNodeDatum {
   y?: number;
   fx?: number | null;
   fy?: number | null;
+  angle?: number;
+  radialOffset?: number;
 
   // Hard-set group based on type
   get group(): number {

@@ -230,6 +230,12 @@ export const getLinksForEntity = (entityType) => {
         FROM content_authors ca
         JOIN content c ON ca.content_id = c.content_id
         WHERE c.content_type='reference' and ca.content_id = ?
+
+        UNION
+
+        SELECT 'published' AS type, tp.publisher_id AS source, tp.content_id AS target
+        FROM content_publishers tp
+        WHERE tp.content_id = ?
         ;
       `;
   }

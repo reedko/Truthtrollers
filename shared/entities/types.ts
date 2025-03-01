@@ -84,10 +84,12 @@ export class GraphNode implements d3.SimulationNodeDatum {
   label: string;
   type: string;
   url?: string;
-  x?: number;
-  y?: number;
+  x: number;
+  y: number;
   fx?: number | null;
   fy?: number | null;
+  angle?: number;
+  radialOffset?: number;
 
   get group(): number {
     return this.type === "author"
@@ -99,17 +101,27 @@ export class GraphNode implements d3.SimulationNodeDatum {
       : 4;
   }
 
-  constructor(id: string, label: string, type: string, url?: string) {
+  constructor(
+    id: string,
+    label: string,
+    type: string,
+    x: number,
+    y: number,
+    url?: string
+  ) {
     this.id = id;
     this.label = label;
     this.type = type;
     this.url = url;
+    this.x = x;
+    this.y = y;
   }
 }
 
 export interface Link extends d3.SimulationLinkDatum<GraphNode> {
-  source: string | GraphNode;
-  target: string | GraphNode;
+  source: GraphNode;
+  target: GraphNode;
   type: string;
   value?: number;
+  angle?: number;
 }

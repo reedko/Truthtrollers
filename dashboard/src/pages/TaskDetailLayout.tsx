@@ -49,6 +49,8 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
       label: task.content_name,
       type: "task", // Distinguish that this node is a task
       url: task.url,
+      x: 0,
+      y: 0,
       group: 2,
     };
   };
@@ -120,7 +122,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   // RENDER
   // ─────────────────────────────────────────────────────────────────────────────
   return (
-    <Box w="100%" p={4} overflow="auto">
+    <Box w="calc(100vw-20px)" mx="10px" p={4} overflow="auto">
       <Grid
         templateColumns={{ base: "1fr", md: "1fr 2fr" }}
         gap={2}
@@ -196,6 +198,8 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
           <NetworkGraph
             nodes={graphData.nodes}
             links={graphData.links}
+            width={1000}
+            height={1000}
             onNodeClick={handleNodeClick}
           />
 
