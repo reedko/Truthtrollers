@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect } from "react";
 import * as d3 from "d3";
-import { GraphNode, Link } from "../../../shared/entities/types.ts";
+import { GraphNode, Link } from "../../../shared/entities/types";
 
 interface NetworkGraphProps {
   nodes: GraphNode[];
@@ -15,8 +15,8 @@ interface NetworkGraphProps {
 const NetworkGraph: React.FC<NetworkGraphProps> = ({
   nodes,
   links,
-  width = 600,
-  height = 400,
+  width = 1000,
+  height = 1000,
   onNodeClick,
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -28,6 +28,43 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove(); // Clear previous graph
 
+    // Append defs for clipPath (clip images to fit within node shape)
+    const defs = svg.append("defs");
+
+    defs
+      .append("clipPath")
+      .attr("id", "clipCircle")
+      .append("circle")
+      .attr("cx", 0)
+      .attr("cy", 0)
+      .attr("r", 30); // Clip images inside circles
+
+    defs
+      .append("clipPath")
+      .attr("id", "clipSquare")
+      .append("circle")
+      .attr("cx", 0)
+      .attr("cy", 0)
+      .attr("r", 30); // Clip images inside circles
+
+    const centerX = width / 2;
+    const centerY = height / 2;
+    const centerNode = nodes[0]; // First node is the center
+    let offSetter = 0;
+    if (centerNode) {
+      centerNode.fx = centerX;
+      centerNode.fy = centerY;
+    }
+
+    // Compute node angles and offsets
+    nodes.forEach((node, index) => {
+      if (index === 0) return; // Skip center node
+      node.angle = Math.atan2(node.y - centerY, node.x - centerX);
+      node.radialOffset = node.label.length > 25 ? 40 : -2;
+      offSetter = node.radialOffset;
+    });
+
+    // Create the force simulation
     const simulation = d3
       .forceSimulation<GraphNode>(nodes)
       .force(
@@ -35,10 +72,16 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
         d3
           .forceLink<GraphNode, Link>(links)
           .id((d) => d.id)
-          .distance(120)
+          .distance((d) =>
+            d.target.angle
+              ? d.target.angle
+              : 100 % 2 === 0
+              ? 250 + offSetter
+              : 300 + offSetter
+          ) // Alternating distances
       )
-      .force("charge", d3.forceManyBody().strength(-300))
-      .force("center", d3.forceCenter(width / 2, height / 2));
+      .force("charge", d3.forceManyBody().strength(-1000))
+      .force("center", d3.forceCenter(centerX, centerY));
 
     // Draw links
     const linkSelection = svg
@@ -51,57 +94,13 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
       .attr("stroke-opacity", 0.6)
       .attr("stroke-width", (d) => Math.sqrt(d.value || 1));
 
-    // Draw nodes with different shapes
+    // Draw nodes
     const nodeSelection = svg
       .append("g")
-      .selectAll("g") // Use groups to attach different shapes
+      .selectAll("g")
       .data(nodes)
       .enter()
       .append("g")
-      .attr("transform", (d) => `translate(${d.x},${d.y})`)
-      .each(function (d) {
-        const node = d3.select(this);
-
-        if (d.group === 4) {
-          // REF NODE (SQUARE)
-          node
-            .append("rect")
-            .attr("width", 30)
-            .attr("height", 30)
-            .attr("x", -12) // Centering
-            .attr("y", -12)
-            .attr("rx", 5) // Rounded corners
-            .attr("fill", "#d62728") // red
-            .attr("stroke", "#000")
-            .attr("stroke-width", 1.5);
-        } else if (d.group === 2) {
-          // TASK NODE (STAR)
-          node
-            .append("polygon")
-            .attr(
-              "points",
-              "0,-10 4,-3 10,-3 5,2 6,8 0,5 -6,8 -5,2 -10,-3 -4,-3"
-            ) // Star shape
-            .attr("transform", "scale(2.5)") // Adjust star size
-            .attr("fill", "#ff7f0e") // orange for references
-            .attr("stroke", "#000")
-            .attr("stroke-width", 1.5);
-        } else {
-          // OTHER NODES (CIRCLES)
-          node
-            .append("circle")
-            .attr("r", d.group === 1 ? 24 : d.group === 3 ? 30 : 12)
-            .attr("fill", () =>
-              d.group === 1
-                ? "#1f77b4" // Blue (Author)
-                : d.group === 3
-                ? "#2ca02c" // Green (Publisher)
-                : "#d62728"
-            ) // Red (References)
-            .attr("stroke", "#000")
-            .attr("stroke-width", 1.5);
-        }
-      })
       .call(
         d3
           .drag<SVGGElement, GraphNode>()
@@ -124,70 +123,135 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
         if (onNodeClick) onNodeClick(d);
       });
 
-    // Add labels with contrast
-    const labelSelection = svg
-      .append("g")
-      .selectAll("text")
-      .data(nodes)
-      .enter()
-      .append("text")
-      .attr("text-anchor", "middle")
-      .style("font-size", "12px")
-      .style("fill", (d) => (d.group === 2 ? "white" : "white")) // Tasks get black text
-      .style("font-weight", (d) => (d.group === 2 ? "bold" : "normal")) // Bold for content
-      .style("pointer-events", "none")
-      .each(function (d) {
-        const text = d3.select(this);
-        const words = d.label.split(" ");
-        const lineHeight = 12;
-        const maxWidth = d.group === 2 ? 20 : 20; // Set max width for wrapping
-        let line = "";
-        let lineNumber = 0;
+    // Append shape, image, and labels to nodes
+    nodeSelection.each(function (d) {
+      const nodeGroup = d3.select(this);
+      const imageUrl = `http://localhost:5001/assets/images/${
+        {
+          1: `authors/author_id_${d.id}.png`,
+          2: `content/content_id_${d.id}.png`,
+          3: `publishers/publisher_id_${d.id}.png`,
+          4: `content/content_id_${d.id}.png`,
+        }[d.group] || `default.png`
+      }`;
 
-        // Get correct x and y
-        const xPos = d.x ?? 0;
-        const yPos = d.y ?? 0;
+      // Draw shape
+      if (d.group === 4) {
+        nodeGroup
+          .append("rect")
+          .attr("width", 60)
+          .attr("height", 60)
+          .attr("x", -30)
+          .attr("y", -30)
+          .attr("rx", 5)
+          .attr("fill", "#d62728")
+          .attr("stroke", "#000")
+          .attr("stroke-width", 1.5);
+      } else if (d.group === 2) {
+        nodeGroup
+          .append("polygon")
+          .attr(
+            "points",
+            "0,-15 6,-5 15,-5 7,4 8,12 0,6 -8,12 -7,4 -15,-5 -6,-5"
+          )
+          .attr("transform", "scale(4.5)")
+          .attr("fill", "#ff7f0e")
+          .attr("stroke", "#000")
+          .attr("stroke-width", 2);
+      } else {
+        const radius = d.group === 1 ? 50 : d.group === 3 ? 55 : 36;
+        nodeGroup
+          .append("circle")
+          .attr("r", radius)
+          .attr(
+            "fill",
+            d.group === 1 ? "#1f77b4" : d.group === 3 ? "#2ca02c" : "#d62728"
+          )
+          .attr("stroke", "#000")
+          .attr("stroke-width", 1.5);
+      }
 
-        // Clear previous text before appending new tspans
-        text.selectAll("tspan").remove();
+      // Append image
+      nodeGroup
+        .append("image")
+        .attr("href", imageUrl)
+        .attr("width", 60)
+        .attr("height", 60)
+        .attr("x", -30)
+        .attr("y", -30)
+        .attr(
+          "clip-path",
+          d.group === 4 ? "url(#clipSquare)" : "url(#clipCircle)"
+        );
 
-        words.forEach((word, index) => {
-          if ((line + word).length > maxWidth) {
-            text
-              .append("tspan")
-              .attr("x", xPos)
-              .attr("dy", lineNumber === 0 ? 0 : lineHeight)
-              .text(line.trim());
-            line = word + " ";
-            lineNumber++;
-          } else {
-            line += word + " ";
-          }
-        });
+      // **Label Box with Proper Word Wrapping**
+      const labelGroup = nodeGroup.append("g").attr("class", "labelGroup");
 
-        // Append the final line
-        text
-          .append("tspan")
-          .attr("x", xPos)
-          .attr("dy", lineNumber === 0 ? 0 : lineHeight)
-          .text(line.trim());
+      // Word wrapping logic
+      const words = d.label.split(" ");
+      const maxCharsPerLine = 18;
+      let lines: string[] = [];
+      let currentLine = "";
+
+      words.forEach((word) => {
+        if ((currentLine + word).length > maxCharsPerLine) {
+          lines.push(currentLine.trim());
+          currentLine = word + " ";
+        } else {
+          currentLine += word + " ";
+        }
       });
+      if (currentLine) lines.push(currentLine.trim());
 
-    // Attach the text labels to the node's position in the tick function
+      const lineHeight = 15;
+      const textHeight = lines.length * lineHeight + 10;
+
+      // Draw label background box
+      labelGroup
+        .append("rect")
+        .attr("x", -70)
+        .attr("y", 50)
+        .attr("width", 140)
+        .attr("height", textHeight)
+        .attr("fill", "#333")
+        .attr("rx", 5)
+        .attr("ry", 5);
+
+      // Draw wrapped text
+      const textElement = labelGroup
+        .append("text")
+        .attr("x", 0)
+        .attr("y", 65)
+        .attr("text-anchor", "middle")
+        .attr("fill", "white")
+        .style("font-size", "12px");
+
+      lines.forEach((line, i) => {
+        textElement
+          .append("tspan")
+          .attr("x", 0)
+          .attr("dy", i === 0 ? 0 : lineHeight)
+          .text(line);
+      });
+    });
+
     simulation.on("tick", () => {
       linkSelection
-        .attr("x1", (d) => (typeof d.source === "object" ? d.source.x! : 0))
-        .attr("y1", (d) => (typeof d.source === "object" ? d.source.y! : 0))
-        .attr("x2", (d) => (typeof d.target === "object" ? d.target.x! : 0))
-        .attr("y2", (d) => (typeof d.target === "object" ? d.target.y! : 0));
+        .attr("x1", (d) => d.source.x!)
+        .attr("y1", (d) => d.source.y!)
+        .attr("x2", (d) => d.target.x!)
+        .attr("y2", (d) => d.target.y!);
 
-      nodeSelection.attr("transform", (d) => `translate(${d.x},${d.y})`);
-
-      // Correct text placement
-      labelSelection.attr(
-        "transform",
-        (d) => `translate(${d.x ?? 0},${d.y ?? 0 - 15})`
-      );
+      // Update node positions with alternating radial offset:
+      nodeSelection.attr("transform", (d, i) => {
+        const angle = Math.atan2(d.y - centerY, d.x - centerX);
+        // Alternate offset: even-index nodes get +20, odd-index nodes get -20
+        const alternatingOffset = i % 2 === 0 ? 40 : -40;
+        const totalOffset = alternatingOffset + (d.radialOffset || 0);
+        const newX = d.x + totalOffset * Math.cos(angle);
+        const newY = d.y + totalOffset * Math.sin(angle);
+        return `translate(${newX}, ${newY})`;
+      });
     });
 
     return () => {

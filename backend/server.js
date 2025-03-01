@@ -295,7 +295,7 @@ app.get("/api/get-graph-data", async (req, res) => {
 
   try {
     const nodes = await query(nodeSql, [entity, entity, entity, entity]);
-    const links = await query(linkSql, [entity, entity, entity]);
+    const links = await query(linkSql, [entity, entity, entity, entity]);
 
     //console.log("📌 Nodes Retrieved:", nodes);
     //console.log("🔗 Links Retrieved:", links);

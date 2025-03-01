@@ -16,13 +16,13 @@ const NavBar = () => {
   return (
     <Flex as="nav" align="center" padding="10px" width="100%" boxShadow="sm">
       <Link to="/">
-        <Image src={`${API_BASE_URL}/assets/ttlogo11.png`} boxSize="80px" />
+        <Image src={`${API_BASE_URL}/assets/ttlogo11.png`} boxSize="120px" />
       </Link>
       <Input
         placeholder="Search content..."
         onChange={handleSearchChange}
         marginLeft="20px"
-        maxWidth="400px"
+        maxWidth="1000px"
         flex="1"
       />
       <Spacer />
