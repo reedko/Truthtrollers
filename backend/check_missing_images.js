@@ -49,7 +49,7 @@ async function checkMissingImages() {
       try {
         await fs.access(imagePath);
       } catch {
-        console.log(`❌ Missing: ${thumbnail} (Content ID: ${id})`);
+        console.log(`${thumbnail}`);
         missingCount++;
       }
     }
