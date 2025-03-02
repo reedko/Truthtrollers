@@ -21,7 +21,7 @@ const dbConfig = {
 };
 
 // Set the path to the folder where images are stored
-const IMAGE_DIR = path.join(__dirname, "public/assets/images/content");
+const IMAGE_DIR = path.join(__dirname, "../backend/assets/images/content");
 
 // Function to check for missing images
 async function checkMissingImages() {

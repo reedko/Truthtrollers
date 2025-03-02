@@ -1,0 +1,169 @@
+Below is the author extraction code that works, the third try of the publisher extraction that doesn't work, and the actual element we are searching for the author and publisher in.  
+// Extract Authors
+export const extractAuthors = async (
+  $: cheerio.CheerioAPI
+): Promise<Author[]> => {
+  const authors: Author[] = [];
+
+  // Extract from JSON-LD
+  $('script[type="application/ld+json"]').each((_, scriptTag) => {
+    try {
+      const metadata = JSON.parse($(scriptTag).html() || "");
+      const authorData = Array.isArray(metadata) ? metadata : [metadata];
+
+      authorData.forEach((entry) => {
+        if (entry["@type"] === "Person" && entry.name) {
+          authors.push({
+            name: entry.name,
+            description: entry.description || null,
+            image: entry.image?.contentUrl || null,
+          });
+        }
+      });
+
+      if (metadata.author) {
+        (Array.isArray(metadata.author)
+          ? metadata.author
+          : [metadata.author]
+        ).forEach((author: any) => {
+          authors.push(
+            typeof author === "object"
+              ? {
+                  name: author.name,
+                  description: author.description || null,
+                  image: author.image?.contentUrl || null,
+                }
+              : { name: author }
+          );
+        });
+      }
+    } catch (err) {
+      console.error("Error parsing ld+json for authors:", err);
+    }
+  });
+
+  // Extract from meta tags
+  if (!authors.length) {
+    const rawAuthorNames =
+      $('meta[name="author"]').attr("content") ||
+      $('meta[property="article:author"]').attr("content");
+    if (rawAuthorNames) {
+      rawAuthorNames
+        .split(/\s*and\s*|,\s*/)
+        .forEach((name) => authors.push({ name: name.trim() }));
+    }
+  }
+
+  // Extract from citation meta tags
+  if (!authors.length) {
+    $(
+      'meta[name="citation_author"], meta[property="article:citation_author"]'
+    ).each((_, metaTag) => {
+      const rawAuthorName = $(metaTag).attr("content");
+      if (rawAuthorName) {
+        rawAuthorName
+          .split(/\s*and\s*|,\s*/)
+          .forEach((name) => authors.push({ name: name.trim() }));
+      }
+    });
+  }
+
+  // Special case handling for certain sites (e.g., Children's Health Defense)
+  if (!authors.length) {
+    $("script").each((_, scriptTag) => {
+      const scriptContent = $(scriptTag).html();
+      if (scriptContent?.includes("var chd_ga4_data =")) {
+        try {
+          const match = scriptContent.match(/var chd_ga4_data = (\{.*?\});/s);
+          if (match && match[1]) {
+            const chdData = JSON.parse(match[1]);
+            if (chdData.contentAuthor) {
+              authors.push({
+                name: chdData.contentAuthor,
+                title: chdData.contentAuthorTitle || null,
+              });
+            }
+          }
+        } catch (err) {
+          console.error("Error parsing chd_ga4_data:", err);
+        }
+      }
+    });
+  }
+
+  return authors;
+};
+
+export const extractPublisher = async (
+  $: cheerio.CheerioAPI
+): Promise<Publisher> => {
+  let publisherName =
+    $('meta[property="og:site_name"]').attr("content") ||
+    $('meta[name="publisher"]').attr("content") ||
+    $('meta[name="citation_journal_title"]').attr("content") ||
+    "Unknown Publisher";
+
+  // Extract from JSON-LD
+  // Extract from JSON-LD
+  // Extract publisher from JSON-LD
+  if (publisherName === "Unknown Publisher") {
+    $('script[type="application/ld+json"]').each((_, elem) => {
+      try {
+        const jsonData = JSON.parse($(elem).text().trim());
+
+        // ✅ Directly check if 'publisher' exists as an object
+        if (
+          jsonData.publisher &&
+          typeof jsonData.publisher === "object" &&
+          jsonData.publisher.name
+        ) {
+          publisherName = jsonData.publisher.name;
+          console.log("✅ Publisher Found (Direct):", publisherName);
+          return false; // Break out of loop once found
+        }
+
+        // 🔄 Recursive fallback in case it's buried deeper
+        const findPublisher = (data: any): string | null => {
+          if (Array.isArray(data))
+            return data.map(findPublisher).find((name) => name) || null;
+          if (typeof data === "object" && data) {
+            if (data["@type"] === "NewsMediaOrganization" && data.name)
+              return data.name;
+            return (
+              Object.values(data)
+                .map(findPublisher)
+                .find((name) => name) || null
+            );
+          }
+          return null;
+        };
+
+        const foundPublisher = findPublisher(jsonData);
+        if (foundPublisher) {
+          publisherName = foundPublisher;
+          console.log("✅ Publisher Found (Recursive):", publisherName);
+        }
+      } catch (err) {
+        console.warn(`⚠️ Failed to parse ld+json script: ${err}`);
+      }
+    });
+  }
+
+  // Handle Substack
+  if (publisherName === "Unknown Publisher") {
+    const title = $("title").text();
+    if (title.includes("on Substack")) {
+      const match = title.match(/^(.*?)(?: on Substack)?$/i);
+      publisherName = match ? match[1].trim() : "Unknown Publisher";
+    }
+  }
+
+  return { name: publisherName };
+};
+
+
+
+
+
+
+<script type="application/ld+json" data-qa="schema">{"@context":"http://schema.org","@type":"NewsArticle","mainEntityOfPage":"https://www.washingtonpost.com/science/2025/02/02/asteroid-hit-earth/","headline":"Newly detected near-Earth asteroid has astronomers’ full attention ","alternativeHeadline":"Astronomers spot an asteroid that might hit Earth. They’re not worried.","dateModified":"2025-02-05T20:28:55.152Z","datePublished":"2025-02-02T13:00:37.096Z","description":"The risk of impact is likely to drop to zero as observations of Asteroid 2024 YR4 continue.","author":{"@type":"Person","name":"Joel Achenbach","url":"https://www.washingtonpost.com/people/joel-achenbach/"},"isPartOf":{"@type":["CreativeWork","Product"],"name":"The Washington Post","productID":"washingtonpost.com:basic","description":"Breaking news and analysis on politics, business, world, national news, entertainment and more. In-depth DC, Virginia, Maryland news coverage including traffic, weather, crime, education, restaurant reviews and more.","sku":"https://subscribe.washingtonpost.com","image":"https://www.washingtonpost.com/wp-apps/imrs.php?src=https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/RUGLRTKULZB6XPESJMXXJVLTDI.jpeg&w=1440","brand":{"@type":"brand","name":"The Washington Post"},"offers":{"@type":"offer","url":"https://subscribe.washingtonpost.com/acquisition?promo=o26"}},"publisher":{"@id":"washingtonpost.com","@type":"NewsMediaOrganization","name":"The Washington Post"},"isAccessibleForFree":false,"hasPart":{"@type":"WebPageElement","cssSelector":".meteredContent","isAccessibleForFree":false},"image":[{"@context":"https://schema.org","@type":"ImageObject","url":"https://www.washingtonpost.com/wp-apps/imrs.php?src=https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/67YAO7ZO252SES562Q3SYPFXAQ.jpg&w=1600&h=900","height":900,"width":1600},{"@context":"https://schema.org","@type":"ImageObject","url":"https://www.washingtonpost.com/wp-apps/imrs.php?src=https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/67YAO7ZO252SES562Q3SYPFXAQ.jpg&w=1800&h=1800","height":1800,"width":1800},{"@context":"https://schema.org","@type":"ImageObject","url":"https://www.washingtonpost.com/wp-apps/imrs.php?src=https://arc-anglerfish-washpost-prod-washpost.s3.amazonaws.com/public/67YAO7ZO252SES562Q3SYPFXAQ.jpg&w=800&h=600","height":800,"width":600}]}</script>
