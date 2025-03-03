@@ -219,7 +219,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
             {
               target: { tabId: tabs[0].id },
               func: (url) => {
-                console.log("test3");
+                console.log("test3:", url);
                 let maxArea = 0;
                 let chosenImage = null;
 
@@ -531,8 +531,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
   switch (action) {
     case "extractText": {
-      // request.url has the page URL
-      handleExtractText(url)
+      handleExtractText(url, sender.tab.url)
         .then((resp) => sendResponse({ success: true, pageText: resp }))
         .catch((err) => {
           console.error("Error extracting text:", err);
@@ -570,21 +569,67 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 // 1) Extract Text from Node server (/api/extractText)
-async function handleExtractText(url) {
+// Extract text logic
+async function handleExtractText(url, currentPage) {
+  let html = "";
+
+  // ✅ If we are already on the page, extract text from the DOM
+  if (currentPage.includes(url)) {
+    console.log("✅ On the correct page, extracting HTML from DOM...");
+    html = await extractHTMLFromPage();
+  } else {
+    console.log("🌍 Not on the page, will fetch HTML from the backend.");
+  }
+
+  // ✅ Send HTML (if extracted) or let the backend fetch the page
   const response = await fetch(`${BASE_URL}/api/extractText`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
+    body: JSON.stringify({ url, html }),
   });
+
   if (!response.ok) {
     throw new Error(`extractText failed with status ${response.status}`);
   }
-  const data = await response.json(); // should be { pageText: "..." } or { error: "..." }
+
+  const data = await response.json();
   if (data.error) {
     throw new Error(`extractText error: ${data.error}`);
   }
-  // otherwise data.pageText should exist
+
   return data.pageText;
+}
+
+// ✅ Extract full page HTML from the current tab
+async function extractHTMLFromPage() {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (!tabs.length) {
+        reject(new Error("❌ No active tab found!"));
+        return;
+      }
+
+      const tabId = tabs[0].id; // ✅ Get the active tabId
+
+      chrome.scripting.executeScript(
+        {
+          target: { tabId: tabId },
+          func: () => document.documentElement.outerHTML,
+        },
+        (results) => {
+          if (chrome.runtime.lastError) {
+            reject(
+              new Error(
+                `❌ Chrome scripting error: ${chrome.runtime.lastError.message}`
+              )
+            );
+            return;
+          }
+          resolve(results[0]?.result || "");
+        }
+      );
+    });
+  });
 }
 
 // 2) Call ClaimBuster (/api/claimbuster)
@@ -779,13 +824,22 @@ ${content}
   }
 
   const rawReply = data.choices[0].message.content.trim();
+  let cleanedReply = rawReply.trim(); // Remove extra spaces
+
+  // Strip GPT's triple backticks if present
+  if (cleanedReply.startsWith("```json")) {
+    cleanedReply = cleanedReply
+      .replace(/^```json/, "")
+      .replace(/```$/, "")
+      .trim();
+  }
 
   // Attempt to parse the JSON
   let parsed;
   try {
-    parsed = JSON.parse(rawReply);
+    parsed = JSON.parse(cleanedReply);
   } catch (err) {
-    console.error("Invalid JSON from GPT:", rawReply);
+    console.error("Invalid JSON from GPT:", cleanedReply);
     throw new Error("GPT returned invalid JSON");
   }
 

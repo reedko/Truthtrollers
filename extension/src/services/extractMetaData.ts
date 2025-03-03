@@ -23,6 +23,7 @@ export async function getExtractedTextFromBackground(
   url: string
 ): Promise<string> {
   return new Promise((resolve, reject) => {
+    console.log(url, ":at extracting text");
     chrome.runtime.sendMessage({ action: "extractText", url }, (response) => {
       if (response?.success) {
         resolve(response.pageText);
@@ -249,7 +250,7 @@ export const extractReferences = async (
       content_name,
     });
   };
-
+  console.log("IMJUST");
   // Extract references from inline links
   $("article, .content, .post-body, .entry-content, .ref-list")
     .find("a[href]")

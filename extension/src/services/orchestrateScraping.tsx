@@ -86,13 +86,12 @@ export const orchestrateScraping = async (
   if (contentType === "task") {
     extractedReferences = await extractReferences($);
   }
-
+  console.log(extractedReferences);
   // I) Now call the server to get "clean text" (this is optional if you trust your local text)
   //    but let's do it for consistency with your /api/extractText approach:
   let extractedText = "";
   try {
     extractedText = await getExtractedTextFromBackground(url);
-    console.log("✅ Extracted text from server for URL:", url);
   } catch (err) {
     console.warn("Failed to extract text from server:", err);
     // fallback to local text if needed
