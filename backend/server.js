@@ -863,14 +863,30 @@ app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
 
 app.post("/api/extractText", async (req, res) => {
   try {
-    const { url } = req.body;
+    let { url, html } = req.body;
+
     if (!url) {
       return res.status(400).json({ error: "No URL provided" });
     }
 
-    // 1) Fetch HTML from the URL
-    const { data: html } = await axios.get(url);
+    // ✅ If HTML is provided, use it instead of fetching from the web
+    if (html) {
+      console.log("✅ Received HTML from the browser, skipping axios.get");
+    } else {
+      console.log("🌍 Fetching page via axios.get:", url);
+      const { data } = await axios.get(url, {
+        timeout: 10000,
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+          Accept:
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        },
+      });
+      html = data;
+    }
 
+    // ✅ Process the HTML using Readability
     // 2) Create a JSDOM instance from the HTML
     const dom = new JSDOM(html, { url });
 

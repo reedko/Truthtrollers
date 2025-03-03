@@ -1,7 +1,5 @@
 const dotenv = require("dotenv");
 dotenv.config();
-
-dotenv.config();
 const OAuth = require("oauth");
 
 const KEY = process.env.REACT_APP_NOUNPROJECT_API_KEY || "";
@@ -18,10 +16,39 @@ const oauth = new OAuth.OAuth(
 );
 
 const fetchIconForTopic = async (query) => {
-  const queryUrl = `https://api.thenounproject.com/v2/icons?query=${encodeURIComponent(
+  let queryUrl = `https://api.thenounproject.com/v2/icon?query=${encodeURIComponent(
     query
   )}&limit_to_public_domain=yes&thumbnail_size=84&limit=1`;
 
+  console.log(queryUrl, ":fetchicon");
+
+  try {
+    const iconUrl = await fetchIcon(queryUrl);
+
+    if (iconUrl) {
+      return iconUrl;
+    }
+
+    // 🛑 If the first request fails, try only the first word
+    const firstWord = query.split(" ")[0];
+    if (firstWord !== query) {
+      // Only retry if it's different
+      console.log(`🔄 Retrying with first word: ${firstWord}`);
+      const fallbackUrl = `https://api.thenounproject.com/v2/icon?query=${encodeURIComponent(
+        firstWord
+      )}&limit_to_public_domain=yes&thumbnail_size=84&limit=1`;
+      return await fetchIcon(fallbackUrl);
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Error fetching from Noun Project API:", error);
+    return null;
+  }
+};
+
+// ✅ Helper function to make OAuth request
+const fetchIcon = (queryUrl) => {
   return new Promise((resolve, reject) => {
     oauth.get(
       queryUrl,
@@ -35,10 +62,9 @@ const fetchIconForTopic = async (query) => {
         }
 
         try {
-          // Parse and typecast the response data
           const parsedData = JSON.parse(data ? data.toString() : "");
-
           const icons = parsedData?.icons;
+
           if (icons && icons.length > 0) {
             resolve(icons[0].thumbnail_url || null);
           } else {
@@ -53,5 +79,4 @@ const fetchIconForTopic = async (query) => {
   });
 };
 
-// Use module.exports instead of export default
 module.exports = fetchIconForTopic;
