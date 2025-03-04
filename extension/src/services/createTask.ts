@@ -23,6 +23,12 @@ const createTask = async (taskData: TaskData): Promise<string | null> => {
         }
       );
     });
+    console.log("📌 Claims received in createTask:", taskData.Claims);
+    console.log("📌 Sending claims from createTask:", {
+      contentId,
+      claims: taskData.Claims,
+      contentType: taskData.content_type,
+    });
 
     // Step 2: Attach metadata (Authors, Publisher, References) in Parallel
     await Promise.all([
@@ -32,12 +38,10 @@ const createTask = async (taskData: TaskData): Promise<string | null> => {
       taskData.publisherName
         ? addPublisher(contentId, taskData.publisherName)
         : Promise.resolve(),
+      taskData.Claims
+        ? storeClaimsInDB(contentId, taskData.Claims, taskData.content_type)
+        : Promise.resolve,
     ]);
-
-    // 3) If we have claims from ClaimBuster, store them in DB
-    if (taskData.claimbusterClaims && taskData.claimbusterClaims.length > 0) {
-      await storeClaimsInDB(contentId, taskData.claimbusterClaims);
-    }
 
     return contentId;
   } catch (error) {
@@ -71,10 +75,17 @@ const addPublisher = async (contentId: string, publisher: Publisher) => {
 };
 
 // C) Store the claims by sending a message to background => server
+
 async function storeClaimsInDB(
   contentId: string,
-  claims: any[]
-): Promise<void> {
+  claims: string[],
+  contentType: string
+) {
+  console.log("📌 storeClaimsInDB called with:", {
+    contentId,
+    claims,
+    contentType,
+  });
   return new Promise<void>((resolve, reject) => {
     chrome.runtime.sendMessage(
       {
@@ -82,6 +93,7 @@ async function storeClaimsInDB(
         data: {
           contentId,
           claims,
+          contentType, // ✅ Pass content type
         },
       },
       (response) => {
@@ -96,4 +108,5 @@ async function storeClaimsInDB(
     );
   });
 }
+
 export default createTask;

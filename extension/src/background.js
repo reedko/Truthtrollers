@@ -108,6 +108,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       }
 
       const url = tabs[0]?.url;
+
       if (!url) return;
 
       // Call the backend to check if content exists
@@ -125,8 +126,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         console.log("isdet", isDetected);
 
         // Use Zustand to update the store
-
-        //const useStore = require("../src/store/useTaskStore").default;
 
         useTaskStore.getState().setTask(task);
         console.log("GETTING STATE", task);
@@ -213,8 +212,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         }
 
         try {
-          console.log("test2");
-
           chrome.scripting.executeScript(
             {
               target: { tabId: tabs[0].id },
@@ -360,14 +357,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     return true; // Keeps the message channel open for async response
   }
-
-  if (message.action === "checkContent") {
-    checkContent(message.url)
-      .then((contentData) => sendResponse(contentData))
-      .catch(() => sendResponse(null));
-
-    return true; // Keeps the message channel open for async response
-  }
 });
 
 // ✅ Create Task
@@ -462,31 +451,6 @@ const fetchDiffbotData = async (articleUrl) => {
     return null;
   }
 };
-// ✅ Check if content exists in the database
-const checkContent = async (url) => {
-  console.log(`🔍 Checking content in DB for: ${url}`);
-
-  try {
-    const response = await fetch(`${BASE_URL}/api/check-content`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `Check-content API failed with status: ${response.status}`
-      );
-    }
-
-    const data = await response.json();
-    console.log(`📖 Content check result:`, data);
-    return data;
-  } catch (error) {
-    console.error(`❌ Error checking content for ${url}:`, error);
-    return null;
-  }
-};
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "checkDatabaseForReference") {
@@ -496,7 +460,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       body: JSON.stringify({ url: message.url }),
     })
       .then((response) => response.json())
-      .then((data) => sendResponse(data.id ? data.id : null))
+      .then((data) => sendResponse(data.id || null))
       .catch((error) => {
         console.error("Error checking reference in DB:", error);
         sendResponse(null);
@@ -508,6 +472,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "addContentRelation") {
+    console.log("ADDING RELATION IN BACKGROUND");
     fetch(`${BASE_URL}/api/add-content-relation`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -527,11 +492,11 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  const { action, url, text } = request;
+  const { action, url, html } = request;
 
   switch (action) {
     case "extractText": {
-      handleExtractText(url, sender.tab.url)
+      handleExtractText(url, html, sender.tab.url)
         .then((resp) => sendResponse({ success: true, pageText: resp }))
         .catch((err) => {
           console.error("Error extracting text:", err);
@@ -539,20 +504,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
       return true; // Must return true for async
     }
-    case "claimBuster": {
-      // request.text is the text to analyze
-      handleClaimBuster(text)
-        .then((resp) => sendResponse({ success: true, claims: resp }))
-        .catch((err) => {
-          console.error("Error calling ClaimBuster:", err);
-          sendResponse({ success: false, error: err.message });
-        });
-      return true;
-    }
+
     // ... other actions (like addContent, addAuthors, etc.)
     case "storeClaims": {
-      const { contentId, claims } = data;
-      storeClaimsOnServer(contentId, claims)
+      const { contentId, claims, contentType } = request.data;
+      console.log("📌 Background received storeClaims:", {
+        contentId,
+        claims,
+        contentType,
+      });
+      storeClaimsOnServer(contentId, claims, contentType)
         .then(() => {
           sendResponse({ success: true });
         })
@@ -570,15 +531,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // 1) Extract Text from Node server (/api/extractText)
 // Extract text logic
-async function handleExtractText(url, currentPage) {
-  let html = "";
-
-  // ✅ If we are already on the page, extract text from the DOM
-  if (currentPage.includes(url)) {
-    console.log("✅ On the correct page, extracting HTML from DOM...");
-    html = await extractHTMLFromPage();
-  } else {
-    console.log("🌍 Not on the page, will fetch HTML from the backend.");
+async function handleExtractText(url, html, currentPage) {
+  if (currentPage?.includes(url)) {
+    console.log("✅ On the correct page, using extracted HTML.");
+  } else if (!html) {
+    console.log("🌍 No HTML provided, fetching from backend.");
   }
 
   // ✅ Send HTML (if extracted) or let the backend fetch the page
@@ -600,67 +557,28 @@ async function handleExtractText(url, currentPage) {
   return data.pageText;
 }
 
-// ✅ Extract full page HTML from the current tab
-async function extractHTMLFromPage() {
-  return new Promise((resolve, reject) => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (!tabs.length) {
-        reject(new Error("❌ No active tab found!"));
-        return;
-      }
-
-      const tabId = tabs[0].id; // ✅ Get the active tabId
-
-      chrome.scripting.executeScript(
-        {
-          target: { tabId: tabId },
-          func: () => document.documentElement.outerHTML,
-        },
-        (results) => {
-          if (chrome.runtime.lastError) {
-            reject(
-              new Error(
-                `❌ Chrome scripting error: ${chrome.runtime.lastError.message}`
-              )
-            );
-            return;
-          }
-          resolve(results[0]?.result || "");
-        }
-      );
-    });
+async function storeClaimsOnServer(contentId, claims, contentType) {
+  console.log("📌 Sending claims to /api/claims/add:", {
+    contentId,
+    claims,
+    contentType,
   });
-}
-
-// 2) Call ClaimBuster (/api/claimbuster)
-async function handleClaimBuster(text) {
-  const response = await fetch(`${BASE_URL}/api/claimbuster`, {
+  const response = await fetch(`${BASE_URL}/api/claims/add`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({
+      content_id: contentId,
+      claims,
+      content_type: contentType,
+    }), // ✅ Ensure content_id is correct
   });
+
   const data = await response.json();
+  console.log("📌 Server response for claims storage:", data);
 
   if (!data.success) {
-    // You can throw or handle
-    throw new Error(data.error || "No success from claimbuster");
-  }
-
-  // Here data.results should exist
-  return data.results;
-}
-
-async function storeClaimsOnServer(contentId, claims) {
-  // We'll call a new route /api/claims/add
-  // The server will do the dedup & insert for us
-  const response = await fetch(`${BASE_URL}/api/claims/add`, {
-    content_id: contentId,
-    claims, // array of { text, score, etc. } from ClaimBuster
-  });
-  if (!response.data.success) {
     throw new Error("Server responded with an error storing claims");
   }
-  return;
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -692,83 +610,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// background.js (Manifest V3 service worker or background script)
-
-async function analyzeContent(content) {
-  // 1) Make the request
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4-turbo", // or "gpt-3.5-turbo"
-      messages: [
-        {
-          role: "system",
-          content: "You are a content analysis assistant.",
-        },
-        {
-          role: "user",
-          content: `
-Identify the most general topic (at most two words) for this text, then provide a list of more specific topics that fall under this general topic, 
-and also extract every distinct factual assertion or claim from the text (where a claim is a statement that can be tested or verified for truth).
-
-Return your answer in valid JSON only, exactly in the format:
-{
-  "generalTopic": "<string>",
-  "specificTopics": ["<string>", "<string>", ...],
-  "claims": ["<claim1>", "<claim2>", ...]
-}
-
-Text:
-${content}
-          `,
-        },
-      ],
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`OpenAI request failed: ${response.statusText}`);
-  }
-
-  // 2) Parse the JSON result
-  const data = await response.json();
-  if (!data.choices || data.choices.length === 0) {
-    throw new Error("No completion returned from OpenAI");
-  }
-
-  // GPT’s reply (hopefully a valid JSON string)
-  const rawReply = data.choices[0].message.content.trim();
-
-  // 3) Attempt to parse the JSON the model returned
-  let parsed;
-  try {
-    parsed = JSON.parse(rawReply);
-  } catch (err) {
-    console.error("GPT did not return valid JSON:", rawReply);
-    throw new Error("Invalid JSON from GPT");
-  }
-
-  // Expecting parsed to have keys: generalTopic, specificTopics, claims
-  // Provide some defaults if GPT missed them
-  const generalTopic = parsed.generalTopic || "Unknown";
-  const specificTopics = Array.isArray(parsed.specificTopics)
-    ? parsed.specificTopics
-    : [];
-  const claims = Array.isArray(parsed.claims) ? parsed.claims : [];
-
-  return { generalTopic, specificTopics, claims };
-}
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "analyzeContent") {
     // We handle the call asynchronously
     callOpenAiAnalyze(request.content)
       .then((result) => {
-        // 'result' should be { generalTopic, specificTopics, claims }
+        console.log("✅ Sending claims back to popup:", result.claims);
         sendResponse({ success: true, data: result });
       })
       .catch((err) => {
@@ -851,6 +698,50 @@ ${content}
   console.log(claims, ":::CLAIMS");
   return { generalTopic, specificTopics, claims };
 }
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "fetchPageContent") {
+    fetchExternalPage(message.url)
+      .then((html) => sendResponse({ success: true, html }))
+      .catch((error) => sendResponse({ success: false, error: error.message }));
+    return true; // Keep the message channel open for async response
+  }
+});
+
+const fetchExternalPage = async (url) => {
+  try {
+    console.log(`🌍 Fetching page content for: ${url}`);
+
+    const response = await fetch(`${BASE_URL}/api/fetch-page-content`, {
+      method: "POST",
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Content-Type": "application/json", // ✅ Fix: Ensure JSON body is read properly
+        Referer: url, // ✅ Some sites check for a valid referrer
+      },
+      body: JSON.stringify({ url }),
+    });
+
+    if (!response.ok) {
+      console.error(
+        `❌ HTTP error: ${response.status} - ${response.statusText}`
+      );
+      throw new Error(`Failed to fetch page: ${response.status}`);
+    }
+
+    const jsonResponse = await response.json();
+    console.log(
+      `✅ Received page content: ${jsonResponse.html?.length || 0} bytes`
+    );
+
+    return jsonResponse.html;
+  } catch (error) {
+    console.error("❌ Error fetching page content:", error);
+    return null; // ✅ Avoid unhandled rejections
+  }
+};
 
 // The message listener
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

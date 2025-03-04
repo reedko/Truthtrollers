@@ -3,6 +3,8 @@
 import React, { useRef, useEffect } from "react";
 import * as d3 from "d3";
 import { GraphNode, Link } from "../../../shared/entities/types";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
 
 interface NetworkGraphProps {
   nodes: GraphNode[];
@@ -126,7 +128,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
     // Append shape, image, and labels to nodes
     nodeSelection.each(function (d) {
       const nodeGroup = d3.select(this);
-      const imageUrl = `http://localhost:5001/assets/images/${
+      const imageUrl = `${API_BASE_URL}/assets/images/${
         {
           1: `authors/author_id_${d.id}.png`,
           2: `content/content_id_${d.id}.png`,
