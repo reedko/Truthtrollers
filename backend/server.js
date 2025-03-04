@@ -21,11 +21,32 @@ import {
 
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
+import fs from "fs";
+import http from "http";
+import https from "https";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
 const app = express();
+
+// Load SSL certificate and key
+const options = {
+  key: fs.readFileSync("../ssl/server.key"),
+  cert: fs.readFileSync("../ssl/server.cert"),
+};
+
+// ✅ Use HTTPS for localhost:5001
+https.createServer(options, app).listen(5001, () => {
+  console.log("✅ HTTPS Server running on https://localhost:5001");
+});
+
+// 🔄 Optional: Redirect HTTP to HTTPS (port 5000 → 5001)
+http
+  .createServer((req, res) => {
+    res.writeHead(301, { Location: "https://localhost:5001" + req.url });
+    res.end();
+  })
+  .listen(5080);
 // Increase payload size limit (e.g., 50MB)
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
@@ -77,24 +98,6 @@ function getRelativePath(absolutePath) {
   // If 'public/' is not found, return the original path (or handle as needed)
   return absolutePath;
 }
-
-app.listen(
-  3000,
-  () =>
-    //console.log("Proxy server running on port 3000"));
-
-    function getRelativePath(absolutePath) {
-      // Assuming 'public/' is the part of the path that precedes the relative path
-      const index = absolutePath.indexOf("public/");
-      if (index !== -1) {
-        // Return the path after 'public/'
-        return absolutePath.slice(index + "public/".length);
-      }
-      // If 'public/' is not found, return the original path (or handle as needed)
-      return absolutePath;
-    }
-);
-
 /* app.use((req, res, next) => {
   //console.log(`Incoming request: ${req.method} ${req.originalUrl}`);
   next();
@@ -723,16 +726,14 @@ app.post("/api/check-reference", async (req, res) => {
   if (!url) return res.status(400).json({ error: "Missing URL" });
 
   try {
-    const sql = "SELECT content_name, content_id FROM content WHERE url = ?";
+    const sql = "SELECT content_id FROM content WHERE url = ?";
     const [result] = await query(sql, [url]);
 
-    if (result.length > 0) {
-      return res
-        .status(200)
-        .json({ title: result[0].content_name, id: result[0].content_id });
-    } else {
-      return res.status(200).json({ title: null }); // Reference not found
+    if (!result || result.length === 0) {
+      return res.status(200).json({ id: null }); // Reference not found
     }
+
+    return res.status(200).json({ id: result[0].content_id });
   } catch (error) {
     console.error("Database error:", error);
     return res.status(500).json({ error: "Database lookup failed" });
@@ -861,6 +862,36 @@ app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
   }
 });
 
+app.post("/api/fetch-page-content", async (req, res) => {
+  console.log("📌 Received request to fetch page content:", req.body);
+  const { url } = req.body;
+  if (!url || typeof url !== "string") {
+    console.error("❌ Invalid or missing URL:", url);
+    return res.status(400).json({ error: "Invalid or missing URL" });
+  }
+
+  try {
+    console.log(`🌍 Fetching external page: ${url}`);
+
+    const response = await axios.get(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        Referer: url,
+      },
+      timeout: 30000, // ✅ Increase timeout to 30s
+    });
+
+    console.log(`✅ Successfully fetched ${response.data.length} bytes`);
+    return res.json({ html: response.data });
+  } catch (error) {
+    console.error("Error fetching external page:", error);
+    res.status(500).json({ error: "Failed to fetch page content" });
+  }
+});
+
 app.post("/api/extractText", async (req, res) => {
   try {
     let { url, html } = req.body;
@@ -875,7 +906,7 @@ app.post("/api/extractText", async (req, res) => {
     } else {
       console.log("🌍 Fetching page via axios.get:", url);
       const { data } = await axios.get(url, {
-        timeout: 10000,
+        timeout: 5000,
         headers: {
           "User-Agent":
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -913,98 +944,118 @@ app.post("/api/extractText", async (req, res) => {
   }
 });
 
-// POST /api/claimbuster
-app.post("/api/claimbuster", async (req, res) => {
-  try {
-    const { text } = req.body;
-    if (!text) {
-      return res.status(400).json({ error: "No text provided" });
-    }
-
-    // Read API key from .env
-
-    const apiKey = process.env.REACT_APP_CLAIMBUSTER_API_KEY;
-
-    if (!apiKey) {
-      return res.status(500).json({ error: "No API key on server" });
-    }
-
-    // Call ClaimBuster with that key
-    const response = await axios.post(
-      "https://idir.uta.edu/claimbuster/api/v2/score/text/",
-      { text },
-      {
-        headers: {
-          "x-api-key": apiKey,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    return res.json(response.data);
-  } catch (err) {
-    console.error("Error calling ClaimBuster:", err);
-    return res.status(500).json({ error: "Internal server error" });
-  }
-});
-
 app.post("/api/claims/add", async (req, res) => {
+  console.log("📌 Received claims storage request:", req.body);
+
   try {
-    const { content_id, claims } = req.body;
-    if (!content_id || !claims) {
-      return res.status(400).json({ error: "content_id and claims required" });
+    const { content_id, claims, content_type } = req.body;
+
+    // ✅ Validate required fields
+    if (
+      !content_id ||
+      !Array.isArray(claims) ||
+      claims.length === 0 ||
+      !content_type
+    ) {
+      console.error("❌ Missing required fields:", {
+        content_id,
+        claims,
+        content_type,
+      });
+      return res.status(400).json({
+        error: "content_id, claims array, and content_type are required",
+      });
     }
 
     let insertedCount = 0;
 
-    // For each claim from ClaimBuster: { text, score, etc. }
-    for (const claimObj of claims) {
-      const claimText = (claimObj.text || "").trim();
-      if (!claimText) continue;
-
-      // 1) Check if we already have this claim in DB
-      const [rows] = await db.query(
-        "SELECT claim_id FROM claims WHERE claim_text = ?",
-        [claimText]
-      );
-
-      let claimId;
-      if (rows.length > 0) {
-        // Already exists
-        claimId = rows[0].claim_id;
-      } else {
-        // Insert new claim
-        const [result] = await db.query(
-          "INSERT INTO claims (claim_text) VALUES (?)",
-          [claimText]
-        );
-        claimId = result.insertId;
+    for (const claimText of claims) {
+      if (typeof claimText !== "string" || claimText.trim() === "") {
+        console.warn("⚠️ Skipping empty or invalid claim:", claimText);
+        continue;
       }
 
-      // 2) Link content & claim in content_claims
-      // Check if link already exists
-      const [linkRows] = await db.query(
-        "SELECT cc_id FROM content_claims WHERE content_id = ? AND claim_id = ?",
-        [content_id, claimId]
-      );
-      if (linkRows.length === 0) {
-        await db.query(
-          "INSERT INTO content_claims (content_id, claim_id, relationship_type) VALUES (?,?,?)",
-          [content_id, claimId, "claimbuster"] // or "task"/"reference" if you prefer
+      const cleanClaimText = claimText.trim();
+      let claimId;
+      let isNewClaim = false;
+
+      try {
+        // 1️⃣ **Check if claim already exists**
+        const existingClaimResult = await query(
+          "SELECT claim_id FROM claims WHERE claim_text = ?",
+          [cleanClaimText]
         );
-        insertedCount++;
+        const existingClaim = Array.isArray(existingClaimResult)
+          ? existingClaimResult
+          : [];
+
+        if (existingClaim.length > 0) {
+          claimId = existingClaim[0].claim_id;
+        } else {
+          // 2️⃣ **Insert new claim since it doesn't exist**
+          const insertResult = await query(
+            "INSERT INTO claims (claim_text) VALUES (?)",
+            [cleanClaimText]
+          );
+          claimId = insertResult?.insertId || null;
+          isNewClaim = true; // ✅ Mark this claim as newly inserted
+        }
+      } catch (err) {
+        console.error("❌ Database error inserting claim:", err);
+        continue; // Skip this claim and move to the next
+      }
+
+      if (!claimId) {
+        console.warn(
+          "⚠️ Skipping claim as claimId is undefined:",
+          cleanClaimText
+        );
+        continue;
+      }
+
+      try {
+        // 3️⃣ **If this is a NEW claim, no need to check for a link—just insert it.**
+        if (isNewClaim) {
+          await query(
+            "INSERT INTO content_claims (content_id, claim_id, relationship_type) VALUES (?,?,?)",
+            [content_id, claimId, content_type]
+          );
+          insertedCount++;
+          console.log(
+            `🔗 Created new claim & linked to content: ${cleanClaimText}`
+          );
+        } else {
+          // 4️⃣ **If claim already existed, check if link exists first.**
+          const existingLinkResult = await query(
+            "SELECT cc_id FROM content_claims WHERE content_id = ? AND claim_id = ?",
+            [content_id, claimId]
+          );
+          const existingLink = Array.isArray(existingLinkResult)
+            ? existingLinkResult
+            : [];
+
+          if (existingLink.length === 0) {
+            await query(
+              "INSERT INTO content_claims (content_id, claim_id, relationship_type) VALUES (?,?,?)",
+              [content_id, claimId, content_type]
+            );
+            insertedCount++;
+            console.log(
+              `🔗 Linked existing claim to content: ${cleanClaimText}`
+            );
+          } else {
+            console.log("✅ Claim already linked, skipping:", cleanClaimText);
+          }
+        }
+      } catch (err) {
+        console.error("❌ Database error linking claim to content:", err);
       }
     }
 
+    console.log(`✅ Successfully linked ${insertedCount} claims.`);
     return res.json({ success: true, insertedCount });
   } catch (error) {
-    console.error("Error in /api/claims/add:", error);
+    console.error("❌ Error in /api/claims/add:", error);
     return res.status(500).json({ error: "Server error storing claims" });
   }
-});
-
-// Start the server
-const PORT = process.env.PORT || 5001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
 });

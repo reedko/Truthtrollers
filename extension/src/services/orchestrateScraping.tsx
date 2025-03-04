@@ -33,7 +33,8 @@ export const orchestrateScraping = async (
   let claims: string[] = [];
   let specificTopics: string[] = [];
   let extractedReferences: Lit_references[] = [];
-
+  let extractedText = "";
+  let extractedHtml = ""; // ✅ Store extracted HTML to avoid duplicate requests
   try {
     contentType === "task"
       ? (diffbotData = await fetchDiffbotData(url))
@@ -51,8 +52,20 @@ export const orchestrateScraping = async (
       ? fetchPageContent()
       : await fetchExternalPageContent(url); // ✅ Use correct fetch function
 
-  // Get headline
+  // I) Now call the server to get "clean text" (this is optional if you trust your local text)
+  //    but let's do it for consistency with your /api/extractText approach:
 
+  // ✅ Extract clean HTML using Cheerio instead of making another request
+  extractedHtml = $.html(); // Get full HTML content
+
+  try {
+    extractedText = await getExtractedTextFromBackground(url, extractedHtml); // ✅ Pass HTML to background
+  } catch (err) {
+    console.warn("⚠️ Failed to extract text from server:", err);
+    extractedText = $("body").text().trim(); // Fallback
+  }
+
+  // Get headline or content_name
   const mainHeadline =
     content_name.length > 5
       ? content_name
@@ -83,23 +96,22 @@ export const orchestrateScraping = async (
   }
 
   // Extract references only if processing as "reference" content type
-  if (contentType === "task") {
+  /*  if (contentType === "task") {
     extractedReferences = await extractReferences($);
+  } */
+  if (contentType === "task") {
+    const allReferences = await extractReferences($);
+    extractedReferences = allReferences.length > 0 ? [allReferences[0]] : [];
   }
+
   console.log(extractedReferences);
-  // I) Now call the server to get "clean text" (this is optional if you trust your local text)
-  //    but let's do it for consistency with your /api/extractText approach:
-  let extractedText = "";
-  try {
-    extractedText = await getExtractedTextFromBackground(url);
-  } catch (err) {
-    console.warn("Failed to extract text from server:", err);
-    // fallback to local text if needed
-    extractedText = $("body").text().trim();
-  }
 
   // Extract topics and claims
   const topicsAndClaims = await analyzeContent(extractedText);
+  console.log(
+    "📌 Final extracted claims in orchestrateScraping:",
+    topicsAndClaims.claims
+  );
   generalTopic = topicsAndClaims.generalTopic;
   specificTopics = topicsAndClaims.specificTopics;
   claims = topicsAndClaims.claims;
@@ -116,6 +128,7 @@ export const orchestrateScraping = async (
     console.warn("⚠️ ClaimBuster call failed:", err);
   }
  */
+
   return {
     content_name: mainHeadline ? mainHeadline : "",
     media_source: videoId ? "YouTube" : "Web",

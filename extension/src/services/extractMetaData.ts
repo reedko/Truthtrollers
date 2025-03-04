@@ -20,17 +20,20 @@ const isValidReference = (link: string): boolean => {
 
 // A) Utility to get text from server via the background
 export async function getExtractedTextFromBackground(
-  url: string
+  url: string,
+  html: string
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    console.log(url, ":at extracting text");
-    chrome.runtime.sendMessage({ action: "extractText", url }, (response) => {
-      if (response?.success) {
-        resolve(response.pageText);
-      } else {
-        reject(response?.error || "Failed to extract text");
+    chrome.runtime.sendMessage(
+      { action: "extractText", url, html }, // ✅ Send extracted HTML
+      (response) => {
+        if (response?.success) {
+          resolve(response.pageText);
+        } else {
+          reject(response?.error || "Failed to extract text");
+        }
       }
-    });
+    );
   });
 }
 
@@ -56,16 +59,23 @@ export const fetchPageContent = (): cheerio.CheerioAPI => {
 export const fetchExternalPageContent = async (
   url: string
 ): Promise<cheerio.CheerioAPI> => {
-  try {
-    const response = await fetch(url, { method: "GET" });
-    if (!response.ok)
-      throw new Error(`Failed to fetch page: ${response.status}`);
-    const html = await response.text();
-    return cheerio.load(html); // Return Cheerio instance
-  } catch (error) {
-    console.error(`Error fetching external page: ${error}`);
-    return cheerio.load(""); // Return an empty Cheerio instance if error
-  }
+  return new Promise((resolve, reject) => {
+    chrome.runtime.sendMessage(
+      { action: "fetchPageContent", url },
+      (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("Runtime error:", chrome.runtime.lastError);
+          return resolve(cheerio.load(""));
+        }
+        if (response?.success) {
+          return resolve(cheerio.load(response.html));
+        } else {
+          console.error("Error fetching external page:", response?.error);
+          return resolve(cheerio.load(""));
+        }
+      }
+    );
+  });
 };
 
 // Extract Authors
@@ -250,7 +260,7 @@ export const extractReferences = async (
       content_name,
     });
   };
-  console.log("IMJUST");
+
   // Extract references from inline links
   $("article, .content, .post-body, .entry-content, .ref-list")
     .find("a[href]")

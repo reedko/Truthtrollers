@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { useTaskStore } from "../store/useTaskStore";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+  import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
 
 const NavBar = () => {
   const setSearchQuery = useTaskStore((state) => state.setSearchQuery);

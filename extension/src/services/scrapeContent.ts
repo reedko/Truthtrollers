@@ -44,6 +44,7 @@ export const scrapeContent = async (
   try {
     // ✅ If reference, check if it already exists in DB
     if (contentType === "reference") {
+      console.log("RELATION ready");
       const existingContentId = await checkDatabaseForReference(url);
 
       if (existingContentId) {
@@ -53,6 +54,7 @@ export const scrapeContent = async (
         if (taskContentId) {
           await addContentRelation(taskContentId, existingContentId);
         }
+        console.log("RELATION SHOULD HAVE ADDED");
         return existingContentId; // ✅ Skip scraping
       }
     }
