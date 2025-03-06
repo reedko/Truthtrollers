@@ -31,6 +31,36 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ status: "alive" });
   }
 });
+
+console.log("🔍 Monitoring for popups...");
+
+// Function to detect and remove popups
+const handlePopupDetection = () => {
+  const popup = document.querySelector(
+    ".paywall, .popup, .modal, .adblock-popup"
+  );
+  if (popup) {
+    console.warn("⚠️ Popup detected! Attempting to remove...");
+    popup.style.display = "none"; // Hide it
+    document.querySelector(".popup button.close")?.click(); // Try to close
+  }
+};
+
+// Set up the observer to watch for new popups
+const observer = new MutationObserver((mutations) => {
+  mutations.forEach((mutation) => {
+    if (document.querySelector(".paywall, .popup, .modal, .adblock-popup")) {
+      handlePopupDetection();
+    }
+  });
+});
+
+// Start observing changes in the DOM
+observer.observe(document.body, { childList: true, subtree: true });
+
+// Run the function immediately in case popup is already present
+handlePopupDetection();
+
 /* chrome.webNavigation.onCompleted.addListener(
   function (details) {
     // Send a message to the content script to execute checkContent

@@ -10,8 +10,19 @@ export const useTaskScraper = () => {
     setError(null);
 
     try {
+      console.log("🚀 Scraping started...");
+
+      // ✅ Tell background.js that scraping is active
+      chrome.runtime.sendMessage({ action: "scrapingStarted" });
+
       await scrapeContent(url, "", "task"); // ✅ Call recursive scraper
       console.log("✅ Task and references fully scraped!");
+
+      // ✅ unpause the Content Injection
+      chrome.runtime.sendMessage({
+        action: "scrapeCompleted",
+        forceVisible: false,
+      });
 
       // ✅ UI update happens only ONCE at the end
       chrome.runtime.sendMessage({

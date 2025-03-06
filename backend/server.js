@@ -680,8 +680,11 @@ app.post("/api/addContent", async (req, res) => {
   //console.log("IMAGEFILENAME:", imagePath);
   try {
     // Step 2: Download and resize the image
+    const axiosInstance = axios.create({
+      httpsAgent: new https.Agent({ rejectUnauthorized: false }), // ✅ Allow self-signed certificates
+    });
 
-    const response = await axios.get(thumbnail, {
+    const response = await axiosInstance.get(thumbnail, {
       responseType: "arraybuffer",
       headers: {
         "User-Agent":
@@ -945,8 +948,6 @@ app.post("/api/extractText", async (req, res) => {
 });
 
 app.post("/api/claims/add", async (req, res) => {
-  console.log("📌 Received claims storage request:", req.body);
-
   try {
     const { content_id, claims, content_type } = req.body;
 
