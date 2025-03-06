@@ -31,7 +31,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
 
   // For showing details of a selected node
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
-
+  const [debugMessage, setDebugMessage] = useState<string>("");
   // For the Content Viewer
   const [iframeUrl, setIframeUrl] = useState<string>(task.url || "");
 
@@ -43,6 +43,8 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   //    We'll treat the entire Task as a "task" node in the graph.
   // ─────────────────────────────────────────────────────────────────────────────
   const buildTaskNode = (): GraphNode => {
+    console.log("inmcoming urt:", task.url);
+
     return {
       // The 'id' might be something like "task-5" or just the numeric ID in string form
       id: task.content_id.toString(),
@@ -101,6 +103,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
     setSelectedNode(null);
     setTimeout(() => {
       setSelectedNode(node);
+      console.log("Selected Node:", selectedNode);
     }, 0);
   };
 
@@ -112,12 +115,22 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
     try {
       console.log("📡 Fetching new graph data for:", selectedNode);
       const newGraph = await fetchNewGraphData(selectedNode);
+      console.log("Fetched Graph Data:", newGraph.nodes);
+
       setGraphData(newGraph);
     } catch (err) {
       console.error("Error reframing graph:", err);
     }
   };
+  useEffect(() => {
+    console.log("Graph Data Nodes:", graphData.nodes);
+    console.log("Graph Data Links:", graphData.links);
 
+    setDebugMessage(`
+        Nodes: ${JSON.stringify(graphData.nodes, null, 2)}
+        Links: ${JSON.stringify(graphData.links, null, 2)}
+    `);
+  }, [graphData]);
   // ─────────────────────────────────────────────────────────────────────────────
   // RENDER
   // ─────────────────────────────────────────────────────────────────────────────
@@ -195,6 +208,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
           <Heading size="sm" mb={2}>
             Relationship Map
           </Heading>
+
           <NetworkGraph
             nodes={graphData.nodes}
             links={graphData.links}

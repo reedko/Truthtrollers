@@ -1,6 +1,8 @@
 // extractMetaData.ts
 import * as cheerio from "cheerio";
 import { Author, TaskData, Lit_references, Publisher } from "../entities/Task";
+import { DiffbotData } from "../entities/diffbotData";
+const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 
 const isValidReference = (link: string): boolean => {
   const excludedPatterns = [
@@ -50,6 +52,89 @@ export async function getClaimsFromBackground(text: string): Promise<any[]> {
   });
 }
 
+export const getBestImage = async (
+  url: string,
+  extractedHtml: string,
+  diffbotData: DiffbotData
+) => {
+  return new Promise<string>((resolve) => {
+    chrome.runtime.sendMessage(
+      { action: "captureImage", url, html: extractedHtml, diffbotData },
+      (res) => {
+        resolve(res.imageUrl || `${BASE_URL}/assets/images/miniLogo.png`);
+      }
+    );
+  });
+};
+
+export const extractImageFromHtml = (
+  html: string,
+  url: string
+): string | null => {
+  const $ = cheerio.load(html);
+  const baseUrl = new URL(url);
+
+  // 1️⃣ Prefer OpenGraph image if available
+  let ogImage = $('meta[property="og:image"]').attr("content");
+  if (ogImage) {
+    if (!ogImage.startsWith("http")) {
+      if (ogImage.startsWith("/")) {
+        // ✅ If it starts with `/`, use baseUrl (origin)
+        ogImage = new URL(ogImage, baseUrl.origin).href;
+      } else {
+        // ✅ If no `/`, assume it's relative to the full article URL
+        ogImage = new URL(ogImage, baseUrl).href;
+      }
+    }
+    return ogImage;
+  }
+
+  // 2️⃣ Extract from <img> tags, prioritizing srcset
+  let maxArea = 0;
+  let chosenImage = null;
+
+  $("img").each((_, img) => {
+    let src = $(img).attr("src") || "";
+    let srcset = $(img).attr("srcset") || "";
+    const width = parseInt($(img).attr("width") || "0", 10);
+    const height = parseInt($(img).attr("height") || "0", 10);
+    const area = width * height;
+
+    // ✅ If srcset exists, parse it to find the highest-resolution image
+    if (srcset) {
+      const candidates = srcset.split(",").map((entry) => {
+        const [url, size] = entry.trim().split(/\s+/);
+        return { url, width: parseInt(size, 10) || 0 };
+      });
+
+      // Pick the largest image from srcset
+      const bestSrcsetImage = candidates.reduce(
+        (best, candidate) => {
+          return candidate.width > best.width ? candidate : best;
+        },
+        { url: "", width: 0 }
+      );
+
+      if (bestSrcsetImage.url) {
+        src = bestSrcsetImage.url;
+      }
+    }
+
+    // ✅ Convert relative URLs to absolute
+    if (src.startsWith("/") && baseUrl) {
+      src = baseUrl.origin + src;
+    }
+
+    // ✅ Pick the largest available image
+    if (area > maxArea && src) {
+      maxArea = area;
+      chosenImage = src;
+    }
+  });
+
+  return chosenImage;
+};
+
 export const fetchPageContent = (): cheerio.CheerioAPI => {
   const loadedCheerio = cheerio.load(document.documentElement.outerHTML);
   console.log(loadedCheerio, ":from cheerio");
@@ -59,20 +144,30 @@ export const fetchPageContent = (): cheerio.CheerioAPI => {
 export const fetchExternalPageContent = async (
   url: string
 ): Promise<cheerio.CheerioAPI> => {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     chrome.runtime.sendMessage(
       { action: "fetchPageContent", url },
       (response) => {
+        console.log("🔎 Fetch Response:", response); // ✅ Log full response
+
         if (chrome.runtime.lastError) {
           console.error("Runtime error:", chrome.runtime.lastError);
           return resolve(cheerio.load(""));
         }
-        if (response?.success) {
-          return resolve(cheerio.load(response.html));
-        } else {
-          console.error("Error fetching external page:", response?.error);
-          return resolve(cheerio.load(""));
+
+        // ✅ Properly detect failed requests (e.g., 403 errors)
+        if (!response?.success || !response.html) {
+          console.error(
+            "🚨 Fetch failed (likely 403). Falling back to Wayback Machine:",
+            url
+          );
+
+          // ✅ Attempt Wayback Machine fallback
+          const archiveUrl = `https://web.archive.org/web/${url}`;
+          return resolve(fetchExternalPageContent(archiveUrl));
         }
+
+        return resolve(cheerio.load(response.html));
       }
     );
   });
@@ -250,11 +345,8 @@ export const extractReferences = async (
   const processReference = async (url: string, potentialTitle?: string) => {
     url = url.trim();
     if (!isValidReference(url)) return;
-
     // let content_name = await fetchTitleFromDiffbot(url);
-
     let content_name = potentialTitle || formatUrlForTitle(url);
-
     references.push({
       url,
       content_name,
@@ -267,7 +359,13 @@ export const extractReferences = async (
     .each((_, el) => {
       const link = $(el).attr("href")?.trim();
       const inlineText = $(el).text().trim();
-      if (link && link.startsWith("http") && !isNavigationLink(link)) {
+      if (
+        link &&
+        link.startsWith("http") &&
+        !isNavigationLink(link) &&
+        !$(el).closest("nav, header, .menu, .navbar, aside, footer").length
+      ) {
+        // ✅ NEW: Exclude menu links
         promises.push(processReference(link, inlineText));
       }
     });
@@ -300,7 +398,10 @@ export const extractReferences = async (
   });
 
   await Promise.all(promises);
-  return references;
+  const uniqueReferences = references.filter(
+    (ref, index, self) => index === self.findIndex((r) => r.url === ref.url)
+  );
+  return uniqueReferences;
 };
 
 /* // Helpers

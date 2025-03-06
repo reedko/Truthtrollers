@@ -1,10 +1,51 @@
 // Listen for messages from content.js
 // background.js
 import useTaskStore from "../src/store/useTaskStore";
+import { extractImageFromHtml } from "../src/services/extractMetaData";
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
+let isScraperActive = false; // ✅ Track scraper state
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  // ✅ Ignore "chrome://" pages
+  if (tab.url.startsWith("chrome://")) return;
+
+  // ✅ Ignore background-loaded tabs (used for image extraction)
+  if (tab.active === false) return;
+
+  // ✅ Block re-injecting content while the scraper is running
+  if (isScraperActive) {
+    console.log("🚨 Scraper is running, skipping content injection.");
+    return;
+  }
+  if (changeInfo.status === "complete" && tab.url) {
+    // Check if the content script is already loaded
+    loadContentIfNotAlready(tabId)
+      .then(() => {
+        // Send the message after ensuring the content script is injected
+        sendMessageWithRetry(tabId, {
+          action: "triggerCheckContent",
+          forceVisible: false,
+        });
+      })
+      .catch((error) => {
+        console.error("Error ensuring content script is loaded:", error);
+      });
+  }
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "scrapingStarted") {
+    console.log("⏳ Scraping in progress... Blocking new injections.");
+    isScraperActive = true;
+  }
+
+  if (message.action === "scrapeCompleted") {
+    console.log("✅ Scraping finished! Re-enabling content injection.");
+    isScraperActive = false; // Allow new content injections
+  }
+});
+/* chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (!tab.url.startsWith("chrome://")) {
     if (changeInfo.status === "complete" && tab.url) {
       // Check if the content script is already loaded
@@ -21,7 +62,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         });
     }
   }
-});
+}); */
 
 async function loadContentIfNotAlready(tabId) {
   return new Promise((resolve, reject) => {
@@ -92,6 +133,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true; // Keeps the sendResponse channel open for async responses
   }
 });
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "checkContent") {
     const { forceVisible } = message;
@@ -198,116 +240,114 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "captureImage") {
-    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-      const currentUrl = tabs[0].url;
-      console.log("test1");
+    const { url, html, diffbotData } = message;
 
-      if (tabs[0].id) {
-        console.log("Current URL:", currentUrl);
+    // ✅ 1) Try extracting from provided HTML first
+    const Url = new URL(url); // Extract base domain from full URL
+    const imageUrl = extractImageFromHtml(html, Url);
+    const baseUrl = new URL(url).origin;
 
-        if (!currentUrl) {
-          console.error("Current URL is undefined");
-          sendResponse({ error: "Current URL is undefined" });
-          return;
-        }
+    if (imageUrl) {
+      console.log("✅ Found image in extracted HTML:", imageUrl);
+      sendResponse({ imageUrl });
+      return; // 🚀 Exit early, no need for tab loading
+    }
+    if (!imageUrl) {
+      console.warn("⚠️ No image in extracted HTML. Checking Diffbot...");
+    }
 
-        try {
-          chrome.scripting.executeScript(
-            {
-              target: { tabId: tabs[0].id },
-              func: (url) => {
-                console.log("test3:", url);
-                let maxArea = 0;
-                let chosenImage = null;
+    // ✅ 2) Use Diffbot as a fallback
+    if (!imageUrl && diffbotData?.images?.length > 0) {
+      imageUrl = diffbotData.images[0].url;
+      console.log("✅ Found image in Diffbot:", imageUrl);
+      sendResponse({ imageUrl });
+      return; // 🚀 Exit early
+    }
 
-                if (!url) {
-                  console.error("Passed URL is undefined inside func");
-                  return null;
-                }
+    if (!imageUrl) {
+      console.warn("⚠️ No image from Diffbot. Checking current tab...");
+    }
 
-                // YouTube-specific thumbnail extraction
-                if (
-                  url.indexOf("youtube.com") !== -1 &&
-                  url.indexOf("/watch") !== -1
-                ) {
-                  const urlObj = new URL(url);
-                  const videoId = urlObj.searchParams.get("v");
-                  console.log(videoId);
-                  if (videoId) {
-                    const youtubeThumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-                    return youtubeThumbnail; // Return YouTube thumbnail URL immediately
-                  }
-                }
+    // ✅ 3) Check if the current tab matches the requested URL
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const currentTab = tabs[0];
 
-                const parseSrcset = (srcset) => {
-                  if (!srcset) return null;
+      if (currentTab?.url === url) {
+        console.log("🔍 Extracting image from CURRENT tab:", currentTab.url);
+        extractImageFromTab(currentTab.id, sendResponse);
+      } else {
+        // ✅ Open hidden tab and extract image if URL doesn't match
+        console.log("🌍 Opening hidden tab to capture image from:", url);
+        chrome.tabs.create({ url, active: false }, (tab) => {
+          if (!tab || !tab.id) {
+            console.error("❌ Failed to open hidden tab.");
+            sendResponse({
+              imageUrl: `${BASE_URL}/assets/images/miniLogo.png`,
+            });
+            return;
+          }
 
-                  // Define valid image extensions
-                  const validImageExtensions = /\.(jpg|jpeg|png|gif|webp)$/i;
-
-                  // Split srcset and process each entry
-                  const srcsetEntries = srcset.split(",").map((entry) => {
-                    let src = entry.trim().split(" ")[0]; // Get the URL part
-
-                    // Strip PHP-like processing or query prefixes
-                    if (src.includes("?")) {
-                      const cleanedSrc = src.split("?src=")[1] || src; // Keep only after "?" if exists
-                      src = cleanedSrc;
-                    }
-
-                    // Remove any trailing parameters like `&w=1200`
-                    src = src.split("&")[0];
-
-                    // Return only if the src ends with a valid image extension
-                    return validImageExtensions.test(src) ? src : null;
-                  });
-
-                  // Return the first valid image URL or null
-                  return srcsetEntries.find((src) => src) || null;
-                };
-
-                // Extract the largest image based on src or srcset
-                const images = document.querySelectorAll("img");
-                images.forEach((img) => {
-                  const area = img.offsetHeight * img.offsetWidth;
-
-                  if (img.src && area > maxArea) {
-                    maxArea = area;
-                    chosenImage = img.src; // Prefer img.src if available
-                  } else if (img.srcset && area > maxArea) {
-                    const parsedSrc = parseSrcset(img.srcset);
-                    if (parsedSrc) {
-                      maxArea = area;
-                      chosenImage = parsedSrc;
-                    }
-                  }
-                });
-
-                return chosenImage || null;
-              },
-              args: [currentUrl],
-            },
-            (results) => {
-              const imageUrl = results[0]?.result;
-              if (imageUrl) {
-                console.log("Captured Image URL:", imageUrl);
-                sendResponse({ imageUrl });
-              } else {
-                console.error("No valid image found.");
-                sendResponse({ error: "No valid image found." });
-              }
+          // Wait for hidden tab to load, then extract image
+          chrome.tabs.onUpdated.addListener(function listener(
+            tabId,
+            changeInfo
+          ) {
+            if (tabId === tab.id && changeInfo.status === "complete") {
+              console.log("📡 Hidden tab loaded, extracting image...");
+              extractImageFromTab(tab.id, (res) => {
+                chrome.tabs.remove(tab.id); // ✅ Close hidden tab after extraction
+                sendResponse(res);
+              });
+              chrome.tabs.onUpdated.removeListener(listener);
             }
-          );
-        } catch (error) {
-          console.error("Error during script execution:", error);
-        }
+          });
+        });
       }
     });
 
-    // This is necessary to indicate that sendResponse will be called asynchronously
-    return true;
+    return true; // ✅ Keep async message open
   }
 });
+
+// 🛠 Single function for extracting images from a given tab
+const extractImageFromTab = (tabId, sendResponse) => {
+  chrome.scripting.executeScript(
+    {
+      target: { tabId },
+      func: () => {
+        let maxArea = 0;
+        let chosenImage = null;
+
+        document.querySelectorAll("img").forEach((img) => {
+          const width = parseInt(img.getAttribute("width") || "0", 10);
+          const height = parseInt(img.getAttribute("height") || "0", 10);
+          const area = width * height;
+
+          let imgSrc = img.src;
+
+          // ✅ Convert relative URLs to absolute
+          if (imgSrc.startsWith("/")) {
+            imgSrc = window.location.origin + imgSrc;
+          }
+
+          if (area > maxArea && imgSrc) {
+            maxArea = area;
+            chosenImage = imgSrc;
+          }
+        });
+
+        return chosenImage || null;
+      },
+    },
+    (results) => {
+      const extractedImage = results[0]?.result;
+      console.log("✅ Extracted Image:", extractedImage);
+      sendResponse({
+        imageUrl: extractedImage || `${BASE_URL}/assets/images/miniLogo.png`,
+      });
+    }
+  );
+};
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "addContent") {
@@ -370,6 +410,7 @@ const addContent = async (taskData) => {
 
     const responseData = await response.json();
     console.log(responseData, ":REPSODFJKG");
+
     return responseData.content_id;
   } catch (error) {
     console.error("Error adding task:", error);
@@ -508,11 +549,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // ... other actions (like addContent, addAuthors, etc.)
     case "storeClaims": {
       const { contentId, claims, contentType } = request.data;
-      console.log("📌 Background received storeClaims:", {
-        contentId,
-        claims,
-        contentType,
-      });
+
       storeClaimsOnServer(contentId, claims, contentType)
         .then(() => {
           sendResponse({ success: true });
@@ -558,11 +595,6 @@ async function handleExtractText(url, html, currentPage) {
 }
 
 async function storeClaimsOnServer(contentId, claims, contentType) {
-  console.log("📌 Sending claims to /api/claims/add:", {
-    contentId,
-    claims,
-    contentType,
-  });
   const response = await fetch(`${BASE_URL}/api/claims/add`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -574,7 +606,6 @@ async function storeClaimsOnServer(contentId, claims, contentType) {
   });
 
   const data = await response.json();
-  console.log("📌 Server response for claims storage:", data);
 
   if (!data.success) {
     throw new Error("Server responded with an error storing claims");
@@ -615,7 +646,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // We handle the call asynchronously
     callOpenAiAnalyze(request.content)
       .then((result) => {
-        console.log("✅ Sending claims back to popup:", result.claims);
         sendResponse({ success: true, data: result });
       })
       .catch((err) => {
@@ -695,7 +725,6 @@ ${content}
     ? parsed.specificTopics
     : [];
   const claims = Array.isArray(parsed.claims) ? parsed.claims : [];
-  console.log(claims, ":::CLAIMS");
   return { generalTopic, specificTopics, claims };
 }
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

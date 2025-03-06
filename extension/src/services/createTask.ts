@@ -23,12 +23,6 @@ const createTask = async (taskData: TaskData): Promise<string | null> => {
         }
       );
     });
-    console.log("📌 Claims received in createTask:", taskData.Claims);
-    console.log("📌 Sending claims from createTask:", {
-      contentId,
-      claims: taskData.Claims,
-      contentType: taskData.content_type,
-    });
 
     // Step 2: Attach metadata (Authors, Publisher, References) in Parallel
     await Promise.all([

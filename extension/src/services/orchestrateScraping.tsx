@@ -6,6 +6,7 @@ import {
   extractPublisher,
   extractReferences,
   getExtractedTextFromBackground,
+  getBestImage,
 } from "../services/extractMetaData";
 import { getMainHeadline } from "../services/getMainHeadline";
 import { DiffbotData } from "../entities/diffbotData";
@@ -51,7 +52,8 @@ export const orchestrateScraping = async (
     contentType === "task"
       ? fetchPageContent()
       : await fetchExternalPageContent(url); // ✅ Use correct fetch function
-
+  // 🚨 Remove all <style>, <link rel="stylesheet">, and <script> tags
+  $("style, link[rel='stylesheet'], script").remove();
   // I) Now call the server to get "clean text" (this is optional if you trust your local text)
   //    but let's do it for consistency with your /api/extractText approach:
 
@@ -85,49 +87,43 @@ export const orchestrateScraping = async (
   // Get video ID if applicable
   const videoId = extractVideoIdFromUrl(url);
   console.log("✅ Extracted Publisher:", publisherName);
-  // Capture thumbnail image
-  let imageUrl = diffbotData.images?.[0]?.url || null;
-  if (!imageUrl) {
-    imageUrl = await new Promise<string>((resolve) => {
-      chrome.runtime.sendMessage({ action: "captureImage" }, (res) =>
-        resolve(res.imageUrl || "")
-      );
-    });
+
+  // 🚀 Get the best image using background processing
+  let imageUrl = await getBestImage(url, extractedHtml, diffbotData);
+  const baseUrl = new URL(url);
+  if (imageUrl) {
+    if (!imageUrl.startsWith("http")) {
+      if (imageUrl.startsWith("/")) {
+        // ✅ If it starts with `/`, use baseUrl (origin)
+        imageUrl = new URL(imageUrl, baseUrl.origin).href;
+      } else {
+        // ✅ If no `/`, assume it's relative to the full article URL
+        imageUrl = new URL(imageUrl, baseUrl).href;
+      }
+    }
   }
+  console.log("🎯 Final Image Selected:", imageUrl);
 
   // Extract references only if processing as "reference" content type
-  /*  if (contentType === "task") {
-    extractedReferences = await extractReferences($);
-  } */
   if (contentType === "task") {
+    extractedReferences = await extractReferences($);
+  }
+  /*   if (contentType === "task") {
     const allReferences = await extractReferences($);
     extractedReferences = allReferences.length > 0 ? [allReferences[0]] : [];
-  }
+  } */
 
   console.log(extractedReferences);
 
   // Extract topics and claims
   const topicsAndClaims = await analyzeContent(extractedText);
-  console.log(
-    "📌 Final extracted claims in orchestrateScraping:",
-    topicsAndClaims.claims
-  );
+
   generalTopic = topicsAndClaims.generalTopic;
   specificTopics = topicsAndClaims.specificTopics;
   claims = topicsAndClaims.claims;
 
   // Fetch icon for topic
   const iconThumbnailUrl = await checkAndDownloadTopicIcon(generalTopic);
-
-  /*   // J) Next, call ClaimBuster on that text
-  let claimsFromCB: any[] = [];
-  try {
-    claimsFromCB = await getClaimsFromBackground(extractedText);
-    console.log("✅ ClaimBuster returned claims:", claimsFromCB);
-  } catch (err) {
-    console.warn("⚠️ ClaimBuster call failed:", err);
-  }
- */
 
   return {
     content_name: mainHeadline ? mainHeadline : "",

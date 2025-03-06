@@ -13,7 +13,6 @@ export async function analyzeContent(content: string): Promise<{
       },
       (response) => {
         if (response && response.success) {
-          console.log("🔄 Received claims in popup:", response.data.claims);
           resolve(response.data);
         } else {
           const errorMsg =
