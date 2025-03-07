@@ -86,6 +86,7 @@ export const useTaskStore = create<TaskStoreState>()(
 
     setSelectedTopic: (topicName) => {
       const { content, searchQuery } = get();
+      console.log("Setting selected topic:", topicName);
       const filteredTasks = content.filter((task) => {
         const matchesTopic = topicName ? task.topic === topicName : true;
         const matchesSearch = searchQuery
@@ -93,6 +94,7 @@ export const useTaskStore = create<TaskStoreState>()(
           : true;
         return matchesTopic && matchesSearch;
       });
+
       set({ selectedTopic: topicName, filteredTasks });
     },
 
