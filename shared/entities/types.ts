@@ -46,9 +46,27 @@ export interface Publisher {
 // References
 export interface LitReference {
   reference_content_id: number;
+  content_name: string;
   url: string;
   author_id?: number;
+}
+
+// Claims
+export interface Claim {
+  claim_id: number;
+  claim_text: string;
+  veracity_score: number;
+  confidence_level: number;
+  last_verified: string; // Timestamp as ISO string
+  references: ClaimReference[]; // References that support/refute the claim
+  relationship_type?: string; // Type of relationship to the content (if relevant)
+}
+
+export interface ClaimReference {
+  reference_content_id: number;
   content_name: string;
+  url: string;
+  support_level: number; // Positive = supports, Negative = refutes
 }
 
 // User Interface

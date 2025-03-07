@@ -20,5 +20,5 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "../TaskDetailplate.tsx", "../shared/entities/types.ts"]
+  "include": ["src", "../TaskDetail.tsx", "../shared/entities/types.ts"]
 }

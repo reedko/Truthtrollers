@@ -669,6 +669,52 @@ app.get("/api/topics", async (req, res) => {
   });
 });
 
+//claims
+app.get("/api/claims/:content_id", async (req, res) => {
+  const { content_id } = req.params;
+
+  const sql = `
+SELECT 
+    c.claim_id,
+    c.claim_text,
+    c.veracity_score,
+    c.confidence_level,
+    c.last_verified,
+    COALESCE(GROUP_CONCAT(DISTINCT cc.relationship_type ORDER BY cc.relationship_type SEPARATOR ', '), '') AS relationship_type,  -- ✅ Fix for GROUP BY
+    COALESCE(
+        JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'reference_content_id', cr.reference_content_id,
+                'content_name', ref.content_name,
+                'url', ref.url,
+                'support_level', IFNULL(cr.support_level, 0)
+            )
+        ), 
+        JSON_ARRAY()
+    ) AS reference_list
+FROM claims c
+LEFT JOIN content_claims cc ON c.claim_id = cc.claim_id
+LEFT JOIN claims_references cr ON c.claim_id = cr.claim_id
+LEFT JOIN content ref ON cr.reference_content_id = ref.content_id
+WHERE cc.content_id = ?
+GROUP BY c.claim_id;
+
+
+
+  `;
+  console.log("Fetching claims for content_id:", content_id);
+
+  const params = [content_id];
+  pool.query(sql, params, async (err, results) => {
+    if (err) {
+      console.error("❌ Error fetching claims:", err);
+      return res.status(500).json({ error: "Database query failed" });
+    }
+
+    res.json(results);
+  });
+});
+
 app.get("/api/test-connection", (req, res) => {
   pool.query("SELECT 1 + 1 AS solution", (err, results) => {
     if (err) {
