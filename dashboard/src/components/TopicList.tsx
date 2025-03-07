@@ -79,6 +79,7 @@ const TopicList: React.FC = () => {
                 }
                 onClick={() => {
                   if (topic.topic_name !== selectedTopic) {
+                    console.log("Clicked topic:", topic.topic_name);
                     setSelectedTopic(topic.topic_name);
                   }
                 }}

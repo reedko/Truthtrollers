@@ -61,6 +61,7 @@ app.use(express.json());
 const assetsPath = path.join(__dirname, "assets");
 const DIFFBOT_TOKEN = process.env.REACT_APP_DIFFBOT_TOKEN;
 const DIFFBOT_BASE_URL = process.env.REACT_APP_DIFFBOT_BASE_URL;
+const BASE_URL = process.env.REACT_APP_BASE_URL;
 
 app.use("/assets", express.static(assetsPath));
 // MySQL connection
@@ -527,12 +528,22 @@ app.post("/api/reset-password", (req, res) => {
 app.get("/api/content", (req, res) => {
   const sql = `
    SELECT 
-  t.*, 
+    t.*, 
+
+    -- Fetch first topic (topic_order = 1)
+    (SELECT topic_name 
+     FROM topics tt
+     JOIN content_topics ct ON tt.topic_id = ct.topic_id
+     WHERE ct.content_id = t.content_id
+     ORDER BY ct.topic_order ASC
+     LIMIT 1) AS topic,
+
+    -- Fetch authors as JSON array
     COALESCE(
         JSON_ARRAYAGG(
             JSON_OBJECT(
                 'author_id', a.author_id, 
-                'author_first_name', IFNULL(a.author_first_name,' '), 
+                'author_first_name', IFNULL(a.author_first_name, ' '), 
                 'author_other_name', IFNULL(a.author_other_name, ''),
                 'author_last_name', IFNULL(a.author_last_name, ' '),
                 'author_title', IFNULL(a.author_title, ' ')
@@ -540,6 +551,8 @@ app.get("/api/content", (req, res) => {
         ), 
         JSON_ARRAY()
     ) AS authors,
+
+    -- Fetch publishers as JSON array
     COALESCE(
         JSON_ARRAYAGG(
             JSON_OBJECT(
@@ -549,13 +562,20 @@ app.get("/api/content", (req, res) => {
         ), 
         JSON_ARRAY()
     ) AS publishers
+
 FROM content t
+
+-- Join authors & publishers
 LEFT JOIN content_authors ta ON t.content_id = ta.content_id
 LEFT JOIN authors a ON ta.author_id = a.author_id
 LEFT JOIN content_publishers tp ON t.content_id = tp.content_id
 LEFT JOIN publishers p ON tp.publisher_id = p.publisher_id
-WHERE content_type='task'
-GROUP BY t.content_id ;
+
+-- Ensure we only fetch tasks
+WHERE t.content_type = 'task'
+
+GROUP BY t.content_id;
+;
 
   `;
 
@@ -581,13 +601,68 @@ app.get("/api/content_topics", (req, res) => {
 });
 
 //Topics
-app.get("/api/topics", (req, res) => {
+app.get("/api/topics", async (req, res) => {
   const sql =
-    "SELECT * FROM topics where topic_id in (SELECT distinct(topic_id) FROM content_topics where topic_order=1) ";
-  pool.query(sql, (err, results) => {
+    "SELECT * FROM topics WHERE topic_id IN (SELECT DISTINCT(topic_id) FROM content_topics WHERE topic_order=1) ORDER BY topic_name";
+
+  pool.query(sql, async (err, results) => {
     if (err) {
-      console.error("Error fetching topics:", err);
+      console.error("❌ Error fetching topics:", err);
       return res.status(500).json({ error: "Database query failed" });
+    }
+
+    // ✅ Ensure results is iterable
+    if (!Array.isArray(results) || results.length === 0) {
+      console.warn("⚠️ No topics found.");
+      return res.json([]);
+    }
+
+    // ✅ Process topics & fill missing thumbnails
+    for (let topic of results) {
+      if (!topic.thumbnail || topic.thumbnail.trim() === "") {
+        console.log(`🔎 No thumbnail for: ${topic.topic_name}, fetching...`);
+
+        try {
+          const result = await fetchIconForTopic(topic.topic_name, query);
+
+          if (result.thumbnail_url) {
+            console.log(`✅ Found icon: ${result.thumbnail_url}`);
+
+            // 🔥 Strip BASE_URL before storing
+            const cleanThumbnail = result.thumbnail_url.replace(
+              `${BASE_URL}/`,
+              ""
+            );
+
+            const callQuery =
+              "UPDATE topics SET thumbnail = ? WHERE topic_id = ?";
+            const params = [cleanThumbnail, topic.topic_id];
+            console.log(callQuery, ":", cleanThumbnail, ":", topic.topic_id);
+            try {
+              // Execute the procedure
+              db.query(callQuery, params);
+            } catch (err) {
+              console.error("Error inserting task:", err);
+              return res
+                .status(500)
+                .send("Database error during task insertion");
+            }
+            // ✅ Assign fetched & cleaned thumbnail
+            topic.thumbnail = `${cleanThumbnail}`;
+          } else {
+            console.log(
+              `⚠️ No match found for ${topic.topic_name}, using default.`
+            );
+            topic.thumbnail = `assets/images/topics/general.png`;
+          }
+        } catch (fetchError) {
+          console.error(
+            `❌ Error fetching icon for ${topic.topic_name}:`,
+            fetchError
+          );
+          topic.thumbnail = `assets/images/topics/general.png`;
+        }
+      }
     }
 
     res.json(results);
