@@ -11,6 +11,7 @@ import TaskCard from "../components/TaskCard";
 import { EditorFrame } from "../components/EditorFrame";
 import NetworkGraph from "../components/NetworkGraph";
 import { fetchNewGraphData } from "../services/api"; // typed to accept a GraphNode
+import Workspace from "../components/Workspace";
 
 interface TaskDetailLayoutProps {
   task: Task;
@@ -137,20 +138,22 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   return (
     <Box w="calc(100vw-20px)" mx="10px" p={4} overflow="auto">
       <Grid
-        templateColumns={{ base: "1fr", md: "1fr 2fr" }}
+        templateColumns={{ base: "1fr", md: "2fr 4fr" }}
         gap={2}
         gridTemplateAreas={{
           base: `
             "taskCard"
             "frameA"
-            "editor"
+            "workspace"
             "relationFlow"
             "references"
             "users"
           `,
           md: `
             "taskCard frameA"
+
             "editor editor"
+            "workspace workspace"
             "relationFlow relationFlow"
             "references references"
             "users users"
@@ -173,13 +176,13 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
 
         {/* Content Viewer */}
         <Box gridArea="frameA" borderWidth="1px" borderRadius="lg" p={2}>
-          <Heading size="sm" mb={2}>
+          <Heading size="md" mb={2}>
             Content Viewer
           </Heading>
           <iframe
             src={iframeUrl}
             title="Content Viewer"
-            style={{ width: "100%", height: "95%", border: "none" }}
+            style={{ width: "100%", height: "83%", border: "none" }}
           />
           <Input
             mt={2}
@@ -190,11 +193,11 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
         </Box>
 
         {/* Discussion Editor */}
-        <Box gridArea="editor" borderWidth="1px" borderRadius="lg" p={4}>
+        <Box gridArea="workspace" borderWidth="1px" borderRadius="lg" p={4}>
           <Heading size="sm" mb={2}>
-            Editor (Discussion)
+            WorkSpace
           </Heading>
-          <EditorFrame />
+          <Workspace contentId={task.content_id} />
         </Box>
 
         {/* Relationship Map */}
