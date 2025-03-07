@@ -2,138 +2,11 @@
 // background.js
 import useTaskStore from "../src/store/useTaskStore";
 import { extractImageFromHtml } from "../src/services/extractMetaData";
-const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
+const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 let isScraperActive = false; // ✅ Track scraper state
 
-// ✅ Detect when user navigates to a new page
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status !== "complete" || !tab.url) return; // Only trigger on full load
-
-  checkContentAndUpdatePopup(tabId, tab.url, false); // Don't force visible
-});
-
-// ✅ Detect when user clicks the extension icon
-chrome.action.onClicked.addListener((tab) => {
-  if (!tab.url) return;
-
-  console.log("🔍 Extension icon clicked - Forcing popup for:", tab.url);
-  checkContentAndUpdatePopup(tab.id, tab.url, true); // Force visible
-});
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "scrapeCompleted") {
-    console.log("✅ Scraping finished! Refreshing task status...");
-
-    // ✅ After scraping, force the popup to check the newly scraped task
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs.length === 0 || !tabs[0].id) return;
-      const tabId = tabs[0].id;
-      const url = tabs[0].url;
-
-      // ✅ Ensure the popup updates with the newly scraped task
-      checkContentAndUpdatePopup(tabId, url, true);
-    });
-  }
-});
-
-// ✅ Check if URL is in database & update popup
-async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
-  try {
-    const response = await fetch(`${BASE_URL}/api/check-content`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    });
-
-    const data = await response.json();
-    const isDetected = data.exists;
-    const isCompleted = data.exists && data.task.progress === "Completed";
-    const task = data.exists ? data.task : null;
-    const store = useTaskStore.getState();
-
-    if (task) {
-      // ✅ Store task details in Zustand BEFORE attempting to render popup
-
-      store.setTask(task);
-      store.setCurrentUrl(url);
-      store.setContentDetected(isCompleted);
-
-      console.log("📌 Updated Zustand Store:", {
-        task: store.task,
-        url: store.currentUrl,
-        detected: store.contentDetected,
-      });
-    } else {
-      store.setCurrentUrl(url);
-      console.log("📌 Updated Zustand Store:", {
-        task: store.task,
-        url: store.currentUrl,
-        detected: store.contentDetected,
-      });
-    }
-    console.log("🔎 Content check result:", { isDetected, isCompleted, task });
-
-    // ✅ Show popup automatically if content is completed
-    // ✅ Force show popup if the user clicked the extension icon
-    if (isCompleted || forceVisible) {
-      showTaskCard(tabId, isDetected, forceVisible);
-    }
-  } catch (error) {
-    console.error("⚠️ Error checking content:", error);
-  }
-}
-
-// ✅ Injects & controls the task-card popup
-function showTaskCard(tabId, isDetected, forceVisible) {
-  chrome.scripting.executeScript(
-    {
-      target: { tabId },
-      func: (isDetected, forceVisible) => {
-        let popupRoot = document.getElementById("popup-root");
-
-        if (popupRoot) popupRoot.remove(); // Remove any existing popup
-
-        popupRoot = document.createElement("div");
-        popupRoot.id = "popup-root";
-        document.body.appendChild(popupRoot);
-
-        popupRoot.className =
-          isDetected || forceVisible ? "task-card-visible" : "task-card-hidden";
-      },
-      args: [isDetected, forceVisible],
-    },
-    () => {
-      if (chrome.runtime.lastError) {
-        console.error(
-          "⚠️ Error during executeScript:",
-          chrome.runtime.lastError.message
-        );
-      } else {
-        console.log("✅ Task-card injected successfully");
-        chrome.scripting.executeScript({
-          target: { tabId },
-          files: ["popup.js"],
-        });
-      }
-    }
-  );
-}
-chrome.tabs.onActivated.addListener(async (activeInfo) => {
-  chrome.tabs.get(activeInfo.tabId, (tab) => {
-    if (tab.url) {
-      console.log("🔄 Tab switched, checking content:", tab.url);
-      chrome.runtime.sendMessage({ action: "checkContent", url: tab.url });
-    }
-  });
-});
-
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete" && tab.url) {
-    console.log("🔄 Tab updated, checking content:", tab.url);
-    chrome.runtime.sendMessage({ action: "checkContent", url: tab.url });
-  }
-});
-/* chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   // ✅ Ignore "chrome://" pages
   if (tab.url.startsWith("chrome://")) return;
 
@@ -159,7 +32,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         console.error("Error ensuring content script is loaded:", error);
       });
   }
-}); */
+});
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "scrapingStarted") {
@@ -263,30 +136,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "checkContent") {
-    const { url, forceVisible } = message;
-
-    // If no URL is provided, get the active tab's URL
-    if (!url) {
-      chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-        if (tabs.length === 0 || !tabs[0].url) {
-          console.error("❌ No active tab or URL found.");
-          return;
-        }
-        const activeUrl = tabs[0].url;
-        checkContentAndUpdatePopup(tabs[0].id, activeUrl, forceVisible);
-      });
-    } else {
-      // If URL is provided, proceed directly
-      checkContentAndUpdatePopup(sender.tab.id, url, forceVisible);
-    }
-
-    sendResponse({ received: true });
-    return true; // ✅ Keeps the async request open
-  }
-});
-
-/* chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "checkContent") {
     const { forceVisible } = message;
     console.log("fv1", forceVisible);
     // Get the active tab's URL
@@ -387,7 +236,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     return true; // Keeps the sendResponse channel open for async operations
   }
-}); */
+});
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "captureImage") {
@@ -861,7 +710,7 @@ ${content}
       .replace(/```$/, "")
       .trim();
   }
-  console.log("🔍 GPT Raw Response:", rawReply);
+
   // Attempt to parse the JSON
   let parsed;
   try {

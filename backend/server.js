@@ -1,5 +1,5 @@
 // Import dependencies
-import fetchIconForTopic from "../extension/src/services/fetchIconForTopic.js"; // Assuming the service uses export default
+import { fetchIconForTopic } from "../extension/src/services/fetchIconForTopic.js";
 import express from "express";
 import mysql from "mysql";
 import bodyParser from "body-parser";
@@ -813,8 +813,42 @@ app.post("/api/pre-scrape", async (req, res) => {
     });
   }
 });
-
 app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
+  const { generalTopic } = req.body;
+
+  try {
+    // ✅ Check if the topic exists in `topics` or `topic_aliases`
+    const topicQuery = `
+      SELECT topics.topic_id 
+      FROM topics
+      LEFT JOIN topic_aliases ON topics.topic_id = topic_aliases.topic_id
+      WHERE topics.topic_name = ? OR topic_aliases.alias_name = ?
+    `;
+    const results = await query(topicQuery, [generalTopic, generalTopic]);
+
+    console.log(results, generalTopic, ": results for topic check");
+
+    // ✅ If topic exists in DB, return `{ exists: true, thumbnail_url: null }` (no action needed)
+    if (results.length > 0) {
+      return res.status(200).send({ exists: true, thumbnail_url: null });
+    }
+
+    // ✅ If not found in DB, check local icon storage
+    const { exists, thumbnail_url } = await fetchIconForTopic(
+      generalTopic,
+      query
+    );
+    // 🔥 Ensure thumbnail is stored WITHOUT BASE_URL
+    thumbnail_url = thumbnail_url.replace(BASE_URL, "").replace(/^\/+/, ""); // Remove leading slashes if needed
+
+    res.status(200).send({ exists, thumbnail_url });
+  } catch (error) {
+    console.error("❌ Error in checkAndDownloadTopicIcon:", error);
+    res.status(500).send({ error: "Failed to process topic icon." });
+  }
+});
+
+/* app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
   const { generalTopic } = req.body;
 
   try {
@@ -833,19 +867,19 @@ app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
     }
 
     // If not found, fetch icon
-    const icon = await fetchIconForTopic(generalTopic); // Fetch the icon from the Noun Project
+    const icon = await fetchIconForTopic(generalTopic, query); // Fetch the icon from the Noun Project
 
     if (!icon) {
       throw new Error(`Failed to fetch icon for topic: ${generalTopic}`);
     }
 
-    const imagePath = `./assets/images/topics/${generalTopic.replace(
+        const imagePath = `./assets/images/topics/${generalTopic.replace(
       /\s+/g,
       "_"
     )}.png`;
 
     // Download and convert the image to PNG if necessary
-    const response = await axios.get(icon, {
+     const response = await axios.get(icon, {
       responseType: "arraybuffer",
     });
     const buffer = Buffer.from(response.data);
@@ -858,13 +892,13 @@ app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
       /\s+/g,
       "_"
     )}.png`;
-    res.status(201).send({ exists: false, thumbnail_url: thumbnailUrl });
+    res.status(200).send({ exists: false, thumbnail_url: icon });
   } catch (error) {
     console.error("Error in checkAndDownloadTopicIcon:", error);
     res.status(500).send({ error: "Failed to process topic icon." });
   }
 });
-
+ */
 app.post("/api/fetch-page-content", async (req, res) => {
   console.log("📌 Received request to fetch page content:", req.body);
   const { url } = req.body;
