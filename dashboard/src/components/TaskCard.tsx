@@ -15,11 +15,12 @@ import {
 } from "@chakra-ui/react";
 import { BiChevronDown } from "react-icons/bi";
 import AssignUserModal from "./AssignUserModal";
-import SourceListModal from "./SourceListModal";
+import ReferenceModal from "./ReferenceModal";
 import { useTaskStore } from "../store/useTaskStore";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
-
+import { memo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { addReferenceToTask } from "../services/useWorkspaceData";
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
@@ -28,7 +29,6 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
   const publisher = useTaskStore(
     (state) => state.publishers[task.content_id] || []
   );
-
   const navigate = useNavigate();
   const fetchAssignedUsers = useTaskStore((state) => state.fetchAssignedUsers);
   const cardRef = useRef<HTMLDivElement | null>(null);
@@ -46,43 +46,42 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
   } = useDisclosure();
 
   const {
-    isOpen: isReferencesOpen,
-    onOpen: onReferencesOpen,
-    onClose: onReferencesClose,
+    isOpen: isReferenceModalOpen,
+    onOpen: onReferenceModalOpen,
+    onClose: onReferenceModalClose,
   } = useDisclosure();
 
   const handleDrillDown = () => {
     navigate(`/tasks/${task.content_id}`, { state: { task } });
   };
+
   const handleAssignedUsersOpen = async () => {
     try {
       console.log(`Fetching assigned users for task ${task.content_id}`);
-      await fetchAssignedUsers(task.content_id); // This updates the store
+      await fetchAssignedUsers(task.content_id);
     } catch (err) {
       console.error("Error fetching assigned users:", err);
     }
   };
+
   const handleOpenModal = (openModal: () => void) => {
     if (cardRef.current) {
       const { top, left, height } = cardRef.current.getBoundingClientRect();
-      let newtop = 0;
-      let newleft = 0;
-      left >= 740 ? (newleft = left - 400) : (newleft = left + 200);
-      newtop = top - 70;
-      setModalPosition({
-        top: newtop,
-        left: newleft, // Adjust for modal width
-      });
-      console.log("MP:", { modalPosition });
+      let newTop = top - 70;
+      let newLeft = left >= 740 ? left - 400 : left + 200;
+
+      setModalPosition({ top: newTop, left: newLeft });
+      console.log("Modal Position:", modalPosition);
     }
 
     openModal();
   };
+
   return (
     <Center>
       <Box
         ref={cardRef}
-        bg={isAssignOpen ? "blue.200" : isReferencesOpen ? "blue.200" : "teal"}
+        bg={isAssignOpen || isReferenceModalOpen ? "blue.200" : "teal"}
         borderWidth="1px"
         borderRadius="lg"
         overflow="hidden"
@@ -91,6 +90,7 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
         width="250px"
         margin="10px"
       >
+        {/* Thumbnail */}
         <Image
           src={`${API_BASE_URL}/${task.thumbnail}`}
           alt="Thumbnail"
@@ -98,29 +98,33 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
           boxSize="200px"
           objectFit="cover"
         />
+
+        {/* Task Name */}
         <Text fontWeight="bold" mt={2} noOfLines={2}>
           <Link href={task.url} target="_blank">
             {task.content_name}
           </Link>
         </Text>
+
+        {/* Author Information */}
         {author.length > 0 && (
           <Text fontSize="sm" mt={1}>
             <strong>Author:</strong>{" "}
             {author
-              .map(
-                (a) =>
-                  `${a.author_first_name} ${a.author_other_name} ${a.author_last_name} ${a.author_title}`
-              )
+              .map((a) => `${a.author_first_name} ${a.author_last_name}`)
               .join(", ")}
           </Text>
         )}
 
+        {/* Publisher Information */}
         {publisher.length > 0 && (
           <Text fontSize="sm" mt={1}>
             <strong>Publisher:</strong>{" "}
             {publisher.map((p) => p.publisher_name).join(", ")}
           </Text>
         )}
+
+        {/* Progress Bar */}
         <Progress
           value={
             task.progress === "Completed"
@@ -138,6 +142,8 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
           }
           mt={2}
         />
+
+        {/* Assigned Users Dropdown */}
         <Menu onOpen={handleAssignedUsersOpen}>
           <MenuButton as={Button} rightIcon={<BiChevronDown />}>
             Users
@@ -153,6 +159,7 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
           </MenuList>
         </Menu>
 
+        {/* Actions Menu */}
         <Menu>
           <MenuButton as={Button} colorScheme="teal">
             Actions
@@ -161,8 +168,8 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
             <MenuItem onClick={() => handleOpenModal(onAssignOpen)}>
               Assign User
             </MenuItem>
-            <MenuItem onClick={() => handleOpenModal(onReferencesOpen)}>
-              Source List
+            <MenuItem onClick={() => handleOpenModal(onReferenceModalOpen)}>
+              Manage References
             </MenuItem>
             <MenuItem onClick={handleDrillDown}>Drill Down</MenuItem>
           </MenuList>
@@ -175,18 +182,25 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
             onClose={onAssignClose}
             taskId={task.content_id}
             taskName={task.content_name}
-            position={modalPosition} // Pass modal position
+            position={modalPosition}
           />
         )}
 
-        {/* Source List Modal */}
-        {isReferencesOpen && (
-          <SourceListModal
-            isOpen={isReferencesOpen}
-            onClose={onReferencesClose}
+        {/* ✅ Reference Modal (Replaces SourceListModal) */}
+        {isReferenceModalOpen && (
+          <ReferenceModal
+            isOpen={isReferenceModalOpen}
+            onClose={onReferenceModalClose}
             taskId={task.content_id}
-            taskName={task.content_name}
-            position={modalPosition} // Pass modal position
+            onSave={async (referenceId) => {
+              try {
+                await addReferenceToTask(task.content_id, referenceId);
+                console.log("Reference added successfully:", referenceId);
+                // Optionally: refresh the task data if needed
+              } catch (error) {
+                console.error("Error adding reference:", error);
+              }
+            }}
           />
         )}
       </Box>
