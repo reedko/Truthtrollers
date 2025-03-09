@@ -331,6 +331,39 @@ app.get("/api/content/:taskId/source-references", async (req, res) => {
   });
 });
 
+//Get References, aka source because reference is a reserved word
+// Get References with Optional Search Term
+app.get("/api/references/:searchTerm?", async (req, res) => {
+  let { searchTerm } = req.params;
+  let { page = 1 } = req.query; // 🔥 Extract page number (default = 1)
+  const limit = 50;
+  const offset = (page - 1) * limit; // 🔥 Calculate offset
+
+  let sql = `SELECT content_id, content_name, url FROM content`;
+
+  if (searchTerm && searchTerm !== "all") {
+    sql += ` WHERE content_name LIKE ?`;
+    searchTerm = `%${searchTerm}%`;
+  }
+
+  sql += ` LIMIT ? OFFSET ?`; // ✅ Now supports pagination
+
+  pool.query(
+    sql,
+    searchTerm && searchTerm !== "all"
+      ? [searchTerm, limit, offset]
+      : [limit, offset],
+    (err, rows) => {
+      if (err) {
+        console.error("❌ Error fetching references:", err);
+        return res.status(500).send("Error fetching references");
+      }
+
+      return res.json(rows);
+    }
+  );
+});
+
 //Get content_relations
 app.get("/api/content/:taskId/content_relations", async (req, res) => {
   const { taskId } = req.params;
@@ -340,7 +373,7 @@ app.get("/api/content/:taskId/content_relations", async (req, res) => {
     if (err) {
       console.log(rows, taskId);
       console.error(err);
-      return res.status(500).send("Error fetching referenceieseses");
+      return res.status(500).send("Error fetching references");
     }
 
     return res.json(rows);

@@ -24,6 +24,9 @@ interface TaskStoreState {
   searchQuery: string;
   users: User[];
   references: { [taskId: number]: LitReference[] };
+  claimReferences: {
+    [claimId: number]: { referenceId: number; supportLevel: number }[];
+  };
   authors: { [taskId: number]: Author[] };
   publishers: { [taskId: number]: Publisher[] };
   assignedUsers: { [taskId: number]: User[] };
@@ -36,8 +39,16 @@ interface TaskStoreState {
   fetchUsers: () => Promise<void>;
   fetchAssignedUsers: (taskId: number) => Promise<void>;
   fetchReferences: (taskId: number) => Promise<void>;
+  fetchClaimReferences: (claimId: number) => Promise<void>;
   fetchAuthors: (taskId: number) => Promise<void>;
   fetchPublishers: (taskId: number) => Promise<void>;
+  addReferenceToTask: (taskId: number, referenceId: number) => Promise<void>;
+  addReferenceToClaim: (
+    claimId: number,
+    referenceId: number,
+    userId: number,
+    supportLevel: number
+  ) => Promise<void>;
 }
 
 export const useTaskStore = create<TaskStoreState>()(
@@ -48,6 +59,7 @@ export const useTaskStore = create<TaskStoreState>()(
     searchQuery: "",
     users: [],
     references: {},
+    claimReferences: {},
     authors: {},
     publishers: {},
     assignedUsers: {},
@@ -155,6 +167,59 @@ export const useTaskStore = create<TaskStoreState>()(
       set((state) => ({
         publishers: { ...state.publishers, [taskId]: response.data },
       }));
+    },
+    fetchClaimReferences: async (claimId) => {
+      try {
+        const response = await axios.get(
+          `${API_BASE_URL}/api/claims/${claimId}/references`
+        );
+        set((state) => ({
+          claimReferences: {
+            ...state.claimReferences,
+            [claimId]: response.data,
+          },
+        }));
+      } catch (error) {
+        console.error("Error fetching claim references:", error);
+      }
+    },
+    addReferenceToTask: async (taskId, referenceId) => {
+      try {
+        await axios.post(`${API_BASE_URL}/api/content/add-reference`, {
+          taskId,
+          referenceId,
+        });
+        console.log("✅ Reference added to task");
+      } catch (error) {
+        console.error("❌ Error adding reference to task:", error);
+      }
+    },
+
+    addReferenceToClaim: async (claimId, referenceId, userId, supportLevel) => {
+      try {
+        await axios.post(`${API_BASE_URL}/api/claims/add-claim-reference`, {
+          claimId,
+          referenceId,
+          userId,
+          supportLevel,
+        });
+
+        set((state) => ({
+          claimReferences: {
+            ...state.claimReferences,
+            [claimId]: [
+              ...(state.claimReferences[claimId] || []),
+              { referenceId, supportLevel },
+            ],
+          },
+        }));
+
+        console.log(
+          `✅ Reference added to claim ${claimId} with support level ${supportLevel}`
+        );
+      } catch (error) {
+        console.error("❌ Error adding reference to claim:", error);
+      }
     },
   }))
 );

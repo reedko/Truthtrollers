@@ -20,6 +20,7 @@ chrome.action.onClicked.addListener((tab) => {
   console.log("🔍 Extension icon clicked - Forcing popup for:", tab.url);
   checkContentAndUpdatePopup(tab.id, tab.url, true); // Force visible
 });
+
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "scrapeCompleted") {
     console.log("✅ Scraping finished! Refreshing task status...");
@@ -64,7 +65,10 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
         detected: store.contentDetected,
       });
     } else {
+      // ❌ No task found → CLEAR previous task data
+      store.setTask(null); // ✅ Ensures old data is removed
       store.setCurrentUrl(url);
+      store.setContentDetected(false);
       console.log("📌 Updated Zustand Store:", {
         task: store.task,
         url: store.currentUrl,
