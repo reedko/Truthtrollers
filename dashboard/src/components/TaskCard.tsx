@@ -19,7 +19,7 @@ import ReferenceModal from "./ReferenceModal";
 import { useTaskStore } from "../store/useTaskStore";
 import { memo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { addReferenceToTask } from "../services/useWorkspaceData";
+import { addReferenceToTask } from "../services/useDashboardAPI";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
@@ -38,6 +38,7 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
   const assignedUsers = useTaskStore(
     useShallow((state) => state.assignedUsers[task.content_id] || [])
   );
+  const addReference = useTaskStore((state) => state.addReferenceToTask); // ✅ Get function from store
 
   const {
     isOpen: isAssignOpen,
@@ -191,16 +192,7 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
           <ReferenceModal
             isOpen={isReferenceModalOpen}
             onClose={onReferenceModalClose}
-            taskId={task.content_id}
-            onSave={async (referenceId) => {
-              try {
-                await addReferenceToTask(task.content_id, referenceId);
-                console.log("Reference added successfully:", referenceId);
-                // Optionally: refresh the task data if needed
-              } catch (error) {
-                console.error("Error adding reference:", error);
-              }
-            }}
+            taskId={task.content_id} // ✅ Keep this, since we need to know the task
           />
         )}
       </Box>

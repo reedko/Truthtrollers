@@ -418,11 +418,11 @@ app.post("/api/add-content-relation", async (req, res) => {
   }
 });
 
-app.post("/api/content/:taskId/remove-sources", async (req, res) => {
-  const { taskId } = req.params;
-  const { sources } = req.body;
-  const sql = `DELETE FROM content_relations WHERE content_id = ? AND reference_content_id IN (?)`;
-  pool.query(sql, [taskId, sources], (err) => {
+app.delete("/api/remove-content-relation", async (req, res) => {
+  const taskContentId = req.body.taskContentId;
+  const referenceContentId = req.body.referenceContentId;
+  const sql = `DELETE FROM content_relations WHERE content_id = ? AND reference_content_id =?`;
+  pool.query(sql, [taskContentId, referenceContentId], (err) => {
     if (err) return res.status(500).send("Error removing sources");
     res.send("Sources removed");
   });

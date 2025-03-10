@@ -17,7 +17,7 @@ import {
   createClaim,
   updateClaim,
   deleteClaim,
-} from "../services/useWorkspaceData";
+} from "../services/useDashboardAPI";
 import ClaimModal from "./ClaimModal";
 
 interface WorkspaceProps {

@@ -12,41 +12,51 @@ import {
   Text,
   Link,
   Box,
+  useToast,
+  HStack,
+  Tooltip,
 } from "@chakra-ui/react";
-import axios from "axios";
 import SelectReferenceModal from "./SelectReferenceModal"; // New modal for selecting references
 import ScrapeReferenceModal from "./ScrapeReferenceModal"; // New modal for scraping references
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+import { useTaskStore } from "../store/useTaskStore"; // ✅ Import store
+import { useShallow } from "zustand/react/shallow";
 
 const ReferenceModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   taskId: number;
-  onSave: (referenceId: number) => void;
-}> = ({ isOpen, onClose, taskId, onSave }) => {
-  const [references, setReferences] = useState<
-    { reference_content_id: number; content_name: string; url: string }[]
-  >([]);
+}> = ({ isOpen, onClose, taskId }) => {
+  const { fetchReferences, deleteReferenceFromTask } = useTaskStore();
+  const references = useTaskStore(
+    useShallow((state) => state.references[Number(taskId)] || [])
+  );
+  const toast = useToast();
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   const [isScrapeOpen, setIsScrapeOpen] = useState(false);
+  const addReference = useTaskStore((state) => state.addReferenceToTask); // ✅ Get function from store
 
+  const setSelectedTask = useTaskStore((state) => state.setSelectedTask);
+
+  const handleOpenSelectModal = () => {
+    setSelectedTask(taskId); // ✅ Store taskId in Zustand
+    setIsSelectOpen(true);
+  };
   useEffect(() => {
-    const fetchReferences = async () => {
-      try {
-        const response = await axios.get(
-          `${API_BASE_URL}/api/content/${taskId}/source-references`
-        );
-        setReferences(response.data);
-      } catch (error) {
-        console.error("❌ Error fetching references:", error);
-      }
-    };
+    if (taskId && references.length === 0) {
+      fetchReferences(Number(taskId));
+    }
+  }, [isOpen, taskId, references]); // ✅ Add references as a dependency
+  const handleDeleteReference = async (referenceId: number) => {
+    await deleteReferenceFromTask(taskId, referenceId);
 
-    if (isOpen) fetchReferences();
-  }, [isOpen, taskId]);
-
+    toast({
+      title: "Reference Removed!",
+      description: "The reference has been successfully removed from the task.",
+      status: "warning",
+      duration: 3000,
+      isClosable: true,
+    });
+  };
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose}>
@@ -60,11 +70,36 @@ const ReferenceModal: React.FC<{
               <Text fontWeight="bold">Existing References:</Text>
               {references.length > 0 ? (
                 references.map((ref) => (
-                  <Box key={ref.reference_content_id} w="100%">
-                    <Link href={ref.url} isExternal color="blue.500">
-                      🔗 {ref.content_name}
-                    </Link>
-                  </Box>
+                  <HStack
+                    key={ref.reference_content_id}
+                    w="100%"
+                    justifyContent="space-between"
+                  >
+                    <Tooltip
+                      label={ref.content_name}
+                      aria-label="Full reference name"
+                      hasArrow
+                    >
+                      <Link
+                        href={ref.url}
+                        isExternal
+                        color="blue.500"
+                        isTruncated
+                        maxWidth="-moz-max-content"
+                      >
+                        🔗 {ref.content_name}
+                      </Link>
+                    </Tooltip>
+                    <Button
+                      size="xs"
+                      colorScheme="red"
+                      onClick={() =>
+                        handleDeleteReference(ref.reference_content_id)
+                      }
+                    >
+                      🗑️ Remove
+                    </Button>
+                  </HStack>
                 ))
               ) : (
                 <Text>No references found.</Text>
@@ -73,7 +108,7 @@ const ReferenceModal: React.FC<{
           </ModalBody>
           <ModalFooter>
             {/* ✅ New Buttons for Selecting/Scraping References */}
-            <Button colorScheme="blue" onClick={() => setIsSelectOpen(true)}>
+            <Button colorScheme="blue" onClick={handleOpenSelectModal}>
               Select from List
             </Button>
             <Button
@@ -95,14 +130,14 @@ const ReferenceModal: React.FC<{
         <SelectReferenceModal
           isOpen={isSelectOpen}
           onClose={() => setIsSelectOpen(false)}
-          onSelect={onSave} // Pass selected reference back
+          onSelect={(referenceId) => addReference(taskId, referenceId)} // ✅ Calls store directly!
         />
       )}
       {isScrapeOpen && (
         <ScrapeReferenceModal
           isOpen={isScrapeOpen}
           onClose={() => setIsScrapeOpen(false)}
-          onScrape={onSave} // Pass new reference back
+          // Pass new reference back
         />
       )}
     </>
