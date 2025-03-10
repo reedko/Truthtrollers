@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -13,8 +13,12 @@ import {
   Text,
   HStack,
   Tooltip,
+  useToast,
+  Spinner,
 } from "@chakra-ui/react";
-import { fetchAllReferences } from "../services/useWorkspaceData";
+import { fetchAllReferences } from "../services/useDashboardAPI";
+import { TaskStoreState, useTaskStore } from "../store/useTaskStore";
+import debounce from "lodash.debounce"; // ✅ Prevents API spam
 
 const SelectReferenceModal: React.FC<{
   isOpen: boolean;
@@ -26,66 +30,80 @@ const SelectReferenceModal: React.FC<{
   >([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [page, setPage] = useState(1); // ✅ Track current page
-  const [hasMore, setHasMore] = useState(true); // ✅ Track if more data exists
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const addReferenceToTask = useTaskStore(
+    (state: TaskStoreState) => state.addReferenceToTask
+  );
+  const taskId = useTaskStore((state: TaskStoreState) => state.selectedTaskId);
+  const toast = useToast();
+  const hasFetched = useRef(false); // ✅ Prevents double-fetching
 
   useEffect(() => {
-    const loadReferences = async () => {
-      setIsSearching(true);
-      const data = await fetchAllReferences("all", 1); // ✅ Fetch first page
-      setReferences(data);
-      setIsSearching(false);
-    };
-
-    if (isOpen) loadReferences();
+    if (isOpen && !hasFetched.current) {
+      hasFetched.current = true;
+      loadReferences("all", 1);
+    }
   }, [isOpen]);
 
-  // ✅ Search API Call
-  const handleSearch = async () => {
-    if (searchTerm.length < 3) return;
+  // ✅ Debounced search
+  const handleSearch = debounce(async (query: string) => {
+    if (query.length < 3) return;
     setIsSearching(true);
-    setPage(1); // ✅ Reset to first page on new search
-    const searchResults = await fetchAllReferences(searchTerm, 1);
+    setPage(1);
+    const searchResults = await fetchAllReferences(query, 1);
     setReferences(searchResults);
-    setHasMore(searchResults.length === 50); // ✅ If fewer than 50, no more pages
+    setHasMore(searchResults.length === 50);
+    setIsSearching(false);
+  }, 500);
+
+  // ✅ Load references (search or normal)
+  const loadReferences = async (query: string, pageNum: number) => {
+    setIsSearching(true);
+    const data = await fetchAllReferences(query, pageNum);
+    if (pageNum === 1) {
+      setReferences(data);
+    } else {
+      setReferences((prevRefs) => [
+        ...prevRefs,
+        ...data.filter(
+          (newRef: { content_id: number; content_name: string; url: string }) =>
+            !prevRefs.some(
+              (prevRef) => prevRef.content_id === newRef.content_id
+            )
+        ),
+      ]);
+    }
+    setPage(pageNum);
+    setHasMore(data.length === 50);
     setIsSearching(false);
   };
 
-  // ✅ Fetch More References
+  // ✅ Load more references (pagination)
   const handleLoadMore = async () => {
-    const nextPage = page + 1;
-    const newReferences = await fetchAllReferences(
-      searchTerm || "all",
-      nextPage
-    );
-
-    if (newReferences.length > 0) {
-      setReferences((prevRefs) => {
-        const uniqueRefs = [
-          ...prevRefs,
-          ...newReferences.filter(
-            (newRef: {
-              content_id: number;
-              content_name: string;
-              url: string;
-            }) =>
-              !prevRefs.some(
-                (prevRef) => prevRef.content_id === newRef.content_id
-              )
-          ),
-        ];
-        return uniqueRefs;
-      });
-
-      setPage(nextPage);
-    }
-
-    setHasMore(newReferences.length === 50);
+    await loadReferences(searchTerm || "all", page + 1);
   };
 
+  // ✅ Select a reference and remove it from the list
   const handleSelect = async (referenceId: number) => {
-    await onSelect(referenceId);
-    onClose();
+    if (!taskId) {
+      console.error("❌ No task selected");
+      return;
+    }
+
+    await addReferenceToTask(taskId, referenceId);
+
+    toast({
+      title: "Reference Added!",
+      description: "The reference has been successfully added to the task.",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    });
+
+    setReferences((prev) =>
+      prev.filter((ref) => ref.content_id !== referenceId)
+    );
   };
 
   return (
@@ -99,23 +117,20 @@ const SelectReferenceModal: React.FC<{
           <Input
             placeholder="Search references..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyUp={(e) => e.key === "Enter" && handleSearch()} // 🔍 Press Enter to search
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              handleSearch(e.target.value);
+            }}
             mb={3}
           />
 
           <VStack align="start" spacing={2} maxHeight="400px" overflowY="auto">
             {isSearching ? (
-              <Text>Searching...</Text>
-            ) : (
+              <Spinner size="md" />
+            ) : references.length > 0 ? (
               references.map((ref) => (
-                <Tooltip
-                  label={ref.content_name}
-                  aria-label="Full reference name"
-                  hasArrow
-                >
+                <Tooltip key={ref.content_id} label={ref.content_name} hasArrow>
                   <Button
-                    key={ref.content_id}
                     onClick={() => handleSelect(ref.content_id)}
                     variant="outline"
                     width="100%"
@@ -124,19 +139,20 @@ const SelectReferenceModal: React.FC<{
                     justifyContent="flex-start"
                     textOverflow="ellipsis"
                     onContextMenu={(e) => {
-                      e.preventDefault(); // ✅ Prevents default right-click menu
-                      window.open(ref.url, "_blank"); // ✅ Opens in a new tab
+                      e.preventDefault();
+                      window.open(ref.url, "_blank");
                     }}
                   >
                     {ref.content_name}
                   </Button>
                 </Tooltip>
               ))
+            ) : (
+              <Text>No references found.</Text>
             )}
           </VStack>
         </ModalBody>
         <ModalFooter>
-          {/* ✅ Load More Button (only if more results exist) */}
           <HStack>
             {hasMore && (
               <Button onClick={handleLoadMore} mt={2} colorScheme="blue">

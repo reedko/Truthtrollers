@@ -1,8 +1,5 @@
-// src/store/useTaskStore.ts
-
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import axios from "axios";
 import {
   Task,
   User,
@@ -13,11 +10,20 @@ import {
   TaskReference,
   AuthReference,
 } from "../../../shared/entities/types";
+import {
+  fetchTasks,
+  fetchUsers,
+  fetchAssignedUsers,
+  fetchReferencesForTask,
+  fetchClaimReferences,
+  fetchAuthors,
+  fetchPublishers,
+  addReferenceToTask,
+  addReferenceToClaim,
+  deleteReferenceFromTask,
+} from "../services/useDashboardAPI";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
-
-interface TaskStoreState {
+export interface TaskStoreState {
   content: Task[];
   filteredTasks: Task[];
   selectedTopic: string | undefined;
@@ -33,8 +39,12 @@ interface TaskStoreState {
   content_authors: TaskAuthor[];
   content_relations: TaskReference[];
   auth_references: AuthReference[];
+  selectedTaskId: number;
+
   setSearchQuery: (query: string) => void;
   setSelectedTopic: (topicName: string | undefined) => void;
+  setSelectedTask: (taskId: number) => void;
+
   fetchTasks: () => Promise<void>;
   fetchUsers: () => Promise<void>;
   fetchAssignedUsers: (taskId: number) => Promise<void>;
@@ -42,12 +52,17 @@ interface TaskStoreState {
   fetchClaimReferences: (claimId: number) => Promise<void>;
   fetchAuthors: (taskId: number) => Promise<void>;
   fetchPublishers: (taskId: number) => Promise<void>;
+
   addReferenceToTask: (taskId: number, referenceId: number) => Promise<void>;
   addReferenceToClaim: (
     claimId: number,
     referenceId: number,
     userId: number,
     supportLevel: number
+  ) => Promise<void>;
+  deleteReferenceFromTask: (
+    taskId: number,
+    referenceId: number
   ) => Promise<void>;
 }
 
@@ -66,13 +81,14 @@ export const useTaskStore = create<TaskStoreState>()(
     content_authors: [],
     content_relations: [],
     auth_references: [],
+    selectedTaskId: 0,
+
+    setSelectedTask: (taskId: number) => set({ selectedTaskId: taskId }),
 
     fetchTasks: async () => {
       if (get().content.length > 0) return;
       try {
-        const response = await axios.get(`${API_BASE_URL}/api/content`);
-        const content: Task[] = response.data;
-
+        const content = await fetchTasks();
         const authorsMap: Record<number, Author[]> = {};
         const publishersMap: Record<number, Publisher[]> = {};
 
@@ -92,7 +108,7 @@ export const useTaskStore = create<TaskStoreState>()(
           publishers: publishersMap,
         });
       } catch (error) {
-        console.error("Error fetching content:", error);
+        console.error("❌ Error fetching content:", error);
       }
     },
 
@@ -125,84 +141,92 @@ export const useTaskStore = create<TaskStoreState>()(
     },
 
     fetchUsers: async () => {
-      const response = await axios.get(`${API_BASE_URL}/api/all-users`);
-      set({ users: response.data });
+      const users = await fetchUsers();
+      set({ users });
     },
 
     fetchAssignedUsers: async (taskId) => {
       try {
-        const response = await axios.get(
-          `${API_BASE_URL}/api/content/${taskId}/get-users`
-        );
+        const assignedUsers = await fetchAssignedUsers(taskId);
         set((state) => ({
-          assignedUsers: { ...state.assignedUsers, [taskId]: response.data },
+          assignedUsers: { ...state.assignedUsers, [taskId]: assignedUsers },
         }));
       } catch (error) {
-        console.error("Error fetching assigned users:", error);
+        console.error("❌ Error fetching assigned users:", error);
       }
     },
 
     fetchReferences: async (taskId) => {
-      const response = await axios.get(
-        `${API_BASE_URL}/api/content/${taskId}/source-references`
-      );
+      const references = await fetchReferencesForTask(taskId);
       set((state) => ({
-        references: { ...state.references, [taskId]: response.data },
+        references: { ...state.references, [taskId]: references },
       }));
     },
 
     fetchAuthors: async (taskId) => {
-      const response = await axios.get(
-        `${API_BASE_URL}/api/content/${taskId}/authors`
-      );
+      const authors = await fetchAuthors(taskId);
       set((state) => ({
-        authors: { ...state.authors, [taskId]: response.data },
+        authors: { ...state.authors, [taskId]: authors },
       }));
     },
 
     fetchPublishers: async (taskId) => {
-      const response = await axios.get(
-        `${API_BASE_URL}/api/content/${taskId}/publishers`
-      );
+      const publishers = await fetchPublishers(taskId);
       set((state) => ({
-        publishers: { ...state.publishers, [taskId]: response.data },
+        publishers: { ...state.publishers, [taskId]: publishers },
       }));
     },
+
     fetchClaimReferences: async (claimId) => {
       try {
-        const response = await axios.get(
-          `${API_BASE_URL}/api/claims/${claimId}/references`
-        );
+        const claimReferences = await fetchClaimReferences(claimId);
         set((state) => ({
           claimReferences: {
             ...state.claimReferences,
-            [claimId]: response.data,
+            [claimId]: claimReferences,
           },
         }));
       } catch (error) {
-        console.error("Error fetching claim references:", error);
+        console.error("❌ Error fetching claim references:", error);
       }
     },
-    addReferenceToTask: async (taskId, referenceId) => {
+
+    addReferenceToTask: async (taskContentId, referenceContentId) => {
       try {
-        await axios.post(`${API_BASE_URL}/api/content/add-reference`, {
-          taskId,
-          referenceId,
-        });
+        const currentRefs = get().references[taskContentId] || [];
+
+        if (
+          currentRefs.some(
+            (ref) => ref.reference_content_id === referenceContentId
+          )
+        ) {
+          console.warn("⚠️ Reference already exists, skipping API call.");
+          return;
+        }
+
+        await addReferenceToTask(taskContentId, referenceContentId);
         console.log("✅ Reference added to task");
+
+        await get().fetchReferences(taskContentId);
       } catch (error) {
         console.error("❌ Error adding reference to task:", error);
       }
     },
 
+    deleteReferenceFromTask: async (taskContentId, referenceContentId) => {
+      try {
+        await deleteReferenceFromTask(taskContentId, referenceContentId);
+        console.log("✅ Reference removed from task");
+
+        await get().fetchReferences(taskContentId);
+      } catch (error) {
+        console.error("❌ Error removing reference from task:", error);
+      }
+    },
+
     addReferenceToClaim: async (claimId, referenceId, userId, supportLevel) => {
       try {
-        await axios.post(`${API_BASE_URL}/api/claims/add-claim-reference`, {
-          claimId,
-          referenceId,
-          userId,
-          supportLevel,
-        });
+        await addReferenceToClaim(claimId, referenceId, userId, supportLevel);
 
         set((state) => ({
           claimReferences: {

@@ -12,16 +12,18 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { scrapeAndAddReference } from "../services/useWorkspaceData";
+import { scrapeAndAddReference } from "../services/useDashboardAPI";
+import { useTaskStore } from "../store/useTaskStore"; // ✅ Import Zustand store
 
 const ScrapeReferenceModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
-  onScrape: (referenceId: number) => void;
-}> = ({ isOpen, onClose, onScrape }) => {
+}> = ({ isOpen, onClose }) => {
   const [url, setUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const taskId = useTaskStore((state) => state.selectedTaskId); // ✅ Get taskId from Zustand
 
   const handleScrape = async () => {
     if (!url.trim()) {
@@ -29,14 +31,22 @@ const ScrapeReferenceModal: React.FC<{
       return;
     }
 
+    if (!taskId) {
+      setErrorMessage("❌ No task selected.");
+      return;
+    }
+
     setIsLoading(true);
     setErrorMessage("");
 
-    const newReference = await scrapeAndAddReference(url);
+    const newReference = await scrapeAndAddReference(url, taskId); // ✅ Use taskId from Zustand
     setIsLoading(false);
 
     if (newReference) {
-      onScrape(newReference.reference_content_id);
+      console.log(
+        "✅ Successfully scraped reference:",
+        newReference.reference_content_id
+      );
       onClose();
     } else {
       setErrorMessage("❌ Failed to scrape reference.");
