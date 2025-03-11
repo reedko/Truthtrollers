@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -9,47 +9,77 @@ import {
   ModalFooter,
   Button,
   Input,
-  Text,
   VStack,
+  Text,
+  HStack,
+  useToast,
 } from "@chakra-ui/react";
-import { scrapeAndAddReference } from "../services/useDashboardAPI";
-import { useTaskStore } from "../store/useTaskStore"; // ✅ Import Zustand store
+import { scrapeContent } from "../../../extension/src/services/scrapeContent"; // ✅ Import the scrape function
+import { useLastVisitedURL } from "../hooks/useLastVisitedUrl";
 
 const ScrapeReferenceModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
-}> = ({ isOpen, onClose }) => {
-  const [url, setUrl] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
+  taskId: number;
+}> = ({ isOpen, onClose, taskId }) => {
+  const lastVisitedURL = useLastVisitedURL();
+  const [url, setUrl] = useState<string>("");
+  const [isScraping, setIsScraping] = useState(false);
+  const toast = useToast();
+  console.log(lastVisitedURL, ":lastone");
+  // ✅ Detect last visited page when modal opens
+  // ✅ Load last visited URL when the modal opens
+  useEffect(() => {
+    if (isOpen) {
+      chrome.storage.local.get("lastVisitedURL", (data) => {
+        if (data.lastVisitedURL) {
+          setUrl(data.lastVisitedURL);
+          console.log(`✅ Loaded last visited URL: ${data.lastVisitedURL}`);
+        }
+      });
+    }
+  }, [isOpen]);
 
-  const taskId = useTaskStore((state) => state.selectedTaskId); // ✅ Get taskId from Zustand
-
+  // ✅ Handle scraping request
   const handleScrape = async () => {
     if (!url.trim()) {
-      setErrorMessage("Please enter a valid URL.");
+      toast({
+        title: "No URL Provided",
+        description: "Please enter or confirm a URL to scrape.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
       return;
     }
 
-    if (!taskId) {
-      setErrorMessage("❌ No task selected.");
-      return;
-    }
+    setIsScraping(true);
+    const scrapedContentId = await scrapeContent(
+      url,
+      "",
+      "reference",
+      taskId.toString()
+    );
 
-    setIsLoading(true);
-    setErrorMessage("");
+    setIsScraping(false);
 
-    const newReference = await scrapeAndAddReference(url, taskId); // ✅ Use taskId from Zustand
-    setIsLoading(false);
-
-    if (newReference) {
-      console.log(
-        "✅ Successfully scraped reference:",
-        newReference.reference_content_id
-      );
+    if (scrapedContentId) {
+      toast({
+        title: "Reference Added!",
+        description: "The reference has been successfully scraped and linked.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
       onClose();
     } else {
-      setErrorMessage("❌ Failed to scrape reference.");
+      toast({
+        title: "Scrape Failed",
+        description: "Something went wrong while scraping the reference.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
     }
   };
 
@@ -57,29 +87,41 @@ const ScrapeReferenceModal: React.FC<{
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Scrape New Reference</ModalHeader>
+        <ModalHeader>Scrape a New Reference</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
-          <VStack spacing={3}>
+          <VStack align="start" spacing={4} width="100%">
+            {/* ✅ Show last visited page */}
+            {url && (
+              <Text fontSize="sm" color="gray.500">
+                Last Visited:{" "}
+                <Text as="span" fontWeight="bold" color="blue.600">
+                  {url}
+                </Text>
+              </Text>
+            )}
+
+            {/* ✅ User confirms or changes URL */}
             <Input
-              placeholder="Enter article URL..."
+              placeholder="Enter or confirm the URL"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
             />
-            {errorMessage && <Text color="red.500">{errorMessage}</Text>}
           </VStack>
         </ModalBody>
         <ModalFooter>
-          <Button
-            colorScheme="blue"
-            onClick={handleScrape}
-            isLoading={isLoading}
-          >
-            Scrape & Add
-          </Button>
-          <Button colorScheme="red" onClick={onClose} ml={3}>
-            Cancel
-          </Button>
+          <HStack>
+            <Button
+              colorScheme="blue"
+              onClick={handleScrape}
+              isLoading={isScraping}
+            >
+              Scrape Reference
+            </Button>
+            <Button colorScheme="red" onClick={onClose}>
+              Cancel
+            </Button>
+          </HStack>
         </ModalFooter>
       </ModalContent>
     </Modal>
