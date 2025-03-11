@@ -2,7 +2,9 @@
 import * as cheerio from "cheerio";
 import { Author, TaskData, Lit_references, Publisher } from "../entities/Task";
 import { DiffbotData } from "../entities/diffbotData";
-const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
+
+//const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
+const BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
 
 const isValidReference = (link: string): boolean => {
   const excludedPatterns = [

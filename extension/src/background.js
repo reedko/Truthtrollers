@@ -6,6 +6,16 @@ const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 let isScraperActive = false; // ✅ Track scraper state
 
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === "complete" && tab.url) {
+    // 🛠 Store last visited URL but ignore internal dashboard pages
+    if (!tab.url.includes("localhost:5173")) {
+      chrome.storage.local.set({ lastVisitedURL: tab.url });
+      console.log(`📌 Stored last visited URL: ${tab.url}`);
+    }
+  }
+});
+
 // ✅ Detect when user navigates to a new page
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status !== "complete" || !tab.url) return; // Only trigger on full load

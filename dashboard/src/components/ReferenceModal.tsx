@@ -137,6 +137,7 @@ const ReferenceModal: React.FC<{
         <ScrapeReferenceModal
           isOpen={isScrapeOpen}
           onClose={() => setIsScrapeOpen(false)}
+          taskId={taskId}
           // Pass new reference back
         />
       )}
