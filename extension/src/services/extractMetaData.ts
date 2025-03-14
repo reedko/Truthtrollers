@@ -3,8 +3,8 @@ import * as cheerio from "cheerio";
 import { Author, TaskData, Lit_references, Publisher } from "../entities/Task";
 import { DiffbotData } from "../entities/diffbotData";
 
-//const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
-const BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
+const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
+//const BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
 
 const isValidReference = (link: string): boolean => {
   const excludedPatterns = [
@@ -79,16 +79,8 @@ export const extractImageFromHtml = (
   // 1️⃣ Prefer OpenGraph image if available
   let ogImage = $('meta[property="og:image"]').attr("content");
   if (ogImage) {
-    if (!ogImage.startsWith("http")) {
-      if (ogImage.startsWith("/")) {
-        // ✅ If it starts with `/`, use baseUrl (origin)
-        ogImage = new URL(ogImage, baseUrl.origin).href;
-      } else {
-        // ✅ If no `/`, assume it's relative to the full article URL
-        ogImage = new URL(ogImage, baseUrl).href;
-      }
-    }
-    return ogImage;
+    ogImage = decodeURIComponent(ogImage); // Decode
+    if (isProcessableImage(ogImage)) return resolveUrl(ogImage, baseUrl);
   }
 
   // 2️⃣ Extract from <img> tags, prioritizing srcset
@@ -96,45 +88,74 @@ export const extractImageFromHtml = (
   let chosenImage = null;
 
   $("img").each((_, img) => {
-    let src = $(img).attr("src") || "";
-    let srcset = $(img).attr("srcset") || "";
+    let src = decodeURIComponent($(img).attr("src") || "");
+    let srcset = decodeURIComponent($(img).attr("srcset") || "");
     const width = parseInt($(img).attr("width") || "0", 10);
     const height = parseInt($(img).attr("height") || "0", 10);
     const area = width * height;
 
-    // ✅ If srcset exists, parse it to find the highest-resolution image
+    // ✅ If srcset exists, pick the largest image
     if (srcset) {
-      const candidates = srcset.split(",").map((entry) => {
-        const [url, size] = entry.trim().split(/\s+/);
-        return { url, width: parseInt(size, 10) || 0 };
-      });
-
-      // Pick the largest image from srcset
-      const bestSrcsetImage = candidates.reduce(
-        (best, candidate) => {
-          return candidate.width > best.width ? candidate : best;
-        },
-        { url: "", width: 0 }
-      );
-
-      if (bestSrcsetImage.url) {
-        src = bestSrcsetImage.url;
-      }
+      const bestSrc = parseSrcset(srcset);
+      if (isProcessableImage(bestSrc)) src = bestSrc;
     }
 
     // ✅ Convert relative URLs to absolute
-    if (src.startsWith("/") && baseUrl) {
-      src = baseUrl.origin + src;
-    }
+    src = resolveUrl(src, baseUrl);
 
-    // ✅ Pick the largest available image
-    if (area > maxArea && src) {
+    // ✅ If it's a processable image, compare size and pick the largest
+    if (area > maxArea && isProcessableImage(src)) {
       maxArea = area;
       chosenImage = src;
     }
   });
 
   return chosenImage;
+};
+
+// ✅ Helper: Convert relative URLs to absolute
+const resolveUrl = (src: string, baseUrl: URL) => {
+  if (!src.startsWith("http")) {
+    return src.startsWith("/")
+      ? new URL(src, baseUrl.origin).href
+      : new URL(src, baseUrl).href;
+  }
+  return src;
+};
+
+// ✅ Helper: Check if image is processable
+const isProcessableImage = (url: string) => {
+  if (!url) return false;
+
+  // Decode if necessary
+  const decodedUrl = decodeURIComponent(url);
+  // Reject URLs with multiple "https://"
+  const httpsCount = (decodedUrl.match(/https:\/\//g) || []).length;
+  if (httpsCount > 1) {
+    console.warn("❌ Rejected multi-https URL:", decodedUrl);
+    return false;
+  }
+  // Exclude invalid patterns
+  const invalidPatterns = ["data:", "blob:", "svg", "gif"];
+  if (invalidPatterns.some((pattern) => decodedUrl.includes(pattern)))
+    return false;
+
+  // Check for valid image file extensions
+  return /\.(jpg|jpeg|png|webp)$/i.test(decodedUrl);
+};
+
+// ✅ Helper: Parse srcset to find the best image
+const parseSrcset = (srcset: string) => {
+  return srcset
+    .split(",")
+    .map((entry) => {
+      const [url, size] = entry.trim().split(/\s+/);
+      return { url, width: parseInt(size, 10) || 0 };
+    })
+    .reduce(
+      (best, candidate) => (candidate.width > best.width ? candidate : best),
+      { url: "", width: 0 }
+    ).url;
 };
 
 export const fetchPageContent = (): cheerio.CheerioAPI => {
