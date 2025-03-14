@@ -31,10 +31,21 @@ const ScrapeReferenceModal: React.FC<{
   // ✅ Load last visited URL when the modal opens
   useEffect(() => {
     if (isOpen) {
-      chrome.storage.local.get("lastVisitedURL", (data) => {
-        if (data.lastVisitedURL) {
-          setUrl(data.lastVisitedURL);
-          console.log(`✅ Loaded last visited URL: ${data.lastVisitedURL}`);
+      chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+        if (changeInfo.status === "complete" && tab.url) {
+          if (!tab.url.includes("localhost:5173")) {
+            // ✅ Ignore dashboard pages
+            chrome.storage.local.set({ lastVisitedURL: tab.url }, () => {
+              if (chrome.runtime.lastError) {
+                console.error(
+                  "❌ Error saving URL to storage:",
+                  chrome.runtime.lastError
+                );
+              } else {
+                console.log(`📌 Stored last visited URL: ${tab.url}`);
+              }
+            });
+          }
         }
       });
     }

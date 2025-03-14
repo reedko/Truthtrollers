@@ -8,11 +8,34 @@ let isScraperActive = false; // ✅ Track scraper state
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === "complete" && tab.url) {
-    // 🛠 Store last visited URL but ignore internal dashboard pages
     if (!tab.url.includes("localhost:5173")) {
-      chrome.storage.local.set({ lastVisitedURL: tab.url });
-      console.log(`📌 Stored last visited URL: ${tab.url}`);
+      // ✅ Ignore dashboard pages
+      chrome.storage.local.set({ lastVisitedURL: tab.url }, () => {
+        if (chrome.runtime.lastError) {
+          console.error(
+            "❌ Error saving URL to storage:",
+            chrome.runtime.lastError
+          );
+        } else {
+          console.log(`📌 Stored last visited URL: ${tab.url}`);
+        }
+      });
     }
+  }
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "getStoredUrl") {
+    console.log("✅ Retrieving last visited URL...");
+
+    chrome.storage.local.get("lastVisitedURL", (data) => {
+      console.log("📌 Stored URL retrieved:", data);
+
+      // 🔥🔥🔥 Ensure the response is sent properly
+      sendResponse({ url: data.lastVisitedURL || null });
+    });
+
+    return true; // ✅ REQUIRED to keep message channel open!
   }
 });
 
@@ -136,44 +159,9 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
   chrome.tabs.get(activeInfo.tabId, (tab) => {
     if (tab.url) {
       console.log("🔄 Tab switched, checking content:", tab.url);
-      chrome.runtime.sendMessage({ action: "checkContent", url: tab.url });
     }
   });
 });
-
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete" && tab.url) {
-    console.log("🔄 Tab updated, checking content:", tab.url);
-    chrome.runtime.sendMessage({ action: "checkContent", url: tab.url });
-  }
-});
-/* chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  // ✅ Ignore "chrome://" pages
-  if (tab.url.startsWith("chrome://")) return;
-
-  // ✅ Ignore background-loaded tabs (used for image extraction)
-  if (tab.active === false) return;
-
-  // ✅ Block re-injecting content while the scraper is running
-  if (isScraperActive) {
-    console.log("🚨 Scraper is running, skipping content injection.");
-    return;
-  }
-  if (changeInfo.status === "complete" && tab.url) {
-    // Check if the content script is already loaded
-    loadContentIfNotAlready(tabId)
-      .then(() => {
-        // Send the message after ensuring the content script is injected
-        sendMessageWithRetry(tabId, {
-          action: "triggerCheckContent",
-          forceVisible: false,
-        });
-      })
-      .catch((error) => {
-        console.error("Error ensuring content script is loaded:", error);
-      });
-  }
-}); */
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "scrapingStarted") {
@@ -186,55 +174,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     isScraperActive = false; // Allow new content injections
   }
 });
-/* chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (!tab.url.startsWith("chrome://")) {
-    if (changeInfo.status === "complete" && tab.url) {
-      // Check if the content script is already loaded
-      loadContentIfNotAlready(tabId)
-        .then(() => {
-          // Send the message after ensuring the content script is injected
-          sendMessageWithRetry(tabId, {
-            action: "triggerCheckContent",
-            forceVisible: false,
-          });
-        })
-        .catch((error) => {
-          console.error("Error ensuring content script is loaded:", error);
-        });
-    }
-  }
-}); */
-
-async function loadContentIfNotAlready(tabId) {
-  return new Promise((resolve, reject) => {
-    chrome.tabs.sendMessage(tabId, { action: "ping" }, (response) => {
-      if (chrome.runtime.lastError || !response) {
-        // Content script not loaded, inject it
-        chrome.scripting.executeScript(
-          {
-            target: { tabId },
-            files: ["content.js"],
-          },
-          () => {
-            if (chrome.runtime.lastError) {
-              console.error(
-                "Error injecting content script:",
-                chrome.runtime.lastError.message
-              );
-              reject(chrome.runtime.lastError);
-            } else {
-              console.log("Content script injected successfully.");
-              resolve();
-            }
-          }
-        );
-      } else {
-        console.log("Content script already loaded.");
-        resolve();
-      }
-    });
-  });
-}
 
 // Retry logic for sending messages
 function sendMessageWithRetry(tabId, message, retries = 5, delay = 500) {
@@ -257,10 +196,6 @@ function sendMessageWithRetry(tabId, message, retries = 5, delay = 500) {
   });
 }
 
-chrome.action.onClicked.addListener((tab) => {
-  chrome.tabs.sendMessage(tab.id, { action: "toggleTaskCard" });
-});
-
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.action === "getCurrentTabUrl") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -274,134 +209,6 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true; // Keeps the sendResponse channel open for async responses
   }
 });
-
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "checkContent") {
-    const { url, forceVisible } = message;
-
-    // If no URL is provided, get the active tab's URL
-    if (!url) {
-      chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-        if (tabs.length === 0 || !tabs[0].url) {
-          console.error("❌ No active tab or URL found.");
-          return;
-        }
-        const activeUrl = tabs[0].url;
-        checkContentAndUpdatePopup(tabs[0].id, activeUrl, forceVisible);
-      });
-    } else {
-      // If URL is provided, proceed directly
-      checkContentAndUpdatePopup(sender.tab.id, url, forceVisible);
-    }
-
-    sendResponse({ received: true });
-    return true; // ✅ Keeps the async request open
-  }
-});
-
-/* chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "checkContent") {
-    const { forceVisible } = message;
-    console.log("fv1", forceVisible);
-    // Get the active tab's URL
-    chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-      if (chrome.runtime.lastError) {
-        console.error("Error querying tabs:", chrome.runtime.lastError.message);
-        return;
-      }
-      if (tabs.length === 0 || !tabs[0].url) {
-        console.error("No active tab or URL found.");
-        return;
-      }
-
-      const url = tabs[0]?.url;
-
-      if (!url) return;
-
-      // Call the backend to check if content exists
-      try {
-        const response = await fetch(`${BASE_URL}/api/check-content`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url }),
-        });
-
-        const data = await response.json();
-
-        const isDetected = data.exists && data.task.progress === "Completed";
-        const task = data.exists ? data.task : null;
-        console.log("isdet", isDetected);
-
-        // Use Zustand to update the store
-
-        useTaskStore.getState().setTask(task);
-        console.log("GETTING STATE", task);
-
-        useTaskStore.getState().setCurrentUrl(url);
-        useTaskStore.getState().setContentDetected(isDetected);
-        console.log(
-          "Updated task'[;plokjh] in background:",
-          useTaskStore.getState().task
-        );
-        console.log(
-          "Updated URL in background:",
-          useTaskStore.getState().currentUrl
-        );
-        // Execute script to set globals and create popup-root if it doesn't exist
-        chrome.scripting.executeScript(
-          {
-            target: { tabId: sender.tab.id },
-            func: (isDetected, forceVisible) => {
-              // Check if the popup-root div exists, if not, create it
-              let popupRoot = document.getElementById("popup-root");
-
-              if (popupRoot) {
-                popupRoot.remove();
-              }
-              popupRoot = document.getElementById("popup-root");
-              if (!popupRoot) {
-                popupRoot = document.createElement("div");
-                popupRoot.id = "popup-root";
-                document.body.appendChild(popupRoot);
-              }
-              console.log("fv2", forceVisible);
-              console.log("isDetected:", isDetected);
-              console.log("forceVisible:", forceVisible);
-              if (isDetected || forceVisible) {
-                popupRoot.className = "task-card-visible";
-                console.log("fv3", isDetected);
-                console.log("fv31", isDetected || forceVisible);
-              } else {
-                popupRoot.className = "task-card-hidden"; // Initially visible
-                console.log("fv4", isDetected);
-              }
-            },
-            args: [isDetected, forceVisible],
-          },
-          () => {
-            if (chrome.runtime.lastError) {
-              console.error(
-                "Error during executeScript:",
-                chrome.runtime.lastError.message
-              );
-            } else {
-              console.log("Globals set and popup-root created if needed");
-
-              chrome.scripting.executeScript({
-                target: { tabId: sender.tab.id },
-                files: ["popup.js"], // Ensure this file exists
-              });
-            }
-          }
-        );
-      } catch (error) {
-        console.error("Error checking content:", error);
-      }
-    });
-
-    return true; // Keeps the sendResponse channel open for async operations
-  }
-}); */
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "captureImage") {

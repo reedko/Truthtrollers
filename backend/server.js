@@ -993,9 +993,11 @@ app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
       query
     );
     // 🔥 Ensure thumbnail is stored WITHOUT BASE_URL
-    thumbnail_url = thumbnail_url.replace(BASE_URL, "").replace(/^\/+/, ""); // Remove leading slashes if needed
+    let newthumbnail_url = thumbnail_url
+      .replace(BASE_URL, "")
+      .replace(/^\/+/, ""); // Remove leading slashes if needed
 
-    res.status(200).send({ exists, thumbnail_url });
+    res.status(200).send({ exists, newthumbnail_url });
   } catch (error) {
     console.error("❌ Error in checkAndDownloadTopicIcon:", error);
     res.status(500).send({ error: "Failed to process topic icon." });

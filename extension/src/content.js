@@ -13,9 +13,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   sendResponse({ received: true });
   return true;
 });
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "testMessage") {
+    console.log("✅ Test message received in content.js:", message);
+    sendResponse({ success: true, received: true });
+  }
+});
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "triggerCheckContent") {
+    console.log(
+      "🔄 Content script received triggerCheckContent message:",
+      message
+    );
     const { forceVisible } = message;
     chrome.runtime.sendMessage({
       action: "checkContent",
