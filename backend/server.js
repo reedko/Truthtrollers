@@ -124,6 +124,36 @@ app.get("/proxy", async (req, res) => {
   }
 });
 
+//last URL visited INFO
+app.post("/api/store-last-visited-url", async (req, res) => {
+  const { url } = req.body;
+  try {
+    await db.query(
+      "INSERT INTO last_visited (id, url) VALUES (1, ?) ON DUPLICATE KEY UPDATE url = ?",
+      [url, url]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    console.error("DB Error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.get("/api/get-last-visited-url", async (req, res) => {
+  try {
+    const sql = "SELECT url FROM last_visited ORDER BY id DESC LIMIT 1";
+    const [rows] = await query(sql);
+    console.log(rows.url, ":", Date.now());
+    if (!rows || rows.length === 0) {
+      return res.status(200).json({ url: null }); // Reference not found
+    }
+    res.json({ url: rows.url || "" });
+  } catch (err) {
+    console.error("DB Fetch Error:", err);
+    res.status(500).json({ url: "" });
+  }
+});
+
 //publisher and author info
 app.post("/api/extract-metadata", async (req, res) => {
   const { url } = req.body;

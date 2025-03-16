@@ -6,23 +6,23 @@ const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 let isScraperActive = false; // ✅ Track scraper state
 
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete" && tab.url) {
-    if (!tab.url.includes("localhost:5173")) {
-      // ✅ Ignore dashboard pages
-      chrome.storage.local.set({ lastVisitedURL: tab.url }, () => {
-        if (chrome.runtime.lastError) {
-          console.error(
-            "❌ Error saving URL to storage:",
-            chrome.runtime.lastError
-          );
-        } else {
-          console.log(`📌 Stored last visited URL: ${tab.url}`);
-        }
-      });
+chrome.runtime.onMessageExternal.addListener(
+  (message, sender, sendResponse) => {
+    console.log("📩 External message received in background:", message);
+    console.log("📡 Sender:", sender);
+
+    if (message.action === "TEST_MESSAGE") {
+      console.log("✅ Received TEST_MESSAGE from external source!");
+
+      // ✅ Send an explicit response (wrapped in setTimeout to mimic async behavior)
+      setTimeout(() => {
+        sendResponse({ status: "Background received the message!" });
+      }, 100); // 🔥 Small delay ensures Chrome doesn't close the response channel
     }
+
+    return true; // ✅ REQUIRED: Keeps response channel open for async response
   }
-});
+);
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getStoredUrl") {
@@ -157,12 +157,31 @@ function showTaskCard(tabId, isDetected, forceVisible) {
 }
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   chrome.tabs.get(activeInfo.tabId, (tab) => {
-    if (tab.url) {
+    if (!tab.url.includes("localhost:5173") && tab.url) {
       console.log("🔄 Tab switched, checking content:", tab.url);
+      storeLastUrl(tab.url);
     }
   });
 });
+async function storeLastUrl(url) {
+  try {
+    await fetch(`${BASE_URL}/api/store-last-visited-url`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    console.log("📌 Last visited URL stored in DB:", url);
+  } catch (error) {
+    console.error("⚠️ Error storing last visited URL:", error);
+  }
+}
 
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (tab.url && !tab.url.includes("localhost:5173")) {
+    storeLastUrl(tab.url);
+  }
+  console.log("diddididiid", tab.url);
+});
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "scrapingStarted") {
     console.log("⏳ Scraping in progress... Blocking new injections.");

@@ -1,7 +1,7 @@
 import { orchestrateScraping } from "./orchestrateScraping";
 import createTask from "./createTask";
 import { Lit_references } from "../entities/Task";
-
+const EXTENSION_ID = "hfihldigngpdcbmedijohjdcjppdfepj";
 export const addContentRelation = async (
   taskContentId: string,
   referenceContentId: string
@@ -12,6 +12,7 @@ export const addContentRelation = async (
 
   return new Promise<void>((resolve, reject) => {
     chrome.runtime.sendMessage(
+      EXTENSION_ID,
       { action: "addContentRelation", taskContentId, referenceContentId },
       (response) => {
         response?.success ? resolve() : reject("Failed to link reference");
@@ -25,6 +26,7 @@ const checkDatabaseForReference = async (
 ): Promise<string | null> => {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage(
+      EXTENSION_ID,
       { action: "checkDatabaseForReference", url },
       (response) => {
         resolve(response);

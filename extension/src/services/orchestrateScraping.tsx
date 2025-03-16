@@ -14,10 +14,12 @@ import { analyzeContent } from "./openaiTopicsAndClaims";
 import { extractVideoIdFromUrl } from "../services/parseYoutubeUrl";
 import checkAndDownloadTopicIcon from "../services/checkAndDownloadTopicIcon";
 import { Lit_references } from "../entities/Task";
+const EXTENSION_ID = "hfihldigngpdcbmedijohjdcjppdfepj";
 
 const fetchDiffbotData = async (articleUrl: string): Promise<any> => {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage(
+      EXTENSION_ID,
       { action: "fetchDiffbotData", articleUrl },
       (response) => resolve(response)
     );
