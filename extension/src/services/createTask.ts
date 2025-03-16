@@ -1,6 +1,6 @@
 import axios from "axios";
 import { TaskData, Author, Publisher } from "../entities/Task";
-
+const EXTENSION_ID = "hfihldigngpdcbmedijohjdcjppdfepj";
 const createTask = async (taskData: TaskData): Promise<string | null> => {
   console.log("Creating content:", taskData.url, "as", taskData.content_type);
 
@@ -8,6 +8,7 @@ const createTask = async (taskData: TaskData): Promise<string | null> => {
     // Step 1: Create the content entry (Task or Reference)
     const contentId = await new Promise<string>((resolve, reject) => {
       chrome.runtime.sendMessage(
+        EXTENSION_ID,
         { action: "addContent", taskData }, // Renamed to 'addContent' for clarity
         (response) => {
           if (response?.contentId) {
@@ -48,6 +49,7 @@ const createTask = async (taskData: TaskData): Promise<string | null> => {
 const addAuthors = async (contentId: string, authors: Author[]) => {
   return new Promise<void>((resolve, reject) => {
     chrome.runtime.sendMessage(
+      EXTENSION_ID,
       { action: "addAuthors", contentId, authors },
       (response) => {
         response?.success ? resolve() : reject("Failed to add authors");
@@ -60,6 +62,7 @@ const addAuthors = async (contentId: string, authors: Author[]) => {
 const addPublisher = async (contentId: string, publisher: Publisher) => {
   return new Promise<void>((resolve, reject) => {
     chrome.runtime.sendMessage(
+      EXTENSION_ID,
       { action: "addPublisher", contentId, publisher },
       (response) => {
         response?.success ? resolve() : reject("Failed to add publisher");
@@ -82,6 +85,7 @@ async function storeClaimsInDB(
   });
   return new Promise<void>((resolve, reject) => {
     chrome.runtime.sendMessage(
+      EXTENSION_ID,
       {
         action: "storeClaims",
         data: {

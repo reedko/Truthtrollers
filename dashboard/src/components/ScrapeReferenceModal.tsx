@@ -17,39 +17,24 @@ import {
 import { scrapeContent } from "../../../extension/src/services/scrapeContent"; // ✅ Import the scrape function
 import { useLastVisitedURL } from "../hooks/useLastVisitedUrl";
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
+
 const ScrapeReferenceModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   taskId: number;
 }> = ({ isOpen, onClose, taskId }) => {
-  const lastVisitedURL = useLastVisitedURL();
   const [url, setUrl] = useState<string>("");
   const [isScraping, setIsScraping] = useState(false);
   const toast = useToast();
-  console.log(lastVisitedURL, ":lastone");
-  // ✅ Detect last visited page when modal opens
-  // ✅ Load last visited URL when the modal opens
+  const lastVisitedURL = useLastVisitedURL(); // ✅ Fetches URL when returning to tab
+
   useEffect(() => {
-    if (isOpen) {
-      chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-        if (changeInfo.status === "complete" && tab.url) {
-          if (!tab.url.includes("localhost:5173")) {
-            // ✅ Ignore dashboard pages
-            chrome.storage.local.set({ lastVisitedURL: tab.url }, () => {
-              if (chrome.runtime.lastError) {
-                console.error(
-                  "❌ Error saving URL to storage:",
-                  chrome.runtime.lastError
-                );
-              } else {
-                console.log(`📌 Stored last visited URL: ${tab.url}`);
-              }
-            });
-          }
-        }
-      });
+    if (isOpen && lastVisitedURL) {
+      // ✅ Only update if input is empty to prevent overwriting user edits
+      setUrl(lastVisitedURL);
     }
-  }, [isOpen]);
+  }, [isOpen, lastVisitedURL]);
 
   // ✅ Handle scraping request
   const handleScrape = async () => {

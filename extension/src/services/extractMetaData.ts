@@ -2,7 +2,7 @@
 import * as cheerio from "cheerio";
 import { Author, TaskData, Lit_references, Publisher } from "../entities/Task";
 import { DiffbotData } from "../entities/diffbotData";
-
+const EXTENSION_ID = "hfihldigngpdcbmedijohjdcjppdfepj";
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 //const BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
 
@@ -29,6 +29,7 @@ export async function getExtractedTextFromBackground(
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(
+      EXTENSION_ID,
       { action: "extractText", url, html }, // ✅ Send extracted HTML
       (response) => {
         if (response?.success) {
@@ -44,13 +45,17 @@ export async function getExtractedTextFromBackground(
 // B) Utility to get claims from ClaimBuster via the background
 export async function getClaimsFromBackground(text: string): Promise<any[]> {
   return new Promise((resolve, reject) => {
-    chrome.runtime.sendMessage({ action: "claimBuster", text }, (response) => {
-      if (response?.success) {
-        resolve(response.claims);
-      } else {
-        reject(response?.error || "Failed to call ClaimBuster");
+    chrome.runtime.sendMessage(
+      EXTENSION_ID,
+      { action: "claimBuster", text },
+      (response) => {
+        if (response?.success) {
+          resolve(response.claims);
+        } else {
+          reject(response?.error || "Failed to call ClaimBuster");
+        }
       }
-    });
+    );
   });
 }
 
@@ -61,6 +66,7 @@ export const getBestImage = async (
 ) => {
   return new Promise<string>((resolve) => {
     chrome.runtime.sendMessage(
+      EXTENSION_ID,
       { action: "captureImage", url, html: extractedHtml, diffbotData },
       (res) => {
         resolve(res.imageUrl || `${BASE_URL}/assets/images/miniLogo.png`);
@@ -127,21 +133,41 @@ const resolveUrl = (src: string, baseUrl: URL) => {
 const isProcessableImage = (url: string) => {
   if (!url) return false;
 
-  // Decode if necessary
   const decodedUrl = decodeURIComponent(url);
-  // Reject URLs with multiple "https://"
+
+  // ✅ Allow multiple "https://" if the URL is part of an `srcset`
   const httpsCount = (decodedUrl.match(/https:\/\//g) || []).length;
-  if (httpsCount > 1) {
-    console.warn("❌ Rejected multi-https URL:", decodedUrl);
+  const isLikelySrcSet =
+    decodedUrl.includes("&w=") || decodedUrl.includes(" 400w");
+
+  if (httpsCount > 1 && !isLikelySrcSet) {
+    console.warn("❌ Rejected multi-https URL (not srcset):", decodedUrl);
     return false;
   }
-  // Exclude invalid patterns
+
+  // ✅ Exclude invalid patterns
   const invalidPatterns = ["data:", "blob:", "svg", "gif"];
   if (invalidPatterns.some((pattern) => decodedUrl.includes(pattern)))
     return false;
 
-  // Check for valid image file extensions
-  return /\.(jpg|jpeg|png|webp)$/i.test(decodedUrl);
+  // ✅ Check for valid image file extensions
+  if (/\.(jpg|jpeg|png|webp)$/i.test(decodedUrl)) return true;
+
+  // ✅ Last fallback: Try loading the image to check if it's broken
+  return testImageLoad(decodedUrl);
+};
+
+// 🔥 Function to check if an image URL actually loads
+const testImageLoad = (url: string) => {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.src = url;
+    img.onload = () => resolve(true);
+    img.onerror = () => {
+      console.warn("❌ Image failed to load:", url);
+      resolve(false);
+    };
+  });
 };
 
 // ✅ Helper: Parse srcset to find the best image
@@ -169,6 +195,7 @@ export const fetchExternalPageContent = async (
 ): Promise<cheerio.CheerioAPI> => {
   return new Promise((resolve) => {
     chrome.runtime.sendMessage(
+      EXTENSION_ID,
       { action: "fetchPageContent", url },
       (response) => {
         console.log("🔎 Fetch Response:", response); // ✅ Log full response
