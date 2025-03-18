@@ -14,15 +14,17 @@ import {
   HStack,
   useToast,
 } from "@chakra-ui/react";
-import { scrapeContent } from "../../../extension/src/services/scrapeContent"; // ✅ Import the scrape function
+import { dashboardScraper } from "../services/dashboardScraper";
+
 import { useLastVisitedURL } from "../hooks/useLastVisitedUrl";
+//import { sendMessageToExtension } from "../services/messageService"; // ✅ New service
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
 
 const ScrapeReferenceModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
-  taskId: number;
+  taskId: string;
 }> = ({ isOpen, onClose, taskId }) => {
   const [url, setUrl] = useState<string>("");
   const [isScraping, setIsScraping] = useState(false);
@@ -36,7 +38,9 @@ const ScrapeReferenceModal: React.FC<{
     }
   }, [isOpen, lastVisitedURL]);
 
-  // ✅ Handle scraping request
+  // ✅ Handle scraping request using the messageService
+
+  // ✅ Updated scrape function using DashboardScraper
   const handleScrape = async () => {
     if (!url.trim()) {
       toast({
@@ -50,33 +54,49 @@ const ScrapeReferenceModal: React.FC<{
     }
 
     setIsScraping(true);
-    const scrapedContentId = await scrapeContent(
-      url,
-      "",
-      "reference",
-      taskId.toString()
-    );
 
-    setIsScraping(false);
+    try {
+      console.log("🚀 Scraping reference:", url);
+      const scrapedContentId = await dashboardScraper(
+        url,
+        "",
+        "reference",
+        taskId
+      );
 
-    if (scrapedContentId) {
+      if (scrapedContentId) {
+        toast({
+          title: "Reference Added!",
+          description:
+            "The reference has been successfully scraped and linked.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+        onClose();
+      } else {
+        toast({
+          title: "Scrape Failed",
+          description: "Something went wrong while scraping the reference.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (error) {
+      console.error("❌ Error in scraping reference:", error);
       toast({
-        title: "Reference Added!",
-        description: "The reference has been successfully scraped and linked.",
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-      onClose();
-    } else {
-      toast({
-        title: "Scrape Failed",
-        description: "Something went wrong while scraping the reference.",
+        title: "Scrape Error",
+        description: `Error: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
         status: "error",
         duration: 3000,
         isClosable: true,
       });
     }
+
+    setIsScraping(false);
   };
 
   return (

@@ -42,7 +42,6 @@ export const scrapeContent = async (
 
     // ✅ Step 2: Scrape metadata (only if not nonScrapable)
     if (!contentData) {
-      console.log(url, ":before");
       contentData = await orchestrateScraping(url, content_name, contentType);
     }
 
@@ -76,7 +75,6 @@ export const scrapeContent = async (
 
     // ✅ Step 5: Recursively process references (only for tasks)
     if (contentType === "task" && references.length > 0) {
-      console.log("🔁 Recursively scraping references...");
       for (const reference of references) {
         console.log(
           "🔗 Scraping reference:",

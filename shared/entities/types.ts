@@ -143,3 +143,34 @@ export interface Link extends d3.SimulationLinkDatum<GraphNode> {
   value?: number;
   angle?: number;
 }
+
+export interface Lit_references {
+  url: string;
+  content_name: string;
+}
+
+export interface Publisher {
+  name: string;
+}
+
+export interface TaskData {
+  content_name: string;
+  media_source: string;
+  url: string;
+  assigned: string;
+  progress: string;
+  users: string;
+  details: string;
+  topic: string;
+  subtopics: string[];
+  thumbnail: string;
+  iconThumbnailUrl: string | null;
+  authors: Author[];
+  content: Lit_references[];
+  publisherName: Publisher | null;
+  content_type: string; // Added this to support both types
+  // new:
+  raw_text?: string; // the text from /api/extractText
+  Claims?: string[];
+  taskContentId?: string | null;
+}
