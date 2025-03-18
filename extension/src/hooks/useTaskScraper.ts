@@ -45,6 +45,7 @@ export const useTaskScraper = () => {
       // ✅ Ensure the popup updates with the newly scraped task
       chrome.runtime.sendMessage({
         action: "scrapeCompleted",
+        url: initialUrl, // ✅ Send the scraped URL
         forceVisible: userStillOnSamePage,
       });
     } catch (err) {

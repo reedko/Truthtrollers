@@ -6,24 +6,6 @@ const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 let isScraperActive = false; // ✅ Track scraper state
 
-chrome.runtime.onMessageExternal.addListener(
-  (message, sender, sendResponse) => {
-    console.log("📩 External message received in background:", message);
-    console.log("📡 Sender:", sender);
-
-    if (message.action === "TEST_MESSAGE") {
-      console.log("✅ Received TEST_MESSAGE from external source!");
-
-      // ✅ Send an explicit response (wrapped in setTimeout to mimic async behavior)
-      setTimeout(() => {
-        sendResponse({ status: "Background received the message!" });
-      }, 100); // 🔥 Small delay ensures Chrome doesn't close the response channel
-    }
-
-    return true; // ✅ REQUIRED: Keeps response channel open for async response
-  }
-);
-
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getStoredUrl") {
     console.log("✅ Retrieving last visited URL...");
@@ -39,6 +21,42 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
+//SCRAPING
+let activeScrapeTabId = null;
+
+//scrape completed, scraping started messages
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "scrapingStarted") {
+    console.log("⏳ Scraping in progress... Blocking new injections.");
+    isScraperActive = true;
+    activeScrapeTabId = sender.tab.id; // ✅ Store the tab where scraping started
+  }
+
+  if (message.action === "scrapeStarted") {
+    console.log("⏳ Scraping started... Setting activeScrapeTabId");
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs.length === 0 || !tabs[0].id) return;
+      activeScrapeTabId = tabs[0].id;
+    });
+  }
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "scrapeCompleted") {
+    console.log("✅ Scraping finished!");
+
+    chrome.storage.local.get("activeScrapeTabId", (data) => {
+      const url = message.url; // ✅ Now this should be defined!
+      if (data.activeScrapeTabId) {
+        console.log("📌 Updating popup in scrape tab:", data.activeScrapeTabId);
+        checkContentAndUpdatePopup(data.activeScrapeTabId, url, true);
+      } else {
+        console.warn("⚠️ No activeScrapeTabId found! Using current tab.");
+        checkContentAndUpdatePopup(sender.tab.id, url, true);
+      }
+    });
+  }
+});
 // ✅ Detect when user navigates to a new page
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status !== "complete" || !tab.url) return; // Only trigger on full load
@@ -52,22 +70,6 @@ chrome.action.onClicked.addListener((tab) => {
 
   console.log("🔍 Extension icon clicked - Forcing popup for:", tab.url);
   checkContentAndUpdatePopup(tab.id, tab.url, true); // Force visible
-});
-
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "scrapeCompleted") {
-    console.log("✅ Scraping finished! Refreshing task status...");
-
-    // ✅ After scraping, force the popup to check the newly scraped task
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs.length === 0 || !tabs[0].id) return;
-      const tabId = tabs[0].id;
-      const url = tabs[0].url;
-
-      // ✅ Ensure the popup updates with the newly scraped task
-      checkContentAndUpdatePopup(tabId, url, true);
-    });
-  }
 });
 
 // ✅ Check if URL is in database & update popup
@@ -122,6 +124,11 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
 
 // ✅ Injects & controls the task-card popup
 function showTaskCard(tabId, isDetected, forceVisible) {
+  /*   if (tabId !== activeScrapeTabId) {
+    console.warn("🚫 Preventing popup on incorrect tab:", tabId);
+    return;
+  } */
+
   chrome.scripting.executeScript(
     {
       target: { tabId },
@@ -155,14 +162,39 @@ function showTaskCard(tabId, isDetected, forceVisible) {
     }
   );
 }
+
+const shouldIgnoreUrl = (url) => {
+  const ignoredSites = ["facebook.com/messages", "messenger.com"];
+  const isIgnored = ignoredSites.some((site) => url.includes(site));
+  if (isIgnored) console.log("🚫 Ignored URL:", url);
+  return isIgnored;
+};
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.url && !tab.url.includes("localhost:5173")) {
+    const cleanUrl = changeInfo.url.split("?")[0]; // Strip query params
+    if (!shouldIgnoreUrl(cleanUrl) && cleanUrl !== lastStoredUrl) {
+      console.log("🔄 Tab updated, storing URL:", cleanUrl);
+      storeLastUrl(cleanUrl);
+      lastStoredUrl = cleanUrl;
+    }
+  }
+});
+
+let lastStoredUrl = "";
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   chrome.tabs.get(activeInfo.tabId, (tab) => {
     if (!tab.url.includes("localhost:5173") && tab.url) {
-      console.log("🔄 Tab switched, checking content:", tab.url);
-      storeLastUrl(tab.url);
+      const cleanUrl = tab.url.split("?")[0]; // Remove query params
+      if (cleanUrl !== lastStoredUrl) {
+        console.log("🔄 Tab switched, checking content:", cleanUrl);
+        storeLastUrl(cleanUrl);
+        lastStoredUrl = cleanUrl;
+      }
     }
   });
 });
+
 async function storeLastUrl(url) {
   try {
     await fetch(`${BASE_URL}/api/store-last-visited-url`, {
@@ -175,24 +207,6 @@ async function storeLastUrl(url) {
     console.error("⚠️ Error storing last visited URL:", error);
   }
 }
-
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (tab.url && !tab.url.includes("localhost:5173")) {
-    storeLastUrl(tab.url);
-  }
-  console.log("diddididiid", tab.url);
-});
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.action === "scrapingStarted") {
-    console.log("⏳ Scraping in progress... Blocking new injections.");
-    isScraperActive = true;
-  }
-
-  if (message.action === "scrapeCompleted") {
-    console.log("✅ Scraping finished! Re-enabling content injection.");
-    isScraperActive = false; // Allow new content injections
-  }
-});
 
 // Retry logic for sending messages
 function sendMessageWithRetry(tabId, message, retries = 5, delay = 500) {
@@ -486,19 +500,26 @@ const fetchDiffbotData = async (articleUrl) => {
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "checkDatabaseForReference") {
-    fetch(`${BASE_URL}/api/check-reference`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: message.url }),
-    })
+    console.log(`🔍 Received request to check DB for: ${message.url}`);
+
+    fetch(
+      `${BASE_URL}/api/check-reference?url=${encodeURIComponent(message.url)}`,
+      {
+        method: "GET", // ✅ Now using GET
+        headers: { "Content-Type": "application/json" },
+      }
+    )
       .then((response) => response.json())
-      .then((data) => sendResponse(data.id || null))
+      .then((data) => {
+        console.log(`📌 API Response for ${message.url}:`, data);
+        sendResponse(data.content_id || null); // ✅ Now correctly checking if ID exists
+      })
       .catch((error) => {
-        console.error("Error checking reference in DB:", error);
+        console.error("❌ Error checking reference in DB:", error);
         sendResponse(null);
       });
 
-    return true; // Keeps the message channel open for async response
+    return true; // ✅ Keep message channel open for async response
   }
 });
 

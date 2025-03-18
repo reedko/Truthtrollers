@@ -818,10 +818,11 @@ app.post("/api/addContent", async (req, res) => {
     progress,
     iconThumbnailUrl,
     content_type,
+    taskContentId,
   } = req.body;
 
   // Step 1: Insert the task without the thumbnail path
-  const callQuery = `CALL InsertContentAndTopics(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, @contentId);`;
+  const callQuery = `CALL InsertContentAndTopics(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?, @contentId);`;
 
   const params = [
     content_name, // Task name
@@ -835,6 +836,7 @@ app.post("/api/addContent", async (req, res) => {
     progress, // Progress status
     iconThumbnailUrl ? iconThumbnailUrl : "",
     content_type,
+    taskContentId,
   ];
 
   try {
@@ -846,7 +848,8 @@ app.post("/api/addContent", async (req, res) => {
   }
   let contentId = null;
   try {
-    const fetchContentIdQuery = "SELECT content_id FROM content WHERE url = ?";
+    const fetchContentIdQuery =
+      "SELECT content_id FROM content WHERE url = ? LIMIT 1";
     const results = await query(fetchContentIdQuery, [url]);
     if (results.length === 0) {
       throw new Error("Content ID not found");
@@ -907,7 +910,7 @@ app.post("/api/addContent", async (req, res) => {
   }
 });
 
-app.post("/api/check-reference", async (req, res) => {
+app.get("/api/check-reference", async (req, res) => {
   const { url } = req.body;
 
   if (!url) return res.status(400).json({ error: "Missing URL" });
@@ -920,7 +923,7 @@ app.post("/api/check-reference", async (req, res) => {
       return res.status(200).json({ id: null }); // Reference not found
     }
 
-    return res.status(200).json({ id: result[0].content_id });
+    return res.status(200).json({ content_id: result.content_id });
   } catch (error) {
     console.error("Database error:", error);
     return res.status(500).json({ error: "Database lookup failed" });
