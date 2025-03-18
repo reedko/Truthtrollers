@@ -58,7 +58,7 @@ export const orchestrateScraping = async (
   $("style, link[rel='stylesheet'], script").remove();
 
   extractedHtml = $.html();
-
+  console.log(extractedHtml);
   try {
     extractedText = await getExtractedTextFromBackground(url, extractedHtml);
   } catch (err) {
@@ -82,6 +82,7 @@ export const orchestrateScraping = async (
 
   const videoId = extractVideoIdFromUrl(url);
   console.log("✅ Extracted Publisher:", publisherName);
+  console.log("✅ Extracted a:", authors);
 
   let imageUrl = await getBestImage(url, extractedHtml, diffbotData);
   const baseUrl = new URL(url);
@@ -90,7 +91,6 @@ export const orchestrateScraping = async (
       imageUrl = new URL(imageUrl, baseUrl).href;
     }
   }
-  console.log("🎯 Final Image Selected:", imageUrl);
 
   if (contentType === "task") {
     extractedReferences = await extractReferences($);

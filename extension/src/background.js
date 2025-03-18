@@ -2,10 +2,13 @@
 // background.js
 import useTaskStore from "../src/store/useTaskStore";
 import { extractImageFromHtml } from "../src/services/extractMetaData";
+import { scrapeContent } from "./services/scrapeContent";
+
 const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
-let isScraperActive = false; // ✅ Track scraper state
 
+let isScraperActive = false; // ✅ Track scraper state
+//get stored url
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "getStoredUrl") {
     console.log("✅ Retrieving last visited URL...");
@@ -24,7 +27,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 //SCRAPING
 let activeScrapeTabId = null;
 
-//scrape completed, scraping started messages
+//scraping started messages
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "scrapingStarted") {
     console.log("⏳ Scraping in progress... Blocking new injections.");
@@ -41,6 +44,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
+//scrape completed call check content
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "scrapeCompleted") {
     console.log("✅ Scraping finished!");
@@ -57,6 +61,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     });
   }
 });
+
 // ✅ Detect when user navigates to a new page
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status !== "complete" || !tab.url) return; // Only trigger on full load
@@ -170,6 +175,7 @@ const shouldIgnoreUrl = (url) => {
   return isIgnored;
 };
 
+//update new tab, write url to db
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.url && !tab.url.includes("localhost:5173")) {
     const cleanUrl = changeInfo.url.split("?")[0]; // Strip query params
@@ -182,6 +188,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
 });
 
 let lastStoredUrl = "";
+//on activate new tab, write url to db
 chrome.tabs.onActivated.addListener(async (activeInfo) => {
   chrome.tabs.get(activeInfo.tabId, (tab) => {
     if (!tab.url.includes("localhost:5173") && tab.url) {
@@ -194,7 +201,7 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
     }
   });
 });
-
+//call api rout to update latest url visited
 async function storeLastUrl(url) {
   try {
     await fetch(`${BASE_URL}/api/store-last-visited-url`, {
@@ -229,6 +236,7 @@ function sendMessageWithRetry(tabId, message, retries = 5, delay = 500) {
   });
 }
 
+//send current tab as reponse
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   if (message.action === "getCurrentTabUrl") {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -243,6 +251,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   }
 });
 
+//capture image
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "captureImage") {
     const { url, html, diffbotData } = message;
@@ -354,6 +363,7 @@ const extractImageFromTab = (tabId, sendResponse) => {
   );
 };
 
+//add content to db, calls api route
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "addContent") {
     addContent(message.taskData)
@@ -498,6 +508,7 @@ const fetchDiffbotData = async (articleUrl) => {
   }
 };
 
+//check for current db -- not sure this is used anymore--handled in storedproc
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "checkDatabaseForReference") {
     console.log(`🔍 Received request to check DB for: ${message.url}`);
@@ -523,6 +534,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
+////add content task to reference relation -- not sure this is used anymore--handled in storedproc
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "addContentRelation") {
     console.log("ADDING RELATION IN BACKGROUND");
@@ -544,6 +556,8 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 });
+
+//pass text to handleextracttext, pass claims to store claims on server
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   const { action, url, html } = request;
 
@@ -722,7 +736,6 @@ ${content}
       .replace(/```$/, "")
       .trim();
   }
-  console.log("🔍 GPT Raw Response:", rawReply);
   // Attempt to parse the JSON
   let parsed;
   try {
@@ -739,11 +752,51 @@ ${content}
   const claims = Array.isArray(parsed.claims) ? parsed.claims : [];
   return { generalTopic, specificTopics, claims };
 }
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+
+//fetchPageContent
+/* chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "fetchPageContent") {
     fetchExternalPage(message.url)
       .then((html) => sendResponse({ success: true, html }))
       .catch((error) => sendResponse({ success: false, error: error.message }));
+    return true; // Keep the message channel open for async response
+  }
+}); */
+//external
+chrome.runtime.onMessageExternal.addListener(
+  (message, sender, sendResponse) => {
+    if (message.action === "fetchPageContent") {
+      console.log(
+        "📩 Received EXTERNAL fetchPageContent request for:",
+        message.url
+      );
+      fetchExternalPage(message.url)
+        .then((html) => {
+          console.log("📬 Sending HTML response:", html ? "Success" : "NULL");
+          sendResponse({ success: !!html, html });
+        })
+        .catch((error) => {
+          console.error("❌ Error fetching:", error);
+          sendResponse({ success: false, error: error.message });
+        });
+      return true; // ✅ Keeps the async response open
+    }
+  }
+);
+
+//internal
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "fetchPageContent") {
+    console.log("📩 Received fetchPageContent request for:", message.url);
+    fetchExternalPage(message.url)
+      .then((html) => {
+        console.log("📬 Sending HTML response:", html ? "Success" : "NULL");
+        sendResponse({ success: !!html, html });
+      })
+      .catch((error) => {
+        console.error("❌ Error fetching:", error);
+        sendResponse({ success: false, error: error.message });
+      });
     return true; // Keep the message channel open for async response
   }
 });
@@ -784,7 +837,7 @@ const fetchExternalPage = async (url) => {
   }
 };
 
-// The message listener
+// get topics from text
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "getTopicsFromText") {
     const { content } = request;
