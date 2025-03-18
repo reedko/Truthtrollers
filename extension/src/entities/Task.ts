@@ -54,4 +54,5 @@ export interface TaskData {
   // new:
   raw_text?: string; // the text from /api/extractText
   Claims?: string[];
+  taskContentId?: string | null;
 }

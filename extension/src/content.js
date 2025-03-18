@@ -21,6 +21,28 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  console.log("📩 Received message in content.js:", message);
+
+  if (message.action === "updatePopup") {
+    console.log("🛠 Updating popup visibility...");
+
+    let popupRoot = document.getElementById("popup-root");
+    if (!popupRoot) {
+      popupRoot = document.createElement("div");
+      popupRoot.id = "popup-root";
+      document.body.appendChild(popupRoot);
+    }
+
+    popupRoot.className =
+      message.isDetected || message.forceVisible
+        ? "task-card-visible"
+        : "task-card-hidden";
+
+    console.log("✅ Popup updated in content.js");
+  }
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action === "triggerCheckContent") {
     console.log(
       "🔄 Content script received triggerCheckContent message:",

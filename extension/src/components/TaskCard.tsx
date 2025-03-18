@@ -1,5 +1,4 @@
-///Users/reedko/React/Truthtrollers demo/TruthTrollers_root/extension/src/components/TaskCard.tsx
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Text,
@@ -11,13 +10,13 @@ import {
   Progress,
   Grid,
 } from "@chakra-ui/react";
-// Import the Task interface if needed
 import "./Popup.css";
-import useTaskStore from "../store/useTaskStore"; // Import Zustand store
+import useTaskStore from "../store/useTaskStore";
 import resizeImage from "../services/image-url";
-import { useTaskScraper } from "../hooks/useTaskScraper"; // Import useTask here
+import { useTaskScraper } from "../hooks/useTaskScraper";
 
 const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
+
 const getProgressColor = (progress: string | null) => {
   switch (progress) {
     case "Completed":
@@ -27,29 +26,37 @@ const getProgressColor = (progress: string | null) => {
     case "Awaiting Evaluation":
       return "blue";
     default:
-      return "red"; // For Assigned/Started states
+      return "red";
   }
 };
 
 const TaskCard: React.FC = () => {
-  const { task, currentUrl } = useTaskStore(); // Hook to access the store values
+  const { task, currentUrl, setTask } = useTaskStore(); // Hook to access Zustand
   const { loading, error, scrapeTask } = useTaskScraper(); // Use scraper hook
+  const [visible, setVisible] = useState(false);
 
-  console.log("Updated currentUrl:", currentUrl);
-  console.log("thumbnail URL:", `${BASE_URL}/${task?.thumbnail}`);
-  const imageUrl =
-    task && task.thumbnail ? `${BASE_URL}/${task.thumbnail}` : "";
-  console.log("URL:", imageUrl);
-  const meter = `${BASE_URL}/assets/images/meter3.png`;
-  const logo = `${BASE_URL}/assets/images/miniLogo.png`;
+  useEffect(() => {
+    // ✅ Retrieve task data from local storage (sent from content.js)
+    chrome.storage.local.get("task", (data) => {
+      if (data.task) {
+        setTask(data.task);
+        setVisible(true);
+      }
+    });
+  }, []);
 
   const handleAddTask = () => {
     if (currentUrl) {
-      scrapeTask(currentUrl); // Trigger scraping with the current URL
+      scrapeTask(currentUrl);
     } else {
       console.error("No URL provided.");
     }
   };
+
+  const imageUrl =
+    task && task.thumbnail ? `${BASE_URL}/${task.thumbnail}` : "";
+  const meter = `${BASE_URL}/assets/images/meter3.png`;
+  const logo = `${BASE_URL}/assets/images/miniLogo.png`;
 
   return (
     <Box className="popup-box" width="300px">
@@ -60,6 +67,7 @@ const TaskCard: React.FC = () => {
             <Text color="black">TruthTrollers</Text>
           </HStack>
         </Box>
+
         {imageUrl && task?.progress === "Completed" ? (
           <Box position="relative" left="25%">
             {resizeImage(120, meter)}
@@ -71,6 +79,7 @@ const TaskCard: React.FC = () => {
             </Box>
           )
         )}
+
         {imageUrl ? (
           <Box width="280px">
             <Text fontWeight="bold" fontSize="l" wrap="yes">
@@ -116,7 +125,7 @@ const TaskCard: React.FC = () => {
                   bg="cyan.100"
                   color="black"
                   onClick={() => {
-                    // Find the popupRoot element
+                    setVisible(false);
                     const popupRoot = document.getElementById("popup-root");
                     if (popupRoot) {
                       popupRoot.classList.add("task-card-hidden");
@@ -152,7 +161,7 @@ const TaskCard: React.FC = () => {
                   bg="cyan.100"
                   color="black"
                   onClick={handleAddTask}
-                  disable={loading} // Use the handleAddClick here to call handleScrape
+                  disabled={loading}
                 >
                   <div>Add</div>
                 </Button>
@@ -161,7 +170,7 @@ const TaskCard: React.FC = () => {
                   bg="cyan.100"
                   color="black"
                   onClick={() => {
-                    // Find the popupRoot element
+                    setVisible(false);
                     const popupRoot = document.getElementById("popup-root");
                     if (popupRoot) {
                       popupRoot.classList.add("task-card-hidden");

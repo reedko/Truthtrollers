@@ -8,13 +8,13 @@ const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 
 const isValidReference = (link: string): boolean => {
   const excludedPatterns = [
-    "ads",
-    "sponsored",
-    "tracking",
-    "login",
-    "share",
-    "subscribe",
-    "instagram",
+    "\\bads\\b", // Match "ads" as a whole word (not inside "uploads")
+    "\\bsponsored\\b",
+    "\\btracking\\b",
+    "\\blogin\\b",
+    "\\bshare\\b",
+    "\\bsubscribe\\b",
+    "\\binstagram\\b",
   ];
   return (
     link.startsWith("http") &&
@@ -158,16 +158,23 @@ const isProcessableImage = (url: string) => {
 };
 
 // 🔥 Function to check if an image URL actually loads
-const testImageLoad = (url: string) => {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.src = url;
-    img.onload = () => resolve(true);
-    img.onerror = () => {
-      console.warn("❌ Image failed to load:", url);
-      resolve(false);
-    };
-  });
+const testImageLoad = async (url: string) => {
+  try {
+    const response = await fetch(url, { method: "HEAD" }); // Only check headers, don't download
+    if (!response.ok) throw new Error(`HTTP status ${response.status}`);
+    const contentType = response.headers.get("content-type");
+
+    // ✅ Allow only valid image types
+    if (!contentType || !contentType.startsWith("image/")) {
+      console.warn("❌ Not an image:", url);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    console.warn("❌ Image failed to load:", url, err);
+    return false;
+  }
 };
 
 // ✅ Helper: Parse srcset to find the best image
@@ -394,12 +401,16 @@ export const extractReferences = async (
 
   const processReference = async (url: string, potentialTitle?: string) => {
     url = url.trim();
+
+    // ✅ List of files we can't scrape but should still save
+
     if (!isValidReference(url)) return;
-    // let content_name = await fetchTitleFromDiffbot(url);
+
     let content_name = potentialTitle || formatUrlForTitle(url);
     references.push({
       url,
       content_name,
+      //nonScrapable: isNonScrapable, // ✅ Flag these files so we don't try to scrape them
     });
   };
 

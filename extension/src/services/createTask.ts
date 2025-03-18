@@ -2,7 +2,14 @@ import axios from "axios";
 import { TaskData, Author, Publisher } from "../entities/Task";
 const EXTENSION_ID = "hfihldigngpdcbmedijohjdcjppdfepj";
 const createTask = async (taskData: TaskData): Promise<string | null> => {
-  console.log("Creating content:", taskData.url, "as", taskData.content_type);
+  console.log(
+    "Creating content:",
+    taskData.url,
+    "as",
+    taskData.content_type,
+    "with task contentID of",
+    taskData.taskContentId
+  );
 
   try {
     // Step 1: Create the content entry (Task or Reference)
