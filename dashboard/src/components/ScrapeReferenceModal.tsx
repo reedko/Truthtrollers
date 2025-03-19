@@ -15,7 +15,8 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import { dashboardScraper } from "../services/dashboardScraper";
-
+import { fetchAllReferences } from "../services/useDashboardAPI";
+import { useTaskStore } from "../store/useTaskStore"; // ✅ Import store
 import { useLastVisitedURL } from "../hooks/useLastVisitedUrl";
 //import { sendMessageToExtension } from "../services/messageService"; // ✅ New service
 
@@ -65,6 +66,14 @@ const ScrapeReferenceModal: React.FC<{
       );
 
       if (scrapedContentId) {
+        // ✅ Add to store
+        useTaskStore
+          .getState()
+          .addReferenceToTask(Number(taskId), Number(scrapedContentId));
+
+        // ✅ Re-fetch the latest references
+        await useTaskStore.getState().fetchReferences(Number(taskId));
+
         toast({
           title: "Reference Added!",
           description:
@@ -73,6 +82,7 @@ const ScrapeReferenceModal: React.FC<{
           duration: 3000,
           isClosable: true,
         });
+
         onClose();
       } else {
         toast({

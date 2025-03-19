@@ -90,9 +90,7 @@ const SelectReferenceModal: React.FC<{
       console.error("❌ No task selected");
       return;
     }
-
     await addReferenceToTask(taskId, referenceId);
-
     toast({
       title: "Reference Added!",
       description: "The reference has been successfully added to the task.",
@@ -104,6 +102,8 @@ const SelectReferenceModal: React.FC<{
     setReferences((prev) =>
       prev.filter((ref) => ref.content_id !== referenceId)
     );
+    // ✅ Re-fetch references after adding a new one
+    loadReferences("all", 1);
   };
 
   return (

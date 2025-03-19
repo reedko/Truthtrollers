@@ -58,12 +58,18 @@ export const orchestrateScraping = async (
   $("style, link[rel='stylesheet'], script").remove();
 
   extractedHtml = $.html();
-  console.log(extractedHtml);
+
   try {
     extractedText = await getExtractedTextFromBackground(url, extractedHtml);
-  } catch (err) {
-    console.warn("⚠️ Failed to extract text from server:", err);
-    extractedText = $("body").text().trim();
+  } catch (err: any) {
+    console.warn("⚠️ Caught an error in orchestrateScraping:", err);
+    if (err) {
+      console.log("🚀 Using extracted HTML from page directly.");
+      extractedText = $("body").text().trim();
+    } else {
+      console.warn("⚠️ Failed to extract text from server:", err);
+      extractedText = $("body").text().trim(); // 🔥 Fallback remains here
+    }
   }
 
   const mainHeadline =
@@ -81,8 +87,6 @@ export const orchestrateScraping = async (
   ]);
 
   const videoId = extractVideoIdFromUrl(url);
-  console.log("✅ Extracted Publisher:", publisherName);
-  console.log("✅ Extracted a:", authors);
 
   let imageUrl = await getBestImage(url, extractedHtml, diffbotData);
   const baseUrl = new URL(url);

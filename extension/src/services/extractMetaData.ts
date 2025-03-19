@@ -4,11 +4,11 @@ import { Author, TaskData, Lit_references, Publisher } from "../entities/Task";
 import { DiffbotData } from "../entities/diffbotData";
 // Determine if running in the extension or dashboard
 const IS_EXTENSION = !!chrome?.runtime?.id;
-console.log("Running in extension:", IS_EXTENSION);
+
 const EXTENSION_ID = "hfihldigngpdcbmedijohjdcjppdfepj";
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 //const BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
-console.log(IS_EXTENSION, "ISIEIXITI");
+
 const isValidReference = (link: string): boolean => {
   const excludedPatterns = [
     "\\bads\\b", // Match "ads" as a whole word (not inside "uploads")
@@ -46,20 +46,48 @@ export const getExtractedTextFromBackground = async (
     });
   } else {
     try {
-      const response = await fetch(`${BASE_URL}/api/extract-text`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, html }),
-      });
-      const data = await response.json();
-      if (!data.success) throw new Error("Text extraction failed.");
-      return data.pageText;
+      return await handleExtractText(url, html); // ✅ Await the async function
     } catch (error) {
       console.error("❌ Text extraction failed:", error);
-      return "";
+      throw error;
     }
   }
 };
+
+async function handleExtractText(url: string, html: string): Promise<string> {
+  if (html) {
+    console.log("✅ HTML provided, skipping API request.");
+    throw new Error("USE_HTML_DIRECTLY"); // ❗ Let orchestrateScraping handle it
+  }
+
+  console.log("🌍 No HTML provided, fetching from backend:", url);
+  try {
+    const response = await fetch(`${BASE_URL}/api/extractText`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url, html }),
+    });
+
+    const textResponse = await response.text();
+
+    let data;
+    try {
+      data = JSON.parse(textResponse);
+    } catch (err) {
+      console.error("❌ JSON Parse Error:", textResponse);
+      throw new Error("Invalid JSON returned from extractText API");
+    }
+
+    if (!data.success || !data.pageText) {
+      throw new Error(`Text extraction failed: ${JSON.stringify(data)}`);
+    }
+
+    return data.pageText;
+  } catch (error) {
+    console.error("❌ Text extraction failed:", error);
+    throw error; // Pass it up for orchestrateScraping to catch
+  }
+}
 
 // B) Utility to get claims from ClaimBuster via the background
 export const getClaimsFromBackground = async (text: string): Promise<any[]> => {
@@ -129,36 +157,56 @@ export const extractImageFromHtml = (
   let ogImage = $('meta[property="og:image"]').attr("content");
   if (ogImage) {
     ogImage = decodeURIComponent(ogImage); // Decode
-    if (isProcessableImage(ogImage)) return resolveUrl(ogImage, baseUrl);
+    ogImage = resolveUrl(ogImage, baseUrl); // Convert relative URLs
+    if (isProcessableImage(ogImage)) {
+      return ogImage;
+    }
   }
 
-  // 2️⃣ Extract from <img> tags, prioritizing srcset
+  // 2️⃣ Extract from <img> tags, prioritizing largest image
   let maxArea = 0;
-  let chosenImage = null;
+  let chosenImage: string | null = null;
 
   $("img").each((_, img) => {
-    let src = decodeURIComponent($(img).attr("src") || "");
-    let srcset = decodeURIComponent($(img).attr("srcset") || "");
+    let src = $(img).attr("src") || "";
+    let srcset = $(img).attr("srcset") || "";
     const width = parseInt($(img).attr("width") || "0", 10);
     const height = parseInt($(img).attr("height") || "0", 10);
     const area = width * height;
 
-    // ✅ If srcset exists, pick the largest image
+    // ✅ If srcset exists, pick the highest-resolution image
     if (srcset) {
       const bestSrc = parseSrcset(srcset);
-      if (isProcessableImage(bestSrc)) src = bestSrc;
+      if (bestSrc) src = bestSrc;
     }
 
     // ✅ Convert relative URLs to absolute
-    src = resolveUrl(src, baseUrl);
+    src = resolveUrl(decodeURIComponent(src), baseUrl);
 
-    // ✅ If it's a processable image, compare size and pick the largest
+    // ✅ Validate & Pick the Largest Image
     if (area > maxArea && isProcessableImage(src)) {
       maxArea = area;
       chosenImage = src;
     }
   });
 
+  // 3️⃣ Fallback: If no large image, pick any valid one
+  if (!chosenImage) {
+    $("img").each((_, img) => {
+      let src = $(img).attr("src") || "";
+      src = resolveUrl(decodeURIComponent(src), baseUrl);
+      if (isProcessableImage(src)) {
+        chosenImage = src;
+        return false; // Break loop
+      }
+    });
+  }
+
+  console.log(
+    chosenImage
+      ? `✅ Selected Image: ${chosenImage}`
+      : "❌ No valid image found."
+  );
   return chosenImage;
 };
 
@@ -236,15 +284,13 @@ const parseSrcset = (srcset: string) => {
 
 export const fetchPageContent = (): cheerio.CheerioAPI => {
   const loadedCheerio = cheerio.load(document.documentElement.outerHTML);
-  console.log(loadedCheerio, ":from cheerio");
+
   return loadedCheerio;
 };
 
 export const fetchExternalPageContent = async (
   url: string
 ): Promise<cheerio.CheerioAPI> => {
-  console.log(`🌍 Fetching page content for: ${url}`);
-
   // ✅ Unified function for Wayback Machine fallback
   const fetchFromWayback = async (originalUrl: string) => {
     const archiveUrl = `https://web.archive.org/web/${originalUrl}`;
@@ -258,8 +304,6 @@ export const fetchExternalPageContent = async (
         EXTENSION_ID,
         { action: "fetchPageContent", url },
         (response) => {
-          console.log("🔎 Fetch Response:", response);
-
           if (chrome.runtime.lastError) {
             console.error("Runtime error:", chrome.runtime.lastError);
             return resolve(cheerio.load(""));
@@ -296,9 +340,6 @@ export const fetchExternalPageContent = async (
       }
 
       const jsonResponse = await response.json();
-      console.log(
-        `✅ Received page content: ${jsonResponse.html?.length || 0} bytes`
-      );
 
       if (!jsonResponse.html) {
         return fetchFromWayback(url);
@@ -312,51 +353,29 @@ export const fetchExternalPageContent = async (
   }
 };
 
-const fetchExternalPage = async (url: string) => {
-  try {
-    console.log(`🌍 Fetching page content for: ${url}`);
-
-    const response = await fetch(`${BASE_URL}/api/fetch-page-content`, {
-      method: "POST",
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        "Content-Type": "application/json", // ✅ Fix: Ensure JSON body is read properly
-        Referer: url, // ✅ Some sites check for a valid referrer
-      },
-      body: JSON.stringify({ url }),
-    });
-
-    if (!response.ok) {
-      console.error(
-        `❌ HTTP error: ${response.status} - ${response.statusText}`
-      );
-      throw new Error(`Failed to fetch page: ${response.status}`);
-    }
-
-    const jsonResponse = await response.json();
-    console.log(
-      `✅ Received page content: ${jsonResponse.html?.length || 0} bytes`
-    );
-
-    return jsonResponse.html;
-  } catch (error) {
-    console.error("❌ Error fetching page content:", error);
-    return null; // ✅ Avoid unhandled rejections
-  }
-};
 // Extract Authors
 export const extractAuthors = async (
   $: cheerio.CheerioAPI
 ): Promise<Author[]> => {
   const authors: Author[] = [];
 
-  // Extract from JSON-LD
+  // ✅ Extract directly from article header
+  const authorRegex =
+    /<span class="chd-defender-article__authors-name">.*?<a.*?>(.*?)<\/a>/;
+  const match = $.html().match(authorRegex);
+
+  if (match) {
+    authors.push({
+      name: match[1].trim(),
+      description: null,
+      image: null,
+    });
+  }
+
+  // ✅ Extract from JSON-LD
   $('script[type="application/ld+json"]').each((_, scriptTag) => {
     try {
-      const metadata = JSON.parse($(scriptTag).html() || "");
+      const metadata = JSON.parse($(scriptTag).text().trim() || "{}"); // ✅ Use .text() to avoid stripping content
       const authorData = Array.isArray(metadata) ? metadata : [metadata];
 
       authorData.forEach((entry) => {
@@ -386,15 +405,16 @@ export const extractAuthors = async (
         });
       }
     } catch (err) {
-      console.error("Error parsing ld+json for authors:", err);
+      console.error("❌ Error parsing ld+json for authors:", err);
     }
   });
 
-  // Extract from meta tags
+  // ✅ Extract from meta tags
   if (!authors.length) {
     const rawAuthorNames =
       $('meta[name="author"]').attr("content") ||
       $('meta[property="article:author"]').attr("content");
+
     if (rawAuthorNames) {
       rawAuthorNames
         .split(/\s*and\s*|,\s*/)
@@ -402,7 +422,7 @@ export const extractAuthors = async (
     }
   }
 
-  // Extract from citation meta tags
+  // ✅ Extract from citation meta tags
   if (!authors.length) {
     $(
       'meta[name="citation_author"], meta[property="article:citation_author"]'
@@ -416,13 +436,15 @@ export const extractAuthors = async (
     });
   }
 
-  // Special case handling for certain sites (e.g., Children's Health Defense)
+  // ✅ Special case: Extract authors from CHD (Children’s Health Defense)
   if (!authors.length) {
-    $("script").each((_, scriptTag) => {
-      const scriptContent = $(scriptTag).html();
-      if (scriptContent?.includes("var chd_ga4_data =")) {
+    const scripts = $("script");
+
+    scripts.each((_, scriptTag) => {
+      const scriptText = $(scriptTag).text().trim(); // ✅ Use .text() instead of .html()
+      if (scriptText.includes("var chd_ga4_data =")) {
         try {
-          const match = scriptContent.match(/var chd_ga4_data = (\{.*?\});/s);
+          const match = scriptText.match(/var chd_ga4_data = (\{.*?\});/s);
           if (match && match[1]) {
             const chdData = JSON.parse(match[1]);
             if (chdData.contentAuthor) {
@@ -433,7 +455,7 @@ export const extractAuthors = async (
             }
           }
         } catch (err) {
-          console.error("Error parsing chd_ga4_data:", err);
+          console.error("❌ Error parsing chd_ga4_data:", err);
         }
       }
     });
@@ -465,7 +487,7 @@ export const extractPublisher = async (
         metadata.publisher.name
       ) {
         publisherName = metadata.publisher.name;
-        console.log("✅ Publisher Found (Direct):", publisherName);
+
         return false; // Exit early if found
       }
 
@@ -476,7 +498,7 @@ export const extractPublisher = async (
         metadata.isPartOf.name
       ) {
         publisherName = metadata.isPartOf.name;
-        console.log("✅ Publisher Found (isPartOf):", publisherName);
+
         return false;
       }
 
@@ -499,7 +521,6 @@ export const extractPublisher = async (
       const foundPublisher = findPublisher(metadata);
       if (foundPublisher) {
         publisherName = foundPublisher;
-        console.log("✅ Publisher Found (Recursive):", publisherName);
       }
     } catch (err) {
       console.warn(`⚠️ Failed to parse ld+json script: ${err}`);
@@ -582,18 +603,6 @@ export const extractReferences = async (
   return uniqueReferences;
 };
 
-/* // Helpers
-const fetchTitleFromDiffbot = async (url: string): Promise<string | null> => {
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage(
-      { action: "fetchTitleFromDiffbot", url },
-      (response) => {
-        resolve(response);
-      }
-    );
-  });
-};
- */
 const formatUrlForTitle = (url: string): string => {
   try {
     const { hostname, pathname } = new URL(url);

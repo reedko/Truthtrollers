@@ -594,30 +594,41 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 // 1) Extract Text from Node server (/api/extractText)
 // Extract text logic
-async function handleExtractText(url, html, currentPage) {
-  if (currentPage?.includes(url)) {
-    console.log("✅ On the correct page, using extracted HTML.");
-  } else if (!html) {
-    console.log("🌍 No HTML provided, fetching from backend.");
+async function handleExtractText(url, html) {
+  console.log(`🔄 Processing text extraction for URL: ${url}`);
+
+  if (html) {
+    console.log("✅ HTML provided, skipping API request.");
+    throw new Error("USE_HTML_DIRECTLY"); // ❗ Allow orchestrateScraping to handle it
   }
 
-  // ✅ Send HTML (if extracted) or let the backend fetch the page
-  const response = await fetch(`${BASE_URL}/api/extractText`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url, html }),
-  });
+  console.log("🌍 No HTML provided, fetching from backend:", url);
 
-  if (!response.ok) {
-    throw new Error(`extractText failed with status ${response.status}`);
+  try {
+    const response = await fetch(`${BASE_URL}/api/extractText`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url, html }),
+    });
+
+    const textResponse = await response.text();
+    console.log("🧐 Raw extractText API response:", textResponse);
+
+    let data;
+    try {
+      data = JSON.parse(textResponse);
+    } catch (err) {
+      console.error("❌ JSON Parse Error:", textResponse);
+      throw new Error("Invalid JSON returned from extractText API");
+    }
+
+    console.log("✅ Parsed API response:", data);
+
+    return data.pageText || "";
+  } catch (error) {
+    console.error("❌ Text extraction failed:", error);
+    throw error;
   }
-
-  const data = await response.json();
-  if (data.error) {
-    throw new Error(`extractText error: ${data.error}`);
-  }
-
-  return data.pageText;
 }
 
 async function storeClaimsOnServer(contentId, claims, contentType) {

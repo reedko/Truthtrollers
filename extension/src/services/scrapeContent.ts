@@ -36,6 +36,7 @@ export const scrapeContent = async (
         authors: [],
         content: [],
         publisherName: null,
+        Claims: [],
         taskContentId: taskContentId || null, // ✅ Ensuring the task reference is linked
       };
     }

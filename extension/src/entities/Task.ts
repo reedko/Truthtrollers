@@ -53,6 +53,6 @@ export interface TaskData {
   content_type: string; // Added this to support both types
   // new:
   raw_text?: string; // the text from /api/extractText
-  Claims?: string[];
+  Claims: string[];
   taskContentId?: string | null;
 }

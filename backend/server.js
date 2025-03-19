@@ -1123,10 +1123,10 @@ app.post("/api/extractText", async (req, res) => {
     let { url, html } = req.body;
 
     if (!url) {
-      return res.status(400).json({ error: "No URL provided" });
+      return res.status(400).json({ success: false, error: "No URL provided" });
     }
 
-    // ✅ If HTML is provided, use it instead of fetching from the web
+    // ✅ If HTML is provided, use it instead of fetching
     if (html) {
       console.log("✅ Received HTML from the browser, skipping axios.get");
     } else {
@@ -1144,29 +1144,19 @@ app.post("/api/extractText", async (req, res) => {
     }
 
     // ✅ Process the HTML using Readability
-    // 2) Create a JSDOM instance from the HTML
     const dom = new JSDOM(html, { url });
-
-    // 3) Use Mozilla's Readability to parse the "main article" content
     const reader = new Readability(dom.window.document);
     const article = reader.parse();
-    // article might be null if Readability can't parse
 
-    // 4) Get the cleaned-up text content, or fallback to an empty string
     let pageText = article?.textContent?.trim() || "";
 
-    // (Optional) Truncate if you want to limit size:
-    // if (pageText.length > 20000) {
-    //   pageText = pageText.slice(0, 20000);
-    // }
-
-    // 5) Return to the client
-    return res.json({ pageText });
+    // 🔥 Fix: Ensure API response includes `success: true`
+    return res.json({ success: true, pageText });
   } catch (error) {
-    console.error("Error extracting text:", error.message);
+    console.error("❌ Error extracting text:", error.message);
     return res
       .status(500)
-      .json({ error: "Error extracting text from the URL" });
+      .json({ success: false, error: "Error extracting text from the URL" });
   }
 });
 
