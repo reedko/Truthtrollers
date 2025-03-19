@@ -9,6 +9,7 @@ import {
   HStack,
   useColorModeValue,
   Tooltip,
+  Input,
 } from "@chakra-ui/react";
 import { Claim, LitReference } from "../../../shared/entities/types";
 import {
@@ -17,8 +18,11 @@ import {
   createClaim,
   updateClaim,
   deleteClaim,
+  updateReference,
+  deleteReferenceFromTask,
 } from "../services/useDashboardAPI";
 import ClaimModal from "./ClaimModal";
+import ReferenceModal from "./ReferenceModal";
 
 interface WorkspaceProps {
   contentId: number;
@@ -28,32 +32,16 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId }) => {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
   const [references, setReferences] = useState<LitReference[]>([]);
+  const [selectedReference, setSelectedReference] =
+    useState<LitReference | null>(null);
   const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
+  const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
   const [editingClaim, setEditingClaim] = useState<Claim | null>(null);
-
-  const handleCreateClaim = async (claimText: string) => {
-    const newClaim = await createClaim(claimText, contentId);
-    if (newClaim) setClaims([...claims, newClaim]);
-  };
-
-  const handleUpdateClaim = async (claimText: string, claimId?: number) => {
-    if (claimId === undefined) {
-      console.error("⚠️ Attempted to update a claim without a valid claimId.");
-      return;
-    }
-
-    await updateClaim(claimText, claimId ? claimId : 0);
-    setClaims(
-      claims.map((claim) =>
-        claim.claim_id === claimId ? { ...claim, claim_text: claimText } : claim
-      )
-    );
-  };
-
-  const handleDeleteClaim = async (claimId: number) => {
-    await deleteClaim(claimId);
-    setClaims(claims.filter((claim) => claim.claim_id !== claimId));
-  };
+  const [editingReference, setEditingReference] = useState<LitReference | null>(
+    null
+  );
+  const [isEditingReference, setIsEditingReference] = useState(false);
+  const [referenceTitle, setReferenceTitle] = useState("");
 
   useEffect(() => {
     if (!contentId) return;
@@ -64,10 +52,6 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId }) => {
     loadClaims();
   }, [contentId]);
 
-  // ✅ Background adapts to light/dark mode
-  const bgColor = useColorModeValue("gray.50", "gray.800");
-  const borderColor = useColorModeValue("gray.300", "gray.600");
-
   useEffect(() => {
     const loadReferences = async () => {
       const refs = await fetchReferencesForTask(contentId);
@@ -76,6 +60,47 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId }) => {
     loadReferences();
   }, [contentId]);
 
+  const handleCreateClaim = async (claimText: string) => {
+    const newClaim = await createClaim(claimText, contentId);
+    if (newClaim) setClaims([...claims, newClaim]);
+  };
+
+  const handleOpenReference = (url: string) => {
+    window.open(url, "_blank");
+  };
+
+  const handleUpdateClaim = async (claimText: string, claimId: number) => {
+    await updateClaim(claimText, claimId);
+    setClaims(
+      claims.map((claim) =>
+        claim.claim_id === claimId ? { ...claim, claim_text: claimText } : claim
+      )
+    );
+    setEditingClaim(null);
+    setIsClaimModalOpen(false);
+  };
+  const handleUpdateReference = async () => {
+    if (editingReference && referenceTitle.trim()) {
+      await updateReference(
+        referenceTitle,
+        editingReference.reference_content_id
+      );
+      setReferences(
+        references.map((ref) =>
+          ref.reference_content_id === editingReference.reference_content_id
+            ? { ...ref, content_name: referenceTitle }
+            : ref
+        )
+      );
+      setEditingReference(null);
+      setIsEditingReference(false);
+      setReferenceTitle("");
+    }
+  };
+
+  const bgColor = useColorModeValue("gray.50", "gray.800");
+  const borderColor = useColorModeValue("gray.300", "gray.600");
+
   return (
     <Box
       borderWidth="1px"
@@ -83,14 +108,14 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId }) => {
       p={4}
       bg={bgColor}
       borderColor={borderColor}
-      height="900px" // 🔥 3x taller
+      height="900px"
       overflow="hidden"
     >
       <Heading size="md" mb={2}>
         Claim Analysis
       </Heading>
 
-      <Grid templateColumns="2fr 2fr 1fr" gap={4} height="100%">
+      <Grid templateColumns="2fr 2fr 2fr" gap={4} height="100%">
         {/* Left Column: Claims */}
         <VStack
           align="start"
@@ -98,44 +123,41 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId }) => {
           borderRight="1px solid"
           borderColor={borderColor}
           pr={4}
-          overflowY="auto" // 🔥 Allow scrolling if needed
+          overflowY="auto"
           maxHeight="800px"
         >
           <Heading size="sm">Claims</Heading>
-
-          {/* New Claim Button */}
-          <Button colorScheme="blue" onClick={() => setIsClaimModalOpen(true)}>
+          <Button
+            colorScheme="blue"
+            onClick={() => {
+              setEditingClaim(null);
+              setIsClaimModalOpen(true);
+            }}
+          >
             + Add Claim
           </Button>
-
           {claims.length === 0 ? (
             <Text>No claims found.</Text>
           ) : (
             claims.map((claim) => (
               <HStack key={claim.claim_id} width="100%" spacing={2}>
-                {/* Selectable Claim */}
                 <Tooltip label={claim.claim_text} hasArrow>
                   <Button
-                    key={claim.claim_id}
                     variant={
                       selectedClaim?.claim_id === claim.claim_id
                         ? "solid"
                         : "outline"
                     }
                     colorScheme="blue"
-                    onClick={() => {
-                      console.log("Selected claim:", claim);
-                      setSelectedClaim(claim);
-                    }}
+                    onClick={() => setSelectedClaim(claim)}
                     width="100%"
                     overflow="hidden"
                     textOverflow="ellipsis"
-                    whiteSpace="nowrap" // ✅ Truncates long text
+                    whiteSpace="nowrap"
                   >
                     {claim.claim_text}
                   </Button>
                 </Tooltip>
-                {/* Edit Button */}
                 <Button
                   size="sm"
                   onClick={() => {
@@ -145,12 +167,10 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId }) => {
                 >
                   ✏️
                 </Button>
-
-                {/* Delete Button */}
                 <Button
                   size="sm"
                   colorScheme="red"
-                  onClick={() => handleDeleteClaim(claim.claim_id)}
+                  onClick={() => deleteClaim(claim.claim_id)}
                 >
                   🗑️
                 </Button>
@@ -159,7 +179,6 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId }) => {
           )}
         </VStack>
 
-        {/* Middle Column: Support / Refutation */}
         {/* Middle Column: Support / Refutation */}
         <VStack
           align="center"
@@ -194,28 +213,101 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId }) => {
           )}
         </VStack>
 
-        {/* Right Column: References */}
-        <VStack align="start" spacing={2} overflowY="auto" maxHeight="800px">
+        {/* References Column */}
+        <VStack
+          align="start"
+          spacing={2}
+          borderRight="1px solid"
+          borderColor={borderColor}
+          pr={4}
+          overflowY="auto"
+          maxHeight="800px"
+        >
           <Heading size="sm">References</Heading>
-          {references.length > 0 ? (
-            references.map((ref) => (
-              <Text key={ref.reference_content_id}>
-                <a href={ref.url} target="_blank" rel="noopener noreferrer">
-                  🔗 {ref.content_name}
-                </a>
-              </Text>
-            ))
+          <Button
+            colorScheme="blue"
+            onClick={() => setIsReferenceModalOpen(true)}
+          >
+            + Add Reference
+          </Button>
+          {references.length === 0 ? (
+            <Text>No References Found</Text>
           ) : (
-            <Text>No references available.</Text>
+            references.map((ref) => (
+              <HStack key={ref.reference_content_id} spacing={2} width="100%">
+                <Tooltip label={ref.content_name} hasArrow>
+                  <Button
+                    variant={
+                      selectedReference?.reference_content_id ===
+                      ref.reference_content_id
+                        ? "solid"
+                        : "outline"
+                    }
+                    colorScheme="blue"
+                    onClick={() => handleOpenReference(ref.url)}
+                    width="100%"
+                    overflow="hidden"
+                    textOverflow="ellipsis"
+                    whiteSpace="nowrap"
+                  >
+                    {ref.content_name}
+                  </Button>
+                </Tooltip>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setEditingReference(ref);
+                    setReferenceTitle(ref.content_name);
+                    setIsEditingReference(true);
+                  }}
+                >
+                  Edit Title
+                </Button>
+                <Button
+                  size="sm"
+                  colorScheme="red"
+                  onClick={() =>
+                    deleteReferenceFromTask(contentId, ref.reference_content_id)
+                  }
+                >
+                  🗑️
+                </Button>
+              </HStack>
+            ))
+          )}{" "}
+          {isEditingReference && (
+            <Box>
+              <Input
+                value={referenceTitle}
+                onChange={(e) => setReferenceTitle(e.target.value)}
+                placeholder="Enter new title"
+              />
+              <Button
+                colorScheme="green"
+                onClick={handleUpdateReference}
+                mt={2}
+              >
+                Save
+              </Button>
+            </Box>
           )}
         </VStack>
       </Grid>
-      {/* ✅ Place the modal right after the claims column (outside Grid) */}
+
       <ClaimModal
         isOpen={isClaimModalOpen}
         onClose={() => setIsClaimModalOpen(false)}
-        onSave={editingClaim ? handleUpdateClaim : handleCreateClaim}
+        onSave={(claimText) =>
+          editingClaim
+            ? handleUpdateClaim(claimText, editingClaim.claim_id)
+            : handleCreateClaim(claimText)
+        }
         editingClaim={editingClaim}
+      />
+      <ReferenceModal
+        isOpen={isReferenceModalOpen}
+        onClose={() => setIsReferenceModalOpen(false)}
+        taskId={contentId} // ✅ Keep this, since we need to know the task
       />
     </Box>
   );

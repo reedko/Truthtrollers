@@ -732,6 +732,52 @@ app.get("/api/topics", async (req, res) => {
   });
 });
 
+// Update reference title
+app.put("/api/updateReference/:content_id", async (req, res) => {
+  const { content_id } = req.params;
+  const { title } = req.body; // Extract from request body
+
+  if (!title || !content_id) {
+    return res.status(400).json({ error: "Missing required parameters." });
+  }
+
+  const sql = "UPDATE content SET content_name = ? WHERE content_id = ?";
+  const params = [title, content_id];
+
+  console.log("Updating content_name for content_id:", content_id);
+
+  pool.query(sql, params, (err, results) => {
+    if (err) {
+      console.error("❌ Error updating references:", err);
+      return res.status(500).json({ error: "Database query failed" });
+    }
+    res.json({ message: "Reference updated successfully", results });
+  });
+});
+
+// Update claim
+app.put("/api/updateClaim/:claim_id", async (req, res) => {
+  const { claim_id } = req.params;
+  const { text } = req.body; // Extract from request body
+
+  if (!text || !claim_id) {
+    return res.status(400).json({ error: "Missing required parameters." });
+  }
+
+  const sql = "UPDATE claims SET claim_text= ? WHERE claim_id = ?";
+  const params = [text, claim_id];
+
+  console.log("Updating cclaim text for claim_id:", claim_id);
+
+  pool.query(sql, params, (err, results) => {
+    if (err) {
+      console.error("❌ Error updating references:", err);
+      return res.status(500).json({ error: "Database query failed" });
+    }
+    res.json({ message: "RClaim updated successfully", results });
+  });
+});
+
 //claims
 app.get("/api/claims/:content_id", async (req, res) => {
   const { content_id } = req.params;
