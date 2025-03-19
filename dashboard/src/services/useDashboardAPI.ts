@@ -80,12 +80,27 @@ export const createClaim = async (claimText: string, contentId: number) => {
  */
 export const updateClaim = async (claimText: string, claimId: number) => {
   try {
-    await axios.put(`${API_BASE_URL}/api/claims/${claimId}`, { claimText });
+    await axios.put(`${API_BASE_URL}/api/updateClaim/${claimId}`, {
+      claimText,
+    });
   } catch (error) {
     console.error("❌ Error updating claim:", error);
   }
 };
 
+/**
+ * Update an existing reference
+ */
+export const updateReference = async (title: string, content_id: number) => {
+  try {
+    await axios.put(`${API_BASE_URL}/updateReference/${content_id}`, {
+      title, // Send title in the request body
+    });
+    console.log(`✅ Reference ${content_id} updated to "${title}".`);
+  } catch (error) {
+    console.error("❌ Error updating reference:", error);
+  }
+};
 /**
  * Delete a claim
  */
