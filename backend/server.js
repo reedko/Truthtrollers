@@ -345,6 +345,33 @@ app.get("/api/get-graph-data", async (req, res) => {
   }
 });
 
+//get references with claims for a content_id
+app.get("/api/content/:contentId/references-with-claims", async (req, res) => {
+  const { contentId } = req.params;
+
+  try {
+    const referencesWithClaims = await db.query(
+      `
+      SELECT r.*, 
+             COALESCE(JSON_ARRAYAGG(
+               JSON_OBJECT('claim_id', c.claim_id, 'claim_text', c.claim_text)
+             ), '[]') AS claims
+      FROM references r
+      LEFT JOIN claim_references cr ON r.reference_content_id = cr.reference_content_id
+      LEFT JOIN claims c ON cr.claim_id = c.claim_id
+      WHERE r.task_id = ?
+      GROUP BY r.reference_content_id
+      `,
+      [contentId]
+    );
+
+    res.json(referencesWithClaims);
+  } catch (err) {
+    console.error("Error fetching references with claims:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
 //Get References, aka source because reference is a reserved word
 app.get("/api/content/:taskId/source-references", async (req, res) => {
   const { taskId } = req.params;
@@ -361,7 +388,6 @@ app.get("/api/content/:taskId/source-references", async (req, res) => {
   });
 });
 
-//Get References, aka source because reference is a reserved word
 // Get References with Optional Search Term
 app.get("/api/references/:searchTerm?", async (req, res) => {
   let { searchTerm } = req.params;
@@ -448,6 +474,7 @@ app.post("/api/add-content-relation", async (req, res) => {
   }
 });
 
+//delete references
 app.delete("/api/remove-content-relation", async (req, res) => {
   const taskContentId = req.body.taskContentId;
   const referenceContentId = req.body.referenceContentId;
@@ -733,9 +760,8 @@ app.get("/api/topics", async (req, res) => {
 });
 
 // Update reference title
-app.put("/api/updateReference/:content_id", async (req, res) => {
-  const { content_id } = req.params;
-  const { title } = req.body; // Extract from request body
+app.put("/api/updateReference", async (req, res) => {
+  const { title, content_id } = req.body; // Extract from request body
 
   if (!title || !content_id) {
     return res.status(400).json({ error: "Missing required parameters." });
@@ -756,16 +782,15 @@ app.put("/api/updateReference/:content_id", async (req, res) => {
 });
 
 // Update claim
-app.put("/api/updateClaim/:claim_id", async (req, res) => {
-  const { claim_id } = req.params;
-  const { text } = req.body; // Extract from request body
+app.put("/api/updateClaim", async (req, res) => {
+  const { claim_id, claim_text } = req.body; // Extract from request body
 
-  if (!text || !claim_id) {
+  if (!claim_text || !claim_id) {
     return res.status(400).json({ error: "Missing required parameters." });
   }
 
   const sql = "UPDATE claims SET claim_text= ? WHERE claim_id = ?";
-  const params = [text, claim_id];
+  const params = [claim_text, claim_id];
 
   console.log("Updating cclaim text for claim_id:", claim_id);
 

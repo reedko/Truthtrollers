@@ -42,10 +42,11 @@ const ReferenceModal: React.FC<{
     setIsSelectOpen(true);
   };
   useEffect(() => {
-    if (taskId && references.length === 0) {
-      fetchReferences(Number(taskId));
+    if (isOpen) {
+      fetchReferences(Number(taskId)); // 🔥 Always fetch latest references when modal opens
     }
-  }, [isOpen, taskId, references]); // ✅ Add references as a dependency
+  }, [isOpen, taskId]); // ✅ Triggers a fresh fetch every time modal opens
+
   const handleDeleteReference = async (referenceId: number) => {
     await deleteReferenceFromTask(taskId, referenceId);
 
