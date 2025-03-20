@@ -1,314 +1,91 @@
 import React, { useEffect, useState } from "react";
-import {
-  Box,
-  Grid,
-  Heading,
-  VStack,
-  Text,
-  Button,
-  HStack,
-  useColorModeValue,
-  Tooltip,
-  Input,
-} from "@chakra-ui/react";
-import { Claim, LitReference } from "../../../shared/entities/types";
+import { Box, Grid, Heading, useColorModeValue } from "@chakra-ui/react";
 import {
   fetchClaimsForTask,
-  fetchReferencesForTask,
-  createClaim,
-  updateClaim,
-  deleteClaim,
+  fetchReferencesWithClaimsForTask,
   updateReference,
   deleteReferenceFromTask,
 } from "../services/useDashboardAPI";
-import ClaimModal from "./ClaimModal";
-import ReferenceModal from "./ReferenceModal";
+import TaskClaims from "./TaskClaims";
+import ReferenceList from "./ReferenceList";
+import { Claim, ReferenceWithClaims } from "../../../shared/entities/types";
 
-interface WorkspaceProps {
-  contentId: number;
-}
-
-const Workspace: React.FC<WorkspaceProps> = ({ contentId }) => {
+const Workspace: React.FC<{ contentId: number }> = ({ contentId }) => {
   const [claims, setClaims] = useState<Claim[]>([]);
-  const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
-  const [references, setReferences] = useState<LitReference[]>([]);
-  const [selectedReference, setSelectedReference] =
-    useState<LitReference | null>(null);
-  const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
-  const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
-  const [editingClaim, setEditingClaim] = useState<Claim | null>(null);
-  const [editingReference, setEditingReference] = useState<LitReference | null>(
-    null
-  );
-  const [isEditingReference, setIsEditingReference] = useState(false);
-  const [referenceTitle, setReferenceTitle] = useState("");
+  const [references, setReferences] = useState<ReferenceWithClaims[]>([]);
+  const [refreshReferences, setRefreshReferences] = useState(false);
 
   useEffect(() => {
-    if (!contentId) return;
-    const loadClaims = async () => {
-      const claimsData = await fetchClaimsForTask(contentId);
-      setClaims(claimsData);
-    };
-    loadClaims();
+    fetchClaimsForTask(contentId).then(setClaims);
   }, [contentId]);
 
   useEffect(() => {
-    const loadReferences = async () => {
-      const refs = await fetchReferencesForTask(contentId);
-      setReferences(refs);
-    };
-    loadReferences();
-  }, [contentId]);
+    fetchReferencesWithClaimsForTask(contentId).then(setReferences);
+  }, [contentId, refreshReferences]);
 
-  const handleCreateClaim = async (claimText: string) => {
-    const newClaim = await createClaim(claimText, contentId);
-    if (newClaim) setClaims([...claims, newClaim]);
+  const handleUpdateReference = async (
+    referenceId: number,
+    title: string
+  ): Promise<void> => {
+    await updateReference(title, referenceId);
+    setRefreshReferences((prev) => !prev);
   };
-
-  const handleOpenReference = (url: string) => {
-    window.open(url, "_blank");
-  };
-
-  const handleUpdateClaim = async (claimText: string, claimId: number) => {
-    await updateClaim(claimText, claimId);
-    setClaims(
-      claims.map((claim) =>
-        claim.claim_id === claimId ? { ...claim, claim_text: claimText } : claim
-      )
-    );
-    setEditingClaim(null);
-    setIsClaimModalOpen(false);
-  };
-  const handleUpdateReference = async () => {
-    if (editingReference && referenceTitle.trim()) {
-      await updateReference(
-        referenceTitle,
-        editingReference.reference_content_id
-      );
-      setReferences(
-        references.map((ref) =>
-          ref.reference_content_id === editingReference.reference_content_id
-            ? { ...ref, content_name: referenceTitle }
-            : ref
-        )
-      );
-      setEditingReference(null);
-      setIsEditingReference(false);
-      setReferenceTitle("");
-    }
-  };
-
-  const bgColor = useColorModeValue("gray.50", "gray.800");
-  const borderColor = useColorModeValue("gray.300", "gray.600");
 
   return (
     <Box
       borderWidth="1px"
       borderRadius="lg"
       p={4}
-      bg={bgColor}
-      borderColor={borderColor}
+      bg={useColorModeValue("gray.50", "gray.800")}
+      borderColor="gray.300"
       height="900px"
-      overflow="hidden"
     >
       <Heading size="md" mb={2}>
         Claim Analysis
       </Heading>
-
       <Grid templateColumns="2fr 2fr 2fr" gap={4} height="100%">
-        {/* Left Column: Claims */}
-        <VStack
-          align="start"
-          spacing={2}
-          borderRight="1px solid"
-          borderColor={borderColor}
-          pr={4}
-          overflowY="auto"
-          maxHeight="800px"
-        >
-          <Heading size="sm">Claims</Heading>
-          <Button
-            colorScheme="blue"
-            onClick={() => {
-              setEditingClaim(null);
-              setIsClaimModalOpen(true);
-            }}
-          >
-            + Add Claim
-          </Button>
-          {claims.length === 0 ? (
-            <Text>No claims found.</Text>
-          ) : (
-            claims.map((claim) => (
-              <HStack key={claim.claim_id} width="100%" spacing={2}>
-                <Tooltip label={claim.claim_text} hasArrow>
-                  <Button
-                    variant={
-                      selectedClaim?.claim_id === claim.claim_id
-                        ? "solid"
-                        : "outline"
-                    }
-                    colorScheme="blue"
-                    onClick={() => setSelectedClaim(claim)}
-                    width="100%"
-                    overflow="hidden"
-                    textOverflow="ellipsis"
-                    whiteSpace="nowrap"
-                  >
-                    {claim.claim_text}
-                  </Button>
-                </Tooltip>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setEditingClaim(claim);
-                    setIsClaimModalOpen(true);
-                  }}
-                >
-                  ✏️
-                </Button>
-                <Button
-                  size="sm"
-                  colorScheme="red"
-                  onClick={() => deleteClaim(claim.claim_id)}
-                >
-                  🗑️
-                </Button>
-              </HStack>
-            ))
-          )}
-        </VStack>
-
-        {/* Middle Column: Support / Refutation */}
-        <VStack
-          align="center"
-          spacing={2}
-          borderRight="1px solid"
-          borderColor={borderColor}
-          pr={4}
-          overflowY="auto"
-          maxHeight="800px"
-        >
-          <Heading size="sm">Support / Refutation</Heading>
-          {selectedClaim ? (
-            selectedClaim.references && selectedClaim.references.length > 0 ? (
-              selectedClaim.references.map((ref) => (
-                <HStack
-                  key={ref.reference_content_id ?? Math.random()}
-                  spacing={4}
-                >
-                  <Text>{ref.content_name || "Unnamed Reference"}</Text>
-                  <Text color={ref.support_level > 0 ? "green.500" : "red.500"}>
-                    {ref.support_level > 0
-                      ? `+${ref.support_level}`
-                      : `${ref.support_level}`}
-                  </Text>
-                </HStack>
-              ))
-            ) : (
-              <Text>No references linked to this claim yet.</Text>
-            )
-          ) : (
-            <Text>Select a claim to see relationships</Text>
-          )}
-        </VStack>
+        {/* Task Claims Column */}
+        <TaskClaims
+          claims={claims}
+          onAddClaim={(claimText) =>
+            setClaims([
+              ...claims,
+              {
+                claim_id: Math.floor(Math.random() * 100000), // Temporary ID until DB assigns one
+                claim_text: claimText,
+                veracity_score: 0, // Default or null
+                confidence_level: 0, // Default or null
+                last_verified: new Date().toISOString(), // Placeholder timestamp
+                references: [], // Empty references array
+              },
+            ])
+          }
+          onEditClaim={(claim) => {
+            /* Open Edit Modal - Implement this */
+            console.log("Edit claim:", claim);
+          }}
+          onDeleteClaim={(claimId) => {
+            setClaims(claims.filter((claim) => claim.claim_id !== claimId));
+          }}
+          onDropReferenceClaim={(taskClaimId, refClaimId) => {
+            /* Open Linking Modal - Implement this */
+            console.log(
+              `Link reference claim ${refClaimId} to task claim ${taskClaimId}`
+            );
+          }}
+        />
+        {/* Middle Column: Support/Refutation */}
+        <Box> {/* Placeholder for Support/Refute Box */} </Box>
 
         {/* References Column */}
-        <VStack
-          align="start"
-          spacing={2}
-          borderRight="1px solid"
-          borderColor={borderColor}
-          pr={4}
-          overflowY="auto"
-          maxHeight="800px"
-        >
-          <Heading size="sm">References</Heading>
-          <Button
-            colorScheme="blue"
-            onClick={() => setIsReferenceModalOpen(true)}
-          >
-            + Add Reference
-          </Button>
-          {references.length === 0 ? (
-            <Text>No References Found</Text>
-          ) : (
-            references.map((ref) => (
-              <HStack key={ref.reference_content_id} spacing={2} width="100%">
-                <Tooltip label={ref.content_name} hasArrow>
-                  <Button
-                    variant={
-                      selectedReference?.reference_content_id ===
-                      ref.reference_content_id
-                        ? "solid"
-                        : "outline"
-                    }
-                    colorScheme="blue"
-                    onClick={() => handleOpenReference(ref.url)}
-                    width="100%"
-                    overflow="hidden"
-                    textOverflow="ellipsis"
-                    whiteSpace="nowrap"
-                  >
-                    {ref.content_name}
-                  </Button>
-                </Tooltip>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setEditingReference(ref);
-                    setReferenceTitle(ref.content_name);
-                    setIsEditingReference(true);
-                  }}
-                >
-                  Edit Title
-                </Button>
-                <Button
-                  size="sm"
-                  colorScheme="red"
-                  onClick={() =>
-                    deleteReferenceFromTask(contentId, ref.reference_content_id)
-                  }
-                >
-                  🗑️
-                </Button>
-              </HStack>
-            ))
-          )}{" "}
-          {isEditingReference && (
-            <Box>
-              <Input
-                value={referenceTitle}
-                onChange={(e) => setReferenceTitle(e.target.value)}
-                placeholder="Enter new title"
-              />
-              <Button
-                colorScheme="green"
-                onClick={handleUpdateReference}
-                mt={2}
-              >
-                Save
-              </Button>
-            </Box>
-          )}
-        </VStack>
+        <ReferenceList
+          references={references}
+          onEditReference={handleUpdateReference}
+          onDeleteReference={(refId) =>
+            deleteReferenceFromTask(contentId, refId)
+          }
+        />
       </Grid>
-
-      <ClaimModal
-        isOpen={isClaimModalOpen}
-        onClose={() => setIsClaimModalOpen(false)}
-        onSave={(claimText) =>
-          editingClaim
-            ? handleUpdateClaim(claimText, editingClaim.claim_id)
-            : handleCreateClaim(claimText)
-        }
-        editingClaim={editingClaim}
-      />
-      <ReferenceModal
-        isOpen={isReferenceModalOpen}
-        onClose={() => setIsReferenceModalOpen(false)}
-        taskId={contentId} // ✅ Keep this, since we need to know the task
-      />
     </Box>
   );
 };

@@ -7,13 +7,21 @@ export const register = async (
   password: string,
   email: string
 ) => {
-  return await axios.post(`${API_URL}register`, { username, password, email });
+  return await axios.post(`${API_URL}/api/register`, {
+    username,
+    password,
+    email,
+  });
 };
 
 export const login = async (username: string, password: string) => {
-  return await axios.post(`${API_URL}login`, { username, password });
+  return await axios.post(`${API_URL}/api/login`, { username, password });
 };
 
 export const resetPassword = async (email: string, newPassword: string) => {
-  return await axios.post(`${API_URL}reset-password`, { email, newPassword });
+  console.log(`${API_URL}/api/reset-password`);
+  return await axios.post(`${API_URL}/api/reset-password`, {
+    email,
+    newPassword,
+  });
 };

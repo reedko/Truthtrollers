@@ -6,6 +6,7 @@ import {
   Publisher,
   LitReference,
   Claim,
+  ReferenceWithClaims,
 } from "../../../shared/entities/types";
 
 const API_BASE_URL =
@@ -78,10 +79,11 @@ export const createClaim = async (claimText: string, contentId: number) => {
 /**
  * Update an existing claim
  */
-export const updateClaim = async (claimText: string, claimId: number) => {
+export const updateClaim = async (claim_id: number, claim_text: string) => {
   try {
-    await axios.put(`${API_BASE_URL}/api/updateClaim/${claimId}`, {
-      claimText,
+    await axios.put(`${API_BASE_URL}/api/updateClaim`, {
+      claim_id,
+      claim_text,
     });
   } catch (error) {
     console.error("❌ Error updating claim:", error);
@@ -93,7 +95,8 @@ export const updateClaim = async (claimText: string, claimId: number) => {
  */
 export const updateReference = async (title: string, content_id: number) => {
   try {
-    await axios.put(`${API_BASE_URL}/updateReference/${content_id}`, {
+    await axios.put(`${API_BASE_URL}/api/updateReference`, {
+      content_id,
       title, // Send title in the request body
     });
     console.log(`✅ Reference ${content_id} updated to "${title}".`);
@@ -146,6 +149,20 @@ export const fetchReferencesForTask = async (contentId: number) => {
     console.error("❌ Error fetching references:", error);
     return [];
   }
+};
+
+export const fetchReferencesWithClaimsForTask = async (
+  contentId: number
+): Promise<ReferenceWithClaims[]> => {
+  const response = await fetch(
+    `${API_BASE_URL}/api/content/${contentId}/references-with-claims`
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch references with claims");
+  }
+
+  return response.json();
 };
 
 /**

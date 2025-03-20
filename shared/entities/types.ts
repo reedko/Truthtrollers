@@ -51,6 +51,10 @@ export interface LitReference {
   author_id?: number;
 }
 
+export interface ReferenceWithClaims extends LitReference {
+  claims: Claim[];
+}
+
 // Claims
 export interface Claim {
   claim_id: number;
