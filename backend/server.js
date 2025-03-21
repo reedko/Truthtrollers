@@ -124,6 +124,21 @@ app.get("/proxy", async (req, res) => {
   }
 });
 
+//get a single task
+// server.js
+
+app.get("/api/tasks/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const SQL = "SELECT * FROM content WHERE content_id = ?";
+    const result = await query(SQL, [id]);
+    res.json(result[0] || {});
+  } catch (err) {
+    console.error("Error fetching task by ID:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
 //last URL visited INFO
 app.post("/api/store-last-visited-url", async (req, res) => {
   const { url } = req.body;
@@ -347,24 +362,25 @@ app.get("/api/get-graph-data", async (req, res) => {
 
 //get references with claims for a content_id
 app.get("/api/content/:contentId/references-with-claims", async (req, res) => {
+  console.log("Received request for contentId:", req.params.contentId);
   const { contentId } = req.params;
 
   try {
-    const referencesWithClaims = await db.query(
-      `
-      SELECT r.*, 
+    const SQL = `
+      SELECT c.*, 
              COALESCE(JSON_ARRAYAGG(
-               JSON_OBJECT('claim_id', c.claim_id, 'claim_text', c.claim_text)
+               JSON_OBJECT('claim_id', cl.claim_id, 'claim_text', cl.claim_text)
              ), '[]') AS claims
-      FROM references r
-      LEFT JOIN claim_references cr ON r.reference_content_id = cr.reference_content_id
-      LEFT JOIN claims c ON cr.claim_id = c.claim_id
-      WHERE r.task_id = ?
-      GROUP BY r.reference_content_id
-      `,
-      [contentId]
-    );
+       FROM content c
+      INNER JOIN content_relations cr ON c.content_id = cr.reference_content_id
+      LEFT JOIN content_claims cc ON c.content_id = cc.content_id
+      LEFT JOIN claims cl ON cc.claim_id = cl.claim_id
+      WHERE cr.content_id = ?
+      GROUP BY c.content_id
+      `;
 
+    const params = [contentId];
+    const referencesWithClaims = await query(SQL, params);
     res.json(referencesWithClaims);
   } catch (err) {
     console.error("Error fetching references with claims:", err);
