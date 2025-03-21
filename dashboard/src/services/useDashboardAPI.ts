@@ -13,7 +13,14 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 /** --------------------- 📝 TASK (CONTENT) FUNCTIONS --------------------- **/
+/** fetch one task  */
+// services/useDashboardAPI.ts
 
+export async function fetchTaskById(taskId: number): Promise<Task> {
+  const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`);
+  if (!response.ok) throw new Error("Failed to fetch task");
+  return response.json();
+}
 /**
  * Fetch all tasks (content items).
  */

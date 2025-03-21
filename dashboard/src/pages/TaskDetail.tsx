@@ -1,25 +1,28 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { useTaskStore } from "../store/useTaskStore";
 import TaskDetailLayout from "./TaskDetailLayout";
 import { useShallow } from "zustand/react/shallow";
+import { fetchTaskById } from "../services/useDashboardAPI";
+import { Task } from "../../../shared/entities/types";
 
 const TaskDetail = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const location = useLocation();
   const passedTask = location.state?.task;
 
-  // Find the task from the store (fallback if not passed in location)
   const storeTask = useTaskStore((state) =>
     state.content.find((t) => t.content_id === Number(taskId))
   );
-  const task = passedTask || storeTask;
 
-  // Store actions for fetching assigned users & references
+  const [localTask, setLocalTask] = useState<Task | null>(
+    passedTask || storeTask || null
+  );
+  const [loading, setLoading] = useState<boolean>(!passedTask && !storeTask);
+
   const fetchAssignedUsers = useTaskStore((state) => state.fetchAssignedUsers);
   const fetchReferences = useTaskStore((state) => state.fetchReferences);
 
-  // Grab the data from the store (by taskId)
   const assignedUsers = useTaskStore(
     useShallow((state) => state.assignedUsers[Number(taskId)] || [])
   );
@@ -27,7 +30,25 @@ const TaskDetail = () => {
     useShallow((state) => state.references[Number(taskId)] || [])
   );
 
-  // Fetch assigned users & references once if needed
+  // 🔁 Fetch the task if it's not passed or in store
+  useEffect(() => {
+    const loadTaskIfNeeded = async () => {
+      if (!localTask && taskId) {
+        try {
+          const fetchedTask = await fetchTaskById(Number(taskId));
+          setLocalTask(fetchedTask);
+        } catch (err) {
+          console.error("❌ Failed to fetch task:", err);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadTaskIfNeeded();
+  }, [localTask, taskId]);
+
+  // Fetch references and assigned users only once
   useEffect(() => {
     if (taskId && assignedUsers.length === 0) {
       fetchAssignedUsers(Number(taskId));
@@ -35,23 +56,15 @@ const TaskDetail = () => {
     if (taskId && references.length === 0) {
       fetchReferences(Number(taskId));
     }
-  }, [
-    taskId,
-    assignedUsers.length,
-    references.length,
-    fetchAssignedUsers,
-    fetchReferences,
-  ]);
+  }, [taskId, assignedUsers.length, references.length]);
 
-  // If we still don't have a task, we can show a loading or error message
-  if (!task) {
+  if (loading || !localTask) {
     return <div>Loading task...</div>;
   }
 
-  // Pass the relevant data down to the layout
   return (
     <TaskDetailLayout
-      task={task}
+      task={localTask}
       assignedUsers={assignedUsers}
       content={references}
     />

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   VStack,
   Heading,
@@ -16,55 +16,79 @@ import {
   ModalFooter,
   ModalCloseButton,
 } from "@chakra-ui/react";
-import { ReferenceWithClaims } from "../../../shared/entities/types";
+import {
+  LitReference,
+  ReferenceWithClaims,
+} from "../../../shared/entities/types";
 import ReferenceModal from "./ReferenceModal";
 
 interface ReferenceListProps {
   references: ReferenceWithClaims[];
   onEditReference: (referenceId: number, title: string) => void;
   onDeleteReference: (referenceId: number) => void;
+  taskId: number;
 }
 
 const ReferenceList: React.FC<ReferenceListProps> = ({
   references,
   onEditReference,
   onDeleteReference,
+  taskId,
 }) => {
   const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingReference, setEditingReference] =
     useState<ReferenceWithClaims | null>(null);
   const [newTitle, setNewTitle] = useState("");
+  const [selectedReference, setSelectedReference] =
+    useState<LitReference | null>(null);
 
+  console.log("Selected Reference:", selectedReference);
   return (
-    <VStack
-      align="start"
-      spacing={2}
-      borderLeft="1px solid gray"
-      pl={4}
-      overflowY="auto"
-      maxHeight="800px"
-    >
-      <Heading size="sm">References</Heading>
+    <>
+      <VStack
+        align="start"
+        spacing={2}
+        borderLeft="1px solid gray"
+        pl={4}
+        overflowY="auto"
+        maxHeight="800px"
+        width="100%"
+      >
+        <Heading size="sm">References</Heading>
 
-      {/* 🔥 Button to Open ReferenceModal */}
-      <Button colorScheme="blue" onClick={() => setIsReferenceModalOpen(true)}>
-        + Add Reference
-      </Button>
+        {/* 🔥 Button to Open ReferenceModal */}
+        <Button
+          colorScheme="blue"
+          onClick={() => setIsReferenceModalOpen(true)}
+        >
+          + Add Reference
+        </Button>
 
-      {references.length === 0 ? (
-        <Text>No References Found</Text>
-      ) : (
-        references.map((ref) => (
-          <Box key={ref.reference_content_id}>
-            <HStack spacing={2} width="100%">
+        {references.length === 0 ? (
+          <Text>No References Found</Text>
+        ) : (
+          references.map((ref) => (
+            <HStack key={ref.reference_content_id} width="100%" spacing={2}>
               <Tooltip label={ref.content_name} hasArrow>
-                <Button variant="outline" colorScheme="blue" width="100%">
+                <Button
+                  variant={
+                    selectedReference?.reference_content_id ===
+                    ref.reference_content_id
+                      ? "outline"
+                      : "solid"
+                  }
+                  colorScheme="blue"
+                  width="100%"
+                  overflow="hidden"
+                  textOverflow="ellipsis"
+                  whiteSpace="nowrap"
+                  onClick={() => setSelectedReference(ref)}
+                >
                   {ref.content_name}
                 </Button>
               </Tooltip>
 
-              {/* 🔥 Edit Reference Title */}
               <Button
                 size="sm"
                 onClick={() => {
@@ -73,10 +97,9 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                   setIsEditModalOpen(true);
                 }}
               >
-                Edit Title
+                ✏️
               </Button>
 
-              {/* 🔥 Delete Reference */}
               <Button
                 size="sm"
                 colorScheme="red"
@@ -85,15 +108,15 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                 🗑️
               </Button>
             </HStack>
-          </Box>
-        ))
-      )}
+          ))
+        )}
+      </VStack>
 
       {/* 🔥 Reference Modal for Adding References */}
       <ReferenceModal
         isOpen={isReferenceModalOpen}
         onClose={() => setIsReferenceModalOpen(false)}
-        taskId={1} // Pass actual taskId from parent
+        taskId={taskId} // Pass actual taskId from parent
       />
 
       {/* 🔥 Modal for Editing Reference Title */}
@@ -131,7 +154,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </VStack>
+    </>
   );
 };
 

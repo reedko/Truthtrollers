@@ -20,7 +20,10 @@ const Workspace: React.FC<{ contentId: number }> = ({ contentId }) => {
   }, [contentId]);
 
   useEffect(() => {
-    fetchReferencesWithClaimsForTask(contentId).then(setReferences);
+    fetchReferencesWithClaimsForTask(contentId).then((data) => {
+      console.log("Fetched References:", data); // 🔥 Debugging Log
+      setReferences(data);
+    });
   }, [contentId, refreshReferences]);
 
   const handleUpdateReference = async (
@@ -51,39 +54,36 @@ const Workspace: React.FC<{ contentId: number }> = ({ contentId }) => {
             setClaims([
               ...claims,
               {
-                claim_id: Math.floor(Math.random() * 100000), // Temporary ID until DB assigns one
+                claim_id: Math.floor(Math.random() * 100000), // Temporary ID
                 claim_text: claimText,
-                veracity_score: 0, // Default or null
-                confidence_level: 0, // Default or null
-                last_verified: new Date().toISOString(), // Placeholder timestamp
-                references: [], // Empty references array
+                veracity_score: 0,
+                confidence_level: 0,
+                last_verified: new Date().toISOString(),
+                references: [],
               },
             ])
           }
-          onEditClaim={(claim) => {
-            /* Open Edit Modal - Implement this */
-            console.log("Edit claim:", claim);
-          }}
-          onDeleteClaim={(claimId) => {
-            setClaims(claims.filter((claim) => claim.claim_id !== claimId));
-          }}
-          onDropReferenceClaim={(taskClaimId, refClaimId) => {
-            /* Open Linking Modal - Implement this */
-            console.log(
-              `Link reference claim ${refClaimId} to task claim ${taskClaimId}`
-            );
-          }}
+          onEditClaim={(claim) => console.log("Edit claim:", claim)}
+          onDeleteClaim={(claimId) =>
+            setClaims(claims.filter((claim) => claim.claim_id !== claimId))
+          }
+          //onDropReferenceClaim={(taskClaimId: number, refClaimId: number) =>
+          // console.log(`Link reference ${refClaimId} to task ${taskClaimId}`)
+          //}
+          taskId={contentId}
         />
+
         {/* Middle Column: Support/Refutation */}
         <Box> {/* Placeholder for Support/Refute Box */} </Box>
 
         {/* References Column */}
         <ReferenceList
           references={references}
-          onEditReference={handleUpdateReference}
+          onEditReference={handleUpdateReference} // ✅ Now correctly typed
           onDeleteReference={(refId) =>
             deleteReferenceFromTask(contentId, refId)
           }
+          taskId={contentId}
         />
       </Grid>
     </Box>

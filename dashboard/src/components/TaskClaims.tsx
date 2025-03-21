@@ -16,7 +16,8 @@ interface TaskClaimsProps {
   onAddClaim: (claimText: string) => void;
   onEditClaim: (claim: Claim) => void;
   onDeleteClaim: (claimId: number) => void;
-  onDropReferenceClaim: (taskClaimId: number, referenceClaimId: number) => void;
+  // onDropReferenceClaim: (taskClaimId: number, refClaimId: number) => void;
+  taskId: number;
 }
 
 const TaskClaims: React.FC<TaskClaimsProps> = ({
@@ -24,9 +25,11 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   onAddClaim,
   onEditClaim,
   onDeleteClaim,
-  onDropReferenceClaim,
+  //onDropReferenceClaim,
+  taskId,
 }) => {
   const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
+  const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
 
   return (
     <VStack
@@ -36,6 +39,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
       pr={4}
       overflowY="auto"
       maxHeight="800px"
+      width="100%"
     >
       <Heading size="sm">Claims</Heading>
 
@@ -48,40 +52,39 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
         <Text>No claims found.</Text>
       ) : (
         claims.map((claim) => (
-          <Box
-            key={claim.claim_id ?? Math.random()} // ✅ Ensures no duplicate keys
-            p={2}
-            bg="white"
-            border="1px solid gray"
-            borderRadius="md"
-            onDragOver={(e) => e.preventDefault()} // Allow drop
-            onDrop={(e) => {
-              const draggedClaimId = e.dataTransfer.getData("claimId");
-              if (draggedClaimId && claim.claim_id) {
-                onDropReferenceClaim(claim.claim_id, parseInt(draggedClaimId));
-              }
-            }}
-          >
-            <HStack>
-              <Tooltip label={claim.claim_text} hasArrow>
-                <Text>{claim.claim_text.slice(0, 50)}...</Text>
-              </Tooltip>
-
-              {/* Edit Claim Button */}
-              <Button size="xs" onClick={() => onEditClaim(claim)}>
-                ✏️ Edit
-              </Button>
-
-              {/* Delete Claim Button */}
+          <HStack key={claim.claim_id} width="100%" spacing={2}>
+            <Tooltip label={claim.claim_text} hasArrow>
               <Button
-                size="xs"
-                colorScheme="red"
-                onClick={() => claim.claim_id && onDeleteClaim(claim.claim_id)}
+                variant={
+                  selectedClaim?.claim_id === claim.claim_id
+                    ? "solid"
+                    : "outline"
+                }
+                colorScheme="blue"
+                onClick={() => setSelectedClaim(claim)}
+                width="100%"
+                overflow="hidden"
+                textOverflow="ellipsis"
+                whiteSpace="nowrap"
               >
-                🗑️ Delete
+                {claim.claim_text}
               </Button>
-            </HStack>
-          </Box>
+            </Tooltip>
+
+            {/* Edit Button */}
+            <Button size="sm" onClick={() => onEditClaim(claim)}>
+              ✏️
+            </Button>
+
+            {/* Delete Button */}
+            <Button
+              size="sm"
+              colorScheme="red"
+              onClick={() => onDeleteClaim(claim.claim_id)}
+            >
+              🗑️
+            </Button>
+          </HStack>
         ))
       )}
 

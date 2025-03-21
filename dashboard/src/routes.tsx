@@ -8,6 +8,7 @@ import ForgotPassword from "./components/ForgotPassword";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import { RouterProvider } from "react-router-dom";
+import TestCardPage from "./pages/TestCardPage";
 
 const router = createBrowserRouter([
   {
@@ -21,6 +22,7 @@ const router = createBrowserRouter([
       { path: "/tasks/:taskId", element: <TaskDetail /> }, // TaskDetail also uses the store
       { path: "/forgot-password", element: <ForgotPassword /> },
       { path: "/register", element: <Register /> },
+      { path: "/test-card", element: <TestCardPage /> },
     ],
   },
 ]);
