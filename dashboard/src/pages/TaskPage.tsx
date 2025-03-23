@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { Grid, GridItem, Show, Heading, Text } from "@chakra-ui/react";
+import { Grid, GridItem, Show, Heading, Text, Button } from "@chakra-ui/react";
 import TaskGrid from "../components/TaskGrid";
 import TopicList from "../components/TopicList";
 import { useShallow } from "zustand/react/shallow";
@@ -13,6 +13,7 @@ export const TaskPage: React.FC = () => {
     )
   );
   const fetchTasks = useTaskStore(useShallow((state) => state.fetchTasks));
+  const loadMoreTasks = useTaskStore((state) => state.loadMoreTasks);
 
   // Fetch content on component mount
   const fetchInitiated = useRef(false);
@@ -24,6 +25,12 @@ export const TaskPage: React.FC = () => {
       fetchTasks();
     }
   }, [content.length, fetchTasks]);
+
+  // 🔍 ADD THIS:
+  useEffect(() => {
+    console.log("🧠 Zustand filteredTasks in TaskPage:", content);
+    console.log("📦 Number of tasks loaded:", content.length);
+  }, [content]);
 
   return (
     <Grid
@@ -49,7 +56,13 @@ export const TaskPage: React.FC = () => {
         {content.length === 0 ? (
           <Text>No content match the selected criteria.</Text>
         ) : (
-          <TaskGrid content={content} />
+          <>
+            <TaskGrid content={content} />
+
+            <Button mt={4} onClick={() => loadMoreTasks()}>
+              Load More Tasks
+            </Button>
+          </>
         )}
       </GridItem>
     </Grid>

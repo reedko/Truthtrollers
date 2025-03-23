@@ -17,8 +17,8 @@ import {
   Tooltip,
 } from "@chakra-ui/react";
 import SelectReferenceModal from "./SelectReferenceModal"; // New modal for selecting references
-import ScrapeReferenceModal from "./ScrapeReferenceModal"; // New modal for scraping references
-import { useTaskStore } from "../store/useTaskStore"; // ✅ Import store
+import ScrapeReferenceModal from "../ScrapeReferenceModal"; // New modal for scraping references
+import { useTaskStore } from "../../store/useTaskStore"; // ✅ Import store
 import { useShallow } from "zustand/react/shallow";
 
 const ReferenceModal: React.FC<{

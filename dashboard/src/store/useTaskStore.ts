@@ -11,7 +11,7 @@ import {
   AuthReference,
 } from "../../../shared/entities/types";
 import {
-  fetchTasks,
+  fetchTasks as fetchTasksAPI,
   fetchUsers,
   fetchAssignedUsers,
   fetchReferencesForTask,
@@ -40,7 +40,8 @@ export interface TaskStoreState {
   content_relations: TaskReference[];
   auth_references: AuthReference[];
   selectedTaskId: number;
-
+  currentPage: number;
+  loadMoreTasks: () => Promise<void>;
   setSearchQuery: (query: string) => void;
   setSelectedTopic: (topicName: string | undefined) => void;
   setSelectedTask: (taskId: number) => void;
@@ -82,30 +83,37 @@ export const useTaskStore = create<TaskStoreState>()(
     content_relations: [],
     auth_references: [],
     selectedTaskId: 0,
-
+    currentPage: 0,
     setSelectedTask: (taskId: number) => set({ selectedTaskId: taskId }),
 
     fetchTasks: async () => {
-      if (get().content.length > 0) return;
+      const limit = 25;
+
+      const { currentPage } = get();
       try {
-        const content = await fetchTasks();
+        const content = await fetchTasksAPI(currentPage + 1, limit);
         const authorsMap: Record<number, Author[]> = {};
         const publishersMap: Record<number, Publisher[]> = {};
 
         content.forEach((task) => {
           authorsMap[task.content_id] =
-            typeof task.authors === "string" ? JSON.parse(task.authors) : [];
+            typeof task.authors === "string"
+              ? JSON.parse(task.authors)
+              : task.authors || [];
           publishersMap[task.content_id] =
             typeof task.publishers === "string"
               ? JSON.parse(task.publishers)
-              : [];
+              : task.publishers || [];
         });
 
+        const newContent = [...get().content, ...content];
+
         set({
-          content,
-          filteredTasks: content,
-          authors: authorsMap,
-          publishers: publishersMap,
+          content: newContent,
+          filteredTasks: newContent,
+          authors: { ...get().authors, ...authorsMap },
+          publishers: { ...get().publishers, ...publishersMap },
+          currentPage: currentPage + 1,
         });
       } catch (error) {
         console.error("❌ Error fetching content:", error);
@@ -243,6 +251,21 @@ export const useTaskStore = create<TaskStoreState>()(
         );
       } catch (error) {
         console.error("❌ Error adding reference to claim:", error);
+      }
+    },
+
+    loadMoreTasks: async () => {
+      const { currentPage, content } = get();
+      const nextPage = currentPage + 1;
+      try {
+        const newTasks = await fetchTasksAPI(nextPage + 1, 25);
+        set((state) => ({
+          content: [...state.content, ...newTasks],
+          filteredTasks: [...state.content, ...newTasks],
+          currentPage: nextPage,
+        }));
+      } catch (error) {
+        console.error("❌ Error loading more tasks:", error);
       }
     },
   }))

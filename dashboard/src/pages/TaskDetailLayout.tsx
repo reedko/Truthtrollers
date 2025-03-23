@@ -101,11 +101,8 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   const handleNodeClick = (node: GraphNode) => {
     console.log("🔵 Node Clicked:", node);
     // Hide any old selection first, then show the new one
-    setSelectedNode(null);
-    setTimeout(() => {
-      setSelectedNode(node);
-      console.log("Selected Node:", selectedNode);
-    }, 0);
+    setSelectedNode(node);
+    console.log("Selected Node:", node);
   };
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -171,7 +168,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
           <Heading size="md" mb={2}>
             Task Details
           </Heading>
-          <TaskCard key={task.content_id} task={task} />
+          <TaskCard key={task.content_id} task={task} useStore={false} />
         </Box>
 
         {/* Content Viewer */}

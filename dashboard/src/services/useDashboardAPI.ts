@@ -24,13 +24,14 @@ export async function fetchTaskById(taskId: number): Promise<Task> {
 /**
  * Fetch all tasks (content items).
  */
-export const fetchTasks = async (): Promise<Task[]> => {
+export const fetchTasks = async (page = 1, limit = 25): Promise<Task[]> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/content`);
-    console.log("📌 Tasks Data:", response.data);
+    const response = await axios.get(`${API_BASE_URL}/api/content`, {
+      params: { page, limit },
+    });
     return response.data;
   } catch (error) {
-    console.error("❌ Error fetching tasks:", error);
+    console.error("❌ Error fetching paginated tasks:", error);
     return [];
   }
 };
@@ -67,46 +68,57 @@ export const fetchClaimsForTask = async (
   }
 };
 
-/**
- * Create a new claim for a task
- */
-export const createClaim = async (claimText: string, contentId: number) => {
+// ✅ Add a new claim (with full metadata)
+export const addClaim = async (claimData: {
+  claim_text: string;
+  veracity_score?: number;
+  confidence_level?: number;
+  last_verified?: string;
+  content_id: number;
+  relationship_type?: string;
+}) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/claims`, {
-      contentId,
-      claimText,
-    });
+    const response = await axios.post(`${API_BASE_URL}/api/claims`, claimData);
+    console.log("✅ Claim added:", response.data);
     return response.data;
   } catch (error) {
-    console.error("❌ Error creating claim:", error);
-    return null;
+    console.error("❌ Error adding claim:", error);
+    throw error;
   }
 };
 
-/**
- * Update an existing claim
- */
-export const updateClaim = async (claim_id: number, claim_text: string) => {
+// ✅ Update an existing claim
+export const updateClaim = async (claim: Claim): Promise<Claim> => {
   try {
-    await axios.put(`${API_BASE_URL}/api/updateClaim`, {
-      claim_id,
-      claim_text,
-    });
+    const response = await axios.put(
+      `${API_BASE_URL}/api/claims/${claim.claim_id}`,
+      claim
+    );
+    console.log("✅ Claim updated:", response.data);
+    return { ...claim }; // or response.data if it returns the whole claim
   } catch (error) {
     console.error("❌ Error updating claim:", error);
+    throw error;
   }
 };
 
 /**
  * Update an existing reference
  */
-export const updateReference = async (title: string, content_id: number) => {
+export const updateReference = async (
+  reference_content_id: number,
+  title: string
+) => {
   try {
+    console.log("🧪 Sending PUT to updateReference:", {
+      title,
+      content_id: reference_content_id,
+    });
     await axios.put(`${API_BASE_URL}/api/updateReference`, {
-      content_id,
+      content_id: reference_content_id,
       title, // Send title in the request body
     });
-    console.log(`✅ Reference ${content_id} updated to "${title}".`);
+    console.log(`✅ Reference ${reference_content_id} updated to "${title}".`);
   } catch (error) {
     console.error("❌ Error updating reference:", error);
   }
@@ -159,10 +171,10 @@ export const fetchReferencesForTask = async (contentId: number) => {
 };
 
 export const fetchReferencesWithClaimsForTask = async (
-  contentId: number
+  taskContentId: number
 ): Promise<ReferenceWithClaims[]> => {
   const response = await fetch(
-    `${API_BASE_URL}/api/content/${contentId}/references-with-claims`
+    `${API_BASE_URL}/api/content/${taskContentId}/references-with-claims`
   );
 
   if (!response.ok) {
@@ -170,6 +182,35 @@ export const fetchReferencesWithClaimsForTask = async (
   }
 
   return response.json();
+};
+
+//Add a link between two claims
+export const addClaimLink = async ({
+  source_claim_id,
+  target_claim_id,
+  user_id,
+  relationship,
+  support_level,
+}: {
+  source_claim_id: number;
+  target_claim_id: number;
+  user_id: number;
+  relationship: "supports" | "refutes" | "related";
+  support_level: number;
+}) => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/api/claim-links`, {
+      source_claim_id,
+      target_claim_id,
+      user_id,
+      relationship,
+      support_level,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error adding claim link:", error);
+    throw error;
+  }
 };
 
 /**

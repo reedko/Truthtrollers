@@ -1,70 +1,68 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { useTaskStore } from "../store/useTaskStore";
 import TaskDetailLayout from "./TaskDetailLayout";
-import { useShallow } from "zustand/react/shallow";
-import { fetchTaskById } from "../services/useDashboardAPI";
-import { Task } from "../../../shared/entities/types";
+import {
+  fetchTaskById,
+  fetchAssignedUsers,
+  fetchReferencesForTask,
+} from "../services/useDashboardAPI";
+import { Task, User, LitReference } from "../../../shared/entities/types";
 
 const TaskDetail = () => {
   const { taskId } = useParams<{ taskId: string }>();
   const location = useLocation();
   const passedTask = location.state?.task;
 
-  const storeTask = useTaskStore((state) =>
-    state.content.find((t) => t.content_id === Number(taskId))
-  );
+  const [task, setTask] = useState<Task | null>(passedTask || null);
+  const [assignedUsers, setAssignedUsers] = useState<User[]>([]);
+  const [references, setReferences] = useState<LitReference[]>([]);
+  const [loading, setLoading] = useState(!passedTask);
+  const [taskLoaded, setTaskLoaded] = useState(!!passedTask);
 
-  const [localTask, setLocalTask] = useState<Task | null>(
-    passedTask || storeTask || null
-  );
-  const [loading, setLoading] = useState<boolean>(!passedTask && !storeTask);
-
-  const fetchAssignedUsers = useTaskStore((state) => state.fetchAssignedUsers);
-  const fetchReferences = useTaskStore((state) => state.fetchReferences);
-
-  const assignedUsers = useTaskStore(
-    useShallow((state) => state.assignedUsers[Number(taskId)] || [])
-  );
-  const references = useTaskStore(
-    useShallow((state) => state.references[Number(taskId)] || [])
-  );
-
-  // 🔁 Fetch the task if it's not passed or in store
+  // Load the task only once if not passed
   useEffect(() => {
-    const loadTaskIfNeeded = async () => {
-      if (!localTask && taskId) {
-        try {
-          const fetchedTask = await fetchTaskById(Number(taskId));
-          setLocalTask(fetchedTask);
-        } catch (err) {
-          console.error("❌ Failed to fetch task:", err);
-        } finally {
-          setLoading(false);
-        }
+    if (!taskId || task || taskLoaded) return;
+
+    const loadTask = async () => {
+      try {
+        const fetched = await fetchTaskById(Number(taskId));
+        setTask(fetched);
+      } catch (err) {
+        console.error("❌ Failed to fetch task:", err);
+      } finally {
+        setTaskLoaded(true);
+        setLoading(false);
       }
     };
 
-    loadTaskIfNeeded();
-  }, [localTask, taskId]);
+    loadTask();
+  }, [taskId, task, taskLoaded]);
 
-  // Fetch references and assigned users only once
+  // Load assigned users and references
   useEffect(() => {
-    if (taskId && assignedUsers.length === 0) {
-      fetchAssignedUsers(Number(taskId));
-    }
-    if (taskId && references.length === 0) {
-      fetchReferences(Number(taskId));
-    }
-  }, [taskId, assignedUsers.length, references.length]);
+    const loadExtras = async () => {
+      if (!task?.content_id) return;
+      try {
+        const [users, refs] = await Promise.all([
+          fetchAssignedUsers(task.content_id),
+          fetchReferencesForTask(task.content_id),
+        ]);
+        setAssignedUsers(users);
+        setReferences(refs);
+      } catch (err) {
+        console.error("❌ Failed to load task extras:", err);
+      }
+    };
+    loadExtras();
+  }, [task?.content_id]);
 
-  if (loading || !localTask) {
+  if (loading || !task) {
     return <div>Loading task...</div>;
   }
 
   return (
     <TaskDetailLayout
-      task={localTask}
+      task={task}
       assignedUsers={assignedUsers}
       content={references}
     />

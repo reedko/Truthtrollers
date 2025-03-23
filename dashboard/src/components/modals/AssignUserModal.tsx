@@ -13,7 +13,7 @@ import {
   Text,
   Box,
 } from "@chakra-ui/react";
-import { useTaskStore } from "../store/useTaskStore";
+import { useTaskStore } from "../../store/useTaskStore";
 import { useShallow } from "zustand/react/shallow";
 import axios from "axios";
 

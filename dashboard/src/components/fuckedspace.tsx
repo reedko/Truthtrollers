@@ -27,8 +27,8 @@ import {
   updateReference,
   deleteReferenceFromTask,
 } from "../services/useDashboardAPI";
-import ClaimModal from "./ClaimModal";
-import ReferenceModal from "./ReferenceModal";
+import ClaimModal from "./modals/ClaimModal";
+import ReferenceModal from "./modals/ReferenceModal";
 
 interface WorkspaceProps {
   contentId: number;
