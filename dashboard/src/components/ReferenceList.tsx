@@ -20,13 +20,16 @@ import {
   LitReference,
   ReferenceWithClaims,
 } from "../../../shared/entities/types";
-import ReferenceModal from "./ReferenceModal";
+import ReferenceModal from "./modals/ReferenceModal";
+import ReferenceClaimsModal from "./modals/ReferenceClaimsModal";
 
 interface ReferenceListProps {
   references: ReferenceWithClaims[];
   onEditReference: (referenceId: number, title: string) => void;
   onDeleteReference: (referenceId: number) => void;
   taskId: number;
+  onReferenceClick: (ref: ReferenceWithClaims) => void;
+  selectedReference: ReferenceWithClaims | null; // 👈 add this!
 }
 
 const ReferenceList: React.FC<ReferenceListProps> = ({
@@ -34,16 +37,15 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
   onEditReference,
   onDeleteReference,
   taskId,
+  onReferenceClick,
+  selectedReference,
 }) => {
   const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingReference, setEditingReference] =
     useState<ReferenceWithClaims | null>(null);
   const [newTitle, setNewTitle] = useState("");
-  const [selectedReference, setSelectedReference] =
-    useState<LitReference | null>(null);
 
-  console.log("Selected Reference:", selectedReference);
   return (
     <>
       <VStack
@@ -75,15 +77,25 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                   variant={
                     selectedReference?.reference_content_id ===
                     ref.reference_content_id
-                      ? "outline"
-                      : "solid"
+                      ? "solid"
+                      : "outline"
                   }
                   colorScheme="blue"
                   width="100%"
                   overflow="hidden"
                   textOverflow="ellipsis"
                   whiteSpace="nowrap"
-                  onClick={() => setSelectedReference(ref)}
+                  onClick={() => {
+                    console.log("📘 Reference clicked:", ref);
+
+                    onReferenceClick(ref); // ✅ add this line
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    if (ref.url) {
+                      window.open(ref.url, "_blank");
+                    }
+                  }}
                 >
                   {ref.content_name}
                 </Button>
@@ -138,7 +150,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
               onClick={() => {
                 if (editingReference) {
                   onEditReference(
-                    editingReference.reference_content_id,
+                    editingReference?.reference_content_id as number,
                     newTitle
                   );
                   setIsEditModalOpen(false);

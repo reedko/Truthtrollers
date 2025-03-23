@@ -14,31 +14,23 @@ import {
   Link,
 } from "@chakra-ui/react";
 import { BiChevronDown } from "react-icons/bi";
-import AssignUserModal from "./AssignUserModal";
-import ReferenceModal from "./ReferenceModal";
+import AssignUserModal from "./modals/AssignUserModal";
+import ReferenceModal from "./modals/ReferenceModal";
 import { useTaskStore } from "../store/useTaskStore";
 import { memo, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { addReferenceToTask } from "../services/useDashboardAPI";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
-const TaskCard: React.FC<{ task: any }> = ({ task }) => {
-  const author = useTaskStore((state) => state.authors[task.content_id] || []);
-  const publisher = useTaskStore(
-    (state) => state.publishers[task.content_id] || []
-  );
+interface TaskCardProps {
+  task: any;
+}
+
+const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
   const navigate = useNavigate();
-  const fetchAssignedUsers = useTaskStore((state) => state.fetchAssignedUsers);
   const cardRef = useRef<HTMLDivElement | null>(null);
-
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
-
-  const assignedUsers = useTaskStore(
-    useShallow((state) => state.assignedUsers[task.content_id] || [])
-  );
-  const addReference = useTaskStore((state) => state.addReferenceToTask); // ✅ Get function from store
 
   const {
     isOpen: isAssignOpen,
@@ -52,31 +44,40 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
     onClose: onReferenceModalClose,
   } = useDisclosure();
 
+  const fetchAssignedUsers = useTaskStore((state) => state.fetchAssignedUsers);
+
+  // 🧠 Direct, flat Zustand access (no wrapper)
+  const author = useTaskStore(
+    useShallow((state) => state.authors?.[task?.content_id] || [])
+  );
+  const publisher = useTaskStore(
+    useShallow((state) => state.publishers?.[task?.content_id] || [])
+  );
+  const assignedUsers = useTaskStore(
+    useShallow((state) => state.assignedUsers?.[task?.content_id] || [])
+  );
+
   const handleDrillDown = () => {
     navigate(`/tasks/${task.content_id}`, { state: { task } });
   };
 
   const handleAssignedUsersOpen = async () => {
-    try {
-      console.log(`Fetching assigned users for task ${task.content_id}`);
+    if (task?.content_id) {
       await fetchAssignedUsers(task.content_id);
-    } catch (err) {
-      console.error("Error fetching assigned users:", err);
     }
   };
 
   const handleOpenModal = (openModal: () => void) => {
     if (cardRef.current) {
-      const { top, left, height } = cardRef.current.getBoundingClientRect();
-      let newTop = top - 70;
-      let newLeft = left >= 740 ? left - 400 : left + 200;
-
+      const { top, left } = cardRef.current.getBoundingClientRect();
+      const newTop = top - 70;
+      const newLeft = left >= 740 ? left - 400 : left + 200;
       setModalPosition({ top: newTop, left: newLeft });
-      console.log("Modal Position:", modalPosition);
     }
-
     openModal();
   };
+
+  if (!task || !task.content_id) return null;
 
   return (
     <Center>
@@ -91,7 +92,6 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
         width="250px"
         margin="10px"
       >
-        {/* Thumbnail */}
         <Image
           src={`${API_BASE_URL}/${task.thumbnail}`}
           alt="Thumbnail"
@@ -100,14 +100,12 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
           objectFit="cover"
         />
 
-        {/* Task Name */}
         <Text fontWeight="bold" mt={2} noOfLines={2}>
           <Link href={task.url} target="_blank">
             {task.content_name}
           </Link>
         </Text>
 
-        {/* Author Information */}
         {author.length > 0 && (
           <Text fontSize="sm" mt={1}>
             <strong>Author:</strong>{" "}
@@ -117,7 +115,6 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
           </Text>
         )}
 
-        {/* Publisher Information */}
         {publisher.length > 0 && (
           <Text fontSize="sm" mt={1}>
             <strong>Publisher:</strong>{" "}
@@ -125,7 +122,6 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
           </Text>
         )}
 
-        {/* Progress Bar */}
         <Progress
           value={
             task.progress === "Completed"
@@ -144,7 +140,6 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
           mt={2}
         />
 
-        {/* Assigned Users Dropdown */}
         <Menu onOpen={handleAssignedUsersOpen}>
           <MenuButton as={Button} rightIcon={<BiChevronDown />}>
             Users
@@ -160,7 +155,6 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
           </MenuList>
         </Menu>
 
-        {/* Actions Menu */}
         <Menu>
           <MenuButton as={Button} colorScheme="teal">
             Actions
@@ -176,7 +170,6 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
           </MenuList>
         </Menu>
 
-        {/* Assign User Modal */}
         {isAssignOpen && (
           <AssignUserModal
             isOpen={isAssignOpen}
@@ -187,12 +180,11 @@ const TaskCard: React.FC<{ task: any }> = ({ task }) => {
           />
         )}
 
-        {/* ✅ Reference Modal (Replaces SourceListModal) */}
         {isReferenceModalOpen && (
           <ReferenceModal
             isOpen={isReferenceModalOpen}
             onClose={onReferenceModalClose}
-            taskId={task.content_id} // ✅ Keep this, since we need to know the task
+            taskId={task.content_id}
           />
         )}
       </Box>

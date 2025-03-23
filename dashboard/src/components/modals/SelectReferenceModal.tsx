@@ -16,8 +16,8 @@ import {
   useToast,
   Spinner,
 } from "@chakra-ui/react";
-import { fetchAllReferences } from "../services/useDashboardAPI";
-import { TaskStoreState, useTaskStore } from "../store/useTaskStore";
+import { fetchAllReferences } from "../../services/useDashboardAPI";
+import { TaskStoreState, useTaskStore } from "../../store/useTaskStore";
 import debounce from "lodash.debounce"; // ✅ Prevents API spam
 
 const SelectReferenceModal: React.FC<{

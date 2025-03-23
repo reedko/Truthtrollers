@@ -51,8 +51,20 @@ export interface LitReference {
   author_id?: number;
 }
 
-export interface ReferenceWithClaims extends LitReference {
-  claims: Claim[];
+export interface ReferenceWithClaims {
+  reference_content_id: number;
+  content_name: string;
+  url?: string;
+  thumbnail?: string;
+  progress?: string;
+  details?: string;
+  media_source?: string;
+  topic?: string;
+  subtopic?: string;
+  claims: {
+    claim_id: number;
+    claim_text: string;
+  }[];
 }
 
 // Claims
@@ -64,6 +76,7 @@ export interface Claim {
   last_verified: string; // Timestamp as ISO string
   references: ClaimReference[]; // References that support/refute the claim
   relationship_type?: string; // Type of relationship to the content (if relevant)
+  content_id?: number;
 }
 
 export interface ClaimReference {

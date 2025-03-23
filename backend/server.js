@@ -361,13 +361,23 @@ app.get("/api/get-graph-data", async (req, res) => {
 });
 
 //get references with claims for a content_id
-app.get("/api/content/:contentId/references-with-claims", async (req, res) => {
-  console.log("Received request for contentId:", req.params.contentId);
-  const { contentId } = req.params;
+app.get(
+  "/api/content/:task_content_id/references-with-claims",
+  async (req, res) => {
+    console.log("Received request for contentId:", req.params.task_content_id);
+    const { task_content_id } = req.params;
 
-  try {
-    const SQL = `
-      SELECT c.*, 
+    try {
+      const SQL = `
+      SELECT  c.content_id AS reference_content_id,
+        c.content_name,
+        c.url,
+        c.thumbnail,
+        c.progress,
+        c.details,
+        c.media_source,
+        c.topic,
+        c.subtopic,
              COALESCE(JSON_ARRAYAGG(
                JSON_OBJECT('claim_id', cl.claim_id, 'claim_text', cl.claim_text)
              ), '[]') AS claims
@@ -379,14 +389,15 @@ app.get("/api/content/:contentId/references-with-claims", async (req, res) => {
       GROUP BY c.content_id
       `;
 
-    const params = [contentId];
-    const referencesWithClaims = await query(SQL, params);
-    res.json(referencesWithClaims);
-  } catch (err) {
-    console.error("Error fetching references with claims:", err);
-    res.status(500).json({ error: "Database error" });
+      const params = [task_content_id];
+      const referencesWithClaims = await query(SQL, params);
+      res.json(referencesWithClaims);
+    } catch (err) {
+      console.error("Error fetching references with claims:", err);
+      res.status(500).json({ error: "Database error" });
+    }
   }
-});
+);
 
 //Get References, aka source because reference is a reserved word
 app.get("/api/content/:taskId/source-references", async (req, res) => {
@@ -631,63 +642,106 @@ app.post("/api/reset-password", (req, res) => {
 });
 
 //Tasks
-app.get("/api/content", (req, res) => {
+app.get("/api/content/:id", (req, res) => {
+  const taskId = req.params.id;
+
   const sql = `
-   SELECT 
-    t.*, 
-
-    -- Fetch first topic (topic_order = 1)
-    (SELECT topic_name 
-     FROM topics tt
-     JOIN content_topics ct ON tt.topic_id = ct.topic_id
-     WHERE ct.content_id = t.content_id
-     ORDER BY ct.topic_order ASC
-     LIMIT 1) AS topic,
-
-    -- Fetch authors as JSON array
-    COALESCE(
+    SELECT 
+      t.*, 
+      -- Fetch topic
+      (SELECT topic_name 
+       FROM topics tt
+       JOIN content_topics ct ON tt.topic_id = ct.topic_id
+       WHERE ct.content_id = t.content_id
+       ORDER BY ct.topic_order ASC
+       LIMIT 1) AS topic,
+      -- Authors
+      COALESCE(
         JSON_ARRAYAGG(
-            JSON_OBJECT(
-                'author_id', a.author_id, 
-                'author_first_name', IFNULL(a.author_first_name, ' '), 
-                'author_other_name', IFNULL(a.author_other_name, ''),
-                'author_last_name', IFNULL(a.author_last_name, ' '),
-                'author_title', IFNULL(a.author_title, ' ')
-            )
+          JSON_OBJECT(
+            'author_id', a.author_id, 
+            'author_first_name', IFNULL(a.author_first_name, ' '), 
+            'author_last_name', IFNULL(a.author_last_name, ' ')
+          )
         ), 
         JSON_ARRAY()
-    ) AS authors,
-
-    -- Fetch publishers as JSON array
-    COALESCE(
+      ) AS authors,
+      -- Publishers
+      COALESCE(
         JSON_ARRAYAGG(
-            JSON_OBJECT(
-                'publisher_id', p.publisher_id, 
-                'publisher_name', p.publisher_name
-            )
+          JSON_OBJECT(
+            'publisher_id', p.publisher_id, 
+            'publisher_name', p.publisher_name
+          )
         ), 
         JSON_ARRAY()
-    ) AS publishers
-
-FROM content t
-
--- Join authors & publishers
-LEFT JOIN content_authors ta ON t.content_id = ta.content_id
-LEFT JOIN authors a ON ta.author_id = a.author_id
-LEFT JOIN content_publishers tp ON t.content_id = tp.content_id
-LEFT JOIN publishers p ON tp.publisher_id = p.publisher_id
-
--- Ensure we only fetch tasks
-WHERE t.content_type = 'task'
-
-GROUP BY t.content_id;
-;
-
+      ) AS publishers
+    FROM content t
+    LEFT JOIN content_authors ta ON t.content_id = ta.content_id
+    LEFT JOIN authors a ON ta.author_id = a.author_id
+    LEFT JOIN content_publishers tp ON t.content_id = tp.content_id
+    LEFT JOIN publishers p ON tp.publisher_id = p.publisher_id
+    WHERE t.content_type = 'task' AND t.content_id = ?
+    GROUP BY t.content_id
   `;
 
-  pool.query(sql, (err, results) => {
+  pool.query(sql, [taskId], (err, results) => {
     if (err) {
-      console.error("Error fetching content:", err);
+      console.error("Error fetching task:", err);
+      return res.status(500).json({ error: "Database query failed" });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: "Task not found" });
+    }
+
+    res.json(results[0]);
+  });
+});
+
+app.get("/api/content", (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 25;
+  const offset = (page - 1) * limit;
+
+  const sql = `
+   SELECT 
+  t.*,
+  (
+  
+    SELECT topic_name 
+    FROM topics tt
+    JOIN content_topics ct ON tt.topic_id = ct.topic_id
+    WHERE ct.content_id = t.content_id
+    ORDER BY ct.topic_order ASC
+    LIMIT 1
+  ) AS topic,
+  JSON_ARRAYAGG(
+    JSON_OBJECT(
+      'author_id', a.author_id,
+      'author_first_name', a.author_first_name,
+      'author_last_name', a.author_last_name
+    )
+  ) AS authors,
+  JSON_ARRAYAGG(
+    JSON_OBJECT(
+      'publisher_id', p.publisher_id,
+      'publisher_name', p.publisher_name
+    )
+  ) AS publishers
+FROM content t
+LEFT JOIN content_authors ca ON t.content_id = ca.content_id
+LEFT JOIN authors a ON ca.author_id = a.author_id
+LEFT JOIN content_publishers cp ON t.content_id = cp.content_id
+LEFT JOIN publishers p ON cp.publisher_id = p.publisher_id
+WHERE t.content_type = 'task'
+GROUP BY t.content_id
+    LIMIT ? OFFSET ?;
+  `;
+
+  pool.query(sql, [limit, offset], (err, results) => {
+    if (err) {
+      console.error("Error fetching paginated content:", err);
       return res.status(500).json({ error: "Database query failed" });
     }
     res.json(results);
@@ -777,7 +831,7 @@ app.get("/api/topics", async (req, res) => {
 
 // Update reference title
 app.put("/api/updateReference", async (req, res) => {
-  const { title, content_id } = req.body; // Extract from request body
+  const { content_id, title } = req.body; // Extract from request body
 
   if (!title || !content_id) {
     return res.status(400).json({ error: "Missing required parameters." });
@@ -797,29 +851,8 @@ app.put("/api/updateReference", async (req, res) => {
   });
 });
 
-// Update claim
-app.put("/api/updateClaim", async (req, res) => {
-  const { claim_id, claim_text } = req.body; // Extract from request body
-
-  if (!claim_text || !claim_id) {
-    return res.status(400).json({ error: "Missing required parameters." });
-  }
-
-  const sql = "UPDATE claims SET claim_text= ? WHERE claim_id = ?";
-  const params = [claim_text, claim_id];
-
-  console.log("Updating cclaim text for claim_id:", claim_id);
-
-  pool.query(sql, params, (err, results) => {
-    if (err) {
-      console.error("❌ Error updating references:", err);
-      return res.status(500).json({ error: "Database query failed" });
-    }
-    res.json({ message: "RClaim updated successfully", results });
-  });
-});
-
 //claims
+//get claims for  a task or reference
 app.get("/api/claims/:content_id", async (req, res) => {
   const { content_id } = req.params;
 
@@ -863,6 +896,231 @@ GROUP BY c.claim_id;
 
     res.json(results);
   });
+});
+
+//add a full new claim
+app.post("/api/claims", async (req, res) => {
+  const {
+    claim_text,
+    veracity_score = 0,
+    confidence_level = 0,
+    last_verified = new Date(),
+    content_id,
+    relationship_type = "task",
+  } = req.body;
+  const formattedDate = new Date(last_verified)
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ");
+
+  if (!claim_text || !content_id) {
+    return res
+      .status(400)
+      .json({ error: "claim_text and content_id are required" });
+  }
+
+  try {
+    const insertResult = await query(
+      "INSERT INTO claims (claim_text, veracity_score, confidence_level, last_verified) VALUES (?, ?, ?, ?)",
+      [claim_text, veracity_score, confidence_level, formattedDate]
+    );
+
+    const claimId = insertResult.insertId;
+
+    await query(
+      "INSERT INTO content_claims (content_id, claim_id, relationship_type) VALUES (?, ?, ?)",
+      [content_id, claimId, relationship_type]
+    );
+
+    res.json({ success: true, claimId });
+  } catch (error) {
+    console.error("❌ Error creating claim:", error);
+    res.status(500).json({ error: "Failed to insert claim" });
+  }
+});
+
+//edit a full new claim
+app.put("/api/claims/:claim_id", async (req, res) => {
+  const claimId = req.params.claim_id;
+  const {
+    claim_text,
+    veracity_score = 0,
+    confidence_level = 0,
+    last_verified = new Date(),
+  } = req.body;
+  const formattedDate = new Date(last_verified)
+    .toISOString()
+    .slice(0, 19)
+    .replace("T", " ");
+
+  console.log(claimId, "To edit");
+  if (!claim_text || !claimId) {
+    return res.status(400).json({ error: "claim_text and claim_id required" });
+  }
+
+  try {
+    await query(
+      "UPDATE claims SET claim_text = ?, veracity_score = ?, confidence_level = ?, last_verified = ? WHERE claim_id = ?",
+      [claim_text, veracity_score, confidence_level, formattedDate, claimId]
+    );
+
+    res.json({ success: true, claimId });
+  } catch (error) {
+    console.error("❌ Error updating claim:", error);
+    res.status(500).json({ error: "Failed to update claim" });
+  }
+});
+
+//save or edit a claim link
+app.post("/api/claim-links", async (req, res) => {
+  const {
+    source_claim_id,
+    target_claim_id,
+    user_id,
+    support_level,
+    relationship = "related", // fallback
+  } = req.body;
+
+  if (!source_claim_id || !target_claim_id || !user_id) {
+    return res.status(400).json({ error: "Missing required parameters" });
+  }
+
+  try {
+    const sql = `
+      INSERT INTO claim_links 
+        (source_claim_id, target_claim_id, relationship, user_id, support_level)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+    const params = [
+      source_claim_id,
+      target_claim_id,
+      relationship,
+      user_id,
+      support_level,
+    ];
+
+    await query(sql, params);
+    res.status(201).json({ message: "Claim link created" });
+  } catch (err) {
+    console.error("❌ Error inserting claim link:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+//add claims in batch for a content_id (as in a scrape)
+// and link the claim to the content_id
+app.post("/api/claims/add", async (req, res) => {
+  try {
+    const { content_id, claims, content_type } = req.body;
+
+    // ✅ Validate required fields
+    if (
+      !content_id ||
+      !Array.isArray(claims) ||
+      claims.length === 0 ||
+      !content_type
+    ) {
+      console.error("❌ Missing required fields:", {
+        content_id,
+        claims,
+        content_type,
+      });
+      return res.status(400).json({
+        error: "content_id, claims array, and content_type are required",
+      });
+    }
+
+    let insertedCount = 0;
+
+    for (const claimText of claims) {
+      if (typeof claimText !== "string" || claimText.trim() === "") {
+        console.warn("⚠️ Skipping empty or invalid claim:", claimText);
+        continue;
+      }
+
+      const cleanClaimText = claimText.trim();
+      let claimId;
+      let isNewClaim = false;
+
+      try {
+        // 1️⃣ **Check if claim already exists**
+        const existingClaimResult = await query(
+          "SELECT claim_id FROM claims WHERE claim_text = ?",
+          [cleanClaimText]
+        );
+        const existingClaim = Array.isArray(existingClaimResult)
+          ? existingClaimResult
+          : [];
+
+        if (existingClaim.length > 0) {
+          claimId = existingClaim[0].claim_id;
+        } else {
+          // 2️⃣ **Insert new claim since it doesn't exist**
+          const insertResult = await query(
+            "INSERT INTO claims (claim_text) VALUES (?)",
+            [cleanClaimText]
+          );
+          claimId = insertResult?.insertId || null;
+          isNewClaim = true; // ✅ Mark this claim as newly inserted
+        }
+      } catch (err) {
+        console.error("❌ Database error inserting claim:", err);
+        continue; // Skip this claim and move to the next
+      }
+
+      if (!claimId) {
+        console.warn(
+          "⚠️ Skipping claim as claimId is undefined:",
+          cleanClaimText
+        );
+        continue;
+      }
+
+      try {
+        // 3️⃣ **If this is a NEW claim, no need to check for a link—just insert it.**
+        if (isNewClaim) {
+          await query(
+            "INSERT INTO content_claims (content_id, claim_id, relationship_type) VALUES (?,?,?)",
+            [content_id, claimId, content_type]
+          );
+          insertedCount++;
+          console.log(
+            `🔗 Created new claim & linked to content: ${cleanClaimText}`
+          );
+        } else {
+          // 4️⃣ **If claim already existed, check if link exists first.**
+          const existingLinkResult = await query(
+            "SELECT cc_id FROM content_claims WHERE content_id = ? AND claim_id = ?",
+            [content_id, claimId]
+          );
+          const existingLink = Array.isArray(existingLinkResult)
+            ? existingLinkResult
+            : [];
+
+          if (existingLink.length === 0) {
+            await query(
+              "INSERT INTO content_claims (content_id, claim_id, relationship_type) VALUES (?,?,?)",
+              [content_id, claimId, content_type]
+            );
+            insertedCount++;
+            console.log(
+              `🔗 Linked existing claim to content: ${cleanClaimText}`
+            );
+          } else {
+            console.log("✅ Claim already linked, skipping:", cleanClaimText);
+          }
+        }
+      } catch (err) {
+        console.error("❌ Database error linking claim to content:", err);
+      }
+    }
+
+    console.log(`✅ Successfully linked ${insertedCount} claims.`);
+    return res.json({ success: true, insertedCount });
+  } catch (error) {
+    console.error("❌ Error in /api/claims/add:", error);
+    return res.status(500).json({ error: "Server error storing claims" });
+  }
 });
 
 app.get("/api/test-connection", (req, res) => {
@@ -1244,119 +1502,5 @@ app.post("/api/extractText", async (req, res) => {
     return res
       .status(500)
       .json({ success: false, error: "Error extracting text from the URL" });
-  }
-});
-
-app.post("/api/claims/add", async (req, res) => {
-  try {
-    const { content_id, claims, content_type } = req.body;
-
-    // ✅ Validate required fields
-    if (
-      !content_id ||
-      !Array.isArray(claims) ||
-      claims.length === 0 ||
-      !content_type
-    ) {
-      console.error("❌ Missing required fields:", {
-        content_id,
-        claims,
-        content_type,
-      });
-      return res.status(400).json({
-        error: "content_id, claims array, and content_type are required",
-      });
-    }
-
-    let insertedCount = 0;
-
-    for (const claimText of claims) {
-      if (typeof claimText !== "string" || claimText.trim() === "") {
-        console.warn("⚠️ Skipping empty or invalid claim:", claimText);
-        continue;
-      }
-
-      const cleanClaimText = claimText.trim();
-      let claimId;
-      let isNewClaim = false;
-
-      try {
-        // 1️⃣ **Check if claim already exists**
-        const existingClaimResult = await query(
-          "SELECT claim_id FROM claims WHERE claim_text = ?",
-          [cleanClaimText]
-        );
-        const existingClaim = Array.isArray(existingClaimResult)
-          ? existingClaimResult
-          : [];
-
-        if (existingClaim.length > 0) {
-          claimId = existingClaim[0].claim_id;
-        } else {
-          // 2️⃣ **Insert new claim since it doesn't exist**
-          const insertResult = await query(
-            "INSERT INTO claims (claim_text) VALUES (?)",
-            [cleanClaimText]
-          );
-          claimId = insertResult?.insertId || null;
-          isNewClaim = true; // ✅ Mark this claim as newly inserted
-        }
-      } catch (err) {
-        console.error("❌ Database error inserting claim:", err);
-        continue; // Skip this claim and move to the next
-      }
-
-      if (!claimId) {
-        console.warn(
-          "⚠️ Skipping claim as claimId is undefined:",
-          cleanClaimText
-        );
-        continue;
-      }
-
-      try {
-        // 3️⃣ **If this is a NEW claim, no need to check for a link—just insert it.**
-        if (isNewClaim) {
-          await query(
-            "INSERT INTO content_claims (content_id, claim_id, relationship_type) VALUES (?,?,?)",
-            [content_id, claimId, content_type]
-          );
-          insertedCount++;
-          console.log(
-            `🔗 Created new claim & linked to content: ${cleanClaimText}`
-          );
-        } else {
-          // 4️⃣ **If claim already existed, check if link exists first.**
-          const existingLinkResult = await query(
-            "SELECT cc_id FROM content_claims WHERE content_id = ? AND claim_id = ?",
-            [content_id, claimId]
-          );
-          const existingLink = Array.isArray(existingLinkResult)
-            ? existingLinkResult
-            : [];
-
-          if (existingLink.length === 0) {
-            await query(
-              "INSERT INTO content_claims (content_id, claim_id, relationship_type) VALUES (?,?,?)",
-              [content_id, claimId, content_type]
-            );
-            insertedCount++;
-            console.log(
-              `🔗 Linked existing claim to content: ${cleanClaimText}`
-            );
-          } else {
-            console.log("✅ Claim already linked, skipping:", cleanClaimText);
-          }
-        }
-      } catch (err) {
-        console.error("❌ Database error linking claim to content:", err);
-      }
-    }
-
-    console.log(`✅ Successfully linked ${insertedCount} claims.`);
-    return res.json({ success: true, insertedCount });
-  } catch (error) {
-    console.error("❌ Error in /api/claims/add:", error);
-    return res.status(500).json({ error: "Server error storing claims" });
   }
 });
