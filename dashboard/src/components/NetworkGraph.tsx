@@ -3,6 +3,7 @@
 import React, { useRef, useEffect } from "react";
 import * as d3 from "d3";
 import { GraphNode, Link } from "../../../shared/entities/types";
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
 
@@ -25,84 +26,55 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
   useEffect(() => {
     if (!svgRef.current || nodes.length === 0 || links.length === 0) return;
-    console.log("🎯 Rendering NetworkGraph with:", nodes, links);
 
     const svg = d3.select(svgRef.current);
-    svg.selectAll("*").remove(); // Clear previous graph
-
-    // Append defs for clipPath (clip images to fit within node shape)
-    const defs = svg.append("defs");
-
-    defs
-      .append("clipPath")
-      .attr("id", "clipCircle")
-      .append("circle")
-      .attr("cx", 0)
-      .attr("cy", 0)
-      .attr("r", 30); // Clip images inside circles
-
-    defs
-      .append("clipPath")
-      .attr("id", "clipSquare")
-      .append("circle")
-      .attr("cx", 0)
-      .attr("cy", 0)
-      .attr("r", 30); // Clip images inside circles
+    svg.selectAll("*").remove();
 
     const centerX = width / 2;
     const centerY = height / 2;
-    const centerNode = nodes[0]; // First node is the center
-    let offSetter = 0;
+    const centerNode = nodes[0];
+
     if (centerNode) {
       centerNode.fx = centerX;
       centerNode.fy = centerY;
     }
 
-    // Compute node angles and offsets
-    nodes.forEach((node, index) => {
-      if (index === 0) return; // Skip center node
-      node.angle = Math.atan2(node.y - centerY, node.x - centerX);
-      node.radialOffset = node.label.length > 25 ? 40 : -2;
-      offSetter = node.radialOffset;
-    });
+    // Setup zoom/pan
+    const zoom = d3
+      .zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.25, 4])
+      .on("zoom", (event) => {
+        g.attr("transform", event.transform);
+      });
 
-    // Create the force simulation
-    const simulation = d3
-      .forceSimulation<GraphNode>(nodes)
-      .force(
-        "link",
-        d3
-          .forceLink<GraphNode, Link>(links)
-          .id((d) => d.id)
-          .distance((d) =>
-            d.target.angle
-              ? d.target.angle
-              : 100 % 2 === 0
-              ? 250 + offSetter
-              : 300 + offSetter
-          ) // Alternating distances
-      )
-      .force("charge", d3.forceManyBody().strength(-1000))
-      .force("center", d3.forceCenter(centerX, centerY));
+    svg.call(zoom);
+
+    const g = svg.append("g");
+
+    // Define link colors
+    const getLinkColor = (link: Link): string => {
+      if (link.relationship === "supports") return "#38A169"; // green
+      if (link.relationship === "refutes") return "#E53E3E"; // red
+      return "#718096"; // gray
+    };
 
     // Draw links
-    const linkSelection = svg
+    const linkSelection = g
       .append("g")
-      .selectAll("line")
-      .data(links)
-      .enter()
-      .append("line")
       .attr("stroke", "#999")
       .attr("stroke-opacity", 0.6)
+      .selectAll("line")
+      .data(links)
+      .join("line")
+      .attr("stroke", getLinkColor)
       .attr("stroke-width", (d) => Math.sqrt(d.value || 1));
 
     // Draw nodes
-    const nodeSelection = svg
+    const nodeSelection = g
       .append("g")
       .selectAll("g")
       .data(nodes)
-      .enter()
-      .append("g")
+      .join("g")
       .call(
         d3
           .drag<SVGGElement, GraphNode>()
@@ -121,23 +93,13 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
             d.fy = null;
           })
       )
-      .on("click", (event, d) => {
-        if (onNodeClick) onNodeClick(d);
-      });
+      .on("click", (_, d) => onNodeClick?.(d));
 
-    // Append shape, image, and labels to nodes
+    // Draw node shapes
     nodeSelection.each(function (d) {
       const nodeGroup = d3.select(this);
-      const imageUrl = `${API_BASE_URL}/assets/images/${
-        {
-          1: `authors/author_id_${d.id}.png`,
-          2: `content/content_id_${d.id}.png`,
-          3: `publishers/publisher_id_${d.id}.png`,
-          4: `content/content_id_${d.id}.png`,
-        }[d.group] || `default.png`
-      }`;
 
-      // Draw shape
+      // Shape style
       if (d.group === 4) {
         nodeGroup
           .append("rect")
@@ -147,8 +109,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
           .attr("y", -30)
           .attr("rx", 5)
           .attr("fill", "#d62728")
-          .attr("stroke", "#000")
-          .attr("stroke-width", 1.5);
+          .attr("stroke", "#000");
       } else if (d.group === 2) {
         nodeGroup
           .append("polygon")
@@ -158,8 +119,7 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
           )
           .attr("transform", "scale(4.5)")
           .attr("fill", "#ff7f0e")
-          .attr("stroke", "#000")
-          .attr("stroke-width", 2);
+          .attr("stroke", "#000");
       } else {
         const radius = d.group === 1 ? 50 : d.group === 3 ? 55 : 36;
         nodeGroup
@@ -169,11 +129,19 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
             "fill",
             d.group === 1 ? "#1f77b4" : d.group === 3 ? "#2ca02c" : "#d62728"
           )
-          .attr("stroke", "#000")
-          .attr("stroke-width", 1.5);
+          .attr("stroke", "#000");
       }
 
       // Append image
+      const imageUrl = `${API_BASE_URL}/assets/images/${
+        {
+          1: `authors/author_id_${d.id}.png`,
+          2: `content/content_id_${d.id}.png`,
+          3: `publishers/publisher_id_${d.id}.png`,
+          4: `content/content_id_${d.id}.png`,
+        }[d.group] || `default.png`
+      }`;
+
       nodeGroup
         .append("image")
         .attr("href", imageUrl)
@@ -181,18 +149,14 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
         .attr("height", 60)
         .attr("x", -30)
         .attr("y", -30)
-        .attr(
-          "clip-path",
-          d.group === 4 ? "url(#clipSquare)" : "url(#clipCircle)"
-        );
+        .attr("clip-path", "url(#clipCircle)");
 
-      // **Label Box with Proper Word Wrapping**
+      // Labels
       const labelGroup = nodeGroup.append("g").attr("class", "labelGroup");
 
-      // Word wrapping logic
       const words = d.label.split(" ");
       const maxCharsPerLine = 18;
-      let lines: string[] = [];
+      const lines: string[] = [];
       let currentLine = "";
 
       words.forEach((word) => {
@@ -208,7 +172,6 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
       const lineHeight = 15;
       const textHeight = lines.length * lineHeight + 10;
 
-      // Draw label background box
       labelGroup
         .append("rect")
         .attr("x", -70)
@@ -219,7 +182,6 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
         .attr("rx", 5)
         .attr("ry", 5);
 
-      // Draw wrapped text
       const textElement = labelGroup
         .append("text")
         .attr("x", 0)
@@ -237,6 +199,19 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
       });
     });
 
+    // Force simulation
+    const simulation = d3
+      .forceSimulation<GraphNode>(nodes)
+      .force(
+        "link",
+        d3
+          .forceLink<GraphNode, Link>(links)
+          .id((d) => d.id)
+          .distance(200)
+      )
+      .force("charge", d3.forceManyBody().strength(-1000))
+      .force("center", d3.forceCenter(centerX, centerY));
+
     simulation.on("tick", () => {
       linkSelection
         .attr("x1", (d) => d.source.x!)
@@ -244,22 +219,13 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
         .attr("x2", (d) => d.target.x!)
         .attr("y2", (d) => d.target.y!);
 
-      // Update node positions with alternating radial offset:
-      nodeSelection.attr("transform", (d, i) => {
-        const angle = Math.atan2(d.y - centerY, d.x - centerX);
-        // Alternate offset: even-index nodes get +20, odd-index nodes get -20
-        const alternatingOffset = i % 2 === 0 ? 40 : -40;
-        const totalOffset = alternatingOffset + (d.radialOffset || 0);
-        const newX = d.x + totalOffset * Math.cos(angle);
-        const newY = d.y + totalOffset * Math.sin(angle);
-        return `translate(${newX}, ${newY})`;
-      });
+      nodeSelection.attr("transform", (d) => `translate(${d.x},${d.y})`);
     });
 
     return () => {
       simulation.stop();
     };
-  }, [nodes, links]);
+  }, [nodes, links, width, height, onNodeClick]);
 
   return <svg ref={svgRef} width={width} height={height} />;
 };
