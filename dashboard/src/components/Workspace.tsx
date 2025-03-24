@@ -138,7 +138,6 @@ const Workspace: React.FC<{ contentId: number }> = ({ contentId }) => {
           onClose={() => setIsReferenceClaimsModalOpen(false)}
           reference={selectedReference}
           setDraggingClaim={setDraggingClaim}
-          mousePosition={mousePosition}
           draggingClaim={draggingClaim}
         />
       )}

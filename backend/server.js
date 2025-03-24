@@ -1504,3 +1504,100 @@ app.post("/api/extractText", async (req, res) => {
       .json({ success: false, error: "Error extracting text from the URL" });
   }
 });
+
+//GRAPH DATA FOR NODE MAPS
+
+// GET /api/graph-data/:taskId
+router.get("/graph-data/:taskId", async (req, res) => {
+  const taskId = parseInt(req.params.taskId);
+
+  try {
+    // Task Node
+    const taskResults = await query(
+      "SELECT content_id, content_name, url FROM content WHERE content_id = ?",
+      [taskId]
+    );
+    const task = taskResults[0];
+
+    // Reference Nodes
+    const references = await query(
+      `SELECT r.reference_content_id, r.content_name, r.url
+       FROM content_references cr
+       JOIN content r ON cr.reference_content_id = r.content_id
+       WHERE cr.content_id = ?`,
+      [taskId]
+    );
+
+    // Claim Nodes (task + reference claims)
+    const claims = await query(
+      `SELECT * FROM claims WHERE content_id = ? OR content_id IN
+        (SELECT reference_content_id FROM content_references WHERE content_id = ?)`,
+      [taskId, taskId]
+    );
+
+    // Build nodes
+    const nodes = [];
+
+    // Task node
+    nodes.push({
+      id: `task-${task.content_id}`,
+      label: task.content_name,
+      type: "task",
+      url: task.url,
+    });
+
+    // Reference nodes
+    for (const ref of references) {
+      nodes.push({
+        id: `ref-${ref.reference_content_id}`,
+        label: ref.content_name,
+        type: "reference",
+        url: ref.url,
+      });
+    }
+
+    // Claim nodes
+    const claimIdToNode = {};
+    for (const claim of claims) {
+      const id = `claim-${claim.claim_id}`;
+      const type = claim.content_id === taskId ? "taskClaim" : "refClaim";
+
+      const node = {
+        id,
+        label: claim.claim_text.slice(0, 60),
+        type,
+        content_id: claim.content_id,
+        claim_id: claim.claim_id,
+      };
+      nodes.push(node);
+      claimIdToNode[claim.claim_id] = node;
+    }
+
+    // Claim-to-claim links
+    const claimIds = Object.keys(claimIdToNode).map(Number);
+    let links = [];
+    if (claimIds.length > 0) {
+      const rawLinks = await query(
+        `SELECT * FROM claim_links
+         WHERE source_claim_id IN (?) OR target_claim_id IN (?)`,
+        [claimIds, claimIds]
+      );
+
+      links = rawLinks.map((link) => ({
+        id: `link-${link.link_id}`,
+        source: `claim-${link.source_claim_id}`,
+        target: `claim-${link.target_claim_id}`,
+        type: link.relationship,
+        value: link.support_level || 1,
+        user_id: link.user_id,
+      }));
+    }
+
+    res.json({ nodes, links });
+  } catch (err) {
+    console.error("Graph data error:", err);
+    res.status(500).json({ error: "Failed to fetch graph data" });
+  }
+});
+
+export default router;

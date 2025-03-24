@@ -25,6 +25,7 @@ const API_BASE_URL =
 
 interface TaskCardProps {
   task: any;
+  useStore: boolean;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
