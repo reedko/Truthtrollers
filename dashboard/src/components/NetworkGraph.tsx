@@ -15,11 +15,21 @@ interface NetworkGraphProps {
   onNodeClick?: (node: GraphNode) => void;
 }
 
+const getLinkColor = (link: Link): string => {
+  if (link.relationship === "supports") return "#38A169"; // green
+  if (link.relationship === "refutes") return "#E53E3E"; // red
+  return "blue"; // gray
+};
+
+const getStrokeWidth = (link: Link): number => {
+  return Math.max(1, Math.abs(link.value || 1) * 2.5);
+};
+
 const NetworkGraph: React.FC<NetworkGraphProps> = ({
   nodes,
   links,
   width = 1000,
-  height = 1000,
+  height = 800,
   onNodeClick,
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -30,51 +40,63 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
+    const svgGroup = svg.append("g");
+
+    // Zoom & pan
+    svg.call(
+      d3
+        .zoom<SVGSVGElement, unknown>()
+        .scaleExtent([0.5, 3])
+        .on("zoom", (event) => svgGroup.attr("transform", event.transform))
+    );
+
     const centerX = width / 2;
     const centerY = height / 2;
-    const centerNode = nodes[0];
 
-    if (centerNode) {
-      centerNode.fx = centerX;
-      centerNode.fy = centerY;
+    if (nodes[0]) {
+      nodes[0].fx = centerX;
+      nodes[0].fy = centerY;
     }
 
-    // Setup zoom/pan
-    const zoom = d3
-      .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.25, 4])
-      .on("zoom", (event) => {
-        g.attr("transform", event.transform);
-      });
+    const simulation = d3
+      .forceSimulation<GraphNode>(nodes)
+      .force(
+        "link",
+        d3
+          .forceLink<GraphNode, Link>(links)
+          .id((d) => d.id)
+          .distance(220)
+      )
+      .force("charge", d3.forceManyBody().strength(-700))
+      .force("center", d3.forceCenter(centerX, centerY));
 
-    svg.call(zoom);
-
-    const g = svg.append("g");
-
-    // Define link colors
-    const getLinkColor = (link: Link): string => {
-      if (link.relationship === "supports") return "#38A169"; // green
-      if (link.relationship === "refutes") return "#E53E3E"; // red
-      return "#718096"; // gray
-    };
-
-    // Draw links
-    const linkSelection = g
+    const linkGroup = svgGroup
       .append("g")
-      .attr("stroke", "#999")
-      .attr("stroke-opacity", 0.6)
       .selectAll("line")
       .data(links)
-      .join("line")
+      .enter()
+      .append("line")
       .attr("stroke", getLinkColor)
-      .attr("stroke-width", (d) => Math.sqrt(d.value || 1));
+      .attr("stroke-width", getStrokeWidth)
+      .on("click", (event, d) => console.log("🧵 Link clicked:", d));
 
-    // Draw nodes
-    const nodeSelection = g
+    const linkLabels = svgGroup
+      .append("g")
+      .selectAll("text")
+      .data(links)
+      .enter()
+      .append("text")
+      .text((d) => d.value?.toFixed(1) || "")
+      .attr("font-size", "12px")
+      .attr("fill", "#000")
+      .attr("pointer-events", "none");
+
+    const nodeGroup = svgGroup
       .append("g")
       .selectAll("g")
       .data(nodes)
-      .join("g")
+      .enter()
+      .append("g")
       .call(
         d3
           .drag<SVGGElement, GraphNode>()
@@ -93,46 +115,11 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
             d.fy = null;
           })
       )
-      .on("click", (_, d) => onNodeClick?.(d));
+      .on("click", (event, d) => onNodeClick?.(d));
 
-    // Draw node shapes
-    nodeSelection.each(function (d) {
-      const nodeGroup = d3.select(this);
+    nodeGroup.each(function (d) {
+      const group = d3.select(this);
 
-      // Shape style
-      if (d.group === 4) {
-        nodeGroup
-          .append("rect")
-          .attr("width", 60)
-          .attr("height", 60)
-          .attr("x", -30)
-          .attr("y", -30)
-          .attr("rx", 5)
-          .attr("fill", "#d62728")
-          .attr("stroke", "#000");
-      } else if (d.group === 2) {
-        nodeGroup
-          .append("polygon")
-          .attr(
-            "points",
-            "0,-15 6,-5 15,-5 7,4 8,12 0,6 -8,12 -7,4 -15,-5 -6,-5"
-          )
-          .attr("transform", "scale(4.5)")
-          .attr("fill", "#ff7f0e")
-          .attr("stroke", "#000");
-      } else {
-        const radius = d.group === 1 ? 50 : d.group === 3 ? 55 : 36;
-        nodeGroup
-          .append("circle")
-          .attr("r", radius)
-          .attr(
-            "fill",
-            d.group === 1 ? "#1f77b4" : d.group === 3 ? "#2ca02c" : "#d62728"
-          )
-          .attr("stroke", "#000");
-      }
-
-      // Append image
       const imageUrl = `${API_BASE_URL}/assets/images/${
         {
           1: `authors/author_id_${d.id}.png`,
@@ -142,7 +129,36 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
         }[d.group] || `default.png`
       }`;
 
-      nodeGroup
+      if (d.group === 4) {
+        group
+          .append("rect")
+          .attr("width", 60)
+          .attr("height", 60)
+          .attr("x", -30)
+          .attr("y", -30)
+          .attr("rx", 5)
+          .attr("fill", "#d62728");
+      } else if (d.group === 2) {
+        group
+          .append("polygon")
+          .attr(
+            "points",
+            "0,-15 6,-5 15,-5 7,4 8,12 0,6 -8,12 -7,4 -15,-5 -6,-5"
+          )
+          .attr("transform", "scale(4.5)")
+          .attr("fill", "#ff7f0e");
+      } else {
+        const radius = d.group === 1 ? 50 : d.group === 3 ? 55 : 36;
+        group
+          .append("circle")
+          .attr("r", radius)
+          .attr(
+            "fill",
+            d.group === 1 ? "#1f77b4" : d.group === 3 ? "#2ca02c" : "#d62728"
+          );
+      }
+
+      group
         .append("image")
         .attr("href", imageUrl)
         .attr("width", 60)
@@ -151,23 +167,21 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
         .attr("y", -30)
         .attr("clip-path", "url(#clipCircle)");
 
-      // Labels
-      const labelGroup = nodeGroup.append("g").attr("class", "labelGroup");
-
+      const labelGroup = group.append("g").attr("class", "labelGroup");
       const words = d.label.split(" ");
-      const maxCharsPerLine = 18;
-      const lines: string[] = [];
-      let currentLine = "";
+      const maxChars = 18;
+      let lines: string[] = [];
+      let current = "";
 
       words.forEach((word) => {
-        if ((currentLine + word).length > maxCharsPerLine) {
-          lines.push(currentLine.trim());
-          currentLine = word + " ";
+        if ((current + word).length > maxChars) {
+          lines.push(current.trim());
+          current = word + " ";
         } else {
-          currentLine += word + " ";
+          current += word + " ";
         }
       });
-      if (currentLine) lines.push(currentLine.trim());
+      if (current) lines.push(current.trim());
 
       const lineHeight = 15;
       const textHeight = lines.length * lineHeight + 10;
@@ -199,33 +213,24 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
       });
     });
 
-    // Force simulation
-    const simulation = d3
-      .forceSimulation<GraphNode>(nodes)
-      .force(
-        "link",
-        d3
-          .forceLink<GraphNode, Link>(links)
-          .id((d) => d.id)
-          .distance(200)
-      )
-      .force("charge", d3.forceManyBody().strength(-1000))
-      .force("center", d3.forceCenter(centerX, centerY));
-
     simulation.on("tick", () => {
-      linkSelection
+      linkGroup
         .attr("x1", (d) => d.source.x!)
         .attr("y1", (d) => d.source.y!)
         .attr("x2", (d) => d.target.x!)
         .attr("y2", (d) => d.target.y!);
 
-      nodeSelection.attr("transform", (d) => `translate(${d.x},${d.y})`);
+      linkLabels
+        .attr("x", (d) => (d.source.x! + d.target.x!) / 2)
+        .attr("y", (d) => (d.source.y! + d.target.y!) / 2);
+
+      nodeGroup.attr("transform", (d) => `translate(${d.x}, ${d.y})`);
     });
 
     return () => {
       simulation.stop();
     };
-  }, [nodes, links, width, height, onNodeClick]);
+  }, [nodes, links]);
 
   return <svg ref={svgRef} width={width} height={height} />;
 };

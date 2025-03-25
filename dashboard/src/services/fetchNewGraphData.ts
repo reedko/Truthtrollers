@@ -10,20 +10,25 @@ export async function fetchNewGraphData(initialNode: GraphNode): Promise<{
   links: Link[];
 }> {
   try {
-    const taskId = parseInt(initialNode.id.replace("task-", ""));
-    const response = await fetch(`${API_BASE_URL}/api/graph-data/${taskId}`);
+    // Extract the numeric taskId from something like "task-9002"
+    const taskId = parseInt(
+      initialNode.id.replace("task-", "").replace("ref-", "")
+    );
+
+    console.log("🧭 Calling /api/full-graph with taskId:", taskId);
+
+    const response = await fetch(`${API_BASE_URL}/api/full-graph/${taskId}`);
 
     if (!response.ok) {
-      throw new Error("Failed to fetch graph data");
+      throw new Error("Failed to fetch full graph data");
     }
 
     const { nodes, links } = await response.json();
 
-    // Enhance nodes with required layout fields
     const enrichedNodes: GraphNode[] = nodes.map((node: GraphNode) => ({
       ...node,
-      x: 0,
-      y: 0,
+      x: node.x ?? 0,
+      y: node.y ?? 0,
     }));
 
     return {

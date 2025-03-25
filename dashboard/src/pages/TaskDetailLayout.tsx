@@ -10,7 +10,7 @@ import {
 import TaskCard from "../components/TaskCard";
 import { EditorFrame } from "../components/EditorFrame";
 import NetworkGraph from "../components/NetworkGraph";
-import { fetchNewGraphData } from "../services/api"; // typed to accept a GraphNode
+import { fetchNewGraphDataFromLegacyRoute } from "../services/api"; // typed to accept a GraphNode
 import Workspace from "../components/Workspace";
 
 interface TaskDetailLayoutProps {
@@ -67,7 +67,9 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
         // Build the "task" node
         const initialNode = buildTaskNode();
         // Pass it to the same fetch function we use for reframe
-        const initialGraph = await fetchNewGraphData(initialNode);
+        const initialGraph = await fetchNewGraphDataFromLegacyRoute(
+          initialNode
+        );
         setGraphData(initialGraph);
       } catch (err) {
         console.error("Error fetching initial graph data:", err);
@@ -112,7 +114,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
     if (!selectedNode) return;
     try {
       console.log("📡 Fetching new graph data for:", selectedNode);
-      const newGraph = await fetchNewGraphData(selectedNode);
+      const newGraph = await fetchNewGraphDataFromLegacyRoute(selectedNode);
       console.log("Fetched Graph Data:", newGraph.nodes);
 
       setGraphData(newGraph);
@@ -135,8 +137,8 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   return (
     <Box w="calc(100vw-20px)" mx="10px" p={4} overflow="auto">
       <Grid
-        templateColumns={{ base: "1fr", md: "2fr 4fr" }}
-        gap={2}
+        templateColumns={{ base: "1fr", md: "1fr 3fr" }}
+        gap={4}
         gridTemplateAreas={{
           base: `
             "taskCard"
@@ -148,8 +150,6 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
           `,
           md: `
             "taskCard frameA"
-
-            "editor editor"
             "workspace workspace"
             "relationFlow relationFlow"
             "references references"
@@ -204,6 +204,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
           borderRadius="lg"
           p={4}
           position="relative"
+          width="100%"
         >
           <Heading size="sm" mb={2}>
             Relationship Map
@@ -212,7 +213,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
           <NetworkGraph
             nodes={graphData.nodes}
             links={graphData.links}
-            width={1000}
+            width={window.innerWidth - 100}
             height={1000}
             onNodeClick={handleNodeClick}
           />
