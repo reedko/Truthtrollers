@@ -1509,75 +1509,63 @@ app.get("/api/full-graph/:taskId", async (req, res) => {
   const { entity, entityType } = req.query;
   const taskId = parseInt(req.params.taskId);
 
+  if (!entity || !entityType) {
+    return res
+      .status(400)
+      .json({ error: "Missing entity or entityType parameter" });
+  }
+
+  //console.log("🔍 Received Graph Data Request:", { entity, entityType });
+
+  const nodeSql = getNodesForEntity(entityType);
+  const linkSql = getLinksForEntity(entityType);
+
+  if (!nodeSql || !linkSql) {
+    return res.status(400).json({ error: "Invalid entityType parameter" });
+  }
   try {
     // ───────────────────────────────────────────────
     // 1. Get entity-based nodes & links
     // ───────────────────────────────────────────────
-    try {
-      const nodes = await query(nodeSql, [entity, entity, entity, entity]);
-      const links = await query(linkSql, [entity, entity, entity, entity]);
-
-      //console.log("📌 Nodes Retrieved:", nodes);
-      //console.log("🔗 Links Retrieved:", links);
-
-      // Ensure JSON-safe response
-      res.json({
-        nodes: JSON.parse(JSON.stringify(nodes)),
-        links: JSON.parse(JSON.stringify(links)),
-      });
-    } catch (error) {
-      console.error("🚨 SQL Error:", error);
-      res.status(500).json({ error: "Database query failed", details: error });
-    }
-    const nodeSql = getNodesForEntity(entityType);
-    const linkSql = getLinksForEntity(entityType);
-
+    // 1. Get existing entity nodes and links
     const nodes = await query(nodeSql, [entity, entity, entity, entity]);
     const links = await query(linkSql, [entity, entity, entity, entity]);
 
-    // ───────────────────────────────────────────────
-    // 2. Get all content_ids involved
-    // ───────────────────────────────────────────────
+    // 2. Extract all task + reference content_ids from nodes
     const contentIds = nodes
       .filter((n) => n.type === "task" || n.type === "reference")
       .map((n) => n.id);
 
-    if (contentIds.length === 0) {
-      return res.json({ nodes, links }); // nothing to do
-    }
-
-    // ───────────────────────────────────────────────
-    // 3. Fetch claims linked to those content_ids
-    // ───────────────────────────────────────────────
+    // 3. Fetch claims for those content IDs
     const claimResults = await query(
-      `SELECT c.claim_id, c.claim_text, cc.content_id
-       FROM claims c
-       JOIN content_claims cc ON c.claim_id = cc.claim_id
-       WHERE cc.content_id IN (?)`,
+      `
+  SELECT c.claim_id, c.claim_text, cc.content_id
+  FROM claims c
+  JOIN content_claims cc ON c.claim_id = cc.claim_id
+  WHERE cc.content_id IN (?)
+`,
       [contentIds]
     );
 
+    // 4. Add claim nodes
     const claimNodes = claimResults.map((claim) => ({
       id: `claim-${claim.claim_id}`,
       label: claim.claim_text.slice(0, 60),
-      type: claim.content_id === taskId ? "taskClaim" : "refClaim",
+      type: claim.content_id === parseInt(entity) ? "taskClaim" : "refClaim",
       claim_id: claim.claim_id,
       content_id: claim.content_id,
     }));
-
-    // Add claim nodes to node list
     nodes.push(...claimNodes);
 
-    // ───────────────────────────────────────────────
-    // 4. Fetch claim-to-claim links
-    // ───────────────────────────────────────────────
+    // 5. Get all claim-to-claim links
     const claimIds = claimResults.map((c) => c.claim_id);
     let claimLinks = [];
 
     if (claimIds.length > 0) {
       const rawLinks = await query(
-        `SELECT * FROM claim_links
-         WHERE source_claim_id IN (?) OR target_claim_id IN (?)`,
+        `
+    SELECT * FROM claim_links
+    WHERE source_claim_id IN (?) OR target_claim_id IN (?)`,
         [claimIds, claimIds]
       );
 
@@ -1585,15 +1573,13 @@ app.get("/api/full-graph/:taskId", async (req, res) => {
         id: `link-${link.link_id}`,
         source: `claim-${link.source_claim_id}`,
         target: `claim-${link.target_claim_id}`,
-        type: link.relationship, // 'supports', 'refutes', 'related'
+        type: link.relationship, // supports/refutes/related
         value: link.support_level || 1,
         user_id: link.user_id,
       }));
     }
 
-    // ───────────────────────────────────────────────
-    // 5. Return all graph data
-    // ───────────────────────────────────────────────
+    // 6. Return combined data
     res.json({
       nodes: JSON.parse(JSON.stringify(nodes)),
       links: [...links, ...claimLinks],
@@ -1601,97 +1587,5 @@ app.get("/api/full-graph/:taskId", async (req, res) => {
   } catch (err) {
     console.error("🌐 Full Graph Error:", err);
     res.status(500).json({ error: "Failed to build full graph" });
-  }
-});
-
-app.get("/api/graph-data/:taskId", async (req, res) => {
-  const taskId = parseInt(req.params.taskId);
-
-  try {
-    // Task Node
-    const taskResults = await query(
-      "SELECT content_id, content_name, url FROM content WHERE content_id = ?",
-      [taskId]
-    );
-    const task = taskResults[0];
-    console.log(task, "taskresults");
-    // Reference Nodes
-    const references = await query(
-      `SELECT cr.reference_content_id, c.content_name, c.url
-       FROM content_relations cr
-       JOIN content c ON cr.reference_content_id = c.content_id
-       WHERE cr.content_id = ?`,
-      [taskId]
-    );
-
-    // Claim Nodes (task + reference claims)
-    const claims = await query(
-      `SELECT * FROM claims WHERE content_id = ? OR content_id IN
-        (SELECT reference_content_id FROM content_relations WHERE content_id = ?)`,
-      [taskId, taskId]
-    );
-
-    const nodes = [];
-
-    // Task node
-    nodes.push({
-      id: `task-${task.content_id}`,
-      label: task.content_name,
-      type: "task",
-      url: task.url,
-    });
-
-    // Reference nodes
-    for (const ref of references) {
-      nodes.push({
-        id: `ref-${ref.reference_content_id}`,
-        label: ref.content_name,
-        type: "reference",
-        url: ref.url,
-      });
-    }
-
-    // Claim nodes
-    const claimIdToNode = {};
-    for (const claim of claims) {
-      const id = `claim-${claim.claim_id}`;
-      const type = claim.content_id === taskId ? "taskClaim" : "refClaim";
-
-      const node = {
-        id,
-        label: claim.claim_text.slice(0, 60),
-        type,
-        content_id: claim.content_id,
-        claim_id: claim.claim_id,
-      };
-      nodes.push(node);
-      claimIdToNode[claim.claim_id] = node;
-    }
-
-    // Claim-to-claim links
-    const claimIds = Object.keys(claimIdToNode).map(Number);
-    let links = [];
-    if (claimIds.length > 0) {
-      const rawLinks = await query(
-        `SELECT * FROM claim_links
-         WHERE source_claim_id IN (?) OR target_claim_id IN (?)`,
-        [claimIds, claimIds]
-      );
-
-      links = rawLinks.map((link) => ({
-        id: `link-${link.link_id}`,
-        source: `claim-${link.source_claim_id}`,
-        target: `claim-${link.target_claim_id}`,
-        type: link.relationship, // support/refute/related
-        value: link.support_level || 1,
-        user_id: link.user_id,
-      }));
-      console.log(links, "WHATEJJKD");
-    }
-
-    res.json({ nodes, links });
-  } catch (err) {
-    console.error("Graph data error:", err);
-    res.status(500).json({ error: "Failed to fetch graph data" });
   }
 });

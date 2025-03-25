@@ -125,6 +125,8 @@ export class GraphNode implements d3.SimulationNodeDatum {
   fy?: number | null;
   angle?: number;
   radialOffset?: number;
+  claim_id?: number;
+  content_id?: number;
 
   get group(): number {
     return this.type === "author"
@@ -166,6 +168,8 @@ export interface Link extends d3.SimulationLinkDatum<GraphNode> {
     refute: number;
     related: number;
   };
+  claim_text?: string;
+  content_id?: number;
 }
 
 export interface Lit_references {
