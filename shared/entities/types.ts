@@ -161,6 +161,11 @@ export interface Link extends d3.SimulationLinkDatum<GraphNode> {
   angle?: number;
   relationship?: "supports" | "refutes" | "related"; // ✅ Add this line
   support_level?: number; //
+  counts?: {
+    support: number;
+    refute: number;
+    related: number;
+  };
 }
 
 export interface Lit_references {

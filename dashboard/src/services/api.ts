@@ -2,7 +2,7 @@ import { GraphNode, Link } from "../../../shared/entities/types.ts";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
-export const fetchNewGraphData = async (
+export const fetchNewGraphDataFromLegacyRoute = async (
   selectedNode: GraphNode
 ): Promise<{ nodes: GraphNode[]; links: Link[] }> => {
   console.log("📡 Fetching Graph Data for:", selectedNode);
