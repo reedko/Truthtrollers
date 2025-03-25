@@ -78,8 +78,17 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
       .append("line")
       .attr("stroke", getLinkColor)
       .attr("stroke-width", getStrokeWidth)
-      .on("click", (event, d) => console.log("🧵 Link clicked:", d));
-
+      .on("click", (event, d) => {
+        d3
+          .select("#link-tooltip")
+          .style("display", "block")
+          .style("left", `${event.pageX + 10}px`)
+          .style("top", `${event.pageY + 10}px`).html(`
+            <strong>Relationship:</strong> ${d.relationship}<br/>
+            <strong>Support Level:</strong> ${d.value}<br/>
+            ${d.claim_text ? `<strong>Claim:</strong> ${d.claim_text}` : ""}
+          `);
+      });
     const linkLabels = svgGroup
       .append("g")
       .selectAll("text")
@@ -119,6 +128,61 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
 
     nodeGroup.each(function (d) {
       const group = d3.select(this);
+      if (d.type === "taskClaim" || d.type === "refClaim") {
+        // 💬 Claim node as a blue rectangle with text
+        group
+          .append("rect")
+          .attr("x", -60)
+          .attr("y", -25)
+          .attr("width", 120)
+          .attr("height", 50)
+          .attr("fill", "#3182bd")
+          .attr("rx", 6)
+          .attr("ry", 6);
+
+        group
+          .append("text")
+          .text(d.label || "")
+          .attr("x", 0)
+          .attr("y", 0)
+          .attr("text-anchor", "middle")
+          .attr("dominant-baseline", "middle")
+          .attr("fill", "white")
+          .attr("font-size", "10px")
+          .call((text) => {
+            // wrap text if it's too long
+            const words = d.label.split(" ");
+            let line = "";
+            let dy = -10;
+            text.text(null);
+            for (let i = 0; i < words.length; i++) {
+              line += words[i] + " ";
+              const testLine = text.append("tspan").text(line.trim());
+              const node = testLine.node();
+              if (node && node.getComputedTextLength() > 110) {
+                testLine.remove();
+                text
+                  .append("tspan")
+                  .attr("x", 0)
+                  .attr("dy", dy)
+                  .text(line.trim());
+                line = words[i] + " ";
+                dy += 12;
+              } else {
+                testLine.remove();
+              }
+            }
+            if (line.trim() !== "") {
+              text
+                .append("tspan")
+                .attr("x", 0)
+                .attr("dy", dy)
+                .text(line.trim());
+            }
+          });
+
+        return;
+      }
 
       const imageUrl = `${API_BASE_URL}/assets/images/${
         {
@@ -211,6 +275,33 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
           .attr("dy", i === 0 ? 0 : lineHeight)
           .text(line);
       });
+    });
+    const contentNodeMap = new Map<string, GraphNode>();
+    nodes.forEach((node) => {
+      if (node.type === "task" || node.type === "reference") {
+        contentNodeMap.set(node.id.toString(), node);
+      }
+    });
+
+    // Position claims near their parent content node
+    nodes.forEach((node) => {
+      if (node.type === "taskClaim" || node.type === "refClaim") {
+        const parentId =
+          node.type === "taskClaim"
+            ? `task-${node.content_id}`
+            : `ref-${node.content_id}`;
+        const parent = contentNodeMap.get(parentId);
+
+        if (parent) {
+          const angle = Math.random() * 2 * Math.PI;
+          const radius = 100 + Math.random() * 30;
+
+          node.fx = parent.x! + Math.cos(angle) * radius;
+          node.fy = parent.y! + Math.sin(angle) * radius;
+        } else {
+          console.warn("🟡 Parent not found for claim node:", node);
+        }
+      }
     });
 
     simulation.on("tick", () => {
