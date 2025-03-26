@@ -127,6 +127,10 @@ export class GraphNode implements d3.SimulationNodeDatum {
   radialOffset?: number;
   claim_id?: number;
   content_id?: number;
+  trust_score?: number;
+  rating_source?: string;
+  publisher_id?: number;
+  author_id?: number;
 
   get group(): number {
     return this.type === "author"
@@ -144,7 +148,11 @@ export class GraphNode implements d3.SimulationNodeDatum {
     type: string,
     x: number,
     y: number,
-    url?: string
+    url?: string,
+    content_id?: number,
+    claim_id?: number,
+    publisher_id?: number,
+    author_id?: number
   ) {
     this.id = id;
     this.label = label;
@@ -152,6 +160,10 @@ export class GraphNode implements d3.SimulationNodeDatum {
     this.url = url;
     this.x = x;
     this.y = y;
+    this.content_id = content_id;
+    this.claim_id = claim_id;
+    this.publisher_id = publisher_id;
+    this.author_id = author_id;
   }
 }
 

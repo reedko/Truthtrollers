@@ -1,8 +1,8 @@
-// src/components/NetworkGraph.tsx
-
-import React, { useRef, useEffect } from "react";
+// NetworkGraph.tsx
+import React, { useRef, useEffect, useState } from "react";
 import * as d3 from "d3";
 import { GraphNode, Link } from "../../../shared/entities/types";
+import ClaimNodesLayer from "./ClaimNodesLayer";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
@@ -15,16 +15,6 @@ interface NetworkGraphProps {
   onNodeClick?: (node: GraphNode) => void;
 }
 
-const getLinkColor = (link: Link): string => {
-  if (link.relationship === "supports") return "#38A169"; // green
-  if (link.relationship === "refutes") return "#E53E3E"; // red
-  return "blue"; // gray
-};
-
-const getStrokeWidth = (link: Link): number => {
-  return Math.max(1, Math.abs(link.value || 1) * 2.5);
-};
-
 const NetworkGraph: React.FC<NetworkGraphProps> = ({
   nodes,
   links,
@@ -33,6 +23,15 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
   onNodeClick,
 }) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const [selectedReferenceId, setSelectedReferenceId] = useState<string | null>(
+    null
+  );
+  const [svgGroup, setSvgGroup] = useState<d3.Selection<
+    SVGGElement,
+    unknown,
+    null,
+    undefined
+  > | null>(null);
 
   useEffect(() => {
     if (!svgRef.current || nodes.length === 0 || links.length === 0) return;
@@ -40,14 +39,15 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
     const svg = d3.select(svgRef.current);
     svg.selectAll("*").remove();
 
-    const svgGroup = svg.append("g");
+    const group = svg.append("g");
+    setSvgGroup(group);
 
-    // Zoom & pan
     svg.call(
       d3
         .zoom<SVGSVGElement, unknown>()
         .scaleExtent([0.5, 3])
-        .on("zoom", (event) => svgGroup.attr("transform", event.transform))
+        .filter((event) => event.type !== "wheel")
+        .on("zoom", (event) => group.attr("transform", event.transform))
     );
 
     const centerX = width / 2;
@@ -67,40 +67,20 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
           .id((d) => d.id)
           .distance(220)
       )
-      .force("charge", d3.forceManyBody().strength(-700))
-      .force("center", d3.forceCenter(centerX, centerY));
+      .force("charge", d3.forceManyBody().strength(-500))
+      .force("center", d3.forceCenter(centerX, centerY))
+      .force("collision", d3.forceCollide().radius(75));
 
-    const linkGroup = svgGroup
+    const linkGroup = group
       .append("g")
       .selectAll("line")
       .data(links)
       .enter()
       .append("line")
-      .attr("stroke", getLinkColor)
-      .attr("stroke-width", getStrokeWidth)
-      .on("click", (event, d) => {
-        d3
-          .select("#link-tooltip")
-          .style("display", "block")
-          .style("left", `${event.pageX + 10}px`)
-          .style("top", `${event.pageY + 10}px`).html(`
-            <strong>Relationship:</strong> ${d.relationship}<br/>
-            <strong>Support Level:</strong> ${d.value}<br/>
-            ${d.claim_text ? `<strong>Claim:</strong> ${d.claim_text}` : ""}
-          `);
-      });
-    const linkLabels = svgGroup
-      .append("g")
-      .selectAll("text")
-      .data(links)
-      .enter()
-      .append("text")
-      .text((d) => d.value?.toFixed(1) || "")
-      .attr("font-size", "12px")
-      .attr("fill", "#000")
-      .attr("pointer-events", "none");
+      .attr("stroke", "gray")
+      .attr("stroke-width", 1.5);
 
-    const nodeGroup = svgGroup
+    const nodeGroup = group
       .append("g")
       .selectAll("g")
       .data(nodes)
@@ -120,89 +100,40 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
           })
           .on("end", (event, d) => {
             if (!event.active) simulation.alphaTarget(0);
-            d.fx = null;
-            d.fy = null;
+            d.fx = d.x;
+            d.fy = d.y;
           })
       )
-      .on("click", (event, d) => onNodeClick?.(d));
+      .on("click", (event, d) => {
+        if ((event.target as Element).tagName === "line") return;
+        onNodeClick?.(d);
+        if (d.type === "reference") {
+          setSelectedReferenceId(d.content_id?.toString() || null);
+        }
+      });
 
     nodeGroup.each(function (d) {
       const group = d3.select(this);
-      if (d.type === "taskClaim" || d.type === "refClaim") {
-        // 💬 Claim node as a blue rectangle with text
-        group
-          .append("rect")
-          .attr("x", -60)
-          .attr("y", -25)
-          .attr("width", 120)
-          .attr("height", 50)
-          .attr("fill", "#3182bd")
-          .attr("rx", 6)
-          .attr("ry", 6);
 
-        group
-          .append("text")
-          .text(d.label || "")
-          .attr("x", 0)
-          .attr("y", 0)
-          .attr("text-anchor", "middle")
-          .attr("dominant-baseline", "middle")
-          .attr("fill", "white")
-          .attr("font-size", "10px")
-          .call((text) => {
-            // wrap text if it's too long
-            const words = d.label.split(" ");
-            let line = "";
-            let dy = -10;
-            text.text(null);
-            for (let i = 0; i < words.length; i++) {
-              line += words[i] + " ";
-              const testLine = text.append("tspan").text(line.trim());
-              const node = testLine.node();
-              if (node && node.getComputedTextLength() > 110) {
-                testLine.remove();
-                text
-                  .append("tspan")
-                  .attr("x", 0)
-                  .attr("dy", dy)
-                  .text(line.trim());
-                line = words[i] + " ";
-                dy += 12;
-              } else {
-                testLine.remove();
-              }
-            }
-            if (line.trim() !== "") {
-              text
-                .append("tspan")
-                .attr("x", 0)
-                .attr("dy", dy)
-                .text(line.trim());
-            }
-          });
+      if (d.type === "taskClaim" || d.type === "refClaim") return;
 
-        return;
-      }
+      const trustScore = d.trust_score ?? 50;
+      const baseColor =
+        d.type === "publisher"
+          ? trustScore > 80
+            ? "#38A169"
+            : trustScore < 40
+            ? "#E53E3E"
+            : "#A0AEC0"
+          : d.type === "task"
+          ? "#FFD700"
+          : d.type === "reference"
+          ? "#d62728"
+          : d.type === "author"
+          ? "#1f77b4"
+          : "#3182bd";
 
-      const imageUrl = `${API_BASE_URL}/assets/images/${
-        {
-          1: `authors/author_id_${d.id}.png`,
-          2: `content/content_id_${d.id}.png`,
-          3: `publishers/publisher_id_${d.id}.png`,
-          4: `content/content_id_${d.id}.png`,
-        }[d.group] || `default.png`
-      }`;
-
-      if (d.group === 4) {
-        group
-          .append("rect")
-          .attr("width", 60)
-          .attr("height", 60)
-          .attr("x", -30)
-          .attr("y", -30)
-          .attr("rx", 5)
-          .attr("fill", "#d62728");
-      } else if (d.group === 2) {
+      if (d.type === "task") {
         group
           .append("polygon")
           .attr(
@@ -210,26 +141,52 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
             "0,-15 6,-5 15,-5 7,4 8,12 0,6 -8,12 -7,4 -15,-5 -6,-5"
           )
           .attr("transform", "scale(4.5)")
-          .attr("fill", "#ff7f0e");
-      } else {
-        const radius = d.group === 1 ? 50 : d.group === 3 ? 55 : 36;
+          .attr("fill", baseColor);
+      } else if (d.type === "publisher") {
         group
-          .append("circle")
-          .attr("r", radius)
-          .attr(
-            "fill",
-            d.group === 1 ? "#1f77b4" : d.group === 3 ? "#2ca02c" : "#d62728"
-          );
+          .append("rect")
+          .attr("width", 60)
+          .attr("height", 60)
+          .attr("x", -30)
+          .attr("y", -30)
+          .attr("rx", 5)
+          .attr("fill", baseColor);
+      } else {
+        group.append("circle").attr("r", 40).attr("fill", baseColor);
       }
+
+      const getUnprefixedId = (id: string) => {
+        const parts = id.split("-");
+        return parts.length > 1 ? parts[1] : id;
+      };
+
+      const imageUrl = `${API_BASE_URL}/assets/images/${
+        {
+          1: `authors/author_id_${getUnprefixedId(d.id)}.png`,
+          2: `content/content_id_${getUnprefixedId(d.id)}.png`,
+          3: `publishers/publisher_id_${getUnprefixedId(d.id)}.png`,
+          4: `content/content_id_${getUnprefixedId(d.id)}.png`,
+        }[d.group] || `default.png`
+      }`;
+
+      const shapeSize = 60;
+
+      group
+        .append("clipPath")
+        .attr("id", `clip-${d.id}`)
+        .append("circle")
+        .attr("r", shapeSize / 2)
+        .attr("cx", 0)
+        .attr("cy", 0);
 
       group
         .append("image")
         .attr("href", imageUrl)
-        .attr("width", 60)
-        .attr("height", 60)
-        .attr("x", -30)
-        .attr("y", -30)
-        .attr("clip-path", "url(#clipCircle)");
+        .attr("width", shapeSize)
+        .attr("height", shapeSize)
+        .attr("x", -shapeSize / 2)
+        .attr("y", -shapeSize / 2)
+        .attr("clip-path", `url(#clip-${d.id})`);
 
       const labelGroup = group.append("g").attr("class", "labelGroup");
       const words = d.label.split(" ");
@@ -276,33 +233,6 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
           .text(line);
       });
     });
-    const contentNodeMap = new Map<string, GraphNode>();
-    nodes.forEach((node) => {
-      if (node.type === "task" || node.type === "reference") {
-        contentNodeMap.set(node.id.toString(), node);
-      }
-    });
-
-    // Position claims near their parent content node
-    nodes.forEach((node) => {
-      if (node.type === "taskClaim" || node.type === "refClaim") {
-        const parentId =
-          node.type === "taskClaim"
-            ? `task-${node.content_id}`
-            : `ref-${node.content_id}`;
-        const parent = contentNodeMap.get(parentId);
-
-        if (parent) {
-          const angle = Math.random() * 2 * Math.PI;
-          const radius = 100 + Math.random() * 30;
-
-          node.fx = parent.x! + Math.cos(angle) * radius;
-          node.fy = parent.y! + Math.sin(angle) * radius;
-        } else {
-          console.warn("🟡 Parent not found for claim node:", node);
-        }
-      }
-    });
 
     simulation.on("tick", () => {
       linkGroup
@@ -311,19 +241,28 @@ const NetworkGraph: React.FC<NetworkGraphProps> = ({
         .attr("x2", (d) => d.target.x!)
         .attr("y2", (d) => d.target.y!);
 
-      linkLabels
-        .attr("x", (d) => (d.source.x! + d.target.x!) / 2)
-        .attr("y", (d) => (d.source.y! + d.target.y!) / 2);
-
       nodeGroup.attr("transform", (d) => `translate(${d.x}, ${d.y})`);
     });
 
     return () => {
       simulation.stop();
     };
-  }, [nodes, links]);
+  }, [nodes, links, width, height, onNodeClick]);
 
-  return <svg ref={svgRef} width={width} height={height} />;
+  return (
+    <>
+      <svg ref={svgRef} width={width} height={height} />
+      {svgGroup && (
+        <ClaimNodesLayer
+          svgGroup={svgGroup}
+          nodes={nodes}
+          links={links}
+          referenceId={selectedReferenceId}
+          onClaimClick={(node) => console.log("Claim clicked:", node)}
+        />
+      )}
+    </>
+  );
 };
 
 export default NetworkGraph;
