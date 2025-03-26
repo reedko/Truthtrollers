@@ -17,6 +17,7 @@ import { dirname } from "path";
 import {
   getNodesForEntity,
   getLinksForEntity,
+  getLinkedClaimsAndLinksForTask,
 } from "./database/graphQueries.js";
 
 import { JSDOM } from "jsdom";
@@ -1515,73 +1516,27 @@ app.get("/api/full-graph/:taskId", async (req, res) => {
       .json({ error: "Missing entity or entityType parameter" });
   }
 
-  //console.log("🔍 Received Graph Data Request:", { entity, entityType });
-
   const nodeSql = getNodesForEntity(entityType);
   const linkSql = getLinksForEntity(entityType);
 
   if (!nodeSql || !linkSql) {
     return res.status(400).json({ error: "Invalid entityType parameter" });
   }
+
   try {
-    // ───────────────────────────────────────────────
-    // 1. Get entity-based nodes & links
-    // ───────────────────────────────────────────────
-    // 1. Get existing entity nodes and links
+    // 1. Base nodes/links
     const nodes = await query(nodeSql, [entity, entity, entity, entity]);
     const links = await query(linkSql, [entity, entity, entity, entity]);
 
-    // 2. Extract all task + reference content_ids from nodes
-    const contentIds = nodes
-      .filter((n) => n.type === "task" || n.type === "reference")
-      .map((n) => n.id);
+    // 2. Only claims & links actually connected to the task
+    const { claimNodeSql, claimLinkSql, params } =
+      getLinkedClaimsAndLinksForTask(taskId);
+    const claimNodes = await query(claimNodeSql, params);
+    const claimLinks = await query(claimLinkSql, params);
 
-    // 3. Fetch claims for those content IDs
-    const claimResults = await query(
-      `
-  SELECT c.claim_id, c.claim_text, cc.content_id
-  FROM claims c
-  JOIN content_claims cc ON c.claim_id = cc.claim_id
-  WHERE cc.content_id IN (?)
-`,
-      [contentIds]
-    );
-
-    // 4. Add claim nodes
-    const claimNodes = claimResults.map((claim) => ({
-      id: `claim-${claim.claim_id}`,
-      label: claim.claim_text.slice(0, 60),
-      type: claim.content_id === parseInt(entity) ? "taskClaim" : "refClaim",
-      claim_id: claim.claim_id,
-      content_id: claim.content_id,
-    }));
-    nodes.push(...claimNodes);
-
-    // 5. Get all claim-to-claim links
-    const claimIds = claimResults.map((c) => c.claim_id);
-    let claimLinks = [];
-
-    if (claimIds.length > 0) {
-      const rawLinks = await query(
-        `
-    SELECT * FROM claim_links
-    WHERE source_claim_id IN (?) OR target_claim_id IN (?)`,
-        [claimIds, claimIds]
-      );
-
-      claimLinks = rawLinks.map((link) => ({
-        id: `link-${link.link_id}`,
-        source: `claim-${link.source_claim_id}`,
-        target: `claim-${link.target_claim_id}`,
-        type: link.relationship, // supports/refutes/related
-        value: link.support_level || 1,
-        user_id: link.user_id,
-      }));
-    }
-
-    // 6. Return combined data
+    // 3. Merge and return
     res.json({
-      nodes: JSON.parse(JSON.stringify(nodes)),
+      nodes: JSON.parse(JSON.stringify([...nodes, ...claimNodes])),
       links: [...links, ...claimLinks],
     });
   } catch (err) {

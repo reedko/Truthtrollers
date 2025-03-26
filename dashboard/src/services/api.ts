@@ -27,7 +27,18 @@ export const fetchNewGraphDataFromLegacyRoute = async (
 
     const nodes = data.nodes.map(
       (node: GraphNode) =>
-        new GraphNode(node.id, node.label, node.type, node.x, node.y, node.url)
+        new GraphNode(
+          node.id,
+          node.label,
+          node.type,
+          node.x ?? 0,
+          node.y ?? 0,
+          node.url,
+          node.content_id,
+          node.claim_id,
+          node.publisher_id,
+          node.author_id
+        )
     );
     console.log(nodes, "nodes", data.links, "links");
     return { nodes, links: data.links };

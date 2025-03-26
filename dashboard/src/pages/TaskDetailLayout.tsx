@@ -55,6 +55,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
       x: 0,
       y: 0,
       group: 2,
+      content_id: task.content_id,
     };
   };
 
