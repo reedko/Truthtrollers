@@ -9,7 +9,7 @@ import {
 } from "../../../shared/entities/types";
 import TaskCard from "../components/TaskCard";
 import { EditorFrame } from "../components/EditorFrame";
-import NetworkGraph from "../components/NetworkGraph";
+import CytoscapeMolecule from "../components/CytoscapeMolecule";
 import { fetchNewGraphDataFromLegacyRoute } from "../services/api"; // typed to accept a GraphNode
 import Workspace from "../components/Workspace";
 
@@ -39,6 +39,23 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   // Ref used to detect outside clicks and hide the node popup
   const cardRef = useRef<HTMLDivElement | null>(null);
 
+  const cytoNodes = graphData.nodes.map((node) => ({
+    data: {
+      id: node.id,
+      label: node.label,
+      type: node.type,
+      // relation: node.relation,
+    },
+  }));
+
+  const cytoLinks = graphData.links.map((link) => ({
+    data: {
+      id: link.id,
+      source: typeof link.source === "string" ? link.source : link.source.id,
+      target: typeof link.target === "string" ? link.target : link.target.id,
+      relation: link.relationship || link.type,
+    },
+  }));
   // ─────────────────────────────────────────────────────────────────────────────
   // 1) CREATE A MOCK “TASK NODE” FOR INITIAL LOAD
   //    We'll treat the entire Task as a "task" node in the graph.
@@ -135,6 +152,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   // ─────────────────────────────────────────────────────────────────────────────
   // RENDER
   // ─────────────────────────────────────────────────────────────────────────────
+
   return (
     <Box w="calc(100vw-20px)" mx="10px" p={4} overflow="auto">
       <Grid
@@ -211,12 +229,20 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
             Relationship Map
           </Heading>
 
-          <NetworkGraph
-            nodes={graphData.nodes}
-            links={graphData.links}
-            width={window.innerWidth - 100}
-            height={1000}
-            onNodeClick={handleNodeClick}
+          <CytoscapeMolecule
+            nodes={graphData.nodes.map((node) => ({
+              id: node.id,
+              label: node.label,
+              type: node.type,
+            }))}
+            links={graphData.links.map((link) => ({
+              id: link.id,
+              source:
+                typeof link.source === "string" ? link.source : link.source.id,
+              target:
+                typeof link.target === "string" ? link.target : link.target.id,
+              relation: link.relationship || link.type,
+            }))}
           />
 
           {/* Selected Node Popup */}

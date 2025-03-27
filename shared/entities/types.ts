@@ -168,6 +168,7 @@ export class GraphNode implements d3.SimulationNodeDatum {
 }
 
 export interface Link extends d3.SimulationLinkDatum<GraphNode> {
+  id: string;
   source: GraphNode;
   target: GraphNode;
   type: string;
