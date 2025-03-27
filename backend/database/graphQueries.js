@@ -149,19 +149,31 @@ export const getNodesForEntity = (entityType) => {
 export const getLinksForEntity = (entityType) => {
   if (entityType === "task") {
     return `
-      SELECT 'authored' AS type, CONCAT("conte-", ca.content_id) AS source, CONCAT("autho-", ca.author_id) AS target
+      SELECT 
+        'authored' AS type, 
+        CONCAT("conte-", ca.content_id) AS source, 
+        CONCAT("autho-", ca.author_id) AS target,
+        CONCAT("conte-", ca.content_id, "_autho-", ca.author_id) AS id
       FROM content_authors ca
       WHERE ca.content_id = ?
-      
+
       UNION
-      
-      SELECT 'published_by' AS type, CONCAT("conte-", tp.content_id) AS source, CONCAT("publi-", tp.publisher_id) AS target
+
+      SELECT 
+        'published_by' AS type, 
+        CONCAT("conte-", tp.content_id) AS source, 
+        CONCAT("publi-", tp.publisher_id) AS target,
+        CONCAT("conte-", tp.content_id, "_publi-", tp.publisher_id) AS id
       FROM content_publishers tp
       WHERE tp.content_id = ?
-      
+
       UNION
-      
-      SELECT 'references' AS type, CONCAT("conte-", tr.content_id) AS source, CONCAT("conte-", tr.reference_content_id) AS target
+
+      SELECT 
+        'references' AS type, 
+        CONCAT("conte-", tr.content_id) AS source, 
+        CONCAT("conte-", tr.reference_content_id) AS target,
+        CONCAT("conte-", tr.content_id, "_conte-", tr.reference_content_id) AS id
       FROM content_relations tr
       WHERE tr.content_id = ?
     `;
@@ -169,21 +181,33 @@ export const getLinksForEntity = (entityType) => {
 
   if (entityType === "author") {
     return `
-      SELECT 'authored' AS type, CONCAT("autho-", ca.author_id) AS source, CONCAT("conte-", ca.content_id) AS target
+      SELECT 
+        'authored' AS type, 
+        CONCAT("autho-", ca.author_id) AS source, 
+        CONCAT("conte-", ca.content_id) AS target,
+        CONCAT("autho-", ca.author_id, "_conte-", ca.content_id) AS id
       FROM content_authors ca
       WHERE ca.author_id = ?
-      
+
       UNION
-      
-      SELECT 'published_by' AS type, CONCAT("autho-", ca.author_id) AS source, CONCAT("publi-", p.publisher_id) AS target
+
+      SELECT 
+        'published_by' AS type, 
+        CONCAT("autho-", ca.author_id) AS source, 
+        CONCAT("publi-", p.publisher_id) AS target,
+        CONCAT("autho-", ca.author_id, "_publi-", p.publisher_id) AS id
       FROM publishers p
       JOIN content_publishers tp ON p.publisher_id = tp.publisher_id
       JOIN content_authors ca ON tp.content_id = ca.content_id
       WHERE ca.author_id = ?
-      
+
       UNION
-      
-      SELECT 'auth_referenced' AS type, CONCAT("autho-", ca.author_id) AS source, CONCAT("conte-", ca.content_id) AS target
+
+      SELECT 
+        'auth_referenced' AS type, 
+        CONCAT("autho-", ca.author_id) AS source, 
+        CONCAT("conte-", ca.content_id) AS target,
+        CONCAT("autho-", ca.author_id, "_conte-", ca.content_id) AS id
       FROM content_authors ca
       WHERE ca.author_id = ?
     `;
@@ -191,13 +215,21 @@ export const getLinksForEntity = (entityType) => {
 
   if (entityType === "publisher") {
     return `
-      SELECT 'published' AS type, CONCAT("publi-", tp.publisher_id) AS source, CONCAT("conte-", tp.content_id) AS target
+      SELECT 
+        'published' AS type, 
+        CONCAT("publi-", tp.publisher_id) AS source, 
+        CONCAT("conte-", tp.content_id) AS target,
+        CONCAT("publi-", tp.publisher_id, "_conte-", tp.content_id) AS id
       FROM content_publishers tp
       WHERE tp.publisher_id = ?
-      
+
       UNION
-      
-      SELECT 'has_author' AS type, CONCAT("publi-", tp.publisher_id) AS source, CONCAT("autho-", ca.author_id) AS target
+
+      SELECT 
+        'has_author' AS type, 
+        CONCAT("publi-", tp.publisher_id) AS source, 
+        CONCAT("autho-", ca.author_id) AS target,
+        CONCAT("publi-", tp.publisher_id, "_autho-", ca.author_id) AS id
       FROM content_authors ca
       JOIN content_publishers tp ON ca.content_id = tp.content_id
       WHERE tp.publisher_id = ?
@@ -206,26 +238,42 @@ export const getLinksForEntity = (entityType) => {
 
   if (entityType === "reference") {
     return `
-      SELECT 'references' AS type, CONCAT("conte-", cr.reference_content_id) AS source, CONCAT("conte-", cr.content_id) AS target
+      SELECT 
+        'references' AS type, 
+        CONCAT("conte-", cr.reference_content_id) AS source, 
+        CONCAT("conte-", cr.content_id) AS target,
+        CONCAT("conte-", cr.reference_content_id, "_conte-", cr.content_id) AS id
       FROM content_relations cr
       WHERE cr.reference_content_id = ?
-      
+
       UNION
-      
-      SELECT 'referenced_by' AS type, CONCAT("conte-", cr.content_id) AS source, CONCAT("conte-", cr.reference_content_id) AS target
+
+      SELECT 
+        'referenced_by' AS type, 
+        CONCAT("conte-", cr.content_id) AS source, 
+        CONCAT("conte-", cr.reference_content_id) AS target,
+        CONCAT("conte-", cr.content_id, "_conte-", cr.reference_content_id) AS id
       FROM content_relations cr
       WHERE cr.content_id = ?
-      
+
       UNION
-      
-      SELECT 'has_author' AS type, CONCAT("conte-", c.content_id) AS source, CONCAT("autho-", ca.author_id) AS target
+
+      SELECT 
+        'has_author' AS type, 
+        CONCAT("conte-", c.content_id) AS source, 
+        CONCAT("autho-", ca.author_id) AS target,
+        CONCAT("conte-", c.content_id, "_autho-", ca.author_id) AS id
       FROM content_authors ca
       JOIN content c ON ca.content_id = c.content_id
       WHERE c.content_type = 'reference' AND ca.content_id = ?
-      
+
       UNION
-      
-      SELECT 'published' AS type, CONCAT("publi-", tp.publisher_id) AS source, CONCAT("conte-", tp.content_id) AS target
+
+      SELECT 
+        'published' AS type, 
+        CONCAT("publi-", tp.publisher_id) AS source, 
+        CONCAT("conte-", tp.content_id) AS target,
+        CONCAT("publi-", tp.publisher_id, "_conte-", tp.content_id) AS id
       FROM content_publishers tp
       WHERE tp.content_id = ?
     `;
