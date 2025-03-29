@@ -169,12 +169,12 @@ export class GraphNode implements d3.SimulationNodeDatum {
 
 export interface Link extends d3.SimulationLinkDatum<GraphNode> {
   id: string;
-  source: GraphNode;
-  target: GraphNode;
+  source: string;
+  target: string;
   type: string;
   value?: number;
   angle?: number;
-  relationship?: "supports" | "refutes" | "related"; // ✅ Add this line
+  relation?: "supports" | "refutes" | "related"; // ✅ Add this line
   support_level?: number; //
   counts?: {
     support: number;

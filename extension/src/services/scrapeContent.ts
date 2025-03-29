@@ -47,9 +47,19 @@ export const scrapeContent = async (
     }
 
     if (!contentData) {
-      console.error("🚨 Failed to obtain contentData for:", url);
-      return null;
+      console.warn(
+        `⚠️ Skipping ${contentType} — No usable content returned: ${url}`
+      );
+
+      // Optionally log more detail for tasks (e.g., add fallback entry later)
+      if (contentType === "task") {
+        console.error("❌ Cannot continue. A task must have valid content.");
+        return null; // don't try to save this
+      }
+
+      return null; // skip bad reference
     }
+
     // ✅ Ensure taskContentId is set for references
     // ✅ Ensure taskContentId is assigned for scrapable references
     if (!contentData.taskContentId) {
@@ -84,12 +94,15 @@ export const scrapeContent = async (
           reference.content_name
         );
 
-        await scrapeContent(
+        const result = await scrapeContent(
           reference.url,
           reference.content_name || "",
           "reference",
           taskContentId
         );
+        if (!result) {
+          console.warn("⛔ Skipped reference (bad or blank):", reference.url);
+        }
       }
     }
 

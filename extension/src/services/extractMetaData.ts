@@ -310,6 +310,11 @@ export const fetchExternalPageContent = async (
           }
 
           if (!response?.success || !response.html) {
+            if (url.includes("web.archive.org")) {
+              console.warn(`🚫 Skipping Wayback recursion for: ${url}`);
+              return resolve(cheerio.load("")); // Return empty content to indicate failure
+            }
+
             return resolve(fetchFromWayback(url));
           }
 
@@ -365,6 +370,7 @@ export const extractAuthors = async (
   const match = $.html().match(authorRegex);
 
   if (match) {
+    console.log("🧠 Found author in CHD article header span.");
     authors.push({
       name: match[1].trim(),
       description: null,
@@ -374,36 +380,44 @@ export const extractAuthors = async (
 
   // ✅ Extract from JSON-LD
   $('script[type="application/ld+json"]').each((_, scriptTag) => {
+    console.log("trying ld+json");
     try {
-      const metadata = JSON.parse($(scriptTag).text().trim() || "{}"); // ✅ Use .text() to avoid stripping content
-      const authorData = Array.isArray(metadata) ? metadata : [metadata];
-
-      authorData.forEach((entry) => {
-        if (entry["@type"] === "Person" && entry.name) {
-          authors.push({
-            name: entry.name,
-            description: entry.description || null,
-            image: entry.image?.contentUrl || null,
-          });
-        }
+      let raw = $(scriptTag).text().trim() || "{}";
+      // 🧽 Clean up malformed endings like stray semicolons or double JSON
+      if (raw.endsWith(";")) raw = raw.slice(0, -1);
+      // ✅ Handle multiple JSON blobs in one script tag
+      const entries = raw.split(/}\s*{/).map((s, i, arr) => {
+        if (arr.length === 1) return s;
+        return i === 0
+          ? s + "}"
+          : i === arr.length - 1
+          ? "{" + s
+          : "{" + s + "}";
       });
+      entries.forEach((entry) => {
+        const metadata = JSON.parse(raw);
 
-      if (metadata.author) {
-        (Array.isArray(metadata.author)
+        // 🔍 Look directly for metadata.author
+        const authorArray = Array.isArray(metadata.author)
           ? metadata.author
-          : [metadata.author]
-        ).forEach((author: any) => {
-          authors.push(
-            typeof author === "object"
-              ? {
-                  name: author.name,
-                  description: author.description || null,
-                  image: author.image?.contentUrl || null,
-                }
-              : { name: author }
-          );
+          : metadata.author
+          ? [metadata.author]
+          : [];
+
+        authorArray.forEach((author: any) => {
+          if (author?.name) {
+            console.log(
+              "👤 Found author from metadata.author array:",
+              author.name
+            );
+            authors.push({
+              name: author.name.trim(),
+              description: author.description || null,
+              image: author.image?.contentUrl || null,
+            });
+          }
         });
-      }
+      });
     } catch (err) {
       console.error("❌ Error parsing ld+json for authors:", err);
     }
@@ -416,9 +430,12 @@ export const extractAuthors = async (
       $('meta[property="article:author"]').attr("content");
 
     if (rawAuthorNames) {
+      console.log("📦 Found author in meta tag:", rawAuthorNames);
       rawAuthorNames
         .split(/\s*and\s*|,\s*/)
-        .forEach((name) => authors.push({ name: name.trim() }));
+        .forEach((name) =>
+          authors.push({ name: name.trim(), description: null, image: null })
+        );
     }
   }
 
@@ -429,9 +446,12 @@ export const extractAuthors = async (
     ).each((_, metaTag) => {
       const rawAuthorName = $(metaTag).attr("content");
       if (rawAuthorName) {
+        console.log("📚 Found citation_author meta:", rawAuthorName);
         rawAuthorName
           .split(/\s*and\s*|,\s*/)
-          .forEach((name) => authors.push({ name: name.trim() }));
+          .forEach((name) =>
+            authors.push({ name: name.trim(), description: null, image: null })
+          );
       }
     });
   }
@@ -441,16 +461,20 @@ export const extractAuthors = async (
     const scripts = $("script");
 
     scripts.each((_, scriptTag) => {
-      const scriptText = $(scriptTag).text().trim(); // ✅ Use .text() instead of .html()
+      const scriptText = $(scriptTag).text().trim();
       if (scriptText.includes("var chd_ga4_data =")) {
         try {
           const match = scriptText.match(/var chd_ga4_data = (\{.*?\});/s);
           if (match && match[1]) {
             const chdData = JSON.parse(match[1]);
             if (chdData.contentAuthor) {
+              console.log(
+                "🏥 Found author in chd_ga4_data:",
+                chdData.contentAuthor
+              );
               authors.push({
                 name: chdData.contentAuthor,
-                title: chdData.contentAuthorTitle || null,
+                description: chdData.contentAuthorTitle || null,
               });
             }
           }
@@ -459,6 +483,12 @@ export const extractAuthors = async (
         }
       }
     });
+  }
+
+  if (!authors.length) {
+    console.warn("🚫 No authors found from any source.");
+  } else {
+    console.log("✅ Total authors extracted:", authors);
   }
 
   return authors;

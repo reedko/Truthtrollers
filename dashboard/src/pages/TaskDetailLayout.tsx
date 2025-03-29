@@ -39,23 +39,6 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   // Ref used to detect outside clicks and hide the node popup
   const cardRef = useRef<HTMLDivElement | null>(null);
 
-  const cytoNodes = graphData.nodes.map((node) => ({
-    data: {
-      id: node.id,
-      label: node.label,
-      type: node.type,
-      // relation: node.relation,
-    },
-  }));
-
-  const cytoLinks = graphData.links.map((link) => ({
-    data: {
-      id: link.id,
-      source: typeof link.source === "string" ? link.source : link.source.id,
-      target: typeof link.target === "string" ? link.target : link.target.id,
-      relation: link.relationship || link.type,
-    },
-  }));
   // ─────────────────────────────────────────────────────────────────────────────
   // 1) CREATE A MOCK “TASK NODE” FOR INITIAL LOAD
   //    We'll treat the entire Task as a "task" node in the graph.
@@ -230,55 +213,59 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
           </Heading>
 
           <CytoscapeMolecule
-            nodes={graphData.nodes.map((node) => ({
-              id: node.id,
-              label: node.label,
-              type: node.type,
-            }))}
-            links={graphData.links.map((link) => ({
-              id: link.id,
-              source:
-                typeof link.source === "string" ? link.source : link.source.id,
-              target:
-                typeof link.target === "string" ? link.target : link.target.id,
-              relation: link.relationship || link.type,
-            }))}
+            nodes={graphData.nodes}
+            links={graphData.links}
+            onNodeClick={handleNodeClick}
+            centerNodeId={selectedNode?.id || task.content_id.toString()}
           />
 
-          {/* Selected Node Popup */}
           {selectedNode && (
             <Box
               position="absolute"
               top="100%"
               left="50%"
               transform="translateX(-50%)"
-              bg="teal"
-              border="1px solid gray"
-              borderRadius="lg"
+              bg="white"
+              border="2px solid #3182ce"
+              borderRadius="xl"
               p={4}
               mt={2}
-              boxShadow="lg"
-              zIndex="10"
-              width="250px"
+              boxShadow="2xl"
+              zIndex="20"
+              width="280px"
               textAlign="center"
               ref={cardRef}
             >
-              <Text fontWeight="bold" textDecoration="underline">
-                {selectedNode.type}
+              <Text fontWeight="bold" fontSize="md" mb={1} color="gray.700">
+                Node Type:{" "}
+                <span style={{ textTransform: "capitalize" }}>
+                  {selectedNode.type}
+                </span>
               </Text>
-              <Text fontWeight="bold">{selectedNode.label}</Text>
+              <Text fontWeight="semibold" fontSize="lg" color="teal.700">
+                {selectedNode.label}
+              </Text>
+
               {selectedNode.url && (
-                <Text fontSize="sm">
+                <Text fontSize="sm" mt={1}>
                   <a
                     href={selectedNode.url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    style={{ color: "#2b6cb0", textDecoration: "underline" }}
                   >
                     Open Link 🔗
                   </a>
                 </Text>
               )}
-              <Button mt={2} colorScheme="blue" onClick={handleReframeClick}>
+
+              <Button
+                mt={3}
+                colorScheme="blue"
+                size="sm"
+                onClick={handleReframeClick}
+                borderRadius="full"
+              >
                 Reframe Graph
               </Button>
             </Box>

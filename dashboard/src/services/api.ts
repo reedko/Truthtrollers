@@ -9,11 +9,10 @@ export const fetchNewGraphDataFromLegacyRoute = async (
   console.log("📡 Fetching Graph Data for:", selectedNode);
 
   try {
-    const taskId =
-      selectedNode.type === "task" ? selectedNode.id.replace("task-", "") : "0"; // fallback if not a task
-
+    const contentId = selectedNode.id.replace(/^.*-/, ""); // fallback if not a task
+    console.log(contentId, selectedNode.type, selectedNode.id);
     const response = await fetch(
-      `${API_BASE_URL}/api/full-graph/${taskId}?entity=${selectedNode.id}&entityType=${selectedNode.type}`,
+      `${API_BASE_URL}/api/full-graph/${contentId}?entity=${contentId}&entityType=${selectedNode.type}`,
       { headers: { Accept: "application/json" } }
     );
 
@@ -40,7 +39,7 @@ export const fetchNewGraphDataFromLegacyRoute = async (
           node.author_id
         )
     );
-    console.log(nodes, "nodes", data.links, "links");
+    console.log(data.nodes, "nodes", data.links, "links");
     return { nodes, links: data.links };
   } catch (error) {
     console.error("🚨 Graph Fetch Error:", error);
