@@ -1453,7 +1453,7 @@ app.post("/api/fetch-page-content", async (req, res) => {
           "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
         Referer: url,
       },
-      timeout: 30000, // ✅ Increase timeout to 30s
+      timeout: 3000, // ✅ Increase timeout to 30s
     });
 
     console.log(`✅ Successfully fetched ${response.data.length} bytes`);
@@ -1522,7 +1522,7 @@ app.get("/api/full-graph/:taskId", async (req, res) => {
   if (!nodeSql || !linkSql) {
     return res.status(400).json({ error: "Invalid entityType parameter" });
   }
-
+  console.log(entity);
   try {
     // 1. Base nodes/links
     const nodes = await query(nodeSql, [entity, entity, entity, entity]);
