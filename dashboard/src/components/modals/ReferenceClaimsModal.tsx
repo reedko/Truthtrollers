@@ -13,8 +13,10 @@ import {
   VStack,
   Box,
   Divider,
+  IconButton,
 } from "@chakra-ui/react";
 import { Claim, ReferenceWithClaims } from "../../../../shared/entities/types";
+import ClaimVerificationModal from "./ClaimVerificationModal";
 
 interface ReferenceClaimsModalProps {
   isOpen: boolean;
@@ -24,6 +26,7 @@ interface ReferenceClaimsModalProps {
     claim: Pick<Claim, "claim_id" | "claim_text"> | null
   ) => void;
   draggingClaim: Pick<Claim, "claim_id" | "claim_text"> | null;
+  onVerifyClaim?: (claim: Claim) => void;
 }
 
 const ReferenceClaimsModal: React.FC<ReferenceClaimsModalProps> = ({
@@ -32,6 +35,7 @@ const ReferenceClaimsModal: React.FC<ReferenceClaimsModalProps> = ({
   reference,
   setDraggingClaim,
   draggingClaim,
+  onVerifyClaim,
 }) => {
   const tooltipRef = useRef<HTMLDivElement | null>(null);
 
@@ -92,26 +96,36 @@ const ReferenceClaimsModal: React.FC<ReferenceClaimsModalProps> = ({
               {claimsArray.length > 0 ? (
                 <VStack align="start" spacing={2}>
                   {claimsArray.map((claim: Claim, index: number) => (
-                    <Box
-                      key={claim.claim_id ?? index}
-                      pl={2}
-                      border="1px solid blue"
-                      borderRadius="md"
-                      w="100%"
-                      bg="black"
-                      color="blue.300"
-                      _hover={{
-                        bg: "blue.200",
-                        color: "black",
-                        cursor: "grab",
-                      }}
-                      px={2}
-                      py={1}
-                      onMouseDown={() => setDraggingClaim(claim)}
-                      onMouseUp={() => setDraggingClaim(null)}
-                    >
-                      {claim.claim_text}
-                    </Box>
+                    <>
+                      <Box
+                        key={claim.claim_id ?? index}
+                        pl={2}
+                        border="1px solid blue"
+                        borderRadius="md"
+                        w="100%"
+                        bg="black"
+                        color="blue.300"
+                        _hover={{
+                          bg: "blue.200",
+                          color: "black",
+                          cursor: "grab",
+                        }}
+                        px={2}
+                        py={1}
+                        onMouseDown={() => setDraggingClaim(claim)}
+                        onMouseUp={() => setDraggingClaim(null)}
+                      >
+                        {claim.claim_text}
+                      </Box>
+                      <IconButton
+                        size="sm"
+                        colorScheme="purple"
+                        aria-label="Verify claim"
+                        icon={<span>👁️</span>}
+                        onClick={() => onVerifyClaim?.(claim)}
+                        ml={2}
+                      />
+                    </>
                   ))}
                 </VStack>
               ) : (

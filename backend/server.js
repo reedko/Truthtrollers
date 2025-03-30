@@ -1165,10 +1165,11 @@ app.post("/api/addContent", async (req, res) => {
     iconThumbnailUrl,
     content_type,
     taskContentId,
+    is_retracted,
   } = req.body;
 
   // Step 1: Insert the task without the thumbnail path
-  const callQuery = `CALL InsertContentAndTopics(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?, @contentId);`;
+  const callQuery = `CALL InsertContentAndTopics(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?, ?, @contentId);`;
 
   const params = [
     content_name, // Task name
@@ -1183,6 +1184,7 @@ app.post("/api/addContent", async (req, res) => {
     iconThumbnailUrl ? iconThumbnailUrl : "",
     content_type,
     taskContentId,
+    is_retracted,
   ];
 
   try {

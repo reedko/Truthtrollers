@@ -12,6 +12,7 @@ import { Claim, ReferenceWithClaims } from "../../../shared/entities/types";
 import { addClaim, updateClaim } from "../services/useDashboardAPI";
 import ClaimLinkModal from "./modals/ClaimLinkModal";
 import ReferenceClaimsModal from "./modals/ReferenceClaimsModal";
+import ClaimVerificationModal from "./modals/ClaimVerificationModal";
 
 const Workspace: React.FC<{ contentId: number }> = ({ contentId }) => {
   const [claims, setClaims] = useState<Claim[]>([]);
@@ -33,11 +34,12 @@ const Workspace: React.FC<{ contentId: number }> = ({ contentId }) => {
   const [isReferenceClaimsModalOpen, setIsReferenceClaimsModalOpen] =
     useState(false);
   const [isClaimLinkModalOpen, setIsClaimLinkModalOpen] = useState(false);
-
   const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
   const [isClaimViewModalOpen, setIsClaimViewModalOpen] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
   const [editingClaim, setEditingClaim] = useState<Claim | null>(null);
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+  const [verifyingClaim, setVerifyingClaim] = useState<Claim | null>(null);
 
   useEffect(() => {
     fetchClaimsForTask(contentId).then(setClaims);
@@ -63,6 +65,11 @@ const Workspace: React.FC<{ contentId: number }> = ({ contentId }) => {
     setTargetClaim(targetClaim);
     setIsClaimLinkModalOpen(true);
     setDraggingClaim(null);
+  };
+
+  const handleVerifyClaim = (claim: Claim) => {
+    setVerifyingClaim(claim);
+    setIsVerificationModalOpen(true);
   };
 
   return (
@@ -100,6 +107,10 @@ const Workspace: React.FC<{ contentId: number }> = ({ contentId }) => {
           onDeleteClaim={(claimId) =>
             setClaims(claims.filter((claim) => claim.claim_id !== claimId))
           }
+          onVerifyClaim={(claim) => {
+            setVerifyingClaim(claim);
+            setIsVerificationModalOpen(true);
+          }}
           draggingClaim={draggingClaim}
           onDropReferenceClaim={handleDropReferenceClaim}
           taskId={contentId}
@@ -139,6 +150,7 @@ const Workspace: React.FC<{ contentId: number }> = ({ contentId }) => {
           reference={selectedReference}
           setDraggingClaim={setDraggingClaim}
           draggingClaim={draggingClaim}
+          onVerifyClaim={handleVerifyClaim}
         />
       )}
 
@@ -148,6 +160,18 @@ const Workspace: React.FC<{ contentId: number }> = ({ contentId }) => {
         sourceClaim={sourceClaim}
         targetClaim={targetClaim}
       />
+      {verifyingClaim && (
+        <ClaimVerificationModal
+          isOpen={isVerificationModalOpen}
+          onClose={() => setIsVerificationModalOpen(false)}
+          claim={verifyingClaim}
+          onSaveVerification={(verification) => {
+            console.log("🧪 Verification saved:", verification);
+            // TODO: Save to database or update local state
+            setIsVerificationModalOpen(false);
+          }}
+        />
+      )}
     </Box>
   );
 };

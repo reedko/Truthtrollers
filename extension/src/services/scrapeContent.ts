@@ -38,6 +38,7 @@ export const scrapeContent = async (
         publisherName: null,
         Claims: [],
         taskContentId: taskContentId || null, // ✅ Ensuring the task reference is linked
+        is_retracted: false,
       };
     }
 

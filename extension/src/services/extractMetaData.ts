@@ -290,7 +290,7 @@ export const fetchPageContent = (): cheerio.CheerioAPI => {
 
 export const fetchExternalPageContent = async (
   url: string
-): Promise<cheerio.CheerioAPI> => {
+): Promise<{ $: cheerio.CheerioAPI; isRetracted: boolean }> => {
   // ✅ Unified function for Wayback Machine fallback
   const fetchFromWayback = async (originalUrl: string) => {
     const archiveUrl = `https://web.archive.org/web/${originalUrl}`;
@@ -298,27 +298,38 @@ export const fetchExternalPageContent = async (
     return fetchExternalPageContent(archiveUrl);
   };
 
+  const detectRetraction = (html: string): boolean => {
+    const lower = html.toLowerCase();
+    return (
+      lower.includes("retracted") ||
+      lower.includes("withdrawn") ||
+      lower.includes("this article has been retracted")
+    );
+  };
+
   if (IS_EXTENSION) {
     return new Promise((resolve) => {
       chrome.runtime.sendMessage(
         EXTENSION_ID,
         { action: "fetchPageContent", url },
-        (response) => {
+        async (response) => {
           if (chrome.runtime.lastError) {
             console.error("Runtime error:", chrome.runtime.lastError);
-            return resolve(cheerio.load(""));
+            return resolve({ $: cheerio.load(""), isRetracted: false });
           }
 
           if (!response?.success || !response.html) {
             if (url.includes("web.archive.org")) {
               console.warn(`🚫 Skipping Wayback recursion for: ${url}`);
-              return resolve(cheerio.load("")); // Return empty content to indicate failure
+              return resolve({ $: cheerio.load(""), isRetracted: false });
             }
 
-            return resolve(fetchFromWayback(url));
+            return resolve(await fetchFromWayback(url));
           }
 
-          return resolve(cheerio.load(response.html));
+          const html = response.html;
+          const isRetracted = detectRetraction(html);
+          return resolve({ $: cheerio.load(html), isRetracted });
         }
       );
     });
@@ -350,10 +361,12 @@ export const fetchExternalPageContent = async (
         return fetchFromWayback(url);
       }
 
-      return cheerio.load(jsonResponse.html);
+      const html = jsonResponse.html;
+      const isRetracted = detectRetraction(html);
+      return { $: cheerio.load(html), isRetracted };
     } catch (error) {
       console.error("❌ Error fetching page content:", error);
-      return cheerio.load(""); // ✅ Ensures return is always valid
+      return { $: cheerio.load(""), isRetracted: false }; // ✅ Ensures return is always valid
     }
   }
 };

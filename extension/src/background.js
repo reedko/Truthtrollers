@@ -424,7 +424,6 @@ const addContent = async (taskData) => {
     });
 
     const responseData = await response.json();
-    console.log(responseData, ":REPSODFJKG");
 
     return responseData.content_id;
   } catch (error) {

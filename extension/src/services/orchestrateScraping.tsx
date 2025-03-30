@@ -54,8 +54,13 @@ export const orchestrateScraping = async (
   try {
     const $ =
       contentType === "task"
-        ? fetchPageContent()
-        : await fetchExternalPageContent(url);
+        ? await fetchPageContent()
+        : (await fetchExternalPageContent(url)).$;
+
+    const isRetracted =
+      contentType === "reference"
+        ? (await fetchExternalPageContent(url)).isRetracted
+        : false;
 
     if (!$.html().trim()) {
       console.warn(`⚠️ No content loaded from: ${url}. Skipping.`);
@@ -147,12 +152,13 @@ export const orchestrateScraping = async (
       subtopics: specificTopics,
       thumbnail: imageUrl,
       iconThumbnailUrl: iconThumbnailUrl || null,
-      authors: allAuthors,
+      authors,
       content: extractedReferences,
       publisherName,
       content_type: contentType,
       raw_text: extractedText,
       Claims: claims,
+      is_retracted: isRetracted,
     };
   } catch (e) {
     console.warn("🧨 Failed to load page content:", url);
