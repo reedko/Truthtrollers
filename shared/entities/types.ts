@@ -65,6 +65,7 @@ export interface ReferenceWithClaims {
     claim_id: number;
     claim_text: string;
   }[];
+  is_primary_source?: boolean;
 }
 
 // Claims
@@ -214,4 +215,5 @@ export interface TaskData {
   raw_text?: string; // the text from /api/extractText
   Claims?: string[];
   taskContentId?: string | null;
+  is_retracted: boolean;
 }

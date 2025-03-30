@@ -55,4 +55,5 @@ export interface TaskData {
   raw_text?: string; // the text from /api/extractText
   Claims: string[];
   taskContentId?: string | null;
+  is_retracted: boolean;
 }

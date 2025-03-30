@@ -32,6 +32,7 @@ interface TaskClaimsProps {
   setIsClaimViewModalOpen: (open: boolean) => void;
   editingClaim: Claim | null;
   setEditingClaim: (claim: Claim | null) => void;
+  onVerifyClaim: (claim: Claim) => void;
 }
 
 const TaskClaims: React.FC<TaskClaimsProps> = ({
@@ -51,6 +52,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   setIsClaimViewModalOpen,
   editingClaim,
   setEditingClaim,
+  onVerifyClaim,
   taskId,
 }) => {
   const claimRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -159,6 +161,16 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
                   e.stopPropagation();
                   setEditingClaim(claim);
                   setIsClaimModalOpen(true);
+                }}
+              />
+              <IconButton
+                size="sm"
+                colorScheme="purple"
+                aria-label="Verify"
+                icon={<span>👁️</span>}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onVerifyClaim(claim);
                 }}
               />
               <IconButton
