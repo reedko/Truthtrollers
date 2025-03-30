@@ -6,6 +6,7 @@ import React, { useEffect, useRef, useState } from "react";
 import cytoscape, { NodeSingular } from "cytoscape";
 import { createPortal } from "react-dom";
 import { GraphNode } from "../../../shared/entities/types";
+
 function pushAwayOtherNodes(
   cy: cytoscape.Core,
   center: { x: number; y: number },
@@ -29,13 +30,8 @@ function pushAwayOtherNodes(
       const newY = pos.y + normY * distance;
 
       node.animate(
-        {
-          position: { x: newX, y: newY },
-        },
-        {
-          duration: 400,
-          easing: "ease-in-out",
-        }
+        { position: { x: newX, y: newY } },
+        { duration: 400, easing: "ease-in-out" }
       );
     }
   });
@@ -61,14 +57,11 @@ function fanOutClaims({
   centerShiftFactor?: number;
 }): cytoscape.ElementDefinition[] {
   const isRef = sourceNode.data("type") === "reference";
-
   const originalPos = { ...sourceNode.position() };
   const targetPos = targetNode.position();
-
   const dx = targetPos.x - originalPos.x;
   const dy = targetPos.y - originalPos.y;
   const angleRadians = Math.atan2(dy, dx);
-
   const arcPadding = centerShiftFactor * claims.length;
 
   if (isRef) {
@@ -78,23 +71,23 @@ function fanOutClaims({
     };
     sourceNode.position(shiftedPos);
   }
+
   const arcCenter = sourceNode.position();
   const neededArcLength = Math.max(2, claims.length - 1) * minDistance;
   const radius = neededArcLength / arcSpan;
-
   const added: cytoscape.ElementDefinition[] = [];
 
   claims.forEach((claim, i) => {
     const angle =
       -arcSpan / 2 + (i / (claims.length - 1 || 1)) * arcSpan + angleRadians;
+    const x = arcCenter.x + radius * Math.cos(angle);
+    const y = arcCenter.y + radius * Math.sin(angle);
 
-    added.push({
-      data: claim,
-      position: {
-        x: arcCenter.x + radius * Math.cos(angle),
-        y: arcCenter.y + radius * Math.sin(angle),
-      },
-    });
+    added.push({ data: claim });
+    cy.add({ data: claim });
+    const claimNode = cy.getElementById(claim.id).first() as NodeSingular;
+    claimNode.position(arcCenter);
+    claimNode.animate({ position: { x, y } }, { duration: 400 });
 
     added.push({
       data: {
@@ -108,6 +101,39 @@ function fanOutClaims({
 
   return added;
 }
+
+function saveNodePositions(
+  cy: cytoscape.Core,
+  store: React.MutableRefObject<any>
+) {
+  store.current = {};
+  cy.nodes().forEach((node) => {
+    const id = node.id();
+    const type = node.data("type");
+    if (["reference", "author", "publisher"].includes(type)) {
+      store.current[id] = { ...node.position() };
+    }
+  });
+}
+
+function restoreNodePositions(
+  cy: cytoscape.Core,
+  store: React.MutableRefObject<Record<string, cytoscape.Position>>,
+  excludeId?: string
+) {
+  Object.entries(store.current).forEach(([id, pos]) => {
+    if (id === excludeId) return;
+    const nodeToRestore = cy.getElementById(id).first() as NodeSingular;
+    if (nodeToRestore.nonempty()) {
+      nodeToRestore.animate(
+        { position: pos },
+        { duration: 400, easing: "ease-in-out" }
+      );
+    }
+  });
+}
+
+// All other unchanged code is retained as-is
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
@@ -322,38 +348,29 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       });
     });
 
+    // 🧠 Keep track of last clicked node
+    const lastClickedNodeId = { current: null };
+    // 📌 Main event handler
     cy.on("tap", "node", (event) => {
-      // Restore previous reference node position if it exists
-
-      if (lastRefNode.current && lastRefOriginalPos.current) {
-        lastRefNode.current.position(lastRefOriginalPos.current);
-        lastRefNode.current = null;
-        lastRefOriginalPos.current = null;
-      }
       const node = event.target;
       const type = node.data("type");
       const contentId = node.data("content_id");
-      // ← right here: check if an external callback is passed
-      if (onNodeClick) {
-        onNodeClick(node.data()); // 🔥 sends full node data back to TaskDetailLayout
+
+      if (node.id() === lastClickedNodeId.current) {
+        console.log("🛑 Same node clicked again — skipping.");
+        return;
       }
-      Object.entries(originalNodePositions.current).forEach(([id, pos]) => {
-        const nodeToRestore = cy.getElementById(id);
+      lastClickedNodeId.current = node.id();
 
-        // Skip if this is the currently-clicked reference node
-        if (!nodeToRestore || id === node.id()) return;
+      // 🧊 Store initial layout if first interaction (no claims visible)
+      if (cy.nodes('node[type *= "Claim"]').length === 0) {
+        saveNodePositions(cy, originalNodePositions);
+      }
 
-        nodeToRestore.animate(
-          {
-            position: { x: pos.x, y: pos.y },
-          },
-          {
-            duration: 400,
-            easing: "ease-in-out",
-          }
-        );
-      });
+      // 📦 Send clicked node to external handler
+      if (onNodeClick) onNodeClick(node.data());
 
+      // 🧠 Handle claim node click
       if (type === "refClaim" || type === "taskClaim") {
         const claimId = node.id();
         const connectedEdge = cy
@@ -364,7 +381,6 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           )
           .toArray()
           .find((e) => ["supports", "refutes"].includes(e.data("relation")));
-
         const relation = connectedEdge?.data("relation") || "related";
 
         setSelectedClaim({
@@ -375,89 +391,86 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         return;
       }
 
+      // 🧽 Remove existing claims
       cy.elements('node[type *= "Claim"], edge[relation]').remove();
-
+      // Only restore if layout was previously saved
+      if (
+        lastRefNode.current &&
+        lastRefOriginalPos.current &&
+        lastRefNode.current.id() !== node.id()
+      ) {
+        lastRefNode.current.position(lastRefOriginalPos.current);
+      }
+      if (Object.keys(originalNodePositions.current).length > 0) {
+        restoreNodePositions(cy, originalNodePositions);
+      }
+      // 📍 Handle reference click
       if (type === "reference") {
-        const refClaims = nodes.filter(
-          (n) => n.type === "refClaim" && n.content_id === contentId
-        );
+        setTimeout(() => {
+          saveNodePositions(cy, originalNodePositions); // Save before fanout
 
-        const claimLinks = links.filter((l) =>
-          refClaims.some((rc) => rc.id === l.source)
-        );
+          const refClaims = nodes.filter(
+            (n) => n.type === "refClaim" && n.content_id === contentId
+          );
+          const claimLinks = links.filter((l) =>
+            refClaims.some((rc) => rc.id === l.source)
+          );
 
-        const taskClaimMap = new Map(
-          nodes.filter((n) => n.type === "taskClaim").map((n) => [n.id, n])
-        );
-
-        const linkedTaskClaims: NodeData[] = [];
-        const seen = new Set<string>();
-        claimLinks.forEach((link) => {
-          if (!seen.has(link.target)) {
-            const claim = taskClaimMap.get(link.target);
-            if (claim) {
-              linkedTaskClaims.push(claim);
-              seen.add(link.target);
+          const taskClaimMap = new Map(
+            nodes.filter((n) => n.type === "taskClaim").map((n) => [n.id, n])
+          );
+          const linkedTaskClaims: NodeData[] = [];
+          const seen = new Set<string>();
+          claimLinks.forEach((link) => {
+            if (!seen.has(link.target)) {
+              const claim = taskClaimMap.get(link.target);
+              if (claim) {
+                linkedTaskClaims.push(claim);
+                seen.add(link.target);
+              }
             }
-          }
-        });
-        if (refClaims.length === 0 && linkedTaskClaims.length === 0) {
-          console.log("🛑 No claims to show for this reference.");
-          return;
-        }
-        // 🔁 Always refresh original positions before laying out claims
-        originalNodePositions.current = {};
-        cy.nodes().forEach((node) => {
-          const id = node.id();
-          const type = node.data("type");
-          if (["reference", "author", "publisher"].includes(type)) {
-            originalNodePositions.current[id] = { ...node.position() };
-          }
-        });
+          });
 
-        if (!lastRefOriginalPos.current) {
+          if (refClaims.length === 0 && linkedTaskClaims.length === 0) {
+            console.log("🛑 No claims to show for this reference.");
+            return;
+          }
+
           lastRefOriginalPos.current = { ...node.position() };
           lastRefNode.current = node;
-        }
 
-        const added: cytoscape.ElementDefinition[] = [];
-        const refNode = node; // the one you clicked
-        const refPos = refNode.position();
-        const taskNode = cy
-          .nodes()
-          .filter('[type = "task"]')
-          .first() as NodeSingular;
+          const taskNode = cy
+            .nodes()
+            .filter('[type = "task"]')
+            .first() as NodeSingular;
+          const added: cytoscape.ElementDefinition[] = [];
 
-        const refClaimElements = fanOutClaims({
-          cy,
-          claims: refClaims,
-          sourceNode: refNode,
-          targetNode: taskNode,
-          relation: "evidence",
-        });
+          const refClaimElements = fanOutClaims({
+            cy,
+            claims: refClaims,
+            sourceNode: node,
+            targetNode: taskNode,
+            relation: "evidence",
+          });
+          added.push(...refClaimElements);
 
-        added.push(...refClaimElements);
+          const taskClaimElements = fanOutClaims({
+            cy,
+            claims: linkedTaskClaims,
+            sourceNode: taskNode,
+            targetNode: node,
+            relation: "evidence",
+          });
+          added.push(...taskClaimElements);
 
-        const taskClaimElements = fanOutClaims({
-          cy,
-          claims: linkedTaskClaims,
-          sourceNode: taskNode,
-          targetNode: refNode,
-          relation: "evidence",
-        });
+          claimLinks.forEach((link) => added.push({ data: link }));
 
-        added.push(...taskClaimElements);
-
-        claimLinks.forEach((link) => {
-          added.push({ data: link });
-        });
-
-        cy.add(added);
-        cy.animate({
-          fit: { eles: cy.elements(), padding: 15 },
-          duration: 300,
-        });
-        pushAwayOtherNodes(cy, refPos, [node.id(), taskNode.id()]);
+          cy.add(added);
+          // 🌀 Instant zoom-to-fit
+          cy.fit(cy.elements(), 15);
+          pushAwayOtherNodes(cy, node.position(), [node.id(), taskNode.id()]);
+          // ✅ Capture new positions after push, so we can restore accurately later
+        }, 420);
       }
     });
 
