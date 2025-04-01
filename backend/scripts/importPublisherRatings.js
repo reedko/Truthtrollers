@@ -23,7 +23,7 @@ const CSV_PATH = path.join(
   "..",
   "assets",
   "data",
-  "publisher_ratings_mockup_extended.csv" // make sure this matches your file
+  "publisher_ratings_mockup_extended 2.csv" // make sure this matches your file
 );
 
 async function importRatings() {
