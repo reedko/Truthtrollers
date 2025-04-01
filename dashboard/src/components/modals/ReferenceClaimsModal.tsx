@@ -14,9 +14,11 @@ import {
   Box,
   Divider,
   IconButton,
+  HStack,
 } from "@chakra-ui/react";
 import { Claim, ReferenceWithClaims } from "../../../../shared/entities/types";
 import ClaimVerificationModal from "./ClaimVerificationModal";
+import { Search2Icon } from "@chakra-ui/icons";
 
 interface ReferenceClaimsModalProps {
   isOpen: boolean;
@@ -96,7 +98,7 @@ const ReferenceClaimsModal: React.FC<ReferenceClaimsModalProps> = ({
               {claimsArray.length > 0 ? (
                 <VStack align="start" spacing={2}>
                   {claimsArray.map((claim: Claim, index: number) => (
-                    <>
+                    <HStack>
                       <Box
                         key={claim.claim_id ?? index}
                         pl={2}
@@ -121,11 +123,11 @@ const ReferenceClaimsModal: React.FC<ReferenceClaimsModalProps> = ({
                         size="sm"
                         colorScheme="purple"
                         aria-label="Verify claim"
-                        icon={<span>👁️</span>}
+                        icon={<Search2Icon />}
                         onClick={() => onVerifyClaim?.(claim)}
                         ml={2}
                       />
-                    </>
+                    </HStack>
                   ))}
                 </VStack>
               ) : (

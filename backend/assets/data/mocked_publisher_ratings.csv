@@ -1,0 +1,42 @@
+publisher_name,source,bias_score,veracity_score,url
+Annals of Internal Medicine,DemoRatingsService,-0.39,0.5,https://ratings.example.com/Annals_of_Internal_Medicine
+AP News,DemoRatingsService,0.63,0.7,https://ratings.example.com/AP_News
+Asparagus Magazine,DemoRatingsService,0.22,0.88,https://ratings.example.com/Asparagus_Magazine
+Australian Government Department of Health and Aged Care,DemoRatingsService,0.5,0.37,https://ratings.example.com/Australian_Government_Department_of_Health_and_Aged_Care
+Autoimmunity Reviews,DemoRatingsService,0.55,0.6,https://ratings.example.com/Autoimmunity_Reviews
+bloomberglaw.com,DemoRatingsService,0.72,0.85,https://ratings.example.com/bloomberglaw.com
+Center for Science in the Public Interest,DemoRatingsService,0.42,0.72,https://ratings.example.com/Center_for_Science_in_the_Public_Interest
+Children's Health Defense,DemoRatingsService,0.26,0.67,https://ratings.example.com/Children's_Health_Defense
+CNN,DemoRatingsService,-0.04,0.42,https://ratings.example.com/CNN
+cochranelibrary.com,DemoRatingsService,0.89,0.49,https://ratings.example.com/cochranelibrary.com
+Connecticut Senate Democrats,DemoRatingsService,-0.23,0.6,https://ratings.example.com/Connecticut_Senate_Democrats
+CT. gov,DemoRatingsService,-0.48,0.79,https://ratings.example.com/CT._gov
+ecobank.com,DemoRatingsService,0.2,0.51,https://ratings.example.com/ecobank.com
+Encyclopedia Britannica,DemoRatingsService,0.69,0.59,https://ratings.example.com/Encyclopedia_Britannica
+Fidelity Bank Plc,DemoRatingsService,-0.33,0.64,https://ratings.example.com/Fidelity_Bank_Plc
+Fluoride Action Network,DemoRatingsService,0.73,0.44,https://ratings.example.com/Fluoride_Action_Network
+Food Fix,DemoRatingsService,-0.75,0.76,https://ratings.example.com/Food_Fix
+Gallup,DemoRatingsService,0.36,0.84,https://ratings.example.com/Gallup
+Gallup.com,DemoRatingsService,-0.56,0.31,https://ratings.example.com/Gallup.com
+Global Governance Forum,DemoRatingsService,-0.59,0.56,https://ratings.example.com/Global_Governance_Forum
+Greenpeace Southeast Asia,DemoRatingsService,0.14,0.44,https://ratings.example.com/Greenpeace_Southeast_Asia
+HHS.gov,DemoRatingsService,-0.92,0.4,https://ratings.example.com/HHS.gov
+Honolulu Civil Beat,DemoRatingsService,-0.21,0.55,https://ratings.example.com/Honolulu_Civil_Beat
+iawn.net,DemoRatingsService,0.63,0.32,https://ratings.example.com/iawn.net
+Infection Control,DemoRatingsService,-0.98,0.51,https://ratings.example.com/Infection_Control
+JAMA,DemoRatingsService,-0.32,0.84,https://ratings.example.com/JAMA
+ksl.com,DemoRatingsService,0.74,0.86,https://ratings.example.com/ksl.com
+NASA,DemoRatingsService,0.57,0.67,https://ratings.example.com/NASA
+Nasa.gov,DemoRatingsService,0.33,0.49,https://ratings.example.com/Nasa.gov
+National Daily,DemoRatingsService,-0.03,0.64,https://ratings.example.com/National_Daily
+National Daily Newspaper,DemoRatingsService,0.55,0.88,https://ratings.example.com/National_Daily_Newspaper
+National Institutes of Health,DemoRatingsService,0.37,0.65,https://ratings.example.com/National_Institutes_of_Health
+National Toxicology Program,DemoRatingsService,0.21,0.4,https://ratings.example.com/National_Toxicology_Program
+NBC News,DemoRatingsService,0.17,0.93,https://ratings.example.com/NBC_News
+New York Post,DemoRatingsService,0.41,0.32,https://ratings.example.com/New_York_Post
+OUP Academic,DemoRatingsService,0.39,0.97,https://ratings.example.com/OUP_Academic
+PBS.org,DemoRatingsService,-0.86,0.54,https://ratings.example.com/PBS.org
+PubMed,DemoRatingsService,-0.19,0.41,https://ratings.example.com/PubMed
+reachoutworld.org,DemoRatingsService,0.64,0.81,https://ratings.example.com/reachoutworld.org
+reddit.com,DemoRatingsService,-0.28,0.84,https://ratings.example.com/reddit.com
+revolutionplusproper,DemoRatingsService,-0.5,0.97,https://ratings.example.com/revolutionplusproper

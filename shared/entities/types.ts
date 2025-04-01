@@ -49,6 +49,7 @@ export interface LitReference {
   content_name: string;
   url: string;
   author_id?: number;
+  claim_source_id?: number;
 }
 
 export interface ReferenceWithClaims {

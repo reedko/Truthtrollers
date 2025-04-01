@@ -11,53 +11,92 @@ import {
   VStack,
   Text,
   Link,
-  Box,
   useToast,
   HStack,
   Tooltip,
 } from "@chakra-ui/react";
-import SelectReferenceModal from "./SelectReferenceModal"; // New modal for selecting references
-import ScrapeReferenceModal from "../ScrapeReferenceModal"; // New modal for scraping references
-import { useTaskStore } from "../../store/useTaskStore"; // ✅ Import store
+import SelectReferenceModal from "./SelectReferenceModal";
+import ScrapeReferenceModal from "../ScrapeReferenceModal";
+import { useTaskStore } from "../../store/useTaskStore";
 import { useShallow } from "zustand/react/shallow";
+import {
+  addClaimSource,
+  deleteClaimSource,
+  fetchClaimSources,
+} from "../../services/useDashboardAPI";
+import { LitReference } from "../../../../shared/entities/types";
 
-const ReferenceModal: React.FC<{
+interface ReferenceModalProps {
   isOpen: boolean;
   onClose: () => void;
-  taskId: number;
-}> = ({ isOpen, onClose, taskId }) => {
+  taskId?: number;
+  claimId?: number;
+}
+
+const ReferenceModal: React.FC<ReferenceModalProps> = ({
+  isOpen,
+  onClose,
+  taskId,
+  claimId,
+}) => {
   const { fetchReferences, deleteReferenceFromTask } = useTaskStore();
-  const references = useTaskStore(
+  const toast = useToast();
+
+  const zustandReferences = useTaskStore(
     useShallow((state) => state.references[Number(taskId)] || [])
   );
-  const toast = useToast();
-  const [isSelectOpen, setIsSelectOpen] = useState(false);
-  const [isScrapeOpen, setIsScrapeOpen] = useState(false);
-  const addReference = useTaskStore((state) => state.addReferenceToTask); // ✅ Get function from store
-
+  const addReference = useTaskStore((state) => state.addReferenceToTask);
   const setSelectedTask = useTaskStore((state) => state.setSelectedTask);
 
+  const [claimReferences, setClaimReferences] = useState<LitReference[]>([]);
+  const [isSelectOpen, setIsSelectOpen] = useState(false);
+  const [isScrapeOpen, setIsScrapeOpen] = useState(false);
+
   const handleOpenSelectModal = () => {
-    setSelectedTask(taskId); // ✅ Store taskId in Zustand
+    if (typeof taskId === "number") {
+      console.log("Opening select modal for task:", taskId);
+      setSelectedTask(taskId);
+    }
     setIsSelectOpen(true);
   };
+
   useEffect(() => {
-    if (isOpen) {
-      fetchReferences(Number(taskId)); // 🔥 Always fetch latest references when modal opens
+    if (!isOpen) return;
+
+    if (claimId) {
+      fetchClaimSources(claimId).then((refs) => setClaimReferences(refs));
+    } else if (typeof taskId === "number") {
+      fetchReferences(taskId);
     }
-  }, [isOpen, taskId]); // ✅ Triggers a fresh fetch every time modal opens
+  }, [isOpen, taskId, claimId]);
 
-  const handleDeleteReference = async (referenceId: number) => {
-    await deleteReferenceFromTask(taskId, referenceId);
-
-    toast({
-      title: "Reference Removed!",
-      description: "The reference has been successfully removed from the task.",
-      status: "warning",
-      duration: 3000,
-      isClosable: true,
-    });
+  const handleDeleteReference = async (id: number) => {
+    if (typeof taskId === "number") {
+      await deleteReferenceFromTask(taskId, id);
+      toast({
+        title: "Reference Removed from Task!",
+        description: "The reference was removed from the task.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+    } else if (typeof claimId === "number") {
+      await deleteClaimSource(id); // this is the claim_source_id
+      toast({
+        title: "Reference Unlinked from Claim!",
+        description: "The reference was removed from this claim.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      const updated = await fetchClaimSources(claimId);
+      setClaimReferences(updated);
+    }
   };
+
+  const activeReferences =
+    typeof claimId === "number" ? claimReferences : zustandReferences;
+
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose}>
@@ -67,20 +106,15 @@ const ReferenceModal: React.FC<{
           <ModalCloseButton />
           <ModalBody>
             <VStack align="start" spacing={3}>
-              {/* ✅ Show Existing References */}
               <Text fontWeight="bold">Existing References:</Text>
-              {references.length > 0 ? (
-                references.map((ref) => (
+              {activeReferences.length > 0 ? (
+                activeReferences.map((ref) => (
                   <HStack
                     key={ref.reference_content_id}
                     w="100%"
                     justifyContent="space-between"
                   >
-                    <Tooltip
-                      label={ref.content_name}
-                      aria-label="Full reference name"
-                      hasArrow
-                    >
+                    <Tooltip label={ref.content_name} hasArrow>
                       <Link
                         href={ref.url}
                         isExternal
@@ -91,12 +125,18 @@ const ReferenceModal: React.FC<{
                         🔗 {ref.content_name}
                       </Link>
                     </Tooltip>
+
                     <Button
                       size="xs"
                       colorScheme="red"
-                      onClick={() =>
-                        handleDeleteReference(ref.reference_content_id)
-                      }
+                      onClick={() => {
+                        if (typeof claimId === "number") {
+                          ref.claim_source_id &&
+                            handleDeleteReference(ref.claim_source_id);
+                        } else if (typeof taskId === "number") {
+                          handleDeleteReference(ref.reference_content_id);
+                        }
+                      }}
                     >
                       🗑️ Remove
                     </Button>
@@ -108,14 +148,13 @@ const ReferenceModal: React.FC<{
             </VStack>
           </ModalBody>
           <ModalFooter>
-            {/* ✅ New Buttons for Selecting/Scraping References */}
-            <Button colorScheme="blue" onClick={handleOpenSelectModal}>
+            <Button colorScheme="blue" onClick={handleOpenSelectModal} mr={1}>
               Select from List
             </Button>
             <Button
               colorScheme="green"
               onClick={() => setIsScrapeOpen(true)}
-              ml={3}
+              ml={2}
             >
               Scrape New Reference
             </Button>
@@ -126,21 +165,37 @@ const ReferenceModal: React.FC<{
         </ModalContent>
       </Modal>
 
-      {/* ✅ Modals for Selecting & Scraping References */}
+      {/* 🔍 Select Existing Reference */}
+      {/* 📂 Select Reference Modal */}
       {isSelectOpen && (
         <SelectReferenceModal
           isOpen={isSelectOpen}
           onClose={() => setIsSelectOpen(false)}
-          onSelect={(referenceId) => addReference(taskId, referenceId)} // ✅ Calls store directly!
+          claimId={claimId}
+          onSelect={
+            claimId
+              ? async (referenceId) => {
+                  await addClaimSource(claimId, referenceId);
+                }
+              : undefined
+          }
+          onRefresh={
+            claimId
+              ? () =>
+                  fetchClaimSources(claimId).then((refs) =>
+                    setClaimReferences(refs)
+                  )
+              : undefined
+          }
         />
       )}
+
+      {/* 🧪 Scrape New Reference */}
       {isScrapeOpen && (
         <ScrapeReferenceModal
           isOpen={isScrapeOpen}
           onClose={() => setIsScrapeOpen(false)}
-          taskId={taskId.toString()}
-
-          // Pass new reference back
+          taskId={taskId?.toString() || ""}
         />
       )}
     </>

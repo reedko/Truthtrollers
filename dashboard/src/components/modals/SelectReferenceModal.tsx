@@ -16,15 +16,28 @@ import {
   useToast,
   Spinner,
 } from "@chakra-ui/react";
-import { fetchAllReferences } from "../../services/useDashboardAPI";
+import {
+  addClaimSource,
+  fetchAllReferences,
+} from "../../services/useDashboardAPI";
 import { TaskStoreState, useTaskStore } from "../../store/useTaskStore";
 import debounce from "lodash.debounce"; // ✅ Prevents API spam
 
-const SelectReferenceModal: React.FC<{
+interface SelectReferenceModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (referenceId: number) => void;
-}> = ({ isOpen, onClose, onSelect }) => {
+  onSelect?: (referenceId: number) => Promise<void>; // optional override
+  onRefresh?: () => Promise<void>; // optional refresh for caller
+  claimId?: number;
+}
+
+const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
+  isOpen,
+  onClose,
+  onSelect,
+  onRefresh,
+  claimId,
+}) => {
   const [references, setReferences] = useState<
     { content_id: number; content_name: string; url: string }[]
   >([]);
@@ -86,24 +99,52 @@ const SelectReferenceModal: React.FC<{
 
   // ✅ Select a reference and remove it from the list
   const handleSelect = async (referenceId: number) => {
-    if (!taskId) {
-      console.error("❌ No task selected");
-      return;
-    }
-    await addReferenceToTask(taskId, referenceId);
-    toast({
-      title: "Reference Added!",
-      description: "The reference has been successfully added to the task.",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
+    try {
+      if (onSelect) {
+        await onSelect(referenceId); // ✅ Add reference
+        toast({
+          title: "Reference Linked!",
+          description: "Reference successfully linked.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+        if (onRefresh) await onRefresh(); // ✅ Tell parent to update
+      } else if (claimId) {
+        await addClaimSource(claimId, referenceId);
+        toast({
+          title: "Reference Linked!",
+          description: "Reference successfully linked to claim.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      } else if (taskId) {
+        await addReferenceToTask(taskId, referenceId);
+        toast({
+          title: "Reference Added!",
+          description: "Reference added to the task.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
 
-    setReferences((prev) =>
-      prev.filter((ref) => ref.content_id !== referenceId)
-    );
-    // ✅ Re-fetch references after adding a new one
-    loadReferences("all", 1);
+      // Remove the selected ref and reload more
+      setReferences((prev) =>
+        prev.filter((ref) => ref.content_id !== referenceId)
+      );
+      loadReferences("all", 1);
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to add reference.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      console.error("Reference link error:", err);
+    }
   };
 
   return (

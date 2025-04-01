@@ -8,6 +8,7 @@ import {
   HStack,
   IconButton,
 } from "@chakra-ui/react";
+import { SearchIcon } from "@chakra-ui/icons";
 import { Claim } from "../../../shared/entities/types";
 import ClaimModal from "./modals/ClaimModal";
 
@@ -167,7 +168,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
                 size="sm"
                 colorScheme="purple"
                 aria-label="Verify"
-                icon={<span>👁️</span>}
+                icon={<SearchIcon />}
                 onClick={(e) => {
                   e.stopPropagation();
                   onVerifyClaim(claim);
