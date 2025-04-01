@@ -7,10 +7,94 @@ import {
   LitReference,
   Claim,
   ReferenceWithClaims,
+  AuthorRating,
+  PublisherRating,
 } from "../../../shared/entities/types";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+
+//UPLOAD IMAGES
+export const uploadImage = async (
+  id: number,
+  file: File,
+  type: "authors" | "publishers"
+): Promise<string | null> => {
+  const formData = new FormData();
+  formData.append("image", file);
+  formData.append("id", id.toString());
+  formData.append("type", type);
+
+  const response = await fetch(`${API_BASE_URL}/api/upload-image`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    console.error("Image upload failed");
+    return null;
+  }
+
+  const data = await response.json();
+  return data.path;
+};
+
+// 🔵 AUTHOR BIO
+export const updateAuthorBio = async (authorId: number, newBio: string) => {
+  const res = await axios.put(`${API_BASE_URL}/api/authors/${authorId}/bio`, {
+    description: newBio,
+  });
+  return res.data;
+};
+
+// 🔵 AUTHOR RATINGS
+export const fetchAuthorRatings = async (
+  authorId: number
+): Promise<AuthorRating[]> => {
+  const res = await axios.get(
+    `${API_BASE_URL}/api/authors/${authorId}/ratings`
+  );
+  return res.data;
+};
+
+export const updateAuthorRatings = async (
+  authorId: number,
+  ratings: AuthorRating[]
+) => {
+  const res = await axios.put(
+    `${API_BASE_URL}/api/authors/${authorId}/ratings`,
+    { ratings }
+  );
+  return res.data;
+};
+
+// 🔵 PUBLISHER RATINGS
+export const fetchPublisherRatings = async (publisherId: number) => {
+  const res = await axios.get(
+    `${API_BASE_URL}/api/publishers/${publisherId}/ratings`
+  );
+  return res.data;
+};
+
+//get ratings topics
+
+export const fetchRatingTopics = async () => {
+  const res = await axios.get(`${API_BASE_URL}/api/publishers/ratings-topics`);
+  return res.data;
+};
+
+export const updatePublisherRatings = async (
+  publisherId: number,
+  ratings: PublisherRating[]
+) => {
+  const res = await axios.put(
+    `${API_BASE_URL}/api/publishers/${publisherId}/ratings`,
+    {
+      ratings,
+    }
+  );
+  return res.data;
+};
 
 /** --------------------- 📝 TASK (CONTENT) FUNCTIONS --------------------- **/
 /** fetch one task  */
@@ -329,22 +413,6 @@ export const fetchPublishers = async (taskId: number): Promise<Publisher[]> => {
     console.error("❌ Error fetching publishers:", error);
     return [];
   }
-};
-
-//fetch publisher ratings for a publisher
-export const fetchPublisherRatings = async (
-  publisherId: number
-): Promise<
-  {
-    source: string;
-    bias_score: number | null;
-    veracity_score: number | null;
-    topic_id: number | null;
-    url: string | null;
-  }[]
-> => {
-  const response = await fetch(`/api/publisher/${publisherId}/ratings`);
-  return await response.json();
 };
 
 /**

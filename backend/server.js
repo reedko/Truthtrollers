@@ -8,6 +8,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import axios from "axios";
 import path from "path";
+import multer from "multer";
 import sharp from "sharp";
 import dotenv from "dotenv";
 import * as cheerio from "cheerio";
@@ -88,6 +89,29 @@ const pool = mysql.createPool({
 db.connect((err) => {
   if (err) throw err;
   //console.log("MySQL connected!");
+});
+//image uploading
+
+// Define storage location and filename strategy
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const type = req.params.type; // "authors" or "publishers"
+    cb(null, path.join(__dirname, `assets/images/${type}`));
+  },
+  filename: function (req, file, cb) {
+    const id = req.params.id;
+    const ext = path.extname(file.originalname);
+    cb(null, `${type.slice(0, -1)}_id_${id}${ext}`);
+  },
+});
+
+//upload image
+const upload = multer({ storage });
+app.post("/api/upload-image", upload.single("image"), (req, res) => {
+  if (!req.file) return res.status(400).send("No file uploaded.");
+  return res
+    .status(200)
+    .json({ message: "Upload successful", path: req.file.path });
 });
 
 function getRelativePath(absolutePath) {
@@ -200,6 +224,17 @@ app.post("/api/extract-metadata", async (req, res) => {
   }
 });
 
+//publisher and author images
+app.use(
+  "/images/authors",
+  express.static(path.join(__dirname, "assets/images/authors"))
+);
+
+app.use(
+  "/images/publishers",
+  express.static(path.join(__dirname, "assets/images/publishers"))
+);
+
 //Get Authors
 app.get("/api/content/:taskId/authors", async (req, res) => {
   const { taskId } = req.params;
@@ -267,6 +302,61 @@ app.post("/api/content/:contentId/authors", async (req, res) => {
   }
 });
 
+//update author bio
+app.put("/api/authors/:authorId/bio", async (req, res) => {
+  const { authorId } = req.params;
+  const { description } = req.body;
+  try {
+    await db.query("UPDATE authors SET description = ? WHERE author_id = ?", [
+      description,
+      authorId,
+    ]);
+    res.send({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ success: false });
+  }
+});
+
+// get the author ratings
+app.get("/api/authors/:authorId/ratings", async (req, res) => {
+  const { authorId } = req.params;
+  try {
+    const [rows] = await db.query(
+      `SELECT ar.*, t.topic_name 
+       FROM author_ratings ar 
+       JOIN topics t ON ar.topic_id = t.topic_id 
+       WHERE ar.author_id = ?`,
+      [authorId]
+    );
+    res.send(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ success: false });
+  }
+});
+
+//update author ratings
+app.put("/api/authors/:authorId/ratings", async (req, res) => {
+  const { authorId } = req.params;
+  const { ratings } = req.body;
+  try {
+    await db.query("DELETE FROM author_ratings WHERE author_id = ?", [
+      authorId,
+    ]);
+    for (const r of ratings) {
+      await db.query(
+        `INSERT INTO author_ratings (author_id, topic_id, bias_score, veracity_score) VALUES (?, ?, ?, ?)`,
+        [authorId, r.topic_id, r.bias_score, r.veracity_score]
+      );
+    }
+    res.send({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ success: false });
+  }
+});
+
 //Get publishers
 app.get("/api/content/:taskId/publishers", async (req, res) => {
   const { taskId } = req.params;
@@ -306,17 +396,68 @@ app.post("/api/content/:contentId/publishers", async (req, res) => {
 });
 
 // GET ratings for a specific publisher
-app.get("/api/publisher/:publisher_id/ratings", (req, res) => {
-  const { publisher_id } = req.params;
-  const query = `
-    SELECT source, bias_score, veracity_score, topic_id, url
-    FROM publisher_ratings
-    WHERE publisher_id = ?
-  `;
-  db.query(query, [publisher_id], (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(results);
-  });
+app.get("/api/publishers/:publisherId/ratings", async (req, res) => {
+  const { publisherId } = req.params;
+  try {
+    const rows = await query(
+      `SELECT pr.*, t.topic_name 
+       FROM publisher_ratings pr 
+       JOIN topics t ON pr.topic_id = t.topic_id 
+       WHERE pr.publisher_id = ?`,
+      [publisherId]
+    );
+    res.send(rows);
+  } catch (err) {
+    console.error("Error fetching publisher ratings:", err);
+    res.status(500).send({ success: false });
+  }
+});
+
+//get all topics in ratings
+// GET ratings for a specific publisher
+app.get("/api/publishers/ratings-topics", async (req, res) => {
+  try {
+    const rows = await query(
+      `SELECT DISTINCT t.topic_id, t.topic_name
+       FROM publisher_ratings pr
+       JOIN topics t ON pr.topic_id = t.topic_id`
+    );
+    res.send(rows);
+  } catch (err) {
+    console.error("Error fetching publisher rating topics:", err);
+    res.status(500).send({ success: false });
+  }
+});
+
+//update ratings for a specific publsiher
+app.put("/api/publishers/:publisherId/ratings", async (req, res) => {
+  const { publisherId } = req.params;
+  const { ratings } = req.body;
+
+  try {
+    await db.query("DELETE FROM publisher_ratings WHERE publisher_id = ?", [
+      publisherId,
+    ]);
+    for (const r of ratings) {
+      await db.query(
+        `INSERT INTO publisher_ratings (publisher_id, topic_id, source, score, url, last_checked, bias_score, veracity_score)
+         VALUES (?, ?, ?, ?, ?, NOW(), ?, ?)`,
+        [
+          publisherId,
+          r.topic_id,
+          r.source || null,
+          r.score || null,
+          r.url || null,
+          r.bias_score,
+          r.veracity_score,
+        ]
+      );
+    }
+    res.send({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ success: false });
+  }
 });
 
 //Get auth_references

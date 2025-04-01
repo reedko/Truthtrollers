@@ -33,6 +33,18 @@ export interface Author {
   author_other_name?: string;
   author_title?: string;
   author_profile_pic?: string;
+  description?: string;
+}
+
+export interface AuthorRating {
+  author_id: number;
+  source: string;
+  url: string;
+  bias_score: number;
+  veracity_score: number;
+  topic_id: number;
+  notes?: string;
+  topic_name?: string;
 }
 
 // Publisher Interface
@@ -41,6 +53,24 @@ export interface Publisher {
   publisher_name: string;
   publisher_owner?: string;
   publisher_icon?: string;
+}
+
+//Publisher Rating interface
+export interface PublisherRating {
+  publisher_id: number;
+  source: string;
+  url: string;
+  bias_score: number;
+  veracity_score: number;
+  topic_id: number;
+  notes?: string;
+  topic_name?: string;
+}
+
+//topics
+export interface Topic {
+  topic_id: number;
+  topic_name: string;
 }
 
 // References
@@ -134,6 +164,9 @@ export class GraphNode implements d3.SimulationNodeDatum {
   publisher_id?: number;
   author_id?: number;
 
+  /*
+ 
+  */
   get group(): number {
     return this.type === "author"
       ? 1
