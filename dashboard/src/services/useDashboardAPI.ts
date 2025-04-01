@@ -103,6 +103,60 @@ export const updateClaim = async (claim: Claim): Promise<Claim> => {
 };
 
 /**
+ * Associate a selected reference with a claim
+ */
+
+export const addClaimSource = async (
+  claimId: number,
+  referenceContentId: number,
+  isPrimary: boolean = false,
+  userId?: number
+): Promise<{ claim_source_id: number }> => {
+  const response = await axios.post(`${API_BASE_URL}/api/claim-sources`, {
+    claim_id: claimId,
+    reference_content_id: referenceContentId,
+    is_primary: isPrimary,
+    user_id: userId,
+  });
+  return response.data;
+};
+
+export const fetchClaimSources = async (
+  claimId: number
+): Promise<
+  {
+    claim_source_id: number;
+    reference_content_id: number;
+    is_primary: boolean;
+    created_at: string;
+    content_name: string;
+    url: string;
+  }[]
+> => {
+  const response = await axios.get(
+    `${API_BASE_URL}/api/claim-sources/${claimId}`
+  );
+  return response.data;
+};
+
+export const updateClaimSource = async (
+  claim_sources_id: number,
+  newReferenceId: number,
+  notes: string
+): Promise<void> => {
+  await axios.put(`${API_BASE_URL}/claim-sources/${claim_sources_id}`, {
+    new_reference_id: newReferenceId,
+    notes: notes,
+  });
+};
+
+export const deleteClaimSource = async (
+  claim_sources_id: number
+): Promise<void> => {
+  await axios.delete(`${API_BASE_URL}/claim-sources/${claim_sources_id}`);
+};
+
+/**
  * Update an existing reference
  */
 export const updateReference = async (
@@ -275,6 +329,22 @@ export const fetchPublishers = async (taskId: number): Promise<Publisher[]> => {
     console.error("❌ Error fetching publishers:", error);
     return [];
   }
+};
+
+//fetch publisher ratings for a publisher
+export const fetchPublisherRatings = async (
+  publisherId: number
+): Promise<
+  {
+    source: string;
+    bias_score: number | null;
+    veracity_score: number | null;
+    topic_id: number | null;
+    url: string | null;
+  }[]
+> => {
+  const response = await fetch(`/api/publisher/${publisherId}/ratings`);
+  return await response.json();
 };
 
 /**

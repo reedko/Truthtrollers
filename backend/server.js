@@ -305,6 +305,20 @@ app.post("/api/content/:contentId/publishers", async (req, res) => {
   }
 });
 
+// GET ratings for a specific publisher
+app.get("/api/publisher/:publisher_id/ratings", (req, res) => {
+  const { publisher_id } = req.params;
+  const query = `
+    SELECT source, bias_score, veracity_score, topic_id, url
+    FROM publisher_ratings
+    WHERE publisher_id = ?
+  `;
+  db.query(query, [publisher_id], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
 //Get auth_references
 app.get("/api/content/:taskId/auth_references", async (req, res) => {
   const { taskId } = req.params;
@@ -1124,6 +1138,68 @@ app.post("/api/claims/add", async (req, res) => {
   }
 });
 
+// ✅ Add new claim source (reference or Task)
+app.post("/api/claim-sources", (req, res) => {
+  const { claim_id, reference_content_id, is_primary, user_id } = req.body;
+  const query = `
+    INSERT INTO claim_sources (claim_id, reference_content_id, is_primary, user_id)
+    VALUES (?, ?, ?, ?)
+  `;
+
+  db.query(
+    query,
+    [claim_id, reference_content_id, is_primary, user_id],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json({ claim_source_id: results.insertId });
+    }
+  );
+});
+
+// ✅ Fetch claim sources for a given claim
+app.get("/api/claim-sources/:claimId", (req, res) => {
+  const claimId = req.params.claimId;
+  const query = `
+    SELECT cs.claim_source_id, cs.reference_content_id, cs.is_primary, cs.created_at, c.content_name,c.url
+    FROM claim_sources cs JOIN content c
+    ON cs.reference_content_id=c.content_id
+    WHERE cs.claim_id = ?
+  `;
+  db.query(query, [claimId], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+
+//delete a claim source for a claim_id
+app.delete("/api/claim-sources/:claimId", (req, res) => {
+  const claimId = req.params.claimId;
+  const query = `
+    DELETE FROM claim_sources
+    WHERE claim_sources_id = ?
+  `;
+  db.query(query, [claimId], (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+});
+// ✅ Update claim sources for a given claim
+app.put("/api/claim-sources/:claim_sources_id", (req, res) => {
+  const claim_sources_id = req.params.claim_sources_id;
+  const { new_reference_id, notes } = req.body;
+  const query = `
+    UPDATE claim_sources SET reference_id = ?, notes = ?
+    WHERE claim_source_id = ?
+  `;
+  db.query(
+    query,
+    [new_reference_id, notes || null, claim_sources_id],
+    (err, results) => {
+      if (err) return res.status(500).json({ error: err.message });
+      res.json(results);
+    }
+  );
+});
 app.get("/api/test-connection", (req, res) => {
   pool.query("SELECT 1 + 1 AS solution", (err, results) => {
     if (err) {

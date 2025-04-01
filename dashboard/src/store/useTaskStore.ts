@@ -258,7 +258,7 @@ export const useTaskStore = create<TaskStoreState>()(
       const { currentPage, content } = get();
       const nextPage = currentPage + 1;
       try {
-        const newTasks = await fetchTasksAPI(nextPage + 1, 25);
+        const newTasks = await fetchTasksAPI(nextPage, 25);
         set((state) => ({
           content: [...state.content, ...newTasks],
           filteredTasks: [...state.content, ...newTasks],

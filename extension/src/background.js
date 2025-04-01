@@ -596,37 +596,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 async function handleExtractText(url, html) {
   console.log(`🔄 Processing text extraction for URL: ${url}`);
 
-  if (html) {
-    console.log("✅ HTML provided, skipping API request.");
-    throw new Error("USE_HTML_DIRECTLY"); // ❗ Allow orchestrateScraping to handle it
-  }
+  if (!html) {
+    console.log("🌍 No HTML provided, fetching from backend:", url);
 
-  console.log("🌍 No HTML provided, fetching from backend:", url);
-
-  try {
-    const response = await fetch(`${BASE_URL}/api/extractText`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url, html }),
-    });
-
-    const textResponse = await response.text();
-    console.log("🧐 Raw extractText API response:", textResponse);
-
-    let data;
     try {
-      data = JSON.parse(textResponse);
-    } catch (err) {
-      console.error("❌ JSON Parse Error:", textResponse);
-      throw new Error("Invalid JSON returned from extractText API");
+      const response = await fetch(`${BASE_URL}/api/extractText`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, html }),
+      });
+
+      const textResponse = await response.text();
+      console.log("🧐 Raw extractText API response:", textResponse);
+
+      let data;
+      try {
+        data = JSON.parse(textResponse);
+      } catch (err) {
+        console.error("❌ JSON Parse Error:", textResponse);
+        throw new Error("Invalid JSON returned from extractText API");
+      }
+
+      console.log("✅ Parsed API response:", data);
+
+      return data.pageText || "";
+    } catch (error) {
+      console.error("❌ Text extraction failed:", error);
+      throw error;
     }
-
-    console.log("✅ Parsed API response:", data);
-
-    return data.pageText || "";
-  } catch (error) {
-    console.error("❌ Text extraction failed:", error);
-    throw error;
+  } else {
+    console.log("✅ HTML provided, skipping API request.");
+    console.log("USE_HTML_DIRECTLY"); // ❗ Allow orchestrateScraping to handle it
+    return html;
   }
 }
 
@@ -701,7 +702,7 @@ async function callOpenAiAnalyze(content) {
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "gpt-4-turbo",
+      model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
@@ -728,7 +729,18 @@ ${content}
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI request failed: ${response.statusText}`);
+    let errorMessage = `OpenAI request failed: ${response.status} ${response.statusText}`;
+
+    try {
+      const errorData = await response.json();
+      if (errorData?.error?.message) {
+        errorMessage += ` — ${errorData.error.message}`;
+      }
+    } catch (jsonErr) {
+      console.warn("⚠️ Failed to parse error response JSON", jsonErr);
+    }
+
+    throw new Error(errorMessage);
   }
 
   const data = await response.json();

@@ -55,37 +55,39 @@ export const getExtractedTextFromBackground = async (
 };
 
 async function handleExtractText(url: string, html: string): Promise<string> {
-  if (html) {
-    console.log("✅ HTML provided, skipping API request.");
-    throw new Error("USE_HTML_DIRECTLY"); // ❗ Let orchestrateScraping handle it
-  }
-
-  console.log("🌍 No HTML provided, fetching from backend:", url);
-  try {
-    const response = await fetch(`${BASE_URL}/api/extractText`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url, html }),
-    });
-
-    const textResponse = await response.text();
-
-    let data;
+  if (!html) {
+    console.log("🌍 No HTML provided, fetching from backend:", url);
     try {
-      data = JSON.parse(textResponse);
-    } catch (err) {
-      console.error("❌ JSON Parse Error:", textResponse);
-      throw new Error("Invalid JSON returned from extractText API");
-    }
+      const response = await fetch(`${BASE_URL}/api/extractText`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, html }),
+      });
 
-    if (!data.success || !data.pageText) {
-      throw new Error(`Text extraction failed: ${JSON.stringify(data)}`);
-    }
+      const textResponse = await response.text();
 
-    return data.pageText;
-  } catch (error) {
-    console.error("❌ Text extraction failed:", error);
-    throw error; // Pass it up for orchestrateScraping to catch
+      let data;
+      try {
+        data = JSON.parse(textResponse);
+      } catch (err) {
+        console.error("❌ JSON Parse Error:", textResponse);
+        throw new Error("Invalid JSON returned from extractText API");
+      }
+
+      if (!data.success || !data.pageText) {
+        throw new Error(`Text extraction failed: ${JSON.stringify(data)}`);
+      }
+
+      return data.pageText;
+    } catch (error) {
+      console.error("❌ Text extraction failed:", error);
+      throw error; // Pass it up for orchestrateScraping to catch
+    }
+  } else {
+    console.log("✅ HTML provided, skipping API request.");
+    console.log("USE_HTML_DIRECTLY"); // ❗ Let orchestrateScraping handle it
+
+    return html;
   }
 }
 

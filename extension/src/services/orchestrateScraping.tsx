@@ -52,15 +52,19 @@ export const orchestrateScraping = async (
 
   // Fetch page content
   try {
-    const $ =
-      contentType === "task"
-        ? await fetchPageContent()
-        : (await fetchExternalPageContent(url)).$;
+    console.log("📦 Starting to fetch page content for", url);
+    let $;
+    let isRetracted = false;
 
-    const isRetracted =
-      contentType === "reference"
-        ? (await fetchExternalPageContent(url)).isRetracted
-        : false;
+    if (contentType === "task") {
+      $ = await fetchPageContent();
+      console.log("✅ fetchPageContent success");
+    } else {
+      const result = await fetchExternalPageContent(url);
+      $ = result.$;
+      isRetracted = result.isRetracted;
+      console.log("✅ fetchExternalPageContent success");
+    }
 
     if (!$.html().trim()) {
       console.warn(`⚠️ No content loaded from: ${url}. Skipping.`);
@@ -160,8 +164,13 @@ export const orchestrateScraping = async (
       Claims: claims,
       is_retracted: isRetracted,
     };
-  } catch (e) {
+  } catch (e: any) {
     console.warn("🧨 Failed to load page content:", url);
-    return null; // fallback here too, if necessary
+    console.error("🧨 Failed to load page content:", url);
+    console.error("🧨 Error details:", e);
+    console.error("🧨 Error message:", e?.message);
+    console.error("🧨 Error stack:", e?.stack);
+
+    return null;
   }
 };

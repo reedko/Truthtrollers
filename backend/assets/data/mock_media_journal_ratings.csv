@@ -1,0 +1,11 @@
+Source Name,Rating Agency,Bias,Accuracy,Notes
+Nature,Scimago,Neutral,9.5,Top-tier science journal
+Fox News,AllSides,Right,4.0,Some partisan bias
+New York Times,MBFC,Left-Center,8.7,High factual reporting
+The Lancet,Scimago,Neutral,9.8,Peer-reviewed medical journal
+The Epoch Times,MBFC,Right,3.2,Mixed factual reporting
+Reuters,AllSides,Center,9.0,Highly reliable reporting
+Scientific American,Scimago,Left,8.9,Well-respected in science
+Breitbart,MBFC,Far Right,2.5,Low factual reliability
+Washington Post,AllSides,Left-Center,8.3,Mainstream liberal outlet
+Journal of Climate,Scimago,Neutral,9.4,Scientific consensus-driven
