@@ -37,6 +37,7 @@ export interface Author {
 }
 
 export interface AuthorRating {
+  author_rating_id: number;
   author_id: number;
   source: string;
   url: string;
@@ -57,6 +58,7 @@ export interface Publisher {
 
 //Publisher Rating interface
 export interface PublisherRating {
+  publisher_rating_id: number;
   publisher_id: number;
   source: string;
   url: string;

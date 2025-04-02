@@ -13,12 +13,15 @@ import {
   HStack,
   useDisclosure,
   useToast,
+  Badge,
+  Flex,
 } from "@chakra-ui/react";
 import { Publisher, PublisherRating } from "../../../shared/entities/types";
 import { BiChevronDown } from "react-icons/bi";
 import {
   uploadImage,
   fetchPublisherRatings,
+  fetchPublisher,
 } from "../services/useDashboardAPI";
 import PubRatingModal from "./modals/PubRatingModal";
 import { useEffect, useRef, useState } from "react";
@@ -38,6 +41,52 @@ const PubCard: React.FC<PubCardProps> = ({ publishers }) => {
   const [allRatings, setAllRatings] = useState<{
     [publisherId: number]: PublisherRating[];
   }>({});
+  const [publisherList, setPublisherList] = useState<Publisher[]>(publishers);
+  useEffect(() => {
+    if (publishers.length > 0) {
+      setPublisherList(publishers);
+    }
+  }, [publishers]);
+  // Score-based badge styles
+  // Use readable badge background colors
+  const getBiasColor = (score: number) => {
+    if (score <= -5 || score >= 5) return "red.300";
+    return "green.300";
+  };
+
+  const getVeracityColor = (score: number) => {
+    if (score > 5) return "green.300";
+    if (score < 0) return "red.300";
+    return "gray.300";
+  };
+
+  // Set text color for good contrast
+  const getBadgeTextColor = (score: number) => {
+    return "black"; // readable over red.300, green.300, gray.300
+  };
+  const getBiasEmoji = (score: number) => {
+    if (score <= -5 || score >= 5) return "🔴";
+    return "🟢";
+  };
+
+  const getVeracityEmoji = (score: number) => {
+    if (score > 5) return "🟢";
+    if (score < 0) return "🔴";
+    return "⚪";
+  };
+
+  useEffect(() => {
+    const loadAllRatings = async () => {
+      const map: { [publisherId: number]: PublisherRating[] } = {};
+      for (const pub of publishers) {
+        const pubRatings = await fetchPublisherRatings(pub.publisher_id);
+        map[pub.publisher_id] = pubRatings;
+      }
+      setAllRatings(map);
+    };
+
+    if (publishers.length) loadAllRatings();
+  }, [publishers]);
 
   useEffect(() => {
     const loadRatings = async () => {
@@ -51,24 +100,14 @@ const PubCard: React.FC<PubCardProps> = ({ publishers }) => {
     loadRatings();
   }, [activePublisher]);
 
-  useEffect(() => {
-    const loadAllRatings = async () => {
-      const ratingsMap: { [publisherId: number]: PublisherRating[] } = {};
-
-      for (const pub of publishers) {
-        const ratings = await fetchPublisherRatings(pub.publisher_id);
-        ratingsMap[pub.publisher_id] = ratings;
-      }
-
-      setAllRatings(ratingsMap);
-    };
-
-    if (publishers.length > 0) {
-      loadAllRatings();
-    }
-  }, [publishers]);
-  const handleRatingsUpdate = (updated: PublisherRating[]) => {
-    setRatings(updated);
+  const handleRatingsUpdate = (
+    publisherId: number,
+    updated: PublisherRating[]
+  ) => {
+    setAllRatings((prev) => ({
+      ...prev,
+      [publisherId]: updated,
+    }));
   };
 
   const handleUpload = async (file: File, publisherId: number) => {
@@ -81,6 +120,17 @@ const PubCard: React.FC<PubCardProps> = ({ publishers }) => {
         duration: 3000,
         isClosable: true,
       });
+      // 🔄 Refresh the updated publisher
+      const updatedPublisher = await fetchPublisher(publisherId);
+
+      if (updatedPublisher) {
+        setPublisherList((prev) =>
+          prev.map((a: Publisher) =>
+            a.publisher_id === publisherId ? updatedPublisher : a
+          )
+        );
+        setActivePublisher(updatedPublisher);
+      }
     }
   };
 
@@ -101,7 +151,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers }) => {
           Publisher Details
         </Text>
 
-        {publishers.map((pub, idx) => (
+        {publisherList.map((pub, idx) => (
           <Box key={idx} mb={4}>
             {pub.publisher_icon && (
               <Center mb={2}>
@@ -133,15 +183,52 @@ const PubCard: React.FC<PubCardProps> = ({ publishers }) => {
               {pub.publisher_name}
             </Text>
             {allRatings[pub.publisher_id]?.length > 0 && (
-              <Box mt={2}>
-                {allRatings[pub.publisher_id].map((r, i) => (
-                  <Text fontSize="sm" key={i}>
-                    ⭐ {r.source}: {r.bias_score} bias, {r.veracity_score}{" "}
-                    veracity ({r.topic_name})
-                  </Text>
-                ))}
+              <Box mt={3} bg="whiteAlpha.600" p={2} borderRadius="md" w="100%">
+                <Text fontWeight="medium" fontSize="sm" mb={1}>
+                  Ratings:
+                </Text>
+
+                {/* Header row */}
+                <HStack fontWeight="bold" fontSize="sm" spacing={4} w="100%">
+                  <Box flex="1">Source (Topic)</Box>
+                  <Box w="70px" textAlign="right" color="purple.600">
+                    Bias
+                  </Box>
+                  <Box w="90px" textAlign="right" color="green.600">
+                    Veracity
+                  </Box>
+                </HStack>
+
+                <VStack spacing={1} align="start" w="100%">
+                  {allRatings[pub.publisher_id].map((r, i) => (
+                    <HStack key={i} fontSize="sm" spacing={4} w="100%">
+                      <Box flex="1">
+                        <Text isTruncated fontWeight="semibold">
+                          {r.source}{" "}
+                          <Text as="span" color="gray.500" fontSize="xs">
+                            ({r.topic_name})
+                          </Text>
+                        </Text>
+                      </Box>
+
+                      <Badge w="90px" px={2} borderRadius="md" bg="gray.600">
+                        <Flex justify="space-between" w="full">
+                          <Text>{getBiasEmoji(r.bias_score)}</Text>
+                          <Text>{r.bias_score?.toFixed(1)}</Text>
+                        </Flex>
+                      </Badge>
+                      <Badge w="90px" px={2} borderRadius="md" bg="gray.600">
+                        <Flex justify="space-between" w="full">
+                          <Text>{getVeracityEmoji(r.veracity_score)}</Text>
+                          <Text>{r.veracity_score?.toFixed(1)}</Text>
+                        </Flex>
+                      </Badge>
+                    </HStack>
+                  ))}
+                </VStack>
               </Box>
             )}
+
             <Menu>
               <MenuButton as={Button} rightIcon={<BiChevronDown />} mt={2}>
                 Actions
@@ -157,27 +244,6 @@ const PubCard: React.FC<PubCardProps> = ({ publishers }) => {
                 </MenuItem>
               </MenuList>
             </Menu>
-
-            {/* Ratings */}
-            {ratings.length > 0 && (
-              <Box mt={3} bg="whiteAlpha.600" p={2} borderRadius="md">
-                <Text fontWeight="medium" fontSize="sm" mb={1}>
-                  Ratings:
-                </Text>
-                <VStack spacing={1} align="start">
-                  {ratings.map((r, i) => (
-                    <HStack key={i} fontSize="sm" spacing={2}>
-                      <Text fontWeight="bold">{r.source}</Text>
-                      <Text>({r.topic_name})</Text>
-                      <Text color="purple.600">Bias: {r.bias_score}</Text>
-                      <Text color="green.600">
-                        Veracity: {r.veracity_score}
-                      </Text>
-                    </HStack>
-                  ))}
-                </VStack>
-              </Box>
-            )}
           </Box>
         ))}
 

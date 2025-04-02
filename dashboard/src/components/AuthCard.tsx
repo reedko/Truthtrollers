@@ -19,13 +19,21 @@ import {
   useToast,
   VStack,
   HStack,
+  Badge,
+  Flex,
 } from "@chakra-ui/react";
 import { BiChevronDown } from "react-icons/bi";
 import { Author, AuthorRating } from "../../../shared/entities/types";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import AuthBioModal from "./modals/AuthBioModal";
 import AuthRatingModal from "./modals/AuthRatingModal";
-import { fetchAuthorRatings, uploadImage } from "../services/useDashboardAPI";
+import {
+  uploadImage,
+  fetchAuthorRatings,
+  updateAuthorBio,
+  fetchAuthors,
+  fetchAuthor,
+} from "../services/useDashboardAPI";
 
 interface AuthCardProps {
   authors: Author[];
@@ -37,44 +45,76 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors }) => {
     onOpen: onBioOpen,
     onClose: onBioClose,
   } = useDisclosure();
-
   const {
     isOpen: isRatingOpen,
     onOpen: onRatingOpen,
     onClose: onRatingClose,
   } = useDisclosure();
-
+  const [activeAuthor, setActiveAuthor] = useState<Author | null>(authors[0]);
+  const [allRatings, setAllRatings] = useState<{
+    [authorId: number]: AuthorRating[];
+  }>({});
   const toast = useToast();
   const cardRef = useRef<HTMLDivElement | null>(null);
-  const [activeAuthor, setActiveAuthor] = useState<Author | null>(authors[0]);
-  const [ratings, setRatings] = useState<AuthorRating[]>([]);
+  const [authorList, setAuthorList] = useState<Author[]>(authors);
+  useEffect(() => {
+    if (authors.length > 0) {
+      setAuthorList(authors);
+    }
+  }, [authors]);
 
   useEffect(() => {
-    const loadRatings = async () => {
-      if (activeAuthor) {
-        const result = await fetchAuthorRatings(activeAuthor.author_id);
-        setRatings(result);
+    const loadAllRatings = async () => {
+      const map: { [authorId: number]: AuthorRating[] } = {};
+      for (const author of authors) {
+        const ratings = await fetchAuthorRatings(author.author_id);
+        map[author.author_id] = ratings;
       }
+      setAllRatings(map);
     };
-    loadRatings();
-  }, [activeAuthor]);
+
+    if (authors.length) loadAllRatings();
+  }, [authors]);
+
+  const handleRatingsUpdate = (authorId: number, updated: AuthorRating[]) => {
+    setAllRatings((prev) => ({
+      ...prev,
+      [authorId]: updated,
+    }));
+  };
 
   const handleUpload = async (file: File, authorId: number) => {
     const result = await uploadImage(authorId, file, "authors");
     if (result) {
       toast({
         title: "Image Uploaded",
-        description: "Author profile image was updated!",
+        description: "Author profile image updated!",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
+
+      // 🔄 Refresh the updated author
+      const updatedAuthor = await fetchAuthor(authorId);
+      console.log(updatedAuthor, ":JJDJDJ");
+      if (updatedAuthor) {
+        setAuthorList((prev) =>
+          prev.map((a) => (a.author_id === authorId ? updatedAuthor : a))
+        );
+        setActiveAuthor(updatedAuthor);
+      }
     }
   };
 
-  const handleOpenModal = (open: () => void, author: Author) => {
-    setActiveAuthor(author);
-    open();
+  const getBiasEmoji = (score: number) => {
+    if (score <= -5 || score >= 5) return "🔴";
+    return "🟢";
+  };
+
+  const getVeracityEmoji = (score: number) => {
+    if (score > 5) return "🟢";
+    if (score < 0) return "🔴";
+    return "⚪";
   };
 
   return (
@@ -94,11 +134,7 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors }) => {
           Author Details
         </Text>
 
-        <Tabs
-          isFitted
-          variant="enclosed"
-          onChange={(i) => setActiveAuthor(authors[i])}
-        >
+        <Tabs isFitted variant="enclosed">
           <TabList>
             {authors.map((author, idx) => (
               <Tab key={idx}>
@@ -107,7 +143,7 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors }) => {
             ))}
           </TabList>
           <TabPanels>
-            {authors.map((author, idx) => (
+            {authorList.map((author, idx) => (
               <TabPanel key={idx}>
                 {author.author_profile_pic && (
                   <Center mb={3}>
@@ -143,21 +179,59 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors }) => {
                   {author.description || "No bio available."}
                 </Text>
 
-                {/* Ratings */}
-                {ratings.length > 0 && (
+                {allRatings[author.author_id]?.length > 0 && (
                   <Box mt={3} bg="whiteAlpha.600" p={2} borderRadius="md">
                     <Text fontWeight="medium" fontSize="sm" mb={1}>
                       Ratings:
                     </Text>
+                    {/* Header row */}
+                    <HStack
+                      fontWeight="bold"
+                      fontSize="sm"
+                      spacing={4}
+                      w="100%"
+                    >
+                      <Box flex="1">Source (Topic)</Box>
+                      <Box w="70px" textAlign="right" color="purple.600">
+                        Bias
+                      </Box>
+                      <Box w="90px" textAlign="right" color="green.600">
+                        Veracity
+                      </Box>
+                    </HStack>
                     <VStack spacing={1} align="start">
-                      {ratings.map((r, i) => (
-                        <HStack key={i} fontSize="sm" spacing={2}>
-                          <Text fontWeight="bold">{r.source}</Text>
-                          <Text>({r.topic_name})</Text>
-                          <Text color="purple.600">Bias: {r.bias_score}</Text>
-                          <Text color="green.600">
-                            Veracity: {r.veracity_score}
-                          </Text>
+                      {allRatings[author.author_id].map((r, i) => (
+                        <HStack key={i} fontSize="sm" spacing={6}>
+                          <Box flex="1">
+                            <Text isTruncated fontWeight="semibold">
+                              {r.source}{" "}
+                              <Text as="span" color="gray.500" fontSize="xs">
+                                ({r.topic_name})
+                              </Text>
+                            </Text>
+                          </Box>
+                          <Badge
+                            w="90px"
+                            px={2}
+                            borderRadius="md"
+                            bg="gray.600"
+                          >
+                            <Flex justify="space-between" w="full">
+                              <Text>{getBiasEmoji(r.bias_score)}</Text>
+                              <Text>{r.bias_score?.toFixed(1)}</Text>
+                            </Flex>
+                          </Badge>
+                          <Badge
+                            w="90px"
+                            px={2}
+                            borderRadius="md"
+                            bg="gray.600"
+                          >
+                            <Flex justify="space-between" w="full">
+                              <Text>{getVeracityEmoji(r.veracity_score)}</Text>
+                              <Text>{r.veracity_score?.toFixed(1)}</Text>
+                            </Flex>
+                          </Badge>
                         </HStack>
                       ))}
                     </VStack>
@@ -170,12 +244,18 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors }) => {
                   </MenuButton>
                   <MenuList>
                     <MenuItem
-                      onClick={() => handleOpenModal(onBioOpen, author)}
+                      onClick={() => {
+                        setActiveAuthor(author);
+                        onBioOpen();
+                      }}
                     >
                       ✏️ Edit Bio
                     </MenuItem>
                     <MenuItem
-                      onClick={() => handleOpenModal(onRatingOpen, author)}
+                      onClick={() => {
+                        setActiveAuthor(author);
+                        onRatingOpen();
+                      }}
                     >
                       📊 Manage Ratings
                     </MenuItem>
@@ -192,7 +272,26 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors }) => {
             onClose={onBioClose}
             authorId={activeAuthor.author_id}
             currentBio={activeAuthor.description}
-            onSave={async () => {}}
+            onSave={async (newBio) => {
+              await updateAuthorBio(activeAuthor.author_id, newBio);
+
+              // Update local state so the card reflects the new bio
+              setAuthorList((prev) =>
+                prev.map((a) =>
+                  a.author_id === activeAuthor.author_id
+                    ? { ...a, description: newBio }
+                    : a
+                )
+              );
+
+              toast({
+                title: "Bio Updated",
+                description: "Author biography saved.",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+              });
+            }}
           />
         )}
 
@@ -201,8 +300,7 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors }) => {
             isOpen={isRatingOpen}
             onClose={onRatingClose}
             authorId={activeAuthor.author_id}
-            ratings={ratings}
-            onSave={async () => {}}
+            onRatingsUpdate={handleRatingsUpdate}
           />
         )}
       </Box>

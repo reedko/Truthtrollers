@@ -21,14 +21,15 @@ export const uploadImage = async (
   type: "authors" | "publishers"
 ): Promise<string | null> => {
   const formData = new FormData();
-  formData.append("image", file);
-  formData.append("id", id.toString());
-  formData.append("type", type);
+  formData.append("image", file); // ✅ only append the file here
 
-  const response = await fetch(`${API_BASE_URL}/api/upload-image`, {
-    method: "POST",
-    body: formData,
-  });
+  const response = await fetch(
+    `${API_BASE_URL}/api/upload-image?type=${type}&id=${id}`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
 
   if (!response.ok) {
     console.error("Image upload failed");
@@ -57,6 +58,7 @@ export const fetchAuthorRatings = async (
   return res.data;
 };
 
+//update all author ratings
 export const updateAuthorRatings = async (
   authorId: number,
   ratings: AuthorRating[]
@@ -65,6 +67,26 @@ export const updateAuthorRatings = async (
     `${API_BASE_URL}/api/authors/${authorId}/ratings`,
     { ratings }
   );
+  return res.data;
+};
+
+//update single author rating
+export const updateAuthorRating = async (
+  authorRatingId: number,
+  ratings: AuthorRating
+) => {
+  let res;
+  if (authorRatingId !== 0) {
+    res = await axios.put(
+      `${API_BASE_URL}/api/authors/${authorRatingId}/rating`,
+      { ratings }
+    );
+  } else {
+    //add a new rating
+    res = await axios.post(`${API_BASE_URL}/api/authors/add-rating`, {
+      ratings,
+    });
+  }
   return res.data;
 };
 
@@ -96,6 +118,19 @@ export const updatePublisherRatings = async (
   return res.data;
 };
 
+//update a single publisher rating
+export const updatePublisherRating = async (
+  publisherRatingId: number,
+  rating: PublisherRating
+) => {
+  const res = await axios.put(
+    `${API_BASE_URL}/api/publishers/${publisherRatingId}/rating`,
+    {
+      rating,
+    }
+  );
+  return res.data;
+};
 /** --------------------- 📝 TASK (CONTENT) FUNCTIONS --------------------- **/
 /** fetch one task  */
 // services/useDashboardAPI.ts
@@ -401,6 +436,21 @@ export const fetchAuthors = async (taskId: number): Promise<Author[]> => {
 };
 
 /**
+ * Fetch a single author by author_id.
+ */
+export const fetchAuthor = async (authorId: number): Promise<Author | null> => {
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/api/content/${authorId}/author`
+    );
+    return response.data[0];
+  } catch (error) {
+    console.error("❌ Error fetching author:", error);
+    return null;
+  }
+};
+
+/**
  * Fetch all publishers associated with a task.
  */
 export const fetchPublishers = async (taskId: number): Promise<Publisher[]> => {
@@ -415,6 +465,22 @@ export const fetchPublishers = async (taskId: number): Promise<Publisher[]> => {
   }
 };
 
+/**
+ * Fetch a single publisher by publisher_id.
+ */
+export const fetchPublisher = async (
+  publisherId: number
+): Promise<Publisher | null> => {
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/api/content/${publisherId}/publisher`
+    );
+    return response.data[0];
+  } catch (error) {
+    console.error("❌ Error fetching author:", error);
+    return null;
+  }
+};
 /**
  * Fetch all users in the system.
  */

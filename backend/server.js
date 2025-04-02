@@ -95,20 +95,41 @@ db.connect((err) => {
 // Define storage location and filename strategy
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const type = req.params.type; // "authors" or "publishers"
+    const { type, id } = req.query;
+    //const type = req.params.type; // "authors" or "publishers"
     cb(null, path.join(__dirname, `assets/images/${type}`));
   },
-  filename: function (req, file, cb) {
-    const id = req.params.id;
+  filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
+    const { type, id } = req.query;
+    if (!type || !id) {
+      return cb(new Error("Missing type or id"));
+    }
     cb(null, `${type.slice(0, -1)}_id_${id}${ext}`);
   },
 });
 
 //upload image
 const upload = multer({ storage });
+
 app.post("/api/upload-image", upload.single("image"), (req, res) => {
   if (!req.file) return res.status(400).send("No file uploaded.");
+  const { type, id } = req.query;
+
+  const imagePath = `assets/images/${type}/${req.file.filename}`;
+
+  if (type === "authors") {
+    db.query("UPDATE authors SET author_profile_pic = ? WHERE author_id = ?", [
+      imagePath,
+      id,
+    ]);
+  } else if (type === "publishers") {
+    db.query(
+      "UPDATE publishers SET publisher_icon = ? WHERE publisher_id = ?",
+      [imagePath, id]
+    );
+  }
+
   return res
     .status(200)
     .json({ message: "Upload successful", path: req.file.path });
@@ -250,6 +271,36 @@ app.get("/api/content/:taskId/authors", async (req, res) => {
   });
 });
 
+//Get a single author by authorId
+app.get("/api/content/:authorId/author", async (req, res) => {
+  const { authorId } = req.params;
+  const sql = `SELECT * FROM  authors
+  WHERE author_id = ?`;
+  pool.query(sql, authorId, (err, rows) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Error fetching authors");
+    }
+
+    return res.json(rows);
+  });
+});
+
+//Get a single publisher by publisherId
+app.get("/api/content/:publisherId/publisher", async (req, res) => {
+  const { publisherId } = req.params;
+  const sql = `SELECT * FROM  publishers
+  WHERE publisher_id = ?`;
+  pool.query(sql, publisherId, (err, rows) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send("Error fetching authors");
+    }
+
+    return res.json(rows);
+  });
+});
+
 //Get content_authors
 app.get("/api/content/:taskId/content_authors", async (req, res) => {
   const { taskId } = req.params;
@@ -305,33 +356,36 @@ app.post("/api/content/:contentId/authors", async (req, res) => {
 //update author bio
 app.put("/api/authors/:authorId/bio", async (req, res) => {
   const { authorId } = req.params;
-  const { description } = req.body;
+  const { bio } = req.body;
+
   try {
-    await db.query("UPDATE authors SET description = ? WHERE author_id = ?", [
-      description,
+    await query(`UPDATE authors SET description = ? WHERE author_id = ?`, [
+      bio,
       authorId,
     ]);
     res.send({ success: true });
   } catch (err) {
-    console.error(err);
+    console.error("Failed to update author bio:", err);
     res.status(500).send({ success: false });
   }
 });
 
-// get the author ratings
+// Make sure this line is already declared at the top of your server file
+
+// fetching author ratings
 app.get("/api/authors/:authorId/ratings", async (req, res) => {
   const { authorId } = req.params;
   try {
-    const [rows] = await db.query(
+    const rows = await query(
       `SELECT ar.*, t.topic_name 
        FROM author_ratings ar 
        JOIN topics t ON ar.topic_id = t.topic_id 
        WHERE ar.author_id = ?`,
       [authorId]
     );
-    res.send(rows);
+    res.send(rows); // rows is already an iterable array
   } catch (err) {
-    console.error(err);
+    console.error("Failed to fetch author ratings:", err);
     res.status(500).send({ success: false });
   }
 });
@@ -354,6 +408,77 @@ app.put("/api/authors/:authorId/ratings", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).send({ success: false });
+  }
+});
+// Update a single author rating
+app.put("/api/authors/:authorRatingId/rating", async (req, res) => {
+  const { authorRatingId } = req.params;
+  const { topic_id, source, url, bias_score, veracity_score, notes } =
+    req.body.rating;
+
+  try {
+    await query(
+      `UPDATE author_ratings 
+       SET topic_id = ?, source = ?, url = ?, bias_score = ?, veracity_score = ?, notes = ?, last_checked = NOW() 
+       WHERE author_rating_id = ?`,
+      [
+        topic_id,
+        source,
+        url,
+        bias_score,
+        veracity_score,
+        notes || null,
+        authorRatingId,
+      ]
+    );
+
+    res.send({ success: true });
+  } catch (err) {
+    console.error("Error updating author rating:", err);
+    res.status(500).send({ success: false });
+  }
+});
+
+// Add new author rating
+app.post("/api/authors/add-rating", async (req, res) => {
+  const { ratings } = req.body;
+
+  if (!ratings || !ratings.author_id || !ratings.topic_id) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Missing required fields" });
+  }
+
+  try {
+    const result = await query(
+      `INSERT INTO author_ratings 
+        (author_id, topic_id, source, url, notes, bias_score, veracity_score)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        ratings.author_id,
+        ratings.topic_id,
+        ratings.source || null,
+        ratings.url || null,
+        ratings.notes || null,
+        ratings.bias_score ?? 0,
+        ratings.veracity_score ?? 0,
+      ]
+    );
+
+    const newId = result.insertId;
+
+    const [newRating] = await query(
+      `SELECT ar.*, t.topic_name
+       FROM author_ratings ar
+       JOIN topics t ON ar.topic_id = t.topic_id
+       WHERE ar.author_rating_id = ?`,
+      [newId]
+    );
+
+    res.json(newRating);
+  } catch (err) {
+    console.error("Error inserting new author rating:", err);
+    res.status(500).json({ success: false, message: "Database error" });
   }
 });
 
@@ -429,7 +554,7 @@ app.get("/api/publishers/ratings-topics", async (req, res) => {
   }
 });
 
-//update ratings for a specific publsiher
+//update ratings for a specific publisher
 app.put("/api/publishers/:publisherId/ratings", async (req, res) => {
   const { publisherId } = req.params;
   const { ratings } = req.body;
@@ -456,6 +581,35 @@ app.put("/api/publishers/:publisherId/ratings", async (req, res) => {
     res.send({ success: true });
   } catch (err) {
     console.error(err);
+    res.status(500).send({ success: false });
+  }
+});
+
+// Update a single publisher rating
+app.put("/api/publishers/:publisherRatingId/rating", async (req, res) => {
+  const { publisherRatingId } = req.params;
+  const { topic_id, source, url, bias_score, veracity_score, notes } =
+    req.body.rating;
+
+  try {
+    await query(
+      `UPDATE publisher_ratings 
+       SET topic_id = ?, source = ?, url = ?, bias_score = ?, veracity_score = ?, notes = ?, last_checked = NOW() 
+       WHERE publisher_rating_id = ?`,
+      [
+        topic_id,
+        source,
+        url,
+        bias_score,
+        veracity_score,
+        notes || null,
+        publisherRatingId,
+      ]
+    );
+
+    res.send({ success: true });
+  } catch (err) {
+    console.error("Error updating publisher rating:", err);
     res.status(500).send({ success: false });
   }
 });

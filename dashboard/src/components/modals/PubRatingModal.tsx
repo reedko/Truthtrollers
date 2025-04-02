@@ -21,13 +21,14 @@ import {
   fetchPublisherRatings,
   updatePublisherRatings,
   fetchRatingTopics,
+  updatePublisherRating,
 } from "../../services/useDashboardAPI";
 
 interface PubRatingModalProps {
   isOpen: boolean;
   onClose: () => void;
   publisherId: number;
-  onRatingsUpdate: (updated: PublisherRating[]) => void;
+  onRatingsUpdate: (publisherId: number, updated: PublisherRating[]) => void;
 }
 
 const PubRatingModal: React.FC<PubRatingModalProps> = ({
@@ -39,6 +40,11 @@ const PubRatingModal: React.FC<PubRatingModalProps> = ({
   const toast = useToast();
   const [localRatings, setLocalRatings] = useState<PublisherRating[]>([]);
   const [allTopics, setAllTopics] = useState<{ [key: number]: string }>({});
+  const [savedRatingIds, setSavedRatingIds] = useState<number[]>([]);
+  const [biasInputs, setBiasInputs] = useState<{ [id: number]: string }>({});
+  const [veracityInputs, setVeracityInputs] = useState<{
+    [id: number]: string;
+  }>({});
 
   useEffect(() => {
     const load = async () => {
@@ -53,6 +59,16 @@ const PubRatingModal: React.FC<PubRatingModalProps> = ({
         topics.map((t: Topic) => [t.topic_id, t.topic_name])
       );
       setAllTopics(topicMap);
+      const biasInit: { [id: number]: string } = {};
+      const veracityInit: { [id: number]: string } = {};
+      ratings.forEach((r: PublisherRating) => {
+        if (r.publisher_rating_id) {
+          biasInit[r.publisher_rating_id] = r.bias_score?.toString() || "";
+          veracityInit[r.publisher_rating_id] = r.bias_score?.toString() || "";
+        }
+      });
+      setBiasInputs(biasInit);
+      setVeracityInputs(veracityInit);
     };
 
     if (isOpen && publisherId) {
@@ -74,6 +90,7 @@ const PubRatingModal: React.FC<PubRatingModalProps> = ({
     setLocalRatings((prev) => [
       ...prev,
       {
+        publisher_rating_id: 0,
         publisher_id: publisherId,
         topic_id: 2402,
         topic_name: "Political",
@@ -85,11 +102,55 @@ const PubRatingModal: React.FC<PubRatingModalProps> = ({
       },
     ]);
   };
+  const handleSaveSingle = async (rating: PublisherRating) => {
+    if (!rating.publisher_rating_id) {
+      toast({
+        title: "Missing Rating ID",
+        description: "This rating cannot be saved because it has no ID.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    try {
+      await updatePublisherRating(rating.publisher_rating_id, rating);
+
+      // ✅ Fetch the full updated list of ratings
+      const updated = await fetchPublisherRatings(publisherId);
+      onRatingsUpdate?.(publisherId, updated);
+
+      toast({
+        title: "Rating Updated",
+        description: "Rating successfully saved.",
+        status: "success",
+        duration: 2000,
+        isClosable: true,
+      });
+
+      setSavedRatingIds((prev) => [...prev, rating.publisher_rating_id]);
+      setTimeout(() => {
+        setSavedRatingIds((prev) =>
+          prev.filter((id) => id !== rating.publisher_rating_id)
+        );
+      }, 3000);
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Update Failed",
+        description: "Unable to save the rating.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
 
   const handleSave = async () => {
     await updatePublisherRatings(publisherId, localRatings);
     const updated = await fetchPublisherRatings(publisherId);
-    onRatingsUpdate?.([publisherId, updated]);
+    onRatingsUpdate?.(publisherId, updated);
     toast({
       title: "Ratings saved",
       description: "Changes to publisher ratings have been saved.",
@@ -110,7 +171,7 @@ const PubRatingModal: React.FC<PubRatingModalProps> = ({
           <VStack spacing={4} align="stretch">
             {localRatings.map((rating, index) => (
               <VStack
-                key={index}
+                key={rating.publisher_rating_id || rating.topic_id}
                 border="1px solid #ccc"
                 borderRadius="md"
                 p={3}
@@ -119,7 +180,7 @@ const PubRatingModal: React.FC<PubRatingModalProps> = ({
                 <HStack>
                   <Input
                     placeholder="Source"
-                    value={rating.source}
+                    value={rating.source ?? ""}
                     onChange={(e) =>
                       updateRating(index, "source", e.target.value)
                     }
@@ -144,42 +205,70 @@ const PubRatingModal: React.FC<PubRatingModalProps> = ({
                 </HStack>
                 <HStack>
                   <Input
-                    type="number"
+                    type="text"
                     inputMode="decimal"
-                    step="any"
                     placeholder="Bias Score"
-                    value={rating.bias_score ?? ""}
-                    onChange={(e) =>
-                      updateRating(
-                        index,
-                        "bias_score",
-                        parseFloat(e.target.value)
-                      )
-                    }
+                    value={biasInputs[rating.publisher_rating_id] ?? ""}
+                    onChange={(e) => {
+                      const newVal = e.target.value;
+                      if (/^-?\d*\.?\d*$/.test(newVal)) {
+                        setBiasInputs((prev) => ({
+                          ...prev,
+                          [rating.publisher_rating_id]: newVal,
+                        }));
+                        const parsed = parseFloat(newVal);
+                        updateRating(
+                          index,
+                          "bias_score",
+                          isNaN(parsed) ? 0 : parsed
+                        );
+                      }
+                    }}
                   />
                   <Input
-                    type="number"
+                    type="text"
+                    inputMode="decimal"
                     placeholder="Veracity Score"
-                    value={rating.veracity_score ?? ""}
-                    onChange={(e) =>
-                      updateRating(
-                        index,
-                        "veracity_score",
-                        parseFloat(e.target.value)
-                      )
-                    }
+                    value={veracityInputs[rating.publisher_rating_id] ?? ""}
+                    onChange={(e) => {
+                      const newVal = e.target.value;
+                      if (/^-?\d*\.?\d*$/.test(newVal)) {
+                        setVeracityInputs((prev) => ({
+                          ...prev,
+                          [rating.publisher_rating_id]: newVal,
+                        }));
+                        const parsed = parseFloat(newVal);
+                        updateRating(
+                          index,
+                          "veracity_score",
+                          isNaN(parsed) ? 0 : parsed
+                        );
+                      }
+                    }}
                   />
                 </HStack>
                 <Input
                   placeholder="URL (optional)"
-                  value={rating.url}
+                  value={rating.url ?? ""}
                   onChange={(e) => updateRating(index, "url", e.target.value)}
                 />
                 <Input
                   placeholder="Notes (optional)"
-                  value={rating.notes}
+                  value={rating.notes ?? ""}
                   onChange={(e) => updateRating(index, "notes", e.target.value)}
                 />
+                <Button
+                  colorScheme="green"
+                  size="sm"
+                  onClick={() => handleSaveSingle(rating)}
+                >
+                  ✅ Save
+                </Button>
+                {savedRatingIds.includes(rating.publisher_rating_id) && (
+                  <Text fontSize="sm" color="green.600" fontWeight="bold">
+                    ✅ Saved!
+                  </Text>
+                )}
               </VStack>
             ))}
             <Button onClick={addNewRating} colorScheme="blue">
@@ -189,7 +278,7 @@ const PubRatingModal: React.FC<PubRatingModalProps> = ({
         </ModalBody>
         <ModalFooter>
           <Button onClick={onClose} mr={3}>
-            Cancel
+            Close
           </Button>
           <Button colorScheme="green" onClick={handleSave}>
             Save All

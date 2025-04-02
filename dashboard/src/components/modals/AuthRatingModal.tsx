@@ -1,4 +1,5 @@
 // src/components/modals/AuthRatingModal.tsx
+import React, { useEffect, useState } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -8,45 +9,72 @@ import {
   ModalBody,
   ModalFooter,
   Button,
+  Input,
   VStack,
   HStack,
-  Text,
   Select,
-  NumberInput,
-  NumberInputField,
+  Text,
   useToast,
 } from "@chakra-ui/react";
-import { useState } from "react";
-import { AuthorRating } from "../../../../shared/entities/types";
+import { AuthorRating, Topic } from "../../../../shared/entities/types";
+import {
+  fetchAuthorRatings,
+  updateAuthorRatings,
+  fetchRatingTopics,
+  updateAuthorRating,
+} from "../../services/useDashboardAPI";
 
 interface AuthRatingModalProps {
   isOpen: boolean;
   onClose: () => void;
   authorId: number;
-  ratings: AuthorRating[];
-  onSave: (updated: AuthorRating[]) => Promise<void>;
+  onRatingsUpdate: (authorId: number, updated: AuthorRating[]) => void;
 }
-
-const topics = [
-  { id: 2401, name: "Vaccines" },
-  { id: 2402, name: "Political" },
-  { id: 2403, name: "Science" },
-  { id: 2404, name: "Evidence-Based Medicine" },
-  { id: 2405, name: "Alternative Medicine" },
-  { id: 2406, name: "Vaccines (Alt)" },
-  { id: 2407, name: "Economics" },
-  { id: 2408, name: "Commerce" },
-];
 
 const AuthRatingModal: React.FC<AuthRatingModalProps> = ({
   isOpen,
   onClose,
   authorId,
-  ratings,
-  onSave,
+  onRatingsUpdate,
 }) => {
-  const [localRatings, setLocalRatings] = useState<AuthorRating[]>(ratings);
   const toast = useToast();
+  const [localRatings, setLocalRatings] = useState<AuthorRating[]>([]);
+  const [allTopics, setAllTopics] = useState<{ [key: number]: string }>({});
+  const [savedRatingIds, setSavedRatingIds] = useState<number[]>([]);
+  const [biasInputs, setBiasInputs] = useState<{ [id: number]: string }>({});
+  const [veracityInputs, setVeracityInputs] = useState<{
+    [id: number]: string;
+  }>({});
+
+  useEffect(() => {
+    const load = async () => {
+      const [ratings, topics] = await Promise.all([
+        fetchAuthorRatings(authorId),
+        fetchRatingTopics(),
+      ]); // No destructure
+      setLocalRatings(ratings);
+      console.log(topics);
+      // Set all topics for the dropdown
+      const topicMap = Object.fromEntries(
+        topics.map((t: Topic) => [t.topic_id, t.topic_name])
+      );
+      setAllTopics(topicMap);
+      const biasInit: { [id: number]: string } = {};
+      const veracityInit: { [id: number]: string } = {};
+      ratings.forEach((r: AuthorRating) => {
+        if (r.author_rating_id) {
+          biasInit[r.author_rating_id] = r.bias_score?.toString() || "";
+          veracityInit[r.author_rating_id] = r.bias_score?.toString() || "";
+        }
+      });
+      setBiasInputs(biasInit);
+      setVeracityInputs(veracityInit);
+    };
+
+    if (isOpen && authorId) {
+      load();
+    }
+  }, [isOpen, authorId]);
 
   const updateRating = <K extends keyof AuthorRating>(
     index: number,
@@ -58,35 +86,58 @@ const AuthRatingModal: React.FC<AuthRatingModalProps> = ({
     setLocalRatings(updated);
   };
 
-  const handleAddRating = () => {
-    setLocalRatings([
-      ...localRatings,
+  const addNewRating = () => {
+    setLocalRatings((prev) => [
+      ...prev,
       {
-        author_id: authorId, // 👈 You'll need this variable to be passed into the component
-        source: "AdHoc", // or "Manual Entry"
-        url: "",
+        author_rating_id: 0,
+        author_id: authorId,
         topic_id: 2402,
         topic_name: "Political",
+        source: "",
         bias_score: 0,
         veracity_score: 0,
+        url: "",
+        notes: "",
       },
     ]);
   };
-
-  const handleSave = async () => {
+  const handleSaveSingle = async (rating: AuthorRating) => {
     try {
-      await onSave(localRatings);
+      if (rating.author_rating_id === 0) {
+        // This is a new rating — call insert/update logic
+        await updateAuthorRating(0, rating);
+      } else {
+        // Existing rating — update by ID
+        await updateAuthorRating(rating.author_rating_id, rating);
+      }
+
+      const updated = await fetchAuthorRatings(authorId);
+      onRatingsUpdate?.(authorId, updated);
+
       toast({
-        title: "Ratings Updated",
+        title: "Rating Saved",
+        description: "Author rating saved successfully.",
         status: "success",
-        duration: 3000,
+        duration: 2000,
         isClosable: true,
       });
-      onClose();
+
+      // ✅ Mark it as saved
+      setSavedRatingIds((prev) => [
+        ...prev,
+        rating.author_rating_id || Date.now(), // temp fallback if 0
+      ]);
+      setTimeout(() => {
+        setSavedRatingIds((prev) =>
+          prev.filter((id) => id !== rating.author_rating_id)
+        );
+      }, 3000);
     } catch (err) {
+      console.error(err);
       toast({
-        title: "Error",
-        description: "Failed to save ratings.",
+        title: "Save Failed",
+        description: "Unable to save this rating.",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -94,66 +145,142 @@ const AuthRatingModal: React.FC<AuthRatingModalProps> = ({
     }
   };
 
+  const handleSave = async () => {
+    await updateAuthorRatings(authorId, localRatings);
+    const updated = await fetchAuthorRatings(authorId);
+    onRatingsUpdate?.(authorId, updated);
+    toast({
+      title: "Ratings saved",
+      description: "Changes to author ratings have been saved.",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    });
+    onClose();
+  };
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" scrollBehavior="inside">
+    <Modal isOpen={isOpen} onClose={onClose} size="4xl" scrollBehavior="inside">
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Edit Author Ratings</ModalHeader>
+        <ModalHeader>Author Ratings</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
-          <VStack spacing={4} align="start">
+          <VStack spacing={4} align="stretch">
             {localRatings.map((rating, index) => (
-              <HStack key={index} spacing={3} w="100%">
-                <Select
-                  value={rating.topic_id}
-                  onChange={(e) => {
-                    const topic = topics.find(
-                      (t) => t.id === parseInt(e.target.value)
-                    );
-                    if (topic) {
-                      updateRating(index, "topic_id", topic.id);
-                      updateRating(index, "topic_name", topic.name);
+              <VStack
+                key={rating.author_rating_id || rating.topic_id}
+                border="1px solid #ccc"
+                borderRadius="md"
+                p={3}
+                align="stretch"
+              >
+                <HStack>
+                  <Input
+                    placeholder="Source"
+                    value={rating.source ?? ""}
+                    onChange={(e) =>
+                      updateRating(index, "source", e.target.value)
                     }
-                  }}
+                  />
+                  <Select
+                    placeholder="Topic"
+                    value={rating.topic_id ?? ""}
+                    onChange={(e) =>
+                      updateRating(
+                        index,
+                        "topic_id",
+                        parseInt(e.target.value, 10)
+                      )
+                    }
+                  >
+                    {Object.entries(allTopics).map(([id, name]) => (
+                      <option key={id} value={id}>
+                        {name}
+                      </option>
+                    ))}
+                  </Select>
+                </HStack>
+                <HStack>
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="Bias Score"
+                    value={biasInputs[rating.author_rating_id] ?? ""}
+                    onChange={(e) => {
+                      const newVal = e.target.value;
+                      if (/^-?\d*\.?\d*$/.test(newVal)) {
+                        setBiasInputs((prev) => ({
+                          ...prev,
+                          [rating.author_rating_id]: newVal,
+                        }));
+                        const parsed = parseFloat(newVal);
+                        updateRating(
+                          index,
+                          "bias_score",
+                          isNaN(parsed) ? 0 : parsed
+                        );
+                      }
+                    }}
+                  />
+                  <Input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="Veracity Score"
+                    value={veracityInputs[rating.author_rating_id] ?? ""}
+                    onChange={(e) => {
+                      const newVal = e.target.value;
+                      if (/^-?\d*\.?\d*$/.test(newVal)) {
+                        setVeracityInputs((prev) => ({
+                          ...prev,
+                          [rating.author_rating_id]: newVal,
+                        }));
+                        const parsed = parseFloat(newVal);
+                        updateRating(
+                          index,
+                          "veracity_score",
+                          isNaN(parsed) ? 0 : parsed
+                        );
+                      }
+                    }}
+                  />
+                </HStack>
+                <Input
+                  placeholder="URL (optional)"
+                  value={rating.url ?? ""}
+                  onChange={(e) => updateRating(index, "url", e.target.value)}
+                />
+                <Input
+                  placeholder="Notes (optional)"
+                  value={rating.notes ?? ""}
+                  onChange={(e) => updateRating(index, "notes", e.target.value)}
+                />
+                <Button
+                  colorScheme="green"
+                  size="sm"
+                  onClick={() => handleSaveSingle(rating)}
                 >
-                  {topics.map((topic) => (
-                    <option key={topic.id} value={topic.id}>
-                      {topic.name}
-                    </option>
-                  ))}
-                </Select>
-                <NumberInput
-                  value={rating.bias_score}
-                  min={-10}
-                  max={10}
-                  onChange={(val) =>
-                    updateRating(index, "bias_score", parseFloat(val))
-                  }
-                >
-                  <NumberInputField placeholder="Bias" />
-                </NumberInput>
-                <NumberInput
-                  value={rating.veracity_score}
-                  min={0}
-                  max={10}
-                  onChange={(val) =>
-                    updateRating(index, "veracity_score", parseFloat(val))
-                  }
-                >
-                  <NumberInputField placeholder="Veracity" />
-                </NumberInput>
-              </HStack>
+                  ✅ Save
+                </Button>
+                {savedRatingIds.includes(rating.author_rating_id) && (
+                  <Text fontSize="sm" color="green.600" fontWeight="bold">
+                    ✅ Saved!
+                  </Text>
+                )}
+              </VStack>
             ))}
-            <Button onClick={handleAddRating} size="sm">
+            <Button onClick={addNewRating} colorScheme="blue">
               ➕ Add Rating
             </Button>
           </VStack>
         </ModalBody>
         <ModalFooter>
-          <Button colorScheme="blue" mr={3} onClick={handleSave}>
-            Save
+          <Button onClick={onClose} mr={3}>
+            Close
           </Button>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button colorScheme="green" onClick={handleSave}>
+            Save All
+          </Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
