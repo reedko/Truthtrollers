@@ -2,7 +2,7 @@ import axios from "axios";
 import { TaskData, Author, Publisher } from "../entities/Task";
 const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 
-const EXTENSION_ID = "hfihldigngpdcbmedijohjdcjppdfepj";
+const EXTENSION_ID = "phacjklngoihnlhcadefaiokbacnagbf";
 const IS_EXTENSION = typeof chrome !== "undefined" && chrome.runtime?.id;
 
 // ✅ Create Task (De-Extensionized)

@@ -1,4 +1,4 @@
-const EXTENSION_ID = "hfihldigngpdcbmedijohjdcjppdfepj"; // ✅ Replace with actual ID
+const EXTENSION_ID = "phacjklngoihnlhcadefaiokbacnagbf"; // ✅ Replace with actual ID
 
 export const sendMessageToExtension = (
   action: string,

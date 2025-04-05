@@ -1,3 +1,5 @@
+// src/services/orchestrateScraping.ts
+
 import {
   fetchPageContent,
   fetchExternalPageContent,
@@ -8,6 +10,8 @@ import {
   getBestImage,
 } from "../services/extractMetaData";
 import * as cheerio from "cheerio";
+import type { Cheerio, CheerioAPI } from "cheerio";
+
 import { getMainHeadline } from "../services/getMainHeadline";
 import { DiffbotData } from "../entities/diffbotData";
 import { analyzeContent } from "./openaiTopicsAndClaims";
@@ -15,7 +19,85 @@ import { extractVideoIdFromUrl } from "../services/parseYoutubeUrl";
 import checkAndDownloadTopicIcon from "../services/checkAndDownloadTopicIcon";
 import { TaskData, Lit_references } from "../entities/Task";
 
-const EXTENSION_ID = "hfihldigngpdcbmedijohjdcjppdfepj";
+const EXTENSION_ID = "phacjklngoihnlhcadefaiokbacnagbf";
+const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
+function extractArticleRootHTML($: cheerio.CheerioAPI): string | null {
+  const selectors = [
+    '[data-cy="article-content"]',
+    ".rawHtml-content-no-nativo",
+    "article",
+    '[role="main"]',
+    ".main-content",
+    "#main",
+    ".content",
+    ".post-content",
+    ".entry-content",
+  ];
+
+  let bestNode: Cheerio<any> | null = null;
+  let bestScore = 0;
+
+  for (const sel of selectors) {
+    $(sel).each((_, el) => {
+      const node = $(el);
+      const text = node.text().trim();
+      const paraCount = node.find("p").length;
+      const charCount = text.length;
+
+      // Heuristic: favor nodes with many <p> and characters
+      const score = paraCount * 10 + charCount;
+
+      if (paraCount >= 2 && charCount > 200 && score > bestScore) {
+        bestScore = score;
+        bestNode = node;
+      }
+    });
+  }
+
+  if (bestNode) {
+    return (bestNode as Cheerio<any>).html()?.trim() || null;
+  }
+
+  // 🔻 Fallback to cleaned body if no good match
+  console.warn(
+    "⚠️ No strong article node found — falling back to cleaned <body>"
+  );
+
+  const body = $("body").clone();
+
+  body.find("script, style, nav, footer, aside, iframe").remove();
+  body
+    .find(
+      ".ad, .ads, .popup, .newsletter, .social-share, .comments, .related, .cookie"
+    )
+    .remove();
+
+  const cleanedHtml = body.html()?.trim() || null;
+
+  if (cleanedHtml) {
+    const maxLength = 64000;
+    return cleanedHtml.length > maxLength
+      ? cleanedHtml.slice(0, maxLength) + "\n<!-- Truncated -->"
+      : cleanedHtml;
+  }
+
+  return null;
+}
+function trimTo60k(text: string) {
+  while (text.length > 60000) {
+    const lastNewline = text.lastIndexOf("\n");
+
+    if (lastNewline === -1) {
+      // No newline found; remove a single character.
+      // This handles the case where it's just one long line.
+      text = text.slice(0, -1);
+    } else {
+      // Drop the entire last line.
+      text = text.slice(0, lastNewline);
+    }
+  }
+  return text;
+}
 
 const fetchDiffbotData = async (articleUrl: string): Promise<any> => {
   return new Promise((resolve) => {
@@ -27,6 +109,15 @@ const fetchDiffbotData = async (articleUrl: string): Promise<any> => {
   });
 };
 
+function smartCleanHTMLForReadability($: cheerio.CheerioAPI): string {
+  const $clean = cheerio.load($.html());
+  $clean(
+    "style, link[rel='stylesheet'], script:not([type='application/ld+json'])"
+  ).remove();
+  $clean("img[src^='data:']").remove(); // Remove base64 images
+  $clean("figure, figcaption, .caption, .image, .media").remove();
+  return $clean.html() || "";
+}
 export const orchestrateScraping = async (
   url: string,
   content_name: string,
@@ -39,6 +130,7 @@ export const orchestrateScraping = async (
   let extractedReferences: Lit_references[] = [];
   let extractedText = "";
   let extractedHtml = "";
+  let authors = [];
 
   try {
     if (contentType === "task") {
@@ -50,45 +142,117 @@ export const orchestrateScraping = async (
     console.warn("⚠️ Diffbot fetch failed:", error);
   }
 
+  // 🧠 Detect and skip RSS feeds
+  if (url.includes("feed") || url.endsWith(".xml")) {
+    console.warn("⚠️ Skipping likely RSS/XML feed:", url);
+    return null;
+  }
+
   // Fetch page content
   try {
     console.log("📦 Starting to fetch page content for", url);
-    let $;
+    let $: cheerio.CheerioAPI;
     let isRetracted = false;
-
+    let thumbNailUrl = "";
     if (contentType === "task") {
       $ = await fetchPageContent();
       console.log("✅ fetchPageContent success");
     } else {
       const result = await fetchExternalPageContent(url);
+
+      if (!result || !result.$ || result.isRSS) {
+        console.warn(
+          `⚠️ fetchExternalPageContent returned no usable content for ${url}.`
+        );
+        result.isRSS && console.warn(`RSS feed.`);
+        return null;
+      }
+
       $ = result.$;
       isRetracted = result.isRetracted;
-      console.log("✅ fetchExternalPageContent success");
+      if (result.pdfMeta) {
+        console.log("📄 PDF metadata:", result.pdfMeta);
+        if (!content_name || content_name.length < 5) {
+          content_name = result.pdfMeta.title || content_name;
+        }
+        if (!authors.length && result.pdfMeta.author) {
+          authors.push({
+            name: result.pdfMeta.author,
+            description: null,
+            image: null,
+          });
+          thumbNailUrl = result.pdfMeta.thumbnailUrl || "";
+        }
+      }
+      console.log("✅ fetchExternalPageContent success", result);
     }
 
     if (!$.html().trim()) {
       console.warn(`⚠️ No content loaded from: ${url}. Skipping.`);
-      return null; // 👈 return early or handle however you want
+      return null;
     }
 
-    const $cleaned = cheerio.load($.html()); // clone original
-    $cleaned(
-      "style, link[rel='stylesheet'], script:not([type='application/ld+json'])"
-    ).remove();
+    const $cleaned = cheerio.load($.html());
+    extractedHtml = smartCleanHTMLForReadability($cleaned);
+    const $smart = cheerio.load(extractedHtml);
+    let cleanHTML = extractArticleRootHTML($smart);
+    if (!cleanHTML) cleanHTML = extractedHtml;
 
-    extractedHtml = $cleaned.html();
+    // ✅ Try Readability
+    let readableText = "";
 
-    try {
-      extractedText = await getExtractedTextFromBackground(url, extractedHtml);
-    } catch (err: any) {
-      console.warn("⚠️ Caught an error in orchestrateScraping:", err);
-      if (err) {
-        console.log("🚀 Using extracted HTML from page directly.");
-        extractedText = $("body").text().trim();
-      } else {
-        console.warn("⚠️ Failed to extract text from server:", err);
-        extractedText = $cleaned("body").text().trim(); // 🔥 Fallback remains here
+    if (typeof chrome !== "undefined" && chrome?.runtime?.id) {
+      readableText = await new Promise((resolve) => {
+        chrome.runtime.sendMessage(
+          {
+            action: "extractReadableText",
+            html: cleanHTML,
+            url,
+          },
+          (response) => {
+            console.log("📦 Readability background response:", response);
+            if (response?.success && response.text) {
+              resolve(response.text);
+            } else {
+              console.warn("❌ Readability fallback triggered.");
+              resolve("");
+            }
+          }
+        );
+      });
+    } else {
+      try {
+        const res = await fetch(`${BASE_URL}/api/extract-readable-text`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ html: cleanHTML, url }),
+        });
+        const json = await res.json();
+        readableText = json.text || "";
+      } catch (err) {
+        console.warn("❌ API call to Readability failed:", err);
+        readableText = "";
       }
+    }
+
+    if (readableText && readableText.length > 300) {
+      console.log("✅ Readability succeeded, using readableText");
+      extractedText = readableText;
+    } else {
+      console.warn(
+        "⚠️ Readability failed or text too long — using cleanHTML fallback"
+      );
+
+      extractedText = cleanHTML || "";
+      const $ext = cheerio.load(cleanHTML);
+      $ext(
+        "style, link[rel='stylesheet'], script:not([type='application/ld+json'])"
+      ).remove();
+      extractedText = $ext.text();
+    }
+
+    if (extractedText.length > 60000) {
+      extractedText = trimTo60k(extractedText);
     }
 
     const mainHeadline =
@@ -97,7 +261,6 @@ export const orchestrateScraping = async (
         : diffbotData.title || (await getMainHeadline($));
 
     const extractedAuthors = await extractAuthors($);
-
     const diffbotAuthors = diffbotData.author
       ? diffbotData.author.split(/[,&]/).map((name) => ({
           name: name.trim(),
@@ -107,10 +270,8 @@ export const orchestrateScraping = async (
       : [];
 
     const allAuthors = [...extractedAuthors, ...diffbotAuthors];
-
-    // ✅ De-dupe based on name (case-insensitive)
     const seen = new Set();
-    const authors = allAuthors.filter((author) => {
+    authors = allAuthors.filter((author) => {
       const nameKey = author.name?.toLowerCase();
       if (nameKey && !seen.has(nameKey)) {
         seen.add(nameKey);
@@ -124,19 +285,22 @@ export const orchestrateScraping = async (
       : await extractPublisher($);
 
     const videoId = extractVideoIdFromUrl(url);
-
-    let imageUrl = await getBestImage(url, extractedHtml, diffbotData);
-    const baseUrl = new URL(url);
-    if (imageUrl) {
-      if (!imageUrl.startsWith("http")) {
+    let imageUrl = "";
+    if (!thumbNailUrl) {
+      imageUrl = await getBestImage(url, extractedHtml, diffbotData);
+      const baseUrl = new URL(url);
+      if (imageUrl && !imageUrl.startsWith("http")) {
         imageUrl = new URL(imageUrl, baseUrl).href;
       }
+    } else {
+      imageUrl = thumbNailUrl;
     }
 
     if (contentType === "task") {
       extractedReferences = await extractReferences($);
+      console.log("References to process:", extractedReferences);
     }
-    console.log(extractedReferences);
+
     const topicsAndClaims = await analyzeContent(extractedText);
     generalTopic = topicsAndClaims.generalTopic;
     specificTopics = topicsAndClaims.specificTopics;
@@ -166,11 +330,7 @@ export const orchestrateScraping = async (
     };
   } catch (e: any) {
     console.warn("🧨 Failed to load page content:", url);
-    console.error("🧨 Failed to load page content:", url);
     console.error("🧨 Error details:", e);
-    console.error("🧨 Error message:", e?.message);
-    console.error("🧨 Error stack:", e?.stack);
-
     return null;
   }
 };

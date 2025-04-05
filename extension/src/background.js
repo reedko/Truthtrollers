@@ -2,7 +2,6 @@
 // background.js
 import useTaskStore from "../src/store/useTaskStore";
 import { extractImageFromHtml } from "../src/services/extractMetaData";
-import { scrapeContent } from "./services/scrapeContent";
 
 const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
@@ -648,6 +647,111 @@ async function storeClaimsOnServer(contentId, claims, contentType) {
     throw new Error("Server responded with an error storing claims");
   }
 }
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "checkIfPdf") {
+    fetch(request.url, { method: "HEAD" })
+      .then((res) => {
+        const type = res.headers.get("Content-Type") || "";
+        sendResponse({ isPdf: type.includes("application/pdf") });
+      })
+      .catch((err) => {
+        console.error("❌ HEAD request failed:", err);
+        sendResponse({ isPdf: false });
+      });
+    return true; // async response
+  }
+});
+
+chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+  if (request.action === "fetchPdfText") {
+    try {
+      console.log("📨 Received fetchPdfText request for:", request.url);
+
+      // 🔹 Fetch PDF text
+      const textRes = await fetch(`${BASE_URL}/api/fetch-pdf-text`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: request.url }),
+      });
+
+      const textData = await textRes.json();
+      console.log("📄 PDF text response:", textData);
+
+      // 🔸 Check if text parse failed
+      if (!textData.success || !textData.text?.trim()) {
+        console.warn("❌ PDF parsing failed or returned empty text");
+        return sendResponse({ success: false });
+      }
+
+      // 🔹 Fetch thumbnail
+      const thumbRes = await fetch(`${BASE_URL}/api/pdf-thumbnail`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: request.url }),
+      });
+
+      const thumbData = await thumbRes.json();
+      console.log("🖼️ PDF thumbnail response:", thumbData);
+
+      sendResponse({
+        success: true,
+        text: textData.text,
+        title: textData.title,
+        author: textData.author,
+        thumbnailUrl: thumbData.imageUrl || null,
+      });
+    } catch (err) {
+      console.error("📄❌ PDF fetch error in background script:", err);
+      sendResponse({ success: false });
+    }
+  }
+
+  return true; // Required for async `sendResponse`
+});
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "extractReadableText") {
+    (async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/api/extract-readable-text`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            html: request.html,
+            url: request.url,
+          }),
+        });
+        const json = await res.json();
+
+        sendResponse(json);
+      } catch (err) {
+        console.error("❌ Error calling readable text API:", err);
+        sendResponse({ success: false });
+      }
+    })();
+
+    // ✅ Must be outside the async function
+    return true;
+  }
+
+  // ...any other handlers
+});
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "puppeteerFetch") {
+    fetch(`${BASE_URL}/api/fetch-with-puppeteer`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: request.url }),
+    })
+      .then((res) => res.json())
+      .then((data) => sendResponse(data))
+      .catch((err) => sendResponse({ success: false, error: err.message }));
+
+    return true; // 👈 IMPORTANT to keep the message channel open for async response
+  }
+});
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "checkAndDownloadTopicIcon") {

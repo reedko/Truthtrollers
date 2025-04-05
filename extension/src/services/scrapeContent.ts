@@ -2,8 +2,24 @@ import { orchestrateScraping } from "./orchestrateScraping";
 import createTask from "./createTask";
 import { TaskData, Lit_references } from "../entities/Task";
 
-const EXTENSION_ID = "hfihldigngpdcbmedijohjdcjppdfepj";
+const EXTENSION_ID = "phacjklngoihnlhcadefaiokbacnagbf";
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
+
+const getFileType = (url: string): string => {
+  const cleanUrl = url.split("?")[0].toLowerCase();
+  const match = cleanUrl.match(/\.[a-z0-9]+$/);
+  return match ? match[0] : "";
+};
+
+const getFileCategory = (ext: string): string => {
+  const audio = [".mp3", ".wav", ".ogg", ".flac"];
+  const video = [".mp4", ".avi", ".mov", ".mkv", ".webm"];
+  const docs = [".doc", ".ppt", ".xls"];
+  if (audio.includes(ext)) return "Audio";
+  if (video.includes(ext)) return "Video";
+  if (docs.includes(ext)) return "Document";
+  return "Media";
+};
 
 export const scrapeContent = async (
   url: string,
@@ -18,30 +34,34 @@ export const scrapeContent = async (
 
     // ✅ Step 1: Pre-define contentData for non-scrapable references
     if (contentType === "reference" && isNonScrapable(url)) {
-      console.warn("🚫 Non-scrapable file detected, skipping scraping:", url);
+      const fileType = getFileType(url); // 🆕 .mp3, .pdf, etc.
+      const fileCategory = getFileCategory(fileType); // 🆕 Audio, Video, etc.
+
+      console.warn(
+        `🚫 Non-scrapable ${fileCategory} file detected: ${fileType}`
+      );
+
       contentData = {
         url,
-        content_name: content_name || "Untitled Reference",
+        content_name: content_name || `Untitled ${fileCategory} File`,
         content_type: "reference",
-        media_source: "Unknown",
+        media_source: fileCategory,
         assigned: "unassigned",
         progress: "Unassigned",
         users: "",
-        details:
-          "This reference is a non-scrapable file (e.g., PDF, audio, video).",
+        details: `This reference is a non-scrapable ${fileCategory.toLowerCase()} file (${fileType}).`,
         topic: "general",
         subtopics: ["general", ""],
-        thumbnail: `${BASE_URL}/assets/images/content/document-placeholder.png`, // ✅ Default document icon
+        thumbnail: `${BASE_URL}/assets/images/content/document-placeholder.png`,
         iconThumbnailUrl: null,
         authors: [],
         content: [],
         publisherName: null,
         Claims: [],
-        taskContentId: taskContentId || null, // ✅ Ensuring the task reference is linked
+        taskContentId: taskContentId || null,
         is_retracted: false,
       };
     }
-
     // ✅ Step 2: Scrape metadata (only if not nonScrapable)
     if (!contentData) {
       contentData = await orchestrateScraping(url, content_name, contentType);
@@ -116,22 +136,22 @@ export const scrapeContent = async (
 
 // ✅ Function to check if a URL is non-scrapable (PDFs, audio, video, etc.)
 const isNonScrapable = (url: string) => {
+  const cleanUrl = url.split("?")[0].toLowerCase(); // strip query
   const nonScrapableFileTypes = [
-    ".pdf",
     ".zip",
     ".exe",
     ".doc",
     ".ppt",
-    ".xls", // Documents & archives
+    ".xls",
     ".mp3",
     ".wav",
     ".ogg",
-    ".flac", // Audio
+    ".flac",
     ".mp4",
     ".avi",
     ".mov",
     ".mkv",
-    ".webm", // Video
+    ".webm",
   ];
-  return nonScrapableFileTypes.some((ext) => url.toLowerCase().endsWith(ext));
+  return nonScrapableFileTypes.some((ext) => cleanUrl.endsWith(ext));
 };

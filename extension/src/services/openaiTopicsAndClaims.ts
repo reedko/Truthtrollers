@@ -103,6 +103,7 @@ export async function analyzeContent(content: string): Promise<{
   } else {
     // ✅ Running outside extension (Use local function)
     console.warn("⚠️ Running outside extension, calling OpenAI API directly.");
+    console.log(content);
     return await callOpenAiAnalyze(content);
   }
 }

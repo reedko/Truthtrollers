@@ -15,6 +15,7 @@ import {
   useToast,
   Badge,
   Flex,
+  Tooltip,
 } from "@chakra-ui/react";
 import { Publisher, PublisherRating } from "../../../shared/entities/types";
 import { BiChevronDown } from "react-icons/bi";
@@ -42,28 +43,17 @@ const PubCard: React.FC<PubCardProps> = ({ publishers }) => {
     [publisherId: number]: PublisherRating[];
   }>({});
   const [publisherList, setPublisherList] = useState<Publisher[]>(publishers);
+  const MAX_VISIBLE_RATINGS = 3;
+  const [showAllRatings, setShowAllRatings] = useState<{
+    [id: number]: boolean;
+  }>({});
+
   useEffect(() => {
     if (publishers.length > 0) {
       setPublisherList(publishers);
     }
   }, [publishers]);
-  // Score-based badge styles
-  // Use readable badge background colors
-  const getBiasColor = (score: number) => {
-    if (score <= -5 || score >= 5) return "red.300";
-    return "green.300";
-  };
 
-  const getVeracityColor = (score: number) => {
-    if (score > 5) return "green.300";
-    if (score < 0) return "red.300";
-    return "gray.300";
-  };
-
-  // Set text color for good contrast
-  const getBadgeTextColor = (score: number) => {
-    return "black"; // readable over red.300, green.300, gray.300
-  };
   const getBiasEmoji = (score: number) => {
     if (score <= -5 || score >= 5) return "🔴";
     return "🟢";
@@ -120,9 +110,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers }) => {
         duration: 3000,
         isClosable: true,
       });
-      // 🔄 Refresh the updated publisher
       const updatedPublisher = await fetchPublisher(publisherId);
-
       if (updatedPublisher) {
         setPublisherList((prev) =>
           prev.map((a: Publisher) =>
@@ -182,42 +170,48 @@ const PubCard: React.FC<PubCardProps> = ({ publishers }) => {
             <Text fontWeight="semibold" fontSize="md">
               {pub.publisher_name}
             </Text>
+
             {allRatings[pub.publisher_id]?.length > 0 && (
               <Box mt={3} bg="whiteAlpha.600" p={2} borderRadius="md" w="100%">
                 <Text fontWeight="medium" fontSize="sm" mb={1}>
                   Ratings:
                 </Text>
 
-                {/* Header row */}
                 <HStack fontWeight="bold" fontSize="sm" spacing={4} w="100%">
                   <Box flex="1">Source (Topic)</Box>
-                  <Box w="70px" textAlign="right" color="purple.600">
+                  <Box minW="80px" textAlign="center" color="purple.600">
                     Bias
                   </Box>
-                  <Box w="90px" textAlign="right" color="green.600">
+                  <Box minW="90px" textAlign="center" color="green.600">
                     Veracity
                   </Box>
                 </HStack>
 
                 <VStack spacing={1} align="start" w="100%">
-                  {allRatings[pub.publisher_id].map((r, i) => (
+                  {(showAllRatings[pub.publisher_id]
+                    ? allRatings[pub.publisher_id]
+                    : allRatings[pub.publisher_id].slice(0, MAX_VISIBLE_RATINGS)
+                  ).map((r, i) => (
                     <HStack key={i} fontSize="sm" spacing={4} w="100%">
                       <Box flex="1">
-                        <Text isTruncated fontWeight="semibold">
-                          {r.source}{" "}
-                          <Text as="span" color="gray.500" fontSize="xs">
-                            ({r.topic_name})
+                        <Tooltip label={r.topic_name} hasArrow>
+                          <Text isTruncated fontWeight="semibold" maxW="140px">
+                            {r.source}
+                            {""}
+                            <Text as="span" color="gray.500" fontSize="xs">
+                              ({r.topic_name})
+                            </Text>
                           </Text>
-                        </Text>
+                        </Tooltip>
                       </Box>
 
-                      <Badge w="90px" px={2} borderRadius="md" bg="gray.600">
+                      <Badge minW="80px" px={2} borderRadius="md" bg="gray.600">
                         <Flex justify="space-between" w="full">
                           <Text>{getBiasEmoji(r.bias_score)}</Text>
                           <Text>{r.bias_score?.toFixed(1)}</Text>
                         </Flex>
                       </Badge>
-                      <Badge w="90px" px={2} borderRadius="md" bg="gray.600">
+                      <Badge minW="90px" px={2} borderRadius="md" bg="gray.600">
                         <Flex justify="space-between" w="full">
                           <Text>{getVeracityEmoji(r.veracity_score)}</Text>
                           <Text>{r.veracity_score?.toFixed(1)}</Text>
@@ -226,6 +220,24 @@ const PubCard: React.FC<PubCardProps> = ({ publishers }) => {
                     </HStack>
                   ))}
                 </VStack>
+
+                {allRatings[pub.publisher_id].length > MAX_VISIBLE_RATINGS && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    mt={2}
+                    onClick={() =>
+                      setShowAllRatings((prev) => ({
+                        ...prev,
+                        [pub.publisher_id]: !prev[pub.publisher_id],
+                      }))
+                    }
+                  >
+                    {showAllRatings[pub.publisher_id]
+                      ? "Show Less"
+                      : "Show All"}
+                  </Button>
+                )}
               </Box>
             )}
 

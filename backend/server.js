@@ -20,13 +20,17 @@ import {
   getLinksForEntity,
   getLinkedClaimsAndLinksForTask,
 } from "./database/graphQueries.js";
-
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
-import fs from "fs";
+import fs from "fs-extra";
 import http from "http";
 import https from "https";
+import fetchWithPuppeteer from "./routes/fetchWithPuppeteer.js"; //
+import pdfParse from "pdf-parse/lib/pdf-parse.js";
+import pdfPoppler from "pdf-poppler";
+import { spawn } from "child_process";
 
+//const pdfParse = pkg.default || pkg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const app = express();
@@ -35,6 +39,19 @@ const app = express();
 const options = {
   key: fs.readFileSync("../ssl/server.key"),
   cert: fs.readFileSync("../ssl/server.cert"),
+};
+process.env.PATH = [process.env.PATH, "/usr/local/bin"].join(":");
+console.log("🧭 PATH:", process.env.PATH);
+const DEFAULT_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36",
+  Accept:
+    "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+  "Accept-Language": "en-US,en;q=0.9",
+  "Cache-Control": "no-cache",
+  Pragma: "no-cache",
+  Connection: "keep-alive",
+  Referer: "https://www.google.com/",
 };
 
 // ✅ Use HTTPS for localhost:5001
@@ -54,10 +71,10 @@ app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 // Configure environment variables
 dotenv.config();
-
+// ✅ Puppeteer route
+app.use(fetchWithPuppeteer);
 app.use(cors());
-app.use(bodyParser.json());
-app.use(express.json());
+
 // Serve static files from the assets directory
 
 const assetsPath = path.join(__dirname, "assets");
@@ -66,6 +83,7 @@ const DIFFBOT_BASE_URL = process.env.REACT_APP_DIFFBOT_BASE_URL;
 const BASE_URL = process.env.REACT_APP_BASE_URL;
 
 app.use("/assets", express.static(assetsPath));
+
 // MySQL connection
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
@@ -169,7 +187,134 @@ app.get("/proxy", async (req, res) => {
     res.status(500).send("Failed to fetch data");
   }
 });
+//readability
+app.post("/api/extract-readable-text", (req, res) => {
+  const { html, url } = req.body;
 
+  if (!html) {
+    return res
+      .status(400)
+      .json({ success: false, message: "Missing HTML content" });
+  }
+  try {
+    const dom = new JSDOM(html, { url });
+    const doc = dom.window.document;
+    const article = new Readability(doc).parse();
+
+    res.send({
+      success: true,
+      text: article?.textContent || null,
+      title: article?.title || null,
+      author: article?.byline || null, // 👈 here’s the author
+    });
+  } catch (err) {
+    console.warn("⚠️ Readability server-side failed:", err);
+    res
+      .status(500)
+      .json({ success: false, message: "Readability parse failed" });
+  }
+});
+//prse pdfs:
+app.post("/api/fetch-pdf-text", async (req, res) => {
+  const { url } = req.body;
+
+  try {
+    const response = await fetch(url);
+    const buffer = await response.arrayBuffer();
+    const parsed = await pdfParse(Buffer.from(buffer));
+
+    const author = parsed.info?.Author || "";
+    const title = parsed.info?.Title || "";
+    console.log("📄 PDF parsed OK:", { title, author }); // NEW
+    res.send({
+      success: true,
+      text: parsed.text,
+      author,
+      title,
+    });
+  } catch (err) {
+    console.error("❌ PDF parse failed:", err);
+    res.status(500).send({ success: false });
+  }
+});
+
+function spawnPdftocairo(inputPdf, outputBase) {
+  return new Promise((resolve, reject) => {
+    const proc = spawn("/usr/local/bin/pdftocairo", [
+      "-png",
+      "-f",
+      "1", // from page 1
+      "-l",
+      "1", // to page 1 (only first page)
+      "-singlefile",
+      "-scale-to",
+      "1024",
+      inputPdf,
+      outputBase,
+    ]);
+
+    proc.on("error", reject);
+    proc.on("close", (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`pdftocairo exited with code ${code}`));
+    });
+  });
+}
+//get thumbnail of pdf
+
+app.post("/api/pdf-thumbnail", async (req, res) => {
+  const { url } = req.body;
+  console.log("TRYING PDF THUMBNAL");
+
+  try {
+    // 2) Download the PDF into a temp folder
+    const tempDir = path.join(__dirname, "temp");
+    fs.mkdirSync(tempDir, { recursive: true });
+
+    const pdfFilename = `pdf-${Date.now()}.pdf`;
+    const pdfPath = path.join(tempDir, pdfFilename);
+
+    const writer = fs.createWriteStream(pdfPath);
+    const response = await axios.get(url, { responseType: "stream" });
+    response.data.pipe(writer);
+
+    await new Promise((resolve, reject) => {
+      writer.on("finish", resolve);
+      writer.on("error", reject);
+    });
+
+    // 3) Use pdftocairo (via child_process.spawn) to convert the first PDF page to PNG
+    const outputBase = path.join(tempDir, `thumb-${Date.now()}`);
+    await spawnPdftocairo(pdfPath, outputBase);
+
+    // pdftocairo produces `outputBase-1.png` for the first page
+    const firstPagePath = `${outputBase}.png`;
+
+    // 4) Resize that PNG to 600×800 with sharp
+    const finalImagePath = path.join(
+      __dirname,
+      "assets/pdf-thumbnails",
+      `thumb-${Date.now()}.png`
+    );
+    fs.mkdirSync(path.dirname(finalImagePath), { recursive: true });
+
+    await sharp(firstPagePath).resize(600, 800).toFile(finalImagePath);
+
+    // 5) Clean up temporary files
+    fs.removeSync(pdfPath);
+    fs.removeSync(firstPagePath);
+
+    // 6) Return a public URL to the generated thumbnail
+    const publicUrl = `${BASE_URL}/assets/pdf-thumbnails/${path.basename(
+      finalImagePath
+    )}`;
+    console.log(publicUrl, "PDF IMAGE URL");
+    res.send({ success: true, imageUrl: publicUrl });
+  } catch (err) {
+    console.error("❌ Failed to generate PDF thumbnail:", err);
+    res.status(500).send({ success: false });
+  }
+});
 //get a single task
 // server.js
 
@@ -520,20 +665,26 @@ app.post("/api/content/:contentId/publishers", async (req, res) => {
   }
 });
 
-// GET ratings for a specific publisher
 app.get("/api/publishers/:publisherId/ratings", async (req, res) => {
   const { publisherId } = req.params;
+  console.log("🔍 Publisher ID:", publisherId);
+
+  const sql = `
+    SELECT pr.*, t.topic_name 
+    FROM publisher_ratings pr 
+    JOIN topics t ON pr.topic_id = t.topic_id 
+    WHERE pr.publisher_id = ?
+  `;
+
+  console.log("📘 SQL:", sql.trim());
+  console.log("📘 Params:", [publisherId]);
+
   try {
-    const rows = await query(
-      `SELECT pr.*, t.topic_name 
-       FROM publisher_ratings pr 
-       JOIN topics t ON pr.topic_id = t.topic_id 
-       WHERE pr.publisher_id = ?`,
-      [publisherId]
-    );
+    const rows = await query(sql, [publisherId]);
+    console.log("📦 Query result:", rows);
     res.send(rows);
   } catch (err) {
-    console.error("Error fetching publisher ratings:", err);
+    console.error("❌ Error fetching publisher ratings:", err);
     res.status(500).send({ success: false });
   }
 });
@@ -1808,7 +1959,6 @@ app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
 });
  */
 app.post("/api/fetch-page-content", async (req, res) => {
-  console.log("📌 Received request to fetch page content:", req.body);
   const { url } = req.body;
   if (!url || typeof url !== "string") {
     console.error("❌ Invalid or missing URL:", url);
@@ -1820,19 +1970,18 @@ app.post("/api/fetch-page-content", async (req, res) => {
 
     const response = await axios.get(url, {
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-        Referer: url,
+        ...DEFAULT_HEADERS,
+        Referer: url, // Include referer for added authenticity
       },
-      timeout: 3000, // ✅ Increase timeout to 30s
+      timeout: 3000, // Increased timeout to 3 seconds
     });
 
-    console.log(`✅ Successfully fetched ${response.data.length} bytes`);
+    console.log(
+      `✅ Successfully fetched ${response.data.length} bytes from ${url}`
+    );
     return res.json({ html: response.data });
   } catch (error) {
-    console.error("Error fetching external page:", error);
+    console.error("❌ Error fetching external page:", error.message);
     res.status(500).json({ error: "Failed to fetch page content" });
   }
 });
