@@ -2,28 +2,14 @@
 import * as cheerio from "cheerio";
 import { Author, TaskData, Lit_references, Publisher } from "../entities/Task";
 import { DiffbotData } from "../entities/diffbotData";
+import { fetchHtmlWithPuppeteer } from "./getHtmlWithPuppeteer";
+
 // Determine if running in the extension or dashboard
 const IS_EXTENSION = !!chrome?.runtime?.id;
 
-const EXTENSION_ID = "hfihldigngpdcbmedijohjdcjppdfepj";
+const EXTENSION_ID = "phacjklngoihnlhcadefaiokbacnagbf";
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 //const BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
-
-const isValidReference = (link: string): boolean => {
-  const excludedPatterns = [
-    "\\bads\\b", // Match "ads" as a whole word (not inside "uploads")
-    "\\bsponsored\\b",
-    "\\btracking\\b",
-    "\\blogin\\b",
-    "\\bshare\\b",
-    "\\bsubscribe\\b",
-    "\\binstagram\\b",
-  ];
-  return (
-    link.startsWith("http") &&
-    excludedPatterns.every((pattern) => !link.includes(pattern))
-  );
-};
 
 // B) Utility: Extract Text Content (Extension & Dashboard Variants)
 export const getExtractedTextFromBackground = async (
@@ -289,87 +275,236 @@ export const fetchPageContent = (): cheerio.CheerioAPI => {
 
   return loadedCheerio;
 };
+const detectRetraction = (html: string): boolean => {
+  const lower = html.toLowerCase();
+  return lower.includes("retracted") || lower.includes("withdrawn");
+};
 
+const removeCookieWalls = (html: string): string => {
+  const $ = cheerio.load(html);
+  $(
+    '[id*="cookie"], [class*="cookie"], [id*="consent"], [class*="consent"],' +
+      ".qc-cmp2-container, .truste_popframe, #onetrust-banner-sdk"
+  ).remove();
+  return $.html();
+};
+
+const isLikelyRSS = (html: string) =>
+  html.trim().startsWith("<rss") || html.toLowerCase().includes("<feed");
+
+const fetchViaPuppeteer = async (url: string) => {
+  console.warn("🤖 Fetching via Puppeteer:", url);
+  const res = await fetchHtmlWithPuppeteer(url);
+  if (res.success && res.html) {
+    const cleaned = removeCookieWalls(res.html);
+    const $ = cheerio.load(cleaned);
+    const text = $("body").text().trim();
+    if (text.length > 300) {
+      console.log("✅ Puppeteer succeeded, length:", text.length);
+      return { $, isRetracted: detectRetraction(cleaned) };
+    }
+  }
+  return null;
+};
+
+const fetchFromWaybackWithPuppeteer = async (originalUrl: string) => {
+  const archiveUrl = `https://web.archive.org/web/${originalUrl}`;
+  console.warn("🕰️ Trying Wayback Machine via Puppeteer:", archiveUrl);
+  return await fetchViaPuppeteer(archiveUrl);
+};
+const checkIfPdfViaHead = async (url: string): Promise<boolean> => {
+  try {
+    const res = await fetch(url, { method: "HEAD" });
+    const contentType = res.headers.get("Content-Type") || "";
+    return contentType.includes("application/pdf");
+  } catch (e) {
+    console.warn("❌ PDF HEAD check failed:", e);
+    return false;
+  }
+};
 export const fetchExternalPageContent = async (
   url: string
-): Promise<{ $: cheerio.CheerioAPI; isRetracted: boolean }> => {
-  // ✅ Unified function for Wayback Machine fallback
-  const fetchFromWayback = async (originalUrl: string) => {
-    const archiveUrl = `https://web.archive.org/web/${originalUrl}`;
-    console.warn("🔄 Fetching from Wayback Machine:", archiveUrl);
-    return fetchExternalPageContent(archiveUrl);
+): Promise<{
+  $: cheerio.CheerioAPI;
+  isRetracted: boolean;
+  isRSS?: boolean;
+  pdfMeta?: {
+    title?: string;
+    author?: string;
+    thumbnailUrl?: string;
+    // Add image?: string later if you extract one
   };
+}> => {
+  let isPdf = url.toLowerCase().endsWith(".pdf");
 
-  const detectRetraction = (html: string): boolean => {
-    const lower = html.toLowerCase();
-    return (
-      lower.includes("retracted") ||
-      lower.includes("withdrawn") ||
-      lower.includes("this article has been retracted")
-    );
-  };
+  if (!isPdf) {
+    if (typeof chrome !== "undefined" && chrome.runtime?.id) {
+      // Wrap in a promise so we can await it
+      isPdf = await new Promise((resolve) => {
+        chrome.runtime.sendMessage(
+          { action: "checkIfPdf", url },
+          (response) => {
+            resolve(response?.isPdf);
+          }
+        );
+      });
+    } else {
+      isPdf = await checkIfPdfViaHead(url);
+      console.log("✅ Detected PDF from frontend:", isPdf);
+    }
+  }
+  console.log("✅ Detected PDF in extension?:", isPdf);
+  // ✅ Handle PDF
+  if (isPdf) {
+    // Extension
+    console.log(url, ":URL PASSED TO PDF DETECT");
+    if (typeof chrome !== "undefined" && chrome.runtime?.id) {
+      return new Promise((resolve) => {
+        chrome.runtime.sendMessage(
+          { action: "fetchPdfText", url },
+          (response) => {
+            console.log("Got fetchPdfText response:", response);
+            if (!response?.success || !response.text) {
+              return resolve({ $: cheerio.load(""), isRetracted: false });
+            }
+            const $ = cheerio.load(`<body>${response.text.trim()}</body>`);
+            const resultObj = {
+              $,
+              isRetracted: detectRetraction(response.text),
+              pdfMeta: {
+                title: response.title,
+                author: response.author,
+                thumbnailUrl: response.thumbnailUrl,
+              },
+            };
 
-  if (IS_EXTENSION) {
+            console.log("About to resolve fetchPdfText with:", resultObj);
+            resolve(resultObj);
+          }
+        );
+      });
+    }
+
+    // Server-side PDF
+    try {
+      const pdfRes = await fetch(`${BASE_URL}/api/fetch-pdf-text`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const json = await pdfRes.json();
+
+      if (!json?.success || !json.text) {
+        return { $: cheerio.load(""), isRetracted: false };
+      }
+
+      const $ = cheerio.load(`<body>${json.text.trim()}</body>`);
+      const thumbRes = await fetch(`${BASE_URL}/api/pdf-thumbnail`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const thumbJson = await thumbRes.json();
+
+      return {
+        $,
+        isRetracted: detectRetraction(json.text),
+        pdfMeta: {
+          title: json.title,
+          author: json.author,
+          thumbnailUrl: thumbJson?.imageUrl || undefined,
+        },
+      };
+    } catch (err) {
+      console.error("❌ PDF parse failed:", err);
+      return { $: cheerio.load(""), isRetracted: false };
+    }
+  }
+
+  // 🔁 HTML fetch: Extension first
+  if (typeof chrome !== "undefined" && chrome.runtime?.id) {
     return new Promise((resolve) => {
       chrome.runtime.sendMessage(
         EXTENSION_ID,
         { action: "fetchPageContent", url },
         async (response) => {
-          if (chrome.runtime.lastError) {
-            console.error("Runtime error:", chrome.runtime.lastError);
+          if (
+            chrome.runtime.lastError ||
+            !response?.success ||
+            !response.html
+          ) {
+            console.warn("⚠️ Extension fetch failed. Trying Puppeteer...");
+            const puppeteerTry = await fetchViaPuppeteer(url);
+            if (puppeteerTry) return resolve(puppeteerTry);
+
+            const waybackTry = await fetchFromWaybackWithPuppeteer(url);
+            if (waybackTry) return resolve(waybackTry);
+
             return resolve({ $: cheerio.load(""), isRetracted: false });
           }
 
-          if (!response?.success || !response.html) {
-            if (url.includes("web.archive.org")) {
-              console.warn(`🚫 Skipping Wayback recursion for: ${url}`);
-              return resolve({ $: cheerio.load(""), isRetracted: false });
-            }
-
-            return resolve(await fetchFromWayback(url));
+          const cleaned = removeCookieWalls(response.html);
+          if (isLikelyRSS(cleaned)) {
+            console.warn("🛑 RSS feed detected. Skipping.");
+            return resolve({
+              $: cheerio.load(""),
+              isRetracted: false,
+              isRSS: true,
+            });
           }
 
-          const html = response.html;
-          const isRetracted = detectRetraction(html);
-          return resolve({ $: cheerio.load(html), isRetracted });
+          const $ = cheerio.load(cleaned);
+          const len = $("body").text().trim().length;
+
+          if (len < 300) {
+            console.warn("⚠️ Short content. Trying Puppeteer...");
+            const puppetAlt = await fetchViaPuppeteer(url);
+            if (puppetAlt) return resolve(puppetAlt);
+
+            const waybackTry = await fetchFromWaybackWithPuppeteer(url);
+            if (waybackTry) return resolve(waybackTry);
+          }
+
+          return resolve({ $, isRetracted: detectRetraction(cleaned) });
         }
       );
     });
-  } else {
-    try {
-      const response = await fetch(`${BASE_URL}/api/fetch-page-content`, {
-        method: "POST",
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-          Accept:
-            "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-          "Content-Type": "application/json",
-          Referer: url, // ✅ Some sites check for a valid referrer
-        },
-        body: JSON.stringify({ url }),
-      });
+  }
 
-      if (!response.ok) {
-        console.error(
-          `❌ HTTP error: ${response.status} - ${response.statusText}`
-        );
-        return fetchFromWayback(url);
-      }
+  // 🔁 Server-side HTML fetch
+  try {
+    const res = await fetch(`${BASE_URL}/api/fetch-page-content`, {
+      method: "POST",
+      headers: {
+        "User-Agent": "Mozilla/5.0",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ url }),
+    });
 
-      const jsonResponse = await response.json();
-
-      if (!jsonResponse.html) {
-        return fetchFromWayback(url);
-      }
-
-      const html = jsonResponse.html;
-      const isRetracted = detectRetraction(html);
-      return { $: cheerio.load(html), isRetracted };
-    } catch (error) {
-      console.error("❌ Error fetching page content:", error);
-      return { $: cheerio.load(""), isRetracted: false }; // ✅ Ensures return is always valid
+    const json = await res.json();
+    const cleaned = removeCookieWalls(json.html);
+    if (isLikelyRSS(cleaned)) {
+      console.warn("🛑 RSS feed detected. Skipping.");
+      return { $: cheerio.load(""), isRetracted: false, isRSS: true };
     }
+
+    const $ = cheerio.load(cleaned);
+    const len = $("body").text().trim().length;
+
+    if (len < 300) {
+      console.warn("⚠️ Short server content. Trying Puppeteer + Wayback...");
+      const puppet = await fetchViaPuppeteer(url);
+      if (puppet) return puppet;
+
+      const wayback = await fetchFromWaybackWithPuppeteer(url);
+      if (wayback) return wayback;
+    }
+
+    return { $, isRetracted: detectRetraction(cleaned) };
+  } catch (err) {
+    console.error("❌ Server fetch error:", err);
+    return { $: cheerio.load(""), isRetracted: false };
   }
 };
 
@@ -576,6 +711,41 @@ export const extractPublisher = async (
 };
 
 // Extract References
+
+const isValidReference = (link: string): boolean => {
+  const excludedPatterns = [
+    "\\bads\\b",
+    "\\bsponsored\\b",
+    "\\btracking\\b",
+    "\\blogin\\b",
+    "\\bshare\\b",
+    "\\bsubscribe\\b",
+    "\\binstagram\\b",
+  ];
+  return (
+    link.startsWith("http") &&
+    excludedPatterns.every((pattern) => !link.includes(pattern))
+  );
+};
+
+const formatUrlForTitle = (url: string): string => {
+  try {
+    const { hostname, pathname } = new URL(url);
+    const readablePart = pathname.split("/").filter((part) => part.length > 3);
+    return readablePart.length
+      ? readablePart.join(" ").replace(/[-_]/g, " ")
+      : hostname;
+  } catch (err) {
+    return url;
+  }
+};
+
+const isNavigationLink = (link: string): boolean => {
+  return /#|twitter\.com|facebook\.com|linkedin\.com|instagram\.com|subscribe|comment|share|login|menu|footer|nav/i.test(
+    link
+  );
+};
+
 export const extractReferences = async (
   $: cheerio.CheerioAPI
 ): Promise<Lit_references[]> => {
@@ -584,49 +754,96 @@ export const extractReferences = async (
 
   const processReference = async (url: string, potentialTitle?: string) => {
     url = url.trim();
-
-    // ✅ List of files we can't scrape but should still save
-
     if (!isValidReference(url)) return;
 
-    let content_name = potentialTitle || formatUrlForTitle(url);
-    references.push({
-      url,
-      content_name,
-      //nonScrapable: isNonScrapable, // ✅ Flag these files so we don't try to scrape them
-    });
+    const content_name = potentialTitle || formatUrlForTitle(url);
+    references.push({ url, content_name });
   };
 
-  // Extract references from inline links
-  $("article, .content, .post-body, .entry-content, .ref-list")
+  // 🔍 1. Collect nav-like category prefixes (e.g. 'defender_category')
+  const getNavCategoryPrefixes = ($: cheerio.CheerioAPI): string[] => {
+    const prefixes = new Set<string>();
+
+    $("nav a[href], header a[href], .menu a[href], .navbar a[href]").each(
+      (_, el) => {
+        const href = $(el).attr("href");
+        if (href?.startsWith("http")) {
+          try {
+            const parsed = new URL(href);
+            const segments = parsed.pathname?.split("/").filter(Boolean);
+            if (segments && segments.length > 0) {
+              prefixes.add(segments[0]);
+            }
+          } catch (err) {
+            console.warn("⚠️ Invalid nav link:", href);
+          }
+        }
+      }
+    );
+
+    return [...prefixes];
+  };
+
+  const navPrefixes = getNavCategoryPrefixes($);
+  console.log("📎 Detected nav prefixes:", navPrefixes);
+
+  // 🔥 2. Zones likely to contain references
+  const referenceZones = [
+    "article",
+    "main",
+    ".content",
+    ".post-body",
+    ".entry-content",
+    ".ref-list",
+    ".references",
+    ".citation",
+    ".citations",
+    ".footnotes",
+    "footer", // ✅ footer allowed now
+  ].join(",");
+
+  // 🔍 3. Crawl anchor tags in those zones
+  $(referenceZones)
     .find("a[href]")
     .each((_, el) => {
       const link = $(el).attr("href")?.trim();
       const inlineText = $(el).text().trim();
-      if (
-        link &&
-        link.startsWith("http") &&
-        !isNavigationLink(link) &&
-        !$(el).closest("nav, header, .menu, .navbar, aside, footer").length
-      ) {
-        // ✅ NEW: Exclude menu links
-        promises.push(processReference(link, inlineText));
+
+      if (!link || !link.startsWith("http")) return;
+
+      try {
+        const parsed = new URL(link);
+        const pathSegments = parsed.pathname?.split("/").filter(Boolean);
+        const firstSegment = pathSegments?.[0];
+        const matchesNavPrefix =
+          firstSegment && navPrefixes.includes(firstSegment);
+
+        const isInBadNav =
+          $(el).closest(
+            `nav, header, .menu, .navbar, .nav-container, .nav-list, .nav-list--horizontal-scroll, .nav-list--defender-subnav, aside`
+          ).length > 0;
+
+        if (!isInBadNav && !matchesNavPrefix && !isNavigationLink(link)) {
+          promises.push(processReference(link, inlineText));
+        } else {
+          console.log("🛑 Skipped nav-like link:", link);
+        }
+      } catch (err) {
+        console.warn("⚠️ Skipping invalid link:", link);
       }
     });
 
-  // Extract references from JSON-LD structured data
+  // ✅ 4. Extract from ld+json metadata
   $('script[type="application/ld+json"]').each((_, scriptTag) => {
     try {
       const rawJson = $(scriptTag).html();
       if (rawJson) {
         const metadata = JSON.parse(rawJson);
-        // ✅ Make sure metadata.references exists and is an array
-        if (!metadata.references || !Array.isArray(metadata.references)) {
-          return; // Skip this JSON-LD entry if no references are found
-        }
         const refs = Array.isArray(metadata.references)
           ? metadata.references
-          : [metadata.references];
+          : metadata.references
+          ? [metadata.references]
+          : [];
 
         refs.forEach((ref: any) => {
           const refUrl = ref.url?.trim();
@@ -637,31 +854,16 @@ export const extractReferences = async (
         });
       }
     } catch (err) {
-      console.error("Error parsing ld+json for references:", err);
+      console.error("❌ Error parsing ld+json for references:", err);
     }
   });
 
   await Promise.all(promises);
+
+  // ✅ 5. De-duplicate by URL
   const uniqueReferences = references.filter(
     (ref, index, self) => index === self.findIndex((r) => r.url === ref.url)
   );
+
   return uniqueReferences;
-};
-
-const formatUrlForTitle = (url: string): string => {
-  try {
-    const { hostname, pathname } = new URL(url);
-    const readablePart = pathname.split("/").filter((part) => part.length > 3);
-    return readablePart.length
-      ? readablePart.join(" ").replace(/-/g, " ")
-      : hostname;
-  } catch (err) {
-    return url;
-  }
-};
-
-const isNavigationLink = (link: string): boolean => {
-  return /#|twitter\.com|facebook\.com|linkedin\.com|instagram\.com|subscribe|comment|share/.test(
-    link
-  );
 };

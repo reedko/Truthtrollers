@@ -11,8 +11,7 @@ import {
   PublisherRating,
 } from "../../../shared/entities/types";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+const API_BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
 
 //UPLOAD IMAGES
 export const uploadImage = async (
@@ -92,10 +91,17 @@ export const updateAuthorRating = async (
 
 // 🔵 PUBLISHER RATINGS
 export const fetchPublisherRatings = async (publisherId: number) => {
-  const res = await axios.get(
-    `${API_BASE_URL}/api/publishers/${publisherId}/ratings`
-  );
-  return res.data;
+  try {
+    console.log("🔵 Fetching pub ratings for:", publisherId);
+    const res = await axios.get(
+      `${API_BASE_URL}/api/publishers/${publisherId}/ratings`
+    );
+    console.log(publisherId, ":KUNDIS");
+    return res.data;
+  } catch (err) {
+    console.error("❌ Failed to fetch publisher ratings:", err);
+    return [];
+  }
 };
 
 //get ratings topics
