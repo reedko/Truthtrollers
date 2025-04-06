@@ -106,8 +106,9 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
       spacing={2}
       borderRight="1px solid gray"
       pr={4}
-      overflowY="auto"
-      maxHeight="800px"
+      alignSelf="flex-start"
+      //overflowY="auto"
+      //maxHeight="800px"
       width="100%"
     >
       <Heading size="sm">Claims</Heading>
