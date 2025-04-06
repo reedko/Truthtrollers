@@ -663,51 +663,53 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "fetchPdfText") {
-    try {
-      console.log("📨 Received fetchPdfText request for:", request.url);
+    (async () => {
+      try {
+        console.log("📨 Received fetchPdfText request for:", request.url);
 
-      // 🔹 Fetch PDF text
-      const textRes = await fetch(`${BASE_URL}/api/fetch-pdf-text`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: request.url }),
-      });
+        // 🔹 Fetch PDF text
+        const textRes = await fetch(`${BASE_URL}/api/fetch-pdf-text`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: request.url }),
+        });
 
-      const textData = await textRes.json();
-      console.log("📄 PDF text response:", textData);
+        const textData = await textRes.json();
+        console.log("📄 PDF text response:", textData);
 
-      // 🔸 Check if text parse failed
-      if (!textData.success || !textData.text?.trim()) {
-        console.warn("❌ PDF parsing failed or returned empty text");
-        return sendResponse({ success: false });
+        // 🔸 Check if text parse failed
+        if (!textData.success || !textData.text?.trim()) {
+          console.warn("❌ PDF parsing failed or returned empty text");
+          return sendResponse({ success: false });
+        }
+
+        // 🔹 Fetch thumbnail
+        const thumbRes = await fetch(`${BASE_URL}/api/pdf-thumbnail`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url: request.url }),
+        });
+
+        const thumbData = await thumbRes.json();
+        console.log("🖼️ PDF thumbnail response:", thumbData);
+
+        sendResponse({
+          success: true,
+          text: textData.text,
+          title: textData.title,
+          author: textData.author,
+          thumbnailUrl: thumbData.imageUrl || null,
+        });
+      } catch (err) {
+        console.error("📄❌ PDF fetch error in background script:", err);
+        sendResponse({ success: false });
       }
+    })();
 
-      // 🔹 Fetch thumbnail
-      const thumbRes = await fetch(`${BASE_URL}/api/pdf-thumbnail`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: request.url }),
-      });
-
-      const thumbData = await thumbRes.json();
-      console.log("🖼️ PDF thumbnail response:", thumbData);
-
-      sendResponse({
-        success: true,
-        text: textData.text,
-        title: textData.title,
-        author: textData.author,
-        thumbnailUrl: thumbData.imageUrl || null,
-      });
-    } catch (err) {
-      console.error("📄❌ PDF fetch error in background script:", err);
-      sendResponse({ success: false });
-    }
+    return true; // Required for async `sendResponse`
   }
-
-  return true; // Required for async `sendResponse`
 });
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

@@ -52,9 +52,8 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
         align="start"
         spacing={2}
         borderLeft="1px solid gray"
+        alignSelf="flex-start"
         pl={4}
-        overflowY="auto"
-        maxHeight="800px"
         width="100%"
       >
         <Heading size="sm">References</Heading>

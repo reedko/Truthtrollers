@@ -259,7 +259,7 @@ export const orchestrateScraping = async (
       content_name.length > 5
         ? content_name
         : diffbotData.title || (await getMainHeadline($));
-
+    const existingAuthors = authors; // the array that might have PDF’s author
     const extractedAuthors = await extractAuthors($);
     const diffbotAuthors = diffbotData.author
       ? diffbotData.author.split(/[,&]/).map((name) => ({
@@ -269,7 +269,11 @@ export const orchestrateScraping = async (
         }))
       : [];
 
-    const allAuthors = [...extractedAuthors, ...diffbotAuthors];
+    const allAuthors = [
+      ...extractedAuthors,
+      ...diffbotAuthors,
+      ...existingAuthors,
+    ];
     const seen = new Set();
     authors = allAuthors.filter((author) => {
       const nameKey = author.name?.toLowerCase();

@@ -41,6 +41,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   const publishers = useTaskStore(
     useShallow((state) => state.publishers?.[task.content_id] || [])
   );
+  const [workspaceHeight, setWorkspaceHeight] = useState(900);
 
   useEffect(() => {
     const loadInitialGraph = async () => {
@@ -105,11 +106,20 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
           <AuthCard authors={authors} />
         </Box>
 
-        <Box gridArea="workspace" borderWidth="1px" borderRadius="lg" p={4}>
+        <Box
+          gridArea="workspace"
+          borderWidth="1px"
+          borderRadius="lg"
+          p={4}
+          height={`${workspaceHeight + 60}px`}
+        >
           <Heading size="sm" mb={2}>
             WorkSpace
           </Heading>
-          <Workspace contentId={task.content_id} />
+          <Workspace
+            contentId={task.content_id}
+            onHeightChange={setWorkspaceHeight}
+          />
         </Box>
 
         <Box gridArea="relationFlow" borderWidth="1px" borderRadius="lg" p={4}>

@@ -1,3 +1,5 @@
+import { parseOrRepairJSON, GptJson } from "../utils/repairJson";
+
 const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 
 async function callOpenAiAnalyze(content: string): Promise<{
@@ -59,9 +61,9 @@ ${content}
   }
 
   // Attempt to parse the JSON
-  let parsed;
+  let parsed: GptJson;
   try {
-    parsed = JSON.parse(cleanedReply);
+    parsed = parseOrRepairJSON(cleanedReply);
   } catch (err) {
     console.error("Invalid JSON from GPT:", cleanedReply);
     throw new Error("GPT returned invalid JSON");

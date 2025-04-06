@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Grid, Heading, useColorModeValue } from "@chakra-ui/react";
 import {
   fetchClaimsForTask,
@@ -10,17 +10,12 @@ import {
 } from "../services/useDashboardAPI";
 import TaskClaims from "./TaskClaims";
 import ReferenceList from "./ReferenceList";
-import { Claim, ReferenceWithClaims } from "../../../shared/entities/types";
 import ClaimLinkModal from "./modals/ClaimLinkModal";
 import ReferenceClaimsModal from "./modals/ReferenceClaimsModal";
 import ClaimVerificationModal from "./modals/ClaimVerificationModal";
-import RelationshipMap, { ClaimLink } from "./RelationshipMap";
+import { Claim, ReferenceWithClaims } from "../../../shared/entities/types";
 
-interface WorkspaceProps {
-  contentId: number;
-  onHeightChange?: (height: number) => void;
-}
-const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
+const Workspace: React.FC<{ contentId: number }> = ({ contentId }) => {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [references, setReferences] = useState<ReferenceWithClaims[]>([]);
   const [refreshReferences, setRefreshReferences] = useState(false);
@@ -79,18 +74,11 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
   };
 
   // Define constants for layout:
-  const rowHeight = 50; // height per list item
-  const headerPadding = 80; // extra space for headings, margins, etc.
+  const rowHeight = 40; // height per list item
+  const headerPadding = 100; // extra space for headings, margins, etc.
   // Compute the workspace height based on the longer list:
   const computedHeight =
     Math.max(claims.length, references.length) * rowHeight + headerPadding;
-  // Use a ref to measure the container's height
-
-  useEffect(() => {
-    if (onHeightChange) {
-      onHeightChange(computedHeight);
-    }
-  }, [claims, references, computedHeight, onHeightChange]); // recalc when claims or references change
 
   return (
     <Box
@@ -117,7 +105,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
             setClaims([...claims, { ...newClaim, claim_id: saved.claimId }]);
           }}
           onEditClaim={async (updatedClaim: Claim) => {
-            const saved = await updateClaim(updatedClaim);
+            await updateClaim(updatedClaim);
             setClaims(
               claims.map((c) =>
                 c.claim_id === updatedClaim.claim_id ? updatedClaim : c
@@ -146,19 +134,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
           setEditingClaim={setEditingClaim}
         />
 
-        <Box>
-          {/* Middle column reserved */}
-          <RelationshipMap
-            leftItems={claims} // from your TaskClaims state
-            rightItems={references} // from your ReferenceList state
-            links={links}
-            rowHeight={40} // adjust based on your item height
-            onLineClick={(link) => {
-              // Open ClaimLinkModal or show details
-              console.log("Line clicked:", link);
-            }}
-          />
-        </Box>
+        <Box>{/* Middle column reserved for relationship map */}</Box>
 
         <ReferenceList
           references={references}
