@@ -73,6 +73,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
             <HStack key={ref.reference_content_id} width="100%" spacing={2}>
               <Tooltip label={ref.content_name} hasArrow>
                 <Button
+                  height="50px" // 👈 Set fixed height to match rowHeight
                   variant={
                     selectedReference?.reference_content_id ===
                     ref.reference_content_id

@@ -108,7 +108,7 @@ export interface Claim {
   veracity_score: number;
   confidence_level: number;
   last_verified: string; // Timestamp as ISO string
-  references: ClaimReference[]; // References that support/refute the claim
+  references?: ClaimReference[]; // References that support/refute the claim
   relationship_type?: string; // Type of relationship to the content (if relevant)
   content_id?: number;
 }
@@ -120,6 +120,16 @@ export interface ClaimReference {
   support_level: number; // Positive = supports, Negative = refutes
 }
 
+export interface ClaimLinks {
+  id: number;
+  claim_link_id?: number; // for future use
+  task_content_id: number;
+  left_claim_id: number;
+  right_reference_id: number;
+  source_claim_id: number;
+  relationship: "supports" | "refutes" | "related";
+  confidence: number;
+}
 // User Interface
 export interface User {
   user_id: number;

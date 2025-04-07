@@ -28,6 +28,7 @@ interface ClaimLinkModalProps {
   onClose: () => void;
   sourceClaim: Pick<Claim, "claim_id" | "claim_text"> | null;
   targetClaim: Claim | null;
+  isReadOnly?: boolean;
 }
 
 const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
@@ -35,6 +36,7 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
   onClose,
   sourceClaim,
   targetClaim,
+  isReadOnly,
 }) => {
   const toast = useToast();
   const [supportLevel, setSupportLevel] = useState(0);
@@ -74,7 +76,9 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose} isCentered size="lg">
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Create Claim Relationship</ModalHeader>
+        <ModalHeader>
+          {!isReadOnly ? "Create Claim Relationship" : "Claim Relationship"}
+        </ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <Text fontWeight="bold" mb={2}>
@@ -121,10 +125,16 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
         </ModalBody>
 
         <ModalFooter>
-          <Button colorScheme="blue" mr={3} onClick={handleSubmit}>
-            Create Link
-          </Button>
-          <Button onClick={onClose}>Cancel</Button>
+          {!isReadOnly ? (
+            <>
+              <Button colorScheme="blue" mr={3} onClick={handleSubmit}>
+                Create Link
+              </Button>
+              <Button onClick={onClose}>Cancel</Button>
+            </>
+          ) : (
+            <Button onClick={onClose}>Close</Button>
+          )}
         </ModalFooter>
       </ModalContent>
     </Modal>
