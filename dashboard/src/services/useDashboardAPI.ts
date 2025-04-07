@@ -9,9 +9,12 @@ import {
   ReferenceWithClaims,
   AuthorRating,
   PublisherRating,
+  ClaimLinks,
 } from "../../../shared/entities/types";
 
 const API_BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
+
+//task claims to reference links
 
 //UPLOAD IMAGES
 export const uploadImage = async (
@@ -177,6 +180,30 @@ export const fetchAssignedUsers = async (taskId: number): Promise<User[]> => {
 };
 
 /** --------------------- 🔎 CLAIMS FUNCTIONS --------------------- **/
+
+//fetch a claim by claim id
+//
+export async function fetchClaimById(claimId: number): Promise<Claim> {
+  const response = await axios.get(`${API_BASE_URL}/api/claim/${claimId}`);
+  return response.data[0];
+}
+/**
+ * Fetch all claims for a specific task (contentId)
+ */
+export const fetchClaimsAndLinkedReferencesForTask = async (
+  contentId: number
+): Promise<ClaimLinks[]> => {
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/api/claims-and-linked-references/${contentId}`
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error adding claim:", error);
+    throw error;
+  }
+};
 
 /**
  * Fetch all claims for a specific task (contentId)

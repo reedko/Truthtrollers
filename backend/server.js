@@ -667,7 +667,6 @@ app.post("/api/content/:contentId/publishers", async (req, res) => {
 
 app.get("/api/publishers/:publisherId/ratings", async (req, res) => {
   const { publisherId } = req.params;
-  console.log("🔍 Publisher ID:", publisherId);
 
   const sql = `
     SELECT pr.*, t.topic_name 
@@ -676,12 +675,9 @@ app.get("/api/publishers/:publisherId/ratings", async (req, res) => {
     WHERE pr.publisher_id = ?
   `;
 
-  console.log("📘 SQL:", sql.trim());
-  console.log("📘 Params:", [publisherId]);
-
   try {
     const rows = await query(sql, [publisherId]);
-    console.log("📦 Query result:", rows);
+
     res.send(rows);
   } catch (err) {
     console.error("❌ Error fetching publisher ratings:", err);
@@ -818,6 +814,33 @@ app.get("/api/get-graph-data", async (req, res) => {
   } catch (error) {
     console.error("🚨 SQL Error:", error);
     res.status(500).json({ error: "Database query failed", details: error });
+  }
+});
+
+//get claims from claim_id
+
+app.get("/api/claim/:claimId", async (req, res) => {
+  const { claimId } = req.params;
+
+  try {
+    const SQL = `
+    SELECT  
+      claim_id,
+      claim_text,
+      veracity_score,
+      confidence_level,
+      last_verified
+  
+    FROM claims
+    WHERE claim_id=?
+    `;
+
+    const params = [claimId];
+    const claim = await query(SQL, params);
+    res.json(claim);
+  } catch (err) {
+    console.error("Error fetching references with claims:", err);
+    res.status(500).json({ error: "Database error" });
   }
 });
 
@@ -1464,6 +1487,40 @@ app.post("/api/claim-links", async (req, res) => {
     res.status(201).json({ message: "Claim link created" });
   } catch (err) {
     console.error("❌ Error inserting claim link:", err);
+    res.status(500).json({ error: "Database error" });
+  }
+});
+
+app.get("/api/claims-and-linked-references/:contentId", async (req, res) => {
+  const contentId = req.params.contentId;
+  const sql = `
+    SELECT 
+   CONCAT(cl.claim_link_id, cr.reference_content_id) AS id,
+   cl.claim_link_id AS claim_link_id,
+  cc_task.content_id AS task_content_id,
+  cl.target_claim_id AS left_claim_id,
+  cl.source_claim_id,
+  cr.reference_content_id AS right_reference_id,
+  cl.relationship,
+  cl.support_level AS confidence
+FROM claim_links cl
+JOIN content_claims cc_task
+  ON cl.target_claim_id = cc_task.claim_id
+JOIN content_claims cc_ref
+  ON cl.source_claim_id = cc_ref.claim_id
+JOIN content_relations cr
+  ON cr.reference_content_id = cc_ref.content_id
+WHERE cc_task.content_id = cr.content_id
+  AND cc_task.content_id =  ?
+  `;
+  console.log(sql, "SQL", contentId, "CID");
+
+  const params = [contentId];
+  try {
+    const claimsWithReferences = await query(sql, params);
+    res.json(claimsWithReferences);
+  } catch (err) {
+    console.error("Error fetching references with claims:", err);
     res.status(500).json({ error: "Database error" });
   }
 });

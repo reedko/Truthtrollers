@@ -10,11 +10,16 @@ import {
 } from "../services/useDashboardAPI";
 import TaskClaims from "./TaskClaims";
 import ReferenceList from "./ReferenceList";
-import { Claim, ReferenceWithClaims } from "../../../shared/entities/types";
+import {
+  Claim,
+  ClaimReference,
+  ReferenceWithClaims,
+} from "../../../shared/entities/types";
 import ClaimLinkModal from "./modals/ClaimLinkModal";
 import ReferenceClaimsModal from "./modals/ReferenceClaimsModal";
 import ClaimVerificationModal from "./modals/ClaimVerificationModal";
 import RelationshipMap, { ClaimLink } from "./RelationshipMap";
+import { fetchClaimById } from "../services/useDashboardAPI"; // or wherever
 
 interface WorkspaceProps {
   contentId: number;
@@ -46,14 +51,73 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
   const [editingClaim, setEditingClaim] = useState<Claim | null>(null);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
   const [verifyingClaim, setVerifyingClaim] = useState<Claim | null>(null);
+  const leftRef = useRef<HTMLDivElement | null>(null);
+  const rightRef = useRef<HTMLDivElement | null>(null);
+  const [leftX, setLeftX] = useState(0);
+  const [rightX, setRightX] = useState(0);
+  const [computedHeight, setComputedHeight] = useState(500);
+  const [readOnly, setReadOnly] = useState<boolean>(false);
 
+  const updateXPositionsAndHeight = () => {
+    if (leftRef.current && rightRef.current) {
+      const leftBox = leftRef.current.getBoundingClientRect();
+      const rightBox = rightRef.current.getBoundingClientRect();
+
+      setLeftX(leftBox.left + leftBox.width);
+      setRightX(rightBox.left);
+
+      const fullHeight =
+        Math.max(leftBox.height, rightBox.height) + headerPadding;
+      setComputedHeight(fullHeight);
+    }
+  };
   useEffect(() => {
     fetchClaimsForTask(contentId).then(setClaims);
   }, [contentId]);
 
   useEffect(() => {
-    fetchReferencesWithClaimsForTask(contentId).then(setReferences);
+    fetchReferencesWithClaimsForTask(contentId).then((data) => {
+      console.log("✅ references fetched:", data);
+      setReferences(data);
+    });
   }, [contentId, refreshReferences]);
+
+  useEffect(() => {
+    updateXPositionsAndHeight();
+    window.addEventListener("resize", updateXPositionsAndHeight);
+    return () =>
+      window.removeEventListener("resize", updateXPositionsAndHeight);
+  }, [claims, references]);
+  useEffect(() => {
+    if (onHeightChange) {
+      onHeightChange(computedHeight);
+    }
+  }, [claims, references, computedHeight, onHeightChange]);
+  const [hasRetriedClick, setHasRetriedClick] = useState(false);
+
+  const handleLineClick = async (link: ClaimLink) => {
+    try {
+      const [source, target] = await Promise.all([
+        fetchClaimById(link.sourceClaimId),
+        fetchClaimById(link.claimId),
+      ]);
+
+      console.log(source, "SOURCE", target, "TARET");
+      if (source && target) {
+        setSourceClaim({
+          claim_id: source.claim_id,
+          claim_text: source.claim_text,
+        });
+        setTargetClaim(target);
+        setIsClaimLinkModalOpen(true);
+      } else {
+        console.warn("❌ Claim(s) not found:", { source, target, link });
+      }
+    } catch (err) {
+      console.error("🔥 Error fetching claims by ID:", err);
+    }
+    setReadOnly(true);
+  };
 
   const handleUpdateReference = async (
     referenceId: number,
@@ -79,18 +143,14 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
   };
 
   // Define constants for layout:
-  const rowHeight = 50; // height per list item
+  const rowHeight = 58; // height per list item
   const headerPadding = 80; // extra space for headings, margins, etc.
   // Compute the workspace height based on the longer list:
-  const computedHeight =
-    Math.max(claims.length, references.length) * rowHeight + headerPadding;
+
   // Use a ref to measure the container's height
 
-  useEffect(() => {
-    if (onHeightChange) {
-      onHeightChange(computedHeight);
-    }
-  }, [claims, references, computedHeight, onHeightChange]); // recalc when claims or references change
+  // recalc when claims or references change
+  //console.log("📏 leftX:", leftX, "rightX:", rightX);
 
   return (
     <Box
@@ -106,73 +166,77 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
         Claim Analysis
       </Heading>
       <Grid templateColumns="2fr 2fr 2fr" gap={4} height="100%">
-        <TaskClaims
-          claims={claims}
-          onAddClaim={async (newClaim: Claim) => {
-            const saved = await addClaim({
-              ...newClaim,
-              content_id: contentId,
-              relationship_type: "task",
-            });
-            setClaims([...claims, { ...newClaim, claim_id: saved.claimId }]);
-          }}
-          onEditClaim={async (updatedClaim: Claim) => {
-            const saved = await updateClaim(updatedClaim);
-            setClaims(
-              claims.map((c) =>
-                c.claim_id === updatedClaim.claim_id ? updatedClaim : c
-              )
-            );
-          }}
-          onDeleteClaim={(claimId) =>
-            setClaims(claims.filter((claim) => claim.claim_id !== claimId))
-          }
-          onVerifyClaim={(claim) => {
-            setVerifyingClaim(claim);
-            setIsVerificationModalOpen(true);
-          }}
-          draggingClaim={draggingClaim}
-          onDropReferenceClaim={handleDropReferenceClaim}
-          taskId={contentId}
-          hoveredClaimId={hoveredClaimId}
-          setHoveredClaimId={setHoveredClaimId}
-          selectedClaim={selectedClaim}
-          setSelectedClaim={setSelectedClaim}
-          isClaimModalOpen={isClaimModalOpen}
-          setIsClaimModalOpen={setIsClaimModalOpen}
-          isClaimViewModalOpen={isClaimViewModalOpen}
-          setIsClaimViewModalOpen={setIsClaimViewModalOpen}
-          editingClaim={editingClaim}
-          setEditingClaim={setEditingClaim}
-        />
-
+        <Box ref={leftRef}>
+          <TaskClaims
+            claims={claims}
+            onAddClaim={async (newClaim: Claim) => {
+              const saved = await addClaim({
+                ...newClaim,
+                content_id: contentId,
+                relationship_type: "task",
+              });
+              setClaims([...claims, { ...newClaim, claim_id: saved.claimId }]);
+            }}
+            onEditClaim={async (updatedClaim: Claim) => {
+              const saved = await updateClaim(updatedClaim);
+              setClaims(
+                claims.map((c) =>
+                  c.claim_id === updatedClaim.claim_id ? updatedClaim : c
+                )
+              );
+            }}
+            onDeleteClaim={(claimId) =>
+              setClaims(claims.filter((claim) => claim.claim_id !== claimId))
+            }
+            onVerifyClaim={(claim) => {
+              setVerifyingClaim(claim);
+              setIsVerificationModalOpen(true);
+            }}
+            draggingClaim={draggingClaim}
+            onDropReferenceClaim={handleDropReferenceClaim}
+            taskId={contentId}
+            hoveredClaimId={hoveredClaimId}
+            setHoveredClaimId={setHoveredClaimId}
+            selectedClaim={selectedClaim}
+            setSelectedClaim={setSelectedClaim}
+            isClaimModalOpen={isClaimModalOpen}
+            setIsClaimModalOpen={setIsClaimModalOpen}
+            isClaimViewModalOpen={isClaimViewModalOpen}
+            setIsClaimViewModalOpen={setIsClaimViewModalOpen}
+            editingClaim={editingClaim}
+            setEditingClaim={setEditingClaim}
+          />
+        </Box>
         <Box>
           {/* Middle column reserved */}
           <RelationshipMap
-            leftItems={claims} // from your TaskClaims state
-            rightItems={references} // from your ReferenceList state
-            links={links}
-            rowHeight={40} // adjust based on your item height
-            onLineClick={(link) => {
-              // Open ClaimLinkModal or show details
-              console.log("Line clicked:", link);
-            }}
+            key={`${leftX}-${rightX}-${claims.length}-${references.length}`}
+            contentId={contentId}
+            leftItems={claims}
+            rightItems={references}
+            rowHeight={rowHeight}
+            topOffset={headerPadding} // 👈 This is your top offset
+            height={computedHeight} // 👈 Total height of the surrounding Box
+            leftX={leftX} // 👈 You can adjust this to match TaskClaims column
+            rightX={rightX} // 👈 Adjust to align with ReferenceList column
+            onLineClick={handleLineClick}
           />
         </Box>
-
-        <ReferenceList
-          references={references}
-          onEditReference={handleUpdateReference}
-          onDeleteReference={(refId) =>
-            deleteReferenceFromTask(contentId, refId)
-          }
-          taskId={contentId}
-          onReferenceClick={(ref) => {
-            setSelectedReference(ref);
-            setIsReferenceClaimsModalOpen(true);
-          }}
-          selectedReference={selectedReference}
-        />
+        <Box ref={rightRef}>
+          <ReferenceList
+            references={references}
+            onEditReference={handleUpdateReference}
+            onDeleteReference={(refId) =>
+              deleteReferenceFromTask(contentId, refId)
+            }
+            taskId={contentId}
+            onReferenceClick={(ref) => {
+              setSelectedReference(ref);
+              setIsReferenceClaimsModalOpen(true);
+            }}
+            selectedReference={selectedReference}
+          />
+        </Box>
       </Grid>
 
       {selectedReference && (
@@ -188,9 +252,13 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
 
       <ClaimLinkModal
         isOpen={isClaimLinkModalOpen}
-        onClose={() => setIsClaimLinkModalOpen(false)}
+        onClose={() => {
+          setIsClaimLinkModalOpen(false);
+          setReadOnly(false);
+        }}
         sourceClaim={sourceClaim}
         targetClaim={targetClaim}
+        isReadOnly={readOnly}
       />
       {verifyingClaim && (
         <ClaimVerificationModal

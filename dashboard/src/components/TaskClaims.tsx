@@ -117,6 +117,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
         as="button"
         bg="blue.600"
         color="white"
+        height="50px"
         px={3}
         py={2}
         borderRadius="md"
