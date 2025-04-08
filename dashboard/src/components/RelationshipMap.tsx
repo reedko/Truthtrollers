@@ -12,6 +12,7 @@ export interface ClaimLink {
   sourceClaimId: number; // 👈 new
   relation: "support" | "refute";
   confidence: number;
+  notes?: string;
 }
 
 interface RelationshipMapProps {
@@ -76,6 +77,7 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
               ? "refute"
               : "support", // fallback for "related"
           confidence: row.confidence || 0,
+          notes: row.notes || "",
         }));
         setLinks(formattedLinks);
       })
