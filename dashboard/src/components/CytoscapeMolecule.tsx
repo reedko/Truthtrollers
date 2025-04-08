@@ -4,6 +4,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import cytoscape, { EdgeSingular, NodeSingular } from "cytoscape";
+
 import { createPortal } from "react-dom";
 import { GraphNode } from "../../../shared/entities/types";
 
@@ -319,6 +320,19 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     label: string;
     relation: string;
   }>(null);
+  const [selectedEdge, setSelectedEdge] = useState<null | {
+    sourceLabel: string;
+    targetLabel: string;
+    relation: string;
+    value: number;
+    notes: string;
+  }>(null);
+  const [hoveredEdgeTooltip, setHoveredEdgeTooltip] = useState<{
+    label: string;
+    x: number;
+    y: number;
+  } | null>(null);
+
   const lastRefNode = useRef<NodeSingular | null>(null);
   const lastRefOriginalPos = useRef<{ x: number; y: number } | null>(null);
   const originalNodePositions = useRef<
@@ -468,9 +482,20 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           selector: "edge",
           style: {
             width: (ele: EdgeSingular) => {
-              const val = Math.abs(ele.data("value") || 1);
-              return 2 + val * 4; // Base width 2, scales up with strength
+              const val = Math.abs(ele.data("value") || 0);
+              return 2 + val * 4;
             },
+            label: (ele: EdgeSingular) => {
+              const rel = ele.data("relation");
+              const val = ele.data("value");
+              if (!val) return "";
+              const pct = Math.round(Math.abs(val) * 100);
+              return `${rel}: ${pct}%`;
+            },
+            "text-rotation": "autorotate",
+            "text-margin-y": -10,
+            "font-size": 9,
+            color: "#eee",
             "line-color": (ele) => {
               const rel = ele.data("relation");
               return rel === "supports"
@@ -487,6 +512,25 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         },
       ],
     });
+    cy.on("mouseover", "edge", (event) => {
+      const edge = event.target;
+      const relation = edge.data("relation") || "related";
+      const value = edge.data("value") || 0;
+      const label =
+        (relation === "supports"
+          ? "✅ Supports"
+          : relation === "refutes"
+          ? "❌ Refutes"
+          : "Related") + `: ${Math.round(Math.abs(value) * 100)}%`;
+
+      const { x, y } = event.renderedPosition;
+      setHoveredEdgeTooltip({ label, x, y });
+    });
+
+    cy.on("mouseout", "edge", () => {
+      setHoveredEdgeTooltip(null);
+    });
+
     cy.ready(() => {
       cy.animate({
         fit: {
@@ -674,6 +718,16 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           });
 
           cy.add(added);
+          cy.edges().forEach((edge) => {
+            const rel = edge.data("relation");
+            const value = edge.data("value") ?? 0;
+            const notes = edge.data("notes") || "";
+
+            const label = `${
+              rel === "supports" ? "✅" : rel === "refutes" ? "❌" : "↔️"
+            } ${Math.round(Math.abs(value) * 100)}% — ${notes || "No notes"}`;
+          });
+
           // 🌀 Instant zoom-to-fit
           cy.fit(cy.elements(), 15);
           fartScatterAwayFromRef({
@@ -698,6 +752,25 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           // ✅ Capture new positions after push, so we can restore accurately later
         }, 420);
       }
+    });
+
+    // 🎯 Handle edge click (relation line between claims)
+    cy.on("tap", "edge", (event) => {
+      const edge = event.target as EdgeSingular;
+      const rel = edge.data("relation");
+      const value = edge.data("value") ?? 0;
+      const notes = edge.data("notes") || "";
+
+      const sourceNode = cy.getElementById(edge.data("source")).data();
+      const targetNode = cy.getElementById(edge.data("target")).data();
+
+      setSelectedEdge({
+        sourceLabel: sourceNode.label,
+        targetLabel: targetNode.label,
+        relation: rel,
+        value,
+        notes,
+      });
     });
 
     return () => cy.destroy();
@@ -735,6 +808,80 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             <p style={{ marginTop: 12 }}>{selectedClaim.label}</p>
             <button
               onClick={() => setSelectedClaim(null)}
+              style={{
+                marginTop: 20,
+                background: "#6c5ce7",
+                color: "#fff",
+                padding: "0.5em 1em",
+                borderRadius: 6,
+              }}
+            >
+              Close
+            </button>
+          </div>,
+          document.body
+        )}
+      {hoveredEdgeTooltip &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              top: hoveredEdgeTooltip.y + 10,
+              left: hoveredEdgeTooltip.x + 10,
+              background: "#333",
+              color: "#fff",
+              padding: "0.5em 1em",
+              borderRadius: 6,
+              fontSize: "0.85em",
+              pointerEvents: "none",
+              zIndex: 1000,
+              whiteSpace: "nowrap",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.5)",
+            }}
+          >
+            {hoveredEdgeTooltip.label}
+          </div>,
+          document.body
+        )}
+
+      {selectedEdge &&
+        createPortal(
+          <div
+            style={{
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              background: "#222",
+              color: "#fff",
+              padding: "1.5em",
+              borderRadius: 12,
+              boxShadow: "0 0 20px rgba(0,0,0,0.6)",
+              zIndex: 1000,
+              maxWidth: "500px",
+              width: "90%",
+            }}
+          >
+            <h3 style={{ marginBottom: "0.5em" }}>
+              {selectedEdge.relation === "supports"
+                ? "✅ Supports"
+                : selectedEdge.relation === "refutes"
+                ? "❌ Refutes"
+                : "↔️ Related"}{" "}
+              ({Math.round(Math.abs(selectedEdge.value) * 100)}% confidence)
+            </h3>
+            <p>
+              <strong>From:</strong> {selectedEdge.sourceLabel}
+            </p>
+            <p>
+              <strong>To:</strong> {selectedEdge.targetLabel}
+            </p>
+            <p style={{ marginTop: "1em" }}>
+              <strong>Notes:</strong>
+            </p>
+            <p>{selectedEdge.notes || "—"}</p>
+            <button
+              onClick={() => setSelectedEdge(null)}
               style={{
                 marginTop: 20,
                 background: "#6c5ce7",
