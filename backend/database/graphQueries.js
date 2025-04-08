@@ -317,7 +317,7 @@ export const getLinkedClaimsAndLinksForTask = (taskId) => {
     claimLinkSql: `
       -- Only include links where the target is a taskClaim for this task
       SELECT 
-        'supports' AS relation,
+        cl.relationship AS relation,
         cl.support_level AS value,
         CONCAT('claim-', cl.source_claim_id) AS source,
         CONCAT('claim-', cl.target_claim_id) AS target,

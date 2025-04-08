@@ -3,10 +3,137 @@
 // Implements edge convergence halfway between claim groups and main nodes
 
 import React, { useEffect, useRef, useState } from "react";
-import cytoscape, { NodeSingular } from "cytoscape";
+import cytoscape, { EdgeSingular, NodeSingular } from "cytoscape";
 import { createPortal } from "react-dom";
 import { GraphNode } from "../../../shared/entities/types";
 
+function fartScatterAwayFromRef({
+  cy,
+  refNode,
+  taskNode,
+  radius = 300,
+  radiusStep = 40,
+  dipRange = 5, // how many nodes on each side participate in the dip rise
+}: {
+  cy: cytoscape.Core;
+  refNode: NodeSingular;
+  taskNode: NodeSingular;
+  radius?: number;
+  radiusStep?: number;
+  dipRange?: number;
+}) {
+  const center = taskNode.position();
+  const refPos = refNode.position();
+
+  const dx = refPos.x - center.x;
+  const dy = refPos.y - center.y;
+  const angleToRef = Math.atan2(dy, dx);
+
+  const arcSpan = (3 * Math.PI) / 2;
+  const startAngle = angleToRef + Math.PI - arcSpan / 2;
+
+  const nodesToScatter = cy.nodes().filter((node) => {
+    const id = node.id();
+    const type = node.data("type");
+    return (
+      id !== refNode.id() &&
+      id !== taskNode.id() &&
+      ["reference", "author", "publisher"].includes(type)
+    );
+  });
+
+  const centerIndex = (nodesToScatter.length - 1) / 2;
+
+  function valleyCurve(i: number): number {
+    const dist = Math.abs(i - centerIndex);
+    if (dist <= dipRange) {
+      return dist; // rising toward outer middle
+    } else {
+      const decay = dist - dipRange;
+      return dipRange - decay * 0.7; // taper back down gently
+    }
+  }
+
+  nodesToScatter.forEach((node, i) => {
+    const t = i / Math.max(1, nodesToScatter.length - 1);
+    const angle = startAngle + t * arcSpan;
+
+    const rOffset = Math.max(0, valleyCurve(i)) * radiusStep;
+    const effectiveRadius = radius + rOffset;
+
+    const newX = center.x + effectiveRadius * Math.cos(angle);
+    const newY = center.y + effectiveRadius * Math.sin(angle);
+
+    node.animate(
+      { position: { x: newX, y: newY } },
+      { duration: 500, easing: "ease-in-out" }
+    );
+  });
+}
+function bellValley(
+  i: number,
+  center: number,
+  maxHeight: number,
+  range: number
+) {
+  const dist = Math.abs(i - center);
+  if (dist <= range) {
+    return (dist / range) * maxHeight; // rising edge
+  } else {
+    return (1 - (dist - range) / (center - range)) * maxHeight; // falling edge
+  }
+}
+
+function smartRadialPush({
+  cy,
+  center,
+  excludeIds,
+  minRadius,
+  maxRadius = 800,
+}: {
+  cy: cytoscape.Core;
+  center: { x: number; y: number };
+  excludeIds: string[];
+  minRadius: number;
+  maxRadius?: number;
+}) {
+  const usedAngles = new Set<number>();
+
+  cy.nodes().forEach((node) => {
+    const id = node.id();
+    const type = node.data("type");
+
+    if (
+      excludeIds.includes(id) ||
+      !["reference", "author", "publisher"].includes(type)
+    ) {
+      return;
+    }
+
+    const pos = node.position();
+    const dx = pos.x - center.x;
+    const dy = pos.y - center.y;
+    let angle = Math.atan2(dy, dx);
+
+    while (usedAngles.has(angle)) {
+      angle += 0.1;
+    }
+    usedAngles.add(angle);
+
+    const r = Math.min(maxRadius, minRadius + 200);
+    const newX = center.x + r * Math.cos(angle);
+    const newY = center.y + r * Math.sin(angle);
+
+    console.log(
+      `🔄 Smart-pushing ${id} to (${newX.toFixed(1)}, ${newY.toFixed(1)})`
+    );
+
+    node.animate(
+      { position: { x: newX, y: newY } },
+      { duration: 400, easing: "ease-in-out" }
+    );
+  });
+}
 function pushAwayOtherNodes(
   cy: cytoscape.Core,
   center: { x: number; y: number },
@@ -29,6 +156,10 @@ function pushAwayOtherNodes(
       const newX = pos.x + normX * distance;
       const newY = pos.y + normY * distance;
 
+      console.log(
+        `🧼 Pushing ${type} node ${id} from (${pos.x}, ${pos.y}) to (${newX}, ${newY})`
+      );
+
       node.animate(
         { position: { x: newX, y: newY } },
         { duration: 400, easing: "ease-in-out" }
@@ -39,30 +170,33 @@ function pushAwayOtherNodes(
 
 function fanOutClaims({
   cy,
-  claims,
+  claimsWithRelation,
   sourceNode,
   targetNode,
-  relation,
   minDistance = 100,
   arcSpan = Math.PI / 2,
   centerShiftFactor = 90,
 }: {
   cy: cytoscape.Core;
-  claims: NodeData[];
+  claimsWithRelation: {
+    claim: NodeData;
+    relation: "supports" | "refutes" | "related";
+    notes: string;
+  }[];
   sourceNode: NodeSingular;
   targetNode: NodeSingular;
-  relation: string;
   minDistance?: number;
   arcSpan?: number;
   centerShiftFactor?: number;
 }): cytoscape.ElementDefinition[] {
   const isRef = sourceNode.data("type") === "reference";
+  const isTask = sourceNode.data("type") === "task";
   const originalPos = { ...sourceNode.position() };
   const targetPos = targetNode.position();
   const dx = targetPos.x - originalPos.x;
   const dy = targetPos.y - originalPos.y;
   const angleRadians = Math.atan2(dy, dx);
-  const arcPadding = centerShiftFactor * claims.length;
+  const arcPadding = centerShiftFactor * claimsWithRelation.length;
 
   if (isRef) {
     const shiftedPos = {
@@ -73,30 +207,42 @@ function fanOutClaims({
   }
 
   const arcCenter = sourceNode.position();
-  const neededArcLength = Math.max(2, claims.length - 1) * minDistance;
+  const neededArcLength =
+    Math.max(2, claimsWithRelation.length - 1) * minDistance;
   const radius = neededArcLength / arcSpan;
   const added: cytoscape.ElementDefinition[] = [];
 
-  claims.forEach((claim, i) => {
+  claimsWithRelation.forEach(({ claim, relation, notes }, i) => {
     const angle =
-      -arcSpan / 2 + (i / (claims.length - 1 || 1)) * arcSpan + angleRadians;
+      -arcSpan / 2 +
+      (i / (claimsWithRelation.length - 1 || 1)) * arcSpan +
+      angleRadians;
     const x = arcCenter.x + radius * Math.cos(angle);
     const y = arcCenter.y + radius * Math.sin(angle);
 
-    added.push({ data: claim });
-    cy.add({ data: claim });
+    // Add the node
+    if (!cy.getElementById(claim.id).nonempty()) {
+      cy.add({ data: claim });
+      added.push({ data: claim });
+    }
+
     const claimNode = cy.getElementById(claim.id).first() as NodeSingular;
     claimNode.position(arcCenter);
     claimNode.animate({ position: { x, y } }, { duration: 400 });
 
-    added.push({
-      data: {
-        id: `edge-${claim.id}-${sourceNode.id()}`,
-        source: claim.id,
-        target: sourceNode.id(),
-        relation,
-      },
-    });
+    // Add the edge with relation and notes
+    const edgeId = `edge-${claim.id}-${sourceNode.id()}`;
+    if (!cy.getElementById(edgeId).nonempty()) {
+      added.push({
+        data: {
+          id: edgeId,
+          source: claim.id,
+          target: sourceNode.id(),
+          relation,
+          notes,
+        },
+      });
+    }
   });
 
   return added;
@@ -152,6 +298,7 @@ interface CytoscapeMoleculeProps {
     source: string;
     target: string;
     relation?: "supports" | "refutes" | "related";
+    notes?: string;
   }[];
   onNodeClick?: (node: GraphNode) => void;
   centerNodeId?: string;
@@ -320,7 +467,10 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         {
           selector: "edge",
           style: {
-            width: 2,
+            width: (ele: EdgeSingular) => {
+              const val = Math.abs(ele.data("value") || 1);
+              return 2 + val * 4; // Base width 2, scales up with strength
+            },
             "line-color": (ele) => {
               const rel = ele.data("relation");
               return rel === "supports"
@@ -386,7 +536,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         setSelectedClaim({
           id: claimId,
           label: node.data("label"),
-          relation,
+          relation: relation,
         });
         return;
       }
@@ -415,6 +565,30 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           const claimLinks = links.filter((l) =>
             refClaims.some((rc) => rc.id === l.source)
           );
+          const claimsWithRelation: {
+            claim: NodeData;
+            relation: "supports" | "refutes" | "related";
+            notes: string;
+          }[] = claimLinks
+            .map((link) => {
+              const claim = refClaims.find((rc) => rc.id === link.source);
+              return claim
+                ? {
+                    claim,
+                    relation: link.relation || "related",
+                    notes: link.notes || "",
+                  }
+                : null;
+            })
+            .filter(
+              (
+                x
+              ): x is {
+                claim: NodeData;
+                relation: "supports" | "refutes" | "related";
+                notes: string;
+              } => !!x
+            );
 
           const taskClaimMap = new Map(
             nodes.filter((n) => n.type === "taskClaim").map((n) => [n.id, n])
@@ -422,6 +596,8 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           const linkedTaskClaims: NodeData[] = [];
           const seen = new Set<string>();
           claimLinks.forEach((link) => {
+            console.log("✨ Adding link edge:", link);
+
             if (!seen.has(link.target)) {
               const claim = taskClaimMap.get(link.target);
               if (claim) {
@@ -430,6 +606,31 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               }
             }
           });
+
+          const linkedTaskClaimMap = new Map(
+            linkedTaskClaims.map((tc) => [tc.id, tc])
+          );
+
+          const taskClaimsWithRelation = claimLinks
+            .map((link) => {
+              const claim = linkedTaskClaimMap.get(link.target);
+              return claim
+                ? {
+                    claim,
+                    relation: link.relation || "related",
+                    notes: link.notes || "",
+                  }
+                : null;
+            })
+            .filter(
+              (
+                x
+              ): x is {
+                claim: NodeData;
+                relation: "supports" | "refutes" | "related";
+                notes: string;
+              } => !!x
+            );
 
           if (refClaims.length === 0 && linkedTaskClaims.length === 0) {
             console.log("🛑 No claims to show for this reference.");
@@ -447,28 +648,53 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
           const refClaimElements = fanOutClaims({
             cy,
-            claims: refClaims,
+            claimsWithRelation,
             sourceNode: node,
             targetNode: taskNode,
-            relation: "evidence",
           });
           added.push(...refClaimElements);
 
           const taskClaimElements = fanOutClaims({
             cy,
-            claims: linkedTaskClaims,
+            claimsWithRelation: taskClaimsWithRelation,
             sourceNode: taskNode,
             targetNode: node,
-            relation: "evidence",
           });
           added.push(...taskClaimElements);
-
-          claimLinks.forEach((link) => added.push({ data: link }));
+          claimLinks.forEach((link) => {
+            if (!link.relation) {
+              console.warn("🚨 Missing relation in link:", link);
+            }
+            added.push({
+              data: {
+                ...link,
+                relation: link.relation || "related",
+              },
+            });
+          });
 
           cy.add(added);
           // 🌀 Instant zoom-to-fit
           cy.fit(cy.elements(), 15);
-          pushAwayOtherNodes(cy, node.position(), [node.id(), taskNode.id()]);
+          fartScatterAwayFromRef({
+            cy,
+            refNode: node,
+            taskNode,
+          });
+          /*  fartScatterAwayFromRef({
+            cy,
+            refNode: node,
+            taskNode,
+            excludeIds: [node.id(), taskNode.id()],
+            radius: 420 + refClaims.length * 25,
+          }); */
+          /*   smartRadialPush({
+            cy,
+            center: taskNode.position(),
+            excludeIds: [node.id(), taskNode.id()],
+            minRadius: 300 + refClaims.length * 40, // room for fanout
+          }); */
+          //pushAwayOtherNodes(cy, node.position(), [node.id(), taskNode.id()]);
           // ✅ Capture new positions after push, so we can restore accurately later
         }, 420);
       }

@@ -231,6 +231,7 @@ export interface Link extends d3.SimulationLinkDatum<GraphNode> {
   };
   claim_text?: string;
   content_id?: number;
+  notes?: string;
 }
 
 export interface Lit_references {
