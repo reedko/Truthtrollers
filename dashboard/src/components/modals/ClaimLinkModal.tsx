@@ -19,9 +19,11 @@ import {
   HStack,
   Switch,
   FormLabel,
+  Textarea,
 } from "@chakra-ui/react";
 import { addClaimLink } from "../../services/useDashboardAPI";
 import { Claim } from "../../../../shared/entities/types";
+import { ClaimLink } from "../RelationshipMap";
 
 interface ClaimLinkModalProps {
   isOpen: boolean;
@@ -29,6 +31,7 @@ interface ClaimLinkModalProps {
   sourceClaim: Pick<Claim, "claim_id" | "claim_text"> | null;
   targetClaim: Claim | null;
   isReadOnly?: boolean;
+  claimLink?: ClaimLink | null;
 }
 
 const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
@@ -37,13 +40,14 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
   sourceClaim,
   targetClaim,
   isReadOnly,
+  claimLink,
 }) => {
   const toast = useToast();
   const [supportLevel, setSupportLevel] = useState(0);
   const [relationship, setRelationship] = useState<"supports" | "refutes">(
     "supports"
   );
-
+  const [notes, setNote] = useState(claimLink?.notes || "");
   const handleSubmit = async () => {
     try {
       const response = await addClaimLink({
@@ -52,6 +56,7 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
         user_id: 1,
         relationship,
         support_level: supportLevel,
+        notes: notes,
       });
       toast({
         title: "Claim link created",
@@ -90,38 +95,61 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
             Target Claim:
           </Text>
           <Text mb={4}>{targetClaim?.claim_text}</Text>
+          <FormLabel mt={4}>Notes</FormLabel>
+          {isReadOnly ? (
+            <Text fontStyle="italic" p={2} borderRadius="md">
+              {claimLink?.notes || "No notes provided."}
+            </Text>
+          ) : (
+            <Textarea
+              placeholder="Optional notes about this link..."
+              value={notes}
+              onChange={(e) => setNote(e.target.value)}
+            />
+          )}
+          {isReadOnly && claimLink ? (
+            <Box mb={4} mt={2}>
+              <FormLabel mb={1}>Relationship</FormLabel>
+              <Text fontWeight="bold" fontSize="lg">
+                {claimLink.relation === "refute" ? "⛔ Refutes" : "✅ Supports"}{" "}
+                : {(claimLink.confidence * 100).toFixed(0)}%
+              </Text>
+            </Box>
+          ) : (
+            <>
+              <FormLabel mb={1}>Relationship:</FormLabel>
+              <HStack mb={4}>
+                <Tooltip label="Does this support or refute the claim?">
+                  <Switch
+                    isChecked={relationship === "supports"}
+                    onChange={(e) =>
+                      setRelationship(e.target.checked ? "supports" : "refutes")
+                    }
+                    colorScheme="green"
+                  />
+                </Tooltip>
+                <Text>{relationship}</Text>
+              </HStack>
 
-          <FormLabel mb={1}>Relationship:</FormLabel>
-          <HStack mb={4}>
-            <Tooltip label="Does this support or refute the claim?">
-              <Switch
-                isChecked={relationship === "supports"}
-                onChange={(e) =>
-                  setRelationship(e.target.checked ? "supports" : "refutes")
-                }
-                colorScheme="green"
-              />
-            </Tooltip>
-            <Text>{relationship}</Text>
-          </HStack>
-
-          <FormLabel mb={1}>Support Level</FormLabel>
-          <Slider
-            aria-label="support-slider"
-            defaultValue={0}
-            min={-1}
-            max={1}
-            step={0.1}
-            onChange={(val) => setSupportLevel(val)}
-          >
-            <SliderTrack>
-              <SliderFilledTrack />
-            </SliderTrack>
-            <SliderThumb />
-          </Slider>
-          <Box mt={2} textAlign="center">
-            <Text>Level: {supportLevel.toFixed(1)}</Text>
-          </Box>
+              <FormLabel mb={1}>Support Level</FormLabel>
+              <Slider
+                aria-label="support-slider"
+                defaultValue={0}
+                min={-1}
+                max={1}
+                step={0.1}
+                onChange={(val) => setSupportLevel(val)}
+              >
+                <SliderTrack>
+                  <SliderFilledTrack />
+                </SliderTrack>
+                <SliderThumb />
+              </Slider>
+              <Box mt={2} textAlign="center">
+                <Text>Level: {supportLevel.toFixed(1)}</Text>
+              </Box>
+            </>
+          )}
         </ModalBody>
 
         <ModalFooter>

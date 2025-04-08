@@ -397,12 +397,14 @@ export const addClaimLink = async ({
   user_id,
   relationship,
   support_level,
+  notes,
 }: {
   source_claim_id: number;
   target_claim_id: number;
   user_id: number;
   relationship: "supports" | "refutes" | "related";
   support_level: number;
+  notes: string;
 }) => {
   try {
     const response = await axios.post(`${API_BASE_URL}/api/claim-links`, {
@@ -411,6 +413,7 @@ export const addClaimLink = async ({
       user_id,
       relationship,
       support_level,
+      notes,
     });
     return response.data;
   } catch (error) {

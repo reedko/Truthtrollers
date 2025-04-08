@@ -1463,6 +1463,7 @@ app.post("/api/claim-links", async (req, res) => {
     user_id,
     support_level,
     relationship = "related", // fallback
+    notes,
   } = req.body;
 
   if (!source_claim_id || !target_claim_id || !user_id) {
@@ -1472,8 +1473,8 @@ app.post("/api/claim-links", async (req, res) => {
   try {
     const sql = `
       INSERT INTO claim_links 
-        (source_claim_id, target_claim_id, relationship, user_id, support_level)
-      VALUES (?, ?, ?, ?, ?)
+        (source_claim_id, target_claim_id, relationship, user_id, support_level,notes)
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
     const params = [
       source_claim_id,
@@ -1481,6 +1482,7 @@ app.post("/api/claim-links", async (req, res) => {
       relationship,
       user_id,
       support_level,
+      notes,
     ];
 
     await query(sql, params);
@@ -1502,7 +1504,8 @@ app.get("/api/claims-and-linked-references/:contentId", async (req, res) => {
   cl.source_claim_id,
   cr.reference_content_id AS right_reference_id,
   cl.relationship,
-  cl.support_level AS confidence
+  cl.support_level AS confidence,
+  cl.notes AS notes
 FROM claim_links cl
 JOIN content_claims cc_task
   ON cl.target_claim_id = cc_task.claim_id

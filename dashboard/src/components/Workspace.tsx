@@ -57,6 +57,9 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
   const [rightX, setRightX] = useState(0);
   const [computedHeight, setComputedHeight] = useState(500);
   const [readOnly, setReadOnly] = useState<boolean>(false);
+  const [selectedClaimLink, setSelectedClaimLink] = useState<ClaimLink | null>(
+    null
+  );
 
   const updateXPositionsAndHeight = () => {
     if (leftRef.current && rightRef.current) {
@@ -110,6 +113,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
         });
         setTargetClaim(target);
         setIsClaimLinkModalOpen(true);
+        setSelectedClaimLink(link);
       } else {
         console.warn("❌ Claim(s) not found:", { source, target, link });
       }
@@ -259,6 +263,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
         sourceClaim={sourceClaim}
         targetClaim={targetClaim}
         isReadOnly={readOnly}
+        claimLink={selectedClaimLink}
       />
       {verifyingClaim && (
         <ClaimVerificationModal

@@ -129,6 +129,7 @@ export interface ClaimLinks {
   source_claim_id: number;
   relationship: "supports" | "refutes" | "related";
   confidence: number;
+  notes?: string;
 }
 // User Interface
 export interface User {
