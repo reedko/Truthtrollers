@@ -12,6 +12,7 @@ import {
   Center,
   useDisclosure,
   Link,
+  HStack,
 } from "@chakra-ui/react";
 import { BiChevronDown } from "react-icons/bi";
 import AssignUserModal from "./modals/AssignUserModal";
@@ -25,14 +26,15 @@ const API_BASE_URL =
 
 interface TaskCardProps {
   task: any;
-  useStore: boolean;
+  useStore?: boolean;
+  compact?: boolean;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, compact = false }) => {
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
-
+  compact = false;
   const {
     isOpen: isAssignOpen,
     onOpen: onAssignOpen,
@@ -89,88 +91,114 @@ const TaskCard: React.FC<TaskCardProps> = ({ task }) => {
         borderRadius="lg"
         overflow="hidden"
         boxShadow="md"
-        p={4}
-        width="250px"
+        p={3}
+        w="250px"
+        h="405px"
+        display="flex"
+        flexDirection="column"
+        justifyContent="space-between"
         margin="10px"
       >
-        <Image
-          src={`${API_BASE_URL}/${task.thumbnail}`}
-          alt="Thumbnail"
+        <Center>
+          <Text fontWeight="bold" fontSize="md" mb={0}>
+            Content Details
+          </Text>
+        </Center>
+        <Text
+          fontWeight="bold"
+          mt={2}
+          bg="whiteAlpha.700"
+          color="gray.800"
           borderRadius="md"
-          boxSize="200px"
-          objectFit="cover"
-        />
-
-        <Text fontWeight="bold" mt={2} noOfLines={2}>
+          noOfLines={2}
+          fontSize={compact ? "sm" : "md"}
+          textAlign="center"
+          marginBottom={"4px"}
+        >
           <Link href={task.url} target="_blank">
             {task.content_name}
           </Link>
         </Text>
+        <Box flex="1">
+          <Box w="100%" h="150px" overflow="hidden" borderRadius="md" mb={2}>
+            <Image
+              src={`${API_BASE_URL}/${task.thumbnail}`}
+              alt="Thumbnail"
+              borderRadius="md"
+              w="100%"
+              h="100%"
+              objectFit="cover"
+              mx="auto"
+            />
+          </Box>
 
-        {author.length > 0 && (
-          <Text fontSize="sm" mt={1}>
-            <strong>Author:</strong>{" "}
-            {author
-              .map((a) => `${a.author_first_name} ${a.author_last_name}`)
-              .join(", ")}
-          </Text>
-        )}
+          {author.length > 0 && (
+            <Text fontSize={compact ? "xs" : "sm"} mt={1}>
+              <strong>Author:</strong>{" "}
+              {author
+                .map((a) => `${a.author_first_name} ${a.author_last_name}`)
+                .join(", ")}
+            </Text>
+          )}
 
-        {publisher.length > 0 && (
-          <Text fontSize="sm" mt={1}>
-            <strong>Publisher:</strong>{" "}
-            {publisher.map((p) => p.publisher_name).join(", ")}
-          </Text>
-        )}
+          {publisher.length > 0 && (
+            <Text fontSize={compact ? "xs" : "sm"} mt={1}>
+              <strong>Publisher:</strong>{" "}
+              {publisher.map((p) => p.publisher_name).join(", ")}
+            </Text>
+          )}
 
-        <Progress
-          value={
-            task.progress === "Completed"
-              ? 100
-              : task.progress === "Partially Complete"
-              ? 50
-              : 25
-          }
-          colorScheme={
-            task.progress === "Completed"
-              ? "green"
-              : task.progress === "Partially Complete"
-              ? "yellow"
-              : "red"
-          }
-          mt={2}
-        />
+          <Progress
+            value={
+              task.progress === "Completed"
+                ? 100
+                : task.progress === "Partially Complete"
+                ? 50
+                : 25
+            }
+            colorScheme={
+              task.progress === "Completed"
+                ? "green"
+                : task.progress === "Partially Complete"
+                ? "yellow"
+                : "red"
+            }
+            mt={2}
+          />
+        </Box>
+        <Center>
+          <HStack>
+            <Menu onOpen={handleAssignedUsersOpen}>
+              <MenuButton as={Button} rightIcon={<BiChevronDown />}>
+                Users
+              </MenuButton>
+              <MenuList>
+                {assignedUsers.length > 0 ? (
+                  assignedUsers.map((user) => (
+                    <MenuItem key={user.user_id}>{user.username}</MenuItem>
+                  ))
+                ) : (
+                  <MenuItem>No Users Assigned</MenuItem>
+                )}
+              </MenuList>
+            </Menu>
 
-        <Menu onOpen={handleAssignedUsersOpen}>
-          <MenuButton as={Button} rightIcon={<BiChevronDown />}>
-            Users
-          </MenuButton>
-          <MenuList>
-            {assignedUsers.length > 0 ? (
-              assignedUsers.map((user) => (
-                <MenuItem key={user.user_id}>{user.username}</MenuItem>
-              ))
-            ) : (
-              <MenuItem>No Users Assigned</MenuItem>
-            )}
-          </MenuList>
-        </Menu>
-
-        <Menu>
-          <MenuButton as={Button} colorScheme="teal">
-            Actions
-          </MenuButton>
-          <MenuList>
-            <MenuItem onClick={() => handleOpenModal(onAssignOpen)}>
-              Assign User
-            </MenuItem>
-            <MenuItem onClick={() => handleOpenModal(onReferenceModalOpen)}>
-              Manage References
-            </MenuItem>
-            <MenuItem onClick={handleDrillDown}>Drill Down</MenuItem>
-          </MenuList>
-        </Menu>
-
+            <Menu>
+              <MenuButton as={Button} colorScheme="teal">
+                Actions
+              </MenuButton>
+              <MenuList>
+                <MenuItem onClick={() => handleOpenModal(onAssignOpen)}>
+                  Assign User
+                </MenuItem>
+                <MenuItem onClick={() => handleOpenModal(onReferenceModalOpen)}>
+                  Manage References
+                </MenuItem>
+                <MenuItem onClick={handleDrillDown}>Drill Down</MenuItem>
+              </MenuList>
+            </Menu>
+          </HStack>
+        </Center>
         {isAssignOpen && (
           <AssignUserModal
             isOpen={isAssignOpen}

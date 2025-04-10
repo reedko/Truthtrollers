@@ -41,6 +41,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   const publishers = useTaskStore(
     useShallow((state) => state.publishers?.[task.content_id] || [])
   );
+  console.log(publishers, "pub on load");
   const [workspaceHeight, setWorkspaceHeight] = useState(900);
 
   useEffect(() => {

@@ -54,6 +54,7 @@ export interface Publisher {
   publisher_name: string;
   publisher_owner?: string;
   publisher_icon?: string;
+  description: string;
 }
 
 //Publisher Rating interface
@@ -100,7 +101,7 @@ export interface ReferenceWithClaims {
   }[];
   is_primary_source?: boolean;
 }
-
+export type UnifiedReference = ReferenceWithClaims;
 // Claims
 export interface Claim {
   claim_id: number;
@@ -241,6 +242,19 @@ export interface Lit_references {
 
 export interface Publisher {
   name: string;
+  description: string;
+}
+
+export interface DiscussionEntry {
+  id: number;
+  content_id: number;
+  side: "pro" | "con";
+  text: string;
+  citation_url?: string;
+  linked_claim_id?: number;
+  citation_score?: number; // -1 to +1 scaled to [-100, +100] UI
+  created_at: string;
+  user?: string;
 }
 
 export interface TaskData {
@@ -264,4 +278,13 @@ export interface TaskData {
   Claims?: string[];
   taskContentId?: string | null;
   is_retracted: boolean;
+}
+export function toReferenceWithClaims(
+  ref: LitReference | ReferenceWithClaims
+): ReferenceWithClaims {
+  if ("claims" in ref) return ref;
+  return {
+    ...(ref as LitReference),
+    claims: [],
+  };
 }

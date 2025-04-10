@@ -36,7 +36,7 @@ interface ReferenceModalProps {
   claimId?: number;
   usePersonalRefs?: boolean;
   personalRefs?: LitReference[];
-  onSelectReference?: (ref: LitReference) => void;
+  onSelectReference?: (ref: ReferenceWithClaims) => void;
 }
 
 const ReferenceModal: React.FC<ReferenceModalProps> = ({
@@ -48,76 +48,67 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
   personalRefs = [],
   onSelectReference,
 }) => {
+  const { fetchReferences, deleteReferenceFromTask } = useTaskStore();
   const toast = useToast();
 
   const zustandReferences = useTaskStore(
     useShallow((state) => state.references[Number(taskId)] || [])
   );
 
-  const { fetchReferences, deleteReferenceFromTask } = useTaskStore();
-  const addReferenceToTask = useTaskStore((s) => s.addReferenceToTask);
-  const setSelectedTask = useTaskStore((s) => s.setSelectedTask);
+  const addReference = useTaskStore((state) => state.addReferenceToTask);
+  const setSelectedTask = useTaskStore((state) => state.setSelectedTask);
 
   const [claimReferences, setClaimReferences] = useState<LitReference[]>([]);
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   const [isScrapeOpen, setIsScrapeOpen] = useState(false);
 
-  // 🧠 Load references on open
+  const handleOpenSelectModal = () => {
+    if (typeof taskId === "number") {
+      setSelectedTask(taskId);
+    }
+    setIsSelectOpen(true);
+  };
+
   useEffect(() => {
     if (!isOpen) return;
 
     if (claimId) {
-      fetchClaimSources(claimId).then(setClaimReferences);
+      fetchClaimSources(claimId).then((refs) => setClaimReferences(refs));
     } else if (typeof taskId === "number") {
       fetchReferences(taskId);
     }
-  }, [isOpen, claimId, taskId]);
+  }, [isOpen, taskId, claimId]);
 
-  // 🔀 Choose which list to use
-  const activeReferences: LitReference[] = usePersonalRefs
-    ? personalRefs
-    : claimId
-    ? claimReferences
-    : zustandReferences;
+  // 🔀 Master source of references to show
+  const activeReferences: LitReference[] =
+    usePersonalRefs || onSelectReference
+      ? personalRefs
+      : claimId
+      ? claimReferences
+      : zustandReferences;
 
-  // 🗑️ Handle delete
   const handleDeleteReference = async (id: number) => {
-    try {
-      if (typeof taskId === "number") {
-        await deleteReferenceFromTask(taskId, id);
-        toast({
-          title: "Reference Removed from Task!",
-          status: "warning",
-          duration: 3000,
-          isClosable: true,
-        });
-        fetchReferences(taskId); // refresh list
-      } else if (typeof claimId === "number") {
-        await deleteClaimSource(id);
-        const updated = await fetchClaimSources(claimId);
-        setClaimReferences(updated);
-        toast({
-          title: "Reference Unlinked from Claim!",
-          status: "warning",
-          duration: 3000,
-          isClosable: true,
-        });
-      }
-    } catch (err) {
+    if (typeof taskId === "number") {
+      await deleteReferenceFromTask(taskId, id);
       toast({
-        title: "Error removing reference",
-        status: "error",
+        title: "Reference Removed from Task!",
+        description: "The reference was removed from the task.",
+        status: "warning",
         duration: 3000,
         isClosable: true,
       });
-      console.error(err);
+    } else if (typeof claimId === "number") {
+      await deleteClaimSource(id);
+      toast({
+        title: "Reference Unlinked from Claim!",
+        description: "The reference was removed from this claim.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      const updated = await fetchClaimSources(claimId);
+      setClaimReferences(updated);
     }
-  };
-
-  // 📚 Select from global list
-  const handleOpenSelectModal = () => {
-    if (typeof taskId === "number") setSelectedTask(taskId);
-    setIsSelectOpen(true);
   };
 
   return (
@@ -138,29 +129,15 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
                     justifyContent="space-between"
                   >
                     <Tooltip label={ref.content_name} hasArrow>
-                      {onSelectReference ? (
-                        <Button
-                          variant="ghost"
-                          colorScheme="blue"
-                          size="sm"
-                          onClick={() => {
-                            onSelectReference(ref);
-                            onClose();
-                          }}
-                        >
-                          ➕ Cite: {ref.content_name}
-                        </Button>
-                      ) : (
-                        <Link
-                          href={ref.url}
-                          isExternal
-                          color="blue.500"
-                          isTruncated
-                          maxWidth="-moz-max-content"
-                        >
-                          🔗 {ref.content_name}
-                        </Link>
-                      )}
+                      <Link
+                        href={ref.url}
+                        isExternal
+                        color="blue.500"
+                        isTruncated
+                        maxWidth="-moz-max-content"
+                      >
+                        🔗 {ref.content_name}
+                      </Link>
                     </Tooltip>
 
                     <Button
@@ -203,7 +180,6 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
         </ModalContent>
       </Modal>
 
-      {/* 🔍 SelectReferenceModal */}
       {isSelectOpen && (
         <SelectReferenceModal
           isOpen={isSelectOpen}
@@ -211,34 +187,26 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
           claimId={claimId}
           onSelect={
             claimId
-              ? async (refId) => {
-                  await addClaimSource(claimId, refId);
+              ? async (referenceId) => {
+                  await addClaimSource(claimId, referenceId);
                 }
               : onSelectReference
-              ? async (refId) => {
-                  const ref = zustandReferences.find(
-                    (r) => r.reference_content_id === refId
-                  );
-                  if (ref) {
-                    onSelectReference(ref);
-                  }
+              ? async (referenceId) => {
+                  // Optionally return a mock reference or reload list
                 }
-              : async (refId) => {
-                  if (taskId) await addReferenceToTask(taskId, refId);
-                  fetchReferences(taskId!);
-                }
+              : undefined
           }
           onRefresh={
             claimId
-              ? () => fetchClaimSources(claimId).then(setClaimReferences)
-              : taskId
-              ? () => fetchReferences(taskId)
+              ? () =>
+                  fetchClaimSources(claimId).then((refs) =>
+                    setClaimReferences(refs)
+                  )
               : undefined
           }
         />
       )}
 
-      {/* 🧪 ScrapeReferenceModal */}
       {isScrapeOpen && (
         <ScrapeReferenceModal
           isOpen={isScrapeOpen}

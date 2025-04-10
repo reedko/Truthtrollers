@@ -10,6 +10,7 @@ import {
   AuthorRating,
   PublisherRating,
   ClaimLinks,
+  DiscussionEntry,
 } from "../../../shared/entities/types";
 
 const API_BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
@@ -47,6 +48,19 @@ export const updateAuthorBio = async (authorId: number, newBio: string) => {
   const res = await axios.put(`${API_BASE_URL}/api/authors/${authorId}/bio`, {
     description: newBio,
   });
+  return res.data;
+};
+// 🔵 PUBLISHER BIO
+export const updatePublisherBio = async (
+  publisherId: number,
+  newBio: string
+) => {
+  const res = await axios.put(
+    `${API_BASE_URL}/api/publishers/${publisherId}/bio`,
+    {
+      description: newBio,
+    }
+  );
   return res.data;
 };
 
@@ -620,4 +634,20 @@ export const scrapeAndAddReference = async (url: string, taskId: number) => {
     console.error("❌ Error scraping reference:", error);
   }
   return null;
+};
+
+/**
+ ** Discussions
+ **/
+export async function postDiscussionEntry(entry: Partial<DiscussionEntry>) {
+  const res = await axios.post(`${API_BASE_URL}/api/discussion`, entry);
+  return res.data;
+}
+
+export const fetchDiscussionEntries = async (
+  contentId: number
+): Promise<DiscussionEntry[]> => {
+  const res = await axios.get(`${API_BASE_URL}/api/discussion/${contentId}`);
+  if (Array.isArray(res.data)) return res.data;
+  return [];
 };
