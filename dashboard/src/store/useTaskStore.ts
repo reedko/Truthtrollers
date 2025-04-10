@@ -87,9 +87,9 @@ export const useTaskStore = create<TaskStoreState>()(
     setSelectedTask: (taskId: number) => set({ selectedTaskId: taskId }),
 
     fetchTasks: async () => {
-      const limit = 25;
-
+      const limit = 100;
       const { currentPage } = get();
+
       try {
         const content = await fetchTasksAPI(currentPage + 1, limit);
         const authorsMap: Record<number, Author[]> = {};
@@ -106,11 +106,14 @@ export const useTaskStore = create<TaskStoreState>()(
               : task.publishers || [];
         });
 
-        const newContent = [...get().content, ...content];
+        const combined = [...get().content, ...content];
+        const deduped = Array.from(
+          new Map(combined.map((t) => [t.content_id, t])).values()
+        );
 
         set({
-          content: newContent,
-          filteredTasks: newContent,
+          content: deduped,
+          filteredTasks: deduped,
           authors: { ...get().authors, ...authorsMap },
           publishers: { ...get().publishers, ...publishersMap },
           currentPage: currentPage + 1,
@@ -257,13 +260,19 @@ export const useTaskStore = create<TaskStoreState>()(
     loadMoreTasks: async () => {
       const { currentPage, content } = get();
       const nextPage = currentPage + 1;
+
       try {
         const newTasks = await fetchTasksAPI(nextPage, 25);
-        set((state) => ({
-          content: [...state.content, ...newTasks],
-          filteredTasks: [...state.content, ...newTasks],
+        const combined = [...content, ...newTasks];
+        const deduped = Array.from(
+          new Map(combined.map((t) => [t.content_id, t])).values()
+        );
+
+        set({
+          content: deduped,
+          filteredTasks: deduped,
           currentPage: nextPage,
-        }));
+        });
       } catch (error) {
         console.error("❌ Error loading more tasks:", error);
       }

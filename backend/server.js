@@ -27,8 +27,8 @@ import http from "http";
 import https from "https";
 import fetchWithPuppeteer from "./routes/fetchWithPuppeteer.js"; //
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
-import pdfPoppler from "pdf-poppler";
 import { spawn } from "child_process";
+import registerDiscussionRoutes from "./routes/discussionRoutes.js";
 
 //const pdfParse = pkg.default || pkg;
 const __filename = fileURLToPath(import.meta.url);
@@ -67,6 +67,7 @@ http
   })
   .listen(5080);
 // Increase payload size limit (e.g., 50MB)
+
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 // Configure environment variables
@@ -111,6 +112,9 @@ db.connect((err) => {
 //image uploading
 
 // Define storage location and filename strategy
+
+registerDiscussionRoutes(app, query, pool);
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const { type, id } = req.query;
@@ -501,11 +505,11 @@ app.post("/api/content/:contentId/authors", async (req, res) => {
 //update author bio
 app.put("/api/authors/:authorId/bio", async (req, res) => {
   const { authorId } = req.params;
-  const { bio } = req.body;
+  const { description } = req.body;
 
   try {
     await query(`UPDATE authors SET description = ? WHERE author_id = ?`, [
-      bio,
+      description,
       authorId,
     ]);
     res.send({ success: true });
@@ -515,6 +519,22 @@ app.put("/api/authors/:authorId/bio", async (req, res) => {
   }
 });
 
+// update publisher bio
+app.put("/api/publishers/:publisherId/bio", async (req, res) => {
+  const { publisherId } = req.params;
+  const { description } = req.body;
+
+  try {
+    await query(
+      `UPDATE publishers SET description = ? WHERE publisher_id = ?`,
+      [description, publisherId]
+    );
+    res.send({ success: true });
+  } catch (err) {
+    console.error("Failed to update publisher bio:", err);
+    res.status(500).send({ success: false });
+  }
+});
 // Make sure this line is already declared at the top of your server file
 
 // fetching author ratings

@@ -21,6 +21,7 @@ import {
   HStack,
   Badge,
   Flex,
+  Select,
 } from "@chakra-ui/react";
 import { BiChevronDown } from "react-icons/bi";
 import { Author, AuthorRating } from "../../../shared/entities/types";
@@ -31,15 +32,15 @@ import {
   uploadImage,
   fetchAuthorRatings,
   updateAuthorBio,
-  fetchAuthors,
   fetchAuthor,
 } from "../services/useDashboardAPI";
 
 interface AuthCardProps {
   authors: Author[];
+  compact?: boolean;
 }
 
-const AuthCard: React.FC<AuthCardProps> = ({ authors }) => {
+const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
   const {
     isOpen: isBioOpen,
     onOpen: onBioOpen,
@@ -57,9 +58,11 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors }) => {
   const toast = useToast();
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [authorList, setAuthorList] = useState<Author[]>(authors);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   useEffect(() => {
     if (authors.length > 0) {
       setAuthorList(authors);
+      setActiveAuthor(authors[0]);
     }
   }, [authors]);
 
@@ -72,15 +75,11 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors }) => {
       }
       setAllRatings(map);
     };
-
     if (authors.length) loadAllRatings();
   }, [authors]);
 
   const handleRatingsUpdate = (authorId: number, updated: AuthorRating[]) => {
-    setAllRatings((prev) => ({
-      ...prev,
-      [authorId]: updated,
-    }));
+    setAllRatings((prev) => ({ ...prev, [authorId]: updated }));
   };
 
   const handleUpload = async (file: File, authorId: number) => {
@@ -93,10 +92,7 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors }) => {
         duration: 3000,
         isClosable: true,
       });
-
-      // 🔄 Refresh the updated author
       const updatedAuthor = await fetchAuthor(authorId);
-      console.log(updatedAuthor, ":JJDJDJ");
       if (updatedAuthor) {
         setAuthorList((prev) =>
           prev.map((a) => (a.author_id === authorId ? updatedAuthor : a))
@@ -106,17 +102,20 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors }) => {
     }
   };
 
-  const getBiasEmoji = (score: number) => {
-    if (score <= -5 || score >= 5) return "🔴";
-    return "🟢";
-  };
+  const getBiasEmoji = (score: number) =>
+    score <= -5 || score >= 5 ? "🔴" : "🟢";
+  const getVeracityEmoji = (score: number) =>
+    score > 5 ? "🟢" : score < 0 ? "🔴" : "⚪";
+  const currentRatings = activeAuthor
+    ? allRatings[activeAuthor.author_id] || []
+    : [];
 
-  const getVeracityEmoji = (score: number) => {
-    if (score > 5) return "🟢";
-    if (score < 0) return "🔴";
-    return "⚪";
+  const avgScore = (key: keyof AuthorRating) => {
+    if (!currentRatings.length) return "-";
+    const values = currentRatings.map((r) => r[key] as number);
+    const avg = values.reduce((acc, val) => acc + val, 0) / values.length;
+    return avg.toFixed(1);
   };
-
   return (
     <Center>
       <Box
@@ -126,145 +125,163 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors }) => {
         borderRadius="lg"
         boxShadow="md"
         p={4}
-        width="100%"
-        maxW="400px"
+        width="250px"
+        height="405px"
+        display="flex"
+        flexDirection="column"
+        justifyContent="space-between"
         margin="10px"
       >
-        <Text fontWeight="bold" fontSize="lg" mb={2}>
-          Author Details
-        </Text>
+        <Center>
+          <Text fontWeight="bold" fontSize="lg" mb={2} textAlign="center">
+            Author Details
+          </Text>
+        </Center>
 
-        <Tabs isFitted variant="enclosed">
-          <TabList>
-            {authors.map((author, idx) => (
-              <Tab key={idx}>
+        {authors.length > 1 ? (
+          <Select
+            size="sm"
+            value={activeAuthor?.author_id}
+            onChange={(e) => {
+              const found = authors.find(
+                (a) => a.author_id === Number(e.target.value)
+              );
+              if (found) setActiveAuthor(found);
+            }}
+            mb={3}
+            textAlign="center"
+            bg="whiteAlpha.800"
+            borderRadius="md"
+          >
+            {authors.map((author) => (
+              <option key={author.author_id} value={author.author_id}>
                 {author.author_first_name} {author.author_last_name}
-              </Tab>
+              </option>
             ))}
-          </TabList>
-          <TabPanels>
-            {authorList.map((author, idx) => (
-              <TabPanel key={idx}>
-                {author.author_profile_pic && (
-                  <Center mb={3}>
-                    <Image
-                      src={`${import.meta.env.VITE_API_BASE_URL}/${
-                        author.author_profile_pic
-                      }`}
-                      alt={`${author.author_first_name} ${author.author_last_name}`}
-                      borderRadius="full"
-                      boxSize="100px"
-                      objectFit="cover"
-                      border="2px solid #805AD5"
-                    />
-                  </Center>
-                )}
+          </Select>
+        ) : (
+          <Text
+            fontWeight="semibold"
+            fontSize="md"
+            mb={3}
+            textAlign="center"
+            bg="whiteAlpha.700"
+            color="gray.800"
+            borderRadius="md"
+            px={2}
+            py={1}
+          >
+            {activeAuthor?.author_first_name} {activeAuthor?.author_last_name}
+          </Text>
+        )}
 
-                <Input
-                  type="file"
-                  accept="image/*"
-                  size="sm"
-                  mb={2}
-                  onChange={(e) => {
-                    if (e.target.files?.[0]) {
-                      handleUpload(e.target.files[0], author.author_id);
-                    }
-                  }}
-                />
+        <Center mb={2}>
+          <Box
+            as="button"
+            onClick={() => fileInputRef.current?.click()}
+            cursor="pointer"
+            borderRadius="full"
+            overflow="hidden"
+            border="2px solid #805AD5"
+            boxSize="100px"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            marginBottom={"1px"}
+          >
+            {activeAuthor?.author_profile_pic ? (
+              <Image
+                src={`${import.meta.env.VITE_API_BASE_URL}/${
+                  activeAuthor.author_profile_pic
+                }`}
+                alt="Author"
+                objectFit="cover"
+                boxSize="100px"
+              />
+            ) : (
+              <Text fontSize="xs" color="gray.300">
+                Upload
+              </Text>
+            )}
+            {activeAuthor && (
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={(e) => {
+                  if (e.target.files?.[0]) {
+                    handleUpload(e.target.files[0], activeAuthor.author_id);
+                  }
+                }}
+                style={{ display: "none" }}
+              />
+            )}
+          </Box>
+        </Center>
 
-                <Text fontWeight="semibold">
-                  {author.author_first_name} {author.author_last_name}
-                </Text>
-                <Text fontSize="sm" color="gray.600" mt={1}>
-                  {author.description || "No bio available."}
-                </Text>
-
-                {allRatings[author.author_id]?.length > 0 && (
-                  <Box mt={3} bg="whiteAlpha.600" p={2} borderRadius="md">
-                    <Text fontWeight="medium" fontSize="sm" mb={1}>
-                      Ratings:
-                    </Text>
-                    {/* Header row */}
-                    <HStack
-                      fontWeight="bold"
-                      fontSize="sm"
-                      spacing={4}
-                      w="100%"
-                    >
-                      <Box flex="1">Source (Topic)</Box>
-                      <Box w="70px" textAlign="right" color="purple.600">
-                        Bias
-                      </Box>
-                      <Box w="90px" textAlign="right" color="green.600">
-                        Veracity
-                      </Box>
-                    </HStack>
-                    <VStack spacing={1} align="start">
-                      {allRatings[author.author_id].map((r, i) => (
-                        <HStack key={i} fontSize="sm" spacing={6}>
-                          <Box flex="1">
-                            <Text isTruncated fontWeight="semibold">
-                              {r.source}{" "}
-                              <Text as="span" color="gray.500" fontSize="xs">
-                                ({r.topic_name})
-                              </Text>
-                            </Text>
-                          </Box>
-                          <Badge
-                            w="90px"
-                            px={2}
-                            borderRadius="md"
-                            bg="gray.600"
-                          >
-                            <Flex justify="space-between" w="full">
-                              <Text>{getBiasEmoji(r.bias_score)}</Text>
-                              <Text>{r.bias_score?.toFixed(1)}</Text>
-                            </Flex>
-                          </Badge>
-                          <Badge
-                            w="90px"
-                            px={2}
-                            borderRadius="md"
-                            bg="gray.600"
-                          >
-                            <Flex justify="space-between" w="full">
-                              <Text>{getVeracityEmoji(r.veracity_score)}</Text>
-                              <Text>{r.veracity_score?.toFixed(1)}</Text>
-                            </Flex>
-                          </Badge>
-                        </HStack>
-                      ))}
-                    </VStack>
-                  </Box>
-                )}
-
-                <Menu>
-                  <MenuButton as={Button} rightIcon={<BiChevronDown />} mt={3}>
-                    Actions
-                  </MenuButton>
-                  <MenuList>
-                    <MenuItem
-                      onClick={() => {
-                        setActiveAuthor(author);
-                        onBioOpen();
-                      }}
-                    >
-                      ✏️ Edit Bio
-                    </MenuItem>
-                    <MenuItem
-                      onClick={() => {
-                        setActiveAuthor(author);
-                        onRatingOpen();
-                      }}
-                    >
-                      📊 Manage Ratings
-                    </MenuItem>
-                  </MenuList>
-                </Menu>
-              </TabPanel>
-            ))}
-          </TabPanels>
-        </Tabs>
+        <HStack justify="center" spacing={4} mt={1}>
+          <Flex direction="column" align="center">
+            <Text fontSize="md">Bias</Text>
+            <Flex align="center" gap={1}>
+              <Text>{getBiasEmoji(parseFloat(avgScore("bias_score")))}</Text>
+              <Badge
+                fontSize="md"
+                borderRadius="md"
+                px={2}
+                bg="gray.700"
+                color="purple.200"
+              >
+                {avgScore("bias_score")}
+              </Badge>
+            </Flex>
+          </Flex>
+          <Flex direction="column" align="center">
+            <Text fontSize="md">Veracity</Text>
+            <Flex align="center" gap={1}>
+              <Text>
+                {getVeracityEmoji(parseFloat(avgScore("veracity_score")))}
+              </Text>
+              <Badge
+                fontSize="md"
+                borderRadius="md"
+                px={2}
+                bg="gray.700"
+                color="green.200"
+              >
+                {avgScore("veracity_score")}
+              </Badge>
+            </Flex>
+          </Flex>
+        </HStack>
+        <Box />
+        <Text fontSize="sm" mt={1} textAlign="center">
+          {activeAuthor?.description || "No bio available."}
+        </Text>
+        <Center>
+          <Menu>
+            <MenuButton as={Button} rightIcon={<BiChevronDown />} mt={3}>
+              Actions
+            </MenuButton>
+            <MenuList>
+              <MenuItem
+                onClick={() => {
+                  setActiveAuthor(activeAuthor);
+                  onBioOpen();
+                }}
+              >
+                ✏️ Edit Bio
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  setActiveAuthor(activeAuthor);
+                  onRatingOpen();
+                }}
+              >
+                📊 Manage Ratings
+              </MenuItem>
+            </MenuList>
+          </Menu>
+        </Center>
 
         {activeAuthor && isBioOpen && (
           <AuthBioModal
@@ -274,8 +291,6 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors }) => {
             currentBio={activeAuthor.description}
             onSave={async (newBio) => {
               await updateAuthorBio(activeAuthor.author_id, newBio);
-
-              // Update local state so the card reflects the new bio
               setAuthorList((prev) =>
                 prev.map((a) =>
                   a.author_id === activeAuthor.author_id
@@ -283,7 +298,9 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors }) => {
                     : a
                 )
               );
-
+              setActiveAuthor((prev) =>
+                prev ? { ...prev, description: newBio } : prev
+              );
               toast({
                 title: "Bio Updated",
                 description: "Author biography saved.",

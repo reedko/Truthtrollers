@@ -21,13 +21,13 @@ import {
   fetchAllReferences,
 } from "../../services/useDashboardAPI";
 import { TaskStoreState, useTaskStore } from "../../store/useTaskStore";
-import debounce from "lodash.debounce"; // ✅ Prevents API spam
+import debounce from "lodash.debounce";
 
 interface SelectReferenceModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect?: (referenceId: number) => Promise<void>; // optional override
-  onRefresh?: () => Promise<void>; // optional refresh for caller
+  onSelect?: (referenceId: number) => Promise<void>;
+  onRefresh?: () => Promise<void>;
   claimId?: number;
 }
 
@@ -45,12 +45,10 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
   const [isSearching, setIsSearching] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
-  const addReferenceToTask = useTaskStore(
-    (state: TaskStoreState) => state.addReferenceToTask
-  );
-  const taskId = useTaskStore((state: TaskStoreState) => state.selectedTaskId);
   const toast = useToast();
-  const hasFetched = useRef(false); // ✅ Prevents double-fetching
+  const taskId = useTaskStore((state: TaskStoreState) => state.selectedTaskId);
+  const addReferenceToTask = useTaskStore((s) => s.addReferenceToTask);
+  const hasFetched = useRef(false);
 
   useEffect(() => {
     if (isOpen && !hasFetched.current) {
@@ -59,7 +57,6 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
     }
   }, [isOpen]);
 
-  // ✅ Debounced search
   const handleSearch = debounce(async (query: string) => {
     if (query.length < 3) return;
     setIsSearching(true);
@@ -70,7 +67,6 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
     setIsSearching(false);
   }, 500);
 
-  // ✅ Load references (search or normal)
   const loadReferences = async (query: string, pageNum: number) => {
     setIsSearching(true);
     const data = await fetchAllReferences(query, pageNum);
@@ -80,10 +76,8 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
       setReferences((prevRefs) => [
         ...prevRefs,
         ...data.filter(
-          (newRef: { content_id: number; content_name: string; url: string }) =>
-            !prevRefs.some(
-              (prevRef) => prevRef.content_id === newRef.content_id
-            )
+          (ref: { content_id: number; content_name: string; url: string }) =>
+            !prevRefs.some((r) => r.content_id === ref.content_id)
         ),
       ]);
     }
@@ -92,29 +86,27 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
     setIsSearching(false);
   };
 
-  // ✅ Load more references (pagination)
   const handleLoadMore = async () => {
     await loadReferences(searchTerm || "all", page + 1);
   };
 
-  // ✅ Select a reference and remove it from the list
   const handleSelect = async (referenceId: number) => {
     try {
       if (onSelect) {
-        await onSelect(referenceId); // ✅ Add reference
+        await onSelect(referenceId);
         toast({
-          title: "Reference Linked!",
-          description: "Reference successfully linked.",
+          title: "Reference Selected!",
+          description: "Reference added to your list.",
           status: "success",
           duration: 3000,
           isClosable: true,
         });
-        if (onRefresh) await onRefresh(); // ✅ Tell parent to update
+        if (onRefresh) await onRefresh();
       } else if (claimId) {
         await addClaimSource(claimId, referenceId);
         toast({
           title: "Reference Linked!",
-          description: "Reference successfully linked to claim.",
+          description: "Reference linked to this claim.",
           status: "success",
           duration: 3000,
           isClosable: true,
@@ -123,19 +115,20 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
         await addReferenceToTask(taskId, referenceId);
         toast({
           title: "Reference Added!",
-          description: "Reference added to the task.",
+          description: "Reference added to task.",
           status: "success",
           duration: 3000,
           isClosable: true,
         });
       }
 
-      // Remove the selected ref and reload more
+      // Remove selected ref and reload first page
       setReferences((prev) =>
         prev.filter((ref) => ref.content_id !== referenceId)
       );
       loadReferences("all", 1);
     } catch (err) {
+      console.error("Error linking reference:", err);
       toast({
         title: "Error",
         description: "Failed to add reference.",
@@ -143,7 +136,6 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
         duration: 3000,
         isClosable: true,
       });
-      console.error("Reference link error:", err);
     }
   };
 
@@ -154,7 +146,6 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
         <ModalHeader>Select a Reference</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
-          {/* ✅ Search Box */}
           <Input
             placeholder="Search references..."
             value={searchTerm}
@@ -164,25 +155,23 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
             }}
             mb={3}
           />
-
           <VStack align="start" spacing={2} maxHeight="400px" overflowY="auto">
             {isSearching ? (
-              <Spinner size="md" />
+              <Spinner />
             ) : references.length > 0 ? (
               references.map((ref) => (
                 <Tooltip key={ref.content_id} label={ref.content_name} hasArrow>
                   <Button
-                    onClick={() => handleSelect(ref.content_id)}
                     variant="outline"
                     width="100%"
-                    textAlign="left"
-                    colorScheme="blue"
-                    justifyContent="flex-start"
-                    textOverflow="ellipsis"
+                    onClick={() => handleSelect(ref.content_id)}
                     onContextMenu={(e) => {
                       e.preventDefault();
                       window.open(ref.url, "_blank");
                     }}
+                    colorScheme="blue"
+                    justifyContent="flex-start"
+                    textOverflow="ellipsis"
                   >
                     {ref.content_name}
                   </Button>
@@ -196,11 +185,11 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
         <ModalFooter>
           <HStack>
             {hasMore && (
-              <Button onClick={handleLoadMore} mt={2} colorScheme="blue">
+              <Button onClick={handleLoadMore} colorScheme="blue">
                 Load More
               </Button>
             )}
-            <Button colorScheme="red" onClick={onClose}>
+            <Button onClick={onClose} colorScheme="red">
               Close
             </Button>
           </HStack>
