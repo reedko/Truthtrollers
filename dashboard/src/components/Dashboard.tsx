@@ -18,6 +18,14 @@ import PubCard from "./PubCard";
 import AuthCard from "./AuthCard";
 import DiscussionBoard from "./DiscussionBoard";
 import UnifiedHeader from "../components/UnifiedHeader";
+import VerimeterGauge from "../components/VerimeterGauge";
+import TrollmeterGauge from "./TrollmeterGauge";
+import CustomVerimeterGauge from "./CustomVerimeterGauge";
+import TrollSupportBar from "./TrollSupportBar";
+import ModernTrollmeterGauge from "./ModernTrollmeterGauge";
+import ModernArcGauge from "./ModernArcGauge";
+import BoolCard from "./BoolCard";
+import ProgressCard from "./ProgressCard";
 
 // 🚀 MOCK USER TYPE
 type UserType = "casual" | "troller";
@@ -74,21 +82,48 @@ const Dashboard: React.FC = () => {
         <Spinner />
       ) : (
         <VStack align="stretch" spacing={8}>
-          <UnifiedHeader
-            task={selectedTask}
-            publishers={publishers}
-            authors={authors}
+          <BoolCard
+            verimeterScore={-0.6}
+            trollmeterScore={0.9}
+            pro={27}
+            con={94}
           />
+          <ModernArcGauge score={0} label={"VERACIMETER"} />
+          <ModernArcGauge score={0.9} label={"TROLLMETER"} />
+          <VerimeterGauge score={0.83} />
+          <TrollmeterGauge score={-0.85} pro={27} con={77} />
+          <TrollSupportBar value={27} label="Agree" />
+          <TrollSupportBar value={87} label="Disagree" />
+          <ModernTrollmeterGauge score={-0.85} pro={27} con={77} />
+          <Grid templateColumns={{ base: "1fr", md: "repeat(5, 1fr)" }} gap={4}>
+            <GridItem>
+              <BoolCard
+                verimeterScore={-0.6}
+                trollmeterScore={0.2}
+                pro={27}
+                con={94}
+              />
+            </GridItem>
 
-          <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={4}>
             <GridItem>
               <TaskCard task={selectedTask} useStore={false} />
             </GridItem>
+
             <GridItem>
               <PubCard publishers={publishers} />
             </GridItem>
+
             <GridItem>
               <AuthCard authors={authors} />
+            </GridItem>
+            <GridItem>
+              <ProgressCard
+                ProgressScore={0.2}
+                totalClaims={90}
+                verifiedClaims={27}
+                totalReferences={20}
+                verifiedReferences={10}
+              />
             </GridItem>
           </Grid>
 

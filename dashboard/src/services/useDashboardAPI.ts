@@ -43,6 +43,24 @@ export const uploadImage = async (
   return data.path;
 };
 
+/**
+ * Fetch Verimeter Score for a given task (by content_id)
+ */
+export const fetchVerimeterScore = async (taskContentId: number) => {
+  const res = await fetch(`${API_BASE_URL}/api/verimeter/${taskContentId}`);
+  if (!res.ok) throw new Error("Failed to fetch Verimeter score");
+  return await res.json();
+};
+
+/**
+ * Fetch Trollmeter Score (crowd sentiment) for a given task (by content_id)
+ */
+export const fetchTrollmeterScore = async (taskContentId: number) => {
+  const res = await fetch(`${API_BASE_URL}/api/trollmeter/${taskContentId}`);
+  if (!res.ok) throw new Error("Failed to fetch Trollmeter score");
+  return await res.json();
+};
+
 // 🔵 AUTHOR BIO
 export const updateAuthorBio = async (authorId: number, newBio: string) => {
   const res = await axios.put(`${API_BASE_URL}/api/authors/${authorId}/bio`, {

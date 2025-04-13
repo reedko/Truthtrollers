@@ -15,6 +15,8 @@ import { fetchNewGraphDataFromLegacyRoute } from "../services/api";
 import Workspace from "../components/Workspace";
 import { useTaskStore } from "../store/useTaskStore";
 import { useShallow } from "zustand/react/shallow";
+import BoolCard from "../components/BoolCard";
+import ProgressCard from "../components/ProgressCard";
 
 interface TaskDetailLayoutProps {
   task: Task;
@@ -88,25 +90,40 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   return (
     <Box w="calc(100vw - 20px)" mx="10px" p={4} overflow="auto">
       <Grid
-        templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }}
+        templateColumns={{ base: "1fr", md: "repeat(5, 1fr)" }}
         gap={4}
         gridTemplateAreas={{
-          base: `"taskCard" "pubCard" "authCard" "workspace" "relationFlow" "references" "users"`,
-          md: `"taskCard pubCard authCard" "workspace workspace workspace" "relationFlow relationFlow relationFlow" "references references references" "users users users"`,
+          base: `"boolCard" "taskCard" "pubCard" "authCard" "progressCard" "workspace" "relationFlow" "references" "users"`,
+          md: `"boolCard taskCard pubCard authCard progressCard" "workspace workspace workspace workspace workspace" "relationFlow relationFlow relationFlow relationFlow relationFlow" "references references references users users"`,
         }}
       >
+        {" "}
+        <Box gridArea="boolCard">
+          <BoolCard
+            verimeterScore={-0.6}
+            trollmeterScore={0.2}
+            pro={27}
+            con={94}
+          />
+        </Box>
         <Box gridArea="taskCard">
           <TaskCard key={task.content_id} task={task} useStore={false} />
         </Box>
-
         <Box gridArea="pubCard">
           <PubCard publishers={publishers} />
         </Box>
-
         <Box gridArea="authCard">
           <AuthCard authors={authors} />
         </Box>
-
+        <Box gridArea="progressCard">
+          <ProgressCard
+            ProgressScore={0.2}
+            totalClaims={90}
+            verifiedClaims={27}
+            totalReferences={20}
+            verifiedReferences={10}
+          />
+        </Box>
         <Box
           gridArea="workspace"
           borderWidth="1px"
@@ -122,7 +139,6 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
             onHeightChange={setWorkspaceHeight}
           />
         </Box>
-
         <Box gridArea="relationFlow" borderWidth="1px" borderRadius="lg" p={4}>
           <Heading size="sm" mb={2}>
             Relationship Map
@@ -183,7 +199,6 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
             </Box>
           )}
         </Box>
-
         <Box gridArea="references" borderWidth="1px" borderRadius="lg" p={4}>
           <Heading size="md" mb={2}>
             Source References
@@ -196,7 +211,6 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
             </Text>
           ))}
         </Box>
-
         <Box gridArea="users" borderWidth="1px" borderRadius="lg" p={4}>
           <Heading size="sm" mb={2}>
             Assigned Users

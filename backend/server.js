@@ -29,6 +29,7 @@ import fetchWithPuppeteer from "./routes/fetchWithPuppeteer.js"; //
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
 import { spawn } from "child_process";
 import registerDiscussionRoutes from "./routes/discussionRoutes.js";
+import registerBeaconRoutes from "./routes/beaconRoutes.js";
 
 //const pdfParse = pkg.default || pkg;
 const __filename = fileURLToPath(import.meta.url);
@@ -114,6 +115,7 @@ db.connect((err) => {
 // Define storage location and filename strategy
 
 registerDiscussionRoutes(app, query, pool);
+registerBeaconRoutes(app, query, pool);
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
