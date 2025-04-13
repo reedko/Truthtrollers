@@ -48,7 +48,12 @@ const TruthGauge: React.FC<TruthGaugeProps> = ({
   const tickSpacing = 100 / (tickCount - 1);
 
   return (
-    <Box w={size?.w || "260px"} h={size?.h || "140px"} position="relative">
+    <Box
+      w={size?.w || "260px"}
+      h={size?.h || "140px"}
+      position="relative"
+      bg="gray.600"
+    >
       <CircularProgressbarWithChildren
         value={animatedValue}
         maxValue={100}

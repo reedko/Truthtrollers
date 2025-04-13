@@ -41,10 +41,12 @@ export interface TaskStoreState {
   auth_references: AuthReference[];
   selectedTaskId: number;
   currentPage: number;
+  selectedTask: Task | null;
+
   loadMoreTasks: () => Promise<void>;
   setSearchQuery: (query: string) => void;
   setSelectedTopic: (topicName: string | undefined) => void;
-  setSelectedTask: (taskId: number) => void;
+  setSelectedTask: (input: number | Task) => void;
 
   fetchTasks: () => Promise<void>;
   fetchUsers: () => Promise<void>;
@@ -84,7 +86,13 @@ export const useTaskStore = create<TaskStoreState>()(
     auth_references: [],
     selectedTaskId: 0,
     currentPage: 0,
-    setSelectedTask: (taskId: number) => set({ selectedTaskId: taskId }),
+    setSelectedTask: (input: Task | number) => {
+      if (typeof input === "number") {
+        set({ selectedTaskId: input });
+      } else {
+        set({ selectedTask: input, selectedTaskId: input.content_id });
+      }
+    },
 
     fetchTasks: async () => {
       const limit = 100;
