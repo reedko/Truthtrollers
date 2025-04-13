@@ -288,3 +288,21 @@ export function toReferenceWithClaims(
     claims: [],
   };
 }
+export interface TrollmeterData {
+  trollmeter_score: number; // Between 0.0 and 1.0 (support vs. refute)
+  pro_weight: number;
+  con_weight: number;
+  total_weight: number;
+}
+export interface VerimeterData {
+  verimeter_score: number; // Main weighted score (-1 to 1)
+  avg_veracity_score: number; // Average veracity from refs
+  avg_bias_score: number; // Average bias from refs
+  num_references: number; // How many references are included
+  num_authors: number; // How many authors are included
+  top_publisher: string | null; // Best-rated publisher name
+  top_publisher_score: number | null;
+  top_author: string | null; // Best-rated author name
+  top_author_score: number | null;
+  verimeter_mood: string; // e.g. "Truthy", "Sketchy"
+}
