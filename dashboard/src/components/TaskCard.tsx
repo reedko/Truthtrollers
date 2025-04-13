@@ -28,9 +28,14 @@ interface TaskCardProps {
   task: any;
   useStore?: boolean;
   compact?: boolean;
+  redirectTo?: string; // e.g. "/dashboard" or "/workspace"
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({ task, compact = false }) => {
+const TaskCard: React.FC<TaskCardProps> = ({
+  task,
+  compact = false,
+  redirectTo,
+}) => {
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
@@ -78,6 +83,13 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, compact = false }) => {
       setModalPosition({ top: newTop, left: newLeft });
     }
     openModal();
+  };
+
+  const { setSelectedTask } = useTaskStore();
+
+  const handleSelect = () => {
+    setSelectedTask(task);
+    navigate(redirectTo || "/dashboard");
   };
 
   if (!task || !task.content_id) return null;
@@ -168,26 +180,18 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, compact = false }) => {
         </Box>
         <Center>
           <HStack>
-            <Menu onOpen={handleAssignedUsersOpen}>
-              <MenuButton as={Button} rightIcon={<BiChevronDown />}>
-                Users
-              </MenuButton>
-              <MenuList>
-                {assignedUsers.length > 0 ? (
-                  assignedUsers.map((user) => (
-                    <MenuItem key={user.user_id}>{user.username}</MenuItem>
-                  ))
-                ) : (
-                  <MenuItem>No Users Assigned</MenuItem>
-                )}
-              </MenuList>
-            </Menu>
+            <Button colorScheme="blue" onClick={handleSelect}>
+              Select
+            </Button>
 
             <Menu>
               <MenuButton as={Button} colorScheme="teal">
                 Actions
               </MenuButton>
               <MenuList>
+                <MenuItem onClick={handleAssignedUsersOpen}>
+                  View Assigned Users
+                </MenuItem>
                 <MenuItem onClick={() => handleOpenModal(onAssignOpen)}>
                   Assign User
                 </MenuItem>

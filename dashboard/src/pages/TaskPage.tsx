@@ -1,32 +1,27 @@
+// src/pages/TaskPage.tsx
 import React, { useEffect, useRef } from "react";
 import { Grid, GridItem, Show, Heading, Text, Button } from "@chakra-ui/react";
 import TaskGrid from "../components/TaskGrid";
 import TopicList from "../components/TopicList";
 import { useShallow } from "zustand/react/shallow";
-
 import { useTaskStore } from "../store/useTaskStore";
 
 export const TaskPage: React.FC = () => {
-  const content = useTaskStore(
-    useShallow(
-      (state) => state.filteredTasks // Zustand's shallow comparison utility
-    )
-  );
-  const fetchTasks = useTaskStore(useShallow((state) => state.fetchTasks));
+  const content = useTaskStore(useShallow((state) => state.filteredTasks));
+  const fetchTasks = useTaskStore((state) => state.fetchTasks);
   const loadMoreTasks = useTaskStore((state) => state.loadMoreTasks);
 
-  // Fetch content on component mount
   const fetchInitiated = useRef(false);
 
   useEffect(() => {
-    if (fetchInitiated.current) return;
-    fetchInitiated.current = true;
-    if (content.length === 0) {
-      fetchTasks();
+    if (!fetchInitiated.current) {
+      fetchInitiated.current = true;
+      if (content.length === 0) {
+        fetchTasks();
+      }
     }
   }, [content.length, fetchTasks]);
 
-  // 🔍 ADD THIS:
   useEffect(() => {
     console.log("🧠 Zustand filteredTasks in TaskPage:", content);
     console.log("📦 Number of tasks loaded:", content.length);
@@ -57,7 +52,8 @@ export const TaskPage: React.FC = () => {
           <Text>No content match the selected criteria.</Text>
         ) : (
           <>
-            <TaskGrid content={content} />
+            {/* Pass target redirect path here */}
+            <TaskGrid content={content} redirectTo="/dashboard" />
 
             <Button mt={4} onClick={() => loadMoreTasks()}>
               Load More Tasks

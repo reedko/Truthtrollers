@@ -9,6 +9,9 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import { RouterProvider } from "react-router-dom";
 import TestCardPage from "./pages/TestCardPage";
+import WorkspacePage from "./pages/WorkspacePage";
+import MoleculeMapPage from "./pages/MoleculeMapPage";
+import DiscussionPage from "./pages/DiscussionPage";
 
 const router = createBrowserRouter([
   {
@@ -23,6 +26,9 @@ const router = createBrowserRouter([
       { path: "/forgot-password", element: <ForgotPassword /> },
       { path: "/register", element: <Register /> },
       { path: "/test-card", element: <TestCardPage /> },
+      { path: "/workspace/:taskId", element: <WorkspacePage /> },
+      { path: "/molecule/:taskId", element: <MoleculeMapPage /> },
+      { path: "/discussion/:taskId", element: <DiscussionPage /> },
     ],
   },
 ]);

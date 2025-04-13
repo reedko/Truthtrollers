@@ -35,7 +35,12 @@ const MiniVoteArcGauge: React.FC<MiniVoteArcGaugeProps> = ({
   const percentage = total > 0 ? (value / total) * 100 : 0;
 
   return (
-    <Box w={size?.w || "150px"} h={size?.h || "100px"} position="relative">
+    <Box
+      w={size?.w || "150px"}
+      h={size?.h || "100px"}
+      position="relative"
+      bg="gray.600"
+    >
       <CircularProgressbarWithChildren
         value={animatedValue}
         maxValue={total}
