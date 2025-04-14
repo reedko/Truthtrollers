@@ -17,7 +17,7 @@ import {
   HStack,
 } from "@chakra-ui/react";
 import { Claim, ReferenceWithClaims } from "../../../../shared/entities/types";
-import ClaimVerificationModal from "./ClaimVerificationModal";
+import ClaimEvaluationModal from "./ClaimEvaluationModal";
 import { Search2Icon } from "@chakra-ui/icons";
 
 interface ReferenceClaimsModalProps {

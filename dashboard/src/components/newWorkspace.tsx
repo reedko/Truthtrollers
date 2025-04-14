@@ -12,7 +12,7 @@ import TaskClaims from "./TaskClaims";
 import ReferenceList from "./ReferenceList";
 import ClaimLinkModal from "./modals/ClaimLinkModal";
 import ReferenceClaimsModal from "./modals/ReferenceClaimsModal";
-import ClaimVerificationModal from "./modals/ClaimVerificationModal";
+import ClaimEvaluationModal from "./modals/ClaimEvaluationModal";
 import { Claim, ReferenceWithClaims } from "../../../shared/entities/types";
 
 const Workspace: React.FC<{ contentId: number }> = ({ contentId }) => {
@@ -169,7 +169,7 @@ const Workspace: React.FC<{ contentId: number }> = ({ contentId }) => {
         targetClaim={targetClaim}
       />
       {verifyingClaim && (
-        <ClaimVerificationModal
+        <ClaimEvaluationModal
           isOpen={isVerificationModalOpen}
           onClose={() => setIsVerificationModalOpen(false)}
           claim={verifyingClaim}

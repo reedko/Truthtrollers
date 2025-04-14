@@ -5,6 +5,7 @@ import CytoscapeMolecule from "../components/CytoscapeMolecule";
 import { useTaskStore } from "../store/useTaskStore";
 import { fetchNewGraphDataFromLegacyRoute } from "../services/api";
 import { GraphNode, Link } from "../../../shared/entities/types";
+import UnifiedHeader from "../components/UnifiedHeader";
 
 const MoleculeMapPage = () => {
   const selectedTask = useTaskStore((s) => s.selectedTask);
@@ -16,7 +17,7 @@ const MoleculeMapPage = () => {
 
   useEffect(() => {
     if (!selectedTask) {
-      navigate("/tasks");
+      navigate("/tasks", { state: { redirectTo: "/molecule" } });
       return;
     }
 
@@ -51,25 +52,28 @@ const MoleculeMapPage = () => {
   if (!selectedTask) return null;
 
   return (
-    <Box p={4}>
-      <Heading size="md" mb={4}>
-        Relationship Graph
-      </Heading>
+    <>
+      <UnifiedHeader />
+      <Box p={4}>
+        <Heading size="md" mb={4}>
+          Relationship Graph
+        </Heading>
 
-      {loading ? (
-        <Center>
-          <Spinner size="xl" />
-        </Center>
-      ) : nodes.length > 0 ? (
-        <CytoscapeMolecule
-          nodes={nodes}
-          links={links}
-          centerNodeId={selectedTask.content_id.toString()}
-        />
-      ) : (
-        <Text>No graph data available for this task.</Text>
-      )}
-    </Box>
+        {loading ? (
+          <Center>
+            <Spinner size="xl" />
+          </Center>
+        ) : nodes.length > 0 ? (
+          <CytoscapeMolecule
+            nodes={nodes}
+            links={links}
+            centerNodeId={selectedTask.content_id.toString()}
+          />
+        ) : (
+          <Text>No graph data available for this task.</Text>
+        )}
+      </Box>
+    </>
   );
 };
 

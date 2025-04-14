@@ -184,7 +184,7 @@ export async function fetchTaskById(taskId: number): Promise<Task> {
 /**
  * Fetch all tasks (content items).
  */
-export const fetchTasks = async (page = 1, limit = 25): Promise<Task[]> => {
+export const fetchTasks = async (page = 1, limit = 100): Promise<Task[]> => {
   try {
     const response = await axios.get(`${API_BASE_URL}/api/content`, {
       params: { page, limit },
@@ -209,6 +209,16 @@ export const fetchAssignedUsers = async (taskId: number): Promise<User[]> => {
     console.error("❌ Error fetching assigned users:", error);
     return [];
   }
+};
+
+/**
+ * fetch all tasks for a user
+ *
+ */
+
+export const fetchTasksForUser = async (userId: number): Promise<Task[]> => {
+  const res = await axios.get(`${API_BASE_URL}/api/user-tasks/${userId}`);
+  return res.data;
 };
 
 /** --------------------- 🔎 CLAIMS FUNCTIONS --------------------- **/
@@ -252,6 +262,14 @@ export const fetchClaimsForTask = async (
   }
 };
 
+//evaluate claims
+export async function submitClaimEvaluation(data: {
+  claim_id: number;
+  reference_id: number;
+  evaluation_text: string;
+}) {
+  return await axios.post(`${API_BASE_URL}/api/claim_verifications`, data);
+}
 // ✅ Add a new claim (with full metadata)
 export const addClaim = async (claimData: {
   claim_text: string;

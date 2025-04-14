@@ -17,7 +17,7 @@ import {
 } from "../../../shared/entities/types";
 import ClaimLinkModal from "./modals/ClaimLinkModal";
 import ReferenceClaimsModal from "./modals/ReferenceClaimsModal";
-import ClaimVerificationModal from "./modals/ClaimVerificationModal";
+import ClaimEvaluationModal from "./modals/ClaimEvaluationModal";
 import RelationshipMap, { ClaimLink } from "./RelationshipMap";
 import { fetchClaimById } from "../services/useDashboardAPI"; // or wherever
 
@@ -266,7 +266,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
         claimLink={selectedClaimLink}
       />
       {verifyingClaim && (
-        <ClaimVerificationModal
+        <ClaimEvaluationModal
           isOpen={isVerificationModalOpen}
           onClose={() => setIsVerificationModalOpen(false)}
           claim={verifyingClaim}

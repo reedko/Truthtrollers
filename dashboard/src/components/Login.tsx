@@ -3,16 +3,23 @@ import React, { useState } from "react";
 import { login } from "../services/authService";
 import { useNavigate } from "react-router-dom";
 import { Button, Input, Stack, Heading, useToast } from "@chakra-ui/react";
+import { useAuthStore } from "../store/useAuthStore"; // ✅ NEW
 
+import { User } from "../../../shared/entities/types";
 const Login: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const setUser = useAuthStore((s) => s.setUser); // ✅ GET STORE
   const navigate = useNavigate();
   const toast = useToast();
 
   const handleLogin = async () => {
     try {
-      await login(username, password);
+      const user: User = await login(username, password); // Assume this returns user data
+      setUser(user); // ✅ STORE IN ZUSTAND
+      console.log(user.username, "USER");
+      localStorage.setItem("user", JSON.stringify(user));
+      setUser(user);
       navigate("/dashboard");
     } catch (error) {
       toast({
@@ -23,16 +30,6 @@ const Login: React.FC = () => {
         isClosable: true,
       });
     }
-  };
-
-  const handleForgotPassword = () => {
-    // Redirect to forgot password page
-    navigate("/forgot-password");
-  };
-
-  const handleRegister = () => {
-    // Redirect to registration page
-    navigate("/register");
   };
 
   return (
@@ -54,10 +51,10 @@ const Login: React.FC = () => {
       <Button colorScheme="teal" onClick={handleLogin}>
         Login
       </Button>
-      <Button variant="link" onClick={handleForgotPassword}>
+      <Button variant="link" onClick={() => navigate("/forgot-password")}>
         Forgot Password?
       </Button>
-      <Button variant="link" onClick={handleRegister}>
+      <Button variant="link" onClick={() => navigate("/register")}>
         Register
       </Button>
     </Stack>

@@ -1,3 +1,4 @@
+// src/components/modals/ClaimEvaluationModal.tsx
 import React, { useEffect, useState } from "react";
 import {
   Modal,
@@ -20,19 +21,18 @@ import {
   Text,
   VStack,
   Select,
+  useToast,
 } from "@chakra-ui/react";
-import {
-  Claim,
-  LitReference,
-  ReferenceWithClaims,
-} from "../../../../shared/entities/types";
+import { Claim, ReferenceWithClaims } from "../../../../shared/entities/types";
 import {
   fetchClaimSources,
   fetchReferencesWithClaimsForTask,
+  fetchAllReferences,
+  submitClaimEvaluation,
 } from "../../services/useDashboardAPI";
 import ReferenceModal from "./ReferenceModal";
 
-interface ClaimVerificationModalProps {
+interface ClaimEvaluationModalProps {
   isOpen: boolean;
   onClose: () => void;
   claim: Claim;
@@ -45,7 +45,7 @@ interface ClaimVerificationModalProps {
   }) => void;
 }
 
-const ClaimVerificationModal: React.FC<ClaimVerificationModalProps> = ({
+const ClaimEvaluationModal: React.FC<ClaimEvaluationModalProps> = ({
   isOpen,
   onClose,
   claim,
@@ -61,9 +61,28 @@ const ClaimVerificationModal: React.FC<ClaimVerificationModalProps> = ({
   const [linkedReferenceIds, setLinkedReferenceIds] = useState<number[]>([]);
   const [references, setReferences] = useState<ReferenceWithClaims[]>([]);
   const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
+  const toast = useToast();
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!claim) return;
+
+    if (!selectedReferenceId || !notes.trim()) {
+      toast({
+        title: "Missing information",
+        description: "Please select a reference and provide justification.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    await submitClaimEvaluation({
+      claim_id: claim.claim_id,
+      reference_id: selectedReferenceId,
+      evaluation_text: notes,
+    });
+
     onSaveVerification({
       claim_id: claim.claim_id,
       veracity_score: veracityScore,
@@ -71,20 +90,20 @@ const ClaimVerificationModal: React.FC<ClaimVerificationModalProps> = ({
       is_refuted: isRefuted,
       notes,
     });
+
+    toast({
+      title: "Claim evaluated",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    });
     onClose();
   };
 
   useEffect(() => {
     if (claim?.content_id) {
       fetchReferencesWithClaimsForTask(claim.content_id).then((refs) => {
-        // 🔮 In the future you might filter by `ref.is_primary_source`
-        const usableReferences = refs; // or refs.filter((ref) => ref.is_primary_source)
-
-        if (usableReferences.length === 0) {
-          console.warn("⚠️ No references found for this claim.");
-        }
-
-        setReferences(usableReferences);
+        setReferences(refs);
       });
     }
   }, [claim]);
@@ -92,7 +111,6 @@ const ClaimVerificationModal: React.FC<ClaimVerificationModalProps> = ({
   useEffect(() => {
     if (claim?.claim_id) {
       fetchClaimSources(claim.claim_id).then((sources) => {
-        // Extract the reference_content_ids from the claim_sources table
         const ids = sources.map((s) => s.reference_content_id);
         setLinkedReferenceIds(ids);
       });
@@ -104,7 +122,7 @@ const ClaimVerificationModal: React.FC<ClaimVerificationModalProps> = ({
       <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Verify Claim</ModalHeader>
+          <ModalHeader>Evaluate Claim</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <Text mb={2} fontWeight="semibold">
@@ -188,7 +206,7 @@ const ClaimVerificationModal: React.FC<ClaimVerificationModalProps> = ({
                 </Select>
                 {references.length === 0 && (
                   <Text color="red.500" mt={2}>
-                    ⚠️ You must link at least one source to verify this claim.
+                    ⚠️ You must link at least one source to Evaluate this claim.
                   </Text>
                 )}
               </FormControl>
@@ -205,7 +223,7 @@ const ClaimVerificationModal: React.FC<ClaimVerificationModalProps> = ({
             </Button>
 
             <Button colorScheme="blue" onClick={handleSave}>
-              Save Verification
+              Submit Evaluation
             </Button>
             <Button onClick={onClose} ml={3}>
               Cancel
@@ -224,4 +242,4 @@ const ClaimVerificationModal: React.FC<ClaimVerificationModalProps> = ({
   );
 };
 
-export default ClaimVerificationModal;
+export default ClaimEvaluationModal;

@@ -1,76 +1,67 @@
-import React from "react";
-import { Grid, Box, Heading, useBreakpointValue } from "@chakra-ui/react";
+import React, { useEffect } from "react";
+import { Grid, Box } from "@chakra-ui/react";
+import { useTaskStore } from "../store/useTaskStore";
+import { useShallow } from "zustand/react/shallow";
 import TaskCard from "./TaskCard";
 import PubCard from "./PubCard";
 import AuthCard from "./AuthCard";
-import { Task, Publisher, Author } from "../../../shared/entities/types";
+import BoolCard from "./BoolCard";
+import ProgressCard from "./ProgressCard";
 
-interface UnifiedHeaderProps {
-  task: Task;
-  publishers: Publisher[];
-  authors: Author[];
-}
+const UnifiedHeader: React.FC = () => {
+  const task = useTaskStore((s) => s.selectedTask);
+  const contentId = task?.content_id;
 
-const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
-  task,
-  publishers,
-  authors,
-}) => {
-  const columnCount = useBreakpointValue({ base: 1, md: 3 });
+  const fetchAuthors = useTaskStore((s) => s.fetchAuthors);
+  const fetchPublishers = useTaskStore((s) => s.fetchPublishers);
+
+  const authors = useTaskStore(
+    useShallow((s) => (contentId ? s.authors[contentId] || [] : []))
+  );
+  const publishers = useTaskStore(
+    useShallow((s) => (contentId ? s.publishers[contentId] || [] : []))
+  );
+
+  useEffect(() => {
+    if (contentId) {
+      fetchAuthors(contentId);
+      fetchPublishers(contentId);
+    }
+  }, [contentId]);
+
+  if (!task) return null;
 
   return (
     <Grid
-      templateColumns={`repeat(${columnCount}, 1fr)`}
+      templateColumns={{ base: "1fr", md: "repeat(5, 1fr)" }}
       gap={4}
-      alignItems="stretch"
       mb={6}
     >
-      <Box
-        bg="gray.800"
-        p={4}
-        borderRadius="xl"
-        boxShadow="md"
-        minH="160px"
-        display="flex"
-        flexDirection="column"
-        justifyContent="space-between"
-      >
-        <Heading size="sm" color="gray.300" mb={2}>
-          Task Info
-        </Heading>
-        <TaskCard task={task} useStore={false} compact={true} />
+      <Box>
+        <BoolCard
+          verimeterScore={-0.6}
+          trollmeterScore={0.2}
+          pro={27}
+          con={94}
+        />
       </Box>
-
-      <Box
-        bg="gray.800"
-        p={4}
-        borderRadius="xl"
-        boxShadow="md"
-        minH="160px"
-        display="flex"
-        flexDirection="column"
-        justifyContent="space-between"
-      >
-        <Heading size="sm" color="gray.300" mb={2}>
-          Publisher
-        </Heading>
-        <PubCard publishers={publishers} compact={true} />
+      <Box>
+        <TaskCard task={task} useStore={false} />
       </Box>
-
-      <Box
-        bg="gray.800"
-        p={4}
-        borderRadius="xl"
-        boxShadow="md"
-        minH="160px"
-        display="flex"
-        flexDirection="column"
-        justifyContent="space-between"
-      >
-        <Heading size="sm" color="gray.300" mb={2}>
-          Author(s)
-        </Heading>
-        <AuthCard authors={authors} compact />
+      <Box>
+        <PubCard publishers={publishers} />
+      </Box>
+      <Box>
+        <AuthCard authors={authors} />
+      </Box>
+      <Box>
+        <ProgressCard
+          ProgressScore={0.2}
+          totalClaims={90}
+          verifiedClaims={27}
+          totalReferences={20}
+          verifiedReferences={10}
+        />
       </Box>
     </Grid>
   );

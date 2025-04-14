@@ -22,6 +22,9 @@ import {
   Badge,
   Flex,
   Select,
+  Alert,
+  AlertIcon,
+  AlertDescription,
 } from "@chakra-ui/react";
 import { BiChevronDown } from "react-icons/bi";
 import { Author, AuthorRating } from "../../../shared/entities/types";
@@ -40,6 +43,7 @@ interface AuthCardProps {
   compact?: boolean;
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
   const {
     isOpen: isBioOpen,
@@ -101,6 +105,10 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
       }
     }
   };
+  console.log(
+    "ACTIVE AUTHOR:",
+    `${API_BASE_URL}/${activeAuthor?.author_profile_pic}`
+  );
 
   const getBiasEmoji = (score: number) =>
     score <= -5 || score >= 5 ? "🔴" : "🟢";
@@ -137,7 +145,6 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
             Author Details
           </Text>
         </Center>
-
         {authors.length > 1 ? (
           <Select
             size="sm"
@@ -174,7 +181,6 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
             {activeAuthor?.author_first_name} {activeAuthor?.author_last_name}
           </Text>
         )}
-
         <Center mb={2}>
           <Box
             as="button"
@@ -190,14 +196,14 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
             marginBottom={"1px"}
           >
             {activeAuthor?.author_profile_pic ? (
-              <Image
-                src={`${import.meta.env.VITE_API_BASE_URL}/${
-                  activeAuthor.author_profile_pic
-                }`}
-                alt="Author"
-                objectFit="cover"
-                boxSize="100px"
-              />
+              <>
+                <Image
+                  src={`${API_BASE_URL}/${activeAuthor.author_profile_pic}`}
+                  alt="Author"
+                  objectFit="cover"
+                  boxSize="100px"
+                />
+              </>
             ) : (
               <Text fontSize="xs" color="gray.300">
                 Upload
