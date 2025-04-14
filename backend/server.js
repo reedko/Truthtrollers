@@ -406,6 +406,28 @@ app.use(
   "/images/publishers",
   express.static(path.join(__dirname, "assets/images/publishers"))
 );
+//claim evaluation
+app.post("/api/claim_verifications", (req, res) => {
+  const { claim_id, reference_id, evaluation_text } = req.body;
+
+  if (!claim_id || !reference_id || !evaluation_text) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const sql = `
+    INSERT INTO claim_verifications (claim_id, reference_id, evaluation_text)
+    VALUES (?, ?, ?)
+  `;
+
+  pool.query(sql, [claim_id, reference_id, evaluation_text], (err, result) => {
+    if (err) {
+      console.error("❌ Error inserting claim verification:", err);
+      return res.status(500).json({ error: "Database insert failed" });
+    }
+
+    res.status(200).json({ success: true, verification_id: result.insertId });
+  });
+});
 
 //Get Authors
 app.get("/api/content/:taskId/authors", async (req, res) => {
@@ -1118,6 +1140,7 @@ app.post("/api/login", (req, res) => {
       console.error("Error logging in user:", err);
       return res.status(500).json({ error: "Database query failed" });
     }
+
     if (results.length === 0) return res.status(404).send("User not found.");
 
     const user = results[0];
@@ -1125,7 +1148,7 @@ app.post("/api/login", (req, res) => {
       const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
         expiresIn: "1h",
       });
-      res.status(200).json({ auth: true, token });
+      res.status(200).json({ auth: true, token, user });
     } else {
       res.status(401).send("Invalid credentials.");
     }
@@ -1226,7 +1249,8 @@ app.get("/api/content", (req, res) => {
     JSON_OBJECT(
       'author_id', a.author_id,
       'author_first_name', a.author_first_name,
-      'author_last_name', a.author_last_name
+      'author_last_name', a.author_last_name,
+      'author_profile_pic', a.author_profile_pic
     )
   ) AS authors,
   JSON_ARRAYAGG(
@@ -1249,6 +1273,51 @@ GROUP BY t.content_id
     if (err) {
       console.error("Error fetching paginated content:", err);
       return res.status(500).json({ error: "Database query failed" });
+    }
+    res.json(results);
+  });
+});
+
+//tasks for a user
+app.get("/api/user-tasks/:user_id", async (req, res) => {
+  const { user_id } = req.params;
+  const sql = `
+    SELECT 
+      t.*,
+      (
+        SELECT topic_name 
+        FROM topics tt
+        JOIN content_topics ct ON tt.topic_id = ct.topic_id
+        WHERE ct.content_id = t.content_id
+        ORDER BY ct.topic_order ASC
+        LIMIT 1
+      ) AS topic,
+     JSON_ARRAYAGG(
+    JSON_OBJECT(
+      'author_id', a.author_id,
+      'author_first_name', a.author_first_name,
+      'author_last_name', a.author_last_name
+    )
+  ) AS authors,
+  JSON_ARRAYAGG(
+    JSON_OBJECT(
+          'publisher_id', p.publisher_id,
+          'publisher_name', p.publisher_name
+        )
+      ) AS publishers
+    FROM content t
+    JOIN content_users cu ON t.content_id = cu.content_id
+    LEFT JOIN content_authors ca ON t.content_id = ca.content_id
+    LEFT JOIN authors a ON ca.author_id = a.author_id
+    LEFT JOIN content_publishers cp ON t.content_id = cp.content_id
+    LEFT JOIN publishers p ON cp.publisher_id = p.publisher_id
+    WHERE cu.user_id = ? AND t.content_type = 'task'
+    GROUP BY t.content_id
+  `;
+  pool.query(sql, [user_id], (err, results) => {
+    if (err) {
+      console.error("❌ Error fetching user tasks:", err);
+      return res.status(500).json({ error: "Query failed" });
     }
     res.json(results);
   });

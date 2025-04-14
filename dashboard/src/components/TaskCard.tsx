@@ -189,9 +189,20 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 Actions
               </MenuButton>
               <MenuList>
-                <MenuItem onClick={handleAssignedUsersOpen}>
-                  View Assigned Users
-                </MenuItem>
+                <Menu onOpen={handleAssignedUsersOpen}>
+                  <MenuButton as={Button} rightIcon={<BiChevronDown />}>
+                    Users
+                  </MenuButton>
+                  <MenuList>
+                    {assignedUsers.length > 0 ? (
+                      assignedUsers.map((user) => (
+                        <MenuItem key={user.user_id}>{user.username}</MenuItem>
+                      ))
+                    ) : (
+                      <MenuItem>No Users Assigned</MenuItem>
+                    )}
+                  </MenuList>
+                </Menu>
                 <MenuItem onClick={() => handleOpenModal(onAssignOpen)}>
                   Assign User
                 </MenuItem>

@@ -17,7 +17,7 @@ export interface Task {
   url: string;
   assigned: "assigned" | "unassigned";
   progress: TaskProgress;
-  users: string[]; // Ensuring this is always an array
+  users: User[]; // Ensuring this is always an array
   details: string;
   topic: string;
   subtopic: string;
@@ -136,6 +136,8 @@ export interface ClaimLinks {
 export interface User {
   user_id: number;
   username: string;
+  email: string;
+  role: string;
 }
 
 // Relationships

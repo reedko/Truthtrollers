@@ -5,12 +5,14 @@ import TaskGrid from "../components/TaskGrid";
 import TopicList from "../components/TopicList";
 import { useShallow } from "zustand/react/shallow";
 import { useTaskStore } from "../store/useTaskStore";
+import { useLocation } from "react-router-dom";
 
 export const TaskPage: React.FC = () => {
   const content = useTaskStore(useShallow((state) => state.filteredTasks));
   const fetchTasks = useTaskStore((state) => state.fetchTasks);
   const loadMoreTasks = useTaskStore((state) => state.loadMoreTasks);
-
+  const location = useLocation();
+  const redirectTo = location.state?.redirectTo || "/dashboard";
   const fetchInitiated = useRef(false);
 
   useEffect(() => {
@@ -53,7 +55,7 @@ export const TaskPage: React.FC = () => {
         ) : (
           <>
             {/* Pass target redirect path here */}
-            <TaskGrid content={content} redirectTo="/dashboard" />
+            <TaskGrid content={content} redirectTo={redirectTo} />
 
             <Button mt={4} onClick={() => loadMoreTasks()}>
               Load More Tasks

@@ -9,12 +9,15 @@ import {
   TaskAuthor,
   TaskReference,
   AuthReference,
+  Claim,
 } from "../../../shared/entities/types";
 import {
   fetchTasks as fetchTasksAPI,
   fetchUsers,
   fetchAssignedUsers,
+  fetchTasksForUser,
   fetchReferencesForTask,
+  fetchClaimsForTask,
   fetchClaimReferences,
   fetchAuthors,
   fetchPublishers,
@@ -42,6 +45,11 @@ export interface TaskStoreState {
   selectedTaskId: number;
   currentPage: number;
   selectedTask: Task | null;
+  claimsByTask: {
+    [taskId: number]: Claim[];
+  };
+  fetchTasksForUser: (userId: number) => Promise<void>;
+  fetchClaims: (taskId: number) => Promise<void>;
 
   loadMoreTasks: () => Promise<void>;
   setSearchQuery: (query: string) => void;
@@ -86,6 +94,7 @@ export const useTaskStore = create<TaskStoreState>()(
     auth_references: [],
     selectedTaskId: 0,
     currentPage: 0,
+    claimsByTask: {},
     setSelectedTask: (input: Task | number) => {
       if (typeof input === "number") {
         set({ selectedTaskId: input });
@@ -265,6 +274,16 @@ export const useTaskStore = create<TaskStoreState>()(
       }
     },
 
+    fetchClaims: async (taskId: number) => {
+      const claims = await fetchClaimsForTask(taskId);
+      set((state) => ({
+        claimsByTask: {
+          ...state.claimsByTask,
+          [taskId]: claims,
+        },
+      }));
+    },
+
     loadMoreTasks: async () => {
       const { currentPage, content } = get();
       const nextPage = currentPage + 1;
@@ -283,6 +302,38 @@ export const useTaskStore = create<TaskStoreState>()(
         });
       } catch (error) {
         console.error("❌ Error loading more tasks:", error);
+      }
+    },
+    fetchTasksForUser: async (userId: number) => {
+      try {
+        const tasks = await fetchTasksForUser(userId);
+        const authorsMap: Record<number, Author[]> = {};
+        const publishersMap: Record<number, Publisher[]> = {};
+
+        tasks.forEach((task) => {
+          authorsMap[task.content_id] =
+            typeof task.authors === "string"
+              ? JSON.parse(task.authors)
+              : task.authors || [];
+
+          publishersMap[task.content_id] =
+            typeof task.publishers === "string"
+              ? JSON.parse(task.publishers)
+              : task.publishers || [];
+        });
+
+        const deduped = Array.from(
+          new Map(tasks.map((t) => [t.content_id, t])).values()
+        );
+
+        set({
+          content: deduped,
+          filteredTasks: deduped,
+          authors: { ...get().authors, ...authorsMap },
+          publishers: { ...get().publishers, ...publishersMap },
+        });
+      } catch (error) {
+        console.error("❌ Error fetching user-specific tasks:", error);
       }
     },
   }))

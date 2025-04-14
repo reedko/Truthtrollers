@@ -36,7 +36,6 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
 
-  const { fetchAuthors, fetchPublishers } = useTaskStore.getState();
   const authors = useTaskStore(
     useShallow((state) => state.authors?.[task.content_id] || [])
   );
