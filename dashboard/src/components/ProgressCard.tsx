@@ -23,7 +23,7 @@ const ProgressCard: React.FC<ProgressCardProps> = ({
 }) => {
   return (
     <Box
-      bg={"teal"}
+      bg="stat2Gradient"
       borderRadius="lg"
       boxShadow="2xl"
       p={5}

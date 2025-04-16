@@ -1,8 +1,15 @@
 // src/pages/TaskPage.tsx
 import React, { useEffect, useRef } from "react";
-import { Grid, GridItem, Show, Heading, Text, Button } from "@chakra-ui/react";
+import {
+  Grid,
+  GridItem,
+  Heading,
+  Text,
+  Button,
+  Box,
+  VStack,
+} from "@chakra-ui/react";
 import TaskGrid from "../components/TaskGrid";
-import TopicList from "../components/TopicList";
 import { useShallow } from "zustand/react/shallow";
 import { useTaskStore } from "../store/useTaskStore";
 import { useLocation } from "react-router-dom";
@@ -24,46 +31,25 @@ export const TaskPage: React.FC = () => {
     }
   }, [content.length, fetchTasks]);
 
-  useEffect(() => {
-    console.log("🧠 Zustand filteredTasks in TaskPage:", content);
-    console.log("📦 Number of tasks loaded:", content.length);
-  }, [content]);
-
   return (
-    <Grid
-      templateAreas={{
-        base: `"main"`,
-        lg: `"aside main"`,
-      }}
-      templateColumns={{
-        base: "2fr",
-        lg: "200px 2fr",
-      }}
-      gap={4}
-    >
-      <Show above="lg">
-        <GridItem area="aside" paddingX={5}>
-          <TopicList />
-        </GridItem>
-      </Show>
-      <GridItem area="main" paddingLeft={20}>
-        <Heading size="lg" textAlign="left" paddingBottom={14}>
+    <Box p={4}>
+      <VStack align="start" spacing={4}>
+        <Heading size="lg" color="teal.300">
           Active Tasks
         </Heading>
+
         {content.length === 0 ? (
-          <Text>No content match the selected criteria.</Text>
+          <Text>No content matches the selected criteria.</Text>
         ) : (
           <>
-            {/* Pass target redirect path here */}
             <TaskGrid content={content} redirectTo={redirectTo} />
-
-            <Button mt={4} onClick={() => loadMoreTasks()}>
+            <Button mt={4} onClick={() => loadMoreTasks()} colorScheme="teal">
               Load More Tasks
             </Button>
           </>
         )}
-      </GridItem>
-    </Grid>
+      </VStack>
+    </Box>
   );
 };
 

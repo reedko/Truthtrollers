@@ -98,7 +98,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
     <Center>
       <Box
         ref={cardRef}
-        bg={isAssignOpen || isReferenceModalOpen ? "blue.200" : "teal"}
+        bg={isAssignOpen || isReferenceModalOpen ? "blue.200" : "stat2Gradient"}
         borderWidth="1px"
         borderRadius="lg"
         overflow="hidden"
