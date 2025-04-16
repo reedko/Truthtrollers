@@ -5,7 +5,7 @@ import { useTaskStore } from "../store/useTaskStore";
 import { Claim } from "../../../shared/entities/types";
 import ClaimModal from "./modals/ClaimModal";
 import ClaimEvaluationModal from "./modals/ClaimEvaluationModal";
-import MicroTaskCard from "./MicroTaskCard";
+import MicroClaimCard from "./MicroClaimCard";
 
 const ClaimBoard: React.FC = () => {
   const allClaims = useTaskStore((s) => s.claimsByTask);
@@ -52,10 +52,10 @@ const ClaimBoard: React.FC = () => {
               <Box
                 height="200px"
                 width="220px"
-                bg="gray.800"
-                borderRadius="md"
+                bg="stackGradient"
+                borderRadius="xl"
                 p={3}
-                boxShadow="md"
+                boxShadow="dark-lg"
                 position="sticky"
                 top={0}
                 zIndex={1}
@@ -63,12 +63,14 @@ const ClaimBoard: React.FC = () => {
                 <Text
                   fontSize="sm"
                   fontWeight="bold"
-                  color="teal.300"
+                  color="teal.100"
                   noOfLines={4}
+                  lineHeight="short"
                 >
                   {task.content_name}
                 </Text>
               </Box>
+
               {claims.map((claim) => {
                 const refs = claimReferences[claim.claim_id] || [];
                 const isEvaluated = refs.length > 0;
@@ -81,7 +83,7 @@ const ClaimBoard: React.FC = () => {
                     overflow="auto"
                     flexShrink={0}
                   >
-                    <MicroTaskCard
+                    <MicroClaimCard
                       title={isEvaluated ? "✅ Evaluated" : "❗ Unevaluated"}
                       description={claim.claim_text}
                       status={isEvaluated ? "complete" : "pending"}

@@ -3,7 +3,7 @@ import Layout from "./pages/Layout";
 import ErrorPage from "./pages/ErrorPage";
 import { TaskPage } from "./pages/TaskPage";
 import TaskDetail from "./pages/TaskDetail";
-import Dashboard from "./components/Dashboard";
+import VisionDashboard from "./components/Dashboard";
 import ForgotPassword from "./components/ForgotPassword";
 import Login from "./components/Login";
 import Register from "./components/Register";
@@ -12,15 +12,16 @@ import TestCardPage from "./pages/TestCardPage";
 import WorkspacePage from "./pages/WorkspacePage";
 import MoleculeMapPage from "./pages/MoleculeMapPage";
 import DiscussionPage from "./pages/DiscussionPage";
+import VisionLayout from "./layout/VisionLayout";
 
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Layout />,
+    element: <VisionLayout />,
     errorElement: <ErrorPage />,
     children: [
       { index: true, element: <Login /> },
-      { path: "/dashboard", element: <Dashboard /> },
+      { path: "/dashboard", element: <VisionDashboard /> },
       { path: "/tasks", element: <TaskPage /> }, // TaskPage pulls data from the store
       { path: "/tasks/:taskId", element: <TaskDetail /> }, // TaskDetail also uses the store
       { path: "/forgot-password", element: <ForgotPassword /> },

@@ -6,7 +6,7 @@ import {
   CircularProgressbarWithChildren,
   buildStyles,
 } from "react-circular-progressbar";
-import { steampunkTealTheme } from "./themes/steampunkTealTheme";
+import { tealGaugeTheme } from "./themes/tealGaugeTheme";
 
 interface MiniVoteArcGaugeProps {
   label: string;
@@ -54,7 +54,7 @@ const MiniVoteArcGauge: React.FC<MiniVoteArcGaugeProps> = ({
         })}
       >
         <Box mt={-1} textAlign="center">
-          <Text fontSize="xs" color={steampunkTealTheme.colors.parchment}>
+          <Text fontSize="xs" color={tealGaugeTheme.colors.parchment}>
             {label}
           </Text>
           <Text fontSize="lg" fontWeight="bold" color={color}>

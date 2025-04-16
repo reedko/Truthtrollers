@@ -30,7 +30,7 @@ const NavBar = () => {
   return (
     <Box>
       {/* Top-Level Navigation */}
-      <Box as="nav" bg="teal.600" p={3} color="white">
+      <Box as="nav" p={3} color="white">
         <HStack spacing={6}>
           <Link as={RouterLink} to="/tasks">
             Tasks
@@ -51,14 +51,7 @@ const NavBar = () => {
       </Box>
 
       {/* Search Bar & Logo Row */}
-      <Flex
-        align="center"
-        p={3}
-        // bg="gray.100"
-        boxShadow="sm"
-        width="100%"
-        wrap="wrap"
-      >
+      <Flex align="center" p={3} boxShadow="sm" width="100%" wrap="wrap">
         <RouterLink to="/">
           <Image
             src={`${API_BASE_URL}/assets/ttlogo11.png`}

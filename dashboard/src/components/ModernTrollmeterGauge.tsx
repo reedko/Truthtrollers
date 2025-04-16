@@ -2,7 +2,7 @@
 import React from "react";
 import { Box, Text, Center } from "@chakra-ui/react";
 import ReactSpeedometer from "react-d3-speedometer";
-import { steampunkTealTheme } from "./themes/steampunkTealTheme";
+import { tealGaugeTheme } from "./themes/tealGaugeTheme";
 
 const ModernTrollmeterGauge: React.FC<{
   score: number;
@@ -36,7 +36,7 @@ const ModernTrollmeterGauge: React.FC<{
         currentValueText={`${percent}% crowd support`}
         valueTextFontSize="18px"
         height={200}
-        customSegmentLabels={steampunkTealTheme.segmentLabels}
+        customSegmentLabels={tealGaugeTheme.segmentLabels}
       />
       <Center mt={2}>
         <Text fontSize="sm" color="gray.400">

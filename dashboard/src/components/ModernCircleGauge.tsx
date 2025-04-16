@@ -3,36 +3,37 @@ import {
   CircularProgressbarWithChildren,
   buildStyles,
 } from "react-circular-progressbar";
-import { tealGaugeTheme } from "./themes/tealGaugeTheme";
 import { keyframes } from "@emotion/react";
 import React, { useEffect, useState } from "react";
+import { tealGaugeTheme } from "./themes/tealGaugeTheme";
+import "react-circular-progressbar/dist/styles.css";
 
 const pulse = keyframes`
   0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 8px; }
   50% { transform: translateX(-50%) scale(1.3); box-shadow: 0 0 15px; }
   100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 8px; }
 `;
-interface TruthGaugeProps {
+
+interface GlowGaugeProps {
   score: number; // -1 to 1
   label?: string;
-  size?: { w?: string | number; h?: string | number }; // ✅ new
+  size?: { w?: string | number; h?: string | number };
   normalize?: boolean;
 }
 
-const TruthGauge: React.FC<TruthGaugeProps> = ({
+const GlowGauge: React.FC<GlowGaugeProps> = ({
   score,
   label = "Consensus",
-  size,
+  size = { w: 220, h: 180 },
   normalize = false,
 }) => {
   const normalizedToAll = ((score + 1) / 2) * 100;
-  const [animatedValue, setAnimatedValue] = useState(0);
   const normalizedToPositive = (score + 1) * 100 - 100;
   const normalized = normalize ? normalizedToPositive : normalizedToAll;
+  const [animatedValue, setAnimatedValue] = useState(0);
+
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      setAnimatedValue(normalized);
-    }, 100); // delay to trigger animation
+    const timeout = setTimeout(() => setAnimatedValue(normalized), 100);
     return () => clearTimeout(timeout);
   }, [normalized]);
 
@@ -49,35 +50,34 @@ const TruthGauge: React.FC<TruthGaugeProps> = ({
 
   return (
     <Box
-      w={size?.w || "260px"}
-      h={size?.h || "140px"}
+      w={size.w}
+      h={size.h}
       position="relative"
-      //bg="stackGradient"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      bg="transparent"
+      zIndex={1} // ✅ makes sure it's above any blending layer
+      overflow="visible" // ✅ helps ensure SVG isn't clipped
+      style={{ pointerEvents: "none" }} // just in case
     >
       <CircularProgressbarWithChildren
         value={animatedValue}
         maxValue={100}
-        circleRatio={0.5}
+        circleRatio={1}
         styles={buildStyles({
-          rotation: 0.75,
-          strokeLinecap: "butt",
+          rotation: 0,
+          strokeLinecap: "round",
           trailColor: "#222",
           pathColor: activeColor,
           pathTransitionDuration: 1.5,
-          pathTransition: "stroke-dashoffset 1.5s ease-in-out",
         })}
       >
-        <Box
-          mt={size?.h ? (size.h === 120 ? -20 : -12) : -20}
-          mb={size?.h ? (size.h === 120 ? 5 : 3) : 5}
-          textAlign="center"
-        >
+        <Box textAlign="center">
           <Text fontSize="2xl" fontWeight="bold" color={activeColor}>
-            {(score * 100).toFixed(0)}%
+            {Math.round(score * 100)}%
           </Text>
-        </Box>
-        <Box mt={-3} textAlign="center">
-          <Text fontSize="sm" color={tealGaugeTheme.colors.parchment}>
+          <Text fontSize="sm" color="gray.300">
             {label}
           </Text>
         </Box>
@@ -107,7 +107,6 @@ const TruthGauge: React.FC<TruthGaugeProps> = ({
             TRUE
           </Text>
 
-          {/* Ticks with active highlight */}
           {Array.from({ length: tickCount }, (_, i) => {
             const tickValue = i * tickSpacing;
             const isClosest =
@@ -143,4 +142,4 @@ const TruthGauge: React.FC<TruthGaugeProps> = ({
   );
 };
 
-export default TruthGauge;
+export default GlowGauge;

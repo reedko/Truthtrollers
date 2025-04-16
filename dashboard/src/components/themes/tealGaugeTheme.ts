@@ -1,8 +1,8 @@
-// src/theme/steampunkTealTheme.ts
+// src/theme/tealGaugeTheme.ts
 //import { CustomSegmentLabelPosition } from "react-d3-speedometer";
 const API_BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
 
-export const steampunkTealTheme = {
+export const tealGaugeTheme = {
   colors: {
     background: "#2F2F2F",
     brass: "#B08D57",
@@ -37,97 +37,36 @@ export const steampunkTealTheme = {
   segmentLabels: [
     {
       text: "FALSE",
-      position: CustomSegmentLabelPosition.Inside,
+      // position: CustomSegmentLabelPosition.Inside,
       color: "#fff",
       fontSize: "14px",
     },
     {
       text: "Sketchy",
-      position: CustomSegmentLabelPosition.Inside,
+      // position: CustomSegmentLabelPosition.Inside,
       color: "#fff",
       fontSize: "11px",
     },
     {
       text: "Mixed",
-      position: CustomSegmentLabelPosition.Inside,
+      // position: CustomSegmentLabelPosition.Inside,
       color: "#333",
       fontSize: "11px",
     },
     {
       text: "Truthy",
-      position: CustomSegmentLabelPosition.Inside,
+      // position: CustomSegmentLabelPosition.Inside,
       color: "#002",
       fontSize: "11px",
     },
     {
       text: "TRUE",
-      position: CustomSegmentLabelPosition.Inside,
+      //position: CustomSegmentLabelPosition.Inside,
       color: "#000",
       fontSize: "14px",
     },
   ],
-  segmentLabels2: [
-    {
-      text: "Debunked",
-      position: CustomSegmentLabelPosition.Inside,
-      color: "#fff",
-      fontSize: "5px",
-    },
-    {
-      text: "Sketchy",
-      position: CustomSegmentLabelPosition.Inside,
-      color: "#fff",
-      fontSize: "5px",
-    },
-    {
-      text: "Mixed",
-      position: CustomSegmentLabelPosition.Inside,
-      color: "#333",
-      fontSize: "5px",
-    },
-    {
-      text: "Truthy",
-      position: CustomSegmentLabelPosition.Inside,
-      color: "#002",
-      fontSize: "5px",
-    },
-    {
-      text: "Confirmed",
-      position: CustomSegmentLabelPosition.Inside,
-      color: "#000",
-      fontSize: "5px",
-    },
-    {
-      text: "Debunked",
-      position: CustomSegmentLabelPosition.Inside,
-      color: "#fff",
-      fontSize: "5px",
-    },
-    {
-      text: "Sketchy",
-      position: CustomSegmentLabelPosition.Inside,
-      color: "#fff",
-      fontSize: "5px",
-    },
-    {
-      text: "Mixed",
-      position: CustomSegmentLabelPosition.Inside,
-      color: "#333",
-      fontSize: "5px",
-    },
-    {
-      text: "Truthy",
-      position: CustomSegmentLabelPosition.Inside,
-      color: "#002",
-      fontSize: "5px",
-    },
-    {
-      text: "Confirmed",
-      position: CustomSegmentLabelPosition.Inside,
-      color: "#000",
-      fontSize: "5px",
-    },
-  ],
+
   textures: {
     backgroundImage: `${API_BASE_URL}/assets/images/textures/bronze-plate-texture.png`, // ensure it's in your public folder
     frameOverlay: `${API_BASE_URL}/assets/images/textures/gear-frame2b.png`,

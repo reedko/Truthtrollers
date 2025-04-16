@@ -1,68 +1,72 @@
 // src/components/MicroTaskCard.tsx
-import { Box, Text, Badge, Button, VStack, HStack } from "@chakra-ui/react";
+import {
+  Box,
+  Text,
+  Image,
+  Button,
+  VStack,
+  Progress,
+  useColorModeValue,
+  Center,
+} from "@chakra-ui/react";
 import { Task } from "../../../shared/entities/types";
-import { useNavigate } from "react-router-dom";
+const API_BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
 
 interface MicroTaskCardProps {
-  title: string;
-  description: string;
-  status?: "pending" | "complete" | "urgent";
-  relatedTask?: Task;
-  actionLabel?: string;
-  actionLink?: string;
-  onClick?: () => void;
+  task: Task;
+  onSelect: (task: Task) => void;
 }
 
-const statusColors = {
-  pending: "yellow",
-  complete: "green",
-  urgent: "red",
-};
-
-const MicroTaskCard: React.FC<MicroTaskCardProps> = ({
-  title,
-  description,
-  status = "pending",
-  relatedTask,
-  actionLabel = "Open",
-  actionLink,
-}) => {
-  const navigate = useNavigate();
-
-  const handleClick = () => {
-    if (actionLink) navigate(actionLink);
-  };
+const MicroTaskCard: React.FC<MicroTaskCardProps> = ({ task, onSelect }) => {
+  const bg = useColorModeValue("gray.100", "gray.800");
 
   return (
     <Box
+      w="175px"
+      h="175px"
+      bg={bg}
+      borderRadius="xl"
+      p={2}
+      boxShadow="md"
       border="1px solid"
       borderColor="gray.600"
-      borderRadius="md"
-      p={2}
-      bg="gray.800"
-      color="white"
-      shadow="md"
+      display="flex"
+      flexDirection="column"
+      justifyContent="space-between"
     >
-      <VStack align="start" spacing={1}>
-        <HStack justifyContent="space-between" w="100%">
-          <Text fontWeight="bold" colorScheme="whiteAlpha.800">
-            {title}
-          </Text>
-          <Badge colorScheme={statusColors[status]}>{status}</Badge>
-        </HStack>
-        <Text fontSize="sm">{description}</Text>
+      <VStack spacing={1} align="center">
+        <Text fontSize="xs" fontWeight="bold" noOfLines={2}>
+          {task.content_name}
+        </Text>
 
-        {relatedTask && (
-          <Text fontSize="xs" color="gray.400">
-            Task: {relatedTask.content_name}
-          </Text>
-        )}
+        <Image
+          src={`${API_BASE_URL}/${task.thumbnail}`}
+          alt={task.content_name}
+          boxSize="80px"
+          borderRadius="md"
+          objectFit="cover"
+        />
 
-        {actionLink && (
-          <Button size="sm" colorScheme="teal" onClick={handleClick}>
-            {actionLabel}
-          </Button>
-        )}
+        <Progress
+          size="xs"
+          value={
+            task.progress === "Completed"
+              ? 100
+              : task.progress === "Started"
+              ? 50
+              : 0
+          }
+          colorScheme="teal"
+          w="full"
+        />
+        <Button
+          size="xs"
+          colorScheme="teal"
+          variant="solid"
+          onClick={() => onSelect(task)}
+        >
+          Select
+        </Button>
       </VStack>
     </Box>
   );
