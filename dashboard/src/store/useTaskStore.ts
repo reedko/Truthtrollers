@@ -42,7 +42,7 @@ export interface TaskStoreState {
   content_authors: TaskAuthor[];
   content_relations: TaskReference[];
   auth_references: AuthReference[];
-  selectedTaskId: number;
+  selectedTaskId: number | null;
   currentPage: number;
   selectedTask: Task | null;
   claimsByTask: {
@@ -54,7 +54,7 @@ export interface TaskStoreState {
   loadMoreTasks: () => Promise<void>;
   setSearchQuery: (query: string) => void;
   setSelectedTopic: (topicName: string | undefined) => void;
-  setSelectedTask: (input: number | Task) => void;
+  setSelectedTask: (input: number | Task | null) => void;
 
   fetchTasks: () => Promise<void>;
   fetchUsers: () => Promise<void>;
@@ -95,14 +95,15 @@ export const useTaskStore = create<TaskStoreState>()(
     selectedTaskId: 0,
     currentPage: 0,
     claimsByTask: {},
-    setSelectedTask: (input: Task | number) => {
-      if (typeof input === "number") {
+    setSelectedTask: (input: Task | number | null) => {
+      if (input === null) {
+        set({ selectedTask: null, selectedTaskId: null });
+      } else if (typeof input === "number") {
         set({ selectedTaskId: input });
       } else {
         set({ selectedTask: input, selectedTaskId: input.content_id });
       }
     },
-
     fetchTasks: async () => {
       const limit = 100;
       const { currentPage } = get();

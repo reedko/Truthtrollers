@@ -4,7 +4,7 @@ import React from "react";
 import { Box, VStack, HStack, Text, Center } from "@chakra-ui/react";
 import TruthGauge from "./ModernArcGauge";
 import MiniVoteArcGauge from "./MiniVoteArcGauge";
-import { steampunkTealTheme } from "./themes/steampunkTealTheme";
+import { tealGaugeTheme } from "./themes/tealGaugeTheme";
 
 interface BoolCardProps {
   verimeterScore: number;
@@ -45,7 +45,7 @@ const BoolCard: React.FC<BoolCardProps> = ({
           <Text
             fontSize="sm"
             fontWeight="semibold"
-            color={steampunkTealTheme.colors.parchment}
+            color={tealGaugeTheme.colors.parchment}
             mb={1}
             textAlign="center"
             background="whiteAlpha.200"
@@ -68,7 +68,7 @@ const BoolCard: React.FC<BoolCardProps> = ({
           <Text
             fontSize="sm"
             fontWeight="semibold"
-            color={steampunkTealTheme.colors.parchment}
+            color={tealGaugeTheme.colors.parchment}
             mb={1}
             textAlign="center"
             background="whiteAlpha.200"
@@ -92,14 +92,14 @@ const BoolCard: React.FC<BoolCardProps> = ({
             label="Agree"
             value={pro}
             total={totalVotes}
-            color={steampunkTealTheme.colors.green}
+            color={tealGaugeTheme.colors.green}
             size={{ w: 90, h: 70 }}
           />
           <MiniVoteArcGauge
             label="Disagree"
             value={con}
             total={totalVotes}
-            color={steampunkTealTheme.colors.red}
+            color={tealGaugeTheme.colors.red}
             size={{ w: 90, h: 70 }}
           />
         </HStack>

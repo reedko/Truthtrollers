@@ -4,7 +4,7 @@ import React from "react";
 import { Box, VStack, HStack, Text, Center } from "@chakra-ui/react";
 import TruthGauge from "./ModernArcGauge";
 import MiniVoteArcGauge from "./MiniVoteArcGauge";
-import { steampunkTealTheme } from "./themes/steampunkTealTheme";
+import { tealGaugeTheme } from "./themes/tealGaugeTheme";
 
 interface ProgressCardProps {
   ProgressScore: number;
@@ -45,7 +45,7 @@ const ProgressCard: React.FC<ProgressCardProps> = ({
           <Text
             fontSize="sm"
             fontWeight="semibold"
-            color={steampunkTealTheme.colors.parchment}
+            color={tealGaugeTheme.colors.parchment}
             mb={1}
             textAlign="center"
             background="whiteAlpha.200"
@@ -68,7 +68,7 @@ const ProgressCard: React.FC<ProgressCardProps> = ({
           <Text
             fontSize="sm"
             fontWeight="semibold"
-            color={steampunkTealTheme.colors.parchment}
+            color={tealGaugeTheme.colors.parchment}
             mb={1}
             textAlign="center"
             background="whiteAlpha.200"
@@ -86,14 +86,14 @@ const ProgressCard: React.FC<ProgressCardProps> = ({
               label="Total Claims"
               value={totalClaims}
               total={totalClaims}
-              color={steampunkTealTheme.colors.green}
+              color={tealGaugeTheme.colors.green}
               size={{ w: 90, h: 70 }}
             />
             <MiniVoteArcGauge
               label="Total References"
               value={totalReferences}
               total={totalReferences}
-              color={steampunkTealTheme.colors.red}
+              color={tealGaugeTheme.colors.red}
               size={{ w: 90, h: 70 }}
             />
           </HStack>
@@ -102,14 +102,14 @@ const ProgressCard: React.FC<ProgressCardProps> = ({
               label="Verified Claims"
               value={verifiedClaims}
               total={totalClaims}
-              color={steampunkTealTheme.colors.green}
+              color={tealGaugeTheme.colors.green}
               size={{ w: 90, h: 70 }}
             />
             <MiniVoteArcGauge
               label="Verified References"
               value={verifiedReferences}
               total={totalReferences}
-              color={steampunkTealTheme.colors.red}
+              color={tealGaugeTheme.colors.red}
               size={{ w: 90, h: 70 }}
             />
           </HStack>

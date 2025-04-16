@@ -1,6 +1,6 @@
 // src/components/DashboardSection.tsx
 import { Box, Heading, SimpleGrid } from "@chakra-ui/react";
-import MicroTaskCard from "./MicroTaskCard";
+import MicroClaimCard from "./MicroClaimCard";
 import { Task } from "../../../shared/entities/types";
 
 interface DashboardSectionProps {
@@ -26,7 +26,7 @@ const DashboardSection: React.FC<DashboardSectionProps> = ({
       </Heading>
       <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={4}>
         {tasks.map((t) => (
-          <MicroTaskCard
+          <MicroClaimCard
             key={t.id}
             title={t.title}
             description={t.description}
