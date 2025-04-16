@@ -128,7 +128,7 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
     <Center>
       <Box
         ref={cardRef}
-        bg="teal.500"
+        bg="stat2Gradient"
         borderWidth="1px"
         borderRadius="lg"
         boxShadow="md"

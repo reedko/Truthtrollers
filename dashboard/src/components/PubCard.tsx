@@ -183,7 +183,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
     <Center>
       <Box
         ref={cardRef}
-        bg="teal.500"
+        bg="stat2Gradient"
         borderWidth="1px"
         borderRadius="lg"
         boxShadow="md"

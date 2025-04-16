@@ -46,11 +46,11 @@ const TopicList: React.FC = () => {
   }, []);
 
   return (
-    <VStack align="stretch" spacing={3} width="100%" maxWidth="300px">
-      <Heading size="lg" marginBottom={3}>
+    <VStack align="stretch" spacing={2} width="100%" maxWidth="300px">
+      <Heading size="md" marginBottom={2}>
         Topics
       </Heading>
-      <List spacing={3}>
+      <List spacing={2}>
         <ListItem>
           <Button
             onClick={() => setSelectedTopic(undefined)}
@@ -67,13 +67,15 @@ const TopicList: React.FC = () => {
                 src={`${API_BASE_URL}/${topic.thumbnail}`}
                 alt={`${topic.topic_name} Thumbnail`}
                 borderRadius="md"
-                boxSize="50px"
+                boxSize="40px"
                 objectFit="cover"
                 backgroundColor={"teal.50"}
               />
               <Button
                 justifyContent="start"
                 textAlign="left"
+                whiteSpace="normal" // ✅ allow wrapping
+                wordBreak="break-word" // ✅ break long words if needed
                 fontWeight={
                   topic.topic_name === selectedTopic ? "bold" : "normal"
                 }
@@ -83,11 +85,12 @@ const TopicList: React.FC = () => {
                     setSelectedTopic(topic.topic_name);
                   }
                 }}
-                fontSize="lg"
+                size="sm"
+                fontSize="sm"
                 variant="ghost"
                 flex="1"
-                minWidth="200px"
-                padding={0}
+                minWidth="0"
+                p={2}
                 _hover={{ backgroundColor: "gray.400" }}
               >
                 {topic.topic_name.toUpperCase()}

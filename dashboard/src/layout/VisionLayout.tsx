@@ -1,14 +1,18 @@
 import { Box, useColorModeValue } from "@chakra-ui/react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import NavBar from "../components/NavBar"; // Your custom navbar
 import { VStack, HStack, Text } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 import { FiHome, FiBarChart2 } from "react-icons/fi";
+// inside VisionLayout.tsx
+import TopicList from "../components/TopicList"; // ✅ Import it
 
 const SIDEBAR_WIDTH = "220px";
 const NAVBAR_HEIGHT = "160px"; // match your actual NavBar height
 
 const Sidebar = () => {
+  const location = useLocation(); // 👀 Get current path
+  const isTaskPage = location.pathname === "/tasks";
   return (
     <VStack
       as="nav"
@@ -54,6 +58,12 @@ const Sidebar = () => {
           </HStack>
         </Link>
       </VStack>
+      {/* 🫣 Only show this on /tasks */}
+      {isTaskPage && (
+        <Box overflowY="auto" flex="1" w="full" mt={4} pr={1}>
+          <TopicList />
+        </Box>
+      )}
     </VStack>
   );
 };
@@ -75,6 +85,8 @@ const VisionLayout = () => {
         zIndex={90}
         borderBottom="1px solid"
         borderColor="gray.700"
+        backdropFilter="blur(12px)" // ✅ adds glass blur2, 0, 36,
+        background="linear-gradient(to bottom, rgba(2, 0, 36, 0.8), rgba(94, 234, 212, 0.1))" // ✅ darker transparent overlay
       >
         <NavBar />
       </Box>

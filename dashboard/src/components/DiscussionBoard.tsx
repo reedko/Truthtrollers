@@ -55,7 +55,7 @@ const DiscussionBoard: React.FC<DiscussionBoardProps> = ({ contentId }) => {
   const conEntries = filteredEntries.filter((e) => e.side === "con");
 
   return (
-    <Box mt={6} bg={"gray.900"}>
+    <Box mt={6} bg="stat2Gradient">
       <Tabs
         colorScheme="blue"
         size="sm"
