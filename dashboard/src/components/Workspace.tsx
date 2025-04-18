@@ -27,6 +27,7 @@ import ReferenceClaimsModal from "./modals/ReferenceClaimsModal";
 import ClaimEvaluationModal from "./modals/ClaimEvaluationModal";
 import RelationshipMap, { ClaimLink } from "./RelationshipMap";
 import { fetchClaimById } from "../services/useDashboardAPI"; // or wherever
+import { fetchClaimsAndLinkedReferencesForTask } from "../services/useDashboardAPI";
 
 interface WorkspaceProps {
   contentId: number;
@@ -34,6 +35,8 @@ interface WorkspaceProps {
 }
 const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
   const [claims, setClaims] = useState<Claim[]>([]);
+  const [claimLinks, setClaimLinks] = useState<ClaimLink[]>([]);
+  const [refreshLinks, setRefreshLinks] = useState(false);
   const [references, setReferences] = useState<ReferenceWithClaims[]>([]);
   const [refreshReferences, setRefreshReferences] = useState(false);
   const [sourceClaim, setSourceClaim] = useState<Pick<
@@ -82,6 +85,32 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
       setComputedHeight(fullHeight);
     }
   };
+
+  useEffect(() => {
+    fetchClaimsAndLinkedReferencesForTask(contentId)
+      .then((data) => {
+        // Map the API results to the ClaimLink shape expected by the component.
+        const formattedLinks: ClaimLink[] = data.map((row) => ({
+          id: row.id.toString(),
+          claimId: row.left_claim_id, // from content_claims.target_claim_id
+          referenceId: row.right_reference_id, // from claims_references.reference_content_id
+          sourceClaimId: row.source_claim_id,
+          relation:
+            row.relationship === "supports"
+              ? "support"
+              : row.relationship === "refutes"
+              ? "refute"
+              : "support", // fallback for "related"
+          confidence: row.confidence || 0,
+          notes: row.notes || "",
+        }));
+        setClaimLinks(formattedLinks);
+      })
+      .catch((error) => {
+        console.error("Error fetching claim links:", error);
+      });
+  }, [contentId, refreshLinks]);
+
   useEffect(() => {
     fetchClaimsForTask(contentId).then(setClaims);
   }, [contentId]);
@@ -232,6 +261,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
             leftX={leftX} // 👈 You can adjust this to match TaskClaims column
             rightX={rightX} // 👈 Adjust to align with ReferenceList column
             onLineClick={handleLineClick}
+            claimLinks={claimLinks}
           />
         </Box>
         <Box ref={rightRef}>
@@ -272,6 +302,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
         targetClaim={targetClaim}
         isReadOnly={readOnly}
         claimLink={selectedClaimLink}
+        onLinkCreated={() => setRefreshLinks((prev) => !prev)}
       />
       {verifyingClaim && (
         <ClaimEvaluationModal
