@@ -32,6 +32,7 @@ interface ClaimLinkModalProps {
   targetClaim: Claim | null;
   isReadOnly?: boolean;
   claimLink?: ClaimLink | null;
+  onLinkCreated: ClaimLink | null;
 }
 
 const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
@@ -41,6 +42,7 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
   targetClaim,
   isReadOnly,
   claimLink,
+  onLinkCreated,
 }) => {
   const toast = useToast();
   const [supportLevel, setSupportLevel] = useState(0);
@@ -58,6 +60,17 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
         support_level: supportLevel,
         notes: notes,
       });
+      if (response.success) {
+        const newLink = {
+          sourceClaimId: sourceClaim?.claim_id ?? 0,
+          claimId: targetClaim?.claim_id ?? 0,
+          relationship,
+          support_level: supportLevel,
+          notes,
+          id: response.newLinkId || Date.now(),
+        };
+        onLinkCreated?.(newLink);
+      
       toast({
         title: "Claim link created",
         description: `Link: ${relationship} (${supportLevel})`,

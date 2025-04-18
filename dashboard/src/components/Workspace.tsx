@@ -1,5 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Box, Grid, Heading, useColorModeValue } from "@chakra-ui/react";
+import {
+  Box,
+  Card,
+  CardBody,
+  Grid,
+  Heading,
+  useColorModeValue,
+} from "@chakra-ui/react";
 import {
   fetchClaimsForTask,
   fetchReferencesWithClaimsForTask,
@@ -33,6 +40,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
     Claim,
     "claim_id" | "claim_text"
   > | null>(null);
+
   const [targetClaim, setTargetClaim] = useState<Claim | null>(null);
   const [draggingClaim, setDraggingClaim] = useState<Pick<
     Claim,

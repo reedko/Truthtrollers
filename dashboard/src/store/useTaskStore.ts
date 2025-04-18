@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { devtools } from "zustand/middleware";
+import { devtools, persist } from "zustand/middleware";
 import {
   Task,
   User,
@@ -43,85 +43,94 @@ export interface TaskStoreState {
   content_relations: TaskReference[];
   auth_references: AuthReference[];
   selectedTaskId: number | null;
-  currentPage: number;
   selectedTask: Task | null;
-  claimsByTask: {
-    [taskId: number]: Claim[];
-  };
-  fetchTasksForUser: (userId: number) => Promise<void>;
-  fetchClaims: (taskId: number) => Promise<void>;
+  selectedRedirect: string;
+  currentPage: number;
+  claimsByTask: { [taskId: number]: Claim[] };
 
-  loadMoreTasks: () => Promise<void>;
-  setSearchQuery: (query: string) => void;
-  setSelectedTopic: (topicName: string | undefined) => void;
-  setSelectedTask: (input: number | Task | null) => void;
-
+  setSelectedTask: (input: Task | number | null) => void;
+  setRedirect: (path: string) => void;
   fetchTasks: () => Promise<void>;
+  fetchTasksForUser: (userId: number) => Promise<void>;
   fetchUsers: () => Promise<void>;
   fetchAssignedUsers: (taskId: number) => Promise<void>;
-  fetchReferences: (taskId: number) => Promise<void>;
-  fetchClaimReferences: (claimId: number) => Promise<void>;
   fetchAuthors: (taskId: number) => Promise<void>;
   fetchPublishers: (taskId: number) => Promise<void>;
+  fetchReferences: (taskId: number) => Promise<void>;
+  fetchClaims: (taskId: number) => Promise<void>;
+  fetchClaimReferences: (claimId: number) => Promise<void>;
 
   addReferenceToTask: (taskId: number, referenceId: number) => Promise<void>;
+  deleteReferenceFromTask: (
+    taskId: number,
+    referenceId: number
+  ) => Promise<void>;
   addReferenceToClaim: (
     claimId: number,
     referenceId: number,
     userId: number,
     supportLevel: number
   ) => Promise<void>;
-  deleteReferenceFromTask: (
-    taskId: number,
-    referenceId: number
-  ) => Promise<void>;
+
+  setSelectedTopic: (topicName: string | undefined) => void;
+  setSearchQuery: (query: string) => void;
+  loadMoreTasks: () => Promise<void>;
 }
 
 export const useTaskStore = create<TaskStoreState>()(
-  devtools((set, get) => ({
-    content: [],
-    filteredTasks: [],
-    selectedTopic: undefined,
-    searchQuery: "",
-    users: [],
-    references: {},
-    claimReferences: {},
-    authors: {},
-    publishers: {},
-    assignedUsers: {},
-    content_authors: [],
-    content_relations: [],
-    auth_references: [],
-    selectedTaskId: 0,
-    currentPage: 0,
-    claimsByTask: {},
-    setSelectedTask: (input: Task | number | null) => {
-      if (input === null) {
-        set({ selectedTask: null, selectedTaskId: null });
-      } else if (typeof input === "number") {
-        set({ selectedTaskId: input });
-      } else {
-        set({ selectedTask: input, selectedTaskId: input.content_id });
-      }
-    },
-    fetchTasks: async () => {
-      const limit = 100;
-      const { currentPage } = get();
+  persist(
+    devtools((set, get) => ({
+      content: [],
+      filteredTasks: [],
+      selectedTopic: undefined,
+      searchQuery: "",
+      users: [],
+      references: {},
+      claimReferences: {},
+      authors: {},
+      publishers: {},
+      assignedUsers: {},
+      content_authors: [],
+      content_relations: [],
+      auth_references: [],
+      selectedTaskId: null,
+      selectedTask: null,
+      selectedRedirect: "/dashboard",
+      currentPage: 0,
+      claimsByTask: {},
 
-      try {
-        const content = await fetchTasksAPI(currentPage + 1, limit);
+      setRedirect: (path) => {
+        set({ selectedRedirect: path });
+      },
+
+      setSelectedTask: (input) => {
+        if (input === null) {
+          set({ selectedTask: null, selectedTaskId: null });
+        } else if (typeof input === "number") {
+          const found = get().content.find((t) => t.content_id === input);
+          if (found) {
+            set({ selectedTaskId: input, selectedTask: found });
+          } else {
+            set({ selectedTaskId: input, selectedTask: null });
+          }
+        } else {
+          set({ selectedTask: input, selectedTaskId: input.content_id });
+        }
+      },
+
+      fetchTasks: async () => {
+        const { currentPage } = get();
+        const content = await fetchTasksAPI(currentPage + 1, 100);
         const authorsMap: Record<number, Author[]> = {};
         const publishersMap: Record<number, Publisher[]> = {};
 
         content.forEach((task) => {
-          authorsMap[task.content_id] =
-            typeof task.authors === "string"
-              ? JSON.parse(task.authors)
-              : task.authors || [];
-          publishersMap[task.content_id] =
-            typeof task.publishers === "string"
-              ? JSON.parse(task.publishers)
-              : task.publishers || [];
+          authorsMap[task.content_id] = Array.isArray(task.authors)
+            ? task.authors
+            : [];
+          publishersMap[task.content_id] = Array.isArray(task.publishers)
+            ? task.publishers
+            : [];
         });
 
         const combined = [...get().content, ...content];
@@ -136,206 +145,119 @@ export const useTaskStore = create<TaskStoreState>()(
           publishers: { ...get().publishers, ...publishersMap },
           currentPage: currentPage + 1,
         });
-      } catch (error) {
-        console.error("❌ Error fetching content:", error);
-      }
-    },
+      },
 
-    setSelectedTopic: (topicName) => {
-      const { content, searchQuery } = get();
-      console.log("Setting selected topic:", topicName);
-      const filteredTasks = content.filter((task) => {
-        const matchesTopic = topicName ? task.topic === topicName : true;
-        const matchesSearch = searchQuery
-          ? task.content_name.toLowerCase().includes(searchQuery.toLowerCase())
-          : true;
-        return matchesTopic && matchesSearch;
-      });
+      fetchTasksForUser: async (userId) => {
+        const content = await fetchTasksForUser(userId);
+        set({ content, filteredTasks: content });
+      },
 
-      set({ selectedTopic: topicName, filteredTasks });
-    },
+      fetchUsers: async () => {
+        const users = await fetchUsers();
+        set({ users });
+      },
 
-    setSearchQuery: (query) => {
-      const { content, selectedTopic } = get();
-      const filteredTasks = content.filter((task) => {
-        const matchesTopic = selectedTopic
-          ? task.topic === selectedTopic
-          : true;
-        const matchesSearch = query
-          ? task.content_name.toLowerCase().includes(query.toLowerCase())
-          : true;
-        return matchesTopic && matchesSearch;
-      });
-      set({ searchQuery: query, filteredTasks });
-    },
-
-    fetchUsers: async () => {
-      const users = await fetchUsers();
-      set({ users });
-    },
-
-    fetchAssignedUsers: async (taskId) => {
-      try {
-        const assignedUsers = await fetchAssignedUsers(taskId);
-        set((state) => ({
-          assignedUsers: { ...state.assignedUsers, [taskId]: assignedUsers },
+      fetchAssignedUsers: async (taskId) => {
+        const assigned = await fetchAssignedUsers(taskId);
+        set((s) => ({
+          assignedUsers: { ...s.assignedUsers, [taskId]: assigned },
         }));
-      } catch (error) {
-        console.error("❌ Error fetching assigned users:", error);
-      }
-    },
+      },
 
-    fetchReferences: async (taskId) => {
-      const references = await fetchReferencesForTask(taskId);
-      set((state) => ({
-        references: { ...state.references, [taskId]: references },
-      }));
-    },
-
-    fetchAuthors: async (taskId) => {
-      const authors = await fetchAuthors(taskId);
-      set((state) => ({
-        authors: { ...state.authors, [taskId]: authors },
-      }));
-    },
-
-    fetchPublishers: async (taskId) => {
-      const publishers = await fetchPublishers(taskId);
-      set((state) => ({
-        publishers: { ...state.publishers, [taskId]: publishers },
-      }));
-    },
-
-    fetchClaimReferences: async (claimId) => {
-      try {
-        const claimReferences = await fetchClaimReferences(claimId);
-        set((state) => ({
-          claimReferences: {
-            ...state.claimReferences,
-            [claimId]: claimReferences,
-          },
+      fetchAuthors: async (taskId) => {
+        const authors = await fetchAuthors(taskId);
+        set((s) => ({
+          authors: { ...s.authors, [taskId]: authors },
         }));
-      } catch (error) {
-        console.error("❌ Error fetching claim references:", error);
-      }
-    },
+      },
 
-    addReferenceToTask: async (taskContentId, referenceContentId) => {
-      try {
-        const currentRefs = get().references[taskContentId] || [];
+      fetchPublishers: async (taskId) => {
+        const publishers = await fetchPublishers(taskId);
+        set((s) => ({
+          publishers: { ...s.publishers, [taskId]: publishers },
+        }));
+      },
 
-        if (
-          currentRefs.some(
-            (ref) => ref.reference_content_id === referenceContentId
-          )
-        ) {
-          console.warn("⚠️ Reference already exists, skipping API call.");
-          return;
-        }
+      fetchReferences: async (taskId) => {
+        const refs = await fetchReferencesForTask(taskId);
+        set((s) => ({
+          references: { ...s.references, [taskId]: refs },
+        }));
+      },
 
-        await addReferenceToTask(taskContentId, referenceContentId);
-        console.log("✅ Reference added to task");
+      fetchClaims: async (taskId) => {
+        const claims = await fetchClaimsForTask(taskId);
+        set((s) => ({
+          claimsByTask: { ...s.claimsByTask, [taskId]: claims },
+        }));
+      },
 
-        await get().fetchReferences(taskContentId);
-      } catch (error) {
-        console.error("❌ Error adding reference to task:", error);
-      }
-    },
+      fetchClaimReferences: async (claimId) => {
+        const refs = await fetchClaimReferences(claimId);
+        set((s) => ({
+          claimReferences: { ...s.claimReferences, [claimId]: refs },
+        }));
+      },
 
-    deleteReferenceFromTask: async (taskContentId, referenceContentId) => {
-      try {
-        await deleteReferenceFromTask(taskContentId, referenceContentId);
-        console.log("✅ Reference removed from task");
+      addReferenceToTask: async (taskId, refId) => {
+        await addReferenceToTask(taskId, refId);
+        await get().fetchReferences(taskId);
+      },
 
-        await get().fetchReferences(taskContentId);
-      } catch (error) {
-        console.error("❌ Error removing reference from task:", error);
-      }
-    },
+      deleteReferenceFromTask: async (taskId, refId) => {
+        await deleteReferenceFromTask(taskId, refId);
+        await get().fetchReferences(taskId);
+      },
 
-    addReferenceToClaim: async (claimId, referenceId, userId, supportLevel) => {
-      try {
-        await addReferenceToClaim(claimId, referenceId, userId, supportLevel);
-
-        set((state) => ({
+      addReferenceToClaim: async (claimId, refId, userId, level) => {
+        await addReferenceToClaim(claimId, refId, userId, level);
+        set((s) => ({
           claimReferences: {
-            ...state.claimReferences,
+            ...s.claimReferences,
             [claimId]: [
-              ...(state.claimReferences[claimId] || []),
-              { referenceId, supportLevel },
+              ...(s.claimReferences[claimId] || []),
+              { referenceId: refId, supportLevel: level },
             ],
           },
         }));
+      },
 
-        console.log(
-          `✅ Reference added to claim ${claimId} with support level ${supportLevel}`
+      setSelectedTopic: (topic) => {
+        const filtered = get().content.filter((t) =>
+          topic ? t.topic === topic : true
         );
-      } catch (error) {
-        console.error("❌ Error adding reference to claim:", error);
-      }
-    },
+        set({ selectedTopic: topic, filteredTasks: filtered });
+      },
 
-    fetchClaims: async (taskId: number) => {
-      const claims = await fetchClaimsForTask(taskId);
-      set((state) => ({
-        claimsByTask: {
-          ...state.claimsByTask,
-          [taskId]: claims,
-        },
-      }));
-    },
+      setSearchQuery: (query) => {
+        const { content, selectedTopic } = get();
+        const filtered = content.filter((t) => {
+          return (
+            (!selectedTopic || t.topic === selectedTopic) &&
+            (!query ||
+              t.content_name.toLowerCase().includes(query.toLowerCase()))
+          );
+        });
+        set({ searchQuery: query, filteredTasks: filtered });
+      },
 
-    loadMoreTasks: async () => {
-      const { currentPage, content } = get();
-      const nextPage = currentPage + 1;
-
-      try {
-        const newTasks = await fetchTasksAPI(nextPage, 25);
-        const combined = [...content, ...newTasks];
+      loadMoreTasks: async () => {
+        const { currentPage } = get();
+        const newTasks = await fetchTasksAPI(currentPage + 1, 25);
+        const combined = [...get().content, ...newTasks];
         const deduped = Array.from(
           new Map(combined.map((t) => [t.content_id, t])).values()
         );
-
-        set({
-          content: deduped,
-          filteredTasks: deduped,
-          currentPage: nextPage,
-        });
-      } catch (error) {
-        console.error("❌ Error loading more tasks:", error);
-      }
-    },
-    fetchTasksForUser: async (userId: number) => {
-      try {
-        const tasks = await fetchTasksForUser(userId);
-        const authorsMap: Record<number, Author[]> = {};
-        const publishersMap: Record<number, Publisher[]> = {};
-
-        tasks.forEach((task) => {
-          authorsMap[task.content_id] =
-            typeof task.authors === "string"
-              ? JSON.parse(task.authors)
-              : task.authors || [];
-
-          publishersMap[task.content_id] =
-            typeof task.publishers === "string"
-              ? JSON.parse(task.publishers)
-              : task.publishers || [];
-        });
-
-        const deduped = Array.from(
-          new Map(tasks.map((t) => [t.content_id, t])).values()
-        );
-
-        set({
-          content: deduped,
-          filteredTasks: deduped,
-          authors: { ...get().authors, ...authorsMap },
-          publishers: { ...get().publishers, ...publishersMap },
-        });
-      } catch (error) {
-        console.error("❌ Error fetching user-specific tasks:", error);
-      }
-    },
-  }))
+        set({ content: deduped, currentPage: currentPage + 1 });
+      },
+    })),
+    {
+      name: "task-store",
+      partialize: (state) => ({
+        selectedTaskId: state.selectedTaskId,
+        selectedTask: state.selectedTask,
+        selectedRedirect: state.selectedRedirect,
+      }),
+    }
+  )
 );

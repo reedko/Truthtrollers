@@ -1,4 +1,4 @@
-import { Box, Heading } from "@chakra-ui/react";
+import { Box, Card, CardBody, Heading } from "@chakra-ui/react";
 import { useNavigate } from "react-router-dom";
 import { useTaskStore } from "../store/useTaskStore";
 import { useEffect } from "react";
@@ -19,8 +19,12 @@ const DiscussionPage = () => {
 
   return (
     <>
-      <UnifiedHeader />
       <Box p={4}>
+        <Card mb={6} mt={2}>
+          <CardBody>
+            <UnifiedHeader />
+          </CardBody>
+        </Card>
         <Heading size="md" mb={4}>
           Community Discussion
         </Heading>

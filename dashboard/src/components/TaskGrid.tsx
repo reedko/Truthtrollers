@@ -12,12 +12,7 @@ const TaskGrid: React.FC<TaskGridProps> = memo(({ content, redirectTo }) => {
   return (
     <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
       {content.map((task) => (
-        <TaskCard
-          key={task.content_id}
-          task={task}
-          useStore={false}
-          redirectTo={redirectTo}
-        />
+        <TaskCard key={task.content_id} task={task} useStore={false} />
       ))}
     </SimpleGrid>
   );
