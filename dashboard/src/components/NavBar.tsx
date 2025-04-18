@@ -20,11 +20,19 @@ const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
 
 const NavBar = () => {
-  const setSearchQuery = useTaskStore((state) => state.setSearchQuery);
-  const selectedTask = useTaskStore((state) => state.selectedTask); // ✅ Use Zustand store
+  const setSearchQuery = useTaskStore((s) => s.setSearchQuery);
+  const selectedTaskId = useTaskStore((s) => s.selectedTaskId);
+  const setRedirect = useTaskStore((s) => s.setRedirect);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
+  };
+
+  // Helper to conditionally set redirect before navigating
+  const handleNavClick = (target: string) => {
+    if (!selectedTaskId) {
+      setRedirect(target);
+    }
   };
 
   return (
@@ -35,16 +43,32 @@ const NavBar = () => {
           <Link as={RouterLink} to="/tasks">
             Tasks
           </Link>
+
           <Link as={RouterLink} to="/dashboard">
             Dashboard
           </Link>
-          <Link as={RouterLink} to="/workspace">
+
+          <Link
+            as={RouterLink}
+            to="/workspace"
+            onClick={() => handleNavClick("/workspace")}
+          >
             Workspace
           </Link>
-          <Link as={RouterLink} to="/molecule">
+
+          <Link
+            as={RouterLink}
+            to="/molecule"
+            onClick={() => handleNavClick("/molecule")}
+          >
             Molecule
           </Link>
-          <Link as={RouterLink} to="/discussion">
+
+          <Link
+            as={RouterLink}
+            to="/discussion"
+            onClick={() => handleNavClick("/discussion")}
+          >
             Discussion
           </Link>
         </HStack>
@@ -70,7 +94,7 @@ const NavBar = () => {
 
         <Spacer />
 
-        {selectedTask && (
+        {selectedTaskId && (
           <Menu>
             <MenuButton as={Button}>View</MenuButton>
             <MenuList>

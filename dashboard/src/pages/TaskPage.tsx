@@ -42,7 +42,7 @@ export const TaskPage: React.FC = () => {
           <Text>No content matches the selected criteria.</Text>
         ) : (
           <>
-            <TaskGrid content={content} redirectTo={redirectTo} />
+            <TaskGrid content={content} />
             <Button mt={4} onClick={() => loadMoreTasks()} colorScheme="teal">
               Load More Tasks
             </Button>

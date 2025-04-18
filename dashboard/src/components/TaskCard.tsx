@@ -28,17 +28,13 @@ interface TaskCardProps {
   task: any;
   useStore?: boolean;
   compact?: boolean;
-  redirectTo?: string; // e.g. "/dashboard" or "/workspace"
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({
-  task,
-  compact = false,
-  redirectTo,
-}) => {
+const TaskCard: React.FC<TaskCardProps> = ({ task, compact = false }) => {
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+  const redirectTo = useTaskStore((s) => s.selectedRedirect);
   compact = false;
   const {
     isOpen: isAssignOpen,
