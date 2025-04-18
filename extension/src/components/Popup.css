@@ -42,12 +42,12 @@
   top: 1px;
   right: 20px;
   padding: 10px 10px;
-  background-color: rgba(34, 147, 126, 0.7);
+  /* background-color: rgba(34, 147, 126, 0.7);*/
   color: white;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   z-index: 1000; /* Make sure it is above the video */
-  animation: fadeIn 0.5s ease-in-out; /* Fade-in effect with 0.5s duration */
+  animation: fadeIn 1.5s ease-in-out; /* Fade-in effect with 0.5s duration */
   max-width: 300px;
 }
 .logo-box {

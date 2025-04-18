@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client"; // Use createRoot for React 18
 import Popup from "./components/Popup";
 import "./components/Popup.css"; // Ensure CSS is loaded
+import visionTheme from "./components/themes/VisionTheme"; // adjust if your path is different
 
 // Function to render the Popup component when the root element is present
 const renderPopup = () => {
