@@ -14,6 +14,7 @@ import "./Popup.css";
 import useTaskStore from "../store/useTaskStore";
 import resizeImage from "../services/image-url";
 import { useTaskScraper } from "../hooks/useTaskScraper";
+import VerimeterGauge from "./VerimeterGauge";
 
 const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 
@@ -59,8 +60,17 @@ const TaskCard: React.FC = () => {
   const logo = `${BASE_URL}/assets/images/miniLogo.png`;
 
   return (
-    <Box className="popup-box" width="300px">
+    <Box
+      className="popup-box"
+      width="300px"
+      bg="linear-gradient(
+      to top right,
+      rgba(0, 100, 90, .7),
+      rgba(0, 0, 0, .7)
+    );"
+    >
       <VStack spacing={3} align="start">
+        <VerimeterGauge score={-0.83} />
         <Box bg="cyan.100" className="logo-box" position="relative" left="2.5%">
           <HStack spacing="130">
             <Box>{resizeImage(40, logo)}</Box>
