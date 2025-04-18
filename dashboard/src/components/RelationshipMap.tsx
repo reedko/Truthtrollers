@@ -25,6 +25,7 @@ interface RelationshipMapProps {
   leftX: number;
   rightX: number;
   onLineClick?: (link: ClaimLink) => void;
+  claimLinks: ClaimLink[];
 }
 
 const RelationshipMap: React.FC<RelationshipMapProps> = ({
@@ -37,6 +38,7 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
   leftX,
   rightX,
   onLineClick,
+  claimLinks,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerX, setContainerX] = useState(0);
@@ -60,31 +62,8 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
     console.log("📦 containerX updated:", containerX);
   }, [containerX]);
 
-  const [links, setLinks] = useState<ClaimLink[]>([]);
-  useEffect(() => {
-    fetchClaimsAndLinkedReferencesForTask(contentId)
-      .then((data) => {
-        // Map the API results to the ClaimLink shape expected by the component.
-        const formattedLinks: ClaimLink[] = data.map((row) => ({
-          id: row.id.toString(),
-          claimId: row.left_claim_id, // from content_claims.target_claim_id
-          referenceId: row.right_reference_id, // from claims_references.reference_content_id
-          sourceClaimId: row.source_claim_id,
-          relation:
-            row.relationship === "supports"
-              ? "support"
-              : row.relationship === "refutes"
-              ? "refute"
-              : "support", // fallback for "related"
-          confidence: row.confidence || 0,
-          notes: row.notes || "",
-        }));
-        setLinks(formattedLinks);
-      })
-      .catch((error) => {
-        console.error("Error fetching claim links:", error);
-      });
-  }, [contentId]);
+  const links = claimLinks;
+
   const getLeftY = (index: number) =>
     index * rowHeight + rowHeight / 2 + topOffset;
 
