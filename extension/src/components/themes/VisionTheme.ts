@@ -1,6 +1,6 @@
 // src/theme.ts
 import { extendTheme } from "@chakra-ui/react";
-const API_BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
+const API_BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 
 const theme = extendTheme({
   fonts: {
@@ -39,12 +39,20 @@ const theme = extendTheme({
     colors: {
       cardGradient:
         "radial-gradient(circle at 70% 70%, rgba(72, 187, 215, 0.25), rgba(45, 55, 72, 1))",
+      pop2Gradient:
+        "radial-gradient(circle at 70% 70%, rgba(72, 187, 215, 0.25), rgba(45, 55, 72, 1))",
+      popGradient:
+        "radial-gradient(circle at 75% 80%, rgba(1, 17, 15, 0.5), rgba(43, 105, 82, 0.5))",
       stackGradient:
         "radial-gradient(circle at 75% 80%, rgba(136, 230, 196, 0.31), rgb(2, 0, 36))",
       statGradient:
         "radial-gradient(circle at bottom left,  rgba(0, 255, 225, 0.05) 0%,  #0a192f 20%,  #010212 50%,#000000 80%)",
       stat2Gradient:
         "linear-gradient(to top right,rgba(0, 100, 90, 1),rgba(0, 0, 0, 1))",
+      stat5Gradient:
+        "linear-gradient(to top right,rgba(0, 100, 90, .6),rgba(0, 0, 0, .6))",
+      stat6Gradient:
+        "linear-gradient(to top right,rgba(113, 144, 141, 0.1),rgba(215, 226, 227, 0.5))",
       cardTeal: "teal.400",
       cardBlue: "#4682b4",
       cardGreen: "#175d48",
