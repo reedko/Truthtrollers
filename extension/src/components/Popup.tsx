@@ -3,12 +3,13 @@ import { ChakraProvider } from "@chakra-ui/react";
 import React from "react";
 import TaskCard from "./TaskCard";
 import ReactDOM from "react-dom/client";
+import VisionTheme from "../components/themes/VisionTheme";
 
 const Popup: React.FC = () => {
   // Directly access the state from Zustand store
 
   return (
-    <ChakraProvider>
+    <ChakraProvider theme={VisionTheme}>
       <div>
         <TaskCard />
       </div>

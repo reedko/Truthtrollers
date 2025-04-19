@@ -4,10 +4,16 @@ import {
   Button,
   GridItem,
   Progress,
+  SimpleGrid,
+  Stat,
+  StatLabel,
+  StatNumber,
   Card,
   CardBody,
   CardHeader,
+  Heading,
   Text,
+  Flex,
   Grid,
   VStack,
   HStack,
@@ -16,9 +22,10 @@ import {
 } from "@chakra-ui/react";
 import "./Popup.css";
 import UserConsensusBar from "./UserConsensusBar";
-import useTaskStore from "../store/useTaskStore";
 import resizeImage from "../services/image-url";
-import { useTaskScraper } from "../hooks/useTaskScraper";
+
+import VerimeterGauge from "./VerimeterGauge";
+import StatCard from "./StatCard";
 import TruthGauge from "./ModernArcGauge";
 
 const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
@@ -37,30 +44,8 @@ const getProgressColor = (progress: string | null) => {
 };
 
 const TaskCard: React.FC = () => {
-  const { task, currentUrl, setTask } = useTaskStore(); // Hook to access Zustand
-  const { loading, error, scrapeTask } = useTaskScraper(); // Use scraper hook
-  const [visible, setVisible] = useState(false);
+  const imageUrl = "test";
 
-  useEffect(() => {
-    // ✅ Retrieve task data from local storage (sent from content.js)
-    chrome.storage.local.get("task", (data) => {
-      if (data.task) {
-        setTask(data.task);
-        setVisible(true);
-      }
-    });
-  }, []);
-
-  const handleAddTask = () => {
-    if (currentUrl) {
-      scrapeTask(currentUrl);
-    } else {
-      console.error("No URL provided.");
-    }
-  };
-
-  const imageUrl =
-    task && task.thumbnail ? `${BASE_URL}/${task.thumbnail}` : "";
   const meter = `${BASE_URL}/assets/images/meter3.png`;
   const logo = `${BASE_URL}/assets/images/miniLogo.png`;
 
@@ -73,8 +58,9 @@ const TaskCard: React.FC = () => {
             <Text color="white">TruthTrollers</Text>
           </HStack>
         </Box>
-        {imageUrl && task?.progress === "Completed" ? (
-          <VStack spacing={3} align="center" width="100%">
+
+        {imageUrl ? (
+          <VStack spacing={1} align="center" width="100%">
             <Card
               width="100%"
               borderRadius="2xl"
@@ -85,7 +71,7 @@ const TaskCard: React.FC = () => {
               minW={{ base: "100%", md: "300px" }}
             >
               <CardHeader>
-                <VStack spacing={1} align="center" mb={1} mt={1}>
+                <VStack spacing={0} align="center" mb={0} mt={0}>
                   <Spacer />
 
                   <TruthGauge
@@ -98,8 +84,8 @@ const TaskCard: React.FC = () => {
               </CardHeader>
 
               <CardBody>
-                <VStack spacing={1}>
-                  <Box w="100%" p={1}>
+                <VStack spacing={0}>
+                  <Box w="100%" p={0}>
                     <UserConsensusBar
                       trueCount={21}
                       falseCount={71}
@@ -114,6 +100,7 @@ const TaskCard: React.FC = () => {
           imageUrl && (
             <Box position="relative" left="25%">
               {resizeImage(120, imageUrl)}
+              <VerimeterGauge score={-0.83} />
             </Box>
           )
         )}
@@ -121,37 +108,31 @@ const TaskCard: React.FC = () => {
         {imageUrl ? (
           <Box width="280px">
             <Text fontWeight="bold" fontSize="l" wrap="yes">
-              {task?.content_name}
+              {"THIS IS WHERE THE TITLE GOES"}
             </Text>
             <Grid templateRows="repeat(2, 1fr)">
               <GridItem>
                 <Text color="gray.600" fontSize="sm">
-                  Progress: {task?.progress}
+                  Progress: {"Completed"}
                 </Text>
               </GridItem>
               <GridItem>
                 <Progress
-                  value={
-                    task?.progress === "Completed"
-                      ? 100
-                      : task?.progress === "Partially Complete"
-                      ? 50
-                      : 25
-                  }
-                  colorScheme={task ? getProgressColor(task.progress) : ""}
+                  value={100}
+                  colorScheme={getProgressColor("Completed")}
                   mt={2}
                 />
               </GridItem>
             </Grid>
             <Text color="gray.600" fontSize="sm">
-              Media Source: {task?.media_source}
+              Media Source: {"SHIT FFACTORY"}
             </Text>
 
             <Center>
               <HStack spacing={5}>
                 <Button variant="surface" bg="cardGradient" color="white">
                   <a
-                    href={task?.details || "#"}
+                    href={"google.com"}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -162,14 +143,7 @@ const TaskCard: React.FC = () => {
                   variant="solid"
                   bg="cardGradient"
                   color="white"
-                  onClick={() => {
-                    setVisible(false);
-                    const popupRoot = document.getElementById("popup-root");
-                    if (popupRoot) {
-                      popupRoot.classList.add("task-card-hidden");
-                      popupRoot.classList.remove("task-card-visible");
-                    }
-                  }}
+                  onClick={() => {}}
                 >
                   <div>Close</div>
                 </Button>
@@ -179,7 +153,7 @@ const TaskCard: React.FC = () => {
         ) : (
           <Box width="280px">
             <Text fontWeight="bold" fontSize="l" wrap="yes">
-              {task?.content_name}
+              {"CONTENT"}
             </Text>
             <Grid templateRows="repeat(2, 1fr)">
               <GridItem>
@@ -194,27 +168,14 @@ const TaskCard: React.FC = () => {
 
             <Center>
               <HStack spacing={5}>
-                <Button
-                  variant="surface"
-                  bg="cyan.100"
-                  color="white"
-                  onClick={handleAddTask}
-                  disabled={loading}
-                >
+                <Button variant="surface" bg="cyan.100" color="black">
                   <div>Add</div>
                 </Button>
                 <Button
                   variant="solid"
-                  bg="cyan.100"
+                  bg="cardGradient"
                   color="black"
-                  onClick={() => {
-                    setVisible(false);
-                    const popupRoot = document.getElementById("popup-root");
-                    if (popupRoot) {
-                      popupRoot.classList.add("task-card-hidden");
-                      popupRoot.classList.remove("task-card-visible");
-                    }
-                  }}
+                  onClick={() => {}}
                 >
                   <div>Close</div>
                 </Button>

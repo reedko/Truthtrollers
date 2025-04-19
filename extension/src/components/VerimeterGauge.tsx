@@ -1,8 +1,6 @@
 import React from "react";
-import { Box, Text, Center, useColorModeValue } from "@chakra-ui/react";
-import ReactSpeedometer, {
-  CustomSegmentLabelPosition,
-} from "react-d3-speedometer";
+import { Box, Text } from "@chakra-ui/react";
+import ReactSpeedometer from "react-d3-speedometer";
 import { steampunkTealTheme } from "./themes/steampunkTealTheme";
 
 interface VerimeterGaugeProps {
@@ -10,96 +8,99 @@ interface VerimeterGaugeProps {
 }
 
 const VerimeterGauge: React.FC<VerimeterGaugeProps> = ({ score }) => {
-  const labelColor = useColorModeValue("gray.700", "gray.100");
-  const value = ((score + 1) / 2) * 100; // Normalize -1 to 1 → 0 to 100
+  const value = score * 100;
 
   return (
     <Box
-      w={"150px"}
-      h={"170px"}
-      p={4}
       position="relative"
-      borderRadius="lg"
+      w="240px"
+      h="255px"
       border="4px solid"
       borderColor={steampunkTealTheme.colors.brass}
+      borderRadius="lg"
+      overflow="hidden"
       boxShadow="lg"
     >
-      {/* Overlay */}
+      {/* Overlay with background image */}
       <Box
         position="absolute"
-        top={0}
-        left={0}
+        top="0"
+        left="0"
         w="100%"
         h="100%"
-        width={300}
-        height={200}
-        margin="0 auto"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-        transform="translate(18.5%, 61%) scale(.67)" // scale it up
         backgroundImage={`url(${steampunkTealTheme.textures.trollOverlay})`}
         backgroundSize="contain"
         backgroundRepeat="no-repeat"
         backgroundPosition="center"
+        zIndex="1"
+        opacity={0.3}
         pointerEvents="none"
-        opacity={1}
-        zIndex={0}
       />
-
-      {/* Title */}
-      <Center zIndex={2} position="relative">
-        <Text
-          fontSize="30px"
-          fontWeight="bold"
-          fontFamily="papyrus"
-          color={steampunkTealTheme.colors.brass}
-          mt={-1}
-          mb={-1}
-        >
-          VERIMETER
-        </Text>
-      </Center>
 
       {/* Gauge */}
       <Box
+        position="absolute"
+        top="0"
+        left="0"
+        zIndex="0"
+        w="100%"
+        h="100%"
         display="flex"
         justifyContent="center"
         alignItems="center"
-        h="100x"
-        position="relative"
-        zIndex={0}
-        opacity={0.4}
+        opacity={0.7}
       >
         <ReactSpeedometer
           minValue={-100}
           maxValue={100}
           value={value}
-          segments={10}
-          segmentColors={steampunkTealTheme.segmentColors2}
-          customSegmentStops={[-100, -60, -20, 20, 60, 100]}
+          width={185}
+          height={170}
+          segments={5}
+          ringWidth={25}
+          needleHeightRatio={0.85}
           customSegmentLabels={steampunkTealTheme.segmentLabels}
-          needleHeightRatio={0.9}
-          ringWidth={40}
+          customSegmentStops={[-100, -40, -20, 20, 40, 100]}
+          segmentColors={steampunkTealTheme.segmentColors2}
           needleColor={steampunkTealTheme.colors.highlight}
-          valueTextFontSize="0px"
           currentValueText=""
-          height={Math.floor(140)} // dynamic gauge height
+          valueTextFontSize="0px"
         />
       </Box>
 
       {/* Value Text */}
-      <Center mt={4} ml={4}>
+      <Box
+        position="absolute"
+        top="75%" // Adjust as needed
+        left="50%"
+        transform="translate(-50%, -50%)"
+        zIndex="2"
+        color={steampunkTealTheme.colors.brass}
+        fontFamily="papyrus"
+        fontSize="38px"
+        fontWeight="bold"
+        pointerEvents="none"
+      >
+        {(score * 100).toFixed(0)}%
+      </Box>
+
+      {/* Title */}
+      <Box
+        position="absolute"
+        bottom="210px"
+        width="100%"
+        textAlign="center"
+        zIndex="2"
+      >
         <Text
-          fontFamily="papyrus"
-          fontSize="45px"
+          fontSize="24px"
           fontWeight="bold"
-          zIndex={1}
+          fontFamily="papyrus"
           color={steampunkTealTheme.colors.brass}
         >
-          {(score * 100).toFixed(0)}%
+          VERIMETER
         </Text>
-      </Center>
+      </Box>
     </Box>
   );
 };
