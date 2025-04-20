@@ -1606,6 +1606,7 @@ JOIN content_relations cr
   ON cr.reference_content_id = cc_ref.content_id
 WHERE cc_task.content_id = cr.content_id
   AND cc_task.content_id =  ?
+  AND disabled=false
   `;
   console.log(sql, "SQL", contentId, "CID");
 

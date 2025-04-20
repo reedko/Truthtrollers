@@ -44,7 +44,7 @@ const getProgressColor = (progress: string | null) => {
 };
 
 const TaskCard: React.FC = () => {
-  const imageUrl = "test";
+  const imageUrl = "";
 
   const meter = `${BASE_URL}/assets/images/meter3.png`;
   const logo = `${BASE_URL}/assets/images/miniLogo.png`;
@@ -155,20 +155,28 @@ const TaskCard: React.FC = () => {
             <Text fontWeight="bold" fontSize="l" wrap="yes">
               {"CONTENT"}
             </Text>
-            <Grid templateRows="repeat(2, 1fr)">
-              <GridItem>
-                <Text color="gray.600" fontSize="sm">
-                  This document has not been added to Truthtrollers.
-                </Text>
-              </GridItem>
-              <GridItem>
-                <Text>Would you like to Add?</Text>
-              </GridItem>
-            </Grid>
+
+            <Stat
+              p={2}
+              px={3}
+              py={1}
+              borderRadius="2xl"
+              shadow="md"
+              color="white"
+              bg="cardGradient"
+              w="full"
+            >
+              <Text color="white" fontSize="md" align="center">
+                This document has not been added to Truthtrollers.
+              </Text>
+              <Text mt={4} color="white" fontSize="lg" align="center">
+                Would you like to Add?
+              </Text>
+            </Stat>
 
             <Center>
-              <HStack spacing={5}>
-                <Button variant="surface" bg="cyan.100" color="black">
+              <HStack spacing={5} mt={2}>
+                <Button variant="surface" bg="cardGradient" color="black">
                   <div>Add</div>
                 </Button>
                 <Button
