@@ -44,14 +44,18 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
   const [containerX, setContainerX] = useState(0);
   const adjustedLeftX = leftX - containerX - 12;
   const adjustedRightX = rightX - containerX + 15;
+  const [hasMeasuredContainer, setHasMeasuredContainer] = useState(false);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
       requestAnimationFrame(() => {
-        if (containerRef.current) {
-          const rect = containerRef.current.getBoundingClientRect();
-          setContainerX(rect.x);
-        }
+        requestAnimationFrame(() => {
+          if (containerRef.current) {
+            const rect = containerRef.current.getBoundingClientRect();
+            setContainerX(rect.x);
+            setHasMeasuredContainer(true); // ✅ mark as measured
+          }
+        });
       });
     }, 50); // ← no delay, just wait for browser to do one frame
 
@@ -93,7 +97,7 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
     !rightItems.length ||
     !links.length ||
     leftX === 0 ||
-    rightX === 0
+    rightX === 0 // 👈 instead of containerX === 0// 👈 prevent premature render
   ) {
     console.log("⏳ Waiting for valid X positions before drawing links...");
     return null;

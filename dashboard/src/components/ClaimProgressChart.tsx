@@ -9,14 +9,24 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { useTaskStore } from "../store/useTaskStore";
+import {
+  Task,
+  ClaimReferenceMap,
+  ClaimsByTaskMap,
+} from "../../../shared/entities/types";
 import IconStat from "./IconStat";
 
-const ClaimProgressChart = () => {
-  const assignedTasks = useTaskStore((s) => s.content);
-  const claimsByTask = useTaskStore((s) => s.claimsByTask);
-  const claimReferences = useTaskStore((s) => s.claimReferences);
+interface ClaimProgressChartProps {
+  assignedTasks: Task[];
+  claimsByTask: ClaimsByTaskMap;
+  claimReferences: ClaimReferenceMap;
+}
 
+const ClaimProgressChart: React.FC<ClaimProgressChartProps> = ({
+  assignedTasks,
+  claimsByTask,
+  claimReferences,
+}) => {
   // ✅ Aggregate stats
   const claimCount = Object.values(claimsByTask).flat().length;
   const referenceCount = Object.values(claimReferences).flat().length;

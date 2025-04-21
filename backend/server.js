@@ -1337,8 +1337,11 @@ app.get("/api/content_topics", (req, res) => {
 
 //Topics
 app.get("/api/topics", async (req, res) => {
-  const sql =
-    "SELECT * FROM topics WHERE topic_id IN (SELECT DISTINCT(topic_id) FROM content_topics WHERE topic_order=1) ORDER BY topic_name";
+  const sql = `SELECT t.* FROM topics t WHERE topic_id IN 
+  (SELECT DISTINCT(topic_id) 
+FROM content_topics ct join content c
+on ct.content_id=c.content_id
+WHERE topic_order=1 and content_type='task')ORDER by topic_name`;
 
   pool.query(sql, async (err, results) => {
     if (err) {

@@ -17,21 +17,32 @@ import {
   Spacer,
   Center,
 } from "@chakra-ui/react";
-import { useAuthStore } from "../store/useAuthStore";
-import { useTaskStore } from "../store/useTaskStore";
 import VisionTheme from "./themes/VisionTheme";
 import StatCard from "./StatCard";
 import TruthGauge from "./ModernArcGauge";
 import GlowGauge from "./ModernCircleGauge";
 import BareGauge from "./BareGauge";
+import {
+  Task,
+  Claim,
+  ClaimReferenceMap,
+  ClaimsByTaskMap,
+} from "../../../shared/entities/types";
 
-const TopStatsPanel: React.FC = () => {
-  const user = useAuthStore((s) => s.user);
-  const assignedTasks = useTaskStore((s) => s.content);
-  const claimReferences = useTaskStore((s) => s.claimReferences);
-  const claimsByTask = useTaskStore((s) => s.claimsByTask);
+interface TopStatsPanelProps {
+  tasks: Task[];
+  claimsByTask: ClaimsByTaskMap;
+  claimReferences: ClaimReferenceMap;
+  username?: string;
+}
 
-  const verificationTasks = assignedTasks.flatMap((task) => {
+const TopStatsPanel: React.FC<TopStatsPanelProps> = ({
+  tasks,
+  claimsByTask,
+  claimReferences,
+  username,
+}) => {
+  const verificationTasks = tasks.flatMap((task) => {
     const claims = claimsByTask[task.content_id] || [];
     return claims.filter((claim) => {
       const refs = claimReferences[claim.claim_id] || [];
@@ -58,7 +69,6 @@ const TopStatsPanel: React.FC = () => {
       gap={1}
       flexDirection={{ base: "column", md: "row" }}
     >
-      {/* Welcome Card - wide and left-aligned */}
       <Box flex="1" maxW="700px">
         <Card
           height="380px"
@@ -81,7 +91,7 @@ const TopStatsPanel: React.FC = () => {
           >
             <Box maxW="50%">
               <Heading size="lg" mb={3} color="teal.200">
-                Welcome, {user?.username} 👋
+                Welcome, {username} 👋
               </Heading>
               <Text fontSize="md" color="gray.200">
                 Track your tasks, verify claims, and rate references.
@@ -122,7 +132,7 @@ const TopStatsPanel: React.FC = () => {
               Progress Overview
             </Heading>
             <TruthGauge
-              score={assignedTasks.length / 10}
+              score={tasks.length / 10}
               label="PROGRESS"
               size={{ w: 220, h: 140 }}
               normalize={true}
@@ -132,7 +142,7 @@ const TopStatsPanel: React.FC = () => {
 
         <CardBody>
           <VStack spacing={4}>
-            <StatCard label="Assigned Tasks" value={assignedTasks.length} />
+            <StatCard label="Assigned Tasks" value={tasks.length} />
             <StatCard
               label="Verification Tasks"
               value={verificationTasks.length}
@@ -151,36 +161,16 @@ const TopStatsPanel: React.FC = () => {
         p={4}
       >
         <Flex direction="column" height="100%">
-          {/* Header */}
           <Heading size="lg" color="teal.200" mb={4}>
             Claims Verified
           </Heading>
 
           <Grid templateColumns="1fr 1fr" flex="1" gap={4}>
-            {/* Left: Stat Cards stacked at bottom */}
             <Flex direction="column" justify="flex-end" gap={2}>
-              <StatCard
-                label="Verified Claims"
-                value={
-                  Object.values(claimReferences).filter(
-                    (refs) =>
-                      refs.length > 0 &&
-                      refs.every((r) => r.supportLevel >= 0.5)
-                  ).length
-                }
-              />
-              <StatCard
-                label="Claim Evaluation Rate"
-                value={`${Math.round(
-                  (Object.values(claimReferences).filter((r) => r.length > 0)
-                    .length /
-                    Object.values(claimsByTask).flat().length) *
-                    100 || 0
-                )}%`}
-              />
+              <StatCard label="Verified Claims" value={verifiedCount} />
+              <StatCard label="Claim Evaluation Rate" value={`${evalRate}%`} />
             </Flex>
 
-            {/* Right: Gauge Centered Vertically */}
             <Center>
               <GlowGauge score={0.75} label="Verified" />
             </Center>

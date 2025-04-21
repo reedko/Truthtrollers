@@ -1,42 +1,39 @@
+// Updated VisionDashboard.tsx
 import {
   Box,
   Grid,
   Heading,
   Text,
   VStack,
-  SimpleGrid,
-  Stat,
-  StatLabel,
-  StatNumber,
   Card,
   CardHeader,
   CardBody,
   Button,
   HStack,
   Flex,
-  GridItem,
 } from "@chakra-ui/react";
-import StatCard from "./StatCard";
+
 import { useEffect, useMemo } from "react";
 import { useTaskStore } from "../store/useTaskStore";
 import { useAuthStore } from "../store/useAuthStore";
+import { useDashboardStore } from "../store/useDashboardStore";
+
 import AssignedTaskGrid from "./AssignedTaskGrid";
 import ClaimProgressChart from "./ClaimProgressChart";
 import ClaimBoard from "./ClaimBoard";
 import UnifiedHeader from "./UnifiedHeader";
-import VisionTheme from "./themes/VisionTheme";
 import TopStatsPanel from "./TopStatsPanel";
-import GlowGaugeTestHarness from "./TestHarness";
 import MultiLineChart from "./MultiLineChart";
 import TaskProjectsPanel from "./TaskProjectsPanel";
 
 const VisionDashboard: React.FC = () => {
   const user = useAuthStore((s) => s.user);
   const fetchTasksForUser = useTaskStore((s) => s.fetchTasksForUser);
-  const assignedTasks = useTaskStore((s) => s.content);
+  const assignedTasks = useTaskStore((s) => s.assignedTasks);
   const fetchClaims = useTaskStore((s) => s.fetchClaims);
   const claimsByTask = useTaskStore((s) => s.claimsByTask);
   const claimReferences = useTaskStore((s) => s.claimReferences);
+  const selectedTask = useTaskStore((s) => s.selectedTask);
   const setSelectedTask = useTaskStore((s) => s.setSelectedTask);
 
   useEffect(() => {
@@ -46,14 +43,21 @@ const VisionDashboard: React.FC = () => {
   }, [user?.user_id]);
 
   useEffect(() => {
-    assignedTasks.forEach((task) => {
+    const safeAssignedTasks = Array.isArray(assignedTasks) ? assignedTasks : [];
+    const tasksToCheck = selectedTask ? [selectedTask] : safeAssignedTasks;
+    tasksToCheck.forEach((task) => {
       fetchClaims(task.content_id);
     });
-  }, [assignedTasks]);
+  }, [assignedTasks, selectedTask]);
 
   const verificationTasks = useMemo(() => {
+    const tasksToCheck = selectedTask
+      ? [selectedTask]
+      : Array.isArray(assignedTasks)
+      ? assignedTasks
+      : [];
     const result: any[] = [];
-    for (const task of assignedTasks) {
+    for (const task of tasksToCheck) {
       const claims = claimsByTask[task.content_id] || [];
       for (const claim of claims) {
         const refs = claimReferences[claim.claim_id] || [];
@@ -70,26 +74,38 @@ const VisionDashboard: React.FC = () => {
       }
     }
     return result;
-  }, [assignedTasks, claimsByTask, claimReferences]);
+  }, [assignedTasks, selectedTask, claimsByTask, claimReferences]);
+
+  const tasksToRender = selectedTask
+    ? [selectedTask]
+    : Array.isArray(assignedTasks)
+    ? assignedTasks
+    : [];
 
   return (
     <Box p={6} minH="100vh">
       <Card>
         <CardBody>
-          <TopStatsPanel />
+          <TopStatsPanel
+            tasks={tasksToRender}
+            claimsByTask={claimsByTask}
+            claimReferences={claimReferences}
+            username={user?.username || ""}
+          />
         </CardBody>
       </Card>
 
-      <Card mb={6} mt={6}>
-        <CardBody>
-          <UnifiedHeader />
-        </CardBody>
-      </Card>
+      {selectedTask && (
+        <Card mb={6} mt={6}>
+          <CardBody>
+            <UnifiedHeader />
+          </CardBody>
+        </Card>
+      )}
 
       <Grid templateColumns={{ base: "1fr", md: "2fr 1fr" }} gap={6}>
         <VStack spacing={6} align="stretch" width="full">
           <Flex width="full" gap={4} align="start">
-            {/* Left: Fixed Width Assigned Tasks */}
             <Box maxW="425px" flexShrink={0}>
               <Card bg="stackGradient">
                 <CardHeader>
@@ -108,12 +124,11 @@ const VisionDashboard: React.FC = () => {
                   </HStack>
                 </CardHeader>
                 <CardBody>
-                  <AssignedTaskGrid tasks={assignedTasks} />
+                  <AssignedTaskGrid tasks={tasksToRender} />
                 </CardBody>
               </Card>
             </Box>
 
-            {/* Right: Fill remaining space with Chart */}
             <VStack>
               <Box flex="1">
                 <Card width="600px" height="100%" bg="stat2Gradient">
@@ -141,9 +156,9 @@ const VisionDashboard: React.FC = () => {
                 </CardBody>
               </Card>
             </VStack>
-          </Flex>{" "}
+          </Flex>
+
           <Flex gap={4} align="start" width="100%">
-            {/* Left: TaskProjectsPanel */}
             <Box width="1000px" flexShrink={0}>
               <TaskProjectsPanel />
             </Box>
@@ -158,10 +173,14 @@ const VisionDashboard: React.FC = () => {
               </Heading>
             </CardHeader>
             <CardBody>
-              <ClaimProgressChart />
+              <ClaimProgressChart
+                assignedTasks={tasksToRender}
+                claimsByTask={claimsByTask}
+                claimReferences={claimReferences}
+              />
             </CardBody>
           </Card>
-          {/* Right: ClaimBoard */}
+
           <Box flex="1">
             <Card height="100%" bg="gray.900">
               <CardHeader>
@@ -170,7 +189,12 @@ const VisionDashboard: React.FC = () => {
                 </Heading>
               </CardHeader>
               <CardBody>
-                <ClaimBoard />
+                <ClaimBoard
+                  tasks={tasksToRender}
+                  claimsByTask={claimsByTask}
+                  claimReferences={claimReferences}
+                  selectedTask={selectedTask}
+                />
               </CardBody>
             </Card>
           </Box>

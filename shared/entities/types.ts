@@ -9,6 +9,14 @@ type TaskProgress =
   | "Awaiting Evaluation"
   | "Completed";
 
+export type ClaimsByTaskMap = {
+  [content_id: number]: Claim[];
+};
+
+export type ClaimReferenceMap = {
+  [claimId: number]: { referenceId: number; supportLevel: number }[];
+};
+
 export interface Task {
   content_id: number;
   content_name: string;
