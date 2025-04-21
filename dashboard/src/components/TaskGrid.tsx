@@ -2,9 +2,10 @@
 import { SimpleGrid } from "@chakra-ui/react";
 import React, { memo } from "react";
 import TaskCard from "./TaskCard";
+import { Task } from "../../../shared/entities/types";
 
 interface TaskGridProps {
-  content: any[];
+  content: Task[];
   redirectTo?: string; // optional, defaults to dashboard
 }
 

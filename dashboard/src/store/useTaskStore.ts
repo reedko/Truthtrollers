@@ -15,7 +15,7 @@ import {
   fetchTasks as fetchTasksAPI,
   fetchUsers,
   fetchAssignedUsers,
-  fetchTasksForUser,
+  fetchTasksForUser as fetchTasksForUserAPI,
   fetchReferencesForTask,
   fetchClaimsForTask,
   fetchClaimReferences,
@@ -28,6 +28,7 @@ import {
 
 export interface TaskStoreState {
   content: Task[];
+  assignedTasks: Task[];
   filteredTasks: Task[];
   selectedTopic: string | undefined;
   searchQuery: string;
@@ -147,9 +148,26 @@ export const useTaskStore = create<TaskStoreState>()(
         });
       },
 
-      fetchTasksForUser: async (userId) => {
-        const content = await fetchTasksForUser(userId);
-        set({ content, filteredTasks: content });
+      fetchTasksForUser: async (userId: number) => {
+        const tasks = await fetchTasksForUserAPI(userId);
+
+        const authorsMap: Record<number, Author[]> = {};
+        const publishersMap: Record<number, Publisher[]> = {};
+
+        tasks.forEach((task) => {
+          authorsMap[task.content_id] = Array.isArray(task.authors)
+            ? task.authors
+            : [];
+          publishersMap[task.content_id] = Array.isArray(task.publishers)
+            ? task.publishers
+            : [];
+        });
+
+        set({
+          assignedTasks: tasks,
+          authors: { ...get().authors, ...authorsMap },
+          publishers: { ...get().publishers, ...publishersMap },
+        });
       },
 
       fetchUsers: async () => {
@@ -188,10 +206,12 @@ export const useTaskStore = create<TaskStoreState>()(
       fetchClaims: async (taskId) => {
         const claims = await fetchClaimsForTask(taskId);
         set((s) => ({
-          claimsByTask: { ...s.claimsByTask, [taskId]: claims },
+          claimsByTask: {
+            ...s.claimsByTask, // 🛡️ preserve existing claims
+            [taskId]: claims, // ✅ just update this one
+          },
         }));
       },
-
       fetchClaimReferences: async (claimId) => {
         const refs = await fetchClaimReferences(claimId);
         set((s) => ({

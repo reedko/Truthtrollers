@@ -1,18 +1,29 @@
 // src/components/ClaimBoard.tsx
 import React, { useState } from "react";
-import { Box, VStack, useDisclosure, Text, Button } from "@chakra-ui/react";
-import { useTaskStore } from "../store/useTaskStore";
-import { Claim } from "../../../shared/entities/types";
+import { Box, Text } from "@chakra-ui/react";
+import {
+  Claim,
+  ClaimReferenceMap,
+  ClaimsByTaskMap,
+  Task,
+} from "../../../shared/entities/types";
 import ClaimModal from "./modals/ClaimModal";
 import ClaimEvaluationModal from "./modals/ClaimEvaluationModal";
 import MicroClaimCard from "./MicroClaimCard";
 
-const ClaimBoard: React.FC = () => {
-  const allClaims = useTaskStore((s) => s.claimsByTask);
-  const tasks = useTaskStore((s) => s.content);
-  const selectedTask = useTaskStore((s) => s.selectedTask);
-  const claimReferences = useTaskStore((s) => s.claimReferences);
+interface ClaimBoardProps {
+  tasks: Task[];
+  claimsByTask: ClaimsByTaskMap;
+  claimReferences: ClaimReferenceMap;
+  selectedTask: Task | null;
+}
 
+const ClaimBoard: React.FC<ClaimBoardProps> = ({
+  tasks,
+  claimsByTask,
+  claimReferences,
+  selectedTask,
+}) => {
   const [editingClaim, setEditingClaim] = useState<Claim | null>(null);
   const [evaluatingClaim, setEvaluatingClaim] = useState<Claim | null>(null);
 
@@ -20,7 +31,7 @@ const ClaimBoard: React.FC = () => {
 
   const visibleTasks = selectedTask
     ? [selectedTask]
-    : tasks.filter((t) => allClaims[t.content_id]);
+    : tasks.filter((t) => claimsByTask[t.content_id]);
 
   return (
     <Box
@@ -35,7 +46,7 @@ const ClaimBoard: React.FC = () => {
     >
       <Box display="flex" gap={1} maxW="700">
         {visibleTasks.map((task) => {
-          const claims = allClaims[task.content_id] || [];
+          const claims = claimsByTask[task.content_id] || [];
 
           return (
             <Box
@@ -87,7 +98,6 @@ const ClaimBoard: React.FC = () => {
                       title={isEvaluated ? "✅ Evaluated" : "❗ Unevaluated"}
                       description={claim.claim_text}
                       status={isEvaluated ? "complete" : "pending"}
-                      //relatedTask={task}
                       actionLabel="Evaluate"
                       actionLink="#"
                       onClick={() => handleEvalClick(claim)}
