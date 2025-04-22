@@ -1,118 +1,51 @@
-import { useNavigate } from "react-router-dom";
 import {
   Box,
-  Image,
+  Center,
   Text,
-  Progress,
   Button,
+  Image,
+  Progress,
   Menu,
   MenuButton,
   MenuList,
   MenuItem,
-  Center,
-  useDisclosure,
-  Link,
   HStack,
+  Select,
+  useDisclosure,
 } from "@chakra-ui/react";
 import { BiChevronDown } from "react-icons/bi";
+import { useNavigate } from "react-router-dom";
+import { useRef, useState, memo, useEffect } from "react";
+import { useTaskStore } from "../store/useTaskStore";
 import AssignUserModal from "./modals/AssignUserModal";
 import ReferenceModal from "./modals/ReferenceModal";
-import { useTaskStore } from "../store/useTaskStore";
-import { memo, useRef, useState } from "react";
 import { Task, Author, Publisher, User } from "../../../shared/entities/types";
+import { extractMeta, ensureArray } from "../utils/normalize";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 interface TaskCardProps {
-  task: Task | { content_id: number } | null;
+  task: Task | Task[] | null;
   useStore?: boolean;
   compact?: boolean;
-}
-
-// 🔍 Helper: Pull authors/publishers/users from store or props
-function ensureArray<T>(val: unknown): T[] {
-  // JSON string case
-  if (typeof val === "string") {
-    try {
-      const parsed = JSON.parse(val);
-      if (Array.isArray(parsed)) return parsed;
-    } catch (e) {
-      console.warn("🧨 Failed to parse stringified array:", val);
-      return [];
-    }
-  }
-
-  if (Array.isArray(val)) return val;
-
-  if (
-    val &&
-    typeof val === "object" &&
-    typeof (val as any).length === "number" &&
-    (val as any).length > 0 &&
-    [...Array((val as any).length).keys()].every((i) => i in (val as any))
-  ) {
-    return Array.from(
-      { length: (val as any).length },
-      (_, i) => (val as any)[i]
-    );
-  }
-
-  if (
-    val &&
-    typeof val === "object" &&
-    Object.keys(val).every((k) => /^\d+$/.test(k))
-  ) {
-    return Object.values(val) as T[];
-  }
-
-  return [];
-}
-
-function extractMeta(
-  task: Task | { content_id: number } | null,
-  useStore: boolean
-): {
-  authors: Author[];
-  publishers: Publisher[];
-  users: User[];
-} {
-  if (!task || !("content_id" in task)) {
-    return { authors: [], publishers: [], users: [] };
-  }
-
-  const contentId = task.content_id;
-
-  if (useStore) {
-    const state = useTaskStore.getState();
-    return {
-      authors: state.authors?.[contentId] || [],
-      publishers: state.publishers?.[contentId] || [],
-      users: state.assignedUsers?.[contentId] || [],
-    };
-  }
-
-  const fullTask = task as Task;
-  console.log(fullTask, "TTRRYRYRUEIWOQWP", fullTask.authors, "AUTHR");
-  return {
-    authors: ensureArray<Author>(fullTask.authors),
-    publishers: ensureArray<Publisher>(fullTask.publishers),
-    users: ensureArray<User>(fullTask.users),
-  };
+  onSelect?: (task: Task) => void;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({
   task,
   useStore = true,
   compact = false,
+  onSelect,
 }) => {
   const navigate = useNavigate();
+  const [activeTask, setActiveTask] = useState<Task | null>(
+    Array.isArray(task) ? task[0] : task
+  );
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
-
-  const redirectTo = useTaskStore((s) => s.selectedRedirect);
+  const { setSelectedTask, selectedRedirect } = useTaskStore();
   const fetchAssignedUsers = useTaskStore((s) => s.fetchAssignedUsers);
-  const { setSelectedTask } = useTaskStore();
 
   const {
     isOpen: isAssignOpen,
@@ -126,31 +59,37 @@ const TaskCard: React.FC<TaskCardProps> = ({
     onClose: onReferenceModalClose,
   } = useDisclosure();
 
-  if (!task || !("content_id" in task)) return null;
+  useEffect(() => {
+    if (Array.isArray(task)) setActiveTask(task[0]);
+    else setActiveTask(task);
+  }, [task]);
 
-  const { authors, publishers, users } = extractMeta(task, useStore);
+  if (!activeTask) return null;
+
+  const { authors, publishers, users } = extractMeta(activeTask, useStore);
 
   const handleSelect = () => {
-    setSelectedTask(task as Task);
-    navigate(redirectTo || "/dashboard");
+    setSelectedTask(activeTask);
+    navigate(selectedRedirect || "/dashboard");
   };
 
   const handleDrillDown = () => {
-    navigate(`/tasks/${task.content_id}`, { state: { task } });
+    navigate(`/tasks/${activeTask.content_id}`, {
+      state: { task: activeTask },
+    });
   };
 
   const handleAssignedUsersOpen = async () => {
-    if (useStore) {
-      await fetchAssignedUsers(task.content_id);
-    }
+    if (useStore) await fetchAssignedUsers(activeTask.content_id);
   };
 
   const handleOpenModal = (openModal: () => void) => {
     if (cardRef.current) {
       const { top, left } = cardRef.current.getBoundingClientRect();
-      const newTop = top - 70;
-      const newLeft = left >= 740 ? left - 400 : left + 200;
-      setModalPosition({ top: newTop, left: newLeft });
+      setModalPosition({
+        top: top - 70,
+        left: left >= 740 ? left - 400 : left + 200,
+      });
     }
     openModal();
   };
@@ -173,51 +112,79 @@ const TaskCard: React.FC<TaskCardProps> = ({
         margin="10px"
       >
         <Center>
-          <Text fontWeight="bold" fontSize="md" mb={0}>
+          <Text fontWeight="bold" fontSize="md">
             Content Details
           </Text>
         </Center>
 
-        <Text
-          fontWeight="bold"
-          mt={2}
-          bg="whiteAlpha.700"
-          color="gray.800"
-          borderRadius="md"
-          noOfLines={2}
-          fontSize={compact ? "sm" : "md"}
-          textAlign="center"
-          marginBottom="4px"
-        >
-          <Link href={(task as Task).url} target="_blank">
-            {(task as Task).content_name}
-          </Link>
-        </Text>
+        {Array.isArray(task) && task.length > 1 ? (
+          <Select
+            size="md"
+            value={activeTask.content_id}
+            onChange={(e) => {
+              const next = task.find(
+                (t) => t.content_id === Number(e.target.value)
+              );
+              if (next) {
+                setActiveTask(next);
+                onSelect?.(next); // 🧠 Notify UnifiedHeader of change
+              }
+            }}
+            mb={2}
+            fontWeight="semibold"
+            color="gray.800"
+            bg="whiteAlpha.800"
+            borderRadius="md"
+          >
+            {task.map((t) => (
+              <option key={t.content_id} value={t.content_id}>
+                {t.content_name.slice(0, 30)}
+              </option>
+            ))}
+          </Select>
+        ) : (
+          <Text
+            mt={2}
+            fontWeight="semibold"
+            bg="whiteAlpha.700"
+            color="gray.800"
+            borderRadius="md"
+            noOfLines={2}
+            fontSize={compact ? "sm" : "md"}
+            textAlign="center"
+            mb={2}
+          >
+            <a href={activeTask.url} target="_blank" rel="noopener noreferrer">
+              {activeTask.content_name}
+            </a>
+          </Text>
+        )}
 
         <Box flex="1">
           <Box w="100%" h="150px" overflow="hidden" borderRadius="md" mb={2}>
             <Image
-              src={`${API_BASE_URL}/${(task as Task).thumbnail}`}
+              src={`${API_BASE_URL}/${activeTask.thumbnail}`}
               alt="Thumbnail"
-              borderRadius="md"
               w="100%"
               h="100%"
               objectFit="cover"
-              mx="auto"
             />
           </Box>
 
           {authors.length > 0 && (
-            <Text fontSize={compact ? "xs" : "sm"} mt={1}>
+            <Text fontSize={compact ? "xs" : "sm"}>
               <strong>Author:</strong>{" "}
               {authors
-                .map((a) => `${a.author_first_name} ${a.author_last_name}`)
+                .map(
+                  (a) =>
+                    `${a.author_first_name} ${a.author_last_name} ${a.author_title}`
+                )
                 .join(", ")}
             </Text>
           )}
 
           {publishers.length > 0 && (
-            <Text fontSize={compact ? "xs" : "sm"} mt={1}>
+            <Text fontSize={compact ? "xs" : "sm"}>
               <strong>Publisher:</strong>{" "}
               {publishers.map((p) => p.publisher_name).join(", ")}
             </Text>
@@ -225,16 +192,16 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
           <Progress
             value={
-              (task as Task).progress === "Completed"
+              activeTask.progress === "Completed"
                 ? 100
-                : (task as Task).progress === "Partially Complete"
+                : activeTask.progress === "Partially Complete"
                 ? 50
                 : 25
             }
             colorScheme={
-              (task as Task).progress === "Completed"
+              activeTask.progress === "Completed"
                 ? "green"
-                : (task as Task).progress === "Partially Complete"
+                : activeTask.progress === "Partially Complete"
                 ? "yellow"
                 : "red"
             }
@@ -283,8 +250,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
           <AssignUserModal
             isOpen={isAssignOpen}
             onClose={onAssignClose}
-            taskId={task.content_id}
-            taskName={(task as Task).content_name}
+            taskId={activeTask.content_id}
+            taskName={activeTask.content_name}
             position={modalPosition}
           />
         )}
@@ -293,7 +260,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           <ReferenceModal
             isOpen={isReferenceModalOpen}
             onClose={onReferenceModalClose}
-            taskId={task.content_id}
+            taskId={activeTask.content_id}
           />
         )}
       </Box>

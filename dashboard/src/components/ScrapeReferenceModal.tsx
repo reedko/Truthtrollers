@@ -26,7 +26,8 @@ const ScrapeReferenceModal: React.FC<{
   isOpen: boolean;
   onClose: () => void;
   taskId: string;
-}> = ({ isOpen, onClose, taskId }) => {
+  onUpdateReferences?: () => void;
+}> = ({ isOpen, onClose, taskId, onUpdateReferences }) => {
   const [url, setUrl] = useState<string>("");
   const [isScraping, setIsScraping] = useState(false);
   const toast = useToast();
@@ -82,7 +83,7 @@ const ScrapeReferenceModal: React.FC<{
           duration: 3000,
           isClosable: true,
         });
-
+        onUpdateReferences?.();
         onClose();
       } else {
         toast({

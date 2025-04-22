@@ -24,6 +24,7 @@ import {
   addReferenceToTask,
   addReferenceToClaim,
   deleteReferenceFromTask,
+  fetchUnifiedTasksByPivot,
 } from "../services/useDashboardAPI";
 
 export interface TaskStoreState {
@@ -49,6 +50,9 @@ export interface TaskStoreState {
   currentPage: number;
   claimsByTask: { [taskId: number]: Claim[] };
 
+  selectedPivotTasks: Task[];
+  setSelectedPivotTasks: (tasks: Task[]) => void;
+
   setSelectedTask: (input: Task | number | null) => void;
   setRedirect: (path: string) => void;
   fetchTasks: () => Promise<void>;
@@ -60,6 +64,11 @@ export interface TaskStoreState {
   fetchReferences: (taskId: number) => Promise<void>;
   fetchClaims: (taskId: number) => Promise<void>;
   fetchClaimReferences: (claimId: number) => Promise<void>;
+
+  fetchTasksByPivot: (
+    type: "task" | "author" | "publisher",
+    id: number
+  ) => Promise<Task[]>;
 
   addReferenceToTask: (taskId: number, referenceId: number) => Promise<void>;
   deleteReferenceFromTask: (
@@ -96,6 +105,7 @@ export const useTaskStore = create<TaskStoreState>()(
       auth_references: [],
       selectedTaskId: null,
       selectedTask: null,
+      selectedPivotTasks: [],
       selectedRedirect: "/dashboard",
       currentPage: 0,
       claimsByTask: {},
@@ -118,7 +128,31 @@ export const useTaskStore = create<TaskStoreState>()(
           set({ selectedTask: input, selectedTaskId: input.content_id });
         }
       },
+      setSelectedPivotTasks: (tasks) => {
+        set({ selectedPivotTasks: tasks });
+      },
+      fetchTasksByPivot: async (type, id) => {
+        const results = await fetchUnifiedTasksByPivot(type, id);
+        const authorsMap: Record<number, Author[]> = {};
+        const publishersMap: Record<number, Publisher[]> = {};
 
+        results.forEach((task) => {
+          authorsMap[task.content_id] = Array.isArray(task.authors)
+            ? task.authors
+            : [];
+          publishersMap[task.content_id] = Array.isArray(task.publishers)
+            ? task.publishers
+            : [];
+        });
+
+        set({
+          selectedPivotTasks: results,
+          authors: { ...get().authors, ...authorsMap },
+          publishers: { ...get().publishers, ...publishersMap },
+        });
+
+        return results;
+      },
       fetchTasks: async () => {
         const { currentPage } = get();
         const content = await fetchTasksAPI(currentPage + 1, 100);

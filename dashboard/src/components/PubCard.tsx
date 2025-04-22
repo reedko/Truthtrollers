@@ -215,6 +215,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
               mb={3}
               textAlign="center"
               bg="whiteAlpha.800"
+              color="gray.800"
               borderRadius="md"
             >
               {publisherList.map((pub) => (
@@ -239,7 +240,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
             </Text>
           )}
 
-          <Center mb={2}>
+          <Center>
             <Box
               as="button"
               onClick={() => fileInputRef.current?.click()}

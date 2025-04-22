@@ -1,5 +1,11 @@
 // src/components/RelationshipMap.tsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Box } from "@chakra-ui/react";
 import { Claim, ReferenceWithClaims } from "../../../shared/entities/types";
 import { fetchClaimsAndLinkedReferencesForTask } from "../services/useDashboardAPI";
@@ -42,11 +48,11 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerX, setContainerX] = useState(0);
-  const adjustedLeftX = leftX - containerX - 12;
-  const adjustedRightX = rightX - containerX + 15;
+  const adjustedLeftX = leftX - 12;
+  const adjustedRightX = rightX + 15;
   const [hasMeasuredContainer, setHasMeasuredContainer] = useState(false);
 
-  useEffect(() => {
+  /*   useEffect(() => {
     const timeout = setTimeout(() => {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -57,9 +63,24 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
           }
         });
       });
-    }, 50); // ← no delay, just wait for browser to do one frame
+    }, 250);
+      return () => clearTimeout(timeout);
+  }, []);
+   // ← no delay, just wait for browser to do one frame
+ */
+  useLayoutEffect(() => {
+    const observer = new ResizeObserver(() => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setContainerX(rect.x);
+      }
+    });
 
-    return () => clearTimeout(timeout);
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {

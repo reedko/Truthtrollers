@@ -8,7 +8,7 @@ import { fetchHtmlWithPuppeteer } from "./getHtmlWithPuppeteer";
 const IS_EXTENSION = !!chrome?.runtime?.id;
 
 const EXTENSION_ID = "phacjklngoihnlhcadefaiokbacnagbf";
-const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
+const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 //const BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
 
 // B) Utility: Extract Text Content (Extension & Dashboard Variants)

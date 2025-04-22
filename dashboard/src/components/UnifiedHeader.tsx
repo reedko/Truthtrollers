@@ -1,36 +1,47 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Grid, Box } from "@chakra-ui/react";
 import { useTaskStore } from "../store/useTaskStore";
-import { useShallow } from "zustand/react/shallow";
 import TaskCard from "./TaskCard";
 import PubCard from "./PubCard";
 import AuthCard from "./AuthCard";
 import BoolCard from "./BoolCard";
 import ProgressCard from "./ProgressCard";
+import { Author, Publisher, Task } from "../../../shared/entities/types";
+import { ensureArray } from "../utils/normalize";
 
-const UnifiedHeader: React.FC = () => {
-  const task = useTaskStore((s) => s.selectedTask);
-  const contentId = task?.content_id;
+interface UnifiedHeaderProps {
+  pivotType?: "task" | "author" | "publisher";
+  pivotId?: number;
+}
 
-  const fetchAuthors = useTaskStore((s) => s.fetchAuthors);
-  const fetchPublishers = useTaskStore((s) => s.fetchPublishers);
-
-  const authors = useTaskStore(
-    useShallow((s) => (contentId ? s.authors[contentId] || [] : []))
-  );
-  const publishers = useTaskStore(
-    useShallow((s) => (contentId ? s.publishers[contentId] || [] : []))
-  );
+const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
+  pivotType,
+  pivotId,
+}) => {
+  const selectedTask = useTaskStore((s) => s.selectedTask);
+  const fetchTasksByPivot = useTaskStore((s) => s.fetchTasksByPivot);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [pivotTask, setPivotTask] = useState<Task | null>(null);
 
   useEffect(() => {
-    if (contentId) {
-      fetchAuthors(contentId);
-      fetchPublishers(contentId);
-    }
-  }, [contentId]);
+    const load = async () => {
+      if (pivotType && pivotId !== undefined) {
+        const results = await fetchTasksByPivot(pivotType, pivotId);
+        setTasks(results);
+        setPivotTask(results[0]);
+      } else if (selectedTask) {
+        setTasks([selectedTask]);
+        setPivotTask(selectedTask);
+      }
+    };
+    load();
+  }, [pivotType, pivotId, selectedTask]);
 
-  if (!task) return null;
+  if (!pivotTask) return null;
 
+  const authors = ensureArray<Author>(pivotTask.authors);
+  const publishers = ensureArray<Publisher>(pivotTask.publishers);
+  console.log(authors, "SDFDFDF");
   return (
     <Grid
       templateColumns={{ base: "1fr", md: "repeat(5, 1fr)" }}
@@ -46,7 +57,7 @@ const UnifiedHeader: React.FC = () => {
         />
       </Box>
       <Box>
-        <TaskCard task={task} useStore={false} />
+        <TaskCard task={tasks} useStore={false} onSelect={setPivotTask} />
       </Box>
       <Box>
         <PubCard publishers={publishers} />
