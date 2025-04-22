@@ -30,6 +30,7 @@ interface ReferenceListProps {
   taskId: number;
   onReferenceClick: (ref: ReferenceWithClaims) => void;
   selectedReference: ReferenceWithClaims | null; // 👈 add this!
+  onUpdateReferences?: () => void; // ✅ new
 }
 
 const ReferenceList: React.FC<ReferenceListProps> = ({
@@ -39,6 +40,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
   taskId,
   onReferenceClick,
   selectedReference,
+  onUpdateReferences,
 }) => {
   const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -129,6 +131,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
         isOpen={isReferenceModalOpen}
         onClose={() => setIsReferenceModalOpen(false)}
         taskId={taskId} // Pass actual taskId from parent
+        onUpdateReferences={onUpdateReferences}
       />
 
       {/* 🔥 Modal for Editing Reference Title */}

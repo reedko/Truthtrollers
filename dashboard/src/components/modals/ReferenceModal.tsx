@@ -37,6 +37,7 @@ interface ReferenceModalProps {
   usePersonalRefs?: boolean;
   personalRefs?: LitReference[];
   onSelectReference?: (ref: LitReference) => void;
+  onUpdateReferences?: () => void; // ✅ New prop
 }
 
 const ReferenceModal: React.FC<ReferenceModalProps> = ({
@@ -47,6 +48,7 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
   usePersonalRefs = false,
   personalRefs = [],
   onSelectReference,
+  onUpdateReferences,
 }) => {
   const toast = useToast();
 
@@ -70,6 +72,7 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
       fetchClaimSources(claimId).then(setClaimReferences);
     } else if (typeof taskId === "number") {
       fetchReferences(taskId);
+      onUpdateReferences?.();
     }
   }, [isOpen, claimId, taskId]);
 
@@ -92,6 +95,7 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
           isClosable: true,
         });
         fetchReferences(taskId); // refresh list
+        onUpdateReferences?.();
       } else if (typeof claimId === "number") {
         await deleteClaimSource(id);
         const updated = await fetchClaimSources(claimId);
@@ -116,6 +120,7 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
 
   // 📚 Select from global list
   const handleOpenSelectModal = () => {
+    console.log("Opening select modal with taskId:", taskId);
     if (typeof taskId === "number") setSelectedTask(taskId);
     setIsSelectOpen(true);
   };
@@ -226,6 +231,7 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
               : async (refId) => {
                   if (taskId) await addReferenceToTask(taskId, refId);
                   fetchReferences(taskId!);
+                  onUpdateReferences?.();
                 }
           }
           onRefresh={
@@ -244,6 +250,7 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
           isOpen={isScrapeOpen}
           onClose={() => setIsScrapeOpen(false)}
           taskId={taskId?.toString() || ""}
+          onUpdateReferences={onUpdateReferences}
         />
       )}
     </>

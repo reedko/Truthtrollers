@@ -1170,47 +1170,154 @@ app.post("/api/reset-password", (req, res) => {
   );
 });
 
+///Unified taskauthorpubuser
+// 🔧 EXPRESS API ROUTE (backend/api/index.js or wherever you define routes)
+// Server-side pivot route
+app.get("/api/unified-tasks/:pivotType/:pivotId", (req, res) => {
+  const { pivotType, pivotId } = req.params;
+
+  let sql = "";
+  let params = [pivotId];
+
+  if (pivotType === "task") {
+    sql = `SELECT ... FROM content t WHERE t.content_id = ? AND t.content_type = 'task'`;
+  } else if (pivotType === "author") {
+    sql = `
+      SELECT ...
+      FROM content t
+      JOIN content_authors ca ON t.content_id = ca.content_id
+      WHERE ca.author_id = ? AND t.content_type = 'task'
+    `;
+  } else if (pivotType === "publisher") {
+    sql = `
+      SELECT ...
+      FROM content t
+      JOIN content_publishers cp ON t.content_id = cp.content_id
+      WHERE cp.publisher_id = ? AND t.content_type = 'task'
+    `;
+  } else {
+    return res.status(400).json({ error: "Invalid pivot type" });
+  }
+
+  // Append your JSON subqueries for authors, publishers, users, topic here 👇
+  sql = sql.replace(
+    "SELECT ...",
+    `
+    SELECT 
+      t.*,
+      (
+        SELECT topic_name 
+        FROM topics tt
+        JOIN content_topics ct ON tt.topic_id = ct.topic_id
+        WHERE ct.content_id = t.content_id
+        ORDER BY ct.topic_order ASC
+        LIMIT 1
+      ) AS topic,
+
+      (
+        SELECT JSON_ARRAYAGG(
+                 JSON_OBJECT(
+                               'author_id', a.author_id, 
+               'author_first_name', IFNULL(a.author_first_name, ''), 
+               'author_last_name', IFNULL(a.author_last_name, ''),
+               'author_title', IFNULL(a.author_title, ''),
+               'author_profile_pic', a.author_profile_pic,
+               'description', a.description
+                 )
+               )
+        FROM content_authors ca
+        JOIN authors a ON ca.author_id = a.author_id
+        WHERE ca.content_id = t.content_id
+      ) AS authors,
+
+      (
+        SELECT JSON_ARRAYAGG(
+                 JSON_OBJECT(
+                   'publisher_id', p.publisher_id, 
+                   'publisher_name', p.publisher_name,
+                   'publisher_icon', p.publisher_icon,
+                   'description', p.description
+                 )
+               )
+        FROM content_publishers cp
+        JOIN publishers p ON cp.publisher_id = p.publisher_id
+        WHERE cp.content_id = t.content_id
+      ) AS publishers,
+
+      (
+        SELECT JSON_ARRAYAGG(
+                 JSON_OBJECT(
+                   'user_id', u.user_id,
+                   'username', u.username,
+                   'email', u.email
+                 )
+               )
+        FROM content_users cu
+        JOIN users u ON cu.user_id = u.user_id
+        WHERE cu.content_id = t.content_id
+      ) AS users
+  `
+  );
+
+  pool.query(sql, params, (err, results) => {
+    if (err) {
+      console.error("Pivot query failed:", err);
+      return res.status(500).json({ error: "Database query failed" });
+    }
+    res.json(results);
+  });
+});
+
 //Tasks
 app.get("/api/content/:id", (req, res) => {
   const taskId = req.params.id;
 
   const sql = `
-    SELECT 
-      t.*, 
-      -- Fetch topic
-      (SELECT topic_name 
-       FROM topics tt
-       JOIN content_topics ct ON tt.topic_id = ct.topic_id
-       WHERE ct.content_id = t.content_id
-       ORDER BY ct.topic_order ASC
-       LIMIT 1) AS topic,
-      -- Authors
-      COALESCE(
-        JSON_ARRAYAGG(
-          JSON_OBJECT(
-            'author_id', a.author_id, 
-            'author_first_name', IFNULL(a.author_first_name, ' '), 
-            'author_last_name', IFNULL(a.author_last_name, ' ')
-          )
-        ), 
-        JSON_ARRAY()
-      ) AS authors,
-      -- Publishers
-      COALESCE(
-        JSON_ARRAYAGG(
-          JSON_OBJECT(
-            'publisher_id', p.publisher_id, 
-            'publisher_name', p.publisher_name
-          )
-        ), 
-        JSON_ARRAY()
-      ) AS publishers
-    FROM content t
-    LEFT JOIN content_authors ta ON t.content_id = ta.content_id
-    LEFT JOIN authors a ON ta.author_id = a.author_id
-    LEFT JOIN content_publishers tp ON t.content_id = tp.content_id
-    LEFT JOIN publishers p ON tp.publisher_id = p.publisher_id
-    WHERE t.content_type = 'task' AND t.content_id = ?
+  SELECT 
+  t.*,
+
+  -- Topic
+  (SELECT topic_name 
+   FROM topics tt
+   JOIN content_topics ct ON tt.topic_id = ct.topic_id
+   WHERE ct.content_id = t.content_id
+   ORDER BY ct.topic_order ASC
+   LIMIT 1) AS topic,
+
+  -- Authors
+  (
+    SELECT JSON_ARRAYAGG(
+             JSON_OBJECT(
+               'author_id', a.author_id, 
+               'author_first_name', IFNULL(a.author_first_name, ''), 
+               'author_last_name', IFNULL(a.author_last_name, ''),
+               'author_title', IFNULL(a.author_title, ''),
+               'author_profile_pic', a.author_profile_pic,
+               'description', a.description
+             )
+           )
+    FROM content_authors ca
+    JOIN authors a ON ca.author_id = a.author_id
+    WHERE ca.content_id = t.content_id
+  ) AS authors,
+
+  -- Publishers
+  (
+    SELECT JSON_ARRAYAGG(
+             JSON_OBJECT(
+               'publisher_id', p.publisher_id, 
+               'publisher_name', p.publisher_name,
+               'publisher_icon', p.publisher_icon,
+               'description', p.description
+             )
+           )
+    FROM content_publishers cp
+    JOIN publishers p ON cp.publisher_id = p.publisher_id
+    WHERE cp.content_id = t.content_id
+  ) AS publishers
+
+FROM content t
+WHERE t.content_type = 'task' AND t.content_id = ?
     GROUP BY t.content_id
   `;
 
@@ -1223,7 +1330,7 @@ app.get("/api/content/:id", (req, res) => {
     if (results.length === 0) {
       return res.status(404).json({ error: "Task not found" });
     }
-
+    console.log(results[0], "contentbyid");
     res.json(results[0]);
   });
 });
@@ -1236,35 +1343,49 @@ app.get("/api/content", (req, res) => {
   const sql = `
    SELECT 
   t.*,
+
+  -- Topic
+  (SELECT topic_name 
+   FROM topics tt
+   JOIN content_topics ct ON tt.topic_id = ct.topic_id
+   WHERE ct.content_id = t.content_id
+   ORDER BY ct.topic_order ASC
+   LIMIT 1) AS topic,
+
+  -- Authors
   (
-  
-    SELECT topic_name 
-    FROM topics tt
-    JOIN content_topics ct ON tt.topic_id = ct.topic_id
-    WHERE ct.content_id = t.content_id
-    ORDER BY ct.topic_order ASC
-    LIMIT 1
-  ) AS topic,
-  JSON_ARRAYAGG(
-    JSON_OBJECT(
-      'author_id', a.author_id,
-      'author_first_name', a.author_first_name,
-      'author_last_name', a.author_last_name,
-      'author_profile_pic', a.author_profile_pic
-    )
+    SELECT JSON_ARRAYAGG(
+             JSON_OBJECT(
+               'author_id', a.author_id, 
+               'author_first_name', IFNULL(a.author_first_name, ''), 
+               'author_last_name', IFNULL(a.author_last_name, ''),
+               'author_title', IFNULL(a.author_title, ''),
+               'author_profile_pic', a.author_profile_pic,
+               'description', a.description
+             )
+           )
+    FROM content_authors ca
+    JOIN authors a ON ca.author_id = a.author_id
+    WHERE ca.content_id = t.content_id
   ) AS authors,
-  JSON_ARRAYAGG(
-    JSON_OBJECT(
-      'publisher_id', p.publisher_id,
-      'publisher_name', p.publisher_name
-    )
+
+  -- Publishers
+  (
+    SELECT JSON_ARRAYAGG(
+             JSON_OBJECT(
+               'publisher_id', p.publisher_id, 
+               'publisher_name', p.publisher_name,
+               'publisher_icon', p.publisher_icon,
+               'description', p.description
+             )
+           )
+    FROM content_publishers cp
+    JOIN publishers p ON cp.publisher_id = p.publisher_id
+    WHERE cp.content_id = t.content_id
   ) AS publishers
+
 FROM content t
-LEFT JOIN content_authors ca ON t.content_id = ca.content_id
-LEFT JOIN authors a ON ca.author_id = a.author_id
-LEFT JOIN content_publishers cp ON t.content_id = cp.content_id
-LEFT JOIN publishers p ON cp.publisher_id = p.publisher_id
-WHERE t.content_type = 'task'
+WHERE t.content_type = 'task' 
 GROUP BY t.content_id
     LIMIT ? OFFSET ?;
   `;
@@ -1292,25 +1413,38 @@ app.get("/api/user-tasks/:user_id", async (req, res) => {
         ORDER BY ct.topic_order ASC
         LIMIT 1
       ) AS topic,
-     JSON_ARRAYAGG(
-    JSON_OBJECT(
-      'author_id', a.author_id,
-      'author_first_name', a.author_first_name,
-      'author_last_name', a.author_last_name
-    )
+   (
+    SELECT JSON_ARRAYAGG(
+             JSON_OBJECT(
+               'author_id', a.author_id, 
+               'author_first_name', IFNULL(a.author_first_name, ''), 
+               'author_last_name', IFNULL(a.author_last_name, ''),
+               'author_title', IFNULL(a.author_title, ''),
+               'author_profile_pic', a.author_profile_pic,
+               'description', a.description
+             )
+           )
+    FROM content_authors ca
+    JOIN authors a ON ca.author_id = a.author_id
+    WHERE ca.content_id = t.content_id
   ) AS authors,
-  JSON_ARRAYAGG(
-    JSON_OBJECT(
-          'publisher_id', p.publisher_id,
-          'publisher_name', p.publisher_name
-        )
-      ) AS publishers
+
+ (
+    SELECT JSON_ARRAYAGG(
+             JSON_OBJECT(
+               'publisher_id', p.publisher_id, 
+               'publisher_name', p.publisher_name,
+               'publisher_icon', p.publisher_icon,
+               'description', p.description
+             )
+           )
+    FROM content_publishers cp
+    JOIN publishers p ON cp.publisher_id = p.publisher_id
+    WHERE cp.content_id = t.content_id
+  ) AS publishers
+
     FROM content t
     JOIN content_users cu ON t.content_id = cu.content_id
-    LEFT JOIN content_authors ca ON t.content_id = ca.content_id
-    LEFT JOIN authors a ON ca.author_id = a.author_id
-    LEFT JOIN content_publishers cp ON t.content_id = cp.content_id
-    LEFT JOIN publishers p ON cp.publisher_id = p.publisher_id
     WHERE cu.user_id = ? AND t.content_type = 'task'
     GROUP BY t.content_id
   `;
@@ -2113,31 +2247,56 @@ app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
   }
 });
  */
+import puppeteer from "puppeteer";
+
 app.post("/api/fetch-page-content", async (req, res) => {
   const { url } = req.body;
   if (!url || typeof url !== "string") {
-    console.error("❌ Invalid or missing URL:", url);
     return res.status(400).json({ error: "Invalid or missing URL" });
   }
 
   try {
-    console.log(`🌍 Fetching external page: ${url}`);
+    console.log(`🌍 Axios fetching: ${url}`);
 
     const response = await axios.get(url, {
       headers: {
         ...DEFAULT_HEADERS,
-        Referer: url, // Include referer for added authenticity
+        Referer: url,
       },
-      timeout: 3000, // Increased timeout to 3 seconds
+      timeout: 10000,
     });
 
-    console.log(
-      `✅ Successfully fetched ${response.data.length} bytes from ${url}`
+    console.log(`✅ Axios fetched ${response.data.length} chars`);
+    return res.json({ html: response.data, source: "axios" });
+  } catch (axiosError) {
+    console.warn(
+      "⚠️ Axios failed, falling back to Puppeteer...",
+      axiosError.message
     );
-    return res.json({ html: response.data });
-  } catch (error) {
-    console.error("❌ Error fetching external page:", error.message);
-    res.status(500).json({ error: "Failed to fetch page content" });
+  }
+
+  try {
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+
+    const page = await browser.newPage();
+    await page.setUserAgent(DEFAULT_HEADERS["User-Agent"]);
+    await page.setExtraHTTPHeaders(DEFAULT_HEADERS);
+
+    await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
+
+    const html = await page.content();
+    await browser.close();
+
+    console.log(`✅ Puppeteer fetched ${html.length} chars`);
+    return res.json({ html, source: "puppeteer" });
+  } catch (puppeteerError) {
+    console.error("❌ Puppeteer failed:", puppeteerError.message);
+    return res
+      .status(500)
+      .json({ error: "Failed to fetch page via both axios and puppeteer" });
   }
 });
 

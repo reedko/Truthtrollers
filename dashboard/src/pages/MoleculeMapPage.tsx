@@ -71,21 +71,41 @@ const MoleculeMapPage = () => {
   const handleReframeClick = async () => {
     if (!selectedNode) return;
 
+    const pivotType = selectedNode?.type as "task" | "author" | "publisher";
+    const pivotId =
+      selectedNode?.content_id ??
+      selectedNode?.author_id ??
+      selectedNode?.publisher_id ??
+      null;
+
     try {
       const result = await fetchNewGraphDataFromLegacyRoute(selectedNode);
       setGraphData(result);
+
+      if (pivotType && pivotId !== null) {
+        await useTaskStore.getState().fetchTasksByPivot(pivotType, pivotId);
+      }
     } catch (err) {
       console.error("❌ Error reframing graph:", err);
     }
   };
-
   if (!selectedTask) return null;
 
   return (
     <Box p={4}>
       <Card mb={6} mt={2}>
         <CardBody>
-          <UnifiedHeader />
+          <UnifiedHeader
+            pivotType={
+              (selectedNode?.type as "task" | "author" | "publisher") || "task"
+            }
+            pivotId={
+              selectedNode?.content_id ??
+              selectedNode?.author_id ??
+              selectedNode?.publisher_id ??
+              selectedTask.content_id
+            }
+          />
         </CardBody>
       </Card>
 

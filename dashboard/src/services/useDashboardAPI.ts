@@ -131,7 +131,7 @@ export const fetchPublisherRatings = async (publisherId: number) => {
     const res = await axios.get(
       `${API_BASE_URL}/api/publishers/${publisherId}/ratings`
     );
-    console.log(publisherId, ":KUNDIS");
+
     return res.data;
   } catch (err) {
     console.error("❌ Failed to fetch publisher ratings:", err);
@@ -174,6 +174,7 @@ export const updatePublisherRating = async (
 };
 /** --------------------- 📝 TASK (CONTENT) FUNCTIONS --------------------- **/
 /** fetch one task  */
+/** fetch one task  */
 // services/useDashboardAPI.ts
 
 export async function fetchTaskById(taskId: number): Promise<Task> {
@@ -181,6 +182,23 @@ export async function fetchTaskById(taskId: number): Promise<Task> {
   if (!response.ok) throw new Error("Failed to fetch task");
   return response.json();
 }
+// services/useDashboardAPI.ts
+
+// ✅ useDashboardAPI.ts
+
+//Fetch all taskinfo by publisher, author or task id
+export async function fetchUnifiedTasksByPivot(
+  pivotType: "task" | "author" | "publisher",
+  pivotId: number
+): Promise<Task[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/unified-tasks/${pivotType}/${pivotId}`
+  );
+
+  if (!response.ok) throw new Error("Failed to fetch unified tasks");
+  return response.json();
+}
+
 /**
  * Fetch all tasks (content items).
  */

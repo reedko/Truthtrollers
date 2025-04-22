@@ -64,6 +64,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
   const [verifyingClaim, setVerifyingClaim] = useState<Claim | null>(null);
   const leftRef = useRef<HTMLDivElement | null>(null);
   const rightRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const [leftX, setLeftX] = useState(0);
   const [rightX, setRightX] = useState(0);
   const [computedHeight, setComputedHeight] = useState(500);
@@ -72,13 +73,29 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
     null
   );
 
-  const updateXPositionsAndHeight = () => {
+  /*   const updateXPositionsAndHeight = () => {
     if (leftRef.current && rightRef.current) {
       const leftBox = leftRef.current.getBoundingClientRect();
       const rightBox = rightRef.current.getBoundingClientRect();
 
       setLeftX(leftBox.left + leftBox.width);
       setRightX(rightBox.left);
+
+      const fullHeight =
+        Math.max(leftBox.height, rightBox.height) + headerPadding;
+      setComputedHeight(fullHeight);
+    }
+  }; */
+
+  const updateXPositionsAndHeight = () => {
+    if (leftRef.current && rightRef.current && containerRef.current) {
+      const leftBox = leftRef.current.getBoundingClientRect();
+      const rightBox = rightRef.current.getBoundingClientRect();
+      const containerBox = containerRef.current.getBoundingClientRect();
+
+      // ✅ These are now RELATIVE to containerRef
+      setLeftX(leftBox.left + leftBox.width - containerBox.left);
+      setRightX(rightBox.left - containerBox.left);
 
       const fullHeight =
         Math.max(leftBox.height, rightBox.height) + headerPadding;
@@ -158,6 +175,15 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
       console.error("🔥 Error fetching claims by ID:", err);
     }
     setReadOnly(true);
+  };
+
+  const handleDeleteReference = async (
+    contentId: number,
+    refId: number
+  ): Promise<void> => {
+    await deleteReferenceFromTask(contentId, refId);
+
+    setRefreshReferences((prev) => !prev);
   };
 
   const handleUpdateReference = async (
@@ -248,7 +274,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
             setEditingClaim={setEditingClaim}
           />
         </Box>
-        <Box>
+        <Box ref={containerRef}>
           {/* Middle column reserved */}
           <RelationshipMap
             key={`${leftX}-${rightX}-${claims.length}-${references.length}`}
@@ -269,7 +295,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
             references={references}
             onEditReference={handleUpdateReference}
             onDeleteReference={(refId) =>
-              deleteReferenceFromTask(contentId, refId)
+              handleDeleteReference(contentId, refId)
             }
             taskId={contentId}
             onReferenceClick={(ref) => {
@@ -277,6 +303,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
               setIsReferenceClaimsModalOpen(true);
             }}
             selectedReference={selectedReference}
+            onUpdateReferences={() => setRefreshReferences((prev) => !prev)}
           />
         </Box>
       </Grid>

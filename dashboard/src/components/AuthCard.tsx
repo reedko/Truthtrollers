@@ -124,6 +124,7 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
     const avg = values.reduce((acc, val) => acc + val, 0) / values.length;
     return avg.toFixed(1);
   };
+  console.log("🧠 Active Author:", activeAuthor);
   return (
     <Center>
       <Box
@@ -140,129 +141,135 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
         justifyContent="space-between"
         margin="10px"
       >
-        <Center>
-          <Text fontWeight="bold" fontSize="lg" mb={2} textAlign="center">
-            Author Details
-          </Text>
-        </Center>
-        {authors.length > 1 ? (
-          <Select
-            size="sm"
-            value={activeAuthor?.author_id}
-            onChange={(e) => {
-              const found = authors.find(
-                (a) => a.author_id === Number(e.target.value)
-              );
-              if (found) setActiveAuthor(found);
-            }}
-            mb={3}
-            textAlign="center"
-            bg="whiteAlpha.800"
-            borderRadius="md"
-          >
-            {authors.map((author) => (
-              <option key={author.author_id} value={author.author_id}>
-                {author.author_first_name} {author.author_last_name}
-              </option>
-            ))}
-          </Select>
-        ) : (
-          <Text
-            fontWeight="semibold"
-            fontSize="md"
-            mb={3}
-            textAlign="center"
-            bg="whiteAlpha.700"
-            color="gray.800"
-            borderRadius="md"
-            px={2}
-            py={1}
-          >
-            {activeAuthor?.author_first_name} {activeAuthor?.author_last_name}
-          </Text>
-        )}
-        <Center mb={2}>
-          <Box
-            as="button"
-            onClick={() => fileInputRef.current?.click()}
-            cursor="pointer"
-            borderRadius="full"
-            overflow="hidden"
-            border="2px solid #805AD5"
-            boxSize="100px"
-            display="flex"
-            alignItems="center"
-            justifyContent="center"
-            marginBottom={"1px"}
-          >
-            {activeAuthor?.author_profile_pic ? (
-              <>
-                <Image
-                  src={`${API_BASE_URL}/${activeAuthor.author_profile_pic}`}
-                  alt="Author"
-                  objectFit="cover"
-                  boxSize="100px"
-                />
-              </>
-            ) : (
-              <Text fontSize="xs" color="gray.300">
-                Upload
-              </Text>
-            )}
-            {activeAuthor && (
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileInputRef}
-                onChange={(e) => {
-                  if (e.target.files?.[0]) {
-                    handleUpload(e.target.files[0], activeAuthor.author_id);
-                  }
-                }}
-                style={{ display: "none" }}
-              />
-            )}
-          </Box>
-        </Center>
+        <Box>
+          <Center>
+            <Text fontWeight="bold" fontSize="md" mb={2} textAlign="center">
+              Author Details
+            </Text>
+          </Center>
+          {authors.length > 1 ? (
+            <Select
+              size="sm"
+              value={activeAuthor?.author_id}
+              onChange={(e) => {
+                const found = authors.find(
+                  (a) => a.author_id === Number(e.target.value)
+                );
+                if (found) setActiveAuthor(found);
+              }}
+              mb={3}
+              textAlign="center"
+              fontWeight="semibold"
+              bg="whiteAlpha.800"
+              fontSize="md"
+              color="gray.800"
+              borderRadius="md"
+            >
+              {authors.map((author) => (
+                <option key={author.author_id} value={author.author_id}>
+                  {author.author_first_name} {author.author_last_name}
+                </option>
+              ))}
+            </Select>
+          ) : (
+            <Text
+              fontWeight="semibold"
+              fontSize="md"
+              mb={3}
+              textAlign="center"
+              bg="whiteAlpha.700"
+              color="gray.800"
+              borderRadius="md"
+              px={2}
+              py={1}
+            >
+              {activeAuthor?.author_first_name} {activeAuthor?.author_last_name}
+            </Text>
+          )}
+          <Center>
+            <Box
+              as="button"
+              onClick={() => fileInputRef.current?.click()}
+              cursor="pointer"
+              borderRadius="full"
+              overflow="hidden"
+              border="2px solid #805AD5"
+              boxSize="100px"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              marginBottom={"10px"}
+            >
+              {activeAuthor?.author_profile_pic ? (
+                <>
+                  <Image
+                    src={`${API_BASE_URL}/${activeAuthor.author_profile_pic}`}
+                    alt="Author"
+                    objectFit="cover"
+                    boxSize="100px"
+                  />
+                </>
+              ) : (
+                <Text fontSize="xs" color="gray.300">
+                  Upload
+                </Text>
+              )}
 
-        <HStack justify="center" spacing={4} mt={1}>
-          <Flex direction="column" align="center">
-            <Text fontSize="md">Bias</Text>
-            <Flex align="center" gap={1}>
-              <Text>{getBiasEmoji(parseFloat(avgScore("bias_score")))}</Text>
-              <Badge
-                fontSize="md"
-                borderRadius="md"
-                px={2}
-                bg="gray.700"
-                color="purple.200"
-              >
-                {avgScore("bias_score")}
-              </Badge>
+              {activeAuthor && (
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={(e) => {
+                    if (e.target.files?.[0]) {
+                      handleUpload(e.target.files[0], activeAuthor.author_id);
+                    }
+                  }}
+                  style={{ display: "none" }}
+                />
+              )}
+            </Box>
+          </Center>
+
+          <HStack justify="center" spacing={4} mt={1}>
+            <Flex direction="column" align="center">
+              <Text fontSize="md">Bias</Text>
+              <Flex align="center" gap={1}>
+                <Text>{getBiasEmoji(parseFloat(avgScore("bias_score")))}</Text>
+                <Badge
+                  fontSize="md"
+                  borderRadius="md"
+                  px={2}
+                  bg="gray.700"
+                  color="purple.200"
+                >
+                  {avgScore("bias_score")}
+                </Badge>
+              </Flex>
             </Flex>
-          </Flex>
-          <Flex direction="column" align="center">
-            <Text fontSize="md">Veracity</Text>
-            <Flex align="center" gap={1}>
-              <Text>
-                {getVeracityEmoji(parseFloat(avgScore("veracity_score")))}
-              </Text>
-              <Badge
-                fontSize="md"
-                borderRadius="md"
-                px={2}
-                bg="gray.700"
-                color="green.200"
-              >
-                {avgScore("veracity_score")}
-              </Badge>
+            <Flex direction="column" align="center">
+              <Text fontSize="md">Veracity</Text>
+              <Flex align="center" gap={1}>
+                <Text>
+                  {getVeracityEmoji(parseFloat(avgScore("veracity_score")))}
+                </Text>
+                <Badge
+                  fontSize="md"
+                  borderRadius="md"
+                  px={2}
+                  bg="gray.700"
+                  color="green.200"
+                >
+                  {avgScore("veracity_score")}
+                </Badge>
+              </Flex>
             </Flex>
-          </Flex>
-        </HStack>
-        <Box />
-        <Text fontSize="sm" mt={1} textAlign="center">
-          {activeAuthor?.description || "No bio available."}
-        </Text>
+          </HStack>
+          <Box />
+          <Text fontSize="sm" mt={1} textAlign="center">
+            {activeAuthor?.description || "No bio available."}
+          </Text>
+        </Box>
         <Center>
           <Menu>
             <MenuButton as={Button} rightIcon={<BiChevronDown />} mt={3}>
