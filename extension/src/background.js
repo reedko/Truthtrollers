@@ -808,7 +808,7 @@ async function callOpenAiAnalyze(content) {
       Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: "gpt-3.5-turbo",
+      model: "gpt-4-turbo",
       messages: [
         {
           role: "system",
@@ -817,9 +817,15 @@ async function callOpenAiAnalyze(content) {
         {
           role: "user",
           content: `
-Identify the most general topic (at most two words) for this text, then provide a list of more specific topics under that general topic.
-Additionally, extract every distinct factual assertion or claim (statements that can be tested or verified for truth).
-Return your answer in valid JSON exactly like this:
+You are a fact-checking assistant.
+
+First, identify the most general topic (max 2 words) for this text.
+Then, list more specific subtopics under that topic (2 to 5).
+Next, extract every distinct factual assertion or claim — especially those with numbers, statistics, or timelines. 
+Avoid generalizations or summaries. Do not combine multiple claims. 
+Each claim must be independently verifiable and phrased as a full sentence.
+
+Return your answer in strict JSON like this:
 {
   "generalTopic": "<string>",
   "specificTopics": ["<string>", "<string>"],
