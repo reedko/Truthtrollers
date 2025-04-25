@@ -4,16 +4,10 @@ import {
   Button,
   GridItem,
   Progress,
-  SimpleGrid,
-  Stat,
-  StatLabel,
-  StatNumber,
   Card,
   CardBody,
   CardHeader,
-  Heading,
   Text,
-  Flex,
   Grid,
   VStack,
   HStack,
@@ -22,11 +16,12 @@ import {
 } from "@chakra-ui/react";
 import "./Popup.css";
 import UserConsensusBar from "./UserConsensusBar";
+import useTaskStore from "../store/useTaskStore";
 import resizeImage from "../services/image-url";
-
-import VerimeterGauge from "./VerimeterGauge";
-import StatCard from "./StatCard";
+import { useTaskScraper } from "../hooks/useTaskScraper";
 import TruthGauge from "./ModernArcGauge";
+import { Stat } from "@chakra-ui/react";
+import { Tooltip } from "@chakra-ui/react";
 
 const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 
@@ -44,8 +39,12 @@ const getProgressColor = (progress: string | null) => {
 };
 
 const TaskCard: React.FC = () => {
-  const imageUrl = "";
+  // const { task, currentUrl, setTask } = useTaskStore(); // Hook to access Zustand
+  // const { loading, error, scrapeTask } = useTaskScraper(); // Use scraper hook
+  // const [visible, setVisible] = useState(false);
 
+  const imageUrl = "test";
+  // task && task.thumbnail ? `${BASE_URL}/${task.thumbnail}` : "";
   const meter = `${BASE_URL}/assets/images/meter3.png`;
   const logo = `${BASE_URL}/assets/images/miniLogo.png`;
 
@@ -58,49 +57,30 @@ const TaskCard: React.FC = () => {
             <Text color="white">TruthTrollers</Text>
           </HStack>
         </Box>
+        {imageUrl && "Completed" === "Completed" ? (
+          <HStack spacing={1} align="center" width="290px">
+            <Box flex="0 0 70%">
+              <VStack spacing={1} align="center" mb={1} mt={1}>
+                <Spacer />
+                <TruthGauge
+                  score={-0.73}
+                  label="VERIMETER"
+                  size={{ w: 170, h: 90 }} // ⬅️ slightly narrower too
+                  normalize={false}
+                />
+              </VStack>
+            </Box>
 
-        {imageUrl ? (
-          <VStack spacing={1} align="center" width="100%">
-            <Card
-              width="100%"
-              borderRadius="2xl"
-              overflow="hidden"
-              boxShadow="xl"
-              bg="stat6Gradient"
-              position="relative"
-              minW={{ base: "100%", md: "300px" }}
-            >
-              <CardHeader>
-                <VStack spacing={0} align="center" mb={0} mt={0}>
-                  <Spacer />
-
-                  <TruthGauge
-                    score={-0.73}
-                    label="VERIMETER"
-                    size={{ w: 220, h: 140 }}
-                    normalize={false}
-                  />
-                </VStack>
-              </CardHeader>
-
-              <CardBody>
-                <VStack spacing={0}>
-                  <Box w="100%" p={0}>
-                    <UserConsensusBar
-                      trueCount={21}
-                      falseCount={71}
-                      total={121}
-                    />
-                  </Box>
-                </VStack>
-              </CardBody>
-            </Card>
-          </VStack>
+            <Box flex="0 0 30%" pl={1}>
+              <Box w="75px" p={0} bg="cardGradient" mt={"30px"} mr={"5px"}>
+                <UserConsensusBar trueCount={21} falseCount={71} total={121} />
+              </Box>
+            </Box>
+          </HStack>
         ) : (
           imageUrl && (
             <Box position="relative" left="25%">
               {resizeImage(120, imageUrl)}
-              <VerimeterGauge score={-0.83} />
             </Box>
           )
         )}
@@ -108,34 +88,30 @@ const TaskCard: React.FC = () => {
         {imageUrl ? (
           <Box width="280px">
             <Text fontWeight="bold" fontSize="l" wrap="yes">
-              {"THIS IS WHERE THE TITLE GOES"}
+              {"task?.content_name"}
             </Text>
             <Grid templateRows="repeat(2, 1fr)">
               <GridItem>
                 <Text color="gray.600" fontSize="sm">
-                  Progress: {"Completed"}
+                  Progress: {"task?.progress"}
                 </Text>
               </GridItem>
               <GridItem>
                 <Progress
-                  value={100}
+                  value={"Completed" === "Completed" ? 100 : 100}
                   colorScheme={getProgressColor("Completed")}
                   mt={2}
                 />
               </GridItem>
             </Grid>
             <Text color="gray.600" fontSize="sm">
-              Media Source: {"SHIT FFACTORY"}
+              Media Source: {"task?.media_source"}
             </Text>
 
             <Center>
               <HStack spacing={5}>
                 <Button variant="surface" bg="cardGradient" color="white">
-                  <a
-                    href={"google.com"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
+                  <a href={"#"} target="_blank" rel="noopener noreferrer">
                     <div>Argue</div>
                   </a>
                 </Button>
@@ -151,11 +127,24 @@ const TaskCard: React.FC = () => {
             </Center>
           </Box>
         ) : (
-          <Box width="280px">
+          <Box>
+            <Box width="280px">
+              <Tooltip label={"task?.content_name"} fontSize="sm">
+                <Text
+                  fontWeight="bold"
+                  fontSize="md"
+                  isTruncated
+                  whiteSpace="nowrap"
+                  overflow="hidden"
+                  textOverflow="ellipsis"
+                >
+                  {"task?.content_name"}
+                </Text>
+              </Tooltip>
+            </Box>
             <Text fontWeight="bold" fontSize="l" wrap="yes">
-              {"CONTENT"}
+              {"task?.content_name"}
             </Text>
-
             <Stat
               p={2}
               px={3}
@@ -173,16 +162,15 @@ const TaskCard: React.FC = () => {
                 Would you like to Add?
               </Text>
             </Stat>
-
             <Center>
               <HStack spacing={5} mt={2}>
-                <Button variant="surface" bg="cardGradient" color="black">
+                <Button variant="surface" bg="cardGradient" color="white">
                   <div>Add</div>
                 </Button>
                 <Button
                   variant="solid"
                   bg="cardGradient"
-                  color="black"
+                  color="white"
                   onClick={() => {}}
                 >
                   <div>Close</div>

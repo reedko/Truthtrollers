@@ -41,9 +41,9 @@ const theme = extendTheme({
       statGradient:
         "radial-gradient(circle at bottom left,  rgba(0, 255, 225, 0.05) 0%,  #0a192f 20%,  #010212 50%,#000000 80%)",
       stat2Gradient:
-        "linear-gradient(to top right,rgba(0, 100, 90, 1),rgba(0, 0, 0, 1))",
+        "linear-gradient(to top right,rgba(7, 82, 75, 0.6),rgba(137, 84, 84, 0.6))",
       stat5Gradient:
-        "linear-gradient(to top right,rgba(0, 100, 90, .6),rgba(0, 0, 0, .6))",
+        "linear-gradient(to top right,rgba(4, 82, 40, 0.7),rgba(105, 228, 140, 0.51))",
       stat6Gradient:
         "linear-gradient(to top right,rgba(113, 144, 141, 0.1),rgba(215, 226, 227, 0.5))",
       cardTeal: "teal.400",

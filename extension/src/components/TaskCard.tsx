@@ -21,6 +21,7 @@ import resizeImage from "../services/image-url";
 import { useTaskScraper } from "../hooks/useTaskScraper";
 import TruthGauge from "./ModernArcGauge";
 import { Stat } from "@chakra-ui/react";
+import { Tooltip } from "@chakra-ui/react";
 
 const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 
@@ -81,7 +82,7 @@ const TaskCard: React.FC = () => {
               borderRadius="2xl"
               overflow="hidden"
               boxShadow="xl"
-              bg="stat6Gradient"
+              bg="cardGradient"
               position="relative"
               minW={{ base: "100%", md: "300px" }}
             >
@@ -178,7 +179,21 @@ const TaskCard: React.FC = () => {
             </Center>
           </Box>
         ) : (
-          <Box width="280px">
+          <Box>
+            <Box width="280px">
+              <Tooltip label={task?.content_name} fontSize="sm">
+                <Text
+                  fontWeight="bold"
+                  fontSize="md"
+                  isTruncated
+                  whiteSpace="nowrap"
+                  overflow="hidden"
+                  textOverflow="ellipsis"
+                >
+                  {task?.content_name}
+                </Text>
+              </Tooltip>
+            </Box>
             <Text fontWeight="bold" fontSize="l" wrap="yes">
               {task?.content_name}
             </Text>

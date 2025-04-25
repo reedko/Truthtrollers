@@ -1,5 +1,7 @@
-import { Box, Flex, Text, VStack } from "@chakra-ui/react";
+// Updated UserConsensusBar: tighter layout for ticks, thinner bars
+import { Box, Text, VStack, HStack } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
+import "./UserConsensusBar.css";
 
 interface UserConsensusBarProps {
   trueCount: number;
@@ -25,92 +27,105 @@ const UserConsensusBar: React.FC<UserConsensusBarProps> = ({
     return () => clearTimeout(timeout);
   }, [trueCount, falseCount, total]);
 
-  return (
-    <VStack spacing={2} w="100%" align="stretch">
-      {/* Header */}
-      <Text
-        fontSize="md"
-        fontWeight="bold"
-        color="gray.200"
-        textAlign="center"
-        mb={1}
-      >
-        USER RATINGS
-      </Text>
+  const isTrueWinner = truePercent > falsePercent;
+  const isFalseWinner = falsePercent > truePercent;
 
-      {/* TRUE */}
-      <Box
-        bg="cardGradient"
-        borderRadius="lg"
-        px={2}
-        py={0}
-        w="100%"
-        overflow="hidden"
-      >
-        <Flex align="center" gap={0} w="100%" maxW="600px" mx="auto">
-          <Text
-            fontWeight="bold"
-            w="60px"
-            whiteSpace="nowrap"
-            color="green.300"
-          >
-            TRUE
-          </Text>
-          <Box flex="1" bg="gray.700" borderRadius="md" overflow="hidden">
-            <Box
-              w={`${truePercent.toFixed(1)}%`}
-              bg="green.400"
-              height="12px"
-              borderRadius="0"
-              transition="width 0.8s ease"
-            />
-          </Box>
-          <Text
-            w="60px"
-            textAlign="right"
-            fontSize="sm"
-            color="gray.300"
-            whiteSpace="nowrap"
-          >
-            {trueCount} / {total}
-          </Text>
-        </Flex>
-      </Box>
-
-      {/* FALSE */}
-      <Box
-        bg="cardGradient"
-        borderRadius="lg"
-        px={2}
-        py={0}
-        w="100%"
-        overflow="hidden"
-      >
-        <Flex align="center" gap={0} w="100%" maxW="600px" mx="auto">
-          <Text fontWeight="bold" w="60px" whiteSpace="nowrap" color="red.300">
-            FALSE
-          </Text>
-          <Box flex="1" bg="gray.700" borderRadius="md" overflow="hidden">
-            <Box
-              w={`${falsePercent.toFixed(1)}%`}
-              bg="red.400"
-              height="12px"
-              borderRadius="0"
-              transition="width 0.8s ease"
-            />
-          </Box>
-          <Text
-            w="60px"
-            textAlign="right"
-            fontSize="sm"
-            color="gray.300"
-            whiteSpace="nowrap"
-          >
-            {falseCount} / {total}
-          </Text>
-        </Flex>
-      </Box>
+  const renderVerticalLabel = (text: string) => (
+    <VStack spacing={0} zIndex={1} pointerEvents="none">
+      {text.split("").map((char, idx) => (
+        <Text
+          key={idx}
+          fontSize="2xs"
+          fontWeight="bold"
+          color="white"
+          lineHeight="1"
+        >
+          {char}
+        </Text>
+      ))}
     </VStack>
+  );
+
+  return (
+    <Box ml={"40px"}>
+      <VStack
+        spacing={4}
+        align="center"
+        h="140px"
+        justify="center"
+        mt={"-10px"}
+      >
+        <Text fontSize="2xs" color="gray.400" mb={1} ml={"-10px"}>
+          USER CONSENSUS
+        </Text>
+
+        <HStack spacing={3} align="center" h="100px" w="90px">
+          {/* FALSE Bar */}
+          <Box
+            position="relative"
+            w="20px"
+            h="100%"
+            bg="gray.700"
+            borderRadius="md"
+            overflow="hidden"
+            className={isFalseWinner ? "pulsing-glow false" : ""}
+          >
+            <Box
+              position="absolute"
+              bottom="0"
+              left="0"
+              w="full"
+              h={`${falsePercent.toFixed(1)}%`}
+              bg="red.400"
+              transition="height 0.8s ease"
+            />
+            <Box
+              position="absolute"
+              top="50%"
+              left="50%"
+              transform="translate(-50%, -50%)"
+              display="flex"
+              flexDir="column"
+              alignItems="center"
+            >
+              {renderVerticalLabel("FALSE")}
+            </Box>
+          </Box>
+
+          {/* TRUE Bar */}
+          <Box
+            position="relative"
+            w="20px"
+            h="100%"
+            bg="gray.700"
+            borderRadius="md"
+            overflow="hidden"
+            className={isTrueWinner ? "pulsing-glow true" : ""}
+          >
+            <Box
+              position="absolute"
+              bottom="0"
+              left="0"
+              w="full"
+              h={`${truePercent.toFixed(1)}%`}
+              bg="green.400"
+              transition="height 0.8s ease"
+            />
+            <Box
+              position="absolute"
+              top="50%"
+              left="50%"
+              transform="translate(-50%, -50%)"
+              display="flex"
+              flexDir="column"
+              alignItems="center"
+            >
+              {renderVerticalLabel("TRUE")}
+            </Box>
+          </Box>
+        </HStack>
+      </VStack>
+    </Box>
   );
 };
 
