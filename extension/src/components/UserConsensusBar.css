@@ -1,0 +1,31 @@
+.pulsing-glow.true {
+  animation: pulse-green 1.6s infinite ease-in-out;
+}
+
+.pulsing-glow.false {
+  animation: pulse-red 1.6s infinite ease-in-out;
+}
+
+@keyframes pulse-green {
+  0% {
+    box-shadow: 0 0 8px rgba(0, 255, 0, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(0, 255, 0, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 8px rgba(0, 255, 0, 0.4);
+  }
+}
+
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 8px rgba(255, 0, 0, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(255, 0, 0, 0.8);
+  }
+  100% {
+    box-shadow: 0 0 8px rgba(255, 0, 0, 0.4);
+  }
+}

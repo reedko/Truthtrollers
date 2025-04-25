@@ -68,6 +68,9 @@ const TruthGauge: React.FC<TruthGaugeProps> = ({
           pathTransition: "stroke-dashoffset 1.5s ease-in-out",
         })}
       >
+        {/* === Inside the gauge === */}
+
+        {/* Verimeter Number */}
         <Box
           mt={size?.h ? (size.h === 120 ? -20 : -12) : -20}
           mb={size?.h ? (size.h === 120 ? 5 : 3) : 5}
@@ -77,69 +80,71 @@ const TruthGauge: React.FC<TruthGaugeProps> = ({
             {(score * 100).toFixed(0)}%
           </Text>
         </Box>
+
+        {/* Label */}
         <Box mt={-3} textAlign="center">
           <Text fontSize="md" color={tealGaugeTheme.colors.parchment}>
             {label}
           </Text>
         </Box>
+
+        {/* === Ticks are now INSIDE === */}
+        <Box position="absolute" bottom="20px" left="0" width="100%" px={2}>
+          <Flex justify="space-between" align="center" position="relative">
+            <Text
+              fontSize="xs"
+              fontWeight="bold"
+              color={tealGaugeTheme.colors.red}
+              position="absolute"
+              left="-20px"
+              bottom="10px"
+            >
+              FALSE
+            </Text>
+            <Text
+              fontSize="xs"
+              fontWeight="bold"
+              color={tealGaugeTheme.colors.green}
+              position="absolute"
+              right="-20px"
+              bottom="10px"
+            >
+              TRUE
+            </Text>
+
+            {/* Ticks */}
+            {Array.from({ length: tickCount }, (_, i) => {
+              const tickValue = i * tickSpacing;
+              const isClosest =
+                Math.abs(tickValue - normalized) <= tickSpacing / 2;
+              return (
+                <Box
+                  key={i}
+                  position="absolute"
+                  left={`${tickValue}%`}
+                  transform="translateX(-50%)"
+                  width={isClosest ? "6px" : "2px"}
+                  height={isClosest ? "16px" : "8px"}
+                  background={
+                    isClosest ? activeColor : tealGaugeTheme.colors.parchment
+                  }
+                  bottom="30px"
+                  borderRadius="1px"
+                  boxShadow={
+                    isClosest
+                      ? `0 0 8px ${activeColor}, 0 0 12px ${activeColor}`
+                      : "none"
+                  }
+                  animation={
+                    isClosest ? `${pulse} 1.2s ease-in-out infinite` : "none"
+                  }
+                  transition="all 0.3s ease"
+                />
+              );
+            })}
+          </Flex>
+        </Box>
       </CircularProgressbarWithChildren>
-
-      {/* Label Bar with Ticks */}
-      <Box position="absolute" bottom="0" left="0" width="100%" px={2}>
-        <Flex justify="space-between" align="center" position="relative">
-          <Text
-            fontSize="sm"
-            fontWeight="bold"
-            color={tealGaugeTheme.colors.red}
-            position="absolute"
-            left="-20px"
-            bottom="-30px"
-          >
-            FALSE
-          </Text>
-          <Text
-            fontSize="sm"
-            fontWeight="bold"
-            color={tealGaugeTheme.colors.green}
-            position="absolute"
-            right="-20px"
-            bottom="-30px"
-          >
-            TRUE
-          </Text>
-
-          {/* Ticks with active highlight */}
-          {Array.from({ length: tickCount }, (_, i) => {
-            const tickValue = i * tickSpacing;
-            const isClosest =
-              Math.abs(tickValue - normalized) <= tickSpacing / 2;
-            return (
-              <Box
-                key={i}
-                position="absolute"
-                left={`${tickValue}%`}
-                transform="translateX(-50%)"
-                width={isClosest ? "6px" : "2px"}
-                height={isClosest ? "16px" : "8px"}
-                background={
-                  isClosest ? activeColor : tealGaugeTheme.colors.parchment
-                }
-                bottom="-10px"
-                borderRadius="1px"
-                boxShadow={
-                  isClosest
-                    ? `0 0 8px ${activeColor}, 0 0 12px ${activeColor}`
-                    : "none"
-                }
-                animation={
-                  isClosest ? `${pulse} 1.2s ease-in-out infinite` : "none"
-                }
-                transition="all 0.3s ease"
-              />
-            );
-          })}
-        </Flex>
-      </Box>
     </Box>
   );
 };
