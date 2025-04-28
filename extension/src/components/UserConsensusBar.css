@@ -9,23 +9,29 @@
 @keyframes pulse-green {
   0% {
     box-shadow: 0 0 8px rgba(0, 255, 0, 0.4);
+    transform: translateX(-0%) scale(0.97);
   }
   50% {
-    box-shadow: 0 0 16px rgba(0, 255, 0, 0.8);
+    box-shadow: 0 0 26px rgba(0, 255, 0, 0.8);
+    transform: translateX(-0%) scale(1.03);
   }
   100% {
     box-shadow: 0 0 8px rgba(0, 255, 0, 0.4);
+    transform: translateX(-0%) scale(0.97);
   }
 }
 
 @keyframes pulse-red {
   0% {
     box-shadow: 0 0 8px rgba(255, 0, 0, 0.4);
+    transform: translateX(-0%) scale(0.97);
   }
   50% {
-    box-shadow: 0 0 16px rgba(255, 0, 0, 0.8);
+    box-shadow: 0 0 26px rgba(255, 0, 0, 0.8);
+    transform: translateX(-0%) scale(1.03);
   }
   100% {
     box-shadow: 0 0 8px rgba(255, 0, 0, 0.4);
+    transform: translateX(-0%) scale(0.97);
   }
 }

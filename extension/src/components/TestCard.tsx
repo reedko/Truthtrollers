@@ -50,7 +50,7 @@ const TaskCard: React.FC = () => {
 
   return (
     <Box className="popup-box" width="300px" bg="stat5Gradient">
-      <VStack spacing={3} align="start">
+      <VStack spacing={0} align="start">
         <Box bg="cardGradient" className="logo-box" position="relative">
           <HStack spacing="130">
             <Box>{resizeImage(40, logo)}</Box>
@@ -60,7 +60,8 @@ const TaskCard: React.FC = () => {
         {imageUrl && "Completed" === "Completed" ? (
           <HStack spacing={1} align="center" width="290px">
             <Box flex="0 0 70%">
-              <VStack spacing={1} align="center" mb={1} mt={1}>
+              <VStack spacing={1} align="center" mb={10} mt={1}>
+                <Text>VERDICT</Text>
                 <Spacer />
                 <TruthGauge
                   score={-0.73}
@@ -71,8 +72,15 @@ const TaskCard: React.FC = () => {
               </VStack>
             </Box>
 
-            <Box flex="0 0 30%" pl={1}>
-              <Box w="75px" p={0} bg="cardGradient" mt={"30px"} mr={"5px"}>
+            <Box flex="0 0 30%" pl={-5}>
+              <Box
+                borderRadius="8px"
+                w="70px"
+                p={0}
+                bg="cardGradient"
+                mt={"30px"}
+                mr={"5px"}
+              >
                 <UserConsensusBar trueCount={21} falseCount={71} total={121} />
               </Box>
             </Box>
@@ -87,9 +95,29 @@ const TaskCard: React.FC = () => {
 
         {imageUrl ? (
           <Box width="280px">
-            <Text fontWeight="bold" fontSize="l" wrap="yes">
-              {"task?.content_name"}
-            </Text>
+            <Box width="100%">
+              <Tooltip
+                label={
+                  "task?.content_name ok but longer to test the long stuff lets go ggogogogogogogogogoggoogogogo"
+                }
+                fontSize="sm"
+              >
+                <Text
+                  fontSize="lg"
+                  fontWeight="bold"
+                  isTruncated
+                  whiteSpace="nowrap"
+                  overflow="hidden"
+                  textOverflow="ellipsis"
+                  color="white"
+                  px={1}
+                >
+                  {
+                    "task?.content_name ok but longer to test the long stuff lets go ggogogogogogogogogoggoogogogo"
+                  }
+                </Text>
+              </Tooltip>
+            </Box>
             <Grid templateRows="repeat(2, 1fr)">
               <GridItem>
                 <Text color="gray.600" fontSize="sm">
