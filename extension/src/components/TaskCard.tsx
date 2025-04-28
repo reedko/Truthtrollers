@@ -68,7 +68,7 @@ const TaskCard: React.FC = () => {
 
   return (
     <Box className="popup-box" width="300px" bg="stat5Gradient">
-      <VStack spacing={3} align="start">
+      <VStack spacing={0} align="start">
         <Box bg="cardGradient" className="logo-box" position="relative">
           <HStack spacing="130">
             <Box>{resizeImage(40, logo)}</Box>
@@ -76,45 +76,41 @@ const TaskCard: React.FC = () => {
           </HStack>
         </Box>
         {imageUrl && task?.progress === "Completed" ? (
-          <VStack spacing={3} align="center" width="100%">
-            <Card
-              width="100%"
-              borderRadius="2xl"
-              overflow="hidden"
-              boxShadow="xl"
-              bg="cardGradient"
-              position="relative"
-              minW={{ base: "100%", md: "300px" }}
-            >
-              <CardHeader>
-                <VStack spacing={1} align="center" mb={1} mt={1}>
-                  <Spacer />
+          <HStack spacing={1} align="center" width="290px">
+            <Box flex="0 0 70%">
+              <VStack spacing={1} align="center" mb={1} mt={1}>
+                <Text>VERDICT</Text>
+                <Spacer />
+                <TruthGauge
+                  score={-0.73}
+                  label="VERIMETER"
+                  size={{ w: 170, h: 90 }} // ⬅️ slightly narrower too
+                  normalize={false}
+                />
+              </VStack>
+            </Box>
 
-                  <TruthGauge
-                    score={-0.73}
-                    label="VERIMETER"
-                    size={{ w: 220, h: 140 }}
-                    normalize={false}
-                  />
-                </VStack>
-              </CardHeader>
-
-              <CardBody>
-                <VStack spacing={1}>
-                  <Box w="100%" p={1}>
-                    <UserConsensusBar
-                      trueCount={21}
-                      falseCount={71}
-                      total={121}
-                    />
-                  </Box>
-                </VStack>
-              </CardBody>
-            </Card>
-          </VStack>
+            <Box flex="0 0 30%" pl={-5}>
+              <Box
+                borderRadius="8px"
+                w="75px"
+                p={0}
+                bg="cardGradient"
+                mt={"30px"}
+                mr={"5px"}
+              >
+                <UserConsensusBar trueCount={21} falseCount={71} total={121} />
+              </Box>
+            </Box>
+          </HStack>
         ) : (
           imageUrl && (
-            <Box position="relative" left="25%">
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              width="100%"
+            >
               {resizeImage(120, imageUrl)}
             </Box>
           )
@@ -122,9 +118,22 @@ const TaskCard: React.FC = () => {
 
         {imageUrl ? (
           <Box width="280px">
-            <Text fontWeight="bold" fontSize="l" wrap="yes">
-              {task?.content_name}
-            </Text>
+            <Box width="100%">
+              <Tooltip label={task?.content_name || "No title"} fontSize="sm">
+                <Text
+                  fontSize="lg"
+                  fontWeight="bold"
+                  isTruncated
+                  whiteSpace="nowrap"
+                  overflow="hidden"
+                  textOverflow="ellipsis"
+                  color="white"
+                  px={1}
+                >
+                  {task?.content_name || "Unknown Content"}
+                </Text>
+              </Tooltip>
+            </Box>
             <Grid templateRows="repeat(2, 1fr)">
               <GridItem>
                 <Text color="gray.600" fontSize="sm">
@@ -145,18 +154,11 @@ const TaskCard: React.FC = () => {
                 />
               </GridItem>
             </Grid>
-            <Text color="gray.600" fontSize="sm">
-              Media Source: {task?.media_source}
-            </Text>
 
             <Center>
               <HStack spacing={5}>
                 <Button variant="surface" bg="cardGradient" color="white">
-                  <a
-                    href={task?.details || "#"}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
+                  <a href={"#"} target="_blank" rel="noopener noreferrer">
                     <div>Argue</div>
                   </a>
                 </Button>
@@ -223,6 +225,7 @@ const TaskCard: React.FC = () => {
                   onClick={handleAddTask}
                   disabled={loading}
                 >
+                  {" "}
                   <div>Add</div>
                 </Button>
                 <Button

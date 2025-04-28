@@ -43,7 +43,7 @@ const theme = extendTheme({
       stat2Gradient:
         "linear-gradient(to top right,rgba(7, 82, 75, 0.6),rgba(137, 84, 84, 0.6))",
       stat5Gradient:
-        "linear-gradient(to top right,rgba(4, 82, 40, 0.7),rgba(105, 228, 140, 0.51))",
+        "linear-gradient(to top right,rgba(38, 50, 44, 0.7),rgb(37, 186, 146))",
       stat6Gradient:
         "linear-gradient(to top right,rgba(113, 144, 141, 0.1),rgba(215, 226, 227, 0.5))",
       cardTeal: "teal.400",
