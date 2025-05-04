@@ -1,4 +1,6 @@
 import { parseOrRepairJSON, GptJson } from "../utils/repairJson";
+import browser from "webextension-polyfill";
+import { IS_EXTENSION } from "./extractMetaData";
 
 const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 
@@ -55,10 +57,7 @@ ${content}
     throw new Error("No completion returned from OpenAI");
   }
 
-  const rawReply = data.choices[0].message.content.trim();
-  console.log(rawReply);
-  // Strip GPT's triple backticks if present
-  let cleanedReply = rawReply.trim();
+  let cleanedReply = data.choices[0].message.content.trim();
   if (cleanedReply.startsWith("```json")) {
     cleanedReply = cleanedReply
       .replace(/^```json/, "")
@@ -66,7 +65,6 @@ ${content}
       .trim();
   }
 
-  // Attempt to parse the JSON
   let parsed: GptJson;
   try {
     parsed = parseOrRepairJSON(cleanedReply);
@@ -84,34 +82,41 @@ ${content}
   };
 }
 
+interface AnalyzeContentResponse {
+  success: boolean;
+  data?: {
+    generalTopic: string;
+    specificTopics: string[];
+    claims: string[];
+  };
+  error?: string;
+}
+
 export async function analyzeContent(content: string): Promise<{
   generalTopic: string;
   specificTopics: string[];
   claims: string[];
 }> {
-  if (typeof chrome !== "undefined" && chrome.runtime?.id) {
-    // ✅ Inside Extension (Keep old logic for now)
-    return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        {
-          action: "analyzeContent",
-          content,
-        },
-        (response) => {
-          if (response && response.success) {
-            resolve(response.data);
-          } else {
-            const errorMsg =
-              response?.error || "Failed to analyze content in background";
-            reject(new Error(errorMsg));
-          }
-        }
-      );
-    });
+  if (IS_EXTENSION) {
+    try {
+      const response = (await browser.runtime.sendMessage({
+        action: "analyzeContent",
+        content,
+      })) as AnalyzeContentResponse;
+
+      if (response.success && response.data) {
+        return response.data;
+      } else {
+        const errorMsg =
+          response.error || "Failed to analyze content in background";
+        throw new Error(errorMsg);
+      }
+    } catch (err) {
+      console.error("❌ Error in analyzeContent:", err);
+      throw err;
+    }
   } else {
-    // ✅ Running outside extension (Use local function)
     console.warn("⚠️ Running outside extension, calling OpenAI API directly.");
-    console.log(content);
     return await callOpenAiAnalyze(content);
   }
 }

@@ -3,41 +3,54 @@ import * as cheerio from "cheerio";
 import { Author, TaskData, Lit_references, Publisher } from "../entities/Task";
 import { DiffbotData } from "../entities/diffbotData";
 import { fetchHtmlWithPuppeteer } from "./getHtmlWithPuppeteer";
+import browser from "webextension-polyfill";
+interface ExtractTextResponse {
+  success: boolean;
+  pageText?: string;
+  error?: string;
+}
 
 // Determine if running in the extension or dashboard
-const IS_EXTENSION = !!chrome?.runtime?.id;
+export const IS_EXTENSION =
+  typeof browser !== "undefined" &&
+  typeof browser.runtime !== "undefined" &&
+  typeof browser.runtime.getURL === "function";
 
-const EXTENSION_ID = "phacjklngoihnlhcadefaiokbacnagbf";
 const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 //const BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
 
 // B) Utility: Extract Text Content (Extension & Dashboard Variants)
+
 export const getExtractedTextFromBackground = async (
   url: string,
   html: string
 ): Promise<string> => {
   if (IS_EXTENSION) {
-    return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        EXTENSION_ID,
-        { action: "extractText", url, html },
-        (response) => {
-          if (response?.success) {
-            resolve(response.pageText);
-          } else {
-            reject(response?.error || "Failed to extract text");
-          }
-        }
-      );
-    });
-  } else {
     try {
-      return await handleExtractText(url, html); // ✅ Await the async function
-    } catch (error) {
-      console.error("❌ Text extraction failed:", error);
-      throw error;
+      const response = (await browser.runtime.sendMessage({
+        action: "extractText",
+        url,
+        html,
+      })) as ExtractTextResponse;
+
+      if (response?.success && response.pageText) {
+        return response.pageText;
+      } else {
+        throw new Error(response?.error || "Failed to extract text");
+      }
+    } catch (err) {
+      console.error(
+        "❌ Error sending message to background for extractText:",
+        err
+      );
+      throw err;
     }
+  } else {
+    return await handleExtractText(url, html);
   }
+
+  // 🧯 This is unreachable but satisfies TypeScript
+  throw new Error("Unhandled condition in getExtractedTextFromBackground");
 };
 
 async function handleExtractText(url: string, html: string): Promise<string> {
@@ -78,21 +91,33 @@ async function handleExtractText(url: string, html: string): Promise<string> {
 }
 
 // B) Utility to get claims from ClaimBuster via the background
+
+interface ClaimBusterResponse {
+  success: boolean;
+  claims?: any[];
+  error?: string;
+}
+
 export const getClaimsFromBackground = async (text: string): Promise<any[]> => {
   if (IS_EXTENSION) {
-    return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        EXTENSION_ID,
-        { action: "claimBuster", text },
-        (response) => {
-          if (response?.success) {
-            resolve(response.claims);
-          } else {
-            reject(response?.error || "Failed to call ClaimBuster");
-          }
-        }
+    try {
+      const response = (await browser.runtime.sendMessage({
+        action: "claimBuster",
+        text,
+      })) as ClaimBusterResponse;
+
+      if (response.success && response.claims) {
+        return response.claims;
+      } else {
+        throw new Error(response.error || "Failed to call ClaimBuster");
+      }
+    } catch (err) {
+      console.error(
+        "❌ Error sending message to background for ClaimBuster:",
+        err
       );
-    });
+      return [];
+    }
   } else {
     try {
       const response = await fetch(`${BASE_URL}/api/claim-buster`, {
@@ -111,27 +136,35 @@ export const getClaimsFromBackground = async (text: string): Promise<any[]> => {
 };
 
 // B) Image Extraction (Restored)
+interface CaptureImageResponse {
+  imageUrl?: string;
+}
+
 export const getBestImage = async (
   url: string,
   extractedHtml: string,
   diffbotData: DiffbotData
-) => {
-  return new Promise<string>((resolve) => {
-    if (IS_EXTENSION) {
-      chrome.runtime.sendMessage(
-        EXTENSION_ID,
-        { action: "captureImage", url, html: extractedHtml, diffbotData },
-        (res) => {
-          resolve(res.imageUrl || `${BASE_URL}/assets/images/miniLogo.png`);
-        }
-      );
-    } else {
-      resolve(
-        extractImageFromHtml(extractedHtml, url) ||
-          `${BASE_URL}/assets/images/miniLogo.png`
-      );
+): Promise<string> => {
+  if (IS_EXTENSION) {
+    try {
+      const response = (await browser.runtime.sendMessage({
+        action: "captureImage",
+        url,
+        html: extractedHtml,
+        diffbotData,
+      })) as CaptureImageResponse;
+
+      return response?.imageUrl || `${BASE_URL}/assets/images/miniLogo.png`;
+    } catch (err) {
+      console.error("❌ Error capturing image:", err);
+      return `${BASE_URL}/assets/images/miniLogo.png`;
     }
-  });
+  } else {
+    return (
+      extractImageFromHtml(extractedHtml, url) ||
+      `${BASE_URL}/assets/images/miniLogo.png`
+    );
+  }
 };
 
 export const extractImageFromHtml = (
@@ -322,6 +355,21 @@ const checkIfPdfViaHead = async (url: string): Promise<boolean> => {
     return false;
   }
 };
+
+type FetchPdfTextResponse = {
+  success: boolean;
+  text?: string;
+  title?: string;
+  author?: string;
+  thumbnailUrl?: string;
+};
+
+type FetchPageContentResponse = {
+  success: boolean;
+  text?: string;
+  html: string;
+};
+
 export const fetchExternalPageContent = async (
   url: string
 ): Promise<{
@@ -332,146 +380,133 @@ export const fetchExternalPageContent = async (
     title?: string;
     author?: string;
     thumbnailUrl?: string;
-    // Add image?: string later if you extract one
   };
 }> => {
   let isPdf = url.toLowerCase().endsWith(".pdf");
 
-  if (!isPdf) {
-    if (typeof chrome !== "undefined" && chrome.runtime?.id) {
-      // Wrap in a promise so we can await it
-      isPdf = await new Promise((resolve) => {
-        chrome.runtime.sendMessage(
-          { action: "checkIfPdf", url },
-          (response) => {
-            resolve(response?.isPdf);
-          }
-        );
-      });
-    } else {
-      isPdf = await checkIfPdfViaHead(url);
-      console.log("✅ Detected PDF from frontend:", isPdf);
-    }
-  }
-  console.log("✅ Detected PDF in extension?:", isPdf);
-  // ✅ Handle PDF
-  if (isPdf) {
-    // Extension
-    console.log(url, ":URL PASSED TO PDF DETECT");
-    if (typeof chrome !== "undefined" && chrome.runtime?.id) {
-      return new Promise((resolve) => {
-        chrome.runtime.sendMessage(
-          { action: "fetchPdfText", url },
-          (response) => {
-            console.log("Got fetchPdfText response:", response);
-            if (!response?.success || !response.text) {
-              return resolve({ $: cheerio.load(""), isRetracted: false });
-            }
-            const $ = cheerio.load(`<body>${response.text.trim()}</body>`);
-            const resultObj = {
-              $,
-              isRetracted: detectRetraction(response.text),
-              pdfMeta: {
-                title: response.title,
-                author: response.author,
-                thumbnailUrl: response.thumbnailUrl,
-              },
-            };
-
-            console.log("About to resolve fetchPdfText with:", resultObj);
-            resolve(resultObj);
-          }
-        );
-      });
-    }
-
-    // Server-side PDF
+  if (!isPdf && IS_EXTENSION) {
     try {
-      const pdfRes = await fetch(`${BASE_URL}/api/fetch-pdf-text`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
-      const json = await pdfRes.json();
+      type CheckPdfResponse = { isPdf: boolean };
+      const response = (await browser.runtime.sendMessage({
+        action: "checkIfPdf",
+        url,
+      })) as CheckPdfResponse;
 
-      if (!json?.success || !json.text) {
+      isPdf = response?.isPdf;
+    } catch (err) {
+      console.warn("⚠️ checkIfPdf failed, falling back to HEAD check.");
+      isPdf = await checkIfPdfViaHead(url);
+    }
+  } else if (!isPdf) {
+    isPdf = await checkIfPdfViaHead(url);
+  }
+
+  if (isPdf) {
+    if (IS_EXTENSION) {
+      try {
+        const response = (await browser.runtime.sendMessage({
+          action: "fetchPdfText",
+          url,
+        })) as FetchPdfTextResponse;
+        if (!response?.success || !response.text) {
+          return { $: cheerio.load(""), isRetracted: false };
+        }
+
+        const $ = cheerio.load(`<body>${response.text.trim()}</body>`);
+        return {
+          $,
+          isRetracted: detectRetraction(response.text),
+          pdfMeta: {
+            title: response.title,
+            author: response.author,
+            thumbnailUrl: response.thumbnailUrl,
+          },
+        };
+      } catch (err) {
+        console.warn("❌ PDF fetch from extension failed:", err);
         return { $: cheerio.load(""), isRetracted: false };
       }
+    }
 
-      const $ = cheerio.load(`<body>${json.text.trim()}</body>`);
-      const thumbRes = await fetch(`${BASE_URL}/api/pdf-thumbnail`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
-      const thumbJson = await thumbRes.json();
+    // Server fallback
+    return await fetchPdfViaServer(url);
+  }
 
-      return {
-        $,
-        isRetracted: detectRetraction(json.text),
-        pdfMeta: {
-          title: json.title,
-          author: json.author,
-          thumbnailUrl: thumbJson?.imageUrl || undefined,
-        },
-      };
+  if (IS_EXTENSION) {
+    try {
+      const response = (await browser.runtime.sendMessage({
+        action: "fetchPageContent",
+        url,
+      })) as FetchPageContentResponse;
+
+      if (!response?.success || !response.html)
+        throw new Error("Extension fetch failed");
+
+      const cleaned = removeCookieWalls(response.html);
+      if (isLikelyRSS(cleaned)) {
+        return { $: cheerio.load(""), isRetracted: false, isRSS: true };
+      }
+
+      const $ = cheerio.load(cleaned);
+      const len = $("body").text().trim().length;
+
+      if (len < 300) {
+        const alt =
+          (await fetchViaPuppeteer(url)) ||
+          (await fetchFromWaybackWithPuppeteer(url));
+        return alt || { $: cheerio.load(""), isRetracted: false };
+      }
+
+      return { $, isRetracted: detectRetraction(cleaned) };
     } catch (err) {
-      console.error("❌ PDF parse failed:", err);
-      return { $: cheerio.load(""), isRetracted: false };
+      console.warn("⚠️ Extension fetchPageContent failed:", err);
+      const alt =
+        (await fetchViaPuppeteer(url)) ||
+        (await fetchFromWaybackWithPuppeteer(url));
+      return alt || { $: cheerio.load(""), isRetracted: false };
     }
   }
 
-  // 🔁 HTML fetch: Extension first
-  if (typeof chrome !== "undefined" && chrome.runtime?.id) {
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage(
-        EXTENSION_ID,
-        { action: "fetchPageContent", url },
-        async (response) => {
-          if (
-            chrome.runtime.lastError ||
-            !response?.success ||
-            !response.html
-          ) {
-            console.warn("⚠️ Extension fetch failed. Trying Puppeteer...");
-            const puppeteerTry = await fetchViaPuppeteer(url);
-            if (puppeteerTry) return resolve(puppeteerTry);
+  // Server fallback
+  return await fetchHtmlViaServer(url);
+};
 
-            const waybackTry = await fetchFromWaybackWithPuppeteer(url);
-            if (waybackTry) return resolve(waybackTry);
-
-            return resolve({ $: cheerio.load(""), isRetracted: false });
-          }
-
-          const cleaned = removeCookieWalls(response.html);
-          if (isLikelyRSS(cleaned)) {
-            console.warn("🛑 RSS feed detected. Skipping.");
-            return resolve({
-              $: cheerio.load(""),
-              isRetracted: false,
-              isRSS: true,
-            });
-          }
-
-          const $ = cheerio.load(cleaned);
-          const len = $("body").text().trim().length;
-
-          if (len < 300) {
-            console.warn("⚠️ Short content. Trying Puppeteer...");
-            const puppetAlt = await fetchViaPuppeteer(url);
-            if (puppetAlt) return resolve(puppetAlt);
-
-            const waybackTry = await fetchFromWaybackWithPuppeteer(url);
-            if (waybackTry) return resolve(waybackTry);
-          }
-
-          return resolve({ $, isRetracted: detectRetraction(cleaned) });
-        }
-      );
+// Extracted PDF/server HTML logic to keep main function clean
+async function fetchPdfViaServer(url: string) {
+  try {
+    const pdfRes = await fetch(`${BASE_URL}/api/fetch-pdf-text`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
     });
-  }
+    const json = await pdfRes.json();
+    if (!json?.success || !json.text)
+      return { $: cheerio.load(""), isRetracted: false };
 
-  // 🔁 Server-side HTML fetch
+    const $ = cheerio.load(`<body>${json.text.trim()}</body>`);
+    const thumbRes = await fetch(`${BASE_URL}/api/pdf-thumbnail`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    const thumbJson = await thumbRes.json();
+
+    return {
+      $,
+      isRetracted: detectRetraction(json.text),
+      pdfMeta: {
+        title: json.title,
+        author: json.author,
+        thumbnailUrl: thumbJson?.imageUrl || undefined,
+      },
+    };
+  } catch (err) {
+    console.error("❌ PDF parse failed:", err);
+    return { $: cheerio.load(""), isRetracted: false };
+  }
+}
+
+async function fetchHtmlViaServer(url: string) {
   try {
     const res = await fetch(`${BASE_URL}/api/fetch-page-content`, {
       method: "POST",
@@ -484,21 +519,17 @@ export const fetchExternalPageContent = async (
 
     const json = await res.json();
     const cleaned = removeCookieWalls(json.html);
-    if (isLikelyRSS(cleaned)) {
-      console.warn("🛑 RSS feed detected. Skipping.");
+    if (isLikelyRSS(cleaned))
       return { $: cheerio.load(""), isRetracted: false, isRSS: true };
-    }
 
     const $ = cheerio.load(cleaned);
     const len = $("body").text().trim().length;
 
     if (len < 300) {
-      console.warn("⚠️ Short server content. Trying Puppeteer + Wayback...");
-      const puppet = await fetchViaPuppeteer(url);
-      if (puppet) return puppet;
-
-      const wayback = await fetchFromWaybackWithPuppeteer(url);
-      if (wayback) return wayback;
+      const alt =
+        (await fetchViaPuppeteer(url)) ||
+        (await fetchFromWaybackWithPuppeteer(url));
+      return alt || { $: cheerio.load(""), isRetracted: false };
     }
 
     return { $, isRetracted: detectRetraction(cleaned) };
@@ -506,7 +537,7 @@ export const fetchExternalPageContent = async (
     console.error("❌ Server fetch error:", err);
     return { $: cheerio.load(""), isRetracted: false };
   }
-};
+}
 
 // Extract Authors
 export const extractAuthors = async (

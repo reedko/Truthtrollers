@@ -20,5 +20,11 @@
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src", "../TaskDetail.tsx", "../shared/entities/types.ts"]
+  "include": [
+    "src",
+    "../TaskDetail.tsx",
+    "../shared/entities/types.ts",
+    "experimental/TestCardPage.tsx",
+    "experimental/main_old.tsx"
+  ]
 }

@@ -1,9 +1,23 @@
 import axios from "axios";
-import { TaskData, Author, Publisher } from "../entities/Task";
+import { TaskData, Author, Publisher, Task } from "../entities/Task";
+import browser from "webextension-polyfill";
+import { IS_EXTENSION } from "./extractMetaData";
+type AddContentResponse = {
+  contentId: string;
+};
+
+type GenericSuccessResponse = {
+  success: boolean;
+};
+
+type StoreClaimsResponse = {
+  success: boolean;
+  error?: string;
+};
+
 const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 
 const EXTENSION_ID = "phacjklngoihnlhcadefaiokbacnagbf";
-const IS_EXTENSION = typeof chrome !== "undefined" && chrome.runtime?.id;
 
 // ✅ Create Task (De-Extensionized)
 const createTask = async (taskData: TaskData): Promise<string | null> => {
@@ -20,25 +34,17 @@ const createTask = async (taskData: TaskData): Promise<string | null> => {
     let contentId: string | null = null;
 
     if (IS_EXTENSION) {
-      // ✅ Inside Extension - Use `chrome.runtime.sendMessage`
-      contentId = await new Promise<string>((resolve, reject) => {
-        chrome.runtime.sendMessage(
-          EXTENSION_ID,
-          { action: "addContent", taskData },
-          (response) => {
-            if (response?.contentId) {
-              console.log("✅ Content created with ID:", response.contentId);
-              resolve(response.contentId);
-            } else {
-              console.error(
-                "❌ No contentId returned from addContent:",
-                response
-              );
-              reject("Failed to create content");
-            }
-          }
-        );
-      });
+      const response = (await browser.runtime.sendMessage({
+        action: "addContent",
+        taskData,
+      })) as AddContentResponse;
+
+      if (response?.contentId) {
+        console.log("✅ Content created with ID:", response.contentId);
+        contentId = response.contentId;
+      } else {
+        throw new Error("Failed to create content");
+      }
     } else {
       // ✅ Outside Extension - Use API call
       const response = await fetch(`${BASE_URL}/api/addContent`, {
@@ -81,56 +87,40 @@ const createTask = async (taskData: TaskData): Promise<string | null> => {
 // ✅ Attach Authors
 const addAuthors = async (contentId: string, authors: Author[]) => {
   if (IS_EXTENSION) {
-    return new Promise<void>((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        EXTENSION_ID,
-        { action: "addAuthors", contentId, authors },
-        (response) => {
-          response?.success ? resolve() : reject("Failed to add authors");
-        }
-      );
-    });
+    const response = (await browser.runtime.sendMessage({
+      action: "addAuthors",
+      contentId,
+      authors,
+    })) as GenericSuccessResponse;
+
+    if (!response?.success) throw new Error("Failed to add authors");
   } else {
-    // ✅ API Call Version
-    try {
-      await fetch(`${BASE_URL}/api/content/${contentId}/authors`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contentId, authors }),
-      });
-      console.log("✅ Authors added successfully");
-    } catch (error) {
-      console.error("❌ Error adding authors:", error);
-      throw new Error("Failed to add authors via API");
-    }
+    await fetch(`${BASE_URL}/api/content/${contentId}/authors`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contentId, authors }),
+    });
+    console.log("✅ Authors added successfully");
   }
 };
 
 // ✅ Attach Publisher
+
 const addPublisher = async (contentId: string, publisher: Publisher) => {
   if (IS_EXTENSION) {
-    return new Promise<void>((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        EXTENSION_ID,
-        { action: "addPublisher", contentId, publisher },
-        (response) => {
-          response?.success ? resolve() : reject("Failed to add publisher");
-        }
-      );
-    });
+    const response = (await browser.runtime.sendMessage({
+      action: "addPublisher",
+      contentId,
+      publisher,
+    })) as GenericSuccessResponse;
+
+    if (!response.success) throw new Error("Failed to add publisher");
   } else {
-    // ✅ API Call Version
-    try {
-      await fetch(`${BASE_URL}/api/content/${contentId}/publishers`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contentId, publisher }),
-      });
-      console.log("✅ Publisher added successfully");
-    } catch (error) {
-      console.error("❌ Error adding publisher:", error);
-      throw new Error("Failed to add publisher via API");
-    }
+    await fetch(`${BASE_URL}/api/content/${contentId}/publishers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contentId, publisher }),
+    });
   }
 };
 
@@ -140,52 +130,25 @@ const storeClaimsInDB = async (
   claims: string[],
   contentType: string
 ) => {
-  console.log("📌 storeClaimsInDB called with:", {
-    contentId,
-    claims,
-    contentType,
-  });
-
   if (IS_EXTENSION) {
-    return new Promise<void>((resolve, reject) => {
-      chrome.runtime.sendMessage(
-        EXTENSION_ID,
-        {
-          action: "storeClaims",
-          data: {
-            contentId,
-            claims,
-            contentType, // ✅ Pass content type
-          },
-        },
-        (response) => {
-          if (response?.success) {
-            console.log("✅ Claims stored successfully");
-            resolve();
-          } else {
-            console.error("❌ Error storing claims:", response);
-            reject(response?.error || "storeClaims failed");
-          }
-        }
-      );
-    });
-  } else {
-    // ✅ API Call Version
-    try {
-      const response = await fetch(`${BASE_URL}/api/claims/add`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content_id: contentId,
-          claims,
-          content_type: contentType,
-        }), // ✅ Ensure content_id is correct
-      });
-      console.log("✅ Claims stored successfully");
-    } catch (error) {
-      console.error("❌ Error storing claims:", error);
-      throw new Error("Failed to store claims via API");
+    const response = (await browser.runtime.sendMessage({
+      action: "storeClaims",
+      data: { contentId, claims, contentType },
+    })) as StoreClaimsResponse;
+
+    if (!response.success) {
+      throw new Error(response.error || "storeClaims failed");
     }
+  } else {
+    await fetch(`${BASE_URL}/api/claims/add`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content_id: contentId,
+        claims,
+        content_type: contentType,
+      }),
+    });
   }
 };
 

@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { Task } from "../entities/Task";
+import browser from "webextension-polyfill";
 
 interface TaskStore {
   task: Task | null;
@@ -11,33 +12,37 @@ interface TaskStore {
 }
 
 const useTaskStore = create<TaskStore>((set) => {
-  // Initialize state from chrome.storage
-  chrome.storage.local.get(
-    ["task", "currentUrl", "isContentDetected"],
-    (result) => {
+  browser.storage.local
+    .get(["task", "currentUrl", "isContentDetected"])
+    .then((result) => {
+      const maybeTask = result.task;
+      const isValidTask =
+        maybeTask && typeof maybeTask === "object" && "content_id" in maybeTask;
       set({
-        task: result.task || null,
-        currentUrl: result.currentUrl || null,
-        isContentDetected: result.isContentDetected || false,
+        task: isValidTask ? (maybeTask as Task) : null,
+        currentUrl:
+          typeof result.currentUrl === "string" ? result.currentUrl : null,
+        isContentDetected:
+          typeof result.isContentDetected === "boolean"
+            ? result.isContentDetected
+            : false,
       });
-    }
-  );
-
+    });
   return {
     task: null,
     currentUrl: null,
     isContentDetected: false,
     setTask: (task) => {
       set({ task });
-      chrome.storage.local.set({ task });
+      browser.storage.local.set({ task });
     },
     setCurrentUrl: (url) => {
       set({ currentUrl: url });
-      chrome.storage.local.set({ currentUrl: url });
+      browser.storage.local.set({ currentUrl: url });
     },
     setContentDetected: (detected) => {
       set({ isContentDetected: detected });
-      chrome.storage.local.set({ isContentDetected: detected });
+      browser.storage.local.set({ isContentDetected: detected });
     },
   };
 });

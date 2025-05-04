@@ -18,8 +18,12 @@ import { analyzeContent } from "./openaiTopicsAndClaims";
 import { extractVideoIdFromUrl } from "../services/parseYoutubeUrl";
 import checkAndDownloadTopicIcon from "../services/checkAndDownloadTopicIcon";
 import { TaskData, Lit_references } from "../entities/Task";
+import browser from "webextension-polyfill";
 
-const EXTENSION_ID = "phacjklngoihnlhcadefaiokbacnagbf";
+interface ReadabilityResponse {
+  success: boolean;
+  text?: string;
+}
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 function extractArticleRootHTML($: cheerio.CheerioAPI): string | null {
   const selectors = [
@@ -100,15 +104,17 @@ function trimTo60k(text: string) {
 }
 
 const fetchDiffbotData = async (articleUrl: string): Promise<any> => {
-  return new Promise((resolve) => {
-    chrome.runtime.sendMessage(
-      EXTENSION_ID,
-      { action: "fetchDiffbotData", articleUrl },
-      (response) => resolve(response)
-    );
-  });
+  try {
+    const response = await browser.runtime.sendMessage({
+      action: "fetchDiffbotData",
+      articleUrl,
+    });
+    return response;
+  } catch (err) {
+    console.error("Failed to fetch Diffbot data:", err);
+    return null;
+  }
 };
-
 function smartCleanHTMLForReadability($: cheerio.CheerioAPI): string {
   const $clean = cheerio.load($.html());
   $clean(
@@ -201,25 +207,26 @@ export const orchestrateScraping = async (
     // ✅ Try Readability
     let readableText = "";
 
-    if (typeof chrome !== "undefined" && chrome?.runtime?.id) {
-      readableText = await new Promise((resolve) => {
-        chrome.runtime.sendMessage(
-          {
-            action: "extractReadableText",
-            html: cleanHTML,
-            url,
-          },
-          (response) => {
-            console.log("📦 Readability background response:", response);
-            if (response?.success && response.text) {
-              resolve(response.text);
-            } else {
-              console.warn("❌ Readability fallback triggered.");
-              resolve("");
-            }
-          }
-        );
-      });
+    if (typeof browser !== "undefined" && browser?.runtime?.id) {
+      try {
+        const response = (await browser.runtime.sendMessage({
+          action: "extractReadableText",
+          html: cleanHTML,
+          url,
+        })) as ReadabilityResponse;
+
+        console.log("📦 Readability background response:", response);
+
+        if (response?.success && response.text) {
+          readableText = response.text;
+        } else {
+          console.warn("❌ Readability fallback triggered.");
+          readableText = "";
+        }
+      } catch (err) {
+        console.error("❌ Readability message error:", err);
+        readableText = "";
+      }
     } else {
       try {
         const res = await fetch(`${BASE_URL}/api/extract-readable-text`, {

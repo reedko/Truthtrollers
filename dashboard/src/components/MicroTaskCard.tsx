@@ -22,9 +22,10 @@ const MicroTaskCard: React.FC<MicroTaskCardProps> = ({ task, onSelect }) => {
 
   return (
     <Box
-      w="175px"
-      h="175px"
-      bg={bg}
+      maxW="175px"
+      minW="90px"
+      flex="1"
+      bg="stackGradient"
       borderRadius="xl"
       p={2}
       boxShadow="md"
@@ -32,7 +33,6 @@ const MicroTaskCard: React.FC<MicroTaskCardProps> = ({ task, onSelect }) => {
       borderColor="gray.600"
       display="flex"
       flexDirection="column"
-      justifyContent="space-between"
     >
       <VStack spacing={1} align="center">
         <Text fontSize="xs" fontWeight="bold" noOfLines={2}>

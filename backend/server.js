@@ -30,19 +30,19 @@ import pdfParse from "pdf-parse/lib/pdf-parse.js";
 import { spawn } from "child_process";
 import registerDiscussionRoutes from "./routes/discussionRoutes.js";
 import registerBeaconRoutes from "./routes/beaconRoutes.js";
+import fetch from "node-fetch";
 
 //const pdfParse = pkg.default || pkg;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const app = express();
-
+/* 
 // Load SSL certificate and key
 const options = {
   key: fs.readFileSync("../ssl/server.key"),
   cert: fs.readFileSync("../ssl/server.cert"),
 };
-process.env.PATH = [process.env.PATH, "/usr/local/bin"].join(":");
-console.log("🧭 PATH:", process.env.PATH);
+ */
 const DEFAULT_HEADERS = {
   "User-Agent":
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36",
@@ -55,7 +55,7 @@ const DEFAULT_HEADERS = {
   Referer: "https://www.google.com/",
 };
 
-// ✅ Use HTTPS for localhost:5001
+/* // ✅ Use HTTPS for localhost:5001
 https.createServer(options, app).listen(5001, () => {
   console.log("✅ HTTPS Server running on https://localhost:5001");
 });
@@ -68,6 +68,10 @@ http
   })
   .listen(5080);
 // Increase payload size limit (e.g., 50MB)
+ */
+app.listen(3000, () => {
+  console.log("✅ Node backend running on http://localhost:3000");
+});
 
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
@@ -1114,28 +1118,80 @@ app.get("/api/scrapecontent", async (req, res) => {
   }
 });
 
+async function verifyCaptcha(token) {
+  const secret = process.env.VITE_RECAPTCHA_SECRET_KEY;
+  const res = await fetch("https://www.google.com/recaptcha/api/siteverify", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `secret=${secret}&response=${token}`,
+  });
+
+  const data = await res.json();
+  console.log("CAPTCHA VERIFICATION RESULT:", data);
+  console.log("CAPTCHA VERIFICATION RESULT:", token);
+  return data.success;
+}
+
 // Register endpoint
-app.post("/api/register", (req, res) => {
-  const { username, password, email } = req.body;
+app.post("/api/register", async (req, res) => {
+  const { username, password, email, captcha } = req.body;
+
+  if (!username || !password || !email || !captcha) {
+    return res
+      .status(400)
+      .json({ error: "All fields and CAPTCHA are required." });
+  }
+
+  const isHuman = await verifyCaptcha(captcha);
+  if (!isHuman) {
+    return res.status(403).json({ error: "Failed CAPTCHA verification" });
+  }
+
   const hashedPassword = bcrypt.hashSync(password, 10);
   const sql = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
   const params = [username, hashedPassword, email];
 
   pool.query(sql, params, (err, result) => {
     if (err) {
+      if (err.code === "ER_DUP_ENTRY") {
+        return res
+          .status(409)
+          .json({ error: "Username or email already exists." });
+      }
+
       console.error("Error registering user:", err);
-      return res.status(500).json({ error: "Database query failed" });
+      return res.status(500).json({ error: "Database error." });
     }
-    res.status(200).send("User registered!");
+
+    res.status(201).json({
+      user: {
+        id: result.insertId,
+        username,
+        email,
+      },
+    });
   });
 });
 
 // Login endpoint
-app.post("/api/login", (req, res) => {
-  const { username, password } = req.body;
+app.post("/api/login", async (req, res) => {
+  const { username, password, captcha } = req.body;
+
+  // Only require CAPTCHA fields if not bypassed via extension or post-registration
+  const skipCaptcha = req.headers["x-skip-captcha"] === "true";
+
+  if (!username || !password || (!skipCaptcha && !captcha)) {
+    return res.status(400).json({ error: "All fields are required." });
+  }
+
+  if (!skipCaptcha) {
+    const isHuman = await verifyCaptcha(captcha);
+    if (!isHuman) {
+      return res.status(403).json({ error: "Failed CAPTCHA verification" });
+    }
+  }
   const sql = "SELECT * FROM users WHERE username = ?";
-  const params = [username, password];
-  pool.query(sql, params, (err, results) => {
+  pool.query(sql, [username], (err, results) => {
     if (err) {
       console.error("Error logging in user:", err);
       return res.status(500).json({ error: "Database query failed" });
