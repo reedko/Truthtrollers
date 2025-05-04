@@ -1,7 +1,7 @@
 // src/components/Beacon/CustomVerimeterGauge.tsx
 import { Box, Text, Center } from "@chakra-ui/react";
 import React from "react";
-import { steampunkTealTheme } from "./themes/steampunkTealTheme";
+import { steampunkTealTheme } from "./experimental/steampunkTealTheme";
 const API_BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
 
 interface CustomVerimeterGaugeProps {

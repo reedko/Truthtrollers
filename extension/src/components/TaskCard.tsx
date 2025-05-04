@@ -22,6 +22,8 @@ import { useTaskScraper } from "../hooks/useTaskScraper";
 import TruthGauge from "./ModernArcGauge";
 import { Stat } from "@chakra-ui/react";
 import { Tooltip } from "@chakra-ui/react";
+import browser from "webextension-polyfill";
+import { Task } from "../entities/Task";
 
 const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 
@@ -44,13 +46,19 @@ const TaskCard: React.FC = () => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // ✅ Retrieve task data from local storage (sent from content.js)
-    chrome.storage.local.get("task", (data) => {
-      if (data.task) {
-        setTask(data.task);
-        setVisible(true);
-      }
-    });
+    // ✅ Retrieve task data from local storage
+    browser.storage.local
+      .get("task")
+      .then((data) => {
+        const storedTask = data.task as Task | undefined;
+        if (storedTask) {
+          setTask(storedTask);
+          setVisible(true);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to get task from storage:", err);
+      });
   }, []);
 
   const handleAddTask = () => {

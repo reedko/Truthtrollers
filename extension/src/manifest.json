@@ -39,7 +39,9 @@
         "assets/icons/icon-16.png",
         "assets/icons/icon-48.png",
         "assets/icons/icon-128.png",
-        "assets/images/meter3.png"
+        "assets/images/meter3.png",
+        "popup.js",
+        "popup.css"
       ],
       "matches": ["<all_urls>"]
     }

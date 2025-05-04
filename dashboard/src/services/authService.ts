@@ -6,20 +6,36 @@ const API_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5001";
 export const register = async (
   username: string,
   password: string,
-  email: string
+  email: string,
+  captcha: string | null
 ) => {
   return await axios.post(`${API_URL}/api/register`, {
     username,
     password,
     email,
+    captcha,
   });
 };
 
 export const login = async (
   username: string,
-  password: string
+  password: string,
+  captcha?: string,
+  skipCaptchaHeader: boolean = false
 ): Promise<User> => {
-  const res = await axios.post(`${API_URL}/api/login`, { username, password });
+  const config = {
+    headers: {} as Record<string, string>,
+  };
+
+  if (skipCaptchaHeader) {
+    config.headers["x-skip-captcha"] = "true";
+  }
+
+  const res = await axios.post(
+    `${API_URL}/api/login`,
+    captcha ? { username, password, captcha } : { username, password },
+    config
+  );
 
   const { user, token } = res.data;
   localStorage.setItem("token", token);

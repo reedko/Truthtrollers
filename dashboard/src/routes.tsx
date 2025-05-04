@@ -1,6 +1,5 @@
-import { RouterProvider } from "react-router-dom";
-
 // routes.tsx
+import { RouterProvider } from "react-router-dom";
 import { createBrowserRouter } from "react-router-dom";
 import VisionLayout from "./layout/VisionLayout";
 import ErrorPage from "./pages/ErrorPage";
@@ -10,10 +9,10 @@ import VisionDashboard from "./components/Dashboard";
 import ForgotPassword from "./components/ForgotPassword";
 import Login from "./components/Login";
 import Register from "./components/Register";
-import TestCardPage from "./pages/TestCardPage";
 import WorkspacePage from "./pages/WorkspacePage";
 import MoleculeMapPage from "./pages/MoleculeMapPage";
 import DiscussionPage from "./pages/DiscussionPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const router = createBrowserRouter([
   {
@@ -22,15 +21,60 @@ const router = createBrowserRouter([
     errorElement: <ErrorPage />,
     children: [
       { index: true, element: <Login /> },
-      { path: "/dashboard", element: <VisionDashboard /> },
-      { path: "/tasks", element: <TaskPage /> },
-      { path: "/tasks/:taskId", element: <TaskDetail /> },
+
+      { path: "/login", element: <Login /> },
       { path: "/forgot-password", element: <ForgotPassword /> },
       { path: "/register", element: <Register /> },
-      { path: "/test-card", element: <TestCardPage /> },
-      { path: "/workspace", element: <WorkspacePage /> }, // ← no param
-      { path: "/molecule", element: <MoleculeMapPage /> },
-      { path: "/discussion", element: <DiscussionPage /> },
+
+      // 🔒 Protected Routes
+      {
+        path: "/dashboard",
+        element: (
+          <ProtectedRoute>
+            <VisionDashboard />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/tasks",
+        element: (
+          <ProtectedRoute>
+            <TaskPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/tasks/:taskId",
+        element: (
+          <ProtectedRoute>
+            <TaskDetail />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/workspace",
+        element: (
+          <ProtectedRoute>
+            <WorkspacePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/molecule",
+        element: (
+          <ProtectedRoute>
+            <MoleculeMapPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/discussion",
+        element: (
+          <ProtectedRoute>
+            <DiscussionPage />
+          </ProtectedRoute>
+        ),
+      },
     ],
   },
 ]);

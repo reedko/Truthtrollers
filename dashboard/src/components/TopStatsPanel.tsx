@@ -1,7 +1,8 @@
 // src/components/TopStatsPanel.tsx
 import {
   Box,
-  SimpleGrid,
+  Grid,
+  GridItem,
   Stat,
   StatLabel,
   StatNumber,
@@ -10,10 +11,7 @@ import {
   CardHeader,
   Heading,
   Text,
-  Flex,
-  Grid,
   VStack,
-  HStack,
   Spacer,
   Center,
 } from "@chakra-ui/react";
@@ -21,7 +19,6 @@ import VisionTheme from "./themes/VisionTheme";
 import StatCard from "./StatCard";
 import TruthGauge from "./ModernArcGauge";
 import GlowGauge from "./ModernCircleGauge";
-import BareGauge from "./BareGauge";
 import {
   Task,
   Claim,
@@ -61,15 +58,17 @@ const TopStatsPanel: React.FC<TopStatsPanelProps> = ({
   );
 
   return (
-    <Flex
-      justify="space-between"
-      align="start"
-      wrap="wrap"
-      mb={3}
-      gap={1}
-      flexDirection={{ base: "column", md: "row" }}
+    <Grid
+      templateColumns={{
+        base: "1fr",
+        md: "repeat(2, 1fr)",
+        lg: "100fr 55fr 75fr",
+      }}
+      gap={4}
+      alignItems="stretch"
     >
-      <Box flex="1" maxW="700px">
+      {/* Welcome Card */}
+      <GridItem colSpan={{ base: 1, md: 2, lg: 1 }}>
         <Card
           height="380px"
           borderRadius="2xl"
@@ -113,71 +112,83 @@ const TopStatsPanel: React.FC<TopStatsPanelProps> = ({
             </Box>
           </CardBody>
         </Card>
-      </Box>
+      </GridItem>
 
-      <Card
-        height="380px"
-        width="380px"
-        borderRadius="2xl"
-        overflow="hidden"
-        boxShadow="xl"
-        bg="stat2Gradient"
-        position="relative"
-        minW={{ base: "100%", md: "300px" }}
-      >
-        <CardHeader>
-          <VStack spacing={2} align="center" mb={2} mt={2}>
-            <Spacer />
-            <Heading size="lg" color="teal.200">
-              Progress Overview
+      {/* Progress Card */}
+      <GridItem>
+        <Card
+          height="380px"
+          borderRadius="2xl"
+          overflow="hidden"
+          boxShadow="xl"
+          bg="stat2Gradient"
+          position="relative"
+        >
+          <CardHeader>
+            <VStack spacing={2} align="center" mb={2} mt={2}>
+              <Spacer />
+              <Heading size="lg" color="teal.200">
+                Progress Overview
+              </Heading>
+              <TruthGauge
+                score={tasks.length / 10}
+                label="PROGRESS"
+                size={{ w: 220, h: 140 }}
+                normalize={true}
+              />
+            </VStack>
+          </CardHeader>
+
+          <CardBody>
+            <VStack spacing={4}>
+              <StatCard label="Assigned Tasks" value={tasks.length} />
+              <StatCard
+                label="Verification Tasks"
+                value={verificationTasks.length}
+              />
+            </VStack>
+          </CardBody>
+        </Card>
+      </GridItem>
+
+      {/* Claims Verified Card */}
+      <GridItem>
+        <Card
+          height="380px"
+          borderRadius="2xl"
+          overflow="hidden"
+          boxShadow="xl"
+          bg="statGradient"
+          position="relative"
+          p={4}
+        >
+          <Box display="flex" flexDirection="column" height="100%">
+            <Heading size="lg" color="teal.200" mb={4}>
+              Claims Verified
             </Heading>
-            <TruthGauge
-              score={tasks.length / 10}
-              label="PROGRESS"
-              size={{ w: 220, h: 140 }}
-              normalize={true}
-            />
-          </VStack>
-        </CardHeader>
 
-        <CardBody>
-          <VStack spacing={4}>
-            <StatCard label="Assigned Tasks" value={tasks.length} />
-            <StatCard
-              label="Verification Tasks"
-              value={verificationTasks.length}
-            />
-          </VStack>
-        </CardBody>
-      </Card>
-      <Card
-        height="380px"
-        width="500px"
-        borderRadius="2xl"
-        overflow="hidden"
-        boxShadow="xl"
-        bg="statGradient"
-        position="relative"
-        p={4}
-      >
-        <Flex direction="column" height="100%">
-          <Heading size="lg" color="teal.200" mb={4}>
-            Claims Verified
-          </Heading>
+            <Grid templateColumns="1fr 1fr" flex="1" gap={4}>
+              <Box
+                display="flex"
+                flexDirection="column"
+                justifyContent="flex-end"
+                gap={2}
+              >
+                <StatCard label="Verified Claims" value={verifiedCount} />
+                <StatCard
+                  label="Claim Evaluation Rate"
+                  value={`${evalRate}%`}
+                />
+              </Box>
 
-          <Grid templateColumns="1fr 1fr" flex="1" gap={4}>
-            <Flex direction="column" justify="flex-end" gap={2}>
-              <StatCard label="Verified Claims" value={verifiedCount} />
-              <StatCard label="Claim Evaluation Rate" value={`${evalRate}%`} />
-            </Flex>
-
-            <Center>
-              <GlowGauge score={0.75} label="Verified" />
-            </Center>
-          </Grid>
-        </Flex>
-      </Card>
-    </Flex>
+              <Center>
+                <GlowGauge score={0.75} label="Verified" />
+              </Center>
+            </Grid>
+          </Box>
+        </Card>
+      </GridItem>
+    </Grid>
   );
 };
 

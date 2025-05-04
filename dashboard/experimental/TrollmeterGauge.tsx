@@ -2,7 +2,7 @@
 import React from "react";
 import { Box, Text, Center, HStack, VStack } from "@chakra-ui/react";
 import ReactSpeedometer from "react-d3-speedometer";
-import { steampunkTealTheme } from "./themes/steampunkTealTheme";
+import { steampunkTealTheme } from "./experimental/steampunkTealTheme";
 import { CustomSegmentLabelPosition } from "react-d3-speedometer";
 
 interface TrollmeterGaugeProps {

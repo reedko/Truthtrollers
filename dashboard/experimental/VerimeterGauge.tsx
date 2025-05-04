@@ -3,7 +3,7 @@ import { Box, Text, Center, useColorModeValue } from "@chakra-ui/react";
 import ReactSpeedometer, {
   CustomSegmentLabelPosition,
 } from "react-d3-speedometer";
-import { steampunkTealTheme } from "./themes/steampunkTealTheme";
+import { steampunkTealTheme } from "./experimental/steampunkTealTheme";
 
 interface VerimeterGaugeProps {
   score: number; // -1 to 1

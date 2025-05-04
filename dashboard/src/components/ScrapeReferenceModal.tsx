@@ -18,7 +18,6 @@ import { dashboardScraper } from "../services/dashboardScraper";
 import { fetchAllReferences } from "../services/useDashboardAPI";
 import { useTaskStore } from "../store/useTaskStore"; // ✅ Import store
 import { useLastVisitedURL } from "../hooks/useLastVisitedUrl";
-//import { sendMessageToExtension } from "../services/messageService"; // ✅ New service
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
 

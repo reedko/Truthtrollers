@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { scrapeContent } from "../services/scrapeContent"; // ✅ Import recursive scraper
 import useTaskStore from "../store/useTaskStore"; // ✅ Zustand Store
+import browser from "webextension-polyfill";
 
 export const useTaskScraper = () => {
   const [loading, setLoading] = useState<boolean>(false);
@@ -27,7 +28,7 @@ export const useTaskScraper = () => {
       store.setCurrentUrl(initialUrl);
 
       // ✅ Notify background that scraping is active
-      chrome.runtime.sendMessage({ action: "scrapingStarted" });
+      browser.runtime.sendMessage({ action: "scrapingStarted" });
 
       await scrapeContent(initialUrl, "", "task"); // ✅ Call recursive scraper
       console.log("✅ Task and references fully scraped!");
@@ -43,7 +44,7 @@ export const useTaskScraper = () => {
       );
 
       // ✅ Ensure the popup updates with the newly scraped task
-      chrome.runtime.sendMessage({
+      browser.runtime.sendMessage({
         action: "scrapeCompleted",
         url: initialUrl, // ✅ Send the scraped URL
         forceVisible: userStillOnSamePage,

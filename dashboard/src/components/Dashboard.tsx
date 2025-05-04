@@ -1,4 +1,4 @@
-// Updated VisionDashboard.tsx
+// VisionDashboard.tsx (Refactored Layout)
 import {
   Box,
   Grid,
@@ -12,12 +12,9 @@ import {
   HStack,
   Flex,
 } from "@chakra-ui/react";
-
 import { useEffect, useMemo } from "react";
 import { useTaskStore } from "../store/useTaskStore";
 import { useAuthStore } from "../store/useAuthStore";
-import { useDashboardStore } from "../store/useDashboardStore";
-
 import AssignedTaskGrid from "./AssignedTaskGrid";
 import ClaimProgressChart from "./ClaimProgressChart";
 import ClaimBoard from "./ClaimBoard";
@@ -37,54 +34,19 @@ const VisionDashboard: React.FC = () => {
   const setSelectedTask = useTaskStore((s) => s.setSelectedTask);
 
   useEffect(() => {
-    if (user?.user_id) {
-      fetchTasksForUser(user.user_id);
-    }
+    if (user?.user_id) fetchTasksForUser(user.user_id);
   }, [user?.user_id]);
 
   useEffect(() => {
-    const safeAssignedTasks = Array.isArray(assignedTasks) ? assignedTasks : [];
-    const tasksToCheck = selectedTask ? [selectedTask] : safeAssignedTasks;
-    tasksToCheck.forEach((task) => {
-      fetchClaims(task.content_id);
-    });
+    const tasks = selectedTask ? [selectedTask] : assignedTasks || [];
+    tasks.forEach((task) => fetchClaims(task.content_id));
   }, [assignedTasks, selectedTask]);
 
-  const verificationTasks = useMemo(() => {
-    const tasksToCheck = selectedTask
-      ? [selectedTask]
-      : Array.isArray(assignedTasks)
-      ? assignedTasks
-      : [];
-    const result: any[] = [];
-    for (const task of tasksToCheck) {
-      const claims = claimsByTask[task.content_id] || [];
-      for (const claim of claims) {
-        const refs = claimReferences[claim.claim_id] || [];
-        const needsVerification =
-          refs.length === 0 || refs.some((r) => r.supportLevel < 0.5);
-        if (needsVerification) {
-          result.push({
-            id: `verify-claim-${claim.claim_id}`,
-            title: "Verify Claim",
-            description: claim.claim_text,
-            status: refs.length === 0 ? "urgent" : "pending",
-          });
-        }
-      }
-    }
-    return result;
-  }, [assignedTasks, selectedTask, claimsByTask, claimReferences]);
-
-  const tasksToRender = selectedTask
-    ? [selectedTask]
-    : Array.isArray(assignedTasks)
-    ? assignedTasks
-    : [];
+  const tasksToRender = selectedTask ? [selectedTask] : assignedTasks || [];
 
   return (
     <Box p={6} minH="100vh">
-      <Card>
+      <Card w="100%" bg="transparent" boxShadow="none">
         <CardBody>
           <TopStatsPanel
             tasks={tasksToRender}
@@ -103,11 +65,17 @@ const VisionDashboard: React.FC = () => {
         </Card>
       )}
 
-      <Grid templateColumns={{ base: "1fr", md: "2fr 1fr" }} gap={6}>
-        <VStack spacing={6} align="stretch" width="full">
-          <Flex width="full" gap={4} align="start">
-            <Box maxW="425px" flexShrink={0}>
-              <Card bg="stackGradient">
+      <Flex
+        direction={{ base: "column", lg: "row" }}
+        gap={6}
+        wrap="wrap"
+        w="100%"
+      >
+        {/* Left Column */}
+        <VStack spacing={6} align="stretch" flex="1 1 60%">
+          <Flex wrap="wrap" gap={4} width="100%" align="stretch">
+            <Box flex={{ base: "1 1 100%", md: "1 1 45%" }} minW="260px">
+              <Card height="100%" bg="stackGradient">
                 <CardHeader>
                   <HStack>
                     <Heading size="md" color="teal.200">
@@ -129,43 +97,45 @@ const VisionDashboard: React.FC = () => {
               </Card>
             </Box>
 
-            <VStack>
-              <Box flex="1">
-                <Card width="600px" height="100%" bg="stat2Gradient">
+            <Box flex={{ base: "1 1 100%", md: "1 1 50%" }} minW="300px">
+              <VStack spacing={4} align="stretch">
+                <Card height="100%" bg="stat2Gradient">
                   <CardBody>
                     <MultiLineChart />
                   </CardBody>
                 </Card>
-              </Box>
-              <Card width="600px" height="145px">
-                <CardHeader>
-                  <Heading size="md" color="teal.200" mb={-10}>
-                    Trending Topics
-                  </Heading>
-                </CardHeader>
-                <CardBody>
-                  <Text color="gray.300">
-                    🔥 Spike in vaccine misinformation
-                  </Text>
-                  <Text color="gray.300">
-                    📈 Claim #5842 cited by 19 users today
-                  </Text>
-                  <Text color="gray.300">
-                    💬 “5G causes COVID” trending again
-                  </Text>
-                </CardBody>
-              </Card>
-            </VStack>
+
+                <Card height="145px">
+                  <CardHeader>
+                    <Heading size="md" color="teal.200" mb={-10}>
+                      Trending Topics
+                    </Heading>
+                  </CardHeader>
+                  <CardBody>
+                    <Text color="gray.300">
+                      🔥 Spike in vaccine misinformation
+                    </Text>
+                    <Text color="gray.300">
+                      📈 Claim #5842 cited by 19 users today
+                    </Text>
+                    <Text color="gray.300">
+                      💬 “5G causes COVID” trending again
+                    </Text>
+                  </CardBody>
+                </Card>
+              </VStack>
+            </Box>
           </Flex>
 
-          <Flex gap={4} align="start" width="100%">
-            <Box width="1000px" flexShrink={0}>
+          <Flex width="100%" wrap="wrap" gap={4}>
+            <Box flex="1 1 100%" minW="300px">
               <TaskProjectsPanel />
             </Box>
           </Flex>
         </VStack>
 
-        <VStack spacing={6} align="stretch">
+        {/* Right Column */}
+        <VStack spacing={6} align="stretch" flex="1 1 35%" minW="300px">
           <Card bg="statGradient">
             <CardHeader>
               <Heading size="md" color="teal.200">
@@ -181,25 +151,23 @@ const VisionDashboard: React.FC = () => {
             </CardBody>
           </Card>
 
-          <Box flex="1">
-            <Card height="100%" bg="gray.900">
-              <CardHeader>
-                <Heading size="md" color="teal.200">
-                  Claims to Evaluate
-                </Heading>
-              </CardHeader>
-              <CardBody>
-                <ClaimBoard
-                  tasks={tasksToRender}
-                  claimsByTask={claimsByTask}
-                  claimReferences={claimReferences}
-                  selectedTask={selectedTask}
-                />
-              </CardBody>
-            </Card>
-          </Box>
+          <Card height="100%" bg="gray.900">
+            <CardHeader>
+              <Heading size="md" color="teal.200">
+                Claims to Evaluate
+              </Heading>
+            </CardHeader>
+            <CardBody>
+              <ClaimBoard
+                tasks={tasksToRender}
+                claimsByTask={claimsByTask}
+                claimReferences={claimReferences}
+                selectedTask={selectedTask}
+              />
+            </CardBody>
+          </Card>
         </VStack>
-      </Grid>
+      </Flex>
     </Box>
   );
 };

@@ -4,6 +4,7 @@ import { login } from "../services/authService";
 import { useNavigate } from "react-router-dom";
 import { Button, Input, Stack, Heading, useToast } from "@chakra-ui/react";
 import { useAuthStore } from "../store/useAuthStore"; // ✅ NEW
+import ReCAPTCHA from "react-google-recaptcha";
 
 import { User } from "../../../shared/entities/types";
 const Login: React.FC = () => {
@@ -12,19 +13,27 @@ const Login: React.FC = () => {
   const setUser = useAuthStore((s) => s.setUser); // ✅ GET STORE
   const navigate = useNavigate();
   const toast = useToast();
-
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const handleLogin = async () => {
+    if (!captchaToken) {
+      toast({
+        title: "Please complete the CAPTCHA.",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
     try {
-      const user: User = await login(username, password); // Assume this returns user data
-      setUser(user); // ✅ STORE IN ZUSTAND
-      console.log(user.username, "USER");
-      localStorage.setItem("user", JSON.stringify(user));
+      const user: User = await login(username, password, captchaToken);
       setUser(user);
+      localStorage.setItem("user", JSON.stringify(user));
       navigate("/dashboard");
     } catch (error) {
       toast({
         title: "Login failed.",
-        description: "Invalid username or password.",
+        description: "Invalid credentials or CAPTCHA failed.",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -47,6 +56,10 @@ const Login: React.FC = () => {
         placeholder="Password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
+      />
+      <ReCAPTCHA
+        sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+        onChange={(token) => setCaptchaToken(token)}
       />
       <Button colorScheme="teal" onClick={handleLogin}>
         Login
