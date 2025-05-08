@@ -27,6 +27,7 @@ import http from "http";
 import https from "https";
 import fetchWithPuppeteer from "./routes/fetchWithPuppeteer.js"; //
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
+
 import { spawn } from "child_process";
 import registerDiscussionRoutes from "./routes/discussionRoutes.js";
 import registerBeaconRoutes from "./routes/beaconRoutes.js";
@@ -43,17 +44,6 @@ const options = {
   cert: fs.readFileSync("../ssl/server.cert"),
 };
  */
-const DEFAULT_HEADERS = {
-  "User-Agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36",
-  Accept:
-    "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-  "Accept-Language": "en-US,en;q=0.9",
-  "Cache-Control": "no-cache",
-  Pragma: "no-cache",
-  Connection: "keep-alive",
-  Referer: "https://www.google.com/",
-};
 
 /* // ✅ Use HTTPS for localhost:5001
 https.createServer(options, app).listen(5001, () => {
@@ -80,7 +70,25 @@ dotenv.config();
 // ✅ Puppeteer route
 app.use(fetchWithPuppeteer);
 app.use(cors());
+const allowedOrigins = [
+  "http://localhost:5173", // for dev dashboard
+  "https://truthtrollers.com", // for deployed dashboard
+  "chrome-extension://phacjklngoihnlhcadefaiokbacnagbf", // allow Chrome extension
+  "safari-web-extension://<your-safari-id>", // allow Safari extension
+];
 
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
 // Serve static files from the assets directory
 
 const assetsPath = path.join(__dirname, "assets");

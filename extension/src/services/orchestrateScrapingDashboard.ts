@@ -1,129 +1,42 @@
-// src/services/orchestrateScraping.ts
-
+// orchestrateScrapingExtension.ts
 import {
-  fetchExternalPageContent,
   fetchPageContent,
   extractAuthors,
   extractPublisher,
   extractReferences,
-  getExtractedTextFromBackground,
+} from "../services/extractMetaDataUtils";
+import {
   getBestImage,
-} from "../services/extractMetaData";
-import * as cheerio from "cheerio";
-import type { Cheerio, CheerioAPI } from "cheerio";
-
+  fetchExternalPageContent,
+} from "./extractMetaDataDashboard";
 import { getMainHeadline } from "../services/getMainHeadline";
-import { DiffbotData } from "../entities/diffbotData";
-import { analyzeContent } from "./openaiTopicsAndClaims";
+import { analyzeContent } from "./openaiTopicsAndClaimsDashboard";
 import { extractVideoIdFromUrl } from "../services/parseYoutubeUrl";
-import checkAndDownloadTopicIcon from "../services/checkAndDownloadTopicIcon";
-import { TaskData, Lit_references } from "../entities/Task";
-import browser from "webextension-polyfill";
-
+import { checkAndDownloadTopicIcon } from "../services/checkAndDownloadTopicIconDashboard";
+import {
+  extractArticleRootHTML,
+  smartCleanHTMLForReadability,
+  trimTo60k,
+} from "./orchestrateScrapingUtils";
+import type { TaskData, Lit_references } from "../entities/Task";
+import type { DiffbotData } from "../entities/diffbotData";
+import * as cheerio from "cheerio";
 interface ReadabilityResponse {
   success: boolean;
   text?: string;
 }
+
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
-function extractArticleRootHTML($: cheerio.CheerioAPI): string | null {
-  const selectors = [
-    '[data-cy="article-content"]',
-    ".rawHtml-content-no-nativo",
-    "article",
-    '[role="main"]',
-    ".main-content",
-    "#main",
-    ".content",
-    ".post-content",
-    ".entry-content",
-  ];
-
-  let bestNode: Cheerio<any> | null = null;
-  let bestScore = 0;
-
-  for (const sel of selectors) {
-    $(sel).each((_, el) => {
-      const node = $(el);
-      const text = node.text().trim();
-      const paraCount = node.find("p").length;
-      const charCount = text.length;
-
-      // Heuristic: favor nodes with many <p> and characters
-      const score = paraCount * 10 + charCount;
-
-      if (paraCount >= 2 && charCount > 200 && score > bestScore) {
-        bestScore = score;
-        bestNode = node;
-      }
-    });
-  }
-
-  if (bestNode) {
-    return (bestNode as Cheerio<any>).html()?.trim() || null;
-  }
-
-  // 🔻 Fallback to cleaned body if no good match
-  console.warn(
-    "⚠️ No strong article node found — falling back to cleaned <body>"
-  );
-
-  const body = $("body").clone();
-
-  body.find("script, style, nav, footer, aside, iframe").remove();
-  body
-    .find(
-      ".ad, .ads, .popup, .newsletter, .social-share, .comments, .related, .cookie"
-    )
-    .remove();
-
-  const cleanedHtml = body.html()?.trim() || null;
-
-  if (cleanedHtml) {
-    const maxLength = 64000;
-    return cleanedHtml.length > maxLength
-      ? cleanedHtml.slice(0, maxLength) + "\n<!-- Truncated -->"
-      : cleanedHtml;
-  }
-
-  return null;
-}
-function trimTo60k(text: string) {
-  while (text.length > 60000) {
-    const lastNewline = text.lastIndexOf("\n");
-
-    if (lastNewline === -1) {
-      // No newline found; remove a single character.
-      // This handles the case where it's just one long line.
-      text = text.slice(0, -1);
-    } else {
-      // Drop the entire last line.
-      text = text.slice(0, lastNewline);
-    }
-  }
-  return text;
-}
-
 const fetchDiffbotData = async (articleUrl: string): Promise<any> => {
   try {
-    const response = await browser.runtime.sendMessage({
-      action: "fetchDiffbotData",
-      articleUrl,
-    });
-    return response;
+    return fetchDiffbotData(articleUrl)
+      .then((data) => data || { success: false })
+      .catch(() => ({ success: false }));
   } catch (err) {
     console.error("Failed to fetch Diffbot data:", err);
     return null;
   }
 };
-function smartCleanHTMLForReadability($: cheerio.CheerioAPI): string {
-  const $clean = cheerio.load($.html());
-  $clean(
-    "style, link[rel='stylesheet'], script:not([type='application/ld+json'])"
-  ).remove();
-  $clean("img[src^='data:']").remove(); // Remove base64 images
-  $clean("figure, figcaption, .caption, .image, .media").remove();
-  return $clean.html() || "";
-}
 export const orchestrateScraping = async (
   url: string,
   content_name: string,
@@ -147,7 +60,6 @@ export const orchestrateScraping = async (
   } catch (error) {
     console.warn("⚠️ Diffbot fetch failed:", error);
   }
-
   // 🧠 Detect and skip RSS feeds
   if (url.includes("feed") || url.endsWith(".xml")) {
     console.warn("⚠️ Skipping likely RSS/XML feed:", url);
@@ -207,39 +119,17 @@ export const orchestrateScraping = async (
     // ✅ Try Readability
     let readableText = "";
 
-    if (typeof browser !== "undefined" && browser?.runtime?.id) {
-      try {
-        const response = (await browser.runtime.sendMessage({
-          action: "extractReadableText",
-          html: cleanHTML,
-          url,
-        })) as ReadabilityResponse;
-
-        console.log("📦 Readability background response:", response);
-
-        if (response?.success && response.text) {
-          readableText = response.text;
-        } else {
-          console.warn("❌ Readability fallback triggered.");
-          readableText = "";
-        }
-      } catch (err) {
-        console.error("❌ Readability message error:", err);
-        readableText = "";
-      }
-    } else {
-      try {
-        const res = await fetch(`${BASE_URL}/api/extract-readable-text`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ html: cleanHTML, url }),
-        });
-        const json = await res.json();
-        readableText = json.text || "";
-      } catch (err) {
-        console.warn("❌ API call to Readability failed:", err);
-        readableText = "";
-      }
+    try {
+      const res = await fetch(`${BASE_URL}/api/extract-readable-text`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ html: cleanHTML, url }),
+      });
+      const json = await res.json();
+      readableText = json.text || "";
+    } catch (err) {
+      console.warn("❌ API call to Readability failed:", err);
+      readableText = "";
     }
 
     if (readableText && readableText.length > 300) {

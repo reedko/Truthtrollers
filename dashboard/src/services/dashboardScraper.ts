@@ -1,5 +1,5 @@
-import { orchestrateScraping } from "../../../extension/src/services/orchestrateScraping";
-import createTask from "../../../extension/src/services/createTask";
+import { orchestrateScraping } from "../../../extension/src/services/orchestrateScrapingDashboard";
+import createTask from "../../../extension/src/services/createTaskDashboard";
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
 

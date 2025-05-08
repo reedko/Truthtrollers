@@ -50,29 +50,30 @@ const ClaimProgressChart: React.FC<ClaimProgressChartProps> = ({
   });
 
   return (
-    <Box bg="stat2Gradient" width={600}>
-      <ResponsiveContainer height={290}>
-        <BarChart data={data}>
-          <Legend
-            verticalAlign="top"
-            align="center"
-            iconType="circle"
-            formatter={(value: any) =>
-              value === "linked"
-                ? "🔗 Linked Claims"
-                : value === "total"
-                ? "📊 Total Claims"
-                : value
-            }
-          />
-          <XAxis dataKey="name" />
-          <YAxis />
-          <Tooltip />
-          <Bar dataKey="linked" stackId="a" barSize={16} fill="#212e4d" />
-          <Bar dataKey="total" stackId="a" barSize={16} fill="#175d48" />
-        </BarChart>
-      </ResponsiveContainer>
-
+    <Box bg="stat2Gradient" width="100%" overflowX="auto">
+      <Box minWidth="600px" px={2}>
+        <ResponsiveContainer width="100%" height={290}>
+          <BarChart data={data}>
+            <Legend
+              verticalAlign="top"
+              align="center"
+              iconType="circle"
+              formatter={(value: any) =>
+                value === "linked"
+                  ? "🔗 Linked Claims"
+                  : value === "total"
+                  ? "📊 Total Claims"
+                  : value
+              }
+            />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="linked" stackId="a" barSize={16} fill="#212e4d" />
+            <Bar dataKey="total" stackId="a" barSize={16} fill="#175d48" />
+          </BarChart>
+        </ResponsiveContainer>
+      </Box>
       <SimpleGrid columns={4} spacing={3} mt={4} ml={20}>
         <IconStat icon="🗂️" label="Claims" value={claimCount} />
         <IconStat icon="📚" label="References" value={referenceCount} />

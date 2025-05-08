@@ -12,7 +12,8 @@ const isDashboardUrl = (url) => {
   }
 };
 
-const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
+const BASE_URL =
+  process.env.REACT_APP_EXTENSION_BASE_URL || "https://localhost:5001";
 const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 const code = `
   (function() {
@@ -29,8 +30,8 @@ const code = `
 
 const injectPopup = async (tabId) => {
   try {
-    await browser.tabs.executeScript(tabId, { code });
-    await browser.tabs.executeScript(tabId, { file: "popup.js" });
+    await browser.scripting.executeScript(tabId, { code });
+    await browser.scripting.executeScript(tabId, { file: "popup.js" });
   } catch (err) {
     console.error("❌ Popup injection failed:", err);
     // Optionally log fallback here
@@ -187,8 +188,27 @@ async function showTaskCard(tabId, isDetected, forceVisible) {
   `;
 
   try {
-    await browser.tabs.executeScript(tabId, { code });
-    await browser.tabs.executeScript(tabId, { file: "popup.js" });
+    await browser.scripting.executeScript({
+      target: { tabId },
+      func: (isDetected, forceVisible) => {
+        let popupRoot = document.getElementById("popup-root");
+        if (popupRoot) popupRoot.remove();
+
+        popupRoot = document.createElement("div");
+        popupRoot.id = "popup-root";
+        document.body.appendChild(popupRoot);
+
+        popupRoot.className =
+          isDetected || forceVisible ? "task-card-visible" : "task-card-hidden";
+      },
+      args: [isDetected, forceVisible],
+    });
+
+    await browser.scripting.executeScript({
+      target: { tabId },
+      files: ["popup.js"],
+    });
+
     console.log("✅ Task-card injected successfully");
   } catch (err) {
     console.error("❌ Error injecting task card:", err);

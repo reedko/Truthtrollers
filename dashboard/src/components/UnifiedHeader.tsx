@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Grid, Box } from "@chakra-ui/react";
+import { Grid, Box, Flex } from "@chakra-ui/react";
 import { useTaskStore } from "../store/useTaskStore";
 import TaskCard from "./TaskCard";
 import PubCard from "./PubCard";
@@ -41,14 +41,14 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
   const authors = ensureArray<Author>(pivotTask.authors);
   const publishers = ensureArray<Publisher>(pivotTask.publishers);
-  console.log(authors, "SDFDFDF");
+
+  // Replace your current return block with this:
   return (
-    <Grid
-      templateColumns={{ base: "1fr", md: "repeat(5, 1fr)" }}
-      gap={4}
-      mb={6}
-    >
-      <Box>
+    <Flex wrap="wrap" gap={4} mb={6} justify="space-between">
+      <Box
+        flex={{ base: "1 1 100%", sm: "1 1 48%", md: "1 1 30%", lg: "1 1 18%" }}
+        minW="240px"
+      >
         <BoolCard
           verimeterScore={-0.6}
           trollmeterScore={0.2}
@@ -56,16 +56,28 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
           con={94}
         />
       </Box>
-      <Box>
+      <Box
+        flex={{ base: "1 1 100%", sm: "1 1 48%", md: "1 1 30%", lg: "1 1 18%" }}
+        minW="240px"
+      >
         <TaskCard task={tasks} useStore={false} onSelect={setPivotTask} />
       </Box>
-      <Box>
+      <Box
+        flex={{ base: "1 1 100%", sm: "1 1 48%", md: "1 1 30%", lg: "1 1 18%" }}
+        minW="240px"
+      >
         <PubCard publishers={publishers} />
       </Box>
-      <Box>
+      <Box
+        flex={{ base: "1 1 100%", sm: "1 1 48%", md: "1 1 30%", lg: "1 1 18%" }}
+        minW="240px"
+      >
         <AuthCard authors={authors} />
       </Box>
-      <Box>
+      <Box
+        flex={{ base: "1 1 100%", sm: "1 1 48%", md: "1 1 30%", lg: "1 1 18%" }}
+        minW="240px"
+      >
         <ProgressCard
           ProgressScore={0.2}
           totalClaims={90}
@@ -74,7 +86,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
           verifiedReferences={10}
         />
       </Box>
-    </Grid>
+    </Flex>
   );
 };
 
