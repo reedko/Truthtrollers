@@ -16,10 +16,11 @@ import {
   IconButton,
   HStack,
 } from "@chakra-ui/react";
+import { ModalContent as ChakraModalContent } from "@chakra-ui/react";
 import { Claim, ReferenceWithClaims } from "../../../../shared/entities/types";
 import ClaimEvaluationModal from "./ClaimEvaluationModal";
 import { Search2Icon } from "@chakra-ui/icons";
-
+import { motion } from "framer-motion";
 interface ReferenceClaimsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -30,7 +31,7 @@ interface ReferenceClaimsModalProps {
   draggingClaim: Pick<Claim, "claim_id" | "claim_text"> | null;
   onVerifyClaim?: (claim: Claim) => void;
 }
-
+const MotionModalContent = motion(ChakraModalContent);
 const ReferenceClaimsModal: React.FC<ReferenceClaimsModalProps> = ({
   isOpen,
   onClose,
@@ -58,10 +59,39 @@ const ReferenceClaimsModal: React.FC<ReferenceClaimsModalProps> = ({
     return () => document.removeEventListener("mousemove", handleMouseMove);
   }, [draggingClaim]);
 
+  useEffect(() => {
+    let cachedY = 0;
+    if (isOpen) {
+      cachedY = window.scrollY;
+      setTimeout(() => window.scrollTo({ top: cachedY }), 100);
+    }
+  }, [isOpen]);
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered size="xl">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      isCentered
+      size="xl"
+      blockScrollOnMount={false} // ✅ prevent body scroll lock
+      preserveScrollBarGap={true} // ✅ avoid layout shift
+      trapFocus={false}
+      scrollBehavior="inside" // ✅ allow internal modal scroll
+    >
       <ModalOverlay />
-      <ModalContent userSelect="none">
+      <MotionModalContent
+        as={motion.div}
+        initial={{ x: "100%", opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        exit={{ x: "100%", opacity: 0 }}
+        transition={{ duration: 0.6 }} // 👈 Adjust speed here (default is ~0.2)
+        position="fixed"
+        right="2rem"
+        top="5%"
+        maxHeight="90vh"
+        userSelect="none"
+        boxShadow="2xl"
+      >
         <ModalHeader>Reference Details</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
@@ -139,7 +169,7 @@ const ReferenceClaimsModal: React.FC<ReferenceClaimsModalProps> = ({
         <ModalFooter>
           <Button onClick={onClose}>Close</Button>
         </ModalFooter>
-      </ModalContent>
+      </MotionModalContent>
 
       {/* 🔥 Floating Tooltip Claim Preview */}
       {draggingClaim && (

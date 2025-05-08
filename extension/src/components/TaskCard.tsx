@@ -25,7 +25,8 @@ import { Tooltip } from "@chakra-ui/react";
 import browser from "webextension-polyfill";
 import { Task } from "../entities/Task";
 
-const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
+const BASE_URL =
+  process.env.REACT_APP_EXTENSION_BASE_URL || "https://localhost:5001";
 
 const getProgressColor = (progress: string | null) => {
   switch (progress) {

@@ -73,20 +73,6 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
     null
   );
 
-  /*   const updateXPositionsAndHeight = () => {
-    if (leftRef.current && rightRef.current) {
-      const leftBox = leftRef.current.getBoundingClientRect();
-      const rightBox = rightRef.current.getBoundingClientRect();
-
-      setLeftX(leftBox.left + leftBox.width);
-      setRightX(rightBox.left);
-
-      const fullHeight =
-        Math.max(leftBox.height, rightBox.height) + headerPadding;
-      setComputedHeight(fullHeight);
-    }
-  }; */
-
   const updateXPositionsAndHeight = () => {
     if (leftRef.current && rightRef.current && containerRef.current) {
       const leftBox = leftRef.current.getBoundingClientRect();
@@ -145,11 +131,13 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
     return () =>
       window.removeEventListener("resize", updateXPositionsAndHeight);
   }, [claims, references]);
+
   useEffect(() => {
     if (onHeightChange) {
       onHeightChange(computedHeight);
     }
   }, [claims, references, computedHeight, onHeightChange]);
+
   const [hasRetriedClick, setHasRetriedClick] = useState(false);
 
   const handleLineClick = async (link: ClaimLink) => {
@@ -213,11 +201,6 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
   const rowHeight = 58; // height per list item
   const headerPadding = 80; // extra space for headings, margins, etc.
   // Compute the workspace height based on the longer list:
-
-  // Use a ref to measure the container's height
-
-  // recalc when claims or references change
-  //console.log("📏 leftX:", leftX, "rightX:", rightX);
 
   return (
     <Box
@@ -342,6 +325,25 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
             setIsVerificationModalOpen(false);
           }}
         />
+      )}
+      {draggingClaim && hoveredClaimId && (
+        <Box
+          position="fixed"
+          top={mousePosition.y - 80} // 👈 push it above the cursor
+          left={mousePosition.x + 20}
+          bg="gray.700"
+          color="white"
+          px={4}
+          py={2}
+          borderRadius="md"
+          boxShadow="lg"
+          maxW="400px"
+          zIndex={3000}
+          fontSize="sm"
+          pointerEvents="none"
+        >
+          {claims.find((c) => c.claim_id === hoveredClaimId)?.claim_text}
+        </Box>
       )}
     </Box>
   );
