@@ -1,3 +1,4 @@
+// NavBar.tsx (Responsive with compact mode)
 import {
   Box,
   Flex,
@@ -11,6 +12,7 @@ import {
   MenuList,
   Spacer,
   Button,
+  useBreakpointValue,
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
 import ColorModeSwitch from "./ColorModeSwitch";
@@ -19,7 +21,11 @@ import { useTaskStore } from "../store/useTaskStore";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
 
-const NavBar = () => {
+interface NavBarProps {
+  compact?: boolean;
+}
+
+const NavBar: React.FC<NavBarProps> = ({ compact }) => {
   const setSearchQuery = useTaskStore((s) => s.setSearchQuery);
   const selectedTaskId = useTaskStore((s) => s.selectedTaskId);
   const setRedirect = useTaskStore((s) => s.setRedirect);
@@ -28,7 +34,6 @@ const NavBar = () => {
     setSearchQuery(event.target.value);
   };
 
-  // Helper to conditionally set redirect before navigating
   const handleNavClick = (target: string) => {
     if (!selectedTaskId) {
       setRedirect(target);
@@ -36,83 +41,136 @@ const NavBar = () => {
   };
 
   return (
-    <Box>
-      {/* Top-Level Navigation */}
-      <Box as="nav" p={3} color="white">
-        <HStack spacing={6}>
-          <Link as={RouterLink} to="/tasks">
-            Tasks
-          </Link>
+    <Box w="100%">
+      {/* Compact mode: Only search and switches */}
+      {compact ? (
+        <Flex
+          align="center"
+          px={2}
+          py={1}
+          justify="space-between"
+          wrap="nowrap"
+        >
+          <HStack spacing={2} align="center">
+            <Box h="50px">
+              <Image
+                src={`${API_BASE_URL}/assets/ttlogo11.png`}
+                boxSize="50px"
+                objectFit="contain"
+              />
+            </Box>
+          </HStack>
 
-          <Link as={RouterLink} to="/dashboard">
-            Dashboard
-          </Link>
-
-          <Link
-            as={RouterLink}
-            to="/workspace"
-            onClick={() => handleNavClick("/workspace")}
-          >
-            Workspace
-          </Link>
-
-          <Link
-            as={RouterLink}
-            to="/molecule"
-            onClick={() => handleNavClick("/molecule")}
-          >
-            Molecule
-          </Link>
-
-          <Link
-            as={RouterLink}
-            to="/discussion"
-            onClick={() => handleNavClick("/discussion")}
-          >
-            Discussion
-          </Link>
-        </HStack>
-      </Box>
-
-      {/* Search Bar & Logo Row */}
-      <Flex align="center" p={3} boxShadow="sm" width="100%" wrap="wrap">
-        <RouterLink to="/">
-          <Image
-            src={`${API_BASE_URL}/assets/ttlogo11.png`}
-            boxSize="100px"
-            objectFit="contain"
+          <Input
+            placeholder="Search..."
+            onChange={handleSearchChange}
+            fontSize="xs"
+            size="sm"
+            width="130px"
+            mx={2}
           />
-        </RouterLink>
 
-        <Input
-          placeholder="Search content..."
-          onChange={handleSearchChange}
-          marginLeft="20px"
-          maxWidth="1000px"
-          flex="1"
-        />
+          {selectedTaskId && (
+            <Menu>
+              <MenuButton as={Button} size="sm">
+                View
+              </MenuButton>
+              <MenuList>
+                <MenuItem as={RouterLink} to="/workspace">
+                  Workspace
+                </MenuItem>
+                <MenuItem as={RouterLink} to="/molecule">
+                  Graph
+                </MenuItem>
+                <MenuItem as={RouterLink} to="/discussion">
+                  Discussion
+                </MenuItem>
+              </MenuList>
+            </Menu>
+          )}
 
-        <Spacer />
+          <ColorModeSwitch />
+        </Flex>
+      ) : (
+        <Box>
+          {/* Full Navigation Menu */}
+          <Box as="nav" p={3} color="white">
+            <HStack spacing={6} wrap="wrap">
+              <Link as={RouterLink} to="/tasks">
+                Tasks
+              </Link>
 
-        {selectedTaskId && (
-          <Menu>
-            <MenuButton as={Button}>View</MenuButton>
-            <MenuList>
-              <MenuItem as={RouterLink} to="/workspace">
+              <Link as={RouterLink} to="/dashboard">
+                Dashboard
+              </Link>
+
+              <Link
+                as={RouterLink}
+                to="/workspace"
+                onClick={() => handleNavClick("/workspace")}
+              >
                 Workspace
-              </MenuItem>
-              <MenuItem as={RouterLink} to="/molecule">
-                Graph
-              </MenuItem>
-              <MenuItem as={RouterLink} to="/discussion">
-                Discussion
-              </MenuItem>
-            </MenuList>
-          </Menu>
-        )}
+              </Link>
 
-        <ColorModeSwitch />
-      </Flex>
+              <Link
+                as={RouterLink}
+                to="/molecule"
+                onClick={() => handleNavClick("/molecule")}
+              >
+                Molecule
+              </Link>
+
+              <Link
+                as={RouterLink}
+                to="/discussion"
+                onClick={() => handleNavClick("/discussion")}
+              >
+                Discussion
+              </Link>
+            </HStack>
+          </Box>
+
+          {/* Logo, Search and View Switch */}
+          <Flex align="center" p={3} boxShadow="sm" width="100%" wrap="wrap">
+            <RouterLink to="/">
+              <Image
+                src={`${API_BASE_URL}/assets/ttlogo11.png`}
+                boxSize="100px"
+                objectFit="contain"
+              />
+            </RouterLink>
+
+            <Input
+              placeholder="Search content..."
+              onChange={handleSearchChange}
+              marginLeft="20px"
+              maxWidth="1000px"
+              flex="1"
+            />
+
+            <Spacer />
+
+            {selectedTaskId && (
+              <Menu>
+                <MenuButton as={Button}>View</MenuButton>
+                <MenuList>
+                  <MenuItem as={RouterLink} to="/workspace">
+                    Workspace
+                  </MenuItem>
+                  <MenuItem as={RouterLink} to="/molecule">
+                    Graph
+                  </MenuItem>
+                  <MenuItem as={RouterLink} to="/discussion">
+                    Discussion
+                  </MenuItem>
+                </MenuList>
+              </Menu>
+            )}
+
+            <ColorModeSwitch />
+          </Flex>
+        </Box>
+      )}
     </Box>
   );
 };

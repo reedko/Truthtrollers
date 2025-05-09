@@ -187,7 +187,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
         borderWidth="1px"
         borderRadius="lg"
         boxShadow="md"
-        p={4}
+        p={3}
         width="250px"
         height="405px"
         display="flex"
