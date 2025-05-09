@@ -1,9 +1,7 @@
-// src/components/modals/ReferenceClaimsModal.tsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Modal,
   ModalOverlay,
-  ModalContent,
   ModalHeader,
   ModalCloseButton,
   ModalBody,
@@ -16,12 +14,15 @@ import {
   IconButton,
   HStack,
 } from "@chakra-ui/react";
-import { ModalContent as ChakraModalContent } from "@chakra-ui/react";
-import { Claim, ReferenceWithClaims } from "../../../../shared/entities/types";
-import ClaimEvaluationModal from "./ClaimEvaluationModal";
 import { Search2Icon } from "@chakra-ui/icons";
+import { Claim, ReferenceWithClaims } from "../../../../shared/entities/types";
+import { Global, css } from "@emotion/react";
 import { motion } from "framer-motion";
-interface ReferenceClaimsModalProps {
+import { ModalContent as ChakraModalContent } from "@chakra-ui/react";
+const MotionCard = motion(ChakraModalContent);
+/* ────────────────────────────────────────────────────────── */
+/* Types */
+interface Props {
   isOpen: boolean;
   onClose: () => void;
   reference: ReferenceWithClaims | null;
@@ -31,55 +32,58 @@ interface ReferenceClaimsModalProps {
   draggingClaim: Pick<Claim, "claim_id" | "claim_text"> | null;
   onVerifyClaim?: (claim: Claim) => void;
 }
-const MotionModalContent = motion(ChakraModalContent);
-const ReferenceClaimsModal: React.FC<ReferenceClaimsModalProps> = ({
-  isOpen,
-  onClose,
-  reference,
-  setDraggingClaim,
-  draggingClaim,
-  onVerifyClaim,
-}) => {
-  const tooltipRef = useRef<HTMLDivElement | null>(null);
+/* ────────────────────────────────────────────────────────── */
 
-  const claimsArray =
-    typeof reference?.claims === "string"
-      ? JSON.parse(reference.claims)
-      : reference?.claims || [];
+const ReferenceClaimsModal: React.FC<Props> = (props) => {
+  const {
+    isOpen,
+    onClose,
+    reference,
+    setDraggingClaim,
+    draggingClaim,
+    onVerifyClaim,
+  } = props;
 
+  /* Tooltip follows cursor while dragging */
+  const tipRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (tooltipRef.current && draggingClaim) {
-        tooltipRef.current.style.left = `${e.clientX + 10}px`;
-        tooltipRef.current.style.top = `${e.clientY + 10}px`;
+    const move = (e: MouseEvent) => {
+      if (tipRef.current && draggingClaim) {
+        tipRef.current.style.left = `${e.clientX + 10}px`;
+        tipRef.current.style.top = `${e.clientY + 10}px`;
       }
     };
-
-    document.addEventListener("mousemove", handleMouseMove);
-    return () => document.removeEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mousemove", move);
+    return () => document.removeEventListener("mousemove", move);
   }, [draggingClaim]);
 
-  useEffect(() => {
-    let cachedY = 0;
-    if (isOpen) {
-      cachedY = window.scrollY;
-      setTimeout(() => window.scrollTo({ top: cachedY }), 100);
-    }
-  }, [isOpen]);
-
+  /* ------------------------------------------------------------------ */
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      isCentered
       size="xl"
-      blockScrollOnMount={false} // ✅ prevent body scroll lock
-      preserveScrollBarGap={true} // ✅ avoid layout shift
-      trapFocus={false}
-      scrollBehavior="inside" // ✅ allow internal modal scroll
+      /* ↓↓↓  KEY LINES  ↓↓↓ */
+      blockScrollOnMount={false} /* keep body scrollable              */
+      scrollBehavior="inside" /* ModalBody scrolls, not backdrop   */
+      trapFocus={false} /* allow clicks to pass backdrop     */
     >
-      <ModalOverlay />
-      <MotionModalContent
+      {/* Backdrop lets wheel/touch fall through */}
+      <ModalOverlay bg="blackAlpha.700" pointerEvents="none" />
+      <Global
+        styles={css`
+          /* full-viewport flex box that hugs the right  */
+          .chakra-modal__content-container {
+            pointer-events: none; /* let wheel/touch through */
+          }
+          /* the actual card stays interactive */
+          .chakra-modal__content {
+            pointer-events: auto;
+          }
+        `}
+      />
+      {/* Modal card (white box) */}
+      <MotionCard
         as={motion.div}
         initial={{ x: "100%", opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
@@ -94,7 +98,8 @@ const ReferenceClaimsModal: React.FC<ReferenceClaimsModalProps> = ({
       >
         <ModalHeader>Reference Details</ModalHeader>
         <ModalCloseButton />
-        <ModalBody>
+
+        <ModalBody maxH="70vh" overflowY="auto">
           <VStack align="start" spacing={4}>
             <Box>
               <Text fontWeight="bold">Title:</Text>
@@ -103,7 +108,7 @@ const ReferenceClaimsModal: React.FC<ReferenceClaimsModalProps> = ({
 
             <Box>
               <Text fontWeight="bold">Source URL:</Text>
-              <Text color="blue.500" wordBreak="break-word">
+              <Text color="blue.500" wordBreak="break-all">
                 <a
                   href={reference?.url}
                   target="_blank"
@@ -125,25 +130,23 @@ const ReferenceClaimsModal: React.FC<ReferenceClaimsModalProps> = ({
               <Text fontWeight="bold" mb={2}>
                 Associated Claims:
               </Text>
-              {claimsArray.length > 0 ? (
+
+              {reference?.claims && (
                 <VStack align="start" spacing={2}>
-                  {claimsArray.map((claim: Claim, index: number) => (
-                    <HStack>
+                  {(typeof reference.claims === "string"
+                    ? JSON.parse(reference.claims)
+                    : reference.claims
+                  ).map((claim: Claim) => (
+                    <HStack key={claim.claim_id} align="start">
                       <Box
-                        key={claim.claim_id ?? index}
-                        pl={2}
-                        border="1px solid blue"
-                        borderRadius="md"
-                        w="100%"
+                        flex="1"
                         bg="black"
                         color="blue.300"
-                        _hover={{
-                          bg: "blue.200",
-                          color: "black",
-                          cursor: "grab",
-                        }}
                         px={2}
                         py={1}
+                        borderRadius="md"
+                        border="1px solid blue"
+                        _hover={{ bg: "blue.200", color: "black" }}
                         onMouseDown={() => setDraggingClaim(claim)}
                         onMouseUp={() => setDraggingClaim(null)}
                       >
@@ -155,26 +158,24 @@ const ReferenceClaimsModal: React.FC<ReferenceClaimsModalProps> = ({
                         aria-label="Verify claim"
                         icon={<Search2Icon />}
                         onClick={() => onVerifyClaim?.(claim)}
-                        ml={2}
                       />
                     </HStack>
                   ))}
                 </VStack>
-              ) : (
-                <Text>No claims associated with this reference.</Text>
               )}
             </Box>
           </VStack>
         </ModalBody>
+
         <ModalFooter>
           <Button onClick={onClose}>Close</Button>
         </ModalFooter>
-      </MotionModalContent>
+      </MotionCard>
 
-      {/* 🔥 Floating Tooltip Claim Preview */}
+      {/* Floating tooltip while dragging */}
       {draggingClaim && (
         <Box
-          ref={tooltipRef}
+          ref={tipRef}
           position="fixed"
           pointerEvents="none"
           zIndex={2000}

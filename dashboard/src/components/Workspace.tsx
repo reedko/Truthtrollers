@@ -138,8 +138,6 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
     }
   }, [claims, references, computedHeight, onHeightChange]);
 
-  const [hasRetriedClick, setHasRetriedClick] = useState(false);
-
   const handleLineClick = async (link: ClaimLink) => {
     try {
       const [source, target] = await Promise.all([

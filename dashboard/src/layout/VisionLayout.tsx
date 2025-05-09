@@ -1,7 +1,21 @@
-// VisionLayout.tsx
-import { Box, VStack, HStack, Text } from "@chakra-ui/react";
+// VisionLayout.tsx (Responsive with Burger Menu)
+import {
+  Box,
+  VStack,
+  HStack,
+  Text,
+  IconButton,
+  useDisclosure,
+  Drawer,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerCloseButton,
+  DrawerHeader,
+  DrawerBody,
+  useBreakpointValue,
+} from "@chakra-ui/react";
 import { Outlet, useLocation, Link as RouterLink } from "react-router-dom";
-import { FiHome, FiBarChart2 } from "react-icons/fi";
+import { FiHome, FiBarChart2, FiMenu } from "react-icons/fi";
 import TopicList from "../components/TopicList";
 import NavBar from "../components/NavBar";
 import { useTaskStore } from "../store/useTaskStore";
@@ -9,11 +23,10 @@ import { useTaskStore } from "../store/useTaskStore";
 const SIDEBAR_WIDTH = "220px";
 const HEADER_HEIGHT = "160px";
 
-const Sidebar = () => {
+const SidebarContent = () => {
   const location = useLocation();
   const isTaskPage = location.pathname === "/tasks";
-
-  const selectedTaskId = useTaskStore((s) => s.selectedTaskId); // ✅ moved here
+  const selectedTaskId = useTaskStore((s) => s.selectedTaskId);
   const setRedirect = useTaskStore((s) => s.setRedirect);
 
   const createLink = (label: string, route: string) => (
@@ -25,13 +38,35 @@ const Sidebar = () => {
         }
       }}
     >
-      <HStack spacing={2}>
+      <HStack spacing={2} mb={2}>
         <FiBarChart2 />
         <Text>{label}</Text>
       </HStack>
     </RouterLink>
   );
 
+  return (
+    <VStack align="start" spacing={4} w="full">
+      <RouterLink to="/dashboard">
+        <HStack spacing={2} mb={2}>
+          <FiHome />
+          <Text>Dashboard</Text>
+        </HStack>
+      </RouterLink>
+      {createLink("Workspace", "/workspace")}
+      {createLink("Molecule", "/molecule")}
+      {createLink("Discussion", "/discussion")}
+
+      {isTaskPage && (
+        <Box overflowY="auto" flex="1" w="full" mt={4} pr={1}>
+          <TopicList />
+        </Box>
+      )}
+    </VStack>
+  );
+};
+
+const Sidebar = () => {
   return (
     <VStack
       as="nav"
@@ -46,54 +81,81 @@ const Sidebar = () => {
       borderRight="1px solid"
       borderColor="gray.700"
       zIndex={100}
+      display={{ base: "none", md: "flex" }}
     >
       <Text fontSize="2xl" fontWeight="bold" color="teal.300">
         Truthtrollers
       </Text>
-
-      <VStack align="start" spacing={3} w="full">
-        <RouterLink to="/dashboard">
-          <HStack spacing={2}>
-            <FiHome />
-            <Text>Dashboard</Text>
-          </HStack>
-        </RouterLink>
-
-        {createLink("Workspace", "/workspace")}
-        {createLink("Molecule", "/molecule")}
-        {createLink("Discussion", "/discussion")}
-      </VStack>
-
-      {isTaskPage && (
-        <Box overflowY="auto" flex="1" w="full" mt={4} pr={1}>
-          <TopicList />
-        </Box>
-      )}
+      <SidebarContent />
     </VStack>
   );
 };
 
 const VisionLayout = () => {
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const isMobile = useBreakpointValue({ base: true, md: false });
+
   return (
     <>
+      {/* Desktop Sidebar */}
       <Sidebar />
+
+      {/* Mobile Burger Drawer */}
+      {isMobile && (
+        <Drawer placement="left" onClose={onClose} isOpen={isOpen}>
+          <DrawerOverlay />
+          <DrawerContent bg="gray.900" color="white">
+            <DrawerCloseButton />
+            <DrawerHeader borderBottomWidth="1px">Menu</DrawerHeader>
+            <DrawerBody>
+              <SidebarContent />
+            </DrawerBody>
+          </DrawerContent>
+        </Drawer>
+      )}
 
       <Box
         as="header"
         position="fixed"
         top="0"
-        left={SIDEBAR_WIDTH}
+        left={{ base: 0, md: SIDEBAR_WIDTH }}
         right="0"
         zIndex={90}
+        h={{ base: "60px", md: HEADER_HEIGHT }}
+        px={4}
+        display="flex"
+        alignItems="center"
+        justifyContent="space-between"
         borderBottom="1px solid"
         borderColor="gray.700"
         backdropFilter="blur(12px)"
         background="linear-gradient(to bottom, rgba(2, 0, 36, 0.8), rgba(94, 234, 212, 0.1))"
       >
-        <NavBar />
+        <HStack spacing={2} align="center">
+          {isMobile && (
+            <IconButton
+              icon={<FiMenu />}
+              aria-label="Menu"
+              onClick={onOpen}
+              size="sm"
+              variant="outline"
+              colorScheme="teal"
+              mr={2}
+            />
+          )}
+        </HStack>
+        <Box flex="1">
+          <NavBar compact={isMobile} />
+        </Box>
       </Box>
 
-      <Box as="main" ml={SIDEBAR_WIDTH} pt={HEADER_HEIGHT} px={4} minH="100vh">
+      <Box
+        as="main"
+        ml={{ base: 0, md: SIDEBAR_WIDTH }}
+        pt={{ base: "60px", md: HEADER_HEIGHT }}
+        px={4}
+        minH="100vh"
+      >
         <Outlet />
       </Box>
     </>
