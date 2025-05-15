@@ -251,16 +251,18 @@ export async function fetchClaimById(claimId: number): Promise<Claim> {
  * Fetch all claims for a specific task (contentId)
  */
 export const fetchClaimsAndLinkedReferencesForTask = async (
-  contentId: number
+  contentId: number,
+  viewerId: number | null
 ): Promise<ClaimLinks[]> => {
   try {
     const response = await axios.get(
-      `${API_BASE_URL}/api/claims-and-linked-references/${contentId}`
+      `${API_BASE_URL}/api/claims-and-linked-references/${contentId}`,
+      { params: { viewerId } }
     );
 
     return response.data;
   } catch (error) {
-    console.error("❌ Error adding claim:", error);
+    console.error("❌ Error fetching linked refs:", error);
     throw error;
   }
 };
@@ -269,10 +271,17 @@ export const fetchClaimsAndLinkedReferencesForTask = async (
  * Fetch all claims for a specific task (contentId)
  */
 export const fetchClaimsForTask = async (
-  contentId: number
+  contentId: number,
+  viewerId: number | null
 ): Promise<Claim[]> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/claims/${contentId}`);
+    const response = await axios.get(
+      `${API_BASE_URL}/api/claims/${contentId}`,
+      {
+        params: { viewerId },
+      }
+    );
+
     return response.data;
   } catch (error) {
     console.error("❌ Error fetching claims:", error);

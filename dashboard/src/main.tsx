@@ -7,7 +7,7 @@ import "./index.css";
 import { RouterProvider } from "react-router-dom";
 import AppRouter from "./routes";
 import theme from "./components/themes/VisionTheme";
-
+console.log("🌟 main.tsx loaded, bootstrapping app…");
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(

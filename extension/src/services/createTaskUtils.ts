@@ -62,13 +62,14 @@ export const storeClaimsInDB = async (
   contentId: string,
   claims: string[],
   contentType: string,
+  userId: number | null,
   isExtension: boolean,
   extensionSendMessage?: any
 ) => {
   if (isExtension && extensionSendMessage) {
     const response = (await extensionSendMessage({
       action: "storeClaims",
-      data: { contentId, claims, contentType },
+      data: { contentId, claims, contentType, userId },
     })) as StoreClaimsResponse;
     if (!response.success) {
       throw new Error(response.error || "storeClaims failed");
@@ -81,6 +82,7 @@ export const storeClaimsInDB = async (
         content_id: contentId,
         claims,
         content_type: contentType,
+        user_id: userId,
       }),
     });
   }

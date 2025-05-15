@@ -17,6 +17,7 @@ import {
 import { Link as RouterLink } from "react-router-dom";
 import ColorModeSwitch from "./ColorModeSwitch";
 import { useTaskStore } from "../store/useTaskStore";
+import { AccountMenu } from "./AccountMenu";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
@@ -82,7 +83,12 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 <MenuItem as={RouterLink} to="/molecule">
                   Graph
                 </MenuItem>
-                <MenuItem as={RouterLink} to="/discussion">
+                <MenuItem
+                  as={RouterLink}
+                  to={
+                    selectedTaskId ? `/discussion/${selectedTaskId}` : "/tasks"
+                  }
+                >
                   Discussion
                 </MenuItem>
               </MenuList>
@@ -122,11 +128,12 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
 
               <Link
                 as={RouterLink}
-                to="/discussion"
+                to={selectedTaskId ? `/discussion/${selectedTaskId}` : "/tasks"}
                 onClick={() => handleNavClick("/discussion")}
               >
                 Discussion
               </Link>
+              <AccountMenu />
             </HStack>
           </Box>
 
@@ -158,9 +165,16 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                     Workspace
                   </MenuItem>
                   <MenuItem as={RouterLink} to="/molecule">
-                    Graph
+                    Molecule
                   </MenuItem>
-                  <MenuItem as={RouterLink} to="/discussion">
+                  <MenuItem
+                    as={RouterLink}
+                    to={
+                      selectedTaskId
+                        ? `/discussion/${selectedTaskId}`
+                        : "/tasks"
+                    }
+                  >
                     Discussion
                   </MenuItem>
                 </MenuList>

@@ -1,4 +1,4 @@
-// VisionLayout.tsx (Responsive with Burger Menu)
+import React, { useEffect } from "react";
 import {
   Box,
   VStack,
@@ -15,27 +15,39 @@ import {
   useBreakpointValue,
 } from "@chakra-ui/react";
 import { Outlet, useLocation, Link as RouterLink } from "react-router-dom";
-import { FiHome, FiBarChart2, FiMenu } from "react-icons/fi";
+import { FiHome, FiBarChart2, FiMenu, FiUser } from "react-icons/fi";
 import TopicList from "../components/TopicList";
 import NavBar from "../components/NavBar";
 import { useTaskStore } from "../store/useTaskStore";
+import { useAuthStore } from "../store/useAuthStore";
+import { decodeJwt } from "../utils/jwt";
+import { AccountMenu } from "../components/AccountMenu";
 
 const SIDEBAR_WIDTH = "220px";
 const HEADER_HEIGHT = "160px";
-
-const SidebarContent = () => {
+console.log("💡 VisionLayout mounted, path:", window.location.pathname);
+const SidebarContent: React.FC = () => {
   const location = useLocation();
-  const isTaskPage = location.pathname === "/tasks";
+  const isTaskPage = location.pathname.startsWith("/tasks");
   const selectedTaskId = useTaskStore((s) => s.selectedTaskId);
   const setRedirect = useTaskStore((s) => s.setRedirect);
+  const user = useAuthStore((s) => s.user);
+  const viewerId = useTaskStore((s) => s.viewingUserId);
+  const resetTasks = useTaskStore((s) => s.resetTasks); // ✅ add this action
+  const fetchTasksForUser = useTaskStore((s) => s.fetchTasksForUser);
 
-  const createLink = (label: string, route: string) => (
+  useEffect(() => {
+    if (user?.user_id) {
+      resetTasks();
+      fetchTasksForUser(user.user_id); // ✅ use the actual logged-in user
+    }
+  }, [user?.user_id]);
+
+  const createLink = (label: string, path: string) => (
     <RouterLink
-      to={selectedTaskId ? route : "/tasks"}
+      to={path}
       onClick={() => {
-        if (!selectedTaskId) {
-          setRedirect(route);
-        }
+        if (!selectedTaskId) setRedirect(path);
       }}
     >
       <HStack spacing={2} mb={2}>
@@ -53,11 +65,21 @@ const SidebarContent = () => {
           <Text>Dashboard</Text>
         </HStack>
       </RouterLink>
-      {createLink("Workspace", "/workspace")}
-      {createLink("Molecule", "/molecule")}
-      {createLink("Discussion", "/discussion")}
 
-      {isTaskPage && (
+      {createLink("Workspace", selectedTaskId ? "/workspace" : "/tasks")}
+      {createLink("Molecule", selectedTaskId ? "/molecule" : "/tasks")}
+      {createLink(
+        "Discussion",
+        selectedTaskId ? `/discussion/${selectedTaskId}` : "/tasks"
+      )}
+
+      <HStack spacing={2} mb={2} align="center">
+        <FiUser />
+        <AccountMenu />
+        <Text>Account</Text>
+      </HStack>
+
+      {isTaskPage && selectedTaskId && (
         <Box overflowY="auto" flex="1" w="full" mt={4} pr={1}>
           <TopicList />
         </Box>
@@ -66,41 +88,70 @@ const SidebarContent = () => {
   );
 };
 
-const Sidebar = () => {
-  return (
-    <VStack
-      as="nav"
-      color="white"
-      spacing={6}
-      p={4}
-      w={SIDEBAR_WIDTH}
-      h="100vh"
-      position="fixed"
-      top={0}
-      left={0}
-      borderRight="1px solid"
-      borderColor="gray.700"
-      zIndex={100}
-      display={{ base: "none", md: "flex" }}
-    >
-      <Text fontSize="2xl" fontWeight="bold" color="teal.300">
-        Truthtrollers
-      </Text>
-      <SidebarContent />
-    </VStack>
-  );
-};
+const Sidebar: React.FC = () => (
+  <VStack
+    as="nav"
+    color="white"
+    spacing={6}
+    p={4}
+    w={SIDEBAR_WIDTH}
+    h="100vh"
+    position="fixed"
+    top={0}
+    left={0}
+    borderRight="1px solid"
+    borderColor="gray.700"
+    zIndex={100}
+    display={{ base: "none", md: "flex" }}
+  >
+    <Text fontSize="2xl" fontWeight="bold" color="teal.300">
+      Truthtrollers
+    </Text>
+    <SidebarContent />
+  </VStack>
+);
 
-const VisionLayout = () => {
+const VisionLayout: React.FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const isMobile = useBreakpointValue({ base: true, md: false });
+  const location = useLocation();
+  const setAuth = useAuthStore((s) => s.setAuth);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const demoToken = params.get("demo");
+    if (demoToken) {
+      const payload = decodeJwt(demoToken);
+      const currentUser = useAuthStore.getState().user;
+
+      if (!currentUser?.user_id) {
+        console.log("🧬 No user set — applying demo token.");
+        setAuth(
+          { ...payload, jwt: demoToken, can_post: false, isDemo: true },
+          demoToken
+        );
+      } else {
+        console.log(
+          "🚫 Skipping demo token — real user is already set:",
+          currentUser
+        );
+      }
+
+      // Clean up the URL
+      params.delete("demo");
+      const newSearch = params.toString();
+      window.history.replaceState(
+        {},
+        "",
+        location.pathname + (newSearch ? `?${newSearch}` : "")
+      );
+    }
+  }, [location.search, location.pathname, setAuth]);
 
   return (
-    <>
-      {/* Desktop Sidebar */}
+    <React.Fragment>
       <Sidebar />
 
-      {/* Mobile Burger Drawer */}
       {isMobile && (
         <Drawer placement="left" onClose={onClose} isOpen={isOpen}>
           <DrawerOverlay />
@@ -117,9 +168,9 @@ const VisionLayout = () => {
       <Box
         as="header"
         position="fixed"
-        top="0"
+        top={0}
         left={{ base: 0, md: SIDEBAR_WIDTH }}
-        right="0"
+        right={0}
         zIndex={90}
         h={{ base: "60px", md: HEADER_HEIGHT }}
         px={4}
@@ -129,7 +180,7 @@ const VisionLayout = () => {
         borderBottom="1px solid"
         borderColor="gray.700"
         backdropFilter="blur(12px)"
-        background="linear-gradient(to bottom, rgba(2, 0, 36, 0.8), rgba(94, 234, 212, 0.1))"
+        background="linear-gradient(to bottom, rgba(2,0,36,0.8), rgba(94,234,212,0.1))"
       >
         <HStack spacing={2} align="center">
           {isMobile && (
@@ -144,7 +195,8 @@ const VisionLayout = () => {
             />
           )}
         </HStack>
-        <Box flex="1">
+
+        <Box flex={1}>
           <NavBar compact={isMobile} />
         </Box>
       </Box>
@@ -158,7 +210,7 @@ const VisionLayout = () => {
       >
         <Outlet />
       </Box>
-    </>
+    </React.Fragment>
   );
 };
 

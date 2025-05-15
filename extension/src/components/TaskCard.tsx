@@ -4,9 +4,6 @@ import {
   Button,
   GridItem,
   Progress,
-  Card,
-  CardBody,
-  CardHeader,
   Text,
   Grid,
   VStack,
@@ -68,6 +65,14 @@ const TaskCard: React.FC = () => {
     } else {
       console.error("No URL provided.");
     }
+  };
+
+  const handleArgueClick = () => {
+    if (!task) return;
+    const url = `${process.env.REACT_APP_EXTENSION_URL}/discussion/${task.content_id}`;
+
+    // ask the background script to open the tab (safer than window.open)
+    browser.runtime.sendMessage({ fn: "openDiscussionTab", url });
   };
 
   const imageUrl =
@@ -166,10 +171,13 @@ const TaskCard: React.FC = () => {
 
             <Center>
               <HStack spacing={5}>
-                <Button variant="surface" bg="cardGradient" color="white">
-                  <a href={"#"} target="_blank" rel="noopener noreferrer">
-                    <div>Argue</div>
-                  </a>
+                <Button
+                  variant="surface"
+                  bg="cardGradient"
+                  color="white"
+                  onClick={handleArgueClick}
+                >
+                  <div>Argue</div>
                 </Button>
                 <Button
                   variant="solid"

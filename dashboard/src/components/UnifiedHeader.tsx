@@ -20,29 +20,37 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 }) => {
   const selectedTask = useTaskStore((s) => s.selectedTask);
   const fetchTasksByPivot = useTaskStore((s) => s.fetchTasksByPivot);
+
   const [tasks, setTasks] = useState<Task[]>([]);
   const [pivotTask, setPivotTask] = useState<Task | null>(null);
 
+  // 🔁 If no pivotId is passed, default to selectedTask
+  const resolvedPivotType = pivotType || "task";
+  const resolvedPivotId =
+    pivotId !== undefined ? pivotId : selectedTask?.content_id ?? undefined;
+
   useEffect(() => {
     const load = async () => {
-      if (pivotType && pivotId !== undefined) {
-        const results = await fetchTasksByPivot(pivotType, pivotId);
+      if (resolvedPivotId !== undefined) {
+        const results = await fetchTasksByPivot(
+          resolvedPivotType,
+          resolvedPivotId
+        );
         setTasks(results);
-        setPivotTask(results[0]);
+        setPivotTask(results[0] || null);
       } else if (selectedTask) {
         setTasks([selectedTask]);
         setPivotTask(selectedTask);
       }
     };
     load();
-  }, [pivotType, pivotId, selectedTask]);
+  }, [resolvedPivotType, resolvedPivotId, selectedTask]);
 
   if (!pivotTask) return null;
 
   const authors = ensureArray<Author>(pivotTask.authors);
   const publishers = ensureArray<Publisher>(pivotTask.publishers);
 
-  // Replace your current return block with this:
   return (
     <Flex wrap="wrap" gap={4} mb={6} justify="space-between">
       <Box

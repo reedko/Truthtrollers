@@ -1,17 +1,16 @@
+// src/components/DiscussionBoard.tsx
 import React, { useEffect, useState } from "react";
 import {
   Tabs,
   TabList,
-  TabPanels,
   Tab,
-  TabPanel,
   Box,
   Text,
   VStack,
   Tooltip,
-  Spinner,
   Card,
   CardBody,
+  Button,
 } from "@chakra-ui/react";
 import DiscussionCard from "./DiscussionCard";
 import DiscussionComposer from "./DiscussionComposer";
@@ -20,6 +19,8 @@ import {
   fetchClaimsForTask,
   fetchDiscussionEntries,
 } from "../services/useDashboardAPI";
+import { useAuthStore } from "../store/useAuthStore"; // 🆕 auth store
+import { Link as RouterLink } from "react-router-dom";
 
 interface DiscussionBoardProps {
   contentId: number;
@@ -31,6 +32,11 @@ const DiscussionBoard: React.FC<DiscussionBoardProps> = ({ contentId }) => {
   const [linkedClaimId, setLinkedClaimId] = useState<number | null>(null);
   const [selectedTabIndex, setSelectedTabIndex] = useState<number>(0);
 
+  /* 🆕 read-only test */
+  const user = useAuthStore((s) => s.user);
+  const readOnly = !user || user.can_post === false;
+
+  /* fetch entries + claims once per contentId */
   useEffect(() => {
     const load = async () => {
       const [allEntries, allClaims] = await Promise.all([
@@ -43,22 +49,22 @@ const DiscussionBoard: React.FC<DiscussionBoardProps> = ({ contentId }) => {
     load();
   }, [contentId]);
 
-  const handleNewEntry = (entry: DiscussionEntry) => {
+  const handleNewEntry = (entry: DiscussionEntry) =>
     setEntries((prev) => [...prev, entry]);
-  };
 
+  /* filter + groups */
   const filteredEntries = entries.filter((e) => {
-    if (linkedClaimId === null) return true; // "All"
-    if (linkedClaimId === -1) return !e.linked_claim_id; // "No Claim"
+    if (linkedClaimId === null) return true;
+    if (linkedClaimId === -1) return !e.linked_claim_id;
     return e.linked_claim_id === linkedClaimId;
   });
-
   const proEntries = filteredEntries.filter((e) => e.side === "pro");
   const conEntries = filteredEntries.filter((e) => e.side === "con");
 
   return (
     <Card mt={6} bg="stat2Gradient">
       <CardBody px={6} py={4}>
+        {/* ---------------- Tabs for claim filter ---------------- */}
         <Tabs
           colorScheme="blue"
           size="sm"
@@ -66,14 +72,14 @@ const DiscussionBoard: React.FC<DiscussionBoardProps> = ({ contentId }) => {
           index={selectedTabIndex}
           onChange={(index) => {
             setSelectedTabIndex(index);
-            if (index === 0) setLinkedClaimId(null);
-            else if (index === 1) setLinkedClaimId(-1);
+            if (index === 0) setLinkedClaimId(null); // All
+            else if (index === 1) setLinkedClaimId(-1); // No Claim
             else setLinkedClaimId(claims[index - 2]?.claim_id ?? null);
           }}
         >
           <TabList overflowX="auto" whiteSpace="nowrap" maxW="100%">
-            <Tab key="all">🗂️ All</Tab>
-            <Tab key="none">❓ No Claim</Tab>
+            <Tab>🗂️ All</Tab>
+            <Tab>❓ No Claim</Tab>
             {claims.map((claim) => (
               <Tooltip
                 key={claim.claim_id}
@@ -89,6 +95,7 @@ const DiscussionBoard: React.FC<DiscussionBoardProps> = ({ contentId }) => {
           </TabList>
         </Tabs>
 
+        {/* ---------------- Selected claim banner ---------------- */}
         {linkedClaimId && linkedClaimId > 0 && (
           <Box mt={3} p={3} bg="gray.700" color="white" borderRadius="md">
             <Text fontWeight="bold">Claim:</Text>
@@ -98,22 +105,44 @@ const DiscussionBoard: React.FC<DiscussionBoardProps> = ({ contentId }) => {
           </Box>
         )}
 
-        <Box mt={6}>
-          <DiscussionComposer
-            contentId={contentId}
-            linkedClaimId={
-              linkedClaimId && linkedClaimId > 0 ? linkedClaimId : undefined
-            }
-            onSubmit={handleNewEntry}
-          />
-        </Box>
+        {/* ---------------- Composer (only if allowed) ----------- */}
+        {!readOnly && (
+          <Box mt={6}>
+            <DiscussionComposer
+              contentId={contentId}
+              linkedClaimId={
+                linkedClaimId && linkedClaimId > 0 ? linkedClaimId : undefined
+              }
+              onSubmit={handleNewEntry}
+            />
+          </Box>
+        )}
 
+        {readOnly && (
+          <Box
+            border="1px solid"
+            borderColor="yellow.300"
+            bg="yellow.50"
+            p={4}
+            mb={4}
+            borderRadius="md"
+            textAlign="center"
+          >
+            <Text mb={2} color="gray.700">
+              You’re in read-only demo mode. Log in to join the discussion.
+            </Text>
+            <Button as={RouterLink} to="/login" colorScheme="teal" size="sm">
+              Log In
+            </Button>
+          </Box>
+        )}
+
+        {/* ---------------- Entry lists -------------------------- */}
         <Box mt={6}>
           <Box
             display="flex"
             flexDirection={{ base: "column", md: "row" }}
             gap={6}
-            alignItems="flex-start"
           >
             <Box flex={1}>
               <Text fontSize="lg" fontWeight="bold" color="green.400" mb={2}>

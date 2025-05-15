@@ -1,3 +1,4 @@
+// src/components/Register.tsx
 import React, { useState } from "react";
 import {
   Box,
@@ -25,14 +26,26 @@ const Register: React.FC = () => {
   const [email, setEmail] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+
   const toast = useToast();
   const navigate = useNavigate();
+  const setAuth = useAuthStore((s) => s.setAuth);
 
   const handleRegister = async () => {
     try {
+      // 1️⃣ Create the account
       await register(username, password, email, captchaToken);
+
+      // 2️⃣ Immediately log in (skipping captcha on login call)
+      //    Our login service will return the User and persist JWT into localStorage
       const user = await login(username, password, undefined, true);
-      useAuthStore.getState().setUser(user);
+
+      // 3️⃣ Grab that token out of localStorage
+      const token = localStorage.getItem("jwt") || "";
+
+      // 4️⃣ Tell the store about our freshly‑minted user+token
+      setAuth({ ...user, jwt: token, can_post: true }, token);
+
       toast({
         title: "Welcome!",
         description: "Registration successful.",
@@ -40,6 +53,8 @@ const Register: React.FC = () => {
         duration: 4000,
         isClosable: true,
       });
+
+      // 5️⃣ Send them into the app
       navigate("/dashboard");
     } catch (error) {
       console.error("Registration failed:", error);
@@ -53,7 +68,7 @@ const Register: React.FC = () => {
     }
   };
 
-  const isFormValid = username && email && password && captchaToken;
+  const isFormValid = !!username && !!email && !!password && !!captchaToken;
 
   return (
     <Box maxW="420px" w="full" mx="auto" mt={{ base: 6, md: 12 }} px={4}>
@@ -95,14 +110,13 @@ const Register: React.FC = () => {
                 variant="ghost"
                 aria-label={showPassword ? "Hide password" : "Show password"}
                 icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={() => setShowPassword((v) => !v)}
               />
             </InputRightElement>
           </InputGroup>
         </FormControl>
 
         <Box display="flex" justifyContent="center" pt={2}>
-          {/* Captcha can get cramped on phones, so we constrain its max width */}
           <ReCAPTCHA
             sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY as string}
             onChange={(token) => setCaptchaToken(token)}

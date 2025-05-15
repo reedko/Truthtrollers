@@ -25,7 +25,7 @@ const GraphLegend = () => {
   return (
     <Box
       position="absolute"
-      bottom="12px"
+      top="20px"
       left="12px"
       bg="stackGradient"
       border="2px solid #ccc"

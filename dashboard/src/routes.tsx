@@ -13,6 +13,9 @@ import WorkspacePage from "./pages/WorkspacePage";
 import MoleculeMapPage from "./pages/MoleculeMapPage";
 import DiscussionPage from "./pages/DiscussionPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AccountSettingsPage from "./pages/AccountSettingsPage";
+import LogoutPage from "./pages/LogoutPage";
+import UserSelectionPage from "./pages/UserSelectionPage";
 
 const router = createBrowserRouter([
   {
@@ -68,12 +71,33 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/discussion",
+        path: "/discussion/:contentId",
         element: (
           <ProtectedRoute>
             <DiscussionPage />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "/account",
+        element: (
+          <ProtectedRoute>
+            <AccountSettingsPage />
+          </ProtectedRoute>
+        ),
+      },
+
+      {
+        path: "/select-user",
+        element: (
+          <ProtectedRoute>
+            <UserSelectionPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/logout",
+        element: <LogoutPage />,
       },
     ],
   },

@@ -31,9 +31,14 @@ import { fetchClaimsAndLinkedReferencesForTask } from "../services/useDashboardA
 
 interface WorkspaceProps {
   contentId: number;
+  viewerId: number | null;
   onHeightChange?: (height: number) => void;
 }
-const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
+const Workspace: React.FC<WorkspaceProps> = ({
+  contentId,
+  viewerId,
+  onHeightChange,
+}) => {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [claimLinks, setClaimLinks] = useState<ClaimLink[]>([]);
   const [refreshLinks, setRefreshLinks] = useState(false);
@@ -90,7 +95,7 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
   };
 
   useEffect(() => {
-    fetchClaimsAndLinkedReferencesForTask(contentId)
+    fetchClaimsAndLinkedReferencesForTask(contentId, viewerId)
       .then((data) => {
         // Map the API results to the ClaimLink shape expected by the component.
         const formattedLinks: ClaimLink[] = data.map((row) => ({
@@ -112,11 +117,11 @@ const Workspace: React.FC<WorkspaceProps> = ({ contentId, onHeightChange }) => {
       .catch((error) => {
         console.error("Error fetching claim links:", error);
       });
-  }, [contentId, refreshLinks]);
+  }, [contentId, refreshLinks, viewerId]);
 
   useEffect(() => {
-    fetchClaimsForTask(contentId).then(setClaims);
-  }, [contentId]);
+    fetchClaimsForTask(contentId, viewerId).then(setClaims);
+  }, [contentId, viewerId]);
 
   useEffect(() => {
     fetchReferencesWithClaimsForTask(contentId).then((data) => {

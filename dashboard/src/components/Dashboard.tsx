@@ -1,7 +1,5 @@
-// VisionDashboard.tsx (Refactored Layout)
 import {
   Box,
-  Grid,
   Heading,
   Text,
   VStack,
@@ -12,7 +10,7 @@ import {
   HStack,
   Flex,
 } from "@chakra-ui/react";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { useTaskStore } from "../store/useTaskStore";
 import { useAuthStore } from "../store/useAuthStore";
 import AssignedTaskGrid from "./AssignedTaskGrid";
@@ -33,8 +31,32 @@ const VisionDashboard: React.FC = () => {
   const selectedTask = useTaskStore((s) => s.selectedTask);
   const setSelectedTask = useTaskStore((s) => s.setSelectedTask);
 
+  const hydrated = useAuthStore((s) => s.hydrated);
+
+  if (!hydrated) {
+    return (
+      <Text color="white" p={6}>
+        Initializing user session...
+      </Text>
+    );
+  }
+
+  if (!user?.user_id) {
+    return (
+      <Text color="white" p={6}>
+        Please log in...
+      </Text>
+    );
+  }
+
   useEffect(() => {
-    if (user?.user_id) fetchTasksForUser(user.user_id);
+    if (user?.user_id) {
+      console.log(
+        "🎯 VisionDashboard mounted — fetching for user",
+        user.user_id
+      );
+      fetchTasksForUser(user.user_id);
+    }
   }, [user?.user_id]);
 
   useEffect(() => {
@@ -43,6 +65,14 @@ const VisionDashboard: React.FC = () => {
   }, [assignedTasks, selectedTask]);
 
   const tasksToRender = selectedTask ? [selectedTask] : assignedTasks || [];
+
+  if (!user?.user_id) {
+    return (
+      <Text color="white" p={6}>
+        Loading your dashboard...
+      </Text>
+    );
+  }
 
   return (
     <Box p={6} minH="100vh">
@@ -71,7 +101,6 @@ const VisionDashboard: React.FC = () => {
         wrap="wrap"
         w="100%"
       >
-        {/* Left Column */}
         <VStack spacing={6} align="stretch" flex="1 1 60%">
           <Flex wrap="wrap" gap={4} width="100%" align="stretch">
             <Box flex={{ base: "1 1 100%", md: "1 1 45%" }} minW="260px">
@@ -134,7 +163,6 @@ const VisionDashboard: React.FC = () => {
           </Flex>
         </VStack>
 
-        {/* Right Column */}
         <VStack spacing={6} align="stretch" flex="1 1 35%" minW="300px">
           <Card bg="statGradient">
             <CardHeader>

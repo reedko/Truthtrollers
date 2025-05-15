@@ -284,51 +284,62 @@ export const getLinksForEntity = (entityType) => {
 
 // graphQueries.js
 
-export const getLinkedClaimsAndLinksForTask = (taskId) => {
+export const getLinkedClaimsAndLinksForTask = (taskId, viewerId) => {
+  const claimNodeSql = `
+    -- Task Claims
+    SELECT DISTINCT 
+      CONCAT('claim-', c.claim_id) AS id,
+      c.claim_id,
+      cc.content_id,
+      c.claim_text AS label,
+      'taskClaim' AS type
+    FROM claims c
+    JOIN content_claims cc ON c.claim_id = cc.claim_id
+    WHERE cc.content_id = ?
+
+    UNION
+
+    -- Reference Claims that link to the task's claims
+    SELECT DISTINCT 
+      CONCAT('claim-', c2.claim_id) AS id,
+      c2.claim_id,
+      cc2.content_id,
+      c2.claim_text AS label,
+      'refClaim' AS type
+    FROM claim_links cl
+    JOIN claims c2 ON c2.claim_id = cl.source_claim_id
+    JOIN content_claims cc2 ON c2.claim_id = cc2.claim_id
+    WHERE cl.target_claim_id IN (
+      SELECT claim_id FROM content_claims WHERE content_id = ?
+    )
+    ${viewerId !== null ? "AND cl.user_id = ?" : ""}
+  `;
+
+  const claimLinkSql = `
+    -- Only include links where the target is a taskClaim for this task
+    SELECT 
+      cl.relationship AS relation,
+      cl.support_level AS value,
+      CONCAT('claim-', cl.source_claim_id) AS source,
+      CONCAT('claim-', cl.target_claim_id) AS target,
+      cl.claim_link_id,
+      cl.notes,
+      cl.created_at
+    FROM claim_links cl
+    WHERE cl.target_claim_id IN (
+      SELECT claim_id FROM content_claims WHERE content_id = ?
+    )
+    ${viewerId !== null ? "AND cl.user_id = ?" : ""}
+  `;
+
+  const params =
+    viewerId !== null
+      ? [taskId, taskId, viewerId, taskId, viewerId]
+      : [taskId, taskId, taskId];
+
   return {
-    claimNodeSql: `
-      -- Task Claims
-      SELECT DISTINCT 
-        CONCAT('claim-', c.claim_id) AS id,
-        c.claim_id,
-        cc.content_id,
-        c.claim_text AS label,
-        'taskClaim' AS type
-      FROM claims c
-      JOIN content_claims cc ON c.claim_id = cc.claim_id
-      WHERE cc.content_id = ?
-
-      UNION
-
-      -- Reference Claims that link to the task's claims
-      SELECT DISTINCT 
-        CONCAT('claim-', c2.claim_id) AS id,
-        c2.claim_id,
-        cc2.content_id,
-        c2.claim_text AS label,
-        'refClaim' AS type
-      FROM claim_links cl
-      JOIN claims c2 ON c2.claim_id = cl.source_claim_id
-      JOIN content_claims cc2 ON c2.claim_id = cc2.claim_id
-      WHERE cl.target_claim_id IN (
-        SELECT claim_id FROM content_claims WHERE content_id = ?
-      );
-    `,
-    claimLinkSql: `
-      -- Only include links where the target is a taskClaim for this task
-      SELECT 
-        cl.relationship AS relation,
-        cl.support_level AS value,
-        CONCAT('claim-', cl.source_claim_id) AS source,
-        CONCAT('claim-', cl.target_claim_id) AS target,
-        cl.claim_link_id,
-        cl.notes,
-        cl.created_at
-      FROM claim_links cl
-      WHERE cl.target_claim_id IN (
-        SELECT claim_id FROM content_claims WHERE content_id = ?
-      );
-    `,
-    params: [taskId, taskId, taskId],
+    claimNodeSql,
+    claimLinkSql,
+    params,
   };
 };
