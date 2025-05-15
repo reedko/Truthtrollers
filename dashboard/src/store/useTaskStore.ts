@@ -49,8 +49,10 @@ export interface TaskStoreState {
   selectedRedirect: string;
   currentPage: number;
   claimsByTask: { [taskId: number]: Claim[] };
-
+  viewingUserId: number | null;
   selectedPivotTasks: Task[];
+  resetTasks: () => void;
+  setViewingUserId: (id: number | null) => void;
   setSelectedPivotTasks: (tasks: Task[]) => void;
 
   setSelectedTask: (input: Task | number | null) => void;
@@ -109,7 +111,17 @@ export const useTaskStore = create<TaskStoreState>()(
       selectedRedirect: "/dashboard",
       currentPage: 0,
       claimsByTask: {},
+      viewingUserId: undefined,
 
+      resetTasks: () =>
+        set(() => ({
+          selectedTask: null,
+          claimsByTask: {},
+          tasks: [],
+          // ... any other stale state
+        })),
+
+      setViewingUserId: (id: number | null) => set({ viewingUserId: id }),
       setRedirect: (path) => {
         set({ selectedRedirect: path });
       },
@@ -187,7 +199,7 @@ export const useTaskStore = create<TaskStoreState>()(
 
         const authorsMap: Record<number, Author[]> = {};
         const publishersMap: Record<number, Publisher[]> = {};
-
+        console.log("📦 Loading assignedTasks for userId:", userId);
         tasks.forEach((task) => {
           authorsMap[task.content_id] = Array.isArray(task.authors)
             ? task.authors
@@ -203,6 +215,7 @@ export const useTaskStore = create<TaskStoreState>()(
           publishers: { ...get().publishers, ...publishersMap },
         });
       },
+      // ✅ Add this wrapper right below it:
 
       fetchUsers: async () => {
         const users = await fetchUsers();
@@ -238,7 +251,8 @@ export const useTaskStore = create<TaskStoreState>()(
       },
 
       fetchClaims: async (taskId) => {
-        const claims = await fetchClaimsForTask(taskId);
+        const { viewingUserId } = get();
+        const claims = await fetchClaimsForTask(taskId, viewingUserId);
         set((s) => ({
           claimsByTask: {
             ...s.claimsByTask, // 🛡️ preserve existing claims

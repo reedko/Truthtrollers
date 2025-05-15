@@ -3,6 +3,8 @@
 import useTaskStore from "../src/store/useTaskStore";
 import { extractImageFromHtml } from "../src/services/extractMetaData";
 import browser from "webextension-polyfill";
+import { generateDeviceFingerprint } from "../../dashboard/src/utils/generateDeviceFingerprint";
+
 const isDashboardUrl = (url) => {
   try {
     const hostname = new URL(url).hostname;
@@ -114,6 +116,89 @@ browser.action.onClicked.addListener((tab) => {
   console.log("🔍 Extension icon clicked - Forcing popup for:", tab.url);
   checkContentAndUpdatePopup(tab.id, tab.url, true);
 });
+
+async function generateExtensionFingerprint() {
+  const key = "tt_device_fp";
+
+  const stored = await browser.storage.local.get(key);
+  if (stored && stored[key]) return stored[key];
+
+  const components = [
+    navigator.userAgent,
+    navigator.language,
+    "1920x1080", // ✅ fixed value
+    "24", // ✅ fixed color depth
+    new Date().getTimezoneOffset(),
+    "Africa/Nairobi",
+  ];
+
+  const raw = components.join("|");
+  const hash = btoa(raw);
+  await browser.storage.local.set({ [key]: hash });
+  return hash;
+}
+
+// export if needed elsewhere in background.js
+// module.exports = { generateExtensionFingerprint };
+
+//DiscussionTab listener
+// 🧪 DiscussionTab listener
+browser.runtime.onMessage.addListener(async (msg) => {
+  if (msg.fn === "openDiscussionTab") {
+    console.log("🧪 Argue button clicked");
+
+    // ✅ Await the fingerprint
+    const deviceFingerprint = await generateExtensionFingerprint();
+    console.log("🧬 Device Fingerprint:", deviceFingerprint);
+
+    let fullUrl = msg.url;
+
+    try {
+      const response = await fetch(
+        `${BASE_URL}/api/get-session-user?fingerprint=${deviceFingerprint}`
+      );
+
+      const { jwt } = await response.json();
+      if (response.ok && jwt) {
+        await browser.storage.local.set({ jwt });
+        fullUrl = msg.url;
+        console.log("✅ Found session, using full access");
+      } else {
+        throw new Error("Session lookup failed");
+      }
+    } catch (err) {
+      const demoJwt = await getReadOnlyDemoJwt();
+      fullUrl = `${msg.url}?demo=${encodeURIComponent(demoJwt)}`;
+      console.log("🔁 Falling back to demo session", fullUrl);
+    }
+
+    await browser.tabs.create({ url: fullUrl });
+  }
+});
+
+// fetch a read-only demo JWT once, cache it in storage.local
+async function getReadOnlyDemoJwt() {
+  const { tt_demo_jwt } = await browser.storage.local.get("tt_demo_jwt");
+  if (tt_demo_jwt) return tt_demo_jwt;
+
+  // 🔐 call your API login endpoint
+  const res = await fetch("http://localhost:3000/api/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Skip-Captcha": "true", // ← bypass CAPTCHA
+    },
+    body: JSON.stringify({
+      username: "critic",
+      password: "newPassword", // or hard-coded for demo
+    }),
+  });
+
+  if (!res.ok) return null;
+  const { token } = await res.json();
+  await browser.storage.local.set({ tt_demo_jwt: token });
+  return token;
+}
 
 // ✅ Check if URL is in database & update popup
 async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
@@ -640,6 +725,7 @@ async function storeClaimsOnServer(contentId, claims, contentType) {
       content_id: contentId,
       claims,
       content_type: contentType,
+      user_id: userId,
     }), // ✅ Ensure content_id is correct
   });
 

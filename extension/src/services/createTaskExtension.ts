@@ -28,6 +28,7 @@ const createTask = async (taskData: TaskData): Promise<string | null> => {
             contentId,
             taskData.Claims,
             taskData.content_type,
+            null,
             true
           )
         : Promise.resolve(),

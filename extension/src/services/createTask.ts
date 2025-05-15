@@ -73,7 +73,12 @@ const createTask = async (taskData: TaskData): Promise<string | null> => {
         ? addPublisher(contentId, taskData.publisherName)
         : Promise.resolve(),
       taskData.Claims.length > 0
-        ? storeClaimsInDB(contentId, taskData.Claims, taskData.content_type)
+        ? storeClaimsInDB(
+            contentId,
+            taskData.Claims,
+            taskData.content_type,
+            null
+          )
         : Promise.resolve(),
     ]);
 
@@ -128,12 +133,13 @@ const addPublisher = async (contentId: string, publisher: Publisher) => {
 const storeClaimsInDB = async (
   contentId: string,
   claims: string[],
-  contentType: string
+  contentType: string,
+  userId: number | null
 ) => {
   if (IS_EXTENSION) {
     const response = (await browser.runtime.sendMessage({
       action: "storeClaims",
-      data: { contentId, claims, contentType },
+      data: { contentId, claims, contentType, userId },
     })) as StoreClaimsResponse;
 
     if (!response.success) {
@@ -147,6 +153,7 @@ const storeClaimsInDB = async (
         content_id: contentId,
         claims,
         content_type: contentType,
+        user_id: userId,
       }),
     });
   }

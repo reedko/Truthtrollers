@@ -1,7 +1,7 @@
 import axios from "axios";
 import { User } from "../../../shared/entities/types";
+import { useAuthStore } from "../store/useAuthStore";
 
-//const API_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 const API_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5001";
 export const register = async (
   username: string,
@@ -38,7 +38,12 @@ export const login = async (
   );
 
   const { user, token } = res.data;
-  localStorage.setItem("token", token);
+  localStorage.setItem("jwt", token);
+
+  useAuthStore
+    .getState()
+    .setAuth({ ...user, jwt: token, can_post: true }, token);
+
   return user as User;
 };
 

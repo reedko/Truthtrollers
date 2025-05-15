@@ -32,6 +32,26 @@ import { spawn } from "child_process";
 import registerDiscussionRoutes from "./routes/discussionRoutes.js";
 import registerBeaconRoutes from "./routes/beaconRoutes.js";
 import fetch from "node-fetch";
+import nodemailer from "nodemailer";
+import { decodeJwt } from "./utils/jwt.js";
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+export const sendResetEmail = async (to, link) => {
+  await transporter.sendMail({
+    from: `"TruthTrollers" <${process.env.SMTP_USER}>`,
+    to,
+    subject: "Reset your password",
+    html: `<p>Click to reset: <a href="${link}">${link}</a></p>`,
+  });
+};
 
 //const pdfParse = pkg.default || pkg;
 const __filename = fileURLToPath(import.meta.url);
@@ -148,27 +168,42 @@ const storage = multer.diskStorage({
 //upload image
 const upload = multer({ storage });
 
+// Unified image upload endpoint
 app.post("/api/upload-image", upload.single("image"), (req, res) => {
   if (!req.file) return res.status(400).send("No file uploaded.");
   const { type, id } = req.query;
-
   const imagePath = `assets/images/${type}/${req.file.filename}`;
 
-  if (type === "authors") {
-    db.query("UPDATE authors SET author_profile_pic = ? WHERE author_id = ?", [
-      imagePath,
-      id,
-    ]);
-  } else if (type === "publishers") {
-    db.query(
-      "UPDATE publishers SET publisher_icon = ? WHERE publisher_id = ?",
-      [imagePath, id]
-    );
+  let updateSql = "";
+  let column = "";
+
+  switch (type) {
+    case "authors":
+      updateSql =
+        "UPDATE authors SET author_profile_pic = ? WHERE author_id = ?";
+      break;
+    case "publishers":
+      updateSql =
+        "UPDATE publishers SET publisher_icon = ? WHERE publisher_id = ?";
+      break;
+    case "users":
+      updateSql = "UPDATE users SET user_profile_image = ? WHERE user_id = ?";
+      break;
+    default:
+      return res.status(400).json({ error: "Invalid type" });
   }
 
-  return res
-    .status(200)
-    .json({ message: "Upload successful", path: req.file.path });
+  pool.query(updateSql, [imagePath, id], (err) => {
+    if (err) {
+      console.error("Image update error:", err);
+      return res.status(500).json({ error: "Failed to update image path" });
+    }
+
+    return res.status(200).json({
+      message: "Upload successful",
+      path: imagePath,
+    });
+  });
 });
 
 function getRelativePath(absolutePath) {
@@ -1053,6 +1088,63 @@ app.delete("/api/remove-content-relation", async (req, res) => {
 });
 
 //Users
+//sto9re and get sessions
+app.post("/api/store-extension-session", async (req, res) => {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.replace("Bearer ", "");
+  console.log("🔑 Token received:", token);
+  const user = decodeJwt(token); // your existing decode function
+
+  const { device_fingerprint } = req.body;
+
+  if (!device_fingerprint || !user?.user_id) {
+    return res.status(400).json({ error: "Missing fingerprint or user" });
+  }
+
+  await query(
+    `
+    INSERT INTO user_sessions (device_fingerprint, user_id, jwt, updated_at)
+    VALUES (?, ?, ?, NOW())
+    ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), jwt = VALUES(jwt), updated_at = NOW()
+  `,
+    [device_fingerprint, user.user_id, token]
+  );
+
+  res.json({ message: "Session stored" });
+});
+
+//check for session
+app.get("/api/get-session-user", async (req, res) => {
+  const { fingerprint } = req.query;
+  if (!fingerprint) {
+    return res.status(400).json({ error: "Missing fingerprint" });
+  }
+  console.log("🔍 Looking up session for fingerprint:", fingerprint);
+  const result = await query(
+    `
+    SELECT jwt FROM user_sessions
+    WHERE device_fingerprint = ?
+    AND updated_at > NOW() - INTERVAL 1 DAY
+    LIMIT 1
+  `,
+    [fingerprint]
+  );
+
+  if (result.length === 0) {
+    return res.json({ jwt: null }); // guest
+  }
+  const token = result[0].jwt;
+
+  try {
+    // ✅ Check if it's still valid
+    jwt.verify(token, process.env.JWT_SECRET);
+    return res.json({ jwt: token });
+  } catch (err) {
+    console.warn("⚠️ Stored session token is invalid or expired:", err.message);
+    return res.json({ jwt: null }); // fallback to guest
+  }
+});
+
 //all users
 app.get("/api/all-users", async (req, res) => {
   const sql = "SELECT * FROM users";
@@ -1209,10 +1301,27 @@ app.post("/api/login", async (req, res) => {
 
     const user = results[0];
     if (bcrypt.compareSync(password, user.password)) {
-      const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-        expiresIn: "1h",
+      console.log("JWT_SECRET used for signing:", process.env.JWT_SECRET);
+      console.log("🧠 user.id at login:", user.user_id);
+      const token = jwt.sign(
+        {
+          user_id: user.user_id, // ✅ critical: this is what decodeJwt().user_id reads
+          username: user.username,
+          can_post: true, // or from DB if your app tracks this
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "1h" }
+      );
+      res.status(200).json({
+        auth: true,
+        token,
+        user: {
+          user_id: user.user_id,
+          username: user.username,
+          can_post: true,
+          user_profile_image: user.user_profile_image ?? null, // ✅ or whatever your DB column is
+        },
       });
-      res.status(200).json({ auth: true, token, user });
     } else {
       res.status(401).send("Invalid credentials.");
     }
@@ -1232,6 +1341,77 @@ app.post("/api/reset-password", (req, res) => {
       res.status(200).send("Password reset successful.");
     }
   );
+});
+
+// Middleware to authenticate JWT
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) return res.sendStatus(401);
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+}
+
+// 🔐 Change Email
+app.post("/api/change-email", authenticateToken, (req, res) => {
+  const { newEmail, password } = req.body;
+  const userId = req.user.id;
+
+  if (!newEmail || !password)
+    return res.status(400).json({ error: "Missing fields." });
+
+  pool.query("SELECT * FROM users WHERE id = ?", [userId], (err, results) => {
+    if (err || results.length === 0)
+      return res.status(400).json({ error: "User not found." });
+
+    const user = results[0];
+    if (!bcrypt.compareSync(password, user.password)) {
+      return res.status(401).json({ error: "Invalid password." });
+    }
+
+    pool.query(
+      "UPDATE users SET email = ? WHERE id = ?",
+      [newEmail, userId],
+      (err2) => {
+        if (err2) return res.status(500).json({ error: "Update failed." });
+        res.status(200).json({ message: "Email updated successfully." });
+      }
+    );
+  });
+});
+
+// 🔐 Change Password
+app.post("/api/change-password", authenticateToken, (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const userId = req.user.id;
+
+  if (!currentPassword || !newPassword)
+    return res.status(400).json({ error: "Missing fields." });
+
+  pool.query("SELECT * FROM users WHERE id = ?", [userId], (err, results) => {
+    if (err || results.length === 0)
+      return res.status(400).json({ error: "User not found." });
+
+    const user = results[0];
+    if (!bcrypt.compareSync(currentPassword, user.password)) {
+      return res.status(401).json({ error: "Current password incorrect." });
+    }
+
+    const hashedNew = bcrypt.hashSync(newPassword, 10);
+    pool.query(
+      "UPDATE users SET password = ? WHERE id = ?",
+      [hashedNew, userId],
+      (err2) => {
+        if (err2)
+          return res.status(500).json({ error: "Password update failed." });
+        res.status(200).json({ message: "Password changed successfully." });
+      }
+    );
+  });
 });
 
 ///Unified taskauthorpubuser
@@ -1631,39 +1811,42 @@ app.put("/api/updateReference", async (req, res) => {
 //get claims for  a task or reference
 app.get("/api/claims/:content_id", async (req, res) => {
   const { content_id } = req.params;
+  const viewerId = req.query.viewerId;
 
   const sql = `
-SELECT 
-    c.claim_id,
-    c.claim_text,
-    c.veracity_score,
-    c.confidence_level,
-    c.last_verified,
-    COALESCE(GROUP_CONCAT(DISTINCT cc.relationship_type ORDER BY cc.relationship_type SEPARATOR ', '), '') AS relationship_type,  -- ✅ Fix for GROUP BY
-    COALESCE(
+    SELECT 
+      c.claim_id,
+      c.claim_text,
+      c.veracity_score,
+      c.confidence_level,
+      c.last_verified,
+      COALESCE(GROUP_CONCAT(DISTINCT cc.relationship_type ORDER BY cc.relationship_type SEPARATOR ', '), '') AS relationship_type,
+      COALESCE(
         JSON_ARRAYAGG(
-            JSON_OBJECT(
-                'reference_content_id', cr.reference_content_id,
-                'content_name', ref.content_name,
-                'url', ref.url,
-                'support_level', IFNULL(cr.support_level, 0)
-            )
+          JSON_OBJECT(
+            'reference_content_id', cr.reference_content_id,
+            'content_name', ref.content_name,
+            'url', ref.url,
+            'support_level', IFNULL(cr.support_level, 0)
+          )
         ), 
         JSON_ARRAY()
-    ) AS reference_list
-FROM claims c
-LEFT JOIN content_claims cc ON c.claim_id = cc.claim_id
-LEFT JOIN claims_references cr ON c.claim_id = cr.claim_id
-LEFT JOIN content ref ON cr.reference_content_id = ref.content_id
-WHERE cc.content_id = ?
-GROUP BY c.claim_id;
-
-
-
+      ) AS reference_list
+    FROM claims c
+    LEFT JOIN content_claims cc ON c.claim_id = cc.claim_id
+    LEFT JOIN claims_references cr ON c.claim_id = cr.claim_id
+    LEFT JOIN content ref ON cr.reference_content_id = ref.content_id
+    WHERE cc.content_id = ?
+      ${
+        viewerId
+          ? "AND (cc.user_id IS NULL OR cc.user_id = ?)"
+          : "AND cc.user_id IS NULL"
+      }
+    GROUP BY c.claim_id;
   `;
-  console.log("Fetching claims for content_id:", content_id);
 
-  const params = [content_id];
+  const params = viewerId ? [content_id, viewerId] : [content_id];
+
   pool.query(sql, params, async (err, results) => {
     if (err) {
       console.error("❌ Error fetching claims:", err);
@@ -1787,31 +1970,31 @@ app.post("/api/claim-links", async (req, res) => {
 
 app.get("/api/claims-and-linked-references/:contentId", async (req, res) => {
   const contentId = req.params.contentId;
+  const viewerId = req.query.viewerId;
+
   const sql = `
     SELECT 
-   CONCAT(cl.claim_link_id, cr.reference_content_id) AS id,
-   cl.claim_link_id AS claim_link_id,
-  cc_task.content_id AS task_content_id,
-  cl.target_claim_id AS left_claim_id,
-  cl.source_claim_id,
-  cr.reference_content_id AS right_reference_id,
-  cl.relationship,
-  cl.support_level AS confidence,
-  cl.notes AS notes
-FROM claim_links cl
-JOIN content_claims cc_task
-  ON cl.target_claim_id = cc_task.claim_id
-JOIN content_claims cc_ref
-  ON cl.source_claim_id = cc_ref.claim_id
-JOIN content_relations cr
-  ON cr.reference_content_id = cc_ref.content_id
-WHERE cc_task.content_id = cr.content_id
-  AND cc_task.content_id =  ?
-  AND disabled=false
+      CONCAT(cl.claim_link_id, cr.reference_content_id) AS id,
+      cl.claim_link_id AS claim_link_id,
+      cc_task.content_id AS task_content_id,
+      cl.target_claim_id AS left_claim_id,
+      cl.source_claim_id,
+      cr.reference_content_id AS right_reference_id,
+      cl.relationship,
+      cl.support_level AS confidence,
+      cl.notes AS notes
+    FROM claim_links cl
+    JOIN content_claims cc_task ON cl.target_claim_id = cc_task.claim_id
+    JOIN content_claims cc_ref ON cl.source_claim_id = cc_ref.claim_id
+    JOIN content_relations cr ON cr.reference_content_id = cc_ref.content_id
+    WHERE cc_task.content_id = cr.content_id
+      AND cc_task.content_id = ?
+      AND cl.disabled = false
+      ${viewerId ? "AND cl.user_id = ?" : ""}
   `;
-  console.log(sql, "SQL", contentId, "CID");
 
-  const params = [contentId];
+  const params = viewerId ? [contentId, viewerId] : [contentId];
+
   try {
     const claimsWithReferences = await query(sql, params);
     res.json(claimsWithReferences);
@@ -1825,7 +2008,7 @@ WHERE cc_task.content_id = cr.content_id
 // and link the claim to the content_id
 app.post("/api/claims/add", async (req, res) => {
   try {
-    const { content_id, claims, content_type } = req.body;
+    const { content_id, claims, content_type, user_id } = req.body;
 
     // ✅ Validate required fields
     if (
@@ -1894,8 +2077,8 @@ app.post("/api/claims/add", async (req, res) => {
         // 3️⃣ **If this is a NEW claim, no need to check for a link—just insert it.**
         if (isNewClaim) {
           await query(
-            "INSERT INTO content_claims (content_id, claim_id, relationship_type) VALUES (?,?,?)",
-            [content_id, claimId, content_type]
+            "INSERT INTO content_claims (content_id, claim_id, relationship_type,user_id) VALUES (?,?,?,?)",
+            [content_id, claimId, content_type, user_id]
           );
           insertedCount++;
           console.log(
@@ -2312,6 +2495,7 @@ app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
 });
  */
 import puppeteer from "puppeteer";
+import { collapseTextChangeRangesAcrossMultipleVersions } from "typescript";
 
 app.post("/api/fetch-page-content", async (req, res) => {
   const { url } = req.body;
@@ -2409,6 +2593,7 @@ app.post("/api/extractText", async (req, res) => {
 app.get("/api/full-graph/:taskId", async (req, res) => {
   const { entity, entityType } = req.query;
   const taskId = parseInt(req.params.taskId);
+  const viewerId = req.query.viewerId ? parseInt(req.query.viewerId) : null;
 
   if (!entity || !entityType) {
     return res
@@ -2430,7 +2615,7 @@ app.get("/api/full-graph/:taskId", async (req, res) => {
 
     // 2. Only claims & links actually connected to the task
     const { claimNodeSql, claimLinkSql, params } =
-      getLinkedClaimsAndLinksForTask(taskId);
+      getLinkedClaimsAndLinksForTask(taskId, viewerId);
     const claimNodes = await query(claimNodeSql, params);
     const claimLinks = await query(claimLinkSql, params);
 

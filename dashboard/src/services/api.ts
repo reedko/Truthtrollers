@@ -1,4 +1,7 @@
+import axios from "axios";
+import { useAuthStore } from "../store/useAuthStore";
 import { GraphNode, Link } from "../../../shared/entities/types.ts";
+import { useTaskStore } from "../store/useTaskStore.ts";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
@@ -9,10 +12,11 @@ export const fetchNewGraphDataFromLegacyRoute = async (
   console.log("📡 Fetching Graph Data for:", selectedNode);
 
   try {
+    const viewerId = useTaskStore((s) => s.viewingUserId);
     const contentId = selectedNode.id.replace(/^.*-/, ""); // fallback if not a task
     console.log(contentId, selectedNode.type, selectedNode.id);
     const response = await fetch(
-      `${API_BASE_URL}/api/full-graph/${contentId}?entity=${contentId}&entityType=${selectedNode.type}`,
+      `${API_BASE_URL}/api/full-graph/${contentId}?entity=${contentId}&entityType=${selectedNode.type}&viewerId=${viewerId}`,
       { headers: { Accept: "application/json" } }
     );
 
@@ -47,3 +51,17 @@ export const fetchNewGraphDataFromLegacyRoute = async (
     return { nodes: [], links: [] };
   }
 };
+
+export const api = axios.create({
+  baseURL: import.meta.env.VITE_BASE_URL || "http://localhost:5001",
+});
+
+// Attach the JWT on every request automatically
+api.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().token;
+  if (token) {
+    config.headers = config.headers ?? {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});

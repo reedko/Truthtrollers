@@ -146,6 +146,10 @@ export interface User {
   username: string;
   email: string;
   role: string;
+  can_post?: boolean;
+  jwt?: string;
+  isDemo?: boolean;
+  user_profile_image?: string;
 }
 
 // Relationships

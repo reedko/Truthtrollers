@@ -13,6 +13,7 @@ const WorkspacePage = () => {
   const setRedirect = useTaskStore((s) => s.setRedirect);
   const selectedRedirect = useTaskStore((s) => s.selectedRedirect);
   const [hydrated, setHydrated] = useState(useTaskStore.persist.hasHydrated());
+  const viewerId = useTaskStore((s) => s.viewingUserId);
 
   useEffect(() => {
     if (!hydrated) {
@@ -52,7 +53,7 @@ const WorkspacePage = () => {
       <Heading size="md" mb={4}>
         Workspace
       </Heading>
-      <Workspace contentId={taskId} />
+      <Workspace contentId={taskId} viewerId={viewerId} />
     </Box>
   );
 };
