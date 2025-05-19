@@ -27,6 +27,8 @@ dist/
 *.pyo
 *.pyc
 .env
+.env dev
+.env build
 *.env
 popup.js
 *.log
