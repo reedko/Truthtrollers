@@ -285,6 +285,8 @@ export const getLinksForEntity = (entityType) => {
 // graphQueries.js
 
 export const getLinkedClaimsAndLinksForTask = (taskId, viewerId) => {
+  console.log("👁️ viewerId in fetchNewGraphDataFromLegacyRoute:", viewerId);
+  const isValidViewer = Number.isInteger(viewerId);
   const claimNodeSql = `
     -- Task Claims
     SELECT DISTINCT 
@@ -312,7 +314,7 @@ export const getLinkedClaimsAndLinksForTask = (taskId, viewerId) => {
     WHERE cl.target_claim_id IN (
       SELECT claim_id FROM content_claims WHERE content_id = ?
     )
-    ${viewerId !== null ? "AND cl.user_id = ?" : ""}
+   ${isValidViewer ? "AND cl.user_id = ?" : ""}
   `;
 
   const claimLinkSql = `
@@ -329,17 +331,21 @@ export const getLinkedClaimsAndLinksForTask = (taskId, viewerId) => {
     WHERE cl.target_claim_id IN (
       SELECT claim_id FROM content_claims WHERE content_id = ?
     )
-    ${viewerId !== null ? "AND cl.user_id = ?" : ""}
+    ${isValidViewer ? "AND cl.user_id = ?" : ""}
   `;
+  console.log("ViewerId", viewerId, "<---");
+  const claimNodeParams = isValidViewer
+    ? [taskId, taskId, viewerId]
+    : [taskId, taskId];
 
-  const params =
-    viewerId !== null
-      ? [taskId, taskId, viewerId, taskId, viewerId]
-      : [taskId, taskId, taskId];
+  const claimLinkParams = isValidViewer
+    ? [taskId, viewerId] // ← NOTE: viewerId *second*
+    : [taskId];
 
   return {
     claimNodeSql,
+    claimNodeParams,
     claimLinkSql,
-    params,
+    claimLinkParams,
   };
 };

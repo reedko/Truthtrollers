@@ -21,6 +21,7 @@ import {
 } from "../services/useDashboardAPI";
 import { useAuthStore } from "../store/useAuthStore"; // 🆕 auth store
 import { Link as RouterLink } from "react-router-dom";
+import { useTaskStore } from "../store/useTaskStore";
 
 interface DiscussionBoardProps {
   contentId: number;
@@ -31,7 +32,7 @@ const DiscussionBoard: React.FC<DiscussionBoardProps> = ({ contentId }) => {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [linkedClaimId, setLinkedClaimId] = useState<number | null>(null);
   const [selectedTabIndex, setSelectedTabIndex] = useState<number>(0);
-
+  const viewerId = useTaskStore((s) => s.viewingUserId);
   /* 🆕 read-only test */
   const user = useAuthStore((s) => s.user);
   const readOnly = !user || user.can_post === false;
@@ -41,7 +42,7 @@ const DiscussionBoard: React.FC<DiscussionBoardProps> = ({ contentId }) => {
     const load = async () => {
       const [allEntries, allClaims] = await Promise.all([
         fetchDiscussionEntries(contentId),
-        fetchClaimsForTask(contentId),
+        fetchClaimsForTask(contentId, viewerId),
       ]);
       setEntries(allEntries);
       setClaims(allClaims);

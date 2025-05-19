@@ -345,6 +345,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
   >({});
 
   useEffect(() => {
+    console.log("🧪 CytoscapeMolecule mount — received links:", links);
     if (!cyRef.current) return;
 
     const centerX = 500;
@@ -593,6 +594,9 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       const type = node.data("type");
       const contentId = node.data("content_id");
 
+      // ← FIRST: log every time a node is tapped
+      console.log("📌 [DEBUG] Node tapped:", node.id(), "type=", type);
+
       if (node.id() === lastClickedNodeId.current) {
         console.log("🛑 Same node clicked again — skipping.");
         return;
@@ -649,9 +653,14 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           const refClaims = nodes.filter(
             (n) => n.type === "refClaim" && n.content_id === contentId
           );
+          // <-- Insert this log right here:
+          console.log("🔍 [DEBUG] refClaims:", refClaims);
           const claimLinks = links.filter((l) =>
             refClaims.some((rc) => rc.id === l.source)
           );
+          // <-- And this log right here:
+          console.log("🔍 [DEBUG] claimLinks:", claimLinks);
+
           const claimsWithRelation: {
             claim: NodeData;
             relation: "supports" | "refutes" | "related";
@@ -693,7 +702,8 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               }
             }
           });
-
+          // <-- And this one:
+          console.log("🔍 [DEBUG] linkedTaskClaims:", linkedTaskClaims);
           const linkedTaskClaimMap = new Map(
             linkedTaskClaims.map((tc) => [tc.id, tc])
           );
@@ -731,6 +741,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             .nodes()
             .filter('[type = "task"]')
             .first() as NodeSingular;
+          console.log("🔍 [DEBUG] linkedTaskClaims:", linkedTaskClaims);
           const added: cytoscape.ElementDefinition[] = [];
 
           const refClaimElements = fanOutClaims({

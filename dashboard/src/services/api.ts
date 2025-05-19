@@ -12,7 +12,8 @@ export const fetchNewGraphDataFromLegacyRoute = async (
   console.log("📡 Fetching Graph Data for:", selectedNode);
 
   try {
-    const viewerId = useTaskStore((s) => s.viewingUserId);
+    const viewerId = useTaskStore.getState().viewingUserId;
+
     const contentId = selectedNode.id.replace(/^.*-/, ""); // fallback if not a task
     console.log(contentId, selectedNode.type, selectedNode.id);
     const response = await fetch(
@@ -27,6 +28,8 @@ export const fetchNewGraphDataFromLegacyRoute = async (
     }
 
     const data = await response.json();
+    console.log("[API] raw nodes:", data.nodes.length, data.nodes);
+    console.log("[API] raw links:", data.links.length, data.links);
 
     const nodes = data.nodes.map(
       (node: GraphNode) =>
@@ -43,6 +46,7 @@ export const fetchNewGraphDataFromLegacyRoute = async (
           node.author_id
         )
     );
+
     console.log(data.nodes, "nodes", data.links, "links");
     return { nodes, links: data.links };
   } catch (error) {

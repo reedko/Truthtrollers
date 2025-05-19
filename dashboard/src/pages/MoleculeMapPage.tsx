@@ -19,27 +19,38 @@ import UnifiedHeader from "../components/UnifiedHeader";
 import GraphLegend from "../components/GraphLegend";
 
 const MoleculeMapPage = () => {
-  const selectedTask = useTaskStore((s) => s.selectedTask);
   const navigate = useNavigate();
   const toast = useToast();
+  const selectedTask = useTaskStore((s) => s.selectedTask);
+  const selectedTaskId = useTaskStore((s) => s.selectedTaskId);
+  const viewerId = useTaskStore((s) => s.viewingUserId);
+  const setSelectedTask = useTaskStore((s) => s.setSelectedTask);
+
   const [graphData, setGraphData] = useState<{
     nodes: GraphNode[];
     links: Link[];
-  }>({
-    nodes: [],
-    links: [],
-  });
+  }>({ nodes: [], links: [] });
+
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 🧠 Load initial graph based on selectedTask
+  // 🧠 Restore selectedTask from ID if necessary
   useEffect(() => {
-    if (!selectedTask) {
-      navigate("/tasks", { state: { redirectTo: "/molecule" } });
-      return;
+    if (selectedTaskId && !selectedTask) {
+      const all = useTaskStore.getState().content;
+      const match = all.find((t) => t.content_id === selectedTaskId);
+      if (match) {
+        console.log("🧠 Rehydrating selectedTask from ID");
+        setSelectedTask(match);
+      }
     }
+  }, [selectedTaskId, selectedTask, setSelectedTask]);
 
+  // 🌐 Load graph data for selected task
+  useEffect(() => {
     const loadGraph = async () => {
+      if (!selectedTask) return;
+
       const taskNode: GraphNode = {
         id: `conte-${selectedTask.content_id}`,
         label: selectedTask.content_name,
@@ -52,14 +63,50 @@ const MoleculeMapPage = () => {
       };
 
       try {
+        console.log("🧬 Fetching graph for task:", taskNode);
         const result = await fetchNewGraphDataFromLegacyRoute(taskNode);
+        // ─── ADD THESE LOGS ───────────────────────────────────────────────────
+        console.log(
+          "🔍 [DEBUG] ALL NODES:",
+          result.nodes.map((n) => `${n.id} (type=${n.type})`)
+        );
+        console.log(
+          "🔍 [DEBUG] ALL LINKS:",
+          result.links.map((l) => `${l.id}: ${l.source}→${l.target}`)
+        );
+        console.log(
+          "🔍 [DEBUG] CLAIM NODES:",
+          result.nodes.filter(
+            (n) => n.type === "refClaim" || n.type === "taskClaim"
+          )
+        );
+        console.log(
+          "🔍 [DEBUG] CLAIM LINKS:",
+          result.links.filter(
+            (l) =>
+              l.source.startsWith("refClaim") ||
+              l.source.startsWith("taskClaim") ||
+              l.target.startsWith("refClaim") ||
+              l.target.startsWith("taskClaim")
+          )
+        );
+        // ─────────────────────────────────────────────────────────────────────
+
+        console.log("✅ Graph data loaded:", result);
         setGraphData(result);
       } catch (err) {
-        console.error("❌ Error loading graph data:", err);
+        console.error("🔥 Error loading graph data:", err);
       } finally {
         setLoading(false);
       }
     };
+
+    if (!selectedTask) {
+      console.warn("❌ No selected task — redirecting.");
+      setLoading(false);
+      navigate("/tasks", { state: { redirectTo: "/molecule" } });
+      return;
+    }
 
     loadGraph();
   }, [selectedTask, navigate]);
@@ -71,11 +118,11 @@ const MoleculeMapPage = () => {
   const handleReframeClick = async () => {
     if (!selectedNode) return;
 
-    const pivotType = selectedNode?.type as "task" | "author" | "publisher";
+    const pivotType = selectedNode.type as "task" | "author" | "publisher";
     const pivotId =
-      selectedNode?.content_id ??
-      selectedNode?.author_id ??
-      selectedNode?.publisher_id ??
+      selectedNode.content_id ??
+      selectedNode.author_id ??
+      selectedNode.publisher_id ??
       null;
 
     try {
@@ -89,8 +136,22 @@ const MoleculeMapPage = () => {
       console.error("❌ Error reframing graph:", err);
     }
   };
-  if (!selectedTask) return null;
 
+  if (!selectedTask || loading) {
+    console.log("[🧪 MoleculeMapPage] Not ready:", {
+      selectedTaskId,
+      selectedTask,
+      viewerId,
+      loading,
+    });
+    return (
+      <Center h="80vh">
+        <Spinner size="xl" color="teal.400" />
+      </Center>
+    );
+  }
+  console.log("🔗 Links in graphData:", graphData.links);
+  console.log("🧠 Nodes in graphData:", graphData.nodes);
   return (
     <Box p={4}>
       <Card mb={6} mt={2}>
@@ -113,11 +174,7 @@ const MoleculeMapPage = () => {
         Relationship Graph
       </Heading>
 
-      {loading ? (
-        <Center>
-          <Spinner size="xl" />
-        </Center>
-      ) : graphData.nodes.length > 0 ? (
+      {graphData.nodes.length > 0 ? (
         <Box position="relative" height="78vh">
           <GraphLegend />
           <CytoscapeMolecule

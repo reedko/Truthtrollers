@@ -127,7 +127,6 @@ export const updateAuthorRating = async (
 // 🔵 PUBLISHER RATINGS
 export const fetchPublisherRatings = async (publisherId: number) => {
   try {
-    console.log("🔵 Fetching pub ratings for:", publisherId);
     const res = await axios.get(
       `${API_BASE_URL}/api/publishers/${publisherId}/ratings`
     );
@@ -188,7 +187,7 @@ export async function fetchTaskById(taskId: number): Promise<Task> {
 
 //Fetch all taskinfo by publisher, author or task id
 export async function fetchUnifiedTasksByPivot(
-  pivotType: "task" | "author" | "publisher",
+  pivotType: "task" | "author" | "publisher" | "reference",
   pivotId: number
 ): Promise<Task[]> {
   const response = await fetch(

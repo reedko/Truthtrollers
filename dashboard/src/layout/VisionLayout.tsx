@@ -25,7 +25,7 @@ import { AccountMenu } from "../components/AccountMenu";
 
 const SIDEBAR_WIDTH = "220px";
 const HEADER_HEIGHT = "160px";
-console.log("💡 VisionLayout mounted, path:", window.location.pathname);
+
 const SidebarContent: React.FC = () => {
   const location = useLocation();
   const isTaskPage = location.pathname.startsWith("/tasks");
@@ -33,15 +33,17 @@ const SidebarContent: React.FC = () => {
   const setRedirect = useTaskStore((s) => s.setRedirect);
   const user = useAuthStore((s) => s.user);
   const viewerId = useTaskStore((s) => s.viewingUserId);
-  const resetTasks = useTaskStore((s) => s.resetTasks); // ✅ add this action
+  const resetTasks = useTaskStore((s) => s.resetTasks);
   const fetchTasksForUser = useTaskStore((s) => s.fetchTasksForUser);
+  const hasHydrated = useTaskStore((s) => s.hasHydrated);
 
+  // 🚦 Only fetch once Zustand store is hydrated
   useEffect(() => {
-    if (user?.user_id) {
+    if (hasHydrated && user?.user_id) {
       resetTasks();
-      fetchTasksForUser(user.user_id); // ✅ use the actual logged-in user
+      fetchTasksForUser(user.user_id);
     }
-  }, [user?.user_id]);
+  }, [hasHydrated, user?.user_id]);
 
   const createLink = (label: string, path: string) => (
     <RouterLink
@@ -73,6 +75,12 @@ const SidebarContent: React.FC = () => {
         selectedTaskId ? `/discussion/${selectedTaskId}` : "/tasks"
       )}
 
+      <RouterLink to="/game">
+        <HStack spacing={2} mb={2}>
+          <FiHome />
+          <Text>Game</Text>
+        </HStack>
+      </RouterLink>
       <HStack spacing={2} mb={2} align="center">
         <FiUser />
         <AccountMenu />
@@ -137,7 +145,6 @@ const VisionLayout: React.FC = () => {
         );
       }
 
-      // Clean up the URL
       params.delete("demo");
       const newSearch = params.toString();
       window.history.replaceState(
@@ -149,7 +156,7 @@ const VisionLayout: React.FC = () => {
   }, [location.search, location.pathname, setAuth]);
 
   return (
-    <React.Fragment>
+    <>
       <Sidebar />
 
       {isMobile && (
@@ -210,7 +217,7 @@ const VisionLayout: React.FC = () => {
       >
         <Outlet />
       </Box>
-    </React.Fragment>
+    </>
   );
 };
 

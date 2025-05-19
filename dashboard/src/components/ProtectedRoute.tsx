@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
 import { useTaskStore } from "../store/useTaskStore";
@@ -13,6 +13,7 @@ export default function ProtectedRoute({
   const user = useAuthStore((s) => s.user);
   const setAuth = useAuthStore((s) => s.setAuth);
   const viewingUserId = useTaskStore((s) => s.viewingUserId);
+  const setViewingUserId = useTaskStore((s) => s.setViewingUserId);
 
   const pathname = location.pathname;
   const params = new URLSearchParams(location.search);
@@ -59,6 +60,14 @@ export default function ProtectedRoute({
 
     return null;
   }
+
+  // ✅ 3️⃣ Always sync viewingUserId to user.user_id (if not already)
+  useEffect(() => {
+    if (user?.user_id && viewingUserId !== user.user_id) {
+      console.log("👁️ Syncing viewingUserId to", user.user_id);
+      setViewingUserId(user.user_id);
+    }
+  }, [user?.user_id, viewingUserId, setViewingUserId]);
 
   // ✅ 3️⃣ Require user/viewer for workspace/molecule
   const requiresViewer = ["/workspace", "/molecule"].some((p) =>

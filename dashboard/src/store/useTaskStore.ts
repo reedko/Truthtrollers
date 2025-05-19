@@ -51,10 +51,10 @@ export interface TaskStoreState {
   claimsByTask: { [taskId: number]: Claim[] };
   viewingUserId: number | null;
   selectedPivotTasks: Task[];
+  hasHydrated: boolean;
   resetTasks: () => void;
   setViewingUserId: (id: number | null) => void;
   setSelectedPivotTasks: (tasks: Task[]) => void;
-
   setSelectedTask: (input: Task | number | null) => void;
   setRedirect: (path: string) => void;
   fetchTasks: () => Promise<void>;
@@ -66,12 +66,10 @@ export interface TaskStoreState {
   fetchReferences: (taskId: number) => Promise<void>;
   fetchClaims: (taskId: number) => Promise<void>;
   fetchClaimReferences: (claimId: number) => Promise<void>;
-
   fetchTasksByPivot: (
     type: "task" | "author" | "publisher",
     id: number
   ) => Promise<Task[]>;
-
   addReferenceToTask: (taskId: number, referenceId: number) => Promise<void>;
   deleteReferenceFromTask: (
     taskId: number,
@@ -83,7 +81,6 @@ export interface TaskStoreState {
     userId: number,
     supportLevel: number
   ) => Promise<void>;
-
   setSelectedTopic: (topicName: string | undefined) => void;
   setSearchQuery: (query: string) => void;
   loadMoreTasks: () => Promise<void>;
@@ -112,13 +109,13 @@ export const useTaskStore = create<TaskStoreState>()(
       currentPage: 0,
       claimsByTask: {},
       viewingUserId: undefined,
+      hasHydrated: false,
 
       resetTasks: () =>
         set(() => ({
           selectedTask: null,
           claimsByTask: {},
           tasks: [],
-          // ... any other stale state
         })),
 
       setViewingUserId: (id: number | null) => set({ viewingUserId: id }),
@@ -143,6 +140,7 @@ export const useTaskStore = create<TaskStoreState>()(
       setSelectedPivotTasks: (tasks) => {
         set({ selectedPivotTasks: tasks });
       },
+
       fetchTasksByPivot: async (type, id) => {
         const results = await fetchUnifiedTasksByPivot(type, id);
         const authorsMap: Record<number, Author[]> = {};
@@ -165,6 +163,7 @@ export const useTaskStore = create<TaskStoreState>()(
 
         return results;
       },
+
       fetchTasks: async () => {
         const { currentPage } = get();
         const content = await fetchTasksAPI(currentPage + 1, 100);
@@ -196,10 +195,8 @@ export const useTaskStore = create<TaskStoreState>()(
 
       fetchTasksForUser: async (userId: number) => {
         const tasks = await fetchTasksForUserAPI(userId);
-
         const authorsMap: Record<number, Author[]> = {};
         const publishersMap: Record<number, Publisher[]> = {};
-        console.log("📦 Loading assignedTasks for userId:", userId);
         tasks.forEach((task) => {
           authorsMap[task.content_id] = Array.isArray(task.authors)
             ? task.authors
@@ -208,14 +205,12 @@ export const useTaskStore = create<TaskStoreState>()(
             ? task.publishers
             : [];
         });
-
         set({
           assignedTasks: tasks,
           authors: { ...get().authors, ...authorsMap },
           publishers: { ...get().publishers, ...publishersMap },
         });
       },
-      // ✅ Add this wrapper right below it:
 
       fetchUsers: async () => {
         const users = await fetchUsers();
@@ -255,11 +250,12 @@ export const useTaskStore = create<TaskStoreState>()(
         const claims = await fetchClaimsForTask(taskId, viewingUserId);
         set((s) => ({
           claimsByTask: {
-            ...s.claimsByTask, // 🛡️ preserve existing claims
-            [taskId]: claims, // ✅ just update this one
+            ...s.claimsByTask,
+            [taskId]: claims,
           },
         }));
       },
+
       fetchClaimReferences: async (claimId) => {
         const refs = await fetchClaimReferences(claimId);
         set((s) => ({
@@ -321,11 +317,17 @@ export const useTaskStore = create<TaskStoreState>()(
     })),
     {
       name: "task-store",
-      partialize: (state) => ({
-        selectedTaskId: state.selectedTaskId,
-        selectedTask: state.selectedTask,
-        selectedRedirect: state.selectedRedirect,
-      }),
+      partialize: (state) => {
+        const { hasHydrated, ...rest } = state;
+        return {
+          selectedTaskId: rest.selectedTaskId,
+          selectedTask: rest.selectedTask,
+          selectedRedirect: rest.selectedRedirect,
+        };
+      },
+      onRehydrateStorage: () => () => {
+        useTaskStore.setState({ hasHydrated: true });
+      },
     }
   )
 );

@@ -1424,21 +1424,19 @@ app.get("/api/unified-tasks/:pivotType/:pivotId", (req, res) => {
   let params = [pivotId];
 
   if (pivotType === "task") {
-    sql = `SELECT ... FROM content t WHERE t.content_id = ? AND t.content_type = 'task'`;
+    sql = `SELECT ... FROM content t WHERE t.content_id = ?`;
   } else if (pivotType === "author") {
     sql = `
       SELECT ...
       FROM content t
       JOIN content_authors ca ON t.content_id = ca.content_id
-      WHERE ca.author_id = ? AND t.content_type = 'task'
-    `;
+      WHERE ca.author_id = ?`;
   } else if (pivotType === "publisher") {
     sql = `
       SELECT ...
       FROM content t
       JOIN content_publishers cp ON t.content_id = cp.content_id
-      WHERE cp.publisher_id = ? AND t.content_type = 'task'
-    `;
+      WHERE cp.publisher_id = ?`;
   } else {
     return res.status(400).json({ error: "Invalid pivot type" });
   }
@@ -1447,7 +1445,7 @@ app.get("/api/unified-tasks/:pivotType/:pivotId", (req, res) => {
   sql = sql.replace(
     "SELECT ...",
     `
-    SELECT 
+    SELECT DISTINCT
       t.*,
       (
         SELECT topic_name 
@@ -2614,10 +2612,10 @@ app.get("/api/full-graph/:taskId", async (req, res) => {
     const links = await query(linkSql, [entity, entity, entity, entity]);
 
     // 2. Only claims & links actually connected to the task
-    const { claimNodeSql, claimLinkSql, params } =
+    const { claimNodeSql, claimNodeParams, claimLinkSql, claimLinkParams } =
       getLinkedClaimsAndLinksForTask(taskId, viewerId);
-    const claimNodes = await query(claimNodeSql, params);
-    const claimLinks = await query(claimLinkSql, params);
+    const claimNodes = await query(claimNodeSql, claimNodeParams);
+    const claimLinks = await query(claimLinkSql, claimLinkParams);
 
     // 3. Merge and return
     res.json({

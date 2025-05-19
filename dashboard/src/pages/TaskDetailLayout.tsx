@@ -35,7 +35,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
   }>({ nodes: [], links: [] });
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const cardRef = useRef<HTMLDivElement | null>(null);
-
+  const viewerId = useTaskStore((s) => s.viewingUserId);
   const authors = useTaskStore(
     useShallow((state) => state.authors?.[task.content_id] || [])
   );
@@ -135,6 +135,7 @@ const TaskDetailLayout: React.FC<TaskDetailLayoutProps> = ({
           </Heading>
           <Workspace
             contentId={task.content_id}
+            viewerId={viewerId}
             onHeightChange={setWorkspaceHeight}
           />
         </Box>

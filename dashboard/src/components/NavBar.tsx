@@ -1,4 +1,3 @@
-// NavBar.tsx (Responsive with compact mode)
 import {
   Box,
   Flex,
@@ -83,6 +82,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 <MenuItem as={RouterLink} to="/molecule">
                   Graph
                 </MenuItem>
+                <MenuItem as={RouterLink} to="/game">
+                  Game
+                </MenuItem>
                 <MenuItem
                   as={RouterLink}
                   to={
@@ -132,6 +134,13 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 onClick={() => handleNavClick("/discussion")}
               >
                 Discussion
+              </Link>
+              <Link
+                as={RouterLink}
+                to="/game"
+                onClick={() => handleNavClick("/game")}
+              >
+                Game
               </Link>
               <AccountMenu />
             </HStack>

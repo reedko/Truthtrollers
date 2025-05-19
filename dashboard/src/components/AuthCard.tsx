@@ -105,10 +105,6 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
       }
     }
   };
-  console.log(
-    "ACTIVE AUTHOR:",
-    `${API_BASE_URL}/${activeAuthor?.author_profile_pic}`
-  );
 
   const getBiasEmoji = (score: number) =>
     score <= -5 || score >= 5 ? "🔴" : "🟢";
@@ -124,7 +120,7 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
     const avg = values.reduce((acc, val) => acc + val, 0) / values.length;
     return avg.toFixed(1);
   };
-  console.log("🧠 Active Author:", activeAuthor);
+
   return (
     <Center>
       <Box
