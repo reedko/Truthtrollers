@@ -16,6 +16,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AccountSettingsPage from "./pages/AccountSettingsPage";
 import LogoutPage from "./pages/LogoutPage";
 import UserSelectionPage from "./pages/UserSelectionPage";
+import GamePreview from "./pages/GamePage";
 
 const router = createBrowserRouter([
   {
@@ -92,6 +93,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <UserSelectionPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/game",
+        element: (
+          <ProtectedRoute>
+            <GamePreview />
           </ProtectedRoute>
         ),
       },

@@ -10,7 +10,7 @@ import { Author, Publisher, Task } from "../../../shared/entities/types";
 import { ensureArray } from "../utils/normalize";
 
 interface UnifiedHeaderProps {
-  pivotType?: "task" | "author" | "publisher";
+  pivotType?: "task" | "author" | "publisher" | "reference";
   pivotId?: number;
 }
 
@@ -25,7 +25,9 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   const [pivotTask, setPivotTask] = useState<Task | null>(null);
 
   // 🔁 If no pivotId is passed, default to selectedTask
-  const resolvedPivotType = pivotType || "task";
+  const resolvedPivotType =
+    pivotType === "reference" ? "task" : pivotType || "task";
+
   const resolvedPivotId =
     pivotId !== undefined ? pivotId : selectedTask?.content_id ?? undefined;
 

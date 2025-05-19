@@ -1,18 +1,34 @@
-// pages/UserSelectionPage.tsx
+(""); // pages/UserSelectionPage.tsx
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Box, Heading, Text, VStack, Button, Spinner } from "@chakra-ui/react";
+import {
+  Box,
+  Heading,
+  Text,
+  VStack,
+  Button,
+  Spinner,
+  HStack,
+  useToast,
+} from "@chakra-ui/react";
 import { useTaskStore } from "../store/useTaskStore";
-import { api } from "../services/api"; // assuming axios instance
+import { api } from "../services/api";
 
 export default function UserSelectionPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
   const setViewingUserId = useTaskStore((s) => s.setViewingUserId);
   const navigate = useNavigate();
   const location = useLocation();
+  const toast = useToast();
 
-  const redirectTo = location.state?.redirectTo || "/workspace";
+  const refPath = new URL(document.referrer).pathname;
+  const fallbackRedirect = refPath.startsWith("/select-user")
+    ? "/workspace"
+    : refPath;
+
+  const redirectTo = location.state?.redirectTo || fallbackRedirect;
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -21,15 +37,26 @@ export default function UserSelectionPage() {
         setUsers(res.data);
       } catch (err) {
         console.error("Error loading users:", err);
+        toast({
+          title: "Error loading users",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
       } finally {
         setLoading(false);
       }
     };
     loadUsers();
-  }, []);
+  }, [toast]);
 
-  const handleSelect = (userId: number | null) => {
-    setViewingUserId(userId);
+  const handleConfirm = () => {
+    setViewingUserId(selectedId);
+    navigate(redirectTo);
+  };
+
+  const handleCancel = () => {
+    setViewingUserId(null);
     navigate(redirectTo);
   };
 
@@ -41,27 +68,42 @@ export default function UserSelectionPage() {
       {loading ? (
         <Spinner />
       ) : (
-        <VStack spacing={3} align="start">
-          <Button
-            onClick={() => handleSelect(null)}
-            colorScheme="green"
-            variant="outline"
-            width="100%"
-            justifyContent="flex-start"
-          >
-            👥 View All Users
-          </Button>
-          {users.map((user) => (
+        <>
+          <VStack spacing={3} align="start" mb={6}>
             <Button
-              key={user.user_id}
-              onClick={() => handleSelect(user.user_id)}
+              onClick={() => setSelectedId(null)}
+              colorScheme={selectedId === null ? "green" : "gray"}
+              variant="outline"
               width="100%"
               justifyContent="flex-start"
             >
-              {user.username} — {user.verimeter_score ?? 0} 🧠
+              👥 View All Users
             </Button>
-          ))}
-        </VStack>
+            {users.map((user) => (
+              <Button
+                key={user.user_id}
+                onClick={() => setSelectedId(user.user_id)}
+                colorScheme={selectedId === user.user_id ? "blue" : "gray"}
+                width="100%"
+                justifyContent="flex-start"
+              >
+                {user.username} — {user.verimeter_score ?? 0} 🧠
+              </Button>
+            ))}
+          </VStack>
+          <HStack spacing={4}>
+            <Button
+              onClick={handleConfirm}
+              colorScheme="blue"
+              isDisabled={selectedId === undefined}
+            >
+              Confirm Selection
+            </Button>
+            <Button onClick={handleCancel} variant="outline">
+              Cancel
+            </Button>
+          </HStack>
+        </>
       )}
     </Box>
   );

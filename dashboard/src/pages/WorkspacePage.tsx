@@ -1,6 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Box, Card, CardBody, Heading } from "@chakra-ui/react";
+import {
+  Box,
+  Card,
+  CardBody,
+  Heading,
+  Spinner,
+  Center,
+} from "@chakra-ui/react";
 import Workspace from "../components/Workspace";
 import UnifiedHeader from "../components/UnifiedHeader";
 import { useTaskStore } from "../store/useTaskStore";
@@ -12,36 +19,39 @@ const WorkspacePage = () => {
   const setSelectedTask = useTaskStore((s) => s.setSelectedTask);
   const setRedirect = useTaskStore((s) => s.setRedirect);
   const selectedRedirect = useTaskStore((s) => s.selectedRedirect);
-  const [hydrated, setHydrated] = useState(useTaskStore.persist.hasHydrated());
   const viewerId = useTaskStore((s) => s.viewingUserId);
 
+  // Try to restore selectedTask from content
   useEffect(() => {
-    if (!hydrated) {
-      const unsub = useTaskStore.persist.onFinishHydration(() =>
-        setHydrated(true)
-      );
-      return unsub;
-    }
-  }, [hydrated]);
-
-  useEffect(() => {
-    if (hydrated && taskId && !task) {
+    if (taskId && !task) {
       const all = useTaskStore.getState().content;
       const match = all.find((t) => t.content_id === taskId);
       if (match) {
+        console.log("🔁 Restoring task from content list", match);
         setSelectedTask(match);
       }
     }
-  }, [hydrated, taskId, task, setSelectedTask]);
+  }, [taskId, task, setSelectedTask]);
 
+  // Redirect if no taskId
   useEffect(() => {
-    if (hydrated && !taskId) {
-      if (!selectedRedirect) setRedirect("/workspace"); // ✅ only set if missing
+    if (!taskId) {
+      console.warn("⛔ No taskId — redirecting to /tasks");
+      if (!selectedRedirect) setRedirect("/workspace");
       navigate("/tasks");
     }
-  }, [hydrated, taskId, navigate, setRedirect, selectedRedirect]);
+  }, [taskId, navigate, setRedirect, selectedRedirect]);
 
-  if (!hydrated || !taskId || !task) return null;
+  const isReady = taskId != null && task != null && viewerId != null;
+
+  if (!isReady) {
+    console.log("⏳ Not ready:", { taskId, task, viewerId });
+    return (
+      <Center h="80vh">
+        <Spinner size="xl" color="teal.400" />
+      </Center>
+    );
+  }
 
   return (
     <Box p={4}>

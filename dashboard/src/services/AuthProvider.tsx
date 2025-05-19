@@ -1,9 +1,13 @@
 // src/App.tsx (or AuthProvider.tsx)
-import React, { useEffect } from "react";
+import React, { ReactNode, useEffect } from "react";
 import { api } from "./api"; // axios instance
 import { useAuthStore } from "../store/useAuthStore";
 
-export function AuthBootstrap({ children }) {
+interface AuthBootstrapProps {
+  children: ReactNode;
+}
+
+export function AuthBootstrap({ children }: AuthBootstrapProps) {
   const setAuth = useAuthStore((s) => s.setAuth);
 
   useEffect(() => {
