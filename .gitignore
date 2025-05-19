@@ -23,7 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 *.env
+*.env build
+*.env dev
 backend/*.env
 backend/.env
+backend/.env build
+backend/.env dev
 
 extension/public/background.js
