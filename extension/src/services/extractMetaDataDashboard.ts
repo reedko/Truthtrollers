@@ -70,7 +70,7 @@ export const extractImageFromHtml = (
 
   let ogImage = $('meta[property="og:image"]').attr("content");
   if (ogImage) {
-    ogImage = decodeURIComponent(ogImage);
+    //ogImage = decodeURIComponent(ogImage);
     ogImage = resolveUrl(ogImage, baseUrl);
     if (isProcessableImage(ogImage)) return ogImage;
   }
@@ -232,7 +232,9 @@ export const fetchExternalPageContent = async (
   let isPdf = url.toLowerCase().endsWith(".pdf");
 
   if (!isPdf) {
+    console.log("checkingpdf");
     isPdf = await checkIfPdfViaHead(url);
+    console.log("checkingpdfdone");
   }
 
   if (isPdf) {

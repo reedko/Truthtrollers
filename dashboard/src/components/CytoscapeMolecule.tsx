@@ -279,7 +279,29 @@ function restoreNodePositions(
     }
   });
 }
-
+// ---- CytoscapeThrobbage™ ----
+function startThrobbing(node: any) {
+  let growing = true;
+  const minSize = node.width();
+  const maxSize = minSize * 1.18;
+  let throbInterval = setInterval(() => {
+    node.animate(
+      {
+        style: {
+          width: growing ? maxSize : minSize,
+          height: growing ? maxSize : minSize,
+        },
+      },
+      {
+        duration: 380,
+        complete: () => {
+          growing = !growing;
+        },
+      }
+    );
+  }, 420);
+  node.data("throbInterval", throbInterval);
+}
 // All other unchanged code is retained as-is
 
 const API_BASE_URL =
@@ -515,6 +537,23 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       ],
     });
 
+    const activatedContentIds = new Set(
+      nodes
+        .filter((n) => n.type === "refClaim" || n.type === "taskClaim")
+        .map((n) => n.content_id)
+        .filter(Boolean)
+    );
+    const activatedNodeIds = new Set(
+      [...activatedContentIds].map((cid) => `conte-${cid}`)
+    );
+    cy.ready(() => {
+      cy.nodes().forEach((node) => {
+        if (activatedNodeIds.has(node.id())) {
+          startThrobbing(node);
+          node.addClass("throb");
+        }
+      });
+    });
     cyInstance.current = cy;
 
     cy.on("mouseover", "edge", (event) => {
@@ -827,7 +866,14 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       });
     });
 
-    return () => cy.destroy();
+    return () => {
+      if (cy) {
+        cy.nodes(".throb").forEach((node) => {
+          clearInterval(node.data("throbInterval"));
+        });
+        cy.destroy();
+      }
+    };
   }, [nodes, links]);
 
   return (

@@ -26,6 +26,7 @@ import fs from "fs-extra";
 import http from "http";
 import https from "https";
 import fetchWithPuppeteer from "./routes/fetchWithPuppeteer.js"; //
+import { DEFAULT_HEADERS } from "./routes/fetchWithPuppeteer.js";
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
 
 import { spawn } from "child_process";
@@ -34,6 +35,8 @@ import registerBeaconRoutes from "./routes/beaconRoutes.js";
 import fetch from "node-fetch";
 import nodemailer from "nodemailer";
 import { decodeJwt } from "./utils/jwt.js";
+
+import { parseOrRepairJSON } from "./utils/repairJson.js";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -115,6 +118,7 @@ const assetsPath = path.join(__dirname, "assets");
 const DIFFBOT_TOKEN = process.env.REACT_APP_DIFFBOT_TOKEN;
 const DIFFBOT_BASE_URL = process.env.REACT_APP_DIFFBOT_BASE_URL;
 const BASE_URL = process.env.REACT_APP_BASE_URL;
+const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 
 app.use("/assets", express.static(assetsPath));
 
@@ -268,6 +272,18 @@ app.post("/api/extract-readable-text", (req, res) => {
   }
 });
 //prse pdfs:
+app.get("/api/check-pdf-head", async (req, res) => {
+  const url = req.query.url;
+  console.log(url, "incheck-pdf-head");
+  try {
+    const headRes = await fetch(url, { method: "HEAD" });
+    const contentType = headRes.headers.get("content-type") || "";
+    res.json({ isPdf: contentType.includes("application/pdf") });
+  } catch (e) {
+    res.json({ isPdf: false, error: e.message });
+  }
+});
+
 app.post("/api/fetch-pdf-text", async (req, res) => {
   const { url } = req.body;
 
@@ -2268,7 +2284,11 @@ app.post("/api/addContent", async (req, res) => {
   const imageFilename = `content_id_${contentId}.png`;
 
   const imagePath = `assets/images/content/${imageFilename}`;
-  //console.log("IMAGEFILENAME:", imagePath);
+  console.log("IMAGEFILENAME:", imagePath);
+
+  let buffer;
+  let usedPuppeteer = false;
+
   try {
     // Step 2: Download and resize the image
     const axiosInstance = axios.create({
@@ -2280,38 +2300,66 @@ app.post("/api/addContent", async (req, res) => {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        Referer: thumbnail, // Optional: Helps if the server checks the origin
+        Referer: url, // Optional: Helps if the server checks the origin
         Accept:
           "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
       },
+      validateStatus: function (status) {
+        // Accept only 2xx
+        return status >= 200 && status < 300; // default
+      },
     });
 
-    const buffer = Buffer.from(response.data, "binary");
+    buffer = Buffer.from(response.data, "binary");
+    console.log("✅ Downloaded image with Axios.");
+  } catch (axiosErr) {
+    // Only try Puppeteer if the error is a network/HTTP error
+    console.warn(
+      "⚠️ Axios image fetch failed, falling back to Puppeteer...",
+      axiosErr.message
+    );
 
     try {
-      await sharp(buffer).resize({ width: 300 }).toFile(imagePath);
-    } catch (error) {
-      console.error("Error resizing image:", error);
+      // Use your Puppeteer image download logic here
+      const puppeteerRes = await axios.post(
+        `${BASE_URL}/api/fetch-image-with-puppeteer`,
+        { imageUrl: thumbnail },
+        { responseType: "arraybuffer" }
+      );
+      buffer = Buffer.from(puppeteerRes.data, "binary");
+      usedPuppeteer = true;
+      console.log("✅ Downloaded image with Puppeteer.");
+    } catch (puppeteerErr) {
+      console.error(
+        "❌ Both Axios and Puppeteer image fetch failed.",
+        puppeteerErr
+      );
+      return res.status(500).send("Image download failed");
     }
-    // Step 3: Update the task with the thumbnail path
-    //change thumbnail path from absolute to relative
-    const relativeImagePath = getRelativePath(imagePath);
-    const updateQuery = "UPDATE content SET thumbnail = ? WHERE content_id = ?";
-    db.query(updateQuery, [relativeImagePath, contentId], (updateErr) => {
-      if (updateErr) {
-        console.error("Error updating task with thumbnail:", updateErr);
-        return res.status(500).send("Database update error");
-      }
-      console.log("✅ Server Response:", {
-        success: true,
-        content_id: contentId,
-      });
-      res.status(200).send({ success: true, content_id: contentId });
-    });
-  } catch (imageError) {
-    console.error("Error handling image:", imageError);
-    res.status(500).send("Image processing error");
   }
+
+  try {
+    await sharp(buffer).resize({ width: 300 }).toFile(imagePath);
+  } catch (error) {
+    console.error("Error resizing image:", error);
+    return res.status(500).send("Image processing error");
+  }
+
+  // Step 3: Update the task with the thumbnail path
+  //change thumbnail path from absolute to relative
+  const relativeImagePath = getRelativePath(imagePath);
+  const updateQuery = "UPDATE content SET thumbnail = ? WHERE content_id = ?";
+  db.query(updateQuery, [relativeImagePath, contentId], (updateErr) => {
+    if (updateErr) {
+      console.error("Error updating task with thumbnail:", updateErr);
+      return res.status(500).send("Database update error");
+    }
+    console.log("✅ Server Response:", {
+      success: true,
+      content_id: contentId,
+    });
+    res.status(200).send({ success: true, content_id: contentId });
+  });
 });
 
 app.get("/api/check-reference", async (req, res) => {
@@ -2333,6 +2381,123 @@ app.get("/api/check-reference", async (req, res) => {
     return res.status(500).json({ error: "Database lookup failed" });
   }
 });
+
+app.post("/api/analyze-content", async (req, res) => {
+  const { content } = req.body;
+  if (!content) {
+    return res.status(400).json({ error: "Missing 'content' in request body" });
+  }
+
+  try {
+    const results = await callOpenAiAnalyze(content);
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+function parseOrRepairJSON2(input) {
+  try {
+    return JSON.parse(input);
+  } catch (err) {
+    // Attempt repair: remove trailing commas
+    const fixed = input.replace(/,\s*([\]}])/g, "$1");
+    try {
+      return JSON.parse(fixed);
+    } catch (repairErr) {
+      throw new Error("Irreparable JSON");
+    }
+  }
+}
+
+async function callOpenAiAnalyze(content) {
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: "gpt-4-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "You are a combined topic and claim extraction assistant.",
+        },
+        {
+          role: "user",
+          content: `
+You are a fact-checking assistant.
+
+First, identify the most general topic (max 2 words) for this text.
+Then, list more specific subtopics under that topic (2 to 5).
+Next, extract every distinct factual assertion or claim — especially those with numbers, statistics, or timelines. 
+Avoid generalizations or summaries. Do not combine multiple claims. 
+Each claim must be independently verifiable and phrased as a full sentence.
+
+Return your answer in strict JSON like this:
+{
+  "generalTopic": "<string>",
+  "specificTopics": ["<string>", "<string>"],
+  "claims": ["<claim1>", "<claim2>", ...]
+}
+
+Text:
+${content}
+          `,
+        },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    let errorMessage = `OpenAI request failed: ${response.status} ${response.statusText}`;
+
+    try {
+      const errorData = await response.json();
+      if (errorData?.error?.message) {
+        errorMessage += ` — ${errorData.error.message}`;
+      }
+    } catch (jsonErr) {
+      console.warn("⚠️ Failed to parse error response JSON", jsonErr);
+    }
+
+    throw new Error(errorMessage);
+  }
+
+  const data = await response.json();
+  if (!data.choices || data.choices.length === 0) {
+    throw new Error("No completion returned from OpenAI");
+  }
+
+  const rawReply = data.choices[0].message.content.trim();
+  let cleanedReply = rawReply.trim(); // Remove extra spaces
+
+  // Strip GPT's triple backticks if present
+  if (cleanedReply.startsWith("```json")) {
+    cleanedReply = cleanedReply
+      .replace(/^```json/, "")
+      .replace(/```$/, "")
+      .trim();
+  }
+  // Attempt to parse the JSON
+  let parsed;
+  try {
+    parsed = parseOrRepairJSON(cleanedReply);
+  } catch (err) {
+    console.error("Invalid JSON from GPT:", cleanedReply);
+    console.error("Parse error:", err);
+    throw new Error("GPT returned invalid JSON");
+  }
+
+  return {
+    generalTopic: parsed.generalTopic || "Unknown",
+    specificTopics: Array.isArray(parsed.specificTopics)
+      ? parsed.specificTopics
+      : [],
+    claims: Array.isArray(parsed.claims) ? parsed.claims : [],
+  };
+}
 
 app.post("/api/pre-scrape", async (req, res) => {
   const { articleUrl } = req.body;
@@ -2494,6 +2659,53 @@ app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
  */
 import puppeteer from "puppeteer";
 import { collapseTextChangeRangesAcrossMultipleVersions } from "typescript";
+
+app.post("/api/fetch-image-with-puppeteer", async (req, res) => {
+  const { imageUrl } = req.body;
+  if (!imageUrl || typeof imageUrl !== "string") {
+    return res.status(400).json({ error: "Missing or invalid imageUrl" });
+  }
+
+  let browser;
+  try {
+    browser = await puppeteer.launch({
+      headless: true,
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+
+    const page = await browser.newPage();
+    await page.setUserAgent(DEFAULT_HEADERS["User-Agent"]);
+    await page.setExtraHTTPHeaders(DEFAULT_HEADERS);
+
+    // Navigate to a blank page first to set cookies etc if you want
+    await page.goto("about:blank");
+    // Go to the image url directly
+    const viewSource = await page.goto(imageUrl, {
+      waitUntil: "networkidle2",
+      timeout: 30000,
+    });
+
+    const buffer = await viewSource.buffer();
+    // Option 1: Send as base64 (easy for frontend)
+    // const base64 = buffer.toString('base64');
+    // res.json({ success: true, base64 });
+
+    // Option 2: Send as image/binary for backend processing
+    res.set(
+      "Content-Type",
+      viewSource.headers()["content-type"] || "image/jpeg"
+    );
+    res.send(buffer);
+
+    await browser.close();
+  } catch (err) {
+    if (browser) await browser.close();
+    console.error("🧨 Puppeteer image error:", err.message);
+    res
+      .status(500)
+      .json({ error: "Puppeteer image fetch error", details: err.message });
+  }
+});
 
 app.post("/api/fetch-page-content", async (req, res) => {
   const { url } = req.body;

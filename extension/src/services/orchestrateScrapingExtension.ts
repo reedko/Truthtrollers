@@ -29,11 +29,17 @@ interface ReadabilityResponse {
   text?: string;
 }
 const fetchDiffbotData = async (articleUrl: string): Promise<any> => {
+  const result = await browser.runtime.sendMessage({ action: "pingTest" });
+  console.log("pongTest result:", result);
   try {
+    console.log("🔔 [Content] about to ask background for Diffbot data…");
     const response = await browser.runtime.sendMessage({
-      action: "fetchDiffbotData",
+      action: "fetchDiffbotDataTest",
       articleUrl,
     });
+    console.log("🔔 [Content] got back from background:", response);
+    const result2 = await browser.runtime.sendMessage({ action: "pingTest" });
+    console.log("pongTest result2:", result2);
     return response;
   } catch (err) {
     console.error("Failed to fetch Diffbot data:", err);

@@ -1,6 +1,7 @@
 import { parseOrRepairJSON, GptJson } from "../utils/repairJson";
 
 const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
+const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 
 async function callOpenAiAnalyze(content: string): Promise<{
   generalTopic: string;
@@ -95,11 +96,11 @@ export async function analyzeContent(content: string): Promise<{
   specificTopics: string[];
   claims: string[];
 }> {
-  try {
-    console.warn("⚠️ Running outside extension, calling OpenAI API directly.");
-    return await callOpenAiAnalyze(content);
-  } catch (err) {
-    console.error("❌ Error in analyzeContent:", err);
-    throw err;
-  }
+  const res = await fetch(`${BASE_URL}/api/analyze-content`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  const data = await res.json();
+  return data; // should have {generalTopic, specificTopics, claims}
 }

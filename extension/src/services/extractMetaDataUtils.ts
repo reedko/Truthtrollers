@@ -188,7 +188,29 @@ export const extractAuthors = async (
       image: null,
     });
   }
+  $('[class*="author"][class*="wrapper"]').each((_, authorWrapper) => {
+    // Try to get name from various possible elements inside the wrapper
+    let name =
+      $(authorWrapper).find(".text-weight-semibold").text().trim() ||
+      $(authorWrapper).find('[class*="name"]').first().text().trim() ||
+      $(authorWrapper).find("strong").first().text().trim() ||
+      $(authorWrapper).find("a").first().text().trim();
 
+    // Try to get image src from common class or any img inside
+    let image = $(authorWrapper).find("img").first().attr("src") || null;
+
+    if (name) {
+      authors.push({
+        name,
+        description: null,
+        image,
+      });
+      console.log("✨ Found author via [class*='author'][class*='wrapper']:", {
+        name,
+        image,
+      });
+    }
+  });
   // ✅ Extract from JSON-LD
   $('script[type="application/ld+json"]').each((_, scriptTag) => {
     console.log("trying ld+json");
@@ -492,14 +514,13 @@ export const extractReferences = async (
 
   return uniqueReferences;
 };
+const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 
-export const checkIfPdfViaHead = async (url: string): Promise<boolean> => {
-  try {
-    const res = await fetch(url, { method: "HEAD" });
-    const contentType = res.headers.get("Content-Type") || "";
-    return contentType.includes("application/pdf");
-  } catch (e) {
-    console.warn("❌ PDF HEAD check failed:", e);
-    return false;
-  }
+export const checkIfPdfViaHead = async (url: string) => {
+  console.log("toapi");
+  const res = await fetch(
+    `${BASE_URL}/api/check-pdf-head?url=${encodeURIComponent(url)}`
+  );
+  const data = await res.json();
+  return data.isPdf;
 };
