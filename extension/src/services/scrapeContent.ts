@@ -1,8 +1,7 @@
-import { orchestrateScraping } from "./orchestrateScraping";
-import createTask from "./createTask";
+import { orchestrateScraping } from "./orchestrateScrapingExtension";
+import createTask from "./createTaskExtension";
 import { TaskData, Lit_references } from "../entities/Task";
 
-const EXTENSION_ID = "phacjklngoihnlhcadefaiokbacnagbf";
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 
 const getFileType = (url: string): string => {

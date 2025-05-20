@@ -18,10 +18,20 @@ const createTask = async (taskData: TaskData): Promise<string | null> => {
 
     await Promise.all([
       taskData.authors.length > 0
-        ? addAuthors(contentId, taskData.authors, true)
+        ? addAuthors(
+            contentId,
+            taskData.authors,
+            true,
+            browser.runtime.sendMessage
+          )
         : Promise.resolve(),
       taskData.publisherName
-        ? addPublisher(contentId, taskData.publisherName, true)
+        ? addPublisher(
+            contentId,
+            taskData.publisherName,
+            true,
+            browser.runtime.sendMessage
+          )
         : Promise.resolve(),
       taskData.Claims.length > 0
         ? storeClaimsInDB(
@@ -29,7 +39,8 @@ const createTask = async (taskData: TaskData): Promise<string | null> => {
             taskData.Claims,
             taskData.content_type,
             null,
-            true
+            true,
+            browser.runtime.sendMessage
           )
         : Promise.resolve(),
     ]);

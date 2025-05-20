@@ -120,7 +120,6 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
     leftX === 0 ||
     rightX === 0 // 👈 instead of containerX === 0// 👈 prevent premature render
   ) {
-    console.log("⏳ Waiting for valid X positions before drawing links...");
     return null;
   }
   if (!leftItems.length || !rightItems.length || !links.length) {
