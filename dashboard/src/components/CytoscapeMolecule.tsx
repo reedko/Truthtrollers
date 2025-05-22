@@ -7,14 +7,165 @@ import cytoscape, { EdgeSingular, NodeSingular } from "cytoscape";
 import { Box, Button, Text, useToast } from "@chakra-ui/react";
 import { createPortal } from "react-dom";
 import { GraphNode } from "../../../shared/entities/types";
+async function animateMoleculeScene({
+  cy,
+  node,
+  taskNode,
+  nodes,
+  links,
+  originalNodePositions,
+  lastRefNode,
+  lastRefOriginalPos,
+}: {
+  cy: cytoscape.Core;
+  node: NodeSingular;
+  taskNode: NodeSingular;
+  nodes: NodeData[];
+  links: LinkData[];
+  originalNodePositions: React.MutableRefObject<
+    Record<string, cytoscape.Position>
+  >;
+  lastRefNode: React.MutableRefObject<NodeSingular | null>;
+  lastRefOriginalPos: React.MutableRefObject<{ x: number; y: number } | null>;
+}) {
+  const contentId = node.data("content_id");
 
-function fartScatterAwayFromRef({
+  // Step 1: Restore nodes
+  if (
+    lastRefNode.current &&
+    lastRefOriginalPos.current &&
+    lastRefNode.current.id() !== node.id()
+  ) {
+    lastRefNode.current.position(lastRefOriginalPos.current);
+  }
+  if (Object.keys(originalNodePositions.current).length > 0) {
+    await restoreNodePositions(cy, originalNodePositions);
+  }
+
+  // Step 2: Gather refClaims and taskClaims
+  const refClaims = nodes.filter(
+    (n) => n.type === "refClaim" && n.content_id === contentId
+  );
+  const claimLinks = links.filter((l) =>
+    refClaims.some((rc) => rc.id === l.source)
+  );
+  const claimsWithRelation = claimLinks
+    .map((link) => {
+      const claim = refClaims.find((rc) => rc.id === link.source);
+      return claim
+        ? {
+            claim,
+            relation: link.relation || "related",
+            notes: link.notes || "",
+          }
+        : null;
+    })
+    .filter((x): x is NonNullable<typeof x> => !!x);
+
+  const taskClaimMap = new Map(
+    nodes.filter((n) => n.type === "taskClaim").map((n) => [n.id, n])
+  );
+  const linkedTaskClaims = claimLinks
+    .map((l) => taskClaimMap.get(l.target))
+    .filter((n): n is NodeData => !!n);
+
+  const taskClaimsWithRelation = claimLinks
+    .map((link) => {
+      const claim = taskClaimMap.get(link.target);
+      return claim
+        ? {
+            claim,
+            relation: link.relation || "related",
+            notes: link.notes || "",
+          }
+        : null;
+    })
+    .filter((x): x is NonNullable<typeof x> => !!x);
+
+  if (refClaims.length === 0 && linkedTaskClaims.length === 0) return;
+
+  // Step 3: Scatter first
+  lastRefOriginalPos.current = { ...node.position() };
+  lastRefNode.current = node;
+
+  await fartScatterAwayFromRef({
+    cy,
+    refNode: node,
+    taskNode,
+    radius: 300,
+    radiusStep: 40,
+    dipRange: 5,
+  });
+
+  // Step 4: Fan out claim nodes
+  const refClaimElements = await fanOutClaims({
+    cy,
+    claimsWithRelation,
+    sourceNode: node,
+    targetNode: taskNode,
+  });
+
+  const taskClaimElements = await fanOutClaims({
+    cy,
+    claimsWithRelation: taskClaimsWithRelation,
+    sourceNode: taskNode,
+    targetNode: node,
+  });
+
+  // Step 5: Add linking edges
+  const addedEdges = claimLinks.map((link) => ({
+    data: {
+      ...link,
+      relation: link.relation || "related",
+    },
+  }));
+
+  cy.add([...refClaimElements, ...taskClaimElements, ...addedEdges]);
+
+  // Step 6: Fit view
+  cy.fit(cy.elements(), 15);
+}
+
+function animateNode(
+  node: NodeSingular,
+  options: { position: { x: number; y: number } },
+  duration = 400
+): Promise<void> {
+  return new Promise((resolve) => {
+    node.animate(options, {
+      duration,
+      complete: () => resolve(),
+    });
+  });
+}
+function animateNodes(
+  nodes: cytoscape.SingularElementArgument[],
+  optionsList: { position: { x: number; y: number } }[],
+  duration = 500
+): Promise<void> {
+  return new Promise((resolve) => {
+    let finished = 0;
+    nodes.forEach((node, i) => {
+      node.animate(optionsList[i], {
+        duration,
+        easing: "ease-in-out",
+        complete: () => {
+          finished++;
+          if (finished === nodes.length) resolve();
+        },
+      });
+    });
+    if (nodes.length === 0) resolve();
+  });
+}
+
+async function fartScatterAwayFromRef({
   cy,
   refNode,
   taskNode,
   radius = 300,
   radiusStep = 40,
-  dipRange = 5, // how many nodes on each side participate in the dip rise
+  dipRange = 5,
 }: {
   cy: cytoscape.Core;
   refNode: NodeSingular;
@@ -22,7 +173,7 @@ function fartScatterAwayFromRef({
   radius?: number;
   radiusStep?: number;
   dipRange?: number;
-}) {
+}): Promise<void> {
   const center = taskNode.position();
   const refPos = refNode.position();
 
@@ -33,15 +184,18 @@ function fartScatterAwayFromRef({
   const arcSpan = (3 * Math.PI) / 2;
   const startAngle = angleToRef + Math.PI - arcSpan / 2;
 
-  const nodesToScatter = cy.nodes().filter((node) => {
-    const id = node.id();
-    const type = node.data("type");
-    return (
-      id !== refNode.id() &&
-      id !== taskNode.id() &&
-      ["reference", "author", "publisher"].includes(type)
-    );
-  });
+  const nodesToScatter = cy
+    .nodes()
+    .filter((node) => {
+      const id = node.id();
+      const type = node.data("type");
+      return (
+        id !== refNode.id() &&
+        id !== taskNode.id() &&
+        ["reference", "author", "publisher"].includes(type)
+      );
+    })
+    .toArray();
 
   const centerIndex = (nodesToScatter.length - 1) / 2;
 
@@ -55,7 +209,7 @@ function fartScatterAwayFromRef({
     }
   }
 
-  nodesToScatter.forEach((node, i) => {
+  const optionsList = nodesToScatter.map((node, i) => {
     const t = i / Math.max(1, nodesToScatter.length - 1);
     const angle = startAngle + t * arcSpan;
 
@@ -65,12 +219,12 @@ function fartScatterAwayFromRef({
     const newX = center.x + effectiveRadius * Math.cos(angle);
     const newY = center.y + effectiveRadius * Math.sin(angle);
 
-    node.animate(
-      { position: { x: newX, y: newY } },
-      { duration: 500, easing: "ease-in-out" }
-    );
+    return { position: { x: newX, y: newY } };
   });
+
+  await animateNodes(nodesToScatter, optionsList, 500);
 }
+
 function bellValley(
   i: number,
   center: number,
@@ -169,7 +323,7 @@ function pushAwayOtherNodes(
   });
 }
 
-function fanOutClaims({
+async function fanOutClaims({
   cy,
   claimsWithRelation,
   sourceNode,
@@ -189,9 +343,8 @@ function fanOutClaims({
   minDistance?: number;
   arcSpan?: number;
   centerShiftFactor?: number;
-}): cytoscape.ElementDefinition[] {
+}): Promise<cytoscape.ElementDefinition[]> {
   const isRef = sourceNode.data("type") === "reference";
-  const isTask = sourceNode.data("type") === "task";
   const originalPos = { ...sourceNode.position() };
   const targetPos = targetNode.position();
   const dx = targetPos.x - originalPos.x;
@@ -213,25 +366,12 @@ function fanOutClaims({
   const radius = neededArcLength / arcSpan;
   const added: cytoscape.ElementDefinition[] = [];
 
-  claimsWithRelation.forEach(({ claim, relation, notes }, i) => {
-    const angle =
-      -arcSpan / 2 +
-      (i / (claimsWithRelation.length - 1 || 1)) * arcSpan +
-      angleRadians;
-    const x = arcCenter.x + radius * Math.cos(angle);
-    const y = arcCenter.y + radius * Math.sin(angle);
-
-    // Add the node
+  // First, add missing nodes/edges
+  claimsWithRelation.forEach(({ claim, relation, notes }) => {
     if (!cy.getElementById(claim.id).nonempty()) {
       cy.add({ data: claim });
       added.push({ data: claim });
     }
-
-    const claimNode = cy.getElementById(claim.id).first() as NodeSingular;
-    claimNode.position(arcCenter);
-    claimNode.animate({ position: { x, y } }, { duration: 400 });
-
-    // Add the edge with relation and notes
     const edgeId = `edge-${claim.id}-${sourceNode.id()}`;
     if (!cy.getElementById(edgeId).nonempty()) {
       added.push({
@@ -246,6 +386,21 @@ function fanOutClaims({
     }
   });
 
+  // Then animate them all in parallel and wait for completion
+  const promises = claimsWithRelation.map(({ claim }, i) => {
+    const angle =
+      -arcSpan / 2 +
+      (i / (claimsWithRelation.length - 1 || 1)) * arcSpan +
+      angleRadians;
+    const x = arcCenter.x + radius * Math.cos(angle);
+    const y = arcCenter.y + radius * Math.sin(angle);
+
+    const claimNode = cy.getElementById(claim.id).first() as NodeSingular;
+    claimNode.position(arcCenter);
+    return animateNode(claimNode, { position: { x, y } }, 400);
+  });
+
+  await Promise.all(promises);
   return added;
 }
 
@@ -263,21 +418,18 @@ function saveNodePositions(
   });
 }
 
-function restoreNodePositions(
+async function restoreNodePositions(
   cy: cytoscape.Core,
-  store: React.MutableRefObject<Record<string, cytoscape.Position>>,
-  excludeId?: string
-) {
+  store: React.MutableRefObject<Record<string, cytoscape.Position>>
+): Promise<void> {
+  const promises: Promise<void>[] = [];
   Object.entries(store.current).forEach(([id, pos]) => {
-    if (id === excludeId) return;
     const nodeToRestore = cy.getElementById(id).first() as NodeSingular;
     if (nodeToRestore.nonempty()) {
-      nodeToRestore.animate(
-        { position: pos },
-        { duration: 400, easing: "ease-in-out" }
-      );
+      promises.push(animateNode(nodeToRestore, { position: pos }, 400));
     }
   });
+  await Promise.all(promises);
 }
 // ---- CytoscapeThrobbage™ ----
 function startThrobbing(node: any) {
@@ -489,7 +641,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                   : 0;
               const path =
                 {
-                  0: `authors/author_id_${id.replace("autho-", "")}.png`,
+                  0: `ttlogo11.png`,
                   1: `authors/author_id_${id.replace("autho-", "")}.png`,
                   2: `content/content_id_${id.replace("conte-", "")}.png`,
                   3: `publishers/publisher_id_${id.replace("publi-", "")}.png`,
@@ -531,12 +683,14 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             "target-arrow-color": "#aaa",
             "target-arrow-shape": "triangle",
             "curve-style": "unbundled-bezier",
-            "control-point-step-size": 60,
+            "control-point-distances": [40],
+            "control-point-weights": [0.5],
           },
         },
       ],
     });
-
+    // @ts-ignore
+    window.cy = cy;
     const activatedContentIds = new Set(
       nodes
         .filter((n) => n.type === "refClaim" || n.type === "taskClaim")
@@ -686,19 +840,16 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       }
       // 📍 Handle reference click
       if (type === "reference") {
-        setTimeout(() => {
-          saveNodePositions(cy, originalNodePositions); // Save before fanout
-
+        (async () => {
+          //saveNodePositions(cy, originalNodePositions); // Save before fanout
+          await restoreNodePositions(cy, originalNodePositions);
           const refClaims = nodes.filter(
             (n) => n.type === "refClaim" && n.content_id === contentId
           );
-          // <-- Insert this log right here:
-          console.log("🔍 [DEBUG] refClaims:", refClaims);
+
           const claimLinks = links.filter((l) =>
             refClaims.some((rc) => rc.id === l.source)
           );
-          // <-- And this log right here:
-          console.log("🔍 [DEBUG] claimLinks:", claimLinks);
 
           const claimsWithRelation: {
             claim: NodeData;
@@ -782,8 +933,16 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             .first() as NodeSingular;
           console.log("🔍 [DEBUG] linkedTaskClaims:", linkedTaskClaims);
           const added: cytoscape.ElementDefinition[] = [];
-
-          const refClaimElements = fanOutClaims({
+          // 🟡 SCATTER and WAIT
+          await fartScatterAwayFromRef({
+            cy,
+            refNode: node,
+            taskNode,
+            radius: 300,
+            radiusStep: 40,
+            dipRange: 5,
+          });
+          const refClaimElements = await fanOutClaims({
             cy,
             claimsWithRelation,
             sourceNode: node,
@@ -791,7 +950,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           });
           added.push(...refClaimElements);
 
-          const taskClaimElements = fanOutClaims({
+          const taskClaimElements = await fanOutClaims({
             cy,
             claimsWithRelation: taskClaimsWithRelation,
             sourceNode: taskNode,
@@ -823,27 +982,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
           // 🌀 Instant zoom-to-fit
           cy.fit(cy.elements(), 15);
-          fartScatterAwayFromRef({
-            cy,
-            refNode: node,
-            taskNode,
-          });
-          /*  fartScatterAwayFromRef({
-            cy,
-            refNode: node,
-            taskNode,
-            excludeIds: [node.id(), taskNode.id()],
-            radius: 420 + refClaims.length * 25,
-          }); */
-          /*   smartRadialPush({
-            cy,
-            center: taskNode.position(),
-            excludeIds: [node.id(), taskNode.id()],
-            minRadius: 300 + refClaims.length * 40, // room for fanout
-          }); */
-          //pushAwayOtherNodes(cy, node.position(), [node.id(), taskNode.id()]);
-          // ✅ Capture new positions after push, so we can restore accurately later
-        }, 420);
+        })();
       }
     });
 
