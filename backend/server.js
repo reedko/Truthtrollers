@@ -762,7 +762,7 @@ app.post("/api/content/:contentId/publishers", async (req, res) => {
     const publisherId = result[0][0].publisherId;
 
     if (publisherId) {
-      const insertTaskPublisher = `INSERT INTO content_publishers (content_id, publisher_id) VALUES (?, ?)`;
+      const insertTaskPublisher = `INSERT IGNORE INTO content_publishers (content_id, publisher_id) VALUES (?, ?)`;
       await pool.query(insertTaskPublisher, [contentId, publisherId]);
     }
     res.status(200).send("Publisher added successfully");
