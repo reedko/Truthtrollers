@@ -2,7 +2,7 @@ import axios from "axios";
 import { User } from "../../../shared/entities/types";
 import { useAuthStore } from "../store/useAuthStore";
 
-const API_URL = import.meta.env.VITE_BASE_URL || "http://localhost:5001";
+const API_URL = import.meta.env.VITE_BASE_URL;
 export const register = async (
   username: string,
   password: string,

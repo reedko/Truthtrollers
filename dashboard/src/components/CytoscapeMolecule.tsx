@@ -841,147 +841,19 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       // 📍 Handle reference click
       if (type === "reference") {
         (async () => {
-          //saveNodePositions(cy, originalNodePositions); // Save before fanout
-          await restoreNodePositions(cy, originalNodePositions);
-          const refClaims = nodes.filter(
-            (n) => n.type === "refClaim" && n.content_id === contentId
-          );
-
-          const claimLinks = links.filter((l) =>
-            refClaims.some((rc) => rc.id === l.source)
-          );
-
-          const claimsWithRelation: {
-            claim: NodeData;
-            relation: "supports" | "refutes" | "related";
-            notes: string;
-          }[] = claimLinks
-            .map((link) => {
-              const claim = refClaims.find((rc) => rc.id === link.source);
-              return claim
-                ? {
-                    claim,
-                    relation: link.relation || "related",
-                    notes: link.notes || "",
-                  }
-                : null;
-            })
-            .filter(
-              (
-                x
-              ): x is {
-                claim: NodeData;
-                relation: "supports" | "refutes" | "related";
-                notes: string;
-              } => !!x
-            );
-
-          const taskClaimMap = new Map(
-            nodes.filter((n) => n.type === "taskClaim").map((n) => [n.id, n])
-          );
-          const linkedTaskClaims: NodeData[] = [];
-          const seen = new Set<string>();
-          claimLinks.forEach((link) => {
-            console.log("✨ Adding link edge:", link);
-
-            if (!seen.has(link.target)) {
-              const claim = taskClaimMap.get(link.target);
-              if (claim) {
-                linkedTaskClaims.push(claim);
-                seen.add(link.target);
-              }
-            }
-          });
-          // <-- And this one:
-          console.log("🔍 [DEBUG] linkedTaskClaims:", linkedTaskClaims);
-          const linkedTaskClaimMap = new Map(
-            linkedTaskClaims.map((tc) => [tc.id, tc])
-          );
-
-          const taskClaimsWithRelation = claimLinks
-            .map((link) => {
-              const claim = linkedTaskClaimMap.get(link.target);
-              return claim
-                ? {
-                    claim,
-                    relation: link.relation || "related",
-                    notes: link.notes || "",
-                  }
-                : null;
-            })
-            .filter(
-              (
-                x
-              ): x is {
-                claim: NodeData;
-                relation: "supports" | "refutes" | "related";
-                notes: string;
-              } => !!x
-            );
-
-          if (refClaims.length === 0 && linkedTaskClaims.length === 0) {
-            console.log("🛑 No claims to show for this reference.");
-            return;
-          }
-
-          lastRefOriginalPos.current = { ...node.position() };
-          lastRefNode.current = node;
-
-          const taskNode = cy
-            .nodes()
-            .filter('[type = "task"]')
-            .first() as NodeSingular;
-          console.log("🔍 [DEBUG] linkedTaskClaims:", linkedTaskClaims);
-          const added: cytoscape.ElementDefinition[] = [];
-          // 🟡 SCATTER and WAIT
-          await fartScatterAwayFromRef({
+          await animateMoleculeScene({
             cy,
-            refNode: node,
-            taskNode,
-            radius: 300,
-            radiusStep: 40,
-            dipRange: 5,
+            node,
+            taskNode: cy
+              .nodes()
+              .filter('[type = "task"]')
+              .first() as NodeSingular,
+            nodes,
+            links,
+            originalNodePositions,
+            lastRefNode,
+            lastRefOriginalPos,
           });
-          const refClaimElements = await fanOutClaims({
-            cy,
-            claimsWithRelation,
-            sourceNode: node,
-            targetNode: taskNode,
-          });
-          added.push(...refClaimElements);
-
-          const taskClaimElements = await fanOutClaims({
-            cy,
-            claimsWithRelation: taskClaimsWithRelation,
-            sourceNode: taskNode,
-            targetNode: node,
-          });
-          added.push(...taskClaimElements);
-          claimLinks.forEach((link) => {
-            if (!link.relation) {
-              console.warn("🚨 Missing relation in link:", link);
-            }
-            added.push({
-              data: {
-                ...link,
-                relation: link.relation || "related",
-              },
-            });
-          });
-
-          cy.add(added);
-          cy.edges().forEach((edge) => {
-            const rel = edge.data("relation");
-            const value = edge.data("value") ?? 0;
-            const notes = edge.data("notes") || "";
-
-            const label = `${
-              rel === "supports" ? "✅" : rel === "refutes" ? "❌" : "↔️"
-            } ${Math.round(Math.abs(value) * 100)}% — ${notes || "No notes"}`;
-          });
-
-          // 🌀 Instant zoom-to-fit
-          cy.fit(cy.elements(), 15);
         })();
       }
     });
