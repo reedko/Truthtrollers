@@ -37,6 +37,7 @@ import nodemailer from "nodemailer";
 import { decodeJwt } from "./utils/jwt.js";
 
 import { parseOrRepairJSON } from "./utils/repairJson.js";
+import { createSessionLogger } from "./utils/sessionLogger.js";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -132,6 +133,9 @@ const db = mysql.createConnection({
 });
 
 const query = promisify(db.query).bind(db);
+
+const { logSuccessfulLogin, logFailedLogin, logRegistrationAttempt } =
+  createSessionLogger(query);
 
 const pool = mysql.createPool({
   connectionLimit: 10,
@@ -1251,8 +1255,16 @@ async function verifyCaptcha(token) {
 // Register endpoint
 app.post("/api/register", async (req, res) => {
   const { username, password, email, captcha } = req.body;
+  const ipAddress = req.ip;
 
   if (!username || !password || !email || !captcha) {
+    await logRegistrationAttempt({
+      username,
+      email,
+      ipAddress,
+      success: false,
+      message: "Missing required fields or CAPTCHA",
+    });
     return res
       .status(400)
       .json({ error: "All fields and CAPTCHA are required." });
@@ -1260,6 +1272,13 @@ app.post("/api/register", async (req, res) => {
 
   const isHuman = await verifyCaptcha(captcha);
   if (!isHuman) {
+    await logRegistrationAttempt({
+      username,
+      email,
+      ipAddress,
+      success: false,
+      message: "Failed CAPTCHA verification",
+    });
     return res.status(403).json({ error: "Failed CAPTCHA verification" });
   }
 
@@ -1267,17 +1286,40 @@ app.post("/api/register", async (req, res) => {
   const sql = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
   const params = [username, hashedPassword, email];
 
-  pool.query(sql, params, (err, result) => {
+  pool.query(sql, params, async (err, result) => {
     if (err) {
       if (err.code === "ER_DUP_ENTRY") {
+        await logRegistrationAttempt({
+          username,
+          email,
+          ipAddress,
+          success: false,
+          message: "Duplicate username or email",
+        });
         return res
           .status(409)
           .json({ error: "Username or email already exists." });
       }
 
       console.error("Error registering user:", err);
+      await logRegistrationAttempt({
+        username,
+        email,
+        ipAddress,
+        success: false,
+        message: `Database error: ${err.message}`,
+      });
       return res.status(500).json({ error: "Database error." });
     }
+
+    // Log success
+    await logRegistrationAttempt({
+      username,
+      email,
+      ipAddress,
+      success: true,
+      message: "Registration successful",
+    });
 
     res.status(201).json({
       user: {
@@ -1292,8 +1334,9 @@ app.post("/api/register", async (req, res) => {
 // Login endpoint
 app.post("/api/login", async (req, res) => {
   const { username, password, captcha } = req.body;
+  const ipAddress = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
-  // Only require CAPTCHA fields if not bypassed via extension or post-registration
+  // CAPTCHA bypass for extensions or post-registration
   const skipCaptcha = req.headers["x-skip-captcha"] === "true";
 
   if (!username || !password || (!skipCaptcha && !captcha)) {
@@ -1303,31 +1346,44 @@ app.post("/api/login", async (req, res) => {
   if (!skipCaptcha) {
     const isHuman = await verifyCaptcha(captcha);
     if (!isHuman) {
+      await logFailedLogin({ username, ipAddress });
       return res.status(403).json({ error: "Failed CAPTCHA verification" });
     }
   }
+
   const sql = "SELECT * FROM users WHERE username = ?";
-  pool.query(sql, [username], (err, results) => {
+  pool.query(sql, [username], async (err, results) => {
     if (err) {
       console.error("Error logging in user:", err);
       return res.status(500).json({ error: "Database query failed" });
     }
 
-    if (results.length === 0) return res.status(404).send("User not found.");
+    if (results.length === 0) {
+      await logFailedLogin({ username, ipAddress });
+      return res.status(404).send("User not found.");
+    }
 
     const user = results[0];
-    if (bcrypt.compareSync(password, user.password)) {
-      console.log("JWT_SECRET used for signing:", process.env.JWT_SECRET);
-      console.log("🧠 user.id at login:", user.user_id);
+    const isValidPassword = bcrypt.compareSync(password, user.password);
+
+    if (isValidPassword) {
       const token = jwt.sign(
         {
-          user_id: user.user_id, // ✅ critical: this is what decodeJwt().user_id reads
+          user_id: user.user_id,
           username: user.username,
-          can_post: true, // or from DB if your app tracks this
+          can_post: true,
         },
         process.env.JWT_SECRET,
         { expiresIn: "1h" }
       );
+
+      await logSuccessfulLogin({
+        userId: user.user_id,
+        jwt: token,
+        ipAddress,
+        fingerprint: "manual_login", // or customize if you have it
+      });
+
       res.status(200).json({
         auth: true,
         token,
@@ -1335,10 +1391,11 @@ app.post("/api/login", async (req, res) => {
           user_id: user.user_id,
           username: user.username,
           can_post: true,
-          user_profile_image: user.user_profile_image ?? null, // ✅ or whatever your DB column is
+          user_profile_image: user.user_profile_image ?? null,
         },
       });
     } else {
+      await logFailedLogin({ username, ipAddress });
       res.status(401).send("Invalid credentials.");
     }
   });

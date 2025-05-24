@@ -7,6 +7,7 @@ import {
   Text,
   HStack,
   IconButton,
+  Tooltip,
 } from "@chakra-ui/react";
 import { SearchIcon } from "@chakra-ui/icons";
 import { Claim } from "../../../shared/entities/types";
@@ -152,9 +153,11 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
               setIsClaimViewModalOpen(true);
             }}
           >
-            <Text flex="1" noOfLines={1}>
-              {claim.claim_text}
-            </Text>
+            <Tooltip label={claim.claim_text} hasArrow>
+              <Text flex="1" noOfLines={1}>
+                {claim.claim_text}
+              </Text>
+            </Tooltip>
             <HStack spacing={2}>
               <IconButton
                 size="sm"

@@ -218,8 +218,12 @@ const Workspace: React.FC<WorkspaceProps> = ({
       <Heading size="md" mb={2}>
         Claim Analysis
       </Heading>
-      <Grid templateColumns="2fr 2fr 2fr" gap={4} height="100%">
-        <Box ref={leftRef}>
+      <Grid
+        templateColumns="2fr 2fr 2fr" // mobile → stacked, desktop → middle flexes more
+        gap={4}
+        height="100%"
+      >
+        <Box ref={leftRef} minW="250px" maxW="400px" w="100%">
           <TaskClaims
             claims={claims}
             onAddClaim={async (newClaim: Claim) => {
@@ -260,7 +264,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
             setEditingClaim={setEditingClaim}
           />
         </Box>
-        <Box ref={containerRef}>
+        <Box ref={containerRef} minW="100px" w="100%">
           {/* Middle column reserved */}
           <RelationshipMap
             key={`${leftX}-${rightX}-${claims.length}-${references.length}`}
@@ -276,7 +280,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
             claimLinks={claimLinks}
           />
         </Box>
-        <Box ref={rightRef}>
+        <Box ref={rightRef} maxW="400px" w="100%">
           <ReferenceList
             references={references}
             onEditReference={handleUpdateReference}

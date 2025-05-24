@@ -16,6 +16,7 @@ const isDashboardUrl = (url) => {
 
 const BASE_URL =
   process.env.REACT_APP_EXTENSION_BASE_URL || "https://localhost:5001";
+console.log(BASE_URL, "JOIKLHKGFSFDH");
 const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 const code = `
   (function() {
@@ -656,7 +657,7 @@ async function getReadOnlyDemoJwt() {
   if (tt_demo_jwt) return tt_demo_jwt;
 
   // 🔐 call your API login endpoint
-  const res = await fetch("http://localhost:3000/api/login", {
+  const res = await fetch(`${BASE_URL}/api/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
