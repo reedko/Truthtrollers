@@ -19,6 +19,7 @@ import ReCAPTCHA from "react-google-recaptcha";
 import { login, register } from "../services/authService";
 import { useAuthStore } from "../store/useAuthStore";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
+import { generateDeviceFingerprint } from "../utils/generateDeviceFingerprint";
 
 const Register: React.FC = () => {
   const [username, setUsername] = useState("");
@@ -33,12 +34,19 @@ const Register: React.FC = () => {
 
   const handleRegister = async () => {
     try {
+      const fingerprint = generateDeviceFingerprint();
       // 1️⃣ Create the account
       await register(username, password, email, captchaToken);
 
       // 2️⃣ Immediately log in (skipping captcha on login call)
       //    Our login service will return the User and persist JWT into localStorage
-      const user = await login(username, password, undefined, true);
+      const user = await login(
+        username,
+        password,
+        fingerprint,
+        undefined,
+        true
+      );
 
       // 3️⃣ Grab that token out of localStorage
       const token = localStorage.getItem("jwt") || "";

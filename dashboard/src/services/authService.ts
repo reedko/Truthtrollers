@@ -20,6 +20,7 @@ export const register = async (
 export const login = async (
   username: string,
   password: string,
+  fingerprint: string,
   captcha?: string,
   skipCaptchaHeader: boolean = false
 ): Promise<User> => {
@@ -33,7 +34,7 @@ export const login = async (
 
   const res = await axios.post(
     `${API_URL}/api/login`,
-    captcha ? { username, password, captcha } : { username, password },
+    { username, password, fingerprint, captcha },
     config
   );
 

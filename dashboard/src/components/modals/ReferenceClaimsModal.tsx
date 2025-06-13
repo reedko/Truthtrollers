@@ -69,7 +69,7 @@ const ReferenceClaimsModal: React.FC<Props> = (props) => {
       trapFocus={false} /* allow clicks to pass backdrop     */
     >
       {/* Backdrop lets wheel/touch fall through */}
-      <ModalOverlay bg="blackAlpha.700" pointerEvents="none" />
+      <ModalOverlay bg="blackAlpha.100" pointerEvents="none" />
       <Global
         styles={css`
           /* full-viewport flex box that hugs the right  */

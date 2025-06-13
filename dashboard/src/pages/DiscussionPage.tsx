@@ -14,50 +14,40 @@ import UnifiedHeader from "../components/UnifiedHeader";
 import DiscussionBoard from "../components/DiscussionBoard";
 
 const DiscussionPage: React.FC = () => {
-  /* 1️⃣  Get the ID from the route if present */
   const { contentId } = useParams<{ contentId?: string }>();
   const routeId = contentId ? Number(contentId) : undefined;
 
-  /* 2️⃣  Task state from the global store */
-  const selectedTask = useTaskStore((s) => s.selectedTask);
   const setSelectedTask = useTaskStore((s) => s.setSelectedTask);
+  const [task, setTask] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  /* 3️⃣  Local “loading” flag for deep-link fetch */
-  const [loading, setLoading] = useState(false);
-
   useEffect(() => {
-    // A. Deep-link case: we have a route ID but no task in the store yet
-    if (routeId && !selectedTask && !loading) {
-      setLoading(true);
-      fetchTaskById(routeId)
-        .then((task) => {
-          if (task) setSelectedTask(task);
-          else navigate("/tasks"); // invalid ID – bounce out
-        })
-        .finally(() => setLoading(false));
+    if (!routeId) {
+      navigate("/tasks", { state: { redirectTo: "/discussion" } });
       return;
     }
+    setLoading(true);
+    fetchTaskById(routeId)
+      .then((task) => {
+        if (task) {
+          setTask(task); // Use local state for THIS page
+          setSelectedTask(task); // (optional) update global store for dashboard
+        } else {
+          navigate("/tasks");
+        }
+      })
+      .finally(() => setLoading(false));
+    // eslint-disable-next-line
+  }, [routeId, navigate, setSelectedTask]);
 
-    // B. No route ID AND no selected task → redirect to task list
-    if (!routeId && !selectedTask) {
-      navigate("/tasks", { state: { redirectTo: "/discussion" } });
-    }
-  }, [routeId, selectedTask, navigate, setSelectedTask, loading]);
-
-  // While fetching the deep-link task
-  if (loading) {
+  if (loading || !task) {
     return (
       <Center h="60vh">
         <Spinner size="lg" />
       </Center>
     );
   }
-
-  /* Decide which ID the board should use */
-  const discussionId = selectedTask?.content_id ?? routeId ?? null;
-
-  if (discussionId === null) return null; // should never hit, but type-safe
 
   return (
     <Box p={4}>
@@ -71,7 +61,7 @@ const DiscussionPage: React.FC = () => {
         Community Discussion
       </Heading>
 
-      <DiscussionBoard contentId={discussionId} />
+      <DiscussionBoard contentId={task.content_id} />
     </Box>
   );
 };

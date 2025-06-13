@@ -22,8 +22,14 @@ export default function UserSelectionPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
-
-  const refPath = new URL(document.referrer).pathname;
+  const refPath = (() => {
+    try {
+      if (document.referrer && document.referrer.startsWith("http")) {
+        return new URL(document.referrer).pathname;
+      }
+    } catch {}
+    return "/";
+  })();
   const fallbackRedirect = refPath.startsWith("/select-user")
     ? "/workspace"
     : refPath;
@@ -52,6 +58,7 @@ export default function UserSelectionPage() {
 
   const handleConfirm = () => {
     setViewingUserId(selectedId);
+    console.log(redirectTo, "LIJKUJYFDHFGDJ");
     navigate(redirectTo);
   };
 

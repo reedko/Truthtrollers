@@ -70,7 +70,7 @@ const TaskCard: React.FC = () => {
   const handleArgueClick = () => {
     if (!task) return;
     const url = `${process.env.REACT_APP_EXTENSION_URL}/discussion/${task.content_id}`;
-
+    console.log(url, "IJKUHHD");
     // ask the background script to open the tab (safer than window.open)
     browser.runtime.sendMessage({ fn: "openDiscussionTab", url });
   };
