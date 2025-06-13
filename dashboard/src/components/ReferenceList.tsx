@@ -15,6 +15,7 @@ import {
   ModalBody,
   ModalFooter,
   ModalCloseButton,
+  IconButton,
 } from "@chakra-ui/react";
 import {
   LitReference,
@@ -72,56 +73,58 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
           <Text>No References Found</Text>
         ) : (
           references.map((ref) => (
-            <HStack key={ref.reference_content_id} width="100%" spacing={2}>
+            <Box
+              key={ref.reference_content_id}
+              border="1px solid #90caf9"
+              bg="black"
+              color="#90caf9"
+              px={3}
+              py={2}
+              borderRadius="md"
+              width="100%"
+              display="flex"
+              alignItems="center"
+              justifyContent="space-between"
+              cursor="pointer"
+              mb={1}
+            >
               <Tooltip label={ref.content_name} hasArrow>
-                <Button
-                  height="50px" // 👈 Set fixed height to match rowHeight
-                  variant={
-                    selectedReference?.reference_content_id ===
-                    ref.reference_content_id
-                      ? "solid"
-                      : "outline"
-                  }
-                  colorScheme="blue"
-                  width="100%"
-                  overflow="hidden"
-                  textOverflow="ellipsis"
-                  whiteSpace="nowrap"
+                <Text
+                  flex="1"
+                  noOfLines={1}
                   onClick={() => {
-                    console.log("📘 Reference clicked:", ref);
-
-                    onReferenceClick(ref); // ✅ add this line
+                    onReferenceClick(ref);
                   }}
                   onContextMenu={(e) => {
                     e.preventDefault();
-                    if (ref.url) {
-                      window.open(ref.url, "_blank");
-                    }
+                    if (ref.url) window.open(ref.url, "_blank");
                   }}
                 >
                   {ref.content_name}
-                </Button>
+                </Text>
               </Tooltip>
-
-              <Button
-                size="sm"
-                onClick={() => {
-                  setEditingReference(ref);
-                  setNewTitle(ref.content_name);
-                  setIsEditModalOpen(true);
-                }}
-              >
-                ✏️
-              </Button>
-
-              <Button
-                size="sm"
-                colorScheme="red"
-                onClick={() => onDeleteReference(ref.reference_content_id)}
-              >
-                🗑️
-              </Button>
-            </HStack>
+              <HStack spacing={2}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label="Edit"
+                  onClick={() => {
+                    setEditingReference(ref);
+                    setNewTitle(ref.content_name);
+                    setIsEditModalOpen(true);
+                  }}
+                >
+                  ✏️
+                </Button>
+                <IconButton
+                  size="sm"
+                  colorScheme="red"
+                  aria-label="Delete"
+                  icon={<span>🗑️</span>}
+                  onClick={() => onDeleteReference(ref.reference_content_id)}
+                />
+              </HStack>
+            </Box>
           ))
         )}
       </VStack>

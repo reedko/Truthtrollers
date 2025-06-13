@@ -25,6 +25,12 @@ export const AccountMenu: React.FC = () => {
   const handleLogout = () => {
     logout();
     clearTask(null);
+    // Clear browser storage for good measure
+    localStorage.removeItem("jwt");
+    sessionStorage.removeItem("jwt");
+    localStorage.removeItem("user");
+    sessionStorage.removeItem("user");
+    document.cookie = "jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     navigate("/logout", { replace: true });
   };
 
@@ -72,9 +78,16 @@ export const AccountMenu: React.FC = () => {
             {isDemo ? "Read‑only preview" : user?.email}
           </Text>
         </Flex>
-        <MenuItem onClick={() => navigate("/select-user")}>
+        <MenuItem
+          onClick={() =>
+            navigate("/select-user", {
+              state: { redirectTo: location.pathname },
+            })
+          }
+        >
           Switch Viewer
         </MenuItem>
+
         <MenuItem onClick={() => navigate("/account")}>
           Account Settings
         </MenuItem>

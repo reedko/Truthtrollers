@@ -23,7 +23,7 @@ import {
   ReferenceWithClaims,
 } from "../../../shared/entities/types";
 import ClaimLinkModal from "./modals/ClaimLinkModal";
-import ReferenceClaimsModal from "./modals/ReferenceClaimsModal";
+import DraggableReferenceClaimsModal from "./modals/DraggableReferenceClaimsModal";
 import ClaimEvaluationModal from "./modals/ClaimEvaluationModal";
 import RelationshipMap, { ClaimLink } from "./RelationshipMap";
 import { fetchClaimById } from "../services/useDashboardAPI"; // or wherever
@@ -299,7 +299,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
       </Grid>
 
       {selectedReference && (
-        <ReferenceClaimsModal
+        <DraggableReferenceClaimsModal
           isOpen={isReferenceClaimsModalOpen}
           onClose={() => setIsReferenceClaimsModalOpen(false)}
           reference={selectedReference}

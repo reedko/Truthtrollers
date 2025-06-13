@@ -39,7 +39,14 @@ const Login: React.FC = () => {
     }
 
     try {
-      const user = await login(username, password, captchaToken, true);
+      const fingerprint = generateDeviceFingerprint();
+      const user = await login(
+        username,
+        password,
+        fingerprint,
+        captchaToken,
+        true
+      );
       const token = localStorage.getItem("jwt");
       if (!token) throw new Error("No token returned from login");
 
@@ -64,7 +71,7 @@ const Login: React.FC = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            device_fingerprint: generateDeviceFingerprint(),
+            device_fingerprint: fingerprint,
           }),
         }
       );

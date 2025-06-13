@@ -16,7 +16,7 @@ const isDashboardUrl = (url) => {
 
 const BASE_URL =
   process.env.REACT_APP_EXTENSION_BASE_URL || "https://localhost:5001";
-console.log(BASE_URL, "JOIKLHKGFSFDH");
+
 const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 const code = `
   (function() {
@@ -596,7 +596,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
       console.log("🧬 Device Fingerprint:", deviceFingerprint);
 
       let fullUrl = message.url;
-
+      console.log(fullUrl, "JKHHGFDS");
       try {
         const response = await fetch(
           `${BASE_URL}/api/get-session-user?fingerprint=${deviceFingerprint}`
@@ -610,10 +610,13 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
           throw new Error("Session lookup failed");
         }
       } catch (err) {
-        const demoJwt = await getReadOnlyDemoJwt();
+        await browser.storage.local.remove("jwt");
+        await browser.storage.local.remove("user");
+        const demoJwt = await getReadOnlyDemoJwt(deviceFingerprint);
         fullUrl = `${message.url}?demo=${encodeURIComponent(demoJwt)}`;
         console.log("🔁 Falling back to demo session", fullUrl);
       }
+      console.log(fullUrl, "LJKJHJGFHJKK");
       await browser.tabs.create({ url: fullUrl });
       return;
     }
@@ -631,31 +634,36 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
 // e.g. fetchDiffbotData, addContent, addAuthorsToServer, etc.
 
 async function generateExtensionFingerprint() {
-  const key = "tt_device_fp";
+  // Normalize userAgent: only keep browser family (Chrome/Firefox/Safari/Edge)
+  let browser = "Unknown";
+  const ua = navigator.userAgent;
 
-  const stored = await browser.storage.local.get(key);
-  if (stored && stored[key]) return stored[key];
+  if (ua.includes("Chrome")) browser = "Chrome";
+  else if (ua.includes("Firefox")) browser = "Firefox";
+  else if (ua.includes("Safari")) browser = "Safari";
+  else if (ua.includes("Edg")) browser = "Edge";
 
   const components = [
-    navigator.userAgent,
+    browser, // Now version-agnostic!
+    navigator.platform || "", // Platform, e.g. "MacIntel"
     navigator.language,
-    "1920x1080", // ✅ fixed value
-    "24", // ✅ fixed color depth
+    "1920x1080", // Fixed for your app
+    "24", // Fixed for your app
     new Date().getTimezoneOffset(),
     "Africa/Nairobi",
   ];
 
   const raw = components.join("|");
-  const hash = btoa(raw);
-  await browser.storage.local.set({ [key]: hash });
-  return hash;
+  return btoa(raw);
 }
 
 // fetch a read-only demo JWT once, cache it in storage.local
 async function getReadOnlyDemoJwt() {
   const { tt_demo_jwt } = await browser.storage.local.get("tt_demo_jwt");
   if (tt_demo_jwt) return tt_demo_jwt;
-
+  // 👇 Generate fingerprint on the fly
+  const fingerprint = generateDeviceFingerprint();
+  console.log("Demo login with fingerprint:", fingerprint);
   // 🔐 call your API login endpoint
   const res = await fetch(`${BASE_URL}/api/login`, {
     method: "POST",
@@ -665,7 +673,8 @@ async function getReadOnlyDemoJwt() {
     },
     body: JSON.stringify({
       username: "critic",
-      password: "newPassword", // or hard-coded for demo
+      password: "newPassword",
+      fingerprint, // or hard-coded for demo
     }),
   });
 

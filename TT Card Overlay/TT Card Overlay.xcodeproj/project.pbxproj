@@ -1,0 +1,1091 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		BCE2E08E2DE85F3D0012293D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCE2E08D2DE85F3D0012293D /* AppDelegate.swift */; };
+		BCE2E0902DE85F3D0012293D /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCE2E08F2DE85F3D0012293D /* SceneDelegate.swift */; };
+		BCE2E0932DE85F3D0012293D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0912DE85F3D0012293D /* LaunchScreen.storyboard */; };
+		BCE2E0962DE85F3D0012293D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0942DE85F3D0012293D /* Main.storyboard */; };
+		BCE2E09F2DE85F3D0012293D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCE2E09E2DE85F3D0012293D /* AppDelegate.swift */; };
+		BCE2E0A22DE85F3D0012293D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0A02DE85F3D0012293D /* Main.storyboard */; };
+		BCE2E0AA2DE85F3D0012293D /* TT Card Overlay Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BCE2E0A92DE85F3D0012293D /* TT Card Overlay Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BCE2E0B42DE85F3D0012293D /* TT Card Overlay Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BCE2E0B32DE85F3D0012293D /* TT Card Overlay Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BCE2E0BA2DE85F3D0012293D /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E07D2DE85F3B0012293D /* Main.html */; };
+		BCE2E0BB2DE85F3D0012293D /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E07D2DE85F3B0012293D /* Main.html */; };
+		BCE2E0BC2DE85F3D0012293D /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E07F2DE85F3B0012293D /* Icon.png */; };
+		BCE2E0BD2DE85F3D0012293D /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E07F2DE85F3B0012293D /* Icon.png */; };
+		BCE2E0BE2DE85F3D0012293D /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0802DE85F3B0012293D /* Style.css */; };
+		BCE2E0BF2DE85F3D0012293D /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0802DE85F3B0012293D /* Style.css */; };
+		BCE2E0C02DE85F3D0012293D /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0812DE85F3B0012293D /* Script.js */; };
+		BCE2E0C12DE85F3D0012293D /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0812DE85F3B0012293D /* Script.js */; };
+		BCE2E0C22DE85F3D0012293D /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCE2E0822DE85F3B0012293D /* ViewController.swift */; };
+		BCE2E0C32DE85F3D0012293D /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCE2E0822DE85F3B0012293D /* ViewController.swift */; };
+		BCE2E0C42DE85F3D0012293D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0832DE85F3D0012293D /* Assets.xcassets */; };
+		BCE2E0C52DE85F3D0012293D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0832DE85F3D0012293D /* Assets.xcassets */; };
+		BCE2E0C62DE85F3D0012293D /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCE2E0852DE85F3D0012293D /* SafariWebExtensionHandler.swift */; };
+		BCE2E0C72DE85F3D0012293D /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BCE2E0852DE85F3D0012293D /* SafariWebExtensionHandler.swift */; };
+		BCE2E0F62DE85F3E0012293D /* webpack.sandbox.config.js in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0D92DE85F3E0012293D /* webpack.sandbox.config.js */; };
+		BCE2E0F72DE85F3E0012293D /* tsconfig.node.json in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0DA2DE85F3E0012293D /* tsconfig.node.json */; };
+		BCE2E0F82DE85F3E0012293D /* popup.js in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0DB2DE85F3E0012293D /* popup.js */; };
+		BCE2E0F92DE85F3E0012293D /* tsconfig.app.json in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0DC2DE85F3E0012293D /* tsconfig.app.json */; };
+		BCE2E0FA2DE85F3E0012293D /* test in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0DD2DE85F3E0012293D /* test */; };
+		BCE2E0FB2DE85F3E0012293D /* popup.js.LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0DE2DE85F3E0012293D /* popup.js.LICENSE.txt */; };
+		BCE2E0FC2DE85F3E0012293D /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0DF2DE85F3E0012293D /* background.js */; };
+		BCE2E0FD2DE85F3E0012293D /* dist in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E02DE85F3E0012293D /* dist */; };
+		BCE2E0FE2DE85F3E0012293D /* unifiedBackground.js in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E12DE85F3E0012293D /* unifiedBackground.js */; };
+		BCE2E0FF2DE85F3E0012293D /* tsconfig.tsbuildinfo in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E22DE85F3E0012293D /* tsconfig.tsbuildinfo */; };
+		BCE2E1002DE85F3E0012293D /* node_modules in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E32DE85F3E0012293D /* node_modules */; };
+		BCE2E1012DE85F3E0012293D /* webpack.config.js in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E42DE85F3E0012293D /* webpack.config.js */; };
+		BCE2E1022DE85F3E0012293D /* tsconfig orig.json in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E52DE85F3E0012293D /* tsconfig orig.json */; };
+		BCE2E1032DE85F3E0012293D /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E62DE85F3E0012293D /* README.md */; };
+		BCE2E1042DE85F3E0012293D /* public in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E72DE85F3E0012293D /* public */; };
+		BCE2E1052DE85F3E0012293D /* package-lock.json in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E82DE85F3E0012293D /* package-lock.json */; };
+		BCE2E1062DE85F3E0012293D /* package.json in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E92DE85F3E0012293D /* package.json */; };
+		BCE2E1072DE85F3E0012293D /* public.zip in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0EB2DE85F3E0012293D /* public.zip */; };
+		BCE2E1082DE85F3E0012293D /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0EC2DE85F3E0012293D /* manifest.json */; };
+		BCE2E1092DE85F3E0012293D /* assets old in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0ED2DE85F3E0012293D /* assets old */; };
+		BCE2E10A2DE85F3E0012293D /* tsconfig.json in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0EE2DE85F3E0012293D /* tsconfig.json */; };
+		BCE2E10B2DE85F3E0012293D /* eslint.config.js in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0EF2DE85F3E0012293D /* eslint.config.js */; };
+		BCE2E10C2DE85F3E0012293D /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0F02DE85F3E0012293D /* content.js */; };
+		BCE2E10D2DE85F3E0012293D /* assets in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0F22DE85F3E0012293D /* assets */; };
+		BCE2E10E2DE85F3E0012293D /* background.js.LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0F32DE85F3E0012293D /* background.js.LICENSE.txt */; };
+		BCE2E10F2DE85F3E0012293D /* sandbox-dist in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0F42DE85F3E0012293D /* sandbox-dist */; };
+		BCE2E1102DE85F3E0012293D /* src in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0F52DE85F3E0012293D /* src */; };
+		BCE2E1112DE85F3E0012293D /* webpack.sandbox.config.js in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0D92DE85F3E0012293D /* webpack.sandbox.config.js */; };
+		BCE2E1122DE85F3E0012293D /* tsconfig.node.json in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0DA2DE85F3E0012293D /* tsconfig.node.json */; };
+		BCE2E1132DE85F3E0012293D /* popup.js in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0DB2DE85F3E0012293D /* popup.js */; };
+		BCE2E1142DE85F3E0012293D /* tsconfig.app.json in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0DC2DE85F3E0012293D /* tsconfig.app.json */; };
+		BCE2E1152DE85F3E0012293D /* test in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0DD2DE85F3E0012293D /* test */; };
+		BCE2E1162DE85F3E0012293D /* popup.js.LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0DE2DE85F3E0012293D /* popup.js.LICENSE.txt */; };
+		BCE2E1172DE85F3E0012293D /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0DF2DE85F3E0012293D /* background.js */; };
+		BCE2E1182DE85F3E0012293D /* dist in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E02DE85F3E0012293D /* dist */; };
+		BCE2E1192DE85F3E0012293D /* unifiedBackground.js in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E12DE85F3E0012293D /* unifiedBackground.js */; };
+		BCE2E11A2DE85F3E0012293D /* tsconfig.tsbuildinfo in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E22DE85F3E0012293D /* tsconfig.tsbuildinfo */; };
+		BCE2E11B2DE85F3E0012293D /* node_modules in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E32DE85F3E0012293D /* node_modules */; };
+		BCE2E11C2DE85F3E0012293D /* webpack.config.js in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E42DE85F3E0012293D /* webpack.config.js */; };
+		BCE2E11D2DE85F3E0012293D /* tsconfig orig.json in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E52DE85F3E0012293D /* tsconfig orig.json */; };
+		BCE2E11E2DE85F3E0012293D /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E62DE85F3E0012293D /* README.md */; };
+		BCE2E11F2DE85F3E0012293D /* public in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E72DE85F3E0012293D /* public */; };
+		BCE2E1202DE85F3E0012293D /* package-lock.json in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E82DE85F3E0012293D /* package-lock.json */; };
+		BCE2E1212DE85F3E0012293D /* package.json in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0E92DE85F3E0012293D /* package.json */; };
+		BCE2E1222DE85F3E0012293D /* public.zip in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0EB2DE85F3E0012293D /* public.zip */; };
+		BCE2E1232DE85F3E0012293D /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0EC2DE85F3E0012293D /* manifest.json */; };
+		BCE2E1242DE85F3E0012293D /* assets old in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0ED2DE85F3E0012293D /* assets old */; };
+		BCE2E1252DE85F3E0012293D /* tsconfig.json in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0EE2DE85F3E0012293D /* tsconfig.json */; };
+		BCE2E1262DE85F3E0012293D /* eslint.config.js in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0EF2DE85F3E0012293D /* eslint.config.js */; };
+		BCE2E1272DE85F3E0012293D /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0F02DE85F3E0012293D /* content.js */; };
+		BCE2E1282DE85F3E0012293D /* assets in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0F22DE85F3E0012293D /* assets */; };
+		BCE2E1292DE85F3E0012293D /* background.js.LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0F32DE85F3E0012293D /* background.js.LICENSE.txt */; };
+		BCE2E12A2DE85F3E0012293D /* sandbox-dist in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0F42DE85F3E0012293D /* sandbox-dist */; };
+		BCE2E12B2DE85F3E0012293D /* src in Resources */ = {isa = PBXBuildFile; fileRef = BCE2E0F52DE85F3E0012293D /* src */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		BCE2E0AB2DE85F3D0012293D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BCE2E0772DE85F3B0012293D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BCE2E0A82DE85F3D0012293D;
+			remoteInfo = "TT Card Overlay Extension (iOS)";
+		};
+		BCE2E0B52DE85F3D0012293D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BCE2E0772DE85F3B0012293D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BCE2E0B22DE85F3D0012293D;
+			remoteInfo = "TT Card Overlay Extension (macOS)";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		BCE2E0CD2DE85F3D0012293D /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				BCE2E0AA2DE85F3D0012293D /* TT Card Overlay Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCE2E0D42DE85F3D0012293D /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				BCE2E0B42DE85F3D0012293D /* TT Card Overlay Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		BCE2E07E2DE85F3B0012293D /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = Base.lproj/Main.html; sourceTree = "<group>"; };
+		BCE2E07F2DE85F3B0012293D /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		BCE2E0802DE85F3B0012293D /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
+		BCE2E0812DE85F3B0012293D /* Script.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Script.js; sourceTree = "<group>"; };
+		BCE2E0822DE85F3B0012293D /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		BCE2E0832DE85F3D0012293D /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BCE2E0852DE85F3D0012293D /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		BCE2E08A2DE85F3D0012293D /* TT Card Overlay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TT Card Overlay.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BCE2E08D2DE85F3D0012293D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		BCE2E08F2DE85F3D0012293D /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		BCE2E0922DE85F3D0012293D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		BCE2E0952DE85F3D0012293D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		BCE2E0972DE85F3D0012293D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BCE2E09C2DE85F3D0012293D /* TT Card Overlay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TT Card Overlay.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BCE2E09E2DE85F3D0012293D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		BCE2E0A12DE85F3D0012293D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		BCE2E0A32DE85F3D0012293D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BCE2E0A42DE85F3D0012293D /* TT Card Overlay.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "TT Card Overlay.entitlements"; sourceTree = "<group>"; };
+		BCE2E0A92DE85F3D0012293D /* TT Card Overlay Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "TT Card Overlay Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BCE2E0AE2DE85F3D0012293D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BCE2E0B32DE85F3D0012293D /* TT Card Overlay Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "TT Card Overlay Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BCE2E0B82DE85F3D0012293D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BCE2E0B92DE85F3D0012293D /* TT Card Overlay.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "TT Card Overlay.entitlements"; sourceTree = "<group>"; };
+		BCE2E0D92DE85F3E0012293D /* webpack.sandbox.config.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = webpack.sandbox.config.js; path = ../../extension/webpack.sandbox.config.js; sourceTree = "<group>"; };
+		BCE2E0DA2DE85F3E0012293D /* tsconfig.node.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = tsconfig.node.json; path = ../../extension/tsconfig.node.json; sourceTree = "<group>"; };
+		BCE2E0DB2DE85F3E0012293D /* popup.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = popup.js; path = ../../extension/popup.js; sourceTree = "<group>"; };
+		BCE2E0DC2DE85F3E0012293D /* tsconfig.app.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = tsconfig.app.json; path = ../../extension/tsconfig.app.json; sourceTree = "<group>"; };
+		BCE2E0DD2DE85F3E0012293D /* test */ = {isa = PBXFileReference; lastKnownFileType = folder; name = test; path = ../../extension/test; sourceTree = "<group>"; };
+		BCE2E0DE2DE85F3E0012293D /* popup.js.LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = popup.js.LICENSE.txt; path = ../../extension/popup.js.LICENSE.txt; sourceTree = "<group>"; };
+		BCE2E0DF2DE85F3E0012293D /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = background.js; path = ../../extension/background.js; sourceTree = "<group>"; };
+		BCE2E0E02DE85F3E0012293D /* dist */ = {isa = PBXFileReference; lastKnownFileType = folder; name = dist; path = ../../extension/dist; sourceTree = "<group>"; };
+		BCE2E0E12DE85F3E0012293D /* unifiedBackground.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = unifiedBackground.js; path = ../../extension/unifiedBackground.js; sourceTree = "<group>"; };
+		BCE2E0E22DE85F3E0012293D /* tsconfig.tsbuildinfo */ = {isa = PBXFileReference; lastKnownFileType = text; name = tsconfig.tsbuildinfo; path = ../../extension/tsconfig.tsbuildinfo; sourceTree = "<group>"; };
+		BCE2E0E32DE85F3E0012293D /* node_modules */ = {isa = PBXFileReference; lastKnownFileType = folder; name = node_modules; path = ../../extension/node_modules; sourceTree = "<group>"; };
+		BCE2E0E42DE85F3E0012293D /* webpack.config.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = webpack.config.js; path = ../../extension/webpack.config.js; sourceTree = "<group>"; };
+		BCE2E0E52DE85F3E0012293D /* tsconfig orig.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "tsconfig orig.json"; path = "../../extension/tsconfig orig.json"; sourceTree = "<group>"; };
+		BCE2E0E62DE85F3E0012293D /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../../extension/README.md; sourceTree = "<group>"; };
+		BCE2E0E72DE85F3E0012293D /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; name = public; path = ../../extension/public; sourceTree = "<group>"; };
+		BCE2E0E82DE85F3E0012293D /* package-lock.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "package-lock.json"; path = "../../extension/package-lock.json"; sourceTree = "<group>"; };
+		BCE2E0E92DE85F3E0012293D /* package.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = package.json; path = ../../extension/package.json; sourceTree = "<group>"; };
+		BCE2E0EA2DE85F3E0012293D /* vite-env.d.ts */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.typescript; name = "vite-env.d.ts"; path = "../../extension/vite-env.d.ts"; sourceTree = "<group>"; };
+		BCE2E0EB2DE85F3E0012293D /* public.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; name = public.zip; path = ../../extension/public.zip; sourceTree = "<group>"; };
+		BCE2E0EC2DE85F3E0012293D /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../../extension/manifest.json; sourceTree = "<group>"; };
+		BCE2E0ED2DE85F3E0012293D /* assets old */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "assets old"; path = "../../extension/assets old"; sourceTree = "<group>"; };
+		BCE2E0EE2DE85F3E0012293D /* tsconfig.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = tsconfig.json; path = ../../extension/tsconfig.json; sourceTree = "<group>"; };
+		BCE2E0EF2DE85F3E0012293D /* eslint.config.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = eslint.config.js; path = ../../extension/eslint.config.js; sourceTree = "<group>"; };
+		BCE2E0F02DE85F3E0012293D /* content.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = content.js; path = ../../extension/content.js; sourceTree = "<group>"; };
+		BCE2E0F12DE85F3E0012293D /* vite.config.ts */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.typescript; name = vite.config.ts; path = ../../extension/vite.config.ts; sourceTree = "<group>"; };
+		BCE2E0F22DE85F3E0012293D /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = assets; path = ../../extension/assets; sourceTree = "<group>"; };
+		BCE2E0F32DE85F3E0012293D /* background.js.LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = background.js.LICENSE.txt; path = ../../extension/background.js.LICENSE.txt; sourceTree = "<group>"; };
+		BCE2E0F42DE85F3E0012293D /* sandbox-dist */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "sandbox-dist"; path = "../../extension/sandbox-dist"; sourceTree = "<group>"; };
+		BCE2E0F52DE85F3E0012293D /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = ../../extension/src; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		BCE2E0872DE85F3D0012293D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCE2E0992DE85F3D0012293D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCE2E0A62DE85F3D0012293D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCE2E0B02DE85F3D0012293D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		BCE2E0762DE85F3B0012293D = {
+			isa = PBXGroup;
+			children = (
+				BCE2E07B2DE85F3B0012293D /* Shared (App) */,
+				BCE2E0842DE85F3D0012293D /* Shared (Extension) */,
+				BCE2E08C2DE85F3D0012293D /* iOS (App) */,
+				BCE2E09D2DE85F3D0012293D /* macOS (App) */,
+				BCE2E0AD2DE85F3D0012293D /* iOS (Extension) */,
+				BCE2E0B72DE85F3D0012293D /* macOS (Extension) */,
+				BCE2E08B2DE85F3D0012293D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		BCE2E07B2DE85F3B0012293D /* Shared (App) */ = {
+			isa = PBXGroup;
+			children = (
+				BCE2E0822DE85F3B0012293D /* ViewController.swift */,
+				BCE2E0832DE85F3D0012293D /* Assets.xcassets */,
+				BCE2E07C2DE85F3B0012293D /* Resources */,
+			);
+			path = "Shared (App)";
+			sourceTree = "<group>";
+		};
+		BCE2E07C2DE85F3B0012293D /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				BCE2E07D2DE85F3B0012293D /* Main.html */,
+				BCE2E07F2DE85F3B0012293D /* Icon.png */,
+				BCE2E0802DE85F3B0012293D /* Style.css */,
+				BCE2E0812DE85F3B0012293D /* Script.js */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		BCE2E0842DE85F3D0012293D /* Shared (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				BCE2E0D82DE85F3E0012293D /* Resources */,
+				BCE2E0852DE85F3D0012293D /* SafariWebExtensionHandler.swift */,
+			);
+			path = "Shared (Extension)";
+			sourceTree = "<group>";
+		};
+		BCE2E08B2DE85F3D0012293D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BCE2E08A2DE85F3D0012293D /* TT Card Overlay.app */,
+				BCE2E09C2DE85F3D0012293D /* TT Card Overlay.app */,
+				BCE2E0A92DE85F3D0012293D /* TT Card Overlay Extension.appex */,
+				BCE2E0B32DE85F3D0012293D /* TT Card Overlay Extension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		BCE2E08C2DE85F3D0012293D /* iOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				BCE2E08D2DE85F3D0012293D /* AppDelegate.swift */,
+				BCE2E08F2DE85F3D0012293D /* SceneDelegate.swift */,
+				BCE2E0912DE85F3D0012293D /* LaunchScreen.storyboard */,
+				BCE2E0942DE85F3D0012293D /* Main.storyboard */,
+				BCE2E0972DE85F3D0012293D /* Info.plist */,
+			);
+			path = "iOS (App)";
+			sourceTree = "<group>";
+		};
+		BCE2E09D2DE85F3D0012293D /* macOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				BCE2E09E2DE85F3D0012293D /* AppDelegate.swift */,
+				BCE2E0A02DE85F3D0012293D /* Main.storyboard */,
+				BCE2E0A32DE85F3D0012293D /* Info.plist */,
+				BCE2E0A42DE85F3D0012293D /* TT Card Overlay.entitlements */,
+			);
+			path = "macOS (App)";
+			sourceTree = "<group>";
+		};
+		BCE2E0AD2DE85F3D0012293D /* iOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				BCE2E0AE2DE85F3D0012293D /* Info.plist */,
+			);
+			path = "iOS (Extension)";
+			sourceTree = "<group>";
+		};
+		BCE2E0B72DE85F3D0012293D /* macOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				BCE2E0B82DE85F3D0012293D /* Info.plist */,
+				BCE2E0B92DE85F3D0012293D /* TT Card Overlay.entitlements */,
+			);
+			path = "macOS (Extension)";
+			sourceTree = "<group>";
+		};
+		BCE2E0D82DE85F3E0012293D /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				BCE2E0D92DE85F3E0012293D /* webpack.sandbox.config.js */,
+				BCE2E0DA2DE85F3E0012293D /* tsconfig.node.json */,
+				BCE2E0DB2DE85F3E0012293D /* popup.js */,
+				BCE2E0DC2DE85F3E0012293D /* tsconfig.app.json */,
+				BCE2E0DD2DE85F3E0012293D /* test */,
+				BCE2E0DE2DE85F3E0012293D /* popup.js.LICENSE.txt */,
+				BCE2E0DF2DE85F3E0012293D /* background.js */,
+				BCE2E0E02DE85F3E0012293D /* dist */,
+				BCE2E0E12DE85F3E0012293D /* unifiedBackground.js */,
+				BCE2E0E22DE85F3E0012293D /* tsconfig.tsbuildinfo */,
+				BCE2E0E32DE85F3E0012293D /* node_modules */,
+				BCE2E0E42DE85F3E0012293D /* webpack.config.js */,
+				BCE2E0E52DE85F3E0012293D /* tsconfig orig.json */,
+				BCE2E0E62DE85F3E0012293D /* README.md */,
+				BCE2E0E72DE85F3E0012293D /* public */,
+				BCE2E0E82DE85F3E0012293D /* package-lock.json */,
+				BCE2E0E92DE85F3E0012293D /* package.json */,
+				BCE2E0EA2DE85F3E0012293D /* vite-env.d.ts */,
+				BCE2E0EB2DE85F3E0012293D /* public.zip */,
+				BCE2E0EC2DE85F3E0012293D /* manifest.json */,
+				BCE2E0ED2DE85F3E0012293D /* assets old */,
+				BCE2E0EE2DE85F3E0012293D /* tsconfig.json */,
+				BCE2E0EF2DE85F3E0012293D /* eslint.config.js */,
+				BCE2E0F02DE85F3E0012293D /* content.js */,
+				BCE2E0F12DE85F3E0012293D /* vite.config.ts */,
+				BCE2E0F22DE85F3E0012293D /* assets */,
+				BCE2E0F32DE85F3E0012293D /* background.js.LICENSE.txt */,
+				BCE2E0F42DE85F3E0012293D /* sandbox-dist */,
+				BCE2E0F52DE85F3E0012293D /* src */,
+			);
+			name = Resources;
+			path = "Shared (Extension)";
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		BCE2E0892DE85F3D0012293D /* TT Card Overlay (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BCE2E0CE2DE85F3D0012293D /* Build configuration list for PBXNativeTarget "TT Card Overlay (iOS)" */;
+			buildPhases = (
+				BCE2E0862DE85F3D0012293D /* Sources */,
+				BCE2E0872DE85F3D0012293D /* Frameworks */,
+				BCE2E0882DE85F3D0012293D /* Resources */,
+				BCE2E0CD2DE85F3D0012293D /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BCE2E0AC2DE85F3D0012293D /* PBXTargetDependency */,
+			);
+			name = "TT Card Overlay (iOS)";
+			packageProductDependencies = (
+			);
+			productName = "TT Card Overlay (iOS)";
+			productReference = BCE2E08A2DE85F3D0012293D /* TT Card Overlay.app */;
+			productType = "com.apple.product-type.application";
+		};
+		BCE2E09B2DE85F3D0012293D /* TT Card Overlay (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BCE2E0D52DE85F3D0012293D /* Build configuration list for PBXNativeTarget "TT Card Overlay (macOS)" */;
+			buildPhases = (
+				BCE2E0982DE85F3D0012293D /* Sources */,
+				BCE2E0992DE85F3D0012293D /* Frameworks */,
+				BCE2E09A2DE85F3D0012293D /* Resources */,
+				BCE2E0D42DE85F3D0012293D /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BCE2E0B62DE85F3D0012293D /* PBXTargetDependency */,
+			);
+			name = "TT Card Overlay (macOS)";
+			packageProductDependencies = (
+			);
+			productName = "TT Card Overlay (macOS)";
+			productReference = BCE2E09C2DE85F3D0012293D /* TT Card Overlay.app */;
+			productType = "com.apple.product-type.application";
+		};
+		BCE2E0A82DE85F3D0012293D /* TT Card Overlay Extension (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BCE2E0CA2DE85F3D0012293D /* Build configuration list for PBXNativeTarget "TT Card Overlay Extension (iOS)" */;
+			buildPhases = (
+				BCE2E0A52DE85F3D0012293D /* Sources */,
+				BCE2E0A62DE85F3D0012293D /* Frameworks */,
+				BCE2E0A72DE85F3D0012293D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "TT Card Overlay Extension (iOS)";
+			packageProductDependencies = (
+			);
+			productName = "TT Card Overlay Extension (iOS)";
+			productReference = BCE2E0A92DE85F3D0012293D /* TT Card Overlay Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		BCE2E0B22DE85F3D0012293D /* TT Card Overlay Extension (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BCE2E0D12DE85F3D0012293D /* Build configuration list for PBXNativeTarget "TT Card Overlay Extension (macOS)" */;
+			buildPhases = (
+				BCE2E0AF2DE85F3D0012293D /* Sources */,
+				BCE2E0B02DE85F3D0012293D /* Frameworks */,
+				BCE2E0B12DE85F3D0012293D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "TT Card Overlay Extension (macOS)";
+			packageProductDependencies = (
+			);
+			productName = "TT Card Overlay Extension (macOS)";
+			productReference = BCE2E0B32DE85F3D0012293D /* TT Card Overlay Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BCE2E0772DE85F3B0012293D /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1610;
+				LastUpgradeCheck = 1610;
+				TargetAttributes = {
+					BCE2E0892DE85F3D0012293D = {
+						CreatedOnToolsVersion = 16.1;
+					};
+					BCE2E09B2DE85F3D0012293D = {
+						CreatedOnToolsVersion = 16.1;
+					};
+					BCE2E0A82DE85F3D0012293D = {
+						CreatedOnToolsVersion = 16.1;
+					};
+					BCE2E0B22DE85F3D0012293D = {
+						CreatedOnToolsVersion = 16.1;
+					};
+				};
+			};
+			buildConfigurationList = BCE2E07A2DE85F3B0012293D /* Build configuration list for PBXProject "TT Card Overlay" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = BCE2E0762DE85F3B0012293D;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = BCE2E08B2DE85F3D0012293D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				BCE2E0892DE85F3D0012293D /* TT Card Overlay (iOS) */,
+				BCE2E09B2DE85F3D0012293D /* TT Card Overlay (macOS) */,
+				BCE2E0A82DE85F3D0012293D /* TT Card Overlay Extension (iOS) */,
+				BCE2E0B22DE85F3D0012293D /* TT Card Overlay Extension (macOS) */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		BCE2E0882DE85F3D0012293D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BCE2E0BC2DE85F3D0012293D /* Icon.png in Resources */,
+				BCE2E0932DE85F3D0012293D /* LaunchScreen.storyboard in Resources */,
+				BCE2E0BA2DE85F3D0012293D /* Main.html in Resources */,
+				BCE2E0C02DE85F3D0012293D /* Script.js in Resources */,
+				BCE2E0C42DE85F3D0012293D /* Assets.xcassets in Resources */,
+				BCE2E0962DE85F3D0012293D /* Main.storyboard in Resources */,
+				BCE2E0BE2DE85F3D0012293D /* Style.css in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCE2E09A2DE85F3D0012293D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BCE2E0BD2DE85F3D0012293D /* Icon.png in Resources */,
+				BCE2E0BF2DE85F3D0012293D /* Style.css in Resources */,
+				BCE2E0A22DE85F3D0012293D /* Main.storyboard in Resources */,
+				BCE2E0C12DE85F3D0012293D /* Script.js in Resources */,
+				BCE2E0C52DE85F3D0012293D /* Assets.xcassets in Resources */,
+				BCE2E0BB2DE85F3D0012293D /* Main.html in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCE2E0A72DE85F3D0012293D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BCE2E1272DE85F3E0012293D /* content.js in Resources */,
+				BCE2E11F2DE85F3E0012293D /* public in Resources */,
+				BCE2E12A2DE85F3E0012293D /* sandbox-dist in Resources */,
+				BCE2E1182DE85F3E0012293D /* dist in Resources */,
+				BCE2E1162DE85F3E0012293D /* popup.js.LICENSE.txt in Resources */,
+				BCE2E11A2DE85F3E0012293D /* tsconfig.tsbuildinfo in Resources */,
+				BCE2E1242DE85F3E0012293D /* assets old in Resources */,
+				BCE2E1112DE85F3E0012293D /* webpack.sandbox.config.js in Resources */,
+				BCE2E1252DE85F3E0012293D /* tsconfig.json in Resources */,
+				BCE2E12B2DE85F3E0012293D /* src in Resources */,
+				BCE2E1172DE85F3E0012293D /* background.js in Resources */,
+				BCE2E1282DE85F3E0012293D /* assets in Resources */,
+				BCE2E1232DE85F3E0012293D /* manifest.json in Resources */,
+				BCE2E1222DE85F3E0012293D /* public.zip in Resources */,
+				BCE2E1262DE85F3E0012293D /* eslint.config.js in Resources */,
+				BCE2E11C2DE85F3E0012293D /* webpack.config.js in Resources */,
+				BCE2E1152DE85F3E0012293D /* test in Resources */,
+				BCE2E1142DE85F3E0012293D /* tsconfig.app.json in Resources */,
+				BCE2E1132DE85F3E0012293D /* popup.js in Resources */,
+				BCE2E11D2DE85F3E0012293D /* tsconfig orig.json in Resources */,
+				BCE2E1202DE85F3E0012293D /* package-lock.json in Resources */,
+				BCE2E11E2DE85F3E0012293D /* README.md in Resources */,
+				BCE2E1292DE85F3E0012293D /* background.js.LICENSE.txt in Resources */,
+				BCE2E1212DE85F3E0012293D /* package.json in Resources */,
+				BCE2E11B2DE85F3E0012293D /* node_modules in Resources */,
+				BCE2E1192DE85F3E0012293D /* unifiedBackground.js in Resources */,
+				BCE2E1122DE85F3E0012293D /* tsconfig.node.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCE2E0B12DE85F3D0012293D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BCE2E10C2DE85F3E0012293D /* content.js in Resources */,
+				BCE2E1042DE85F3E0012293D /* public in Resources */,
+				BCE2E10F2DE85F3E0012293D /* sandbox-dist in Resources */,
+				BCE2E0FD2DE85F3E0012293D /* dist in Resources */,
+				BCE2E0FB2DE85F3E0012293D /* popup.js.LICENSE.txt in Resources */,
+				BCE2E0FF2DE85F3E0012293D /* tsconfig.tsbuildinfo in Resources */,
+				BCE2E1092DE85F3E0012293D /* assets old in Resources */,
+				BCE2E0F62DE85F3E0012293D /* webpack.sandbox.config.js in Resources */,
+				BCE2E10A2DE85F3E0012293D /* tsconfig.json in Resources */,
+				BCE2E1102DE85F3E0012293D /* src in Resources */,
+				BCE2E0FC2DE85F3E0012293D /* background.js in Resources */,
+				BCE2E10D2DE85F3E0012293D /* assets in Resources */,
+				BCE2E1082DE85F3E0012293D /* manifest.json in Resources */,
+				BCE2E1072DE85F3E0012293D /* public.zip in Resources */,
+				BCE2E10B2DE85F3E0012293D /* eslint.config.js in Resources */,
+				BCE2E1012DE85F3E0012293D /* webpack.config.js in Resources */,
+				BCE2E0FA2DE85F3E0012293D /* test in Resources */,
+				BCE2E0F92DE85F3E0012293D /* tsconfig.app.json in Resources */,
+				BCE2E0F82DE85F3E0012293D /* popup.js in Resources */,
+				BCE2E1022DE85F3E0012293D /* tsconfig orig.json in Resources */,
+				BCE2E1052DE85F3E0012293D /* package-lock.json in Resources */,
+				BCE2E1032DE85F3E0012293D /* README.md in Resources */,
+				BCE2E10E2DE85F3E0012293D /* background.js.LICENSE.txt in Resources */,
+				BCE2E1062DE85F3E0012293D /* package.json in Resources */,
+				BCE2E1002DE85F3E0012293D /* node_modules in Resources */,
+				BCE2E0FE2DE85F3E0012293D /* unifiedBackground.js in Resources */,
+				BCE2E0F72DE85F3E0012293D /* tsconfig.node.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BCE2E0862DE85F3D0012293D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BCE2E0C22DE85F3D0012293D /* ViewController.swift in Sources */,
+				BCE2E08E2DE85F3D0012293D /* AppDelegate.swift in Sources */,
+				BCE2E0902DE85F3D0012293D /* SceneDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCE2E0982DE85F3D0012293D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BCE2E0C32DE85F3D0012293D /* ViewController.swift in Sources */,
+				BCE2E09F2DE85F3D0012293D /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCE2E0A52DE85F3D0012293D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BCE2E0C62DE85F3D0012293D /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BCE2E0AF2DE85F3D0012293D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BCE2E0C72DE85F3D0012293D /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BCE2E0AC2DE85F3D0012293D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BCE2E0A82DE85F3D0012293D /* TT Card Overlay Extension (iOS) */;
+			targetProxy = BCE2E0AB2DE85F3D0012293D /* PBXContainerItemProxy */;
+		};
+		BCE2E0B62DE85F3D0012293D /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BCE2E0B22DE85F3D0012293D /* TT Card Overlay Extension (macOS) */;
+			targetProxy = BCE2E0B52DE85F3D0012293D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		BCE2E07D2DE85F3B0012293D /* Main.html */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BCE2E07E2DE85F3B0012293D /* Base */,
+			);
+			name = Main.html;
+			sourceTree = "<group>";
+		};
+		BCE2E0912DE85F3D0012293D /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BCE2E0922DE85F3D0012293D /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		BCE2E0942DE85F3D0012293D /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BCE2E0952DE85F3D0012293D /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		BCE2E0A02DE85F3D0012293D /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BCE2E0A12DE85F3D0012293D /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		BCE2E0C82DE85F3D0012293D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		BCE2E0C92DE85F3D0012293D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		BCE2E0CB2DE85F3D0012293D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TT Card Overlay Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.TT-Card-Overlay.Extension";
+				PRODUCT_NAME = "TT Card Overlay Extension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BCE2E0CC2DE85F3D0012293D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TT Card Overlay Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.TT-Card-Overlay.Extension";
+				PRODUCT_NAME = "TT Card Overlay Extension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		BCE2E0CF2DE85F3D0012293D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TT Card Overlay";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.TT-Card-Overlay";
+				PRODUCT_NAME = "TT Card Overlay";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BCE2E0D02DE85F3D0012293D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TT Card Overlay";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.TT-Card-Overlay";
+				PRODUCT_NAME = "TT Card Overlay";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		BCE2E0D22DE85F3D0012293D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/TT Card Overlay.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TT Card Overlay Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.TT-Card-Overlay.Extension";
+				PRODUCT_NAME = "TT Card Overlay Extension";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		BCE2E0D32DE85F3D0012293D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/TT Card Overlay.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TT Card Overlay Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.TT-Card-Overlay.Extension";
+				PRODUCT_NAME = "TT Card Overlay Extension";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		BCE2E0D62DE85F3D0012293D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "macOS (App)/TT Card Overlay.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TT Card Overlay";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.TT-Card-Overlay";
+				PRODUCT_NAME = "TT Card Overlay";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		BCE2E0D72DE85F3D0012293D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "macOS (App)/TT Card Overlay.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TT Card Overlay";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.TT-Card-Overlay";
+				PRODUCT_NAME = "TT Card Overlay";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		BCE2E07A2DE85F3B0012293D /* Build configuration list for PBXProject "TT Card Overlay" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BCE2E0C82DE85F3D0012293D /* Debug */,
+				BCE2E0C92DE85F3D0012293D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BCE2E0CA2DE85F3D0012293D /* Build configuration list for PBXNativeTarget "TT Card Overlay Extension (iOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BCE2E0CB2DE85F3D0012293D /* Debug */,
+				BCE2E0CC2DE85F3D0012293D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BCE2E0CE2DE85F3D0012293D /* Build configuration list for PBXNativeTarget "TT Card Overlay (iOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BCE2E0CF2DE85F3D0012293D /* Debug */,
+				BCE2E0D02DE85F3D0012293D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BCE2E0D12DE85F3D0012293D /* Build configuration list for PBXNativeTarget "TT Card Overlay Extension (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BCE2E0D22DE85F3D0012293D /* Debug */,
+				BCE2E0D32DE85F3D0012293D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BCE2E0D52DE85F3D0012293D /* Build configuration list for PBXNativeTarget "TT Card Overlay (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BCE2E0D62DE85F3D0012293D /* Debug */,
+				BCE2E0D72DE85F3D0012293D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = BCE2E0772DE85F3B0012293D /* Project object */;
+}

@@ -52,6 +52,7 @@ export interface TaskStoreState {
   viewingUserId: number | null;
   selectedPivotTasks: Task[];
   hasHydrated: boolean;
+
   resetTasks: () => void;
   setViewingUserId: (id: number | null) => void;
   setSelectedPivotTasks: (tasks: Task[]) => void;
@@ -323,6 +324,7 @@ export const useTaskStore = create<TaskStoreState>()(
           selectedTaskId: rest.selectedTaskId,
           selectedTask: rest.selectedTask,
           selectedRedirect: rest.selectedRedirect,
+          viewingUserId: rest.viewingUserId,
         };
       },
       onRehydrateStorage: () => () => {

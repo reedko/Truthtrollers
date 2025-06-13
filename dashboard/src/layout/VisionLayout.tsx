@@ -128,23 +128,19 @@ const VisionLayout: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const demoToken = params.get("demo");
+
     if (demoToken) {
       const payload = decodeJwt(demoToken);
-      const currentUser = useAuthStore.getState().user;
+      const demoUser = {
+        ...payload,
+        username: "CritStink",
+        avatar: "C",
+        can_post: false,
+        isDemo: true,
+      };
+      setAuth(demoUser, demoToken);
 
-      if (!currentUser?.user_id) {
-        console.log("🧬 No user set — applying demo token.");
-        setAuth(
-          { ...payload, jwt: demoToken, can_post: false, isDemo: true },
-          demoToken
-        );
-      } else {
-        console.log(
-          "🚫 Skipping demo token — real user is already set:",
-          currentUser
-        );
-      }
-
+      // Remove ?demo=... from URL for aesthetics
       params.delete("demo");
       const newSearch = params.toString();
       window.history.replaceState(
@@ -153,8 +149,8 @@ const VisionLayout: React.FC = () => {
         location.pathname + (newSearch ? `?${newSearch}` : "")
       );
     }
+    // Don't add logout or clearing logic here!
   }, [location.search, location.pathname, setAuth]);
-
   return (
     <>
       <Sidebar />

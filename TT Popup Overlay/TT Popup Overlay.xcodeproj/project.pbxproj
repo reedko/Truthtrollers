@@ -1,0 +1,1091 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		BC203D772DE862E900D416C7 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC203D762DE862E900D416C7 /* AppDelegate.swift */; };
+		BC203D792DE862E900D416C7 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC203D782DE862E900D416C7 /* SceneDelegate.swift */; };
+		BC203D7C2DE862E900D416C7 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BC203D7A2DE862E900D416C7 /* LaunchScreen.storyboard */; };
+		BC203D7F2DE862E900D416C7 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BC203D7D2DE862E900D416C7 /* Main.storyboard */; };
+		BC203D882DE862E900D416C7 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC203D872DE862E900D416C7 /* AppDelegate.swift */; };
+		BC203D8B2DE862E900D416C7 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = BC203D892DE862E900D416C7 /* Main.storyboard */; };
+		BC203D932DE862E900D416C7 /* TT Popup Overlay Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BC203D922DE862E900D416C7 /* TT Popup Overlay Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BC203D9D2DE862E900D416C7 /* TT Popup Overlay Extension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BC203D9C2DE862E900D416C7 /* TT Popup Overlay Extension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BC203DA32DE862E900D416C7 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = BC203D662DE862E700D416C7 /* Main.html */; };
+		BC203DA42DE862E900D416C7 /* Main.html in Resources */ = {isa = PBXBuildFile; fileRef = BC203D662DE862E700D416C7 /* Main.html */; };
+		BC203DA52DE862E900D416C7 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = BC203D682DE862E700D416C7 /* Icon.png */; };
+		BC203DA62DE862E900D416C7 /* Icon.png in Resources */ = {isa = PBXBuildFile; fileRef = BC203D682DE862E700D416C7 /* Icon.png */; };
+		BC203DA72DE862E900D416C7 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = BC203D692DE862E700D416C7 /* Style.css */; };
+		BC203DA82DE862E900D416C7 /* Style.css in Resources */ = {isa = PBXBuildFile; fileRef = BC203D692DE862E700D416C7 /* Style.css */; };
+		BC203DA92DE862E900D416C7 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = BC203D6A2DE862E700D416C7 /* Script.js */; };
+		BC203DAA2DE862E900D416C7 /* Script.js in Resources */ = {isa = PBXBuildFile; fileRef = BC203D6A2DE862E700D416C7 /* Script.js */; };
+		BC203DAB2DE862E900D416C7 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC203D6B2DE862E700D416C7 /* ViewController.swift */; };
+		BC203DAC2DE862E900D416C7 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC203D6B2DE862E700D416C7 /* ViewController.swift */; };
+		BC203DAD2DE862E900D416C7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BC203D6C2DE862E900D416C7 /* Assets.xcassets */; };
+		BC203DAE2DE862E900D416C7 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BC203D6C2DE862E900D416C7 /* Assets.xcassets */; };
+		BC203DAF2DE862E900D416C7 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC203D6E2DE862E900D416C7 /* SafariWebExtensionHandler.swift */; };
+		BC203DB02DE862E900D416C7 /* SafariWebExtensionHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC203D6E2DE862E900D416C7 /* SafariWebExtensionHandler.swift */; };
+		BC203DDF2DE862EA00D416C7 /* webpack.sandbox.config.js in Resources */ = {isa = PBXBuildFile; fileRef = BC203DC22DE862EA00D416C7 /* webpack.sandbox.config.js */; };
+		BC203DE02DE862EA00D416C7 /* tsconfig.node.json in Resources */ = {isa = PBXBuildFile; fileRef = BC203DC32DE862EA00D416C7 /* tsconfig.node.json */; };
+		BC203DE12DE862EA00D416C7 /* popup.js in Resources */ = {isa = PBXBuildFile; fileRef = BC203DC42DE862EA00D416C7 /* popup.js */; };
+		BC203DE22DE862EA00D416C7 /* tsconfig.app.json in Resources */ = {isa = PBXBuildFile; fileRef = BC203DC52DE862EA00D416C7 /* tsconfig.app.json */; };
+		BC203DE32DE862EA00D416C7 /* test in Resources */ = {isa = PBXBuildFile; fileRef = BC203DC62DE862EA00D416C7 /* test */; };
+		BC203DE42DE862EA00D416C7 /* popup.js.LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = BC203DC72DE862EA00D416C7 /* popup.js.LICENSE.txt */; };
+		BC203DE52DE862EA00D416C7 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = BC203DC82DE862EA00D416C7 /* background.js */; };
+		BC203DE62DE862EA00D416C7 /* dist in Resources */ = {isa = PBXBuildFile; fileRef = BC203DC92DE862EA00D416C7 /* dist */; };
+		BC203DE72DE862EA00D416C7 /* unifiedBackground.js in Resources */ = {isa = PBXBuildFile; fileRef = BC203DCA2DE862EA00D416C7 /* unifiedBackground.js */; };
+		BC203DE82DE862EA00D416C7 /* tsconfig.tsbuildinfo in Resources */ = {isa = PBXBuildFile; fileRef = BC203DCB2DE862EA00D416C7 /* tsconfig.tsbuildinfo */; };
+		BC203DE92DE862EA00D416C7 /* node_modules in Resources */ = {isa = PBXBuildFile; fileRef = BC203DCC2DE862EA00D416C7 /* node_modules */; };
+		BC203DEA2DE862EA00D416C7 /* webpack.config.js in Resources */ = {isa = PBXBuildFile; fileRef = BC203DCD2DE862EA00D416C7 /* webpack.config.js */; };
+		BC203DEB2DE862EA00D416C7 /* tsconfig orig.json in Resources */ = {isa = PBXBuildFile; fileRef = BC203DCE2DE862EA00D416C7 /* tsconfig orig.json */; };
+		BC203DEC2DE862EA00D416C7 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = BC203DCF2DE862EA00D416C7 /* README.md */; };
+		BC203DED2DE862EA00D416C7 /* public in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD02DE862EA00D416C7 /* public */; };
+		BC203DEE2DE862EA00D416C7 /* package-lock.json in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD12DE862EA00D416C7 /* package-lock.json */; };
+		BC203DEF2DE862EA00D416C7 /* package.json in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD22DE862EA00D416C7 /* package.json */; };
+		BC203DF02DE862EA00D416C7 /* public.zip in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD42DE862EA00D416C7 /* public.zip */; };
+		BC203DF12DE862EA00D416C7 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD52DE862EA00D416C7 /* manifest.json */; };
+		BC203DF22DE862EA00D416C7 /* assets old in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD62DE862EA00D416C7 /* assets old */; };
+		BC203DF32DE862EA00D416C7 /* tsconfig.json in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD72DE862EA00D416C7 /* tsconfig.json */; };
+		BC203DF42DE862EA00D416C7 /* eslint.config.js in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD82DE862EA00D416C7 /* eslint.config.js */; };
+		BC203DF52DE862EA00D416C7 /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD92DE862EA00D416C7 /* content.js */; };
+		BC203DF62DE862EA00D416C7 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = BC203DDB2DE862EA00D416C7 /* assets */; };
+		BC203DF72DE862EA00D416C7 /* background.js.LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = BC203DDC2DE862EA00D416C7 /* background.js.LICENSE.txt */; };
+		BC203DF82DE862EA00D416C7 /* sandbox-dist in Resources */ = {isa = PBXBuildFile; fileRef = BC203DDD2DE862EA00D416C7 /* sandbox-dist */; };
+		BC203DF92DE862EA00D416C7 /* src in Resources */ = {isa = PBXBuildFile; fileRef = BC203DDE2DE862EA00D416C7 /* src */; };
+		BC203DFA2DE862EA00D416C7 /* webpack.sandbox.config.js in Resources */ = {isa = PBXBuildFile; fileRef = BC203DC22DE862EA00D416C7 /* webpack.sandbox.config.js */; };
+		BC203DFB2DE862EA00D416C7 /* tsconfig.node.json in Resources */ = {isa = PBXBuildFile; fileRef = BC203DC32DE862EA00D416C7 /* tsconfig.node.json */; };
+		BC203DFC2DE862EA00D416C7 /* popup.js in Resources */ = {isa = PBXBuildFile; fileRef = BC203DC42DE862EA00D416C7 /* popup.js */; };
+		BC203DFD2DE862EA00D416C7 /* tsconfig.app.json in Resources */ = {isa = PBXBuildFile; fileRef = BC203DC52DE862EA00D416C7 /* tsconfig.app.json */; };
+		BC203DFE2DE862EA00D416C7 /* test in Resources */ = {isa = PBXBuildFile; fileRef = BC203DC62DE862EA00D416C7 /* test */; };
+		BC203DFF2DE862EA00D416C7 /* popup.js.LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = BC203DC72DE862EA00D416C7 /* popup.js.LICENSE.txt */; };
+		BC203E002DE862EA00D416C7 /* background.js in Resources */ = {isa = PBXBuildFile; fileRef = BC203DC82DE862EA00D416C7 /* background.js */; };
+		BC203E012DE862EA00D416C7 /* dist in Resources */ = {isa = PBXBuildFile; fileRef = BC203DC92DE862EA00D416C7 /* dist */; };
+		BC203E022DE862EA00D416C7 /* unifiedBackground.js in Resources */ = {isa = PBXBuildFile; fileRef = BC203DCA2DE862EA00D416C7 /* unifiedBackground.js */; };
+		BC203E032DE862EA00D416C7 /* tsconfig.tsbuildinfo in Resources */ = {isa = PBXBuildFile; fileRef = BC203DCB2DE862EA00D416C7 /* tsconfig.tsbuildinfo */; };
+		BC203E042DE862EA00D416C7 /* node_modules in Resources */ = {isa = PBXBuildFile; fileRef = BC203DCC2DE862EA00D416C7 /* node_modules */; };
+		BC203E052DE862EA00D416C7 /* webpack.config.js in Resources */ = {isa = PBXBuildFile; fileRef = BC203DCD2DE862EA00D416C7 /* webpack.config.js */; };
+		BC203E062DE862EA00D416C7 /* tsconfig orig.json in Resources */ = {isa = PBXBuildFile; fileRef = BC203DCE2DE862EA00D416C7 /* tsconfig orig.json */; };
+		BC203E072DE862EA00D416C7 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = BC203DCF2DE862EA00D416C7 /* README.md */; };
+		BC203E082DE862EA00D416C7 /* public in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD02DE862EA00D416C7 /* public */; };
+		BC203E092DE862EA00D416C7 /* package-lock.json in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD12DE862EA00D416C7 /* package-lock.json */; };
+		BC203E0A2DE862EA00D416C7 /* package.json in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD22DE862EA00D416C7 /* package.json */; };
+		BC203E0B2DE862EA00D416C7 /* public.zip in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD42DE862EA00D416C7 /* public.zip */; };
+		BC203E0C2DE862EA00D416C7 /* manifest.json in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD52DE862EA00D416C7 /* manifest.json */; };
+		BC203E0D2DE862EA00D416C7 /* assets old in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD62DE862EA00D416C7 /* assets old */; };
+		BC203E0E2DE862EA00D416C7 /* tsconfig.json in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD72DE862EA00D416C7 /* tsconfig.json */; };
+		BC203E0F2DE862EA00D416C7 /* eslint.config.js in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD82DE862EA00D416C7 /* eslint.config.js */; };
+		BC203E102DE862EA00D416C7 /* content.js in Resources */ = {isa = PBXBuildFile; fileRef = BC203DD92DE862EA00D416C7 /* content.js */; };
+		BC203E112DE862EA00D416C7 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = BC203DDB2DE862EA00D416C7 /* assets */; };
+		BC203E122DE862EA00D416C7 /* background.js.LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = BC203DDC2DE862EA00D416C7 /* background.js.LICENSE.txt */; };
+		BC203E132DE862EA00D416C7 /* sandbox-dist in Resources */ = {isa = PBXBuildFile; fileRef = BC203DDD2DE862EA00D416C7 /* sandbox-dist */; };
+		BC203E142DE862EA00D416C7 /* src in Resources */ = {isa = PBXBuildFile; fileRef = BC203DDE2DE862EA00D416C7 /* src */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		BC203D942DE862E900D416C7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BC203D602DE862E700D416C7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BC203D912DE862E900D416C7;
+			remoteInfo = "TT Popup Overlay Extension (iOS)";
+		};
+		BC203D9E2DE862E900D416C7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = BC203D602DE862E700D416C7 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = BC203D9B2DE862E900D416C7;
+			remoteInfo = "TT Popup Overlay Extension (macOS)";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		BC203DB62DE862E900D416C7 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				BC203D932DE862E900D416C7 /* TT Popup Overlay Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC203DBD2DE862E900D416C7 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				BC203D9D2DE862E900D416C7 /* TT Popup Overlay Extension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		BC203D672DE862E700D416C7 /* Base */ = {isa = PBXFileReference; lastKnownFileType = text.html; name = Base; path = Base.lproj/Main.html; sourceTree = "<group>"; };
+		BC203D682DE862E700D416C7 /* Icon.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = Icon.png; sourceTree = "<group>"; };
+		BC203D692DE862E700D416C7 /* Style.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = Style.css; sourceTree = "<group>"; };
+		BC203D6A2DE862E700D416C7 /* Script.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = Script.js; sourceTree = "<group>"; };
+		BC203D6B2DE862E700D416C7 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		BC203D6C2DE862E900D416C7 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BC203D6E2DE862E900D416C7 /* SafariWebExtensionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariWebExtensionHandler.swift; sourceTree = "<group>"; };
+		BC203D732DE862E900D416C7 /* TT Popup Overlay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TT Popup Overlay.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BC203D762DE862E900D416C7 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		BC203D782DE862E900D416C7 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
+		BC203D7B2DE862E900D416C7 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		BC203D7E2DE862E900D416C7 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		BC203D802DE862E900D416C7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BC203D852DE862E900D416C7 /* TT Popup Overlay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "TT Popup Overlay.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BC203D872DE862E900D416C7 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		BC203D8A2DE862E900D416C7 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		BC203D8C2DE862E900D416C7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BC203D8D2DE862E900D416C7 /* TT Popup Overlay.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "TT Popup Overlay.entitlements"; sourceTree = "<group>"; };
+		BC203D922DE862E900D416C7 /* TT Popup Overlay Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "TT Popup Overlay Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BC203D972DE862E900D416C7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BC203D9C2DE862E900D416C7 /* TT Popup Overlay Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "TT Popup Overlay Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		BC203DA12DE862E900D416C7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BC203DA22DE862E900D416C7 /* TT Popup Overlay.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "TT Popup Overlay.entitlements"; sourceTree = "<group>"; };
+		BC203DC22DE862EA00D416C7 /* webpack.sandbox.config.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = webpack.sandbox.config.js; path = ../../extension/webpack.sandbox.config.js; sourceTree = "<group>"; };
+		BC203DC32DE862EA00D416C7 /* tsconfig.node.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = tsconfig.node.json; path = ../../extension/tsconfig.node.json; sourceTree = "<group>"; };
+		BC203DC42DE862EA00D416C7 /* popup.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = popup.js; path = ../../extension/popup.js; sourceTree = "<group>"; };
+		BC203DC52DE862EA00D416C7 /* tsconfig.app.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = tsconfig.app.json; path = ../../extension/tsconfig.app.json; sourceTree = "<group>"; };
+		BC203DC62DE862EA00D416C7 /* test */ = {isa = PBXFileReference; lastKnownFileType = folder; name = test; path = ../../extension/test; sourceTree = "<group>"; };
+		BC203DC72DE862EA00D416C7 /* popup.js.LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = popup.js.LICENSE.txt; path = ../../extension/popup.js.LICENSE.txt; sourceTree = "<group>"; };
+		BC203DC82DE862EA00D416C7 /* background.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = background.js; path = ../../extension/background.js; sourceTree = "<group>"; };
+		BC203DC92DE862EA00D416C7 /* dist */ = {isa = PBXFileReference; lastKnownFileType = folder; name = dist; path = ../../extension/dist; sourceTree = "<group>"; };
+		BC203DCA2DE862EA00D416C7 /* unifiedBackground.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = unifiedBackground.js; path = ../../extension/unifiedBackground.js; sourceTree = "<group>"; };
+		BC203DCB2DE862EA00D416C7 /* tsconfig.tsbuildinfo */ = {isa = PBXFileReference; lastKnownFileType = text; name = tsconfig.tsbuildinfo; path = ../../extension/tsconfig.tsbuildinfo; sourceTree = "<group>"; };
+		BC203DCC2DE862EA00D416C7 /* node_modules */ = {isa = PBXFileReference; lastKnownFileType = folder; name = node_modules; path = ../../extension/node_modules; sourceTree = "<group>"; };
+		BC203DCD2DE862EA00D416C7 /* webpack.config.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = webpack.config.js; path = ../../extension/webpack.config.js; sourceTree = "<group>"; };
+		BC203DCE2DE862EA00D416C7 /* tsconfig orig.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "tsconfig orig.json"; path = "../../extension/tsconfig orig.json"; sourceTree = "<group>"; };
+		BC203DCF2DE862EA00D416C7 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../../extension/README.md; sourceTree = "<group>"; };
+		BC203DD02DE862EA00D416C7 /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; name = public; path = ../../extension/public; sourceTree = "<group>"; };
+		BC203DD12DE862EA00D416C7 /* package-lock.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = "package-lock.json"; path = "../../extension/package-lock.json"; sourceTree = "<group>"; };
+		BC203DD22DE862EA00D416C7 /* package.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = package.json; path = ../../extension/package.json; sourceTree = "<group>"; };
+		BC203DD32DE862EA00D416C7 /* vite-env.d.ts */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.typescript; name = "vite-env.d.ts"; path = "../../extension/vite-env.d.ts"; sourceTree = "<group>"; };
+		BC203DD42DE862EA00D416C7 /* public.zip */ = {isa = PBXFileReference; lastKnownFileType = archive.zip; name = public.zip; path = ../../extension/public.zip; sourceTree = "<group>"; };
+		BC203DD52DE862EA00D416C7 /* manifest.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = manifest.json; path = ../../extension/manifest.json; sourceTree = "<group>"; };
+		BC203DD62DE862EA00D416C7 /* assets old */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "assets old"; path = "../../extension/assets old"; sourceTree = "<group>"; };
+		BC203DD72DE862EA00D416C7 /* tsconfig.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = tsconfig.json; path = ../../extension/tsconfig.json; sourceTree = "<group>"; };
+		BC203DD82DE862EA00D416C7 /* eslint.config.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = eslint.config.js; path = ../../extension/eslint.config.js; sourceTree = "<group>"; };
+		BC203DD92DE862EA00D416C7 /* content.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; name = content.js; path = ../../extension/content.js; sourceTree = "<group>"; };
+		BC203DDA2DE862EA00D416C7 /* vite.config.ts */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.typescript; name = vite.config.ts; path = ../../extension/vite.config.ts; sourceTree = "<group>"; };
+		BC203DDB2DE862EA00D416C7 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; name = assets; path = ../../extension/assets; sourceTree = "<group>"; };
+		BC203DDC2DE862EA00D416C7 /* background.js.LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; name = background.js.LICENSE.txt; path = ../../extension/background.js.LICENSE.txt; sourceTree = "<group>"; };
+		BC203DDD2DE862EA00D416C7 /* sandbox-dist */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "sandbox-dist"; path = "../../extension/sandbox-dist"; sourceTree = "<group>"; };
+		BC203DDE2DE862EA00D416C7 /* src */ = {isa = PBXFileReference; lastKnownFileType = folder; name = src; path = ../../extension/src; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		BC203D702DE862E900D416C7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC203D822DE862E900D416C7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC203D8F2DE862E900D416C7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC203D992DE862E900D416C7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		BC203D5F2DE862E700D416C7 = {
+			isa = PBXGroup;
+			children = (
+				BC203D642DE862E700D416C7 /* Shared (App) */,
+				BC203D6D2DE862E900D416C7 /* Shared (Extension) */,
+				BC203D752DE862E900D416C7 /* iOS (App) */,
+				BC203D862DE862E900D416C7 /* macOS (App) */,
+				BC203D962DE862E900D416C7 /* iOS (Extension) */,
+				BC203DA02DE862E900D416C7 /* macOS (Extension) */,
+				BC203D742DE862E900D416C7 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		BC203D642DE862E700D416C7 /* Shared (App) */ = {
+			isa = PBXGroup;
+			children = (
+				BC203D6B2DE862E700D416C7 /* ViewController.swift */,
+				BC203D6C2DE862E900D416C7 /* Assets.xcassets */,
+				BC203D652DE862E700D416C7 /* Resources */,
+			);
+			path = "Shared (App)";
+			sourceTree = "<group>";
+		};
+		BC203D652DE862E700D416C7 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				BC203D662DE862E700D416C7 /* Main.html */,
+				BC203D682DE862E700D416C7 /* Icon.png */,
+				BC203D692DE862E700D416C7 /* Style.css */,
+				BC203D6A2DE862E700D416C7 /* Script.js */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		BC203D6D2DE862E900D416C7 /* Shared (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				BC203DC12DE862EA00D416C7 /* Resources */,
+				BC203D6E2DE862E900D416C7 /* SafariWebExtensionHandler.swift */,
+			);
+			path = "Shared (Extension)";
+			sourceTree = "<group>";
+		};
+		BC203D742DE862E900D416C7 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				BC203D732DE862E900D416C7 /* TT Popup Overlay.app */,
+				BC203D852DE862E900D416C7 /* TT Popup Overlay.app */,
+				BC203D922DE862E900D416C7 /* TT Popup Overlay Extension.appex */,
+				BC203D9C2DE862E900D416C7 /* TT Popup Overlay Extension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		BC203D752DE862E900D416C7 /* iOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				BC203D762DE862E900D416C7 /* AppDelegate.swift */,
+				BC203D782DE862E900D416C7 /* SceneDelegate.swift */,
+				BC203D7A2DE862E900D416C7 /* LaunchScreen.storyboard */,
+				BC203D7D2DE862E900D416C7 /* Main.storyboard */,
+				BC203D802DE862E900D416C7 /* Info.plist */,
+			);
+			path = "iOS (App)";
+			sourceTree = "<group>";
+		};
+		BC203D862DE862E900D416C7 /* macOS (App) */ = {
+			isa = PBXGroup;
+			children = (
+				BC203D872DE862E900D416C7 /* AppDelegate.swift */,
+				BC203D892DE862E900D416C7 /* Main.storyboard */,
+				BC203D8C2DE862E900D416C7 /* Info.plist */,
+				BC203D8D2DE862E900D416C7 /* TT Popup Overlay.entitlements */,
+			);
+			path = "macOS (App)";
+			sourceTree = "<group>";
+		};
+		BC203D962DE862E900D416C7 /* iOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				BC203D972DE862E900D416C7 /* Info.plist */,
+			);
+			path = "iOS (Extension)";
+			sourceTree = "<group>";
+		};
+		BC203DA02DE862E900D416C7 /* macOS (Extension) */ = {
+			isa = PBXGroup;
+			children = (
+				BC203DA12DE862E900D416C7 /* Info.plist */,
+				BC203DA22DE862E900D416C7 /* TT Popup Overlay.entitlements */,
+			);
+			path = "macOS (Extension)";
+			sourceTree = "<group>";
+		};
+		BC203DC12DE862EA00D416C7 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				BC203DC22DE862EA00D416C7 /* webpack.sandbox.config.js */,
+				BC203DC32DE862EA00D416C7 /* tsconfig.node.json */,
+				BC203DC42DE862EA00D416C7 /* popup.js */,
+				BC203DC52DE862EA00D416C7 /* tsconfig.app.json */,
+				BC203DC62DE862EA00D416C7 /* test */,
+				BC203DC72DE862EA00D416C7 /* popup.js.LICENSE.txt */,
+				BC203DC82DE862EA00D416C7 /* background.js */,
+				BC203DC92DE862EA00D416C7 /* dist */,
+				BC203DCA2DE862EA00D416C7 /* unifiedBackground.js */,
+				BC203DCB2DE862EA00D416C7 /* tsconfig.tsbuildinfo */,
+				BC203DCC2DE862EA00D416C7 /* node_modules */,
+				BC203DCD2DE862EA00D416C7 /* webpack.config.js */,
+				BC203DCE2DE862EA00D416C7 /* tsconfig orig.json */,
+				BC203DCF2DE862EA00D416C7 /* README.md */,
+				BC203DD02DE862EA00D416C7 /* public */,
+				BC203DD12DE862EA00D416C7 /* package-lock.json */,
+				BC203DD22DE862EA00D416C7 /* package.json */,
+				BC203DD32DE862EA00D416C7 /* vite-env.d.ts */,
+				BC203DD42DE862EA00D416C7 /* public.zip */,
+				BC203DD52DE862EA00D416C7 /* manifest.json */,
+				BC203DD62DE862EA00D416C7 /* assets old */,
+				BC203DD72DE862EA00D416C7 /* tsconfig.json */,
+				BC203DD82DE862EA00D416C7 /* eslint.config.js */,
+				BC203DD92DE862EA00D416C7 /* content.js */,
+				BC203DDA2DE862EA00D416C7 /* vite.config.ts */,
+				BC203DDB2DE862EA00D416C7 /* assets */,
+				BC203DDC2DE862EA00D416C7 /* background.js.LICENSE.txt */,
+				BC203DDD2DE862EA00D416C7 /* sandbox-dist */,
+				BC203DDE2DE862EA00D416C7 /* src */,
+			);
+			name = Resources;
+			path = "Shared (Extension)";
+			sourceTree = SOURCE_ROOT;
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		BC203D722DE862E900D416C7 /* TT Popup Overlay (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BC203DB72DE862E900D416C7 /* Build configuration list for PBXNativeTarget "TT Popup Overlay (iOS)" */;
+			buildPhases = (
+				BC203D6F2DE862E900D416C7 /* Sources */,
+				BC203D702DE862E900D416C7 /* Frameworks */,
+				BC203D712DE862E900D416C7 /* Resources */,
+				BC203DB62DE862E900D416C7 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BC203D952DE862E900D416C7 /* PBXTargetDependency */,
+			);
+			name = "TT Popup Overlay (iOS)";
+			packageProductDependencies = (
+			);
+			productName = "TT Popup Overlay (iOS)";
+			productReference = BC203D732DE862E900D416C7 /* TT Popup Overlay.app */;
+			productType = "com.apple.product-type.application";
+		};
+		BC203D842DE862E900D416C7 /* TT Popup Overlay (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BC203DBE2DE862E900D416C7 /* Build configuration list for PBXNativeTarget "TT Popup Overlay (macOS)" */;
+			buildPhases = (
+				BC203D812DE862E900D416C7 /* Sources */,
+				BC203D822DE862E900D416C7 /* Frameworks */,
+				BC203D832DE862E900D416C7 /* Resources */,
+				BC203DBD2DE862E900D416C7 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BC203D9F2DE862E900D416C7 /* PBXTargetDependency */,
+			);
+			name = "TT Popup Overlay (macOS)";
+			packageProductDependencies = (
+			);
+			productName = "TT Popup Overlay (macOS)";
+			productReference = BC203D852DE862E900D416C7 /* TT Popup Overlay.app */;
+			productType = "com.apple.product-type.application";
+		};
+		BC203D912DE862E900D416C7 /* TT Popup Overlay Extension (iOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BC203DB32DE862E900D416C7 /* Build configuration list for PBXNativeTarget "TT Popup Overlay Extension (iOS)" */;
+			buildPhases = (
+				BC203D8E2DE862E900D416C7 /* Sources */,
+				BC203D8F2DE862E900D416C7 /* Frameworks */,
+				BC203D902DE862E900D416C7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "TT Popup Overlay Extension (iOS)";
+			packageProductDependencies = (
+			);
+			productName = "TT Popup Overlay Extension (iOS)";
+			productReference = BC203D922DE862E900D416C7 /* TT Popup Overlay Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		BC203D9B2DE862E900D416C7 /* TT Popup Overlay Extension (macOS) */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = BC203DBA2DE862E900D416C7 /* Build configuration list for PBXNativeTarget "TT Popup Overlay Extension (macOS)" */;
+			buildPhases = (
+				BC203D982DE862E900D416C7 /* Sources */,
+				BC203D992DE862E900D416C7 /* Frameworks */,
+				BC203D9A2DE862E900D416C7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "TT Popup Overlay Extension (macOS)";
+			packageProductDependencies = (
+			);
+			productName = "TT Popup Overlay Extension (macOS)";
+			productReference = BC203D9C2DE862E900D416C7 /* TT Popup Overlay Extension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		BC203D602DE862E700D416C7 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1610;
+				LastUpgradeCheck = 1610;
+				TargetAttributes = {
+					BC203D722DE862E900D416C7 = {
+						CreatedOnToolsVersion = 16.1;
+					};
+					BC203D842DE862E900D416C7 = {
+						CreatedOnToolsVersion = 16.1;
+					};
+					BC203D912DE862E900D416C7 = {
+						CreatedOnToolsVersion = 16.1;
+					};
+					BC203D9B2DE862E900D416C7 = {
+						CreatedOnToolsVersion = 16.1;
+					};
+				};
+			};
+			buildConfigurationList = BC203D632DE862E700D416C7 /* Build configuration list for PBXProject "TT Popup Overlay" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = BC203D5F2DE862E700D416C7;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = BC203D742DE862E900D416C7 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				BC203D722DE862E900D416C7 /* TT Popup Overlay (iOS) */,
+				BC203D842DE862E900D416C7 /* TT Popup Overlay (macOS) */,
+				BC203D912DE862E900D416C7 /* TT Popup Overlay Extension (iOS) */,
+				BC203D9B2DE862E900D416C7 /* TT Popup Overlay Extension (macOS) */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		BC203D712DE862E900D416C7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC203DA52DE862E900D416C7 /* Icon.png in Resources */,
+				BC203D7C2DE862E900D416C7 /* LaunchScreen.storyboard in Resources */,
+				BC203DA32DE862E900D416C7 /* Main.html in Resources */,
+				BC203DA92DE862E900D416C7 /* Script.js in Resources */,
+				BC203DAD2DE862E900D416C7 /* Assets.xcassets in Resources */,
+				BC203D7F2DE862E900D416C7 /* Main.storyboard in Resources */,
+				BC203DA72DE862E900D416C7 /* Style.css in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC203D832DE862E900D416C7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC203DA62DE862E900D416C7 /* Icon.png in Resources */,
+				BC203DA82DE862E900D416C7 /* Style.css in Resources */,
+				BC203D8B2DE862E900D416C7 /* Main.storyboard in Resources */,
+				BC203DAA2DE862E900D416C7 /* Script.js in Resources */,
+				BC203DAE2DE862E900D416C7 /* Assets.xcassets in Resources */,
+				BC203DA42DE862E900D416C7 /* Main.html in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC203D902DE862E900D416C7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC203E102DE862EA00D416C7 /* content.js in Resources */,
+				BC203E082DE862EA00D416C7 /* public in Resources */,
+				BC203E132DE862EA00D416C7 /* sandbox-dist in Resources */,
+				BC203E012DE862EA00D416C7 /* dist in Resources */,
+				BC203DFF2DE862EA00D416C7 /* popup.js.LICENSE.txt in Resources */,
+				BC203E032DE862EA00D416C7 /* tsconfig.tsbuildinfo in Resources */,
+				BC203E0D2DE862EA00D416C7 /* assets old in Resources */,
+				BC203DFA2DE862EA00D416C7 /* webpack.sandbox.config.js in Resources */,
+				BC203E0E2DE862EA00D416C7 /* tsconfig.json in Resources */,
+				BC203E142DE862EA00D416C7 /* src in Resources */,
+				BC203E002DE862EA00D416C7 /* background.js in Resources */,
+				BC203E112DE862EA00D416C7 /* assets in Resources */,
+				BC203E0C2DE862EA00D416C7 /* manifest.json in Resources */,
+				BC203E0B2DE862EA00D416C7 /* public.zip in Resources */,
+				BC203E0F2DE862EA00D416C7 /* eslint.config.js in Resources */,
+				BC203E052DE862EA00D416C7 /* webpack.config.js in Resources */,
+				BC203DFE2DE862EA00D416C7 /* test in Resources */,
+				BC203DFD2DE862EA00D416C7 /* tsconfig.app.json in Resources */,
+				BC203DFC2DE862EA00D416C7 /* popup.js in Resources */,
+				BC203E062DE862EA00D416C7 /* tsconfig orig.json in Resources */,
+				BC203E092DE862EA00D416C7 /* package-lock.json in Resources */,
+				BC203E072DE862EA00D416C7 /* README.md in Resources */,
+				BC203E122DE862EA00D416C7 /* background.js.LICENSE.txt in Resources */,
+				BC203E0A2DE862EA00D416C7 /* package.json in Resources */,
+				BC203E042DE862EA00D416C7 /* node_modules in Resources */,
+				BC203E022DE862EA00D416C7 /* unifiedBackground.js in Resources */,
+				BC203DFB2DE862EA00D416C7 /* tsconfig.node.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC203D9A2DE862E900D416C7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC203DF52DE862EA00D416C7 /* content.js in Resources */,
+				BC203DED2DE862EA00D416C7 /* public in Resources */,
+				BC203DF82DE862EA00D416C7 /* sandbox-dist in Resources */,
+				BC203DE62DE862EA00D416C7 /* dist in Resources */,
+				BC203DE42DE862EA00D416C7 /* popup.js.LICENSE.txt in Resources */,
+				BC203DE82DE862EA00D416C7 /* tsconfig.tsbuildinfo in Resources */,
+				BC203DF22DE862EA00D416C7 /* assets old in Resources */,
+				BC203DDF2DE862EA00D416C7 /* webpack.sandbox.config.js in Resources */,
+				BC203DF32DE862EA00D416C7 /* tsconfig.json in Resources */,
+				BC203DF92DE862EA00D416C7 /* src in Resources */,
+				BC203DE52DE862EA00D416C7 /* background.js in Resources */,
+				BC203DF62DE862EA00D416C7 /* assets in Resources */,
+				BC203DF12DE862EA00D416C7 /* manifest.json in Resources */,
+				BC203DF02DE862EA00D416C7 /* public.zip in Resources */,
+				BC203DF42DE862EA00D416C7 /* eslint.config.js in Resources */,
+				BC203DEA2DE862EA00D416C7 /* webpack.config.js in Resources */,
+				BC203DE32DE862EA00D416C7 /* test in Resources */,
+				BC203DE22DE862EA00D416C7 /* tsconfig.app.json in Resources */,
+				BC203DE12DE862EA00D416C7 /* popup.js in Resources */,
+				BC203DEB2DE862EA00D416C7 /* tsconfig orig.json in Resources */,
+				BC203DEE2DE862EA00D416C7 /* package-lock.json in Resources */,
+				BC203DEC2DE862EA00D416C7 /* README.md in Resources */,
+				BC203DF72DE862EA00D416C7 /* background.js.LICENSE.txt in Resources */,
+				BC203DEF2DE862EA00D416C7 /* package.json in Resources */,
+				BC203DE92DE862EA00D416C7 /* node_modules in Resources */,
+				BC203DE72DE862EA00D416C7 /* unifiedBackground.js in Resources */,
+				BC203DE02DE862EA00D416C7 /* tsconfig.node.json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		BC203D6F2DE862E900D416C7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC203DAB2DE862E900D416C7 /* ViewController.swift in Sources */,
+				BC203D772DE862E900D416C7 /* AppDelegate.swift in Sources */,
+				BC203D792DE862E900D416C7 /* SceneDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC203D812DE862E900D416C7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC203DAC2DE862E900D416C7 /* ViewController.swift in Sources */,
+				BC203D882DE862E900D416C7 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC203D8E2DE862E900D416C7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC203DAF2DE862E900D416C7 /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		BC203D982DE862E900D416C7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BC203DB02DE862E900D416C7 /* SafariWebExtensionHandler.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BC203D952DE862E900D416C7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BC203D912DE862E900D416C7 /* TT Popup Overlay Extension (iOS) */;
+			targetProxy = BC203D942DE862E900D416C7 /* PBXContainerItemProxy */;
+		};
+		BC203D9F2DE862E900D416C7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = BC203D9B2DE862E900D416C7 /* TT Popup Overlay Extension (macOS) */;
+			targetProxy = BC203D9E2DE862E900D416C7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		BC203D662DE862E700D416C7 /* Main.html */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BC203D672DE862E700D416C7 /* Base */,
+			);
+			name = Main.html;
+			sourceTree = "<group>";
+		};
+		BC203D7A2DE862E900D416C7 /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BC203D7B2DE862E900D416C7 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		BC203D7D2DE862E900D416C7 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BC203D7E2DE862E900D416C7 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		BC203D892DE862E900D416C7 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				BC203D8A2DE862E900D416C7 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		BC203DB12DE862E900D416C7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		BC203DB22DE862E900D416C7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		BC203DB42DE862E900D416C7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TT Popup Overlay Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.TT-Popup-Overlay.Extension";
+				PRODUCT_NAME = "TT Popup Overlay Extension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BC203DB52DE862E900D416C7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TT Popup Overlay Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.TT-Popup-Overlay.Extension";
+				PRODUCT_NAME = "TT Popup Overlay Extension";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		BC203DB82DE862E900D416C7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TT Popup Overlay";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.TT-Popup-Overlay";
+				PRODUCT_NAME = "TT Popup Overlay";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		BC203DB92DE862E900D416C7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "iOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TT Popup Overlay";
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
+				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.TT-Popup-Overlay";
+				PRODUCT_NAME = "TT Popup Overlay";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		BC203DBB2DE862E900D416C7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/TT Popup Overlay.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TT Popup Overlay Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.TT-Popup-Overlay.Extension";
+				PRODUCT_NAME = "TT Popup Overlay Extension";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		BC203DBC2DE862E900D416C7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "macOS (Extension)/TT Popup Overlay.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (Extension)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TT Popup Overlay Extension";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.TT-Popup-Overlay.Extension";
+				PRODUCT_NAME = "TT Popup Overlay Extension";
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		BC203DBF2DE862E900D416C7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "macOS (App)/TT Popup Overlay.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TT Popup Overlay";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.TT-Popup-Overlay";
+				PRODUCT_NAME = "TT Popup Overlay";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		BC203DC02DE862E900D416C7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "macOS (App)/TT Popup Overlay.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "macOS (App)/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "TT Popup Overlay";
+				INFOPLIST_KEY_NSMainStoryboardFile = Main;
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.14;
+				MARKETING_VERSION = 1.0;
+				OTHER_LDFLAGS = (
+					"-framework",
+					SafariServices,
+					"-framework",
+					WebKit,
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = "com.yourCompany.TT-Popup-Overlay";
+				PRODUCT_NAME = "TT Popup Overlay";
+				SDKROOT = macosx;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		BC203D632DE862E700D416C7 /* Build configuration list for PBXProject "TT Popup Overlay" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BC203DB12DE862E900D416C7 /* Debug */,
+				BC203DB22DE862E900D416C7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BC203DB32DE862E900D416C7 /* Build configuration list for PBXNativeTarget "TT Popup Overlay Extension (iOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BC203DB42DE862E900D416C7 /* Debug */,
+				BC203DB52DE862E900D416C7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BC203DB72DE862E900D416C7 /* Build configuration list for PBXNativeTarget "TT Popup Overlay (iOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BC203DB82DE862E900D416C7 /* Debug */,
+				BC203DB92DE862E900D416C7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BC203DBA2DE862E900D416C7 /* Build configuration list for PBXNativeTarget "TT Popup Overlay Extension (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BC203DBB2DE862E900D416C7 /* Debug */,
+				BC203DBC2DE862E900D416C7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		BC203DBE2DE862E900D416C7 /* Build configuration list for PBXNativeTarget "TT Popup Overlay (macOS)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BC203DBF2DE862E900D416C7 /* Debug */,
+				BC203DC02DE862E900D416C7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = BC203D602DE862E700D416C7 /* Project object */;
+}

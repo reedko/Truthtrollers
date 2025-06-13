@@ -153,7 +153,11 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
               setIsClaimViewModalOpen(true);
             }}
           >
-            <Tooltip label={claim.claim_text} hasArrow>
+            <Tooltip
+              label={claim.claim_text}
+              hasArrow
+              isDisabled={!!draggingClaim}
+            >
               <Text flex="1" noOfLines={1}>
                 {claim.claim_text}
               </Text>
