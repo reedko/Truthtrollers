@@ -31,6 +31,6 @@ backend/.env.build
 backend/.env.dev
 .env.build
 .env.dev
-
+backend/.env.prod
 
 extension/public/background.js
