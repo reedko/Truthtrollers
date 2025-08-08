@@ -35,7 +35,8 @@
     "pdf-poppler": "^0.2.1",
     "pdf2pic": "^3.1.4",
     "puppeteer": "^24.3.0",
-    "sharp": "^0.33.5"
+    "sharp": "^0.33.5",
+    "tiktoken": "^1.0.21"
   },
   "description": "",
   "devDependencies": {

@@ -17,6 +17,7 @@ import AccountSettingsPage from "./pages/AccountSettingsPage";
 import LogoutPage from "./pages/LogoutPage";
 import UserSelectionPage from "./pages/UserSelectionPage";
 import GamePreview from "./pages/GamePage";
+import TrueFalseGame from "./components/TrueFalseGame";
 
 const router = createBrowserRouter([
   {
@@ -101,6 +102,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <GamePreview />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/game/truefalse",
+        element: (
+          <ProtectedRoute>
+            <TrueFalseGame />
           </ProtectedRoute>
         ),
       },

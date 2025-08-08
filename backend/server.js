@@ -38,6 +38,7 @@ import { decodeJwt } from "./utils/jwt.js";
 
 import { parseOrRepairJSON } from "./utils/repairJson.js";
 import { createSessionLogger } from "./utils/sessionLogger.js";
+import { getYoutubeTranscriptWithPuppeteer } from "./utils/getYoutubeTranscriptWithPuppeteer.js";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -248,6 +249,82 @@ app.get("/proxy", async (req, res) => {
     res.status(500).send("Failed to fetch data");
   }
 });
+
+//youtubetranscripts:
+// backend/routes/youtubeTranscript.ts
+app.get("/api/youtube-transcript/:videoId", async (req, res) => {
+  const { videoId } = req.params;
+
+  try {
+    const transcriptText = await getYoutubeTranscriptWithPuppeteer(videoId);
+    res.json({ success: true, transcriptText });
+  } catch (err) {
+    console.error("❌ Server error fetching transcript:", err);
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch transcript." });
+  }
+});
+
+app.post("/store-content", async (req, res) => {
+  const {
+    url,
+    content_type,
+    media_source,
+    content_name,
+    raw_text,
+    video_id,
+    thumbnail,
+    topic,
+    subtopics,
+    authors,
+    publisherName,
+    is_retracted,
+  } = req.body;
+
+  try {
+    const [result] = await db.query(
+      `INSERT INTO stored_content 
+       (url, content_type, media_source, content_name, raw_text, video_id, thumbnail, topic, subtopics, authors, publisher_name, is_retracted)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        url,
+        content_type,
+        media_source,
+        content_name,
+        raw_text,
+        video_id,
+        thumbnail,
+        topic,
+        JSON.stringify(subtopics || []),
+        JSON.stringify(authors || []),
+        publisherName,
+        is_retracted || false,
+      ]
+    );
+
+    res.status(200).json({ success: true, stored_content_id: result.insertId });
+  } catch (err) {
+    console.error("❌ Failed to store content:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+app.post("/api/youtube-transcript/:videoId", async (req, res) => {
+  const { videoId } = req.params;
+  const { html, url } = req.body;
+
+  try {
+    const transcriptText = await (videoId, html, url); // optionally use html or url
+    res.json({ success: true, transcriptText });
+  } catch (err) {
+    console.error("❌ Server error fetching transcript:", err);
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch transcript." });
+  }
+});
+
 //readability
 app.post("/api/extract-readable-text", (req, res) => {
   const { html, url } = req.body;
@@ -290,15 +367,39 @@ app.get("/api/check-pdf-head", async (req, res) => {
 
 app.post("/api/fetch-pdf-text", async (req, res) => {
   const { url } = req.body;
+  console.log("📩 /api/fetch-pdf-text route hit:", url);
 
   try {
     const response = await fetch(url);
     const buffer = await response.arrayBuffer();
     const parsed = await pdfParse(Buffer.from(buffer));
 
-    const author = parsed.info?.Author || "";
-    const title = parsed.info?.Title || "";
-    console.log("📄 PDF parsed OK:", { title, author }); // NEW
+    // Raw metadata
+    let author = parsed.info?.Author || "";
+    let title = parsed.info?.Title || "";
+
+    // 🧠 Fallback to visible content if title missing
+    if (!title && parsed.text) {
+      const lines = parsed.text
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      // Pick best visible candidate as fallback
+      title =
+        lines.find((line) =>
+          /^(Subject|Letter|Hearing|Statement|The Honorable|Committee|CDC|Vaccines)/i.test(
+            line
+          )
+        ) ||
+        lines.find((line) => line.length > 40) ||
+        lines[0] ||
+        "";
+    }
+
+    // ✅ Final log
+    console.log("📄 Final inferred PDF metadata:", { title, author });
+
     res.send({
       success: true,
       text: parsed.text,
@@ -2249,6 +2350,132 @@ app.post("/api/claim-links", async (req, res) => {
   }
 });
 
+// GET /api/linked-claims-for-task/:contentId?viewerId=123
+// api/linked-claims-for-claim/:claimId
+app.get("/api/linked-claims-for-claim/:claimId", async (req, res) => {
+  const claimId = req.params.claimId;
+  const viewerId = req.query.viewerId ? req.query.viewerId : null;
+
+  const sql = `
+
+      SELECT 
+  cl.claim_link_id,
+  cl.target_claim_id,
+  cl.source_claim_id,
+
+  cl.relationship,
+  cl.support_level,
+  cl.notes,
+  c.veracity_score AS verimeter_score,
+
+  c.claim_id AS source_claim_id,
+  c.claim_text AS source_claim_text,
+  c.veracity_score AS source_veracity,
+  c.confidence_level AS source_confidence,
+  c.last_verified AS source_last_verified,
+
+  cc.content_id AS reference_content_id
+  
+    FROM claim_links cl
+    JOIN content_claims cc ON cl.source_claim_id = cc.claim_id
+    JOIN claims c ON cc.claim_id = c.claim_id
+    WHERE cl.target_claim_id = ?
+      AND cl.disabled = 0
+      ${viewerId ? "AND cl.user_id = ?" : ""}
+  `;
+
+  const params = viewerId ? [claimId, viewerId] : [claimId];
+
+  try {
+    const rows = await query(sql, params);
+    console.log(rows, ":::ROWOS");
+    const formatted = rows.map((row) => ({
+      claim_link_id: row.claim_link_id,
+      claimId: row.target_claim_id,
+      referenceId: row.reference_content_id,
+      sourceClaimId: row.source_claim_id,
+      relation:
+        row.relationship === "supports"
+          ? "support"
+          : row.relationship === "refutes"
+          ? "refute"
+          : "support", // fallback
+      confidence: row.confidence,
+      notes: row.notes,
+      verimeter_score: row.verimeter_score ?? null,
+      sourceClaim: {
+        claim_id: row.source_claim_id,
+        claim_text: row.source_claim_text,
+        veracity_score: row.source_veracity,
+        confidence_level: row.source_confidence,
+        last_verified: row.source_last_verified,
+      },
+    }));
+
+    res.json(formatted);
+  } catch (err) {
+    console.error("Error fetching linked claims for claim:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+app.get("/api/live-verimeter-score/:claimId", async (req, res) => {
+  const claimId = parseInt(req.params.claimId);
+  const viewerId = req.query.viewerId ? parseInt(req.query.viewerId) : null;
+  console.log(claimId, "::::DKCJKDS", viewerId, "::::DJFHFG");
+
+  if (isNaN(claimId)) {
+    console.warn("Invalid claimId received:", req.params.claimId);
+    return res.status(400).json({ error: "Invalid claim ID" });
+  }
+
+  const sql = viewerId
+    ? "CALL compute_and_store_verimeter_score_for_claim(?, ?);"
+    : "CALL compute_and_store_verimeter_score_for_claim(?, NULL);";
+
+  const params = viewerId ? [claimId, viewerId] : [claimId];
+
+  try {
+    const rows = await query(sql, params); // rows[0] is the SELECT at the end of SP
+    res.json(rows[0]); // Return just the final SELECT output
+  } catch (err) {
+    console.error("Error computing Verimeter score:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+app.get("/api/linked-claims-for-task/:contentId", async (req, res) => {
+  const contentId = req.params.contentId;
+  const viewerId = req.query.viewerId ? req.query.viewerId : null;
+
+  const sql = `
+   SELECT 
+  cl.claim_link_id,
+  cl.target_claim_id,
+  cl.source_claim_id,
+  cl.relationship,
+  cl.support_level,
+  cl.notes,
+  c.claim_text AS source_claim_text,
+  cc.content_id AS reference_content_id
+FROM claim_links cl
+JOIN content_claims cc_task ON cl.target_claim_id = cc_task.claim_id
+JOIN content_claims cc ON cl.source_claim_id = cc.claim_id
+JOIN claims c ON cc.claim_id = c.claim_id
+WHERE cc_task.content_id = ?
+  AND cl.disabled = 0
+  ${viewerId ? "AND cl.user_id = ?" : ""}
+  `;
+
+  const params = viewerId ? [contentId, viewerId] : [contentId];
+  try {
+    const rows = await query(sql, params);
+    res.json(rows);
+  } catch (err) {
+    console.error("Error fetching linked claims:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 app.get("/api/claims-and-linked-references/:contentId", async (req, res) => {
   const contentId = req.params.contentId;
   const viewerId = req.query.viewerId;
@@ -2398,6 +2625,149 @@ app.post("/api/claims/add", async (req, res) => {
   } catch (error) {
     console.error("❌ Error in /api/claims/add:", error);
     return res.status(500).json({ error: "Server error storing claims" });
+  }
+});
+
+//VERIMETER and TROLLMETER SCORES
+app.get("/api/content/:contentId/claim-scores", async (req, res) => {
+  const { contentId } = req.params;
+  const userId = req.query.viewerId ?? null;
+
+  try {
+    await query("CALL compute_verimeter_for_content(?, ?)", [
+      contentId,
+      userId,
+    ]);
+
+    const results = await query(
+      `
+      SELECT claim_id, verimeter_score
+      FROM claim_scores
+      WHERE content_id = ? AND (user_id IS NULL OR user_id = ?)
+    `,
+      [contentId, userId]
+    );
+
+    const scoreMap = {};
+    for (const row of results) {
+      scoreMap[row.claim_id] = Number(row.verimeter_score);
+    }
+
+    res.json(scoreMap);
+  } catch (err) {
+    console.error("Error fetching claim scores:", err);
+    res.status(500).json({ error: "Failed to fetch claim scores" });
+  }
+});
+
+app.get("/api/content/:contentId/scores", async (req, res) => {
+  const { contentId } = req.params;
+  const { userId } = req.body;
+
+  let [row] = await query(
+    "SELECT verimeter_score, trollmeter_score, pro_score, con_score FROM content_scores WHERE content_id = ?",
+    [contentId]
+  );
+  if (!row) {
+    // Run your stored procedures to populate the table
+    await query("CALL compute_verimeter_for_content(?, ?)", [
+      contentId,
+      userId,
+    ]);
+
+    await query("CALL compute_trollmeter_score(?)", [contentId]);
+    // Try again
+    [row] = await query(
+      "SELECT verimeter_score, trollmeter_score, pro_score, con_score FROM content_scores WHERE content_id = ?",
+      [contentId]
+    );
+    if (!row)
+      return res.status(404).json({ error: "Not found, even after compute" });
+  }
+
+  res.json(row);
+});
+
+app.post("/api/content/:contentId/scores/recompute", async (req, res) => {
+  const { contentId } = req.params;
+  const { userId } = req.body;
+
+  if (!userId) {
+    return res.status(400).json({ error: "Missing userId" });
+  }
+
+  try {
+    // Run your stored procedures with userId
+    await query("CALL compute_verimeter_for_content(?, ?)", [
+      contentId,
+      userId,
+    ]);
+
+    await query("CALL compute_trollmeter_score(?)", [contentId]);
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Failed to recompute scores:", err);
+    res.status(500).json({ error: "Failed to recompute scores" });
+  }
+});
+
+app.post("/api/testimonials/add", async (req, res) => {
+  try {
+    const { content_id, testimonials, user_id } = req.body;
+
+    if (
+      !content_id ||
+      !Array.isArray(testimonials) ||
+      testimonials.length === 0
+    ) {
+      return res
+        .status(400)
+        .json({ error: "content_id and testimonials are required" });
+    }
+
+    let insertedCount = 0;
+
+    for (const t of testimonials) {
+      const text = (t.text || "").trim();
+      if (!text) continue;
+
+      let testimonialId;
+
+      // 1️⃣ Check for existing identical testimonial
+      const existing = await query(
+        "SELECT testimonial_id FROM testimonials WHERE testimonial_text = ? AND (name IS NULL OR name = ?) AND (image_url IS NULL OR image_url = ?)",
+        [text, t.name || null, t.imageUrl || null]
+      );
+      if (existing.length > 0) {
+        testimonialId = existing[0].testimonial_id;
+      } else {
+        // 2️⃣ Insert new testimonial
+        const insertResult = await query(
+          "INSERT INTO testimonials (testimonial_text, name, image_url) VALUES (?, ?, ?)",
+          [text, t.name || null, t.imageUrl || null]
+        );
+        testimonialId = insertResult?.insertId || null;
+      }
+      if (!testimonialId) continue;
+
+      // 3️⃣ Link to content (avoid duplicate link)
+      const link = await query(
+        "SELECT ct_id FROM content_testimonials WHERE content_id = ? AND testimonial_id = ?",
+        [content_id, testimonialId]
+      );
+      if (link.length === 0) {
+        await query(
+          "INSERT INTO content_testimonials (content_id, testimonial_id, user_id) VALUES (?, ?, ?)",
+          [content_id, testimonialId, user_id || null]
+        );
+        insertedCount++;
+      }
+    }
+    res.json({ success: true, insertedCount });
+  } catch (error) {
+    console.error("❌ Error in /api/testimonials/add:", error);
+    res.status(500).json({ error: "Server error storing testimonials" });
   }
 });
 
@@ -2649,16 +3019,21 @@ app.get("/api/check-reference", async (req, res) => {
   }
 });
 
+import { encoding_for_model } from "tiktoken";
+
+const MAX_TOKENS = 12000;
+
 app.post("/api/analyze-content", async (req, res) => {
-  const { content } = req.body;
+  const { content, testimonials } = req.body;
   if (!content) {
     return res.status(400).json({ error: "Missing 'content' in request body" });
   }
 
   try {
-    const results = await callOpenAiAnalyze(content);
+    const results = await analyzeInChunks(content, testimonials);
     res.json(results);
   } catch (err) {
+    console.error("❌ Error during analysis:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -2677,23 +3052,95 @@ function parseOrRepairJSON2(input) {
   }
 }
 
-async function callOpenAiAnalyze(content) {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
+async function analyzeInChunks(content, testimonials) {
+  const tokenizer = encoding_for_model("gpt-4");
+  const paragraphs = content.split(/\n\s*\n/);
+  let currentChunk = "";
+  let chunkList = [];
+
+  for (let para of paragraphs) {
+    const testChunk = currentChunk ? `${currentChunk}\n\n${para}` : para;
+    const tokens = tokenizer.encode(testChunk);
+    if (tokens.length > MAX_TOKENS) {
+      if (currentChunk) chunkList.push(currentChunk);
+      currentChunk = para;
+    } else {
+      currentChunk = testChunk;
+    }
+  }
+  if (currentChunk) chunkList.push(currentChunk);
+
+  console.log(`📦 Sending ${chunkList.length} chunk(s) to GPT-4`);
+
+  let allClaims = [];
+  let allTestimonials = [];
+  let generalTopicCounts = {};
+  let specificTopicsCounts = {};
+
+  for (let i = 0; i < chunkList.length; i++) {
+    const chunk = chunkList[i];
+    const tokenLength = tokenizer.encode(chunk).length;
+    console.log(
+      `🔹 Chunk ${i + 1}/${chunkList.length} (${tokenLength} tokens)`
+    );
+
+    try {
+      const result = await callOpenAiAnalyzeSingleChunk(chunk, testimonials);
+
+      if (result.claims) allClaims.push(...result.claims);
+      if (result.testimonials) allTestimonials.push(...result.testimonials);
+
+      if (result.generalTopic) {
+        generalTopicCounts[result.generalTopic] =
+          (generalTopicCounts[result.generalTopic] || 0) + 1;
+      }
+
+      if (Array.isArray(result.specificTopics)) {
+        for (let topic of result.specificTopics) {
+          specificTopicsCounts[topic] = (specificTopicsCounts[topic] || 0) + 1;
+        }
+      }
+    } catch (err) {
+      console.warn(`⚠️ Error in chunk ${i + 1}:`, err.message);
+    }
+  }
+
+  const generalTopic =
+    Object.entries(generalTopicCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ||
+    "";
+  const specificTopics = Object.entries(specificTopicsCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([topic]) => topic);
+
+  return {
+    generalTopic,
+    specificTopics,
+    claims: [...new Set(allClaims)],
+    testimonials: allTestimonials,
+  };
+}
+
+async function callOpenAiAnalyzeSingleChunk(chunk, testimonials) {
+  const testimonialsText =
+    testimonials?.length > 0
+      ? `
+Below is a list of testimonials detected by an extractor. Please consider these, and deduplicate or improve them if they also appear in the main article text.
+
+Extracted testimonials:
+${JSON.stringify(testimonials, null, 2)}
+`
+      : "";
+
+  const messages = [
+    {
+      role: "system",
+      content:
+        "You are a combined topic, claim, and testimonial extraction assistant.",
     },
-    body: JSON.stringify({
-      model: "gpt-4-turbo",
-      messages: [
-        {
-          role: "system",
-          content: "You are a combined topic and claim extraction assistant.",
-        },
-        {
-          role: "user",
-          content: `
+    {
+      role: "user",
+      content: `
 You are a fact-checking assistant.
 
 First, identify the most general topic (max 2 words) for this text.
@@ -2702,69 +3149,137 @@ Next, extract every distinct factual assertion or claim — especially those wit
 Avoid generalizations or summaries. Do not combine multiple claims. 
 Each claim must be independently verifiable and phrased as a full sentence.
 
+Also, extract any testimonials or first-person case studies in the text (phrases such as “I used this and it worked for me,” or “Bobby used this method and made $20 billion”), and try to include a name or image URL if present. Testimonials must be objects: { "text": "...", "name": "...", "imageUrl": "..." } (name and imageUrl are optional).
+
+${testimonialsText}
+
 Return your answer in strict JSON like this:
 {
   "generalTopic": "<string>",
   "specificTopics": ["<string>", "<string>"],
-  "claims": ["<claim1>", "<claim2>", ...]
+  "claims": ["<claim1>", "<claim2>", ...],
+  "testimonials": [
+    { "text": "<testimonial1>", "name": "<optional>", "imageUrl": "<optional>" },
+    ...
+  ]
 }
 
 Text:
-${content}
-          `,
-        },
-      ],
-    }),
+${chunk}
+`,
+    },
+  ];
+
+  const body = {
+    model: "gpt-4-turbo",
+    messages,
+  };
+
+  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(body),
   });
 
-  if (!response.ok) {
-    let errorMessage = `OpenAI request failed: ${response.status} ${response.statusText}`;
+  const raw = await response.text();
 
-    try {
-      const errorData = await response.json();
-      if (errorData?.error?.message) {
-        errorMessage += ` — ${errorData.error.message}`;
-      }
-    } catch (jsonErr) {
-      console.warn("⚠️ Failed to parse error response JSON", jsonErr);
+  if (!response.ok) {
+    console.error("❌ OpenAI API error", response.status, raw.slice(0, 500));
+    throw new Error(`OpenAI API error: ${response.status} - ${raw}`);
+  }
+
+  try {
+    const json = JSON.parse(raw);
+    let reply = json.choices?.[0]?.message?.content?.trim() || "";
+
+    // 🧼 Strip markdown code block if present
+    if (reply.startsWith("```json")) {
+      reply = reply
+        .replace(/^```json\s*/, "")
+        .replace(/```$/, "")
+        .trim();
     }
 
-    throw new Error(errorMessage);
+    const parsed = parseOrRepairJSON2(reply);
+    return parsed;
+  } catch (e) {
+    console.error("❌ Failed to parse or repair assistant message:", raw);
+    throw new Error(
+      "Could not parse or repair assistant response: " + e.message
+    );
   }
-
-  const data = await response.json();
-  if (!data.choices || data.choices.length === 0) {
-    throw new Error("No completion returned from OpenAI");
-  }
-
-  const rawReply = data.choices[0].message.content.trim();
-  let cleanedReply = rawReply.trim(); // Remove extra spaces
-
-  // Strip GPT's triple backticks if present
-  if (cleanedReply.startsWith("```json")) {
-    cleanedReply = cleanedReply
-      .replace(/^```json/, "")
-      .replace(/```$/, "")
-      .trim();
-  }
-  // Attempt to parse the JSON
-  let parsed;
-  try {
-    parsed = parseOrRepairJSON(cleanedReply);
-  } catch (err) {
-    console.error("Invalid JSON from GPT:", cleanedReply);
-    console.error("Parse error:", err);
-    throw new Error("GPT returned invalid JSON");
-  }
-
-  return {
-    generalTopic: parsed.generalTopic || "Unknown",
-    specificTopics: Array.isArray(parsed.specificTopics)
-      ? parsed.specificTopics
-      : [],
-    claims: Array.isArray(parsed.claims) ? parsed.claims : [],
-  };
 }
+
+app.get("/api/store-content", async (req, res) => {
+  const db = getConnection(); // or however you get your MySQL connection
+  try {
+    const {
+      url,
+      content_type,
+      media_source,
+      content_name,
+      raw_text,
+      video_id,
+      thumbnail,
+      topic,
+      subtopics,
+      authors,
+      publisherName,
+      is_retracted,
+    } = req.query;
+
+    if (!url || !content_name || !raw_text) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // First check if this URL already exists
+    const [existing] = await db.query(
+      "SELECT stored_content_id FROM stored_content WHERE url = ?",
+      [url]
+    );
+
+    if (existing.length > 0) {
+      return res.json({
+        message: "Already exists",
+        stored_content_id: existing[0].stored_content_id,
+      });
+    }
+
+    // Otherwise, insert it
+    const [result] = await db.query(
+      `INSERT INTO stored_content (
+        url, content_type, media_source, content_name, raw_text,
+        video_id, thumbnail, topic, subtopics, authors,
+        publisher_name, is_retracted
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        url,
+        content_type || null,
+        media_source || null,
+        content_name,
+        raw_text,
+        video_id || null,
+        thumbnail || null,
+        topic || null,
+        subtopics || null,
+        authors || null,
+        publisherName || null,
+        is_retracted === "true" ? 1 : 0,
+      ]
+    );
+
+    res.json({
+      message: "Stored new content",
+      stored_content_id: result.insertId,
+    });
+  } catch (err) {
+    console.error("🧨 Error storing content:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
 
 app.post("/api/pre-scrape", async (req, res) => {
   const { articleUrl } = req.body;

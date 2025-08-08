@@ -56,4 +56,5 @@ export interface TaskData {
   Claims: string[];
   taskContentId?: string | null;
   is_retracted: boolean;
+  testimonials: { text: string; name?: string; imageUrl?: string }[]; // <--- new!
 }

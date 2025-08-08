@@ -11,10 +11,10 @@ import {
   Badge,
   Button,
   Avatar,
-  Progress,
   useBreakpointValue,
 } from "@chakra-ui/react";
 import { Task } from "../../../shared/entities/types";
+import { useNavigate } from "react-router-dom";
 
 interface GamePreviewProps {
   task?: Task;
@@ -60,6 +60,7 @@ const fakeUsers = [
 ];
 
 const GamePreview: React.FC<GamePreviewProps> = ({ task }) => {
+  const navigate = useNavigate();
   const sampleTask = task || {
     content_name:
       "Operation DebunkStorm – Viral Misinformation Threat Level Orange",
@@ -69,7 +70,6 @@ const GamePreview: React.FC<GamePreviewProps> = ({ task }) => {
 
   return (
     <Box p={6} minH="100vh" bg="gray.950" position="relative" overflow="hidden">
-      {/* Molecule-style SVG background */}
       <Box
         position="absolute"
         top="0"
@@ -176,8 +176,12 @@ const GamePreview: React.FC<GamePreviewProps> = ({ task }) => {
         </Box>
 
         <Box mt={8} textAlign="center">
-          <Button size="lg" colorScheme="teal" isDisabled>
-            🚧 Next Battle Coming Soon...
+          <Button
+            size="lg"
+            colorScheme="teal"
+            onClick={() => navigate("/game/truefalse")}
+          >
+            ✨ Try True/False Quiz
           </Button>
         </Box>
       </VStack>

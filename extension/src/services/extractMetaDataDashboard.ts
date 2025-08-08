@@ -15,6 +15,7 @@ import {
 
 import { fetchHtmlWithPuppeteer } from "./fetchHtmlWithPuppeteerDashboard";
 
+// Optionally: send to OpenAI for deduplication or enrichment
 const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 
 export const getExtractedText = async (
@@ -112,32 +113,72 @@ export const extractImageFromHtml = (
 };
 
 export const fetchPdfViaServer = async (url: string) => {
-  const pdfRes = await fetch(`${BASE_URL}/api/fetch-pdf-text`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
-  });
-  const json = await pdfRes.json();
-  if (!json?.success || !json.text)
+  let text = "";
+  let author = "";
+  let title = "";
+  let thumbnailUrl: string | undefined;
+
+  try {
+    const pdfRes = await fetch(`${BASE_URL}/api/fetch-pdf-text`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+
+    const pdfText = await safeJsonParse(pdfRes);
+    if (!pdfText?.success || !pdfText.text) {
+      console.warn("⚠️ Failed PDF text parse or empty content");
+      return { $: cheerio.load(""), isRetracted: false };
+    }
+
+    text = pdfText.text;
+    author = pdfText.author || "";
+    title = pdfText.title || "";
+
+    const thumbRes = await fetch(`${BASE_URL}/api/pdf-thumbnail`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+
+    const thumbJson = await safeJsonParse(thumbRes);
+    if (thumbJson?.success && thumbJson.imageUrl) {
+      thumbnailUrl = thumbJson.imageUrl;
+    } else {
+      console.warn("⚠️ Failed to get PDF thumbnail");
+    }
+  } catch (err) {
+    console.error("❌ Server-side PDF fetch error:", err);
     return { $: cheerio.load(""), isRetracted: false };
+  }
 
-  const $ = cheerio.load(`<body>${json.text.trim()}</body>`);
-  const thumbRes = await fetch(`${BASE_URL}/api/pdf-thumbnail`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ url }),
-  });
-  const thumbJson = await thumbRes.json();
+  if (!text || text.length < 50) {
+    console.warn("⚠️ Text too short or empty — skipping further processing");
+    return { $: cheerio.load(""), isRetracted: false };
+  }
 
+  const $ = cheerio.load(`<body>${text.trim()}</body>`);
+  console.log(text, "::TEXT::$$::", $.text());
   return {
     $,
-    isRetracted: detectRetraction(json.text),
+    isRetracted: detectRetraction(text),
     pdfMeta: {
-      title: json.title,
-      author: json.author,
-      thumbnailUrl: thumbJson?.imageUrl || undefined,
+      title,
+      author,
+      thumbnailUrl,
     },
   };
+};
+
+// Helper to safely parse JSON from fetch
+const safeJsonParse = async (res: Response): Promise<any | null> => {
+  try {
+    return await res.json();
+  } catch (err) {
+    const fallback = await res.text();
+    console.warn("⚠️ Failed JSON parse. Fallback response:", fallback);
+    return null;
+  }
 };
 
 export const fetchHtmlViaServer = async (url: string) => {

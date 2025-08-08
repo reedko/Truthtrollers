@@ -19,6 +19,7 @@ export interface ClaimLink {
   relation: "support" | "refute";
   confidence: number;
   notes?: string;
+  verimeter_score?: number;
 }
 
 interface RelationshipMapProps {

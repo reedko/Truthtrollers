@@ -7,7 +7,8 @@ import cytoscape, { EdgeSingular, NodeSingular } from "cytoscape";
 import { Box, Button, Text, useToast } from "@chakra-ui/react";
 import { createPortal } from "react-dom";
 import { GraphNode } from "../../../shared/entities/types";
-async function animateMoleculeScene({
+
+export async function animateMoleculeScene({
   cy,
   node,
   taskNode,
@@ -16,6 +17,7 @@ async function animateMoleculeScene({
   originalNodePositions,
   lastRefNode,
   lastRefOriginalPos,
+  animate = true,
 }: {
   cy: cytoscape.Core;
   node: NodeSingular;
@@ -27,10 +29,11 @@ async function animateMoleculeScene({
   >;
   lastRefNode: React.MutableRefObject<NodeSingular | null>;
   lastRefOriginalPos: React.MutableRefObject<{ x: number; y: number } | null>;
+  animate?: boolean;
 }) {
   const contentId = node.data("content_id");
 
-  // Step 1: Restore nodes
+  // Step 1: Restore positions if previous reference node was moved
   if (
     lastRefNode.current &&
     lastRefOriginalPos.current &&
@@ -38,17 +41,19 @@ async function animateMoleculeScene({
   ) {
     lastRefNode.current.position(lastRefOriginalPos.current);
   }
+
   if (Object.keys(originalNodePositions.current).length > 0) {
-    await restoreNodePositions(cy, originalNodePositions);
+    await restoreNodePositions(cy, originalNodePositions, animate);
   }
 
-  // Step 2: Gather refClaims and taskClaims
+  // Step 2: Get ref and task claims and relevant links
   const refClaims = nodes.filter(
     (n) => n.type === "refClaim" && n.content_id === contentId
   );
   const claimLinks = links.filter((l) =>
     refClaims.some((rc) => rc.id === l.source)
   );
+
   const claimsWithRelation = claimLinks
     .map((link) => {
       const claim = refClaims.find((rc) => rc.id === link.source);
@@ -65,9 +70,6 @@ async function animateMoleculeScene({
   const taskClaimMap = new Map(
     nodes.filter((n) => n.type === "taskClaim").map((n) => [n.id, n])
   );
-  const linkedTaskClaims = claimLinks
-    .map((l) => taskClaimMap.get(l.target))
-    .filter((n): n is NodeData => !!n);
 
   const taskClaimsWithRelation = claimLinks
     .map((link) => {
@@ -82,9 +84,9 @@ async function animateMoleculeScene({
     })
     .filter((x): x is NonNullable<typeof x> => !!x);
 
-  if (refClaims.length === 0 && linkedTaskClaims.length === 0) return;
+  if (refClaims.length === 0 && taskClaimsWithRelation.length === 0) return;
 
-  // Step 3: Scatter first
+  // Step 3: Scatter away from node
   lastRefOriginalPos.current = { ...node.position() };
   lastRefNode.current = node;
 
@@ -95,14 +97,16 @@ async function animateMoleculeScene({
     radius: 300,
     radiusStep: 40,
     dipRange: 5,
+    animate,
   });
 
-  // Step 4: Fan out claim nodes
+  // Step 4: Fan out claims
   const refClaimElements = await fanOutClaims({
     cy,
     claimsWithRelation,
     sourceNode: node,
     targetNode: taskNode,
+    animate,
   });
 
   const taskClaimElements = await fanOutClaims({
@@ -110,9 +114,10 @@ async function animateMoleculeScene({
     claimsWithRelation: taskClaimsWithRelation,
     sourceNode: taskNode,
     targetNode: node,
+    animate,
   });
 
-  // Step 5: Add linking edges
+  // Step 5: Add edges
   const addedEdges = claimLinks.map((link) => ({
     data: {
       ...link,
@@ -122,8 +127,23 @@ async function animateMoleculeScene({
 
   cy.add([...refClaimElements, ...taskClaimElements, ...addedEdges]);
 
+  cy.animate({
+    fit: { eles: cy.elements(), padding: 30 },
+    duration: 500,
+  });
+
+  if (animate) {
+    await cy.promiseOn("viewport");
+  } else {
+    cy.fit(cy.elements(), 30);
+  }
   // Step 6: Fit view
-  cy.fit(cy.elements(), 15);
+  if (animate) {
+    await new Promise((res) => setTimeout(res, 400));
+    cy.animate({ fit: { eles: cy.elements(), padding: 30 }, duration: 300 });
+  } else {
+    cy.fit(cy.elements(), 30);
+  }
 }
 
 function animateNode(
@@ -166,6 +186,7 @@ async function fartScatterAwayFromRef({
   radius = 300,
   radiusStep = 40,
   dipRange = 5,
+  animate = true,
 }: {
   cy: cytoscape.Core;
   refNode: NodeSingular;
@@ -173,6 +194,7 @@ async function fartScatterAwayFromRef({
   radius?: number;
   radiusStep?: number;
   dipRange?: number;
+  animate?: boolean;
 }): Promise<void> {
   const center = taskNode.position();
   const refPos = refNode.position();
@@ -195,17 +217,17 @@ async function fartScatterAwayFromRef({
         ["reference", "author", "publisher"].includes(type)
       );
     })
-    .toArray();
+    .toArray() as cytoscape.NodeSingular[]; // ⬅️ type assertion here
 
   const centerIndex = (nodesToScatter.length - 1) / 2;
 
   function valleyCurve(i: number): number {
     const dist = Math.abs(i - centerIndex);
     if (dist <= dipRange) {
-      return dist; // rising toward outer middle
+      return dist;
     } else {
       const decay = dist - dipRange;
-      return dipRange - decay * 0.7; // taper back down gently
+      return dipRange - decay * 0.7;
     }
   }
 
@@ -219,10 +241,110 @@ async function fartScatterAwayFromRef({
     const newX = center.x + effectiveRadius * Math.cos(angle);
     const newY = center.y + effectiveRadius * Math.sin(angle);
 
-    return { position: { x: newX, y: newY } };
+    return { node, position: { x: newX, y: newY } };
   });
 
-  await animateNodes(nodesToScatter, optionsList, 500);
+  const promises = optionsList.map(({ node, position }) =>
+    animate
+      ? animateNode(node, { position }, 500)
+      : (node.position(position), Promise.resolve())
+  );
+
+  Promise.all(
+    nodesToScatter.map((node, i) => {
+      const pos = optionsList[i].position;
+      return animate
+        ? animateNode(node, { position: pos }, 500)
+        : (node.position(pos), Promise.resolve());
+    })
+  );
+}
+
+async function fanOutClaims({
+  cy,
+  claimsWithRelation,
+  sourceNode,
+  targetNode,
+  minDistance = 100,
+  arcSpan = Math.PI / 2,
+  centerShiftFactor = 90,
+  animate = true,
+}: {
+  cy: cytoscape.Core;
+  claimsWithRelation: {
+    claim: NodeData;
+    relation: "supports" | "refutes" | "related";
+    notes: string;
+  }[];
+  sourceNode: NodeSingular;
+  targetNode: NodeSingular;
+  minDistance?: number;
+  arcSpan?: number;
+  centerShiftFactor?: number;
+  animate?: boolean;
+}): Promise<cytoscape.ElementDefinition[]> {
+  const isRef = sourceNode.data("type") === "reference";
+  const originalPos = { ...sourceNode.position() };
+  const targetPos = targetNode.position();
+  const dx = targetPos.x - originalPos.x;
+  const dy = targetPos.y - originalPos.y;
+  const angleRadians = Math.atan2(dy, dx);
+  const arcPadding = centerShiftFactor * claimsWithRelation.length;
+
+  if (isRef) {
+    const shiftedPos = {
+      x: originalPos.x - arcPadding * Math.cos(angleRadians),
+      y: originalPos.y - arcPadding * Math.sin(angleRadians),
+    };
+    sourceNode.position(shiftedPos);
+  }
+
+  const arcCenter = sourceNode.position();
+  const neededArcLength =
+    Math.max(2, claimsWithRelation.length - 1) * minDistance;
+  const radius = neededArcLength / arcSpan;
+  const added: cytoscape.ElementDefinition[] = [];
+
+  claimsWithRelation.forEach(({ claim, relation, notes }) => {
+    if (!cy.getElementById(claim.id).nonempty()) {
+      cy.add({ data: claim });
+      added.push({ data: claim });
+    }
+    const edgeId = `edge-${claim.id}-${sourceNode.id()}`;
+    if (!cy.getElementById(edgeId).nonempty()) {
+      added.push({
+        data: {
+          id: edgeId,
+          source: claim.id,
+          target: sourceNode.id(),
+          relation,
+          notes,
+        },
+      });
+    }
+  });
+
+  const promises = claimsWithRelation.map(({ claim }, i) => {
+    const angle =
+      -arcSpan / 2 +
+      (i / (claimsWithRelation.length - 1 || 1)) * arcSpan +
+      angleRadians;
+    const x = arcCenter.x + radius * Math.cos(angle);
+    const y = arcCenter.y + radius * Math.sin(angle);
+
+    const claimNode = cy.getElementById(claim.id).first() as NodeSingular;
+    claimNode.position(arcCenter);
+
+    if (animate) {
+      return animateNode(claimNode, { position: { x, y } }, 400);
+    } else {
+      claimNode.position({ x, y });
+      return Promise.resolve();
+    }
+  });
+
+  Promise.all(promises);
+  return added;
 }
 
 function bellValley(
@@ -323,87 +445,6 @@ function pushAwayOtherNodes(
   });
 }
 
-async function fanOutClaims({
-  cy,
-  claimsWithRelation,
-  sourceNode,
-  targetNode,
-  minDistance = 100,
-  arcSpan = Math.PI / 2,
-  centerShiftFactor = 90,
-}: {
-  cy: cytoscape.Core;
-  claimsWithRelation: {
-    claim: NodeData;
-    relation: "supports" | "refutes" | "related";
-    notes: string;
-  }[];
-  sourceNode: NodeSingular;
-  targetNode: NodeSingular;
-  minDistance?: number;
-  arcSpan?: number;
-  centerShiftFactor?: number;
-}): Promise<cytoscape.ElementDefinition[]> {
-  const isRef = sourceNode.data("type") === "reference";
-  const originalPos = { ...sourceNode.position() };
-  const targetPos = targetNode.position();
-  const dx = targetPos.x - originalPos.x;
-  const dy = targetPos.y - originalPos.y;
-  const angleRadians = Math.atan2(dy, dx);
-  const arcPadding = centerShiftFactor * claimsWithRelation.length;
-
-  if (isRef) {
-    const shiftedPos = {
-      x: originalPos.x - arcPadding * Math.cos(angleRadians),
-      y: originalPos.y - arcPadding * Math.sin(angleRadians),
-    };
-    sourceNode.position(shiftedPos);
-  }
-
-  const arcCenter = sourceNode.position();
-  const neededArcLength =
-    Math.max(2, claimsWithRelation.length - 1) * minDistance;
-  const radius = neededArcLength / arcSpan;
-  const added: cytoscape.ElementDefinition[] = [];
-
-  // First, add missing nodes/edges
-  claimsWithRelation.forEach(({ claim, relation, notes }) => {
-    if (!cy.getElementById(claim.id).nonempty()) {
-      cy.add({ data: claim });
-      added.push({ data: claim });
-    }
-    const edgeId = `edge-${claim.id}-${sourceNode.id()}`;
-    if (!cy.getElementById(edgeId).nonempty()) {
-      added.push({
-        data: {
-          id: edgeId,
-          source: claim.id,
-          target: sourceNode.id(),
-          relation,
-          notes,
-        },
-      });
-    }
-  });
-
-  // Then animate them all in parallel and wait for completion
-  const promises = claimsWithRelation.map(({ claim }, i) => {
-    const angle =
-      -arcSpan / 2 +
-      (i / (claimsWithRelation.length - 1 || 1)) * arcSpan +
-      angleRadians;
-    const x = arcCenter.x + radius * Math.cos(angle);
-    const y = arcCenter.y + radius * Math.sin(angle);
-
-    const claimNode = cy.getElementById(claim.id).first() as NodeSingular;
-    claimNode.position(arcCenter);
-    return animateNode(claimNode, { position: { x, y } }, 400);
-  });
-
-  await Promise.all(promises);
-  return added;
-}
-
 function saveNodePositions(
   cy: cytoscape.Core,
   store: React.MutableRefObject<any>
@@ -420,17 +461,28 @@ function saveNodePositions(
 
 async function restoreNodePositions(
   cy: cytoscape.Core,
-  store: React.MutableRefObject<Record<string, cytoscape.Position>>
+  store: React.MutableRefObject<Record<string, cytoscape.Position>>,
+  animate: boolean = true
 ): Promise<void> {
   const promises: Promise<void>[] = [];
+
   Object.entries(store.current).forEach(([id, pos]) => {
-    const nodeToRestore = cy.getElementById(id).first() as NodeSingular;
-    if (nodeToRestore.nonempty()) {
-      promises.push(animateNode(nodeToRestore, { position: pos }, 400));
+    const nodeToRestore = cy.getElementById(id).first();
+    if (nodeToRestore && nodeToRestore.nonempty() && nodeToRestore.isNode()) {
+      if (animate) {
+        promises.push(
+          animateNode(nodeToRestore as NodeSingular, { position: pos }, 400)
+        );
+      } else {
+        (nodeToRestore as NodeSingular).position(pos);
+        promises.push(Promise.resolve());
+      }
     }
   });
+
   await Promise.all(promises);
 }
+
 // ---- CytoscapeThrobbage™ ----
 function startThrobbing(node: any) {
   let growing = true;
@@ -826,6 +878,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       }
 
       // 🧽 Remove existing claims
+      const animate = true; // or true, depending on what you want
       cy.elements('node[type *= "Claim"], edge[relation]').remove();
       // Only restore if layout was previously saved
       if (
@@ -836,7 +889,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         lastRefNode.current.position(lastRefOriginalPos.current);
       }
       if (Object.keys(originalNodePositions.current).length > 0) {
-        restoreNodePositions(cy, originalNodePositions);
+        restoreNodePositions(cy, originalNodePositions, animate);
       }
       // 📍 Handle reference click
       if (type === "reference") {
@@ -853,6 +906,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             originalNodePositions,
             lastRefNode,
             lastRefOriginalPos,
+            animate,
           });
         })();
       }

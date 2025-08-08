@@ -4,6 +4,7 @@ import useTaskStore from "../src/store/useTaskStore";
 import { extractImageFromHtml } from "../src/services/extractMetaData";
 import browser from "webextension-polyfill";
 import { generateDeviceFingerprint } from "../../dashboard/src/utils/generateDeviceFingerprint";
+import { extractVideoIdFromUrl } from "./services/parseYoutubeUrl";
 
 const isDashboardUrl = (url) => {
   try {
@@ -447,7 +448,15 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
           return { success: false, error: err.message };
         });
     }
-
+    if (message.action === "storeTestimonials") {
+      const { contentId, testimonials, userId } = message.data;
+      return storeTestimonialsOnServer(contentId, testimonials, userId)
+        .then(() => ({ success: true }))
+        .catch((err) => {
+          console.error("Error storing testimonials:", err);
+          return { success: false, error: err.message };
+        });
+    }
     // [16] checkIfPdf
     if (message.action === "checkIfPdf") {
       return fetch(message.url, { method: "HEAD" })
@@ -519,7 +528,75 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         return { success: false };
       }
     }
+    //18.5 puppetteerTranscriptFetch
 
+    if (message.action === "extractYoutubeTranscript" && message.videoId) {
+      (async () => {
+        try {
+          const tabs = await browser.tabs.query({
+            active: true,
+            currentWindow: true,
+          });
+          const tab = tabs[0];
+          if (!tab?.id) throw new Error("No active tab ID");
+
+          const [result] = await browser.scripting.executeScript({
+            target: { tabId: tab.id },
+            func: () => {
+              const transcriptElems = [
+                ...document.querySelectorAll("ytd-transcript-segment-renderer"),
+              ];
+              return transcriptElems.map((e) => e.innerText).join(" ");
+            },
+          });
+
+          const transcriptText = result?.result || "";
+
+          if (transcriptText.length > 10) {
+            sendResponse({ success: true, transcriptText });
+          } else {
+            sendResponse({ success: false });
+          }
+        } catch (err) {
+          console.error("❌ DOM injection transcript fetch failed:", err);
+          sendResponse({ success: false });
+        }
+      })();
+
+      return true; // ✅ Keeps the message channel open for async sendResponse
+    }
+    // 18.6 fallbackYoutubeTranscript => calls backend API to get transcript
+    if (message.action === "fallbackYoutubeTranscript" && message.videoId) {
+      try {
+        const response = await fetch(
+          `${BASE_URL}/api/youtube-transcript/${message.videoId}`
+        );
+        const data = await response.json();
+        if (data.success && data.transcriptText) {
+          return { success: true, transcriptText: data.transcriptText };
+        } else {
+          return { success: false };
+        }
+      } catch (err) {
+        console.error("❌ Fallback API call failed:", err);
+        return { success: false };
+      }
+    }
+
+    if (message.action === "storeExtractedContent") {
+      try {
+        const response = await fetch(`${BASE_URL}/api/store-content`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(message.data),
+        });
+        const json = await response.json();
+        return json;
+      } catch (err) {
+        console.error("Failed to store content:", err);
+        return { success: false };
+      }
+    }
     // [19] puppeteerFetch
     if (message.action === "puppeteerFetch") {
       return fetch(`${BASE_URL}/api/fetch-with-puppeteer`, {
@@ -558,7 +635,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
 
     // [21] analyzeContent
     if (message.action === "analyzeContent") {
-      return callOpenAiAnalyze(message.content)
+      return callOpenAiAnalyze(message.content, message.testimonials)
         .then((result) => ({ success: true, data: result }))
         .catch((err) => ({ success: false, error: err.message }));
     }
@@ -890,9 +967,51 @@ async function storeClaimsOnServer(contentId, claims, contentType) {
     throw new Error("Server responded with an error storing claims");
   }
 }
+/**
+ * Store testimonials for a content item on the server.
+ * @param {string} contentId - The content ID.
+ * @param {Array<{ text: string, name?: string, imageUrl?: string }>} testimonials - Array of testimonial objects.
+ * @param {number|null} userId - Optional user ID, or null.
+ * @returns {Promise<void>}
+ */
+async function storeTestimonialsOnServer(
+  contentId,
+  testimonials,
+  userId = null
+) {
+  const response = await fetch(`${BASE_URL}/api/testimonials/add`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      content_id: contentId,
+      testimonials,
+      user_id: userId,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to store testimonials: ${errorText}`);
+  }
+
+  // Optional: handle JSON response if you want to check { success: true }
+  // const data = await response.json();
+  // if (!data.success) throw new Error(data.error || "Server error storing testimonials");
+}
 
 // Example function that calls OpenAI for both topics & claims
-async function callOpenAiAnalyze(content) {
+async function callOpenAiAnalyze(content, testimonials) {
+  // Add a testimonialsText block if testimonials were passed
+  const testimonialsText =
+    testimonials && Array.isArray(testimonials) && testimonials.length > 0
+      ? `
+Below is a list of testimonials extracted by a preliminary detector. If they appear in the main text, deduplicate, dedupe, or combine as needed. Improve these if you see better info in the full article.
+
+Extracted testimonials:
+${JSON.stringify(testimonials, null, 2)}
+      `
+      : "";
+
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -904,7 +1023,8 @@ async function callOpenAiAnalyze(content) {
       messages: [
         {
           role: "system",
-          content: "You are a combined topic and claim extraction assistant.",
+          content:
+            "You are a combined topic, claim, and testimonial extraction assistant.",
         },
         {
           role: "user",
@@ -917,11 +1037,19 @@ Next, extract every distinct factual assertion or claim — especially those wit
 Avoid generalizations or summaries. Do not combine multiple claims. 
 Each claim must be independently verifiable and phrased as a full sentence.
 
+Also, extract any testimonials or first-person case studies in the text (phrases such as “I used this and it worked for me,” or “Bobby used this method and made $20 billion”), and try to include a name or image URL if present. Testimonials must be objects: { "text": "...", "name": "...", "imageUrl": "..." } (name and imageUrl are optional).
+
+${testimonialsText}
+
 Return your answer in strict JSON like this:
 {
   "generalTopic": "<string>",
   "specificTopics": ["<string>", "<string>"],
-  "claims": ["<claim1>", "<claim2>", ...]
+  "claims": ["<claim1>", "<claim2>", ...],
+  "testimonials": [
+    { "text": "<testimonial1>", "name": "<optional>", "imageUrl": "<optional>" },
+    ...
+  ]
 }
 
 Text:
@@ -932,18 +1060,15 @@ ${content}
     }),
   });
 
+  // ...the rest of your JSON parsing logic stays as you had it!
   if (!response.ok) {
     let errorMessage = `OpenAI request failed: ${response.status} ${response.statusText}`;
-
     try {
       const errorData = await response.json();
       if (errorData?.error?.message) {
         errorMessage += ` — ${errorData.error.message}`;
       }
-    } catch (jsonErr) {
-      console.warn("⚠️ Failed to parse error response JSON", jsonErr);
-    }
-
+    } catch (jsonErr) {}
     throw new Error(errorMessage);
   }
 
@@ -952,17 +1077,13 @@ ${content}
     throw new Error("No completion returned from OpenAI");
   }
 
-  const rawReply = data.choices[0].message.content.trim();
-  let cleanedReply = rawReply.trim(); // Remove extra spaces
-
-  // Strip GPT's triple backticks if present
+  let cleanedReply = data.choices[0].message.content.trim();
   if (cleanedReply.startsWith("```json")) {
     cleanedReply = cleanedReply
       .replace(/^```json/, "")
       .replace(/```$/, "")
       .trim();
   }
-  // Attempt to parse the JSON
   let parsed;
   try {
     parsed = JSON.parse(cleanedReply);
@@ -971,12 +1092,14 @@ ${content}
     throw new Error("GPT returned invalid JSON");
   }
 
-  const generalTopic = parsed.generalTopic || "Unknown";
-  const specificTopics = Array.isArray(parsed.specificTopics)
-    ? parsed.specificTopics
-    : [];
-  const claims = Array.isArray(parsed.claims) ? parsed.claims : [];
-  return { generalTopic, specificTopics, claims };
+  return {
+    generalTopic: parsed.generalTopic || "Unknown",
+    specificTopics: Array.isArray(parsed.specificTopics)
+      ? parsed.specificTopics
+      : [],
+    claims: Array.isArray(parsed.claims) ? parsed.claims : [],
+    testimonials: Array.isArray(parsed.testimonials) ? parsed.testimonials : [],
+  };
 }
 
 // ✅ Detect when user navigates to a new page

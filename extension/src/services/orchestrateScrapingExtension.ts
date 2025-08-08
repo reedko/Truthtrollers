@@ -14,6 +14,7 @@ import { analyzeContent } from "./openaiTopicsAndClaimsExtension";
 import { extractVideoIdFromUrl } from "../services/parseYoutubeUrl";
 import checkAndDownloadTopicIcon from "../services/checkAndDownloadTopicIcon";
 
+import { YoutubeTranscript } from "youtube-transcript";
 import {
   extractArticleRootHTML,
   smartCleanHTMLForReadability,
@@ -24,10 +25,63 @@ import type { TaskData, Lit_references } from "../entities/Task";
 import type { DiffbotData } from "../entities/diffbotData";
 import * as cheerio from "cheerio";
 import browser from "webextension-polyfill";
+import { extractTestimonialsFromHtml } from "../utils/extractTestimonials";
+import { getYoutubeTranscriptFromDOM } from "./extractYoutubeTranscriptFromDOM";
+const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
+
 interface ReadabilityResponse {
   success: boolean;
   text?: string;
 }
+export function cleanTranscript(raw: string): string {
+  // Remove timestamps (e.g., 0:00, 12:45)
+  const noTimestamps = raw.replace(/\b\d{1,2}:\d{2}\b/g, "");
+
+  // Normalize whitespace
+  const normalized = noTimestamps
+    .replace(/\r?\n|\r/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // Break into chunks based on long pauses or double newlines (simulate paragraphs)
+  const paragraphBreaks = normalized
+    .split(/(?<=[.?!])\s+(?=[A-Z])/g) // Break after sentence-ending punctuation before capital letters
+    .reduce<string[]>((chunks, sentence) => {
+      if (chunks.length === 0) {
+        return [sentence];
+      }
+
+      const last = chunks[chunks.length - 1];
+      if (last.length + sentence.length < 1000) {
+        chunks[chunks.length - 1] = last + " " + sentence;
+      } else {
+        chunks.push(sentence);
+      }
+      return chunks;
+    }, []);
+
+  return paragraphBreaks.join("\n\n"); // Paragraph-style spacing for easier claim parsing
+}
+
+const fallbackTranscriptFromServer = async (
+  videoId: string
+): Promise<string | null> => {
+  try {
+    const response = (await browser.runtime.sendMessage({
+      action: "fallbackYoutubeTranscript",
+      videoId,
+    })) as { success: boolean; transcriptText?: string }; // 👈 Add this
+
+    if (response.success && response.transcriptText) {
+      const cleanScript = cleanTranscript(response.transcriptText);
+      return cleanScript;
+    }
+  } catch (err) {
+    console.warn("❌ Extension background fallback failed:", err);
+  }
+  return null;
+};
+
 const fetchDiffbotData = async (articleUrl: string): Promise<any> => {
   const result = await browser.runtime.sendMessage({ action: "pingTest" });
   console.log("pongTest result:", result);
@@ -71,13 +125,70 @@ export const orchestrateScraping = async (
     console.warn("⚠️ Diffbot fetch failed:", error);
   }
 
-  // 🧠 Detect and skip RSS feeds
   if (url.includes("feed") || url.endsWith(".xml")) {
     console.warn("⚠️ Skipping likely RSS/XML feed:", url);
     return null;
   }
 
-  // Fetch page content
+  let imageUrl = "";
+
+  const videoId = extractVideoIdFromUrl(url);
+
+  if (videoId) {
+    try {
+      console.log("🎥 Fetching transcript for video ID:", videoId);
+      const transcript = await YoutubeTranscript.fetchTranscript(videoId);
+
+      if (!Array.isArray(transcript) || transcript.length === 0) {
+        console.warn("⚠️ Transcript empty, trying DOM fallback…");
+
+        const tabs = await browser.tabs.query({
+          active: true,
+          currentWindow: true,
+        });
+        const activeTab = tabs[0];
+
+        if (activeTab?.id) {
+          const domResponse = (await browser.runtime.sendMessage({
+            action: "extractYoutubeTranscript",
+            videoId,
+          })) as { success: boolean; transcriptText?: string };
+
+          if (domResponse.success && domResponse.transcriptText) {
+            extractedText = domResponse.transcriptText;
+            console.log("✅ Extension background returned transcriptText");
+          } else {
+            console.warn(
+              "❌ Extension background did not return valid transcriptText"
+            );
+            const puppetFallback = await fallbackTranscriptFromServer(videoId);
+            if (puppetFallback) {
+              extractedText = puppetFallback;
+              console.log("✅ Puppeteer server returned fallback transcript");
+            } else {
+              console.warn(
+                "❌ Puppeteer server also failed to return transcript"
+              );
+            }
+          }
+        }
+      } else {
+        const transcriptText = transcript.map((entry) => entry.text).join(" ");
+        extractedText = transcriptText;
+        console.log("✅ YouTube transcript stored in extractedText");
+      }
+    } catch (err) {
+      console.warn("⚠️ Failed to fetch YouTube transcript:", err);
+      const puppetFallback = await fallbackTranscriptFromServer(videoId);
+      if (puppetFallback) {
+        extractedText = puppetFallback;
+        console.log("✅ Puppeteer server returned fallback transcript");
+      } else {
+        console.warn("❌ Puppeteer server also failed to return transcript");
+      }
+      console.log("trans:", extractedText);
+    }
+  }
   try {
     console.log("📦 Starting to fetch page content for", url);
     let $: cheerio.CheerioAPI;
@@ -88,19 +199,15 @@ export const orchestrateScraping = async (
       console.log("✅ fetchPageContent success");
     } else {
       const result = await fetchExternalPageContent(url);
-
       if (!result || !result.$ || result.isRSS) {
         console.warn(
           `⚠️ fetchExternalPageContent returned no usable content for ${url}.`
         );
-        result.isRSS && console.warn(`RSS feed.`);
         return null;
       }
-
       $ = result.$;
       isRetracted = result.isRetracted;
       if (result.pdfMeta) {
-        console.log("📄 PDF metadata:", result.pdfMeta);
         if (!content_name || content_name.length < 5) {
           content_name = result.pdfMeta.title || content_name;
         }
@@ -127,7 +234,6 @@ export const orchestrateScraping = async (
     let cleanHTML = extractArticleRootHTML($smart);
     if (!cleanHTML) cleanHTML = extractedHtml;
 
-    // ✅ Try Readability
     let readableText = "";
 
     try {
@@ -136,29 +242,16 @@ export const orchestrateScraping = async (
         html: cleanHTML,
         url,
       })) as ReadabilityResponse;
-
-      console.log("📦 Readability background response:", response);
-
       if (response?.success && response.text) {
         readableText = response.text;
-      } else {
-        console.warn("❌ Readability fallback triggered.");
-        readableText = "";
       }
     } catch (err) {
       console.error("❌ Readability message error:", err);
-      readableText = "";
     }
 
-    if (readableText && readableText.length > 300) {
-      console.log("✅ Readability succeeded, using readableText");
+    if (!extractedText && readableText && readableText.length > 300) {
       extractedText = readableText;
-    } else {
-      console.warn(
-        "⚠️ Readability failed or text too long — using cleanHTML fallback"
-      );
-
-      extractedText = cleanHTML || "";
+    } else if (!extractedText) {
       const $ext = cheerio.load(cleanHTML);
       $ext(
         "style, link[rel='stylesheet'], script:not([type='application/ld+json'])"
@@ -174,7 +267,7 @@ export const orchestrateScraping = async (
       content_name.length > 5
         ? content_name
         : diffbotData.title || (await getMainHeadline($));
-    const existingAuthors = authors; // the array that might have PDF’s author
+    const existingAuthors = authors;
     const extractedAuthors = await extractAuthors($);
     const diffbotAuthors = diffbotData.author
       ? diffbotData.author.split(/[,&]/).map((name) => ({
@@ -203,8 +296,6 @@ export const orchestrateScraping = async (
       ? { name: diffbotData.publisher.trim() }
       : await extractPublisher($);
 
-    const videoId = extractVideoIdFromUrl(url);
-    let imageUrl = "";
     if (!thumbNailUrl) {
       imageUrl = await getBestImage(url, extractedHtml, diffbotData);
       const baseUrl = new URL(url);
@@ -217,16 +308,33 @@ export const orchestrateScraping = async (
 
     if (contentType === "task") {
       extractedReferences = await extractReferences($);
-      console.log("References to process:", extractedReferences);
     }
-
-    const topicsAndClaims = await analyzeContent(extractedText);
-    generalTopic = topicsAndClaims.generalTopic;
-    specificTopics = topicsAndClaims.specificTopics;
-    claims = topicsAndClaims.claims;
+    const extractedTestimonials = extractTestimonialsFromHtml(extractedHtml);
+    const topicsAndClaims = await analyzeContent(
+      extractedText,
+      extractedTestimonials
+    );
+    const { generalTopic, specificTopics, claims, testimonials } =
+      topicsAndClaims;
 
     const iconThumbnailUrl = await checkAndDownloadTopicIcon(generalTopic);
-
+    await browser.runtime.sendMessage({
+      action: "storeExtractedContent",
+      data: {
+        url,
+        content_type: contentType,
+        media_source: videoId ? "YouTube" : "Web",
+        content_name: mainHeadline || "",
+        raw_text: extractedText,
+        video_id: videoId || null,
+        thumbnail: imageUrl,
+        topic: generalTopic,
+        subtopics: specificTopics,
+        authors,
+        publisherName: publisherName?.name || null,
+        is_retracted: false,
+      },
+    });
     return {
       content_name: mainHeadline || "",
       media_source: videoId ? "YouTube" : "Web",
@@ -245,7 +353,8 @@ export const orchestrateScraping = async (
       content_type: contentType,
       raw_text: extractedText,
       Claims: claims,
-      is_retracted: isRetracted,
+      is_retracted: false,
+      testimonials,
     };
   } catch (e: any) {
     console.warn("🧨 Failed to load page content:", url);
