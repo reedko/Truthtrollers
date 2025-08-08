@@ -8,29 +8,45 @@ import BoolCard from "./BoolCard";
 import ProgressCard from "./ProgressCard";
 import { Author, Publisher, Task } from "../../../shared/entities/types";
 import { ensureArray } from "../utils/normalize";
+import {
+  fetchVerimeterScore,
+  fetchContentScores,
+} from "../services/useDashboardAPI";
+import { getDefaultResultOrder } from "dns";
 
 interface UnifiedHeaderProps {
   pivotType?: "task" | "author" | "publisher" | "reference";
   pivotId?: number;
+  verimeterScore?: number;
+  trollmeterScore?: number;
+  pro?: number;
+  con?: number;
+  refreshKey?: number | string;
 }
-
 const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   pivotType,
   pivotId,
+  verimeterScore,
+  trollmeterScore,
+  pro,
+  con,
+  refreshKey,
 }) => {
   const selectedTask = useTaskStore((s) => s.selectedTask);
   const fetchTasksByPivot = useTaskStore((s) => s.fetchTasksByPivot);
+  const viewerId = useTaskStore((s) => s.viewingUserId);
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [pivotTask, setPivotTask] = useState<Task | null>(null);
+  const [liveVerimeter, setLiveVerimeter] = useState<number | null>(null);
 
-  // 🔁 If no pivotId is passed, default to selectedTask
   const resolvedPivotType =
     pivotType === "reference" ? "task" : pivotType || "task";
 
   const resolvedPivotId =
     pivotId !== undefined ? pivotId : selectedTask?.content_id ?? undefined;
 
+  // Load pivot task(s)
   useEffect(() => {
     const load = async () => {
       if (resolvedPivotId !== undefined) {
@@ -48,8 +64,31 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     load();
   }, [resolvedPivotType, resolvedPivotId, selectedTask]);
 
+  // Fetch live Verimeter score
+  useEffect(() => {
+    const fetchScore = async () => {
+      if (!pivotTask?.content_id || viewerId == null) return;
+      try {
+        const result = await fetchContentScores(pivotTask.content_id, null);
+        if (result && result.verimeterScore !== undefined) {
+          setLiveVerimeter(result.verimeterScore);
+          console.log(result, "::::resulteds:::::", result.verimeterScore);
+        } else {
+          setLiveVerimeter(null);
+        }
+      } catch (err) {
+        console.error("Error fetching live verimeter score:", err);
+        setLiveVerimeter(null);
+      }
+    };
+    fetchScore();
+  }, [pivotTask?.content_id, viewerId, refreshKey]);
+
   if (!pivotTask) return null;
 
+  const contentId = pivotTask.content_id;
+
+  const finalScore = verimeterScore != null ? verimeterScore : liveVerimeter;
   const authors = ensureArray<Author>(pivotTask.authors);
   const publishers = ensureArray<Publisher>(pivotTask.publishers);
 
@@ -60,10 +99,11 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
         minW="240px"
       >
         <BoolCard
-          verimeterScore={-0.6}
-          trollmeterScore={0.2}
-          pro={27}
-          con={94}
+          verimeterScore={finalScore}
+          trollmeterScore={trollmeterScore}
+          pro={pro}
+          con={con}
+          contentId={contentId}
         />
       </Box>
       <Box

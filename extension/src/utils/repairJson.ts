@@ -4,6 +4,7 @@ export interface GptJson {
   generalTopic: string;
   specificTopics: string[];
   claims: string[];
+  testimonials?: { text: string; name?: string; imageUrl?: string | null }[];
 }
 
 /**

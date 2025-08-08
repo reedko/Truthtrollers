@@ -87,3 +87,31 @@ export const storeClaimsInDB = async (
     });
   }
 };
+
+export const storeTestimonialsInDB = async (
+  contentId: string,
+  testimonials: { text: string; name?: string; imageUrl?: string }[],
+  userId = null,
+  isExtension = false,
+  extensionSendMessage?: any
+) => {
+  if (isExtension && extensionSendMessage) {
+    // Use extension messaging if necessary
+    const response = await extensionSendMessage({
+      action: "storeTestimonials",
+      data: { contentId, testimonials, userId },
+    });
+    if (!response.success)
+      throw new Error(response.error || "storeTestimonials failed");
+  } else {
+    await fetch(`${BASE_URL}/api/testimonials/add`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content_id: contentId,
+        testimonials,
+        user_id: userId,
+      }),
+    });
+  }
+};

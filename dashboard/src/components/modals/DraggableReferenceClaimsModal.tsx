@@ -33,7 +33,10 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
   onVerifyClaim,
 }) => {
   // Position state for the floating box
-  const [position, setPosition] = useState({ x: 920, y: 100 });
+  const [position, setPosition] = useState(() => ({
+    x: window.innerWidth - 550, // About 500px width + padding
+    y: 100,
+  }));
   const [dragging, setDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
 

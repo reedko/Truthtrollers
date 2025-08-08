@@ -107,6 +107,7 @@ export interface ReferenceWithClaims {
     claim_id: number;
     claim_text: string;
   }[];
+
   is_primary_source?: boolean;
 }
 export type UnifiedReference = ReferenceWithClaims;
@@ -139,6 +140,55 @@ export interface ClaimLinks {
   relationship: "supports" | "refutes" | "related";
   confidence: number;
   notes?: string;
+  support_level?: number;
+  verimeter_score?: number | null; // 👈 Add this if missing
+}
+
+export interface LinkedClaim {
+  claim_link_id: number;
+  claimId: number;
+  referenceId: number;
+  sourceClaimId: number;
+  relation: string;
+  confidence: number | string;
+  notes: string;
+  verimeter_score: number | null;
+
+  // ✅ Add this:
+  sourceClaim: {
+    claim_id: number;
+    claim_text: string;
+    veracity_score: number;
+    confidence_level: number | null;
+    last_verified: string;
+  };
+}
+export interface GameResult {
+  question: string;
+  userAnswer: boolean | null;
+  correctAnswer: boolean;
+  isCorrect: boolean;
+  sourceClaim: Claim;
+  targetClaim: Claim;
+  claimLink: ClaimLink | null;
+  references?: {
+    sourceClaim: Claim; // ⬅ full claim instead of just ID
+    confidence: number;
+    notes?: string;
+  }[];
+  viewerId?: number; // optional if you plan to pass it
+}
+
+export interface ClaimLink {
+  id?: string;
+  claim_link_id?: number; // for future use
+  claimId: number; // target/task claim
+  referenceId: number; // reference content id
+  sourceClaimId: number; // 👈 new
+  relation: "support" | "refute";
+  confidence: number;
+  notes?: string;
+  verimeter_score?: number;
 }
 // User Interface
 export interface User {

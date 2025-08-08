@@ -59,6 +59,7 @@ export const scrapeContent = async (
         Claims: [],
         taskContentId: taskContentId || null,
         is_retracted: false,
+        testimonials: [],
       };
     }
     // ✅ Step 2: Scrape metadata (only if not nonScrapable)

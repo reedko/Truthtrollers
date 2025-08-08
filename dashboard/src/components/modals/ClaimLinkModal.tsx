@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -21,9 +21,15 @@ import {
   FormLabel,
   Textarea,
 } from "@chakra-ui/react";
-import { addClaimLink } from "../../services/useDashboardAPI";
+import {
+  addClaimLink,
+  fetchContentScores,
+  updateScoresForContent,
+  fetchLiveVerimeterScore,
+} from "../../services/useDashboardAPI";
 import { Claim } from "../../../../shared/entities/types";
 import { ClaimLink } from "../RelationshipMap";
+import { useTaskStore } from "../../store/useTaskStore";
 
 interface ClaimLinkModalProps {
   isOpen: boolean;
@@ -33,6 +39,7 @@ interface ClaimLinkModalProps {
   isReadOnly?: boolean;
   claimLink?: ClaimLink | null;
   onLinkCreated?: () => void;
+  verimeter_score?: number;
 }
 
 const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
@@ -43,13 +50,45 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
   isReadOnly,
   claimLink,
   onLinkCreated,
+  verimeter_score,
 }) => {
   const toast = useToast();
+  const setVerimeterScore = useTaskStore((s) => s.setVerimeterScore);
+  const viewerId = useTaskStore((s) => s.viewingUserId);
+
   const [supportLevel, setSupportLevel] = useState(0);
   const [relationship, setRelationship] = useState<"supports" | "refutes">(
     "supports"
   );
   const [notes, setNote] = useState(claimLink?.notes || "");
+  const [verimeterScore, setLocalVerimeterScore] = useState<number | null>(
+    claimLink?.verimeter_score ?? null
+  );
+
+  useEffect(() => {
+    const shouldFetch =
+      isReadOnly &&
+      isOpen &&
+      targetClaim?.claim_id &&
+      viewerId &&
+      verimeterScore === null;
+
+    if (shouldFetch) {
+      fetchLiveVerimeterScore(targetClaim.claim_id, viewerId)
+        .then((result) => {
+          if (
+            Array.isArray(result) &&
+            typeof result[0]?.verimeter_score === "number"
+          ) {
+            setLocalVerimeterScore(result[0].verimeter_score);
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching verimeter score in modal:", err);
+        });
+    }
+  }, [isReadOnly, isOpen, targetClaim?.claim_id, viewerId, verimeterScore]);
+
   const handleSubmit = async () => {
     try {
       const response = await addClaimLink({
@@ -60,6 +99,7 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
         support_level: supportLevel,
         notes: notes,
       });
+
       toast({
         title: "Claim link created",
         description: `Link: ${relationship} (${supportLevel})`,
@@ -67,7 +107,16 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
         duration: 3000,
         isClosable: true,
       });
+
       onLinkCreated?.();
+
+      const contentId = targetClaim?.content_id ?? null;
+      if (contentId) {
+        await updateScoresForContent(contentId, viewerId);
+        const scores = await fetchContentScores(contentId, viewerId);
+        setVerimeterScore(contentId, scores?.verimeterScore ?? null);
+      }
+
       onClose();
     } catch (err) {
       toast({
@@ -98,6 +147,7 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
             Target Claim:
           </Text>
           <Text mb={4}>{targetClaim?.claim_text}</Text>
+
           <FormLabel mt={4}>Notes</FormLabel>
           {isReadOnly ? (
             <Text fontStyle="italic" p={2} borderRadius="md">
@@ -110,12 +160,25 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
               onChange={(e) => setNote(e.target.value)}
             />
           )}
+
           {isReadOnly && claimLink ? (
             <Box mb={4} mt={2}>
               <FormLabel mb={1}>Relationship</FormLabel>
               <Text fontWeight="bold" fontSize="lg">
-                {claimLink.relation === "refute" ? "⛔ Refutes" : "✅ Supports"}{" "}
-                : {(claimLink.confidence * 100).toFixed(0)}%
+                {verimeterScore !== null ? (
+                  <>
+                    {verimeterScore > 0
+                      ? "✅ Supports"
+                      : verimeterScore < 0
+                      ? "⛔ Refutes"
+                      : "⚖️ Neutral"}{" "}
+                    : {(verimeterScore * 1000).toFixed(0)}%
+                  </>
+                ) : (
+                  <Text as="span" fontStyle="italic" color="gray.500">
+                    loading...
+                  </Text>
+                )}
               </Text>
             </Box>
           ) : (

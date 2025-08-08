@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Box,
@@ -11,8 +11,15 @@ import {
 import Workspace from "../components/Workspace";
 import UnifiedHeader from "../components/UnifiedHeader";
 import { useTaskStore } from "../store/useTaskStore";
+import {
+  updateScoresForContent,
+  fetchContentScores,
+} from "../services/useDashboardAPI";
+import RefreshVerimeterButton from "../components/RefreshVerimeterButton";
 
 const WorkspacePage = () => {
+  const [verimeterScore, setVerimeterScore] = useState<number | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const navigate = useNavigate();
   const taskId = useTaskStore((s) => s.selectedTaskId);
   const task = useTaskStore((s) => s.selectedTask);
@@ -20,6 +27,14 @@ const WorkspacePage = () => {
   const setRedirect = useTaskStore((s) => s.setRedirect);
   const selectedRedirect = useTaskStore((s) => s.selectedRedirect);
   const viewerId = useTaskStore((s) => s.viewingUserId);
+
+  useEffect(() => {
+    if (taskId) {
+      fetchContentScores(taskId, null).then((scores) => {
+        setVerimeterScore(scores?.verimeterScore ?? null);
+      });
+    }
+  }, [taskId]);
 
   // Try to restore selectedTask from content
   useEffect(() => {
@@ -53,11 +68,26 @@ const WorkspacePage = () => {
     );
   }
 
+  const handleVerimeterRefresh = async (contentId: number) => {
+    console.log("⚙️ Calling updateScoresForContent for", contentId, viewerId);
+    await updateScoresForContent(contentId, viewerId);
+    const scores = await fetchContentScores(contentId, null);
+    console.log("✅ New fetched score:", scores);
+    setVerimeterScore(scores?.verimeterScore ?? null);
+    setRefreshKey((prev) => prev + 1);
+  };
   return (
     <Box p={4}>
       <Card mb={6} mt={2}>
         <CardBody>
-          <UnifiedHeader />
+          <Box mb={2}>
+            <RefreshVerimeterButton
+              targetClaimId={taskId}
+              onUpdated={setVerimeterScore} // pass callback for instant update
+              handleRefresh={handleVerimeterRefresh}
+            />
+          </Box>
+          <UnifiedHeader refreshKey={refreshKey} />
         </CardBody>
       </Card>
       <Heading size="md" mb={4}>

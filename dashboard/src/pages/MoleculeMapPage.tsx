@@ -17,6 +17,10 @@ import { fetchNewGraphDataFromLegacyRoute } from "../services/api";
 import { GraphNode, Link } from "../../../shared/entities/types";
 import UnifiedHeader from "../components/UnifiedHeader";
 import GraphLegend from "../components/GraphLegend";
+import {
+  updateScoresForContent,
+  fetchContentScores,
+} from "../services/useDashboardAPI";
 
 const MoleculeMapPage = () => {
   const navigate = useNavigate();
@@ -30,10 +34,15 @@ const MoleculeMapPage = () => {
     nodes: GraphNode[];
     links: Link[];
   }>({ nodes: [], links: [] });
-
+  const [verimeterScore, setVerimeterScore] = useState<number | null>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const handleVerimeterRefresh = async (contentId: number) => {
+    await updateScoresForContent(contentId, viewerId);
+    const scores = await fetchContentScores(contentId, null);
+    setVerimeterScore(scores?.verimeterScore ?? null);
+  };
   // 🧠 Restore selectedTask from ID if necessary
   useEffect(() => {
     if (selectedTaskId && !selectedTask) {

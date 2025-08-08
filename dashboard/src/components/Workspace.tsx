@@ -28,6 +28,12 @@ import ClaimEvaluationModal from "./modals/ClaimEvaluationModal";
 import RelationshipMap, { ClaimLink } from "./RelationshipMap";
 import { fetchClaimById } from "../services/useDashboardAPI"; // or wherever
 import { fetchClaimsAndLinkedReferencesForTask } from "../services/useDashboardAPI";
+import {
+  updateScoresForContent,
+  fetchContentScores,
+} from "../services/useDashboardAPI";
+
+import { useTaskStore } from "../store/useTaskStore";
 
 interface WorkspaceProps {
   contentId: number;
@@ -93,6 +99,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
       setComputedHeight(fullHeight);
     }
   };
+  const setVerimeterScore = useTaskStore((s) => s.setVerimeterScore);
 
   useEffect(() => {
     fetchClaimsAndLinkedReferencesForTask(contentId, viewerId)
@@ -204,6 +211,17 @@ const Workspace: React.FC<WorkspaceProps> = ({
   const rowHeight = 58; // height per list item
   const headerPadding = 80; // extra space for headings, margins, etc.
   // Compute the workspace height based on the longer list:
+  const handleLinkCreated = async () => {
+    const viewerId = useTaskStore.getState().viewingUserId;
+
+    // ✅ Update scores
+    await updateScoresForContent(contentId, viewerId);
+    const scores = await fetchContentScores(contentId, viewerId);
+    setVerimeterScore(contentId, scores?.verimeterScore ?? null);
+
+    // ✅ Refresh links so new lines appear in RelationshipMap
+    setRefreshLinks((prev) => !prev);
+  };
 
   return (
     <Box
@@ -319,7 +337,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
         targetClaim={targetClaim}
         isReadOnly={readOnly}
         claimLink={selectedClaimLink}
-        onLinkCreated={() => setRefreshLinks((prev) => !prev)}
+        // onLinkCreated={() => setRefreshLinks((prev) => !prev)}
+        onLinkCreated={handleLinkCreated}
       />
       {verifyingClaim && (
         <ClaimEvaluationModal

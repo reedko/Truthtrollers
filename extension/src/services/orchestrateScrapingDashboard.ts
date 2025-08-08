@@ -21,6 +21,10 @@ import {
 import type { TaskData, Lit_references } from "../entities/Task";
 import type { DiffbotData } from "../entities/diffbotData";
 import * as cheerio from "cheerio";
+import { extractTestimonialsFromHtml } from "../utils/extractTestimonials";
+
+// ...inside your main scraping/orchestration flow:
+
 interface ReadabilityResponse {
   success: boolean;
   text?: string;
@@ -201,11 +205,14 @@ export const orchestrateScraping = async (
       extractedReferences = await extractReferences($);
       console.log("References to process:", extractedReferences);
     }
+    const extractedTestimonials = extractTestimonialsFromHtml(cleanHTML);
 
-    const topicsAndClaims = await analyzeContent(extractedText);
-    generalTopic = topicsAndClaims.generalTopic;
-    specificTopics = topicsAndClaims.specificTopics;
-    claims = topicsAndClaims.claims;
+    const topicsAndClaims = await analyzeContent(
+      extractedText,
+      extractedTestimonials
+    );
+    const { generalTopic, specificTopics, claims, testimonials } =
+      topicsAndClaims;
 
     const iconThumbnailUrl = await checkAndDownloadTopicIcon(generalTopic);
 
@@ -228,6 +235,7 @@ export const orchestrateScraping = async (
       raw_text: extractedText,
       Claims: claims,
       is_retracted: isRetracted,
+      testimonials,
     };
   } catch (e: any) {
     console.warn("🧨 Failed to load page content:", url);

@@ -25,9 +25,11 @@ import {
   addReferenceToClaim,
   deleteReferenceFromTask,
   fetchUnifiedTasksByPivot,
+  fetchClaimScoresForTask,
 } from "../services/useDashboardAPI";
 
 export interface TaskStoreState {
+  verimeterScores: { [contentId: number]: number };
   content: Task[];
   assignedTasks: Task[];
   filteredTasks: Task[];
@@ -52,7 +54,16 @@ export interface TaskStoreState {
   viewingUserId: number | null;
   selectedPivotTasks: Task[];
   hasHydrated: boolean;
+  claimScores: {};
 
+  setClaimScores: (
+    taskId: number,
+    scores: { [claimId: number]: number }
+  ) => void;
+
+  fetchClaimScores: (taskId: number) => void;
+
+  setVerimeterScore: (contentId: number, score: number) => void;
   resetTasks: () => void;
   setViewingUserId: (id: number | null) => void;
   setSelectedPivotTasks: (tasks: Task[]) => void;
@@ -111,7 +122,29 @@ export const useTaskStore = create<TaskStoreState>()(
       claimsByTask: {},
       viewingUserId: undefined,
       hasHydrated: false,
+      verimeterScores: {},
+      claimScores: {},
 
+      setClaimScores: (taskId: number, scores: { [claimId: number]: number }) =>
+        set((s) => ({
+          claimScores: {
+            ...s.claimScores,
+            [taskId]: scores,
+          },
+        })),
+
+      fetchClaimScores: async (taskId: number) => {
+        const { viewingUserId } = get();
+        const scores = await fetchClaimScoresForTask(taskId, viewingUserId);
+        get().setClaimScores(taskId, scores);
+      },
+      setVerimeterScore: (contentId, score) =>
+        set((s) => ({
+          verimeterScores: {
+            ...s.verimeterScores,
+            [contentId]: score,
+          },
+        })),
       resetTasks: () =>
         set(() => ({
           selectedTask: null,

@@ -11,10 +11,38 @@ import {
   PublisherRating,
   ClaimLinks,
   DiscussionEntry,
+  LinkedClaim,
 } from "../../../shared/entities/types";
 
 const API_BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
 
+//contentscores
+export const fetchContentScores = async (
+  contentId: number,
+  userId: number | null
+) => {
+  const res = await fetch(`${API_BASE_URL}/api/content/${contentId}/scores`);
+  if (!res.ok) throw new Error("Failed to fetch content scores");
+  const data = await res.json();
+  return {
+    verimeterScore: Number(data.verimeter_score) || 0,
+    trollmeterScore: Number(data.trollmeter_score) || 0,
+    pro: Number(data.pro_score) || 0,
+    con: Number(data.con_score) || 0,
+    contentId: Number(contentId),
+  };
+};
+
+export async function updateScoresForContent(
+  contentId: number,
+  userId: number | null
+): Promise<void> {
+  await fetch(`${API_BASE_URL}/api/content/${contentId}/scores/recompute`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId }), // 👈 pass userId to backend
+  });
+}
 //task claims to reference links
 
 //UPLOAD IMAGES
@@ -51,7 +79,23 @@ export const fetchVerimeterScore = async (taskContentId: number) => {
   if (!res.ok) throw new Error("Failed to fetch Verimeter score");
   return await res.json();
 };
-
+export const fetchClaimScores = async (
+  contentId: number,
+  viewerId: number | null
+): Promise<{ [claimId: number]: number }> => {
+  try {
+    const res = await axios.get(
+      `${API_BASE_URL}/api/content/${contentId}/claim-scores`,
+      {
+        params: { viewerId },
+      }
+    );
+    return res.data;
+  } catch (err) {
+    console.error("Error in fetchClaimScores:", err);
+    return {};
+  }
+};
 /**
  * Fetch Trollmeter Score (crowd sentiment) for a given task (by content_id)
  */
@@ -197,6 +241,22 @@ export async function fetchUnifiedTasksByPivot(
   if (!response.ok) throw new Error("Failed to fetch unified tasks");
   return response.json();
 }
+export interface RatedClaim {
+  claim_id: number;
+  claim_text: string;
+  verimeter_score: number; // Expected truth score (-1 to 1)
+}
+
+export async function fetchTaskClaimsWithRatings(
+  taskId: number,
+  viewerId: number
+): Promise<RatedClaim[]> {
+  const res = await fetch(
+    `${API_BASE_URL}/api/task/${taskId}/claims?viewerId=${viewerId}`
+  );
+  if (!res.ok) throw new Error("Failed to fetch claims");
+  return res.json();
+}
 
 /**
  * Fetch all tasks (content items).
@@ -239,7 +299,70 @@ export const fetchTasksForUser = async (userId: number): Promise<Task[]> => {
 };
 
 /** --------------------- 🔎 CLAIMS FUNCTIONS --------------------- **/
+//fetch claims linked to a certain task claim
+export interface LinkedClaim1 {
+  claim_link_id: number;
+  target_claim_id: number;
+  source_claim_id: number;
+  relationship: string;
+  support_level: number;
+  veracity: number | null;
+  bias: number | null;
+  notes: string | null;
+  claim_text: string;
+  reference_content_id: number;
+}
 
+export const fetchLinkedClaimsForTask = async (
+  contentId: number,
+  viewerId?: number | null
+): Promise<LinkedClaim[]> => {
+  const url = new URL(
+    `${API_BASE_URL}/api/linked-claims-for-task/${contentId}`
+  );
+  if (viewerId) url.searchParams.append("viewerId", viewerId.toString());
+
+  const res = await fetch(url.toString());
+  if (!res.ok) {
+    throw new Error("Failed to fetch linked claims");
+  }
+
+  return await res.json();
+};
+
+export const fetchLiveVerimeterScore = async (
+  claimId: number,
+  viewerId: number | null
+): Promise<{
+  verimeter_score: number;
+  num_links: number;
+  num_references: number;
+  avg_reference_veracity: number;
+  avg_reference_bias: number;
+}> => {
+  const url = new URL(`${API_BASE_URL}/api/live-verimeter-score/${claimId}`);
+  if (viewerId) url.searchParams.append("viewerId", viewerId.toString());
+
+  const res = await fetch(url.toString());
+  if (!res.ok) throw new Error("Failed to fetch live verimeter score");
+  const data = await res.json();
+  return data;
+};
+
+export const fetchLinkedClaimsForTaskClaim = async (
+  claimId: number,
+  viewerId?: number | null
+): Promise<LinkedClaim[]> => {
+  const url = new URL(`${API_BASE_URL}/api/linked-claims-for-claim/${claimId}`);
+  if (viewerId) url.searchParams.append("viewerId", viewerId.toString());
+
+  const res = await fetch(url.toString());
+  if (!res.ok) {
+    throw new Error("Failed to fetch linked claims");
+  }
+
+  return await res.json();
+};
 //fetch a claim by claim id
 //
 export async function fetchClaimById(claimId: number): Promise<Claim> {
@@ -265,6 +388,7 @@ export const fetchClaimsAndLinkedReferencesForTask = async (
     throw error;
   }
 };
+// fetchclaimsources for quiz
 
 /**
  * Fetch all claims for a specific task (contentId)
@@ -286,6 +410,19 @@ export const fetchClaimsForTask = async (
     console.error("❌ Error fetching claims:", error);
     return [];
   }
+};
+
+export const fetchClaimScoresForTask = async (
+  contentId: number,
+  viewerId: number | null
+): Promise<{ [claimId: number]: number }> => {
+  const res = await fetch(
+    `${API_BASE_URL}/api/content/${contentId}/claim-scores?viewerId=${
+      viewerId ?? ""
+    }`
+  );
+  if (!res.ok) throw new Error("Failed to fetch claim scores");
+  return await res.json();
 };
 
 //evaluate claims
