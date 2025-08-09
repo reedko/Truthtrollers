@@ -319,6 +319,7 @@ export interface DiscussionEntry {
   citation_score?: number; // -1 to +1 scaled to [-100, +100] UI
   created_at: string;
   user?: string;
+  source_urls?: string[]; // optional array of URLs
 }
 
 export interface TaskData {

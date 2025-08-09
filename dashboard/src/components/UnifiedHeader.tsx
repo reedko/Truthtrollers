@@ -8,11 +8,7 @@ import BoolCard from "./BoolCard";
 import ProgressCard from "./ProgressCard";
 import { Author, Publisher, Task } from "../../../shared/entities/types";
 import { ensureArray } from "../utils/normalize";
-import {
-  fetchVerimeterScore,
-  fetchContentScores,
-} from "../services/useDashboardAPI";
-import { getDefaultResultOrder } from "dns";
+import { fetchContentScores } from "../services/useDashboardAPI";
 
 interface UnifiedHeaderProps {
   pivotType?: "task" | "author" | "publisher" | "reference";
@@ -23,6 +19,7 @@ interface UnifiedHeaderProps {
   con?: number;
   refreshKey?: number | string;
 }
+
 const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   pivotType,
   pivotId,
@@ -35,6 +32,9 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   const selectedTask = useTaskStore((s) => s.selectedTask);
   const fetchTasksByPivot = useTaskStore((s) => s.fetchTasksByPivot);
   const viewerId = useTaskStore((s) => s.viewingUserId);
+
+  // 🔹 NEW: subscribe to the store map of verimeter scores
+  const verimeterScoreMap = useTaskStore((s) => s.verimeterScores || {});
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [pivotTask, setPivotTask] = useState<Task | null>(null);
@@ -62,17 +62,16 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       }
     };
     load();
-  }, [resolvedPivotType, resolvedPivotId, selectedTask]);
+  }, [resolvedPivotType, resolvedPivotId, selectedTask, fetchTasksByPivot]);
 
-  // Fetch live Verimeter score
+  // Fetch live Verimeter score (aggregate) as a fallback
   useEffect(() => {
     const fetchScore = async () => {
-      if (!pivotTask?.content_id || viewerId == null) return;
+      if (!pivotTask?.content_id) return;
       try {
         const result = await fetchContentScores(pivotTask.content_id, null);
         if (result && result.verimeterScore !== undefined) {
           setLiveVerimeter(result.verimeterScore);
-          console.log(result, "::::resulteds:::::", result.verimeterScore);
         } else {
           setLiveVerimeter(null);
         }
@@ -88,7 +87,13 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
   const contentId = pivotTask.content_id;
 
-  const finalScore = verimeterScore != null ? verimeterScore : liveVerimeter;
+  // 🔹 NEW: pull the latest score for this contentId from the store
+  const storeScore =
+    contentId != null ? verimeterScoreMap[contentId] ?? null : null;
+
+  // 🔹 CHANGED: prefer prop → store → live fetched fallback
+  const finalScore = verimeterScore ?? storeScore ?? liveVerimeter;
+
   const authors = ensureArray<Author>(pivotTask.authors);
   const publishers = ensureArray<Publisher>(pivotTask.publishers);
 

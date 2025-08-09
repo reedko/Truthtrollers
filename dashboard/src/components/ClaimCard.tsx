@@ -1,3 +1,4 @@
+// src/components/ClaimCard.tsx
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -21,6 +22,9 @@ interface ClaimCardProps {
   viewerId: number | null;
   sourceClaim: Claim;
   targetClaim: Claim;
+  // 🔹 NEW
+  variant?: "default" | "pill";
+  onClickPill?: () => void; // pill-only click handler
 }
 
 const supportColors = {
@@ -37,6 +41,8 @@ const ClaimCard: React.FC<ClaimCardProps> = ({
   viewerId,
   sourceClaim,
   targetClaim,
+  variant = "default",
+  onClickPill,
 }) => {
   const [verimeterScore, setVerimeterScore] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -97,7 +103,6 @@ const ClaimCard: React.FC<ClaimCardProps> = ({
           {percent > 0 ? "+" : ""}
           {percent}%
         </Text>
-
         <svg width="60" height="60" viewBox="0 0 40 40">
           <circle
             cx="20"
@@ -133,6 +138,57 @@ const ClaimCard: React.FC<ClaimCardProps> = ({
     );
   };
 
+  // 🔹 NEW: compact pill rendering
+  if (variant === "pill") {
+    const pillColor =
+      verimeterScore == null
+        ? "gray"
+        : verimeterScore > 0
+        ? "green"
+        : verimeterScore < 0
+        ? "red"
+        : "yellow";
+
+    return (
+      <HStack
+        as="button"
+        onClick={onClickPill}
+        spacing={2}
+        px={3}
+        py={2}
+        borderRadius="md"
+        borderWidth="1px"
+        bg="rgba(0,0,0,0.25)"
+        _hover={{ bg: "rgba(0,0,0,0.35)", transform: "translateY(-1px)" }}
+        transition="all 120ms ease"
+      >
+        <Box w="28px" h="28px" position="relative">
+          {/* teeny gauge: simple ring */}
+          <Box
+            position="absolute"
+            inset={0}
+            borderRadius="full"
+            border="2px solid"
+            borderColor={`${pillColor}.400`}
+          />
+        </Box>
+        <Text maxW="240px" isTruncated fontSize="sm">
+          {claimText}
+        </Text>
+        {verimeterScore !== null && (
+          <Badge colorScheme={pillColor} ml="auto">
+            {verimeterScore > 0
+              ? "Supports"
+              : verimeterScore < 0
+              ? "Refutes"
+              : "Neutral"}
+          </Badge>
+        )}
+      </HStack>
+    );
+  }
+
+  // Default full card
   return (
     <Box
       p={3}
@@ -142,7 +198,6 @@ const ClaimCard: React.FC<ClaimCardProps> = ({
       boxShadow="md"
     >
       <VStack align="start" spacing={3} w="100%">
-        {/* Top Row: Gauge - Badge - Button */}
         <HStack justifyContent="space-between" w="100%" alignItems="center">
           {loading ? <Spinner size="sm" /> : renderRadialGauge()}
           <Box flex={1} textAlign="center">
@@ -173,19 +228,16 @@ const ClaimCard: React.FC<ClaimCardProps> = ({
           </Button>
         </HStack>
 
-        {/* Claim Text */}
         <Text fontWeight="bold" textAlign="left" w="100%">
           {claimText}
         </Text>
 
-        {/* Notes */}
         {notes && (
           <Text fontSize="sm" color="gray.400" textAlign="left" w="100%">
             {notes}
           </Text>
         )}
 
-        {/* Modal */}
         <ClaimLinkModal
           isOpen={isModalOpen}
           onClose={handleCloseModal}

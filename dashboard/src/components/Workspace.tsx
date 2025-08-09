@@ -218,7 +218,10 @@ const Workspace: React.FC<WorkspaceProps> = ({
     await updateScoresForContent(contentId, viewerId);
     const scores = await fetchContentScores(contentId, viewerId);
     setVerimeterScore(contentId, scores?.verimeterScore ?? null);
-
+    // 🔔 notify any listeners to refetch or re-read store
+    window.dispatchEvent(
+      new CustomEvent("verimeter:updated", { detail: { contentId } })
+    );
     // ✅ Refresh links so new lines appear in RelationshipMap
     setRefreshLinks((prev) => !prev);
   };
