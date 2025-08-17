@@ -23,12 +23,14 @@ dist-ssr
 *.sln
 *.sw?
 *.env
-*.env build
-*.env dev
+*.env\ build
+*.env\ dev
 backend/*.env
 backend/.env
 backend/.env.build
 backend/.env.dev
+backend/.env build
+backend/.env dev
 .env.build
 .env.dev
 backend/.env.prod
