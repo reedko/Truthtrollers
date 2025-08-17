@@ -1576,7 +1576,14 @@ app.post("/api/login", async (req, res) => {
   if (!skipCaptcha) {
     const isHuman = await verifyCaptcha(captcha);
     if (!isHuman) {
-      await logFailedLogin({ username, ipAddress });
+      await logFailedLogin({
+        username,
+        ipAddress,
+        userAgent: req.headers["user-agent"],
+        reason: "captcha_failed",
+        fingerprint,
+      });
+
       return res.status(403).json({ error: "Failed CAPTCHA verification" });
     }
   }
@@ -1589,7 +1596,13 @@ app.post("/api/login", async (req, res) => {
     }
 
     if (results.length === 0) {
-      await logFailedLogin({ username, ipAddress });
+      await logFailedLogin({
+        username,
+        ipAddress,
+        userAgent: req.headers["user-agent"],
+        reason: "user_not_found",
+        fingerprint,
+      });
       return res.status(404).send("User not found.");
     }
 
@@ -1654,7 +1667,13 @@ app.post("/api/login", async (req, res) => {
         },
       });
     } else {
-      await logFailedLogin({ username, ipAddress });
+      await logFailedLogin({
+        username,
+        ipAddress,
+        userAgent: req.headers["user-agent"],
+        reason: "Invalid credentials",
+        fingerprint,
+      });
       res.status(401).send("Invalid credentials.");
     }
   });

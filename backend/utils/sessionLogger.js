@@ -17,12 +17,20 @@ export function createSessionLogger(query) {
     await query(sql, [fingerprint, userId, jwt, ipAddress]);
   }
 
-  async function logFailedLogin({ username, ipAddress }) {
+  async function logFailedLogin({
+    username,
+    ipAddress,
+    userAgent,
+    reason,
+    fingerprint,
+  }) {
     const sql = `
-      INSERT INTO login_attempts (username, success, ip_address)
-      VALUES (?, false, ?)
-    `;
-    await query(sql, [username, ipAddress]);
+    INSERT INTO login_attempts
+      (username, success, ip_address, user_agent, reason, fingerprint)
+    VALUES (?, false, ?, ?, ?, ?)
+  `;
+
+    await query(sql, [username, ipAddress, userAgent, reason, fingerprint]);
   }
   async function logRegistrationAttempt({
     username,
