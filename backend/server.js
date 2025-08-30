@@ -1,5 +1,5 @@
 // Import dependencies
-import { fetchIconForTopic } from "../extension/src/services/fetchIconForTopic.js";
+import { fetchIconForTopic } from "./utils/fetchIconForTopic.js";
 import express from "express";
 import mysql from "mysql";
 import bodyParser from "body-parser";
@@ -87,7 +87,7 @@ http
 app.listen(3000, () => {
   console.log("✅ Node backend running on http://localhost:3000");
 });
-
+app.get("/health", (req, res) => res.json({ ok: true, ts: Date.now() }));
 app.use(bodyParser.json({ limit: "50mb" }));
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 // Configure environment variables
@@ -3459,7 +3459,6 @@ app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
 });
  */
 import puppeteer from "puppeteer";
-import { collapseTextChangeRangesAcrossMultipleVersions } from "typescript";
 
 app.post("/api/fetch-image-with-puppeteer", async (req, res) => {
   const { imageUrl } = req.body;

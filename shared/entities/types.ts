@@ -146,13 +146,14 @@ export interface ClaimLinks {
 
 export interface LinkedClaim {
   claim_link_id: number;
-  claimId: number;
+  claim_id: number;
   referenceId: number;
   sourceClaimId: number;
   relation: string;
   confidence: number | string;
   notes: string;
   verimeter_score: number | null;
+  claim_text: string;
 
   // ✅ Add this:
   sourceClaim: {
