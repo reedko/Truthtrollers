@@ -1,3 +1,4 @@
+// src/components/TaskCard.tsx
 import {
   Box,
   Center,
@@ -19,8 +20,8 @@ import { useRef, useState, memo, useEffect } from "react";
 import { useTaskStore } from "../store/useTaskStore";
 import AssignUserModal from "./modals/AssignUserModal";
 import ReferenceModal from "./modals/ReferenceModal";
-import { Task, Author, Publisher, User } from "../../../shared/entities/types";
-import { extractMeta, ensureArray } from "../utils/normalize";
+import { Task } from "../../../shared/entities/types";
+import { extractMeta } from "../utils/normalize";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
@@ -28,7 +29,10 @@ const API_BASE_URL =
 interface TaskCardProps {
   task: Task | Task[] | null;
   useStore?: boolean;
+  /** already existed in your code */
   compact?: boolean;
+  /** NEW: hide middle meta block (image/authors/publishers/progress) */
+  hideMeta?: boolean;
   onSelect?: (task: Task) => void;
 }
 
@@ -36,6 +40,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   task,
   useStore = true,
   compact = false,
+  hideMeta = false,
   onSelect,
 }) => {
   const navigate = useNavigate();
@@ -105,7 +110,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
         boxShadow="md"
         p={3}
         w="250px"
-        h="405px"
+        // shorten height if meta hidden
+        h={hideMeta ? "230px" : "405px"}
         display="flex"
         flexDirection="column"
         justifyContent="space-between"
@@ -127,7 +133,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
               );
               if (next) {
                 setActiveTask(next);
-                onSelect?.(next); // 🧠 Notify UnifiedHeader of change
+                onSelect?.(next); // 🧠 Notify parent (UnifiedHeader)
               }
             }}
             mb={2}
@@ -160,55 +166,61 @@ const TaskCard: React.FC<TaskCardProps> = ({
           </Text>
         )}
 
-        <Box flex="1">
-          <Box w="100%" h="150px" overflow="hidden" borderRadius="md" mb={2}>
-            <Image
-              src={`${API_BASE_URL}/${activeTask.thumbnail}`}
-              alt="Thumbnail"
-              w="100%"
-              h="100%"
-              objectFit="cover"
+        {/* META BLOCK — hide when hideMeta is true */}
+        {!hideMeta && (
+          <Box flex="1">
+            <Box w="100%" h="150px" overflow="hidden" borderRadius="md" mb={2}>
+              <Image
+                src={`${API_BASE_URL}/${activeTask.thumbnail}`}
+                alt="Thumbnail"
+                w="100%"
+                h="100%"
+                objectFit="cover"
+              />
+            </Box>
+
+            {authors.length > 0 && (
+              <Text fontSize={compact ? "xs" : "sm"}>
+                <strong>Author:</strong>{" "}
+                {authors
+                  .map(
+                    (a) =>
+                      `${a.author_first_name} ${a.author_last_name} ${
+                        a.author_title || ""
+                      }`
+                  )
+                  .join(", ")}
+              </Text>
+            )}
+
+            {publishers.length > 0 && (
+              <Text fontSize={compact ? "xs" : "sm"}>
+                <strong>Publisher:</strong>{" "}
+                {publishers.map((p) => p.publisher_name).join(", ")}
+              </Text>
+            )}
+
+            <Progress
+              value={
+                activeTask.progress === "Completed"
+                  ? 100
+                  : activeTask.progress === "Partially Complete"
+                  ? 50
+                  : 25
+              }
+              colorScheme={
+                activeTask.progress === "Completed"
+                  ? "green"
+                  : activeTask.progress === "Partially Complete"
+                  ? "yellow"
+                  : "red"
+              }
+              mt={2}
             />
           </Box>
+        )}
 
-          {authors.length > 0 && (
-            <Text fontSize={compact ? "xs" : "sm"}>
-              <strong>Author:</strong>{" "}
-              {authors
-                .map(
-                  (a) =>
-                    `${a.author_first_name} ${a.author_last_name} ${a.author_title}`
-                )
-                .join(", ")}
-            </Text>
-          )}
-
-          {publishers.length > 0 && (
-            <Text fontSize={compact ? "xs" : "sm"}>
-              <strong>Publisher:</strong>{" "}
-              {publishers.map((p) => p.publisher_name).join(", ")}
-            </Text>
-          )}
-
-          <Progress
-            value={
-              activeTask.progress === "Completed"
-                ? 100
-                : activeTask.progress === "Partially Complete"
-                ? 50
-                : 25
-            }
-            colorScheme={
-              activeTask.progress === "Completed"
-                ? "green"
-                : activeTask.progress === "Partially Complete"
-                ? "yellow"
-                : "red"
-            }
-            mt={2}
-          />
-        </Box>
-
+        {/* ACTIONS */}
         <Center>
           <HStack>
             <Button colorScheme="blue" onClick={handleSelect}>

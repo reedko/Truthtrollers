@@ -1,5 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Box, Flex, IconButton, Tooltip } from "@chakra-ui/react";
+import {
+  Box,
+  Flex,
+  IconButton,
+  Tooltip,
+  Skeleton,
+  SkeletonText,
+} from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { useTaskStore } from "../store/useTaskStore";
 import TaskCard from "./TaskCard";
@@ -19,11 +26,8 @@ interface UnifiedHeaderProps {
   pro?: number;
   con?: number;
   refreshKey?: number | string;
-  /** NEW: Compact vs Full layout */
   variant?: "full" | "compact";
-  /** NEW: Make header sticky at top */
   sticky?: boolean;
-  /** NEW: Show a tiny toggle button to switch variants at runtime */
   allowToggle?: boolean;
 }
 
@@ -39,28 +43,28 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   sticky = false,
   allowToggle = false,
 }) => {
+  // Zustand selectors (these are hooks too!)
   const selectedTask = useTaskStore((s) => s.selectedTask);
   const fetchTasksByPivot = useTaskStore((s) => s.fetchTasksByPivot);
   const viewerId = useTaskStore((s) => s.viewingUserId);
   const verimeterScoreMap = useTaskStore((s) => s.verimeterScores || {});
 
+  // Local state hooks (must always be called)
   const [tasks, setTasks] = useState<Task[]>([]);
   const [pivotTask, setPivotTask] = useState<Task | null>(null);
   const [liveVerimeter, setLiveVerimeter] = useState<number | null>(null);
-
-  // Local toggle state (falls back to prop default)
   const [localVariant, setLocalVariant] = useState<"full" | "compact">(variant);
+
+  // Keep localVariant in sync with prop
   useEffect(() => setLocalVariant(variant), [variant]);
 
   const isCompact = localVariant === "compact";
-
   const resolvedPivotType =
     pivotType === "reference" ? "task" : pivotType || "task";
-
   const resolvedPivotId =
     pivotId !== undefined ? pivotId : selectedTask?.content_id ?? undefined;
 
-  // Load pivot task(s)
+  // fetch tasks by pivot (always run)
   useEffect(() => {
     const load = async () => {
       if (resolvedPivotId !== undefined) {
@@ -73,15 +77,21 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       } else if (selectedTask) {
         setTasks([selectedTask]);
         setPivotTask(selectedTask);
+      } else {
+        setTasks([]);
+        setPivotTask(null);
       }
     };
     load();
   }, [resolvedPivotType, resolvedPivotId, selectedTask, fetchTasksByPivot]);
 
-  // Fetch live Verimeter score (aggregate) as a fallback
+  // fetch live verimeter (always run; guarded inside)
   useEffect(() => {
     const fetchScore = async () => {
-      if (!pivotTask?.content_id) return;
+      if (!pivotTask?.content_id) {
+        setLiveVerimeter(null);
+        return;
+      }
       try {
         const result = await fetchContentScores(pivotTask.content_id, null);
         if (result && result.verimeterScore !== undefined) {
@@ -95,33 +105,37 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       }
     };
     fetchScore();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pivotTask?.content_id, viewerId, refreshKey]);
 
-  if (!pivotTask) return null;
-
-  const contentId = pivotTask.content_id;
+  // SAFETY: compute derived values with fallbacks; do not early return before hooks
+  const contentId = pivotTask?.content_id ?? null;
   const storeScore =
     contentId != null ? verimeterScoreMap[contentId] ?? null : null;
   const finalScore = verimeterScore ?? storeScore ?? liveVerimeter;
 
+  // Always call these hooks; if pivotTask is null, fall back to []
   const authors = useMemo(
-    () => ensureArray<Author>(pivotTask.authors),
-    [pivotTask.authors]
+    () => ensureArray<Author>(pivotTask?.authors),
+    [pivotTask]
   );
   const publishers = useMemo(
-    () => ensureArray<Publisher>(pivotTask.publishers),
-    [pivotTask.publishers]
+    () => ensureArray<Publisher>(pivotTask?.publishers),
+    [pivotTask]
   );
 
-  // Sticky container styling
+  // Sticky container styling (no hooks here)
   const containerStyles = sticky
-    ? {
-        position: "sticky" as const,
+    ? ({
+        position: "sticky",
         top: 0,
         zIndex: 40,
         backdropFilter: "saturate(180%) blur(6px)",
-      }
+      } as const)
     : {};
+
+  // When we have no pivotTask yet, render a lightweight skeleton—BUT after all hooks have run
+  const isLoading = !pivotTask;
 
   return (
     <Box position="relative">
@@ -156,7 +170,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
         justify="space-between"
         sx={containerStyles}
       >
-        {/* Verimeter / BoolCard */}
+        {/* BoolCard */}
         <Box
           flex={{
             base: "1 1 100%",
@@ -166,19 +180,25 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
           }}
           minW="220px"
         >
-          <BoolCard
-            verimeterScore={finalScore}
-            trollmeterScore={isCompact ? undefined : trollmeterScore}
-            pro={isCompact ? undefined : pro}
-            con={isCompact ? undefined : con}
-            contentId={contentId}
-            // Optional props your BoolCard can ignore if not implemented
-            size={isCompact ? "sm" : "md"}
-            dense={isCompact as any}
-          />
+          {isLoading ? (
+            <Skeleton
+              borderRadius="lg"
+              height={isCompact ? "220px" : "405px"}
+            />
+          ) : (
+            <BoolCard
+              verimeterScore={finalScore}
+              trollmeterScore={isCompact ? undefined : trollmeterScore}
+              pro={isCompact ? undefined : pro}
+              con={isCompact ? undefined : con}
+              contentId={contentId ?? undefined}
+              size={isCompact ? "sm" : "md"}
+              dense={isCompact}
+            />
+          )}
         </Box>
 
-        {/* Task title / quick selector */}
+        {/* TaskCard */}
         <Box
           flex={{
             base: "1 1 100%",
@@ -188,24 +208,39 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
           }}
           minW="240px"
         >
-          <TaskCard
-            task={tasks}
-            useStore={false}
-            onSelect={setPivotTask}
-            // Optional compact prop for a slimmer render
-            compact={isCompact as any}
-            hideMeta={isCompact as any}
-          />
+          {isLoading ? (
+            <Box p={3} borderRadius="lg" bg="stat2Gradient">
+              <Skeleton height="18px" mb={3} />
+              <Skeleton height="150px" mb={2} />
+              <SkeletonText noOfLines={3} spacing="2" />
+            </Box>
+          ) : (
+            <TaskCard
+              task={tasks}
+              useStore={false}
+              onSelect={setPivotTask}
+              compact={isCompact}
+              hideMeta={isCompact}
+            />
+          )}
         </Box>
 
-        {/* Right-side cards: tiny chips when compact; full cards otherwise */}
+        {/* Right-side cards */}
         {isCompact ? (
           <>
             <Box flex={{ base: "1 1 49%", md: "1 1 18%" }} minW="200px">
-              <PubCard publishers={publishers.slice(0, 1)} compact />
+              {isLoading ? (
+                <Skeleton borderRadius="lg" height="120px" />
+              ) : (
+                <PubCard publishers={publishers.slice(0, 1)} compact />
+              )}
             </Box>
             <Box flex={{ base: "1 1 49%", md: "1 1 18%" }} minW="200px">
-              <AuthCard authors={authors.slice(0, 1)} compact />
+              {isLoading ? (
+                <Skeleton borderRadius="lg" height="120px" />
+              ) : (
+                <AuthCard authors={authors.slice(0, 1)} compact />
+              )}
             </Box>
           </>
         ) : (
@@ -219,7 +254,11 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               }}
               minW="240px"
             >
-              <PubCard publishers={publishers} />
+              {isLoading ? (
+                <Skeleton borderRadius="lg" height="180px" />
+              ) : (
+                <PubCard publishers={publishers} />
+              )}
             </Box>
             <Box
               flex={{
@@ -230,7 +269,11 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               }}
               minW="240px"
             >
-              <AuthCard authors={authors} />
+              {isLoading ? (
+                <Skeleton borderRadius="lg" height="180px" />
+              ) : (
+                <AuthCard authors={authors} />
+              )}
             </Box>
             <Box
               flex={{
@@ -241,13 +284,17 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               }}
               minW="240px"
             >
-              <ProgressCard
-                ProgressScore={0.2}
-                totalClaims={90}
-                verifiedClaims={27}
-                totalReferences={20}
-                verifiedReferences={10}
-              />
+              {isLoading ? (
+                <Skeleton borderRadius="lg" height="180px" />
+              ) : (
+                <ProgressCard
+                  ProgressScore={0.2}
+                  totalClaims={90}
+                  verifiedClaims={27}
+                  totalReferences={20}
+                  verifiedReferences={10}
+                />
+              )}
             </Box>
           </>
         )}

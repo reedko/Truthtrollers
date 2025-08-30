@@ -13,6 +13,10 @@ interface BoolCardProps {
   pro?: number;
   con?: number;
   contentId?: number | string;
+  /** NEW: small/medium sizing (default "md") */
+  size?: "sm" | "md";
+  /** NEW: hide non-essential rows for compact header usage */
+  dense?: boolean;
 }
 type Scores = {
   verimeterScore: number;
@@ -28,6 +32,8 @@ const BoolCard: React.FC<BoolCardProps> = ({
   pro,
   con,
   contentId,
+  size = "md",
+  dense = false,
 }) => {
   const [scores, setScores] = useState<Scores | null>(null);
   const [loading, setLoading] = useState(false);
@@ -73,38 +79,58 @@ const BoolCard: React.FC<BoolCardProps> = ({
   const conScore = con !== undefined ? con : scores?.con ?? 0;
   const totalVotes = proScore + conScore;
 
+  // ---------- sizing controls ----------
+  const isSm = size === "sm";
+  const container = {
+    p: isSm ? 3 : 5,
+    w: isSm ? "220px" : "250px",
+    // if dense we shorten height; otherwise keep your original height
+    h: isSm ? (dense ? "210px" : "300px") : dense ? "300px" : "405px",
+  };
+  const titleFont = isSm ? "sm" : "md";
+  const labelFont = isSm ? "xs" : "sm";
+  const verimeterGaugeSize = isSm ? { w: 130, h: 70 } : { w: 150, h: 82 };
+  const trollGaugeSize = isSm ? { w: 130, h: 70 } : { w: 150, h: 82 };
+  const miniGaugeSize = isSm ? { w: 70, h: 58 } : { w: 90, h: 70 };
+  const stackSpacing = isSm ? 4 : 6;
+
   return (
     <Box
       bg="stat2Gradient"
       borderRadius="lg"
       boxShadow="2xl"
-      p={5}
-      w="250px"
-      h="405px"
+      p={container.p}
+      w={container.w}
+      h={container.h}
       position="relative"
       margin="10px"
     >
       <Center>
-        <Text fontWeight="bold" fontSize="md" color="white" mb={3}>
+        <Text
+          fontWeight="bold"
+          fontSize={titleFont}
+          color="white"
+          mb={isSm ? 2 : 3}
+        >
           Veracity Gauges
         </Text>
       </Center>
       {loading ? (
-        <Center h="340px">
-          <Spinner color="teal.300" size="xl" />
+        <Center h={`calc(${container.h} - 40px)`}>
+          <Spinner color="teal.300" size={isSm ? "md" : "xl"} />
         </Center>
       ) : fetchError ? (
-        <Center h="340px">
+        <Center h={`calc(${container.h} - 40px)`}>
           <Text color="red.400" fontWeight="bold">
             Error: {fetchError}
           </Text>
         </Center>
       ) : (
-        <VStack spacing={6}>
+        <VStack spacing={stackSpacing}>
           {/* Verimeter */}
           <Box w="100%">
             <Text
-              fontSize="sm"
+              fontSize={labelFont}
               fontWeight="semibold"
               color={tealGaugeTheme.colors.parchment}
               mb={1}
@@ -119,51 +145,55 @@ const BoolCard: React.FC<BoolCardProps> = ({
               <TruthGauge
                 score={vScore ?? 0}
                 label="VERIMETER"
-                size={{ w: 150, h: 82 }}
+                size={verimeterGaugeSize}
               />
             </Center>
           </Box>
 
-          {/* Trollmeter */}
-          <Box w="100%">
-            <Text
-              fontSize="sm"
-              fontWeight="semibold"
-              color={tealGaugeTheme.colors.parchment}
-              mb={1}
-              textAlign="center"
-              background="whiteAlpha.200"
-              borderRadius="md"
-              px={2}
-            >
-              Popular Vote
-            </Text>
-            <Center>
-              <TruthGauge
-                score={tScore}
-                label="TROLLMETER"
-                size={{ w: 150, h: 82 }}
-              />
-            </Center>
-          </Box>
+          {/* Trollmeter (hidden in dense mode) */}
+          {!dense && (
+            <Box w="100%">
+              <Text
+                fontSize={labelFont}
+                fontWeight="semibold"
+                color={tealGaugeTheme.colors.parchment}
+                mb={1}
+                textAlign="center"
+                background="whiteAlpha.200"
+                borderRadius="md"
+                px={2}
+              >
+                Popular Vote
+              </Text>
+              <Center>
+                <TruthGauge
+                  score={tScore}
+                  label="TROLLMETER"
+                  size={trollGaugeSize}
+                />
+              </Center>
+            </Box>
+          )}
 
-          {/* Tiny vote gauges */}
-          <HStack spacing={6} mt={3} justify="center">
-            <MiniVoteArcGauge
-              label="Agree"
-              value={proScore}
-              total={totalVotes}
-              color={tealGaugeTheme.colors.green}
-              size={{ w: 90, h: 70 }}
-            />
-            <MiniVoteArcGauge
-              label="Disagree"
-              value={conScore}
-              total={totalVotes}
-              color={tealGaugeTheme.colors.red}
-              size={{ w: 90, h: 70 }}
-            />
-          </HStack>
+          {/* Tiny vote gauges (hidden in dense mode) */}
+          {!dense && (
+            <HStack spacing={isSm ? 4 : 6} mt={isSm ? 2 : 3} justify="center">
+              <MiniVoteArcGauge
+                label="Agree"
+                value={proScore}
+                total={totalVotes}
+                color={tealGaugeTheme.colors.green}
+                size={miniGaugeSize}
+              />
+              <MiniVoteArcGauge
+                label="Disagree"
+                value={conScore}
+                total={totalVotes}
+                color={tealGaugeTheme.colors.red}
+                size={miniGaugeSize}
+              />
+            </HStack>
+          )}
         </VStack>
       )}
     </Box>

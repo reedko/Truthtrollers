@@ -353,15 +353,16 @@ export const fetchLinkedClaimsForTaskClaim = async (
   claimId: number,
   viewerId?: number | null
 ): Promise<LinkedClaim[]> => {
-  const url = new URL(`${API_BASE_URL}/api/linked-claims-for-claim/${claimId}`);
-  if (viewerId) url.searchParams.append("viewerId", viewerId.toString());
+  const qs = viewerId ? `?viewerId=${encodeURIComponent(viewerId)}` : "";
+  const res = await fetch(
+    `${API_BASE_URL}/api/linked-claims-for-claim/${claimId}${qs}`
+  );
 
-  const res = await fetch(url.toString());
   if (!res.ok) {
     throw new Error("Failed to fetch linked claims");
   }
 
-  return await res.json();
+  return res.json();
 };
 //fetch a claim by claim id
 //
