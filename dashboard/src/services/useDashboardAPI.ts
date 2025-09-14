@@ -340,15 +340,14 @@ export const fetchLiveVerimeterScore = async (
   avg_reference_veracity: number;
   avg_reference_bias: number;
 }> => {
-  const url = new URL(`${API_BASE_URL}/api/live-verimeter-score/${claimId}`);
-  if (viewerId) url.searchParams.append("viewerId", viewerId.toString());
-
-  const res = await fetch(url.toString());
+  const qs =
+    viewerId != null ? `?viewerId=${encodeURIComponent(viewerId)}` : "";
+  const res = await fetch(
+    `${API_BASE_URL}/api/live-verimeter-score/${claimId}${qs}`
+  );
   if (!res.ok) throw new Error("Failed to fetch live verimeter score");
-  const data = await res.json();
-  return data;
+  return await res.json();
 };
-
 export const fetchLinkedClaimsForTaskClaim = async (
   claimId: number,
   viewerId?: number | null
