@@ -1,4 +1,5 @@
-const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
+const BASE_URL =
+  process.env.REACT_APP_EXTENSION_BASE_URL || "https://localhost:5001";
 
 export async function analyzeContent(
   content: string,

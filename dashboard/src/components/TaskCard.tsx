@@ -70,8 +70,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
   }, [task]);
 
   if (!activeTask) return null;
-
-  const { authors, publishers, users } = extractMeta(activeTask, useStore);
+  //const { authors, publishers, users } = extractMeta(activeTask, useStore);
+  const { authors, publishers } = extractMeta(activeTask, useStore);
+  const assignedUsers = useTaskStore(
+    (s) => s.assignedUsers[activeTask.content_id]
+  );
 
   const handleSelect = () => {
     setSelectedTask(activeTask);
@@ -227,32 +230,18 @@ const TaskCard: React.FC<TaskCardProps> = ({
               Select
             </Button>
 
-            <Menu>
-              <MenuButton as={Button} colorScheme="teal">
-                Actions
+            <Menu onOpen={handleAssignedUsersOpen}>
+              <MenuButton as={Button} rightIcon={<BiChevronDown />}>
+                Users
               </MenuButton>
               <MenuList>
-                <Menu onOpen={handleAssignedUsersOpen}>
-                  <MenuButton as={Button} rightIcon={<BiChevronDown />}>
-                    Users
-                  </MenuButton>
-                  <MenuList>
-                    {users.length > 0 ? (
-                      users.map((user) => (
-                        <MenuItem key={user.user_id}>{user.username}</MenuItem>
-                      ))
-                    ) : (
-                      <MenuItem>No Users Assigned</MenuItem>
-                    )}
-                  </MenuList>
-                </Menu>
-                <MenuItem onClick={() => handleOpenModal(onAssignOpen)}>
-                  Assign User
-                </MenuItem>
-                <MenuItem onClick={() => handleOpenModal(onReferenceModalOpen)}>
-                  Manage References
-                </MenuItem>
-                <MenuItem onClick={handleDrillDown}>Drill Down</MenuItem>
+                {(assignedUsers?.length ?? 0) > 0 ? (
+                  (assignedUsers ?? []).map((u) => (
+                    <MenuItem key={u.user_id}>{u.username}</MenuItem>
+                  ))
+                ) : (
+                  <MenuItem>No Users Assigned</MenuItem>
+                )}
               </MenuList>
             </Menu>
           </HStack>

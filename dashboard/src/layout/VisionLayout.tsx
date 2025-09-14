@@ -67,7 +67,7 @@ const SidebarContent: React.FC = () => {
           <Text>Dashboard</Text>
         </HStack>
       </RouterLink>
-
+      {createLink("Extension", "/extension")}
       {createLink("Workspace", selectedTaskId ? "/workspace" : "/tasks")}
       {createLink("Molecule", selectedTaskId ? "/molecule" : "/tasks")}
       {createLink(

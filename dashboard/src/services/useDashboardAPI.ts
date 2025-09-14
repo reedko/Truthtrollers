@@ -510,7 +510,7 @@ export const updateClaimSource = async (
   newReferenceId: number,
   notes: string
 ): Promise<void> => {
-  await axios.put(`${API_BASE_URL}/claim-sources/${claim_sources_id}`, {
+  await axios.put(`${API_BASE_URL}/api/claim-sources/${claim_sources_id}`, {
     new_reference_id: newReferenceId,
     notes: notes,
   });
@@ -519,7 +519,7 @@ export const updateClaimSource = async (
 export const deleteClaimSource = async (
   claim_sources_id: number
 ): Promise<void> => {
-  await axios.delete(`${API_BASE_URL}/claim-sources/${claim_sources_id}`);
+  await axios.delete(`${API_BASE_URL}/api/claim-sources/${claim_sources_id}`);
 };
 
 /**

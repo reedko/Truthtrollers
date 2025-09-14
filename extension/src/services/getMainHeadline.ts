@@ -4,6 +4,12 @@ export const getMainHeadline = ($: cheerio.CheerioAPI): string | null => {
   try {
     let mainHeadline: string | null = null;
 
+    // 🔹 Step 0: Prefer the document <title> from <head>
+    const pageTitle = $("title").first().text().trim();
+    if (pageTitle && pageTitle.toLowerCase() !== "bookshelf") {
+      return pageTitle;
+    }
+
     // Step 1: Prioritize H1 and H2
     const headings = $("h1, h2").filter((_, heading) => {
       const classes = $(heading).attr("class") || "";
@@ -43,16 +49,17 @@ export const getMainHeadline = ($: cheerio.CheerioAPI): string | null => {
 
       headlineDivs.each((_, div) => {
         const innerText = extractInnermostText($, div as unknown as Element); // ✅ Cast to native Element
-        if (innerText) {
+        if (innerText && innerText.toLowerCase() !== "bookshelf") {
           mainHeadline = innerText;
           return false; // Break out of `.each()`
         }
       });
     }
 
-    // Step 3: Fallback to <title>
+    // Step 3: Fallback to <title> (guard against plain "Bookshelf")
     if (!mainHeadline) {
-      mainHeadline = $("title").text().trim() || null;
+      const t = $("title").text().trim();
+      return t && t.toLowerCase() !== "bookshelf" ? t : null;
     }
 
     return mainHeadline;

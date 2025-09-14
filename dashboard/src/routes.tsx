@@ -18,6 +18,7 @@ import LogoutPage from "./pages/LogoutPage";
 import UserSelectionPage from "./pages/UserSelectionPage";
 import GamePreview from "./pages/GamePage";
 import TrueFalseGame from "./components/TrueFalseGame";
+import ExtensionDownloadPage from "./pages/ExtensionDownloadPage"; // ✅ NEW
 
 const router = createBrowserRouter([
   {
@@ -88,7 +89,6 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-
       {
         path: "/select-user",
         element: (
@@ -110,6 +110,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <TrueFalseGame />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/extension", // ✅ NEW
+        element: (
+          <ProtectedRoute>
+            <ExtensionDownloadPage />
           </ProtectedRoute>
         ),
       },
