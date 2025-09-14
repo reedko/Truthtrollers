@@ -104,6 +104,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
           {/* Full Navigation Menu */}
           <Box as="nav" p={3} color="white">
             <HStack spacing={6} wrap="wrap">
+              <Link as={RouterLink} to="/extension">
+                Extension
+              </Link>
               <Link as={RouterLink} to="/tasks">
                 Tasks
               </Link>

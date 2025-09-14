@@ -13,8 +13,8 @@ import {
 } from "../../../shared/entities/types";
 import {
   fetchTasks as fetchTasksAPI,
-  fetchUsers,
-  fetchAssignedUsers,
+  fetchUsers as apiFetchUsers,
+  fetchAssignedUsers as apiFetchAssignedUsers, // <-- alias to avoid confusion
   fetchTasksForUser as fetchTasksForUserAPI,
   fetchReferencesForTask,
   fetchClaimsForTask,
@@ -27,7 +27,11 @@ import {
   fetchUnifiedTasksByPivot,
   fetchClaimScoresForTask,
 } from "../services/useDashboardAPI";
-
+const normalizeUser = (u: any) =>
+  ({
+    user_id: Number(u?.user_id ?? u?.userId ?? u?.id),
+    username: String(u?.username ?? u?.name ?? u?.email ?? ""),
+  } as User);
 export interface TaskStoreState {
   verimeterScores: { [contentId: number]: number };
   content: Task[];
@@ -55,7 +59,10 @@ export interface TaskStoreState {
   selectedPivotTasks: Task[];
   hasHydrated: boolean;
   claimScores: {};
-
+  toggleAssignedUserLocal: (
+    taskId: number,
+    user: Pick<User, "user_id" | "username">
+  ) => void;
   setClaimScores: (
     taskId: number,
     scores: { [claimId: number]: number }
@@ -247,16 +254,31 @@ export const useTaskStore = create<TaskStoreState>()(
       },
 
       fetchUsers: async () => {
-        const users = await fetchUsers();
-        set({ users });
+        const users = await apiFetchUsers();
+        // normalize everything once on ingest
+        set({ users: users.map(normalizeUser) });
       },
 
       fetchAssignedUsers: async (taskId) => {
-        const assigned = await fetchAssignedUsers(taskId);
+        const assigned = await apiFetchAssignedUsers(taskId);
+        const normalized = assigned.map(normalizeUser);
         set((s) => ({
-          assignedUsers: { ...s.assignedUsers, [taskId]: assigned },
+          assignedUsers: { ...s.assignedUsers, [taskId]: normalized }, // immutable replace
         }));
       },
+
+      toggleAssignedUserLocal: (taskId, user) =>
+        set((state) => {
+          const list = state.assignedUsers[taskId] ?? [];
+          const uid = Number(user.user_id);
+          const exists = list.some((u) => Number(u.user_id) === uid);
+          const next = exists
+            ? list.filter((u) => Number(u.user_id) !== uid)
+            : [...list, { user_id: uid, username: user.username } as User];
+          return {
+            assignedUsers: { ...state.assignedUsers, [taskId]: next }, // immutable replace
+          };
+        }),
 
       fetchAuthors: async (taskId) => {
         const authors = await fetchAuthors(taskId);

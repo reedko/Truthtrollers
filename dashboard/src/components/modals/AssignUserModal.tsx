@@ -52,24 +52,38 @@ const AssignUserModal: React.FC<{
     }
   }, [isOpen, fetchUsers, fetchAssignedUsers, taskId, users.length]);
 
+  const toggleAssignedUserLocal = useTaskStore(
+    (s) => s.toggleAssignedUserLocal
+  );
+
   const handleToggleUser = async (userId: number) => {
-    const isAssigned = assignedUsers.some((user) => user.user_id === userId);
+    const uid = Number(userId);
+    const user = users.find((u) => Number(u.user_id) === uid);
+    if (!user) return;
+
+    // instant UI
+    toggleAssignedUserLocal(taskId, { user_id: uid, username: user.username });
+
     try {
-      if (isAssigned) {
+      const wasAssigned = assignedUsers.some((u) => Number(u.user_id) === uid);
+      if (wasAssigned) {
         await axios.post(
           `${API_BASE_URL}/api/content/${taskId}/unassign-user`,
-          {
-            userId,
-          }
+          { userId: uid }
         );
       } else {
         await axios.post(`${API_BASE_URL}/api/content/${taskId}/assign-user`, {
-          userId,
+          userId: uid,
         });
       }
-      await fetchAssignedUsers(taskId); // Refresh the assigned users list
-    } catch (error) {
-      console.error("Error toggling user assignment:", error);
+      // authoritative refresh
+      await useTaskStore.getState().fetchAssignedUsers(taskId);
+    } catch (e) {
+      // revert on failure
+      toggleAssignedUserLocal(taskId, {
+        user_id: uid,
+        username: user.username,
+      });
     }
   };
 
