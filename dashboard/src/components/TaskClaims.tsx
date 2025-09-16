@@ -35,6 +35,11 @@ interface TaskClaimsProps {
   editingClaim: Claim | null;
   setEditingClaim: (claim: Claim | null) => void;
   onVerifyClaim: (claim: Claim) => void;
+  linkSelection?: {
+    active: boolean;
+    source?: Pick<Claim, "claim_id" | "claim_text"> | null;
+  };
+  onPickTargetForLink?: (target: Claim) => void;
 }
 
 const TaskClaims: React.FC<TaskClaimsProps> = ({
@@ -56,6 +61,8 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   setEditingClaim,
   onVerifyClaim,
   taskId,
+  linkSelection,
+  onPickTargetForLink,
 }) => {
   const claimRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
@@ -137,18 +144,29 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
           <Box
             key={claim.claim_id}
             ref={(el) => (claimRefs.current[claim.claim_id] = el)}
-            border="1px solid #90caf9"
             bg={hoveredClaimId === claim.claim_id ? "blue.200" : "black"}
             color={hoveredClaimId === claim.claim_id ? "black" : "#90caf9"}
             px={3}
             py={2}
             borderRadius="md"
+            border={
+              linkSelection?.active ? "2px dashed #38A169" : "1px solid #90caf9"
+            }
+            _hover={
+              linkSelection?.active
+                ? { bg: "green.100", color: "black", cursor: "pointer" }
+                : undefined
+            }
             width="100%"
             display="flex"
             alignItems="center"
             justifyContent="space-between"
             cursor="pointer"
             onClick={() => {
+              if (linkSelection?.active) {
+                onPickTargetForLink?.(claim);
+                return;
+              }
               setSelectedClaim(claim);
               setIsClaimViewModalOpen(true);
             }}

@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
+import ClaimLinkOverlay from "./overlays/ClaimLinkOverlay";
+
 import {
   Box,
   Card,
@@ -34,6 +36,9 @@ import {
 } from "../services/useDashboardAPI";
 
 import { useTaskStore } from "../store/useTaskStore";
+// imports at top:
+import { useBreakpointValue } from "@chakra-ui/react";
+import MobileWorkspaceShell from "./MobileWorkspaceShell";
 
 interface WorkspaceProps {
   contentId: number;
@@ -54,7 +59,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
     Claim,
     "claim_id" | "claim_text"
   > | null>(null);
-
+  // inside Workspace component:
+  const isMobile = useBreakpointValue({ base: true, md: false });
   const [targetClaim, setTargetClaim] = useState<Claim | null>(null);
   const [draggingClaim, setDraggingClaim] = useState<Pick<
     Claim,
@@ -225,7 +231,16 @@ const Workspace: React.FC<WorkspaceProps> = ({
     // ✅ Refresh links so new lines appear in RelationshipMap
     setRefreshLinks((prev) => !prev);
   };
-
+  if (isMobile) {
+    return (
+      <MobileWorkspaceShell
+        contentId={contentId}
+        claims={claims}
+        references={references}
+        claimLinks={claimLinks}
+      />
+    );
+  }
   return (
     <Box
       borderWidth="1px"
@@ -318,7 +333,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
           />
         </Box>
       </Grid>
-
       {selectedReference && (
         <DraggableReferenceClaimsModal
           isOpen={isReferenceClaimsModalOpen}
@@ -329,8 +343,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
           onVerifyClaim={handleVerifyClaim}
         />
       )}
-
-      <ClaimLinkModal
+      // ...
+      <ClaimLinkOverlay
         isOpen={isClaimLinkModalOpen}
         onClose={() => {
           setIsClaimLinkModalOpen(false);
@@ -340,7 +354,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
         targetClaim={targetClaim}
         isReadOnly={readOnly}
         claimLink={selectedClaimLink}
-        // onLinkCreated={() => setRefreshLinks((prev) => !prev)}
         onLinkCreated={handleLinkCreated}
       />
       {verifyingClaim && (
