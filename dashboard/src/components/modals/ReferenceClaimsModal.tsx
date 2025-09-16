@@ -31,6 +31,7 @@ interface Props {
   ) => void;
   draggingClaim: Pick<Claim, "claim_id" | "claim_text"> | null;
   onVerifyClaim?: (claim: Claim) => void;
+  onStartLink?: (claim: Pick<Claim, "claim_id" | "claim_text">) => void;
 }
 /* ────────────────────────────────────────────────────────── */
 
@@ -42,6 +43,7 @@ const ReferenceClaimsModal: React.FC<Props> = (props) => {
     setDraggingClaim,
     draggingClaim,
     onVerifyClaim,
+    onStartLink,
   } = props;
 
   /* Tooltip follows cursor while dragging */
@@ -159,6 +161,18 @@ const ReferenceClaimsModal: React.FC<Props> = (props) => {
                         icon={<Search2Icon />}
                         onClick={() => onVerifyClaim?.(claim)}
                       />
+                      {/* NEW: Link button — kicks off the bottom sheet flow */}
+                      <Button
+                        size="sm"
+                        onClick={() =>
+                          onStartLink?.({
+                            claim_id: claim.claim_id,
+                            claim_text: claim.claim_text,
+                          })
+                        }
+                      >
+                        Link
+                      </Button>
                     </HStack>
                   ))}
                 </VStack>
