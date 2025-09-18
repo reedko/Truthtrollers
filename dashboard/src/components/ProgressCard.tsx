@@ -1,5 +1,4 @@
 // src/components/Beacon/ProgressCard.tsx
-
 import React from "react";
 import { Box, VStack, HStack, Text, Center } from "@chakra-ui/react";
 import TruthGauge from "./ModernArcGauge";
@@ -27,12 +26,9 @@ const ProgressCard: React.FC<ProgressCardProps> = ({
       borderRadius="lg"
       boxShadow="2xl"
       p={5}
-      w="250px"
+      w="100%" // 👈 obey wrapper (no fixed 250px)
       h="405px"
-      position="relative"
-      margin="10px"
     >
-      {/* Title */}
       <Center>
         <Text fontWeight="bold" fontSize="md" color="white" mb={3}>
           Progress Gauges
@@ -40,7 +36,6 @@ const ProgressCard: React.FC<ProgressCardProps> = ({
       </Center>
 
       <VStack spacing={6}>
-        {/* Verimeter */}
         <Box w="100%">
           <Text
             fontSize="sm"
@@ -79,7 +74,6 @@ const ProgressCard: React.FC<ProgressCardProps> = ({
           </Text>
         </Box>
 
-        {/* Tiny vote gauges */}
         <VStack>
           <HStack spacing={6} mt={3} justify="center">
             <MiniVoteArcGauge
