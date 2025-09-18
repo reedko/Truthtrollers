@@ -33,6 +33,33 @@ export const fetchContentScores = async (
   };
 };
 
+export type ClaimVerdict = "true" | "false" | "uncertain";
+
+export async function saveClaimVerification(input: {
+  claim_id: number;
+  user_id?: number | null;
+  verdict: ClaimVerdict;
+  confidence: number; // 0..1
+  notes?: string;
+}) {
+  const res = await fetch(`${API_BASE_URL}/api/claim-verifications`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      claim_id: input.claim_id,
+      user_id: input.user_id ?? null,
+      verdict: input.verdict,
+      confidence: input.confidence,
+      notes: input.notes ?? "",
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`Failed to save claim verification: ${res.status} ${text}`);
+  }
+  return res.json();
+}
+
 export async function updateScoresForContent(
   contentId: number,
   userId: number | null

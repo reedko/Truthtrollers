@@ -1,7 +1,6 @@
 // src/components/TaskCard.tsx
 import {
   Box,
-  Center,
   Text,
   Button,
   Image,
@@ -31,7 +30,7 @@ interface TaskCardProps {
   useStore?: boolean;
   /** already existed in your code */
   compact?: boolean;
-  /** NEW: hide middle meta block (image/authors/publishers/progress) */
+  /** hide middle meta block (image/authors/publishers/progress) */
   hideMeta?: boolean;
   onSelect?: (task: Task) => void;
 }
@@ -49,8 +48,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
   );
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
+
   const { setSelectedTask, selectedRedirect } = useTaskStore();
   const fetchAssignedUsers = useTaskStore((s) => s.fetchAssignedUsers);
+  const assignedUsers = useTaskStore((s) =>
+    activeTask ? s.assignedUsers[activeTask.content_id] : undefined
+  );
 
   const {
     isOpen: isAssignOpen,
@@ -70,11 +73,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
   }, [task]);
 
   if (!activeTask) return null;
-  //const { authors, publishers, users } = extractMeta(activeTask, useStore);
+
   const { authors, publishers } = extractMeta(activeTask, useStore);
-  const assignedUsers = useTaskStore(
-    (s) => s.assignedUsers[activeTask.content_id]
-  );
 
   const handleSelect = () => {
     setSelectedTask(activeTask);
@@ -102,8 +102,19 @@ const TaskCard: React.FC<TaskCardProps> = ({
     openModal();
   };
 
+  // Keep height predictable but not forcing width
+  const cardHeight = hideMeta
+    ? compact
+      ? "200px"
+      : "230px"
+    : compact
+    ? "340px"
+    : "405px";
+
   return (
-    <Center>
+    // Root wrapper MUST be full-width to avoid stagger;
+    // no margins here—let parent control spacing via gap
+    <Box w="100%" maxW="unset" minW={0}>
       <Box
         ref={cardRef}
         bg={isAssignOpen || isReferenceModalOpen ? "blue.200" : "stat2Gradient"}
@@ -112,19 +123,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
         overflow="hidden"
         boxShadow="md"
         p={3}
-        w="250px"
-        // shorten height if meta hidden
-        h={hideMeta ? "230px" : "405px"}
+        w="100%"
+        maxW="unset"
+        minW={0}
+        h={cardHeight}
         display="flex"
         flexDirection="column"
         justifyContent="space-between"
-        margin="10px"
       >
-        <Center>
-          <Text fontWeight="bold" fontSize="md">
-            Content Details
-          </Text>
-        </Center>
+        <Text fontWeight="bold" fontSize="md" textAlign="center">
+          Content Details
+        </Text>
 
         {Array.isArray(task) && task.length > 1 ? (
           <Select
@@ -136,7 +145,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
               );
               if (next) {
                 setActiveTask(next);
-                onSelect?.(next); // 🧠 Notify parent (UnifiedHeader)
+                onSelect?.(next);
               }
             }}
             mb={2}
@@ -169,9 +178,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
           </Text>
         )}
 
-        {/* META BLOCK — hide when hideMeta is true */}
         {!hideMeta && (
-          <Box flex="1">
+          <Box flex="1" minH={0}>
             <Box w="100%" h="150px" overflow="hidden" borderRadius="md" mb={2}>
               <Image
                 src={`${API_BASE_URL}/${activeTask.thumbnail}`}
@@ -223,29 +231,26 @@ const TaskCard: React.FC<TaskCardProps> = ({
           </Box>
         )}
 
-        {/* ACTIONS */}
-        <Center>
-          <HStack>
-            <Button colorScheme="blue" onClick={handleSelect}>
-              Select
-            </Button>
+        <HStack justify="center">
+          <Button colorScheme="blue" onClick={handleSelect}>
+            Select
+          </Button>
 
-            <Menu onOpen={handleAssignedUsersOpen}>
-              <MenuButton as={Button} rightIcon={<BiChevronDown />}>
-                Users
-              </MenuButton>
-              <MenuList>
-                {(assignedUsers?.length ?? 0) > 0 ? (
-                  (assignedUsers ?? []).map((u) => (
-                    <MenuItem key={u.user_id}>{u.username}</MenuItem>
-                  ))
-                ) : (
-                  <MenuItem>No Users Assigned</MenuItem>
-                )}
-              </MenuList>
-            </Menu>
-          </HStack>
-        </Center>
+          <Menu onOpen={handleAssignedUsersOpen}>
+            <MenuButton as={Button} rightIcon={<BiChevronDown />}>
+              Users
+            </MenuButton>
+            <MenuList>
+              {(assignedUsers?.length ?? 0) > 0 ? (
+                (assignedUsers ?? []).map((u) => (
+                  <MenuItem key={u.user_id}>{u.username}</MenuItem>
+                ))
+              ) : (
+                <MenuItem>No Users Assigned</MenuItem>
+              )}
+            </MenuList>
+          </Menu>
+        </HStack>
 
         {isAssignOpen && (
           <AssignUserModal
@@ -265,7 +270,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
           />
         )}
       </Box>
-    </Center>
+    </Box>
   );
 };
 

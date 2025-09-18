@@ -982,21 +982,19 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
   return (
     <>
-      <Box
-        pt={{ base: 0, md: 4 }}
-        width={{ base: "100vw", md: "calc(100vw - 300px)" }}
-        ml={{ base: 0, md: "8px" }}
-        mt={{ base: 0, md: -4 }}
-      >
+      {/* outer wrapper: just fill parent, no vw, no margins */}
+      <Box w="100%" h="100%" overflow="hidden" minW={0} minH={0}>
         <Box
           ref={cyRef}
-          height={{ base: "calc(100dvh - 98px)", md: "80vh" }} // leave room for header/tabs on mobile
-          width="100%"
+          w="100%"
+          h="100%"
           borderWidth="1px"
           borderRadius="lg"
           p={{ base: 0, md: 4 }}
-          bg={"stat2Gradient"}
+          bg="stat2Gradient"
           borderColor="gray.300"
+          // ensure the inner div respects flex shrink/grow
+          sx={{ minWidth: 0, minHeight: 0, boxSizing: "border-box" }}
         />
       </Box>
 

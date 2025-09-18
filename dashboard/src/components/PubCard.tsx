@@ -188,12 +188,11 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
         borderRadius="lg"
         boxShadow="md"
         p={3}
-        width="250px"
+        w="100%"
         height="405px"
         display="flex"
         flexDirection="column"
         justifyContent="space-between"
-        margin="10px"
       >
         <Box>
           <Center>

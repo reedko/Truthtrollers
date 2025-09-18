@@ -62,28 +62,7 @@ export const sendResetEmail = async (to, link) => {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const app = express();
-/* 
-// Load SSL certificate and key
-const options = {
-  key: fs.readFileSync("../ssl/server.key"),
-  cert: fs.readFileSync("../ssl/server.cert"),
-};
- */
 
-/* // ✅ Use HTTPS for localhost:5001
-https.createServer(options, app).listen(5001, () => {
-  console.log("✅ HTTPS Server running on https://localhost:5001");
-});
-
-// 🔄 Optional: Redirect HTTP to HTTPS (port 5000 → 5001)
-http
-  .createServer((req, res) => {
-    res.writeHead(301, { Location: "https://localhost:5001" + req.url });
-    res.end();
-  })
-  .listen(5080);
-// Increase payload size limit (e.g., 50MB)
- */
 app.listen(3000, () => {
   console.log("✅ Node backend running on http://localhost:3000");
 });
@@ -225,10 +204,6 @@ function getRelativePath(absolutePath) {
   // If 'public/' is not found, return the original path (or handle as needed)
   return absolutePath;
 }
-/* app.use((req, res, next) => {
-  //console.log(`Incoming request: ${req.method} ${req.originalUrl}`);
-  next();
-}); */
 
 app.get("/proxy", async (req, res) => {
   const { url } = req.query; // Pass the target URL as a query parameter
@@ -352,6 +327,7 @@ app.post("/api/extract-readable-text", (req, res) => {
       .json({ success: false, message: "Readability parse failed" });
   }
 });
+
 //prse pdfs:
 app.get("/api/check-pdf-head", async (req, res) => {
   const url = req.query.url;
@@ -574,28 +550,155 @@ app.use(
   "/images/publishers",
   express.static(path.join(__dirname, "assets/images/publishers"))
 );
+
 //claim evaluation
-app.post("/api/claim_verifications", (req, res) => {
-  const { claim_id, reference_id, evaluation_text } = req.body;
 
-  if (!claim_id || !reference_id || !evaluation_text) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
+// Small helper
+const okVerdict = new Set(["true", "false", "uncertain"]);
+function badReq(res, msg) {
+  return res.status(400).json({ error: msg });
+}
 
-  const sql = `
-    INSERT INTO claim_verifications (claim_id, reference_id, evaluation_text)
-    VALUES (?, ?, ?)
-  `;
+// -------------------- CLAIM VERIFICATIONS API -------------------- //
+// Upsert a verification (create or update the same (claim_id, user_id))
+app.post("/api/claim-verifications", async (req, res) => {
+  try {
+    const {
+      claim_id,
+      user_id,
+      verdict,
+      confidence,
+      notes = "",
+    } = req.body || {};
 
-  pool.query(sql, [claim_id, reference_id, evaluation_text], (err, result) => {
-    if (err) {
-      console.error("❌ Error inserting claim verification:", err);
-      return res.status(500).json({ error: "Database insert failed" });
+    if (!Number.isInteger(claim_id))
+      return badReq(res, "claim_id required (int)");
+    if (user_id != null && !Number.isInteger(user_id))
+      return badReq(res, "user_id must be int or null");
+    if (!okVerdict.has(verdict))
+      return badReq(res, "verdict must be 'true' | 'false' | 'uncertain'");
+
+    const confNum = Number(confidence);
+    if (!Number.isFinite(confNum) || confNum < 0 || confNum > 1)
+      return badReq(res, "confidence must be between 0 and 1");
+
+    // If your users table requires a user_id, you can enforce here:
+    // if (user_id == null) return badReq(res, "user_id required");
+
+    const sql = `
+      INSERT INTO claim_verifications
+        (claim_id, user_id, verdict, confidence, notes, created_at, updated_at)
+      VALUES
+        (:claim_id, :user_id, :verdict, :confidence, :notes, NOW(), NOW())
+      ON DUPLICATE KEY UPDATE
+        verdict = VALUES(verdict),
+        confidence = VALUES(confidence),
+        notes = VALUES(notes),
+        updated_at = NOW()
+    `;
+
+    const [result] = await pool.execute(sql, {
+      claim_id,
+      user_id, // can be null if FK allows it
+      verdict,
+      confidence: confNum,
+      notes,
+    });
+
+    // Fetch the current record to return a clean object
+    const [rows] = await pool.execute(
+      `SELECT claim_verifications_id, claim_id, user_id, verdict, confidence, notes, created_at, updated_at
+       FROM claim_verifications
+       WHERE claim_id = :claim_id AND <%= user_id_cond %>`,
+      user_id == null
+        ? { claim_id } // if you allowed null user_id and there's only one per claim
+        : { claim_id, user_id }
+    );
+
+    // If you allow NULL user_id for multiple rows per claim, adjust the SELECT accordingly.
+    return res.json({ ok: true, verification: rows?.[0] ?? null });
+  } catch (err) {
+    console.error("POST /api/claim-verifications error:", err);
+    // Common FK issues:
+    // - claim_id not in claims
+    // - user_id not in users (if NOT NULL FK)
+    if (String(err?.message || "").includes("foreign key")) {
+      return res
+        .status(409)
+        .json({
+          error: "Foreign key violation (claim_id or user_id not found)",
+        });
     }
-
-    res.status(200).json({ success: true, verification_id: result.insertId });
-  });
+    return res.status(500).json({ error: "Server error" });
+  }
 });
+
+// Get one verification for (claim_id, user_id)
+app.get("/api/claim-verifications", async (req, res) => {
+  try {
+    const claim_id = Number(req.query.claim_id);
+    const user_id =
+      req.query.user_id == null ? null : Number(req.query.user_id);
+
+    if (!Number.isInteger(claim_id))
+      return badReq(res, "claim_id required (int)");
+
+    let rows;
+    if (user_id == null) {
+      // If you don’t support null user_id, you can 400 here instead
+      [rows] = await pool.execute(
+        `SELECT * FROM claim_verifications WHERE claim_id = :claim_id`,
+        { claim_id }
+      );
+    } else {
+      [rows] = await pool.execute(
+        `SELECT * FROM claim_verifications WHERE claim_id = :claim_id AND user_id = :user_id`,
+        { claim_id, user_id }
+      );
+    }
+    res.json({ ok: true, verifications: rows });
+  } catch (err) {
+    console.error("GET /api/claim-verifications error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// All verifications for a claim (for admin/aggregation views)
+app.get("/api/claims/:claimId/verifications", async (req, res) => {
+  try {
+    const claimId = Number(req.params.claimId);
+    if (!Number.isInteger(claimId)) return badReq(res, "claimId must be int");
+    const [rows] = await pool.execute(
+      `SELECT * FROM claim_verifications WHERE claim_id = :claimId ORDER BY updated_at DESC`,
+      { claimId }
+    );
+    res.json({ ok: true, verifications: rows });
+  } catch (err) {
+    console.error("GET /api/claims/:claimId/verifications error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// (Optional) delete a verification
+app.delete("/api/claim-verifications", async (req, res) => {
+  try {
+    const claim_id = Number(req.query.claim_id);
+    const user_id = Number(req.query.user_id);
+    if (!Number.isInteger(claim_id) || !Number.isInteger(user_id))
+      return badReq(res, "claim_id and user_id required (int)");
+
+    const [result] = await pool.execute(
+      `DELETE FROM claim_verifications WHERE claim_id = :claim_id AND user_id = :user_id`,
+      { claim_id, user_id }
+    );
+    res.json({ ok: true, deleted: result.affectedRows });
+  } catch (err) {
+    console.error("DELETE /api/claim-verifications error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// --- don’t forget your existing app.listen(...)
 
 //Get Authors
 app.get("/api/content/:taskId/authors", async (req, res) => {
@@ -3407,57 +3510,6 @@ app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
   }
 });
 
-/* app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
-  const { generalTopic } = req.body;
-
-  try {
-    // Check if the topic exists in topics or topicAliases
-    const topicQuery = `
-      SELECT topics.topic_id 
-      FROM topics
-      LEFT JOIN topic_aliases ON topics.topic_id = topic_aliases.topic_id
-      WHERE topics.topic_name = ? OR topic_aliases.alias_name = ?
-    `;
-    const results = await query(topicQuery, [generalTopic, generalTopic]);
-    console.log(results, generalTopic, ":results for check topi");
-    if (results.length > 0) {
-      // Topic or alias exists, return null for the thumbnail
-      return res.status(200).send({ exists: true, thumbnail_url: null });
-    }
-
-    // If not found, fetch icon
-    const icon = await fetchIconForTopic(generalTopic, query); // Fetch the icon from the Noun Project
-
-    if (!icon) {
-      throw new Error(`Failed to fetch icon for topic: ${generalTopic}`);
-    }
-
-        const imagePath = `./assets/images/topics/${generalTopic.replace(
-      /\s+/g,
-      "_"
-    )}.png`;
-
-    // Download and convert the image to PNG if necessary
-     const response = await axios.get(icon, {
-      responseType: "arraybuffer",
-    });
-    const buffer = Buffer.from(response.data);
-
-    // Use Sharp to convert to PNG
-    await sharp(buffer).png().toFile(imagePath);
-
-    // Return the local thumbnail URL
-    const thumbnailUrl = `assets/images/topics/${generalTopic.replace(
-      /\s+/g,
-      "_"
-    )}.png`;
-    res.status(200).send({ exists: false, thumbnail_url: icon });
-  } catch (error) {
-    console.error("Error in checkAndDownloadTopicIcon:", error);
-    res.status(500).send({ error: "Failed to process topic icon." });
-  }
-});
- */
 import puppeteer from "puppeteer";
 
 app.post("/api/fetch-image-with-puppeteer", async (req, res) => {

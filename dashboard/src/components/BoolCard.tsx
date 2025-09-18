@@ -1,5 +1,4 @@
 // src/components/Beacon/BoolCard.tsx
-
 import React, { useEffect, useState } from "react";
 import { Box, VStack, HStack, Text, Center, Spinner } from "@chakra-ui/react";
 import TruthGauge from "./ModernArcGauge";
@@ -13,11 +12,12 @@ interface BoolCardProps {
   pro?: number;
   con?: number;
   contentId?: number | string;
-  /** NEW: small/medium sizing (default "md") */
-  size?: "sm" | "md";
-  /** NEW: hide non-essential rows for compact header usage */
+  /** NEW: extra small for phones */
+  size?: "xs" | "sm" | "md";
+  /** Hide non-essential rows for compact header usage */
   dense?: boolean;
 }
+
 type Scores = {
   verimeterScore: number;
   trollmeterScore: number;
@@ -80,19 +80,44 @@ const BoolCard: React.FC<BoolCardProps> = ({
   const totalVotes = proScore + conScore;
 
   // ---------- sizing controls ----------
+  const isXs = size === "xs";
   const isSm = size === "sm";
+
+  // Parent (UnifiedHeader) should control width; we go full-width inside the slot.
   const container = {
-    p: isSm ? 3 : 5,
-    w: isSm ? "220px" : "250px",
-    // if dense we shorten height; otherwise keep your original height
-    h: isSm ? (dense ? "210px" : "300px") : dense ? "300px" : "405px",
+    p: isXs ? 2 : isSm ? 3 : 5,
+    w: "100%",
+    h: isXs
+      ? dense
+        ? "190px"
+        : "240px"
+      : isSm
+      ? dense
+        ? "210px"
+        : "300px"
+      : dense
+      ? "300px"
+      : "405px",
   };
-  const titleFont = isSm ? "sm" : "md";
-  const labelFont = isSm ? "xs" : "sm";
-  const verimeterGaugeSize = isSm ? { w: 130, h: 70 } : { w: 150, h: 82 };
-  const trollGaugeSize = isSm ? { w: 130, h: 70 } : { w: 150, h: 82 };
-  const miniGaugeSize = isSm ? { w: 70, h: 58 } : { w: 90, h: 70 };
-  const stackSpacing = isSm ? 4 : 6;
+
+  const titleFont = isXs ? "xs" : isSm ? "sm" : "md";
+  const labelFont = isXs ? "xs" : isSm ? "xs" : "sm";
+
+  // Dial sizes — tiny in xs
+  const verimeterGaugeSize = isXs
+    ? { w: 90, h: 50 }
+    : isSm
+    ? { w: 130, h: 70 }
+    : { w: 150, h: 82 };
+  const trollGaugeSize = verimeterGaugeSize;
+
+  const miniGaugeSize = isXs
+    ? { w: 64, h: 52 }
+    : isSm
+    ? { w: 70, h: 58 }
+    : { w: 90, h: 70 };
+
+  const stackSpacing = isXs ? 3 : isSm ? 4 : 6;
 
   return (
     <Box
@@ -103,21 +128,23 @@ const BoolCard: React.FC<BoolCardProps> = ({
       w={container.w}
       h={container.h}
       position="relative"
-      margin="10px"
+      // let parent gap control spacing (UnifiedHeader enforces no margins anyway)
+      m={0}
     >
       <Center>
         <Text
           fontWeight="bold"
           fontSize={titleFont}
           color="white"
-          mb={isSm ? 2 : 3}
+          mb={isXs ? 1 : isSm ? 2 : 3}
         >
           Veracity Gauges
         </Text>
       </Center>
+
       {loading ? (
         <Center h={`calc(${container.h} - 40px)`}>
-          <Spinner color="teal.300" size={isSm ? "md" : "xl"} />
+          <Spinner color="teal.300" size={isXs ? "sm" : isSm ? "md" : "xl"} />
         </Center>
       ) : fetchError ? (
         <Center h={`calc(${container.h} - 40px)`}>
@@ -177,7 +204,11 @@ const BoolCard: React.FC<BoolCardProps> = ({
 
           {/* Tiny vote gauges (hidden in dense mode) */}
           {!dense && (
-            <HStack spacing={isSm ? 4 : 6} mt={isSm ? 2 : 3} justify="center">
+            <HStack
+              spacing={isXs ? 3 : isSm ? 4 : 6}
+              mt={isXs ? 1 : isSm ? 2 : 3}
+              justify="center"
+            >
               <MiniVoteArcGauge
                 label="Agree"
                 value={proScore}

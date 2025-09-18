@@ -1,3 +1,4 @@
+// src/components/UnifiedHeader.tsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
@@ -6,6 +7,7 @@ import {
   Tooltip,
   Skeleton,
   SkeletonText,
+  useBreakpointValue, // ⬅️ NEW
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { useTaskStore } from "../store/useTaskStore";
@@ -17,6 +19,9 @@ import ProgressCard from "./ProgressCard";
 import { Author, Publisher, Task } from "../../../shared/entities/types";
 import { ensureArray } from "../utils/normalize";
 import { fetchContentScores } from "../services/useDashboardAPI";
+import MicroHeaderRail from "./headers/MicroHeaderRail";
+
+type Variant = "full" | "compact" | "micro"; // ⬅️ reintroduce micro
 
 interface UnifiedHeaderProps {
   pivotType?: "task" | "author" | "publisher" | "reference";
@@ -26,10 +31,12 @@ interface UnifiedHeaderProps {
   pro?: number;
   con?: number;
   refreshKey?: number | string;
-  variant?: "full" | "compact";
+  variant?: Variant; // optional; auto if omitted
   sticky?: boolean;
   allowToggle?: boolean;
 }
+
+const CARD_W = 250; // single source of truth
 
 const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   pivotType,
@@ -39,32 +46,52 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   pro,
   con,
   refreshKey,
-  variant = "full",
+  variant, // ⬅️ if provided, we respect it; otherwise auto
   sticky = false,
   allowToggle = false,
 }) => {
-  // Zustand selectors (these are hooks too!)
   const selectedTask = useTaskStore((s) => s.selectedTask);
   const fetchTasksByPivot = useTaskStore((s) => s.fetchTasksByPivot);
   const viewerId = useTaskStore((s) => s.viewingUserId);
   const verimeterScoreMap = useTaskStore((s) => s.verimeterScores || {});
 
-  // Local state hooks (must always be called)
   const [tasks, setTasks] = useState<Task[]>([]);
   const [pivotTask, setPivotTask] = useState<Task | null>(null);
   const [liveVerimeter, setLiveVerimeter] = useState<number | null>(null);
-  const [localVariant, setLocalVariant] = useState<"full" | "compact">(variant);
 
-  // Keep localVariant in sync with prop
-  useEffect(() => setLocalVariant(variant), [variant]);
+  // 🔧 Auto-pick variant by breakpoint unless explicitly provided
+  const bpVariant = useBreakpointValue<Variant>({
+    base: "micro", // phones
+    sm: "compact", // small tablets
+    md: "full", // desktop+
+  });
+  const [localVariant, setLocalVariant] = useState<Variant>(
+    variant ?? bpVariant ?? "full"
+  );
+  useEffect(() => {
+    if (variant) setLocalVariant(variant);
+    else if (bpVariant) setLocalVariant(bpVariant);
+  }, [variant, bpVariant]);
 
+  const isMicro = localVariant === "micro";
   const isCompact = localVariant === "compact";
+  const isFull = localVariant === "full";
+
+  // 🔧 Spread across on desktop, stay centered single-column on phones
+  const justify = useBreakpointValue<
+    "center" | "space-around" | "space-between"
+  >({
+    base: "center",
+    sm: "center",
+    md: "space-around",
+    lg: "space-between",
+  });
+
   const resolvedPivotType =
-    pivotType === "reference" ? "task" : pivotType || "task";
+    (pivotType === "reference" ? "task" : pivotType) || "task";
   const resolvedPivotId =
     pivotId !== undefined ? pivotId : selectedTask?.content_id ?? undefined;
 
-  // fetch tasks by pivot (always run)
   useEffect(() => {
     const load = async () => {
       if (resolvedPivotId !== undefined) {
@@ -85,7 +112,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     load();
   }, [resolvedPivotType, resolvedPivotId, selectedTask, fetchTasksByPivot]);
 
-  // fetch live verimeter (always run; guarded inside)
   useEffect(() => {
     const fetchScore = async () => {
       if (!pivotTask?.content_id) {
@@ -94,13 +120,12 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       }
       try {
         const result = await fetchContentScores(pivotTask.content_id, null);
-        if (result && result.verimeterScore !== undefined) {
-          setLiveVerimeter(result.verimeterScore);
-        } else {
-          setLiveVerimeter(null);
-        }
-      } catch (err) {
-        console.error("Error fetching live verimeter score:", err);
+        setLiveVerimeter(
+          result && result.verimeterScore !== undefined
+            ? result.verimeterScore
+            : null
+        );
+      } catch {
         setLiveVerimeter(null);
       }
     };
@@ -108,13 +133,11 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pivotTask?.content_id, viewerId, refreshKey]);
 
-  // SAFETY: compute derived values with fallbacks; do not early return before hooks
   const contentId = pivotTask?.content_id ?? null;
   const storeScore =
     contentId != null ? verimeterScoreMap[contentId] ?? null : null;
   const finalScore = verimeterScore ?? storeScore ?? liveVerimeter;
 
-  // Always call these hooks; if pivotTask is null, fall back to []
   const authors = useMemo(
     () => ensureArray<Author>(pivotTask?.authors),
     [pivotTask]
@@ -124,7 +147,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     [pivotTask]
   );
 
-  // Sticky container styling (no hooks here)
   const containerStyles = sticky
     ? ({
         position: "sticky",
@@ -134,22 +156,33 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       } as const)
     : {};
 
-  // When we have no pivotTask yet, render a lightweight skeleton—BUT after all hooks have run
   const isLoading = !pivotTask;
 
+  // Card wrapper—forces identical widths, kills stagger
+  const cardWrapSx = {
+    "--card-w": `${CARD_W}px`,
+    flex: "0 0 var(--card-w)",
+    width: "min(100%, var(--card-w))",
+    maxWidth: "var(--card-w)",
+    minWidth: "200px",
+    "> *": {
+      width: "100% !important",
+      maxWidth: "100% !important",
+      margin: "0 !important",
+    },
+  } as const;
+
   return (
-    <Box position="relative">
+    <Box position="relative" w="100%" px={0}>
       {allowToggle && (
         <Tooltip
-          label={
-            isCompact ? "Switch to full header" : "Switch to compact header"
-          }
+          label={isFull ? "Switch to compact/micro" : "Switch to full header"}
           hasArrow
           placement="left"
         >
           <IconButton
             aria-label="Toggle header density"
-            icon={isCompact ? <ViewIcon /> : <ViewOffIcon />}
+            icon={isFull ? <ViewOffIcon /> : <ViewIcon />}
             size="sm"
             variant="ghost"
             position="absolute"
@@ -157,148 +190,109 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
             top="-2"
             zIndex={45}
             onClick={() =>
-              setLocalVariant((v) => (v === "compact" ? "full" : "compact"))
+              setLocalVariant((v) =>
+                v === "full" ? "compact" : v === "compact" ? "micro" : "full"
+              )
             }
           />
         </Tooltip>
       )}
-
-      <Flex
-        wrap="wrap"
-        gap={isCompact ? 3 : 4}
-        mb={isCompact ? 3 : 6}
-        justify="space-between"
-        sx={containerStyles}
-      >
-        {/* BoolCard */}
-        <Box
-          flex={{
-            base: "1 1 100%",
-            sm: isCompact ? "1 1 45%" : "1 1 48%",
-            md: isCompact ? "1 1 24%" : "1 1 30%",
-            lg: "1 1 18%",
-          }}
-          minW="220px"
+      {isMicro ? (
+        // 📱 Micro: swipeable rail + sheet details
+        <MicroHeaderRail
+          score={finalScore}
+          tasks={tasks}
+          pivotTask={pivotTask}
+          authors={authors}
+          publishers={publishers}
+          onSelectTask={setPivotTask}
+        />
+      ) : (
+        <Flex
+          wrap="wrap"
+          justify={justify} // ⬅️ spread on desktop, centered on phone
+          align="stretch"
+          columnGap={isMicro ? 2 : isCompact ? 3 : 4}
+          rowGap={isMicro ? 2 : isCompact ? 3 : 4}
+          mb={isMicro ? 2 : isCompact ? 3 : 6}
+          w="100%"
+          px={0}
+          mx={0}
+          sx={containerStyles}
         >
-          {isLoading ? (
-            <Skeleton
-              borderRadius="lg"
-              height={isCompact ? "220px" : "405px"}
-            />
-          ) : (
-            <BoolCard
-              verimeterScore={finalScore}
-              trollmeterScore={isCompact ? undefined : trollmeterScore}
-              pro={isCompact ? undefined : pro}
-              con={isCompact ? undefined : con}
-              contentId={contentId ?? undefined}
-              size={isCompact ? "sm" : "md"}
-              dense={isCompact}
-            />
-          )}
-        </Box>
+          {/* BoolCard */}
+          <Box sx={cardWrapSx}>
+            {isLoading ? (
+              <Skeleton
+                borderRadius="lg"
+                height={isFull ? "405px" : isCompact ? "220px" : "160px"} // micro shortest
+              />
+            ) : (
+              <BoolCard
+                verimeterScore={finalScore}
+                trollmeterScore={isFull ? trollmeterScore : undefined}
+                pro={isFull ? pro : undefined}
+                con={isFull ? con : undefined}
+                contentId={contentId ?? undefined}
+                size={isFull ? "md" : "sm"} // micro/compact => sm
+                dense={!isFull} // micro/compact => dense
+              />
+            )}
+          </Box>
 
-        {/* TaskCard */}
-        <Box
-          flex={{
-            base: "1 1 100%",
-            sm: isCompact ? "1 1 45%" : "1 1 48%",
-            md: isCompact ? "1 1 30%" : "1 1 30%",
-            lg: "1 1 18%",
-          }}
-          minW="240px"
-        >
-          {isLoading ? (
-            <Box p={3} borderRadius="lg" bg="stat2Gradient">
-              <Skeleton height="18px" mb={3} />
-              <Skeleton height="150px" mb={2} />
-              <SkeletonText noOfLines={3} spacing="2" />
-            </Box>
-          ) : (
-            <TaskCard
-              task={tasks}
-              useStore={false}
-              onSelect={setPivotTask}
-              compact={isCompact}
-              hideMeta={isCompact}
-            />
-          )}
-        </Box>
+          {/* TaskCard */}
+          <Box sx={cardWrapSx}>
+            {isLoading ? (
+              <Box p={3} borderRadius="lg" bg="stat2Gradient">
+                <Skeleton height={isFull ? "18px" : "14px"} mb={3} />
+                {isFull && <Skeleton height="150px" mb={2} />}
+                {isFull && <SkeletonText noOfLines={3} spacing="2" />}
+              </Box>
+            ) : (
+              <TaskCard
+                task={tasks}
+                useStore={false}
+                onSelect={setPivotTask}
+                compact={!isFull} // compact + micro
+                hideMeta={!isFull} // hide image/meta in micro & compact
+              />
+            )}
+          </Box>
 
-        {/* Right-side cards */}
-        {isCompact ? (
-          <>
-            <Box flex={{ base: "1 1 49%", md: "1 1 18%" }} minW="200px">
-              {isLoading ? (
-                <Skeleton borderRadius="lg" height="120px" />
-              ) : (
-                <PubCard publishers={publishers.slice(0, 1)} compact />
-              )}
-            </Box>
-            <Box flex={{ base: "1 1 49%", md: "1 1 18%" }} minW="200px">
-              {isLoading ? (
-                <Skeleton borderRadius="lg" height="120px" />
-              ) : (
-                <AuthCard authors={authors.slice(0, 1)} compact />
-              )}
-            </Box>
-          </>
-        ) : (
-          <>
-            <Box
-              flex={{
-                base: "1 1 100%",
-                sm: "1 1 48%",
-                md: "1 1 30%",
-                lg: "1 1 18%",
-              }}
-              minW="240px"
-            >
-              {isLoading ? (
-                <Skeleton borderRadius="lg" height="180px" />
-              ) : (
-                <PubCard publishers={publishers} />
-              )}
-            </Box>
-            <Box
-              flex={{
-                base: "1 1 100%",
-                sm: "1 1 48%",
-                md: "1 1 30%",
-                lg: "1 1 18%",
-              }}
-              minW="240px"
-            >
-              {isLoading ? (
-                <Skeleton borderRadius="lg" height="180px" />
-              ) : (
-                <AuthCard authors={authors} />
-              )}
-            </Box>
-            <Box
-              flex={{
-                base: "1 1 100%",
-                sm: "1 1 48%",
-                md: "1 1 30%",
-                lg: "1 1 18%",
-              }}
-              minW="240px"
-            >
-              {isLoading ? (
-                <Skeleton borderRadius="lg" height="180px" />
-              ) : (
-                <ProgressCard
-                  ProgressScore={0.2}
-                  totalClaims={90}
-                  verifiedClaims={27}
-                  totalReferences={20}
-                  verifiedReferences={10}
-                />
-              )}
-            </Box>
-          </>
-        )}
-      </Flex>
+          {/* PubCard */}
+          <Box sx={cardWrapSx}>
+            {isLoading ? (
+              <Skeleton borderRadius="lg" height={isFull ? "180px" : "120px"} />
+            ) : (
+              <PubCard publishers={publishers} compact={!isFull} />
+            )}
+          </Box>
+
+          {/* AuthCard */}
+          <Box sx={cardWrapSx}>
+            {isLoading ? (
+              <Skeleton borderRadius="lg" height={isFull ? "180px" : "120px"} />
+            ) : (
+              <AuthCard authors={authors} compact={!isFull} />
+            )}
+          </Box>
+
+          {/* ProgressCard — always show */}
+          <Box sx={cardWrapSx}>
+            {isLoading ? (
+              <Skeleton borderRadius="lg" height={isFull ? "180px" : "160px"} />
+            ) : (
+              <ProgressCard
+                ProgressScore={0.2}
+                totalClaims={90}
+                verifiedClaims={27}
+                totalReferences={20}
+                verifiedReferences={10}
+              />
+            )}
+          </Box>
+        </Flex>
+      )}
     </Box>
   );
 };
