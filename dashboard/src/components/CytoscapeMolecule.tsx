@@ -4,11 +4,9 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import cytoscape, { EdgeSingular, NodeSingular } from "cytoscape";
-import { Box, useToast } from "@chakra-ui/react";
+import { Box, Button, Text, useToast, CloseButton } from "@chakra-ui/react";
 import { createPortal } from "react-dom";
 import { GraphNode } from "../../../shared/entities/types";
-
-// ----------------------------- helpers / animations -----------------------------
 
 export async function animateMoleculeScene({
   cy,
@@ -62,7 +60,7 @@ export async function animateMoleculeScene({
       return claim
         ? {
             claim,
-            relation: (link.relation as any) || "related",
+            relation: link.relation || "related",
             notes: link.notes || "",
           }
         : null;
@@ -79,7 +77,7 @@ export async function animateMoleculeScene({
       return claim
         ? {
             claim,
-            relation: (link.relation as any) || "related",
+            relation: link.relation || "related",
             notes: link.notes || "",
           }
         : null;
@@ -123,7 +121,7 @@ export async function animateMoleculeScene({
   const addedEdges = claimLinks.map((link) => ({
     data: {
       ...link,
-      relation: (link.relation as any) || "related",
+      relation: link.relation || "related",
     },
   }));
 
@@ -160,7 +158,6 @@ function animateNode(
     });
   });
 }
-
 function animateNodes(
   nodes: cytoscape.SingularElementArgument[],
   optionsList: { position: { x: number; y: number } }[],
@@ -220,7 +217,7 @@ async function fartScatterAwayFromRef({
         ["reference", "author", "publisher"].includes(type)
       );
     })
-    .toArray() as cytoscape.NodeSingular[];
+    .toArray() as cytoscape.NodeSingular[]; // ⬅️ type assertion here
 
   const centerIndex = (nodesToScatter.length - 1) / 2;
 
@@ -263,25 +260,6 @@ async function fartScatterAwayFromRef({
   );
 }
 
-// Put this near the top if you like tidy types
-type ClaimWithRelation = {
-  claim: NodeData;
-  relation: "supports" | "refutes" | "related";
-  notes: string;
-};
-
-type FanOutArgs = {
-  cy: cytoscape.Core;
-  claimsWithRelation: ClaimWithRelation[];
-  sourceNode: NodeSingular;
-  targetNode: NodeSingular;
-  minDistance?: number;
-  arcSpan?: number;
-  centerShiftFactor?: number;
-  animate?: boolean;
-};
-
-// ✅ Correctly annotated return type AFTER the param list
 async function fanOutClaims({
   cy,
   claimsWithRelation,
@@ -291,7 +269,20 @@ async function fanOutClaims({
   arcSpan = Math.PI / 2,
   centerShiftFactor = 90,
   animate = true,
-}: FanOutArgs): Promise<cytoscape.ElementDefinition[]> {
+}: {
+  cy: cytoscape.Core;
+  claimsWithRelation: {
+    claim: NodeData;
+    relation: "supports" | "refutes" | "related";
+    notes: string;
+  }[];
+  sourceNode: NodeSingular;
+  targetNode: NodeSingular;
+  minDistance?: number;
+  arcSpan?: number;
+  centerShiftFactor?: number;
+  animate?: boolean;
+}): Promise<cytoscape.ElementDefinition[]> {
   const isRef = sourceNode.data("type") === "reference";
   const originalPos = { ...sourceNode.position() };
   const targetPos = targetNode.position();
@@ -314,14 +305,13 @@ async function fanOutClaims({
   const radius = neededArcLength / arcSpan;
   const added: cytoscape.ElementDefinition[] = [];
 
-  // Add missing claim nodes + edges back to sourceNode
   claimsWithRelation.forEach(({ claim, relation, notes }) => {
-    if (cy.getElementById(claim.id).length === 0) {
+    if (!cy.getElementById(claim.id).nonempty()) {
       cy.add({ data: claim });
       added.push({ data: claim });
     }
     const edgeId = `edge-${claim.id}-${sourceNode.id()}`;
-    if (cy.getElementById(edgeId).length === 0) {
+    if (!cy.getElementById(edgeId).nonempty()) {
       added.push({
         data: {
           id: edgeId,
@@ -334,13 +324,11 @@ async function fanOutClaims({
     }
   });
 
-  // Place the claims along an arc between source and target
   const promises = claimsWithRelation.map(({ claim }, i) => {
     const angle =
       -arcSpan / 2 +
       (i / (claimsWithRelation.length - 1 || 1)) * arcSpan +
       angleRadians;
-
     const x = arcCenter.x + radius * Math.cos(angle);
     const y = arcCenter.y + radius * Math.sin(angle);
 
@@ -355,7 +343,7 @@ async function fanOutClaims({
     }
   });
 
-  await Promise.all(promises);
+  Promise.all(promises);
   return added;
 }
 
@@ -367,9 +355,9 @@ function bellValley(
 ) {
   const dist = Math.abs(i - center);
   if (dist <= range) {
-    return (dist / range) * maxHeight;
+    return (dist / range) * maxHeight; // rising edge
   } else {
-    return (1 - (dist - range) / (center - range)) * maxHeight;
+    return (1 - (dist - range) / (center - range)) * maxHeight; // falling edge
   }
 }
 
@@ -413,13 +401,16 @@ function smartRadialPush({
     const newX = center.x + r * Math.cos(angle);
     const newY = center.y + r * Math.sin(angle);
 
+    console.log(
+      `🔄 Smart-pushing ${id} to (${newX.toFixed(1)}, ${newY.toFixed(1)})`
+    );
+
     node.animate(
       { position: { x: newX, y: newY } },
       { duration: 400, easing: "ease-in-out" }
     );
   });
 }
-
 function pushAwayOtherNodes(
   cy: cytoscape.Core,
   center: { x: number; y: number },
@@ -441,6 +432,10 @@ function pushAwayOtherNodes(
       const normY = dy / mag;
       const newX = pos.x + normX * distance;
       const newY = pos.y + normY * distance;
+
+      console.log(
+        `🧼 Pushing ${type} node ${id} from (${pos.x}, ${pos.y}) to (${newX}, ${newY})`
+      );
 
       node.animate(
         { position: { x: newX, y: newY } },
@@ -470,28 +465,20 @@ async function restoreNodePositions(
   animate: boolean = true
 ): Promise<void> {
   const promises: Promise<void>[] = [];
+
   Object.entries(store.current).forEach(([id, pos]) => {
-    const nodeToRestore = cy.getElementById(id).first();
-    if (
-      nodeToRestore &&
-      (nodeToRestore as any).nonempty &&
-      nodeToRestore.nonempty() &&
-      nodeToRestore.isNode()
-    ) {
+    const coll = cy.getElementById(id);
+    if (coll.length > 0 && coll.isNode()) {
+      const nodeToRestore = coll.first() as NodeSingular;
       if (animate) {
-        promises.push(
-          animateNode(
-            nodeToRestore as unknown as NodeSingular,
-            { position: pos },
-            400
-          )
-        );
+        promises.push(animateNode(nodeToRestore, { position: pos }, 400));
       } else {
-        (nodeToRestore as unknown as NodeSingular).position(pos);
+        nodeToRestore.position(pos);
         promises.push(Promise.resolve());
       }
     }
   });
+
   await Promise.all(promises);
 }
 
@@ -500,7 +487,7 @@ function startThrobbing(node: any) {
   let growing = true;
   const minSize = node.width();
   const maxSize = minSize * 1.18;
-  const throbInterval = setInterval(() => {
+  let throbInterval = setInterval(() => {
     node.animate(
       {
         style: {
@@ -518,13 +505,12 @@ function startThrobbing(node: any) {
   }, 420);
   node.data("throbInterval", throbInterval);
 }
-
-// ----------------------------- component -----------------------------
+// All other unchanged code is retained as-is
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
 
-export interface CytoscapeMoleculeProps {
+interface CytoscapeMoleculeProps {
   nodes: {
     id: string;
     label: string;
@@ -539,7 +525,7 @@ export interface CytoscapeMoleculeProps {
     target: string;
     relation?: "supports" | "refutes" | "related";
     notes?: string;
-    value?: number; // used for edge width/label strength
+    value?: number;
   }[];
   onNodeClick?: (node: GraphNode) => void;
   centerNodeId?: string;
@@ -578,6 +564,10 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
   );
   const toast = useToast();
 
+  // HUD toggles (Legend starts hidden to avoid blocking)
+  const [showMobileHUD, setShowMobileHUD] = useState(true);
+  const [showLegend, setShowLegend] = useState(false);
+
   const lastRefNode = useRef<NodeSingular | null>(null);
   const lastRefOriginalPos = useRef<{ x: number; y: number } | null>(null);
   const originalNodePositions = useRef<
@@ -585,6 +575,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
   >({});
 
   useEffect(() => {
+    console.log("🧪 CytoscapeMolecule mount — received links:", links);
     if (!cyRef.current) return;
 
     const centerX = 500;
@@ -660,8 +651,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             label: (ele: NodeSingular) => {
               const type = ele.data("type");
               if (type === "refClaim" || type === "taskClaim") {
-                const text: string = ele.data("label") || "";
-                return text.length > 35 ? text.slice(0, 35) + "…" : text;
+                return ele.data("label").slice(0, 35) + "...";
               }
               return ele.data("label");
             },
@@ -755,30 +745,8 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         },
       ],
     });
-
-    // Make interactive on phones
-    const isMobile = window.matchMedia("(max-width: 767px)").matches;
-    cy.userZoomingEnabled(true);
-    cy.panningEnabled(true);
-    (cy as any).wheelSensitivity = isMobile ? 0.25 : 0.5;
-
-    // Label LOD: show labels more when zoomed in
-    const updateLabels = () => {
-      const z = cy.zoom();
-      cy.style()
-        .selector("node[type = 'refClaim'], node[type = 'taskClaim']")
-        .style("text-opacity", z > 1.0 ? "1 " : "0")
-        .update();
-    };
-    cy.on("zoom", updateLabels);
-    updateLabels();
-
-    // Expose for debugging
     // @ts-ignore
     window.cy = cy;
-    cyInstance.current = cy;
-
-    // Throb active content nodes
     const activatedContentIds = new Set(
       nodes
         .filter((n) => n.type === "refClaim" || n.type === "taskClaim")
@@ -796,11 +764,11 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         }
       });
     });
+    cyInstance.current = cy;
 
-    // Hover tooltips on edges
     cy.on("mouseover", "edge", (event) => {
-      const edge = event.target as EdgeSingular;
-      const relation = (edge.data("relation") as string) || "related";
+      const edge = event.target;
+      const relation = edge.data("relation") || "related";
       const value = edge.data("value") || 0;
       const label =
         (relation === "supports"
@@ -809,88 +777,102 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           ? "❌ Refutes"
           : "Related") + `: ${Math.round(Math.abs(value) * 100)}%`;
 
-      const { x, y } = (event as any).renderedPosition;
+      const { x, y } = event.renderedPosition;
       setHoveredEdgeTooltip({ label, x, y });
     });
-    cy.on("mouseout", "edge", () => setHoveredEdgeTooltip(null));
 
-    // Shift + wheel zoom (desktop convenience)
-    cyRef.current?.addEventListener(
-      "wheel",
-      (e: WheelEvent & { wheelDelta?: number }) => {
-        const isShift = e.shiftKey;
-        const c = cyInstance.current;
-        if (!c || !isShift) return;
+    cy.on("mouseout", "edge", () => {
+      setHoveredEdgeTooltip(null);
+    });
+    // --- Touch detection ---
+    const isTouchDevice =
+      (typeof window !== "undefined" && "ontouchstart" in window) ||
+      (typeof navigator !== "undefined" && navigator.maxTouchPoints > 0);
 
-        const direction =
-          e.deltaY && e.deltaY !== 0
-            ? e.deltaY < 0
-            : !!(e.wheelDelta && e.wheelDelta > 0);
-        const zoomFactor = 1.05;
-        if (cyRef.current) {
-          const { left, top } = cyRef.current.getBoundingClientRect();
-          const x = e.clientX - left;
-          const y = e.clientY - top;
-          const newZoom = c.zoom() * (direction ? zoomFactor : 1 / zoomFactor);
-          c.zoom({ level: newZoom, renderedPosition: { x, y } });
-        }
-        e.preventDefault();
-      },
-      { passive: false }
-    );
-
-    // Fit on ready
+    // Enable pinch zoom on touch; keep desktop user zoom off
+    if (isTouchDevice) {
+      cy.userZoomingEnabled(true); // pinch-to-zoom enabled
+      cy.userPanningEnabled(true);
+    } else {
+      cy.userZoomingEnabled(false); // desktop: no wheel-zoom by default
+      cy.userPanningEnabled(true);
+    }
     cy.ready(() => {
+      if (cyInstance.current) {
+        cyRef.current?.addEventListener(
+          "wheel",
+          (e: WheelEvent & { wheelDelta?: number }) => {
+            const isShift = e.shiftKey;
+            const cy = cyInstance.current;
+            if (!cy || !isShift) return;
+
+            if (isShift) {
+              // 👇 Fallback to wheelDelta if deltaY is useless
+              const direction =
+                e.deltaY && e.deltaY !== 0
+                  ? e.deltaY < 0
+                  : e.wheelDelta && e.wheelDelta > 0;
+              // Zoom behavior
+              const zoomFactor = 1.05; //e.deltaY < 0 ? 1.1 : 0.9;
+              const zoom = cy.zoom();
+              if (cyRef.current) {
+                const { left, top } = cyRef.current!.getBoundingClientRect();
+                const x = e.clientX - left;
+                const y = e.clientY - top;
+
+                const newZoom =
+                  cy.zoom() * (direction ? zoomFactor : 1 / zoomFactor);
+                cy.zoom({
+                  level: newZoom,
+                  renderedPosition: { x, y },
+                });
+              }
+              e.preventDefault();
+              // Only block scroll if shift is held
+            }
+            // Otherwise let default scroll behavior pass through
+          },
+          { passive: false }
+        );
+      }
       cy.animate({
-        fit: { eles: cy.elements(), padding: 15 },
+        fit: {
+          eles: cy.elements(),
+          padding: 15,
+        },
         duration: 500,
         easing: "ease-in-out",
       });
     });
 
-    // helper: current viewport center in *rendered* pixels
-    const getViewportCenter = () => ({ x: cy.width() / 2, y: cy.height() / 2 });
+    // More logic (node click, layout updates, etc.) continues in next part
 
-    const onZoomIn = () =>
-      cy.zoom({
-        level: cy.zoom() * 1.2,
-        renderedPosition: getViewportCenter(),
-      });
-
-    const onZoomOut = () =>
-      cy.zoom({
-        level: cy.zoom() / 1.2,
-        renderedPosition: getViewportCenter(),
-      });
-
-    const onFit = () => cy.fit(cy.elements(), 28);
-    window.addEventListener("tt-zoom-in", onZoomIn as any);
-    window.addEventListener("tt-zoom-out", onZoomOut as any);
-    window.addEventListener("tt-fit", onFit as any);
-
-    // Auto-resize/fit
-    const ro = new ResizeObserver(() => {
-      cy.resize();
-      if (cy.elements().length) cy.fit(undefined, 28);
-    });
-    if (cyRef.current) ro.observe(cyRef.current);
-
-    // Main interaction
-    const lastClickedNodeId = { current: null as null | string };
+    // 🧠 Keep track of last clicked node
+    const lastClickedNodeId = { current: null };
+    // 📌 Main event handler
     cy.on("tap", "node", (event) => {
-      const node = event.target as NodeSingular;
+      const node = event.target;
       const type = node.data("type");
+      const contentId = node.data("content_id");
 
-      if (node.id() === lastClickedNodeId.current) return;
+      // ← FIRST: log every time a node is tapped
+      console.log("📌 [DEBUG] Node tapped:", node.id(), "type=", type);
+
+      if (node.id() === lastClickedNodeId.current) {
+        console.log("🛑 Same node clicked again — skipping.");
+        return;
+      }
       lastClickedNodeId.current = node.id();
 
+      // 🧊 Store initial layout if first interaction (no claims visible)
       if (cy.nodes('node[type *= "Claim"]').length === 0) {
         saveNodePositions(cy, originalNodePositions);
       }
 
+      // 📦 Send clicked node to external handler
       if (onNodeClick) onNodeClick(node.data());
       setSelectedNodeData(node.data());
-
+      // 🧠 Handle claim node click
       if (type === "refClaim" || type === "taskClaim") {
         const claimId = node.id();
         const connectedEdge = cy
@@ -901,21 +883,26 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           )
           .toArray()
           .find((e) => ["supports", "refutes"].includes(e.data("relation")));
-        const relation =
-          (connectedEdge?.data("relation") as string) || "related";
+        const relation = connectedEdge?.data("relation") || "related";
 
         setSelectedClaim({
           id: claimId,
           label: node.data("label"),
-          relation,
+          relation: relation,
         });
         return;
       }
 
-      // Clear existing claim nodes/edges and restore layout if switching ref
-      const animate = true;
-      cy.elements('node[type *= "Claim"], edge[relation]').remove();
+      // 🧽 Remove existing claims
+      const animate = true; // or true, depending on what you want
+      const claimNodes = cy.nodes('node[type *= "Claim"]');
+      const claimEdges = claimNodes.connectedEdges();
+      cy.batch(() => {
+        claimEdges.remove();
+        claimNodes.remove();
+      });
 
+      // Only restore if layout was previously saved
       if (
         lastRefNode.current &&
         lastRefOriginalPos.current &&
@@ -926,8 +913,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       if (Object.keys(originalNodePositions.current).length > 0) {
         restoreNodePositions(cy, originalNodePositions, animate);
       }
-
-      // Reference click → animate scene
+      // 📍 Handle reference click
       if (type === "reference") {
         (async () => {
           await animateMoleculeScene({
@@ -948,14 +934,16 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       }
     });
 
-    // Edge click detail
+    // 🎯 Handle edge click (relation line between claims)
     cy.on("tap", "edge", (event) => {
       const edge = event.target as EdgeSingular;
       const rel = edge.data("relation");
       const value = edge.data("value") ?? 0;
       const notes = edge.data("notes") || "";
+
       const sourceNode = cy.getElementById(edge.data("source")).data();
       const targetNode = cy.getElementById(edge.data("target")).data();
+
       setSelectedEdge({
         sourceLabel: sourceNode.label,
         targetLabel: targetNode.label,
@@ -965,12 +953,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       });
     });
 
-    // Cleanup
     return () => {
-      window.removeEventListener("tt-zoom-in", onZoomIn as any);
-      window.removeEventListener("tt-zoom-out", onZoomOut as any);
-      window.removeEventListener("tt-fit", onFit as any);
-      ro.disconnect();
       if (cy) {
         cy.nodes(".throb").forEach((node) => {
           clearInterval(node.data("throbInterval"));
@@ -978,29 +961,184 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         cy.destroy();
       }
     };
-  }, [nodes, links, centerNodeId, toast]);
+  }, [nodes, links]);
+
+  // helpers for mobile HUD buttons (no extra listeners)
+  const fitAll = () => {
+    const cy = cyInstance.current;
+    if (!cy) return;
+    cy.fit(cy.elements(), 28);
+  };
+  const centerTask = () => {
+    const cy = cyInstance.current;
+    if (!cy) return;
+    const task = cy.nodes('[type = "task"]');
+    if (task.length > 0) cy.center(task);
+    else cy.center();
+  };
 
   return (
     <>
-      {/* outer wrapper: just fill parent, no vw, no margins */}
-      <Box w="100%" h="100%" overflow="hidden" minW={0} minH={0}>
+      {/* OUTER WRAPPER:
+          - width "100%" so it aligns with your unified header container
+          - no border/padding on mobile so it doesn't feel inset/overlap
+       */}
+      <Box
+        pt={{ base: 0, md: 4 }}
+        width={{ base: "100%", md: "calc(100vw - 300px)" }}
+        ml={{ base: 0, md: "8px" }}
+        mt={{ base: 0, md: -4 }}
+        overflowX={{ base: "hidden", md: "visible" }}
+      >
         <Box
           ref={cyRef}
-          w="100%"
-          h="100%"
-          borderWidth="1px"
-          borderRadius="lg"
+          height={{
+            base: "calc(100dvh - var(--tt-header-h, 98px))",
+            md: "80vh",
+          }} // mobile matches header space via CSS var fallback
+          width="100%"
+          borderWidth={{ base: "0px", md: "1px" }}
+          borderRadius={{ base: "0", md: "lg" }}
           p={{ base: 0, md: 4 }}
-          bg="stat2Gradient"
+          bg={"stat2Gradient"}
           borderColor="gray.300"
-          // ensure the inner div respects flex shrink/grow
-          sx={{ minWidth: 0, minHeight: 0, boxSizing: "border-box" }}
+          overflow="hidden"
+          sx={{
+            boxSizing: "border-box",
+            WebkitOverflowScrolling: "touch",
+            touchAction: "pan-x pan-y",
+          }}
         />
       </Box>
+
+      {/* MOBILE HUD (bottom-right). No listener changes, pure actions. */}
+      {showMobileHUD ? (
+        <Box
+          display={{ base: "block", md: "none" }}
+          position="absolute"
+          right="10px"
+          top="10px"
+          bg="rgba(20,20,20,0.92)"
+          color="#fff"
+          borderRadius="12px"
+          p="10px"
+          zIndex={1000}
+          boxShadow="0 6px 24px rgba(0,0,0,0.35)"
+        >
+          <CloseButton
+            size="sm"
+            onClick={() => setShowMobileHUD(false)}
+            position="absolute"
+            top="6px"
+            right="6px"
+            color="#fff"
+          />
+          <Text fontSize="xs" opacity={0.8} mb={2}>
+            Graph Controls
+          </Text>
+          <Button
+            size="xs"
+            variant="solid"
+            onClick={fitAll}
+            mr={2}
+            colorScheme="purple"
+          >
+            Reframe Graph
+          </Button>
+          <Button size="xs" variant="outline" onClick={centerTask}>
+            Center Graph
+          </Button>
+        </Box>
+      ) : (
+        <Button
+          display={{ base: "inline-flex", md: "none" }}
+          position="absolute"
+          right="4px"
+          top="10px"
+          size="xs"
+          onClick={() => setShowMobileHUD(true)}
+          zIndex={1000}
+        >
+          Show Controls
+        </Button>
+      )}
+
+      {/* MOBILE LEGEND (bottom-left) — starts hidden to avoid blocking */}
+      {showLegend ? (
+        <Box
+          display={{ base: "block", md: "none" }}
+          position="absolute"
+          left="1px"
+          top="10px"
+          bg="rgba(20,20,20,0.92)"
+          color="#fff"
+          borderRadius="12px"
+          p="10px"
+          zIndex={1000}
+          boxShadow="0 6px 24px rgba(0,0,0,0.35)"
+          maxW="58vw"
+        >
+          <CloseButton
+            size="sm"
+            onClick={() => setShowLegend(false)}
+            position="absolute"
+            top="6px"
+            right="6px"
+            color="#fff"
+          />
+          <Text fontSize="xs" opacity={0.8} mb={2}>
+            Legend
+          </Text>
+          <Box fontSize="xs" lineHeight="1.4">
+            <Box display="flex" alignItems="center" mb={1}>
+              <Box w="10px" h="10px" bg="#6c5ce7" borderRadius="2px" mr={2} />
+              Task
+            </Box>
+            <Box display="flex" alignItems="center" mb={1}>
+              <Box w="10px" h="10px" bg="#00b894" borderRadius="2px" mr={2} />
+              Reference
+            </Box>
+            <Box display="flex" alignItems="center" mb={1}>
+              <Box w="10px" h="10px" bg="#aaa" borderRadius="2px" mr={2} />
+              Ref Claim
+            </Box>
+            <Box display="flex" alignItems="center" mb={1}>
+              <Box w="10px" h="10px" bg="#ffeaa7" borderRadius="2px" mr={2} />
+              Task Claim
+            </Box>
+            <Box display="flex" alignItems="center" mb={1}>
+              <Box w="10px" h="10px" bg="#fab1a0" borderRadius="2px" mr={2} />
+              Author
+            </Box>
+            <Box display="flex" alignItems="center">
+              <Box w="10px" h="10px" bg="#81ecec" borderRadius="2px" mr={2} />
+              Publisher
+            </Box>
+            <Box display="flex" alignItems="center">
+              SHIFT + SCROLL to ZOOM
+            </Box>
+          </Box>
+        </Box>
+      ) : (
+        <Button
+          display={{ base: "inline-flex", md: "none" }}
+          position="absolute"
+          left="4px"
+          top="10px"
+          size="xs"
+          onClick={() => setShowLegend(true)}
+          zIndex={1000}
+          variant="outline"
+        >
+          Show Legend
+        </Button>
+      )}
 
       {selectedClaim &&
         createPortal(
           <div
+            role="dialog"
+            aria-modal="true"
             style={{
               position: "fixed",
               top: "50%",
@@ -1008,28 +1146,43 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               transform: "translate(-50%, -50%)",
               background: "#222",
               color: "#fff",
-              padding: "1.5em",
+              padding: "1rem",
               borderRadius: 12,
               boxShadow: "0 0 20px rgba(0,0,0,0.6)",
               zIndex: 1000,
+
+              // ✅ Mobile-safe sizing
+              width: "min(92vw, 520px)",
+              maxHeight: "min(78vh, 560px)",
+              overflowY: "auto",
+
+              // ✅ Text wrapping & safe areas
+              wordBreak: "break-word",
+              overflowWrap: "anywhere",
+              WebkitOverflowScrolling: "touch",
+              paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))",
             }}
           >
-            <h3>
+            <h3 style={{ fontSize: "1rem", lineHeight: 1.2 }}>
               {selectedClaim.relation === "supports"
                 ? "✅ Supports"
                 : selectedClaim.relation === "refutes"
                 ? "❌ Refutes"
                 : "Claim"}
             </h3>
-            <p style={{ marginTop: 12 }}>{selectedClaim.label}</p>
+            <p style={{ marginTop: 12, fontSize: "0.95rem", lineHeight: 1.35 }}>
+              {selectedClaim.label}
+            </p>
             <button
               onClick={() => setSelectedClaim(null)}
               style={{
-                marginTop: 20,
+                marginTop: 16,
                 background: "#6c5ce7",
                 color: "#fff",
-                padding: "0.5em 1em",
-                borderRadius: 6,
+                padding: "0.6em 1em",
+                borderRadius: 8,
+                width: "100%", // 🔹 Easy tap target on mobile
+                fontSize: "0.95rem",
               }}
             >
               Close
@@ -1037,7 +1190,6 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           </div>,
           document.body
         )}
-
       {hoveredEdgeTooltip &&
         createPortal(
           <div
@@ -1064,6 +1216,8 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       {selectedEdge &&
         createPortal(
           <div
+            role="dialog"
+            aria-modal="true"
             style={{
               position: "fixed",
               top: "50%",
@@ -1071,15 +1225,30 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               transform: "translate(-50%, -50%)",
               background: "#222",
               color: "#fff",
-              padding: "1.5em",
+              padding: "1rem",
               borderRadius: 12,
               boxShadow: "0 0 20px rgba(0,0,0,0.6)",
               zIndex: 1000,
-              maxWidth: "500px",
-              width: "90%",
+
+              // ✅ Mobile-safe sizing
+              width: "min(92vw, 560px)",
+              maxHeight: "min(78vh, 640px)",
+              overflowY: "auto",
+
+              // ✅ Text wrapping & safe areas
+              wordBreak: "break-word",
+              overflowWrap: "anywhere",
+              WebkitOverflowScrolling: "touch",
+              paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))",
             }}
           >
-            <h3 style={{ marginBottom: "0.5em" }}>
+            <h3
+              style={{
+                marginBottom: "0.5em",
+                fontSize: "1rem",
+                lineHeight: 1.2,
+              }}
+            >
               {selectedEdge.relation === "supports"
                 ? "✅ Supports"
                 : selectedEdge.relation === "refutes"
@@ -1100,11 +1269,13 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             <button
               onClick={() => setSelectedEdge(null)}
               style={{
-                marginTop: 20,
+                marginTop: 16,
                 background: "#6c5ce7",
                 color: "#fff",
-                padding: "0.5em 1em",
-                borderRadius: 6,
+                padding: "0.6em 1em",
+                borderRadius: 8,
+                width: "100%", // 🔹 Easy tap target on mobile
+                fontSize: "0.95rem",
               }}
             >
               Close

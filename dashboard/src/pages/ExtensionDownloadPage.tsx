@@ -72,6 +72,17 @@ const ExtensionDownloadPage: React.FC = () => {
             Click <b>Load unpacked</b> and select the extracted{" "}
             <Code>extension/</Code> folder.
           </ListItem>
+          <ListItem>
+            <b>Pin the icon:</b> click the <b>Extensions</b> (puzzle) button in
+            the toolbar → find <b>TruthTrollers</b> → click the <b>pin</b> icon.
+            (Edge: “Show in toolbar”.)
+          </ListItem>
+          <ListItem>
+            (Optional) In <Code>chrome://extensions</Code> → <b>Details</b>,
+            enable
+            <b> Allow access to file URLs</b> if your workflows load local
+            files.
+          </ListItem>
         </OrderedList>
 
         <Heading size="md" mt={6}>
@@ -83,13 +94,19 @@ const ExtensionDownloadPage: React.FC = () => {
             Open <Code>about:debugging#/runtime/this-firefox</Code>.
           </ListItem>
           <ListItem>
-            Click <b>Load Temporary Add-on</b>, pick any file inside the
-            extracted <Code>extension/</Code> folder (e.g.,{" "}
-            <Code>manifest.json</Code>).
+            Click <b>Load Temporary Add-on</b>, choose{" "}
+            <Code>manifest.json</Code> from the extracted{" "}
+            <Code>extension/</Code> folder.
+          </ListItem>
+          <ListItem>
+            <b>Pin the icon:</b> click the <b>Extensions</b> (puzzle) button →
+            the <b>gear</b> next to <b>TruthTrollers</b> → <b>Pin to Toolbar</b>
+            . (Or right-click the toolbar → <b>Customize Toolbar…</b> and drag
+            the icon in.)
           </ListItem>
           <ListItem>
             (Optional) If you later provide a signed <Code>.xpi</Code>, just
-            open it in Firefox to install.
+            open it in Firefox to install permanently.
           </ListItem>
         </OrderedList>
 

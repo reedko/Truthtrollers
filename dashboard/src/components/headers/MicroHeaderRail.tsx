@@ -74,25 +74,36 @@ export default function MicroHeaderRail({
     <>
       {/* Horizontal, swipeable rail (no stagger, snap) */}
       <HStack
+        as="section"
         spacing={3}
         px={3}
         py={2}
         overflowX="auto"
+        overflowY="hidden" // ⬅ keep vertical from affecting layout
         align="stretch"
+        h="calc(88px + 16px)" // ⬅ tile height (88) + vertical padding (8+8)
         sx={{
           scrollSnapType: "x mandatory",
+          WebkitOverflowScrolling: "touch",
+          touchAction: "pan-x", // ⬅ only horizontal gestures on the rail
+          overscrollBehaviorX: "contain",
+          overscrollBehaviorY: "none", // ⬅ don’t bubble vertical scroll through the rail
           "::-webkit-scrollbar": { display: "none" },
           msOverflowStyle: "none",
           scrollbarWidth: "none",
         }}
       >
+        {/* …the Tile children stay the same… */}
+
         <Tile onClick={() => openTile("score")} label="Score">
-          <Center flexDir="column">
-            <ScoreTile value={score} />
-            <Text fontSize="2xl" fontWeight="bold">
+          <Center flexDir="column" h="100%" overflow="hidden" gap={1}>
+            <Box boxSize="110px" flex="0 0 auto" overflow="hidden">
+              <ScoreTile value={score} />
+            </Box>
+            <Text fontSize="2xl" fontWeight="bold" lineHeight="1" noOfLines={1}>
               {score == null ? "–" : Math.round(score * 100)}
             </Text>
-            <Badge mt={1} colorScheme="purple">
+            <Badge mt={1} colorScheme="purple" flex="0 0 auto">
               Verimeter
             </Badge>
           </Center>

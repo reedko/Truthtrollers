@@ -10,6 +10,7 @@ import {
   CardBody,
   Button,
   useToast,
+  Hide,
 } from "@chakra-ui/react";
 import CytoscapeMolecule from "../components/CytoscapeMolecule";
 import { useTaskStore } from "../store/useTaskStore";
@@ -185,7 +186,9 @@ const MoleculeMapPage = () => {
 
       {graphData.nodes.length > 0 ? (
         <Box position="relative" height="78vh">
-          <GraphLegend />
+          <Hide below="md">
+            <GraphLegend />
+          </Hide>
           <CytoscapeMolecule
             nodes={graphData.nodes}
             links={graphData.links}
@@ -197,71 +200,73 @@ const MoleculeMapPage = () => {
           />
 
           {selectedNode && (
-            <Box
-              position="absolute"
-              top="12px"
-              right="12px"
-              bg="stat2Gradient"
-              border="2px solid #3182ce"
-              borderRadius="xl"
-              p={4}
-              boxShadow="2xl"
-              zIndex="20"
-              width="280px"
-              textAlign="center"
-            >
-              <Text fontWeight="bold" fontSize="md" mb={1} color="gray.700">
-                Node Type:{" "}
-                <span style={{ textTransform: "capitalize" }}>
-                  {selectedNode.type}
-                </span>
-              </Text>
-              <Text fontWeight="semibold" fontSize="lg" color="teal.700">
-                {selectedNode.label}
-              </Text>
-
-              {selectedNode.url && (
-                <Text fontSize="sm" mt={2}>
-                  <a
-                    href={selectedNode.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: "#2b6cb0", textDecoration: "underline" }}
-                  >
-                    Open Link 🔗
-                  </a>
+            <Hide below="md">
+              <Box
+                position="absolute"
+                top="12px"
+                right="12px"
+                bg="stat2Gradient"
+                border="2px solid #3182ce"
+                borderRadius="xl"
+                p={4}
+                boxShadow="2xl"
+                zIndex="20"
+                width="280px"
+                textAlign="center"
+              >
+                <Text fontWeight="bold" fontSize="md" mb={1} color="gray.700">
+                  Node Type:{" "}
+                  <span style={{ textTransform: "capitalize" }}>
+                    {selectedNode.type}
+                  </span>
                 </Text>
-              )}
+                <Text fontWeight="semibold" fontSize="lg" color="teal.700">
+                  {selectedNode.label}
+                </Text>
 
-              <Button
-                mt={3}
-                colorScheme="blue"
-                size="sm"
-                onClick={handleReframeClick}
-                borderRadius="full"
-              >
-                Reframe Graph
-              </Button>
-              <Button
-                mt={2}
-                size="sm"
-                variant="outline"
-                colorScheme="gray"
-                borderRadius="full"
-                onClick={() => {
-                  toast({
-                    title: "Centered View",
-                    description: `Zoomed to ${selectedNode.label}`,
-                    status: "info",
-                    duration: 2000,
-                    isClosable: true,
-                    position: "top",
-                  });
-                }}
-              >
-                Center Graph
-              </Button>
-            </Box>
+                {selectedNode.url && (
+                  <Text fontSize="sm" mt={2}>
+                    <a
+                      href={selectedNode.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "#2b6cb0", textDecoration: "underline" }}
+                    >
+                      Open Link 🔗
+                    </a>
+                  </Text>
+                )}
+
+                <Button
+                  mt={3}
+                  colorScheme="blue"
+                  size="sm"
+                  onClick={handleReframeClick}
+                  borderRadius="full"
+                >
+                  Reframe Graph
+                </Button>
+                <Button
+                  mt={2}
+                  size="sm"
+                  variant="outline"
+                  colorScheme="gray"
+                  borderRadius="full"
+                  onClick={() => {
+                    toast({
+                      title: "Centered View",
+                      description: `Zoomed to ${selectedNode.label}`,
+                      status: "info",
+                      duration: 2000,
+                      isClosable: true,
+                      position: "top",
+                    });
+                  }}
+                >
+                  Center Graph
+                </Button>
+              </Box>
+            </Hide>
           )}
         </Box>
       ) : (
