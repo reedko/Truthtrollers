@@ -4,7 +4,7 @@ import { createBrowserRouter } from "react-router-dom";
 import VisionLayout from "./layout/VisionLayout";
 import ErrorPage from "./pages/ErrorPage";
 import { TaskPage } from "./pages/TaskPage";
-import TaskDetail from "./pages/TaskDetail";
+
 import VisionDashboard from "./components/Dashboard";
 import ForgotPassword from "./components/ForgotPassword";
 import Login from "./components/Login";
@@ -49,14 +49,7 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
-      {
-        path: "/tasks/:taskId",
-        element: (
-          <ProtectedRoute>
-            <TaskDetail />
-          </ProtectedRoute>
-        ),
-      },
+
       {
         path: "/workspace",
         element: (
