@@ -18,6 +18,7 @@ module.exports = {
     content: "./src/content.js", // Content script
     popup: "./src/components/Popup.tsx", // React Popup component
     background: "./src/background.js",
+    viewer: "./src/viewer.js",
   },
   output: {
     path: publicPath,
@@ -39,6 +40,8 @@ module.exports = {
       patterns: [
         { from: "src/manifest.json", to: "manifest.json" }, // Copy manifest.json
         { from: "src/assets", to: "assets" }, // Copy all assets
+        { from: "src/viewer.html", to: "viewer.html" },
+        { from: "src/viewer.js", to: "viewer.js" },
       ],
     }),
   ],

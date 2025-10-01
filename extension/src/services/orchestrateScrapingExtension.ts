@@ -114,7 +114,13 @@ export const orchestrateScraping = async (
   let extractedText = "";
   let extractedHtml = "";
   let authors = [];
-
+  const isPdf = /\.pdf($|\?)/i.test(url);
+  function normalizeThumbnail(img?: string | null) {
+    if (!img) return "";
+    if (img.startsWith("data:")) return ""; // 🚫 drop huge base64
+    if (img.length > 2048) return ""; // optional safety
+    return img;
+  }
   try {
     if (contentType === "task") {
       diffbotData = await fetchDiffbotData(url);
@@ -194,7 +200,7 @@ export const orchestrateScraping = async (
     let $: cheerio.CheerioAPI;
     let isRetracted = false;
     let thumbNailUrl = "";
-    if (contentType === "task") {
+    if (contentType === "task" && !isPdf) {
       $ = await fetchPageContent();
       console.log("✅ fetchPageContent success");
     } else {
@@ -318,6 +324,9 @@ export const orchestrateScraping = async (
       topicsAndClaims;
 
     const iconThumbnailUrl = await checkAndDownloadTopicIcon(generalTopic);
+    // in orchestrateScraping right before store / create:
+    const safeThumbnail = normalizeThumbnail(imageUrl);
+
     await browser.runtime.sendMessage({
       action: "storeExtractedContent",
       data: {
@@ -325,9 +334,9 @@ export const orchestrateScraping = async (
         content_type: contentType,
         media_source: videoId ? "YouTube" : "Web",
         content_name: mainHeadline || "",
-        raw_text: extractedText,
+        raw_text: extractedText, // already trimmed to 60k, keep it there
         video_id: videoId || null,
-        thumbnail: imageUrl,
+        thumbnail: safeThumbnail, // ✅ use safe version
         topic: generalTopic,
         subtopics: specificTopics,
         authors,
@@ -345,7 +354,7 @@ export const orchestrateScraping = async (
       details: url,
       topic: generalTopic,
       subtopics: specificTopics,
-      thumbnail: imageUrl,
+      thumbnail: safeThumbnail,
       iconThumbnailUrl: iconThumbnailUrl || null,
       authors,
       content: extractedReferences,

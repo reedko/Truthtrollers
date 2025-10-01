@@ -32,15 +32,37 @@ const code = `
   })();
 `;
 
-const injectPopup = async (tabId) => {
+let activeScrapeTabId = null; // 👈 add this
+/** @param {string} url */
+async function syncTaskStateForUrl(url) {
   try {
-    await browser.scripting.executeScript(tabId, { code });
-    await browser.scripting.executeScript(tabId, { file: "popup.js" });
-  } catch (err) {
-    console.error("❌ Popup injection failed:", err);
-    // Optionally log fallback here
+    const resp = await fetch(`${BASE_URL}/api/check-content`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    const data = await resp.json();
+    const isDetected = !!data.exists;
+    const isCompleted =
+      isDetected && data.task && data.task.progress === "Completed";
+    const task = isDetected ? data.task : null;
+
+    // keep background store in sync (your current logic)
+    const store = useTaskStore.getState();
+    store.setTask(task);
+    store.setCurrentUrl(url);
+    store.setContentDetected(isCompleted);
+
+    // and mirror to storage for TaskCard/panel to read
+    await browser.storage.local.set({
+      task,
+      currentUrl: url,
+      contentDetected: isCompleted,
+    });
+  } catch (e) {
+    console.error("syncTaskStateForUrl failed:", e);
   }
-};
+}
 
 // ✅ Create Task
 const addContent = async (taskData) => {
@@ -189,7 +211,17 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     if (message.action === "pingTest") {
       return { pong: true };
     }
-
+    if (message?.action === "setViewedUrlFromViewer" && message.url) {
+      return browser.storage.local
+        .set({ lastVisitedURL: message.url, lastVisitedAt: Date.now() })
+        .then(() => {
+          // optional: notify popup/content so they update immediately
+          browser.runtime.sendMessage({
+            type: "CURRENT_URL_UPDATED",
+            url: message.url,
+          });
+        });
+    }
     // [1] fetchDiffbotDataTest
     if (message.action === "fetchDiffbotDataTest") {
       console.log(
@@ -238,6 +270,11 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
       console.log("⏳ Scraping in progress... Blocking new injections.");
       isScraperActive = true;
       activeScrapeTabId = sender.tab?.id ?? null;
+      try {
+        await browser.storage.local.set({ activeScrapeTabId });
+      } catch (e) {
+        console.warn("Failed to persist activeScrapeTabId:", e);
+      }
       return;
     }
 
@@ -249,8 +286,9 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
           active: true,
           currentWindow: true,
         });
-        if (tabs.length > 0 && tabs[0].id) {
+        if (tabs.length && tabs[0].id) {
           activeScrapeTabId = tabs[0].id;
+          await browser.storage.local.set({ activeScrapeTabId });
         }
       } catch (err) {
         console.error("❌ Error querying active tab:", err);
@@ -261,12 +299,12 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     // [6] scrapeCompleted
     if (message.action === "scrapeCompleted") {
       console.log("✅ Scraping finished!");
+      isScraperActive = false;
       try {
-        const { activeScrapeTabId } = await browser.storage.local.get(
-          "activeScrapeTabId"
-        );
+        const storeObj = await browser.storage.local.get("activeScrapeTabId");
+        const storedId = storeObj?.activeScrapeTabId ?? null;
+        const tabId = storedId ?? activeScrapeTabId ?? sender.tab?.id ?? null;
         const url = message.url;
-        const tabId = activeScrapeTabId || sender.tab?.id;
 
         if (tabId) {
           console.log("📌 Updating popup in scrape tab:", tabId);
@@ -274,8 +312,11 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         } else {
           console.warn("⚠️ No activeScrapeTabId found! Cannot show popup.");
         }
+
+        await browser.storage.local.remove("activeScrapeTabId");
+        activeScrapeTabId = null;
       } catch (err) {
-        console.error("❌ Error accessing browser.storage:", err);
+        console.error("❌ Error finishing scrape:", err);
       }
       return;
     }
@@ -585,6 +626,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
 
     if (message.action === "storeExtractedContent") {
       try {
+        console.log(message.data, ":           IS THIS JSON");
         const response = await fetch(`${BASE_URL}/api/store-content`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -709,6 +751,40 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
 // --- Helper functions below, copy yours here ---
 
 // e.g. fetchDiffbotData, addContent, addAuthorsToServer, etc.
+/** @param {number} tabId @param {string} url */
+async function isTopLevelPdf(tabId, url) {
+  // Fast URL heuristic
+  try {
+    const u = new URL(url);
+    if (/\.pdf($|[?#])/i.test(u.pathname)) return true;
+    const fmt = (u.searchParams.get("format") || "").toLowerCase();
+    if (fmt === "pdf") return true;
+  } catch (_) {}
+
+  // Probe document.contentType; viewer returns application/pdf or blocks
+  try {
+    const [res] = await browser.scripting.executeScript({
+      target: { tabId, allFrames: false },
+      world: "MAIN",
+      func: () => ({ ct: document.contentType || "" }),
+    });
+    return /application\/pdf/i.test((res && res.result && res.result.ct) || "");
+  } catch {
+    // Restricted surface (built-in viewer) → treat as PDF
+    return true;
+  }
+}
+/** Swap current tab to our viewer; the viewer embeds the PDF and loads popup.js */
+async function openPdfViewerTab(tabId, pdfUrl) {
+  const href =
+    browser.runtime.getURL("viewer.html") +
+    "?src=" +
+    encodeURIComponent(pdfUrl);
+  // Swap the URL first (fast, user-gesture safe), then hydrate state
+  await browser.tabs.update(tabId, { url: href });
+  // Prepare TaskCard data in the background for the viewer to read
+  syncTaskStateForUrl(pdfUrl).catch(() => {});
+}
 
 async function generateExtensionFingerprint() {
   // Normalize userAgent: only keep browser family (Chrome/Firefox/Safari/Edge)
@@ -1136,12 +1212,31 @@ browser.tabs.onActivated.addListener(async (activeInfo) => {
   }
 });
 
-// ✅ Detect when user clicks the extension icon
-browser.action.onClicked.addListener((tab) => {
-  if (!tab.url) return;
-
+browser.action.onClicked.addListener(async (tab) => {
+  if (!tab || !tab.id || !tab.url) return;
   console.log("🔍 Extension icon clicked - Forcing popup for:", tab.url);
+  // If it’s a PDF, reload into our viewer page and stop.
+  if (await isTopLevelPdf(tab.id, tab.url)) {
+    await openPdfViewerTab(tab.id, tab.url);
+    return;
+  }
+
+  // HTML/YouTube/etc → keep your in-page overlay flow
+  await syncTaskStateForUrl(tab.url);
   checkContentAndUpdatePopup(tab.id, tab.url, true);
+});
+
+browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  if (changeInfo.status !== "complete" || !tab || !tab.url) return;
+
+  await syncTaskStateForUrl(tab.url);
+
+  if (await isTopLevelPdf(tabId, tab.url)) {
+    // Don't try to inject into the PDF viewer
+    return;
+  }
+
+  return checkContentAndUpdatePopup(tabId, tab.url, false);
 });
 
 //external

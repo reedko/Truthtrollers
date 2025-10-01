@@ -47,6 +47,7 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
   onLineClick,
   claimLinks,
 }) => {
+  const [rightCenters, setRightCenters] = useState<Record<number, number>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerX, setContainerX] = useState(0);
   const adjustedLeftX = leftX - 12;
@@ -83,6 +84,35 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
 
     return () => observer.disconnect();
   }, []);
+  useLayoutEffect(() => {
+    const measure = () => {
+      if (!containerRef.current) return;
+      const containerTop = containerRef.current.getBoundingClientRect().top;
+
+      // query all right boxes by our data attribute
+      const nodes = document.querySelectorAll<HTMLElement>("[data-ref-id]");
+      const map: Record<number, number> = {};
+      nodes.forEach((el) => {
+        const id = Number(el.dataset.refId);
+        const r = el.getBoundingClientRect();
+        // center relative to our SVG container
+        map[id] = r.top - containerTop + r.height / 2;
+      });
+      setRightCenters(map);
+    };
+
+    measure();
+    // re-measure when layout changes
+    const ro = new ResizeObserver(measure);
+    ro.observe(document.body);
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+    };
+  }, [rightItems, height]);
 
   useEffect(() => {
     console.log("📦 containerX updated:", containerX);
@@ -94,7 +124,8 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
     index * rowHeight + rowHeight / 2 + topOffset;
 
   const getRightY = (index: number) =>
-    index * rowHeight + rowHeight / 2 + topOffset - 6; // ← tweak here!
+    index * rowHeight + rowHeight / 2 + topOffset;
+
   // Helper: compute the y coordinate (center of the row) based on index.
   const getYFromIndex = (index: number) =>
     index * rowHeight + rowHeight / 2 + topOffset;
@@ -173,7 +204,10 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
             return null;
           }
           const y1 = getLeftY(leftIndex);
-          const y2 = getRightY(rightIndex);
+          // remove the hardcoded -6 tweak; use DOM-measured center first, fallback to formula
+
+          const y2 =
+            rightCenters[Number(link.referenceId)] ?? getRightY(rightIndex);
           const strokeColor = link.relation === "refute" ? "red" : "green";
 
           return (

@@ -75,6 +75,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
           references.map((ref) => (
             <Box
               key={ref.reference_content_id}
+              data-ref-id={ref.reference_content_id} // 👈 for measuring
               border="1px solid #90caf9"
               bg="black"
               color="#90caf9"
@@ -86,7 +87,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
               alignItems="center"
               justifyContent="space-between"
               cursor="pointer"
-              mb={1}
+              mb={0} // 👈 no extra margin here
             >
               <Tooltip label={ref.content_name} hasArrow>
                 <Text
