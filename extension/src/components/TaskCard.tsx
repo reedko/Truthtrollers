@@ -42,6 +42,30 @@ const TaskCard: React.FC = () => {
   const { task, currentUrl, setTask } = useTaskStore(); // Hook to access Zustand
   const { loading, error, scrapeTask } = useTaskScraper(); // Use scraper hook
   const [visible, setVisible] = useState(false);
+  async function getResolvedUrl(): Promise<string> {
+    const storeUrl = useTaskStore.getState().currentUrl;
+    if (typeof storeUrl === "string" && storeUrl) return storeUrl;
+
+    const { lastVisitedURL } = (await browser.storage.local.get(
+      "lastVisitedURL"
+    )) as {
+      lastVisitedURL?: unknown;
+    };
+
+    return typeof lastVisitedURL === "string" ? lastVisitedURL : "";
+  }
+  useEffect(() => {
+    (async () => {
+      const { lastVisitedURL } = (await browser.storage.local.get(
+        "lastVisitedURL"
+      )) as {
+        lastVisitedURL?: string;
+      };
+      if (typeof lastVisitedURL === "string" && lastVisitedURL) {
+        useTaskStore.getState().setCurrentUrl(lastVisitedURL);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     // ✅ Retrieve task data from local storage
@@ -59,7 +83,13 @@ const TaskCard: React.FC = () => {
       });
   }, []);
 
-  const handleAddTask = () => {
+  const handleAddTask = async () => {
+    const url = await getResolvedUrl();
+    if (!url) {
+      console.error("No URL available.");
+      return;
+    }
+
     if (currentUrl) {
       scrapeTask(currentUrl);
     } else {

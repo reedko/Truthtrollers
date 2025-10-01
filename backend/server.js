@@ -623,14 +623,23 @@ app.post("/api/claim-verifications", async (req, res) => {
     // - claim_id not in claims
     // - user_id not in users (if NOT NULL FK)
     if (String(err?.message || "").includes("foreign key")) {
-      return res
-        .status(409)
-        .json({
-          error: "Foreign key violation (claim_id or user_id not found)",
-        });
+      return res.status(409).json({
+        error: "Foreign key violation (claim_id or user_id not found)",
+      });
     }
     return res.status(500).json({ error: "Server error" });
   }
+});
+
+// backend
+app.get("/api/proxy-pdf", async (req, res) => {
+  const url = String(req.query.url || "");
+  if (!url) return res.status(400).send("missing url");
+  const r = await fetch(url, { redirect: "follow" });
+  if (!r.ok) return res.status(r.status).send("upstream error");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Content-Type", "application/pdf");
+  r.body.pipe(res);
 });
 
 // Get one verification for (claim_id, user_id)

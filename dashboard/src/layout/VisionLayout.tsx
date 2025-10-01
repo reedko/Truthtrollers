@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Box,
   VStack,
@@ -26,7 +26,9 @@ import { AccountMenu } from "../components/AccountMenu";
 const SIDEBAR_WIDTH = "220px";
 const HEADER_HEIGHT = "160px";
 
-const SidebarContent: React.FC = () => {
+const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
+  onNavigate,
+}) => {
   const location = useLocation();
   const isTaskPage = location.pathname.startsWith("/tasks");
   const selectedTaskId = useTaskStore((s) => s.selectedTaskId);
@@ -43,15 +45,15 @@ const SidebarContent: React.FC = () => {
       resetTasks();
       fetchTasksForUser(user.user_id);
     }
-  }, [hasHydrated, user?.user_id]);
+  }, [hasHydrated, user?.user_id, resetTasks, fetchTasksForUser]);
+
+  const handleClick = (path: string) => () => {
+    onNavigate?.(); // close drawer (mobile)
+    if (!selectedTaskId) setRedirect(path);
+  };
 
   const createLink = (label: string, path: string) => (
-    <RouterLink
-      to={path}
-      onClick={() => {
-        if (!selectedTaskId) setRedirect(path);
-      }}
-    >
+    <RouterLink to={path} onClick={handleClick(path)}>
       <HStack spacing={2} mb={2}>
         <FiBarChart2 />
         <Text>{label}</Text>
@@ -61,12 +63,13 @@ const SidebarContent: React.FC = () => {
 
   return (
     <VStack align="start" spacing={4} w="full">
-      <RouterLink to="/dashboard">
+      <RouterLink to="/dashboard" onClick={handleClick("/dashboard")}>
         <HStack spacing={2} mb={2}>
           <FiHome />
           <Text>Dashboard</Text>
         </HStack>
       </RouterLink>
+
       {createLink("Extension", "/extension")}
       {createLink("Workspace", selectedTaskId ? "/workspace" : "/tasks")}
       {createLink("Molecule", selectedTaskId ? "/molecule" : "/tasks")}
@@ -75,12 +78,13 @@ const SidebarContent: React.FC = () => {
         selectedTaskId ? `/discussion/${selectedTaskId}` : "/tasks"
       )}
 
-      <RouterLink to="/game">
+      <RouterLink to="/game" onClick={handleClick("/game")}>
         <HStack spacing={2} mb={2}>
           <FiHome />
           <Text>Game</Text>
         </HStack>
       </RouterLink>
+
       <HStack spacing={2} mb={2} align="center">
         <FiUser />
         <AccountMenu />
@@ -124,6 +128,13 @@ const VisionLayout: React.FC = () => {
   const isMobile = useBreakpointValue({ base: true, md: false });
   const location = useLocation();
   const setAuth = useAuthStore((s) => s.setAuth);
+  const menuBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  // Auto-close drawer on route change
+  useEffect(() => {
+    if (isOpen) onClose();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -149,20 +160,28 @@ const VisionLayout: React.FC = () => {
         location.pathname + (newSearch ? `?${newSearch}` : "")
       );
     }
-    // Don't add logout or clearing logic here!
   }, [location.search, location.pathname, setAuth]);
+
   return (
     <>
       <Sidebar />
 
       {isMobile && (
-        <Drawer placement="left" onClose={onClose} isOpen={isOpen}>
+        <Drawer
+          placement="left"
+          onClose={onClose}
+          isOpen={isOpen}
+          closeOnOverlayClick
+          returnFocusOnClose
+          finalFocusRef={menuBtnRef}
+        >
           <DrawerOverlay />
           <DrawerContent bg="gray.900" color="white">
             <DrawerCloseButton />
             <DrawerHeader borderBottomWidth="1px">Menu</DrawerHeader>
             <DrawerBody>
-              <SidebarContent />
+              {/* Close drawer immediately on any link tap */}
+              <SidebarContent onNavigate={onClose} />
             </DrawerBody>
           </DrawerContent>
         </Drawer>
@@ -188,6 +207,7 @@ const VisionLayout: React.FC = () => {
         <HStack spacing={2} align="center">
           {isMobile && (
             <IconButton
+              ref={menuBtnRef}
               icon={<FiMenu />}
               aria-label="Menu"
               onClick={onOpen}
