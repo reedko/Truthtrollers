@@ -3401,7 +3401,6 @@ app.get("/api/store-content", async (req, res) => {
         is_retracted === "true" ? 1 : 0,
       ]
     );
-
     res.json({
       message: "Stored new content",
       stored_content_id: result.insertId,

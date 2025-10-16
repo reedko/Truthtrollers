@@ -1,21 +1,49 @@
 // src/components/TaskGrid.tsx
-import { SimpleGrid } from "@chakra-ui/react";
 import React, { memo } from "react";
+import { Box, Flex, useBreakpointValue } from "@chakra-ui/react";
 import TaskCard from "./TaskCard";
 import { Task } from "../../../shared/entities/types";
 
+const CARD_W = 250; // keep in sync with UnifiedHeader
+
 interface TaskGridProps {
   content: Task[];
-  redirectTo?: string; // optional, defaults to dashboard
+  redirectTo?: string;
 }
 
-const TaskGrid: React.FC<TaskGridProps> = memo(({ content, redirectTo }) => {
+const TaskGrid: React.FC<TaskGridProps> = memo(({ content }) => {
+  // match UnifiedHeader’s fixed card width wrapper
+  const cardWrapSx = {
+    "--card-w": `${CARD_W}px`,
+    flex: "0 0 var(--card-w)",
+    width: "min(100%, var(--card-w))",
+    maxWidth: "var(--card-w)",
+    minWidth: "200px",
+    "> *": {
+      width: "100% !important",
+      maxWidth: "100% !important",
+      margin: "0 !important",
+    },
+  } as const;
+
+  // compact cards on phone/tablet (like UnifiedHeader)
+  const compact = useBreakpointValue({ base: true, md: false });
+
   return (
-    <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={4}>
+    <Flex
+      wrap="wrap"
+      justify="flex-start" // ✅ consistent spacing per row
+      align="stretch"
+      columnGap={{ base: 3, md: 4 }} // ✅ horizontal gap
+      rowGap={{ base: 3, md: 4 }} // ✅ vertical gap
+      w="100%"
+    >
       {content.map((task) => (
-        <TaskCard key={task.content_id} task={task} useStore={false} />
+        <Box key={task.content_id} sx={cardWrapSx}>
+          <TaskCard task={task} useStore={false} compact={!!compact} />
+        </Box>
       ))}
-    </SimpleGrid>
+    </Flex>
   );
 });
 
