@@ -111,7 +111,7 @@ export const fetchExternalPageContent = async (
       action: "fetchPdfText",
       url,
     })) as FetchPdfTextResponse;
-
+    console.log(response, ":::PDFMETA");
     if (!response?.success || !response.text)
       return { $: cheerio.load(""), isRetracted: false };
 

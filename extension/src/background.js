@@ -6,15 +6,6 @@ import browser from "webextension-polyfill";
 import { generateDeviceFingerprint } from "../../dashboard/src/utils/generateDeviceFingerprint";
 import { extractVideoIdFromUrl } from "./services/parseYoutubeUrl";
 
-const isDashboardUrl = (url) => {
-  try {
-    const hostname = new URL(url).hostname;
-    return hostname === "localhost" || hostname === "truthtrollers.com";
-  } catch {
-    return false;
-  }
-};
-
 const BASE_URL =
   process.env.REACT_APP_EXTENSION_BASE_URL || "https://localhost:5001";
 
@@ -306,11 +297,32 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         const tabId = storedId ?? activeScrapeTabId ?? sender.tab?.id ?? null;
         const url = message.url;
 
-        if (tabId) {
-          console.log("📌 Updating popup in scrape tab:", tabId);
-          await checkContentAndUpdatePopup(tabId, url, true);
-        } else {
+        if (!tabId) {
           console.warn("⚠️ No activeScrapeTabId found! Cannot show popup.");
+        } else {
+          // Is this the extension PDF viewer?
+          const tab = await browser.tabs.get(tabId);
+          const viewerPrefix = browser.runtime.getURL("viewer.html");
+
+          if (tab?.url && tab.url.startsWith(viewerPrefix)) {
+            // 🧠 We're on viewer.html → do NOT inject. Just tell it to refresh.
+            try {
+              await browser.tabs.sendMessage(tabId, {
+                action: "taskcard:update",
+                payload: { url, status: "complete" },
+              });
+              console.log("📣 Notified viewer to refresh taskcard.");
+            } catch (e) {
+              console.warn(
+                "⚠️ Could not message viewer (no listener yet?):",
+                e
+              );
+            }
+          } else {
+            // 🌐 Normal page → keep your existing flow
+            console.log("📌 Updating popup on normal page:", url);
+            await checkContentAndUpdatePopup(tabId, url, true);
+          }
         }
 
         await browser.storage.local.remove("activeScrapeTabId");
@@ -1178,33 +1190,87 @@ ${content}
   };
 }
 
-// ✅ Detect when user navigates to a new page
-browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status !== "complete" || !tab.url) return;
+// --- helpers you already have / minimal tweaks ---
 
-  checkContentAndUpdatePopup(tabId, tab.url, false);
-});
+function isDashboardUrl(url) {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== "http:" && u.protocol !== "https:") return true; // skip chrome-extension://, about:, file:// etc.
+    const host = u.hostname.replace(/^www\./, "");
+    return host === "localhost" || host === "truthtrollers.com";
+  } catch {
+    return true; // invalid URL → skip
+  }
+}
 
-browser.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.url && !isDashboardUrl(tab.url || "")) {
-    const cleanUrl = changeInfo.url.split("?")[0];
-    if (!shouldIgnoreUrl(cleanUrl) && cleanUrl !== lastStoredUrl) {
+function getCleanUrlFromUpdate(changeInfo, tab) {
+  const raw = changeInfo?.url || tab?.url || "";
+  return raw ? raw.split("?")[0] : "";
+}
+
+// --- ONE onUpdated listener ---
+browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
+  const cleanUrl = getCleanUrlFromUpdate(changeInfo, tab);
+  if (!cleanUrl || isDashboardUrl(cleanUrl)) return;
+
+  // Store last visited (on any URL-change), throttled by lastStoredUrl
+  if (
+    changeInfo.url &&
+    !shouldIgnoreUrl(cleanUrl) &&
+    cleanUrl !== lastStoredUrl
+  ) {
+    try {
       console.log("🔄 Tab updated, storing URL:", cleanUrl);
-      storeLastUrl(cleanUrl);
+      await storeLastUrl(cleanUrl);
       lastStoredUrl = cleanUrl;
+    } catch (err) {
+      console.warn("⚠️ Error storing last visited URL:", err);
+    }
+  }
+
+  // Only run content checks/injection when the load is complete
+  if (changeInfo.status === "complete") {
+    try {
+      // Prep TaskCard data regardless of page type
+      await syncTaskStateForUrl(cleanUrl);
+
+      // If it’s a top-level PDF, don't try to inject overlay
+      if (await isTopLevelPdf(tabId, cleanUrl)) {
+        return;
+      }
+
+      // Normal HTML/YouTube/etc → update popup/overlay
+      await checkContentAndUpdatePopup(tabId, cleanUrl, false);
+    } catch (err) {
+      console.warn("⚠️ Error checking content:", err);
     }
   }
 });
 
+// --- ONE onActivated listener ---
 browser.tabs.onActivated.addListener(async (activeInfo) => {
   try {
     const tab = await browser.tabs.get(activeInfo.tabId);
-    if (!isDashboardUrl(tab.url || "")) {
-      const cleanUrl = tab.url.split("?")[0];
-      if (cleanUrl !== lastStoredUrl) {
+    const cleanUrl = (tab?.url || "").split("?")[0];
+    if (!cleanUrl || isDashboardUrl(cleanUrl)) return;
+
+    if (cleanUrl !== lastStoredUrl) {
+      try {
         console.log("🔄 Tab switched, checking content:", cleanUrl);
-        storeLastUrl(cleanUrl);
+        await storeLastUrl(cleanUrl);
         lastStoredUrl = cleanUrl;
+      } catch (err) {
+        console.warn("⚠️ Error storing last visited URL on switch:", err);
+      }
+
+      // Optionally refresh popup/overlay on tab switch
+      try {
+        // If top-level PDF, skip overlay
+        if (!(await isTopLevelPdf(activeInfo.tabId, cleanUrl))) {
+          await checkContentAndUpdatePopup(activeInfo.tabId, cleanUrl, false);
+        }
+      } catch (err) {
+        console.warn("⚠️ Error updating popup on switch:", err);
       }
     }
   } catch (err) {
@@ -1212,34 +1278,23 @@ browser.tabs.onActivated.addListener(async (activeInfo) => {
   }
 });
 
+// --- action click (unchanged except minor guards) ---
 browser.action.onClicked.addListener(async (tab) => {
-  if (!tab || !tab.id || !tab.url) return;
-  console.log("🔍 Extension icon clicked - Forcing popup for:", tab.url);
-  // If it’s a PDF, reload into our viewer page and stop.
-  if (await isTopLevelPdf(tab.id, tab.url)) {
-    await openPdfViewerTab(tab.id, tab.url);
+  if (!tab?.id || !tab?.url) return;
+  const cleanUrl = tab.url.split("?")[0];
+  console.log("🔍 Extension icon clicked - Forcing popup for:", cleanUrl);
+
+  // PDF: route to viewer
+  if (await isTopLevelPdf(tab.id, cleanUrl)) {
+    await openPdfViewerTab(tab.id, cleanUrl);
     return;
   }
 
-  // HTML/YouTube/etc → keep your in-page overlay flow
-  await syncTaskStateForUrl(tab.url);
-  checkContentAndUpdatePopup(tab.id, tab.url, true);
+  // HTML/YouTube/etc → in-page overlay flow
+  await syncTaskStateForUrl(cleanUrl);
+  await checkContentAndUpdatePopup(tab.id, cleanUrl, true);
 });
 
-browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-  if (changeInfo.status !== "complete" || !tab || !tab.url) return;
-
-  await syncTaskStateForUrl(tab.url);
-
-  if (await isTopLevelPdf(tabId, tab.url)) {
-    // Don't try to inject into the PDF viewer
-    return;
-  }
-
-  return checkContentAndUpdatePopup(tabId, tab.url, false);
-});
-
-//external
 browser.runtime.onMessageExternal.addListener((message, sender) => {
   if (message.action === "fetchPageContent") {
     console.log(

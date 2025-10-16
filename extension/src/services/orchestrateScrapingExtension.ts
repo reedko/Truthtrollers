@@ -114,6 +114,8 @@ export const orchestrateScraping = async (
   let extractedText = "";
   let extractedHtml = "";
   let authors = [];
+  let enrichmentStatus: "ok" | "queued" | "failed" = "ok";
+
   const isPdf = /\.pdf($|\?)/i.test(url);
   function normalizeThumbnail(img?: string | null) {
     if (!img) return "";
@@ -211,19 +213,28 @@ export const orchestrateScraping = async (
         );
         return null;
       }
+      // after: const result = await fetchExternalPageContent(url);
       $ = result.$;
       isRetracted = result.isRetracted;
+
       if (result.pdfMeta) {
+        // title
         if (!content_name || content_name.length < 5) {
           content_name = result.pdfMeta.title || content_name;
         }
+
+        // authors (optional)
         if (!authors.length && result.pdfMeta.author) {
           authors.push({
             name: result.pdfMeta.author,
             description: null,
             image: null,
           });
-          thumbNailUrl = result.pdfMeta.thumbnailUrl || "";
+        }
+
+        // ✅ ALWAYS take the pdf thumbnail if present
+        if (result.pdfMeta.thumbnailUrl) {
+          thumbNailUrl = result.pdfMeta.thumbnailUrl;
         }
       }
       console.log("✅ fetchExternalPageContent success", result);
@@ -320,6 +331,26 @@ export const orchestrateScraping = async (
       extractedText,
       extractedTestimonials
     );
+
+    try {
+      const topicsAndClaims = await analyzeContent(
+        extractedText,
+        extractedTestimonials
+      );
+    } catch (err) {
+      console.warn(
+        "LLM analyzeContent failed; queueing server enrichment:",
+        err
+      );
+      enrichmentStatus = "queued";
+      // Fire-and-forget to backend (US region) so HK egress isn’t needed
+      browser.runtime
+        .sendMessage({
+          action: "enqueueServerEnrichment",
+          payload: { url, extractedText },
+        })
+        .catch(() => (enrichmentStatus = "failed"));
+    }
     const { generalTopic, specificTopics, claims, testimonials } =
       topicsAndClaims;
 
