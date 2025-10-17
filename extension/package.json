@@ -6,6 +6,10 @@
   "scripts": {
     "start": "webpack serve --mode development",
     "build": "rm -f public/popup.js public/background.js && webpack --mode production",
+    "scan:extension": "sh -c \"BUILD_DIR=public; if grep -RIlq --binary-files=without-match -E 'sk-proj-[A-Za-z0-9_-]{6,}' $BUILD_DIR; then echo '❌ sk-proj-* detected in build (possible secret)'; exit 1; else echo '✅ no sk-proj-* patterns found'; fi\"",
+    "zip:extension": "sh -c 'ROOT_DIR=\"$(pwd)\"; BUILD_DIR=\"$ROOT_DIR/public\"; TARGET=\"$ROOT_DIR/../backend/assets/extension/truthtrollers_extension.zip\"; mkdir -p \"$(dirname \"$TARGET\")\"; ( cd \"$BUILD_DIR\" && rm -f truthtrollers_extension.zip && zip -rq -9 truthtrollers_extension.zip . ); mv \"$BUILD_DIR/truthtrollers_extension.zip\" \"$TARGET\"; echo \"✅ Wrote $TARGET\"'",
+    "deploy:extension": "npm run build && npm run scan:extension && npm run zip:extension",
+    "postbuild": "npm run scan:extension && npm run zip:extension",
     "sandbox": "webpack serve --config webpack.sandbox.config.js"
   },
   "devDependencies": {
