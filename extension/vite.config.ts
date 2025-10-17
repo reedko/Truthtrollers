@@ -8,7 +8,4 @@ dotenv.config({ path: path.resolve(__dirname, "../backend/.env") });
 
 export default defineConfig({
   plugins: [react()],
-  define: {
-    "process.env": process.env, // ✅ Makes .env variables available globally
-  },
 });

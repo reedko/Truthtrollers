@@ -9,7 +9,6 @@ import { extractVideoIdFromUrl } from "./services/parseYoutubeUrl";
 const BASE_URL =
   process.env.REACT_APP_EXTENSION_BASE_URL || "https://localhost:5001";
 
-const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
 const code = `
   (function() {
     let popupRoot = document.getElementById("popup-root");
@@ -689,9 +688,36 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
 
     // [21] analyzeContent
     if (message.action === "analyzeContent") {
-      return callOpenAiAnalyze(message.content, message.testimonials)
-        .then((result) => ({ success: true, data: result }))
-        .catch((err) => ({ success: false, error: err.message }));
+      const res = await fetch(`${BASE_URL}/api/analyze-content`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: message.content,
+          testimonials: message.testimonials,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        return {
+          success: false,
+          error: data?.error || `HTTP ${res.status} ${res.statusText}`,
+        };
+      }
+
+      return {
+        success: true,
+        data: {
+          generalTopic: data.generalTopic || "Unknown",
+          specificTopics: Array.isArray(data.specificTopics)
+            ? data.specificTopics
+            : [],
+          claims: Array.isArray(data.claims) ? data.claims : [],
+          testimonials: Array.isArray(data.testimonials)
+            ? data.testimonials
+            : [],
+        },
+      };
     }
 
     // [22] getTopicsFromText
@@ -1085,109 +1111,6 @@ async function storeTestimonialsOnServer(
   // Optional: handle JSON response if you want to check { success: true }
   // const data = await response.json();
   // if (!data.success) throw new Error(data.error || "Server error storing testimonials");
-}
-
-// Example function that calls OpenAI for both topics & claims
-async function callOpenAiAnalyze(content, testimonials) {
-  // Add a testimonialsText block if testimonials were passed
-  const testimonialsText =
-    testimonials && Array.isArray(testimonials) && testimonials.length > 0
-      ? `
-Below is a list of testimonials extracted by a preliminary detector. If they appear in the main text, deduplicate, dedupe, or combine as needed. Improve these if you see better info in the full article.
-
-Extracted testimonials:
-${JSON.stringify(testimonials, null, 2)}
-      `
-      : "";
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: "gpt-4-turbo",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a combined topic, claim, and testimonial extraction assistant.",
-        },
-        {
-          role: "user",
-          content: `
-You are a fact-checking assistant.
-
-First, identify the most general topic (max 2 words) for this text.
-Then, list more specific subtopics under that topic (2 to 5).
-Next, extract every distinct factual assertion or claim — especially those with numbers, statistics, or timelines. 
-Avoid generalizations or summaries. Do not combine multiple claims. 
-Each claim must be independently verifiable and phrased as a full sentence.
-
-Also, extract any testimonials or first-person case studies in the text (phrases such as “I used this and it worked for me,” or “Bobby used this method and made $20 billion”), and try to include a name or image URL if present. Testimonials must be objects: { "text": "...", "name": "...", "imageUrl": "..." } (name and imageUrl are optional).
-
-${testimonialsText}
-
-Return your answer in strict JSON like this:
-{
-  "generalTopic": "<string>",
-  "specificTopics": ["<string>", "<string>"],
-  "claims": ["<claim1>", "<claim2>", ...],
-  "testimonials": [
-    { "text": "<testimonial1>", "name": "<optional>", "imageUrl": "<optional>" },
-    ...
-  ]
-}
-
-Text:
-${content}
-          `,
-        },
-      ],
-    }),
-  });
-
-  // ...the rest of your JSON parsing logic stays as you had it!
-  if (!response.ok) {
-    let errorMessage = `OpenAI request failed: ${response.status} ${response.statusText}`;
-    try {
-      const errorData = await response.json();
-      if (errorData?.error?.message) {
-        errorMessage += ` — ${errorData.error.message}`;
-      }
-    } catch (jsonErr) {}
-    throw new Error(errorMessage);
-  }
-
-  const data = await response.json();
-  if (!data.choices || data.choices.length === 0) {
-    throw new Error("No completion returned from OpenAI");
-  }
-
-  let cleanedReply = data.choices[0].message.content.trim();
-  if (cleanedReply.startsWith("```json")) {
-    cleanedReply = cleanedReply
-      .replace(/^```json/, "")
-      .replace(/```$/, "")
-      .trim();
-  }
-  let parsed;
-  try {
-    parsed = JSON.parse(cleanedReply);
-  } catch (err) {
-    console.error("Invalid JSON from GPT:", cleanedReply);
-    throw new Error("GPT returned invalid JSON");
-  }
-
-  return {
-    generalTopic: parsed.generalTopic || "Unknown",
-    specificTopics: Array.isArray(parsed.specificTopics)
-      ? parsed.specificTopics
-      : [],
-    claims: Array.isArray(parsed.claims) ? parsed.claims : [],
-    testimonials: Array.isArray(parsed.testimonials) ? parsed.testimonials : [],
-  };
 }
 
 // --- helpers you already have / minimal tweaks ---
