@@ -79,7 +79,7 @@ interface FetchPdfTextResponse {
   success: boolean;
   text?: string;
   title?: string;
-  author?: string;
+  authors?: string[];
   thumbnailUrl?: string;
 }
 
@@ -97,7 +97,7 @@ export const fetchExternalPageContent = async (
   isRSS?: boolean;
   pdfMeta?: {
     title?: string;
-    author?: string;
+    authors?: string[];
     thumbnailUrl?: string;
   };
 }> => {
@@ -121,7 +121,10 @@ export const fetchExternalPageContent = async (
       isRetracted: detectRetraction(response.text),
       pdfMeta: {
         title: response.title,
-        author: response.author,
+        authors: Array.isArray(response.authors)
+          ? response.authors
+          : ([] as string[]),
+
         thumbnailUrl: response.thumbnailUrl,
       },
     };

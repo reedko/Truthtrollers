@@ -163,23 +163,31 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
               {authors.map((author) => (
                 <option key={author.author_id} value={author.author_id}>
                   {author.author_first_name} {author.author_last_name}
+                  {author.author_title ? `, ${author.author_title}` : ""}
                 </option>
               ))}
             </Select>
           ) : (
-            <Text
-              fontWeight="semibold"
-              fontSize="md"
-              mb={3}
-              textAlign="center"
-              bg="whiteAlpha.700"
-              color="gray.800"
-              borderRadius="md"
-              px={2}
-              py={1}
-            >
-              {activeAuthor?.author_first_name} {activeAuthor?.author_last_name}
-            </Text>
+            <Box textAlign="center" mb={3}>
+              <Text
+                fontWeight="semibold"
+                fontSize="md"
+                bg="whiteAlpha.700"
+                color="gray.800"
+                borderRadius="md"
+                px={2}
+                py={1}
+              >
+                {activeAuthor?.author_first_name}{" "}
+                {activeAuthor?.author_last_name}
+              </Text>
+              {/* 👇 show title right under name */}
+              {activeAuthor?.author_title ? (
+                <Text fontSize="sm" color="gray.200" mt={1}>
+                  {activeAuthor.author_title}
+                </Text>
+              ) : null}
+            </Box>
           )}
           <Center>
             <Box

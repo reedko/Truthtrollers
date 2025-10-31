@@ -523,6 +523,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     }
 
     // [17] fetchPdfText
+    // [17] fetchPdfText
     if (message.action === "fetchPdfText") {
       try {
         console.log("📨 Received fetchPdfText request for:", message.url);
@@ -536,7 +537,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         const textData = await textRes.json();
         console.log("📄 PDF text response:", textData);
 
-        if (!textData.success || !textData.text?.trim()) {
+        if (!textData.success || !textData.text || !textData.text.trim()) {
           console.warn("❌ PDF parsing failed or returned empty text");
           return { success: false };
         }
@@ -554,7 +555,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
           success: true,
           text: textData.text,
           title: textData.title,
-          author: textData.author,
+          authors: Array.isArray(textData.authors) ? textData.authors : [],
           thumbnailUrl: thumbData.imageUrl || null,
         };
       } catch (err) {
