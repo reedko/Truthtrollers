@@ -224,12 +224,17 @@ export const orchestrateScraping = async (
         }
 
         // authors (optional)
-        if (!authors.length && result.pdfMeta.author) {
-          authors.push({
-            name: result.pdfMeta.author,
+        if (
+          !authors.length &&
+          Array.isArray(result.pdfMeta.authors) &&
+          result.pdfMeta.authors.length
+        ) {
+          const pdfAuthors = result.pdfMeta.authors.map((name) => ({
+            name,
             description: null,
             image: null,
-          });
+          }));
+          authors.push(...pdfAuthors);
         }
 
         // ✅ ALWAYS take the pdf thumbnail if present
@@ -237,6 +242,7 @@ export const orchestrateScraping = async (
           thumbNailUrl = result.pdfMeta.thumbnailUrl;
         }
       }
+
       console.log("✅ fetchExternalPageContent success", result);
     }
 
@@ -279,7 +285,7 @@ export const orchestrateScraping = async (
     if (extractedText.length > 60000) {
       extractedText = trimTo60k(extractedText);
     }
-
+    console.log(diffbotData.title, ":::TITLE RFROM DIFBOT");
     const mainHeadline =
       content_name.length > 5
         ? content_name
@@ -301,7 +307,7 @@ export const orchestrateScraping = async (
     ];
     const seen = new Set();
     authors = allAuthors.filter((author) => {
-      const nameKey = author.name?.toLowerCase();
+      const nameKey = author.name;
       if (nameKey && !seen.has(nameKey)) {
         seen.add(nameKey);
         return true;
@@ -327,13 +333,16 @@ export const orchestrateScraping = async (
       extractedReferences = await extractReferences($);
     }
     const extractedTestimonials = extractTestimonialsFromHtml(extractedHtml);
-    const topicsAndClaims = await analyzeContent(
-      extractedText,
-      extractedTestimonials
-    );
+    let enrichmentStatus: "local" | "queued" | "failed" = "local";
+    let topicsAndClaims: {
+      generalTopic: string;
+      specificTopics: string[];
+      claims: string[];
+      testimonials: { text: string; name?: string; imageUrl?: string }[];
+    } | null = null;
 
     try {
-      const topicsAndClaims = await analyzeContent(
+      topicsAndClaims = await analyzeContent(
         extractedText,
         extractedTestimonials
       );
@@ -343,16 +352,24 @@ export const orchestrateScraping = async (
         err
       );
       enrichmentStatus = "queued";
-      // Fire-and-forget to backend (US region) so HK egress isn’t needed
+      // Fire-and-forget fallback
       browser.runtime
         .sendMessage({
           action: "enqueueServerEnrichment",
           payload: { url, extractedText },
         })
-        .catch(() => (enrichmentStatus = "failed"));
+        .catch(() => {
+          enrichmentStatus = "failed";
+        });
     }
-    const { generalTopic, specificTopics, claims, testimonials } =
-      topicsAndClaims;
+
+    // Always have a safe object to destructure
+    const {
+      generalTopic = "Unknown",
+      specificTopics = [],
+      claims = [],
+      testimonials = [],
+    } = topicsAndClaims ?? {};
 
     const iconThumbnailUrl = await checkAndDownloadTopicIcon(generalTopic);
     // in orchestrateScraping right before store / create:

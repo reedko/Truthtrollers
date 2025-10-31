@@ -341,6 +341,7 @@ app.get("/api/check-pdf-head", async (req, res) => {
   }
 });
 
+// server.js (or wherever your Express app lives)
 app.post("/api/fetch-pdf-text", async (req, res) => {
   const { url } = req.body;
   console.log("📩 /api/fetch-pdf-text route hit:", url);
@@ -350,43 +351,279 @@ app.post("/api/fetch-pdf-text", async (req, res) => {
     const buffer = await response.arrayBuffer();
     const parsed = await pdfParse(Buffer.from(buffer));
 
-    // Raw metadata
-    let author = parsed.info?.Author || "";
-    let title = parsed.info?.Title || "";
+    const fullText = (parsed.text || "").replace(/\r/g, "");
+    const infoTitle = (
+      parsed.info && parsed.info.Title ? parsed.info.Title : ""
+    ).trim();
+    const infoAuthor = (
+      parsed.info && parsed.info.Author ? parsed.info.Author : ""
+    ).trim();
 
-    // 🧠 Fallback to visible content if title missing
-    if (!title && parsed.text) {
-      const lines = parsed.text
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean);
+    // take the first chunk of text to mine title/authors
+    const head = fullText.slice(0, 4000);
+    const lines = head
+      .split(/\n+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
 
-      // Pick best visible candidate as fallback
-      title =
-        lines.find((line) =>
-          /^(Subject|Letter|Hearing|Statement|The Honorable|Committee|CDC|Vaccines)/i.test(
-            line
-          )
-        ) ||
-        lines.find((line) => line.length > 40) ||
-        lines[0] ||
-        "";
-    }
+    const title = chooseTitle(infoTitle, lines, url);
+    const authors = choosePdfAuthors(infoAuthor, lines);
 
-    // ✅ Final log
-    console.log("📄 Final inferred PDF metadata:", { title, author });
+    console.log("📄 Final inferred PDF metadata:", { title, authors });
 
     res.send({
       success: true,
-      text: parsed.text,
-      author,
-      title,
+      text: fullText,
+      title: title || "",
+      authors: authors, // 👈 array of strings
+      rawAuthor: infoAuthor, // 👈 optional, for debugging
     });
   } catch (err) {
     console.error("❌ PDF parse failed:", err);
     res.status(500).send({ success: false });
   }
 });
+
+// ---------- helpers ----------
+
+function chooseTitle(metaTitle, lines, url) {
+  const saneMeta = sanitizeTitle(metaTitle);
+  if (saneMeta) return saneMeta;
+
+  // Find the first plausible title within the first ~25 lines
+  const idx = lines.findIndex((l, i) => i < 25 && looksLikeTitleLine(l));
+  if (idx >= 0) {
+    let t = lines[idx];
+    // If line ends with ":" or "-" (subtitle likely on next line), join it
+    if (/[–—:\-]\s*$/.test(t) && lines[idx + 1]) {
+      t = `${t} ${lines[idx + 1]}`.replace(/\s+/g, " ").trim();
+    }
+
+    const sane = sanitizeTitle(t);
+    if (sane) return sane;
+  }
+
+  // Fallback to URL slug
+  const slug = titleFromUrl(url);
+  return sanitizeTitle(slug);
+}
+
+function looksLikeTitleLine(s) {
+  if (!s) return false;
+  if (s.length < 10 || s.length > 180) return false;
+  const low = s.toLowerCase();
+
+  // Skip boilerplate/admin text common in hearings/papers
+  if (
+    low.startsWith("entered into the hearing record") ||
+    low.startsWith("running head") ||
+    low.includes("united states senate") ||
+    low.includes("committee on") ||
+    /^figure\s+\d+/i.test(s) ||
+    /^table\s+\d+/i.test(s) ||
+    /^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(s)
+  ) {
+    return false;
+  }
+
+  // Prefer mixed case words; filter scream-caps short lines
+  if (/^[A-Z \-:]+$/.test(s) && s.split(" ").length < 6) return false;
+  if (!/[a-z]/.test(s)) return false;
+
+  return true;
+}
+
+function sanitizeTitle(t) {
+  if (!t) return null;
+  t = t.replace(/\s+/g, " ").trim();
+  if (t.length < 10) return null;
+  // Avoid obvious mid-sentence fragments that start lowercase
+  if (/^[a-z]/.test(t) && !/[.!?:]$/.test(t) && t.split(" ").length > 10)
+    return null;
+  return t.slice(0, 200);
+}
+
+function titleFromUrl(u) {
+  try {
+    const file = new URL(u).pathname.split("/").pop() || "";
+    const base = file.replace(/\.pdf$/i, "");
+    const parts = base.split(/[_\-]+/).filter(Boolean);
+    const filtered = parts.filter((p) => !/^\d+$/.test(p) && p.length >= 3);
+    const t = filtered.join(" ").replace(/\s+/g, " ").trim();
+    return t ? toTitleCase(t) : null;
+  } catch {
+    return null;
+  }
+}
+
+function toTitleCase(s) {
+  return s
+    .split(" ")
+    .map((w) => (w.length > 3 ? w[0].toUpperCase() + w.slice(1) : w))
+    .join(" ");
+}
+
+// --- Authors ---
+
+// --- replace only this function in your server (above /api/fetch-pdf-text) ---
+
+function choosePdfAuthors(infoAuthor, lines) {
+  const out = [];
+
+  const pushClean = (raw) => {
+    if (!raw) return;
+    let name = raw.trim();
+    if (!name) return;
+
+    // 🧹 NEW: strip weird numeric superscripts like MD2,3 or ,1,2
+    name = name.replace(/(MD|PhD|MS|MPH|DO|RN|DDS|DVM)\s*\d+(?:,\d+)*/i, "$1");
+    name = name.replace(/,\s*\d+(?:,\d+)*/g, "");
+    name = name.replace(/\s+\d+(?:,\d+)*/g, "");
+
+    // 🧹 NEW: skip lines that are departments, institutions, etc.
+    if (/^henry ford health system/i.test(name)) return;
+    if (/^department of/i.test(name)) return;
+    if (/^division of/i.test(name)) return;
+
+    if (!out.includes(name)) {
+      out.push(name);
+    }
+  };
+
+  // 1️⃣ First, use Author metadata if present
+  if (infoAuthor && infoAuthor.trim()) {
+    infoAuthor
+      .split(/(?:,|and)\s+/)
+      .map((s) => s.trim())
+      .forEach(pushClean);
+  }
+
+  // 2️⃣ Then, scan first ~15 lines of text for author-style lines
+  for (let i = 0; i < Math.min(lines.length, 15); i++) {
+    const line = lines[i];
+    if (!line || line.length < 3) continue;
+
+    // detect "PhD", "MD" lines with commas
+    if (/(PhD|MD|MS|MPH|RN|DO|DDS|DVM)/.test(line) && /,/.test(line)) {
+      line.split(/(?:,| and )+/).forEach(pushClean);
+      continue;
+    }
+
+    // detect one-per-line author entries
+    if (/^[A-Z][a-z]+ [A-Z][a-z]+/.test(line) && /(PhD|MD|MS)/.test(line)) {
+      pushClean(line);
+    }
+  }
+
+  return out;
+}
+
+function isSubtitleLine(s) {
+  if (!s) return false;
+  const low = s.toLowerCase();
+  // classic subtitle telltales; many lowercase words, no credentials
+  if (
+    /\b(study|report|review|analysis|cohort|trial|outcome|outcomes|systematic|meta-?analysis)\b/i.test(
+      s
+    )
+  ) {
+    if (!/\b(PhD|MD|MS|MPH|DO|RN|DDS|DVM)\b/.test(s) && !looksLikePerson(s))
+      return true;
+  }
+  // if it’s Title Case-ish but contains stopwords like "of/in/on/for" and no credentials/names
+  if (
+    looksLikeSubtitlePhrase(s) &&
+    !/\b(PhD|MD|MS|MPH|DO|RN|DDS|DVM)\b/.test(s)
+  )
+    return true;
+  return false;
+}
+
+function looksLikeAffiliation(s) {
+  return /(university|department|division|school|institute|center|centre|health system|hospital|detroit|michigan|wayne state)/i.test(
+    s
+  );
+}
+
+function looksLikeParagraph(s) {
+  var words = s.split(/\s+/).length;
+  var commas = (s.match(/,/g) || []).length;
+  return (
+    words > 14 && commas < 2 && !/\b(PhD|MD|MS|MPH|DO|RN|DDS|DVM)\b/.test(s)
+  );
+}
+
+// split a single long PDF author line into multiple names
+function splitPdfAuthorLine(raw) {
+  if (!raw) return [];
+
+  // remove unicode superscripts
+  var cleaned = raw.replace(/[\u00B2\u00B3\u00B9\u2070-\u2079]/g, "");
+  // remove numeric footnotes attached to degrees: "MD2,3" -> "MD"
+  cleaned = cleaned.replace(/\b(PhD|MD|MS|MPH|DO|RN|DDS|DVM)\s*[\d,]+/gi, "$1");
+  // normalize " and "
+  cleaned = cleaned.replace(/\sand\s/gi, ", ");
+
+  var parts = cleaned.split(/,\s*/).filter(Boolean);
+  var authors = [];
+
+  for (var i = 0; i < parts.length; i++) {
+    var part = parts[i].trim();
+
+    if (isDegree(part)) {
+      var prev = authors.pop();
+      if (prev) {
+        authors.push(prev + ", " + part);
+      }
+    } else {
+      authors.push(part);
+    }
+  }
+
+  // cut off affiliations after degree
+  var final = authors
+    .map(function (a) {
+      return stripAfterDegree(a);
+    })
+    .map(function (a) {
+      return a.trim();
+    });
+
+  // dedupe
+  var seen = {};
+  return final.filter(function (a) {
+    var key = a.toLowerCase();
+    if (seen[key]) return false;
+    seen[key] = true;
+    return true;
+  });
+}
+
+function isDegree(s) {
+  return /^(PhD|MD|MS|MPH|DO|RN|DDS|DVM)$/i.test(s);
+}
+
+function stripAfterDegree(s) {
+  var m = s.match(/\b(PhD|MD|MS|MPH|DO|RN|DDS|DVM)\b/i);
+  if (!m) return s;
+  var end = m.index + m[0].length;
+  return s.slice(0, end);
+}
+
+function looksLikeSubtitlePhrase(s) {
+  const low = s.toLowerCase();
+  return (
+    /\b(of|and|in|on|for|with|by|to|from|the|a|an)\b/.test(low) &&
+    !/\b[A-Z]{2,}\b/.test(s)
+  );
+}
+
+function looksLikePerson(s) {
+  // "Firstname M. Lastname" or "Firstname Lastname" (allow hyphen/apos)
+  return /\b[A-Z][a-z]+(?:[-'][A-Z][a-z]+)?(?:\s+[A-Z]\.)?\s+[A-Z][a-z]+(?:[-'][A-Z][a-z]+)?\b/.test(
+    s
+  );
+}
 
 function spawnPdftocairo(inputPdf, outputBase) {
   return new Promise((resolve, reject) => {
@@ -3335,6 +3572,7 @@ ${chunk}
     }
 
     const parsed = parseOrRepairJSON2(reply);
+    console.log("YEYEYEYEYEYEYE");
     return parsed;
   } catch (e) {
     console.error("❌ Failed to parse or repair assistant message:", raw);
