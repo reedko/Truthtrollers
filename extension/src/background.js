@@ -305,6 +305,17 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
 
           if (tab?.url && tab.url.startsWith(viewerPrefix)) {
             // 🧠 We're on viewer.html → do NOT inject. Just tell it to refresh.
+            // 1) run the SAME content-refresh logic we use for normal pages
+            //    so the DB → extension sync actually happens
+            try {
+              await checkContentAndUpdatePopup(tabId, url, true);
+              console.log("🟣 checkContentAndUpdatePopup ran for viewer.html");
+            } catch (e) {
+              console.warn(
+                "⚠️ checkContentAndUpdatePopup failed on viewer:",
+                e
+              );
+            }
             try {
               await browser.tabs.sendMessage(tabId, {
                 action: "taskcard:update",
