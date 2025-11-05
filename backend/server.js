@@ -241,7 +241,7 @@ app.get("/api/youtube-transcript/:videoId", async (req, res) => {
   }
 });
 
-app.post("/store-content", async (req, res) => {
+app.post("/api/store-content", async (req, res) => {
   const {
     url,
     content_type,
@@ -3719,40 +3719,56 @@ app.post("/api/pre-scrape", async (req, res) => {
     });
   }
 });
+
 app.post("/api/checkAndDownloadTopicIcon", async (req, res) => {
   const { generalTopic } = req.body;
 
+  if (!generalTopic || !generalTopic.trim()) {
+    return res.status(400).send({ error: "generalTopic is required" });
+  }
+
   try {
-    // ✅ Check if the topic exists in `topics` or `topic_aliases`
+    // ✅ 1. check topics + aliases
     const topicQuery = `
-      SELECT topics.topic_id 
-      FROM topics
-      LEFT JOIN topic_aliases ON topics.topic_id = topic_aliases.topic_id
-      WHERE topics.topic_name = ? OR topic_aliases.alias_name = ?
+      SELECT t.topic_id
+      FROM topics t
+      LEFT JOIN topic_aliases ta ON t.topic_id = ta.topic_id
+      WHERE t.topic_name = ? OR ta.alias_name = ?
     `;
-    const results = await query(topicQuery, [generalTopic, generalTopic]);
 
-    console.log(results, generalTopic, ": results for topic check");
+    // our query() returns an array of rows
+    const rows = await query(topicQuery, [generalTopic, generalTopic]);
+    console.log(rows, generalTopic, ": results for topic check");
 
-    // ✅ If topic exists in DB, return `{ exists: true, thumbnail_url: null }` (no action needed)
-    if (results.length > 0) {
-      return res.status(200).send({ exists: true, thumbnail_url: null });
+    // ✅ topic already exists → tell FE "you're good, no need to download"
+    if (Array.isArray(rows) && rows.length > 0) {
+      return res.status(200).send({
+        exists: true,
+        thumbnail_url: null,
+      });
     }
 
-    // ✅ If not found in DB, check local icon storage
+    // ✅ 2. otherwise try to fetch/create local icon
     const { exists, thumbnail_url } = await fetchIconForTopic(
       generalTopic,
       query
     );
-    // 🔥 Ensure thumbnail is stored WITHOUT BASE_URL
-    let newthumbnail_url = thumbnail_url
-      .replace(BASE_URL, "")
-      .replace(/^\/+/, ""); // Remove leading slashes if needed
 
-    res.status(200).send({ exists, newthumbnail_url });
+    // we store relative paths, not absolute URLs
+    let cleanThumb = thumbnail_url || "";
+    if (cleanThumb.startsWith(BASE_URL)) {
+      cleanThumb = cleanThumb.replace(BASE_URL, "");
+    }
+    // drop leading slashes so FE can do `${BASE_URL}/${cleanThumb}`
+    cleanThumb = cleanThumb.replace(/^\/+/, "");
+
+    return res.status(200).send({
+      exists,
+      thumbnail_url: cleanThumb,
+    });
   } catch (error) {
     console.error("❌ Error in checkAndDownloadTopicIcon:", error);
-    res.status(500).send({ error: "Failed to process topic icon." });
+    return res.status(500).send({ error: "Failed to process topic icon." });
   }
 });
 
