@@ -36,9 +36,18 @@ import fetch from "node-fetch";
 import nodemailer from "nodemailer";
 import { decodeJwt } from "./utils/jwt.js";
 
-import { parseOrRepairJSON } from "./utils/repairJson.js";
 import { createSessionLogger } from "./utils/sessionLogger.js";
 import { getYoutubeTranscriptWithPuppeteer } from "./utils/getYoutubeTranscriptWithPuppeteer.js";
+import claimsSuggestQueriesRouter from "./routes/claimsSuggestQueries.js";
+import claimsSearchMapRouter from "./routes/claimsSearchMap.js";
+
+// Always keep HTTP for prod / fallback
+const httpPort = process.env.PORT || 3000;
+const httpsPort = process.env.HTTPS_PORT || 5001;
+const SSL_KEY_PATH = process.env.SSL_KEY_PATH;
+const SSL_CERT_PATH = process.env.SSL_CERT_PATH;
+const DEV_USE_HTTPS =
+  String(process.env.DEV_USE_HTTPS || "").toLowerCase() === "true";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -68,6 +77,8 @@ app.listen(3000, () => {
 });
 app.get("/health", (req, res) => res.json({ ok: true, ts: Date.now() }));
 app.use(bodyParser.json({ limit: "50mb" }));
+app.use("/api/claims", claimsSuggestQueriesRouter);
+app.use("/api/claims", claimsSearchMapRouter);
 app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 // Configure environment variables
 dotenv.config();

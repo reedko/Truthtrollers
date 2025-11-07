@@ -26,9 +26,12 @@ export interface Author {
   image?: string | null;
 }
 
+// extension/src/entities/Task.ts (or wherever Lit_references is defined)
 export interface Lit_references {
   url: string;
   content_name: string;
+  origin?: "dom" | "claim";
+  claims?: string[]; // optional: which task-claims pointed to this source
 }
 
 export interface Publisher {

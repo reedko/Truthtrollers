@@ -26,8 +26,6 @@ import type { DiffbotData } from "../entities/diffbotData";
 import * as cheerio from "cheerio";
 import browser from "webextension-polyfill";
 import { extractTestimonialsFromHtml } from "../utils/extractTestimonials";
-import { getYoutubeTranscriptFromDOM } from "./extractYoutubeTranscriptFromDOM";
-const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 
 interface ReadabilityResponse {
   success: boolean;
