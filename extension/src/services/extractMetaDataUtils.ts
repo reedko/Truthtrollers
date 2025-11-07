@@ -1,6 +1,12 @@
 // extractMetaDataUtils.ts
 import * as cheerio from "cheerio";
 import { Author, Lit_references, Publisher } from "../entities/Task";
+import {
+  isLikelyBad,
+  CONTENT_SELECTORS,
+  BAD_ANCESTORS,
+  hasCitationCue,
+} from "./referenceExtractor";
 
 export const extractImageFromHtml = (
   html: string,
@@ -396,124 +402,125 @@ export const extractPublisher = async (
 export const extractReferences = async (
   $: cheerio.CheerioAPI
 ): Promise<Lit_references[]> => {
-  const references: Lit_references[] = [];
-  const promises: Promise<void>[] = [];
+  const MAX_RESULTS = 30;
+  const seen = new Set<string>();
+  const refs: Lit_references[] = [];
 
-  const processReference = async (url: string, potentialTitle?: string) => {
-    url = url.trim();
-    if (!isValidReference(url)) return;
-
-    const content_name = potentialTitle || formatUrlForTitle(url);
-    references.push({ url, content_name });
-  };
-
-  // 🔍 1. Collect nav-like category prefixes (e.g. 'defender_category')
-  const getNavCategoryPrefixes = ($: cheerio.CheerioAPI): string[] => {
-    const prefixes = new Set<string>();
-
-    $("nav a[href], header a[href], .menu a[href], .navbar a[href]").each(
-      (_, el) => {
-        const href = $(el).attr("href");
-        if (href?.startsWith("http")) {
-          try {
-            const parsed = new URL(href);
-            const segments = parsed.pathname?.split("/").filter(Boolean);
-            if (segments && segments.length > 0) {
-              prefixes.add(segments[0]);
-            }
-          } catch (err) {
-            console.warn("⚠️ Invalid nav link:", href);
-          }
-        }
-      }
-    );
-
-    return [...prefixes];
-  };
-
-  const navPrefixes = getNavCategoryPrefixes($);
-  console.log("📎 Detected nav prefixes:", navPrefixes);
-
-  // 🔥 2. Zones likely to contain references
-  const referenceZones = [
-    "article",
-    "main",
-    ".content",
-    ".post-body",
-    ".entry-content",
-    ".ref-list",
-    ".references",
-    ".citation",
-    ".citations",
-    ".footnotes",
-    "footer", // ✅ footer allowed now
-  ].join(",");
-
-  // 🔍 3. Crawl anchor tags in those zones
-  $(referenceZones)
-    .find("a[href]")
-    .each((_, el) => {
-      const link = $(el).attr("href")?.trim();
-      const inlineText = $(el).text().trim();
-
-      if (!link || !link.startsWith("http")) return;
-
-      try {
-        const parsed = new URL(link);
-        const pathSegments = parsed.pathname?.split("/").filter(Boolean);
-        const firstSegment = pathSegments?.[0];
-        const matchesNavPrefix =
-          firstSegment && navPrefixes.includes(firstSegment);
-
-        const isInBadNav =
-          $(el).closest(
-            `nav, header, .menu, .navbar, .nav-container, .nav-list, .nav-list--horizontal-scroll, .nav-list--defender-subnav, aside`
-          ).length > 0;
-
-        if (!isInBadNav && !matchesNavPrefix && !isNavigationLink(link)) {
-          promises.push(processReference(link, inlineText));
-        } else {
-          console.log("🛑 Skipped nav-like link:", link);
-        }
-      } catch (err) {
-        console.warn("⚠️ Skipping invalid link:", link);
-      }
+  const pushRef = (url?: string, title?: string) => {
+    if (!url) return;
+    const href = url.trim();
+    if (!href || !href.startsWith("http") || isLikelyBad(href)) return;
+    if (seen.has(href)) return;
+    seen.add(href);
+    refs.push({
+      url: href,
+      content_name: (title || "").trim() || formatUrlForTitle(href),
     });
+  };
 
-  // ✅ 4. Extract from ld+json metadata
-  $('script[type="application/ld+json"]').each((_, scriptTag) => {
-    try {
-      const rawJson = $(scriptTag).html();
-      if (rawJson) {
-        const metadata = JSON.parse(rawJson);
-        const refs = Array.isArray(metadata.references)
-          ? metadata.references
-          : metadata.references
-          ? [metadata.references]
-          : [];
+  // -------- 1) DOM crawl (content-scoped) --------
+  const $scope = $(CONTENT_SELECTORS).length ? $(CONTENT_SELECTORS) : $.root();
 
-        refs.forEach((ref: any) => {
-          const refUrl = ref.url?.trim();
-          const refTitle = ref.name?.trim();
-          if (refUrl) {
-            promises.push(processReference(refUrl, refTitle));
-          }
-        });
-      }
-    } catch (err) {
-      console.error("❌ Error parsing ld+json for references:", err);
-    }
+  $scope.find("a[href]").each((_, el) => {
+    const $a = $(el);
+    const href = ($a.attr("href") || "").trim();
+    if (!href || !href.startsWith("http") || isLikelyBad(href)) return;
+
+    // avoid nav/recirc/etc
+    if ($a.closest(BAD_ANCESTORS).length) return;
+
+    // must live in reasonable text containers
+    const tag = (
+      $a.closest("p, li, figcaption, .footnote, sup").prop("tagName") || ""
+    ).toLowerCase();
+    if (!tag) return;
+
+    // require a cue in anchor text or the container sentence
+    const anchorText = $a.text().trim();
+    const containerText =
+      $a.closest("p, li, figcaption, .footnote").text().trim() || anchorText;
+    if (!hasCitationCue(anchorText) && !hasCitationCue(containerText)) return;
+
+    pushRef(href, anchorText);
   });
 
-  await Promise.all(promises);
+  // -------- 2) JSON-LD references (robust parsing) --------
+  $('script[type="application/ld+json"]').each((_, scriptTag) => {
+    let raw = $(scriptTag).text().trim();
+    if (!raw) return;
 
-  // ✅ 5. De-duplicate by URL
-  const uniqueReferences = references.filter(
-    (ref, index, self) => index === self.findIndex((r) => r.url === ref.url)
-  );
+    // Some sites stuff multiple JSON objects or arrays into one tag or have trailing semicolons.
+    // Try a few safe parses:
+    const candidates: any[] = [];
 
-  return uniqueReferences;
+    const tryParse = (s: string) => {
+      try {
+        const v = JSON.parse(s);
+        candidates.push(v);
+      } catch {
+        /* ignore */
+      }
+    };
+
+    // 2a) raw as-is (common case)
+    tryParse(raw);
+
+    // 2b) strip trailing semicolon
+    if (raw.endsWith(";")) tryParse(raw.slice(0, -1));
+
+    // 2c) if looks like a “}{” concatenation, split naïvely into objects
+    if (!candidates.length && /}\s*{/.test(raw)) {
+      const parts = raw
+        .split(/}\s*{/)
+        .map((s, i, arr) =>
+          i === 0 ? s + "}" : i === arr.length - 1 ? "{" + s : "{" + s + "}"
+        );
+      parts.forEach(tryParse);
+    }
+
+    const flatten = (v: any): any[] =>
+      Array.isArray(v) ? v.flatMap(flatten) : [v];
+
+    const allObjs = candidates.flatMap(flatten);
+
+    const pickRefs = (node: any) => {
+      if (!node || typeof node !== "object") return;
+
+      // Schema.org often puts references under `references`
+      const refsNode =
+        node.references ??
+        node.citation ?? // some publishers
+        null;
+
+      const list = Array.isArray(refsNode)
+        ? refsNode
+        : refsNode
+        ? [refsNode]
+        : [];
+      list.forEach((r: any) => {
+        const u = typeof r === "string" ? r : r?.url;
+        const name =
+          (typeof r === "object" && (r.name || r.headline || r.title)) || "";
+        pushRef(u, name);
+      });
+
+      // Recurse shallowly for nested structures (isPartOf/hasPart/graph)
+      ["isPartOf", "hasPart", "@graph", "itemListElement"].forEach((k) => {
+        const v = (node as any)[k];
+        if (!v) return;
+        flatten(v).forEach(pickRefs);
+      });
+    };
+
+    allObjs.forEach(pickRefs);
+  });
+
+  // keep original order preference (DOM first, then JSON-LD appended)
+  // already achieved because DOM emits before JSON-LD, and dedupe happens on push
+
+  return refs.slice(0, MAX_RESULTS);
 };
+
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 
 export const checkIfPdfViaHead = async (url: string) => {
