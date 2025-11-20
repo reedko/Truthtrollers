@@ -197,6 +197,112 @@ let lastStoredUrl = "";
 // --- SINGLE onMessage HANDLER ---
 browser.runtime.onMessage.addListener(async (message, sender) => {
   try {
+    // [-2] claimsSourceMapper/map
+    if (message.action === "claimsSourceMapper/map") {
+      console.log(
+        "📡 [Background] claimsSourceMapper/map triggered",
+        message.payload
+      );
+
+      const { claims = [] } = message.payload || {};
+      console.log("🧠 Received claims:", claims);
+
+      if (!Array.isArray(claims) || claims.length === 0) {
+        console.warn("⚠️ No claims passed in payload");
+        return { success: true, refs: [] };
+      }
+
+      try {
+        // 🧩 Single step: map claims → sources
+        const resp = await fetch(`${BASE_URL}/api/claims/map-claims`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          referrerPolicy: "no-referrer",
+          body: JSON.stringify({
+            claims, // your existing array
+            prefer_domains: [
+              "apnews.com",
+              "reuters.com",
+              "bbc.com",
+              "wikipedia.org",
+              "fullfact.org",
+              "snopes.com",
+              "factcheck.org",
+              "politifact.com",
+            ],
+            avoid_domains: [],
+            return_queries: true,
+          }),
+        });
+
+        if (!resp.ok) {
+          const t = await resp.text().catch(() => "");
+          return { success: false, error: `map-claims ${resp.status}: ${t}` };
+        }
+
+        const json = await resp.json();
+        if (!json?.success) {
+          return {
+            success: false,
+            error: json?.error || "Unknown mapping failure",
+          };
+        }
+
+        // Normalize → Lit_references[]
+        const refs = Array.isArray(json?.references) ? json.references : [];
+        console.log(
+          `✅ claimsSourceMapper/map finished: ${refs.length} references (${
+            json?.items?.length ?? 0
+          } claims)`
+        );
+
+        return { success: true, refs };
+      } catch (err) {
+        console.error("claimsSourceMapper/map failed:", err);
+        return { success: false, error: String(err?.message || err) };
+      }
+    }
+
+    // [-1] Image blobber to avoid PNA errors
+    if (message.action === "getAssetBlobUrl" && message.url) {
+      try {
+        const targetUrl = message.url.startsWith("http")
+          ? message.url
+          : `${BASE_URL}${message.url.startsWith("/") ? "" : "/"}${
+              message.url
+            }`;
+
+        const res = await fetch(targetUrl, { credentials: "omit" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const type =
+          res.headers.get("Content-Type") || "application/octet-stream";
+        const buf = await res.arrayBuffer();
+
+        // SAFE encoder: no spread/apply, no chunking, avoids stack overflow
+        const base64 = arrayBufferToBase64(buf);
+
+        return { ok: true, type, base64 };
+      } catch (err) {
+        console.error("getAssetBlobUrl failed:", err);
+        return { ok: false, error: String(err) };
+      }
+    }
+
+    function arrayBufferToBase64(ab) {
+      const bytes = new Uint8Array(ab);
+      let binary = "";
+      // Build the string in small pieces without apply/spread
+      const step = 0x8000; // 32k
+      for (let i = 0; i < bytes.length; i += step) {
+        const chunk = bytes.subarray(i, i + step);
+        let chunkStr = "";
+        for (let j = 0; j < chunk.length; j++) {
+          chunkStr += String.fromCharCode(chunk[j]);
+        }
+        binary += chunkStr;
+      }
+      return btoa(binary);
+    }
     // [0] PING TEST
     if (message.action === "pingTest") {
       return { pong: true };
@@ -706,6 +812,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         body: JSON.stringify({
           content: message.content,
           testimonials: message.testimonials,
+          includeEvidence: message.includeEvidence === true,
         }),
       });
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Box,
   Button,
@@ -10,6 +10,8 @@ import {
   HStack,
   Spacer,
   Center,
+  Stat,
+  Tooltip,
 } from "@chakra-ui/react";
 import "./Popup.css";
 import UserConsensusBar from "./UserConsensusBar";
@@ -17,13 +19,32 @@ import useTaskStore from "../store/useTaskStore";
 import resizeImage from "../services/image-url";
 import { useTaskScraper } from "../hooks/useTaskScraper";
 import TruthGauge from "./ModernArcGauge";
-import { Stat } from "@chakra-ui/react";
-import { Tooltip } from "@chakra-ui/react";
 import browser from "webextension-polyfill";
 import { Task } from "../entities/Task";
 
+// Keep your base URL logic
 const BASE_URL =
-  process.env.REACT_APP_EXTENSION_BASE_URL || "https://localhost:5001";
+  (typeof import.meta !== "undefined" &&
+    (import.meta as any).env?.VITE_EXTENSION_BASE_URL) ||
+  process.env.REACT_APP_EXTENSION_BASE_URL ||
+  "https://localhost:5001";
+
+// --- helper: ask background for bytes → build blob: URL (matches getAssetBlobUrl action) ---
+async function getBlobUrl(pathOrUrl: string): Promise<string> {
+  const resp = (await browser.runtime.sendMessage({
+    action: "getAssetBlobUrl",
+    url: pathOrUrl,
+  })) as { ok: boolean; base64?: string; type?: string; error?: string };
+
+  if (!resp?.ok || !resp.base64)
+    throw new Error(resp?.error || "Failed to fetch asset bytes");
+
+  const bytes = Uint8Array.from(atob(resp.base64), (c) => c.charCodeAt(0));
+  const blob = new Blob([bytes], {
+    type: resp.type || "application/octet-stream",
+  });
+  return URL.createObjectURL(blob);
+}
 
 const getProgressColor = (progress: string | null) => {
   switch (progress) {
@@ -39,9 +60,24 @@ const getProgressColor = (progress: string | null) => {
 };
 
 const TaskCard: React.FC = () => {
-  const { task, currentUrl, setTask } = useTaskStore(); // Hook to access Zustand
-  const { loading, error, scrapeTask } = useTaskScraper(); // Use scraper hook
+  const { task, currentUrl, setTask } = useTaskStore();
+  const { loading, error, scrapeTask } = useTaskScraper();
   const [visible, setVisible] = useState(false);
+
+  // blob URLs we render (logo / meter / content thumb)
+  const [logoBlob, setLogoBlob] = useState<string>("");
+  const [meterBlob, setMeterBlob] = useState<string>("");
+  const [thumbBlob, setThumbBlob] = useState<string>("");
+
+  // track blobs to revoke on unmount
+  const blobPool = useRef<string[]>([]);
+  useEffect(() => {
+    return () => {
+      blobPool.current.forEach((u) => URL.revokeObjectURL(u));
+      blobPool.current = [];
+    };
+  }, []);
+
   async function getResolvedUrl(): Promise<string> {
     const storeUrl = useTaskStore.getState().currentUrl;
     if (typeof storeUrl === "string" && storeUrl) return storeUrl;
@@ -54,6 +90,7 @@ const TaskCard: React.FC = () => {
 
     return typeof lastVisitedURL === "string" ? lastVisitedURL : "";
   }
+
   useEffect(() => {
     (async () => {
       const { lastVisitedURL } = (await browser.storage.local.get(
@@ -81,7 +118,43 @@ const TaskCard: React.FC = () => {
       .catch((err) => {
         console.error("Failed to get task from storage:", err);
       });
+  }, [setTask]);
+
+  // Load static UI assets (logo, meter) via background → blob
+  useEffect(() => {
+    (async () => {
+      try {
+        const logo = await getBlobUrl("/assets/images/miniLogo.png");
+        const meter = await getBlobUrl("/assets/images/meter3.png");
+        setLogoBlob(logo);
+        setMeterBlob(meter);
+        blobPool.current.push(logo, meter);
+      } catch (e) {
+        console.warn("Static asset blob fetch failed:", e);
+      }
+    })();
   }, []);
+
+  // Load the content thumbnail (dynamic) via background → blob
+  useEffect(() => {
+    (async () => {
+      try {
+        if (task?.thumbnail) {
+          const full = task.thumbnail.startsWith("http")
+            ? task.thumbnail
+            : `${BASE_URL}/${task.thumbnail}`;
+          const blobUrl = await getBlobUrl(full);
+          setThumbBlob(blobUrl);
+          blobPool.current.push(blobUrl);
+        } else {
+          setThumbBlob("");
+        }
+      } catch (e) {
+        console.warn("Thumb blob fetch failed:", e);
+        setThumbBlob("");
+      }
+    })();
+  }, [task?.thumbnail]);
 
   const handleAddTask = async () => {
     const url = await getResolvedUrl();
@@ -89,7 +162,6 @@ const TaskCard: React.FC = () => {
       console.error("No URL available.");
       return;
     }
-
     if (currentUrl) {
       scrapeTask(currentUrl);
     } else {
@@ -100,25 +172,24 @@ const TaskCard: React.FC = () => {
   const handleArgueClick = () => {
     if (!task) return;
     const url = `${process.env.REACT_APP_EXTENSION_URL}/discussion/${task.content_id}`;
-    console.log(url, "IJKUHHD");
-    // ask the background script to open the tab (safer than window.open)
     browser.runtime.sendMessage({ fn: "openDiscussionTab", url });
   };
 
-  const imageUrl =
-    task && task.thumbnail ? `${BASE_URL}/${task.thumbnail}` : "";
-  const meter = `${BASE_URL}/assets/images/meter3.png`;
-  const logo = `${BASE_URL}/assets/images/miniLogo.png`;
+  // Render with BLOB URLs (no page → localhost/network fetch)
+  const imageUrl = thumbBlob || "";
+  const meter = meterBlob || "";
+  const logo = logoBlob || "";
 
   return (
     <Box className="popup-box" width="300px" bg="stat5Gradient">
       <VStack spacing={0} align="start">
         <Box bg="cardGradient" className="logo-box" position="relative">
           <HStack spacing="130">
-            <Box>{resizeImage(40, logo)}</Box>
+            <Box>{logo && resizeImage(40, logo)}</Box>
             <Text color="white">TruthTrollers</Text>
           </HStack>
         </Box>
+
         {imageUrl && task?.progress === "Completed" ? (
           <HStack spacing={1} align="center" width="290px">
             <Box flex="0 0 70%">
@@ -128,12 +199,11 @@ const TaskCard: React.FC = () => {
                 <TruthGauge
                   score={-0.73}
                   label="VERIMETER"
-                  size={{ w: 170, h: 90 }} // ⬅️ slightly narrower too
+                  size={{ w: 170, h: 90 }}
                   normalize={false}
                 />
               </VStack>
             </Box>
-
             <Box flex="0 0 30%" pl={-5}>
               <Box
                 borderRadius="8px"
@@ -272,7 +342,6 @@ const TaskCard: React.FC = () => {
                   onClick={handleAddTask}
                   disabled={loading}
                 >
-                  {" "}
                   <div>Add</div>
                 </Button>
                 <Button

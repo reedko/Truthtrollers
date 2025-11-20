@@ -1,5 +1,13 @@
-// Import dependencies
-import { fetchIconForTopic } from "./utils/fetchIconForTopic.js";
+// ───────────────────────────────────────────────────────────
+// Env FIRST
+// ───────────────────────────────────────────────────────────
+import dotenv from "dotenv";
+dotenv.config();
+
+// ───────────────────────────────────────────────────────────
+// Imports
+// ───────────────────────────────────────────────────────────
+import { fetchIconForTopic } from "./src/utils/fetchIconForTopic.js";
 import express from "express";
 import mysql from "mysql";
 import bodyParser from "body-parser";
@@ -10,7 +18,6 @@ import axios from "axios";
 import path from "path";
 import multer from "multer";
 import sharp from "sharp";
-import dotenv from "dotenv";
 import * as cheerio from "cheerio";
 import { promisify } from "util";
 import { fileURLToPath } from "url";
@@ -19,36 +26,129 @@ import {
   getNodesForEntity,
   getLinksForEntity,
   getLinkedClaimsAndLinksForTask,
-} from "./database/graphQueries.js";
+} from "./src/queries/graphQueries.js";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
-import fs from "fs-extra";
+
 import http from "http";
 import https from "https";
-import fetchWithPuppeteer from "./routes/fetchWithPuppeteer.js"; //
-import { DEFAULT_HEADERS } from "./routes/fetchWithPuppeteer.js";
+import fetchWithPuppeteer, {
+  DEFAULT_HEADERS,
+} from "./src/routes/fetchWithPuppeteer.js";
 import pdfParse from "pdf-parse/lib/pdf-parse.js";
-
 import { spawn } from "child_process";
-import registerDiscussionRoutes from "./routes/discussionRoutes.js";
-import registerBeaconRoutes from "./routes/beaconRoutes.js";
+import registerDiscussionRoutes from "./src/routes/discussionRoutes.js";
+import registerBeaconRoutes from "./src/routes/beaconRoutes.js";
 import fetch from "node-fetch";
 import nodemailer from "nodemailer";
-import { decodeJwt } from "./utils/jwt.js";
+import { decodeJwt } from "./src/utils/jwt.js";
+import { createSessionLogger } from "./src/utils/sessionLogger.js";
+import { getYoutubeTranscriptWithPuppeteer } from "./src/utils/getYoutubeTranscriptWithPuppeteer.js";
 
-import { createSessionLogger } from "./utils/sessionLogger.js";
-import { getYoutubeTranscriptWithPuppeteer } from "./utils/getYoutubeTranscriptWithPuppeteer.js";
-import claimsSuggestQueriesRouter from "./routes/claimsSuggestQueries.js";
-import claimsSearchMapRouter from "./routes/claimsSearchMap.js";
+import fs from "fs-extra";
 
-// Always keep HTTP for prod / fallback
-const httpPort = process.env.PORT || 3000;
-const httpsPort = process.env.HTTPS_PORT || 5001;
-const SSL_KEY_PATH = process.env.SSL_KEY_PATH;
-const SSL_CERT_PATH = process.env.SSL_CERT_PATH;
+import { registerAnalyzeContentRoute } from "./src/routes/analyzeContent.js";
+
+// ───────────────────────────────────────────────────────────
+// App / Paths / Ports
+// ───────────────────────────────────────────────────────────
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const app = express();
+
+//Set this in DEV
+if (process.env.DEV_TRUST_SELF_SIGNED === "true") {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+}
+
+if (process.env.DEV_TRUST_SELF_SIGNED === "true") {
+  axios.defaults.httpsAgent = new https.Agent({ rejectUnauthorized: false });
+}
+
+// trust proxy so req.protocol is accurate behind nginx
+app.set("trust proxy", true);
+
+// Ports & HTTPS config
+const httpPort = Number(process.env.PORT || 3000);
+const httpsPort = Number(process.env.HTTPS_PORT || 5001);
 const DEV_USE_HTTPS =
-  String(process.env.DEV_USE_HTTPS || "").toLowerCase() === "true";
+  String(process.env.DEV_USE_HTTPS || "false").toLowerCase() === "true";
+const SSL_KEY_PATH = process.env.SSL_KEY_PATH; // e.g. /.../ssl/server.key
+const SSL_CERT_PATH = process.env.SSL_CERT_PATH; // e.g. /.../ssl/server.cert
+const SSL_CA_PATH = process.env.SSL_CA_PATH; // optional
 
+// CORS allowlist (dev + prod + extension)
+const allowedOrigins = [
+  "https://localhost:5173", // Vite dev (HTTPS recommended)
+  "https://localhost:5001", // Backend self (dev)
+  "https://truthtrollers.com", // Prod site
+  "chrome-extension://phacjklngoihnlhcadefaiokbacnagbf", // Extension
+  "safari-web-extension://<your-safari-id>",
+];
+
+// ───────────────────────────────────────────────────────────
+// Preflight / PNA handler (before cors())
+// ───────────────────────────────────────────────────────────
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    const origin = req.headers.origin;
+    if (!origin || allowedOrigins.includes(origin)) {
+      res.setHeader("Access-Control-Allow-Origin", origin || "*");
+      res.setHeader("Vary", "Origin");
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+      );
+      res.setHeader(
+        "Access-Control-Allow-Headers",
+        req.headers["access-control-request-headers"] || "*"
+      );
+      // Chrome 142+ Private Network Access preflight
+      res.setHeader("Access-Control-Allow-Private-Network", "true");
+      return res.sendStatus(204);
+    }
+    return res.status(403).send("Not allowed by CORS");
+  }
+  return next();
+});
+
+// ───────────────────────────────────────────────────────────
+app.use(
+  cors({
+    origin(origin, cb) {
+      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error("Not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
+
+// Parsers & health
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+app.get("/health", (_req, res) => res.json({ ok: true, ts: Date.now() }));
+
+// Static assets
+const assetsPath = path.join(__dirname, "assets");
+const DIFFBOT_TOKEN = process.env.REACT_APP_DIFFBOT_TOKEN;
+const DIFFBOT_BASE_URL = process.env.REACT_APP_DIFFBOT_BASE_URL;
+const BASE_URL = process.env.REACT_APP_BASE_URL;
+const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
+app.use("/assets", express.static(assetsPath, { maxAge: "1h" }));
+// If you want prod-parity paths too, uncomment this:
+// app.use("/api/assets", express.static(assetsPath, { maxAge: "1h" }));
+
+// ───────────────────────────────────────────────────────────
+// Routes / middleware (order preserved where it matters)
+// ───────────────────────────────────────────────────────────
+
+// register our claims and evidence extraction route
+registerAnalyzeContentRoute(app);
+// Puppeteer route group
+app.use(fetchWithPuppeteer);
+
+// Your transporter (unchanged)
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: process.env.SMTP_PORT,
@@ -67,54 +167,9 @@ export const sendResetEmail = async (to, link) => {
   });
 };
 
-//const pdfParse = pkg.default || pkg;
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const app = express();
-
-app.listen(3000, () => {
-  console.log("✅ Node backend running on http://localhost:3000");
-});
-app.get("/health", (req, res) => res.json({ ok: true, ts: Date.now() }));
-app.use(bodyParser.json({ limit: "50mb" }));
-app.use("/api/claims", claimsSuggestQueriesRouter);
-app.use("/api/claims", claimsSearchMapRouter);
-app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
-// Configure environment variables
-dotenv.config();
-// ✅ Puppeteer route
-app.use(fetchWithPuppeteer);
-app.use(cors());
-const allowedOrigins = [
-  "http://localhost:5173", // for dev dashboard
-  "https://truthtrollers.com", // for deployed dashboard
-  "chrome-extension://phacjklngoihnlhcadefaiokbacnagbf", // allow Chrome extension
-  "safari-web-extension://<your-safari-id>", // allow Safari extension
-];
-
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    credentials: true,
-  })
-);
-// Serve static files from the assets directory
-
-const assetsPath = path.join(__dirname, "assets");
-const DIFFBOT_TOKEN = process.env.REACT_APP_DIFFBOT_TOKEN;
-const DIFFBOT_BASE_URL = process.env.REACT_APP_DIFFBOT_BASE_URL;
-const BASE_URL = process.env.REACT_APP_BASE_URL;
-const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
-
-app.use("/assets", express.static(assetsPath));
-
-// MySQL connection
+// ───────────────────────────────────────────────────────────
+// DB setup (unchanged)
+// ───────────────────────────────────────────────────────────
 const db = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -122,9 +177,7 @@ const db = mysql.createConnection({
   database: process.env.DB_DATABASE,
   multipleStatements: true,
 });
-
 const query = promisify(db.query).bind(db);
-
 const { logSuccessfulLogin, logFailedLogin, logRegistrationAttempt } =
   createSessionLogger(query);
 
@@ -136,36 +189,63 @@ const pool = mysql.createPool({
   database: process.env.DB_DATABASE,
   multipleStatements: true,
 });
-
 db.connect((err) => {
   if (err) throw err;
-  //console.log("MySQL connected!");
 });
-//image uploading
 
-// Define storage location and filename strategy
-
+// Route registration that relies on `app`, `query`, `pool`
 registerDiscussionRoutes(app, query, pool);
 registerBeaconRoutes(app, query, pool);
 
+// ───────────────────────────────────────────────────────────
+// Multer upload (unchanged)
+// ───────────────────────────────────────────────────────────
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const { type, id } = req.query;
-    //const type = req.params.type; // "authors" or "publishers"
+    const { type } = req.query;
     cb(null, path.join(__dirname, `assets/images/${type}`));
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     const { type, id } = req.query;
-    if (!type || !id) {
-      return cb(new Error("Missing type or id"));
-    }
+    if (!type || !id) return cb(new Error("Missing type or id"));
     cb(null, `${type.slice(0, -1)}_id_${id}${ext}`);
   },
 });
-
-//upload image
 const upload = multer({ storage });
+// app.post("/api/upload-image", upload.single("image"), ... )  // (your existing handler continues)
+
+// ───────────────────────────────────────────────────────────
+// Servers: HTTP always; HTTPS only when enabled + certs exist
+// ───────────────────────────────────────────────────────────
+const httpServer = http.createServer(app);
+httpServer.listen(httpPort, () => {
+  console.log(`✅ HTTP server on  http://localhost:${httpPort}`);
+});
+
+if (
+  DEV_USE_HTTPS &&
+  SSL_KEY_PATH &&
+  SSL_CERT_PATH &&
+  fs.existsSync(SSL_KEY_PATH) &&
+  fs.existsSync(SSL_CERT_PATH)
+) {
+  const httpsOptions = {
+    key: fs.readFileSync(SSL_KEY_PATH),
+    cert: fs.readFileSync(SSL_CERT_PATH),
+    ...(SSL_CA_PATH && fs.existsSync(SSL_CA_PATH)
+      ? { ca: fs.readFileSync(SSL_CA_PATH) }
+      : {}),
+  };
+  const httpsServer = https.createServer(httpsOptions, app);
+  httpsServer.listen(httpsPort, () => {
+    console.log(`🔐 HTTPS server on https://localhost:${httpsPort}`);
+  });
+} else if (DEV_USE_HTTPS) {
+  console.warn(
+    "⚠️ DEV_USE_HTTPS=true but SSL files not found; serving HTTP only."
+  );
+}
 
 // Unified image upload endpoint
 app.post("/api/upload-image", upload.single("image"), (req, res) => {
@@ -3397,201 +3477,6 @@ app.get("/api/check-reference", async (req, res) => {
     return res.status(500).json({ error: "Database lookup failed" });
   }
 });
-
-import { encoding_for_model } from "tiktoken";
-
-const MAX_TOKENS = 12000;
-
-app.post("/api/analyze-content", async (req, res) => {
-  const { content, testimonials } = req.body;
-  if (!content) {
-    return res.status(400).json({ error: "Missing 'content' in request body" });
-  }
-
-  try {
-    const results = await analyzeInChunks(content, testimonials);
-    res.json(results);
-  } catch (err) {
-    console.error("❌ Error during analysis:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-function parseOrRepairJSON2(input) {
-  try {
-    return JSON.parse(input);
-  } catch (err) {
-    // Attempt repair: remove trailing commas
-    const fixed = input.replace(/,\s*([\]}])/g, "$1");
-    try {
-      return JSON.parse(fixed);
-    } catch (repairErr) {
-      throw new Error("Irreparable JSON");
-    }
-  }
-}
-
-async function analyzeInChunks(content, testimonials) {
-  const tokenizer = encoding_for_model("gpt-4");
-  const paragraphs = content.split(/\n\s*\n/);
-  let currentChunk = "";
-  let chunkList = [];
-
-  for (let para of paragraphs) {
-    const testChunk = currentChunk ? `${currentChunk}\n\n${para}` : para;
-    const tokens = tokenizer.encode(testChunk);
-    if (tokens.length > MAX_TOKENS) {
-      if (currentChunk) chunkList.push(currentChunk);
-      currentChunk = para;
-    } else {
-      currentChunk = testChunk;
-    }
-  }
-  if (currentChunk) chunkList.push(currentChunk);
-
-  console.log(`📦 Sending ${chunkList.length} chunk(s) to GPT-4`);
-
-  let allClaims = [];
-  let allTestimonials = [];
-  let generalTopicCounts = {};
-  let specificTopicsCounts = {};
-
-  for (let i = 0; i < chunkList.length; i++) {
-    const chunk = chunkList[i];
-    const tokenLength = tokenizer.encode(chunk).length;
-    console.log(
-      `🔹 Chunk ${i + 1}/${chunkList.length} (${tokenLength} tokens)`
-    );
-
-    try {
-      const result = await callOpenAiAnalyzeSingleChunk(chunk, testimonials);
-
-      if (result.claims) allClaims.push(...result.claims);
-      if (result.testimonials) allTestimonials.push(...result.testimonials);
-
-      if (result.generalTopic) {
-        generalTopicCounts[result.generalTopic] =
-          (generalTopicCounts[result.generalTopic] || 0) + 1;
-      }
-
-      if (Array.isArray(result.specificTopics)) {
-        for (let topic of result.specificTopics) {
-          specificTopicsCounts[topic] = (specificTopicsCounts[topic] || 0) + 1;
-        }
-      }
-    } catch (err) {
-      console.warn(`⚠️ Error in chunk ${i + 1}:`, err.message);
-    }
-  }
-
-  const generalTopic =
-    Object.entries(generalTopicCounts).sort((a, b) => b[1] - a[1])[0]?.[0] ||
-    "";
-  const specificTopics = Object.entries(specificTopicsCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([topic]) => topic);
-
-  return {
-    generalTopic,
-    specificTopics,
-    claims: [...new Set(allClaims)],
-    testimonials: allTestimonials,
-  };
-}
-
-async function callOpenAiAnalyzeSingleChunk(chunk, testimonials) {
-  const testimonialsText =
-    testimonials?.length > 0
-      ? `
-Below is a list of testimonials detected by an extractor. Please consider these, and deduplicate or improve them if they also appear in the main article text.
-
-Extracted testimonials:
-${JSON.stringify(testimonials, null, 2)}
-`
-      : "";
-
-  const messages = [
-    {
-      role: "system",
-      content:
-        "You are a combined topic, claim, and testimonial extraction assistant.",
-    },
-    {
-      role: "user",
-      content: `
-You are a fact-checking assistant.
-
-First, identify the most general topic (max 2 words) for this text.
-Then, list more specific subtopics under that topic (2 to 5).
-Next, extract every distinct factual assertion or claim — especially those with numbers, statistics, or timelines. 
-Avoid generalizations or summaries. Do not combine multiple claims. 
-Each claim must be independently verifiable and phrased as a full sentence.
-
-Also, extract any testimonials or first-person case studies in the text (phrases such as “I used this and it worked for me,” or “Bobby used this method and made $20 billion”), and try to include a name or image URL if present. Testimonials must be objects: { "text": "...", "name": "...", "imageUrl": "..." } (name and imageUrl are optional).
-
-${testimonialsText}
-
-Return your answer in strict JSON like this:
-{
-  "generalTopic": "<string>",
-  "specificTopics": ["<string>", "<string>"],
-  "claims": ["<claim1>", "<claim2>", ...],
-  "testimonials": [
-    { "text": "<testimonial1>", "name": "<optional>", "imageUrl": "<optional>" },
-    ...
-  ]
-}
-
-Text:
-${chunk}
-`,
-    },
-  ];
-
-  const body = {
-    model: "gpt-4-turbo",
-    messages,
-  };
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  const raw = await response.text();
-
-  if (!response.ok) {
-    console.error("❌ OpenAI API error", response.status, raw.slice(0, 500));
-    throw new Error(`OpenAI API error: ${response.status} - ${raw}`);
-  }
-
-  try {
-    const json = JSON.parse(raw);
-    let reply = json.choices?.[0]?.message?.content?.trim() || "";
-
-    // 🧼 Strip markdown code block if present
-    if (reply.startsWith("```json")) {
-      reply = reply
-        .replace(/^```json\s*/, "")
-        .replace(/```$/, "")
-        .trim();
-    }
-
-    const parsed = parseOrRepairJSON2(reply);
-    console.log("YEYEYEYEYEYEYE");
-    return parsed;
-  } catch (e) {
-    console.error("❌ Failed to parse or repair assistant message:", raw);
-    throw new Error(
-      "Could not parse or repair assistant response: " + e.message
-    );
-  }
-}
 
 app.get("/api/store-content", async (req, res) => {
   const db = getConnection(); // or however you get your MySQL connection

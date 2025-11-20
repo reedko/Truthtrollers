@@ -1,7 +1,8 @@
+// extension/src/services/scrapeContentExtension.ts (or wherever this lives)
+
 import { orchestrateScraping } from "./orchestrateScrapingExtension";
 import createTask from "./createTaskExtension";
 import { TaskData, Lit_references } from "../entities/Task";
-import { mapClaimsToSources } from "./claimsSourceMapper";
 
 const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
 
@@ -20,6 +21,7 @@ const getFileCategory = (ext: string): string => {
   if (docs.includes(ext)) return "Document";
   return "Media";
 };
+
 function dedupeRefs(refs: Lit_references[]): Lit_references[] {
   const seen = new Set<string>();
   return refs.filter((r) => {
@@ -35,6 +37,7 @@ type CrawlCtx = {
   depth: number;
   maxDepth: number;
 };
+
 /**
  * Scrape a URL as "task" or "reference", save it, then (for tasks) recurse into refs.
  * @param url
@@ -113,35 +116,11 @@ export const scrapeContent = async (
       return null;
     }
 
-    // 🔗 Merge claim-sourced refs for TASKS (so they show on the Task)
-    if (
-      contentType === "task" &&
-      Array.isArray(contentData.Claims) &&
-      contentData.Claims.length
-    ) {
-      try {
-        const claimTexts = contentData.Claims.map((c: any) =>
-          typeof c === "string" ? c : c?.text || ""
-        ).filter(Boolean);
-
-        // Might be heavy; keep text slice or let backend do it.
-        const claimRefs = await mapClaimsToSources(
-          contentData.raw_text || "",
-          claimTexts
-        );
-
-        const domRefs: Lit_references[] = Array.isArray(contentData.content)
-          ? contentData.content
-          : [];
-
-        // merge + dedupe
-        contentData.content = dedupeRefs([...domRefs, ...claimRefs]).slice(
-          0,
-          60
-        ); // cap if you want
-      } catch (e) {
-        console.warn("⚠️ mapClaimsToSources failed; keeping DOM refs only:", e);
-      }
+    // 🔗 At this point:
+    // - For TASKS: orchestrateScraping already merged DOM refs + AI evidenceRefs
+    // - For REFERENCES: orchestrateScraping only put DOM refs in `content`
+    if (Array.isArray(contentData.content) && contentData.content.length) {
+      contentData.content = dedupeRefs(contentData.content).slice(0, 60);
     }
 
     // Ensure parent taskContentId flows down
@@ -179,7 +158,8 @@ export const scrapeContent = async (
         maxDepth: ctx.maxDepth,
       };
 
-      // Recurse on **ALL** unique refs (DOM + claim-sourced)
+      // Recurse on **ALL** unique refs now in contentData.content
+      // (DOM refs + AI-picked evidence refs for tasks)
       for (const reference of contentData.content) {
         const refUrl = reference.url?.trim();
         if (!refUrl) continue;

@@ -2,11 +2,10 @@
   "manifest_version": 3,
   "name": "Truthtrollers Extension",
   "version": "1.0",
-  "description": "Detects specific strings in YouTube URLs or page content",
+  "description": "Checks to see if content is in database",
   "permissions": ["tabs", "activeTab", "scripting", "webNavigation", "storage"],
-
   "host_permissions": [
-    "http://localhost:3000/*",
+    "https://localhost:5001/*",
     "https://*.youtube.com/*",
     "http://*/*",
     "https://*/*",
@@ -32,7 +31,6 @@
     "48": "assets/icons/icon-48.png",
     "128": "assets/icons/icon-128.png"
   },
-
   "web_accessible_resources": [
     {
       "resources": [

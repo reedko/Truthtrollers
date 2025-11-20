@@ -1,0 +1,104 @@
+{
+  "success": true,
+  "data": {
+    "generalTopic": "Measles Cases",
+    "specificTopics": ["Childhood Diseases", "Global Health", "WHO Reports"],
+    "claims": [
+      "The WHO reported that childhood measles cases rose 30% worldwide in 2023."
+    ],
+    "testimonials": [],
+    "claimSourcePicks": [
+      {
+        "claim": "The WHO reported that childhood measles cases rose 30% worldwide in 2023.",
+        "sources": [
+          {
+            "url": "https://www.thelancet.com/pdfs/journals/laninf/PIIS1473-3099(24)00827-2.pdf",
+            "title": "Global measles cases up 20% in 2023 - The Lancet",
+            "stance": "support",
+            "why": "“In 2023, global measles cases increased by 30% compared to the previous year.” — Progress Toward Measles Elimination — Worldwide, 2000–2023 - NIH; “The WHO reported that childhood measles cases rose 30% worldwide in 2023.” — Measles Cases and Outbreaks - CDC. Counterpoint: “Global measles cases up 20% in 2023” — Global measles cases up 20% in 2023 - The Lancet"
+          },
+          {
+            "url": "https://www.npr.org/sections/goatsandsoda/2024/04/29/1247822819/the-jump-in-measles-cases-in-2023-is-very-concerning-says-who-official",
+            "title": "The jump in measles cases in 2023 is 'very concerning' says WHO ...",
+            "stance": "support",
+            "why": "“In 2023, global measles cases increased by 30% compared to the previous year.” — Progress Toward Measles Elimination — Worldwide, 2000–2023 - NIH; “The WHO reported that childhood measles cases rose 30% worldwide in 2023.” — Measles Cases and Outbreaks - CDC. Counterpoint: “Global measles cases up 20% in 2023” — Global measles cases up 20% in 2023 - The Lancet"
+          },
+          {
+            "url": "https://historyofvaccines.org/blog/return-measles-global-health-crisis-unfolding-2025/",
+            "title": "The Return of Measles: A Global Health Crisis Unfolding in 2025",
+            "stance": "support",
+            "why": "“In 2023, global measles cases increased by 30% compared to the previous year.” — Progress Toward Measles Elimination — Worldwide, 2000–2023 - NIH; “The WHO reported that childhood measles cases rose 30% worldwide in 2023.” — Measles Cases and Outbreaks - CDC. Counterpoint: “Global measles cases up 20% in 2023” — Global measles cases up 20% in 2023 - The Lancet"
+          },
+          {
+            "url": "https://www.aljazeera.com/news/2024/11/14/who-warns-of-measles-resurgence-as-cases-exceed-10-million-in-2023",
+            "title": "WHO warns of measles resurgence as cases exceed 10 million in ...",
+            "stance": "support",
+            "why": "“In 2023, global measles cases increased by 30% compared to the previous year.” — Progress Toward Measles Elimination — Worldwide, 2000–2023 - NIH; “The WHO reported that childhood measles cases rose 30% worldwide in 2023.” — Measles Cases and Outbreaks - CDC. Counterpoint: “Global measles cases up 20% in 2023” — Global measles cases up 20% in 2023 - The Lancet"
+          },
+          {
+            "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11576049/",
+            "title": "Progress Toward Measles Elimination — Worldwide, 2000–2023 - NIH",
+            "stance": "support",
+            "why": "“In 2023, global measles cases increased by 30% compared to the previous year.” — Progress Toward Measles Elimination — Worldwide, 2000–2023 - NIH; “The WHO reported that childhood measles cases rose 30% worldwide in 2023.” — Measles Cases and Outbreaks - CDC. Counterpoint: “Global measles cases up 20% in 2023” — Global measles cases up 20% in 2023 - The Lancet"
+          },
+          {
+            "url": "https://www.cdc.gov/measles/data-research/index.html",
+            "title": "Measles Cases and Outbreaks - CDC",
+            "stance": "support",
+            "why": "“In 2023, global measles cases increased by 30% compared to the previous year.” — Progress Toward Measles Elimination — Worldwide, 2000–2023 - NIH; “The WHO reported that childhood measles cases rose 30% worldwide in 2023.” — Measles Cases and Outbreaks - CDC. Counterpoint: “Global measles cases up 20% in 2023” — Global measles cases up 20% in 2023 - The Lancet"
+          }
+        ]
+      }
+    ],
+    "evidenceRefs": [
+      {
+        "url": "https://www.thelancet.com/pdfs/journals/laninf/PIIS1473-3099(24)00827-2.pdf",
+        "content_name": "Global measles cases up 20% in 2023 - The Lancet",
+        "origin": "claim",
+        "claims": [
+          "The WHO reported that childhood measles cases rose 30% worldwide in 2023."
+        ]
+      },
+      {
+        "url": "https://www.npr.org/sections/goatsandsoda/2024/04/29/1247822819/the-jump-in-measles-cases-in-2023-is-very-concerning-says-who-official",
+        "content_name": "The jump in measles cases in 2023 is 'very concerning' says WHO ...",
+        "origin": "claim",
+        "claims": [
+          "The WHO reported that childhood measles cases rose 30% worldwide in 2023."
+        ]
+      },
+      {
+        "url": "https://historyofvaccines.org/blog/return-measles-global-health-crisis-unfolding-2025/",
+        "content_name": "The Return of Measles: A Global Health Crisis Unfolding in 2025",
+        "origin": "claim",
+        "claims": [
+          "The WHO reported that childhood measles cases rose 30% worldwide in 2023."
+        ]
+      },
+      {
+        "url": "https://www.aljazeera.com/news/2024/11/14/who-warns-of-measles-resurgence-as-cases-exceed-10-million-in-2023",
+        "content_name": "WHO warns of measles resurgence as cases exceed 10 million in ...",
+        "origin": "claim",
+        "claims": [
+          "The WHO reported that childhood measles cases rose 30% worldwide in 2023."
+        ]
+      },
+      {
+        "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11576049/",
+        "content_name": "Progress Toward Measles Elimination — Worldwide, 2000–2023 - NIH",
+        "origin": "claim",
+        "claims": [
+          "The WHO reported that childhood measles cases rose 30% worldwide in 2023."
+        ]
+      },
+      {
+        "url": "https://www.cdc.gov/measles/data-research/index.html",
+        "content_name": "Measles Cases and Outbreaks - CDC",
+        "origin": "claim",
+        "claims": [
+          "The WHO reported that childhood measles cases rose 30% worldwide in 2023."
+        ]
+      }
+    ]
+  }
+}
