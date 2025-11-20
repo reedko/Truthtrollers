@@ -21,7 +21,14 @@ import {
   trimTo60k,
 } from "./orchestrateScrapingUtils";
 
-import type { TaskData, Lit_references } from "../entities/Task";
+import type {
+  TaskData,
+  Lit_references,
+  Testimonial,
+  ClaimSourcePick,
+  AnalyzeContentOptions,
+  AnalyzeContentResponse,
+} from "../entities/Task";
 import type { DiffbotData } from "../entities/diffbotData";
 import * as cheerio from "cheerio";
 import browser from "webextension-polyfill";
@@ -31,6 +38,19 @@ interface ReadabilityResponse {
   success: boolean;
   text?: string;
 }
+
+function dedupeRefsByUrl(refs: Lit_references[]): Lit_references[] {
+  const seen = new Set<string>();
+  const out: Lit_references[] = [];
+  for (const r of refs || []) {
+    if (!r?.url) continue;
+    if (seen.has(r.url)) continue;
+    seen.add(r.url);
+    out.push(r);
+  }
+  return out;
+}
+
 export function cleanTranscript(raw: string): string {
   // Remove timestamps (e.g., 0:00, 12:45)
   const noTimestamps = raw.replace(/\b\d{1,2}:\d{2}\b/g, "");
@@ -336,13 +356,16 @@ export const orchestrateScraping = async (
       generalTopic: string;
       specificTopics: string[];
       claims: string[];
-      testimonials: { text: string; name?: string; imageUrl?: string }[];
+      testimonials: Testimonial[];
+      claimSourcePicks?: ClaimSourcePick[];
+      evidenceRefs?: Lit_references[];
     } | null = null;
 
     try {
       topicsAndClaims = await analyzeContent(
         extractedText,
-        extractedTestimonials
+        extractedTestimonials,
+        { includeEvidence: contentType === "task" }
       );
     } catch (err) {
       console.warn(
@@ -367,7 +390,15 @@ export const orchestrateScraping = async (
       specificTopics = [],
       claims = [],
       testimonials = [],
+      evidenceRefs = [],
     } = topicsAndClaims ?? {};
+
+    let finalReferences: Lit_references[] = extractedReferences;
+
+    if (contentType === "task") {
+      const combined = [...extractedReferences, ...evidenceRefs];
+      finalReferences = dedupeRefsByUrl(combined).slice(0, 60); // cap if you like
+    }
 
     const iconThumbnailUrl = await checkAndDownloadTopicIcon(generalTopic);
     // in orchestrateScraping right before store / create:
@@ -403,7 +434,7 @@ export const orchestrateScraping = async (
       thumbnail: safeThumbnail,
       iconThumbnailUrl: iconThumbnailUrl || null,
       authors,
-      content: extractedReferences,
+      content: finalReferences,
       publisherName,
       content_type: contentType,
       raw_text: extractedText,

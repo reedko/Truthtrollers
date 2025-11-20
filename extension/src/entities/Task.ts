@@ -59,5 +59,39 @@ export interface TaskData {
   Claims: string[];
   taskContentId?: string | null;
   is_retracted: boolean;
-  testimonials: { text: string; name?: string; imageUrl?: string }[]; // <--- new!
+  testimonials: Testimonial[]; // <--- new!
+}
+
+// 🧩 Shared across orchestrateScraping, analyzeContent, etc.
+export interface Testimonial {
+  text: string;
+  name?: string;
+  imageUrl?: string | null;
+}
+
+export interface ClaimSourcePick {
+  claim: string;
+  sources: {
+    url: string;
+    title?: string;
+    stance?: string;
+    why?: string;
+  }[];
+}
+
+export interface AnalyzeContentOptions {
+  includeEvidence?: boolean;
+}
+
+export interface AnalyzeContentResponse {
+  success: boolean;
+  data?: {
+    generalTopic: string;
+    specificTopics: string[];
+    claims: string[];
+    testimonials: Testimonial[];
+    claimSourcePicks?: ClaimSourcePick[];
+    evidenceRefs?: Lit_references[];
+  };
+  error?: string;
 }

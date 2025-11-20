@@ -1,36 +1,30 @@
 import browser from "webextension-polyfill";
-
-interface Testimonial {
-  text: string;
-  name?: string;
-  imageUrl?: string | null;
-}
-
-interface AnalyzeContentResponse {
-  success: boolean;
-  data?: {
-    generalTopic: string;
-    specificTopics: string[];
-    claims: string[];
-    testimonials: { text: string; name?: string; imageUrl?: string }[];
-  };
-  error?: string;
-}
+import type {
+  Lit_references,
+  Testimonial,
+  ClaimSourcePick,
+  AnalyzeContentOptions,
+  AnalyzeContentResponse,
+} from "../entities/Task";
 
 export async function analyzeContent(
   content: string,
-  testimonials?: { text: string; name?: string; imageUrl?: string }[]
+  testimonials?: { text: string; name?: string; imageUrl?: string }[],
+  options: AnalyzeContentOptions = {}
 ): Promise<{
   generalTopic: string;
   specificTopics: string[];
   claims: string[];
-  testimonials: { text: string; name?: string; imageUrl?: string }[];
+  testimonials: Testimonial[];
+  claimSourcePicks: ClaimSourcePick[];
+  evidenceRefs: Lit_references[];
 }> {
   try {
     const response = (await browser.runtime.sendMessage({
       action: "analyzeContent",
       content,
       testimonials, // <--- Pass to background
+      includeEvidence: options.includeEvidence === true,
     })) as AnalyzeContentResponse;
 
     if (response.success && response.data) {
@@ -42,6 +36,12 @@ export async function analyzeContent(
         claims: Array.isArray(response.data.claims) ? response.data.claims : [],
         testimonials: Array.isArray(response.data.testimonials)
           ? response.data.testimonials
+          : [],
+        claimSourcePicks: Array.isArray(response.data.claimSourcePicks)
+          ? response.data.claimSourcePicks
+          : [],
+        evidenceRefs: Array.isArray(response.data.evidenceRefs)
+          ? response.data.evidenceRefs
           : [],
       };
     } else {
