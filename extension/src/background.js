@@ -806,37 +806,68 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
 
     // [21] analyzeContent
     if (message.action === "analyzeContent") {
-      const res = await fetch(`${BASE_URL}/api/analyze-content`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: message.content,
-          testimonials: message.testimonials,
-          includeEvidence: message.includeEvidence === true,
-        }),
-      });
+      console.log("[BG][analyzeContent] incoming:", message);
 
-      const data = await res.json();
-      if (!res.ok) {
+      try {
+        const res = await fetch(`${BASE_URL}/api/analyze-content`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: message.content,
+            testimonials: message.testimonials,
+            options: { includeEvidence: message.includeEvidence === true },
+          }),
+        });
+
+        const raw = await res.text();
+        console.log("[BG][analyzeContent] raw backend response:", raw);
+
+        let json;
+        try {
+          json = JSON.parse(raw);
+        } catch (err) {
+          console.error("[BG][analyzeContent] JSON parse error:", err);
+          return {
+            success: false,
+            error: "Invalid JSON returned from backend",
+            raw,
+          };
+        }
+
+        console.log("[BG][analyzeContent] parsed JSON:", json);
+
+        if (!res.ok || !json.success) {
+          return {
+            success: false,
+            error: json?.error || `HTTP ${res.status} ${res.statusText}`,
+          };
+        }
+
+        // BACKEND RETURNS: { success: true, data: {...} }
+        const data = json.data || {};
+
+        return {
+          success: true,
+          data: {
+            generalTopic: data.generalTopic || "Unknown",
+            specificTopics: Array.isArray(data.specificTopics)
+              ? data.specificTopics
+              : [],
+            claims: Array.isArray(data.claims) ? data.claims : [],
+            testimonials: Array.isArray(data.testimonials)
+              ? data.testimonials
+              : [],
+            claimSourcePicks: data.claimSourcePicks || [],
+            evidenceRefs: data.evidenceRefs || [],
+          },
+        };
+      } catch (err) {
+        console.error("[BG][analyzeContent] request failed:", err);
         return {
           success: false,
-          error: data?.error || `HTTP ${res.status} ${res.statusText}`,
+          error: err?.message || "unknown background error",
         };
       }
-
-      return {
-        success: true,
-        data: {
-          generalTopic: data.generalTopic || "Unknown",
-          specificTopics: Array.isArray(data.specificTopics)
-            ? data.specificTopics
-            : [],
-          claims: Array.isArray(data.claims) ? data.claims : [],
-          testimonials: Array.isArray(data.testimonials)
-            ? data.testimonials
-            : [],
-        },
-      };
     }
 
     // [22] getTopicsFromText

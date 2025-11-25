@@ -29,18 +29,11 @@ function chunkContentIntoPieces(content, maxCharsPerChunk = 6000) {
 /**
  * High-level AI pipeline for a single content item.
  *
- * Steps:
- * 1) Chunk the content.
- * 2) Use ClaimsEngine (ClaimExtractor) to get topics/claims/testimonials.
- * 3) Optionally use EvidenceEngine to map claims to evidence/verdicts.
+ * NOTE:
+ *  - This file must remain PURE logic: no DB calls, no query(),
+ *    no inserts — only returns data.
  *
- * @param {Object} params
- * @param {string} params.content
- * @param {Array}  [params.testimonials]
- * @param {boolean} [params.includeEvidence] - whether to run evidence mapping
- * @param {Object} [params.deps] - optional overrides for deps (llm, search, fetcher, storage)
- * @param {Object} [params.cfg] - optional config for EvidenceEngine
- * @param {number} [params.maxCharsPerChunk]
+ *  - /routes/analyzeContent.js performs actual DB insertion.
  */
 export async function analyzeContentPipeline({
   content,
@@ -58,35 +51,35 @@ export async function analyzeContentPipeline({
       testimonials: [],
       claimSourcePicks: [],
       evidenceRefs: [],
+      referenceClaimLinks: [],
     };
   }
 
   console.time("[AI] total");
   console.time("[AI] claim-extraction");
-  // 🔑 llm MUST be provided by caller
+
   const llm = deps.llm;
   if (!llm) {
-    throw new Error(
-      "analyzeContentPipeline: deps.llm is required but was not provided"
-    );
+    throw new Error("analyzeContentPipeline: deps.llm is required.");
   }
+
   const search = deps.search;
   const fetcher = deps.fetcher;
   const storage = deps.storage;
 
   const chunks = chunkContentIntoPieces(content, maxCharsPerChunk);
 
-  // 1) CLAIM EXTRACTION (works for tasks and references)
+  // 1) CLAIM EXTRACTION
   const extractor = new ClaimExtractor(llm);
   const extraction = await extractor.analyzeContent({
     chunks,
     existingTestimonials: testimonials || [],
     maxConcurrency: 3,
   });
-  // extraction = { generalTopic, specificTopics, claims, testimonials }
+
   console.timeEnd("[AI] claim-extraction");
 
-  // 2) NO evidence mode → just return claims
+  // 2) NO EVIDENCE MODE
   if (
     !includeEvidence ||
     !search ||
@@ -99,11 +92,13 @@ export async function analyzeContentPipeline({
       ...extraction,
       claimSourcePicks: [],
       evidenceRefs: [],
+      referenceClaimLinks: [], // <-- NEW: explicit always returned
     };
   }
 
-  // 3) EVIDENCE MODE (tasks ONLY, when includeEvidence=true and deps exist)
+  // 3) EVIDENCE MODE
   console.time("[AI] evidence-phase");
+
   const evidenceEngine = new EvidenceEngine(
     { llm, search, fetcher, storage },
     cfg
@@ -114,22 +109,160 @@ export async function analyzeContentPipeline({
     text,
   }));
 
-  const mappingResults = await evidenceEngine.run(claimObjects, null, {
-    enableInternal: true,
-    enableWeb: true,
-    topKQueries: cfg?.limits?.queriesPerClaim ?? 6,
-    topKCandidates: cfg?.limits?.candidates ?? 12,
-    maxEvidencePerDoc: cfg?.limits?.evidencePerDoc ?? 2,
-    preferDomains: cfg?.preferDomains || [],
-    avoidDomains: cfg?.avoidDomains || [],
-    maxCharsPerDoc: cfg?.maxCharsPerDoc ?? 8000,
-    enableRedTeam: cfg?.enableRedTeam ?? false,
-    maxEvidenceCandidates: cfg?.maxEvidenceCandidates ?? 2,
-  });
+  // --------------------------
+  // PARALLEL EVIDENCE EXECUTION
+  // --------------------------
+  const maxParallelClaims = cfg.maxParallelClaims || 5;
+  const evidenceTimeoutMs = cfg.evidenceTimeoutMs ?? 20000; // default 20 seconds
+  function withTimeout(promise, ms, label) {
+    return Promise.race([
+      promise,
+      new Promise((resolve) =>
+        setTimeout(() => {
+          console.warn(`⏳ [timeout] ${label} exceeded ${ms}ms`);
+          resolve({ __tt_timeout: true });
+        }, ms)
+      ),
+    ]);
+  }
 
-  console.timeEnd("[AI] evidence-phase");
+  async function runEvidenceForClaim(claimObj, claimIndex) {
+    const label = `claim-${claimIndex}`;
+    const TIMEOUT_MS = cfg.evidenceTimeoutMs || 20000; // 20s default
+
+    const result = await withTimeout(
+      evidenceEngine.run([claimObj], null, {
+        enableInternal: true,
+        enableWeb: true,
+        topKQueries: cfg?.limits?.queriesPerClaim ?? 6,
+        topKCandidates: cfg?.limits?.candidates ?? 12,
+        maxEvidencePerDoc: cfg?.limits?.evidencePerDoc ?? 2,
+        preferDomains: cfg?.preferDomains || [],
+        avoidDomains: cfg?.avoidDomains || [],
+        maxCharsPerDoc: cfg?.maxCharsPerDoc ?? 8000,
+        enableRedTeam: cfg?.enableRedTeam ?? false,
+        maxEvidenceCandidates: cfg?.maxEvidenceCandidates ?? 2,
+      }),
+      TIMEOUT_MS,
+      label
+    );
+
+    if (!result || result.__tt_timeout) {
+      console.warn(`❌ [evidence] claim ${label} timed out`);
+      return []; // return empty, but DO NOT BLOCK pool
+    }
+
+    return result;
+  }
+
+  // ------------------------------
+  // SAFE PARALLEL WORKER POOL
+  // with EXTREME LOGGING
+  // ------------------------------
+  async function runParallelWithLimit(items, worker, limit) {
+    console.log(
+      `\n⚙️ [worker-pool] Starting evidence run for ${items.length} claims`
+    );
+    console.log(`⚙️ [worker-pool] Max parallel workers = ${limit}`);
+
+    const results = new Array(items.length);
+    let nextIndex = 0;
+
+    // high-resolution timer
+    const now = () => Number(process.hrtime.bigint()) / 1e6; // ms
+
+    async function runWorker(workerId) {
+      console.log(`🧵 [worker ${workerId}] started`);
+
+      while (true) {
+        const i = nextIndex++;
+        if (i >= items.length) {
+          console.log(`🧵 [worker ${workerId}] finished (no more items)`);
+          break;
+        }
+
+        const claimObj = items[i];
+        const start = now();
+        console.log(
+          `🧵 [worker ${workerId}] → Claim #${i} (“${claimObj.text.slice(
+            0,
+            50
+          )}…”) starting`
+        );
+
+        try {
+          const res = await Promise.race([
+            worker(claimObj, i),
+            new Promise((_, reject) =>
+              setTimeout(
+                () => reject(new Error("Evidence timeout")),
+                evidenceTimeoutMs
+              )
+            ),
+          ]);
+
+          const duration = (now() - start).toFixed(1);
+
+          if (!res) {
+            console.warn(
+              `⚠️ [worker ${workerId}] Claim #${i} returned EMPTY result (duration ${duration} ms)`
+            );
+            results[i] = null;
+            continue;
+          }
+
+          // evidenceEngine.run() returns an ARRAY even when given one claim
+          if (Array.isArray(res)) {
+            results[i] = res[0] || null;
+            console.log(
+              `✅ [worker ${workerId}] Claim #${i} completed (array result) in ${duration} ms`
+            );
+          } else {
+            results[i] = res;
+            console.log(
+              `✅ [worker ${workerId}] Claim #${i} completed (single result) in ${duration} ms`
+            );
+          }
+        } catch (err) {
+          const duration = (now() - start).toFixed(1);
+          console.error(
+            `❌ [worker ${workerId}] ERROR processing claim #${i} after ${duration} ms:\n`,
+            err
+          );
+          results[i] = null;
+        }
+      }
+    }
+
+    // create worker pool
+    const workers = [];
+    for (let w = 0; w < limit; w++) {
+      workers.push(runWorker(w + 1));
+    }
+
+    await Promise.all(workers);
+
+    const ok = results.filter(Boolean).length;
+    const bad = results.length - ok;
+
+    console.log(
+      `\n📊 [worker-pool] Completed all evidence tasks.\n   ✔️ ${ok} ok\n   ❌ ${bad} failed or empty\n`
+    );
+
+    return results.filter(Boolean);
+  }
+
+  console.time("[AI] evidence-phase");
+
+  const mappingResults = await runParallelWithLimit(
+    claimObjects,
+    runEvidenceForClaim,
+    maxParallelClaims
+  );
+
   console.timeEnd("[AI] total");
-  // Per-claim picks (for future UI, suggested claim links)
+
+  // PRODUCE UI FRIENDLY PICKS
   const claimSourcePicks = mappingResults.map((row) => ({
     claim: row.claim.text,
     sources: (row.candidates || [])
@@ -142,37 +275,62 @@ export async function analyzeContentPipeline({
       })),
   }));
 
-  // Flatten into Lit_references-style objects (for recursion)
+  // PRODUCE RECURSION-FRIENDLY REFERENCES
   const byUrl = new Map();
   for (const row of mappingResults) {
-    for (const c of row.candidates || []) {
-      if (!c?.url) continue;
-      const existing = byUrl.get(c.url);
+    for (const cand of row.candidates || []) {
+      if (!cand?.url) continue;
+      const existing = byUrl.get(cand.url);
       if (!existing) {
-        byUrl.set(c.url, {
-          url: c.url,
-          content_name: c.title || c.url,
+        byUrl.set(cand.url, {
+          url: cand.url,
+          content_name: cand.title || cand.url,
           origin: "claim",
           claims: [row.claim.text],
         });
       } else {
-        const s = new Set([...(existing.claims || []), row.claim.text]);
-        existing.claims = [...s];
+        const merged = new Set(existing.claims);
+        merged.add(row.claim.text);
+        existing.claims = [...merged];
       }
     }
   }
+
   const evidenceRefs = Array.from(byUrl.values());
+
+  // NEW → EXPLICIT reference → claim link candidates (NO DB INSERTS HERE)
+  const referenceClaimLinks = [];
+
+  for (const row of mappingResults) {
+    const claimText = row.claim.text;
+    const stance = row.adjudication?.finalVerdict || "nuance";
+    const rationale = row.adjudication?.rationale || null;
+
+    for (const cand of row.candidates || []) {
+      if (!cand.url) continue;
+
+      referenceClaimLinks.push({
+        claim_text: claimText,
+        reference_url: cand.url,
+        reference_title: cand.title || null,
+        stance,
+        rationale,
+        score: cand.score || null,
+        evidence_text: cand.snippet || null,
+      });
+    }
+  }
 
   return {
     ...extraction,
     claimSourcePicks,
     evidenceRefs,
+    referenceClaimLinks, // <-- NEW: returned cleanly for the route to insert
   };
 }
 
 /**
- * Backwards-compat wrapper so anything still importing analyzeInChunks keeps working.
- * You can keep this or delete once all imports are moved to analyzeContentPipeline.
+ * Legacy wrapper — unchanged
  */
 export async function analyzeInChunks(content, testimonials) {
   return analyzeContentPipeline({
