@@ -4,100 +4,131 @@ import { analyzeContentPipeline } from "../core/aiPipeline.js";
 import { openAiLLM } from "../core/openAiLLM.js";
 import { tavilySearch } from "../core/tavilySearch.js";
 
-/**
- * Simple fetcher for EvidenceEngine: uses cand.text if present,
- * otherwise fetches the URL.
- */
-const httpFetcher = {
-  async getText(cand) {
-    if (cand.text && typeof cand.text === "string") {
-      return cand.text;
-    }
-    if (!cand.url) return null;
-
-    try {
-      const resp = await fetch(cand.url);
-      const html = await resp.text();
-      // truncate to keep prompts reasonable
-      return html.slice(0, 50000);
-    } catch (err) {
-      console.warn(
-        "[/api/analyze-content] Failed to fetch candidate URL:",
-        cand.url,
-        err
-      );
-      return null;
-    }
-  },
-};
+import { insertReferenceClaimLink } from "../queries/referenceClaimLinks.js";
+import {
+  lookupClaimIdFromText,
+  lookupReferenceIdFromUrl,
+} from "../queries/referenceLookups.js";
 
 /**
- * Minimal storage adapter for now – logs rows and does nothing.
+ * Registers POST /api/analyze-content
  */
-const noopStorage = {
-  async persistResults(results) {
-    console.log(
-      "[/api/analyze-content] persistResults noop; rows:",
-      Array.isArray(results) ? results.length : 0
-    );
-  },
-};
-
-export function registerAnalyzeContentRoute(app) {
+export function registerAnalyzeContentRoute(app, query) {
   app.post("/api/analyze-content", async (req, res) => {
     try {
       const { content, testimonials, options } = req.body || {};
-
-      if (!content || !content.trim()) {
-        return res
-          .status(400)
-          .json({ error: "Missing 'content' in request body." });
-      }
-
       const includeEvidence = !!options?.includeEvidence;
 
-      // Base deps: always have LLM for claims extraction
-      const deps = {
-        llm: openAiLLM,
-      };
-
-      // Only attach search/fetcher/storage if evidence is requested
-      // AND we actually have Tavily configured.
-      if (includeEvidence && tavilySearch) {
-        deps.search = tavilySearch;
-        deps.fetcher = httpFetcher;
-        deps.storage = noopStorage;
-      } else if (includeEvidence && !tavilySearch) {
-        console.warn(
-          "[/api/analyze-content] includeEvidence=true but TAVILY_API_KEY is missing; running claims-only."
-        );
+      if (!content || !content.trim()) {
+        return res.status(400).json({ error: "Missing 'content'." });
       }
 
+      // -------------------------------------------------------
+      // Configure dependencies for pipeline
+      // -------------------------------------------------------
+      const deps = { llm: openAiLLM };
+
+      if (includeEvidence && tavilySearch) {
+        deps.search = tavilySearch;
+
+        deps.fetcher = {
+          async getText(cand) {
+            try {
+              if (cand.text) return cand.text;
+              if (!cand.url) return null;
+              const resp = await fetch(cand.url);
+              const text = await resp.text();
+              return text.slice(0, 50000);
+            } catch (err) {
+              console.warn("[fetcher] Failed:", cand.url, err);
+              return null;
+            }
+          },
+        };
+
+        deps.storage = {
+          async persistResults(rows) {
+            console.log(
+              "[analyze-content] persistResults noop; rows:",
+              Array.isArray(rows) ? rows.length : 0
+            );
+          },
+        };
+      }
+
+      // -------------------------------------------------------
+      // RUN PIPELINE
+      // -------------------------------------------------------
       const result = await analyzeContentPipeline({
         content,
         testimonials: testimonials || [],
-        includeEvidence: includeEvidence && !!tavilySearch,
+        includeEvidence,
         deps,
         cfg: {
           limits: {
-            queriesPerClaim: 3, // from 6,
-            candidates: 6, // from 12,
-            evidencePerDoc: 1, // from 2,
+            queriesPerClaim: 3, // old 6
+            candidates: 6, // old 12
+            evidencePerDoc: 1, // old 2
             concurrency: 3,
           },
-          maxEvidenceCandidates: 2, // ⬅️ NEW: only run extractEvidence on top 2 URLs
+          maxEvidenceCandidates: 2,
           enableRedTeam: false,
           preferDomains: [],
           avoidDomains: [],
           maxCharsPerDoc: 8000,
+          maxParallelClaims: 5,
+          evidenceTimeoutMs: 50000,
         },
       });
 
-      // Note: analyzeContentPipeline already returns the shape we want
-      // { generalTopic, specificTopics, claims, testimonials, claimSourcePicks, evidenceRefs }
+      // -------------------------------------------------------
+      // INSERT REFERENCE → CLAIM LINKS
+      // -------------------------------------------------------
+      const referenceLinks = result.referenceClaimLinks || [];
+      const insertedIds = [];
+
+      for (const link of referenceLinks) {
+        // Resolve claim_id
+        const claim_id = await lookupClaimIdFromText(query, link.claim_text);
+        if (!claim_id) {
+          console.warn("[analyze-content] No matching claim:", link.claim_text);
+          continue;
+        }
+
+        // Resolve reference content_id
+        const reference_content_id = await lookupReferenceIdFromUrl(
+          query,
+          link.reference_url
+        );
+        if (!reference_content_id) {
+          console.warn(
+            "[analyze-content] No matching reference:",
+            link.reference_url
+          );
+          continue;
+        }
+
+        // Insert row into DB
+        const id = await insertReferenceClaimLink(query, {
+          claim_id,
+          reference_content_id,
+          stance: link.stance,
+          score: link.score,
+          rationale: link.rationale,
+          evidence_text: link.evidence_text,
+          created_by_ai: 1,
+        });
+
+        if (id) insertedIds.push(id);
+      }
+
+      // -------------------------------------------------------
+      // RESPOND
+      // -------------------------------------------------------
       res.json({
         success: true,
         data: result,
+        inserted_reference_links: insertedIds.length,
       });
     } catch (err) {
       console.error("Error in /api/analyze-content:", err);

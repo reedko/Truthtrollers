@@ -48,6 +48,7 @@ import { getYoutubeTranscriptWithPuppeteer } from "./src/utils/getYoutubeTranscr
 import fs from "fs-extra";
 
 import { registerAnalyzeContentRoute } from "./src/routes/analyzeContent.js";
+import { registerReferenceClaimRoutes } from "./src/routes/referenceClaimRoutes.js";
 
 // ───────────────────────────────────────────────────────────
 // App / Paths / Ports
@@ -143,8 +144,6 @@ app.use("/assets", express.static(assetsPath, { maxAge: "1h" }));
 // Routes / middleware (order preserved where it matters)
 // ───────────────────────────────────────────────────────────
 
-// register our claims and evidence extraction route
-registerAnalyzeContentRoute(app);
 // Puppeteer route group
 app.use(fetchWithPuppeteer);
 
@@ -197,6 +196,9 @@ db.connect((err) => {
 registerDiscussionRoutes(app, query, pool);
 registerBeaconRoutes(app, query, pool);
 
+// register our claims and evidence extraction route
+registerAnalyzeContentRoute(app, query);
+registerReferenceClaimRoutes(app, query);
 // ───────────────────────────────────────────────────────────
 // Multer upload (unchanged)
 // ───────────────────────────────────────────────────────────
