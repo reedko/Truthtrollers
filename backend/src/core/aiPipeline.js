@@ -113,22 +113,29 @@ export async function analyzeContentPipeline({
   // PARALLEL EVIDENCE EXECUTION
   // --------------------------
   const maxParallelClaims = cfg.maxParallelClaims || 5;
-  const evidenceTimeoutMs = cfg.evidenceTimeoutMs ?? 20000; // default 20 seconds
-  function withTimeout(promise, ms, label) {
-    return Promise.race([
-      promise,
-      new Promise((resolve) =>
-        setTimeout(() => {
-          console.warn(`⏳ [timeout] ${label} exceeded ${ms}ms`);
-          resolve({ __tt_timeout: true });
-        }, ms)
-      ),
-    ]);
-  }
 
+  async function withTimeout(promise, ms, label) {
+    const controller = new AbortController();
+    const id = setTimeout(() => {
+      controller.abort();
+    }, ms);
+
+    try {
+      const result = await promise;
+      clearTimeout(id);
+      return result;
+    } catch (err) {
+      if (controller.signal.aborted) {
+        console.warn(`⏳ [timeout] ${label} exceeded ${ms}ms`);
+        return { __tt_timeout: true };
+      }
+      throw err;
+    }
+  }
   async function runEvidenceForClaim(claimObj, claimIndex) {
     const label = `claim-${claimIndex}`;
     const TIMEOUT_MS = cfg.evidenceTimeoutMs || 20000; // 20s default
+    console.log("DEBUG >>> runEvidenceForClaim START", claimObj.id);
 
     const result = await withTimeout(
       evidenceEngine.run([claimObj], null, {
@@ -164,7 +171,7 @@ export async function analyzeContentPipeline({
       `\n⚙️ [worker-pool] Starting evidence run for ${items.length} claims`
     );
     console.log(`⚙️ [worker-pool] Max parallel workers = ${limit}`);
-
+    console.log("DEBUG >>> RUNNING aiPipeline.js FROM SRC <<<");
     const results = new Array(items.length);
     let nextIndex = 0;
 
@@ -191,15 +198,8 @@ export async function analyzeContentPipeline({
         );
 
         try {
-          const res = await Promise.race([
-            worker(claimObj, i),
-            new Promise((_, reject) =>
-              setTimeout(
-                () => reject(new Error("Evidence timeout")),
-                evidenceTimeoutMs
-              )
-            ),
-          ]);
+          // ⛔ REMOVE nested timeout — worker already handles its own timeout
+          const res = await worker(claimObj, i);
 
           const duration = (now() - start).toFixed(1);
 
@@ -211,7 +211,6 @@ export async function analyzeContentPipeline({
             continue;
           }
 
-          // evidenceEngine.run() returns an ARRAY even when given one claim
           if (Array.isArray(res)) {
             results[i] = res[0] || null;
             console.log(

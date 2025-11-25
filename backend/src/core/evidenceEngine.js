@@ -1,9 +1,5 @@
-// backend/src/core/engine.js
+// backend/src/core/evidenceEngine.js
 
-// Note: All imports from "./types" / "./ports" were *type-only* in TS,
-// so they are removed in JS. The engine just operates on plain objects.
-
-// tiny utils
 function dedupe(arr, keyFn) {
   const s = new Set();
   const out = [];
@@ -18,10 +14,6 @@ function dedupe(arr, keyFn) {
 }
 
 export class EvidenceEngine {
-  /**
-   * @param {Object} deps - { llm, search, fetcher, storage }
-   * @param {Object} cfg
-   */
   constructor(
     deps,
     cfg = {
@@ -42,11 +34,13 @@ export class EvidenceEngine {
   async generateQueries(claim, ctx, n = 6) {
     const label = `[EV][queries][${claim.id}]`;
     console.time(label);
+
     const system =
       "You generate diverse, high-precision search queries for fact-checking.";
     const user = `Claim: ${claim.text}\nContext: ${JSON.stringify(
       ctx ?? {}
-    )}\nTask: Produce ${n} queries across intents (support, refute, background, factbox).`;
+    )}\nTask: Produce ${n} queries across intents.`;
+
     const schema =
       '{"queries":[{"query":"...","intent":"support|refute|background|factbox"}]}';
 
@@ -64,7 +58,10 @@ export class EvidenceEngine {
       query: q.query,
       intent: q.intent,
     }));
+
     console.timeEnd(label);
+
+    console.log(`🟦 [DEBUG] Queries for ${claim.id}:`, qs);
 
     return dedupe(
       qs,
@@ -75,8 +72,8 @@ export class EvidenceEngine {
   async retrieveCandidates(claim, queries, opt) {
     const topK = opt.topKCandidates ?? 12;
     const chunks = [];
-
     const limitQueries = queries.slice(0, opt.topKQueries ?? queries.length);
+
     const label = `[EV][retrieve][${claim.id}]`;
     console.time(label);
 
@@ -99,7 +96,9 @@ export class EvidenceEngine {
         chunks.push(...(web || []));
       }
     }
+
     console.timeEnd(label);
+
     const best = new Map();
     for (const c of chunks) {
       if (!c) continue;
@@ -110,9 +109,13 @@ export class EvidenceEngine {
       }
     }
 
-    return Array.from(best.values())
+    const finalCandidates = Array.from(best.values())
       .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
       .slice(0, topK);
+
+    console.log(`🟩 [DEBUG] Candidates for ${claim.id}:`, finalCandidates);
+
+    return finalCandidates;
   }
 
   async extractEvidence(claim, cand, opt) {
@@ -124,30 +127,46 @@ export class EvidenceEngine {
 
     const text = await this.deps.fetcher.getText(cand);
     console.timeEnd(fetchLabel);
-    if (!text) return [];
-    const maxChars = opt.maxCharsPerDoc ?? 8000; // was 20000
+
+    if (!text) {
+      console.log(`🟥 [DEBUG] No text for ${claim.id} from ${shortUrl}`);
+      return [];
+    }
+
+    const maxChars = opt.maxCharsPerDoc ?? 8000;
+
     const system =
-      "You extract verbatim quotes that directly bear on a claim; classify stance and avoid speculation.";
+      "You extract verbatim quotes that directly bear on a claim; classify stance.";
+
     const user = `Claim: ${claim.text}\nSource: ${
       cand.title || cand.url
-    }\nText (truncated):\n${text.slice(0, maxChars)}\nTask: Select up to ${
-      opt.maxEvidencePerDoc ?? 1 // was 2
-    } short quotes (<= 40 words) with stance and 1-line summary.`;
+    }\nText:\n${text.slice(0, maxChars)}`;
 
     const schema =
       '{"items":[{"quote":"...","stance":"support|refute|nuance|insufficient","summary":"...","location":{"page":null,"section":"..."}}]}';
 
-    // 2) LLM evidence
     const llmLabel = `[EV][llm-evidence][${claim.id}][${shortUrl}]`;
     console.time(llmLabel);
+
     const out = await this.deps.llm.generate({
       system,
       user,
       schemaHint: schema,
       temperature: 0.1,
     });
+
     console.timeEnd(llmLabel);
+
+    console.log(
+      `📘 [DEBUG] LLM raw evidence for ${claim.id}/${shortUrl}:`,
+      out
+    );
+
     const items = out && Array.isArray(out.items) ? out.items : [];
+
+    console.log(
+      `📙 [DEBUG] Parsed ${items.length} evidence items for ${claim.id}/${shortUrl}`
+    );
 
     const quality = (c) => {
       const base = (c.score ?? 0) / 100;
@@ -161,6 +180,7 @@ export class EvidenceEngine {
 
     let i = 0;
     const arr = [];
+
     for (const it of items) {
       if (!it || !it.quote) continue;
       arr.push({
@@ -177,10 +197,21 @@ export class EvidenceEngine {
         location: it.location || undefined,
       });
     }
+
+    console.log(
+      `🟪 [DEBUG] Final evidence array for ${claim.id}/${shortUrl}:`,
+      arr
+    );
+
     return arr;
   }
 
   adjudicate(claim, evidence) {
+    console.log(
+      `🟫 [DEBUG] Adjudicating ${claim.id} with evidence count:`,
+      evidence.length
+    );
+
     const now = Date.now();
 
     const w = (e) => {
@@ -195,12 +226,7 @@ export class EvidenceEngine {
       return (e.quality ?? 0) * rec;
     };
 
-    const buckets = {
-      support: 0,
-      refute: 0,
-      nuance: 0,
-      insufficient: 0,
-    };
+    const buckets = { support: 0, refute: 0, nuance: 0, insufficient: 0 };
 
     for (const e of evidence) {
       const stance = e.stance || "insufficient";
@@ -240,6 +266,13 @@ export class EvidenceEngine {
       .filter(Boolean)
       .join(". ");
 
+    console.log(
+      `🟧 [DEBUG] Verdict for ${claim.id}:`,
+      finalVerdict,
+      "confidence",
+      confidence
+    );
+
     return {
       claimId: claim.id,
       finalVerdict,
@@ -250,61 +283,26 @@ export class EvidenceEngine {
     };
   }
 
-  async redTeam(claim, adj, evidence) {
-    const system =
-      "You critically audit conclusions. Identify weak assumptions and missing evidence.";
-    const user = `Claim: ${claim.text}\nVerdict: ${
-      adj.finalVerdict
-    } (${adj.confidence.toFixed(2)})\nEvidence:\n${JSON.stringify(
-      evidence
-    ).slice(
-      0,
-      8000
-    )}\nTask: <=120 words blindspots + delta_confidence (-0.2..0).`;
-    const schema = '{"blindspots":["..."],"delta_confidence":0}';
-
-    try {
-      const out = await this.deps.llm.generate({
-        system,
-        user,
-        schemaHint: schema,
-        temperature: 0.1,
-      });
-
-      const delta =
-        typeof out.delta_confidence === "number" ? out.delta_confidence : 0;
-
-      const newConfidence = Math.max(0, Math.min(1, adj.confidence + delta));
-
-      const blindspots =
-        Array.isArray(out.blindspots) && out.blindspots.length
-          ? `\nBlindspots: ${out.blindspots.join("; ")}`
-          : "";
-
-      return {
-        ...adj,
-        confidence: newConfidence,
-        rationale: adj.rationale + blindspots,
-      };
-    } catch {
-      return adj;
-    }
-  }
-
-  // End-to-end
   async run(claims, contexts, opt) {
     const results = [];
 
     for (const claim of claims) {
       const ctx = contexts ? contexts[claim.id] : undefined;
-      const claimLabel = `[EV][claim:${claim.id}]`;
 
+      console.log(
+        `\n🔵 [DEBUG] Starting claim ${claim.id}: "${claim.text.slice(
+          0,
+          50
+        )}..."`
+      );
+
+      const claimLabel = `[EV][claim:${claim.id}]`;
       console.time(`${claimLabel} total`);
 
       const queries = await this.generateQueries(
         claim,
         ctx,
-        opt.topKQueries ?? 3 // was 6
+        opt.topKQueries ?? 3
       );
 
       const candidates = await this.retrieveCandidates(claim, queries, opt);
@@ -316,6 +314,11 @@ export class EvidenceEngine {
             .map((c) => this.extractEvidence(claim, c, opt))
         )
       ).flat();
+
+      console.log(
+        `🟨 [DEBUG] Evidence items returned for ${claim.id}:`,
+        evs.length
+      );
 
       let adj = this.adjudicate(claim, evs);
       if (opt.enableRedTeam) {
@@ -337,10 +340,12 @@ export class EvidenceEngine {
       console.timeEnd(`${claimLabel} total`);
     }
 
+    console.log("🟩 [DEBUG] Final results before persist:", results);
+
     try {
       await this.deps.storage.persistResults(results);
-    } catch {
-      // ignore storage errors for now
+    } catch (err) {
+      console.log("🟥 [DEBUG] Persist error:", err);
     }
 
     return results;

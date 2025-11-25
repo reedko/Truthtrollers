@@ -76,7 +76,7 @@ export function registerAnalyzeContentRoute(app, query) {
           preferDomains: [],
           avoidDomains: [],
           maxCharsPerDoc: 8000,
-          maxParallelClaims: 5,
+          maxParallelClaims: 3,
           evidenceTimeoutMs: 50000,
         },
       });
