@@ -71,34 +71,75 @@ export class EvidenceEngine {
 
   async retrieveCandidates(claim, queries, opt) {
     const topK = opt.topKCandidates ?? 12;
-    const chunks = [];
     const limitQueries = queries.slice(0, opt.topKQueries ?? queries.length);
+
+    // Optional throttle (default: unlimited concurrency)
+    const maxParallel = opt.maxParallelSearches ?? Infinity;
 
     const label = `[EV][retrieve][${claim.id}]`;
     console.time(label);
 
-    for (const q of limitQueries) {
-      if (opt.enableInternal) {
-        const internal = await this.deps.search.internal({
-          query: q.query,
-          topK,
-        });
-        chunks.push(...(internal || []));
-      }
+    // Convert list of queries → list of async tasks
+    const tasks = limitQueries.map((q) => async () => {
+      const sub = [];
 
-      if (opt.enableWeb) {
-        const web = await this.deps.search.web({
-          query: q.query,
-          topK,
-          prefer: opt.preferDomains,
-          avoid: opt.avoidDomains,
-        });
-        chunks.push(...(web || []));
-      }
+      // Run internal + web in parallel for this query
+      await Promise.all(
+        [
+          opt.enableInternal
+            ? (async () => {
+                const internal = await this.deps.search.internal({
+                  query: q.query,
+                  topK,
+                });
+                if (internal?.length) sub.push(...internal);
+              })()
+            : null,
+
+          opt.enableWeb
+            ? (async () => {
+                const web = await this.deps.search.web({
+                  query: q.query,
+                  topK,
+                  prefer: opt.preferDomains,
+                  avoid: opt.avoidDomains,
+                });
+                if (web?.length) sub.push(...web);
+              })()
+            : null,
+        ].filter(Boolean)
+      );
+
+      return sub;
+    });
+
+    //
+    // Execute tasks with optional concurrency limit
+    //
+    const chunks = [];
+
+    if (maxParallel === Infinity) {
+      // No throttle → fastest path
+      const results = await Promise.all(tasks.map((t) => t()));
+      for (const r of results) chunks.push(...r);
+    } else {
+      // Throttled runner
+      let i = 0;
+      const workers = new Array(maxParallel).fill(0).map(async () => {
+        while (i < tasks.length) {
+          const t = tasks[i++];
+          const r = await t();
+          if (r?.length) chunks.push(...r);
+        }
+      });
+      await Promise.all(workers);
     }
 
     console.timeEnd(label);
 
+    //
+    // Deduplicate + rank like your original implementation
+    //
     const best = new Map();
     for (const c of chunks) {
       if (!c) continue;
@@ -282,11 +323,88 @@ export class EvidenceEngine {
       counters: counters.map((e) => e.id),
     };
   }
+  /**
+   * redTeam(claim, adjudication, evidence)
+   * --------------------------------------
+   * Second-pass adversarial check.
+   * Challenges the initial verdict and may revise it.
+   */
+  async redTeam(claim, adjudication, evidence) {
+    console.log(`🟥 [REDTEAM] Starting red-team for claim ${claim.id}`);
+
+    const system = `
+      You are a second-pass adversarial reviewer.
+      Your goal is to critically challenge the initial verdict on a claim.
+      If there is strong contradictory evidence or uncertainty, adjust the verdict.
+      Output ONLY a JSON object following the schema.
+    `;
+
+    const user = `
+CLAIM:
+${claim.text}
+
+INITIAL VERDICT:
+${JSON.stringify(adjudication, null, 2)}
+
+EVIDENCE ITEMS:
+${JSON.stringify(evidence.slice(0, 12), null, 2)}
+
+TASK:
+1. Challenge the logic of the verdict.
+2. Look for bias, missing evidence, or misweighting.
+3. If needed, revise:
+   - finalVerdict (support|refute|nuance|insufficient)
+   - confidence (0–1)
+   - rationale (short explanation)
+4. If initial verdict is solid, keep it but refine rationale.
+    `;
+
+    const schemaHint = `{
+      "finalVerdict": "support|refute|nuance|insufficient",
+      "confidence": 0.0,
+      "rationale": "string"
+    }`;
+
+    let out = null;
+    try {
+      out = await this.deps.llm.generate({
+        system,
+        user,
+        schemaHint,
+        temperature: 0.3,
+      });
+    } catch (err) {
+      console.warn("🟥 [REDTEAM] LLM error:", err);
+      return adjudication; // fallback
+    }
+
+    if (!out || !out.finalVerdict) {
+      console.warn("🟥 [REDTEAM] Invalid red-team result, keeping original.");
+      return adjudication;
+    }
+
+    const revised = {
+      claimId: claim.id,
+      finalVerdict: out.finalVerdict || adjudication.finalVerdict,
+      confidence: Math.max(
+        0.1,
+        Math.min(0.99, out.confidence || adjudication.confidence)
+      ),
+      rationale: out.rationale || adjudication.rationale,
+      evidenceIds: adjudication.evidenceIds,
+      counters: adjudication.counters,
+    };
+
+    console.log(`🟥 [REDTEAM] Revised verdict for ${claim.id}:`, revised);
+    return revised;
+  }
 
   async run(claims, contexts, opt) {
-    const results = [];
+    const maxParallel = this.cfg.maxParallelClaims ?? 3;
+    const results = new Array(claims.length);
 
-    for (const claim of claims) {
+    // Create async task for each claim
+    const tasks = claims.map((claim, index) => async () => {
       const ctx = contexts ? contexts[claim.id] : undefined;
 
       console.log(
@@ -335,18 +453,28 @@ export class EvidenceEngine {
         adjudication: adj,
       };
 
-      results.push(row);
+      results[index] = row;
 
       console.timeEnd(`${claimLabel} total`);
+    });
+
+    // Execute tasks with concurrency limit
+    if (maxParallel === Infinity || maxParallel >= tasks.length) {
+      // No throttle → process all claims in parallel
+      await Promise.all(tasks.map((t) => t()));
+    } else {
+      // Throttled runner
+      let i = 0;
+      const workers = new Array(maxParallel).fill(0).map(async () => {
+        while (i < tasks.length) {
+          const task = tasks[i++];
+          await task();
+        }
+      });
+      await Promise.all(workers);
     }
 
     console.log("🟩 [DEBUG] Final results before persist:", results);
-
-    try {
-      await this.deps.storage.persistResults(results);
-    } catch (err) {
-      console.log("🟥 [DEBUG] Persist error:", err);
-    }
 
     return results;
   }

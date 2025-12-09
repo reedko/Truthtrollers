@@ -31,7 +31,13 @@ export interface Lit_references {
   url: string;
   content_name: string;
   origin?: "dom" | "claim";
-  claims?: string[]; // optional: which task-claims pointed to this source
+  claimIds?: number[]; // Task claim IDs this reference supports
+  stance?: string; // support|refute|nuance|insufficient
+  quote?: string; // Extracted evidence quote
+  summary?: string; // Evidence summary/rationale
+  quality?: number; // Evidence quality score (0-1)
+  location?: { page?: number; section?: string }; // Location in source
+  publishedAt?: string; // Publication date
 }
 
 export interface Publisher {
@@ -60,6 +66,14 @@ export interface TaskData {
   taskContentId?: string | null;
   is_retracted: boolean;
   testimonials: Testimonial[]; // <--- new!
+  // Evidence metadata (for references)
+  claimIds?: number[]; // Task claim IDs this reference supports
+  stance?: string; // support|refute|nuance|insufficient
+  quote?: string; // Extracted evidence quote
+  summary?: string; // Evidence summary/rationale
+  quality?: number; // Evidence quality score (0-1)
+  location?: { page?: number; section?: string }; // Location in source
+  publishedAt?: string; // Publication date
 }
 
 // 🧩 Shared across orchestrateScraping, analyzeContent, etc.

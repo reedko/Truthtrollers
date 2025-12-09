@@ -46,9 +46,12 @@ TASKS
 3) Extract DISTINCT factual claims from the text.
    - Return AT LEAST ${minClaims} and AT MOST ${maxClaims} claims, if available.
    - Each claim must be independently verifiable, one atomic assertion per item.
+   - Each claim must be SELF-CONTAINED: resolve pronouns, include context (time/place/subject).
    - Prefer claims with numbers, dates, named entities, locations, or concrete actions.
    - Avoid duplicates, paraphrases, opinions, or vague summaries.
    - Phrase each claim as a full sentence.
+   - Example: "Trump won 2016 US election" NOT "He won the election"
+
 4) Extract any testimonials/first-person case studies if present (objects with "text", optional "name", optional "imageUrl").
    - Deduplicate against the main text if overlapping.
 `
@@ -57,9 +60,12 @@ TASKS
 1) Extract DISTINCT factual claims from the text ONLY.
    - Return AT LEAST ${minClaims} and AT MOST ${maxClaims} claims, if available.
    - Each claim must be independently verifiable, one atomic assertion per item.
+   - Each claim must be SELF-CONTAINED: resolve pronouns, include context (time/place/subject).
    - Prefer claims with numbers, dates, named entities, locations, or concrete actions.
    - Avoid duplicates, paraphrases, opinions, or vague summaries.
    - Phrase each claim as a full sentence.
+   - Example: "Trump won 2016 US election" NOT "He won the election"
+
 2) Do NOT invent topics or testimonials in this mode.
 `;
 

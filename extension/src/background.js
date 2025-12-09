@@ -147,6 +147,30 @@ const fetchDiffbotData = async (articleUrl) => {
   }
 };
 
+// ✅ Call backend scrape endpoints (task or reference)
+const callBackendScrape = async (endpoint, envelope) => {
+  console.log(`🛠 Calling backend scrape: ${endpoint}`);
+
+  try {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(envelope),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Backend scrape failed with status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log(`✅ Backend scrape complete:`, data);
+    return data;
+  } catch (error) {
+    console.error(`❌ Backend scrape failed for ${endpoint}:`, error);
+    throw error;
+  }
+};
+
 const shouldIgnoreUrl = (url) => {
   const ignoredSites = ["facebook.com/messages", "messenger.com"];
   const isIgnored = ignoredSites.some((site) => url.includes(site));
@@ -926,6 +950,16 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
       console.log(fullUrl, "LJKJHJGFHJKK");
       await browser.tabs.create({ url: fullUrl });
       return;
+    }
+
+    // [25] scrape task
+    if (message.action === "scrapeTaskOnServer") {
+      return callBackendScrape("/api/scrape-task", message.envelope);
+    }
+
+    // [26] scrape reference
+    if (message.action === "scrapeReferenceOnServer") {
+      return callBackendScrape("/api/scrape-reference", message.envelope);
     }
 
     // Default: fall through

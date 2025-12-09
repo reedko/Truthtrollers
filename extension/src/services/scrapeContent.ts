@@ -1,213 +1,160 @@
-// extension/src/services/scrapeContentExtension.ts (or wherever this lives)
+// extension/src/services/scrapeContent.ts
+// ---------------------------------------------------------
+// FINAL VERSION — uses background.js to call backend
+// ---------------------------------------------------------
 
+import browser from "webextension-polyfill";
 import { orchestrateScraping } from "./orchestrateScrapingExtension";
-import createTask from "./createTaskExtension";
-import { TaskData, Lit_references } from "../entities/Task";
+import type { Lit_references, TaskData } from "../entities/Task";
 
-const BASE_URL = process.env.REACT_APP_BASE_URL || "http://localhost:5001";
-
-const getFileType = (url: string): string => {
-  const cleanUrl = url.split("?")[0].toLowerCase();
-  const match = cleanUrl.match(/\.[a-z0-9]+$/);
-  return match ? match[0] : "";
-};
-
-const getFileCategory = (ext: string): string => {
-  const audio = [".mp3", ".wav", ".ogg", ".flac"];
-  const video = [".mp4", ".avi", ".mov", ".mkv", ".webm"];
-  const docs = [".doc", ".ppt", ".xls"];
-  if (audio.includes(ext)) return "Audio";
-  if (video.includes(ext)) return "Video";
-  if (docs.includes(ext)) return "Document";
-  return "Media";
-};
-
-function dedupeRefs(refs: Lit_references[]): Lit_references[] {
-  const seen = new Set<string>();
-  return refs.filter((r) => {
-    if (!r?.url) return false;
-    if (seen.has(r.url)) return false;
-    seen.add(r.url);
-    return true;
-  });
-}
-
-type CrawlCtx = {
+// Prevent infinite recursion
+export type CrawlCtx = {
   visited: Set<string>;
   depth: number;
   maxDepth: number;
 };
 
+type ScrapeBackendResponse = {
+  success: boolean;
+  contentId?: string;
+  references?: {
+    dom?: Lit_references[];
+    ai?: Lit_references[];
+  };
+  error?: string;
+};
+
 /**
- * Scrape a URL as "task" or "reference", save it, then (for tasks) recurse into refs.
- * @param url
- * @param content_name
- * @param contentType "task" | "reference"
- * @param taskContentId parent task content_id (for references)
- * @param ctx crawl context (visited set, depth, maxDepth)
+ * Scrape a URL as TASK or REFERENCE.
+ *
+ * 1) orchestrateScrapingExtension(url, ...) → TaskData envelope
+ * 2) Send envelope to background.js via runtime.sendMessage
+ *    - background calls /api/scrape-task or /api/scrape-reference
+ * 3) Backend returns:
+ *    { success, contentId, references: { dom, ai } }
+ * 4) We recurse on those references (depth-limited).
  */
-export const scrapeContent = async (
+export async function scrapeContent(
   url: string,
   content_name: string,
   contentType: "task" | "reference",
-  taskContentId?: string,
-  ctx: CrawlCtx = { visited: new Set<string>(), depth: 0, maxDepth: 2 }
-): Promise<string | null> => {
+  taskContentId: string | null = null,
+  ctx: CrawlCtx = { visited: new Set<string>(), depth: 0, maxDepth: 2 },
+  evidenceMetadata?: Partial<Lit_references>
+): Promise<string | null> {
   const normUrl = url.trim();
 
-  // 🚧 visited guard
+  // ---------------------------------------
+  // ⛔ Visited guard
+  // ---------------------------------------
   if (ctx.visited.has(normUrl)) {
-    console.log("↩️ Already scraped this URL in this run, skipping:", normUrl);
+    console.log("↩️ Already visited in this scrape run:", normUrl);
     return null;
   }
   ctx.visited.add(normUrl);
 
   console.log(
-    `🔍 Scraping ${contentType} (d=${ctx.depth}/${ctx.maxDepth}): ${normUrl}`
+    `🔎 scrapeContent (${contentType}) depth=${ctx.depth}/${ctx.maxDepth}:`,
+    normUrl
   );
 
-  try {
-    let contentData: TaskData | null = null;
+  // ---------------------------------------
+  // 1. EXTENSION-SIDE SCRAPING → envelope
+  // ---------------------------------------
+  const envelope: TaskData | null = await orchestrateScraping(
+    normUrl,
+    content_name,
+    contentType
+  );
 
-    // Non-scrapable shortcut (unchanged)
-    if (contentType === "reference" && isNonScrapable(normUrl)) {
-      const fileType = getFileType(normUrl);
-      const fileCategory = getFileCategory(fileType);
-      contentData = {
-        url: normUrl,
-        content_name: content_name || `Untitled ${fileCategory} File`,
-        content_type: "reference",
-        media_source: fileCategory,
-        assigned: "unassigned",
-        progress: "Unassigned",
-        users: "",
-        details: `This reference is a non-scrapable ${fileCategory.toLowerCase()} file (${fileType}).`,
-        topic: "general",
-        subtopics: ["general", ""],
-        thumbnail: `${BASE_URL}/assets/images/content/document-placeholder.png`,
-        iconThumbnailUrl: null,
-        authors: [],
-        content: [],
-        publisherName: null,
-        Claims: [],
-        taskContentId: taskContentId || null,
-        is_retracted: false,
-        testimonials: [],
-      };
-    }
-
-    // Scrape normally if needed
-    if (!contentData) {
-      contentData = await orchestrateScraping(
-        normUrl,
-        content_name,
-        contentType
-      );
-    }
-
-    if (!contentData) {
-      console.warn(
-        `⚠️ Skipping ${contentType} — No usable content returned: ${normUrl}`
-      );
-      if (contentType === "task") {
-        console.error("❌ Cannot continue. A task must have valid content.");
-        return null;
-      }
-      return null;
-    }
-
-    // 🔗 At this point:
-    // - For TASKS: orchestrateScraping already merged DOM refs + AI evidenceRefs
-    // - For REFERENCES: orchestrateScraping only put DOM refs in `content`
-    if (Array.isArray(contentData.content) && contentData.content.length) {
-      contentData.content = dedupeRefs(contentData.content).slice(0, 60);
-    }
-
-    // Ensure parent taskContentId flows down
-    if (!contentData.taskContentId) {
-      contentData.taskContentId = taskContentId || null;
-    }
-
-    // 💾 Save this content (your existing createTask)
-    console.log("📎 Saving content to DB:", contentData);
-    const contentId = await createTask(contentData);
-    if (!contentId) {
-      console.error("❌ Failed to create content:", normUrl);
-      return "createTaskFAIL";
-    }
-    console.log(`✅ Content created with ID: ${contentId}`);
-
-    // If this was the main task, remember its id for child refs
-    if (contentType === "task" && !taskContentId) {
-      taskContentId = contentId;
-    }
-
-    // 🪜 Recurse only if:
-    // - this is a TASK
-    // - we have refs
-    // - depth < maxDepth
-    if (
-      contentType === "task" &&
-      Array.isArray(contentData.content) &&
-      contentData.content.length &&
-      ctx.depth < ctx.maxDepth
-    ) {
-      const nextDepthCtx: CrawlCtx = {
-        visited: ctx.visited,
-        depth: ctx.depth + 1,
-        maxDepth: ctx.maxDepth,
-      };
-
-      // Recurse on **ALL** unique refs now in contentData.content
-      // (DOM refs + AI-picked evidence refs for tasks)
-      for (const reference of contentData.content) {
-        const refUrl = reference.url?.trim();
-        if (!refUrl) continue;
-
-        console.log(
-          `🔗 Recursing (d=${nextDepthCtx.depth}/${nextDepthCtx.maxDepth})`,
-          reference.origin ? `[${reference.origin}]` : "",
-          refUrl
-        );
-
-        const result = await scrapeContent(
-          refUrl,
-          reference.content_name || "",
-          "reference",
-          taskContentId,
-          nextDepthCtx
-        );
-        if (!result) {
-          console.warn("⛔ Skipped reference (bad or blank):", refUrl);
-        }
-      }
-    }
-
-    return contentId;
-  } catch (err) {
-    console.error("❌ Error during content scraping:", err);
+  if (!envelope) {
+    console.warn("⚠️ orchestrateScraping returned null for:", normUrl);
     return null;
   }
-};
 
-// ✅ Function to check if a URL is non-scrapable (PDFs, audio, video, etc.)
-const isNonScrapable = (url: string) => {
-  const cleanUrl = url.split("?")[0].toLowerCase(); // strip query
-  const nonScrapableFileTypes = [
-    ".zip",
-    ".exe",
-    ".doc",
-    ".ppt",
-    ".xls",
-    ".mp3",
-    ".wav",
-    ".ogg",
-    ".flac",
-    ".mp4",
-    ".avi",
-    ".mov",
-    ".mkv",
-    ".webm",
-  ];
-  return nonScrapableFileTypes.some((ext) => cleanUrl.endsWith(ext));
-};
+  // For references, carry the parent task content_id
+  if (contentType === "reference" && taskContentId) {
+    envelope.taskContentId = taskContentId;
+  }
+
+  // For references, add evidence metadata (claimIds, stance, etc)
+  if (contentType === "reference" && evidenceMetadata) {
+    envelope.claimIds = evidenceMetadata.claimIds;
+    envelope.stance = evidenceMetadata.stance;
+    envelope.quote = evidenceMetadata.quote;
+    envelope.summary = evidenceMetadata.summary;
+    envelope.quality = evidenceMetadata.quality;
+    envelope.location = evidenceMetadata.location;
+    envelope.publishedAt = evidenceMetadata.publishedAt;
+  }
+
+  // ---------------------------------------
+  // 2. ASK BACKGROUND TO CALL BACKEND
+  // ---------------------------------------
+  const action =
+    contentType === "task" ? "scrapeTaskOnServer" : "scrapeReferenceOnServer";
+
+  let backendResp: ScrapeBackendResponse;
+  try {
+    backendResp = (await browser.runtime.sendMessage({
+      action,
+      envelope,
+    })) as ScrapeBackendResponse;
+  } catch (err) {
+    console.error("❌ Error sending scrape envelope to background:", err);
+    return null;
+  }
+
+  if (!backendResp || !backendResp.success || !backendResp.contentId) {
+    console.error("❌ Backend scrape failed:", backendResp?.error);
+    return null;
+  }
+
+  const thisContentId = backendResp.contentId;
+  console.log(`✅ ${contentType} persisted as content_id=${thisContentId}`);
+
+  // Root task content_id flows down into references
+  if (contentType === "task") {
+    taskContentId = thisContentId;
+  }
+
+  // ---------------------------------------
+  // 3. MERGE DOM + AI references (returned by backend)
+  // ---------------------------------------
+  const domRefs = backendResp.references?.dom || [];
+  const aiRefs = backendResp.references?.ai || [];
+  const nextRefs: Lit_references[] = [...domRefs, ...aiRefs];
+
+  // ---------------------------------------
+  // 4. RECURSE on nextRefs (depth-limited)
+  // ---------------------------------------
+  if (ctx.depth < ctx.maxDepth && nextRefs.length > 0) {
+    const nextDepth = ctx.depth + 1;
+
+    for (const ref of nextRefs) {
+      const rurl = ref.url?.trim();
+      if (!rurl) continue;
+
+      console.log(
+        `🔗 Recursing → depth ${nextDepth}/${ctx.maxDepth}`,
+        ref.origin ? `[${ref.origin}]` : "",
+        rurl
+      );
+
+      await scrapeContent(
+        rurl,
+        ref.content_name || "",
+        "reference",
+        taskContentId,
+        {
+          visited: ctx.visited,
+          depth: nextDepth,
+          maxDepth: ctx.maxDepth,
+        },
+        ref // Pass the entire ref object with evidence metadata
+      );
+    }
+  }
+
+  return thisContentId;
+}
