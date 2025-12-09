@@ -48,10 +48,10 @@ export function extractArticleRootHTML($: cheerio.CheerioAPI): string | null {
 
   const body = $("body").clone();
 
-  body.find("script, style, nav, footer, aside, iframe").remove();
+  body.find("script, style, nav, footer, aside, iframe, header").remove();
   body
     .find(
-      ".ad, .ads, .popup, .newsletter, .social-share, .comments, .related, .cookie"
+      ".ad, .ads, .popup, .newsletter, .social-share, .comments, .related, .cookie, .cookie-banner, .cookie-consent, .cookie-notice, .privacy-banner, .gdpr, .gdpr-banner, [id*='cookie'], [id*='gdpr'], [class*='cookie'], [class*='gdpr'], [class*='privacy-notice'], [class*='consent-banner']"
     )
     .remove();
 

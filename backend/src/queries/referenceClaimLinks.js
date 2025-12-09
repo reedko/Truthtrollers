@@ -47,7 +47,14 @@ export async function insertReferenceClaimLink(query, row) {
 
 // REAL bulk insert — fast, multi-row insert
 export async function insertReferenceClaimLinksBulk(query, items = []) {
-  if (!items.length) return [];
+  if (!items.length) {
+    console.log("[insertReferenceClaimLinksBulk] No items to insert");
+    return [];
+  }
+
+  console.log(
+    `[insertReferenceClaimLinksBulk] Preparing to insert ${items.length} items`
+  );
 
   const sql = `
     INSERT INTO reference_claim_links
@@ -67,12 +74,27 @@ export async function insertReferenceClaimLinksBulk(query, items = []) {
     row.verified_by_user_id ?? null,
   ]);
 
+  console.log(
+    "[insertReferenceClaimLinksBulk] First row values:",
+    values[0]
+  );
+
   try {
     const result = await query(sql, [values]);
+    console.log("[insertReferenceClaimLinksBulk] Query result:", result);
     const firstId = result.insertId;
-    return Array.from({ length: result.affectedRows }, (_, i) => firstId + i);
+    const insertedIds = Array.from(
+      { length: result.affectedRows },
+      (_, i) => firstId + i
+    );
+    console.log(
+      `[insertReferenceClaimLinksBulk] Successfully inserted ${result.affectedRows} rows`
+    );
+    return insertedIds;
   } catch (err) {
     console.error("[insertReferenceClaimLinksBulk] SQL error:", err);
-    return [];
+    console.error("[insertReferenceClaimLinksBulk] SQL:", sql);
+    console.error("[insertReferenceClaimLinksBulk] Values:", values);
+    throw err; // Re-throw instead of silently returning []
   }
 }

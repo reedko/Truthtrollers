@@ -1,450 +1,270 @@
-// orchestrateScrapingExtension.ts
+// extension/src/services/orchestrateScrapingExtension.ts
+// -------------------------------------------------------
+// PURE SCRAPER — NO LLM, NO analyzeContent.
+// Sends only metadata + raw_text + DOM references to backend.
+// -------------------------------------------------------
+
+import browser from "webextension-polyfill";
+import * as cheerio from "cheerio";
+
 import {
   fetchExternalPageContent,
   getBestImage,
 } from "../services/extractMetaDataExtension";
+
 import {
   fetchPageContent,
   extractAuthors,
   extractPublisher,
   extractReferences,
 } from "../services/extractMetaDataUtils";
-import { getMainHeadline } from "../services/getMainHeadline";
-import { analyzeContent } from "./openaiTopicsAndClaimsExtension";
-import { extractVideoIdFromUrl } from "../services/parseYoutubeUrl";
-import checkAndDownloadTopicIcon from "../services/checkAndDownloadTopicIcon";
 
+import { extractVideoIdFromUrl } from "../services/parseYoutubeUrl";
 import { YoutubeTranscript } from "youtube-transcript";
+
 import {
-  extractArticleRootHTML,
   smartCleanHTMLForReadability,
+  extractArticleRootHTML,
   trimTo60k,
 } from "./orchestrateScrapingUtils";
+
+import { extractTestimonialsFromHtml } from "../utils/extractTestimonials";
+import checkAndDownloadTopicIcon from "../services/checkAndDownloadTopicIcon";
 
 import type {
   TaskData,
   Lit_references,
-  Testimonial,
-  ClaimSourcePick,
-  AnalyzeContentOptions,
-  AnalyzeContentResponse,
+  Author,
+  Publisher,
 } from "../entities/Task";
-import type { DiffbotData } from "../entities/diffbotData";
-import * as cheerio from "cheerio";
-import browser from "webextension-polyfill";
-import { extractTestimonialsFromHtml } from "../utils/extractTestimonials";
 
 interface ReadabilityResponse {
   success: boolean;
   text?: string;
 }
 
-function dedupeRefsByUrl(refs: Lit_references[]): Lit_references[] {
-  const seen = new Set<string>();
-  const out: Lit_references[] = [];
-  for (const r of refs || []) {
-    if (!r?.url) continue;
-    if (seen.has(r.url)) continue;
-    seen.add(r.url);
-    out.push(r);
-  }
-  return out;
-}
+// -------------------------------------------------------
+// Small Helpers
+// -------------------------------------------------------
 
-export function cleanTranscript(raw: string): string {
-  // Remove timestamps (e.g., 0:00, 12:45)
-  const noTimestamps = raw.replace(/\b\d{1,2}:\d{2}\b/g, "");
-
-  // Normalize whitespace
-  const normalized = noTimestamps
+function cleanTranscript(raw: string): string {
+  const noTS = raw.replace(/\b\d{1,2}:\d{2}\b/g, "");
+  const norm = noTS
     .replace(/\r?\n|\r/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
-  // Break into chunks based on long pauses or double newlines (simulate paragraphs)
-  const paragraphBreaks = normalized
-    .split(/(?<=[.?!])\s+(?=[A-Z])/g) // Break after sentence-ending punctuation before capital letters
-    .reduce<string[]>((chunks, sentence) => {
-      if (chunks.length === 0) {
-        return [sentence];
-      }
-
-      const last = chunks[chunks.length - 1];
+  const paras = norm
+    .split(/(?<=[.?!])\s+(?=[A-Z])/g)
+    .reduce<string[]>((arr, sentence) => {
+      if (!arr.length) return [sentence];
+      const last = arr[arr.length - 1];
       if (last.length + sentence.length < 1000) {
-        chunks[chunks.length - 1] = last + " " + sentence;
-      } else {
-        chunks.push(sentence);
-      }
-      return chunks;
+        arr[arr.length - 1] = last + " " + sentence;
+      } else arr.push(sentence);
+      return arr;
     }, []);
 
-  return paragraphBreaks.join("\n\n"); // Paragraph-style spacing for easier claim parsing
+  return paras.join("\n\n");
 }
 
-const fallbackTranscriptFromServer = async (
-  videoId: string
-): Promise<string | null> => {
+async function fallbackTranscript(videoId: string): Promise<string | null> {
   try {
-    const response = (await browser.runtime.sendMessage({
+    const resp = (await browser.runtime.sendMessage({
       action: "fallbackYoutubeTranscript",
       videoId,
-    })) as { success: boolean; transcriptText?: string }; // 👈 Add this
+    })) as { success: boolean; transcriptText?: string };
 
-    if (response.success && response.transcriptText) {
-      const cleanScript = cleanTranscript(response.transcriptText);
-      return cleanScript;
+    if (resp.success && resp.transcriptText) {
+      return cleanTranscript(resp.transcriptText);
     }
-  } catch (err) {
-    console.warn("❌ Extension background fallback failed:", err);
-  }
+  } catch {}
+
   return null;
-};
+}
 
-const fetchDiffbotData = async (articleUrl: string): Promise<any> => {
-  const result = await browser.runtime.sendMessage({ action: "pingTest" });
-  console.log("pongTest result:", result);
-  try {
-    console.log("🔔 [Content] about to ask background for Diffbot data…");
-    const response = await browser.runtime.sendMessage({
-      action: "fetchDiffbotDataTest",
-      articleUrl,
-    });
-    console.log("🔔 [Content] got back from background:", response);
-    const result2 = await browser.runtime.sendMessage({ action: "pingTest" });
-    console.log("pongTest result2:", result2);
-    return response;
-  } catch (err) {
-    console.error("Failed to fetch Diffbot data:", err);
-    return null;
-  }
-};
+// -------------------------------------------------------
+// MAIN FUNCTION
+// -------------------------------------------------------
 
-export const orchestrateScraping = async (
+export async function orchestrateScraping(
   url: string,
   content_name: string,
   contentType: "task" | "reference"
-): Promise<TaskData | null> => {
-  let diffbotData: DiffbotData = {};
-  let generalTopic = "";
-  let claims: string[] = [];
-  let specificTopics: string[] = [];
-  let extractedReferences: Lit_references[] = [];
-  let extractedText = "";
-  let extractedHtml = "";
-  let authors = [];
-  let enrichmentStatus: "ok" | "queued" | "failed" = "ok";
-
-  const isPdf = /\.pdf($|\?)/i.test(url);
-  function normalizeThumbnail(img?: string | null) {
-    if (!img) return "";
-    if (img.startsWith("data:")) return ""; // 🚫 drop huge base64
-    if (img.length > 2048) return ""; // optional safety
-    return img;
-  }
+): Promise<TaskData | null> {
   try {
-    if (contentType === "task") {
-      diffbotData = await fetchDiffbotData(url);
-      if (!diffbotData) throw new Error("Diffbot fetch returned null.");
-      console.log("✅ Diffbot data received:", diffbotData);
-    }
-  } catch (error) {
-    console.warn("⚠️ Diffbot fetch failed:", error);
-  }
+    const isPdf = /\.pdf($|\?)/i.test(url);
 
-  if (url.includes("feed") || url.endsWith(".xml")) {
-    console.warn("⚠️ Skipping likely RSS/XML feed:", url);
-    return null;
-  }
+    let extractedText = "";
+    let extractedHtml = "";
+    let authors: Author[] = [];
+    let publisherName: Publisher | null = null;
+    let references: Lit_references[] = [];
+    let thumbnail = "";
+    let topic = "general"; // placeholder; backend will override
+    let subtopics: string[] = []; // placeholder
+    let testimonials = [];
 
-  let imageUrl = "";
+    // -------------------------------------------------------
+    // 1. YOUTUBE TRANSCRIPT (if applicable)
+    // -------------------------------------------------------
+    const videoId = extractVideoIdFromUrl(url);
 
-  const videoId = extractVideoIdFromUrl(url);
+    if (videoId) {
+      try {
+        const transcript = await YoutubeTranscript.fetchTranscript(videoId);
 
-  if (videoId) {
-    try {
-      console.log("🎥 Fetching transcript for video ID:", videoId);
-      const transcript = await YoutubeTranscript.fetchTranscript(videoId);
-
-      if (!Array.isArray(transcript) || transcript.length === 0) {
-        console.warn("⚠️ Transcript empty, trying DOM fallback…");
-
-        const tabs = await browser.tabs.query({
-          active: true,
-          currentWindow: true,
-        });
-        const activeTab = tabs[0];
-
-        if (activeTab?.id) {
-          const domResponse = (await browser.runtime.sendMessage({
+        if (Array.isArray(transcript) && transcript.length) {
+          extractedText = transcript.map((e) => e.text).join(" ");
+        } else {
+          const domResp = (await browser.runtime.sendMessage({
             action: "extractYoutubeTranscript",
             videoId,
           })) as { success: boolean; transcriptText?: string };
 
-          if (domResponse.success && domResponse.transcriptText) {
-            extractedText = domResponse.transcriptText;
-            console.log("✅ Extension background returned transcriptText");
+          if (domResp.success && domResp.transcriptText) {
+            extractedText = domResp.transcriptText;
           } else {
-            console.warn(
-              "❌ Extension background did not return valid transcriptText"
-            );
-            const puppetFallback = await fallbackTranscriptFromServer(videoId);
-            if (puppetFallback) {
-              extractedText = puppetFallback;
-              console.log("✅ Puppeteer server returned fallback transcript");
-            } else {
-              console.warn(
-                "❌ Puppeteer server also failed to return transcript"
-              );
-            }
+            const fb = await fallbackTranscript(videoId);
+            if (fb) extractedText = fb;
           }
         }
-      } else {
-        const transcriptText = transcript.map((entry) => entry.text).join(" ");
-        extractedText = transcriptText;
-        console.log("✅ YouTube transcript stored in extractedText");
+      } catch {
+        const fb = await fallbackTranscript(videoId);
+        if (fb) extractedText = fb;
       }
-    } catch (err) {
-      console.warn("⚠️ Failed to fetch YouTube transcript:", err);
-      const puppetFallback = await fallbackTranscriptFromServer(videoId);
-      if (puppetFallback) {
-        extractedText = puppetFallback;
-        console.log("✅ Puppeteer server returned fallback transcript");
-      } else {
-        console.warn("❌ Puppeteer server also failed to return transcript");
-      }
-      console.log("trans:", extractedText);
     }
-  }
-  try {
-    console.log("📦 Starting to fetch page content for", url);
-    let $: cheerio.CheerioAPI;
-    let isRetracted = false;
-    let thumbNailUrl = "";
-    if (contentType === "task" && !isPdf) {
-      $ = await fetchPageContent();
-      console.log("✅ fetchPageContent success");
-    } else {
-      const result = await fetchExternalPageContent(url);
-      if (!result || !result.$ || result.isRSS) {
-        console.warn(
-          `⚠️ fetchExternalPageContent returned no usable content for ${url}.`
-        );
-        return null;
-      }
-      // after: const result = await fetchExternalPageContent(url);
-      $ = result.$;
-      isRetracted = result.isRetracted;
 
+    // -------------------------------------------------------
+    // 2. FETCH HTML OR PDF CONTENT
+    // -------------------------------------------------------
+    let $: cheerio.CheerioAPI;
+
+    if (contentType === "task" && !isPdf) {
+      // local DOM
+      $ = await fetchPageContent();
+    } else {
+      // background fetch
+      const result = await fetchExternalPageContent(url);
+      if (!result?.$) return null;
+      $ = result.$;
+
+      // PDF metadata
       if (result.pdfMeta) {
-        // title
         if (!content_name || content_name.length < 5) {
           content_name = result.pdfMeta.title || content_name;
         }
 
-        // authors (optional)
-        if (
-          !authors.length &&
-          Array.isArray(result.pdfMeta.authors) &&
-          result.pdfMeta.authors.length
-        ) {
-          const pdfAuthors = result.pdfMeta.authors.map((name) => ({
+        if (Array.isArray(result.pdfMeta.authors)) {
+          authors = result.pdfMeta.authors.map((name) => ({
             name,
             description: null,
             image: null,
           }));
-          authors.push(...pdfAuthors);
         }
 
-        // ✅ ALWAYS take the pdf thumbnail if present
         if (result.pdfMeta.thumbnailUrl) {
-          thumbNailUrl = result.pdfMeta.thumbnailUrl;
+          thumbnail = result.pdfMeta.thumbnailUrl;
         }
       }
-
-      console.log("✅ fetchExternalPageContent success", result);
     }
 
-    if (!$.html().trim()) {
-      console.warn(`⚠️ No content loaded from: ${url}. Skipping.`);
-      return null;
-    }
+    if (!$.html().trim()) return null;
 
-    const $cleaned = cheerio.load($.html());
-    extractedHtml = smartCleanHTMLForReadability($cleaned);
+    // -------------------------------------------------------
+    // 3. CLEAN HTML & EXTRACT READABLE TEXT
+    // -------------------------------------------------------
+    const $clean = cheerio.load($.html());
+    extractedHtml = smartCleanHTMLForReadability($clean);
+
     const $smart = cheerio.load(extractedHtml);
-    let cleanHTML = extractArticleRootHTML($smart);
-    if (!cleanHTML) cleanHTML = extractedHtml;
-
-    let readableText = "";
+    const articleRoot = extractArticleRootHTML($smart) || extractedHtml;
 
     try {
-      const response = (await browser.runtime.sendMessage({
+      const resp = (await browser.runtime.sendMessage({
         action: "extractReadableText",
-        html: cleanHTML,
+        html: articleRoot,
         url,
       })) as ReadabilityResponse;
-      if (response?.success && response.text) {
-        readableText = response.text;
-      }
-    } catch (err) {
-      console.error("❌ Readability message error:", err);
+
+      if (resp.success && resp.text) extractedText = resp.text;
+    } catch {}
+
+    if (!extractedText) {
+      const $manual = cheerio.load(articleRoot);
+      $manual("style,link,script:not([type='application/ld+json'])").remove();
+      extractedText = $manual.text();
     }
 
-    if (!extractedText && readableText && readableText.length > 300) {
-      extractedText = readableText;
-    } else if (!extractedText) {
-      const $ext = cheerio.load(cleanHTML);
-      $ext(
-        "style, link[rel='stylesheet'], script:not([type='application/ld+json'])"
-      ).remove();
-      extractedText = $ext.text();
-    }
+    extractedText = trimTo60k(extractedText);
 
-    if (extractedText.length > 60000) {
-      extractedText = trimTo60k(extractedText);
-    }
-    console.log(diffbotData.title, ":::TITLE RFROM DIFBOT");
-    const mainHeadline =
-      content_name.length > 5
-        ? content_name
-        : diffbotData.title || (await getMainHeadline($));
-    const existingAuthors = authors;
-    const extractedAuthors = await extractAuthors($);
-    const diffbotAuthors = diffbotData.author
-      ? diffbotData.author.split(/[,&]/).map((name) => ({
-          name: name.trim(),
-          description: null,
-          image: null,
-        }))
-      : [];
+    // -------------------------------------------------------
+    // 4. METADATA EXTRACTION
+    // -------------------------------------------------------
 
-    const allAuthors = [
-      ...extractedAuthors,
-      ...diffbotAuthors,
-      ...existingAuthors,
+    // Authors (PDF + DOM)
+    const domAuthors = await extractAuthors($);
+    authors = [
+      ...authors,
+      ...domAuthors.filter(
+        (a) => !authors.some((x) => x.name === (a?.name ?? ""))
+      ),
     ];
-    const seen = new Set();
-    authors = allAuthors.filter((author) => {
-      const nameKey = author.name;
-      if (nameKey && !seen.has(nameKey)) {
-        seen.add(nameKey);
-        return true;
+
+    // Publisher
+    publisherName = publisherName || (await extractPublisher($));
+
+    // Thumbnail
+    if (!thumbnail) {
+      const guess = await getBestImage(url, extractedHtml, {});
+      if (guess) {
+        const base = new URL(url);
+        thumbnail = guess.startsWith("http")
+          ? guess
+          : new URL(guess, base).href;
       }
-      return false;
-    });
-
-    const publisherName = diffbotData.publisher
-      ? { name: diffbotData.publisher.trim() }
-      : await extractPublisher($);
-
-    if (!thumbNailUrl) {
-      imageUrl = await getBestImage(url, extractedHtml, diffbotData);
-      const baseUrl = new URL(url);
-      if (imageUrl && !imageUrl.startsWith("http")) {
-        imageUrl = new URL(imageUrl, baseUrl).href;
-      }
-    } else {
-      imageUrl = thumbNailUrl;
     }
 
+    // References (DOM-only, ONLY for task)
     if (contentType === "task") {
-      extractedReferences = await extractReferences($);
-    }
-    const extractedTestimonials = extractTestimonialsFromHtml(extractedHtml);
-    let enrichmentStatus: "local" | "queued" | "failed" = "local";
-    let topicsAndClaims: {
-      generalTopic: string;
-      specificTopics: string[];
-      claims: string[];
-      testimonials: Testimonial[];
-      claimSourcePicks?: ClaimSourcePick[];
-      evidenceRefs?: Lit_references[];
-    } | null = null;
-
-    try {
-      topicsAndClaims = await analyzeContent(
-        extractedText,
-        extractedTestimonials,
-        { includeEvidence: contentType === "task" }
-      );
-    } catch (err) {
-      console.warn(
-        "LLM analyzeContent failed; queueing server enrichment:",
-        err
-      );
-      enrichmentStatus = "queued";
-      // Fire-and-forget fallback
-      browser.runtime
-        .sendMessage({
-          action: "enqueueServerEnrichment",
-          payload: { url, extractedText },
-        })
-        .catch(() => {
-          enrichmentStatus = "failed";
-        });
+      references = await extractReferences($);
     }
 
-    // Always have a safe object to destructure
-    const {
-      generalTopic = "Unknown",
-      specificTopics = [],
-      claims = [],
-      testimonials = [],
-      evidenceRefs = [],
-    } = topicsAndClaims ?? {};
+    // Testimonials
+    testimonials = extractTestimonialsFromHtml(extractedHtml);
 
-    let finalReferences: Lit_references[] = extractedReferences;
+    // Topic icon
+    const iconThumbnailUrl = await checkAndDownloadTopicIcon(topic);
 
-    if (contentType === "task") {
-      const combined = [...extractedReferences, ...evidenceRefs];
-      finalReferences = dedupeRefsByUrl(combined).slice(0, 60); // cap if you like
-    }
-
-    const iconThumbnailUrl = await checkAndDownloadTopicIcon(generalTopic);
-    // in orchestrateScraping right before store / create:
-    const safeThumbnail = normalizeThumbnail(imageUrl);
-
-    await browser.runtime.sendMessage({
-      action: "storeExtractedContent",
-      data: {
-        url,
-        content_type: contentType,
-        media_source: videoId ? "YouTube" : "Web",
-        content_name: mainHeadline || "",
-        raw_text: extractedText, // already trimmed to 60k, keep it there
-        video_id: videoId || null,
-        thumbnail: safeThumbnail, // ✅ use safe version
-        topic: generalTopic,
-        subtopics: specificTopics,
-        authors,
-        publisherName: publisherName?.name || null,
-        is_retracted: false,
-      },
-    });
-    return {
-      content_name: mainHeadline || "",
+    // -------------------------------------------------------
+    // 5. BUILD & RETURN TaskData (envelope)
+    // -------------------------------------------------------
+    const envelope: TaskData = {
+      content_name,
       media_source: videoId ? "YouTube" : "Web",
       url,
       assigned: "unassigned",
       progress: "Unassigned",
       users: "",
       details: url,
-      topic: generalTopic,
-      subtopics: specificTopics,
-      thumbnail: safeThumbnail,
+      topic,
+      subtopics,
+      thumbnail,
       iconThumbnailUrl: iconThumbnailUrl || null,
       authors,
-      content: finalReferences,
+      content: references,
       publisherName,
       content_type: contentType,
       raw_text: extractedText,
-      Claims: claims,
+      Claims: [], // backend only now
+      taskContentId: null,
       is_retracted: false,
       testimonials,
     };
-  } catch (e: any) {
-    console.warn("🧨 Failed to load page content:", url);
-    console.error("🧨 Error details:", e);
+
+    return envelope;
+  } catch (err) {
+    console.error("❌ orchestrateScraping failed:", url, err);
     return null;
   }
-};
+}
