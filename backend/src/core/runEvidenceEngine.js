@@ -8,10 +8,11 @@
 //   readableText     = original scraped text (optional but useful)
 //
 // OUTPUT:
-//   { aiReferences, evidence, referenceClaimLinks }
+//   { aiReferences } - includes referenceContentId for each reference
 //
-// No DB writes occur here.
-// DB writes happen in persistAIResults().
+// DESIGN:
+//   References are FULLY PROCESSED during fetch (metadata extraction,
+//   content creation, authors/publishers persist) - NO post-processing needed.
 // --------------------------------------------------------------
 
 import { openAiLLM } from "./openAiLLM.js";
@@ -19,13 +20,26 @@ import { tavilySearch } from "./tavilySearch.js";
 import { bingSearch } from "./bingSearch.js";
 import { EvidenceEngine } from "./evidenceEngine.js";
 import { query } from "../db/pool.js";
+import { createContentInternal } from "../storage/createContentInternal.js";
+import { persistAuthors } from "../storage/persistAuthors.js";
+import { persistPublishers } from "../storage/persistPublishers.js";
+import { extractAuthors } from "../utils/extractAuthors.js";
+import { extractPublisher } from "../utils/extractPublisher.js";
+import { getMainHeadline } from "../utils/getMainHeadline.js";
+import { getBestImage } from "../utils/getBestImage.js";
+import logger from "../utils/logger.js";
+import * as cheerio from "cheerio";
+import { JSDOM } from "jsdom";
+import { Readability } from "@mozilla/readability";
+
+import fetch from "node-fetch";
 
 export async function runEvidenceEngine({
   taskContentId,
   claimIds,
   readableText,
 }) {
-  console.log("🟣 [runEvidenceEngine] Starting evidence run…");
+  logger.log("🟣 [runEvidenceEngine] Starting evidence run…");
 
   if (!taskContentId) throw new Error("Missing taskContentId");
   if (!Array.isArray(claimIds) || claimIds.length === 0)
@@ -42,6 +56,12 @@ export async function runEvidenceEngine({
     text: row.claim_text,
   }));
 
+  // Map to store processed references (URL → metadata)
+  const referenceCache = new Map();
+
+  // Track failed candidates for UI fallback (manual dashboard scrape)
+  const failedCandidates = [];
+
   const engine = new EvidenceEngine(
     {
       llm: openAiLLM,
@@ -52,7 +72,7 @@ export async function runEvidenceEngine({
             const start = Date.now();
             const results = await tavilySearch.web(opts);
             const duration = Date.now() - start;
-            console.log(
+            logger.log(
               `⏱️  [BENCHMARK] Tavily search took ${duration}ms for query: "${opts.query}"`
             );
             return results;
@@ -61,7 +81,7 @@ export async function runEvidenceEngine({
             const start = Date.now();
             const results = await bingSearch(opts);
             const duration = Date.now() - start;
-            console.log(
+            logger.log(
               `⏱️  [BENCHMARK] Bing search took ${duration}ms for query: "${opts.query}"`
             );
             return results;
@@ -73,14 +93,14 @@ export async function runEvidenceEngine({
           const [tav, bing] = await Promise.all([
             tavilySearch.web(opts).then((r) => {
               const duration = Date.now() - startTav;
-              console.log(
+              logger.log(
                 `⏱️  [BENCHMARK] Tavily (hybrid) took ${duration}ms for query: "${opts.query}"`
               );
               return r;
             }),
             bingSearch(opts).then((r) => {
               const duration = Date.now() - startBing;
-              console.log(
+              logger.log(
                 `⏱️  [BENCHMARK] Bing (hybrid) took ${duration}ms for query: "${opts.query}"`
               );
               return r;
@@ -90,14 +110,271 @@ export async function runEvidenceEngine({
         },
       },
       fetcher: {
-        async getText(cand) {
+        async getText(cand, claim) {
+          // Get claim index for tracking which claim requested this reference
+          // (defined outside try/catch so it's available in catch block)
+          const claimIndex = claims.findIndex((c) => c.id === claim.id);
+
           try {
             if (cand.text) return cand.text;
             if (!cand.url) return null;
-            const resp = await fetch(cand.url);
-            return (await resp.text()).slice(0, 50000);
+
+            // Check cache first (avoid re-processing same URL)
+            if (referenceCache.has(cand.url)) {
+              logger.log(`♻️  [Evidence] Using cached reference: ${cand.url}`);
+              const cached = referenceCache.get(cand.url);
+
+              // Add this claim to the reference's claim list if not already there
+              if (
+                claimIndex !== -1 &&
+                !cached.claimIndices.includes(claimIndex)
+              ) {
+                cached.claimIndices.push(claimIndex);
+              }
+
+              return cached.cleanText;
+            }
+
+            logger.log(`🌐 [Evidence] Fetching: ${cand.url}`);
+
+            // ─────────────────────────────────────────────
+            // 1. FETCH HTML (simple fetch with timeout)
+            // ─────────────────────────────────────────────
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+            const resp = await fetch(cand.url, { signal: controller.signal });
+            clearTimeout(timeout);
+            const html = await resp.text();
+
+            if (!html || html.length < 100) {
+              logger.warn(`⚠️  [Evidence] Empty response from ${cand.url}`);
+              return null;
+            }
+
+            logger.log(`✅ [Evidence] Fetched ${html.length} chars`);
+
+            // ─────────────────────────────────────────────
+            // 2. PARSE HTML (for metadata extraction)
+            // ─────────────────────────────────────────────
+            const $ = cheerio.load(html);
+
+            // ─────────────────────────────────────────────
+            // 3. EXTRACT METADATA (from full HTML)
+            // ─────────────────────────────────────────────
+            const title =
+              cand.title || (await getMainHeadline($)) || "AI Reference";
+            const authors = await extractAuthors($);
+            const publisher = await extractPublisher($);
+            const thumbnail = getBestImage($, cand.url) || "";
+
+            // ─────────────────────────────────────────────
+            // 4. EXTRACT CLEAN TEXT (using Readability)
+            // ─────────────────────────────────────────────
+            let cleanText;
+            try {
+              const dom = new JSDOM(html, { url: cand.url });
+              const article = new Readability(dom.window.document).parse();
+
+              if (article && article.textContent) {
+                cleanText = article.textContent
+                  .replace(/\s+/g, " ")
+                  .trim()
+                  .slice(0, 60000);
+                logger.log(
+                  `📖 [Evidence] Readability extracted ${cleanText.length} chars`
+                );
+              } else {
+                logger.warn(
+                  `⚠️  [Evidence] Readability failed, falling back to cheerio`
+                );
+                // Fallback to cheerio if Readability fails
+                $("script, style, link, noscript").remove();
+                cleanText = $.text()
+                  .replace(/\s+/g, " ")
+                  .trim()
+                  .slice(0, 60000);
+              }
+            } catch (readabilityErr) {
+              logger.warn(
+                `⚠️  [Evidence] Readability error: ${readabilityErr.message}`
+              );
+              $("script, style, link, noscript").remove();
+              cleanText = $.text().replace(/\s+/g, " ").trim().slice(0, 60000);
+            }
+
+            if (cleanText.length < 100) {
+              logger.warn(
+                `⚠️  [Evidence] Insufficient text (${cleanText.length} chars): ${cand.url}`
+              );
+
+              // ─────────────────────────────────────────────
+              // Create stub content row for failed reference
+              // This allows us to create reference_claim_links
+              // and the user can fill in the content via dashboard scrape
+              // ─────────────────────────────────────────────
+              const stubContentId = await createContentInternal(query, {
+                content_name: title,
+                url: cand.url,
+                media_source: publisher?.name || "Unknown",
+                topic: "AI Evidence (Failed)",
+                subtopics: [],
+                content_type: "reference",
+                taskContentId,
+                thumbnail,
+                details: `Failed to scrape: ${cleanText.length} chars`,
+              });
+
+              logger.log(
+                `⚠️  [Evidence] Created stub for failed reference: ${cand.url} → content_id=${stubContentId}`
+              );
+
+              // Calculate quality for this candidate
+              const base = cand.score ?? 0;
+              const boost = cand.domain?.match(
+                /(reuters|apnews|nature|nih|who|gov|\.edu)/i
+              )
+                ? 0.2
+                : 0;
+              const quality = Math.max(0, Math.min(1.2, base + boost));
+
+              // Cache the stub so it can be linked to claims
+              // Include search snippet as evidence since full scrape failed
+              referenceCache.set(cand.url, {
+                referenceContentId: stubContentId,
+                title,
+                authors,
+                publisher,
+                thumbnail,
+                cleanText: "", // Empty - needs manual scrape
+                snippet: cand.snippet || "", // Save search engine snippet
+                quality, // Store quality
+                isFailed: true, // Mark as needing manual scrape
+                claimIndices: claimIndex !== -1 ? [claimIndex] : [], // Track which claim requested this
+              });
+
+              // Track for UI to display as "needs manual scrape"
+              failedCandidates.push({
+                url: cand.url,
+                title: title || "Unknown",
+                reason: `Insufficient text (${cleanText.length} chars)`,
+                contentId: stubContentId,
+              });
+
+              return null;
+            }
+
+            // ─────────────────────────────────────────────
+            // 5. CREATE REFERENCE CONTENT ROW
+            // ─────────────────────────────────────────────
+            const referenceContentId = await createContentInternal(query, {
+              content_name: title,
+              url: cand.url,
+              media_source: publisher?.name || "Unknown",
+              topic: "AI Evidence",
+              subtopics: [],
+              content_type: "reference",
+              taskContentId,
+              thumbnail,
+              details: cleanText.slice(0, 500),
+            });
+
+            logger.log(
+              `✅ [Evidence] Created reference content_id=${referenceContentId}`
+            );
+
+            // ─────────────────────────────────────────────
+            // 6. PERSIST AUTHORS & PUBLISHERS
+            // ─────────────────────────────────────────────
+            await persistAuthors(query, referenceContentId, authors);
+            if (publisher) {
+              await persistPublishers(query, referenceContentId, publisher);
+            }
+
+            // ─────────────────────────────────────────────
+            // 7. CACHE REFERENCE METADATA (including search snippet)
+            // ─────────────────────────────────────────────
+            // Calculate quality for this candidate
+            const base = cand.score ?? 0;
+            const boost = cand.domain?.match(
+              /(reuters|apnews|nature|nih|who|gov|\.edu)/i
+            )
+              ? 0.2
+              : 0;
+            const quality = Math.max(0, Math.min(1.2, base + boost));
+
+            referenceCache.set(cand.url, {
+              referenceContentId,
+              title,
+              authors,
+              publisher,
+              cleanText,
+              snippet: cand.snippet || "", // Store search snippet for fallback
+              quality, // Store quality for later use
+              claimIndices: claimIndex !== -1 ? [claimIndex] : [], // Track which claim requested this
+            });
+
+            logger.log(
+              `🎯 [Evidence] Fully processed reference: ${cand.url} → content_id=${referenceContentId}`
+            );
+
+            return cleanText;
           } catch (err) {
-            console.warn("❌ fetcher.getText:", err);
+            logger.warn(
+              `⚠️  [Evidence] Fetch failed for ${cand.url}: ${err.message}`
+            );
+
+            // ─────────────────────────────────────────────
+            // Create stub content row for failed reference
+            // ─────────────────────────────────────────────
+            const stubContentId = await createContentInternal(query, {
+              content_name: cand.title || "Failed Reference",
+              url: cand.url,
+              media_source: "Unknown",
+              topic: "AI Evidence (Failed)",
+              subtopics: [],
+              content_type: "reference",
+              taskContentId,
+              thumbnail: "",
+              details: `Failed to fetch: ${err.message}`,
+            });
+
+            logger.log(
+              `⚠️  [Evidence] Created stub for failed reference: ${cand.url} → content_id=${stubContentId}`
+            );
+
+            // Calculate quality for this candidate
+            const base = cand.score ?? 0;
+            const boost = cand.domain?.match(
+              /(reuters|apnews|nature|nih|who|gov|\.edu)/i
+            )
+              ? 0.2
+              : 0;
+            const quality = Math.max(0, Math.min(1.2, base + boost));
+
+            // Cache the stub so it can be linked to claims
+            // Include search snippet as evidence since full scrape failed
+            referenceCache.set(cand.url, {
+              referenceContentId: stubContentId,
+              title: cand.title || "Failed Reference",
+              authors: [],
+              publisher: null,
+              thumbnail: "",
+              cleanText: "", // Empty - needs manual scrape
+              snippet: cand.snippet || "", // Save search engine snippet
+              quality, // Store quality
+              isFailed: true,
+              claimIndices: claimIndex !== -1 ? [claimIndex] : [], // Track which claim requested this
+            });
+
+            // Track for UI fallback
+            failedCandidates.push({
+              url: cand.url,
+              title: cand.title || "Unknown",
+              reason: err.message || "Fetch failed",
+              contentId: stubContentId,
+            });
+
             return null;
           }
         },
@@ -105,11 +382,11 @@ export async function runEvidenceEngine({
     },
     {
       limits: {
-        queriesPerClaim: 3,
-        candidates: 4,
-        evidencePerDoc: 1,
+        queriesPerClaim: 4, // ← Increased from 3 to 4 for more diverse queries
+        candidates: 12, // ← Try more URLs per claim
+        evidencePerDoc: 2, // ← Increased from 1 to 2 to get more evidence per doc
       },
-      maxParallelClaims: 3,
+      maxParallelClaims: Infinity, // Process all claims in parallel (was 3)
       maxCharsPerDoc: 8000,
       preferDomains: [],
       avoidDomains: [],
@@ -132,10 +409,19 @@ export async function runEvidenceEngine({
     avoidDomains: [],
     maxCharsPerDoc: 8000,
     enableRedTeam: false,
-    maxEvidenceCandidates: 2,
+    maxEvidenceCandidates: 4, // ← Increased from 2 to 4 references per claim
   };
 
   const results = await engine.run(claims, null, runOptions);
+
+  // Build confidence map: claimIndex → confidence
+  const claimConfidenceMap = new Map();
+  for (let claimIndex = 0; claimIndex < results.length; claimIndex++) {
+    const adjudication = results[claimIndex].adjudication;
+    if (adjudication && typeof adjudication.confidence === "number") {
+      claimConfidenceMap.set(claimIndex, adjudication.confidence);
+    }
+  }
 
   // Transform results into persistAIResults format
   // Group evidence by URL to avoid duplicates
@@ -147,6 +433,13 @@ export async function runEvidenceEngine({
 
     for (const ev of evidenceItems) {
       if (!ev.url) continue;
+
+      // Get reference metadata from cache
+      const refData = referenceCache.get(ev.url);
+      if (!refData) {
+        logger.warn(`⚠️  [Evidence] No cached data for ${ev.url}, skipping`);
+        continue;
+      }
 
       const existing = evidenceByUrl.get(ev.url);
       if (existing) {
@@ -163,26 +456,122 @@ export async function runEvidenceEngine({
       } else {
         // New reference
         evidenceByUrl.set(ev.url, {
+          referenceContentId: refData.referenceContentId, // ← From cache
           url: ev.url,
-          title: ev.title || "AI Reference",
+          title: refData.title, // ← From cache
           stance: ev.stance,
           why: ev.summary || ev.quote,
           quote: ev.quote,
           claims: [claimIndex],
           quality: ev.quality,
+          cleanText: refData.cleanText, // ← From cache (for claim extraction)
+          scrapeStatus: "full", // Successfully scraped full content
         });
       }
     }
   }
 
-  // Convert to array (remove quality field used for comparison)
-  const aiReferences = Array.from(evidenceByUrl.values()).map(
-    ({ quality, ...rest }) => rest
+  // ─────────────────────────────────────────────
+  // Add ALL cached references (even if LLM found no evidence)
+  // We still want to extract claims from them OR save search snippets
+  // ─────────────────────────────────────────────
+  for (const [url, refData] of referenceCache.entries()) {
+    if (!evidenceByUrl.has(url)) {
+      if (refData.isFailed) {
+        // Failed reference - analyze search snippet with LLM to get stance
+        let snippetStance = "insufficient";
+        let snippetRationale = "Failed to scrape - using search snippet";
+
+        if (refData.snippet && refData.claimIndices && refData.claimIndices.length > 0) {
+          // Get the first claim this reference was matched to
+          const firstClaimIndex = refData.claimIndices[0];
+          const claim = claims[firstClaimIndex];
+
+          if (claim) {
+            try {
+              // Analyze snippet with LLM
+              const snippetAnalysis = await openAiLLM.generate({
+                system: "You analyze search snippets to determine if they support, refute, or add nuance to a claim.",
+                user: `Claim: ${claim.text}\n\nSource: ${refData.title}\nSnippet: ${refData.snippet}\n\nDoes this snippet support, refute, or add nuance to the claim?`,
+                schemaHint: '{"stance":"support|refute|nuance|insufficient","summary":"brief explanation"}',
+                temperature: 0.1,
+              });
+
+              if (snippetAnalysis?.stance) {
+                snippetStance = snippetAnalysis.stance;
+                snippetRationale = snippetAnalysis.summary || "Analysis based on search snippet";
+              }
+            } catch (err) {
+              logger.warn(`⚠️  [Evidence] Failed to analyze snippet for ${url}:`, err.message);
+            }
+          }
+        }
+
+        evidenceByUrl.set(url, {
+          referenceContentId: refData.referenceContentId,
+          url,
+          title: refData.title,
+          stance: snippetStance,
+          why: snippetRationale,
+          quote: refData.snippet || null, // Use search engine snippet
+          claims: [...(refData.claimIndices || [])], // COPY array to avoid mutation
+          quality: refData.quality || 0, // Use cached quality
+          cleanText: "", // No text - failed
+          scrapeStatus: "snippet_only", // Mark as snippet-only scrape
+        });
+        logger.log(
+          `⚠️  [Evidence] Adding failed reference with analyzed snippet (stance: ${snippetStance}): ${url}`
+        );
+      } else if (refData.cleanText) {
+        // Reference was fetched but LLM found no evidence - use search snippet as fallback
+        evidenceByUrl.set(url, {
+          referenceContentId: refData.referenceContentId,
+          url,
+          title: refData.title,
+          stance: "insufficient", // No evidence found
+          why: "No relevant evidence extracted by LLM - using search snippet",
+          quote: refData.snippet || null, // Use search snippet as fallback
+          claims: [...(refData.claimIndices || [])], // COPY array to avoid mutation
+          quality: refData.quality || 0, // Use cached quality
+          cleanText: refData.cleanText,
+          scrapeStatus: "full", // Was fully scraped, just no evidence found
+        });
+        logger.log(
+          `📝 [Evidence] Adding reference with no LLM evidence, using snippet for claim extraction: ${url} (claims: ${refData.claimIndices})`
+        );
+      }
+    }
+  }
+
+  // Convert to array
+  const aiReferences = Array.from(evidenceByUrl.values());
+
+  logger.log(
+    `🟣 [runEvidenceEngine] Returning ${aiReferences.length} AI references (fully processed)`
   );
 
-  console.log(
-    `🟣 [runEvidenceEngine] Returning ${aiReferences.length} AI references`
-  );
+  if (failedCandidates.length > 0) {
+    logger.log(
+      `⚠️  [runEvidenceEngine] ${failedCandidates.length} failed candidates available for manual scrape`
+    );
 
-  return aiReferences;
+    // Log first 5 failed scrapes with details for debugging
+    logger.log(
+      `\n📋 [FAILED SCRAPES] Sample of failed references for debugging:\n`
+    );
+    failedCandidates.slice(0, 5).forEach((failed, idx) => {
+      logger.log(
+        `  ${idx + 1}. URL: ${failed.url}\n` +
+          `     Title: ${failed.title}\n` +
+          `     Reason: ${failed.reason}\n` +
+          `     Content ID: ${failed.contentId}\n`
+      );
+    });
+  }
+
+  return {
+    aiReferences,
+    failedCandidates, // For UI to display as "scrape manually" options
+    claimConfidenceMap, // Map of claimIndex → confidence for persistAIResults
+  };
 }

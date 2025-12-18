@@ -10,8 +10,9 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 import {
-  fetchClaimsForTask,
+  fetchClaimsWithEvidence,
   fetchReferencesWithClaimsForTask,
+  fetchAIEvidenceLinks,
   updateReference,
   deleteReferenceFromTask,
   addClaim,
@@ -52,6 +53,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
 }) => {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [claimLinks, setClaimLinks] = useState<ClaimLink[]>([]);
+  const [aiEvidenceLinks, setAIEvidenceLinks] = useState<import("../../../shared/entities/types").AIEvidenceLink[]>([]);
   const [refreshLinks, setRefreshLinks] = useState(false);
   const [references, setReferences] = useState<ReferenceWithClaims[]>([]);
   const [refreshReferences, setRefreshReferences] = useState(false);
@@ -133,8 +135,17 @@ const Workspace: React.FC<WorkspaceProps> = ({
   }, [contentId, refreshLinks, viewerId]);
 
   useEffect(() => {
-    fetchClaimsForTask(contentId, viewerId).then(setClaims);
+    // Use new API that includes claim_type for snippet detection
+    fetchClaimsWithEvidence(contentId, viewerId).then(setClaims);
   }, [contentId, viewerId]);
+
+  useEffect(() => {
+    // Fetch AI evidence links (reference_claim_links with support_level/stance)
+    fetchAIEvidenceLinks(contentId).then((links) => {
+      console.log("✅ AI evidence links fetched:", links);
+      setAIEvidenceLinks(links);
+    });
+  }, [contentId, refreshLinks]);
 
   useEffect(() => {
     fetchReferencesWithClaimsForTask(contentId).then((data) => {
@@ -303,7 +314,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
         <Box ref={containerRef} minW="100px" w="100%">
           {/* Middle column reserved */}
           <RelationshipMap
-            key={`${leftX}-${rightX}-${claims.length}-${references.length}`}
+            key={`${leftX}-${rightX}-${claims.length}-${references.length}-${aiEvidenceLinks.length}`}
             contentId={contentId}
             leftItems={claims}
             rightItems={references}
@@ -313,7 +324,22 @@ const Workspace: React.FC<WorkspaceProps> = ({
             leftX={leftX} // 👈 You can adjust this to match TaskClaims column
             rightX={rightX} // 👈 Adjust to align with ReferenceList column
             onLineClick={handleLineClick}
-            claimLinks={claimLinks}
+            claimLinks={[
+              ...claimLinks, // User-created claim links
+              // Convert AI evidence links to ClaimLink format
+              ...aiEvidenceLinks.map((ai) => ({
+                id: `ai-${ai.link_id}`,
+                claimId: ai.task_claim_id,
+                referenceId: ai.reference_content_id,
+                sourceClaimId: ai.task_claim_id, // For AI links, source = task claim
+                relation: ai.stance === 'support' ? 'support' as const :
+                         ai.stance === 'refute' ? 'refute' as const :
+                         ai.stance === 'nuance' ? 'nuance' as const :
+                         'support' as const, // fallback
+                confidence: ai.support_level, // Use support_level for line thickness/opacity
+                notes: ai.rationale || '',
+              }))
+            ]}
           />
         </Box>
         <Box ref={rightRef} maxW="400px" w="100%">

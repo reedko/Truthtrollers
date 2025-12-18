@@ -27,7 +27,6 @@ export default function createReferencesRoutes({ query, pool }) {
   router.get(
     "/api/content/:task_content_id/references-with-claims",
     async (req, res) => {
-      console.log("Received request for contentId:", req.params.task_content_id);
       const { task_content_id } = req.params;
 
       try {
@@ -42,7 +41,7 @@ export default function createReferencesRoutes({ query, pool }) {
           c.topic,
           c.subtopic,
                COALESCE(JSON_ARRAYAGG(
-                 JSON_OBJECT('claim_id', cl.claim_id, 'claim_text', cl.claim_text)
+                 JSON_OBJECT('claim_id', cl.claim_id, 'claim_text', cl.claim_text, 'claim_type', cl.claim_type)
                ), '[]') AS claims
          FROM content c
         INNER JOIN content_relations cr ON c.content_id = cr.reference_content_id
@@ -54,6 +53,7 @@ export default function createReferencesRoutes({ query, pool }) {
 
         const params = [task_content_id];
         const referencesWithClaims = await query(SQL, params);
+
         res.json(referencesWithClaims);
       } catch (err) {
         console.error("Error fetching references with claims:", err);

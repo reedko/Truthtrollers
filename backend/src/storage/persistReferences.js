@@ -2,6 +2,8 @@
 // Returns DOM reference metadata WITHOUT creating content records.
 // Content records will be created by /api/scrape-reference.
 
+import logger from "../utils/logger.js";
+
 export async function persistReferences(query, parentContentId, refs = []) {
   if (!parentContentId || !Array.isArray(refs)) return [];
 
@@ -19,7 +21,7 @@ export async function persistReferences(query, parentContentId, refs = []) {
     });
   }
 
-  console.log(
+  logger.log(
     `💾 [persistReferences] Returning ${saved.length} DOM reference metadata (no DB writes)`
   );
 

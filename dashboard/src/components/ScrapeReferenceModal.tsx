@@ -14,7 +14,6 @@ import {
   HStack,
   useToast,
 } from "@chakra-ui/react";
-import { dashboardScraper } from "../services/dashboardScraper";
 import { fetchAllReferences } from "../services/useDashboardAPI";
 import { useTaskStore } from "../store/useTaskStore"; // ✅ Import store
 import { useLastVisitedURL } from "../hooks/useLastVisitedUrl";
@@ -26,22 +25,27 @@ const ScrapeReferenceModal: React.FC<{
   onClose: () => void;
   taskId: string;
   onUpdateReferences?: () => void;
-}> = ({ isOpen, onClose, taskId, onUpdateReferences }) => {
+  initialUrl?: string; // NEW: Pre-fill URL (for retry scrapes)
+}> = ({ isOpen, onClose, taskId, onUpdateReferences, initialUrl }) => {
   const [url, setUrl] = useState<string>("");
   const [isScraping, setIsScraping] = useState(false);
   const toast = useToast();
   const lastVisitedURL = useLastVisitedURL(); // ✅ Fetches URL when returning to tab
 
   useEffect(() => {
-    if (isOpen && lastVisitedURL) {
-      // ✅ Only update if input is empty to prevent overwriting user edits
-      setUrl(lastVisitedURL);
+    if (isOpen) {
+      // Priority: 1) initialUrl (from retry button), 2) lastVisitedURL
+      if (initialUrl) {
+        setUrl(initialUrl);
+      } else if (lastVisitedURL) {
+        setUrl(lastVisitedURL);
+      }
     }
-  }, [isOpen, lastVisitedURL]);
+  }, [isOpen, lastVisitedURL, initialUrl]);
 
   // ✅ Handle scraping request using the messageService
 
-  // ✅ Updated scrape function using DashboardScraper
+  // ✅ Updated scrape function using scrape job queue
   const handleScrape = async () => {
     if (!url.trim()) {
       toast({
@@ -57,42 +61,100 @@ const ScrapeReferenceModal: React.FC<{
     setIsScraping(true);
 
     try {
-      console.log("🚀 Scraping reference:", url);
-      const scrapedContentId = await dashboardScraper(
-        url,
-        "",
-        "reference",
-        taskId
-      );
+      console.log("🚀 Creating scrape job for:", url);
 
-      if (scrapedContentId) {
-        // ✅ Add to store
-        useTaskStore
-          .getState()
-          .addReferenceToTask(Number(taskId), Number(scrapedContentId));
+      // Create scrape job
+      const response = await fetch(`${BASE_URL}/api/scrape-request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          mode: 'scrape_specific_url',
+          url: url,
+          taskContentId: taskId
+        })
+      });
 
-        // ✅ Re-fetch the latest references
-        await useTaskStore.getState().fetchReferences(Number(taskId));
-
-        toast({
-          title: "Reference Added!",
-          description:
-            "The reference has been successfully scraped and linked.",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
-        onUpdateReferences?.();
-        onClose();
-      } else {
-        toast({
-          title: "Scrape Failed",
-          description: "Something went wrong while scraping the reference.",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-        });
+      if (!response.ok) {
+        throw new Error('Failed to create scrape job');
       }
+
+      const result = await response.json();
+
+      toast({
+        title: "Scrape Job Created!",
+        description: "The extension will scrape the page from your open tab. Make sure the page is loaded.",
+        status: "info",
+        duration: 5000,
+        isClosable: true,
+      });
+
+      // Poll for job completion
+      const checkJobStatus = async () => {
+        const statusResponse = await fetch(
+          `${BASE_URL}/api/scrape-jobs/${result.scrape_job_id}/status`,
+          { credentials: 'include' }
+        );
+
+        if (statusResponse.ok) {
+          const jobStatus = await statusResponse.json();
+
+          if (jobStatus.status === 'completed') {
+            // ✅ Add to store
+            useTaskStore
+              .getState()
+              .addReferenceToTask(Number(taskId), Number(jobStatus.content_id));
+
+            // ✅ Re-fetch the latest references
+            await useTaskStore.getState().fetchReferences(Number(taskId));
+
+            toast({
+              title: "Reference Added!",
+              description: "The reference has been successfully scraped and linked.",
+              status: "success",
+              duration: 3000,
+              isClosable: true,
+            });
+            onUpdateReferences?.();
+            onClose();
+            setIsScraping(false);
+            return true;
+          } else if (jobStatus.status === 'failed') {
+            toast({
+              title: "Scrape Failed",
+              description: jobStatus.error_message || "The extension failed to scrape the page.",
+              status: "error",
+              duration: 5000,
+              isClosable: true,
+            });
+            setIsScraping(false);
+            return true;
+          }
+        }
+        return false;
+      };
+
+      // Poll every 2 seconds for up to 30 seconds
+      let attempts = 0;
+      const maxAttempts = 15;
+      const pollInterval = setInterval(async () => {
+        attempts++;
+        const done = await checkJobStatus();
+
+        if (done || attempts >= maxAttempts) {
+          clearInterval(pollInterval);
+          if (attempts >= maxAttempts) {
+            toast({
+              title: "Timeout",
+              description: "Scrape job is taking longer than expected. Check extension console.",
+              status: "warning",
+              duration: 5000,
+              isClosable: true,
+            });
+            setIsScraping(false);
+          }
+        }
+      }, 2000);
     } catch (error) {
       console.error("❌ Error in scraping reference:", error);
       toast({
@@ -113,15 +175,17 @@ const ScrapeReferenceModal: React.FC<{
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>Scrape a New Reference</ModalHeader>
+        <ModalHeader>
+          {initialUrl ? "🔄 Retry Failed Scrape" : "Scrape a New Reference"}
+        </ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <VStack align="start" spacing={4} width="100%">
-            {/* ✅ Show last visited page */}
+            {/* ✅ Show source of URL */}
             {url && (
-              <Text fontSize="sm" color="gray.500">
-                Last Visited:{" "}
-                <Text as="span" fontWeight="bold" color="blue.600">
+              <Text fontSize="sm" color={initialUrl ? "orange.600" : "gray.500"}>
+                {initialUrl ? "⚠️ Failed Reference:" : "Last Visited:"}{" "}
+                <Text as="span" fontWeight="bold" color={initialUrl ? "orange.700" : "blue.600"}>
                   {url}
                 </Text>
               </Text>

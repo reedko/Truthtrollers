@@ -1,6 +1,8 @@
 // backend/src/storage/persistAuthors.js
 // Fully rewritten to mirror legacy server.js behavior EXACTLY.
 
+import logger from "../utils/logger.js";
+
 const surnameParticles = new Set([
   "de",
   "del",
@@ -188,7 +190,7 @@ export async function persistAuthors(query, contentId, authors = []) {
     const authorId = callRows?.[0]?.authorId;
 
     if (!authorId) {
-      console.error("❌ persistAuthors: SP did not return authorId");
+      logger.error("❌ persistAuthors: SP did not return authorId");
       continue;
     }
 

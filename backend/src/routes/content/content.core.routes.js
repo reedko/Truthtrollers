@@ -6,6 +6,7 @@ import sharp from "sharp";
 import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
+import logger from "../../utils/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -80,7 +81,7 @@ GROUP BY t.content_id
 
   pool.query(sql, [limit, offset], (err, results) => {
     if (err) {
-      console.error("Error fetching paginated content:", err);
+      logger.error("Error fetching paginated content:", err);
       return res.status(500).json({ error: "Database query failed" });
     }
     res.json(results);
@@ -145,14 +146,14 @@ WHERE t.content_type = 'task' AND t.content_id = ?
 
   pool.query(sql, [taskId], (err, results) => {
     if (err) {
-      console.error("Error fetching task:", err);
+      logger.error("Error fetching task:", err);
       return res.status(500).json({ error: "Database query failed" });
     }
 
     if (results.length === 0) {
       return res.status(404).json({ error: "Task not found" });
     }
-    console.log(results[0], "contentbyid");
+    logger.log(results[0], "contentbyid");
     res.json(results[0]);
   });
 });
@@ -217,7 +218,7 @@ router.post("/api/store-content", async (req, res) => {
 
     res.status(200).json({ success: true, stored_content_id: result.insertId });
   } catch (err) {
-    console.error("❌ Failed to store content:", err);
+    logger.error("❌ Failed to store content:", err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
@@ -287,7 +288,7 @@ router.get("/api/store-content", async (req, res) => {
       stored_content_id: result.insertId,
     });
   } catch (err) {
-    console.error("🧨 Error storing content:", err);
+    logger.error("🧨 Error storing content:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -337,7 +338,7 @@ router.post("/api/addContent", async (req, res) => {
     // Execute the procedure
     await query(callQuery, params);
   } catch (err) {
-    console.error("Error inserting task:", err);
+    logger.error("Error inserting task:", err);
     return res.status(500).send("Database error during task insertion");
   }
   let contentId = null;
@@ -350,15 +351,15 @@ router.post("/api/addContent", async (req, res) => {
     }
 
     contentId = results[0].content_id;
-    console.log("TASKID:", contentId);
+    logger.log("TASKID:", contentId);
   } catch (err) {
-    //console.log("Detailed Catch Error:", JSON.stringify(err, null, 2));
+    //logger.log("Detailed Catch Error:", JSON.stringify(err, null, 2));
     return res.status(500).send("Database error during task ID fetch.");
   }
   const imageFilename = `content_id_${contentId}.png`;
 
   const imagePath = `assets/images/content/${imageFilename}`;
-  console.log("IMAGEFILENAME:", imagePath);
+  logger.log("IMAGEFILENAME:", imagePath);
 
   let buffer;
   let usedPuppeteer = false;
@@ -386,13 +387,13 @@ router.post("/api/addContent", async (req, res) => {
 
     buffer = Buffer.from(response.data, "binary");
   } catch (axiosError) {
-    console.warn("⚠️ Axios failed, trying Puppeteer...", axiosError.message);
+    logger.warn("⚠️ Axios failed, trying Puppeteer...", axiosError.message);
     try {
       const puppeteerBuffer = await fetchImageWithPuppeteer(thumbnail);
       buffer = puppeteerBuffer;
       usedPuppeteer = true;
     } catch (puppeteerError) {
-      console.error(
+      logger.error(
         "❌ Puppeteer also failed:",
         puppeteerError.message || puppeteerError
       );
@@ -421,7 +422,7 @@ router.post("/api/addContent", async (req, res) => {
       usedPuppeteer,
     });
   } catch (err) {
-    console.error("Error processing image or updating DB:", err);
+    logger.error("Error processing image or updating DB:", err);
     res.status(500).send("Error processing or saving image");
   }
 });

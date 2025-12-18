@@ -38,6 +38,7 @@ export interface Lit_references {
   quality?: number; // Evidence quality score (0-1)
   location?: { page?: number; section?: string }; // Location in source
   publishedAt?: string; // Publication date
+  raw_text?: string; // Pre-fetched text from evidence engine (AI refs only)
 }
 
 export interface Publisher {

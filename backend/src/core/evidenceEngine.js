@@ -1,5 +1,7 @@
 // backend/src/core/evidenceEngine.js
 
+import logger from "../utils/logger.js";
+
 function dedupe(arr, keyFn) {
   const s = new Set();
   const out = [];
@@ -33,7 +35,7 @@ export class EvidenceEngine {
 
   async generateQueries(claim, ctx, n = 6) {
     const label = `[EV][queries][${claim.id}]`;
-    console.time(label);
+    logger.time(label);
 
     const system =
       "You generate diverse, high-precision search queries for fact-checking.";
@@ -59,9 +61,9 @@ export class EvidenceEngine {
       intent: q.intent,
     }));
 
-    console.timeEnd(label);
+    logger.timeEnd(label);
 
-    console.log(`🟦 [DEBUG] Queries for ${claim.id}:`, qs);
+    logger.log(`🟦 [DEBUG] Queries for ${claim.id}:`, qs);
 
     return dedupe(
       qs,
@@ -77,7 +79,7 @@ export class EvidenceEngine {
     const maxParallel = opt.maxParallelSearches ?? Infinity;
 
     const label = `[EV][retrieve][${claim.id}]`;
-    console.time(label);
+    logger.time(label);
 
     // Convert list of queries → list of async tasks
     const tasks = limitQueries.map((q) => async () => {
@@ -135,7 +137,7 @@ export class EvidenceEngine {
       await Promise.all(workers);
     }
 
-    console.timeEnd(label);
+    logger.timeEnd(label);
 
     //
     // Deduplicate + rank like your original implementation
@@ -154,7 +156,9 @@ export class EvidenceEngine {
       .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
       .slice(0, topK);
 
-    console.log(`🟩 [DEBUG] Candidates for ${claim.id}:`, finalCandidates);
+    logger.log(
+      `🟩 [DEBUG] Candidates for ${claim.id}: ${finalCandidates.length} results, scores: ${finalCandidates.map(c => c.score?.toFixed(2) || 'null').join(', ')}`
+    );
 
     return finalCandidates;
   }
@@ -164,59 +168,66 @@ export class EvidenceEngine {
     const shortUrl = url.length > 80 ? url.slice(0, 77) + "..." : url;
 
     const fetchLabel = `[EV][fetch][${claim.id}][${shortUrl}]`;
-    console.time(fetchLabel);
+    logger.time(fetchLabel);
 
-    const text = await this.deps.fetcher.getText(cand);
-    console.timeEnd(fetchLabel);
+    const html = await this.deps.fetcher.getText(cand, claim);
+    logger.timeEnd(fetchLabel);
 
-    if (!text) {
-      console.log(`🟥 [DEBUG] No text for ${claim.id} from ${shortUrl}`);
+    if (!html) {
+      logger.log(`🟥 [DEBUG] No text for ${claim.id} from ${shortUrl}`);
       return [];
     }
 
+    // Extract clean text from HTML for LLM processing
+    let cleanText = html;
+    try {
+      const cheerio = await import("cheerio");
+      const $ = cheerio.load(html);
+      $("script, style, link, noscript").remove();
+      cleanText = $.text().replace(/\s+/g, " ").trim();
+    } catch (err) {
+      // If HTML parsing fails, use original text as-is
+      logger.warn(`⚠️ Failed to parse HTML for ${shortUrl}, using raw text`);
+    }
+
     const maxChars = opt.maxCharsPerDoc ?? 8000;
+    const maxEvidencePerDoc = opt.maxEvidencePerDoc ?? 2;
 
-    const system =
-      "You extract verbatim quotes that directly bear on a claim; classify stance.";
-
-    const user = `Claim: ${claim.text}\nSource: ${
-      cand.title || cand.url
-    }\nText:\n${text.slice(0, maxChars)}`;
-
-    const schema =
-      '{"items":[{"quote":"...","stance":"support|refute|nuance|insufficient","summary":"...","location":{"page":null,"section":"..."}}]}';
+    // Use shared quote extraction utility
+    const { extractQuotesFromText } = await import("../utils/extractQuote.js");
 
     const llmLabel = `[EV][llm-evidence][${claim.id}][${shortUrl}]`;
-    console.time(llmLabel);
+    logger.time(llmLabel);
 
-    const out = await this.deps.llm.generate({
-      system,
-      user,
-      schemaHint: schema,
-      temperature: 0.1,
+    const items = await extractQuotesFromText({
+      claimText: claim.text,
+      fullText: cleanText,
+      sourceTitle: cand.title || cand.url,
+      maxChars,
+      maxQuotes: maxEvidencePerDoc,
     });
 
-    console.timeEnd(llmLabel);
+    logger.timeEnd(llmLabel);
 
-    console.log(
+    logger.log(
       `📘 [DEBUG] LLM raw evidence for ${claim.id}/${shortUrl}:`,
-      out
+      items
     );
 
-    const items = out && Array.isArray(out.items) ? out.items : [];
-
-    console.log(
+    logger.log(
       `📙 [DEBUG] Parsed ${items.length} evidence items for ${claim.id}/${shortUrl}`
     );
 
     const quality = (c) => {
-      const base = (c.score ?? 0) / 100;
+      const base = c.score ?? 0; // Score is already 0-1 range from search engines
       const boost = c.domain?.match(
         /(reuters|apnews|nature|nih|who|gov|\.edu)/i
       )
         ? 0.2
         : 0;
-      return Math.max(0, Math.min(1, base + boost));
+      const q = Math.max(0, Math.min(1.2, base + boost)); // Max 1.2 (1.0 + 0.2 boost)
+      logger.log(`🔢 [DEBUG] Quality calc for ${c.url?.slice(0, 50)}: score=${c.score}, base=${base.toFixed(4)}, boost=${boost}, quality=${q.toFixed(4)}`);
+      return q;
     };
 
     let i = 0;
@@ -236,10 +247,11 @@ export class EvidenceEngine {
         stance: it.stance || "insufficient",
         quality: quality(cand),
         location: it.location || undefined,
+        raw_text: html, // ← Save original HTML to avoid re-fetching and allow metadata extraction
       });
     }
 
-    console.log(
+    logger.log(
       `🟪 [DEBUG] Final evidence array for ${claim.id}/${shortUrl}:`,
       arr
     );
@@ -248,7 +260,7 @@ export class EvidenceEngine {
   }
 
   adjudicate(claim, evidence) {
-    console.log(
+    logger.log(
       `🟫 [DEBUG] Adjudicating ${claim.id} with evidence count:`,
       evidence.length
     );
@@ -307,7 +319,7 @@ export class EvidenceEngine {
       .filter(Boolean)
       .join(". ");
 
-    console.log(
+    logger.log(
       `🟧 [DEBUG] Verdict for ${claim.id}:`,
       finalVerdict,
       "confidence",
@@ -330,7 +342,7 @@ export class EvidenceEngine {
    * Challenges the initial verdict and may revise it.
    */
   async redTeam(claim, adjudication, evidence) {
-    console.log(`🟥 [REDTEAM] Starting red-team for claim ${claim.id}`);
+    logger.log(`🟥 [REDTEAM] Starting red-team for claim ${claim.id}`);
 
     const system = `
       You are a second-pass adversarial reviewer.
@@ -374,12 +386,12 @@ TASK:
         temperature: 0.3,
       });
     } catch (err) {
-      console.warn("🟥 [REDTEAM] LLM error:", err);
+      logger.warn("🟥 [REDTEAM] LLM error:", err);
       return adjudication; // fallback
     }
 
     if (!out || !out.finalVerdict) {
-      console.warn("🟥 [REDTEAM] Invalid red-team result, keeping original.");
+      logger.warn("🟥 [REDTEAM] Invalid red-team result, keeping original.");
       return adjudication;
     }
 
@@ -395,7 +407,7 @@ TASK:
       counters: adjudication.counters,
     };
 
-    console.log(`🟥 [REDTEAM] Revised verdict for ${claim.id}:`, revised);
+    logger.log(`🟥 [REDTEAM] Revised verdict for ${claim.id}:`, revised);
     return revised;
   }
 
@@ -407,7 +419,7 @@ TASK:
     const tasks = claims.map((claim, index) => async () => {
       const ctx = contexts ? contexts[claim.id] : undefined;
 
-      console.log(
+      logger.log(
         `\n🔵 [DEBUG] Starting claim ${claim.id}: "${claim.text.slice(
           0,
           50
@@ -415,7 +427,7 @@ TASK:
       );
 
       const claimLabel = `[EV][claim:${claim.id}]`;
-      console.time(`${claimLabel} total`);
+      logger.time(`${claimLabel} total`);
 
       const queries = await this.generateQueries(
         claim,
@@ -433,7 +445,7 @@ TASK:
         )
       ).flat();
 
-      console.log(
+      logger.log(
         `🟨 [DEBUG] Evidence items returned for ${claim.id}:`,
         evs.length
       );
@@ -455,7 +467,7 @@ TASK:
 
       results[index] = row;
 
-      console.timeEnd(`${claimLabel} total`);
+      logger.timeEnd(`${claimLabel} total`);
     });
 
     // Execute tasks with concurrency limit
@@ -474,7 +486,7 @@ TASK:
       await Promise.all(workers);
     }
 
-    console.log("🟩 [DEBUG] Final results before persist:", results);
+    logger.log("🟩 [DEBUG] Final results before persist:", results);
 
     return results;
   }

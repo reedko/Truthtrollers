@@ -76,10 +76,14 @@ export const orchestrateScraping = async (
     let $: cheerio.CheerioAPI;
     let isRetracted = false;
     let thumbNailUrl = "";
-    if (contentType === "task") {
-      $ = await fetchPageContent();
-      console.log("✅ fetchPageContent success");
-    } else {
+
+    // ✅ Always try to get HTML from loaded tab first (for manual dashboard scrapes)
+    try {
+      $ = await fetchPageContent(url);
+      console.log("✅ fetchPageContent success (from loaded tab)");
+    } catch (tabError) {
+      // Fallback to external fetch if no tab found
+      console.warn("⚠️ No loaded tab found, falling back to external fetch:", tabError);
       const result = await fetchExternalPageContent(url);
 
       if (!result || !result.$ || result.isRSS) {

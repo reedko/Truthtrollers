@@ -6,26 +6,28 @@
 import { ClaimExtractor } from "./claimsEngine.js";
 import { openAiLLM } from "./openAiLLM.js";
 import { persistClaims } from "../storage/persistClaims.js";
+import logger from "../utils/logger.js";
 
 /**
  * processTaskClaims({
  *    query,
  *    taskContentId,
- *    text
+ *    text,
+ *    claimType = 'task'
  * })
  *
  * Returns:
  *    [{ id: claimId, text }]
  */
-export async function processTaskClaims({ query, taskContentId, text }) {
-  console.log("🟩 [processTaskClaims] Extracting + storing claims…");
+export async function processTaskClaims({ query, taskContentId, text, claimType = 'task' }) {
+  logger.log("🟩 [processTaskClaims] Extracting + storing claims…");
 
   if (!query) throw new Error("processTaskClaims: missing query");
   if (!taskContentId)
     throw new Error("processTaskClaims: missing taskContentId");
 
   if (!text || !text.trim()) {
-    console.warn("⚠️ [processTaskClaims] Empty text, skipping claims.");
+    logger.warn("⚠️ [processTaskClaims] Empty text, skipping claims.");
     return [];
   }
 
@@ -41,16 +43,16 @@ export async function processTaskClaims({ query, taskContentId, text }) {
   });
 
   const claims = extraction.claims || [];
-  console.log(`🟩 Extracted ${claims.length} claims`);
+  logger.log(`🟩 Extracted ${claims.length} claims`);
 
   if (claims.length === 0) return [];
 
   // -----------------------------------------------------
   // 2. Persist claims (batch)
-  // persistClaims(query, contentId, claimsArray)
+  // persistClaims(query, contentId, claimsArray, relationshipType, claimType)
   // returns array of new claimIds
   // -----------------------------------------------------
-  const claimIds = await persistClaims(query, taskContentId, claims);
+  const claimIds = await persistClaims(query, taskContentId, claims, claimType, claimType);
 
   if (!Array.isArray(claimIds)) {
     throw new Error("persistClaims returned invalid claimIds");
@@ -64,7 +66,7 @@ export async function processTaskClaims({ query, taskContentId, text }) {
     text: claims[i],
   }));
 
-  console.log(
+  logger.log(
     `🟩 [processTaskClaims] Persisted ${result.length} claims for content ${taskContentId}`
   );
 
