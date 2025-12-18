@@ -50,6 +50,7 @@
     "matches": [
       "http://localhost/*",
       "http://localhost:5173/*",
+      "https://localhost:5173/*",
       "https://truthtrollers.com/*"
     ]
   }

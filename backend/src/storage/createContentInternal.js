@@ -1,5 +1,7 @@
 // backend/src/core/createContentInternal.js
 // Single internal helper that does what /api/addContent used to do:
+
+import logger from "../utils/logger.js";
 //  - CALL InsertContentAndTopics(...)
 //  - fetch content_id
 //  - download & resize thumbnail
@@ -89,7 +91,7 @@ export async function createContentInternal(query, payload) {
   try {
     await query(callQuery, params);
   } catch (err) {
-    console.error(
+    logger.error(
       "❌ createContentInternal: error calling InsertContentAndTopics",
       err
     );
@@ -110,15 +112,15 @@ export async function createContentInternal(query, payload) {
     }
 
     contentId = results[0].content_id;
-    console.log("🧩 createContentInternal: contentId =", contentId);
+    logger.log("🧩 createContentInternal: contentId =", contentId);
   } catch (err) {
-    console.error("❌ createContentInternal: error fetching content_id", err);
+    logger.error("❌ createContentInternal: error fetching content_id", err);
     throw err;
   }
 
   // 3) If we don't have a thumbnail URL, just return contentId
   if (!thumbnail) {
-    console.warn(
+    logger.warn(
       "⚠️ createContentInternal: No thumbnail URL provided; skipping image fetch."
     );
     return contentId;
@@ -127,7 +129,7 @@ export async function createContentInternal(query, payload) {
   // 4) Download and resize the thumbnail image
   const imageFilename = `content_id_${contentId}.png`;
   const imagePath = `assets/images/content/${imageFilename}`;
-  console.log("🖼 createContentInternal: imagePath =", imagePath);
+  logger.log("🖼 createContentInternal: imagePath =", imagePath);
 
   let buffer;
   let usedPuppeteer = false;
@@ -140,6 +142,7 @@ export async function createContentInternal(query, payload) {
 
     const response = await axiosInstance.get(thumbnail, {
       responseType: "arraybuffer",
+      timeout: 10000, // 10 second timeout to prevent hangs
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
@@ -152,7 +155,7 @@ export async function createContentInternal(query, payload) {
 
     buffer = Buffer.from(response.data, "binary");
   } catch (axiosError) {
-    console.warn(
+    logger.warn(
       "⚠️ createContentInternal: Axios failed, trying Puppeteer...",
       axiosError.message
     );
@@ -161,7 +164,7 @@ export async function createContentInternal(query, payload) {
       buffer = puppeteerBuffer;
       usedPuppeteer = true;
     } catch (puppeteerError) {
-      console.error(
+      logger.error(
         "❌ createContentInternal: Puppeteer also failed:",
         puppeteerError.message || puppeteerError
       );
@@ -182,13 +185,13 @@ export async function createContentInternal(query, payload) {
     const updateQuery = "UPDATE content SET thumbnail = ? WHERE content_id = ?";
     await query(updateQuery, [imagePath, contentId]);
 
-    console.log("✅ createContentInternal: thumbnail saved", {
+    logger.log("✅ createContentInternal: thumbnail saved", {
       contentId,
       imagePath,
       usedPuppeteer,
     });
   } catch (err) {
-    console.error(
+    logger.error(
       "❌ createContentInternal: Error processing image or updating DB:",
       err
     );

@@ -4,7 +4,8 @@ export async function persistClaims(
   query,
   contentId,
   claims = [],
-  relationshipType = "task"
+  relationshipType = "task",
+  claimType = "task"
 ) {
   if (!contentId || !Array.isArray(claims)) return [];
 
@@ -24,10 +25,10 @@ export async function persistClaims(
     const insertResult = await query(
       `
         INSERT INTO claims
-          (claim_text, veracity_score, confidence_level, last_verified)
-        VALUES (?, ?, ?, ?)
+          (claim_text, claim_type, veracity_score, confidence_level, last_verified)
+        VALUES (?, ?, ?, ?, ?)
       `,
-      [claimText.trim(), veracity_score, confidence_level, last_verified]
+      [claimText.trim(), claimType, veracity_score, confidence_level, last_verified]
     );
 
     const claimId = insertResult.insertId;

@@ -1,4 +1,4 @@
-import { insertReferenceClaimLink } from "../queries/referenceClaimLinks.js";
+import { insertReferenceClaimLink } from "../src/queries/referenceClaimLinks.js";
 
 export function registerReferenceClaimRoutes(app, query) {
   app.post("/api/reference-claim-links", async (req, res) => {

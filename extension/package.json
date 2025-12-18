@@ -1,7 +1,7 @@
 {
-  "name": "youtube-string-detector",
+  "name": "truthtrollers_extension",
   "version": "1.0.0",
-  "description": "A Chrome extension to detect strings in YouTube URLs and page content",
+  "description": "A veracity testing extension",
   "main": "index.js",
   "scripts": {
     "start": "webpack serve --mode development",

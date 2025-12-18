@@ -21,6 +21,7 @@ import { promisify } from "util";
 // ─────────────────────────────────────────────
 import registerBeaconRoutes from "./src/routes/beaconRoutes.js";
 import registerDiscussionRoutes from "./src/routes/discussionRoutes.js";
+import analyzeContentRoute from "./src/routes/analyzeContent.js";
 // NOTE: referenceClaimRoutes and fetchWithPuppeteer are in temp/, not src/routes/
 // These will be refactored later
 
@@ -40,6 +41,9 @@ import createTestimonialsRouter from "./src/routes/testimonials/index.js";
 import createMiscRouter from "./src/routes/misc/index.js";
 import createGraphRouter from "./src/routes/graph/index.js";
 import createEvidenceRouter from "./src/routes/evidence/index.js";
+
+// Logger utility
+import { clearLogFile } from "./src/utils/logger.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -153,6 +157,7 @@ app.use("/assets", express.static(path.join(__dirname, "assets")));
 // registerReferenceClaimRoutes(app, query); // TODO: Move from temp/ to src/routes/
 registerBeaconRoutes(app, query, pool);
 registerDiscussionRoutes(app, query, pool);
+app.use("/api/analyze-content", analyzeContentRoute);
 
 // ─────────────────────────────────────────────
 // V2 modular routers, all mounted flat under /api
@@ -206,6 +211,29 @@ app.get("/proxy", async (req, res) => {
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", ts: Date.now() });
 });
+
+// ─────────────────────────────────────────────
+// Initialize Logger (clear log file on startup)
+// ─────────────────────────────────────────────
+clearLogFile();
+
+// ─────────────────────────────────────────────
+// Database Health Check (fail fast if DB is down)
+// ─────────────────────────────────────────────
+async function checkDatabaseConnection() {
+  try {
+    console.log("🔍 Checking database connection...");
+    await query("SELECT 1");
+    console.log("✅ Database connection successful");
+  } catch (err) {
+    console.error("❌ Database connection failed:", err.message);
+    console.error("💡 Make sure MySQL is running: mysql.server start");
+    process.exit(1); // Exit with error code
+  }
+}
+
+// Check DB before starting servers
+await checkDatabaseConnection();
 
 // ─────────────────────────────────────────────
 // HTTP Server

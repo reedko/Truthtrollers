@@ -6,6 +6,7 @@
 // NO CLAIM EXTRACTION here
 // ─────────────────────────────────────────────
 
+import logger from "../utils/logger.js";
 import { fetchExternalPageContent } from "../utils/fetchExternalPageContent.js";
 import { fetchPageContent } from "../utils/fetchPageContent.js";
 import { extractAuthors } from "../utils/extractAuthors.js";
@@ -15,21 +16,22 @@ import { extractInlineRefs } from "../utils/extractInlineRefs.js";
 import { extractTestimonialsFromHtml } from "../utils/extractTestimonials.js";
 import { extractTranscript } from "./youtubeTranscript.js";
 import { getMainHeadline } from "../utils/getMainHeadline.js";
+import { getBestImage } from "../utils/getBestImage.js";
 import { persistTaskContent } from "../storage/persistContentAndEvidence.js";
-import cheerio from "cheerio";
+import * as cheerio from "cheerio";
 
 /**
- * scrapeTask(url)
- *  • Fetch HTML, PDF, or YouTube transcript
+ * scrapeTask(query, url, raw_html?)
+ *  • Fetch HTML, PDF, or YouTube transcript (OR use provided raw_html)
  *  • Extract: text, title, authors, publisher, thumbnail
  *  • Extract DOM references
  *  • Extract inline references from text
  *  • Persist the task content row in DB
  *  • Returns: { taskContentId, text, metadata, domRefs, inlineRefs }
  */
-export async function scrapeTask(url) {
+export async function scrapeTask(query, url, raw_html = null) {
   try {
-    console.log(`🟦 [scrapeTask] Starting scrape for: ${url}`);
+    logger.log(`🟦 [scrapeTask] Starting scrape for: ${url}`);
 
     let $ = null;
     let text = "";
@@ -43,24 +45,29 @@ export async function scrapeTask(url) {
     let isPdf = /\.pdf($|\?)/i.test(url);
 
     // ─────────────────────────────────────────────
-    // 1. FETCH CONTENT
-    // HTML page → fetchPageContent
-    // Everything else → fetchExternalPageContent (PDF, etc.)
+    // 1. FETCH CONTENT (or use provided HTML)
     // ─────────────────────────────────────────────
 
-    if (!isPdf) {
+    // Use provided HTML if available (from extension's current page DOM)
+    if (raw_html) {
+      logger.log(`✅ [scrapeTask] Using provided HTML (${raw_html.length} chars, no fetch!)`);
+      $ = cheerio.load(raw_html);
+      rawHtml = raw_html;
+    }
+    // Otherwise fetch from URL
+    else if (!isPdf) {
       try {
         $ = await fetchPageContent(url);
         rawHtml = $.html();
       } catch (err) {
-        console.warn("⚠️ fetchPageContent failed, trying external:", err);
+        logger.warn("⚠️ fetchPageContent failed, trying external:", err);
       }
     }
 
-    if (!$) {
+    if (!$ && !raw_html) {
       const ext = await fetchExternalPageContent(url);
       if (!ext || !ext.$) {
-        console.warn("⚠️ No usable content. aborting:", url);
+        logger.warn("⚠️ No usable content. aborting:", url);
         return null;
       }
       $ = ext.$;
@@ -117,6 +124,14 @@ export async function scrapeTask(url) {
 
     publisher = await extractPublisher($);
 
+    // Extract thumbnail if not already set (from PDF)
+    if (!thumbnail) {
+      thumbnail = getBestImage($, url) || "";
+      if (thumbnail) {
+        logger.log(`🖼️  [scrapeTask] Extracted thumbnail: ${thumbnail.slice(0, 80)}...`);
+      }
+    }
+
     // ─────────────────────────────────────────────
     // 4. REFERENCES
     // ─────────────────────────────────────────────
@@ -132,7 +147,7 @@ export async function scrapeTask(url) {
     // 5. PERSIST TASK CONTENT ROW (NO CLAIMS YET)
     // ─────────────────────────────────────────────
 
-    const taskContentId = await persistTaskContent({
+    const taskContentId = await persistTaskContent(query, {
       url,
       title,
       rawText: text,
@@ -158,7 +173,7 @@ export async function scrapeTask(url) {
       rawHtml,
     };
   } catch (err) {
-    console.error("❌ [scrapeTask] Fatal error on:", url, err);
+    logger.error("❌ [scrapeTask] Fatal error on:", url, err);
     return null;
   }
 }

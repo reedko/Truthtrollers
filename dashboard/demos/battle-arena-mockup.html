@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruthTrollers Battle Arena - Mockup</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .arena-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .arena-header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .arena-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .arena-subtitle {
+            font-size: 1rem;
+            color: #94a3b8;
+        }
+
+        /* Mode Switcher */
+        .mode-switcher {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+            animation: fadeIn 1s ease;
+        }
+
+        .mode-btn {
+            padding: 10px 20px;
+            background: rgba(59, 130, 246, 0.1);
+            border: 2px solid #3b82f6;
+            border-radius: 8px;
+            color: #3b82f6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .mode-btn:hover {
+            background: rgba(59, 130, 246, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .mode-btn.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        /* Battle Stage */
+        .battle-stage {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 60px;
+            margin-bottom: 40px;
+            min-height: 500px;
+            position: relative;
+        }
+
+        /* VS Symbol */
+        .vs-symbol {
+            font-size: 3rem;
+            font-weight: 900;
+            color: #f59e0b;
+            text-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+            z-index: 10;
+        }
+
+        /* Battle Cards */
+        .battle-card {
+            width: 380px;
+            min-height: 520px;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 2px solid transparent;
+            transition: all 0.4s ease;
+            animation: cardFlipIn 0.8s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .battle-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 20px;
+            padding: 2px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .battle-card:hover::before {
+            opacity: 1;
+        }
+
+        .battle-card.left {
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        .battle-card.right {
+            border-color: rgba(34, 197, 94, 0.5);
+        }
+
+        .battle-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 12px 48px rgba(59, 130, 246, 0.3);
+        }
+
+        .card-rarity {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            background: rgba(59, 130, 246, 0.2);
+            border: 2px solid #3b82f6;
+        }
+
+        .card-header {
+            margin-bottom: 25px;
+        }
+
+        .card-type {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #64748b;
+            margin-bottom: 8px;
+        }
+
+        .card-claim {
+            font-size: 1.3rem;
+            font-weight: 600;
+            line-height: 1.4;
+            color: #f1f5f9;
+            margin-bottom: 15px;
+            min-height: 80px;
+        }
+
+        .card-source {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-stats {
+            margin-top: 25px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-row:hover {
+            background: rgba(15, 23, 42, 0.8);
+            transform: translateX(5px);
+        }
+
+        .stat-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .stat-icon {
+            font-size: 1.3rem;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+
+        .stat-bar {
+            width: 100px;
+            height: 8px;
+            background: rgba(59, 130, 246, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border-radius: 4px;
+            transition: width 1s ease;
+            animation: fillBar 1s ease forwards;
+        }
+
+        /* Judgment Controls */
+        .judgment-controls {
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            animation: fadeInUp 1s ease;
+        }
+
+        .judgment-title {
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+            color: #f1f5f9;
+        }
+
+        .judgment-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+
+        .judgment-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .judgment-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .judgment-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .judgment-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        .judgment-btn.left-wins {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .judgment-btn.left-wins:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        .judgment-btn.draw {
+            background: linear-gradient(135deg, #64748b, #475569);
+            color: white;
+        }
+
+        .judgment-btn.draw:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(100, 116, 139, 0.4);
+        }
+
+        .judgment-btn.right-wins {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+        }
+
+        .judgment-btn.right-wins:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(34, 197, 94, 0.4);
+        }
+
+        /* Strength Slider */
+        .strength-control {
+            margin-bottom: 25px;
+        }
+
+        .strength-label {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .slider-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 600;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 8px;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #ef4444 0%, #64748b 50%, #22c55e 100%);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.7);
+        }
+
+        .strength-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #3b82f6;
+            min-width: 40px;
+            text-align: center;
+        }
+
+        /* Note Input */
+        .note-input {
+            margin-bottom: 25px;
+        }
+
+        .note-input textarea {
+            width: 100%;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            background: rgba(15, 23, 42, 0.5);
+            color: #e2e8f0;
+            font-size: 0.95rem;
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .note-input textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: rgba(15, 23, 42, 0.7);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+        }
+
+        .note-input textarea::placeholder {
+            color: #64748b;
+        }
+
+        /* Submit Button */
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.5);
+        }
+
+        .submit-btn:active {
+            transform: translateY(-1px);
+        }
+
+        /* Progress Info */
+        .progress-info {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .progress-info h3 {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .progress-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .progress-stat {
+            text-align: center;
+        }
+
+        .progress-stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+
+        .progress-stat-label {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes cardFlipIn {
+            from {
+                opacity: 0;
+                transform: perspective(1000px) rotateY(-20deg);
+            }
+            to {
+                opacity: 1;
+                transform: perspective(1000px) rotateY(0deg);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        @keyframes fillBar {
+            from {
+                width: 0;
+            }
+        }
+
+        /* Victory Animation */
+        .victory-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .victory-overlay.active {
+            display: flex;
+        }
+
+        .victory-message {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            padding: 60px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: victoryPop 0.5s ease;
+        }
+
+        .victory-message h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: white;
+        }
+
+        .victory-message p {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 30px;
+        }
+
+        .next-battle-btn {
+            padding: 18px 40px;
+            border: none;
+            border-radius: 12px;
+            background: white;
+            color: #3b82f6;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .next-battle-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 24px rgba(255, 255, 255, 0.3);
+        }
+
+        @keyframes victoryPop {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .battle-stage {
+                flex-direction: column;
+                gap: 30px;
+            }
+
+            .vs-symbol {
+                transform: rotate(90deg);
+            }
+        }
+
+        /* Graph Mode Styles */
+        .graph-container {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .graph-container.active {
+            display: flex;
+            opacity: 1;
+            gap: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .graph-canvas {
+            flex: 1;
+            height: 700px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 20px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+
+        #cy {
+            width: 100%;
+            height: 100%;
+        }
+
+        .graph-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .graph-btn {
+            padding: 12px 20px;
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(59, 130, 246, 0.5);
+            border-radius: 10px;
+            color: #3b82f6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .graph-btn:hover {
+            background: rgba(59, 130, 246, 0.2);
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .graph-legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(30, 41, 59, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            z-index: 10;
+        }
+
+        .legend-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #94a3b8;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+        }
+
+        .inspector-drawer {
+            width: 350px;
+            background: rgba(30, 41, 59, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            overflow-y: auto;
+            max-height: 700px;
+        }
+
+        .inspector-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #f1f5f9;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .inspector-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 10px;
+        }
+
+        .inspector-section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            margin-bottom: 10px;
+        }
+
+        .inspector-content {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+
+        .inspector-empty {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+            font-style: italic;
+        }
+
+        .inspector-metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 8px;
+        }
+
+        .inspector-metric-label {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .inspector-metric-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+
+        .inspector-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .inspector-btn {
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .inspector-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+        }
+
+        .battle-container {
+            display: block;
+        }
+
+        .battle-container.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="arena-container">
+        <!-- Header -->
+        <div class="arena-header">
+            <h1 class="arena-title">⚔️ TRUTH BATTLE ARENA</h1>
+            <p class="arena-subtitle">Judge Claims • Build Truth • Earn XP</p>
+        </div>
+
+        <!-- Mode Switcher -->
+        <div class="mode-switcher">
+            <button class="mode-btn">🕸️ Graph Mode</button>
+            <button class="mode-btn active">⚔️ Battle Mode</button>
+            <button class="mode-btn">📅 Timeline Mode</button>
+        </div>
+
+        <!-- Battle Stage -->
+        <div class="battle-container" id="battleContainer">
+        <div class="battle-stage">
+            <!-- Left Card (Task Claim) -->
+            <div class="battle-card left">
+                <div class="card-rarity">⚪</div>
+                <div class="card-header">
+                    <div class="card-type">Task Claim</div>
+                    <div class="card-claim">"Vaccines don't work and are dangerous"</div>
+                    <div class="card-source">
+                        <span>📱</span>
+                        <span>Facebook Post • NaturalHealthWarrior</span>
+                    </div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat-row">
+                        <div class="stat-label">
+                            <span class="stat-icon">💪</span>
+                            <span>Spread</span>
+                        </div>
+                        <div class="stat-value">847K</div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-fill" style="width: 85%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">
+                            <span class="stat-icon">🛡️</span>
+                            <span>Defense</span>
+                        </div>
+                        <div class="stat-value">2/10</div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-fill" style="width: 20%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">
+                            <span class="stat-icon">⚡</span>
+                            <span>Appeal</span>
+                        </div>
+                        <div class="stat-value">9/10</div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-fill" style="width: 90%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">
+                            <span class="stat-icon">🎯</span>
+                            <span>Sources</span>
+                        </div>
+                        <div class="stat-value">2 blogs</div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-fill" style="width: 15%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">
+                            <span class="stat-icon">⭐</span>
+                            <span>Veracity</span>
+                        </div>
+                        <div class="stat-value">1/10</div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-fill" style="width: 10%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VS Symbol -->
+            <div class="vs-symbol">⚡VS⚡</div>
+
+            <!-- Right Card (Reference Claim) -->
+            <div class="battle-card right">
+                <div class="card-rarity">🟡</div>
+                <div class="card-header">
+                    <div class="card-type">Reference Evidence</div>
+                    <div class="card-claim">"mRNA vaccines showed 95% efficacy in Phase 3 clinical trials"</div>
+                    <div class="card-source">
+                        <span>🔬</span>
+                        <span>Nature Medicine • Dr. Sarah Johnson, PhD</span>
+                    </div>
+                </div>
+                <div class="card-stats">
+                    <div class="stat-row">
+                        <div class="stat-label">
+                            <span class="stat-icon">💪</span>
+                            <span>Citations</span>
+                        </div>
+                        <div class="stat-value">12.4K</div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-fill" style="width: 95%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">
+                            <span class="stat-icon">🛡️</span>
+                            <span>Defense</span>
+                        </div>
+                        <div class="stat-value">9/10</div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-fill" style="width: 90%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">
+                            <span class="stat-icon">⚡</span>
+                            <span>Appeal</span>
+                        </div>
+                        <div class="stat-value">4/10</div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-fill" style="width: 40%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">
+                            <span class="stat-icon">🎯</span>
+                            <span>Sources</span>
+                        </div>
+                        <div class="stat-value">Nature</div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-fill" style="width: 95%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-row">
+                        <div class="stat-label">
+                            <span class="stat-icon">⭐</span>
+                            <span>Veracity</span>
+                        </div>
+                        <div class="stat-value">9/10</div>
+                        <div class="stat-bar">
+                            <div class="stat-bar-fill" style="width: 90%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Judgment Controls -->
+        <div class="judgment-controls">
+            <h2 class="judgment-title">⚖️ Your Judgment</h2>
+            
+            <div class="judgment-buttons">
+                <button class="judgment-btn left-wins" onclick="selectJudgment('left')">
+                    <span>👈 Left Wins</span>
+                </button>
+                <button class="judgment-btn draw" onclick="selectJudgment('draw')">
+                    <span>🤝 Draw</span>
+                </button>
+                <button class="judgment-btn right-wins" onclick="selectJudgment('right')">
+                    <span>👉 Right Wins</span>
+                </button>
+            </div>
+
+            <div class="strength-control">
+                <div class="strength-label">Judgment Strength</div>
+                <div class="slider-container">
+                    <span class="slider-label">Weak</span>
+                    <input type="range" id="strengthSlider" min="-10" max="10" value="0" step="1">
+                    <span class="slider-label">Strong</span>
+                    <span class="strength-value" id="strengthValue">0</span>
+                </div>
+            </div>
+
+            <div class="note-input">
+                <textarea placeholder="Add your reasoning... (e.g., 'Clinical trial data directly contradicts the claim with strong methodology')"></textarea>
+            </div>
+
+            <button class="submit-btn" onclick="submitJudgment()">
+                ⚡ SUBMIT JUDGMENT
+            </button>
+        </div>
+
+        <!-- Progress Info -->
+        <div class="progress-info">
+            <h3>Campaign Progress</h3>
+            <div class="progress-stats">
+                <div class="progress-stat">
+                    <div class="progress-stat-value">7</div>
+                    <div class="progress-stat-label">Battles Won</div>
+                </div>
+                <div class="progress-stat">
+                    <div class="progress-stat-value">23</div>
+                    <div class="progress-stat-label">Total Judgments</div>
+                </div>
+                <div class="progress-stat">
+                    <div class="progress-stat-value">340</div>
+                    <div class="progress-stat-label">XP Earned</div>
+                </div>
+            </div>
+        </div>
+        </div>
+
+        <!-- Graph Mode -->
+        <div class="graph-container" id="graphContainer">
+            <div class="graph-canvas">
+                <div id="cy"></div>
+                <div class="graph-controls">
+                    <button class="graph-btn" onclick="resetGraphView()">🎯 Reset View</button>
+                    <button class="graph-btn" onclick="focusOnTask()">📋 Focus Task</button>
+                    <button class="graph-btn" onclick="highlightContradictions()">⚠️ Show Conflicts</button>
+                    <button class="graph-btn" onclick="fitGraph()">🔍 Fit All</button>
+                </div>
+                <div class="graph-legend">
+                    <div class="legend-title">Node Types</div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #3b82f6;"></div>
+                        <span>Task</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #8b5cf6;"></div>
+                        <span>Task Claim</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #22c55e;"></div>
+                        <span>Reference</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f59e0b;"></div>
+                        <span>Reference Claim</span>
+                    </div>
+                    <div class="legend-title" style="margin-top: 15px;">Edge Types</div>
+                    <div class="legend-item">
+                        <div style="width: 30px; height: 3px; background: #22c55e;"></div>
+                        <span>Supports</span>
+                    </div>
+                    <div class="legend-item">
+                        <div style="width: 30px; height: 3px; background: #ef4444;"></div>
+                        <span>Refutes</span>
+                    </div>
+                    <div class="legend-item">
+                        <div style="width: 30px; height: 3px; background: #64748b;"></div>
+                        <span>Neutral</span>
+                    </div>
+                </div>
+            </div>
+            <div class="inspector-drawer" id="inspectorDrawer">
+                <div class="inspector-title">
+                    <span>🔍</span>
+                    <span>Inspector</span>
+                </div>
+                <div class="inspector-empty">
+                    Click on any node or edge to see details
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Victory Overlay -->
+    <div class="victory-overlay" id="victoryOverlay">
+        <div class="victory-message">
+            <h2>🎉 JUDGMENT SUBMITTED!</h2>
+            <p>+10 XP • Validation Streak: 5</p>
+            <button class="next-battle-btn" onclick="nextBattle()">Next Battle →</button>
+        </div>
+    </div>
+
+    <script>
+        let currentJudgment = null;
+        let cy = null;
+        
+        // Initialize Cytoscape graph
+        function initGraph() {
+            cy = cytoscape({
+                container: document.getElementById('cy'),
+                
+                elements: [
+                    // Task node
+                    { data: { id: 'task1', label: 'Vaccine Safety Task', type: 'task' } },
+                    
+                    // Task claims
+                    { data: { id: 'tc1', label: 'Vaccines don\'t work', type: 'task_claim', parent: 'task1' } },
+                    { data: { id: 'tc2', label: 'Vaccines are dangerous', type: 'task_claim', parent: 'task1' } },
+                    
+                    // References
+                    { data: { id: 'ref1', label: 'Nature Medicine Study', type: 'reference' } },
+                    { data: { id: 'ref2', label: 'CDC Report', type: 'reference' } },
+                    { data: { id: 'ref3', label: 'Blog Post', type: 'reference' } },
+                    
+                    // Reference claims
+                    { data: { id: 'rc1', label: '95% efficacy in trials', type: 'ref_claim', parent: 'ref1' } },
+                    { data: { id: 'rc2', label: 'Approved by FDA', type: 'ref_claim', parent: 'ref1' } },
+                    { data: { id: 'rc3', label: 'Millions vaccinated safely', type: 'ref_claim', parent: 'ref2' } },
+                    { data: { id: 'rc4', label: 'Rare side effects monitored', type: 'ref_claim', parent: 'ref2' } },
+                    { data: { id: 'rc5', label: 'Personal anecdote', type: 'ref_claim', parent: 'ref3' } },
+                    
+                    // Edges (claim links)
+                    { data: { source: 'rc1', target: 'tc1', stance: 'refutes', strength: 9 } },
+                    { data: { source: 'rc2', target: 'tc1', stance: 'refutes', strength: 7 } },
+                    { data: { source: 'rc3', target: 'tc2', stance: 'refutes', strength: 8 } },
+                    { data: { source: 'rc4', target: 'tc2', stance: 'refutes', strength: 6 } },
+                    { data: { source: 'rc5', target: 'tc2', stance: 'supports', strength: 2 } },
+                ],
+                
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'background-color': '#3b82f6',
+                            'label': 'data(label)',
+                            'color': '#fff',
+                            'text-valign': 'center',
+                            'text-halign': 'center',
+                            'font-size': '12px',
+                            'width': 'label',
+                            'height': 'label',
+                            'padding': '15px',
+                            'shape': 'roundrectangle',
+                            'text-wrap': 'wrap',
+                            'text-max-width': '120px',
+                            'border-width': 2,
+                            'border-color': '#1e40af'
+                        }
+                    },
+                    {
+                        selector: 'node[type="task"]',
+                        style: {
+                            'background-color': '#3b82f6',
+                            'border-color': '#1e40af',
+                            'font-weight': 'bold',
+                            'font-size': '14px'
+                        }
+                    },
+                    {
+                        selector: 'node[type="task_claim"]',
+                        style: {
+                            'background-color': '#8b5cf6',
+                            'border-color': '#6d28d9'
+                        }
+                    },
+                    {
+                        selector: 'node[type="reference"]',
+                        style: {
+                            'background-color': '#22c55e',
+                            'border-color': '#16a34a',
+                            'font-weight': 'bold'
+                        }
+                    },
+                    {
+                        selector: 'node[type="ref_claim"]',
+                        style: {
+                            'background-color': '#f59e0b',
+                            'border-color': '#d97706'
+                        }
+                    },
+                    {
+                        selector: 'node:selected',
+                        style: {
+                            'border-width': 4,
+                            'border-color': '#fff',
+                            'box-shadow': '0 0 20px rgba(255, 255, 255, 0.5)'
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 'data(strength)',
+                            'line-color': '#64748b',
+                            'target-arrow-color': '#64748b',
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier',
+                            'opacity': 0.8
+                        }
+                    },
+                    {
+                        selector: 'edge[stance="refutes"]',
+                        style: {
+                            'line-color': '#ef4444',
+                            'target-arrow-color': '#ef4444'
+                        }
+                    },
+                    {
+                        selector: 'edge[stance="supports"]',
+                        style: {
+                            'line-color': '#22c55e',
+                            'target-arrow-color': '#22c55e'
+                        }
+                    },
+                    {
+                        selector: 'edge:selected',
+                        style: {
+                            'width': 'calc(data(strength) * 1.5)',
+                            'opacity': 1,
+                            'line-color': '#fff',
+                            'target-arrow-color': '#fff'
+                        }
+                    }
+                ],
+                
+                layout: {
+                    name: 'cose',
+                    animate: true,
+                    animationDuration: 1000,
+                    padding: 50,
+                    nodeRepulsion: 8000,
+                    idealEdgeLength: 100,
+                    edgeElasticity: 100
+                }
+            });
+
+            // Click handlers
+            cy.on('tap', 'node', function(evt) {
+                const node = evt.target;
+                showNodeInspector(node);
+            });
+
+            cy.on('tap', 'edge', function(evt) {
+                const edge = evt.target;
+                showEdgeInspector(edge);
+            });
+
+            cy.on('tap', function(evt) {
+                if (evt.target === cy) {
+                    clearInspector();
+                }
+            });
+        }
+
+        function showNodeInspector(node) {
+            const data = node.data();
+            const typeNames = {
+                'task': 'Task',
+                'task_claim': 'Task Claim',
+                'reference': 'Reference',
+                'ref_claim': 'Reference Claim'
+            };
+
+            const degree = node.degree();
+            const connections = node.connectedEdges().length;
+
+            let statsHTML = '';
+            if (data.type === 'reference' || data.type === 'ref_claim') {
+                statsHTML = `
+                    <div class="inspector-metric">
+                        <span class="inspector-metric-label">Authority</span>
+                        <span class="inspector-metric-value">${data.type === 'reference' && data.id === 'ref1' ? '9/10' : data.id === 'ref2' ? '8/10' : '2/10'}</span>
+                    </div>
+                    <div class="inspector-metric">
+                        <span class="inspector-metric-label">Citations</span>
+                        <span class="inspector-metric-value">${data.type === 'reference' && data.id === 'ref1' ? '12.4K' : data.id === 'ref2' ? '8.2K' : '12'}</span>
+                    </div>
+                `;
+            }
+
+            document.getElementById('inspectorDrawer').innerHTML = `
+                <div class="inspector-title">
+                    <span>🔍</span>
+                    <span>${typeNames[data.type]}</span>
+                </div>
+                <div class="inspector-section">
+                    <div class="inspector-section-title">Label</div>
+                    <div class="inspector-content">${data.label}</div>
+                </div>
+                <div class="inspector-section">
+                    <div class="inspector-section-title">Network</div>
+                    <div class="inspector-metric">
+                        <span class="inspector-metric-label">Connections</span>
+                        <span class="inspector-metric-value">${connections}</span>
+                    </div>
+                    <div class="inspector-metric">
+                        <span class="inspector-metric-label">Degree</span>
+                        <span class="inspector-metric-value">${degree}</span>
+                    </div>
+                </div>
+                ${statsHTML ? `<div class="inspector-section">
+                    <div class="inspector-section-title">Quality Metrics</div>
+                    ${statsHTML}
+                </div>` : ''}
+                <div class="inspector-actions">
+                    <button class="inspector-btn" onclick="reframeOn('${data.id}')">🎯 Reframe on This</button>
+                    <button class="inspector-btn" onclick="focusOnNode('${data.id}')">🔍 Focus & Zoom</button>
+                </div>
+            `;
+        }
+
+        function showEdgeInspector(edge) {
+            const data = edge.data();
+            const source = cy.getElementById(data.source).data('label');
+            const target = cy.getElementById(data.target).data('label');
+
+            const stanceEmoji = {
+                'supports': '✅',
+                'refutes': '❌',
+                'neutral': '➖'
+            };
+
+            const stanceColor = {
+                'supports': '#22c55e',
+                'refutes': '#ef4444',
+                'neutral': '#64748b'
+            };
+
+            document.getElementById('inspectorDrawer').innerHTML = `
+                <div class="inspector-title">
+                    <span>🔗</span>
+                    <span>Claim Link</span>
+                </div>
+                <div class="inspector-section">
+                    <div class="inspector-section-title">From</div>
+                    <div class="inspector-content">${source}</div>
+                </div>
+                <div class="inspector-section">
+                    <div class="inspector-section-title">To</div>
+                    <div class="inspector-content">${target}</div>
+                </div>
+                <div class="inspector-section">
+                    <div class="inspector-section-title">Relationship</div>
+                    <div class="inspector-metric">
+                        <span class="inspector-metric-label">Stance</span>
+                        <span class="inspector-metric-value" style="color: ${stanceColor[data.stance]}">${stanceEmoji[data.stance]} ${data.stance.toUpperCase()}</span>
+                    </div>
+                    <div class="inspector-metric">
+                        <span class="inspector-metric-label">Strength</span>
+                        <span class="inspector-metric-value">${data.strength}/10</span>
+                    </div>
+                </div>
+                <div class="inspector-section">
+                    <div class="inspector-section-title">Note</div>
+                    <div class="inspector-content" style="font-style: italic; color: #94a3b8;">
+                        ${data.stance === 'refutes' ? 'Clinical trial data directly contradicts claim with strong methodology' : 'Anecdotal evidence provides weak support'}
+                    </div>
+                </div>
+                <div class="inspector-actions">
+                    <button class="inspector-btn" onclick="editClaimLink()">✏️ Edit Link</button>
+                </div>
+            `;
+        }
+
+        function clearInspector() {
+            document.getElementById('inspectorDrawer').innerHTML = `
+                <div class="inspector-title">
+                    <span>🔍</span>
+                    <span>Inspector</span>
+                </div>
+                <div class="inspector-empty">
+                    Click on any node or edge to see details
+                </div>
+            `;
+        }
+
+        // Graph control functions
+        function resetGraphView() {
+            if (cy) {
+                cy.layout({
+                    name: 'cose',
+                    animate: true,
+                    animationDuration: 1000
+                }).run();
+            }
+        }
+
+        function focusOnTask() {
+            if (cy) {
+                const taskNode = cy.getElementById('task1');
+                cy.animate({
+                    fit: {
+                        eles: taskNode.neighborhood().add(taskNode),
+                        padding: 100
+                    },
+                    duration: 1000
+                });
+            }
+        }
+
+        function highlightContradictions() {
+            if (cy) {
+                cy.edges('[stance="refutes"]').animate({
+                    style: { 
+                        'width': 'calc(data(strength) * 2)',
+                        'opacity': 1 
+                    },
+                    duration: 500
+                });
+                
+                setTimeout(() => {
+                    cy.edges().animate({
+                        style: { 
+                            'width': 'data(strength)',
+                            'opacity': 0.8 
+                        },
+                        duration: 500
+                    });
+                }, 2000);
+            }
+        }
+
+        function fitGraph() {
+            if (cy) {
+                cy.fit(null, 50);
+            }
+        }
+
+        function reframeOn(nodeId) {
+            if (cy) {
+                const node = cy.getElementById(nodeId);
+                cy.animate({
+                    fit: {
+                        eles: node.neighborhood().add(node),
+                        padding: 80
+                    },
+                    duration: 1000
+                });
+            }
+        }
+
+        function focusOnNode(nodeId) {
+            if (cy) {
+                const node = cy.getElementById(nodeId);
+                cy.animate({
+                    center: {
+                        eles: node
+                    },
+                    zoom: 2,
+                    duration: 1000
+                });
+            }
+        }
+
+        function editClaimLink() {
+            alert('In the real app, this would open an edit dialog for the claim link.');
+        }
+        
+        // Update strength slider value display
+        const slider = document.getElementById('strengthSlider');
+        const strengthValue = document.getElementById('strengthValue');
+        
+        slider.addEventListener('input', (e) => {
+            strengthValue.textContent = e.target.value;
+            const value = parseInt(e.target.value);
+            if (value < 0) {
+                strengthValue.style.color = '#ef4444';
+            } else if (value > 0) {
+                strengthValue.style.color = '#22c55e';
+            } else {
+                strengthValue.style.color = '#3b82f6';
+            }
+        });
+
+        function selectJudgment(type) {
+            currentJudgment = type;
+            
+            // Update slider based on judgment
+            if (type === 'left') {
+                slider.value = -8;
+            } else if (type === 'right') {
+                slider.value = 8;
+            } else {
+                slider.value = 0;
+            }
+            
+            // Trigger slider update
+            slider.dispatchEvent(new Event('input'));
+            
+            // Visual feedback
+            document.querySelectorAll('.judgment-btn').forEach(btn => {
+                btn.style.transform = 'scale(1)';
+                btn.style.opacity = '0.7';
+            });
+            
+            event.target.closest('.judgment-btn').style.transform = 'scale(1.05)';
+            event.target.closest('.judgment-btn').style.opacity = '1';
+        }
+
+        function submitJudgment() {
+            if (!currentJudgment) {
+                alert('Please select a judgment first!');
+                return;
+            }
+
+            // Show victory overlay
+            document.getElementById('victoryOverlay').classList.add('active');
+            
+            // In real app, would save to database here
+            console.log({
+                judgment: currentJudgment,
+                strength: slider.value,
+                note: document.querySelector('textarea').value
+            });
+        }
+
+        function nextBattle() {
+            // Hide overlay
+            document.getElementById('victoryOverlay').classList.remove('active');
+            
+            // Reset form
+            currentJudgment = null;
+            slider.value = 0;
+            slider.dispatchEvent(new Event('input'));
+            document.querySelector('textarea').value = '';
+            document.querySelectorAll('.judgment-btn').forEach(btn => {
+                btn.style.transform = 'scale(1)';
+                btn.style.opacity = '1';
+            });
+            
+            // In real app, would load next battle here
+            alert('Next battle would load here!\n\nIn the real app, this would:\n• Fetch next unvalidated claim pair\n• Animate cards out\n• Load new data\n• Animate cards in\n• Update progress stats');
+        }
+
+        // Mode switcher (demo only)
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                
+                const battleContainer = document.getElementById('battleContainer');
+                const graphContainer = document.getElementById('graphContainer');
+                
+                if (e.target.textContent.includes('Graph')) {
+                    battleContainer.classList.add('hidden');
+                    graphContainer.classList.add('active');
+                    
+                    // Initialize graph if not already done
+                    if (!cy) {
+                        setTimeout(() => initGraph(), 100);
+                    }
+                } else if (e.target.textContent.includes('Battle')) {
+                    battleContainer.classList.remove('hidden');
+                    graphContainer.classList.remove('active');
+                } else if (e.target.textContent.includes('Timeline')) {
+                    alert('Timeline Mode coming soon!\n\nWill show:\n• Chronological evidence chain\n• Publication dates\n• Claim evolution over time\n• Narrative progression');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

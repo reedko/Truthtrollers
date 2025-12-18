@@ -167,31 +167,42 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                   {(typeof reference.claims === "string"
                     ? JSON.parse(reference.claims)
                     : reference.claims
-                  ).map((claim: Claim) => (
-                    <HStack key={claim.claim_id} align="start">
-                      <Box
-                        flex="1"
-                        bg="black"
-                        color="blue.300"
-                        px={2}
-                        py={1}
-                        borderRadius="md"
-                        border="1px solid blue"
-                        _hover={{ bg: "blue.200", color: "black" }}
-                        onMouseDown={() => setDraggingClaim(claim)}
-                        onMouseUp={() => setDraggingClaim(null)}
-                      >
-                        {claim.claim_text}
-                      </Box>
-                      <IconButton
-                        size="sm"
-                        colorScheme="purple"
-                        aria-label="Verify claim"
-                        icon={<Search2Icon />}
-                        onClick={() => onVerifyClaim?.(claim)}
-                      />
-                    </HStack>
-                  ))}
+                  ).map((claim: Claim) => {
+                    const isSnippet = claim.claim_type === 'snippet';
+
+                    return (
+                      <HStack key={claim.claim_id} align="start">
+                        <Box
+                          flex="1"
+                          bg={isSnippet ? "gray.800" : "black"}
+                          color={isSnippet ? "gray.300" : "blue.300"}
+                          px={2}
+                          py={1}
+                          borderRadius="md"
+                          border={isSnippet ? "1px solid #718096" : "1px solid blue"}
+                          borderLeft={isSnippet ? "4px solid #A0AEC0" : undefined}
+                          _hover={{ bg: isSnippet ? "gray.700" : "blue.200", color: "black" }}
+                          onMouseDown={() => setDraggingClaim(claim)}
+                          onMouseUp={() => setDraggingClaim(null)}
+                        >
+                          {isSnippet ? (
+                            <Text fontStyle="italic" fontSize="sm" opacity={0.9}>
+                              " {claim.claim_text} "
+                            </Text>
+                          ) : (
+                            claim.claim_text
+                          )}
+                        </Box>
+                        <IconButton
+                          size="sm"
+                          colorScheme="purple"
+                          aria-label="Verify claim"
+                          icon={<Search2Icon />}
+                          onClick={() => onVerifyClaim?.(claim)}
+                        />
+                      </HStack>
+                    );
+                  })}
                 </VStack>
               )}
             </Box>

@@ -115,6 +115,7 @@ export type UnifiedReference = ReferenceWithClaims;
 export interface Claim {
   claim_id: number;
   claim_text: string;
+  claim_type?: 'task' | 'reference' | 'snippet' | string; // NEW: Type of claim
   veracity_score: number;
   confidence_level: number;
   last_verified: string; // Timestamp as ISO string
@@ -128,6 +129,36 @@ export interface ClaimReference {
   content_name: string;
   url: string;
   support_level: number; // Positive = supports, Negative = refutes
+}
+
+// AI Evidence Link - from reference_claim_links table
+export interface AIEvidenceLink {
+  link_id: number;
+  task_claim_id: number;
+  reference_content_id: number;
+  stance: 'support' | 'refute' | 'nuance' | 'insufficient';
+  score: number; // 0-100 quality score
+  confidence: number; // 0.15-0.98 confidence
+  support_level: number; // -1.2 to +1.2 (stance * confidence * quality)
+  rationale: string | null;
+  quote: string | null; // Evidence snippet
+  evidence_offsets: string | null;
+  created_by_ai: boolean;
+  task_claim_text: string;
+  task_claim_type?: string;
+  reference_title: string;
+  reference_url: string;
+  reference_topic: string;
+}
+
+// Failed Reference - needs manual scraping
+export interface FailedReference {
+  content_id: number;
+  content_name: string;
+  url: string;
+  failure_reason: string;
+  created_at: string;
+  linked_claims_count: number;
 }
 
 export interface ClaimLinks {

@@ -6,7 +6,7 @@ import { addAuthors, addPublisher, storeClaimsInDB } from "./createTaskUtils";
 const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 
 type AddContentResponse = {
-  content_id: string;
+  taskId: string;
 };
 
 const createTask = async (taskData: TaskData): Promise<string | null> => {
@@ -27,7 +27,7 @@ const createTask = async (taskData: TaskData): Promise<string | null> => {
     });
 
     const responseData = (await response.json()) as AddContentResponse;
-    const contentId = responseData.content_id;
+    const contentId = responseData.taskId;
 
     if (!contentId) {
       throw new Error("Failed to create content via API");

@@ -877,3 +877,59 @@ export const fetchDiscussionEntries = async (
   if (Array.isArray(res.data)) return res.data;
   return [];
 };
+
+/**
+ * Fetch AI evidence links (reference_claim_links) for a task
+ * Returns links with support_level, stance, confidence, quote
+ */
+export const fetchAIEvidenceLinks = async (
+  contentId: number
+): Promise<import("../../../shared/entities/types").AIEvidenceLink[]> => {
+  try {
+    const res = await axios.get(
+      `${API_BASE_URL}/api/reference-claim-links/${contentId}`
+    );
+    return res.data || [];
+  } catch (error) {
+    console.error("❌ Error fetching AI evidence links:", error);
+    return [];
+  }
+};
+
+/**
+ * Fetch claims with their claim_type field
+ * Used to distinguish snippets from regular claims
+ */
+export const fetchClaimsWithEvidence = async (
+  contentId: number,
+  viewerId?: number | null
+): Promise<import("../../../shared/entities/types").Claim[]> => {
+  try {
+    const res = await axios.get(
+      `${API_BASE_URL}/api/claims-with-evidence/${contentId}`,
+      { params: { viewerId } }
+    );
+    return res.data || [];
+  } catch (error) {
+    console.error("❌ Error fetching claims with evidence:", error);
+    return [];
+  }
+};
+
+/**
+ * Fetch failed references for a task
+ * These are references that failed to scrape and need manual intervention
+ */
+export const fetchFailedReferences = async (
+  taskContentId: number
+): Promise<import("../../../shared/entities/types").FailedReference[]> => {
+  try {
+    const res = await axios.get(
+      `${API_BASE_URL}/api/failed-references/${taskContentId}`
+    );
+    return res.data || [];
+  } catch (error) {
+    console.error("❌ Error fetching failed references:", error);
+    return [];
+  }
+};

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { scrapeContent } from "../services/scrapeContent"; // ✅ Import recursive scraper
+import { scrapeContent } from "../services/scrapeContent"; // ✅ Single-pass scraper (backend does everything)
 import useTaskStore from "../store/useTaskStore"; // ✅ Zustand Store
 import browser from "webextension-polyfill";
 
@@ -30,7 +30,7 @@ export const useTaskScraper = () => {
       // ✅ Notify background that scraping is active
       browser.runtime.sendMessage({ action: "scrapingStarted" });
 
-      await scrapeContent(initialUrl, "", "task"); // ✅ Call recursive scraper
+      await scrapeContent(initialUrl); // ✅ Backend does EVERYTHING (task + refs + claims + evidence)
       console.log("✅ Task and references fully scraped!");
 
       // ✅ Check the stored URL after scraping to see if user has navigated

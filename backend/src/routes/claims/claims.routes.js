@@ -710,5 +710,129 @@ WHERE cc_task.content_id = ?
     );
   });
 
+  /**
+   * GET /api/reference-claim-links/:contentId
+   * Get AI evidence links (reference_claim_links) for a task
+   * Returns: Array of links with support_level, stance, confidence, quote
+   */
+  router.get("/api/reference-claim-links/:contentId", async (req, res) => {
+    const { contentId } = req.params;
+
+    try {
+      const sql = `
+        SELECT
+          rcl.ref_claim_link_id AS link_id,
+          rcl.claim_id AS task_claim_id,
+          rcl.reference_content_id,
+          rcl.stance,
+          rcl.score,
+          rcl.confidence,
+          rcl.support_level,
+          rcl.rationale,
+          rcl.evidence_text AS quote,
+          rcl.evidence_offsets,
+          rcl.created_by_ai,
+          c.claim_text AS task_claim_text,
+          c.claim_type AS task_claim_type,
+          ref.content_name AS reference_title,
+          ref.url AS reference_url,
+          ref.topic AS reference_topic
+        FROM reference_claim_links rcl
+        JOIN claims c ON rcl.claim_id = c.claim_id
+        JOIN content_claims cc ON c.claim_id = cc.claim_id
+        JOIN content ref ON rcl.reference_content_id = ref.content_id
+        WHERE cc.content_id = ?
+        ORDER BY rcl.support_level DESC
+      `;
+
+      const results = await query(sql, [contentId]);
+      res.json(results);
+    } catch (err) {
+      console.error("❌ Error fetching reference-claim links:", err);
+      res.status(500).json({ error: "Database query failed" });
+    }
+  });
+
+  /**
+   * GET /api/claims-with-evidence/:contentId
+   * Get claims with their claim_type and snippet flag
+   * Used to distinguish snippets from regular claims in UI
+   * Respects viewerId filtering like /api/claims/:content_id
+   */
+  router.get("/api/claims-with-evidence/:contentId", async (req, res) => {
+    const { contentId } = req.params;
+    const viewerId = req.query.viewerId;
+
+    try {
+      const sql = `
+        SELECT
+          c.claim_id,
+          c.claim_text,
+          c.claim_type,
+          c.veracity_score,
+          c.confidence_level,
+          c.last_verified,
+          cc.relationship_type,
+          cc.content_id
+        FROM claims c
+        JOIN content_claims cc ON c.claim_id = cc.claim_id
+        WHERE cc.content_id = ?
+          ${
+            viewerId
+              ? "AND (cc.user_id IS NULL OR cc.user_id = ?)"
+              : "AND cc.user_id IS NULL"
+          }
+        ORDER BY
+          CASE c.claim_type
+            WHEN 'task' THEN 1
+            WHEN 'reference' THEN 2
+            WHEN 'snippet' THEN 3
+            ELSE 4
+          END,
+          c.claim_id
+      `;
+
+      const params = viewerId ? [contentId, viewerId] : [contentId];
+      const results = await query(sql, params);
+      res.json(results);
+    } catch (err) {
+      console.error("❌ Error fetching claims with evidence:", err);
+      res.status(500).json({ error: "Database query failed" });
+    }
+  });
+
+  /**
+   * GET /api/failed-references/:taskContentId
+   * Get references that failed to scrape (stance = "insufficient" or rationale LIKE "Failed%")
+   * These need manual scraping via dashboard
+   */
+  router.get("/api/failed-references/:taskContentId", async (req, res) => {
+    const { taskContentId } = req.params;
+
+    try {
+      const sql = `
+        SELECT
+          ref.content_id,
+          ref.content_name,
+          ref.url,
+          MAX(rcl.rationale) AS failure_reason,
+          COUNT(rcl.ref_claim_link_id) AS linked_claims_count
+        FROM content ref
+        INNER JOIN reference_claim_links rcl ON ref.content_id = rcl.reference_content_id
+        INNER JOIN content_relations cr ON ref.content_id = cr.reference_content_id
+        WHERE cr.content_id = ?
+          AND rcl.scrape_status IN ('snippet_only', 'failed')
+        GROUP BY ref.content_id, ref.content_name, ref.url
+        ORDER BY ref.content_id DESC
+      `;
+
+      const results = await query(sql, [taskContentId]);
+      res.json(results);
+    } catch (err) {
+      console.error("❌ Error fetching failed references:", err);
+      res.status(500).json({ error: "Database query failed" });
+    }
+  });
+
   return router;
 }

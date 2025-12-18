@@ -1,11 +1,12 @@
 // backend/src/core/bingSearch.js
 import fetch from "node-fetch";
+import logger from "../utils/logger.js";
 
 const BING_API_KEY = process.env.BING_SEARCH_KEY;
 const ENDPOINT = "https://api.bing.microsoft.com/v7.0/search";
 
 if (!BING_API_KEY) {
-  console.warn("⚠️  Missing BING_SEARCH_KEY in environment variables");
+  logger.warn("⚠️  Missing BING_SEARCH_KEY in environment variables");
 }
 
 /**
@@ -24,7 +25,7 @@ export async function bingSearch({ query, topK = 5, prefer = [], avoid = [] }) {
     });
 
     if (!resp.ok) {
-      console.warn("❌ Bing search failed:", await resp.text());
+      logger.warn("❌ Bing search failed:", await resp.text());
       return [];
     }
 
@@ -58,7 +59,7 @@ export async function bingSearch({ query, topK = 5, prefer = [], avoid = [] }) {
 
     return boosted;
   } catch (err) {
-    console.error("❌ Bing search error:", err);
+    logger.error("❌ Bing search error:", err);
     return [];
   }
 }

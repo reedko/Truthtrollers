@@ -1,5 +1,6 @@
 // /backend/src/routes/content/content.tasks.routes.js
 import { Router } from "express";
+import logger from "../../utils/logger.js";
 
 export default function({ query, pool }) {
   const router = Router();
@@ -15,7 +16,7 @@ router.get("/api/tasks/:id", async (req, res) => {
     const result = await query(SQL, [id]);
     res.json(result[0] || {});
   } catch (err) {
-    console.error("Error fetching task by ID:", err);
+    logger.error("Error fetching task by ID:", err);
     res.status(500).json({ error: "Database error" });
   }
 });
@@ -74,7 +75,7 @@ router.get("/api/user-tasks/:user_id", async (req, res) => {
   `;
   pool.query(sql, [user_id], (err, results) => {
     if (err) {
-      console.error("❌ Error fetching user tasks:", err);
+      logger.error("❌ Error fetching user tasks:", err);
       return res.status(500).json({ error: "Query failed" });
     }
     res.json(results);
@@ -177,8 +178,10 @@ router.get("/api/unified-tasks/:pivotType/:pivotId", (req, res) => {
 
   pool.query(sql, params, (err, results) => {
     if (err) {
-      console.error("Pivot query failed:", err);
-      return res.status(500).json({ error: "Database query failed" });
+      logger.error("Pivot query failed:", err);
+      // Return empty array instead of error to prevent dashboard crashes
+      // This handles cases where content was deleted but dashboard still references it
+      return res.json([]);
     }
     res.json(results);
   });

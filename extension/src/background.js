@@ -221,72 +221,6 @@ let lastStoredUrl = "";
 // --- SINGLE onMessage HANDLER ---
 browser.runtime.onMessage.addListener(async (message, sender) => {
   try {
-    // [-2] claimsSourceMapper/map
-    if (message.action === "claimsSourceMapper/map") {
-      console.log(
-        "📡 [Background] claimsSourceMapper/map triggered",
-        message.payload
-      );
-
-      const { claims = [] } = message.payload || {};
-      console.log("🧠 Received claims:", claims);
-
-      if (!Array.isArray(claims) || claims.length === 0) {
-        console.warn("⚠️ No claims passed in payload");
-        return { success: true, refs: [] };
-      }
-
-      try {
-        // 🧩 Single step: map claims → sources
-        const resp = await fetch(`${BASE_URL}/api/claims/map-claims`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          referrerPolicy: "no-referrer",
-          body: JSON.stringify({
-            claims, // your existing array
-            prefer_domains: [
-              "apnews.com",
-              "reuters.com",
-              "bbc.com",
-              "wikipedia.org",
-              "fullfact.org",
-              "snopes.com",
-              "factcheck.org",
-              "politifact.com",
-            ],
-            avoid_domains: [],
-            return_queries: true,
-          }),
-        });
-
-        if (!resp.ok) {
-          const t = await resp.text().catch(() => "");
-          return { success: false, error: `map-claims ${resp.status}: ${t}` };
-        }
-
-        const json = await resp.json();
-        if (!json?.success) {
-          return {
-            success: false,
-            error: json?.error || "Unknown mapping failure",
-          };
-        }
-
-        // Normalize → Lit_references[]
-        const refs = Array.isArray(json?.references) ? json.references : [];
-        console.log(
-          `✅ claimsSourceMapper/map finished: ${refs.length} references (${
-            json?.items?.length ?? 0
-          } claims)`
-        );
-
-        return { success: true, refs };
-      } catch (err) {
-        console.error("claimsSourceMapper/map failed:", err);
-        return { success: false, error: String(err?.message || err) };
-      }
-    }
-
     // [-1] Image blobber to avoid PNA errors
     if (message.action === "getAssetBlobUrl" && message.url) {
       try {
@@ -952,15 +886,13 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
       return;
     }
 
-    // [25] scrape task
+    // [25] scrape task (NEW: sends payload with just URL)
     if (message.action === "scrapeTaskOnServer") {
-      return callBackendScrape("/api/scrape-task", message.envelope);
+      return callBackendScrape("/api/scrape-task", message.payload);
     }
 
-    // [26] scrape reference
-    if (message.action === "scrapeReferenceOnServer") {
-      return callBackendScrape("/api/scrape-reference", message.envelope);
-    }
+    // NOTE: scrapeReferenceOnServer removed - backend now processes
+    // all references inline during evidence engine (no recursion needed)
 
     // Default: fall through
     return Promise.resolve(undefined);
@@ -1418,5 +1350,298 @@ browser.runtime.onMessageExternal.addListener((message, sender) => {
         return { success: false, error: error.message };
       });
     // ✅ Keeps the async response open
+  }
+
+  // 🆕 Get HTML from a tab matching the URL (for manual dashboard scrapes)
+  if (message.action === "getHTMLFromTab") {
+    console.log("📩 Received getHTMLFromTab request for:", message.url);
+
+    return (async () => {
+      try {
+        // Find all tabs
+        const tabs = await browser.tabs.query({});
+
+        // Normalize URLs for comparison (remove trailing slashes, fragments, etc)
+        const normalizeUrl = (url) => {
+          try {
+            const urlObj = new URL(url);
+            return urlObj.origin + urlObj.pathname; // Just origin + path, no query/fragment
+          } catch {
+            return url;
+          }
+        };
+
+        const normalizedMessageUrl = normalizeUrl(message.url);
+        console.log(`🔍 Looking for tab matching: ${normalizedMessageUrl}`);
+        console.log(`📋 Found ${tabs.length} open tabs`);
+
+        // Find tab matching the URL (compare normalized versions)
+        const matchingTab = tabs.find((tab) => {
+          if (!tab.url) return false;
+          const normalizedTabUrl = normalizeUrl(tab.url);
+          const matches =
+            normalizedTabUrl === normalizedMessageUrl ||
+            tab.url === message.url ||
+            tab.url?.startsWith(message.url);
+          if (matches) {
+            console.log(`✅ Match found: ${tab.url}`);
+          }
+          return matches;
+        });
+
+        if (!matchingTab || !matchingTab.id) {
+          console.warn(`⚠️ No tab found matching URL: ${message.url}`);
+          console.log(
+            `Available tabs:`,
+            tabs.map((t) => t.url)
+          );
+          return {
+            success: false,
+            error: `No tab found for URL: ${message.url}`,
+          };
+        }
+
+        console.log(
+          `✅ Found matching tab ID: ${matchingTab.id} in window ${matchingTab.windowId}`
+        );
+
+        // Execute script in the matching tab to get its HTML
+        const results = await browser.scripting.executeScript({
+          target: { tabId: matchingTab.id },
+          func: () => document.documentElement.outerHTML,
+        });
+
+        if (!results || !results[0] || !results[0].result) {
+          return {
+            success: false,
+            error: `Failed to get HTML from tab ${matchingTab.id}`,
+          };
+        }
+
+        const html = results[0].result;
+        console.log(
+          `📄 Retrieved ${html.length} chars of HTML from tab ${matchingTab.id}`
+        );
+
+        return { success: true, html };
+      } catch (error) {
+        console.error("❌ Error getting HTML from tab:", error);
+        return { success: false, error: error.message };
+      }
+    })();
+  }
+});
+
+// ============================================================
+// SCRAPE JOB POLLING
+// Poll backend for pending scrape jobs and process them
+// ============================================================
+
+const POLL_INTERVAL_MS = 3000;
+const INSTANCE_ID = `ext_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+let lastPollAt = 0;
+
+// ---------- helpers ----------
+
+async function pollForScrapeJob() {
+  // debounce
+  if (Date.now() - lastPollAt < POLL_INTERVAL_MS) return;
+  lastPollAt = Date.now();
+
+  try {
+    const res = await fetch(
+      `${BASE_URL}/api/scrape-jobs/pending`,
+      {
+        credentials: "include",
+      }
+    );
+
+    if (!res.ok) return;
+
+    const jobs = await res.json();
+    if (!jobs || jobs.length === 0) return;
+
+    // Process first job (FIFO)
+    const job = jobs[0];
+    console.log("[EXT] Processing scrape job:", job.scrape_job_id);
+
+    await handleScrapeJob(job);
+  } catch (err) {
+    console.error("[EXT] Poll error:", err);
+  }
+}
+
+async function handleScrapeJob(job) {
+  const { scrape_job_id, scrape_mode, target_url, task_content_id } = job;
+
+  try {
+    // Step 1: Claim the job
+    await fetch(
+      `${BASE_URL}/api/scrape-jobs/${scrape_job_id}/claim`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ instance_id: INSTANCE_ID }),
+      }
+    );
+
+    let targetTab, url;
+
+    // Step 2: Find the appropriate tab based on scrape mode
+    const tabs = await browser.tabs.query({});
+
+    if (scrape_mode === "scrape_last_viewed") {
+      // Use active tab
+      const activeTabs = await browser.tabs.query({ active: true, currentWindow: true });
+      if (!activeTabs || activeTabs.length === 0) {
+        throw new Error("No active tab found");
+      }
+      targetTab = activeTabs[0];
+      url = targetTab.url;
+    } else if (scrape_mode === "scrape_specific_url") {
+      // Find tab matching target_url
+      targetTab = tabs.find((t) => t.url === target_url || t.url?.startsWith(target_url));
+      if (!targetTab) {
+        throw new Error(`No tab found for URL: ${target_url}`);
+      }
+      url = targetTab.url;
+    }
+
+    if (!targetTab?.id) {
+      throw new Error("Target tab not found");
+    }
+
+    // Step 3: Check if this is a PDF
+    const viewerPrefix = browser.runtime.getURL("viewer.html");
+    const isPdfViewer = targetTab.url && targetTab.url.startsWith(viewerPrefix);
+    const isPdfUrl = url && url.toLowerCase().endsWith('.pdf');
+
+    let raw_html = null;
+    let pdfText = null;
+    let pdfTitle = null;
+    let pdfAuthors = null;
+    let actualUrl = url;
+
+    if (isPdfViewer || isPdfUrl) {
+      // Extract PDF from viewer or direct PDF URL
+      console.log(`[EXT] Detected PDF, fetching text from backend...`);
+
+      // Get the actual PDF URL (if on viewer, extract from query param)
+      if (isPdfViewer) {
+        const urlParams = new URLSearchParams(new URL(targetTab.url).search);
+        actualUrl = urlParams.get('src');
+      }
+
+      try {
+        const pdfRes = await fetch(`${BASE_URL}/api/fetch-pdf-text`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ url: actualUrl }),
+        });
+
+        const pdfData = await pdfRes.json();
+        if (pdfData.success && pdfData.text) {
+          pdfText = pdfData.text;
+          pdfTitle = pdfData.title || null;
+          pdfAuthors = pdfData.authors || null;
+          console.log(`[EXT] Extracted ${pdfText.length} chars from PDF (title: ${pdfTitle})`);
+        } else {
+          throw new Error("PDF text extraction failed");
+        }
+      } catch (err) {
+        console.error("[EXT] PDF extraction error:", err);
+        throw new Error(`Failed to extract PDF: ${err.message}`);
+      }
+    } else {
+      // Extract HTML from regular webpage
+      const results = await browser.scripting.executeScript({
+        target: { tabId: targetTab.id },
+        func: () => document.documentElement.outerHTML,
+      });
+
+      raw_html = results[0].result;
+      console.log(`[EXT] Extracted ${raw_html.length} chars from tab ${targetTab.id}`);
+    }
+
+    // Step 4: Send to scrape-reference endpoint (not scrape-task - we don't want evidence engine)
+    const scrapeRes = await fetch(
+      `${BASE_URL}/api/scrape-reference`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          url: actualUrl,
+          raw_html: raw_html,
+          raw_text: pdfText, // Send PDF text if available
+          title: pdfTitle, // Send PDF title from metadata
+          authors: pdfAuthors, // Send PDF authors from metadata
+          taskContentId: task_content_id
+        }),
+      }
+    );
+
+    const scrapeResult = await scrapeRes.json();
+
+    if (!scrapeResult.success) {
+      throw new Error(scrapeResult.error || "Scrape failed");
+    }
+
+    const referenceContentId = scrapeResult.contentId;
+
+    // Step 5: Mark job as completed
+    await fetch(
+      `${BASE_URL}/api/scrape-jobs/${scrape_job_id}/complete`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          content_id: referenceContentId,
+          instance_id: INSTANCE_ID,
+        }),
+      }
+    );
+
+    console.log(`[EXT] ✅ Scrape job ${scrape_job_id} completed, reference_content_id: ${referenceContentId}`);
+  } catch (err) {
+    console.error(`[EXT] ❌ Scrape job ${scrape_job_id} failed:`, err.message);
+
+    // Mark job as failed
+    await fetch(
+      `${BASE_URL}/api/scrape-jobs/${scrape_job_id}/fail`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          error_message: err.message,
+          instance_id: INSTANCE_ID,
+        }),
+      }
+    ).catch(failErr => console.error("[EXT] Failed to mark job as failed:", failErr));
+  }
+}
+
+// ---------- triggers ----------
+
+// Poll periodically (fallback)
+setInterval(pollForScrapeJob, POLL_INTERVAL_MS);
+
+// Poll when dashboard tab becomes active
+browser.tabs.onActivated.addListener(async () => {
+  await pollForScrapeJob();
+});
+
+// Poll when dashboard finishes loading
+browser.tabs.onUpdated.addListener((_, changeInfo, tab) => {
+  if (
+    changeInfo.status === "complete" &&
+    tab.url &&
+    (tab.url.includes("localhost:5173") || tab.url.includes("truthtrollers.com"))
+  ) {
+    pollForScrapeJob();
   }
 });

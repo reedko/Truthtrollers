@@ -23,10 +23,12 @@ import {
   addClaimSource,
   deleteClaimSource,
   fetchClaimSources,
+  fetchFailedReferences,
 } from "../../services/useDashboardAPI";
 import {
   LitReference,
   ReferenceWithClaims,
+  FailedReference,
 } from "../../../../shared/entities/types";
 
 interface ReferenceModalProps {
@@ -61,8 +63,10 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
   const setSelectedTask = useTaskStore((s) => s.setSelectedTask);
 
   const [claimReferences, setClaimReferences] = useState<LitReference[]>([]);
+  const [failedReferences, setFailedReferences] = useState<FailedReference[]>([]);
   const [isSelectOpen, setIsSelectOpen] = useState(false);
   const [isScrapeOpen, setIsScrapeOpen] = useState(false);
+  const [scrapeUrl, setScrapeUrl] = useState<string>("");
 
   // 🧠 Load references on open
   useEffect(() => {
@@ -72,6 +76,8 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
       fetchClaimSources(claimId).then(setClaimReferences);
     } else if (typeof taskId === "number") {
       fetchReferences(taskId);
+      // Fetch failed references that need manual scraping
+      fetchFailedReferences(taskId).then(setFailedReferences);
       onUpdateReferences?.();
     }
   }, [isOpen, claimId, taskId]);
@@ -82,6 +88,12 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
     : claimId
     ? claimReferences
     : zustandReferences;
+
+  // 🚫 Filter out failed references from the main list (they'll show in failed section)
+  const failedReferenceIds = new Set(failedReferences.map(f => f.content_id));
+  const successfulReferences = activeReferences.filter(
+    ref => !failedReferenceIds.has(ref.reference_content_id)
+  );
 
   // 🗑️ Handle delete
   const handleDeleteReference = async (id: number) => {
@@ -125,6 +137,24 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
     setIsSelectOpen(true);
   };
 
+  // 🔄 Retry failed scrape - opens URL in new tab and triggers scrape modal
+  const handleRetryScrape = (url: string) => {
+    // Open URL in new tab so user can visit the page
+    window.open(url, "_blank");
+    // Pre-fill the scrape modal with this URL
+    setScrapeUrl(url);
+    setIsScrapeOpen(true);
+  };
+
+  // 🔄 Refresh failed references list
+  const refreshFailedReferences = async () => {
+    if (typeof taskId === "number") {
+      const updated = await fetchFailedReferences(taskId);
+      setFailedReferences(updated);
+      fetchReferences(taskId); // Also refresh successful references
+    }
+  };
+
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose}>
@@ -135,8 +165,8 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
           <ModalBody>
             <VStack align="start" spacing={3}>
               <Text fontWeight="bold">Existing References:</Text>
-              {activeReferences.length > 0 ? (
-                activeReferences.map((ref) => (
+              {successfulReferences.length > 0 ? (
+                successfulReferences.map((ref) => (
                   <HStack
                     key={ref.reference_content_id}
                     w="100%"
@@ -187,6 +217,58 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
                 ))
               ) : (
                 <Text>No references found.</Text>
+              )}
+
+              {/* 🚨 Failed References Section */}
+              {failedReferences.length > 0 && (
+                <>
+                  <Text fontWeight="bold" color="orange.500" mt={4}>
+                    ⚠️ Failed Scrapes - Manual Retry Needed:
+                  </Text>
+                  {failedReferences.map((failed) => (
+                    <HStack
+                      key={failed.content_id}
+                      w="100%"
+                      justifyContent="space-between"
+                      bg="orange.50"
+                      p={2}
+                      borderRadius="md"
+                      border="1px solid"
+                      borderColor="orange.200"
+                    >
+                      <VStack align="start" spacing={0} flex="1">
+                        <Tooltip label={failed.content_name} hasArrow>
+                          <Link
+                            href={failed.url}
+                            isExternal
+                            color="orange.600"
+                            fontWeight="bold"
+                            isTruncated
+                            maxWidth="300px"
+                          >
+                            {failed.content_name}
+                          </Link>
+                        </Tooltip>
+                        <Text fontSize="xs" color="gray.600">
+                          {failed.failure_reason}
+                        </Text>
+                        {failed.linked_claims_count > 0 && (
+                          <Text fontSize="xs" color="blue.600">
+                            Linked to {failed.linked_claims_count} claim{failed.linked_claims_count > 1 ? 's' : ''}
+                          </Text>
+                        )}
+                      </VStack>
+
+                      <Button
+                        size="sm"
+                        colorScheme="orange"
+                        onClick={() => handleRetryScrape(failed.url)}
+                      >
+                        🔄 Retry Scrape
+                      </Button>
+                    </HStack>
+                  ))}
+                </>
               )}
             </VStack>
           </ModalBody>
@@ -248,9 +330,17 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
       {isScrapeOpen && (
         <ScrapeReferenceModal
           isOpen={isScrapeOpen}
-          onClose={() => setIsScrapeOpen(false)}
+          onClose={() => {
+            setIsScrapeOpen(false);
+            setScrapeUrl(""); // Clear the pre-filled URL when closing
+            refreshFailedReferences(); // Refresh the failed list after closing
+          }}
           taskId={taskId?.toString() || ""}
-          onUpdateReferences={onUpdateReferences}
+          onUpdateReferences={() => {
+            onUpdateReferences?.();
+            refreshFailedReferences(); // Refresh both successful and failed references
+          }}
+          initialUrl={scrapeUrl} // Pass the URL to pre-fill
         />
       )}
     </>

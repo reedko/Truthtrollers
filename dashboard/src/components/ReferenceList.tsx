@@ -16,13 +16,17 @@ import {
   ModalFooter,
   ModalCloseButton,
   IconButton,
+  Badge,
 } from "@chakra-ui/react";
 import {
   LitReference,
   ReferenceWithClaims,
+  FailedReference,
 } from "../../../shared/entities/types";
 import ReferenceModal from "./modals/ReferenceModal";
 import ReferenceClaimsModal from "./modals/ReferenceClaimsModal";
+import ScrapeReferenceModal from "./ScrapeReferenceModal";
+import { fetchFailedReferences } from "../services/useDashboardAPI";
 
 interface ReferenceListProps {
   references: ReferenceWithClaims[];
@@ -48,6 +52,23 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
   const [editingReference, setEditingReference] =
     useState<ReferenceWithClaims | null>(null);
   const [newTitle, setNewTitle] = useState("");
+  const [failedReferenceIds, setFailedReferenceIds] = useState<Set<number>>(new Set());
+  const [isScrapeModalOpen, setIsScrapeModalOpen] = useState(false);
+  const [retryUrl, setRetryUrl] = useState("");
+
+  // Fetch failed references when component mounts or taskId changes
+  useEffect(() => {
+    if (taskId) {
+      fetchFailedReferences(taskId).then((failedRefs) => {
+        const ids = new Set(failedRefs.map(ref => ref.content_id));
+        setFailedReferenceIds(ids);
+        console.log(`📋 Found ${failedRefs.length} failed references for task ${taskId}:`, failedRefs);
+      });
+    }
+  }, [taskId, references]);
+
+  // Check if a reference is failed
+  const isFailedReference = (refId: number) => failedReferenceIds.has(refId);
 
   return (
     <>
@@ -89,21 +110,38 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
               cursor="pointer"
               mb={0} // 👈 no extra margin here
             >
-              <Tooltip label={ref.content_name} hasArrow>
-                <Text
-                  flex="1"
-                  noOfLines={1}
-                  onClick={() => {
-                    onReferenceClick(ref);
-                  }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    if (ref.url) window.open(ref.url, "_blank");
-                  }}
-                >
-                  {ref.content_name}
-                </Text>
-              </Tooltip>
+              <VStack align="start" flex="1" spacing={0}>
+                <HStack spacing={2} width="100%">
+                  <Tooltip label={ref.content_name} hasArrow>
+                    <Text
+                      flex="1"
+                      noOfLines={1}
+                      onClick={() => {
+                        onReferenceClick(ref);
+                      }}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        if (ref.url) window.open(ref.url, "_blank");
+                      }}
+                    >
+                      {ref.content_name}
+                    </Text>
+                  </Tooltip>
+                  {isFailedReference(ref.reference_content_id) && (
+                    <Button
+                      size="xs"
+                      colorScheme="orange"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setRetryUrl(ref.url || "");
+                        setIsScrapeModalOpen(true);
+                      }}
+                    >
+                      Retry Scrape
+                    </Button>
+                  )}
+                </HStack>
+              </VStack>
               <HStack spacing={2}>
                 <Button
                   size="sm"
@@ -173,6 +211,18 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* 🔥 Scrape Reference Modal for Retrying Failed Scrapes */}
+      <ScrapeReferenceModal
+        isOpen={isScrapeModalOpen}
+        onClose={() => {
+          setIsScrapeModalOpen(false);
+          setRetryUrl("");
+        }}
+        taskId={taskId.toString()}
+        onUpdateReferences={onUpdateReferences}
+        initialUrl={retryUrl}
+      />
     </>
   );
 };

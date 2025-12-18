@@ -16,7 +16,7 @@ export interface ClaimLink {
   claimId: number; // target/task claim
   referenceId: number; // reference content id
   sourceClaimId: number; // 👈 new
-  relation: "support" | "refute";
+  relation: "support" | "refute" | "nuance";
   confidence: number;
   notes?: string;
   verimeter_score?: number;
@@ -208,7 +208,22 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
 
           const y2 =
             rightCenters[Number(link.referenceId)] ?? getRightY(rightIndex);
-          const strokeColor = link.relation === "refute" ? "red" : "green";
+
+          // Check if this is an AI-suggested link (not human-verified)
+          const isAISuggested = link.id?.toString().startsWith("ai-");
+
+          // Base colors: green for support, red for refute, blue for nuance
+          const baseColor =
+            link.relation === "refute" ? "red" :
+            link.relation === "support" ? "green" :
+            "blue"; // nuance
+
+          // For AI links: lighter/more transparent colors
+          const strokeColor = isAISuggested
+            ? (link.relation === "refute" ? "rgba(255, 100, 100, 0.5)" :
+               link.relation === "support" ? "rgba(100, 255, 100, 0.5)" :
+               "rgba(100, 150, 255, 0.5)") // light blue for nuance
+            : baseColor;
 
           return (
             <g
@@ -220,8 +235,10 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
               <circle cx={adjustedRightX} cy={y2} r="8" fill="red" />
 
               <title>
-                {`${
-                  link.relation === "support" ? "✅ Supports" : "⛔ Refutes"
+                {`${isAISuggested ? "🤖 AI " : "✓ "}${
+                  link.relation === "support" ? "Supports" :
+                  link.relation === "refute" ? "Refutes" :
+                  "Nuances"
                 } • ${Math.abs(link.confidence * 100).toFixed(0)}%`}
               </title>
               <line
@@ -232,6 +249,7 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
                 y2={y2}
                 stroke={strokeColor}
                 strokeWidth={4}
+                strokeDasharray={isAISuggested ? "8,4" : undefined}
                 markerStart="url(#arrowhead)"
                 style={{ cursor: "pointer", pointerEvents: "auto" }}
               />

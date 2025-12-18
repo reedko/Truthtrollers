@@ -170,10 +170,61 @@ export const getNavCategoryPrefixes = ($: cheerio.CheerioAPI): string[] => {
   return [...prefixes];
 };
 
-export const fetchPageContent = (): cheerio.CheerioAPI => {
-  const loadedCheerio = cheerio.load(document.documentElement.outerHTML);
+export const fetchPageContent = async (
+  url?: string
+): Promise<cheerio.CheerioAPI> => {
+  // If no URL provided, use current document (extension context)
+  if (!url) {
+    const loadedCheerio = cheerio.load(document.documentElement.outerHTML);
+    return loadedCheerio;
+  }
 
-  return loadedCheerio;
+  // Dashboard context: Send message to background script to get HTML from matching tab
+  console.log(`🔍 Requesting HTML from tab with UXRL: ${url}`);
+
+  try {
+    // Get the extension ID that was injected by the extension's content script
+    const extensionId = (window as any).EXTENSION_ID;
+
+    if (!extensionId) {
+      throw new Error(
+        "Extension ID not found. Make sure the Truthtrollers extension is installed and running."
+      );
+    }
+
+    console.log(`📤 Sending message to extension ${extensionId}`);
+
+    // Use browser-agnostic API
+    const browserAPI = (window as any).browser || (window as any).chrome;
+
+    if (!browserAPI || !browserAPI.runtime) {
+      throw new Error("Browser extension API not available");
+    }
+
+    console.log(
+      `📡 Using API:`,
+      browserAPI === (window as any).browser ? "browser" : "chrome"
+    );
+    console.log(`📨 Sending getHTMLFromTab message for URL: ${url}`);
+
+    const response = await browserAPI.runtime.sendMessage(extensionId, {
+      action: "getHTMLFromTab",
+      url: url,
+    });
+
+    console.log(`📬 Received response:`, response);
+
+    if (!response.success || !response.html) {
+      throw new Error(response.error || "Failed to get HTML from tab");
+    }
+
+    console.log(`📄 Retrieved ${response.html.length} chars of HTML from tab`);
+    const loadedCheerio = cheerio.load(response.html);
+    return loadedCheerio;
+  } catch (error) {
+    console.error("❌ Error fetching HTML from tab:", error);
+    throw error;
+  }
 };
 
 export const extractAuthors = async (

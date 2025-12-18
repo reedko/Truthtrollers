@@ -1,6 +1,7 @@
 // backend/core/tavilySearch.js
 
 import dotenv from "dotenv";
+import logger from "../utils/logger.js";
 
 dotenv.config();
 
@@ -9,7 +10,7 @@ const TAVILY_ENDPOINT = "https://api.tavily.com/search";
 const TAVILY_API_KEY = process.env.TAVILY_API_KEY || "";
 
 if (!TAVILY_API_KEY) {
-  console.warn(
+  logger.warn(
     "[tavilySearch] TAVILY_API_KEY is not set. EvidenceEngine web search will be disabled."
   );
 }
@@ -53,7 +54,7 @@ function createTavilyAdapter(apiKey) {
       });
 
       if (!resp.ok) {
-        console.warn(
+        logger.warn(
           "[tavilySearch] HTTP error from Tavily:",
           resp.status,
           resp.statusText
@@ -84,7 +85,7 @@ function createTavilyAdapter(apiKey) {
         };
       });
     } catch (err) {
-      console.warn("[tavilySearch] Error calling Tavily:", err);
+      logger.warn("[tavilySearch] Error calling Tavily:", err);
       return [];
     }
   };

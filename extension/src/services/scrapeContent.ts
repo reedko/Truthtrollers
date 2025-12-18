@@ -1,107 +1,82 @@
 // extension/src/services/scrapeContent.ts
 // ---------------------------------------------------------
-// FINAL VERSION — uses background.js to call backend
+// SIMPLIFIED — sends URL to backend for single-pass scraping
+// Backend handles: fetch, metadata, claims, evidence, references
+// NO RECURSION - backend processes everything inline!
 // ---------------------------------------------------------
 
 import browser from "webextension-polyfill";
-import { orchestrateScraping } from "./orchestrateScrapingExtension";
-import type { Lit_references, TaskData } from "../entities/Task";
-
-// Prevent infinite recursion
-export type CrawlCtx = {
-  visited: Set<string>;
-  depth: number;
-  maxDepth: number;
-};
 
 type ScrapeBackendResponse = {
   success: boolean;
   contentId?: string;
   references?: {
-    dom?: Lit_references[];
-    ai?: Lit_references[];
+    dom?: any[];
+    ai?: any[];
   };
   error?: string;
 };
 
 /**
- * Scrape a URL as TASK or REFERENCE.
+ * Scrape current page as TASK.
  *
- * 1) orchestrateScrapingExtension(url, ...) → TaskData envelope
- * 2) Send envelope to background.js via runtime.sendMessage
- *    - background calls /api/scrape-task or /api/scrape-reference
- * 3) Backend returns:
- *    { success, contentId, references: { dom, ai } }
- * 4) We recurse on those references (depth-limited).
+ * PROCESS-ONCE-INLINE FLOW:
+ * 1) Capture current page DOM (if HTML, not PDF)
+ * 2) Send URL (+ raw_html if available) to backend via background.js
+ * 3) Backend does EVERYTHING:
+ *    - Fetches page (or uses raw_html)
+ *    - Extracts text + metadata (authors, publisher, title)
+ *    - Creates task content row
+ *    - Persists DOM/inline references
+ *    - Extracts & persists task claims
+ *    - Runs evidence engine → creates AI references INLINE during fetch
+ *    - Creates reference_claim_links (task claims → AI refs)
+ *    - Extracts claims FROM references
+ * 4) Done! ✅ No recursion needed.
  */
-export async function scrapeContent(
-  url: string,
-  content_name: string,
-  contentType: "task" | "reference",
-  taskContentId: string | null = null,
-  ctx: CrawlCtx = { visited: new Set<string>(), depth: 0, maxDepth: 2 },
-  evidenceMetadata?: Partial<Lit_references>
-): Promise<string | null> {
+export async function scrapeContent(url: string): Promise<string | null> {
   const normUrl = url.trim();
 
-  // ---------------------------------------
-  // ⛔ Visited guard
-  // ---------------------------------------
-  if (ctx.visited.has(normUrl)) {
-    console.log("↩️ Already visited in this scrape run:", normUrl);
-    return null;
-  }
-  ctx.visited.add(normUrl);
-
-  console.log(
-    `🔎 scrapeContent (${contentType}) depth=${ctx.depth}/${ctx.maxDepth}:`,
-    normUrl
-  );
+  console.log(`🔎 scrapeContent (task):`, normUrl);
 
   // ---------------------------------------
-  // 1. EXTENSION-SIDE SCRAPING → envelope
+  // 1. BUILD REQUEST PAYLOAD
   // ---------------------------------------
-  const envelope: TaskData | null = await orchestrateScraping(
-    normUrl,
-    content_name,
-    contentType
-  );
+  let payload: any = {
+    url: normUrl,
+  };
 
-  if (!envelope) {
-    console.warn("⚠️ orchestrateScraping returned null for:", normUrl);
-    return null;
+  // For NON-PDF tasks: use already-loaded DOM (NO HTTP REQUEST!)
+  const isPdf = /\.pdf($|\?)/i.test(normUrl);
+  if (!isPdf) {
+    try {
+      // Get HTML from current page DOM (already loaded in browser!)
+      const rawHtml = document.documentElement.outerHTML;
+      payload.raw_html = rawHtml;
+      console.log(
+        `✅ Using current page DOM (${rawHtml.length} chars, no HTTP request)`
+      );
+    } catch (err) {
+      console.warn(
+        "⚠️ Could not access current page DOM, backend will fetch:",
+        err
+      );
+      // Backend will fetch via URL as fallback
+    }
   }
-
-  // For references, carry the parent task content_id
-  if (contentType === "reference" && taskContentId) {
-    envelope.taskContentId = taskContentId;
-  }
-
-  // For references, add evidence metadata (claimIds, stance, etc)
-  if (contentType === "reference" && evidenceMetadata) {
-    envelope.claimIds = evidenceMetadata.claimIds;
-    envelope.stance = evidenceMetadata.stance;
-    envelope.quote = evidenceMetadata.quote;
-    envelope.summary = evidenceMetadata.summary;
-    envelope.quality = evidenceMetadata.quality;
-    envelope.location = evidenceMetadata.location;
-    envelope.publishedAt = evidenceMetadata.publishedAt;
-  }
+  // For PDFs: backend will fetch and parse with pdf-parse
 
   // ---------------------------------------
   // 2. ASK BACKGROUND TO CALL BACKEND
   // ---------------------------------------
-  const action =
-    contentType === "task" ? "scrapeTaskOnServer" : "scrapeReferenceOnServer";
-
   let backendResp: ScrapeBackendResponse;
   try {
     backendResp = (await browser.runtime.sendMessage({
-      action,
-      envelope,
+      action: "scrapeTaskOnServer",
+      payload,
     })) as ScrapeBackendResponse;
   } catch (err) {
-    console.error("❌ Error sending scrape envelope to background:", err);
+    console.error("❌ Error sending scrape request to background:", err);
     return null;
   }
 
@@ -110,51 +85,13 @@ export async function scrapeContent(
     return null;
   }
 
-  const thisContentId = backendResp.contentId;
-  console.log(`✅ ${contentType} persisted as content_id=${thisContentId}`);
+  const contentId = backendResp.contentId;
+  const domCount = backendResp.references?.dom?.length || 0;
+  const aiCount = backendResp.references?.ai?.length || 0;
 
-  // Root task content_id flows down into references
-  if (contentType === "task") {
-    taskContentId = thisContentId;
-  }
+  console.log(`✅ Task complete: content_id=${contentId}`);
+  console.log(`   📄 DOM/inline refs: ${domCount}`);
+  console.log(`   🤖 AI refs: ${aiCount} (fully processed)`);
 
-  // ---------------------------------------
-  // 3. MERGE DOM + AI references (returned by backend)
-  // ---------------------------------------
-  const domRefs = backendResp.references?.dom || [];
-  const aiRefs = backendResp.references?.ai || [];
-  const nextRefs: Lit_references[] = [...domRefs, ...aiRefs];
-
-  // ---------------------------------------
-  // 4. RECURSE on nextRefs (depth-limited)
-  // ---------------------------------------
-  if (ctx.depth < ctx.maxDepth && nextRefs.length > 0) {
-    const nextDepth = ctx.depth + 1;
-
-    for (const ref of nextRefs) {
-      const rurl = ref.url?.trim();
-      if (!rurl) continue;
-
-      console.log(
-        `🔗 Recursing → depth ${nextDepth}/${ctx.maxDepth}`,
-        ref.origin ? `[${ref.origin}]` : "",
-        rurl
-      );
-
-      await scrapeContent(
-        rurl,
-        ref.content_name || "",
-        "reference",
-        taskContentId,
-        {
-          visited: ctx.visited,
-          depth: nextDepth,
-          maxDepth: ctx.maxDepth,
-        },
-        ref // Pass the entire ref object with evidence metadata
-      );
-    }
-  }
-
-  return thisContentId;
+  return contentId;
 }
