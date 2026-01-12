@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TruthTrollers Detective Board V2 - Card Network</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Courier New", monospace;
+        background: #1a1a1a;
+        color: #e2e8f0;
+        min-height: 100vh;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Cork board texture */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background:
+          radial-gradient(circle at 20% 30%, rgba(139, 92, 46, 0.03) 0%, transparent 50%),
+          radial-gradient(circle at 80% 70%, rgba(139, 92, 46, 0.03) 0%, transparent 50%),
+          repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(139, 92, 46, 0.02) 2px,
+            rgba(139, 92, 46, 0.02) 4px
+          );
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      .board-container {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1;
+        overflow: hidden;
+      }
+
+      /* SVG for yarn connections */
+      #yarn-svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .yarn-line {
+        stroke-width: 2;
+        fill: none;
+        opacity: 0.7;
+        filter: drop-shadow(0 0 2px currentColor);
+      }
+
+      .yarn-line.supports {
+        stroke: #22c55e;
+      }
+
+      .yarn-line.refutes {
+        stroke: #ef4444;
+      }
+
+      .yarn-line.related {
+        stroke: #64748b;
+      }
+
+      /* Pushpin at connection points */
+      .pushpin {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        pointer-events: none;
+        z-index: 3;
+        transform: translate(-50%, -50%);
+      }
+
+      .pushpin::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 8px;
+        height: 8px;
+        background: radial-gradient(circle, #c41e3a, #8b0000);
+        border-radius: 50%;
+        box-shadow:
+          0 2px 4px rgba(0, 0, 0, 0.4),
+          0 0 8px rgba(196, 30, 58, 0.6),
+          inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      }
+
+      .pushpin::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 14px;
+        height: 14px;
+        background:
+          radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.4), transparent 60%),
+          radial-gradient(circle, rgba(196, 30, 58, 0.3), transparent);
+        border-radius: 50%;
+      }
+
+      /* Evidence Cards - Index card style */
+      .evidence-card {
+        position: absolute;
+        width: 320px;
+        background: linear-gradient(135deg, #fffef0 0%, #fefce8 100%);
+        border-radius: 2px;
+        padding: 24px;
+        cursor: move;
+        transition: all 0.3s ease;
+        box-shadow:
+          0 4px 12px rgba(0, 0, 0, 0.3),
+          0 1px 3px rgba(0, 0, 0, 0.2),
+          inset 0 1px 0 rgba(255, 255, 255, 0.6);
+        z-index: 10;
+        user-select: none;
+        transform: rotate(-1deg);
+      }
+
+      .evidence-card:nth-child(even) {
+        transform: rotate(0.5deg);
+      }
+
+      .evidence-card:hover {
+        transform: scale(1.05) rotate(0deg) !important;
+        box-shadow:
+          0 8px 24px rgba(0, 0, 0, 0.4),
+          0 2px 6px rgba(0, 0, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        z-index: 50;
+      }
+
+      .evidence-card.dragging {
+        cursor: grabbing;
+        opacity: 0.95;
+        z-index: 100;
+        transform: scale(1.03) rotate(-2deg);
+      }
+
+      /* Pushpin on card */
+      .evidence-card::before {
+        content: "";
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 16px;
+        height: 16px;
+        background:
+          radial-gradient(circle at 30% 30%, #ff6b6b, #c41e3a);
+        border-radius: 50%;
+        box-shadow:
+          0 2px 6px rgba(0, 0, 0, 0.4),
+          0 0 12px rgba(196, 30, 58, 0.4),
+          inset 0 1px 2px rgba(255, 255, 255, 0.4),
+          inset 0 -1px 2px rgba(0, 0, 0, 0.2);
+        z-index: 1;
+      }
+
+      /* Ruled lines on card */
+      .card-content {
+        position: relative;
+        background-image: repeating-linear-gradient(
+          transparent,
+          transparent 27px,
+          rgba(100, 116, 139, 0.15) 27px,
+          rgba(100, 116, 139, 0.15) 28px
+        );
+        min-height: 140px;
+        padding-top: 4px;
+      }
+
+      .card-type-badge {
+        position: absolute;
+        top: -12px;
+        right: 16px;
+        padding: 4px 12px;
+        background: #ef4444;
+        color: #fff;
+        font-size: 0.7rem;
+        font-weight: bold;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        border-radius: 2px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        z-index: 2;
+      }
+
+      .card-type-badge.task {
+        background: #8b5cf6;
+      }
+
+      .card-type-badge.reference {
+        background: #22c55e;
+      }
+
+      .card-type-badge.claim {
+        background: #f59e0b;
+      }
+
+      .card-title {
+        font-size: 1.15rem;
+        font-weight: bold;
+        color: #1e293b;
+        margin-bottom: 8px;
+        line-height: 1.3;
+        font-family: "Courier New", monospace;
+        text-transform: uppercase;
+      }
+
+      .card-meta {
+        font-size: 0.8rem;
+        color: #475569;
+        margin-bottom: 12px;
+        font-style: italic;
+      }
+
+      .card-text {
+        font-size: 0.85rem;
+        color: #334155;
+        line-height: 1.6;
+        margin-bottom: 12px;
+      }
+
+      .card-stats {
+        display: flex;
+        gap: 12px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 2px solid rgba(100, 116, 139, 0.2);
+      }
+
+      .card-stat {
+        text-align: center;
+        flex: 1;
+      }
+
+      .stat-value {
+        display: block;
+        font-size: 1.3rem;
+        font-weight: bold;
+        color: #1e293b;
+      }
+
+      .stat-label {
+        display: block;
+        font-size: 0.65rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 2px;
+      }
+
+      /* Central task card - larger and yellow */
+      .evidence-card.central {
+        width: 380px;
+        background: linear-gradient(135deg, #fef9c3 0%, #fef08a 100%);
+        box-shadow:
+          0 8px 24px rgba(0, 0, 0, 0.4),
+          0 2px 6px rgba(0, 0, 0, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      }
+
+      .evidence-card.central::before {
+        background: radial-gradient(circle at 30% 30%, #a855f7, #7c3aed);
+        box-shadow:
+          0 2px 6px rgba(0, 0, 0, 0.4),
+          0 0 12px rgba(139, 92, 246, 0.6),
+          inset 0 1px 2px rgba(255, 255, 255, 0.4);
+      }
+
+      /* Claim cards - smaller, white */
+      .evidence-card.claim-card {
+        width: 260px;
+        background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+        padding: 16px;
+      }
+
+      .evidence-card.claim-card .card-content {
+        min-height: 80px;
+      }
+
+      /* Header */
+      .board-header {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        z-index: 100;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 12px 32px;
+        border-radius: 4px;
+        border: 2px solid #ef4444;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      }
+
+      .board-title {
+        font-size: 1.8rem;
+        font-weight: bold;
+        letter-spacing: 4px;
+        color: #ef4444;
+        text-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+        text-transform: uppercase;
+      }
+
+      .board-subtitle {
+        font-size: 0.75rem;
+        color: #94a3b8;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        margin-top: 4px;
+      }
+
+      /* Controls */
+      .control-panel {
+        position: absolute;
+        top: 120px;
+        left: 20px;
+        background: rgba(0, 0, 0, 0.85);
+        border: 2px solid #64748b;
+        border-radius: 4px;
+        padding: 16px;
+        z-index: 100;
+        min-width: 200px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      }
+
+      .control-title {
+        font-size: 0.85rem;
+        font-weight: bold;
+        color: #94a3b8;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .control-btn {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 8px;
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid #475569;
+        border-radius: 2px;
+        color: #cbd5e1;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .control-btn:hover {
+        background: rgba(51, 65, 85, 1);
+        border-color: #94a3b8;
+        color: #f1f5f9;
+      }
+
+      /* Legend */
+      .legend {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.85);
+        border: 2px solid #64748b;
+        border-radius: 4px;
+        padding: 16px;
+        z-index: 100;
+        min-width: 180px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+      }
+
+      .legend-title {
+        font-size: 0.85rem;
+        font-weight: bold;
+        color: #94a3b8;
+        margin-bottom: 12px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        font-size: 0.75rem;
+        color: #cbd5e1;
+      }
+
+      .legend-line {
+        width: 30px;
+        height: 2px;
+        border-radius: 1px;
+      }
+
+      .legend-line.supports {
+        background: #22c55e;
+        box-shadow: 0 0 4px rgba(34, 197, 94, 0.6);
+      }
+
+      .legend-line.refutes {
+        background: #ef4444;
+        box-shadow: 0 0 4px rgba(239, 68, 68, 0.6);
+      }
+
+      .legend-line.related {
+        background: #64748b;
+        box-shadow: 0 0 4px rgba(100, 116, 139, 0.4);
+      }
+
+      /* Handwritten effect on some text */
+      .handwritten {
+        font-family: "Comic Sans MS", cursive;
+        color: #3b82f6;
+        font-size: 0.9rem;
+        margin-top: 8px;
+        transform: rotate(-1deg);
+      }
+
+      /* Fan out animation class */
+      .fan-out {
+        animation: fanOut 0.4s ease-out;
+      }
+
+      @keyframes fanOut {
+        from {
+          opacity: 0;
+          transform: scale(0.5) rotate(0deg);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) rotate(-1deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="board-container">
+      <!-- Header -->
+      <div class="board-header">
+        <h1 class="board-title">EVIDENCE BOARD</h1>
+        <p class="board-subtitle">Investigation Network</p>
+      </div>
+
+      <!-- Control Panel -->
+      <div class="control-panel">
+        <div class="control-title">Controls</div>
+        <button class="control-btn" onclick="centerView()">Center View</button>
+        <button class="control-btn" onclick="showAllYarn()">Show All Connections</button>
+        <button class="control-btn" onclick="hideAllYarn()">Hide Connections</button>
+        <button class="control-btn" onclick="autoArrange()">Auto Arrange</button>
+      </div>
+
+      <!-- Legend -->
+      <div class="legend">
+        <div class="legend-title">Legend</div>
+        <div class="legend-item">
+          <div class="legend-line supports"></div>
+          <span>Supports</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-line refutes"></div>
+          <span>Refutes</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-line related"></div>
+          <span>Related</span>
+        </div>
+      </div>
+
+      <!-- SVG for yarn connections -->
+      <svg id="yarn-svg"></svg>
+
+      <!-- Central Task Card -->
+      <div
+        class="evidence-card central"
+        id="card-central"
+        style="left: 50%; top: 50%; transform: translate(-50%, -50%)"
+        data-type="task"
+      >
+        <span class="card-type-badge task">TASK</span>
+        <div class="card-content">
+          <div class="card-title">Vaccine Safety</div>
+          <div class="card-meta">Primary Investigation</div>
+          <div class="card-text">
+            Investigate claims about vaccine safety and efficacy
+          </div>
+          <div class="card-stats">
+            <div class="card-stat">
+              <span class="stat-value">12</span>
+              <span class="stat-label">Claims</span>
+            </div>
+            <div class="card-stat">
+              <span class="stat-value">8</span>
+              <span class="stat-label">References</span>
+            </div>
+            <div class="card-stat">
+              <span class="stat-value">38</span>
+              <span class="stat-label">Links</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reference Cards -->
+      <div
+        class="evidence-card"
+        id="card-ref-1"
+        style="left: 20%; top: 20%"
+        data-type="reference"
+      >
+        <span class="card-type-badge reference">REFERENCE</span>
+        <div class="card-content">
+          <div class="card-title">Nature Medicine</div>
+          <div class="card-meta">Peer-Reviewed • 2024</div>
+          <div class="card-text">
+            Large-scale study on mRNA vaccine safety profile
+          </div>
+          <div class="card-stats">
+            <div class="card-stat">
+              <span class="stat-value">9/10</span>
+              <span class="stat-label">Quality</span>
+            </div>
+            <div class="card-stat">
+              <span class="stat-value">12K</span>
+              <span class="stat-label">Citations</span>
+            </div>
+          </div>
+          <div class="handwritten">Click to expand claims</div>
+        </div>
+      </div>
+
+      <div
+        class="evidence-card"
+        id="card-ref-2"
+        style="left: 70%; top: 25%"
+        data-type="reference"
+      >
+        <span class="card-type-badge reference">REFERENCE</span>
+        <div class="card-content">
+          <div class="card-title">CDC Report</div>
+          <div class="card-meta">Government • 2024</div>
+          <div class="card-text">
+            Official safety monitoring data from VAERS
+          </div>
+          <div class="card-stats">
+            <div class="card-stat">
+              <span class="stat-value">8/10</span>
+              <span class="stat-label">Quality</span>
+            </div>
+            <div class="card-stat">
+              <span class="stat-value">8.2K</span>
+              <span class="stat-label">Citations</span>
+            </div>
+          </div>
+          <div class="handwritten">Click to expand claims</div>
+        </div>
+      </div>
+
+      <div
+        class="evidence-card"
+        id="card-ref-3"
+        style="left: 15%; top: 70%"
+        data-type="reference"
+      >
+        <span class="card-type-badge reference">REFERENCE</span>
+        <div class="card-content">
+          <div class="card-title">Personal Blog</div>
+          <div class="card-meta">Blog Post • 2024</div>
+          <div class="card-text">
+            Anecdotal report of adverse reaction
+          </div>
+          <div class="card-stats">
+            <div class="card-stat">
+              <span class="stat-value">2/10</span>
+              <span class="stat-label">Quality</span>
+            </div>
+            <div class="card-stat">
+              <span class="stat-value">47</span>
+              <span class="stat-label">Shares</span>
+            </div>
+          </div>
+          <div class="handwritten">Click to expand claims</div>
+        </div>
+      </div>
+
+      <div
+        class="evidence-card"
+        id="card-ref-4"
+        style="left: 68%; top: 68%"
+        data-type="reference"
+      >
+        <span class="card-type-badge reference">REFERENCE</span>
+        <div class="card-content">
+          <div class="card-title">Lancet Study</div>
+          <div class="card-meta">Peer-Reviewed • 2024</div>
+          <div class="card-text">
+            Meta-analysis of vaccine effectiveness
+          </div>
+          <div class="card-stats">
+            <div class="card-stat">
+              <span class="stat-value">10/10</span>
+              <span class="stat-label">Quality</span>
+            </div>
+            <div class="card-stat">
+              <span class="stat-value">18K</span>
+              <span class="stat-label">Citations</span>
+            </div>
+          </div>
+          <div class="handwritten">Click to expand claims</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let draggedCard = null;
+      let offsetX, offsetY;
+      let expandedReference = null;
+
+      const connections = [
+        { from: "card-ref-1", to: "card-central", type: "refutes" },
+        { from: "card-ref-2", to: "card-central", type: "refutes" },
+        { from: "card-ref-3", to: "card-central", type: "supports" },
+        { from: "card-ref-4", to: "card-central", type: "refutes" },
+      ];
+
+      // Mock claim data
+      const claimsData = {
+        "card-ref-1": [
+          { id: "c1", text: "mRNA vaccines show 95% efficacy", relation: "supports" },
+          { id: "c2", text: "No long-term safety data available", relation: "refutes" },
+          { id: "c3", text: "Rare myocarditis cases reported", relation: "refutes" }
+        ],
+        "card-ref-2": [
+          { id: "c4", text: "Monitoring shows acceptable safety profile", relation: "supports" },
+          { id: "c5", text: "Severe reactions are extremely rare", relation: "supports" }
+        ],
+        "card-ref-3": [
+          { id: "c6", text: "I experienced side effects", relation: "refutes" }
+        ],
+        "card-ref-4": [
+          { id: "c7", text: "Vaccines reduce hospitalization by 90%", relation: "supports" },
+          { id: "c8", text: "Effectiveness wanes over time", relation: "refutes" }
+        ]
+      };
+
+      // Initialize draggable cards
+      document.querySelectorAll(".evidence-card").forEach((card) => {
+        card.addEventListener("mousedown", startDrag);
+        card.addEventListener("click", handleCardClick);
+      });
+
+      function handleCardClick(e) {
+        const card = e.currentTarget;
+        const type = card.dataset.type;
+
+        if (type === "reference") {
+          const cardId = card.id;
+
+          // Remove existing claim cards
+          document.querySelectorAll(".claim-card").forEach(c => c.remove());
+
+          // If clicking same reference, just remove claims
+          if (expandedReference === cardId) {
+            expandedReference = null;
+            drawConnections();
+            return;
+          }
+
+          expandedReference = cardId;
+
+          // Fan out claims
+          const claims = claimsData[cardId] || [];
+          const cardRect = card.getBoundingClientRect();
+          const centerX = cardRect.left + cardRect.width / 2;
+          const centerY = cardRect.top + cardRect.height / 2;
+
+          claims.forEach((claim, i) => {
+            const angle = (i / claims.length) * Math.PI * 0.8 - Math.PI * 0.4;
+            const radius = 200;
+            const x = centerX + Math.cos(angle) * radius - 130;
+            const y = centerY + Math.sin(angle) * radius - 80;
+
+            const claimCard = createClaimCard(claim, x, y, cardId);
+            document.querySelector(".board-container").appendChild(claimCard);
+
+            // Add connection
+            connections.push({
+              from: claim.id,
+              to: cardId,
+              type: claim.relation
+            });
+          });
+
+          setTimeout(() => drawConnections(), 50);
+        }
+      }
+
+      function createClaimCard(claim, x, y, refId) {
+        const card = document.createElement("div");
+        card.className = "evidence-card claim-card fan-out";
+        card.id = claim.id;
+        card.dataset.type = "claim";
+        card.style.left = x + "px";
+        card.style.top = y + "px";
+
+        card.innerHTML = `
+          <span class="card-type-badge claim">CLAIM</span>
+          <div class="card-content">
+            <div class="card-text">${claim.text}</div>
+            <div class="card-stats">
+              <div class="card-stat">
+                <span class="stat-value">${claim.relation === "supports" ? "✓" : "✗"}</span>
+                <span class="stat-label">${claim.relation}</span>
+              </div>
+            </div>
+          </div>
+        `;
+
+        card.addEventListener("mousedown", startDrag);
+        return card;
+      }
+
+      function startDrag(e) {
+        e.stopPropagation();
+        draggedCard = e.currentTarget;
+        draggedCard.classList.add("dragging");
+
+        const rect = draggedCard.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+
+        document.addEventListener("mousemove", drag);
+        document.addEventListener("mouseup", stopDrag);
+      }
+
+      function drag(e) {
+        if (!draggedCard) return;
+
+        const x = e.clientX - offsetX;
+        const y = e.clientY - offsetY;
+
+        draggedCard.style.left = x + "px";
+        draggedCard.style.top = y + "px";
+        draggedCard.style.transform = "none";
+
+        drawConnections();
+      }
+
+      function stopDrag() {
+        if (draggedCard) {
+          draggedCard.classList.remove("dragging");
+          draggedCard = null;
+        }
+        document.removeEventListener("mousemove", drag);
+        document.removeEventListener("mouseup", stopDrag);
+      }
+
+      function drawConnections() {
+        const svg = document.getElementById("yarn-svg");
+        svg.innerHTML = "";
+
+        // Remove old pushpins
+        document.querySelectorAll(".pushpin").forEach(p => p.remove());
+
+        connections.forEach((conn) => {
+          const from = document.getElementById(conn.from);
+          const to = document.getElementById(conn.to);
+
+          if (!from || !to) return;
+
+          const fromRect = from.getBoundingClientRect();
+          const toRect = to.getBoundingClientRect();
+
+          const x1 = fromRect.left + fromRect.width / 2;
+          const y1 = fromRect.top + 8;
+          const x2 = toRect.left + toRect.width / 2;
+          const y2 = toRect.top + 8;
+
+          // Create curved path for yarn
+          const dx = x2 - x1;
+          const dy = y2 - y1;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const cx = (x1 + x2) / 2 + dy * 0.2;
+          const cy = (y1 + y2) / 2 - dx * 0.1;
+
+          const path = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path"
+          );
+          path.setAttribute(
+            "d",
+            `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`
+          );
+          path.setAttribute("class", `yarn-line ${conn.type}`);
+
+          svg.appendChild(path);
+
+          // Add pushpins
+          addPushpin(x1, y1);
+          addPushpin(x2, y2);
+        });
+      }
+
+      function addPushpin(x, y) {
+        const pin = document.createElement("div");
+        pin.className = "pushpin";
+        pin.style.left = x + "px";
+        pin.style.top = y + "px";
+        document.querySelector(".board-container").appendChild(pin);
+      }
+
+      function centerView() {
+        const central = document.getElementById("card-central");
+        central.style.left = "50%";
+        central.style.top = "50%";
+        central.style.transform = "translate(-50%, -50%)";
+        drawConnections();
+      }
+
+      function showAllYarn() {
+        drawConnections();
+      }
+
+      function hideAllYarn() {
+        document.getElementById("yarn-svg").innerHTML = "";
+        document.querySelectorAll(".pushpin").forEach(p => p.remove());
+      }
+
+      function autoArrange() {
+        const cards = document.querySelectorAll(".evidence-card:not(.central):not(.claim-card)");
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        const radius = 300;
+        const angleStep = (2 * Math.PI) / cards.length;
+
+        cards.forEach((card, i) => {
+          const angle = i * angleStep;
+          const x = centerX + radius * Math.cos(angle) - 160;
+          const y = centerY + radius * Math.sin(angle) - 100;
+
+          card.style.left = x + "px";
+          card.style.top = y + "px";
+          card.style.transform = "none";
+        });
+
+        setTimeout(() => drawConnections(), 100);
+      }
+
+      // Initial draw
+      window.addEventListener("load", () => {
+        setTimeout(() => drawConnections(), 100);
+      });
+
+      window.addEventListener("resize", drawConnections);
+    </script>
+  </body>
+</html>

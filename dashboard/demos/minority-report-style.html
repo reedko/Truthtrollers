@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TruthTrollers - Minority Report Style Interface</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #000000;
+        color: #e2e8f0;
+        min-height: 100vh;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Holographic grid background */
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image:
+          linear-gradient(rgba(0, 162, 255, 0.1) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(0, 162, 255, 0.1) 1px, transparent 1px);
+        background-size: 50px 50px;
+        animation: gridMove 40s linear infinite;
+        pointer-events: none;
+        z-index: 0;
+        perspective: 1000px;
+        transform: rotateX(60deg);
+      }
+
+      @keyframes gridMove {
+        0% {
+          background-position: 0 0;
+        }
+        100% {
+          background-position: 50px 50px;
+        }
+      }
+
+      /* Particle effects */
+      body::after {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-image:
+          radial-gradient(circle at 20% 30%, rgba(0, 162, 255, 0.15) 0%, transparent 50%),
+          radial-gradient(circle at 80% 70%, rgba(139, 92, 246, 0.12) 0%, transparent 50%),
+          radial-gradient(circle at 50% 50%, rgba(34, 197, 94, 0.08) 0%, transparent 50%);
+        animation: particleFloat 15s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      @keyframes particleFloat {
+        0%, 100% {
+          opacity: 0.3;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+
+      .interface-container {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1;
+        overflow: hidden;
+        perspective: 2000px;
+      }
+
+      /* SVG for holographic connections */
+      #connection-svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .connection-line {
+        stroke-width: 1.5;
+        fill: none;
+        opacity: 0.6;
+        filter: drop-shadow(0 0 4px currentColor) drop-shadow(0 0 8px currentColor);
+        animation: pulse 3s ease-in-out infinite;
+      }
+
+      .connection-line.supports {
+        stroke: #22c55e;
+      }
+
+      .connection-line.refutes {
+        stroke: #ef4444;
+      }
+
+      .connection-line.related {
+        stroke: #00a2ff;
+      }
+
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 0.4;
+          stroke-width: 1.5;
+        }
+        50% {
+          opacity: 0.8;
+          stroke-width: 2;
+        }
+      }
+
+      /* Connection particles */
+      .connection-particle {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: #00a2ff;
+        border-radius: 50%;
+        box-shadow: 0 0 8px #00a2ff, 0 0 16px #00a2ff;
+        pointer-events: none;
+        z-index: 2;
+      }
+
+      /* Floating panes */
+      .evidence-pane {
+        position: absolute;
+        width: 380px;
+        background:
+          linear-gradient(135deg, rgba(15, 23, 42, 0.7), rgba(30, 41, 59, 0.5));
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(0, 162, 255, 0.4);
+        border-radius: 8px;
+        padding: 0;
+        cursor: move;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.6),
+          0 0 40px rgba(0, 162, 255, 0.15),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1),
+          inset 0 -1px 0 rgba(0, 0, 0, 0.5);
+        z-index: 10;
+        user-select: none;
+        animation: floatIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      @keyframes floatIn {
+        from {
+          opacity: 0;
+          transform: scale(0.8) translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateY(0);
+        }
+      }
+
+      .evidence-pane:hover {
+        transform: scale(1.03) translateZ(20px);
+        box-shadow:
+          0 12px 48px rgba(0, 0, 0, 0.8),
+          0 0 60px rgba(0, 162, 255, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        border-color: rgba(0, 162, 255, 0.7);
+        z-index: 50;
+      }
+
+      .evidence-pane.dragging {
+        cursor: grabbing;
+        opacity: 0.95;
+        z-index: 100;
+        transform: scale(1.02);
+      }
+
+      /* Pane header */
+      .pane-header {
+        background: linear-gradient(90deg, rgba(0, 162, 255, 0.2), transparent);
+        border-bottom: 1px solid rgba(0, 162, 255, 0.3);
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .pane-header::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background: linear-gradient(180deg, #00a2ff, transparent);
+        box-shadow: 0 0 10px #00a2ff;
+      }
+
+      .type-indicator {
+        display: inline-block;
+        padding: 4px 12px;
+        background: rgba(0, 162, 255, 0.2);
+        border: 1px solid rgba(0, 162, 255, 0.4);
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #00a2ff;
+        text-shadow: 0 0 8px rgba(0, 162, 255, 0.8);
+      }
+
+      .type-indicator.task {
+        background: rgba(139, 92, 246, 0.2);
+        border-color: rgba(139, 92, 246, 0.4);
+        color: #a78bfa;
+        text-shadow: 0 0 8px rgba(139, 92, 246, 0.8);
+      }
+
+      .type-indicator.reference {
+        background: rgba(34, 197, 94, 0.2);
+        border-color: rgba(34, 197, 94, 0.4);
+        color: #4ade80;
+        text-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+      }
+
+      .type-indicator.claim {
+        background: rgba(245, 158, 11, 0.2);
+        border-color: rgba(245, 158, 11, 0.4);
+        color: #fbbf24;
+        text-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
+      }
+
+      .pane-status {
+        display: flex;
+        gap: 8px;
+      }
+
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #22c55e;
+        box-shadow: 0 0 8px #22c55e;
+        animation: statusPulse 2s ease-in-out infinite;
+      }
+
+      @keyframes statusPulse {
+        0%, 100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.6;
+          transform: scale(1.2);
+        }
+      }
+
+      /* Pane content */
+      .pane-content {
+        padding: 20px;
+      }
+
+      .pane-title {
+        font-size: 1.3rem;
+        font-weight: 300;
+        color: #f1f5f9;
+        margin-bottom: 8px;
+        line-height: 1.3;
+        letter-spacing: 0.5px;
+      }
+
+      .pane-meta {
+        font-size: 0.85rem;
+        color: #64748b;
+        margin-bottom: 16px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .meta-separator {
+        width: 4px;
+        height: 4px;
+        background: #475569;
+        border-radius: 50%;
+      }
+
+      .pane-description {
+        font-size: 0.9rem;
+        color: #cbd5e1;
+        line-height: 1.6;
+        margin-bottom: 16px;
+      }
+
+      .pane-metrics {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        padding-top: 16px;
+        border-top: 1px solid rgba(100, 116, 139, 0.2);
+      }
+
+      .metric {
+        text-align: center;
+        padding: 12px;
+        background: rgba(0, 162, 255, 0.05);
+        border-radius: 6px;
+        border: 1px solid rgba(0, 162, 255, 0.1);
+      }
+
+      .metric-value {
+        display: block;
+        font-size: 1.8rem;
+        font-weight: 200;
+        color: #00a2ff;
+        text-shadow: 0 0 10px rgba(0, 162, 255, 0.6);
+        margin-bottom: 4px;
+      }
+
+      .metric-label {
+        display: block;
+        font-size: 0.7rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 300;
+      }
+
+      /* Central pane - larger and purple accent */
+      .evidence-pane.central {
+        width: 440px;
+        border-color: rgba(139, 92, 246, 0.6);
+        box-shadow:
+          0 12px 48px rgba(0, 0, 0, 0.8),
+          0 0 60px rgba(139, 92, 246, 0.3),
+          inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      }
+
+      .evidence-pane.central .pane-header::before {
+        background: linear-gradient(180deg, #a78bfa, transparent);
+        box-shadow: 0 0 10px #a78bfa;
+      }
+
+      /* Claim panes - smaller */
+      .evidence-pane.claim-pane {
+        width: 320px;
+      }
+
+      /* Header */
+      .interface-header {
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        z-index: 100;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(20px);
+        padding: 16px 48px;
+        border-radius: 8px;
+        border: 1px solid rgba(0, 162, 255, 0.3);
+        box-shadow:
+          0 4px 24px rgba(0, 0, 0, 0.6),
+          0 0 40px rgba(0, 162, 255, 0.2);
+      }
+
+      .interface-title {
+        font-size: 2rem;
+        font-weight: 200;
+        letter-spacing: 8px;
+        color: #00a2ff;
+        text-shadow: 0 0 20px rgba(0, 162, 255, 0.8);
+        text-transform: uppercase;
+        margin-bottom: 4px;
+      }
+
+      .interface-subtitle {
+        font-size: 0.8rem;
+        color: #64748b;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        font-weight: 300;
+      }
+
+      /* Control panel */
+      .control-panel {
+        position: absolute;
+        top: 140px;
+        left: 20px;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(0, 162, 255, 0.3);
+        border-radius: 8px;
+        padding: 20px;
+        z-index: 100;
+        min-width: 220px;
+        box-shadow:
+          0 4px 24px rgba(0, 0, 0, 0.6),
+          0 0 30px rgba(0, 162, 255, 0.1);
+      }
+
+      .control-title {
+        font-size: 0.9rem;
+        font-weight: 300;
+        color: #00a2ff;
+        margin-bottom: 16px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow: 0 0 8px rgba(0, 162, 255, 0.6);
+      }
+
+      .control-btn {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        background: rgba(0, 162, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 162, 255, 0.3);
+        border-radius: 6px;
+        color: #00a2ff;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 300;
+      }
+
+      .control-btn:hover {
+        background: rgba(0, 162, 255, 0.2);
+        border-color: #00a2ff;
+        box-shadow: 0 0 20px rgba(0, 162, 255, 0.3);
+        transform: translateX(4px);
+      }
+
+      /* Info panel */
+      .info-panel {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(0, 162, 255, 0.3);
+        border-radius: 8px;
+        padding: 20px;
+        z-index: 100;
+        min-width: 240px;
+        box-shadow:
+          0 4px 24px rgba(0, 0, 0, 0.6),
+          0 0 30px rgba(0, 162, 255, 0.1);
+      }
+
+      .info-title {
+        font-size: 0.9rem;
+        font-weight: 300;
+        color: #00a2ff;
+        margin-bottom: 16px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        text-shadow: 0 0 8px rgba(0, 162, 255, 0.6);
+      }
+
+      .info-stats {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+      }
+
+      .info-stat {
+        text-align: center;
+      }
+
+      .info-stat-value {
+        font-size: 2rem;
+        font-weight: 200;
+        color: #00a2ff;
+        text-shadow: 0 0 15px rgba(0, 162, 255, 0.8);
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .info-stat-label {
+        font-size: 0.7rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 300;
+      }
+
+      /* Interaction hint */
+      .interaction-hint {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(0, 162, 255, 0.3);
+        border-radius: 8px;
+        padding: 12px 20px;
+        z-index: 100;
+        font-size: 0.8rem;
+        color: #64748b;
+        letter-spacing: 0.5px;
+      }
+
+      .interaction-hint::before {
+        content: "💡";
+        margin-right: 8px;
+      }
+
+      /* Holographic scanlines */
+      .evidence-pane::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(0, 162, 255, 0.03) 2px,
+          rgba(0, 162, 255, 0.03) 4px
+        );
+        pointer-events: none;
+        border-radius: 8px;
+      }
+
+      /* Fan out animation */
+      .fan-out {
+        animation: fanOut 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      @keyframes fanOut {
+        from {
+          opacity: 0;
+          transform: scale(0.5) translateZ(-100px);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1) translateZ(0);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="interface-container">
+      <!-- Header -->
+      <div class="interface-header">
+        <h1 class="interface-title">EVIDENCE NET</h1>
+        <p class="interface-subtitle">Neural Network Analysis</p>
+      </div>
+
+      <!-- Control Panel -->
+      <div class="control-panel">
+        <div class="control-title">Controls</div>
+        <button class="control-btn" onclick="centerView()">⊙ Center</button>
+        <button class="control-btn" onclick="showAll()">∿ Show All</button>
+        <button class="control-btn" onclick="hideAll()">− Hide All</button>
+        <button class="control-btn" onclick="autoArrange()">⊞ Arrange</button>
+      </div>
+
+      <!-- Info Panel -->
+      <div class="info-panel">
+        <div class="info-title">Network Stats</div>
+        <div class="info-stats">
+          <div class="info-stat">
+            <span class="info-stat-value">5</span>
+            <span class="info-stat-label">Nodes</span>
+          </div>
+          <div class="info-stat">
+            <span class="info-stat-value">12</span>
+            <span class="info-stat-label">Links</span>
+          </div>
+          <div class="info-stat">
+            <span class="info-stat-value">8</span>
+            <span class="info-stat-label">Active</span>
+          </div>
+          <div class="info-stat">
+            <span class="info-stat-value">94%</span>
+            <span class="info-stat-label">Strength</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interaction Hint -->
+      <div class="interaction-hint">
+        Click references to expand claims
+      </div>
+
+      <!-- SVG for connections -->
+      <svg id="connection-svg"></svg>
+
+      <!-- Central Task Pane -->
+      <div
+        class="evidence-pane central"
+        id="pane-central"
+        style="left: 50%; top: 50%; transform: translate(-50%, -50%)"
+        data-type="task"
+      >
+        <div class="pane-header">
+          <span class="type-indicator task">TASK</span>
+          <div class="pane-status">
+            <div class="status-dot"></div>
+          </div>
+        </div>
+        <div class="pane-content">
+          <h2 class="pane-title">Vaccine Safety Investigation</h2>
+          <div class="pane-meta">
+            <span class="meta-item">Primary Subject</span>
+            <span class="meta-separator"></span>
+            <span class="meta-item">Active</span>
+          </div>
+          <p class="pane-description">
+            Comprehensive analysis of vaccine safety claims and supporting evidence
+            from multiple sources and perspectives
+          </p>
+          <div class="pane-metrics">
+            <div class="metric">
+              <span class="metric-value">12</span>
+              <span class="metric-label">Claims</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">8</span>
+              <span class="metric-label">References</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">38</span>
+              <span class="metric-label">Links</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reference Panes -->
+      <div
+        class="evidence-pane"
+        id="pane-ref-1"
+        style="left: 18%; top: 18%"
+        data-type="reference"
+      >
+        <div class="pane-header">
+          <span class="type-indicator reference">REFERENCE</span>
+          <div class="pane-status">
+            <div class="status-dot"></div>
+          </div>
+        </div>
+        <div class="pane-content">
+          <h2 class="pane-title">Nature Medicine Study</h2>
+          <div class="pane-meta">
+            <span class="meta-item">Peer-Reviewed</span>
+            <span class="meta-separator"></span>
+            <span class="meta-item">2024</span>
+          </div>
+          <p class="pane-description">
+            Large-scale longitudinal study examining mRNA vaccine safety profile
+            across diverse populations
+          </p>
+          <div class="pane-metrics">
+            <div class="metric">
+              <span class="metric-value">9.5</span>
+              <span class="metric-label">Quality</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">12K</span>
+              <span class="metric-label">Citations</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">3</span>
+              <span class="metric-label">Claims</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="evidence-pane"
+        id="pane-ref-2"
+        style="left: 66%; top: 22%"
+        data-type="reference"
+      >
+        <div class="pane-header">
+          <span class="type-indicator reference">REFERENCE</span>
+          <div class="pane-status">
+            <div class="status-dot"></div>
+          </div>
+        </div>
+        <div class="pane-content">
+          <h2 class="pane-title">CDC Safety Report</h2>
+          <div class="pane-meta">
+            <span class="meta-item">Government</span>
+            <span class="meta-separator"></span>
+            <span class="meta-item">2024</span>
+          </div>
+          <p class="pane-description">
+            Official monitoring data from VAERS analyzing adverse event reports
+          </p>
+          <div class="pane-metrics">
+            <div class="metric">
+              <span class="metric-value">8.0</span>
+              <span class="metric-label">Quality</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">8.2K</span>
+              <span class="metric-label">Citations</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">2</span>
+              <span class="metric-label">Claims</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="evidence-pane"
+        id="pane-ref-3"
+        style="left: 12%; top: 68%"
+        data-type="reference"
+      >
+        <div class="pane-header">
+          <span class="type-indicator reference">REFERENCE</span>
+          <div class="pane-status">
+            <div class="status-dot"></div>
+          </div>
+        </div>
+        <div class="pane-content">
+          <h2 class="pane-title">Personal Blog Post</h2>
+          <div class="pane-meta">
+            <span class="meta-item">Blog</span>
+            <span class="meta-separator"></span>
+            <span class="meta-item">2024</span>
+          </div>
+          <p class="pane-description">
+            Anecdotal account of adverse reaction following vaccination
+          </p>
+          <div class="pane-metrics">
+            <div class="metric">
+              <span class="metric-value">2.0</span>
+              <span class="metric-label">Quality</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">47</span>
+              <span class="metric-label">Shares</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">1</span>
+              <span class="metric-label">Claims</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="evidence-pane"
+        id="pane-ref-4"
+        style="left: 64%; top: 66%"
+        data-type="reference"
+      >
+        <div class="pane-header">
+          <span class="type-indicator reference">REFERENCE</span>
+          <div class="pane-status">
+            <div class="status-dot"></div>
+          </div>
+        </div>
+        <div class="pane-content">
+          <h2 class="pane-title">Lancet Meta-Analysis</h2>
+          <div class="pane-meta">
+            <span class="meta-item">Peer-Reviewed</span>
+            <span class="meta-separator"></span>
+            <span class="meta-item">2024</span>
+          </div>
+          <p class="pane-description">
+            Comprehensive meta-analysis of vaccine effectiveness studies
+          </p>
+          <div class="pane-metrics">
+            <div class="metric">
+              <span class="metric-value">10.0</span>
+              <span class="metric-label">Quality</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">18K</span>
+              <span class="metric-label">Citations</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">2</span>
+              <span class="metric-label">Claims</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let draggedPane = null;
+      let offsetX, offsetY;
+      let expandedReference = null;
+
+      const connections = [
+        { from: "pane-ref-1", to: "pane-central", type: "refutes" },
+        { from: "pane-ref-2", to: "pane-central", type: "refutes" },
+        { from: "pane-ref-3", to: "pane-central", type: "supports" },
+        { from: "pane-ref-4", to: "pane-central", type: "refutes" },
+      ];
+
+      const claimsData = {
+        "pane-ref-1": [
+          { id: "c1", text: "95% efficacy demonstrated in trials", relation: "supports" },
+          { id: "c2", text: "Long-term safety data insufficient", relation: "refutes" },
+          { id: "c3", text: "Rare myocarditis cases observed", relation: "refutes" }
+        ],
+        "pane-ref-2": [
+          { id: "c4", text: "Safety profile within acceptable parameters", relation: "supports" },
+          { id: "c5", text: "Severe adverse events extremely rare", relation: "supports" }
+        ],
+        "pane-ref-3": [
+          { id: "c6", text: "Experienced significant side effects", relation: "refutes" }
+        ],
+        "pane-ref-4": [
+          { id: "c7", text: "90% reduction in hospitalization", relation: "supports" },
+          { id: "c8", text: "Effectiveness decreases over time", relation: "refutes" }
+        ]
+      };
+
+      // Initialize draggable panes
+      document.querySelectorAll(".evidence-pane").forEach((pane) => {
+        pane.addEventListener("mousedown", startDrag);
+        pane.addEventListener("click", handlePaneClick);
+      });
+
+      function handlePaneClick(e) {
+        const pane = e.currentTarget;
+        const type = pane.dataset.type;
+
+        if (type === "reference") {
+          const paneId = pane.id;
+
+          // Remove existing claim panes
+          document.querySelectorAll(".claim-pane").forEach(c => c.remove());
+
+          if (expandedReference === paneId) {
+            expandedReference = null;
+            drawConnections();
+            return;
+          }
+
+          expandedReference = paneId;
+
+          const claims = claimsData[paneId] || [];
+          const paneRect = pane.getBoundingClientRect();
+          const centerX = paneRect.left + paneRect.width / 2;
+          const centerY = paneRect.top + paneRect.height / 2;
+
+          claims.forEach((claim, i) => {
+            const angle = (i / claims.length) * Math.PI - Math.PI / 2;
+            const radius = 220;
+            const x = centerX + Math.cos(angle) * radius - 160;
+            const y = centerY + Math.sin(angle) * radius - 100;
+
+            const claimPane = createClaimPane(claim, x, y, paneId);
+            document.querySelector(".interface-container").appendChild(claimPane);
+
+            connections.push({
+              from: claim.id,
+              to: paneId,
+              type: claim.relation
+            });
+          });
+
+          setTimeout(() => drawConnections(), 50);
+        }
+      }
+
+      function createClaimPane(claim, x, y, refId) {
+        const pane = document.createElement("div");
+        pane.className = "evidence-pane claim-pane fan-out";
+        pane.id = claim.id;
+        pane.dataset.type = "claim";
+        pane.style.left = x + "px";
+        pane.style.top = y + "px";
+
+        pane.innerHTML = `
+          <div class="pane-header">
+            <span class="type-indicator claim">CLAIM</span>
+            <div class="pane-status">
+              <div class="status-dot" style="background: ${claim.relation === 'supports' ? '#22c55e' : '#ef4444'}; box-shadow: 0 0 8px ${claim.relation === 'supports' ? '#22c55e' : '#ef4444'};"></div>
+            </div>
+          </div>
+          <div class="pane-content">
+            <p class="pane-description">${claim.text}</p>
+            <div class="pane-metrics">
+              <div class="metric">
+                <span class="metric-value">${claim.relation === 'supports' ? '✓' : '✗'}</span>
+                <span class="metric-label">${claim.relation}</span>
+              </div>
+            </div>
+          </div>
+        `;
+
+        pane.addEventListener("mousedown", startDrag);
+        return pane;
+      }
+
+      function startDrag(e) {
+        e.stopPropagation();
+        draggedPane = e.currentTarget;
+        draggedPane.classList.add("dragging");
+
+        const rect = draggedPane.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+
+        document.addEventListener("mousemove", drag);
+        document.addEventListener("mouseup", stopDrag);
+      }
+
+      function drag(e) {
+        if (!draggedPane) return;
+
+        const x = e.clientX - offsetX;
+        const y = e.clientY - offsetY;
+
+        draggedPane.style.left = x + "px";
+        draggedPane.style.top = y + "px";
+        draggedPane.style.transform = "none";
+
+        drawConnections();
+      }
+
+      function stopDrag() {
+        if (draggedPane) {
+          draggedPane.classList.remove("dragging");
+          draggedPane = null;
+        }
+        document.removeEventListener("mousemove", drag);
+        document.removeEventListener("mouseup", stopDrag);
+      }
+
+      function drawConnections() {
+        const svg = document.getElementById("connection-svg");
+        svg.innerHTML = "";
+
+        connections.forEach((conn) => {
+          const from = document.getElementById(conn.from);
+          const to = document.getElementById(conn.to);
+
+          if (!from || !to) return;
+
+          const fromRect = from.getBoundingClientRect();
+          const toRect = to.getBoundingClientRect();
+
+          const x1 = fromRect.left + fromRect.width / 2;
+          const y1 = fromRect.top + fromRect.height / 2;
+          const x2 = toRect.left + toRect.width / 2;
+          const y2 = toRect.top + toRect.height / 2;
+
+          const dx = x2 - x1;
+          const dy = y2 - y1;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          // Curved path
+          const cx1 = x1 + dx * 0.3 + dy * 0.2;
+          const cy1 = y1 + dy * 0.3 - dx * 0.2;
+          const cx2 = x2 - dx * 0.3 - dy * 0.2;
+          const cy2 = y2 - dy * 0.3 + dx * 0.2;
+
+          const path = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "path"
+          );
+          path.setAttribute(
+            "d",
+            `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`
+          );
+          path.setAttribute("class", `connection-line ${conn.type}`);
+
+          svg.appendChild(path);
+        });
+      }
+
+      function centerView() {
+        const central = document.getElementById("pane-central");
+        central.style.left = "50%";
+        central.style.top = "50%";
+        central.style.transform = "translate(-50%, -50%)";
+        drawConnections();
+      }
+
+      function showAll() {
+        drawConnections();
+      }
+
+      function hideAll() {
+        document.getElementById("connection-svg").innerHTML = "";
+      }
+
+      function autoArrange() {
+        const panes = document.querySelectorAll(".evidence-pane:not(.central):not(.claim-pane)");
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        const radius = 340;
+        const angleStep = (2 * Math.PI) / panes.length;
+
+        panes.forEach((pane, i) => {
+          const angle = i * angleStep - Math.PI / 2;
+          const x = centerX + radius * Math.cos(angle) - 190;
+          const y = centerY + radius * Math.sin(angle) - 150;
+
+          pane.style.left = x + "px";
+          pane.style.top = y + "px";
+          pane.style.transform = "none";
+        });
+
+        setTimeout(() => drawConnections(), 100);
+      }
+
+      // Initial draw
+      window.addEventListener("load", () => {
+        setTimeout(() => drawConnections(), 100);
+      });
+
+      window.addEventListener("resize", drawConnections);
+    </script>
+  </body>
+</html>

@@ -186,9 +186,9 @@ const MoleculeMapPage = () => {
 
       {graphData.nodes.length > 0 ? (
         <Box position="relative" height="78vh">
-          <Hide below="md">
+          {/*           <Hide below="md">
             <GraphLegend />
-          </Hide>
+          </Hide> */}
           <CytoscapeMolecule
             nodes={graphData.nodes}
             links={graphData.links}
@@ -199,7 +199,7 @@ const MoleculeMapPage = () => {
             }
           />
 
-          {selectedNode && (
+          {/* {selectedNode && (
             <Hide below="md">
               <Box
                 position="absolute"
@@ -267,7 +267,7 @@ const MoleculeMapPage = () => {
                 </Button>
               </Box>
             </Hide>
-          )}
+          )} */}
         </Box>
       ) : (
         <Text>No graph data available for this task.</Text>
