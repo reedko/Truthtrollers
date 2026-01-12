@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TruthTrollers Detective Board - Evidence Network</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: 
+                linear-gradient(135deg, #e0f2fe 0%, #dbeafe 30%, #e0e7ff 70%, #ddd6fe 100%);
+            color: #1e293b;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Brushed metal texture overlay */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                repeating-linear-gradient(
+                    90deg,
+                    rgba(148, 163, 184, 0.03) 0px,
+                    rgba(148, 163, 184, 0.03) 1px,
+                    transparent 1px,
+                    transparent 2px
+                ),
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(148, 163, 184, 0.02) 0px,
+                    rgba(148, 163, 184, 0.02) 1px,
+                    transparent 1px,
+                    transparent 2px
+                );
+            pointer-events: none;
+            z-index: 0;
+            animation: metalShift 8s linear infinite;
+        }
+
+        @keyframes metalShift {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(2px); }
+        }
+
+        /* Perspective grid lines */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.08) 1px, transparent 1px);
+            background-size: 60px 60px;
+            transform: perspective(800px) rotateX(60deg) scale(2);
+            transform-origin: 50% 50%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.4;
+        }
+
+        /* Main Container */
+        .detective-board-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .board-header {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 100;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .board-title {
+            font-size: 2.2rem;
+            font-weight: 100;
+            letter-spacing: 12px;
+            background: linear-gradient(135deg, #dc2626 0%, #7c3aed 50%, #2563eb 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            filter: drop-shadow(0 2px 8px rgba(220, 38, 38, 0.3));
+        }
+
+        .board-subtitle {
+            font-size: 0.8rem;
+            color: #475569;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-weight: 300;
+        }
+
+        /* Control Panel */
+        .control-panel {
+            position: absolute;
+            top: 100px;
+            left: 20px;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(25px);
+            border: 1.5px solid rgba(220, 38, 38, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+            z-index: 100;
+            box-shadow: 
+                0 10px 40px rgba(71, 85, 105, 0.2),
+                inset 0 1px 2px rgba(255, 255, 255, 0.9),
+                inset 0 -1px 1px rgba(148, 163, 184, 0.1);
+            animation: slideInLeft 0.8s ease;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .panel-title {
+            font-size: 0.9rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #dc2626;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 1px 3px rgba(220, 38, 38, 0.2));
+            border-bottom: 1.5px solid rgba(220, 38, 38, 0.15);
+            padding-bottom: 10px;
+        }
+
+        .control-btn {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1.5px solid rgba(220, 38, 38, 0.25);
+            border-radius: 6px;
+            color: #dc2626;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            font-weight: 400;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 2px 8px rgba(71, 85, 105, 0.1),
+                inset 0 1px 1px rgba(255, 255, 255, 0.7);
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(220, 38, 38, 0.15), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .control-btn:hover::before {
+            left: 100%;
+        }
+
+        .control-btn:hover {
+            background: rgba(220, 38, 38, 0.1);
+            border-color: #dc2626;
+            box-shadow: 
+                0 4px 15px rgba(220, 38, 38, 0.15),
+                inset 0 1px 2px rgba(255, 255, 255, 0.8);
+            transform: translateX(3px);
+        }
+
+        .control-btn.active {
+            background: rgba(220, 38, 38, 0.15);
+            border-color: #dc2626;
+            box-shadow: 
+                0 6px 20px rgba(220, 38, 38, 0.2),
+                inset 0 1px 2px rgba(255, 255, 255, 0.9);
+        }
+
+        .filter-section {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(239, 68, 68, 0.1);
+        }
+
+        .filter-label {
+            font-size: 0.75rem;
+            color: #475569;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: 400;
+        }
+
+        .filter-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            border-radius: 6px;
+            border: 1.5px solid rgba(59, 130, 246, 0.2);
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(71, 85, 105, 0.08);
+        }
+
+        .filter-toggle:hover {
+            background: rgba(59, 130, 246, 0.08);
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
+        }
+
+        .filter-checkbox {
+            width: 16px;
+            height: 16px;
+            border: 1.5px solid #3b82f6;
+            border-radius: 3px;
+            background: rgba(255, 255, 255, 0.8);
+            position: relative;
+        }
+
+        .filter-checkbox.checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #3b82f6;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .filter-toggle-label {
+            font-size: 0.8rem;
+            color: #1e293b;
+            letter-spacing: 0.5px;
+            font-weight: 400;
+        }
+
+        /* Canvas Board with perspective */
+        .canvas-board {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            perspective: 1200px;
+            perspective-origin: 50% 50%;
+        }
+
+        /* Desktop surface layer with watermarks */
+        .desktop-surface {
+            position: absolute;
+            top: 5%;
+            left: 5%;
+            width: 90%;
+            height: 90%;
+            background: 
+                linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(241, 245, 249, 0.3) 100%),
+                radial-gradient(ellipse at 30% 40%, rgba(59, 130, 246, 0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 60%, rgba(139, 92, 246, 0.04) 0%, transparent 50%);
+            border: 2px solid rgba(59, 130, 246, 0.2);
+            border-radius: 8px;
+            transform: perspective(1000px) rotateX(35deg) rotateY(-3deg) translateZ(-50px);
+            transform-style: preserve-3d;
+            box-shadow: 
+                0 60px 120px rgba(71, 85, 105, 0.15),
+                inset 0 2px 4px rgba(255, 255, 255, 0.6),
+                inset 0 -2px 4px rgba(148, 163, 184, 0.2);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Perspective grid on surface */
+        .desktop-surface::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                /* Vanishing point perspective lines */
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 80px,
+                    rgba(59, 130, 246, 0.06) 80px,
+                    rgba(59, 130, 246, 0.06) 81px
+                ),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 80px,
+                    rgba(59, 130, 246, 0.06) 80px,
+                    rgba(59, 130, 246, 0.06) 81px
+                ),
+                /* Geometric watermarks */
+                url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='100' cy='100' r='80' fill='none' stroke='rgba(59,130,246,0.08)' stroke-width='1.5'/%3E%3Ccircle cx='100' cy='100' r='60' fill='none' stroke='rgba(139,92,246,0.08)' stroke-width='1.5'/%3E%3Ccircle cx='100' cy='100' r='40' fill='none' stroke='rgba(59,130,246,0.06)' stroke-width='1.5'/%3E%3C/svg%3E"),
+                url("data:image/svg+xml,%3Csvg width='180' height='180' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolygon points='90,20 160,160 20,160' fill='none' stroke='rgba(139,92,246,0.06)' stroke-width='1.5'/%3E%3Cpolygon points='90,50 130,130 50,130' fill='none' stroke='rgba(59,130,246,0.05)' stroke-width='1'/%3E%3C/svg%3E"),
+                url("data:image/svg+xml,%3Csvg width='160' height='160' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='30' y='30' width='100' height='100' fill='none' stroke='rgba(59,130,246,0.07)' stroke-width='1.5' transform='rotate(45 80 80)'/%3E%3Crect x='50' y='50' width='60' height='60' fill='none' stroke='rgba(139,92,246,0.05)' stroke-width='1' transform='rotate(45 80 80)'/%3E%3C/svg%3E");
+            background-position: 
+                0 0,
+                0 0,
+                15% 25%,
+                65% 55%,
+                45% 75%;
+            background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat;
+            background-size: 
+                auto,
+                auto,
+                280px, 240px, 220px;
+            opacity: 0.7;
+            animation: watermarkFloat 35s ease-in-out infinite;
+            border-radius: 8px;
+        }
+
+        @keyframes watermarkFloat {
+            0%, 100% { 
+                transform: translate(0, 0) scale(1) rotate(0deg);
+                opacity: 0.7;
+            }
+            50% { 
+                transform: translate(15px, -10px) scale(1.03) rotate(1deg);
+                opacity: 0.9;
+            }
+        }
+
+        /* Depth shadows on surface edges */
+        .desktop-surface::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                linear-gradient(to bottom, rgba(148, 163, 184, 0.1) 0%, transparent 10%, transparent 90%, rgba(71, 85, 105, 0.15) 100%),
+                linear-gradient(to right, rgba(148, 163, 184, 0.08) 0%, transparent 10%, transparent 90%, rgba(71, 85, 105, 0.08) 100%);
+            border-radius: 8px;
+            pointer-events: none;
+        }
+
+        /* SVG for yarn connections */
+        #yarn-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .yarn-line {
+            stroke: #ef4444;
+            stroke-width: 1.5;
+            fill: none;
+            opacity: 0.6;
+            filter: drop-shadow(0 0 3px rgba(239, 68, 68, 0.8));
+            animation: yarnPulse 3s ease-in-out infinite;
+        }
+
+        .yarn-line.supports {
+            stroke: #22c55e;
+            filter: drop-shadow(0 0 3px rgba(34, 197, 94, 0.8));
+        }
+
+        .yarn-line.neutral {
+            stroke: #64748b;
+            filter: drop-shadow(0 0 3px rgba(100, 116, 139, 0.5));
+        }
+
+        @keyframes yarnPulse {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Pin markers at connection points with 3D depth */
+        .pin {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: radial-gradient(circle at 30% 30%, #ef4444, #dc2626);
+            border-radius: 50%;
+            border: 2px solid rgba(15, 23, 42, 0.9);
+            box-shadow: 
+                0 0 12px rgba(239, 68, 68, 0.9),
+                0 0 25px rgba(239, 68, 68, 0.5),
+                0 4px 8px rgba(0, 0, 0, 0.6);
+            pointer-events: none;
+            z-index: 30;
+            animation: pinGlow 2s ease-in-out infinite;
+            transform: translateZ(90px);
+        }
+
+        /* Pin shadow/depth */
+        .pin::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            transform: translate(-60%, -60%);
+            filter: blur(1px);
+        }
+
+        @keyframes pinGlow {
+            0%, 100% { 
+                transform: translateZ(90px) scale(1); 
+                box-shadow: 
+                    0 0 12px rgba(239, 68, 68, 0.9),
+                    0 0 25px rgba(239, 68, 68, 0.5),
+                    0 4px 8px rgba(0, 0, 0, 0.6);
+            }
+            50% { 
+                transform: translateZ(95px) scale(1.15); 
+                box-shadow: 
+                    0 0 18px rgba(239, 68, 68, 1),
+                    0 0 35px rgba(239, 68, 68, 0.7),
+                    0 6px 12px rgba(0, 0, 0, 0.7);
+            }
+        }
+
+        /* Evidence Cards with 3D perspective */
+        .evidence-card {
+            position: absolute;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px);
+            border: 1.5px solid rgba(59, 130, 246, 0.25);
+            border-radius: 8px;
+            padding: 20px;
+            cursor: move;
+            transition: all 0.4s ease;
+            box-shadow: 
+                0 10px 40px rgba(71, 85, 105, 0.25),
+                0 25px 70px rgba(71, 85, 105, 0.15),
+                inset 0 1px 2px rgba(255, 255, 255, 0.8),
+                inset 0 -1px 1px rgba(148, 163, 184, 0.1),
+                0 0 0 1px rgba(255, 255, 255, 0.3);
+            z-index: 10;
+            user-select: none;
+            transform-style: preserve-3d;
+            transform: translateZ(80px) rotateX(5deg);
+        }
+
+        .evidence-card:hover {
+            transform: translateZ(120px) rotateX(3deg) scale(1.05);
+            box-shadow: 
+                0 25px 70px rgba(71, 85, 105, 0.35),
+                0 45px 110px rgba(71, 85, 105, 0.2),
+                inset 0 2px 4px rgba(255, 255, 255, 1),
+                inset 0 -1px 2px rgba(148, 163, 184, 0.15),
+                0 0 0 1.5px rgba(59, 130, 246, 0.4),
+                0 0 30px rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.5);
+            z-index: 50;
+        }
+
+        .evidence-card.dragging {
+            cursor: grabbing;
+            opacity: 0.95;
+            z-index: 100;
+            transform: translateZ(150px) rotateX(2deg) scale(1.02);
+        }
+
+        /* Soft geometric card backgrounds */
+        .evidence-card::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: -6px;
+            right: -6px;
+            bottom: -6px;
+            background: 
+                radial-gradient(circle at 75% 25%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 25% 75%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+            border-radius: 10px;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: -1;
+            filter: blur(12px);
+        }
+
+        .evidence-card:hover::before {
+            opacity: 1;
+        }
+
+        /* Corner accent geometry */
+        .evidence-card::after {
+            content: '';
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 50px;
+            height: 50px;
+            background: 
+                radial-gradient(circle at center, transparent 40%, rgba(59, 130, 246, 0.08) 50%, transparent 60%),
+                conic-gradient(from 45deg, transparent, rgba(139, 92, 246, 0.1), transparent 180deg);
+            border-radius: 50%;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+
+        .card-type-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1.5px solid rgba(59, 130, 246, 0.4);
+            border-radius: 4px;
+            font-size: 0.65rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #2563eb;
+            margin-bottom: 12px;
+            font-weight: 500;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.1);
+        }
+
+        .card-type-badge.task {
+            background: rgba(139, 92, 246, 0.15);
+            border-color: rgba(139, 92, 246, 0.4);
+            color: #7c3aed;
+            box-shadow: 0 2px 6px rgba(139, 92, 246, 0.1);
+        }
+
+        .card-type-badge.reference {
+            background: rgba(34, 197, 94, 0.15);
+            border-color: rgba(34, 197, 94, 0.4);
+            color: #16a34a;
+            box-shadow: 0 2px 6px rgba(34, 197, 94, 0.1);
+        }
+
+        .card-header {
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #0f172a;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .card-meta {
+            font-size: 0.75rem;
+            color: #475569;
+            letter-spacing: 0.5px;
+            font-weight: 400;
+        }
+
+        .card-stats {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1.5px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .card-stat {
+            text-align: center;
+            flex: 1;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 1.4rem;
+            font-weight: 300;
+            color: #2563eb;
+            filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.15));
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 0.65rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+            font-weight: 400;
+        }
+
+        .card-connections {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1.5px solid rgba(148, 163, 184, 0.2);
+        }
+
+        .connection-count {
+            font-size: 0.75rem;
+            color: #475569;
+            display: flex;
+            gap: 15px;
+            font-weight: 400;
+        }
+
+        .connection-count span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .connection-dot.supports {
+            background: #22c55e;
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+        }
+
+        .connection-dot.refutes {
+            background: #ef4444;
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+        }
+
+        /* Central Subject Card (larger with more depth) */
+        .evidence-card.central {
+            width: 340px;
+            border-color: rgba(139, 92, 246, 0.4);
+            box-shadow: 
+                0 18px 70px rgba(124, 58, 237, 0.2),
+                0 35px 100px rgba(71, 85, 105, 0.2),
+                inset 0 2px 4px rgba(255, 255, 255, 1),
+                inset 0 -1px 2px rgba(139, 92, 246, 0.1),
+                0 0 0 1.5px rgba(255, 255, 255, 0.5),
+                0 0 50px rgba(139, 92, 246, 0.15);
+            transform: translateZ(100px) rotateX(4deg);
+        }
+
+        .evidence-card.central:hover {
+            transform: translateZ(140px) rotateX(2deg) scale(1.05);
+            box-shadow: 
+                0 28px 90px rgba(124, 58, 237, 0.3),
+                0 50px 130px rgba(71, 85, 105, 0.25),
+                inset 0 2px 4px rgba(255, 255, 255, 1),
+                inset 0 -1px 2px rgba(139, 92, 246, 0.15),
+                0 0 0 2px rgba(139, 92, 246, 0.5),
+                0 0 70px rgba(139, 92, 246, 0.25);
+        }
+
+        .evidence-card.central::before {
+            background: 
+                radial-gradient(circle at 70% 30%, rgba(139, 92, 246, 0.2) 0%, transparent 50%),
+                radial-gradient(circle at 30% 70%, rgba(124, 58, 237, 0.15) 0%, transparent 50%);
+            opacity: 1;
+        }
+
+        .evidence-card.central::after {
+            width: 65px;
+            height: 65px;
+            background: 
+                radial-gradient(circle at center, transparent 35%, rgba(139, 92, 246, 0.12) 45%, transparent 55%),
+                conic-gradient(from 45deg, transparent, rgba(124, 58, 237, 0.18), transparent 180deg);
+            opacity: 0.6;
+        }
+
+        /* Zoom Controls */
+        .zoom-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .zoom-btn {
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1.5px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            color: #2563eb;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 
+                0 4px 15px rgba(71, 85, 105, 0.15),
+                inset 0 1px 2px rgba(255, 255, 255, 0.9);
+            font-weight: 300;
+        }
+
+        .zoom-btn:hover {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: #2563eb;
+            box-shadow: 
+                0 6px 20px rgba(59, 130, 246, 0.2),
+                inset 0 1px 2px rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+        }
+
+        /* Info Panel */
+        .info-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(25px);
+            border: 1.5px solid rgba(59, 130, 246, 0.2);
+            border-radius: 8px;
+            padding: 20px;
+            z-index: 100;
+            box-shadow: 
+                0 10px 40px rgba(71, 85, 105, 0.2),
+                inset 0 1px 2px rgba(255, 255, 255, 0.9);
+            animation: slideInUp 0.8s ease;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .info-title {
+            font-size: 0.8rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #2563eb;
+            margin-bottom: 15px;
+            filter: drop-shadow(0 1px 3px rgba(37, 99, 235, 0.2));
+        }
+
+        .info-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .info-stat {
+            text-align: center;
+        }
+
+        .info-stat-value {
+            font-size: 2rem;
+            font-weight: 300;
+            color: #2563eb;
+            filter: drop-shadow(0 2px 6px rgba(37, 99, 235, 0.2));
+            display: block;
+        }
+
+        .info-stat-label {
+            font-size: 0.7rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 5px;
+            font-weight: 400;
+        }
+
+        /* Help overlay */
+        .help-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(30px);
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            padding: 40px;
+            width: 500px;
+            z-index: 200;
+            box-shadow: 
+                0 25px 70px rgba(71, 85, 105, 0.3),
+                inset 0 2px 4px rgba(255, 255, 255, 1);
+            display: none;
+        }
+
+        .help-overlay.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .help-title {
+            font-size: 1.5rem;
+            font-weight: 300;
+            color: #2563eb;
+            margin-bottom: 25px;
+            text-align: center;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            filter: drop-shadow(0 2px 8px rgba(37, 99, 235, 0.2));
+        }
+
+        .help-content {
+            font-size: 0.9rem;
+            line-height: 1.8;
+            color: #1e293b;
+            font-weight: 400;
+        }
+
+        .help-content li {
+            margin-bottom: 12px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .help-content li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .close-help {
+            margin-top: 30px;
+            width: 100%;
+            padding: 15px;
+            background: rgba(59, 130, 246, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1.5px solid rgba(59, 130, 246, 0.4);
+            border-radius: 6px;
+            color: #2563eb;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+        }
+
+        .close-help:hover {
+            background: rgba(59, 130, 246, 0.2);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.2);
+            transform: translateY(-2px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -40px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="detective-board-container">
+        <!-- Header -->
+        <div class="board-header">
+            <h1 class="board-title">DETECTIVE BOARD</h1>
+            <p class="board-subtitle">Evidence Network Analysis</p>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <div class="panel-title">🔍 Controls</div>
+            <button class="control-btn" onclick="centerBoard()">⊙ Center View</button>
+            <button class="control-btn" onclick="showAllConnections()">∿ Show All Yarn</button>
+            <button class="control-btn" onclick="hideAllConnections()">− Hide All Yarn</button>
+            <button class="control-btn" onclick="autoArrange()">⊞ Auto Arrange</button>
+            <button class="control-btn" onclick="toggleHelp()">? Help</button>
+
+            <div class="filter-section">
+                <div class="filter-label">Connection Types</div>
+                <div class="filter-toggle" onclick="toggleFilter('supports')">
+                    <div class="filter-checkbox checked" id="filter-supports"></div>
+                    <span class="filter-toggle-label">Supports (Green)</span>
+                </div>
+                <div class="filter-toggle" onclick="toggleFilter('refutes')">
+                    <div class="filter-checkbox checked" id="filter-refutes"></div>
+                    <span class="filter-toggle-label">Refutes (Red)</span>
+                </div>
+                <div class="filter-toggle" onclick="toggleFilter('neutral')">
+                    <div class="filter-checkbox checked" id="filter-neutral"></div>
+                    <span class="filter-toggle-label">Neutral (Gray)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas Board -->
+        <div class="canvas-board" id="canvasBoard">
+            <!-- Desktop surface with watermarks -->
+            <div class="desktop-surface"></div>
+
+            <!-- SVG for yarn connections -->
+            <svg id="yarn-svg"></svg>
+
+            <!-- Central Subject Card -->
+            <div class="evidence-card central" id="card-central" style="left: 50%; top: 50%; transform: translate(-50%, -50%) translateZ(100px) rotateX(4deg);" data-depth="100">                <span class="card-type-badge task">TASK</span>
+                <div class="card-header">
+                    <div class="card-title">Vaccine Safety Investigation</div>
+                    <div class="card-meta">Primary Subject</div>
+                </div>
+                <div class="card-stats">
+                    <div class="card-stat">
+                        <span class="stat-value">12</span>
+                        <span class="stat-label">Claims</span>
+                    </div>
+                    <div class="card-stat">
+                        <span class="stat-value">8</span>
+                        <span class="stat-label">Refs</span>
+                    </div>
+                </div>
+                <div class="card-connections">
+                    <div class="connection-count">
+                        <span><span class="connection-dot supports"></span> 15</span>
+                        <span><span class="connection-dot refutes"></span> 23</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reference Cards (distributed around) -->
+            <div class="evidence-card" id="card-1" style="left: 25%; top: 20%;" data-depth="80">
+                <span class="card-type-badge reference">REFERENCE</span>
+                <div class="card-header">
+                    <div class="card-title">Nature Medicine Study</div>
+                    <div class="card-meta">Peer-Reviewed • 2024</div>
+                </div>
+                <div class="card-stats">
+                    <div class="card-stat">
+                        <span class="stat-value">9/10</span>
+                        <span class="stat-label">Quality</span>
+                    </div>
+                    <div class="card-stat">
+                        <span class="stat-value">12K</span>
+                        <span class="stat-label">Citations</span>
+                    </div>
+                </div>
+                <div class="card-connections">
+                    <div class="connection-count">
+                        <span><span class="connection-dot refutes"></span> 3</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="evidence-card" id="card-2" style="left: 70%; top: 25%;" data-depth="85">
+                <span class="card-type-badge reference">REFERENCE</span>
+                <div class="card-header">
+                    <div class="card-title">CDC Safety Report</div>
+                    <div class="card-meta">Government • 2024</div>
+                </div>
+                <div class="card-stats">
+                    <div class="card-stat">
+                        <span class="stat-value">8/10</span>
+                        <span class="stat-label">Quality</span>
+                    </div>
+                    <div class="card-stat">
+                        <span class="stat-value">8.2K</span>
+                        <span class="stat-label">Citations</span>
+                    </div>
+                </div>
+                <div class="card-connections">
+                    <div class="connection-count">
+                        <span><span class="connection-dot refutes"></span> 4</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="evidence-card" id="card-3" style="left: 15%; top: 65%;" data-depth="75">
+                <span class="card-type-badge reference">REFERENCE</span>
+                <div class="card-header">
+                    <div class="card-title">Blog: Personal Story</div>
+                    <div class="card-meta">Blog • 2024</div>
+                </div>
+                <div class="card-stats">
+                    <div class="card-stat">
+                        <span class="stat-value">2/10</span>
+                        <span class="stat-label">Quality</span>
+                    </div>
+                    <div class="card-stat">
+                        <span class="stat-value">47</span>
+                        <span class="stat-label">Shares</span>
+                    </div>
+                </div>
+                <div class="card-connections">
+                    <div class="connection-count">
+                        <span><span class="connection-dot supports"></span> 2</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="evidence-card" id="card-4" style="left: 65%; top: 70%;" data-depth="90">
+                <span class="card-type-badge reference">REFERENCE</span>
+                <div class="card-header">
+                    <div class="card-title">Lancet Meta-Analysis</div>
+                    <div class="card-meta">Peer-Reviewed • 2024</div>
+                </div>
+                <div class="card-stats">
+                    <div class="card-stat">
+                        <span class="stat-value">10/10</span>
+                        <span class="stat-label">Quality</span>
+                    </div>
+                    <div class="card-stat">
+                        <span class="stat-value">18K</span>
+                        <span class="stat-label">Citations</span>
+                    </div>
+                </div>
+                <div class="card-connections">
+                    <div class="connection-count">
+                        <span><span class="connection-dot refutes"></span> 5</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="evidence-card" id="card-5" style="left: 40%; top: 15%;" data-depth="70">
+                <span class="card-type-badge">CLAIM</span>
+                <div class="card-header">
+                    <div class="card-title">"Vaccines cause autism"</div>
+                    <div class="card-meta">Debunked Claim</div>
+                </div>
+                <div class="card-stats">
+                    <div class="card-stat">
+                        <span class="stat-value">0/10</span>
+                        <span class="stat-label">Veracity</span>
+                    </div>
+                    <div class="card-stat">
+                        <span class="stat-value">847K</span>
+                        <span class="stat-label">Shares</span>
+                    </div>
+                </div>
+                <div class="card-connections">
+                    <div class="connection-count">
+                        <span><span class="connection-dot refutes"></span> 8</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Zoom Controls -->
+        <div class="zoom-controls">
+            <button class="zoom-btn" onclick="zoomIn()">+</button>
+            <button class="zoom-btn" onclick="resetZoom()">⊙</button>
+            <button class="zoom-btn" onclick="zoomOut()">−</button>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="info-panel">
+            <div class="info-title">📊 Network Stats</div>
+            <div class="info-stats">
+                <div class="info-stat">
+                    <span class="info-stat-value">6</span>
+                    <span class="info-stat-label">Cards</span>
+                </div>
+                <div class="info-stat">
+                    <span class="info-stat-value">38</span>
+                    <span class="info-stat-label">Connections</span>
+                </div>
+                <div class="info-stat">
+                    <span class="info-stat-value">15</span>
+                    <span class="info-stat-label">Supports</span>
+                </div>
+                <div class="info-stat">
+                    <span class="info-stat-value">23</span>
+                    <span class="info-stat-label">Refutes</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Overlay -->
+        <div class="help-overlay" id="helpOverlay">
+            <h2 class="help-title">How to Use</h2>
+            <ul class="help-content">
+                <li><strong>Drag cards</strong> to rearrange the board</li>
+                <li><strong>Red yarn</strong> shows refuting connections</li>
+                <li><strong>Green yarn</strong> shows supporting connections</li>
+                <li><strong>Click controls</strong> to filter connections</li>
+                <li><strong>Zoom</strong> using bottom-right controls</li>
+                <li><strong>Auto Arrange</strong> organizes cards spatially</li>
+                <li><strong>Hover cards</strong> to see details and glow effects</li>
+            </ul>
+            <button class="close-help" onclick="toggleHelp()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // Dragging state
+        let draggedCard = null;
+        let offsetX, offsetY;
+        let scale = 1;
+        const connections = [
+            { from: 'card-1', to: 'card-central', type: 'refutes' },
+            { from: 'card-2', to: 'card-central', type: 'refutes' },
+            { from: 'card-3', to: 'card-central', type: 'supports' },
+            { from: 'card-4', to: 'card-central', type: 'refutes' },
+            { from: 'card-5', to: 'card-1', type: 'refutes' },
+            { from: 'card-5', to: 'card-2', type: 'refutes' },
+            { from: 'card-5', to: 'card-4', type: 'refutes' },
+        ];
+
+        let filters = {
+            supports: true,
+            refutes: true,
+            neutral: true
+        };
+
+        // Initialize draggable cards
+        document.querySelectorAll('.evidence-card').forEach(card => {
+            card.addEventListener('mousedown', startDrag);
+        });
+
+        function startDrag(e) {
+            draggedCard = e.currentTarget;
+            draggedCard.classList.add('dragging');
+            
+            const rect = draggedCard.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+        }
+
+        function drag(e) {
+            if (!draggedCard) return;
+
+            const x = e.clientX - offsetX;
+            const y = e.clientY - offsetY;
+            const depth = draggedCard.getAttribute('data-depth') || '80';
+
+            draggedCard.style.left = x + 'px';
+            draggedCard.style.top = y + 'px';
+            
+            // Preserve 3D depth while dragging
+            if (draggedCard.classList.contains('central')) {
+                draggedCard.style.transform = `translateZ(${depth}px) rotateX(4deg)`;
+            } else {
+                draggedCard.style.transform = `translateZ(${depth}px) rotateX(5deg)`;
+            }
+
+            drawConnections();
+        }
+
+        function stopDrag() {
+            if (draggedCard) {
+                draggedCard.classList.remove('dragging');
+                draggedCard = null;
+            }
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', stopDrag);
+        }
+
+        // Draw yarn connections
+        function drawConnections() {
+            const svg = document.getElementById('yarn-svg');
+            svg.innerHTML = '';
+
+            connections.forEach(conn => {
+                if (!filters[conn.type]) return;
+
+                const from = document.getElementById(conn.from);
+                const to = document.getElementById(conn.to);
+
+                if (!from || !to) return;
+
+                const fromRect = from.getBoundingClientRect();
+                const toRect = to.getBoundingClientRect();
+
+                const x1 = fromRect.left + fromRect.width / 2;
+                const y1 = fromRect.top + fromRect.height / 2;
+                const x2 = toRect.left + toRect.width / 2;
+                const y2 = toRect.top + toRect.height / 2;
+
+                // Create curved path
+                const midX = (x1 + x2) / 2;
+                const midY = (y1 + y2) / 2;
+                const offset = 50;
+                
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', `M ${x1} ${y1} Q ${midX + offset} ${midY - offset} ${x2} ${y2}`);
+                path.setAttribute('class', `yarn-line ${conn.type}`);
+                
+                svg.appendChild(path);
+
+                // Add pins
+                addPin(x1, y1);
+                addPin(x2, y2);
+            });
+        }
+
+        function addPin(x, y) {
+            const existingPins = document.querySelectorAll('.pin');
+            let pinExists = false;
+            
+            existingPins.forEach(pin => {
+                const pinX = parseInt(pin.style.left);
+                const pinY = parseInt(pin.style.top);
+                if (Math.abs(pinX - x) < 10 && Math.abs(pinY - y) < 10) {
+                    pinExists = true;
+                }
+            });
+
+            if (!pinExists) {
+                const pin = document.createElement('div');
+                pin.className = 'pin';
+                pin.style.left = (x - 6) + 'px';
+                pin.style.top = (y - 6) + 'px';
+                document.getElementById('canvasBoard').appendChild(pin);
+            }
+        }
+
+        // Controls
+        function centerBoard() {
+            const central = document.getElementById('card-central');
+            central.style.left = '50%';
+            central.style.top = '50%';
+            central.style.transform = 'translate(-50%, -50%) translateZ(100px) rotateX(4deg)';
+            drawConnections();
+        }
+
+        function showAllConnections() {
+            filters = { supports: true, refutes: true, neutral: true };
+            document.querySelectorAll('.filter-checkbox').forEach(cb => cb.classList.add('checked'));
+            drawConnections();
+        }
+
+        function hideAllConnections() {
+            filters = { supports: false, refutes: false, neutral: false };
+            document.querySelectorAll('.filter-checkbox').forEach(cb => cb.classList.remove('checked'));
+            drawConnections();
+        }
+
+        function toggleFilter(type) {
+            filters[type] = !filters[type];
+            const checkbox = document.getElementById('filter-' + type);
+            checkbox.classList.toggle('checked');
+            drawConnections();
+        }
+
+        function autoArrange() {
+            const cards = document.querySelectorAll('.evidence-card:not(.central)');
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const radius = 300;
+            const angleStep = (2 * Math.PI) / cards.length;
+
+            cards.forEach((card, i) => {
+                const angle = i * angleStep;
+                const x = centerX + radius * Math.cos(angle) - 140;
+                const y = centerY + radius * Math.sin(angle) - 100;
+                const depth = card.getAttribute('data-depth') || '80';
+                
+                card.style.left = x + 'px';
+                card.style.top = y + 'px';
+                card.style.transform = `translateZ(${depth}px) rotateX(5deg)`;
+            });
+
+            setTimeout(() => drawConnections(), 100);
+        }
+
+        function zoomIn() {
+            scale = Math.min(scale + 0.1, 2);
+            applyZoom();
+        }
+
+        function zoomOut() {
+            scale = Math.max(scale - 0.1, 0.5);
+            applyZoom();
+        }
+
+        function resetZoom() {
+            scale = 1;
+            applyZoom();
+        }
+
+        function applyZoom() {
+            const board = document.getElementById('canvasBoard');
+            board.style.transform = `scale(${scale})`;
+            drawConnections();
+        }
+
+        function toggleHelp() {
+            document.getElementById('helpOverlay').classList.toggle('active');
+        }
+
+        // Initial draw
+        window.addEventListener('load', () => {
+            setTimeout(() => drawConnections(), 100);
+        });
+
+        // Redraw on resize
+        window.addEventListener('resize', () => {
+            drawConnections();
+        });
+    </script>
+</body>
+</html>

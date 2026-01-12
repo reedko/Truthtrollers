@@ -46,11 +46,13 @@ interface WorkspaceProps {
   viewerId: number | null;
   onHeightChange?: (height: number) => void;
 }
+// Workspace Component v3.0 - Fixed Conditional Hooks
 const Workspace: React.FC<WorkspaceProps> = ({
   contentId,
   viewerId,
   onHeightChange,
 }) => {
+  console.log("🟢 Workspace v3.0 loaded - Conditional hooks fixed");
   const [claims, setClaims] = useState<Claim[]>([]);
   const [claimLinks, setClaimLinks] = useState<ClaimLink[]>([]);
   const [aiEvidenceLinks, setAIEvidenceLinks] = useState<import("../../../shared/entities/types").AIEvidenceLink[]>([]);
@@ -61,8 +63,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
     Claim,
     "claim_id" | "claim_text"
   > | null>(null);
-  // inside Workspace component:
-  const isMobile = useBreakpointValue({ base: true, md: false });
   const [targetClaim, setTargetClaim] = useState<Claim | null>(null);
   const [draggingClaim, setDraggingClaim] = useState<Pick<
     Claim,
@@ -92,6 +92,11 @@ const Workspace: React.FC<WorkspaceProps> = ({
     null
   );
 
+  // Hooks that use context - must be after all useState hooks, but BEFORE any early returns
+  const isMobile = useBreakpointValue({ base: true, md: false });
+  const setVerimeterScore = useTaskStore((s) => s.setVerimeterScore);
+  const bgColor = useColorModeValue("gray.50", "gray.800");
+
   const updateXPositionsAndHeight = () => {
     if (leftRef.current && rightRef.current && containerRef.current) {
       const leftBox = leftRef.current.getBoundingClientRect();
@@ -107,7 +112,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
       setComputedHeight(fullHeight);
     }
   };
-  const setVerimeterScore = useTaskStore((s) => s.setVerimeterScore);
 
   useEffect(() => {
     fetchClaimsAndLinkedReferencesForTask(contentId, viewerId)
@@ -257,7 +261,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
       borderWidth="1px"
       borderRadius="lg"
       p={4}
-      bg={useColorModeValue("gray.50", "gray.800")}
+      bg={bgColor}
       borderColor="gray.300"
       height={`${computedHeight}px`} // dynamic height computed above
       onMouseMove={(e) => setMousePosition({ x: e.clientX, y: e.clientY })}

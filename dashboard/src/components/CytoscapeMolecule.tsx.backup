@@ -8,330 +8,6 @@ import { Box, Button, Text, useToast, CloseButton } from "@chakra-ui/react";
 import { createPortal } from "react-dom";
 import { GraphNode } from "../../../shared/entities/types";
 
-// Forward declaration - will be properly defined after CytoscapeMoleculeProps
-type NodeData = {
-  id: string;
-  label: string;
-  type: string;
-  claim_id?: number;
-  content_id?: number;
-  url?: string;
-  rating?: string | number;
-  claimCount?: number;
-  refCount?: number;
-};
-
-// Minority Report Glassmorphic Card Overlay Component
-interface NodeCardProps {
-  node: cytoscape.NodeSingular;
-  containerRect: DOMRect;
-  zoom: number;
-  allNodes: NodeData[];
-}
-
-const NodeCard: React.FC<NodeCardProps> = ({
-  node,
-  containerRect,
-  zoom,
-  allNodes,
-}) => {
-  const pos = node.renderedPosition();
-  const data = node.data();
-  const type = data.type;
-  const id = node.id();
-
-  // Color schemes for different node types
-  const colorSchemes = {
-    task: {
-      bg: "linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.05))",
-      border: "rgba(99, 102, 241, 0.25)",
-      text: "#a5b4fc",
-      glow: "0 0 20px rgba(99, 102, 241, 0.2)",
-      titleBg: "rgba(99, 102, 241, 0.15)",
-      leftEdge:
-        "linear-gradient(90deg, rgba(99, 102, 241, 0.4) 0%, rgba(99, 102, 241, 0) 100%)",
-    },
-    reference: {
-      bg: "linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.05))",
-      border: "rgba(16, 185, 129, 0.25)",
-      text: "#6ee7b7",
-      glow: "0 0 20px rgba(16, 185, 129, 0.2)",
-      titleBg: "rgba(16, 185, 129, 0.15)",
-      leftEdge:
-        "linear-gradient(90deg, rgba(16, 185, 129, 0.4) 0%, rgba(16, 185, 129, 0) 100%)",
-    },
-    refClaim: {
-      bg: "linear-gradient(135deg, rgba(249, 115, 22, 0.06), rgba(234, 88, 12, 0.04))",
-      border: "rgba(249, 115, 22, 0.2)",
-      text: "#fed7aa",
-      glow: "0 0 15px rgba(249, 115, 22, 0.15)",
-      titleBg: "rgba(249, 115, 22, 0.12)",
-      leftEdge:
-        "linear-gradient(90deg, rgba(249, 115, 22, 0.3) 0%, rgba(249, 115, 22, 0) 100%)",
-    },
-    taskClaim: {
-      bg: "linear-gradient(135deg, rgba(249, 115, 22, 0.06), rgba(234, 88, 12, 0.04))",
-      border: "rgba(249, 115, 22, 0.2)",
-      text: "#fed7aa",
-      glow: "0 0 15px rgba(249, 115, 22, 0.15)",
-      titleBg: "rgba(249, 115, 22, 0.12)",
-      leftEdge:
-        "linear-gradient(90deg, rgba(249, 115, 22, 0.3) 0%, rgba(249, 115, 22, 0) 100%)",
-    },
-    author: {
-      bg: "linear-gradient(135deg, rgba(251, 177, 160, 0.08), rgba(254, 215, 170, 0.05))",
-      border: "rgba(251, 177, 160, 0.25)",
-      text: "#fecaca",
-      glow: "0 0 20px rgba(251, 177, 160, 0.2)",
-      titleBg: "rgba(251, 177, 160, 0.15)",
-      leftEdge:
-        "linear-gradient(90deg, rgba(251, 177, 160, 0.4) 0%, rgba(251, 177, 160, 0) 100%)",
-    },
-    publisher: {
-      bg: "linear-gradient(135deg, rgba(129, 236, 236, 0.08), rgba(103, 232, 249, 0.05))",
-      border: "rgba(129, 236, 236, 0.25)",
-      text: "#a5f3fc",
-      glow: "0 0 20px rgba(129, 236, 236, 0.2)",
-      titleBg: "rgba(129, 236, 236, 0.15)",
-      leftEdge:
-        "linear-gradient(90deg, rgba(129, 236, 236, 0.4) 0%, rgba(129, 236, 236, 0) 100%)",
-    },
-  };
-
-  const scheme =
-    colorSchemes[type as keyof typeof colorSchemes] || colorSchemes.reference;
-
-  // Get thumbnail URL
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
-  const group =
-    type === "author"
-      ? 1
-      : type === "task" || type === "reference"
-      ? 2
-      : type === "publisher"
-      ? 3
-      : 0;
-  const thumbnailPath =
-    {
-      0: `ttlogo11.png`,
-      1: `authors/author_id_${id.replace("autho-", "")}.png`,
-      2: `content/content_id_${id.replace("conte-", "")}.png`,
-      3: `publishers/publisher_id_${id.replace("publi-", "")}.png`,
-    }[group] || `ttlogo11.png`;
-  const thumbnailUrl = `${API_BASE_URL}/assets/images/${thumbnailPath}`;
-
-  // Format type name for title bar
-  const typeLabel =
-    type === "refClaim"
-      ? "Ref Claim"
-      : type === "taskClaim"
-      ? "Task Claim"
-      : type.charAt(0).toUpperCase() + type.slice(1);
-
-  // Get metrics based on node type
-  const getMetrics = (): Array<{ value: string | number; label: string }> => {
-    if (type === "reference") {
-      const rating = data.rating ?? "-";
-      const contentId = data.content_id;
-      // Count refClaims from original data by matching content_id
-      const claimCount = allNodes.filter(
-        (n) => n.type === "refClaim" && n.content_id === contentId
-      ).length;
-      return [
-        { value: rating, label: "Rating" },
-        { value: claimCount, label: "Claims" },
-      ];
-    } else if (type === "task") {
-      // Count taskClaims from original data
-      const claimCount = allNodes.filter((n) => n.type === "taskClaim").length;
-      // Count reference nodes from original data
-      const refCount = allNodes.filter((n) => n.type === "reference").length;
-      return [
-        { value: claimCount, label: "Claims" },
-        { value: refCount, label: "Refs" },
-      ];
-    } else if (type === "author" || type === "publisher") {
-      const rating = data.rating ?? "-";
-      return [{ value: rating, label: "Rating" }];
-    } else if (type === "refClaim" || type === "taskClaim") {
-      // For claims, could show relation type or confidence
-      return [];
-    }
-    return [];
-  };
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: `${pos.x - 62.5}px`,
-        top: `${pos.y - 80}px`,
-        width: "125px",
-        height: "160px",
-        background: scheme.bg,
-        backdropFilter: "blur(6px)",
-        border: `1.5px solid ${scheme.border}`,
-        borderRadius: "16px",
-        boxShadow: `${scheme.glow}, 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)`,
-        pointerEvents: "none", // Let Cytoscape handle interactions
-        transition: "all 0.3s ease",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-        transform: `scale(${zoom})`,
-        transformOrigin: "center center",
-      }}
-    >
-      {/* 3D Left Edge Fade */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          width: "20px",
-          height: "100%",
-          background: scheme.leftEdge,
-          pointerEvents: "none",
-          zIndex: 1,
-        }}
-      />
-
-      {/* Transparent Title Bar */}
-      <div
-        style={{
-          background: scheme.titleBg,
-          backdropFilter: "blur(5px)",
-          padding: "4px 8px",
-          borderTopLeftRadius: "14px",
-          borderTopRightRadius: "14px",
-          borderBottom: `1px solid ${scheme.border}`,
-        }}
-      >
-        <div
-          style={{
-            color: scheme.text,
-            fontSize: "8px",
-            fontWeight: "700",
-            textAlign: "center",
-            textTransform: "uppercase",
-            letterSpacing: "0.5px",
-            textShadow: `0 0 8px ${scheme.text}60, 0 1px 2px rgba(0, 0, 0, 0.9)`,
-          }}
-        >
-          {typeLabel}
-        </div>
-      </div>
-
-      {/* Thumbnail Area */}
-      <div
-        style={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "4px",
-          position: "relative",
-          zIndex: 0,
-        }}
-      >
-        <img
-          src={thumbnailUrl}
-          alt={data.label}
-          style={{
-            maxWidth: "100%",
-            maxHeight: "100%",
-            objectFit: "contain",
-            filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5))",
-            opacity: 0.9,
-          }}
-          onError={(e) => {
-            // Fallback to placeholder if image fails to load
-            e.currentTarget.style.display = "none";
-          }}
-        />
-      </div>
-
-      {/* Label Text */}
-      <div
-        style={{
-          padding: "4px 8px",
-          color: scheme.text,
-          fontSize: "9px",
-          fontWeight: "600",
-          textAlign: "center",
-          lineHeight: "1.2",
-          maxHeight: "32px",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-          textShadow: `0 0 6px ${scheme.text}40, 0 1px 2px rgba(0, 0, 0, 0.8)`,
-        }}
-      >
-        {data.label}
-      </div>
-
-      {/* Metrics Footer */}
-      <div
-        style={{
-          background: scheme.titleBg,
-          backdropFilter: "blur(5px)",
-          padding: "6px 4px",
-          borderTop: `1px solid ${scheme.border}`,
-          borderBottomLeftRadius: "14px",
-          borderBottomRightRadius: "14px",
-          display: "grid",
-          gridTemplateColumns: `repeat(${Math.min(
-            getMetrics().length,
-            3
-          )}, 1fr)`,
-          gap: "4px",
-        }}
-      >
-        {getMetrics().map((metric, idx) => (
-          <div
-            key={idx}
-            style={{
-              textAlign: "center",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-            }}
-          >
-            <span
-              style={{
-                display: "block",
-                fontSize: "12px",
-                fontWeight: "200",
-                color: scheme.text,
-                textShadow: `0 0 8px ${scheme.text}60, 0 1px 2px rgba(0, 0, 0, 0.9)`,
-                marginBottom: "2px",
-              }}
-            >
-              {metric.value}
-            </span>
-            <span
-              style={{
-                display: "block",
-                fontSize: "6px",
-                color: scheme.text,
-                textTransform: "uppercase",
-                letterSpacing: "0.5px",
-                fontWeight: "300",
-                opacity: 0.7,
-              }}
-            >
-              {metric.label}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
 export async function animateMoleculeScene({
   cy,
   node,
@@ -809,16 +485,14 @@ async function restoreNodePositions(
 // ---- CytoscapeThrobbage™ ----
 function startThrobbing(node: any) {
   let growing = true;
-  const minWidth = node.width();
-  const minHeight = node.height();
-  const maxWidth = minWidth * 1.03;
-  const maxHeight = minHeight * 1.03;
+  const minSize = node.width();
+  const maxSize = minSize * 1.18;
   let throbInterval = setInterval(() => {
     node.animate(
       {
         style: {
-          width: growing ? maxWidth : minWidth,
-          height: growing ? maxHeight : minHeight,
+          width: growing ? maxSize : minSize,
+          height: growing ? maxSize : minSize,
         },
       },
       {
@@ -857,6 +531,7 @@ interface CytoscapeMoleculeProps {
   centerNodeId?: string;
 }
 
+type NodeData = CytoscapeMoleculeProps["nodes"][number];
 type LinkData = CytoscapeMoleculeProps["links"][number];
 
 const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
@@ -889,26 +564,15 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
   );
   const toast = useToast();
 
-  // HUD toggles (visible on desktop, hidden on mobile)
-  const [showMobileHUD, setShowMobileHUD] = useState(
-    typeof window !== "undefined" ? window.innerWidth >= 768 : true
-  );
-  const [showLegend, setShowLegend] = useState(
-    typeof window !== "undefined" ? window.innerWidth >= 768 : true
-  );
+  // HUD toggles (Legend starts hidden to avoid blocking)
+  const [showMobileHUD, setShowMobileHUD] = useState(true);
+  const [showLegend, setShowLegend] = useState(false);
 
   const lastRefNode = useRef<NodeSingular | null>(null);
   const lastRefOriginalPos = useRef<{ x: number; y: number } | null>(null);
   const originalNodePositions = useRef<
     Record<string, { x: number; y: number }>
   >({});
-
-  // State for overlay rendering
-  const [overlayNodes, setOverlayNodes] = useState<cytoscape.NodeSingular[]>(
-    []
-  );
-  const [containerRect, setContainerRect] = useState<DOMRect | null>(null);
-  const [zoomLevel, setZoomLevel] = useState<number>(1);
 
   useEffect(() => {
     console.log("🧪 CytoscapeMolecule mount — received links:", links);
@@ -973,7 +637,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       )
       .map((l) => ({ data: l }));
 
-    const cy: cytoscape.Core = cytoscape({
+    const cy = cytoscape({
       container: cyRef.current,
       elements: { nodes: positionedNodes, edges: initialEdges },
       layout: { name: "preset" },
@@ -981,37 +645,69 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         {
           selector: "node",
           style: {
-            shape: "round-rectangle",
-            width: 125,
-            height: 160,
-            label: "", // No label - it's in the card now
-            "text-wrap": "wrap",
-            "text-max-width": "110",
-            "text-valign": "center",
-            "text-halign": "center",
-            "font-size": "10px",
-            "font-weight": 600,
-            color: "rgba(0, 0, 0, 0)", // Hide text - overlays will show it
-            "text-outline-color": "rgba(0, 0, 0, 0)",
-            "text-outline-width": 0,
-            "text-background-color": "rgba(0, 0, 0, 0)",
-            "text-background-opacity": 0,
-            "background-color": "rgba(0, 0, 0, 0)", // Completely transparent box
-            "background-opacity": 0,
-            "border-width": 8,
-            // @ts-ignore - border-radius works but isn't in type definitions
-            "corner-radius": 16, // Match the overlay card border radius
-            "border-color": (ele: any) => {
+            shape: "ellipse",
+            width: 90,
+            height: 90,
+            label: (ele: NodeSingular) => {
               const type = ele.data("type");
-              // Subtle colored outline frames - appear when throbbing
-              if (type === "task") return "#6365f1";
-              if (type === "reference") return "#10b981";
-              if (type === "refClaim" || type === "taskClaim") return "#f97316";
-              if (type === "author") return "#fbb1a0";
-              if (type === "publisher") return "#81ecec";
-              return "#ffffff";
+              if (type === "refClaim" || type === "taskClaim") {
+                return ele.data("label").slice(0, 35) + "...";
+              }
+              return ele.data("label");
             },
-            "border-opacity": 0.4,
+            "text-wrap": "wrap",
+            "text-max-width": "120",
+            "text-valign": (ele: NodeSingular) =>
+              ["task", "reference", "author", "publisher"].includes(
+                ele.data("type")
+              )
+                ? "bottom"
+                : "center",
+            "text-halign": "center",
+            "font-size": "9px",
+            color: "#fff",
+            "text-background-color": (ele: NodeSingular) => {
+              const type = ele.data("type");
+              return ["task", "reference", "author", "publisher"].includes(type)
+                ? "#222"
+                : "transparent";
+            },
+            "text-background-opacity": 1,
+            "text-background-shape": "roundrectangle",
+            "background-color": (ele) => {
+              const type = ele.data("type");
+              if (type === "task") return "#6c5ce7";
+              if (type === "reference") return "#00b894";
+              if (type === "refClaim") return "#aaa";
+              if (type === "taskClaim") return "#ffeaa7";
+              if (type === "author") return "#fab1a0";
+              if (type === "publisher") return "#81ecec";
+              return "#ccc";
+            },
+            "background-image": (ele) => {
+              const id = ele.id();
+              const type = ele.data("type");
+              const group =
+                type === "author"
+                  ? 1
+                  : type === "task" || type === "reference"
+                  ? 2
+                  : type === "publisher"
+                  ? 3
+                  : 0;
+              const path =
+                {
+                  0: `ttlogo11.png`,
+                  1: `authors/author_id_${id.replace("autho-", "")}.png`,
+                  2: `content/content_id_${id.replace("conte-", "")}.png`,
+                  3: `publishers/publisher_id_${id.replace("publi-", "")}.png`,
+                }[group] || `default.png`;
+              return `${API_BASE_URL}/assets/images/${path}`;
+            },
+            "background-fit": "contain",
+            "background-clip": "node",
+            "border-width": 2,
+            "border-color": "#222",
           },
         },
         {
@@ -1032,7 +728,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             "text-margin-y": -10,
             "font-size": 9,
             color: "#eee",
-            "line-color": (ele: any) => {
+            "line-color": (ele) => {
               const rel = ele.data("relation");
               return rel === "supports"
                 ? "#0f6"
@@ -1060,16 +756,6 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     const activatedNodeIds = new Set(
       [...activatedContentIds].map((cid) => `conte-${cid}`)
     );
-
-    // Function to update overlay positions and zoom
-    const updateOverlays = () => {
-      if (cyRef.current) {
-        setContainerRect(cyRef.current.getBoundingClientRect());
-      }
-      setOverlayNodes(cy.nodes().toArray());
-      setZoomLevel(cy.zoom());
-    };
-
     cy.ready(() => {
       cy.nodes().forEach((node) => {
         if (activatedNodeIds.has(node.id())) {
@@ -1077,16 +763,8 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           node.addClass("throb");
         }
       });
-
-      // Initial overlay render
-      updateOverlays();
     });
     cyInstance.current = cy;
-
-    // Update overlays on position changes (drag, animate, zoom, pan)
-    cy.on("position", updateOverlays);
-    cy.on("pan zoom", updateOverlays);
-    cy.on("add remove", updateOverlays);
 
     cy.on("mouseover", "edge", (event) => {
       const edge = event.target;
@@ -1277,7 +955,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
     return () => {
       if (cy) {
-        cy.nodes(".throb").forEach((node: any) => {
+        cy.nodes(".throb").forEach((node) => {
           clearInterval(node.data("throbInterval"));
         });
         cy.destroy();
@@ -1313,7 +991,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         overflowX={{ base: "hidden", md: "visible" }}
       >
         <Box
-          position="relative"
+          ref={cyRef}
           height={{
             base: "calc(100dvh - var(--tt-header-h, 98px))",
             md: "80vh",
@@ -1330,375 +1008,131 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             WebkitOverflowScrolling: "touch",
             touchAction: "pan-x pan-y",
           }}
-        >
-          {/* Cytoscape container */}
-          <div
-            ref={cyRef}
-            style={{
-              width: "100%",
-              height: "100%",
-              position: "absolute",
-              top: 0,
-              left: 0,
-            }}
-          />
-
-          {/* Minority Report Glassmorphic Overlays */}
-          {containerRect &&
-            overlayNodes.map((node) => (
-              <NodeCard
-                key={node.id()}
-                node={node}
-                containerRect={containerRect}
-                zoom={zoomLevel}
-                allNodes={nodes}
-              />
-            ))}
-
-          {/* Centered Node Title Bar */}
-          {selectedNodeData && (
-            <Box
-              position="absolute"
-              top="16px"
-              left="50%"
-              transform="translateX(-50%)"
-              zIndex={1000}
-              background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-              backdropFilter="blur(20px)"
-              border="1px solid rgba(0, 162, 255, 0.4)"
-              borderRadius="12px"
-              px="24px"
-              py="10px"
-              boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 60px rgba(0, 162, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-              minW="300px"
-              maxW="800px"
-              sx={{ position: "relative", overflow: "hidden" }}
-            >
-              {/* 3D Left Edge Fade - matching node cards */}
-              <Box
-                position="absolute"
-                left={0}
-                top={0}
-                width="20px"
-                height="100%"
-                background="linear-gradient(90deg, rgba(0, 162, 255, 0.4) 0%, rgba(0, 162, 255, 0) 100%)"
-                pointerEvents="none"
-                zIndex={1}
-              />
-              <Box
-                display="flex"
-                alignItems="center"
-                gap={3}
-                position="relative"
-                zIndex={2}
-              >
-                <Text
-                  fontSize="xs"
-                  textTransform="uppercase"
-                  letterSpacing="2px"
-                  fontWeight="600"
-                  color="#00a2ff"
-                  textShadow="0 0 8px rgba(0, 162, 255, 0.6)"
-                  whiteSpace="nowrap"
-                >
-                  {selectedNodeData.type === "task"
-                    ? "TASK"
-                    : selectedNodeData.type === "reference"
-                    ? "REFERENCE"
-                    : selectedNodeData.type === "author"
-                    ? "AUTHOR"
-                    : selectedNodeData.type === "publisher"
-                    ? "PUBLISHER"
-                    : selectedNodeData.type === "refClaim"
-                    ? "REF CLAIM"
-                    : "TASK CLAIM"}
-                </Text>
-                <Box w="1px" h="16px" bg="rgba(0, 162, 255, 0.3)" />
-                <Text
-                  fontSize="sm"
-                  fontWeight="300"
-                  color="#f1f5f9"
-                  letterSpacing="0.5px"
-                  lineHeight="1.3"
-                  flex={1}
-                  noOfLines={1}
-                >
-                  {selectedNodeData.label}
-                </Text>
-              </Box>
-            </Box>
-          )}
-
-          {/* Controls HUD (top-right). No listener changes, pure actions. */}
-          {showMobileHUD ? (
-            <Box
-              display="block"
-              position="absolute"
-              right="16px"
-              top="16px"
-              background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-              backdropFilter="blur(20px)"
-              color="#e2e8f0"
-              borderRadius="12px"
-              p="20px"
-              zIndex={1000}
-              border="1px solid rgba(0, 162, 255, 0.4)"
-              boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-              width="200px"
-              sx={{ overflow: "hidden" }}
-            >
-              {/* 3D Left Edge Fade - matching node cards */}
-              <Box
-                position="absolute"
-                left={0}
-                top={0}
-                width="20px"
-                height="100%"
-                background="linear-gradient(90deg, rgba(0, 162, 255, 0.4) 0%, rgba(0, 162, 255, 0) 100%)"
-                pointerEvents="none"
-                zIndex={1}
-              />
-              <CloseButton
-                size="sm"
-                onClick={() => setShowMobileHUD(false)}
-                position="absolute"
-                top="6px"
-                right="6px"
-                color="#00a2ff"
-                _hover={{ bg: "rgba(0, 162, 255, 0.2)" }}
-                zIndex={2}
-              />
-              <Text
-                fontSize="xs"
-                mb={3}
-                textTransform="uppercase"
-                letterSpacing="2px"
-                fontWeight="300"
-                color="#00a2ff"
-                textShadow="0 0 8px rgba(0, 162, 255, 0.6)"
-                position="relative"
-                zIndex={2}
-              >
-                Controls
-              </Text>
-              <Button
-                size="xs"
-                onClick={fitAll}
-                mb={2}
-                width="100%"
-                bg="rgba(0, 162, 255, 0.1)"
-                backdropFilter="blur(10px)"
-                border="1px solid rgba(0, 162, 255, 0.3)"
-                color="#00a2ff"
-                _hover={{
-                  bg: "rgba(0, 162, 255, 0.2)",
-                  borderColor: "#00a2ff",
-                  boxShadow: "0 0 20px rgba(0, 162, 255, 0.3)",
-                }}
-                fontWeight="300"
-                textTransform="uppercase"
-                letterSpacing="1px"
-                fontSize="xs"
-                position="relative"
-                zIndex={2}
-              >
-                ⊙ Reframe
-              </Button>
-              <Button
-                size="xs"
-                onClick={centerTask}
-                width="100%"
-                bg="rgba(0, 162, 255, 0.1)"
-                backdropFilter="blur(10px)"
-                border="1px solid rgba(0, 162, 255, 0.3)"
-                color="#00a2ff"
-                _hover={{
-                  bg: "rgba(0, 162, 255, 0.2)",
-                  borderColor: "#00a2ff",
-                  boxShadow: "0 0 20px rgba(0, 162, 255, 0.3)",
-                }}
-                fontWeight="300"
-                textTransform="uppercase"
-                letterSpacing="1px"
-                fontSize="xs"
-                position="relative"
-                zIndex={2}
-              >
-                ⊕ Center
-              </Button>
-            </Box>
-          ) : (
-            <Button
-              display="inline-flex"
-              position="absolute"
-              right="16px"
-              top="16px"
-              size="xs"
-              onClick={() => setShowMobileHUD(true)}
-              zIndex={1000}
-              bg="rgba(0, 162, 255, 0.1)"
-              backdropFilter="blur(10px)"
-              border="1px solid rgba(0, 162, 255, 0.3)"
-              color="#00a2ff"
-              _hover={{
-                bg: "rgba(0, 162, 255, 0.2)",
-                borderColor: "#00a2ff",
-                boxShadow: "0 0 20px rgba(0, 162, 255, 0.3)",
-              }}
-            >
-              Show Controls
-            </Button>
-          )}
-
-          {/* LEGEND — visible by default on desktop */}
-          {showLegend ? (
-            <Box
-              display="block"
-              position="absolute"
-              left="16px"
-              top="16px"
-              background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-              backdropFilter="blur(20px)"
-              color="#e2e8f0"
-              borderRadius="12px"
-              p="20px"
-              zIndex={1000}
-              border="1px solid rgba(0, 162, 255, 0.4)"
-              boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-              width="200px"
-              sx={{ overflow: "hidden" }}
-            >
-              {/* 3D Left Edge Fade - matching node cards */}
-              <Box
-                position="absolute"
-                left={0}
-                top={0}
-                width="20px"
-                height="100%"
-                background="linear-gradient(90deg, rgba(0, 162, 255, 0.4) 0%, rgba(0, 162, 255, 0) 100%)"
-                pointerEvents="none"
-                zIndex={1}
-              />
-              <CloseButton
-                size="sm"
-                onClick={() => setShowLegend(false)}
-                position="absolute"
-                top="6px"
-                right="6px"
-                color="#00a2ff"
-                _hover={{ bg: "rgba(0, 162, 255, 0.2)" }}
-                zIndex={2}
-              />
-              <Text
-                fontSize="xs"
-                mb={3}
-                textTransform="uppercase"
-                letterSpacing="2px"
-                fontWeight="300"
-                color="#00a2ff"
-                textShadow="0 0 8px rgba(0, 162, 255, 0.6)"
-                position="relative"
-                zIndex={2}
-              >
-                Legend
-              </Text>
-              <Box
-                fontSize="xs"
-                lineHeight="1.6"
-                color="#cbd5e1"
-                position="relative"
-                zIndex={2}
-              >
-                <Box display="flex" alignItems="center" mb={2}>
-                  <Box
-                    w="12px"
-                    h="12px"
-                    bg="#6365f1"
-                    borderRadius="3px"
-                    mr={2}
-                    boxShadow="0 0 8px rgba(99, 102, 241, 0.4)"
-                  />
-                  <Text fontSize="10px">Task</Text>
-                </Box>
-                <Box display="flex" alignItems="center" mb={2}>
-                  <Box
-                    w="12px"
-                    h="12px"
-                    bg="#10b981"
-                    borderRadius="3px"
-                    mr={2}
-                    boxShadow="0 0 8px rgba(16, 185, 129, 0.4)"
-                  />
-                  <Text fontSize="10px">Reference</Text>
-                </Box>
-                <Box display="flex" alignItems="center" mb={2}>
-                  <Box
-                    w="12px"
-                    h="12px"
-                    bg="#f97316"
-                    borderRadius="3px"
-                    mr={2}
-                    boxShadow="0 0 8px rgba(249, 115, 22, 0.4)"
-                  />
-                  <Text fontSize="10px">Claims</Text>
-                </Box>
-                <Box display="flex" alignItems="center" mb={2}>
-                  <Box
-                    w="12px"
-                    h="12px"
-                    bg="#fbb1a0"
-                    borderRadius="3px"
-                    mr={2}
-                    boxShadow="0 0 8px rgba(251, 177, 160, 0.4)"
-                  />
-                  <Text fontSize="10px">Author</Text>
-                </Box>
-                <Box display="flex" alignItems="center" mb={3}>
-                  <Box
-                    w="12px"
-                    h="12px"
-                    bg="#81ecec"
-                    borderRadius="3px"
-                    mr={2}
-                    boxShadow="0 0 8px rgba(129, 236, 236, 0.4)"
-                  />
-                  <Text fontSize="10px">Publisher</Text>
-                </Box>
-                <Box
-                  pt={3}
-                  borderTop="1px solid rgba(100, 116, 139, 0.2)"
-                  fontSize="9px"
-                  color="#64748b"
-                  letterSpacing="0.5px"
-                >
-                  SHIFT + SCROLL to ZOOM
-                </Box>
-              </Box>
-            </Box>
-          ) : (
-            <Button
-              display="inline-flex"
-              position="absolute"
-              left="16px"
-              top="16px"
-              size="xs"
-              onClick={() => setShowLegend(true)}
-              zIndex={1000}
-              bg="rgba(0, 162, 255, 0.1)"
-              backdropFilter="blur(10px)"
-              border="1px solid rgba(0, 162, 255, 0.3)"
-              color="#00a2ff"
-              _hover={{
-                bg: "rgba(0, 162, 255, 0.2)",
-                borderColor: "#00a2ff",
-                boxShadow: "0 0 20px rgba(0, 162, 255, 0.3)",
-              }}
-            >
-              Show Legend
-            </Button>
-          )}
-        </Box>
+        />
       </Box>
+
+      {/* MOBILE HUD (bottom-right). No listener changes, pure actions. */}
+      {showMobileHUD ? (
+        <Box
+          display={{ base: "block", md: "none" }}
+          position="absolute"
+          right="10px"
+          top="10px"
+          bg="rgba(20,20,20,0.92)"
+          color="#fff"
+          borderRadius="12px"
+          p="10px"
+          zIndex={1000}
+          boxShadow="0 6px 24px rgba(0,0,0,0.35)"
+        >
+          <CloseButton
+            size="sm"
+            onClick={() => setShowMobileHUD(false)}
+            position="absolute"
+            top="6px"
+            right="6px"
+            color="#fff"
+          />
+          <Text fontSize="xs" opacity={0.8} mb={2}>
+            Graph Controls
+          </Text>
+          <Button
+            size="xs"
+            variant="solid"
+            onClick={fitAll}
+            mr={2}
+            colorScheme="purple"
+          >
+            Reframe Graph
+          </Button>
+          <Button size="xs" variant="outline" onClick={centerTask}>
+            Center Graph
+          </Button>
+        </Box>
+      ) : (
+        <Button
+          display={{ base: "inline-flex", md: "none" }}
+          position="absolute"
+          right="4px"
+          top="10px"
+          size="xs"
+          onClick={() => setShowMobileHUD(true)}
+          zIndex={1000}
+        >
+          Show Controls
+        </Button>
+      )}
+
+      {/* MOBILE LEGEND (bottom-left) — starts hidden to avoid blocking */}
+      {showLegend ? (
+        <Box
+          display={{ base: "block", md: "none" }}
+          position="absolute"
+          left="1px"
+          top="10px"
+          bg="rgba(20,20,20,0.92)"
+          color="#fff"
+          borderRadius="12px"
+          p="10px"
+          zIndex={1000}
+          boxShadow="0 6px 24px rgba(0,0,0,0.35)"
+          maxW="58vw"
+        >
+          <CloseButton
+            size="sm"
+            onClick={() => setShowLegend(false)}
+            position="absolute"
+            top="6px"
+            right="6px"
+            color="#fff"
+          />
+          <Text fontSize="xs" opacity={0.8} mb={2}>
+            Legend
+          </Text>
+          <Box fontSize="xs" lineHeight="1.4">
+            <Box display="flex" alignItems="center" mb={1}>
+              <Box w="10px" h="10px" bg="#6c5ce7" borderRadius="2px" mr={2} />
+              Task
+            </Box>
+            <Box display="flex" alignItems="center" mb={1}>
+              <Box w="10px" h="10px" bg="#00b894" borderRadius="2px" mr={2} />
+              Reference
+            </Box>
+            <Box display="flex" alignItems="center" mb={1}>
+              <Box w="10px" h="10px" bg="#aaa" borderRadius="2px" mr={2} />
+              Ref Claim
+            </Box>
+            <Box display="flex" alignItems="center" mb={1}>
+              <Box w="10px" h="10px" bg="#ffeaa7" borderRadius="2px" mr={2} />
+              Task Claim
+            </Box>
+            <Box display="flex" alignItems="center" mb={1}>
+              <Box w="10px" h="10px" bg="#fab1a0" borderRadius="2px" mr={2} />
+              Author
+            </Box>
+            <Box display="flex" alignItems="center">
+              <Box w="10px" h="10px" bg="#81ecec" borderRadius="2px" mr={2} />
+              Publisher
+            </Box>
+            <Box display="flex" alignItems="center">
+              SHIFT + SCROLL to ZOOM
+            </Box>
+          </Box>
+        </Box>
+      ) : (
+        <Button
+          display={{ base: "inline-flex", md: "none" }}
+          position="absolute"
+          left="4px"
+          top="10px"
+          size="xs"
+          onClick={() => setShowLegend(true)}
+          zIndex={1000}
+          variant="outline"
+        >
+          Show Legend
+        </Button>
+      )}
 
       {selectedClaim &&
         createPortal(
