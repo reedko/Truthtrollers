@@ -98,6 +98,25 @@ export default function createAuthorsRoutes({ query, pool }) {
   });
 
   /**
+   * DELETE /api/content/:contentId/authors/:authorId
+   * Remove an author from content (delete from content_authors junction table)
+   */
+  router.delete("/api/content/:contentId/authors/:authorId", async (req, res) => {
+    const { contentId, authorId } = req.params;
+
+    try {
+      await query(
+        `DELETE FROM content_authors WHERE content_id = ? AND author_id = ?`,
+        [contentId, authorId]
+      );
+      res.status(200).json({ success: true, message: "Author removed from content" });
+    } catch (error) {
+      console.error("Error removing author from content:", error);
+      res.status(500).json({ success: false, message: "Error removing author" });
+    }
+  });
+
+  /**
    * PUT /api/authors/:authorId/bio
    * Update author bio/description
    */

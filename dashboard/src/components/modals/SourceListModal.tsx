@@ -93,6 +93,7 @@ const SourceListModal: React.FC<{
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
       <ModalContent
+        className="mr-modal"
         bg="transparent"
         boxShadow="none"
         position="absolute"
@@ -110,7 +111,7 @@ const SourceListModal: React.FC<{
           margin="10px auto"
           bg="blue.600"
         >
-          <ModalHeader>
+          <ModalHeader className="mr-modal-header">
             Manage Sources for{" "}
             <Text as="span" fontStyle="italic" color="yellow.200">
               {taskName}
@@ -137,6 +138,7 @@ const SourceListModal: React.FC<{
               ))}
             </VStack>
             <Input
+              className="mr-input"
               placeholder="Add a new source"
               value={newSource}
               onChange={(e) => setNewSource(e.target.value)}
@@ -144,7 +146,7 @@ const SourceListModal: React.FC<{
             />
           </ModalBody>
           <ModalFooter>
-            <Button onClick={handleAddSource} colorScheme="blue" mr={3}>
+            <Button className="mr-button" onClick={handleAddSource} colorScheme="blue" mr={3}>
               Add Source
             </Button>
             <Button onClick={handleRemoveSources} colorScheme="red" mr={3}>

@@ -92,6 +92,7 @@ const AssignUserModal: React.FC<{
       <ModalOverlay />
 
       <ModalContent
+        className="mr-modal"
         bg="transparent"
         boxShadow="none"
         position="absolute"
@@ -110,7 +111,7 @@ const AssignUserModal: React.FC<{
           margin="10px auto"
           bg="blue.600"
         >
-          <ModalHeader>
+          <ModalHeader className="mr-modal-header">
             Assign Users for{" "}
             <Text as="span" fontStyle="italic" color="yellow.200">
               {taskName}

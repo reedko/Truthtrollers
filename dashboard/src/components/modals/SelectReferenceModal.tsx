@@ -142,11 +142,12 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Select a Reference</ModalHeader>
+      <ModalContent className="mr-modal">
+        <ModalHeader className="mr-modal-header">Select a Reference</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <Input
+            className="mr-input"
             placeholder="Search references..."
             value={searchTerm}
             onChange={(e) => {
@@ -185,7 +186,7 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
         <ModalFooter>
           <HStack>
             {hasMore && (
-              <Button onClick={handleLoadMore} colorScheme="blue">
+              <Button className="mr-button" onClick={handleLoadMore} colorScheme="blue">
                 Load More
               </Button>
             )}

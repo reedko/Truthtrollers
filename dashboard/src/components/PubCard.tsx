@@ -183,10 +183,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
     <Center>
       <Box
         ref={cardRef}
-        bg="stat2Gradient"
-        borderWidth="1px"
-        borderRadius="lg"
-        boxShadow="md"
+        className="mr-card mr-card-yellow"
         p={3}
         w="100%"
         height="405px"
@@ -194,9 +191,11 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
         flexDirection="column"
         justifyContent="space-between"
       >
+        <div className="mr-glow-bar mr-glow-bar-yellow" />
+        <div className="mr-scanlines" />
         <Box>
           <Center>
-            <Text fontWeight="bold" fontSize="md" mb={2}>
+            <Text className="mr-badge mr-badge-yellow" fontSize="md" mb={2}>
               Publisher Details
             </Text>
           </Center>
@@ -282,45 +281,33 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
           </Center>
 
           <HStack justify="center" spacing={4} mt={2}>
-            <Flex direction="column" align="center">
-              <Text fontSize="md">Bias</Text>
+            <Flex direction="column" align="center" className="mr-metric">
+              <Text className="mr-metric-label">Bias</Text>
               <Flex align="center" gap={1}>
                 <Text>{getBiasEmoji(parseFloat(avgBias))}</Text>
-                <Badge
-                  borderRadius="md"
-                  px={2}
-                  bg="gray.700"
-                  color="purple.200"
-                  fontSize="md"
-                >
+                <Text className="mr-metric-value">
                   {avgBias}
-                </Badge>
+                </Text>
               </Flex>
             </Flex>
-            <Flex direction="column" align="center">
-              <Text fontSize="md">Veracity</Text>
+            <Flex direction="column" align="center" className="mr-metric">
+              <Text className="mr-metric-label">Veracity</Text>
               <Flex align="center" gap={1}>
                 <Text>{getVeracityEmoji(parseFloat(avgVeracity))}</Text>
-                <Badge
-                  borderRadius="md"
-                  fontSize="md"
-                  px={2}
-                  bg="gray.700"
-                  color="green.200"
-                >
+                <Text className="mr-metric-value">
                   {avgVeracity}
-                </Badge>
+                </Text>
               </Flex>
             </Flex>
           </HStack>
 
           {activePublisher.description && (
             <Text
+              className="mr-text-secondary"
               fontSize="sm"
               mt={3}
               px={2}
-              color="whiteAlpha.800"
-              textAlign="left"
+              textAlign="center"
             >
               {activePublisher.description}
             </Text>
@@ -328,11 +315,10 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
         </Box>
 
         <Center>
-          <HStack>
+          <HStack justify="center" spacing={2} w="100%">
             <Button
               onClick={onViewRatingsOpen}
-              colorScheme="purple"
-              size="md"
+              className="mr-button"
               flex="1"
             >
               Ratings
@@ -340,9 +326,8 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
             <Menu>
               <MenuButton
                 as={Button}
-                colorScheme="teal"
-                size="md"
-                rightIcon={<BiChevronDown />}
+                className="mr-button"
+                flex="1"
               >
                 Actions
               </MenuButton>

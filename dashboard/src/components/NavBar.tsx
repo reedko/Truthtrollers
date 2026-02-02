@@ -11,10 +11,10 @@ import {
   MenuList,
   Spacer,
   Button,
-  useBreakpointValue,
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
 import ColorModeSwitch from "./ColorModeSwitch";
+import HeaderToggleSwitch from "./HeaderToggleSwitch";
 import { useTaskStore } from "../store/useTaskStore";
 import { AccountMenu } from "./AccountMenu";
 
@@ -82,8 +82,14 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 <MenuItem as={RouterLink} to="/molecule">
                   Graph
                 </MenuItem>
+                <MenuItem as={RouterLink} to="/quadrantgrid">
+                  QuadrantGrid
+                </MenuItem>
                 <MenuItem as={RouterLink} to="/game">
                   Game
+                </MenuItem>
+                <MenuItem as={RouterLink} to="/gamespace">
+                  GameSpace
                 </MenuItem>
                 <MenuItem
                   as={RouterLink}
@@ -97,6 +103,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
             </Menu>
           )}
 
+          <HeaderToggleSwitch />
           <ColorModeSwitch />
         </Flex>
       ) : (
@@ -133,6 +140,14 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
 
               <Link
                 as={RouterLink}
+                to="/quadrantgrid"
+                onClick={() => handleNavClick("/quadrantgrid")}
+              >
+                QuadrantGrid
+              </Link>
+
+              <Link
+                as={RouterLink}
                 to={selectedTaskId ? `/discussion/${selectedTaskId}` : "/tasks"}
                 onClick={() => handleNavClick("/discussion")}
               >
@@ -144,6 +159,13 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 onClick={() => handleNavClick("/game")}
               >
                 Game
+              </Link>
+              <Link
+                as={RouterLink}
+                to="/gamespace"
+                onClick={() => handleNavClick("/gamespace")}
+              >
+                GameSpace
               </Link>
               <AccountMenu />
             </HStack>
@@ -179,6 +201,15 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   <MenuItem as={RouterLink} to="/molecule">
                     Molecule
                   </MenuItem>
+                  <MenuItem as={RouterLink} to="/quadrantgrid">
+                    QuadrantGrid
+                  </MenuItem>
+                  <MenuItem as={RouterLink} to="/game">
+                    Game
+                  </MenuItem>
+                  <MenuItem as={RouterLink} to="/gamespace">
+                    GameSpace
+                  </MenuItem>
                   <MenuItem
                     as={RouterLink}
                     to={
@@ -193,6 +224,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
               </Menu>
             )}
 
+            <HeaderToggleSwitch />
             <ColorModeSwitch />
           </Flex>
         </Box>

@@ -138,69 +138,140 @@ export async function runEvidenceEngine({
             logger.log(`🌐 [Evidence] Fetching: ${cand.url}`);
 
             // ─────────────────────────────────────────────
-            // 1. FETCH HTML (simple fetch with timeout)
+            // 1. FETCH and DETECT content type
             // ─────────────────────────────────────────────
             const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+            const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
             const resp = await fetch(cand.url, { signal: controller.signal });
             clearTimeout(timeout);
-            const html = await resp.text();
 
-            if (!html || html.length < 100) {
-              logger.warn(`⚠️  [Evidence] Empty response from ${cand.url}`);
-              return null;
+            const contentType = resp.headers.get('content-type') || '';
+            const isPdf = contentType.includes('application/pdf') || cand.url.toLowerCase().match(/\.pdf($|\?)/);
+
+            let html = null;
+            let pdfExtractedText = null;
+            let pdfTitle = null;
+            let pdfAuthors = null;
+
+            if (isPdf) {
+              logger.log(`📄 [Evidence] Detected PDF (Content-Type: ${contentType}), extracting text...`);
+              try {
+                // Import pdf-parse dynamically
+                const pdfParse = (await import('pdf-parse')).default;
+
+                const buffer = await resp.arrayBuffer();
+                const parsed = await pdfParse(Buffer.from(buffer));
+
+                let fullText = (parsed.text || "").replace(/\r/g, "");
+
+                // Strip XMP metadata
+                fullText = fullText.replace(/<\?xpacket[\s\S]*?<\?xpacket end.*?\?>/gi, '');
+                fullText = fullText.replace(/<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/gi, '');
+                fullText = fullText.replace(/<rdf:RDF[\s\S]*?<\/rdf:RDF>/gi, '');
+                fullText = fullText.replace(/\n{3,}/g, '\n\n').trim();
+
+                pdfExtractedText = fullText;
+                pdfTitle = parsed.info?.Title?.trim() || null;
+                pdfAuthors = parsed.info?.Author?.trim() || null;
+
+                logger.log(`📄 [Evidence] PDF extracted: ${pdfExtractedText.length} chars, ${parsed.numpages} pages`);
+              } catch (pdfErr) {
+                logger.warn(`⚠️  [Evidence] PDF extraction failed: ${pdfErr.message} - will create stub reference`);
+                // Set empty text so it creates a stub reference that can be manually scraped
+                pdfExtractedText = "";
+              }
+            } else {
+              // ─────────────────────────────────────────────
+              // HTML content - get text
+              // ─────────────────────────────────────────────
+              html = await resp.text();
+
+              if (!html || html.length < 100) {
+                logger.warn(`⚠️  [Evidence] Empty response from ${cand.url}`);
+                return null;
+              }
+
+              logger.log(`✅ [Evidence] Fetched ${html.length} chars`);
             }
 
-            logger.log(`✅ [Evidence] Fetched ${html.length} chars`);
+            // ─────────────────────────────────────────────
+            // 2. EXTRACT METADATA based on content type
+            // ─────────────────────────────────────────────
+            let title, authors, publisher, thumbnail, cleanText;
 
-            // ─────────────────────────────────────────────
-            // 2. PARSE HTML (for metadata extraction)
-            // ─────────────────────────────────────────────
-            const $ = cheerio.load(html);
+            if (isPdf) {
+              // PDF metadata extraction
+              let pdfTitleBase = pdfTitle || cand.title;
 
-            // ─────────────────────────────────────────────
-            // 3. EXTRACT METADATA (from full HTML)
-            // ─────────────────────────────────────────────
-            const title =
-              cand.title || (await getMainHeadline($)) || "AI Reference";
-            const authors = await extractAuthors($);
-            const publisher = await extractPublisher($);
-            const thumbnail = getBestImage($, cand.url) || "";
-
-            // ─────────────────────────────────────────────
-            // 4. EXTRACT CLEAN TEXT (using Readability)
-            // ─────────────────────────────────────────────
-            let cleanText;
-            try {
-              const dom = new JSDOM(html, { url: cand.url });
-              const article = new Readability(dom.window.document).parse();
-
-              if (article && article.textContent) {
-                cleanText = article.textContent
-                  .replace(/\s+/g, " ")
-                  .trim()
-                  .slice(0, 60000);
-                logger.log(
-                  `📖 [Evidence] Readability extracted ${cleanText.length} chars`
-                );
-              } else {
-                logger.warn(
-                  `⚠️  [Evidence] Readability failed, falling back to cheerio`
-                );
-                // Fallback to cheerio if Readability fails
-                $("script, style, link, noscript").remove();
-                cleanText = $.text()
-                  .replace(/\s+/g, " ")
-                  .trim()
-                  .slice(0, 60000);
+              // If no title from metadata, extract from first line of text
+              if (!pdfTitleBase && pdfExtractedText) {
+                const lines = pdfExtractedText.split('\n').map(l => l.trim()).filter(Boolean);
+                for (const line of lines) {
+                  if (line.length > 10 && line.length < 200) {
+                    pdfTitleBase = line;
+                    break;
+                  }
+                }
               }
-            } catch (readabilityErr) {
-              logger.warn(
-                `⚠️  [Evidence] Readability error: ${readabilityErr.message}`
-              );
-              $("script, style, link, noscript").remove();
-              cleanText = $.text().replace(/\s+/g, " ").trim().slice(0, 60000);
+
+              // Add [PDF] prefix if not already present
+              title = pdfTitleBase
+                ? (pdfTitleBase.startsWith('[PDF]') ? pdfTitleBase : `[PDF] ${pdfTitleBase}`)
+                : "[PDF] Document";
+
+              authors = pdfAuthors ? [pdfAuthors] : [];
+              publisher = null; // PDFs don't have publishers in same way
+              thumbnail = ""; // PDFs don't have thumbnails from evidence engine
+              cleanText = pdfExtractedText?.slice(0, 60000) || "";
+            } else {
+              // ─────────────────────────────────────────────
+              // 2. PARSE HTML (for metadata extraction)
+              // ─────────────────────────────────────────────
+              const $ = cheerio.load(html);
+
+              // ─────────────────────────────────────────────
+              // 3. EXTRACT METADATA (from full HTML)
+              // ─────────────────────────────────────────────
+              title =
+                cand.title || (await getMainHeadline($)) || "AI Reference";
+              authors = await extractAuthors($);
+              publisher = await extractPublisher($);
+              thumbnail = getBestImage($, cand.url) || "";
+
+              // ─────────────────────────────────────────────
+              // 4. EXTRACT CLEAN TEXT (using Readability)
+              // ─────────────────────────────────────────────
+              try {
+                const dom = new JSDOM(html, { url: cand.url });
+                const article = new Readability(dom.window.document).parse();
+
+                if (article && article.textContent) {
+                  cleanText = article.textContent
+                    .replace(/\s+/g, " ")
+                    .trim()
+                    .slice(0, 60000);
+                  logger.log(
+                    `📖 [Evidence] Readability extracted ${cleanText.length} chars`
+                  );
+                } else {
+                  logger.warn(
+                    `⚠️  [Evidence] Readability failed, falling back to cheerio`
+                  );
+                  // Fallback to cheerio if Readability fails
+                  $("script, style, link, noscript").remove();
+                  cleanText = $.text()
+                    .replace(/\s+/g, " ")
+                    .trim()
+                    .slice(0, 60000);
+                }
+              } catch (readabilityErr) {
+                logger.warn(
+                  `⚠️  [Evidence] Readability error: ${readabilityErr.message}`
+                );
+                $("script, style, link, noscript").remove();
+                cleanText = $.text().replace(/\s+/g, " ").trim().slice(0, 60000);
+              }
             }
 
             if (cleanText.length < 100) {

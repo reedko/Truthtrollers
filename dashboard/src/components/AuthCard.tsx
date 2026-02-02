@@ -31,20 +31,25 @@ import { Author, AuthorRating } from "../../../shared/entities/types";
 import { useRef, useState, useEffect } from "react";
 import AuthBioModal from "./modals/AuthBioModal";
 import AuthRatingModal from "./modals/AuthRatingModal";
+import ResponsiveOverlay from "./overlays/ResponsiveOverlay";
 import {
   uploadImage,
   fetchAuthorRatings,
   updateAuthorBio,
   fetchAuthor,
+  addAuthorsToContent,
+  removeAuthorFromContent,
+  fetchAuthors,
 } from "../services/useDashboardAPI";
 
 interface AuthCardProps {
   authors: Author[];
   compact?: boolean;
+  contentId?: number;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
+const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false, contentId }) => {
   const {
     isOpen: isBioOpen,
     onOpen: onBioOpen,
@@ -55,10 +60,16 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
     onOpen: onRatingOpen,
     onClose: onRatingClose,
   } = useDisclosure();
+  const {
+    isOpen: isAddAuthorOpen,
+    onOpen: onAddAuthorOpen,
+    onClose: onAddAuthorClose,
+  } = useDisclosure();
   const [activeAuthor, setActiveAuthor] = useState<Author | null>(authors[0]);
   const [allRatings, setAllRatings] = useState<{
     [authorId: number]: AuthorRating[];
   }>({});
+  const [newAuthorName, setNewAuthorName] = useState("");
   const toast = useToast();
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [authorList, setAuthorList] = useState<Author[]>(authors);
@@ -106,6 +117,87 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
     }
   };
 
+  const handleAddAuthor = async () => {
+    if (!contentId || !newAuthorName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter an author name",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    const success = await addAuthorsToContent(contentId, [
+      { name: newAuthorName.trim() },
+    ]);
+
+    if (success) {
+      toast({
+        title: "Author Added",
+        description: "Author has been added to content",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      // Refresh author list
+      const updatedAuthors = await fetchAuthors(contentId);
+      setAuthorList(updatedAuthors);
+      if (updatedAuthors.length > 0) {
+        setActiveAuthor(updatedAuthors[updatedAuthors.length - 1]);
+      }
+
+      setNewAuthorName("");
+      onAddAuthorClose();
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to add author",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleRemoveAuthor = async () => {
+    if (!contentId || !activeAuthor) return;
+
+    const success = await removeAuthorFromContent(
+      contentId,
+      activeAuthor.author_id
+    );
+
+    if (success) {
+      toast({
+        title: "Author Removed",
+        description: "Author has been removed from content",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      // Refresh author list
+      const updatedAuthors = await fetchAuthors(contentId);
+      setAuthorList(updatedAuthors);
+      if (updatedAuthors.length > 0) {
+        setActiveAuthor(updatedAuthors[0]);
+      } else {
+        setActiveAuthor(null);
+      }
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to remove author",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
   const getBiasEmoji = (score: number) =>
     score <= -5 || score >= 5 ? "🔴" : "🟢";
   const getVeracityEmoji = (score: number) =>
@@ -125,10 +217,7 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
     <Center>
       <Box
         ref={cardRef}
-        bg="stat2Gradient"
-        borderWidth="1px"
-        borderRadius="lg"
-        boxShadow="md"
+        className="mr-card mr-card-purple"
         p={4}
         w="100%"
         height="405px"
@@ -136,9 +225,11 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
         flexDirection="column"
         justifyContent="space-between"
       >
+        <div className="mr-glow-bar mr-glow-bar-purple" />
+        <div className="mr-scanlines" />
         <Box>
           <Center>
-            <Text fontWeight="bold" fontSize="md" mb={2} textAlign="center">
+            <Text className="mr-badge mr-badge-purple" fontSize="md" mb={2}>
               Author Details
             </Text>
           </Center>
@@ -235,47 +326,35 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
           </Center>
 
           <HStack justify="center" spacing={4} mt={1}>
-            <Flex direction="column" align="center">
-              <Text fontSize="md">Bias</Text>
+            <Flex direction="column" align="center" className="mr-metric">
+              <Text className="mr-metric-label">Bias</Text>
               <Flex align="center" gap={1}>
                 <Text>{getBiasEmoji(parseFloat(avgScore("bias_score")))}</Text>
-                <Badge
-                  fontSize="md"
-                  borderRadius="md"
-                  px={2}
-                  bg="gray.700"
-                  color="purple.200"
-                >
+                <Text className="mr-metric-value">
                   {avgScore("bias_score")}
-                </Badge>
+                </Text>
               </Flex>
             </Flex>
-            <Flex direction="column" align="center">
-              <Text fontSize="md">Veracity</Text>
+            <Flex direction="column" align="center" className="mr-metric">
+              <Text className="mr-metric-label">Veracity</Text>
               <Flex align="center" gap={1}>
                 <Text>
                   {getVeracityEmoji(parseFloat(avgScore("veracity_score")))}
                 </Text>
-                <Badge
-                  fontSize="md"
-                  borderRadius="md"
-                  px={2}
-                  bg="gray.700"
-                  color="green.200"
-                >
+                <Text className="mr-metric-value">
                   {avgScore("veracity_score")}
-                </Badge>
+                </Text>
               </Flex>
             </Flex>
           </HStack>
           <Box />
-          <Text fontSize="sm" mt={1} textAlign="center">
+          <Text className="mr-text-secondary" fontSize="sm" mt={1} textAlign="center">
             {activeAuthor?.description || "No bio available."}
           </Text>
         </Box>
         <Center>
           <Menu>
-            <MenuButton as={Button} rightIcon={<BiChevronDown />} mt={3}>
+            <MenuButton as={Button} className="mr-button" mt={3}>
               Actions
             </MenuButton>
             <MenuList>
@@ -295,6 +374,18 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
               >
                 📊 Manage Ratings
               </MenuItem>
+              {contentId && (
+                <>
+                  <MenuItem onClick={onAddAuthorOpen}>
+                    ➕ Add Author
+                  </MenuItem>
+                  {activeAuthor && authorList.length > 1 && (
+                    <MenuItem onClick={handleRemoveAuthor} color="red.400">
+                      🗑️ Remove Author
+                    </MenuItem>
+                  )}
+                </>
+              )}
             </MenuList>
           </Menu>
         </Center>
@@ -335,6 +426,40 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false }) => {
             authorId={activeAuthor.author_id}
             onRatingsUpdate={handleRatingsUpdate}
           />
+        )}
+
+        {contentId && (
+          <ResponsiveOverlay
+            isOpen={isAddAuthorOpen}
+            onClose={onAddAuthorClose}
+            title="Add Author"
+            footer={
+              <>
+                <Button className="mr-button" mr={3} onClick={handleAddAuthor}>
+                  Add
+                </Button>
+                <Button onClick={onAddAuthorClose}>Cancel</Button>
+              </>
+            }
+            size="md"
+          >
+            <VStack spacing={4} align="stretch">
+              <Text className="mr-text-primary">
+                Enter the author's name (e.g., "John Smith" or "Dr. Jane Doe, PhD")
+              </Text>
+              <Input
+                className="mr-input"
+                placeholder="Author name"
+                value={newAuthorName}
+                onChange={(e) => setNewAuthorName(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter") {
+                    handleAddAuthor();
+                  }
+                }}
+              />
+            </VStack>
+          </ResponsiveOverlay>
         )}
       </Box>
     </Center>

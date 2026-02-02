@@ -31,11 +31,11 @@ export default function createEvidenceRoutes({ query, pool }) {
       });
 
       // Step 2 — Persist AI refs + evidence
-      await persistAIResults({
-        taskContentId,
-        aiReferences: engineOut.aiReferences,
-        evidence: engineOut.evidence,
-        referenceClaimLinks: engineOut.referenceClaimLinks,
+      await persistAIResults(query, {
+        contentId: taskContentId,
+        evidenceRefs: engineOut.aiReferences || [],
+        claimIds: claimIds || [],
+        claimConfidenceMap: engineOut.claimConfidenceMap || new Map(),
       });
 
       return res.json({

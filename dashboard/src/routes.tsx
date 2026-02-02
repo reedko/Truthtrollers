@@ -11,6 +11,7 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import WorkspacePage from "./pages/WorkspacePage";
 import MoleculeMapPage from "./pages/MoleculeMapPage";
+import QuadrantGridPage from "./pages/QuadrantGridPage";
 import DiscussionPage from "./pages/DiscussionPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AccountSettingsPage from "./pages/AccountSettingsPage";
@@ -19,6 +20,8 @@ import UserSelectionPage from "./pages/UserSelectionPage";
 import GamePreview from "./pages/GamePage";
 import TrueFalseGame from "./components/TrueFalseGame";
 import ExtensionDownloadPage from "./pages/ExtensionDownloadPage"; // ✅ NEW
+import GameSpacePage from "./pages/GameSpacePage";
+import LevelPage from "./pages/LevelPage";
 
 const router = createBrowserRouter([
   {
@@ -59,10 +62,34 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "/gamespace",
+        element: (
+          <ProtectedRoute>
+            <GameSpacePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/level",
+        element: (
+          <ProtectedRoute>
+            <LevelPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "/molecule",
         element: (
           <ProtectedRoute>
             <MoleculeMapPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/quadrantgrid",
+        element: (
+          <ProtectedRoute>
+            <QuadrantGridPage />
           </ProtectedRoute>
         ),
       },

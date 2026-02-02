@@ -304,6 +304,7 @@ export default function createClaimsRoutes({ query, pool }) {
       support_level,
       relationship = "related", // fallback
       notes,
+      points_earned = 0, // 🎮 GameSpace scoring
     } = req.body;
 
     if (!source_claim_id || !target_claim_id || !user_id) {
@@ -313,8 +314,8 @@ export default function createClaimsRoutes({ query, pool }) {
     try {
       const sql = `
       INSERT INTO claim_links
-        (source_claim_id, target_claim_id, relationship, user_id, support_level,notes)
-      VALUES (?, ?, ?, ?, ?, ?)
+        (source_claim_id, target_claim_id, relationship, user_id, support_level, notes, points_earned)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
       const params = [
         source_claim_id,
@@ -323,12 +324,42 @@ export default function createClaimsRoutes({ query, pool }) {
         user_id,
         support_level,
         notes,
+        points_earned,
       ];
 
       await query(sql, params);
-      res.status(201).json({ message: "Claim link created" });
+      res.status(201).json({ message: "Claim link created", points_earned });
     } catch (err) {
       console.error("❌ Error inserting claim link:", err);
+      res.status(500).json({ error: "Database error" });
+    }
+  });
+
+  // GET /api/claim-links/score/:contentId?userId=123
+  // Get total GameSpace score for a user on a specific content/task
+  router.get("/api/claim-links/score/:contentId", async (req, res) => {
+    const contentId = parseInt(req.params.contentId, 10);
+    const userId = parseInt(req.query.userId, 10);
+
+    if (!contentId || !userId) {
+      return res.status(400).json({ error: "Missing contentId or userId" });
+    }
+
+    try {
+      // Sum all points_earned for links where target claims belong to this content
+      const sql = `
+        SELECT COALESCE(SUM(cl.points_earned), 0) as total_score
+        FROM claim_links cl
+        JOIN content_claims cc ON cl.target_claim_id = cc.claim_id
+        WHERE cc.content_id = ? AND cl.user_id = ?
+      `;
+
+      const result = await query(sql, [contentId, userId]);
+      const totalScore = result[0]?.total_score || 0;
+
+      res.json({ contentId, userId, totalScore });
+    } catch (err) {
+      console.error("❌ Error fetching claim link score:", err);
       res.status(500).json({ error: "Database error" });
     }
   });

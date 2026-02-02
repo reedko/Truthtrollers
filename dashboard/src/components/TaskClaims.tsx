@@ -123,18 +123,37 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
 
       <Box
         as="button"
-        bg="blue.600"
-        color="white"
+        background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+        backdropFilter="blur(20px)"
+        border="1px solid rgba(0, 162, 255, 0.4)"
+        color="rgba(0, 162, 255, 1)"
         height="50px"
         px={3}
         py={2}
-        borderRadius="md"
+        borderRadius="12px"
+        boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+        position="relative"
+        overflow="hidden"
+        transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+        _hover={{
+          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+          transform: "translateY(-2px)"
+        }}
         onClick={() => {
           setEditingClaim(null);
           setIsClaimModalOpen(true);
         }}
       >
-        + Add Claim
+        <Box
+          position="absolute"
+          left={0}
+          top={0}
+          width="20px"
+          height="100%"
+          background="linear-gradient(90deg, rgba(0, 162, 255, 0.4) 0%, transparent 100%)"
+          pointerEvents="none"
+        />
+        <Text position="relative" zIndex={1}>+ Add Claim</Text>
       </Box>
 
       {claims.length === 0 ? (
@@ -144,24 +163,36 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
           <Box
             key={claim.claim_id}
             ref={(el) => (claimRefs.current[claim.claim_id] = el)}
-            bg={hoveredClaimId === claim.claim_id ? "blue.200" : "black"}
-            color={hoveredClaimId === claim.claim_id ? "black" : "#90caf9"}
+            background={hoveredClaimId === claim.claim_id ? "linear-gradient(135deg, rgba(0, 162, 255, 0.3), rgba(0, 162, 255, 0.2))" : "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"}
+            backdropFilter="blur(20px)"
+            color={hoveredClaimId === claim.claim_id ? "#ffffff" : "#f1f5f9"}
             px={3}
             py={2}
-            borderRadius="md"
+            borderRadius="12px"
             border={
-              linkSelection?.active ? "2px dashed #38A169" : "1px solid #90caf9"
+              linkSelection?.active ? "2px dashed #38A169" : "1px solid rgba(167, 139, 250, 0.4)"
+            }
+            boxShadow={
+              hoveredClaimId === claim.claim_id
+                ? "0 12px 48px rgba(0, 0, 0, 0.8), 0 0 60px rgba(167, 139, 250, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+                : "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(167, 139, 250, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
             }
             _hover={
               linkSelection?.active
                 ? { bg: "green.100", color: "black", cursor: "pointer" }
-                : undefined
+                : {
+                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(167, 139, 250, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+                    transform: "translateY(-2px)"
+                  }
             }
             width="100%"
             display="flex"
             alignItems="center"
             justifyContent="space-between"
             cursor="pointer"
+            position="relative"
+            overflow="hidden"
+            transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
             onClick={() => {
               if (linkSelection?.active) {
                 onPickTargetForLink?.(claim);
@@ -171,16 +202,25 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
               setIsClaimViewModalOpen(true);
             }}
           >
+            <Box
+              position="absolute"
+              left={0}
+              top={0}
+              width="20px"
+              height="100%"
+              background="linear-gradient(90deg, rgba(167, 139, 250, 0.4) 0%, transparent 100%)"
+              pointerEvents="none"
+            />
             <Tooltip
               label={claim.claim_text}
               hasArrow
               isDisabled={!!draggingClaim}
             >
-              <Text flex="1" noOfLines={1}>
+              <Text flex="1" noOfLines={1} position="relative" zIndex={1}>
                 {claim.claim_text}
               </Text>
             </Tooltip>
-            <HStack spacing={2}>
+            <HStack spacing={2} position="relative" zIndex={1}>
               <IconButton
                 size="sm"
                 aria-label="Edit"

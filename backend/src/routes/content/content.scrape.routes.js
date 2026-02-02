@@ -540,11 +540,12 @@ export default function createContentScrapeRoutes({ query }) {
       if (taskContentId && text) {
         // Get existing snippet_only/failed links for this reference
         const existingLinks = await query(
-          `SELECT rcl.link_id, rcl.claim_id, rcl.stance as old_stance,
+          `SELECT rcl.ref_claim_link_id, rcl.claim_id, rcl.stance as old_stance,
                   rcl.rationale as old_rationale, rcl.evidence_text as old_quote,
                   c.claim_text
            FROM reference_claim_links rcl
-           JOIN content_claims c ON rcl.claim_id = c.claim_id
+           JOIN content_claims cc ON rcl.claim_id = cc.claim_id
+           JOIN claims c ON cc.claim_id = c.claim_id
            WHERE rcl.reference_content_id = ?
            AND rcl.scrape_status IN ('snippet_only', 'failed')`,
           [referenceContentId]
@@ -574,15 +575,15 @@ export default function createContentScrapeRoutes({ query }) {
                        stance = ?,
                        evidence_text = ?,
                        rationale = ?
-                   WHERE link_id = ?`,
+                   WHERE ref_claim_link_id = ?`,
                   [
                     validation.stance || link.old_stance,
                     validation.quote,
                     `✓ Validated with full text: ${validation.summary || 'Quote extracted from scraped content'}`,
-                    link.link_id
+                    link.ref_claim_link_id
                   ]
                 );
-                logger.log(`✅ [/api/scrape-reference] Validated link ${link.link_id}: stance=${validation.stance}, extracted quote`);
+                logger.log(`✅ [/api/scrape-reference] Validated link ${link.ref_claim_link_id}: stance=${validation.stance}, extracted quote`);
               } else {
                 // No quote found, mark as insufficient
                 await query(
@@ -590,20 +591,20 @@ export default function createContentScrapeRoutes({ query }) {
                    SET scrape_status = 'full',
                        stance = 'insufficient',
                        rationale = 'Manually scraped but no relevant quote found in full text'
-                   WHERE link_id = ?`,
-                  [link.link_id]
+                   WHERE ref_claim_link_id = ?`,
+                  [link.ref_claim_link_id]
                 );
-                logger.log(`⚠️ [/api/scrape-reference] No quote found for link ${link.link_id}`);
+                logger.log(`⚠️ [/api/scrape-reference] No quote found for link ${link.ref_claim_link_id}`);
               }
             } catch (err) {
-              logger.warn(`⚠️ [/api/scrape-reference] Failed to validate link ${link.link_id}:`, err.message);
+              logger.warn(`⚠️ [/api/scrape-reference] Failed to validate link ${link.ref_claim_link_id}:`, err.message);
               // Fallback: just update scrape_status
               await query(
                 `UPDATE reference_claim_links
                  SET scrape_status = 'full',
                      rationale = CONCAT('Manually scraped from loaded page. ', rationale)
-                 WHERE link_id = ?`,
-                [link.link_id]
+                 WHERE ref_claim_link_id = ?`,
+                [link.ref_claim_link_id]
               );
             }
           }

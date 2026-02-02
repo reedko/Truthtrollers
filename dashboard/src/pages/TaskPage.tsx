@@ -33,7 +33,7 @@ export const TaskPage: React.FC = () => {
 
   return (
     <Box p={4}>
-      <VStack align="start" spacing={4}>
+      <VStack align="center" spacing={4} w="100%">
         <Heading size="lg" color="teal.300">
           Active Tasks
         </Heading>

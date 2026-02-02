@@ -60,16 +60,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
       leftEdge:
         "linear-gradient(90deg, rgba(16, 185, 129, 0.4) 0%, rgba(16, 185, 129, 0) 100%)",
     },
-    refClaim: {
-      bg: "linear-gradient(135deg, rgba(249, 115, 22, 0.06), rgba(234, 88, 12, 0.04))",
-      border: "rgba(249, 115, 22, 0.2)",
-      text: "#fed7aa",
-      glow: "0 0 15px rgba(249, 115, 22, 0.15)",
-      titleBg: "rgba(249, 115, 22, 0.12)",
-      leftEdge:
-        "linear-gradient(90deg, rgba(249, 115, 22, 0.3) 0%, rgba(249, 115, 22, 0) 100%)",
-    },
-    taskClaim: {
+    unifiedClaim: {
       bg: "linear-gradient(135deg, rgba(249, 115, 22, 0.06), rgba(234, 88, 12, 0.04))",
       border: "rgba(249, 115, 22, 0.2)",
       text: "#fed7aa",
@@ -98,36 +89,220 @@ const NodeCard: React.FC<NodeCardProps> = ({
     },
   };
 
-  const scheme =
+  let scheme =
     colorSchemes[type as keyof typeof colorSchemes] || colorSchemes.reference;
 
-  // Get thumbnail URL
+  // Get thumbnail URL (needed for all card types including unifiedClaim)
   const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
   const group =
     type === "author"
       ? 1
       : type === "task" || type === "reference"
-      ? 2
-      : type === "publisher"
-      ? 3
-      : 0;
+        ? 2
+        : type === "publisher"
+          ? 3
+          : 0;
   const thumbnailPath =
     {
       0: `ttlogo11.png`,
       1: `authors/author_id_${id.replace("autho-", "")}.png`,
-      2: `content/content_id_${id.replace("conte-", "")}.png`,
+      2: `content/content_id_${data.content_id || id.replace("conte-", "")}.png`,
       3: `publishers/publisher_id_${id.replace("publi-", "")}.png`,
     }[group] || `ttlogo11.png`;
   const thumbnailUrl = `${API_BASE_URL}/assets/images/${thumbnailPath}`;
+
+  // Special handling for unified claim cards
+  if (type === "unifiedClaim") {
+    const relation = data.relation || "related";
+    const refClaimText = data.refClaimLabel || "";
+    const taskClaimText = data.taskClaimLabel || "";
+
+    return (
+      <div
+        style={{
+          position: "absolute",
+          left: `${pos.x - 130}px`,
+          top: `${pos.y - 160}px`,
+          width: "260px",
+          height: "320px",
+          background: scheme.bg,
+          backdropFilter: "blur(6px)",
+          border: `1.5px solid ${scheme.border}`,
+          borderRadius: "16px",
+          boxShadow: `${scheme.glow}, 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)`,
+          pointerEvents: "none",
+          transition: "all 0.3s ease",
+          display: "flex",
+          flexDirection: "column",
+          overflow: "hidden",
+          transform: `scale(${zoom})`,
+          transformOrigin: "center center",
+        }}
+      >
+        {/* Background watermark thumbnail - reduced size */}
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: "60%",
+            height: "60%",
+            backgroundImage: `url(${thumbnailUrl})`,
+            backgroundSize: "contain",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            opacity: 0.08,
+            zIndex: 0,
+          }}
+        />
+
+        {/* 3D Left Edge Fade */}
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: "20px",
+            height: "100%",
+            background: scheme.leftEdge,
+            pointerEvents: "none",
+            zIndex: 1,
+          }}
+        />
+
+        {/* Content container */}
+        <div
+          style={{
+            position: "relative",
+            zIndex: 2,
+            display: "flex",
+            flexDirection: "column",
+            height: "100%",
+            padding: "8px",
+          }}
+        >
+          {/* Ref Claim (top) */}
+          <div
+            style={{
+              flex: "1",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "6px",
+              background: "rgba(16, 185, 129, 0.1)",
+              borderRadius: "8px",
+              marginBottom: "6px",
+            }}
+          >
+            <div
+              style={{
+                color: "#6ee7b7",
+                fontSize: "32px",
+                fontWeight: "600",
+                lineHeight: "1.4",
+                textAlign: "center",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                display: "-webkit-box",
+                WebkitLineClamp: 4,
+                WebkitBoxOrient: "vertical",
+                textShadow: `0 0 6px rgba(110, 231, 183, 0.4), 0 1px 2px rgba(0, 0, 0, 0.8)`,
+              }}
+            >
+              {refClaimText}
+            </div>
+          </div>
+
+          {/* Relation (middle) */}
+          <div
+            style={{
+              padding: "6px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background:
+                relation === "supports"
+                  ? "rgba(16, 185, 129, 0.2)"
+                  : relation === "refutes"
+                    ? "rgba(239, 68, 68, 0.2)"
+                    : "rgba(251, 191, 36, 0.2)",
+              borderRadius: "8px",
+              marginBottom: "6px",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "35px",
+                fontWeight: "700",
+                textTransform: "uppercase",
+                letterSpacing: "3px",
+                color:
+                  relation === "supports"
+                    ? "#10b981"
+                    : relation === "refutes"
+                      ? "#ef4444"
+                      : "#fbbf24",
+                textShadow: `0 0 10px ${
+                  relation === "supports"
+                    ? "rgba(16, 185, 129, 0.6)"
+                    : relation === "refutes"
+                      ? "rgba(239, 68, 68, 0.6)"
+                      : "rgba(251, 191, 36, 0.6)"
+                }`,
+              }}
+            >
+              {relation === "supports"
+                ? "✅ SUPPORTS"
+                : relation === "refutes"
+                  ? "❌ REFUTES"
+                  : "RELATED"}
+            </span>
+          </div>
+
+          {/* Task Claim (bottom) */}
+          <div
+            style={{
+              flex: "1",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "6px",
+              background: "rgba(99, 102, 241, 0.1)",
+              borderRadius: "8px",
+            }}
+          >
+            <div
+              style={{
+                color: "#a5b4fc",
+                fontSize: "32px",
+                fontWeight: "600",
+                lineHeight: "1.4",
+                textAlign: "center",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                display: "-webkit-box",
+                WebkitLineClamp: 4,
+                WebkitBoxOrient: "vertical",
+                textShadow: `0 0 6px rgba(165, 180, 252, 0.4), 0 1px 2px rgba(0, 0, 0, 0.8)`,
+              }}
+            >
+              {taskClaimText}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Format type name for title bar
   const typeLabel =
     type === "refClaim"
       ? "Ref Claim"
       : type === "taskClaim"
-      ? "Task Claim"
-      : type.charAt(0).toUpperCase() + type.slice(1);
+        ? "Task Claim"
+        : type.charAt(0).toUpperCase() + type.slice(1);
 
   // Get metrics based on node type
   const getMetrics = (): Array<{ value: string | number; label: string }> => {
@@ -136,7 +311,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
       const contentId = data.content_id;
       // Count refClaims from original data by matching content_id
       const claimCount = allNodes.filter(
-        (n) => n.type === "refClaim" && n.content_id === contentId
+        (n) => n.type === "refClaim" && n.content_id === contentId,
       ).length;
       return [
         { value: rating, label: "Rating" },
@@ -165,16 +340,16 @@ const NodeCard: React.FC<NodeCardProps> = ({
     <div
       style={{
         position: "absolute",
-        left: `${pos.x - 62.5}px`,
-        top: `${pos.y - 80}px`,
-        width: "125px",
-        height: "160px",
+        left: `${pos.x - 100}px`,
+        top: `${pos.y - 120}px`,
+        width: "200px",
+        height: "240px",
         background: scheme.bg,
         backdropFilter: "blur(6px)",
         border: `1.5px solid ${scheme.border}`,
         borderRadius: "16px",
         boxShadow: `${scheme.glow}, 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)`,
-        pointerEvents: "none", // Let Cytoscape handle interactions
+        pointerEvents: "none",
         transition: "all 0.3s ease",
         display: "flex",
         flexDirection: "column",
@@ -202,7 +377,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
         style={{
           background: scheme.titleBg,
           backdropFilter: "blur(5px)",
-          padding: "4px 8px",
+          padding: "2px 4px",
           borderTopLeftRadius: "14px",
           borderTopRightRadius: "14px",
           borderBottom: `1px solid ${scheme.border}`,
@@ -211,11 +386,11 @@ const NodeCard: React.FC<NodeCardProps> = ({
         <div
           style={{
             color: scheme.text,
-            fontSize: "8px",
+            fontSize: "27px",
             fontWeight: "700",
             textAlign: "center",
             textTransform: "uppercase",
-            letterSpacing: "0.5px",
+            letterSpacing: "2px",
             textShadow: `0 0 8px ${scheme.text}60, 0 1px 2px rgba(0, 0, 0, 0.9)`,
           }}
         >
@@ -223,54 +398,57 @@ const NodeCard: React.FC<NodeCardProps> = ({
         </div>
       </div>
 
-      {/* Thumbnail Area */}
+      {/* Content area - image + text */}
       <div
         style={{
           flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "4px",
-          position: "relative",
-          zIndex: 0,
-        }}
-      >
-        <img
-          src={thumbnailUrl}
-          alt={data.label}
-          style={{
-            maxWidth: "100%",
-            maxHeight: "100%",
-            objectFit: "contain",
-            filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5))",
-            opacity: 0.9,
-          }}
-          onError={(e) => {
-            // Fallback to placeholder if image fails to load
-            e.currentTarget.style.display = "none";
-          }}
-        />
-      </div>
-
-      {/* Label Text */}
-      <div
-        style={{
-          padding: "4px 8px",
-          color: scheme.text,
-          fontSize: "9px",
-          fontWeight: "600",
-          textAlign: "center",
-          lineHeight: "1.2",
-          maxHeight: "32px",
           overflow: "hidden",
-          textOverflow: "ellipsis",
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-          textShadow: `0 0 6px ${scheme.text}40, 0 1px 2px rgba(0, 0, 0, 0.8)`,
+          pointerEvents: "none",
         }}
       >
-        {data.label}
+        {/* Thumbnail Area - scrolls out of frame */}
+        <div
+          style={{
+            height: "100px",
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "center",
+            padding: "0",
+            position: "relative",
+            zIndex: 0,
+          }}
+        >
+          <img
+            src={thumbnailUrl}
+            alt={data.label}
+            style={{
+              maxWidth: "60%",
+              maxHeight: "100%",
+              objectFit: "contain",
+              filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5))",
+              opacity: 0.9,
+            }}
+            onError={(e) => {
+              // Fallback to placeholder if image fails to load
+              e.currentTarget.style.display = "none";
+            }}
+          />
+        </div>
+
+        {/* Label Text */}
+        <div
+          style={{
+            padding: "5px 8px",
+            color: scheme.text,
+            fontSize: "30px",
+            fontWeight: "600",
+            textAlign: "center",
+            lineHeight: "1.3",
+            textShadow: `0 0 6px ${scheme.text}40, 0 1px 2px rgba(0, 0, 0, 0.8)`,
+          }}
+        >
+          {data.label}
+        </div>
       </div>
 
       {/* Metrics Footer */}
@@ -278,16 +456,16 @@ const NodeCard: React.FC<NodeCardProps> = ({
         style={{
           background: scheme.titleBg,
           backdropFilter: "blur(5px)",
-          padding: "6px 4px",
+          padding: "4px 2px",
           borderTop: `1px solid ${scheme.border}`,
           borderBottomLeftRadius: "14px",
           borderBottomRightRadius: "14px",
           display: "grid",
           gridTemplateColumns: `repeat(${Math.min(
             getMetrics().length,
-            3
+            3,
           )}, 1fr)`,
-          gap: "4px",
+          gap: "2px",
         }}
       >
         {getMetrics().map((metric, idx) => (
@@ -303,11 +481,11 @@ const NodeCard: React.FC<NodeCardProps> = ({
             <span
               style={{
                 display: "block",
-                fontSize: "12px",
-                fontWeight: "200",
+                fontSize: "40px",
+                fontWeight: "400",
                 color: scheme.text,
                 textShadow: `0 0 8px ${scheme.text}60, 0 1px 2px rgba(0, 0, 0, 0.9)`,
-                marginBottom: "2px",
+                marginBottom: "5px",
               }}
             >
               {metric.value}
@@ -315,12 +493,12 @@ const NodeCard: React.FC<NodeCardProps> = ({
             <span
               style={{
                 display: "block",
-                fontSize: "6px",
+                fontSize: "20px",
                 color: scheme.text,
                 textTransform: "uppercase",
-                letterSpacing: "0.5px",
-                fontWeight: "300",
-                opacity: 0.7,
+                letterSpacing: "2px",
+                fontWeight: "500",
+                opacity: 0.9,
               }}
             >
               {metric.label}
@@ -342,6 +520,7 @@ export async function animateMoleculeScene({
   lastRefNode,
   lastRefOriginalPos,
   animate = true,
+  activatedNodeIds,
 }: {
   cy: cytoscape.Core;
   node: NodeSingular;
@@ -354,8 +533,10 @@ export async function animateMoleculeScene({
   lastRefNode: React.MutableRefObject<NodeSingular | null>;
   lastRefOriginalPos: React.MutableRefObject<{ x: number; y: number } | null>;
   animate?: boolean;
+  activatedNodeIds?: Set<string>;
 }) {
-  const contentId = node.data("content_id");
+  try {
+    const contentId = node.data("content_id");
 
   // Step 1: Restore positions if previous reference node was moved
   if (
@@ -370,218 +551,269 @@ export async function animateMoleculeScene({
     await restoreNodePositions(cy, originalNodePositions, animate);
   }
 
-  // Step 2: Get ref and task claims and relevant links
+  // Step 2: Get ref and task claims and create unified claim cards
   const refClaims = nodes.filter(
-    (n) => n.type === "refClaim" && n.content_id === contentId
+    (n) => n.type === "refClaim" && n.content_id === contentId,
   );
   const claimLinks = links.filter((l) =>
-    refClaims.some((rc) => rc.id === l.source)
+    refClaims.some((rc) => rc.id === l.source),
   );
-
-  const claimsWithRelation = claimLinks
-    .map((link) => {
-      const claim = refClaims.find((rc) => rc.id === link.source);
-      return claim
-        ? {
-            claim,
-            relation: link.relation || "related",
-            notes: link.notes || "",
-          }
-        : null;
-    })
-    .filter((x): x is NonNullable<typeof x> => !!x);
 
   const taskClaimMap = new Map(
-    nodes.filter((n) => n.type === "taskClaim").map((n) => [n.id, n])
+    nodes.filter((n) => n.type === "taskClaim").map((n) => [n.id, n]),
   );
 
-  const taskClaimsWithRelation = claimLinks
+  // Create unified claims that combine refClaim + taskClaim
+  const unifiedClaims = claimLinks
     .map((link) => {
-      const claim = taskClaimMap.get(link.target);
-      return claim
-        ? {
-            claim,
-            relation: link.relation || "related",
-            notes: link.notes || "",
-          }
-        : null;
+      const refClaim = refClaims.find((rc) => rc.id === link.source);
+      const taskClaim = taskClaimMap.get(link.target);
+
+      if (!refClaim || !taskClaim) return null;
+
+      return {
+        id: `unified-${refClaim.id}-${taskClaim.id}`,
+        type: "unifiedClaim",
+        label: `${refClaim.label} → ${taskClaim.label}`,
+        refClaimLabel: refClaim.label,
+        taskClaimLabel: taskClaim.label,
+        relation: link.relation || "related",
+        notes: link.notes || "",
+        content_id: contentId,
+      };
     })
     .filter((x): x is NonNullable<typeof x> => !!x);
 
-  if (refClaims.length === 0 && taskClaimsWithRelation.length === 0) return;
+  if (unifiedClaims.length === 0) return;
 
-  // Step 3: Scatter away from node
+  // Step 3: Scatter away from node using Corridor Arc pattern
   lastRefOriginalPos.current = { ...node.position() };
   lastRefNode.current = node;
 
-  await fartScatterAwayFromRef({
+  await corridorArcScatter({
     cy,
     refNode: node,
     taskNode,
-    radius: 300,
-    radiusStep: 40,
-    dipRange: 5,
     animate,
   });
 
-  // Step 4: Fan out claims
-  const refClaimElements = await fanOutClaims({
-    cy,
-    claimsWithRelation,
-    sourceNode: node,
-    targetNode: taskNode,
-    animate,
+  // Step 4: Fan out unified claim cards along the line between task and reference
+  // Position them closer to the reference, spread perpendicular to the connection line
+  const refPos = node.position();
+  const taskPos = taskNode.position();
+
+  // Calculate angle from task to reference
+  const dx = refPos.x - taskPos.x;
+  const dy = refPos.y - taskPos.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  const angleToRef = Math.atan2(dy, dx);
+
+  // Position claims 60% of the way from task to reference
+  // This puts them outside the scatter radius (300-400px) but close to the reference
+  const centerDistance = distance * 0.65;
+  const centerX = taskPos.x + centerDistance * Math.cos(angleToRef);
+  const centerY = taskPos.y + centerDistance * Math.sin(angleToRef);
+
+  // Spread claims perpendicular to the task-reference line
+  // Use larger spacing to avoid overlaps (cards are now 320px wide)
+  const spreadDistance = 370; // Distance between cards
+  const perpAngle = angleToRef + Math.PI / 2; // Perpendicular angle
+
+  const claimElements: cytoscape.ElementDefinition[] = [];
+
+  unifiedClaims.forEach((claim, i) => {
+    // Center the spread around the midpoint
+    const offset = (i - (unifiedClaims.length - 1) / 2) * spreadDistance;
+
+    const x = centerX + offset * Math.cos(perpAngle);
+    const y = centerY + offset * Math.sin(perpAngle);
+
+    // Add the unified claim node
+    const claimNode: cytoscape.ElementDefinition = {
+      data: claim,
+      position: { x: centerX, y: centerY }, // Start at center point
+    };
+
+    cy.add(claimNode);
+    claimElements.push(claimNode);
+
+    // Add edge from task to unified claim
+    const taskEdge: cytoscape.ElementDefinition = {
+      data: {
+        id: `edge-task-${claim.id}`,
+        source: taskNode.id(),
+        target: claim.id,
+        relation: claim.relation,
+      },
+    };
+    cy.add(taskEdge);
+
+    // Add edge from unified claim to reference
+    const refEdge: cytoscape.ElementDefinition = {
+      data: {
+        id: `edge-${claim.id}-ref`,
+        source: claim.id,
+        target: node.id(),
+        relation: claim.relation,
+      },
+    };
+    cy.add(refEdge);
+
+    // Animate to final position
+    const cyNode = cy.getElementById(claim.id);
+    if (animate) {
+      cyNode.animate(
+        { position: { x, y } },
+        { duration: 200, easing: "ease-out" },
+      );
+    } else {
+      cyNode.position({ x, y });
+    }
   });
 
-  const taskClaimElements = await fanOutClaims({
-    cy,
-    claimsWithRelation: taskClaimsWithRelation,
-    sourceNode: taskNode,
-    targetNode: node,
-    animate,
-  });
+    // Single fit at the end, no double animation
+    if (animate) {
+      cy.animate({
+        fit: { eles: cy.elements(), padding: 30 },
+        duration: 250,
+      });
+    } else {
+      cy.fit(cy.elements(), 30);
+    }
 
-  // Step 5: Add edges
-  const addedEdges = claimLinks.map((link) => ({
-    data: {
-      ...link,
-      relation: link.relation || "related",
-    },
-  }));
-
-  cy.add([...refClaimElements, ...taskClaimElements, ...addedEdges]);
-
-  cy.animate({
-    fit: { eles: cy.elements(), padding: 30 },
-    duration: 500,
-  });
-
-  if (animate) {
-    await cy.promiseOn("viewport");
-  } else {
-    cy.fit(cy.elements(), 30);
-  }
-  // Step 6: Fit view
-  if (animate) {
-    await new Promise((res) => setTimeout(res, 400));
-    cy.animate({ fit: { eles: cy.elements(), padding: 30 }, duration: 300 });
-  } else {
-    cy.fit(cy.elements(), 30);
+    // Restart throbbing for activated nodes after animation
+    if (activatedNodeIds) {
+      restartAllThrobs(cy, activatedNodeIds);
+    }
+  } catch (error) {
+    console.error("animateMoleculeScene error:", error);
+    // Try to restore state gracefully
+    if (activatedNodeIds) {
+      restartAllThrobs(cy, activatedNodeIds);
+    }
   }
 }
 
 function animateNode(
   node: NodeSingular,
   options: { position: { x: number; y: number } },
-  duration = 400
+  duration = 200,
 ): Promise<void> {
   return new Promise((resolve) => {
+    // Safety timeout in case animation doesn't complete
+    const timeout = setTimeout(() => {
+      console.warn("Animation timeout for node:", node.id());
+      resolve();
+    }, duration + 500);
+
     node.animate(options, {
       duration,
-      complete: () => resolve(),
+      easing: "ease-out",
+      complete: () => {
+        clearTimeout(timeout);
+        resolve();
+      },
     });
   });
 }
 function animateNodes(
   nodes: cytoscape.SingularElementArgument[],
   optionsList: { position: { x: number; y: number } }[],
-  duration = 500
+  duration = 250,
 ): Promise<void> {
   return new Promise((resolve) => {
+    if (nodes.length === 0) {
+      resolve();
+      return;
+    }
+
+    // Safety timeout in case animations don't complete
+    const timeout = setTimeout(() => {
+      console.warn("Animation timeout for", nodes.length, "nodes");
+      resolve();
+    }, duration + 1000);
+
     let finished = 0;
     nodes.forEach((node, i) => {
       node.animate(optionsList[i], {
         duration,
-        easing: "ease-in-out",
+        easing: "ease-out",
         complete: () => {
           finished++;
-          if (finished === nodes.length) resolve();
+          if (finished === nodes.length) {
+            clearTimeout(timeout);
+            resolve();
+          }
         },
       });
     });
-    if (nodes.length === 0) resolve();
   });
 }
 
-async function fartScatterAwayFromRef({
+async function corridorArcScatter({
   cy,
   refNode,
   taskNode,
-  radius = 300,
-  radiusStep = 40,
-  dipRange = 5,
   animate = true,
 }: {
   cy: cytoscape.Core;
   refNode: NodeSingular;
   taskNode: NodeSingular;
-  radius?: number;
-  radiusStep?: number;
-  dipRange?: number;
   animate?: boolean;
 }): Promise<void> {
-  const center = taskNode.position();
-  const refPos = refNode.position();
+  try {
+    const center = taskNode.position();
+    const refPos = refNode.position();
 
-  const dx = refPos.x - center.x;
-  const dy = refPos.y - center.y;
-  const angleToRef = Math.atan2(dy, dx);
+    // Calculate angle from center to clicked reference
+    const dx = refPos.x - center.x;
+    const dy = refPos.y - center.y;
+    const angleToRef = Math.atan2(dy, dx);
 
-  const arcSpan = (3 * Math.PI) / 2;
-  const startAngle = angleToRef + Math.PI - arcSpan / 2;
+    // Opposite angle - where we'll put the arc
+    const oppositeAngle = angleToRef + Math.PI;
 
-  const nodesToScatter = cy
-    .nodes()
-    .filter((node) => {
-      const id = node.id();
-      const type = node.data("type");
-      return (
-        id !== refNode.id() &&
-        id !== taskNode.id() &&
-        ["reference", "author", "publisher"].includes(type)
-      );
-    })
-    .toArray() as cytoscape.NodeSingular[]; // ⬅️ type assertion here
+    // Create a wide semicircular arc on the opposite side
+    const arcSpan = Math.PI * 1.1; // 198 degrees - wide semicircle
+    const arcStartAngle = oppositeAngle - arcSpan / 2;
 
-  const centerIndex = (nodesToScatter.length - 1) / 2;
+    const nodesToScatter = cy
+      .nodes()
+      .filter((node) => {
+        const id = node.id();
+        const type = node.data("type");
+        return (
+          id !== refNode.id() &&
+          id !== taskNode.id() &&
+          ["reference", "author", "publisher"].includes(type)
+        );
+      })
+      .toArray() as cytoscape.NodeSingular[];
 
-  function valleyCurve(i: number): number {
-    const dist = Math.abs(i - centerIndex);
-    if (dist <= dipRange) {
-      return dist;
-    } else {
-      const decay = dist - dipRange;
-      return dipRange - decay * 0.7;
-    }
-  }
+    if (nodesToScatter.length === 0) return;
 
-  const optionsList = nodesToScatter.map((node, i) => {
-    const t = i / Math.max(1, nodesToScatter.length - 1);
-    const angle = startAngle + t * arcSpan;
+    // Distribute nodes along the arc with varying radius for depth/interest
+    const promises = nodesToScatter.map((node, i) => {
+      const t = i / Math.max(1, nodesToScatter.length - 1);
+      const angle = arcStartAngle + t * arcSpan;
 
-    const rOffset = Math.max(0, valleyCurve(i)) * radiusStep;
-    const effectiveRadius = radius + rOffset;
+      // Create a gentle wave pattern in the radius for visual interest
+      const waveOffset = Math.sin(t * Math.PI * 2) * 120;
+      const baseRadius = 650 + Math.abs(waveOffset); // Adjusted to match Vogel spiral scale
 
-    const newX = center.x + effectiveRadius * Math.cos(angle);
-    const newY = center.y + effectiveRadius * Math.sin(angle);
+      const newX = center.x + baseRadius * Math.cos(angle);
+      const newY = center.y + baseRadius * Math.sin(angle);
 
-    return { node, position: { x: newX, y: newY } };
-  });
-
-  const promises = optionsList.map(({ node, position }) =>
-    animate
-      ? animateNode(node, { position }, 500)
-      : (node.position(position), Promise.resolve())
-  );
-
-  Promise.all(
-    nodesToScatter.map((node, i) => {
-      const pos = optionsList[i].position;
       return animate
-        ? animateNode(node, { position: pos }, 500)
-        : (node.position(pos), Promise.resolve());
-    })
-  );
+        ? animateNode(node, { position: { x: newX, y: newY } }, 200)
+        : (node.position({ x: newX, y: newY }), Promise.resolve());
+    });
+
+    await Promise.all(promises);
+  } catch (error) {
+    console.error("corridorArcScatter error:", error);
+    // Continue gracefully - don't block the animation pipeline
+  }
 }
 
 async function fanOutClaims({
@@ -660,7 +892,7 @@ async function fanOutClaims({
     claimNode.position(arcCenter);
 
     if (animate) {
-      return animateNode(claimNode, { position: { x, y } }, 400);
+      return animateNode(claimNode, { position: { x, y } }, 200);
     } else {
       claimNode.position({ x, y });
       return Promise.resolve();
@@ -675,7 +907,7 @@ function bellValley(
   i: number,
   center: number,
   maxHeight: number,
-  range: number
+  range: number,
 ) {
   const dist = Math.abs(i - center);
   if (dist <= range) {
@@ -726,12 +958,12 @@ function smartRadialPush({
     const newY = center.y + r * Math.sin(angle);
 
     console.log(
-      `🔄 Smart-pushing ${id} to (${newX.toFixed(1)}, ${newY.toFixed(1)})`
+      `🔄 Smart-pushing ${id} to (${newX.toFixed(1)}, ${newY.toFixed(1)})`,
     );
 
     node.animate(
       { position: { x: newX, y: newY } },
-      { duration: 400, easing: "ease-in-out" }
+      { duration: 200, easing: "ease-out" },
     );
   });
 }
@@ -739,7 +971,7 @@ function pushAwayOtherNodes(
   cy: cytoscape.Core,
   center: { x: number; y: number },
   excludeIds: string[],
-  distance: number = 300
+  distance: number = 300,
 ) {
   cy.nodes().forEach((node) => {
     const id = node.id();
@@ -758,12 +990,12 @@ function pushAwayOtherNodes(
       const newY = pos.y + normY * distance;
 
       console.log(
-        `🧼 Pushing ${type} node ${id} from (${pos.x}, ${pos.y}) to (${newX}, ${newY})`
+        `🧼 Pushing ${type} node ${id} from (${pos.x}, ${pos.y}) to (${newX}, ${newY})`,
       );
 
       node.animate(
         { position: { x: newX, y: newY } },
-        { duration: 400, easing: "ease-in-out" }
+        { duration: 400, easing: "ease-in-out" },
       );
     }
   });
@@ -771,7 +1003,7 @@ function pushAwayOtherNodes(
 
 function saveNodePositions(
   cy: cytoscape.Core,
-  store: React.MutableRefObject<any>
+  store: React.MutableRefObject<any>,
 ) {
   store.current = {};
   cy.nodes().forEach((node) => {
@@ -786,34 +1018,50 @@ function saveNodePositions(
 async function restoreNodePositions(
   cy: cytoscape.Core,
   store: React.MutableRefObject<Record<string, cytoscape.Position>>,
-  animate: boolean = true
+  animate: boolean = true,
 ): Promise<void> {
-  const promises: Promise<void>[] = [];
+  try {
+    const promises: Promise<void>[] = [];
 
-  Object.entries(store.current).forEach(([id, pos]) => {
-    const coll = cy.getElementById(id);
-    if (coll.length > 0 && coll.isNode()) {
-      const nodeToRestore = coll.first() as NodeSingular;
-      if (animate) {
-        promises.push(animateNode(nodeToRestore, { position: pos }, 400));
-      } else {
-        nodeToRestore.position(pos);
-        promises.push(Promise.resolve());
+    Object.entries(store.current).forEach(([id, pos]) => {
+      const coll = cy.getElementById(id);
+      if (coll.length > 0 && coll.isNode()) {
+        const nodeToRestore = coll.first() as NodeSingular;
+        if (animate) {
+          promises.push(animateNode(nodeToRestore, { position: pos }, 200));
+        } else {
+          nodeToRestore.position(pos);
+          promises.push(Promise.resolve());
+        }
       }
-    }
-  });
+    });
 
-  await Promise.all(promises);
+    await Promise.all(promises);
+  } catch (error) {
+    console.error("restoreNodePositions error:", error);
+    // Continue gracefully
+  }
 }
 
 // ---- CytoscapeThrobbage™ ----
 function startThrobbing(node: any) {
+  // Clear any existing throb first
+  const existingInterval = node.data("throbInterval");
+  if (existingInterval) {
+    clearInterval(existingInterval);
+  }
+
   let growing = true;
   const minWidth = node.width();
   const minHeight = node.height();
-  const maxWidth = minWidth * 1.03;
-  const maxHeight = minHeight * 1.03;
+  const maxWidth = minWidth * 1.07;
+  const maxHeight = minHeight * 1.07;
   let throbInterval = setInterval(() => {
+    // Check if node still exists before animating
+    if (!node || node.removed()) {
+      clearInterval(throbInterval);
+      return;
+    }
     node.animate(
       {
         style: {
@@ -826,10 +1074,20 @@ function startThrobbing(node: any) {
         complete: () => {
           growing = !growing;
         },
-      }
+      },
     );
   }, 420);
   node.data("throbInterval", throbInterval);
+  node.addClass("throb");
+}
+
+// Restart throbbing for all activated nodes
+function restartAllThrobs(cy: cytoscape.Core, activatedNodeIds: Set<string>) {
+  cy.nodes().forEach((node) => {
+    if (activatedNodeIds.has(node.id()) && !node.data("throbInterval")) {
+      startThrobbing(node);
+    }
+  });
 }
 // All other unchanged code is retained as-is
 
@@ -852,6 +1110,13 @@ interface CytoscapeMoleculeProps {
     relation?: "supports" | "refutes" | "related";
     notes?: string;
     value?: number;
+    claimAggregate?: {
+      supportsCount: number;
+      refutesCount: number;
+      supportsPercent: number;
+      refutesPercent: number;
+      total: number;
+    };
   }[];
   onNodeClick?: (node: GraphNode) => void;
   centerNodeId?: string;
@@ -867,10 +1132,13 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 }) => {
   const cyRef = useRef<HTMLDivElement>(null);
   const cyInstance = useRef<cytoscape.Core | null>(null);
+  const activatedNodeIdsRef = useRef<Set<string>>(new Set());
   const [selectedClaim, setSelectedClaim] = useState<null | {
     id: string;
     label: string;
+    taskClaimLabel?: string;
     relation: string;
+    notes?: string;
   }>(null);
   const [selectedEdge, setSelectedEdge] = useState<null | {
     sourceLabel: string;
@@ -885,16 +1153,16 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     y: number;
   } | null>(null);
   const [selectedNodeData, setSelectedNodeData] = useState<GraphNode | null>(
-    null
+    null,
   );
   const toast = useToast();
 
   // HUD toggles (visible on desktop, hidden on mobile)
   const [showMobileHUD, setShowMobileHUD] = useState(
-    typeof window !== "undefined" ? window.innerWidth >= 768 : true
+    typeof window !== "undefined" ? window.innerWidth >= 768 : true,
   );
   const [showLegend, setShowLegend] = useState(
-    typeof window !== "undefined" ? window.innerWidth >= 768 : true
+    typeof window !== "undefined" ? window.innerWidth >= 768 : true,
   );
 
   const lastRefNode = useRef<NodeSingular | null>(null);
@@ -905,10 +1173,15 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
   // State for overlay rendering
   const [overlayNodes, setOverlayNodes] = useState<cytoscape.NodeSingular[]>(
-    []
+    [],
   );
   const [containerRect, setContainerRect] = useState<DOMRect | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [hoveredNodePopup, setHoveredNodePopup] = useState<{
+    label: string;
+    x: number;
+    y: number;
+  } | null>(null);
 
   useEffect(() => {
     console.log("🧪 CytoscapeMolecule mount — received links:", links);
@@ -922,10 +1195,67 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       nodes.find((n) => n.type === "task");
 
     const baseNodes = nodes.filter((n) =>
-      ["task", "reference", "author", "publisher"].includes(n.type)
+      ["task", "reference", "author", "publisher"].includes(n.type),
     );
 
-    const positionedNodes = baseNodes.map((n, i) => {
+    // Nautilus spiral parameters - Gentle exponential growth for clean spiral
+    const refCount = baseNodes.filter(
+      (node) => node.type === "reference",
+    ).length;
+
+    const clamp = (min: number, max: number, value: number) =>
+      Math.max(min, Math.min(max, value));
+
+    // Nautilus uses exponential growth: radius = a * e^(b * theta)
+    // Cards are 200px wide
+    const spiralStart = 400; // Starting radius
+    const growthFactor = clamp(0.05, 0.12, 0.12 - Math.log(refCount) * 0.015); // Very gentle growth
+    const angleStep = clamp(0.25, 0.4, 0.4 - Math.log(refCount) * 0.02); // Tighter angle steps
+
+    // Calculate claim aggregate for each reference (for edge coloring)
+    const getClaimAggregate = (
+      refId: string,
+    ): { supportsCount: number; refutesCount: number; total: number } => {
+      const ref = baseNodes.find((b) => b.id === refId);
+      if (!ref) return { supportsCount: 0, refutesCount: 0, total: 0 };
+
+      const refClaims = nodes.filter(
+        (n) => n.type === "refClaim" && n.content_id === ref.content_id,
+      );
+
+      if (refClaims.length === 0)
+        return { supportsCount: 0, refutesCount: 0, total: 0 };
+
+      let supportsCount = 0;
+      let refutesCount = 0;
+
+      refClaims.forEach((claim) => {
+        const claimEdge = links.find(
+          (l) => l.source === claim.id || l.target === claim.id,
+        );
+        if (claimEdge?.relation === "supports") supportsCount++;
+        else if (claimEdge?.relation === "refutes") refutesCount++;
+      });
+
+      return {
+        supportsCount,
+        refutesCount,
+        total: supportsCount + refutesCount,
+      };
+    };
+
+    // Store claim aggregates for each reference (for edge coloring)
+    const refClaimAggregates = new Map<
+      string,
+      { supportsCount: number; refutesCount: number; total: number }
+    >();
+    baseNodes
+      .filter((n) => n.type === "reference")
+      .forEach((ref) => {
+        refClaimAggregates.set(ref.id, getClaimAggregate(ref.id));
+      });
+
+    const positionedNodes = baseNodes.map((n) => {
       if (n.id === centerNode?.id) {
         return {
           data: { ...n },
@@ -933,30 +1263,40 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         };
       }
 
-      const refCount = baseNodes.filter(
-        (node) => node.type === "reference"
-      ).length;
       const refIndex = baseNodes.findIndex((b) => b.id === n.id);
 
-      const clamp = (min: number, max: number, value: number) =>
-        Math.max(min, Math.min(max, value));
-      const angleMultiplier = clamp(0.1, 0.6, 0.7 - Math.log(refCount) * 0.07);
-      const spiralGrowth = clamp(10, 40, 60 - Math.log(refCount) * 10);
-      const spiralStart = 150;
-
-      const angleStep = Math.PI / 4;
-      const angle = angleMultiplier * refIndex * angleStep;
-      const radius = spiralStart + spiralGrowth * angle;
+      // True nautilus spiral formula: radius = a * e^(b * theta)
+      // This creates the characteristic exponential spiral of a nautilus shell
+      const angle = refIndex * angleStep;
+      const radius = spiralStart * Math.exp(growthFactor * angle);
 
       let x = centerX + radius * Math.cos(angle);
       let y = centerY + radius * Math.sin(angle);
 
+      // AUTHORS: Far left edge - OUTSIDE the spiral
       if (n.type === "author") {
-        x = centerX - 800;
-        y = centerY + refIndex * 100;
-      } else if (n.type === "publisher") {
-        x = centerX + 800;
-        y = centerY + refIndex * 100;
+        const authorIndex = baseNodes
+          .filter((node) => node.type === "author")
+          .findIndex((a) => a.id === n.id);
+        x = centerX - 1200; // Further left
+        y =
+          centerY +
+          (authorIndex -
+            baseNodes.filter((node) => node.type === "author").length / 2) *
+            150;
+      }
+
+      // PUBLISHERS: Far right edge - OUTSIDE the spiral
+      if (n.type === "publisher") {
+        const publisherIndex = baseNodes
+          .filter((node) => node.type === "publisher")
+          .findIndex((p) => p.id === n.id);
+        x = centerX + 1200; // Further right
+        y =
+          centerY +
+          (publisherIndex -
+            baseNodes.filter((node) => node.type === "publisher").length / 2) *
+            150;
       }
 
       return {
@@ -968,10 +1308,51 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     const initialEdges = links
       .filter((l) =>
         positionedNodes.some(
-          (n) => n.data.id === l.source || n.data.id === l.target
-        )
+          (n) => n.data.id === l.source || n.data.id === l.target,
+        ),
       )
-      .map((l) => ({ data: l }));
+      .map((l) => {
+        // Color edges based on claim aggregates for references
+        const sourceNode = baseNodes.find((n) => n.id === l.source);
+        const targetNode = baseNodes.find((n) => n.id === l.target);
+
+        let edgeData = { ...l };
+
+        // If this edge connects to a reference, check claim aggregates
+        const refNode =
+          sourceNode?.type === "reference"
+            ? sourceNode
+            : targetNode?.type === "reference"
+              ? targetNode
+              : null;
+
+        if (refNode) {
+          const aggregate = refClaimAggregates.get(refNode.id);
+          if (aggregate && aggregate.total > 0) {
+            // Calculate percentage
+            const supportsPercent = Math.round(
+              (aggregate.supportsCount / aggregate.total) * 100,
+            );
+            const refutesPercent = Math.round(
+              (aggregate.refutesCount / aggregate.total) * 100,
+            );
+
+            // Store aggregate info on edge
+            edgeData = {
+              ...edgeData,
+              claimAggregate: {
+                supportsCount: aggregate.supportsCount,
+                refutesCount: aggregate.refutesCount,
+                supportsPercent,
+                refutesPercent,
+                total: aggregate.total,
+              },
+            };
+          }
+        }
+
+        return { data: edgeData };
+      });
 
     const cy: cytoscape.Core = cytoscape({
       container: cyRef.current,
@@ -982,8 +1363,14 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           selector: "node",
           style: {
             shape: "round-rectangle",
-            width: 125,
-            height: 160,
+            width: (ele: any) => {
+              const type = ele.data("type");
+              return type === "unifiedClaim" ? 260 : 200; // Half of doubled size
+            },
+            height: (ele: any) => {
+              const type = ele.data("type");
+              return type === "unifiedClaim" ? 320 : 240; // Half of doubled size
+            },
             label: "", // No label - it's in the card now
             "text-wrap": "wrap",
             "text-max-width": "110",
@@ -998,18 +1385,18 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             "text-background-opacity": 0,
             "background-color": "rgba(0, 0, 0, 0)", // Completely transparent box
             "background-opacity": 0,
-            "border-width": 8,
+            "border-width": 18,
             // @ts-ignore - border-radius works but isn't in type definitions
             "corner-radius": 16, // Match the overlay card border radius
             "border-color": (ele: any) => {
               const type = ele.data("type");
-              // Subtle colored outline frames - appear when throbbing
-              if (type === "task") return "#6365f1";
-              if (type === "reference") return "#10b981";
-              if (type === "refClaim" || type === "taskClaim") return "#f97316";
-              if (type === "author") return "#fbb1a0";
-              if (type === "publisher") return "#81ecec";
-              return "#ffffff";
+              // Minority Report theme colors - matching mr-card colors
+              if (type === "task") return "#00a2ff"; // mr-blue
+              if (type === "reference") return "#4ade80"; // mr-green
+              if (type === "unifiedClaim") return "#fbbf24"; // mr-yellow
+              if (type === "author") return "#a78bfa"; // mr-purple
+              if (type === "publisher") return "#00a2ff"; // mr-blue
+              return "#00a2ff";
             },
             "border-opacity": 0.4,
           },
@@ -1021,24 +1408,36 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               const val = Math.abs(ele.data("value") || 0);
               return 2 + val * 4;
             },
-            label: (ele: EdgeSingular) => {
-              const rel = ele.data("relation");
-              const val = ele.data("value");
-              if (!val) return "";
-              const pct = Math.round(Math.abs(val) * 100);
-              return `${rel}: ${pct}%`;
-            },
+            label: "", // Remove default label
             "text-rotation": "autorotate",
             "text-margin-y": -10,
             "font-size": 9,
             color: "#eee",
             "line-color": (ele: any) => {
+              const aggregate = ele.data("claimAggregate");
+
+              if (aggregate && aggregate.total > 0) {
+                // Color based on claim aggregate - Minority Report theme
+                const ratio =
+                  (aggregate.supportsCount - aggregate.refutesCount) /
+                  aggregate.total;
+
+                if (ratio > 0.3) {
+                  return "#4ade80"; // mr-green for mostly supports
+                } else if (ratio < -0.3) {
+                  return "#ef4444"; // mr-red for mostly refutes
+                } else {
+                  return "#fbbf24"; // mr-yellow for balanced
+                }
+              }
+
+              // Default colors based on relation - Minority Report theme
               const rel = ele.data("relation");
               return rel === "supports"
-                ? "#0f6"
+                ? "#4ade80" // mr-green
                 : rel === "refutes"
-                ? "#f33"
-                : "#39f";
+                  ? "#ef4444" // mr-red
+                  : "#00a2ff"; // mr-blue
             },
             "target-arrow-color": "#aaa",
             "target-arrow-shape": "triangle",
@@ -1051,15 +1450,17 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     });
     // @ts-ignore
     window.cy = cy;
-    const activatedContentIds = new Set(
+    // Mark nodes that have unified claims
+    const contentIdsWithClaims = new Set(
       nodes
-        .filter((n) => n.type === "refClaim" || n.type === "taskClaim")
+        .filter((n) => n.type === "refClaim")
         .map((n) => n.content_id)
-        .filter(Boolean)
+        .filter(Boolean),
     );
     const activatedNodeIds = new Set(
-      [...activatedContentIds].map((cid) => `conte-${cid}`)
+      [...contentIdsWithClaims].map((cid) => `conte-${cid}`),
     );
+    activatedNodeIdsRef.current = activatedNodeIds;
 
     // Function to update overlay positions and zoom
     const updateOverlays = () => {
@@ -1090,14 +1491,33 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
     cy.on("mouseover", "edge", (event) => {
       const edge = event.target;
-      const relation = edge.data("relation") || "related";
-      const value = edge.data("value") || 0;
-      const label =
-        (relation === "supports"
-          ? "✅ Supports"
-          : relation === "refutes"
-          ? "❌ Refutes"
-          : "Related") + `: ${Math.round(Math.abs(value) * 100)}%`;
+      const aggregate = edge.data("claimAggregate");
+
+      let label = "";
+
+      if (aggregate && aggregate.total > 0) {
+        // Show claim aggregate
+        const supportsPercent = aggregate.supportsPercent;
+        const refutesPercent = aggregate.refutesPercent;
+
+        if (supportsPercent > refutesPercent) {
+          label = `✅ Supports ${supportsPercent}%`;
+        } else if (refutesPercent > supportsPercent) {
+          label = `❌ Refutes ${refutesPercent}%`;
+        } else {
+          label = `⚖️ Balanced (${supportsPercent}% / ${refutesPercent}%)`;
+        }
+      } else {
+        // Fallback to original edge data
+        const relation = edge.data("relation") || "related";
+        const value = edge.data("value") || 0;
+        label =
+          (relation === "supports"
+            ? "✅ Supports"
+            : relation === "refutes"
+              ? "❌ Refutes"
+              : "Related") + `: ${Math.round(Math.abs(value) * 100)}%`;
+      }
 
       const { x, y } = event.renderedPosition;
       setHoveredEdgeTooltip({ label, x, y });
@@ -1106,6 +1526,19 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     cy.on("mouseout", "edge", () => {
       setHoveredEdgeTooltip(null);
     });
+
+    // Node hover events for text popup
+    cy.on("mouseover", "node", (event) => {
+      const node = event.target;
+      const label = node.data("label") || "";
+      const { x, y } = event.renderedPosition;
+      setHoveredNodePopup({ label, x, y });
+    });
+
+    cy.on("mouseout", "node", () => {
+      setHoveredNodePopup(null);
+    });
+
     // --- Touch detection ---
     const isTouchDevice =
       (typeof window !== "undefined" && "ontouchstart" in window) ||
@@ -1154,7 +1587,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             }
             // Otherwise let default scroll behavior pass through
           },
-          { passive: false }
+          { passive: false },
         );
       }
       cy.animate({
@@ -1162,8 +1595,8 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           eles: cy.elements(),
           padding: 15,
         },
-        duration: 500,
-        easing: "ease-in-out",
+        duration: 250,
+        easing: "ease-out",
       });
     });
 
@@ -1194,33 +1627,27 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       // 📦 Send clicked node to external handler
       if (onNodeClick) onNodeClick(node.data());
       setSelectedNodeData(node.data());
-      // 🧠 Handle claim node click
-      if (type === "refClaim" || type === "taskClaim") {
-        const claimId = node.id();
-        const connectedEdge = cy
-          .edges()
-          .filter(
-            (edge) =>
-              edge.source().id() === claimId || edge.target().id() === claimId
-          )
-          .toArray()
-          .find((e) => ["supports", "refutes"].includes(e.data("relation")));
-        const relation = connectedEdge?.data("relation") || "related";
+      // 🧠 Handle unified claim node click
+      if (type === "unifiedClaim") {
+        const relation = node.data("relation") || "related";
+        const refClaimLabel = node.data("refClaimLabel") || "";
+        const taskClaimLabel = node.data("taskClaimLabel") || "";
+        const notes = node.data("notes") || "";
 
         setSelectedClaim({
-          id: claimId,
-          label: node.data("label"),
+          id: node.id(),
+          label: `${refClaimLabel}`,
+          taskClaimLabel: taskClaimLabel,
           relation: relation,
+          notes: notes,
         });
         return;
       }
 
-      // 🧽 Remove existing claims
-      const animate = true; // or true, depending on what you want
-      const claimNodes = cy.nodes('node[type *= "Claim"]');
-      const claimEdges = claimNodes.connectedEdges();
+      // 🧽 Remove existing unified claims
+      const animate = true;
+      const claimNodes = cy.nodes('[type = "unifiedClaim"]');
       cy.batch(() => {
-        claimEdges.remove();
         claimNodes.remove();
       });
 
@@ -1235,7 +1662,8 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       if (Object.keys(originalNodePositions.current).length > 0) {
         restoreNodePositions(cy, originalNodePositions, animate);
       }
-      // 📍 Handle reference click
+
+      // 📍 Handle reference click (show claims)
       if (type === "reference") {
         (async () => {
           await animateMoleculeScene({
@@ -1251,6 +1679,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             lastRefNode,
             lastRefOriginalPos,
             animate,
+            activatedNodeIds: activatedNodeIdsRef.current,
           });
         })();
       }
@@ -1263,12 +1692,25 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       const value = edge.data("value") ?? 0;
       const notes = edge.data("notes") || "";
 
-      const sourceNode = cy.getElementById(edge.data("source")).data();
-      const targetNode = cy.getElementById(edge.data("target")).data();
+      const sourceNode = cy.getElementById(edge.data("source"));
+      const targetNode = cy.getElementById(edge.data("target"));
+
+      const sourceData = sourceNode.data();
+      const targetData = targetNode.data();
+
+      // For unifiedClaim edges, use the refClaimLabel and taskClaimLabel
+      const sourceLabel =
+        sourceData.type === "unifiedClaim"
+          ? sourceData.refClaimLabel || sourceData.label
+          : sourceData.label;
+      const targetLabel =
+        targetData.type === "unifiedClaim"
+          ? targetData.taskClaimLabel || targetData.label
+          : targetData.label;
 
       setSelectedEdge({
-        sourceLabel: sourceNode.label,
-        targetLabel: targetNode.label,
+        sourceLabel,
+        targetLabel,
         relation: rel,
         value,
         notes,
@@ -1285,18 +1727,217 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     };
   }, [nodes, links]);
 
-  // helpers for mobile HUD buttons (no extra listeners)
-  const fitAll = () => {
+  // Reframe: rebuild graph with clicked node in center
+  const reframe = async () => {
     const cy = cyInstance.current;
-    if (!cy) return;
-    cy.fit(cy.elements(), 28);
+    if (!cy || !selectedNodeData) {
+      // If no node selected, just fit all
+      if (cy) cy.fit(cy.elements(), 28);
+      return;
+    }
+
+    const selectedId = selectedNodeData.id;
+    const selectedType = selectedNodeData.type;
+
+    // Skip for unified claims
+    if (selectedType === "unifiedClaim") {
+      toast({
+        title: "Cannot reframe",
+        description: "Reframe is not available for claim cards",
+        status: "warning",
+        duration: 2000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    // Extract entity ID based on type
+    let entityId: string | number = "";
+    let entityType = selectedType;
+
+    if (selectedType === "task" || selectedType === "reference") {
+      entityId =
+        selectedNodeData.content_id || selectedId.replace("conte-", "");
+      entityType = selectedType === "task" ? "task" : "reference";
+    } else if (selectedType === "author") {
+      entityId = selectedNodeData.author_id || selectedId.replace("autho-", "");
+      entityType = "author";
+    } else if (selectedType === "publisher") {
+      entityId =
+        selectedNodeData.publisher_id || selectedId.replace("publi-", "");
+      entityType = "publisher";
+    }
+
+    try {
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
+      const response = await fetch(
+        `${API_BASE_URL}/api/get-graph-data?entity=${entityId}&entityType=${entityType}`,
+      );
+
+      if (!response.ok) throw new Error("Failed to fetch graph data");
+
+      const data = await response.json();
+      const { nodes: newNodes, links: newLinks } = data;
+
+      // Clear existing graph
+      cy.elements().remove();
+
+      // Position new nodes with clicked node in center
+      const centerX = 500;
+      const centerY = 350;
+
+      // Find the clicked node in new data
+      const centerNode = newNodes.find((n: any) => n.id === selectedId);
+
+      // Separate nodes by type
+      const references = newNodes.filter((n: any) => n.type === "reference");
+      const authors = newNodes.filter((n: any) => n.type === "author");
+      const publishers = newNodes.filter((n: any) => n.type === "publisher");
+      const tasks = newNodes.filter((n: any) => n.type === "task");
+
+      // Nautilus spiral parameters - gentle growth matching initial layout
+      const refCount = references.length;
+      const clamp = (min: number, max: number, value: number) =>
+        Math.max(min, Math.min(max, value));
+      const spiralStart = 400; // Match initial layout
+      const growthFactor = clamp(0.05, 0.12, 0.12 - Math.log(refCount) * 0.015);
+      const angleStep = clamp(0.25, 0.4, 0.4 - Math.log(refCount) * 0.02);
+
+      const positionedNodes: any[] = [];
+
+      // Position center node
+      if (centerNode) {
+        positionedNodes.push({
+          data: centerNode,
+          position: { x: centerX, y: centerY },
+        });
+      }
+
+      // Position other nodes based on type
+      newNodes.forEach((n: any) => {
+        if (n.id === selectedId) return; // Skip center node
+
+        let x = centerX;
+        let y = centerY;
+
+        if (n.type === "reference" || n.type === "task") {
+          // Use exponential nautilus spiral
+          const index =
+            n.type === "reference"
+              ? references.findIndex((r: any) => r.id === n.id)
+              : tasks.findIndex((t: any) => t.id === n.id);
+
+          const angle = index * angleStep;
+          const radius = spiralStart * Math.exp(growthFactor * angle);
+
+          x = centerX + radius * Math.cos(angle);
+          y = centerY + radius * Math.sin(angle);
+        } else if (n.type === "author") {
+          // Authors on left
+          const authorIndex = authors.findIndex((a: any) => a.id === n.id);
+          x = centerX - 1200;
+          y = centerY + (authorIndex - authors.length / 2) * 150;
+        } else if (n.type === "publisher") {
+          // Publishers on right
+          const publisherIndex = publishers.findIndex(
+            (p: any) => p.id === n.id,
+          );
+          x = centerX + 1200;
+          y = centerY + (publisherIndex - publishers.length / 2) * 150;
+        }
+
+        positionedNodes.push({
+          data: n,
+          position: { x, y },
+        });
+      });
+
+      // Add nodes to graph
+      cy.add(positionedNodes);
+
+      // Add edges
+      const edges = newLinks.map((l: any) => ({ data: l }));
+      cy.add(edges);
+
+      // Fit view
+      cy.fit(cy.elements(), 50);
+
+      // Restart throbbing for all activated nodes after reframe
+      restartAllThrobs(cy, activatedNodeIdsRef.current);
+
+      toast({
+        title: "Graph Reframed",
+        description: `Showing ${newNodes.length} nodes related to ${selectedNodeData.label}`,
+        status: "success",
+        duration: 2000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error("Reframe error:", error);
+      toast({
+        title: "Reframe failed",
+        description: "Could not fetch related nodes",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
+
   const centerTask = () => {
     const cy = cyInstance.current;
     if (!cy) return;
     const task = cy.nodes('[type = "task"]');
     if (task.length > 0) cy.center(task);
     else cy.center();
+  };
+
+  const resetGraph = () => {
+    const cy = cyInstance.current;
+    if (!cy) return;
+
+    // Remove all unified claim nodes and their edges
+    cy.nodes('[type = "unifiedClaim"]').forEach((node) => {
+      // Clear throb interval
+      const interval = node.data("throbInterval");
+      if (interval) clearInterval(interval);
+      node.remove();
+    });
+
+    // Restore all original node positions
+    if (Object.keys(originalNodePositions.current).length > 0) {
+      Object.entries(originalNodePositions.current).forEach(([id, pos]) => {
+        const node = cy.getElementById(id);
+        if (node.length > 0 && node.isNode()) {
+          node.position(pos);
+        }
+      });
+    }
+
+    // Restore last ref node if it was moved
+    if (lastRefNode.current && lastRefOriginalPos.current) {
+      lastRefNode.current.position(lastRefOriginalPos.current);
+      lastRefNode.current = null;
+      lastRefOriginalPos.current = null;
+    }
+
+    // Show all nodes and edges
+    cy.elements().style("display", "element");
+
+    // Fit all
+    cy.fit(cy.elements(), 28);
+
+    // Restart throbbing for all activated nodes
+    restartAllThrobs(cy, activatedNodeIdsRef.current);
+
+    toast({
+      title: "Graph Reset",
+      description: "All nodes are now visible",
+      status: "info",
+      duration: 2000,
+      isClosable: true,
+    });
   };
 
   return (
@@ -1355,6 +1996,39 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               />
             ))}
 
+          {/* Hovered Node Text Popup - Cleaner Minority Report Style */}
+          {hoveredNodePopup && (
+            <div
+              style={{
+                position: "absolute",
+                left: `${hoveredNodePopup.x + 20}px`,
+                top: `${hoveredNodePopup.y - 30}px`,
+                background:
+                  "linear-gradient(135deg, rgba(0, 0, 0, 0.92), rgba(15, 23, 42, 0.88))",
+                backdropFilter: "blur(16px)",
+                border: "1px solid rgba(0, 162, 255, 0.5)",
+                borderRadius: "8px",
+                padding: "10px 16px",
+                color: "#e2e8f0",
+                fontSize: "14px",
+                fontWeight: "500",
+                lineHeight: "1.3",
+                maxWidth: "400px",
+                textShadow: "0 1px 2px rgba(0, 0, 0, 0.8)",
+                boxShadow:
+                  "0 4px 24px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 162, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)",
+                pointerEvents: "none",
+                zIndex: 2000,
+                letterSpacing: "0.3px",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {hoveredNodePopup.label}
+            </div>
+          )}
+
           {/* Centered Node Title Bar */}
           {selectedNodeData && (
             <Box
@@ -1404,14 +2078,14 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                   {selectedNodeData.type === "task"
                     ? "TASK"
                     : selectedNodeData.type === "reference"
-                    ? "REFERENCE"
-                    : selectedNodeData.type === "author"
-                    ? "AUTHOR"
-                    : selectedNodeData.type === "publisher"
-                    ? "PUBLISHER"
-                    : selectedNodeData.type === "refClaim"
-                    ? "REF CLAIM"
-                    : "TASK CLAIM"}
+                      ? "REFERENCE"
+                      : selectedNodeData.type === "author"
+                        ? "AUTHOR"
+                        : selectedNodeData.type === "publisher"
+                          ? "PUBLISHER"
+                          : selectedNodeData.type === "refClaim"
+                            ? "REF CLAIM"
+                            : "TASK CLAIM"}
                 </Text>
                 <Box w="1px" h="16px" bg="rgba(0, 162, 255, 0.3)" />
                 <Text
@@ -1483,7 +2157,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               </Text>
               <Button
                 size="xs"
-                onClick={fitAll}
+                onClick={reframe}
                 mb={2}
                 width="100%"
                 bg="rgba(0, 162, 255, 0.1)"
@@ -1501,8 +2175,39 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 fontSize="xs"
                 position="relative"
                 zIndex={2}
+                isDisabled={
+                  !selectedNodeData || selectedNodeData.type === "unifiedClaim"
+                }
+                opacity={
+                  !selectedNodeData || selectedNodeData.type === "unifiedClaim"
+                    ? 0.5
+                    : 1
+                }
               >
                 ⊙ Reframe
+              </Button>
+              <Button
+                size="xs"
+                onClick={resetGraph}
+                mb={2}
+                width="100%"
+                bg="rgba(34, 197, 94, 0.1)"
+                backdropFilter="blur(10px)"
+                border="1px solid rgba(34, 197, 94, 0.3)"
+                color="#4ade80"
+                _hover={{
+                  bg: "rgba(34, 197, 94, 0.2)",
+                  borderColor: "#4ade80",
+                  boxShadow: "0 0 20px rgba(34, 197, 94, 0.3)",
+                }}
+                fontWeight="300"
+                textTransform="uppercase"
+                letterSpacing="1px"
+                fontSize="xs"
+                position="relative"
+                zIndex={2}
+              >
+                ⟲ Reset
               </Button>
               <Button
                 size="xs"
@@ -1729,32 +2434,96 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))",
             }}
           >
-            <h3 style={{ fontSize: "1rem", lineHeight: 1.2 }}>
+            <h3
+              style={{
+                fontSize: "1.1rem",
+                lineHeight: 1.2,
+                marginBottom: "12px",
+                color: "#00a2ff",
+              }}
+            >
+              Reference Claim{" "}
               {selectedClaim.relation === "supports"
-                ? "✅ Supports"
+                ? "✅ SUPPORTS"
                 : selectedClaim.relation === "refutes"
-                ? "❌ Refutes"
-                : "Claim"}
+                  ? "❌ REFUTES"
+                  : "RELATES TO"}{" "}
+              Task Claim
             </h3>
-            <p style={{ marginTop: 12, fontSize: "0.95rem", lineHeight: 1.35 }}>
-              {selectedClaim.label}
-            </p>
+
+            <div style={{ marginBottom: "16px" }}>
+              <strong style={{ color: "#10b981", fontSize: "0.85rem" }}>
+                REF CLAIM:
+              </strong>
+              <p
+                style={{
+                  marginTop: 6,
+                  fontSize: "0.95rem",
+                  lineHeight: 1.35,
+                  color: "#f1f5f9",
+                }}
+              >
+                {selectedClaim.label}
+              </p>
+            </div>
+
+            {selectedClaim.taskClaimLabel && (
+              <div style={{ marginBottom: "16px" }}>
+                <strong style={{ color: "#6366f1", fontSize: "0.85rem" }}>
+                  TASK CLAIM:
+                </strong>
+                <p
+                  style={{
+                    marginTop: 6,
+                    fontSize: "0.95rem",
+                    lineHeight: 1.35,
+                    color: "#f1f5f9",
+                  }}
+                >
+                  {selectedClaim.taskClaimLabel}
+                </p>
+              </div>
+            )}
+
+            {selectedClaim.notes && (
+              <div style={{ marginBottom: "16px" }}>
+                <strong style={{ color: "#fbbf24", fontSize: "0.85rem" }}>
+                  NOTES:
+                </strong>
+                <p
+                  style={{
+                    marginTop: 6,
+                    fontSize: "0.9rem",
+                    lineHeight: 1.3,
+                    color: "#d1d5db",
+                    fontStyle: "italic",
+                  }}
+                >
+                  {selectedClaim.notes}
+                </p>
+              </div>
+            )}
+
             <button
               onClick={() => setSelectedClaim(null)}
               style={{
                 marginTop: 16,
-                background: "#6c5ce7",
-                color: "#fff",
+                background:
+                  "linear-gradient(135deg, rgba(0, 162, 255, 0.3), rgba(0, 162, 255, 0.2))",
+                border: "1px solid rgba(0, 162, 255, 0.6)",
+                color: "#00a2ff",
                 padding: "0.6em 1em",
                 borderRadius: 8,
-                width: "100%", // 🔹 Easy tap target on mobile
+                width: "100%",
                 fontSize: "0.95rem",
+                fontWeight: "600",
+                cursor: "pointer",
               }}
             >
-              Close
+              CLOSE
             </button>
           </div>,
-          document.body
+          document.body,
         )}
       {hoveredEdgeTooltip &&
         createPortal(
@@ -1776,7 +2545,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           >
             {hoveredEdgeTooltip.label}
           </div>,
-          document.body
+          document.body,
         )}
 
       {selectedEdge &&
@@ -1818,8 +2587,8 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               {selectedEdge.relation === "supports"
                 ? "✅ Supports"
                 : selectedEdge.relation === "refutes"
-                ? "❌ Refutes"
-                : "↔️ Related"}{" "}
+                  ? "❌ Refutes"
+                  : "↔️ Related"}{" "}
               ({Math.round(Math.abs(selectedEdge.value) * 100)}% confidence)
             </h3>
             <p>
@@ -1847,7 +2616,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               Close
             </button>
           </div>,
-          document.body
+          document.body,
         )}
     </>
   );

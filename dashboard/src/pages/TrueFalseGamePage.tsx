@@ -60,48 +60,98 @@ const TrueFalseQuizGame: React.FC = () => {
     <Box p={6} minH="100vh" bg="gray.950">
       <UnifiedHeader />
 
-      <Box mt={6} bg="gray.900" p={6} borderRadius="xl">
-        <Heading color="teal.300">🧠 True or False Quiz</Heading>
-        <Text color="gray.400" mt={2}>
-          Decide whether each claim is TRUE or FALSE based on what you know.
-          Your answers will be compared to the TruthTrollers rating database.
-        </Text>
+      <Box
+        mt={6}
+        position="relative"
+        background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+        backdropFilter="blur(20px)"
+        border="1px solid rgba(0, 162, 255, 0.4)"
+        borderRadius="12px"
+        boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+        overflow="hidden"
+        p={6}
+      >
+        <Box
+          position="absolute"
+          left={0}
+          top={0}
+          width="30px"
+          height="100%"
+          background="linear-gradient(90deg, rgba(0, 162, 255, 0.6) 0%, transparent 100%)"
+          pointerEvents="none"
+        />
+        <VStack spacing={2} align="start" position="relative" zIndex={1}>
+          <Heading color="#00a2ff" fontFamily="Futura, 'Century Gothic', sans-serif" letterSpacing="2px">
+            TRUE OR FALSE QUIZ
+          </Heading>
+          <Text color="#f1f5f9" mt={2}>
+            Decide whether each claim is TRUE or FALSE based on what you know.
+            Your answers will be compared to the TruthTrollers rating database.
+          </Text>
+        </VStack>
       </Box>
 
       <VStack spacing={4} align="stretch" mt={8}>
         {claims.map((claim, index) => (
           <Box
             key={claim.claim_id}
-            bg="gray.800"
+            position="relative"
+            background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+            backdropFilter="blur(20px)"
+            border="1px solid rgba(0, 162, 255, 0.4)"
+            borderRadius="12px"
+            boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+            overflow="hidden"
             p={4}
-            borderRadius="md"
-            borderLeft="6px solid teal"
           >
-            <Text color="teal.200" fontWeight="bold">
-              Claim #{index + 1}:
-            </Text>
-            <Text color="white" mb={3}>
-              {claim.claim_text}
-            </Text>
-            <VStack spacing={2} direction="row">
-              <Button
-                colorScheme="green"
-                variant={answers[claim.claim_id] === true ? "solid" : "outline"}
-                onClick={() => handleAnswer(claim.claim_id, true)}
-                isDisabled={submitted}
-              >
-                ✅ True
-              </Button>
-              <Button
-                colorScheme="red"
-                variant={
-                  answers[claim.claim_id] === false ? "solid" : "outline"
-                }
-                onClick={() => handleAnswer(claim.claim_id, false)}
-                isDisabled={submitted}
-              >
-                ❌ False
-              </Button>
+            <Box
+              position="absolute"
+              left={0}
+              top={0}
+              width="30px"
+              height="100%"
+              background="linear-gradient(90deg, rgba(0, 162, 255, 0.6) 0%, transparent 100%)"
+              pointerEvents="none"
+            />
+            <VStack align="start" spacing={3} position="relative" zIndex={1}>
+              <Text color="#00a2ff" fontWeight="bold" fontSize="lg">
+                Claim #{index + 1}:
+              </Text>
+              <Text color="#f1f5f9" mb={2}>
+                {claim.claim_text}
+              </Text>
+              <VStack spacing={2} width="100%">
+                <button
+                  className="mr-button"
+                  style={{
+                    width: "100%",
+                    background: answers[claim.claim_id] === true
+                      ? "linear-gradient(135deg, rgba(0, 255, 100, 0.3), rgba(0, 255, 100, 0.2))"
+                      : undefined,
+                    borderColor: answers[claim.claim_id] === true ? "rgba(0, 255, 100, 0.8)" : undefined,
+                    opacity: submitted ? 0.6 : 1,
+                  }}
+                  onClick={() => handleAnswer(claim.claim_id, true)}
+                  disabled={submitted}
+                >
+                  <span style={{ position: "relative", zIndex: 1 }}>✓ TRUE</span>
+                </button>
+                <button
+                  className="mr-button"
+                  style={{
+                    width: "100%",
+                    background: answers[claim.claim_id] === false
+                      ? "linear-gradient(135deg, rgba(255, 50, 50, 0.3), rgba(255, 50, 50, 0.2))"
+                      : undefined,
+                    borderColor: answers[claim.claim_id] === false ? "rgba(255, 50, 50, 0.8)" : undefined,
+                    opacity: submitted ? 0.6 : 1,
+                  }}
+                  onClick={() => handleAnswer(claim.claim_id, false)}
+                  disabled={submitted}
+                >
+                  <span style={{ position: "relative", zIndex: 1 }}>✗ FALSE</span>
+                </button>
+              </VStack>
             </VStack>
           </Box>
         ))}
@@ -109,13 +159,38 @@ const TrueFalseQuizGame: React.FC = () => {
 
       <Box textAlign="center" mt={10}>
         {!submitted ? (
-          <Button colorScheme="teal" size="lg" onClick={handleSubmit}>
-            Submit Quiz
-          </Button>
+          <button
+            className="mr-button"
+            onClick={handleSubmit}
+            style={{ padding: "14px 48px", fontSize: "1.1rem" }}
+          >
+            <span style={{ position: "relative", zIndex: 1 }}>SUBMIT QUIZ</span>
+          </button>
         ) : (
-          <Text color="teal.200" fontSize="xl">
-            🎉 Final Score: {score} / {claims.length}
-          </Text>
+          <Box
+            position="relative"
+            background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+            backdropFilter="blur(20px)"
+            border="1px solid rgba(0, 162, 255, 0.4)"
+            borderRadius="12px"
+            boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+            overflow="hidden"
+            p={6}
+            display="inline-block"
+          >
+            <Box
+              position="absolute"
+              left={0}
+              top={0}
+              width="30px"
+              height="100%"
+              background="linear-gradient(90deg, rgba(0, 162, 255, 0.6) 0%, transparent 100%)"
+              pointerEvents="none"
+            />
+            <Text color="#00a2ff" fontSize="2xl" fontWeight="bold" position="relative" zIndex={1}>
+              FINAL SCORE: {score} / {claims.length}
+            </Text>
+          </Box>
         )}
       </Box>
     </Box>

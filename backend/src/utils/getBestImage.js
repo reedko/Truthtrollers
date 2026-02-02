@@ -3,9 +3,11 @@
 
 /**
  * Extract the best thumbnail image from HTML
- * Priority: og:image > largest img with width/height > first processable img
+ * Priority: og:image > largest img with width/height > first processable img > author avatar (for Substack)
  */
 export function getBestImage($, baseUrl) {
+  const isSubstack = baseUrl.includes('substack.com');
+
   // 1. Try og:image first
   let ogImage = $('meta[property="og:image"]').attr("content");
   if (ogImage) {
@@ -58,7 +60,30 @@ export function getBestImage($, baseUrl) {
     }
   });
 
-  return firstImage || null;
+  if (firstImage) return firstImage;
+
+  // 5. Substack-specific: Use author avatar if no other image found
+  if (isSubstack) {
+    let authorAvatar = null;
+    $("img").each((_, img) => {
+      let src = $(img).attr("src") || "";
+      const lowerSrc = src.toLowerCase();
+
+      // Look for Substack author avatar patterns
+      if (src && (lowerSrc.includes('avatar') || lowerSrc.includes('profile'))) {
+        src = resolveUrl(src, baseUrl);
+        // Check it's a valid image format but skip other bad patterns
+        if (src.match(/\.(jpg|jpeg|png|webp|gif|bmp)(\?.*)?$/i)) {
+          authorAvatar = src;
+          return false; // break
+        }
+      }
+    });
+
+    if (authorAvatar) return authorAvatar;
+  }
+
+  return null;
 }
 
 /**

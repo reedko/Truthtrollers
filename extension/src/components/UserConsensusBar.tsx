@@ -48,7 +48,7 @@ const UserConsensusBar: React.FC<UserConsensusBarProps> = ({
   return (
     <Box ml="45px">
       <VStack spacing={2} align="center" h="180px" justify="center" mt="-10px">
-        <Text fontSize="md" color="white" mb={5} ml={"-45px"}>
+        <Text fontSize="sm" color="white" mb={5} ml={"-45px"} fontWeight="500">
           CROWD
         </Text>
 

@@ -42,8 +42,8 @@ const ViewRatingsModal: React.FC<ViewRatingsModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg">
       <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>All Ratings</ModalHeader>
+      <ModalContent className="mr-modal">
+        <ModalHeader className="mr-modal-header">All Ratings</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <VStack spacing={4} align="stretch">

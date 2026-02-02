@@ -11,6 +11,7 @@ import {
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { useTaskStore } from "../store/useTaskStore";
+import { useUIStore } from "../store/useUIStore";
 import TaskCard from "./TaskCard";
 import PubCard from "./PubCard";
 import AuthCard from "./AuthCard";
@@ -58,6 +59,9 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   const [tasks, setTasks] = useState<Task[]>([]);
   const [pivotTask, setPivotTask] = useState<Task | null>(null);
   const [liveVerimeter, setLiveVerimeter] = useState<number | null>(null);
+
+  // Use global header visibility state
+  const isHeaderVisible = useUIStore((s) => s.isHeaderVisible);
 
   // 🔧 Auto-pick variant by breakpoint unless explicitly provided
   const bpVariant = useBreakpointValue<Variant>({
@@ -174,7 +178,8 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
   return (
     <Box position="relative" w="100%" px={0}>
-      {allowToggle && (
+      {/* View Density Toggle - Only visible when header is shown */}
+      {allowToggle && isHeaderVisible && (
         <Tooltip
           label={isFull ? "Switch to compact/micro" : "Switch to full header"}
           hasArrow
@@ -187,7 +192,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
             variant="ghost"
             position="absolute"
             right="4"
-            top="-2"
+            top="2"
             zIndex={45}
             onClick={() =>
               setLocalVariant((v) =>
@@ -197,7 +202,9 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
           />
         </Tooltip>
       )}
-      {isMicro ? (
+
+      {/* Render header only if visible */}
+      {!isHeaderVisible ? null : isMicro ? (
         // 📱 Micro: swipeable rail + sheet details
         <MicroHeaderRail
           score={finalScore}
@@ -273,7 +280,11 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
             {isLoading ? (
               <Skeleton borderRadius="lg" height={isFull ? "180px" : "120px"} />
             ) : (
-              <AuthCard authors={authors} compact={!isFull} />
+              <AuthCard
+                authors={authors}
+                compact={!isFull}
+                contentId={contentId ?? undefined}
+              />
             )}
           </Box>
 
