@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(echo:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Read(**/*.js)",
+      "Read(**/*.jsx)",
+      "Read(**/*.css)"
+    ],
+    "ask": ["Write(**/*.js)", "Write(**/*.jsx)", "Bash(npm:*)", "Bash(git:*)"],
+    "deny": [
+      "Read(**/.env*)",
+      "Read(**/secrets/**)",
+      "Read(**/.ssh/**)",
+      "Read(**/config/credentials/**)",
+      "WebFetch",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(docker:*)",
+      "Bash(git push:*)"
+    ]
+  }
+}

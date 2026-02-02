@@ -1,4 +1,4 @@
-import { Router } from "express";
+import express, { Router } from "express";
 import multer from "multer";
 import path from "path";
 import axios from "axios";
@@ -339,6 +339,9 @@ export default function createMiscRoutes({ query, pool, db }) {
       case "users":
         updateSql = "UPDATE users SET user_profile_image = ? WHERE user_id = ?";
         break;
+      case "content":
+        updateSql = "UPDATE content SET thumbnail = ? WHERE content_id = ?";
+        break;
       default:
         return res.status(400).json({ error: "Invalid type" });
     }
@@ -477,11 +480,90 @@ export default function createMiscRoutes({ query, pool, db }) {
     const url = req.query.url;
     console.log(url, "incheck-pdf-head");
     try {
-      const headRes = await fetch(url, { method: "HEAD" });
+      const headRes = await fetch(url, {
+        method: "HEAD",
+        headers: DEFAULT_HEADERS,
+        redirect: "follow"
+      });
       const contentType = headRes.headers.get("content-type") || "";
-      res.json({ isPdf: contentType.includes("application/pdf") });
+      const isPdf = contentType.includes("application/pdf");
+      console.log(`📋 Content-Type for ${url}: ${contentType} → isPdf: ${isPdf}`);
+      res.json({ isPdf });
     } catch (e) {
+      console.error(`❌ check-pdf-head error for ${url}:`, e.message);
       res.json({ isPdf: false, error: e.message });
+    }
+  });
+
+  // New endpoint: parse PDF from blob (sent by extension after loading in browser)
+  // Use express.raw() middleware to get raw binary data
+  router.post("/api/parse-pdf-blob", express.raw({ type: 'application/octet-stream', limit: '50mb' }), async (req, res) => {
+    console.log("📩 /api/parse-pdf-blob route hit, blob size:", req.body?.length || 0, "type:", typeof req.body);
+
+    try {
+      // Validate we received data
+      if (!req.body) {
+        return res.status(400).json({ success: false, error: "No PDF data received (body is null/undefined)" });
+      }
+
+      // req.body should be the raw PDF buffer
+      let buffer;
+      if (Buffer.isBuffer(req.body)) {
+        buffer = req.body;
+      } else if (req.body instanceof ArrayBuffer) {
+        buffer = Buffer.from(req.body);
+      } else if (typeof req.body === 'object' && req.body.type === 'Buffer') {
+        buffer = Buffer.from(req.body.data);
+      } else {
+        console.error("❌ Unexpected req.body type:", typeof req.body, req.body.constructor?.name);
+        return res.status(400).json({ success: false, error: `Invalid data type: ${typeof req.body}` });
+      }
+
+      if (!buffer || buffer.length < 100) {
+        return res.status(400).json({ success: false, error: `PDF data too small: ${buffer?.length || 0} bytes` });
+      }
+
+      console.log(`📦 Processing PDF buffer: ${buffer.length} bytes`);
+
+      const parsed = await pdfParse(buffer);
+
+      let fullText = (parsed.text || "").replace(/\r/g, "");
+
+      // Strip XMP metadata
+      fullText = fullText.replace(/<\?xpacket[\s\S]*?<\?xpacket end.*?\?>/gi, '');
+      fullText = fullText.replace(/<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/gi, '');
+      fullText = fullText.replace(/<rdf:RDF[\s\S]*?<\/rdf:RDF>/gi, '');
+      fullText = fullText.replace(/\n{3,}/g, '\n\n').trim();
+
+      const infoTitle = (parsed.info && parsed.info.Title ? parsed.info.Title : "").trim();
+      const infoAuthor = (parsed.info && parsed.info.Author ? parsed.info.Author : "").trim();
+
+      const head = fullText.slice(0, 4000);
+      const lines = head.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+
+      const title = chooseTitle(infoTitle, lines, "PDF");
+      const authors = choosePdfAuthors(infoAuthor, lines);
+
+      console.log("📄 Parsed PDF from blob:", { title, authors, textLength: fullText.length });
+
+      res.json({
+        success: true,
+        text: fullText,
+        title: title || "",
+        authors: authors,
+        rawAuthor: infoAuthor,
+      });
+    } catch (err) {
+      console.error("❌ PDF blob parse failed:", err);
+      const errorMsg = err.message || String(err);
+      const isInvalidPdf = errorMsg.includes('Invalid PDF') || errorMsg.includes('PDF structure');
+
+      res.status(500).json({
+        success: false,
+        error: isInvalidPdf
+          ? "This PDF has an invalid structure that cannot be parsed."
+          : `PDF parsing error: ${errorMsg}`
+      });
     }
   });
 
@@ -490,11 +572,44 @@ export default function createMiscRoutes({ query, pool, db }) {
     console.log("📩 /api/fetch-pdf-text route hit:", url);
 
     try {
-      const response = await fetch(url);
+      // Use browser-like headers to avoid getting blocked
+      const response = await fetch(url, {
+        headers: DEFAULT_HEADERS
+      });
+
+      // Check if we got HTML instead of PDF (access denied, etc)
+      const contentType = response.headers.get('content-type') || '';
+      if (contentType.includes('text/html')) {
+        console.error("❌ Server returned HTML instead of PDF - likely access denied or requires browser");
+        return res.status(403).send({
+          success: false,
+          error: "PDF fetch blocked - server requires browser access. Use extension to load PDF in tab instead."
+        });
+      }
+
       const buffer = await response.arrayBuffer();
       const parsed = await pdfParse(Buffer.from(buffer));
 
-      const fullText = (parsed.text || "").replace(/\r/g, "");
+      let fullText = (parsed.text || "").replace(/\r/g, "");
+
+      console.log(`📄 Raw PDF text length: ${fullText.length} chars, ${parsed.numpages} pages`);
+      console.log(`📄 First 500 chars of raw text:`, fullText.slice(0, 500));
+
+      // Strip XMP metadata blocks that pdf-parse sometimes includes
+      // These blocks start with <?xpacket and end with <?xpacket end
+      const beforeMetadataStrip = fullText.length;
+      fullText = fullText.replace(/<\?xpacket[\s\S]*?<\?xpacket end.*?\?>/gi, '');
+
+      // Also strip other common metadata patterns
+      fullText = fullText.replace(/<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/gi, '');
+      fullText = fullText.replace(/<rdf:RDF[\s\S]*?<\/rdf:RDF>/gi, '');
+
+      // Clean up excessive whitespace
+      fullText = fullText.replace(/\n{3,}/g, '\n\n').trim();
+
+      console.log(`📄 After metadata strip: ${fullText.length} chars (removed ${beforeMetadataStrip - fullText.length} chars)`);
+      console.log(`📄 First 500 chars after cleanup:`, fullText.slice(0, 500));
+
       const infoTitle = (
         parsed.info && parsed.info.Title ? parsed.info.Title : ""
       ).trim();
@@ -512,7 +627,7 @@ export default function createMiscRoutes({ query, pool, db }) {
       const title = chooseTitle(infoTitle, lines, url);
       const authors = choosePdfAuthors(infoAuthor, lines);
 
-      console.log("📄 Final inferred PDF metadata:", { title, authors });
+      console.log("📄 Final inferred PDF metadata:", { title, authors, textLength: fullText.length });
 
       res.send({
         success: true,
@@ -523,7 +638,15 @@ export default function createMiscRoutes({ query, pool, db }) {
       });
     } catch (err) {
       console.error("❌ PDF parse failed:", err);
-      res.status(500).send({ success: false });
+      const errorMsg = err.message || String(err);
+      const isInvalidPdf = errorMsg.includes('Invalid PDF') || errorMsg.includes('PDF structure');
+
+      res.status(500).send({
+        success: false,
+        error: isInvalidPdf
+          ? "This PDF has an invalid structure that cannot be parsed. The PDF may be corrupted or use a non-standard format."
+          : `PDF parsing error: ${errorMsg}`
+      });
     }
   });
 
@@ -587,7 +710,10 @@ export default function createMiscRoutes({ query, pool, db }) {
   router.get("/api/proxy-pdf", async (req, res) => {
     const url = String(req.query.url || "");
     if (!url) return res.status(400).send("missing url");
-    const r = await fetch(url, { redirect: "follow" });
+    const r = await fetch(url, {
+      redirect: "follow",
+      headers: DEFAULT_HEADERS
+    });
     if (!r.ok) return res.status(r.status).send("upstream error");
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Content-Type", "application/pdf");

@@ -66,8 +66,8 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
       <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
+      <ModalContent className="mr-modal">
+        <ModalHeader className="mr-modal-header">
           {readOnly
             ? "Claim Details"
             : editingClaim
@@ -99,6 +99,7 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
               <FormControl mb={3}>
                 <FormLabel>Claim Text</FormLabel>
                 <Textarea
+                  className="mr-input"
                   value={claimText}
                   onChange={(e) => setClaimText(e.target.value)}
                   placeholder="Enter claim text..."
@@ -108,6 +109,7 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
               <FormControl mb={3}>
                 <FormLabel>Veracity Score</FormLabel>
                 <Input
+                  className="mr-input"
                   type="number"
                   value={veracityScore}
                   onChange={(e) => {
@@ -122,6 +124,7 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
               <FormControl>
                 <FormLabel>Confidence Level</FormLabel>
                 <Input
+                  className="mr-input"
                   type="number"
                   value={confidenceLevel}
                   onChange={(e) => {
@@ -139,6 +142,7 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
         {!readOnly && (
           <ModalFooter>
             <Button
+              className="mr-button"
               colorScheme="blue"
               onClick={handleSave}
               isDisabled={!claimText.trim()}

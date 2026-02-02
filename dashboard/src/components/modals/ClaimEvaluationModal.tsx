@@ -121,8 +121,8 @@ const ClaimEvaluationModal: React.FC<ClaimEvaluationModalProps> = ({
     <>
       <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
         <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Evaluate Claim</ModalHeader>
+        <ModalContent className="mr-modal">
+          <ModalHeader className="mr-modal-header">Evaluate Claim</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <Text mb={2} fontWeight="semibold">
@@ -183,6 +183,7 @@ const ClaimEvaluationModal: React.FC<ClaimEvaluationModalProps> = ({
               <FormControl>
                 <FormLabel>Notes / Justification</FormLabel>
                 <Textarea
+                  className="mr-input"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Why do you rate it this way? Include sources or reasoning."
@@ -222,7 +223,7 @@ const ClaimEvaluationModal: React.FC<ClaimEvaluationModalProps> = ({
               Add Reference
             </Button>
 
-            <Button colorScheme="blue" onClick={handleSave}>
+            <Button className="mr-button" colorScheme="blue" onClick={handleSave}>
               Submit Evaluation
             </Button>
             <Button onClick={onClose} ml={3}>

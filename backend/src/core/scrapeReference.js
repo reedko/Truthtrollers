@@ -10,6 +10,7 @@ import { extractAuthors } from "../utils/extractAuthors.js";
 import { extractPublisher } from "../utils/extractPublisher.js";
 import { getMainHeadline } from "../utils/getMainHeadline.js";
 import { createContentInternal } from "../storage/createContentInternal.js";
+import { getBestImage } from "../utils/getBestImage.js";
 
 /**
  * scrapeReference(query, { url, raw_text, raw_html, title, authors, taskContentId })
@@ -44,15 +45,44 @@ export async function scrapeReference(query, { url, raw_text, raw_html, title, a
     // 2. EXTRACT METADATA: title, authors, publisher
     // ─────────────────────────────────────────────
 
-    // Use provided title (from PDF metadata) or extract from HTML
+    // Use provided title (from PDF metadata) or extract from HTML/text
     let finalTitle = title || ($? await getMainHeadline($) : null) || "AI Reference";
-    if (finalTitle.length < 3) {
+
+    // If no title and we have raw_text (PDF), extract from first line
+    if ((!finalTitle || finalTitle === "AI Reference" || finalTitle.length < 3) && raw_text && !raw_html) {
+      const lines = raw_text.split('\n').map(l => l.trim()).filter(Boolean);
+      // Use first substantial line as title (skip very short lines)
+      for (const line of lines) {
+        if (line.length > 10 && line.length < 200) {
+          finalTitle = `[PDF] ${line}`;
+          break;
+        }
+      }
+    }
+
+    if (!finalTitle || finalTitle.length < 3) {
       finalTitle = ($? await getMainHeadline($) : null) || "AI Reference";
     }
 
     // Use provided authors (from PDF metadata) or extract from HTML
     const authors = providedAuthors || ($ ? await extractAuthors($) : []);
     const publisher = $ ? await extractPublisher($) : null;
+
+    // Extract thumbnail
+    let thumbnail = "";
+    const isPdf = !raw_html && raw_text; // PDF if we have text but no HTML
+
+    if (isPdf) {
+      // TODO: For PDFs scraped from extension, we need to pass the blob to thumbnail generator
+      // For now, skip thumbnail generation (would need to refetch PDF which might be blocked)
+      logger.log(`🖼️  [scrapeReference] Skipping PDF thumbnail (would require re-fetching blocked PDF)`);
+    } else if ($) {
+      // For HTML pages, extract image from page
+      thumbnail = getBestImage($, url) || "";
+      if (thumbnail) {
+        logger.log(`🖼️  [scrapeReference] Extracted thumbnail: ${thumbnail.slice(0, 80)}...`);
+      }
+    }
 
     // ─────────────────────────────────────────────
     // 3. EXTRACT CLEAN TEXT
@@ -84,7 +114,7 @@ export async function scrapeReference(query, { url, raw_text, raw_html, title, a
       subtopics: [],
       content_type: "reference",
       taskContentId, // Link to parent task
-      thumbnail: "", // AI refs don't have thumbnails from search
+      thumbnail,
       details: text.slice(0, 500), // Preview
     });
 

@@ -14,6 +14,7 @@ import {
   Tooltip,
 } from "@chakra-ui/react";
 import "./Popup.css";
+import "../styles/minorityReport.css";
 import UserConsensusBar from "./UserConsensusBar";
 import useTaskStore from "../store/useTaskStore";
 import resizeImage from "../services/image-url";
@@ -83,7 +84,7 @@ const TaskCard: React.FC = () => {
     if (typeof storeUrl === "string" && storeUrl) return storeUrl;
 
     const { lastVisitedURL } = (await browser.storage.local.get(
-      "lastVisitedURL"
+      "lastVisitedURL",
     )) as {
       lastVisitedURL?: unknown;
     };
@@ -94,7 +95,7 @@ const TaskCard: React.FC = () => {
   useEffect(() => {
     (async () => {
       const { lastVisitedURL } = (await browser.storage.local.get(
-        "lastVisitedURL"
+        "lastVisitedURL",
       )) as {
         lastVisitedURL?: string;
       };
@@ -120,19 +121,18 @@ const TaskCard: React.FC = () => {
       });
   }, [setTask]);
 
-  // Load static UI assets (logo, meter) via background → blob
+  // Load static UI assets (logo, meter) from bundled extension assets - INSTANT!
   useEffect(() => {
-    (async () => {
-      try {
-        const logo = await getBlobUrl("/assets/images/miniLogo.png");
-        const meter = await getBlobUrl("/assets/images/meter3.png");
-        setLogoBlob(logo);
-        setMeterBlob(meter);
-        blobPool.current.push(logo, meter);
-      } catch (e) {
-        console.warn("Static asset blob fetch failed:", e);
-      }
-    })();
+    try {
+      // Use browser.runtime.getURL for bundled assets - no network fetch needed
+      const logo = browser.runtime.getURL("assets/images/miniLogo.png");
+      const meter = browser.runtime.getURL("assets/images/meter3.png");
+      setLogoBlob(logo);
+      setMeterBlob(meter);
+      // These aren't blob URLs, so no need to track for revocation
+    } catch (e) {
+      console.warn("Static asset load failed:", e);
+    }
   }, []);
 
   // Load the content thumbnail (dynamic) via background → blob
@@ -181,37 +181,129 @@ const TaskCard: React.FC = () => {
   const logo = logoBlob || "";
 
   return (
-    <Box className="popup-box" width="300px" bg="stat5Gradient">
-      <VStack spacing={0} align="start">
-        <Box bg="cardGradient" className="logo-box" position="relative">
-          <HStack spacing="130">
-            <Box>{logo && resizeImage(40, logo)}</Box>
-            <Text color="white">TruthTrollers</Text>
+    <Box
+      className="popup-box"
+      width="300px"
+      position="relative"
+      bgGradient="linear(135deg, rgba(10, 30, 60, 0.75), rgba(20, 50, 80, 0.7))"
+      sx={{
+        backgroundImage: `
+          linear-gradient(135deg, rgba(10, 30, 60, 0.75), rgba(20, 50, 80, 0.7)),
+          repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 162, 255, 0.08) 2px, rgba(0, 162, 255, 0.08) 4px)
+        `,
+      }}
+      border="1px solid rgba(0, 162, 255, 0.6)"
+      borderRadius="12px"
+      boxShadow="0 10px 40px rgba(0, 0, 0, 0.7), 0 0 50px rgba(0, 162, 255, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.2)"
+      overflow="hidden"
+      p={3}
+    >
+      <Box
+        position="absolute"
+        left={0}
+        top={0}
+        width="50px"
+        height="100%"
+        background="linear-gradient(90deg, rgba(0, 217, 255, 0.6) 0%, rgba(0, 217, 255, 0.4) 25%, rgba(0, 217, 255, 0.25) 50%, rgba(0, 217, 255, 0.1) 75%, transparent 100%)"
+        pointerEvents="none"
+      />
+      <VStack
+        spacing={2}
+        align="start"
+        position="relative"
+        zIndex={1}
+        style={{ background: "none" }}
+        width="100%"
+      >
+        <Box
+          className="logo-box"
+          position="relative"
+          background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+          backdropFilter="blur(20px)"
+          border="1px solid rgba(0, 162, 255, 0.4)"
+          borderRadius="12px"
+          boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+          overflow="hidden"
+          p={2}
+          width="100%"
+        >
+          <Box
+            position="absolute"
+            left={0}
+            top={0}
+            width="30px"
+            height="100%"
+            background="linear-gradient(90deg, rgba(0, 162, 255, 0.6) 0%, transparent 100%)"
+            pointerEvents="none"
+          />
+          <HStack
+            spacing={2}
+            position="relative"
+            zIndex={1}
+            justify="space-between"
+            align="center"
+          >
+            <Box flexShrink={0}>{logo && resizeImage(40, logo)}</Box>
+            <Text
+              color="#00a2ff"
+              fontWeight="400"
+              letterSpacing="3px"
+              textTransform="uppercase"
+              fontSize="xl"
+              fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+            >
+              TruthTrollers
+            </Text>
           </HStack>
         </Box>
 
         {imageUrl && task?.progress === "Completed" ? (
-          <HStack spacing={1} align="center" width="290px">
-            <Box flex="0 0 70%">
-              <VStack spacing={1} align="center" mb={1} mt={1}>
-                <Text>VERDICT</Text>
-                <Spacer />
-                <TruthGauge
-                  score={-0.73}
-                  label="VERIMETER"
-                  size={{ w: 170, h: 90 }}
-                  normalize={false}
-                />
-              </VStack>
+          <HStack
+            spacing={1}
+            align="flex-start"
+            width="100%"
+            justify="space-between"
+            mt={2}
+            px={1}
+          >
+            <Box flexShrink={0}>
+              <TruthGauge
+                score={-0.73}
+                label="VERIMETER"
+                size={{ w: 170, h: 90 }}
+                normalize={false}
+              />
             </Box>
-            <Box flex="0 0 30%" pl={-5}>
+            <Box
+              position="relative"
+              background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+              backdropFilter="blur(20px)"
+              border="1px solid rgba(0, 162, 255, 0.5)"
+              borderRadius="12px"
+              boxShadow="0 10px 40px rgba(0, 0, 0, 0.7), 0 0 50px rgba(0, 162, 255, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
+              overflow="hidden"
+              flexShrink={0}
+              width="70px"
+              height="180px"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+            >
               <Box
-                borderRadius="8px"
-                w="75px"
-                p={0}
-                bg="cardGradient"
-                mt={"30px"}
-                mr={"5px"}
+                position="absolute"
+                left={0}
+                top={0}
+                width="15px"
+                height="100%"
+                background="linear-gradient(90deg, rgba(0, 162, 255, 0.6) 0%, transparent 100%)"
+                pointerEvents="none"
+              />
+              <Box
+                position="relative"
+                zIndex={1}
+                transform="scale(0.85)"
+                ml={-35}
+                mr={-35}
               >
                 <UserConsensusBar trueCount={21} falseCount={71} total={121} />
               </Box>
@@ -232,7 +324,7 @@ const TaskCard: React.FC = () => {
 
         {imageUrl ? (
           <Box width="280px">
-            <Box width="100%">
+            <Box width="100%" mb={2}>
               <Tooltip label={task?.content_name || "No title"} fontSize="sm">
                 <Text
                   fontSize="lg"
@@ -248,41 +340,14 @@ const TaskCard: React.FC = () => {
                 </Text>
               </Tooltip>
             </Box>
-            <Grid templateRows="repeat(2, 1fr)">
-              <GridItem>
-                <Text color="gray.600" fontSize="sm">
-                  Progress: {task?.progress}
-                </Text>
-              </GridItem>
-              <GridItem>
-                <Progress
-                  value={
-                    task?.progress === "Completed"
-                      ? 100
-                      : task?.progress === "Partially Complete"
-                      ? 50
-                      : 25
-                  }
-                  colorScheme={task ? getProgressColor(task.progress) : ""}
-                  mt={2}
-                />
-              </GridItem>
-            </Grid>
 
-            <Center>
-              <HStack spacing={5}>
-                <Button
-                  variant="surface"
-                  bg="cardGradient"
-                  color="white"
-                  onClick={handleArgueClick}
-                >
-                  <div>Argue</div>
-                </Button>
-                <Button
-                  variant="solid"
-                  bg="cardGradient"
-                  color="white"
+            <Center mt={3}>
+              <HStack spacing={3}>
+                <button className="mr-button" onClick={handleArgueClick}>
+                  <span style={{ position: "relative", zIndex: 1 }}>Argue</span>
+                </button>
+                <button
+                  className="mr-button"
                   onClick={() => {
                     setVisible(false);
                     const popupRoot = document.getElementById("popup-root");
@@ -292,62 +357,84 @@ const TaskCard: React.FC = () => {
                     }
                   }}
                 >
-                  <div>Close</div>
-                </Button>
+                  <span style={{ position: "relative", zIndex: 1 }}>Close</span>
+                </button>
               </HStack>
             </Center>
           </Box>
         ) : (
-          <Box>
-            <Box width="280px">
-              <Tooltip label={task?.content_name} fontSize="sm">
+          <Box width="100%">
+            <Box width="100%" mb={3}>
+              <Tooltip
+                label={task?.content_name || currentUrl || document.title}
+                fontSize="sm"
+              >
                 <Text
                   fontWeight="bold"
                   fontSize="md"
-                  isTruncated
-                  whiteSpace="nowrap"
-                  overflow="hidden"
-                  textOverflow="ellipsis"
+                  noOfLines={2}
+                  color="#f1f5f9"
                 >
-                  {task?.content_name}
+                  {task?.content_name ||
+                    currentUrl ||
+                    document.title ||
+                    "Current Page"}
                 </Text>
               </Tooltip>
             </Box>
-            <Text fontWeight="bold" fontSize="l" wrap="yes">
-              {task?.content_name}
-            </Text>
-            <Stat
-              p={2}
-              px={3}
-              py={1}
-              borderRadius="2xl"
-              shadow="md"
-              color="white"
-              bg="cardGradient"
-              w="full"
+            <Box
+              position="relative"
+              background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+              backdropFilter="blur(20px)"
+              border="1px solid rgba(0, 162, 255, 0.4)"
+              borderRadius="12px"
+              boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+              overflow="hidden"
+              p={4}
+              mb={2}
             >
-              <Text color="white" fontSize="md" align="center">
-                This document has not been added to Truthtrollers.
-              </Text>
-              <Text mt={4} color="white" fontSize="lg" align="center">
-                Would you like to Add?
-              </Text>
-            </Stat>
+              <Box
+                position="absolute"
+                left={0}
+                top={0}
+                width="30px"
+                height="100%"
+                background="linear-gradient(90deg, rgba(0, 162, 255, 0.6) 0%, transparent 100%)"
+                pointerEvents="none"
+              />
+              <VStack spacing={2} position="relative" zIndex={1}>
+                <Text
+                  fontSize="md"
+                  align="center"
+                  color="#f1f5f9"
+                  fontWeight="500"
+                >
+                  Not in database
+                </Text>
+                <Text
+                  fontSize="lg"
+                  align="center"
+                  color="#00a2ff"
+                  fontWeight="600"
+                >
+                  Add to TruthTrollers?
+                </Text>
+              </VStack>
+            </Box>
             <Center>
-              <HStack spacing={5} mt={2}>
-                <Button
-                  variant="surface"
-                  bg="cardGradient"
-                  color="white"
+              <HStack spacing={3} mt={2}>
+                <button
+                  className="mr-button"
                   onClick={handleAddTask}
                   disabled={loading}
+                  style={{ opacity: loading ? 0.5 : 1 }}
                 >
-                  <div>Add</div>
-                </Button>
-                <Button
-                  variant="solid"
-                  bg="cardGradient"
-                  color="white"
+                  <span style={{ position: "relative", zIndex: 1 }}>
+                    {loading ? "Adding..." : "Add"}
+                  </span>
+                </button>
+                <button
+                  className="mr-button"
                   onClick={() => {
                     setVisible(false);
                     const popupRoot = document.getElementById("popup-root");
@@ -357,8 +444,8 @@ const TaskCard: React.FC = () => {
                     }
                   }}
                 >
-                  <div>Close</div>
-                </Button>
+                  <span style={{ position: "relative", zIndex: 1 }}>Close</span>
+                </button>
               </HStack>
             </Center>
           </Box>

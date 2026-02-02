@@ -97,6 +97,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
   return (
     <>
       <Box
+        className="mr-modal"
         position="fixed"
         left={position.x}
         top={position.y}
@@ -114,6 +115,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
       >
         {/* DRAG HANDLE */}
         <Box
+          className="mr-modal-header"
           onMouseDown={onMouseDown}
           cursor="grab"
           bg="gray.800"

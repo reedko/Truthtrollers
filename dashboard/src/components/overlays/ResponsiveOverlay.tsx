@@ -41,9 +41,9 @@ export default function ResponsiveOverlay({
     return (
       <Drawer isOpen={isOpen} onClose={onClose} placement="bottom" size="full">
         <DrawerOverlay />
-        <DrawerContent>
+        <DrawerContent className="mr-modal">
           <DrawerCloseButton />
-          {title && <DrawerHeader>{title}</DrawerHeader>}
+          {title && <DrawerHeader className="mr-modal-header">{title}</DrawerHeader>}
           <DrawerBody>{children}</DrawerBody>
           {footer && <DrawerFooter>{footer}</DrawerFooter>}
         </DrawerContent>
@@ -59,9 +59,9 @@ export default function ResponsiveOverlay({
       scrollBehavior="inside"
     >
       <ModalOverlay />
-      <ModalContent>
+      <ModalContent className="mr-modal">
         <ModalCloseButton />
-        {title && <ModalHeader>{title}</ModalHeader>}
+        {title && <ModalHeader className="mr-modal-header">{title}</ModalHeader>}
         <ModalBody>{children}</ModalBody>
         {footer && <ModalFooter>{footer}</ModalFooter>}
       </ModalContent>

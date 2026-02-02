@@ -77,23 +77,25 @@ const WorkspacePage = () => {
     setRefreshKey((prev) => prev + 1);
   };
   return (
-    <Box p={4}>
-      <Card mb={6} mt={2}>
-        <CardBody>
-          <Box mb={2}>
-            <RefreshVerimeterButton
-              targetClaimId={taskId}
-              onUpdated={setVerimeterScore} // pass callback for instant update
-              handleRefresh={handleVerimeterRefresh}
-            />
-          </Box>
-          <UnifiedHeader refreshKey={refreshKey} />
-        </CardBody>
-      </Card>
-      <Heading size="md" mb={4}>
-        Workspace
-      </Heading>
-      <Workspace contentId={taskId} viewerId={viewerId} />
+    <Box p={4} display="flex" flexDirection="column" alignItems="center" w="100%">
+      <Box maxW="1400px" w="100%">
+        <Card mb={6} mt={2}>
+          <CardBody>
+            <Box mb={2}>
+              <RefreshVerimeterButton
+                targetClaimId={taskId}
+                onUpdated={setVerimeterScore} // pass callback for instant update
+                handleRefresh={handleVerimeterRefresh}
+              />
+            </Box>
+            <UnifiedHeader refreshKey={refreshKey} />
+          </CardBody>
+        </Card>
+        <Heading size="md" mb={4}>
+          Workspace
+        </Heading>
+        <Workspace contentId={taskId} viewerId={viewerId} />
+      </Box>
     </Box>
   );
 };

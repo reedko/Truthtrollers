@@ -115,8 +115,8 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
     <>
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Manage References</ModalHeader>
+        <ModalContent className="mr-modal">
+          <ModalHeader className="mr-modal-header">Manage References</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <VStack align="start" spacing={3}>
@@ -163,7 +163,7 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
             </VStack>
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="blue" onClick={handleOpenSelectModal} mr={1}>
+            <Button className="mr-button" colorScheme="blue" onClick={handleOpenSelectModal} mr={1}>
               Select from List
             </Button>
             <Button

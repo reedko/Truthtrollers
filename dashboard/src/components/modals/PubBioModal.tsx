@@ -54,18 +54,19 @@ const PubBioModal: React.FC<PubBioModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
       <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Edit Publisher Description</ModalHeader>
+      <ModalContent className="mr-modal">
+        <ModalHeader className="mr-modal-header">Edit Publisher Description</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <Textarea
+            className="mr-input"
             value={bio}
             onChange={(e) => setBio(e.target.value || "")}
             placeholder="Enter publisher description..."
           />
         </ModalBody>
         <ModalFooter>
-          <Button colorScheme="teal" mr={3} onClick={handleSave}>
+          <Button className="mr-button" mr={3} onClick={handleSave}>
             Save
           </Button>
           <Button variant="ghost" onClick={onClose}>

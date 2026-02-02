@@ -121,21 +121,19 @@ const BoolCard: React.FC<BoolCardProps> = ({
 
   return (
     <Box
-      bg="stat2Gradient"
-      borderRadius="lg"
-      boxShadow="2xl"
+      className="mr-card mr-card-green"
       p={container.p}
       w={container.w}
       h={container.h}
       position="relative"
-      // let parent gap control spacing (UnifiedHeader enforces no margins anyway)
       m={0}
     >
+      <div className="mr-glow-bar mr-glow-bar-green" />
+      <div className="mr-scanlines" />
       <Center>
         <Text
-          fontWeight="bold"
+          className="mr-badge mr-badge-green"
           fontSize={titleFont}
-          color="white"
           mb={isXs ? 1 : isSm ? 2 : 3}
         >
           Veracity Gauges

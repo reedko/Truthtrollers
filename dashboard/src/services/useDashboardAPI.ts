@@ -76,7 +76,7 @@ export async function updateScoresForContent(
 export const uploadImage = async (
   id: number,
   file: File,
-  type: "authors" | "publishers"
+  type: "authors" | "publishers" | "content"
 ): Promise<string | null> => {
   const formData = new FormData();
   formData.append("image", file); // ✅ only append the file here
@@ -297,6 +297,19 @@ export const fetchTasks = async (page = 1, limit = 100): Promise<Task[]> => {
   } catch (error) {
     console.error("❌ Error fetching paginated tasks:", error);
     return [];
+  }
+};
+
+/**
+ * Fetch a single task by ID.
+ */
+export const fetchTask = async (contentId: number): Promise<Task | null> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/content/${contentId}`);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error fetching task:", error);
+    return null;
   }
 };
 
@@ -638,6 +651,7 @@ export const addClaimLink = async ({
   relationship,
   support_level,
   notes,
+  points_earned = 0, // 🎮 GameSpace scoring
 }: {
   source_claim_id: number;
   target_claim_id: number;
@@ -645,6 +659,7 @@ export const addClaimLink = async ({
   relationship: "supports" | "refutes" | "related";
   support_level: number;
   notes: string;
+  points_earned?: number;
 }) => {
   try {
     const response = await axios.post(`${API_BASE_URL}/api/claim-links`, {
@@ -654,11 +669,25 @@ export const addClaimLink = async ({
       relationship,
       support_level,
       notes,
+      points_earned,
     });
     return response.data;
   } catch (error) {
     console.error("❌ Error adding claim link:", error);
     throw error;
+  }
+};
+
+/**
+ * Get total GameSpace score for a user on a specific content/task
+ */
+export const getClaimLinkScore = async (contentId: number, userId: number): Promise<number> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/api/claim-links/score/${contentId}?userId=${userId}`);
+    return response.data.totalScore || 0;
+  } catch (error) {
+    console.error("❌ Error fetching claim link score:", error);
+    return 0;
   }
 };
 
@@ -723,6 +752,43 @@ export const fetchAuthor = async (authorId: number): Promise<Author | null> => {
   } catch (error) {
     console.error("❌ Error fetching author:", error);
     return null;
+  }
+};
+
+/**
+ * Add authors to content.
+ */
+export const addAuthorsToContent = async (
+  contentId: number,
+  authors: Array<{ name: string; description?: string; image?: string }>
+): Promise<boolean> => {
+  try {
+    await axios.post(`${API_BASE_URL}/api/content/${contentId}/authors`, {
+      contentId,
+      authors,
+    });
+    return true;
+  } catch (error) {
+    console.error("❌ Error adding authors to content:", error);
+    return false;
+  }
+};
+
+/**
+ * Remove an author from content.
+ */
+export const removeAuthorFromContent = async (
+  contentId: number,
+  authorId: number
+): Promise<boolean> => {
+  try {
+    await axios.delete(
+      `${API_BASE_URL}/api/content/${contentId}/authors/${authorId}`
+    );
+    return true;
+  } catch (error) {
+    console.error("❌ Error removing author from content:", error);
+    return false;
   }
 };
 

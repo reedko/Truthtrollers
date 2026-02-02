@@ -174,8 +174,8 @@ const ScrapeReferenceModal: React.FC<{
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
+      <ModalContent className="mr-modal">
+        <ModalHeader className="mr-modal-header">
           {initialUrl ? "🔄 Retry Failed Scrape" : "Scrape a New Reference"}
         </ModalHeader>
         <ModalCloseButton />
@@ -193,6 +193,7 @@ const ScrapeReferenceModal: React.FC<{
 
             {/* ✅ User confirms or changes URL */}
             <Input
+              className="mr-input"
               placeholder="Enter or confirm the URL"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
@@ -202,6 +203,7 @@ const ScrapeReferenceModal: React.FC<{
         <ModalFooter>
           <HStack>
             <Button
+              className="mr-button"
               colorScheme="blue"
               onClick={handleScrape}
               isLoading={isScraping}

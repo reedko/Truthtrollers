@@ -162,8 +162,8 @@ const AuthRatingModal: React.FC<AuthRatingModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="4xl" scrollBehavior="inside">
       <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Author Ratings</ModalHeader>
+      <ModalContent className="mr-modal">
+        <ModalHeader className="mr-modal-header">Author Ratings</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <VStack spacing={4} align="stretch">
@@ -177,6 +177,7 @@ const AuthRatingModal: React.FC<AuthRatingModalProps> = ({
               >
                 <HStack>
                   <Input
+                    className="mr-input"
                     placeholder="Source"
                     value={rating.source ?? ""}
                     onChange={(e) =>
@@ -203,6 +204,7 @@ const AuthRatingModal: React.FC<AuthRatingModalProps> = ({
                 </HStack>
                 <HStack>
                   <Input
+                    className="mr-input"
                     type="text"
                     inputMode="decimal"
                     placeholder="Bias Score"
@@ -224,6 +226,7 @@ const AuthRatingModal: React.FC<AuthRatingModalProps> = ({
                     }}
                   />
                   <Input
+                    className="mr-input"
                     type="text"
                     inputMode="decimal"
                     placeholder="Veracity Score"
@@ -246,11 +249,13 @@ const AuthRatingModal: React.FC<AuthRatingModalProps> = ({
                   />
                 </HStack>
                 <Input
+                  className="mr-input"
                   placeholder="URL (optional)"
                   value={rating.url ?? ""}
                   onChange={(e) => updateRating(index, "url", e.target.value)}
                 />
                 <Input
+                  className="mr-input"
                   placeholder="Notes (optional)"
                   value={rating.notes ?? ""}
                   onChange={(e) => updateRating(index, "notes", e.target.value)}
@@ -278,7 +283,7 @@ const AuthRatingModal: React.FC<AuthRatingModalProps> = ({
           <Button onClick={onClose} mr={3}>
             Close
           </Button>
-          <Button colorScheme="green" onClick={handleSave}>
+          <Button className="mr-button" colorScheme="green" onClick={handleSave}>
             Save All
           </Button>
         </ModalFooter>

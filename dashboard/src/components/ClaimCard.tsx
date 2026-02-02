@@ -191,12 +191,12 @@ const ClaimCard: React.FC<ClaimCardProps> = ({
   // Default full card
   return (
     <Box
+      className="mr-card mr-card-red"
       p={3}
-      borderWidth={1}
-      borderRadius="md"
-      bg="stat2Gradient"
-      boxShadow="md"
+      position="relative"
     >
+      <div className="mr-glow-bar mr-glow-bar-red" />
+      <div className="mr-scanlines" />
       <VStack align="start" spacing={3} w="100%">
         <HStack justifyContent="space-between" w="100%" alignItems="center">
           {loading ? <Spinner size="sm" /> : renderRadialGauge()}

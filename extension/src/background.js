@@ -1515,7 +1515,6 @@ async function handleScrapeJob(job) {
     // Step 3: Check if this is a PDF
     const viewerPrefix = browser.runtime.getURL("viewer.html");
     const isPdfViewer = targetTab.url && targetTab.url.startsWith(viewerPrefix);
-    const isPdfUrl = url && url.toLowerCase().endsWith('.pdf');
 
     let raw_html = null;
     let pdfText = null;
@@ -1523,36 +1522,67 @@ async function handleScrapeJob(job) {
     let pdfAuthors = null;
     let actualUrl = url;
 
-    if (isPdfViewer || isPdfUrl) {
-      // Extract PDF from viewer or direct PDF URL
-      console.log(`[EXT] Detected PDF, fetching text from backend...`);
+    // For viewer.html tabs, extract the actual PDF URL from query params
+    if (isPdfViewer) {
+      const urlParams = new URLSearchParams(new URL(targetTab.url).search);
+      actualUrl = urlParams.get('src');
+    }
 
-      // Get the actual PDF URL (if on viewer, extract from query param)
-      if (isPdfViewer) {
-        const urlParams = new URLSearchParams(new URL(targetTab.url).search);
-        actualUrl = urlParams.get('src');
-      }
+    // Simple PDF detection: try to fetch as PDF if URL suggests it might be one
+    const mightBePdf = url && (url.toLowerCase().includes('.pdf') || url.toLowerCase().includes('/download'));
+
+    if (isPdfViewer || mightBePdf) {
+      // Try to extract as PDF
+      console.log(`[EXT] Attempting PDF extraction from tab ${targetTab.id} for ${actualUrl}`);
 
       try {
-        const pdfRes = await fetch(`${BASE_URL}/api/fetch-pdf-text`, {
+        // Try to fetch the PDF blob from the loaded tab
+        const pdfResponse = await fetch(actualUrl);
+
+        if (!pdfResponse.ok) {
+          console.log(`[EXT] PDF fetch failed with status ${pdfResponse.status}, will try HTML extraction`);
+          throw new Error("Not a PDF or fetch failed");
+        }
+
+        const pdfBlob = await pdfResponse.arrayBuffer();
+        console.log(`[EXT] Got blob from browser: ${pdfBlob.byteLength} bytes`);
+
+        if (!pdfBlob || pdfBlob.byteLength === 0) {
+          throw new Error("Blob is empty");
+        }
+
+        // Send blob to backend for parsing
+        const pdfRes = await fetch(`${BASE_URL}/api/parse-pdf-blob`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/octet-stream" },
           credentials: "include",
-          body: JSON.stringify({ url: actualUrl }),
+          body: pdfBlob,
         });
+
+        if (!pdfRes.ok) {
+          const errorText = await pdfRes.text();
+          console.log(`[EXT] PDF parsing failed: ${errorText}, will try HTML extraction`);
+          throw new Error("PDF parsing failed");
+        }
 
         const pdfData = await pdfRes.json();
         if (pdfData.success && pdfData.text) {
           pdfText = pdfData.text;
           pdfTitle = pdfData.title || null;
           pdfAuthors = pdfData.authors || null;
-          console.log(`[EXT] Extracted ${pdfText.length} chars from PDF (title: ${pdfTitle})`);
+          console.log(`[EXT] ✅ Extracted ${pdfText.length} chars from PDF (title: ${pdfTitle})`);
         } else {
-          throw new Error("PDF text extraction failed");
+          throw new Error("PDF parsing returned no text");
         }
       } catch (err) {
-        console.error("[EXT] PDF extraction error:", err);
-        throw new Error(`Failed to extract PDF: ${err.message}`);
+        // PDF extraction failed, fall back to HTML
+        console.log(`[EXT] PDF extraction failed (${err.message}), falling back to HTML extraction`);
+        const results = await browser.scripting.executeScript({
+          target: { tabId: targetTab.id },
+          func: () => document.documentElement.outerHTML,
+        });
+        raw_html = results[0].result;
+        console.log(`[EXT] Extracted ${raw_html.length} chars HTML from tab ${targetTab.id}`);
       }
     } else {
       // Extract HTML from regular webpage

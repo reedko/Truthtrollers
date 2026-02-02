@@ -35,25 +35,23 @@ const MicroClaimCard: React.FC<MicroClaimCardProps> = ({
 
   return (
     <Box
-      border="1px solid"
-      bg="stat2Gradient"
-      borderColor="gray.600"
-      borderRadius="md"
+      className="mr-card mr-card-blue"
       p={2}
-      color="white"
-      shadow="md"
+      position="relative"
     >
+      <div className="mr-glow-bar mr-glow-bar-blue" />
+      <div className="mr-scanlines" />
       <VStack align="start" spacing={1}>
         <HStack justifyContent="space-between" w="100%">
-          <Text fontWeight="bold" colorScheme="whiteAlpha.800">
+          <Text className="mr-text-primary" fontWeight="bold">
             {title}
           </Text>
           <Badge colorScheme={statusColors[status]}>{status}</Badge>
         </HStack>
-        <Text fontSize="sm">{description}</Text>
+        <Text className="mr-text-secondary" fontSize="sm">{description}</Text>
 
         {relatedTask && (
-          <Text fontSize="xs" color="gray.400">
+          <Text className="mr-text-muted" fontSize="xs">
             Task: {relatedTask.content_name}
           </Text>
         )}

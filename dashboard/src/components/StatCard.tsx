@@ -1,4 +1,4 @@
-import { HStack, Spacer, Stat, StatLabel, StatNumber } from "@chakra-ui/react";
+import { HStack, Spacer, Stat, StatLabel, StatNumber, Box } from "@chakra-ui/react";
 
 interface StatCardProps {
   label: string;
@@ -6,22 +6,17 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ label, value }) => (
-  <Stat
-    p={2}
-    px={3}
-    py={1}
-    borderRadius="2xl"
-    shadow="md"
-    color="white"
-    bg="cardGradient"
-    w="full"
-  >
-    <HStack>
-      <StatLabel>{label}</StatLabel>
-      <Spacer />
-      <StatNumber>{value}</StatNumber>
-    </HStack>
-  </Stat>
+  <Box className="mr-card mr-card-blue" p={2} px={3} py={1} w="full" position="relative">
+    <div className="mr-glow-bar mr-glow-bar-blue" />
+    <div className="mr-scanlines" />
+    <Stat>
+      <HStack>
+        <StatLabel className="mr-metric-label">{label}</StatLabel>
+        <Spacer />
+        <StatNumber className="mr-metric-value">{value}</StatNumber>
+      </HStack>
+    </Stat>
+  </Box>
 );
 
 export default StatCard;

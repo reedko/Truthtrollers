@@ -55,18 +55,19 @@ const AuthBioModal: React.FC<AuthBioModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg">
       <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>Edit Author Bio</ModalHeader>
+      <ModalContent className="mr-modal">
+        <ModalHeader className="mr-modal-header">Edit Author Bio</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <Textarea
+            className="mr-input"
             value={bio}
             onChange={(e) => setBio(e.target.value)}
             placeholder="Edit author biography here..."
           />
         </ModalBody>
         <ModalFooter>
-          <Button onClick={handleSave} colorScheme="blue" mr={3}>
+          <Button className="mr-button" onClick={handleSave} mr={3}>
             Save
           </Button>
           <Button onClick={onClose}>Cancel</Button>

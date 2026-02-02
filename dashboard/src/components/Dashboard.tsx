@@ -75,25 +75,24 @@ const VisionDashboard: React.FC = () => {
   }
 
   return (
-    <Box p={6} minH="100vh">
-      <Card w="100%" bg="transparent" boxShadow="none">
-        <CardBody>
+    <Box className="mr-container" p={6} minH="100vh">
+      <div className="mr-content">
+        <Box w="100%">
           <TopStatsPanel
             tasks={tasksToRender}
             claimsByTask={claimsByTask}
             claimReferences={claimReferences}
             username={user?.username || ""}
           />
-        </CardBody>
-      </Card>
+        </Box>
 
-      {selectedTask && (
-        <Card mb={6} mt={6}>
-          <CardBody>
+        {selectedTask && (
+          <Box className="mr-card mr-card-blue" mb={6} mt={6} p={4} position="relative">
+            <div className="mr-glow-bar mr-glow-bar-blue" />
+            <div className="mr-scanlines" />
             <UnifiedHeader />
-          </CardBody>
-        </Card>
-      )}
+          </Box>
+        )}
 
       <Flex
         direction={{ base: "column", lg: "row" }}
@@ -104,54 +103,53 @@ const VisionDashboard: React.FC = () => {
         <VStack spacing={6} align="stretch" flex="1 1 60%">
           <Flex wrap="wrap" gap={4} width="100%" align="stretch">
             <Box flex={{ base: "1 1 100%", md: "1 1 45%" }} minW="260px">
-              <Card height="100%" bg="stackGradient">
-                <CardHeader>
+              <Box className="mr-card mr-card-blue" height="100%" p={4} position="relative">
+                <div className="mr-glow-bar mr-glow-bar-blue" />
+                <div className="mr-scanlines" />
+                <Box mb={4}>
                   <HStack>
-                    <Heading size="md" color="teal.200">
+                    <Heading size="md" className="mr-heading">
                       Assigned Tasks
                     </Heading>
                     <Button
+                      className="mr-button"
                       size="sm"
-                      colorScheme="teal"
-                      variant="outline"
                       onClick={() => setSelectedTask(null)}
                     >
                       Show All
                     </Button>
                   </HStack>
-                </CardHeader>
-                <CardBody>
-                  <AssignedTaskGrid tasks={tasksToRender} />
-                </CardBody>
-              </Card>
+                </Box>
+                <AssignedTaskGrid tasks={tasksToRender} />
+              </Box>
             </Box>
 
             <Box flex={{ base: "1 1 100%", md: "1 1 50%" }} minW="300px">
               <VStack spacing={4} align="stretch">
-                <Card height="100%" bg="stat2Gradient">
-                  <CardBody>
-                    <MultiLineChart />
-                  </CardBody>
-                </Card>
+                <Box className="mr-card mr-card-green" height="100%" p={4} position="relative">
+                  <div className="mr-glow-bar mr-glow-bar-green" />
+                  <div className="mr-scanlines" />
+                  <MultiLineChart />
+                </Box>
 
-                <Card height="145px">
-                  <CardHeader>
-                    <Heading size="md" color="teal.200" mb={-10}>
-                      Trending Topics
-                    </Heading>
-                  </CardHeader>
-                  <CardBody>
-                    <Text color="gray.300">
+                <Box className="mr-card mr-card-yellow" height="145px" p={4} position="relative">
+                  <div className="mr-glow-bar mr-glow-bar-yellow" />
+                  <div className="mr-scanlines" />
+                  <Heading size="md" className="mr-heading" mb={2}>
+                    Trending Topics
+                  </Heading>
+                  <VStack align="start" spacing={1}>
+                    <Text className="mr-text-secondary">
                       🔥 Spike in vaccine misinformation
                     </Text>
-                    <Text color="gray.300">
+                    <Text className="mr-text-secondary">
                       📈 Claim #5842 cited by 19 users today
                     </Text>
-                    <Text color="gray.300">
-                      💬 “5G causes COVID” trending again
+                    <Text className="mr-text-secondary">
+                      💬 "5G causes COVID" trending again
                     </Text>
-                  </CardBody>
-                </Card>
+                  </VStack>
+                </Box>
               </VStack>
             </Box>
           </Flex>
@@ -164,38 +162,35 @@ const VisionDashboard: React.FC = () => {
         </VStack>
 
         <VStack spacing={6} align="stretch" flex="1 1 35%" minW="300px">
-          <Card bg="statGradient">
-            <CardHeader>
-              <Heading size="md" color="teal.200">
-                Your Claim Activity
-              </Heading>
-            </CardHeader>
-            <CardBody>
-              <ClaimProgressChart
-                assignedTasks={tasksToRender}
-                claimsByTask={claimsByTask}
-                claimReferences={claimReferences}
-              />
-            </CardBody>
-          </Card>
+          <Box className="mr-card mr-card-purple" p={4} position="relative">
+            <div className="mr-glow-bar mr-glow-bar-purple" />
+            <div className="mr-scanlines" />
+            <Heading size="md" className="mr-heading" mb={4}>
+              Your Claim Activity
+            </Heading>
+            <ClaimProgressChart
+              assignedTasks={tasksToRender}
+              claimsByTask={claimsByTask}
+              claimReferences={claimReferences}
+            />
+          </Box>
 
-          <Card height="100%" bg="gray.900">
-            <CardHeader>
-              <Heading size="md" color="teal.200">
-                Claims to Evaluate
-              </Heading>
-            </CardHeader>
-            <CardBody>
-              <ClaimBoard
-                tasks={tasksToRender}
-                claimsByTask={claimsByTask}
-                claimReferences={claimReferences}
-                selectedTask={selectedTask}
-              />
-            </CardBody>
-          </Card>
+          <Box className="mr-card mr-card-red" height="100%" p={4} position="relative">
+            <div className="mr-glow-bar mr-glow-bar-red" />
+            <div className="mr-scanlines" />
+            <Heading size="md" className="mr-heading" mb={4}>
+              Claims to Evaluate
+            </Heading>
+            <ClaimBoard
+              tasks={tasksToRender}
+              claimsByTask={claimsByTask}
+              claimReferences={claimReferences}
+              selectedTask={selectedTask}
+            />
+          </Box>
         </VStack>
       </Flex>
+      </div>
     </Box>
   );
 };

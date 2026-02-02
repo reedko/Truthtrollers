@@ -1,11 +1,12 @@
 const path = require("path");
 const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
 const webpack = require("webpack");
+const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 module.exports = {
   mode: "development",
   target: "web",
-  entry: "./src/sandbox.tsx", // ⬅️ Your meter test entry
+  entry: "./src/taskcard-sandbox.tsx", // ⬅️ TaskCard transparency test
   output: {
     path: path.resolve(__dirname, "sandbox-dist"), // ⬅️ Avoids nuking public/
     filename: "bundle.js",
@@ -18,9 +19,13 @@ module.exports = {
     port: 3002,
     hot: true,
     open: true,
+    https: false,
   },
   resolve: {
     extensions: [".tsx", ".ts", ".js"],
+    alias: {
+      'webextension-polyfill': path.resolve(__dirname, 'src/mock-browser.ts'),
+    },
   },
   module: {
     rules: [
@@ -40,5 +45,13 @@ module.exports = {
       "process.env": JSON.stringify(process.env),
     }),
     new ReactRefreshWebpackPlugin(),
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: "public/assets",
+          to: "assets",
+        },
+      ],
+    }),
   ],
 };

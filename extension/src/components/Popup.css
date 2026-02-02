@@ -38,22 +38,13 @@
 }
 
 .popup-box {
-  position: fixed; /* Fixed position relative to the viewport */
-  top: 1px;
+  position: fixed;
+  top: 10px;
   right: 20px;
-  padding: 10px 10px;
-  /* background-color: rgba(34, 147, 126, 0.7);*/
-  color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  z-index: 1000; /* Make sure it is above the video */
-  animation: fadeIn 1.5s ease-in-out; /* Fade-in effect with 0.5s duration */
-  max-width: 300px;
-}
-.logo-box {
-  border-radius: 5px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  padding: 5px 5px;
+  z-index: 10000; /* Ensure it's above all page content */
+  animation: fadeIn 0.8s ease-in-out;
+  box-sizing: border-box !important;
+  font-size: 16px !important; /* Reset base font size */
 }
 
 .popup-buttons {

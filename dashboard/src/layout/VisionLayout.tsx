@@ -15,8 +15,11 @@ import {
   useBreakpointValue,
 } from "@chakra-ui/react";
 import { Outlet, useLocation, Link as RouterLink } from "react-router-dom";
-import { FiHome, FiBarChart2, FiMenu, FiUser } from "react-icons/fi";
+import { FiHome, FiBarChart2, FiMenu, FiUser, FiAward } from "react-icons/fi";
 import TopicList from "../components/TopicList";
+import TopContributors from "../components/TopContributors";
+import HotTopics from "../components/HotTopics";
+import CollapsibleTopics from "../components/CollapsibleTopics";
 import NavBar from "../components/NavBar";
 import { useTaskStore } from "../store/useTaskStore";
 import { useAuthStore } from "../store/useAuthStore";
@@ -69,13 +72,24 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
           <Text>Dashboard</Text>
         </HStack>
       </RouterLink>
-
+      <RouterLink to="/gamespace" onClick={handleClick("/gamespace")}>
+        <HStack spacing={2} mb={2}>
+          <FiHome />
+          <Text>GameSpace</Text>
+        </HStack>
+      </RouterLink>
+      <RouterLink to="/level" onClick={handleClick("/level")}>
+        <HStack spacing={2} mb={2}>
+          <FiAward />
+          <Text>Level</Text>
+        </HStack>
+      </RouterLink>
       {createLink("Extension", "/extension")}
       {createLink("Workspace", selectedTaskId ? "/workspace" : "/tasks")}
       {createLink("Molecule", selectedTaskId ? "/molecule" : "/tasks")}
       {createLink(
         "Discussion",
-        selectedTaskId ? `/discussion/${selectedTaskId}` : "/tasks"
+        selectedTaskId ? `/discussion/${selectedTaskId}` : "/tasks",
       )}
 
       <RouterLink to="/game" onClick={handleClick("/game")}>
@@ -90,6 +104,15 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
         <AccountMenu />
         <Text>Account</Text>
       </HStack>
+
+      {/* Activity Widgets */}
+      <Box w="full" mt={6}>
+        <VStack spacing={3} w="full">
+          {isTaskPage && <CollapsibleTopics />}
+          <TopContributors />
+          <HotTopics />
+        </VStack>
+      </Box>
 
       {isTaskPage && selectedTaskId && (
         <Box overflowY="auto" flex="1" w="full" mt={4} pr={1}>
@@ -157,7 +180,7 @@ const VisionLayout: React.FC = () => {
       window.history.replaceState(
         {},
         "",
-        location.pathname + (newSearch ? `?${newSearch}` : "")
+        location.pathname + (newSearch ? `?${newSearch}` : ""),
       );
     }
   }, [location.search, location.pathname, setAuth]);

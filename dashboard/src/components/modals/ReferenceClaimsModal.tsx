@@ -83,6 +83,7 @@ const ReferenceClaimsModal: React.FC<Props> = ({
       />
 
       <MotionCard
+        className="mr-modal"
         as={motion.div}
         initial={{ x: isMobile ? 0 : "100%", opacity: isMobile ? 1 : 0 }}
         animate={{ x: 0, opacity: 1 }}
@@ -113,6 +114,7 @@ const ReferenceClaimsModal: React.FC<Props> = ({
       >
         {/* Sticky header with extra right padding so title never sits under the X */}
         <ModalHeader
+          className="mr-modal-header"
           position={isMobile ? "sticky" : "static"}
           top={0}
           zIndex={2}

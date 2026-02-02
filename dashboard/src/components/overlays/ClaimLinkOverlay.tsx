@@ -4,15 +4,12 @@ import {
   Box,
   Button,
   FormLabel,
-  HStack,
   Slider,
   SliderFilledTrack,
   SliderThumb,
   SliderTrack,
-  Switch,
   Text,
   Textarea,
-  Tooltip,
   useToast,
 } from "@chakra-ui/react";
 import ResponsiveOverlay from "./ResponsiveOverlay"; // <-- use the shell we discussed
@@ -25,6 +22,7 @@ import {
 import { Claim } from "../../../../shared/entities/types";
 import { ClaimLink } from "../RelationshipMap";
 import { useTaskStore } from "../../store/useTaskStore";
+import { calculateLinkPoints } from "../../services/gameScoring";
 
 interface ClaimLinkOverlayProps {
   isOpen: boolean;
@@ -35,6 +33,9 @@ interface ClaimLinkOverlayProps {
   claimLink?: ClaimLink | null;
   onLinkCreated?: () => void;
   verimeter_score?: number;
+  // 🎮 Game scoring
+  onScoreAwarded?: (points: number) => void;
+  sourceClaimVeracity?: number; // AI truth rating of source claim
 }
 
 const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
@@ -45,19 +46,33 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
   isReadOnly,
   claimLink,
   onLinkCreated,
+  onScoreAwarded,
+  sourceClaimVeracity,
 }) => {
   const toast = useToast();
   const setVerimeterScore = useTaskStore((s) => s.setVerimeterScore);
   const viewerId = useTaskStore((s) => s.viewingUserId) ?? 0; // use your store id
 
   const [supportLevel, setSupportLevel] = useState(0);
-  const [relationship, setRelationship] = useState<"supports" | "refutes">(
-    "supports"
+  const [relationship, setRelationship] = useState<"supports" | "refutes" | "nuanced">(
+    "nuanced",
   );
   const [notes, setNotes] = useState(claimLink?.notes || "");
   const [verimeterScore, setLocalVerimeterScore] = useState<number | null>(
-    claimLink?.verimeter_score ?? null
+    claimLink?.verimeter_score ?? null,
   );
+
+  // Update relationship based on support level
+  const handleSupportLevelChange = (val: number) => {
+    setSupportLevel(val);
+    if (val === 0) {
+      setRelationship("nuanced");
+    } else if (val > 0) {
+      setRelationship("supports");
+    } else {
+      setRelationship("refutes");
+    }
+  };
 
   // keep your live score fetch behavior for read-only viewing
   useEffect(() => {
@@ -86,22 +101,47 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
 
   const handleSubmit = async () => {
     try {
+      // Map "nuanced" to "related" for the API
+      const apiRelationship = relationship === "nuanced" ? "related" : relationship;
+
+      // 🎮 Calculate points BEFORE creating link
+      let pointsEarned = 0;
+      if (onScoreAwarded && sourceClaimVeracity !== undefined) {
+        pointsEarned = calculateLinkPoints(sourceClaimVeracity, supportLevel);
+        console.log(`🎮 Points earned: ${pointsEarned} (veracity: ${sourceClaimVeracity}, stance: ${supportLevel})`);
+      }
+
+      // Create link with points_earned
       await addClaimLink({
         source_claim_id: sourceClaim?.claim_id ?? 0,
         target_claim_id: targetClaim?.claim_id ?? 0,
         user_id: viewerId, // <-- FIXED: use your store id
-        relationship, // "supports" | "refutes"
+        relationship: apiRelationship, // "supports" | "refutes" | "related"
         support_level: supportLevel, // (keep your -1..1 slider as-is)
         notes, // from your existing field
+        points_earned: pointsEarned, // 🎮 Save to database
       });
 
-      toast({
-        title: "Claim link created",
-        description: `Link: ${relationship} (${supportLevel})`,
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
+      // 🎮 Award points locally
+      if (onScoreAwarded && sourceClaimVeracity !== undefined) {
+        onScoreAwarded(pointsEarned);
+
+        toast({
+          title: `Claim link created - ${pointsEarned >= 0 ? '+' : ''}${pointsEarned.toFixed(1)} points!`,
+          description: `Link: ${relationship} (${supportLevel})`,
+          status: pointsEarned >= 0 ? "success" : "warning",
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: "Claim link created",
+          description: `Link: ${relationship} (${supportLevel})`,
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
 
       onLinkCreated?.();
 
@@ -131,7 +171,7 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
 
   const footer = !isReadOnly ? (
     <>
-      <Button colorScheme="blue" mr={3} onClick={handleSubmit}>
+      <Button className="mr-button" mr={3} onClick={handleSubmit}>
         Create Link
       </Button>
       <Button onClick={onClose}>Cancel</Button>
@@ -148,23 +188,24 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
       footer={footer}
       size="lg"
     >
-      <Text fontWeight="bold" mb={2}>
+      <Text className="mr-text-primary" fontWeight="bold" mb={2}>
         Source Claim:
       </Text>
-      <Text mb={4}>{sourceClaim?.claim_text}</Text>
+      <Text className="mr-text-secondary" mb={4}>{sourceClaim?.claim_text}</Text>
 
-      <Text fontWeight="bold" mb={2}>
+      <Text className="mr-text-primary" fontWeight="bold" mb={2}>
         Target Claim:
       </Text>
-      <Text mb={4}>{targetClaim?.claim_text}</Text>
+      <Text className="mr-text-secondary" mb={4}>{targetClaim?.claim_text}</Text>
 
-      <FormLabel mt={4}>Notes</FormLabel>
+      <FormLabel className="mr-text-primary" mt={4}>Notes</FormLabel>
       {isReadOnly ? (
-        <Text fontStyle="italic" p={2} borderRadius="md">
+        <Text className="mr-text-secondary" fontStyle="italic" p={2} borderRadius="md">
           {claimLink?.notes || "No notes provided."}
         </Text>
       ) : (
         <Textarea
+          className="mr-input"
           placeholder="Optional notes about this link..."
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -173,19 +214,19 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
 
       {isReadOnly && claimLink ? (
         <Box mb={4} mt={2}>
-          <FormLabel mb={1}>Relationship</FormLabel>
-          <Text fontWeight="bold" fontSize="lg">
+          <FormLabel className="mr-text-primary" mb={1}>Relationship</FormLabel>
+          <Text className="mr-text-primary" fontWeight="bold" fontSize="lg">
             {verimeterScore !== null ? (
               <>
                 {verimeterScore > 0
                   ? "✅ Supports"
                   : verimeterScore < 0
-                  ? "⛔ Refutes"
-                  : "⚖️ Neutral"}{" "}
+                    ? "⛔ Refutes"
+                    : "⚖️ Neutral"}{" "}
                 : {(verimeterScore * 1000).toFixed(0)}%
               </>
             ) : (
-              <Text as="span" fontStyle="italic" color="gray.500">
+              <Text as="span" className="mr-text-muted" fontStyle="italic">
                 loading...
               </Text>
             )}
@@ -193,36 +234,43 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
         </Box>
       ) : (
         <>
-          <FormLabel mb={1}>Relationship:</FormLabel>
-          <HStack mb={4}>
-            <Tooltip label="Does this support or refute the claim?">
-              <Switch
-                isChecked={relationship === "supports"}
-                onChange={(e) =>
-                  setRelationship(e.target.checked ? "supports" : "refutes")
-                }
-                colorScheme="green"
-              />
-            </Tooltip>
-            <Text>{relationship}</Text>
-          </HStack>
-
-          <FormLabel mb={1}>Support Level</FormLabel>
+          <FormLabel className="mr-text-primary" mb={1}>Support Level</FormLabel>
           <Slider
             aria-label="support-slider"
             defaultValue={0}
             min={-1}
             max={1}
             step={0.1}
-            onChange={(val) => setSupportLevel(val)}
+            onChange={handleSupportLevelChange}
           >
-            <SliderTrack>
-              <SliderFilledTrack />
+            <SliderTrack bg="rgba(255,255,255,0.1)">
+              <SliderFilledTrack
+                bg={
+                  supportLevel === 0
+                    ? "var(--mr-yellow)"
+                    : supportLevel > 0
+                    ? "var(--mr-green)"
+                    : "var(--mr-red)"
+                }
+              />
             </SliderTrack>
-            <SliderThumb />
+            <SliderThumb boxSize={6} bg={
+              supportLevel === 0
+                ? "var(--mr-yellow)"
+                : supportLevel > 0
+                ? "var(--mr-green)"
+                : "var(--mr-red)"
+            } />
           </Slider>
           <Box mt={2} textAlign="center">
-            <Text>Level: {supportLevel.toFixed(1)}</Text>
+            <Text className="mr-text-primary" fontWeight="bold" fontSize="lg">
+              {supportLevel === 0
+                ? "⚖️ Nuanced"
+                : supportLevel > 0
+                ? "✅ Supports"
+                : "⛔ Refutes"
+              } ({supportLevel.toFixed(1)})
+            </Text>
           </Box>
         </>
       )}

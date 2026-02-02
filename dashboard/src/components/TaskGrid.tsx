@@ -32,7 +32,7 @@ const TaskGrid: React.FC<TaskGridProps> = memo(({ content }) => {
   return (
     <Flex
       wrap="wrap"
-      justify="flex-start" // ✅ consistent spacing per row
+      justify="center" // ✅ center the grid
       align="stretch"
       columnGap={{ base: 3, md: 4 }} // ✅ horizontal gap
       rowGap={{ base: 3, md: 4 }} // ✅ vertical gap

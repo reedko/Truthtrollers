@@ -12,6 +12,7 @@ import {
   HStack,
   Select,
   useDisclosure,
+  useToast,
 } from "@chakra-ui/react";
 import { BiChevronDown } from "react-icons/bi";
 import { useNavigate } from "react-router-dom";
@@ -21,6 +22,7 @@ import AssignUserModal from "./modals/AssignUserModal";
 import ReferenceModal from "./modals/ReferenceModal";
 import { Task } from "../../../shared/entities/types";
 import { extractMeta } from "../utils/normalize";
+import { uploadImage, fetchTask } from "../services/useDashboardAPI";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
@@ -43,10 +45,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onSelect,
 }) => {
   const navigate = useNavigate();
+  const toast = useToast();
   const [activeTask, setActiveTask] = useState<Task | null>(
     Array.isArray(task) ? task[0] : task
   );
   const cardRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
 
   const { setSelectedTask, selectedRedirect } = useTaskStore();
@@ -71,6 +75,23 @@ const TaskCard: React.FC<TaskCardProps> = ({
     if (Array.isArray(task)) setActiveTask(task[0]);
     else setActiveTask(task);
   }, [task]);
+
+  const handleUpload = async (file: File, contentId: number) => {
+    const result = await uploadImage(contentId, file, "content");
+    if (result) {
+      toast({
+        title: "Image Uploaded",
+        description: "Task thumbnail updated!",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      const updatedTask = await fetchTask(contentId);
+      if (updatedTask) {
+        setActiveTask(updatedTask);
+      }
+    }
+  };
 
   if (!activeTask) return null;
 
@@ -117,11 +138,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
     <Box w="100%" maxW="unset" minW={0}>
       <Box
         ref={cardRef}
-        bg={isAssignOpen || isReferenceModalOpen ? "blue.200" : "stat2Gradient"}
-        borderWidth="1px"
-        borderRadius="lg"
+        className="mr-card mr-card-blue"
         overflow="hidden"
-        boxShadow="md"
         p={3}
         w="100%"
         maxW="unset"
@@ -131,7 +149,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
         flexDirection="column"
         justifyContent="space-between"
       >
-        <Text fontWeight="bold" fontSize="md" textAlign="center">
+        <div className="mr-glow-bar mr-glow-bar-blue" />
+        <div className="mr-scanlines" />
+        <Text className="mr-badge mr-badge-blue" fontSize="md" textAlign="center">
           Content Details
         </Text>
 
@@ -180,7 +200,19 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
         {!hideMeta && (
           <Box flex="1" minH={0}>
-            <Box w="100%" h="150px" overflow="hidden" borderRadius="md" mb={2}>
+            <Box
+              as="button"
+              onClick={() => fileInputRef.current?.click()}
+              cursor="pointer"
+              w="100%"
+              h="150px"
+              overflow="hidden"
+              borderRadius="md"
+              mb={2}
+              border="2px solid transparent"
+              _hover={{ border: "2px solid #3182ce" }}
+              transition="border 0.2s"
+            >
               <Image
                 src={`${API_BASE_URL}/${activeTask.thumbnail}`}
                 alt="Thumbnail"
@@ -189,6 +221,18 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 objectFit="cover"
               />
             </Box>
+
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={(e) => {
+                if (e.target.files?.[0]) {
+                  handleUpload(e.target.files[0], activeTask.content_id);
+                }
+              }}
+              style={{ display: "none" }}
+            />
 
             {authors.length > 0 && (
               <Text fontSize={compact ? "xs" : "sm"}>
@@ -231,13 +275,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
           </Box>
         )}
 
-        <HStack justify="center">
-          <Button colorScheme="blue" onClick={handleSelect}>
+        <HStack justify="center" spacing={2} w="100%">
+          <Button className="mr-button" onClick={handleSelect} flex="1">
             Select
           </Button>
 
           <Menu onOpen={handleAssignedUsersOpen}>
-            <MenuButton as={Button} rightIcon={<BiChevronDown />}>
+            <MenuButton
+              as={Button}
+              className="mr-button"
+              flex="1"
+            >
               Users
             </MenuButton>
             <MenuList>

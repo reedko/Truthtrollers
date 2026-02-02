@@ -83,12 +83,38 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
         <Heading size="sm">References</Heading>
 
         {/* 🔥 Button to Open ReferenceModal */}
-        <Button
-          colorScheme="blue"
+        <Box
+          as="button"
+          background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+          backdropFilter="blur(20px)"
+          border="1px solid rgba(0, 162, 255, 0.4)"
+          color="rgba(0, 162, 255, 1)"
+          height="50px"
+          width="100%"
+          px={3}
+          py={2}
+          borderRadius="12px"
+          boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+          position="relative"
+          overflow="hidden"
+          transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+          _hover={{
+            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+            transform: "translateY(-2px)"
+          }}
           onClick={() => setIsReferenceModalOpen(true)}
         >
-          + Add Reference
-        </Button>
+          <Box
+            position="absolute"
+            left={0}
+            top={0}
+            width="20px"
+            height="100%"
+            background="linear-gradient(90deg, rgba(0, 162, 255, 0.4) 0%, transparent 100%)"
+            pointerEvents="none"
+          />
+          <Text position="relative" zIndex={1}>+ Add Reference</Text>
+        </Box>
 
         {references.length === 0 ? (
           <Text>No References Found</Text>
@@ -97,21 +123,39 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
             <Box
               key={ref.reference_content_id}
               data-ref-id={ref.reference_content_id} // 👈 for measuring
-              border="1px solid #90caf9"
-              bg="black"
-              color="#90caf9"
+              border="1px solid rgba(59, 130, 246, 0.4)"
+              background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+              backdropFilter="blur(20px)"
+              color="#f1f5f9"
               px={3}
               py={2}
-              borderRadius="md"
+              borderRadius="12px"
+              boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
               width="100%"
               display="flex"
               alignItems="center"
               justifyContent="space-between"
               cursor="pointer"
               mb={0} // 👈 no extra margin here
+              position="relative"
+              overflow="hidden"
+              transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+              _hover={{
+                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+                transform: "translateY(-2px)"
+              }}
             >
-              <VStack align="start" flex="1" spacing={0}>
-                <HStack spacing={2} width="100%">
+              <Box
+                position="absolute"
+                left={0}
+                top={0}
+                width="20px"
+                height="100%"
+                background="linear-gradient(90deg, rgba(59, 130, 246, 0.4) 0%, transparent 100%)"
+                pointerEvents="none"
+              />
+              <VStack align="start" flex="1" spacing={0} position="relative" zIndex={1}>
+                <HStack spacing={2} width="100%" position="relative" zIndex={1}>
                   <Tooltip label={ref.content_name} hasArrow>
                     <Text
                       flex="1"
@@ -142,7 +186,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                   )}
                 </HStack>
               </VStack>
-              <HStack spacing={2}>
+              <HStack spacing={2} position="relative" zIndex={1}>
                 <Button
                   size="sm"
                   variant="ghost"

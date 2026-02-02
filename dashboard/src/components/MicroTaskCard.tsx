@@ -25,17 +25,16 @@ const MicroTaskCard: React.FC<MicroTaskCardProps> = ({ task, onSelect }) => {
       maxW="175px"
       minW="90px"
       flex="1"
-      bg="stackGradient"
-      borderRadius="xl"
+      className="mr-card mr-card-purple"
       p={2}
-      boxShadow="md"
-      border="1px solid"
-      borderColor="gray.600"
       display="flex"
       flexDirection="column"
+      position="relative"
     >
+      <div className="mr-glow-bar mr-glow-bar-purple" />
+      <div className="mr-scanlines" />
       <VStack spacing={1} align="center">
-        <Text fontSize="xs" fontWeight="bold" noOfLines={2}>
+        <Text className="mr-text-primary" fontSize="xs" fontWeight="bold" noOfLines={2}>
           {task.content_name}
         </Text>
 

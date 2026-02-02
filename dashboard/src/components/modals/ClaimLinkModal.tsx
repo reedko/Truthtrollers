@@ -58,11 +58,11 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
 
   const [supportLevel, setSupportLevel] = useState(0);
   const [relationship, setRelationship] = useState<"supports" | "refutes">(
-    "supports"
+    "supports",
   );
   const [notes, setNote] = useState(claimLink?.notes || "");
   const [verimeterScore, setLocalVerimeterScore] = useState<number | null>(
-    claimLink?.verimeter_score ?? null
+    claimLink?.verimeter_score ?? null,
   );
 
   useEffect(() => {
@@ -132,8 +132,8 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered size="lg">
       <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
+      <ModalContent className="mr-modal">
+        <ModalHeader className="mr-modal-header">
           {!isReadOnly ? "Create Claim Relationship" : "Claim Relationship"}
         </ModalHeader>
         <ModalCloseButton />
@@ -155,6 +155,7 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
             </Text>
           ) : (
             <Textarea
+              className="mr-input"
               placeholder="Optional notes about this link..."
               value={notes}
               onChange={(e) => setNote(e.target.value)}
@@ -170,8 +171,8 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
                     {verimeterScore > 0
                       ? "✅ Supports"
                       : verimeterScore < 0
-                      ? "⛔ Refutes"
-                      : "⚖️ Neutral"}{" "}
+                        ? "⛔ Refutes"
+                        : "⚖️ Neutral"}{" "}
                     : {(verimeterScore * 1000).toFixed(0)}%
                   </>
                 ) : (
@@ -221,7 +222,12 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
         <ModalFooter>
           {!isReadOnly ? (
             <>
-              <Button colorScheme="blue" mr={3} onClick={handleSubmit}>
+              <Button
+                className="mr-button"
+                colorScheme="blue"
+                mr={3}
+                onClick={handleSubmit}
+              >
                 Create Link
               </Button>
               <Button onClick={onClose}>Cancel</Button>
