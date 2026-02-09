@@ -20,6 +20,8 @@ import { persistClaims } from "../../storage/persistClaims.js";
 // Claims + Evidence engines
 import { processTaskClaims } from "../../core/processTaskClaims.js";
 import { runEvidenceEngine } from "../../core/runEvidenceEngine.js";
+import { matchClaimsToTaskClaims } from "../../core/matchClaims.js";
+import { openAiLLM } from "../../core/openAiLLM.js";
 
 export default function createContentScrapeRoutes({ query }) {
   const router = Router();
@@ -420,16 +422,67 @@ export default function createContentScrapeRoutes({ query }) {
             }
 
             // b) Extract reference claims from full text (if available)
+            //    Pass task claim texts so the LLM also pulls statements that
+            //    directly respond to / contradict / support those claims.
             if (ref.cleanText) {
-              await processTaskClaims({
+              const extractedClaims = await processTaskClaims({
                 query,
                 taskContentId: ref.referenceContentId,
                 text: ref.cleanText,
                 claimType: "reference",
+                taskClaimsContext: taskClaims.map((c) => c.text),
               });
-              logger.log(
-                `✅ [/api/scrape-task] Extracted reference claims from reference ${ref.referenceContentId}`
-              );
+
+              if (extractedClaims.length === 0) {
+                logger.warn(
+                  `⚠️  [/api/scrape-task] WARNING: NO claims extracted from reference ${ref.referenceContentId}`
+                );
+                logger.warn(`   URL: ${ref.url}`);
+                logger.warn(`   Text length: ${ref.cleanText.length} chars`);
+                logger.warn(`   This may indicate extraction prompt issues or non-claim-worthy content`);
+              } else {
+                logger.log(
+                  `✅ [/api/scrape-task] Extracted ${extractedClaims.length} reference claims from ${ref.referenceContentId}`
+                );
+
+                // c) Auto-generate claim_links (reference claims → task claims with veracity scores)
+                try {
+                  const claimMatches = await matchClaimsToTaskClaims({
+                    referenceClaims: extractedClaims,
+                    taskClaims: taskClaims,
+                    llm: openAiLLM
+                  });
+
+                  // Insert into claim_links
+                  for (const match of claimMatches) {
+                    await query(
+                      `INSERT INTO claim_links
+                       (source_claim_id, target_claim_id, relationship, support_level, confidence, veracity_score, created_by_ai, notes)
+                       VALUES (?, ?, ?, ?, ?, ?, 1, ?)`,
+                      [
+                        match.referenceClaimId,
+                        match.taskClaimId,
+                        match.stance, // 'supports' or 'refutes'
+                        match.supportLevel, // -1.2 to +1.2
+                        match.confidence, // 0.15-0.98
+                        match.veracityScore, // 0-1
+                        match.rationale
+                      ]
+                    );
+                  }
+
+                  if (claimMatches.length > 0) {
+                    logger.log(
+                      `✅ [/api/scrape-task] Created ${claimMatches.length} claim_links for reference ${ref.referenceContentId}`
+                    );
+                  }
+                } catch (linkErr) {
+                  logger.warn(
+                    `⚠️  [/api/scrape-task] Failed to create claim_links for reference ${ref.referenceContentId}:`,
+                    linkErr.message
+                  );
+                }
+              }
             }
           } catch (err) {
             logger.warn(
@@ -522,15 +575,114 @@ export default function createContentScrapeRoutes({ query }) {
 
       // -----------------------------------------------------------------
       // 2. Extract & persist REFERENCE claims
+      //    If claimIds provided, use those for context.
+      //    Otherwise, if taskContentId provided, use ALL task claims for context.
+      //    This ensures context-aware extraction for manual dashboard scrapes.
       // -----------------------------------------------------------------
+      let taskClaimsContext = null;
+      if (claimIds && Array.isArray(claimIds) && claimIds.length > 0) {
+        // Specific claims provided (e.g., from claim detail page)
+        const claimRows = await query(
+          `SELECT claim_text FROM claims WHERE claim_id IN (?)`,
+          [claimIds]
+        );
+        taskClaimsContext = claimRows.map(row => row.claim_text);
+        logger.log(`🔍 [/api/scrape-reference] Using ${taskClaimsContext.length} specific claims for context`);
+      } else if (taskContentId) {
+        // No specific claims, but we have a task — use ALL task claims as context
+        const taskClaimRows = await query(
+          `SELECT c.claim_text
+           FROM content_claims cc
+           JOIN claims c ON cc.claim_id = c.claim_id
+           WHERE cc.content_id = ?
+           AND cc.relationship_type IN ('task', 'content')`,
+          [taskContentId]
+        );
+        if (taskClaimRows.length > 0) {
+          taskClaimsContext = taskClaimRows.map(row => row.claim_text);
+          logger.log(`🔍 [/api/scrape-reference] Fetched ${taskClaimsContext.length} task claims from content_id=${taskContentId} for context:`);
+          taskClaimsContext.forEach((claim, i) => {
+            logger.log(`   ${i + 1}. "${claim}"`);
+          });
+        } else {
+          logger.log(`⚠️  [/api/scrape-reference] No task claims found for content_id=${taskContentId}`);
+        }
+      }
+
       const refClaims = await processTaskClaims({
         query,
         taskContentId: referenceContentId,
         text,
         claimType: "reference",
+        taskClaimsContext,
       });
 
       const refClaimIds = refClaims.map((c) => c.id);
+
+      // PROACTIVE DETECTION: Warn if manual scrape extracted no claims
+      if (refClaimIds.length === 0) {
+        logger.warn(
+          `⚠️  [/api/scrape-reference] WARNING: Manual scrape extracted NO claims from ${url}`
+        );
+        logger.warn(`   Reference content_id: ${referenceContentId}`);
+        logger.warn(`   Text length: ${text.length} chars`);
+        logger.warn(`   Task claims context: ${taskClaimsContext ? taskClaimsContext.length : 0} claims`);
+      } else if (taskContentId && claimIds && claimIds.length > 0) {
+        // Auto-generate claim_links for manual scrapes with task context
+        try {
+          // Fetch task claims
+          const taskClaimRows = await query(
+            `SELECT c.claim_id, c.claim_text
+             FROM content_claims cc
+             JOIN claims c ON cc.claim_id = c.claim_id
+             WHERE cc.content_id = ?
+             AND cc.relationship_type IN ('task', 'content')`,
+            [taskContentId]
+          );
+
+          if (taskClaimRows.length > 0) {
+            const taskClaimsForMatching = taskClaimRows.map(row => ({
+              id: row.claim_id,
+              text: row.claim_text
+            }));
+
+            const claimMatches = await matchClaimsToTaskClaims({
+              referenceClaims: refClaims,
+              taskClaims: taskClaimsForMatching,
+              llm: openAiLLM
+            });
+
+            // Insert into claim_links
+            for (const match of claimMatches) {
+              await query(
+                `INSERT INTO claim_links
+                 (source_claim_id, target_claim_id, relationship, support_level, confidence, veracity_score, created_by_ai, notes)
+                 VALUES (?, ?, ?, ?, ?, ?, 1, ?)`,
+                [
+                  match.referenceClaimId,
+                  match.taskClaimId,
+                  match.stance,
+                  match.supportLevel,
+                  match.confidence,
+                  match.veracityScore,
+                  match.rationale
+                ]
+              );
+            }
+
+            if (claimMatches.length > 0) {
+              logger.log(
+                `✅ [/api/scrape-reference] Created ${claimMatches.length} claim_links for manual scrape ${referenceContentId}`
+              );
+            }
+          }
+        } catch (linkErr) {
+          logger.warn(
+            `⚠️  [/api/scrape-reference] Failed to create claim_links:`,
+            linkErr.message
+          );
+        }
+      }
 
       // -----------------------------------------------------------------
       // 2.5. Validate and update old snippet_only reference_claim_links

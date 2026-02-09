@@ -85,6 +85,12 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 <MenuItem as={RouterLink} to="/quadrantgrid">
                   QuadrantGrid
                 </MenuItem>
+                <MenuItem as={RouterLink} to="/textpad">
+                  TextPad
+                </MenuItem>
+                <MenuItem as={RouterLink} to="/level">
+                  Level
+                </MenuItem>
                 <MenuItem as={RouterLink} to="/game">
                   Game
                 </MenuItem>
@@ -155,6 +161,20 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
               </Link>
               <Link
                 as={RouterLink}
+                to="/textpad"
+                onClick={() => handleNavClick("/textpad")}
+              >
+                TextPad
+              </Link>
+              <Link
+                as={RouterLink}
+                to="/level"
+                onClick={() => handleNavClick("/level")}
+              >
+                Level
+              </Link>
+              <Link
+                as={RouterLink}
                 to="/game"
                 onClick={() => handleNavClick("/game")}
               >
@@ -203,6 +223,12 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   </MenuItem>
                   <MenuItem as={RouterLink} to="/quadrantgrid">
                     QuadrantGrid
+                  </MenuItem>
+                  <MenuItem as={RouterLink} to="/textpad">
+                    TextPad
+                  </MenuItem>
+                  <MenuItem as={RouterLink} to="/level">
+                    Level
                   </MenuItem>
                   <MenuItem as={RouterLink} to="/game">
                     Game

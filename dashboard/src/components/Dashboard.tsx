@@ -20,6 +20,7 @@ import UnifiedHeader from "./UnifiedHeader";
 import TopStatsPanel from "./TopStatsPanel";
 import MultiLineChart from "./MultiLineChart";
 import TaskProjectsPanel from "./TaskProjectsPanel";
+import PromptManager from "./PromptManager";
 
 const VisionDashboard: React.FC = () => {
   const user = useAuthStore((s) => s.user);
@@ -190,6 +191,11 @@ const VisionDashboard: React.FC = () => {
           </Box>
         </VStack>
       </Flex>
+
+      {/* Prompt Manager Section (Admin) */}
+      <Box mt={6} w="100%">
+        <PromptManager />
+      </Box>
       </div>
     </Box>
   );

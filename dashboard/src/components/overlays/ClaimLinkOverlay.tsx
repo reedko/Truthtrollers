@@ -36,6 +36,8 @@ interface ClaimLinkOverlayProps {
   // 🎮 Game scoring
   onScoreAwarded?: (points: number) => void;
   sourceClaimVeracity?: number; // AI truth rating of source claim
+  // AI rationale from reference_claim_task_links
+  rationale?: string;
 }
 
 const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
@@ -48,6 +50,7 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
   onLinkCreated,
   onScoreAwarded,
   sourceClaimVeracity,
+  rationale,
 }) => {
   const toast = useToast();
   const setVerimeterScore = useTaskStore((s) => s.setVerimeterScore);
@@ -57,10 +60,19 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
   const [relationship, setRelationship] = useState<"supports" | "refutes" | "nuanced">(
     "nuanced",
   );
-  const [notes, setNotes] = useState(claimLink?.notes || "");
+  // Pre-populate notes with AI rationale from reference_claim_task_links
+  const [notes, setNotes] = useState(claimLink?.notes || rationale || "");
   const [verimeterScore, setLocalVerimeterScore] = useState<number | null>(
     claimLink?.verimeter_score ?? null,
   );
+
+  // Update notes when modal opens or rationale changes
+  useEffect(() => {
+    if (isOpen && !isReadOnly && !claimLink?.notes) {
+      // Only populate if modal is open, not read-only, and no existing notes
+      setNotes(rationale || "");
+    }
+  }, [isOpen, rationale, isReadOnly, claimLink?.notes]);
 
   // Update relationship based on support level
   const handleSupportLevelChange = (val: number) => {

@@ -1,10 +1,22 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Box, Text, IconButton, Spinner, useToast } from "@chakra-ui/react";
+import {
+  Box,
+  Text,
+  IconButton,
+  Spinner,
+  useToast,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverArrow,
+  PopoverBody,
+} from "@chakra-ui/react";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   CloseIcon,
   RepeatIcon,
+  InfoIcon,
 } from "@chakra-ui/icons";
 import { Claim, ReferenceWithClaims } from "../../../shared/entities/types";
 import ClaimLinkOverlay from "./overlays/ClaimLinkOverlay";
@@ -55,6 +67,7 @@ interface PlayingCardProps {
   stance?: "support" | "refute" | "nuance" | "insufficient";
   confidence?: number;
   support_level?: number; // -1.2 to +1.2 directional support score
+  rationale?: string; // AI explanation for the stance
   hasLink?: boolean;
   // 🎮 Game scoring
   potentialPoints?: number; // Max points for perfect match
@@ -79,6 +92,7 @@ const PlayingCard: React.FC<PlayingCardProps> = ({
   stance,
   confidence,
   support_level,
+  rationale,
   hasLink = false,
   potentialPoints,
   veracityScore,
@@ -291,6 +305,50 @@ const PlayingCard: React.FC<PlayingCardProps> = ({
               <Text>{Math.round(relevanceScore)}</Text>
             </Box>
           )}
+          {/* Info icon (for viewing rationale) */}
+          {hasLink && rationale && (
+            <Popover placement="top" trigger="hover">
+              <PopoverTrigger>
+                <IconButton
+                  aria-label="View rationale"
+                  icon={<InfoIcon />}
+                  size="xs"
+                  variant="ghost"
+                  color={colors.text}
+                  _hover={{
+                    bg: colors.border.replace("0.4", "0.2"),
+                  }}
+                  transition="all 0.3s ease"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
+                />
+              </PopoverTrigger>
+              <PopoverContent
+                bg="#0f172a"
+                borderColor={colors.border}
+                border="2px solid"
+                boxShadow={`0 8px 32px rgba(0, 0, 0, 0.95), 0 0 20px ${colors.border}`}
+                maxW="400px"
+                _focus={{ outline: "none" }}
+              >
+                <PopoverArrow bg="#0f172a" borderColor={colors.border} />
+                <PopoverBody bg="#0f172a" borderRadius="md">
+                  <Text
+                    fontSize="xs"
+                    fontWeight="bold"
+                    color={colors.text}
+                    mb={2}
+                  >
+                    AI Rationale:
+                  </Text>
+                  <Text fontSize="sm" color="#94a3b8" lineHeight="1.6">
+                    {rationale}
+                  </Text>
+                </PopoverBody>
+              </PopoverContent>
+            </Popover>
+          )}
           {/* Re-assess button (for linked reference claims) */}
           {hasLink && onReassess && (
             <IconButton
@@ -347,7 +405,7 @@ const PlayingCard: React.FC<PlayingCardProps> = ({
             p="20px"
             pt="16px"
             position="relative"
-            zIndex={3}
+            zIndex={2}
             flex={1}
             display="flex"
             alignItems="center"
@@ -1976,6 +2034,7 @@ const GameSpace: React.FC<GameSpaceProps> = ({
           targetClaim={taskClaim}
           isReadOnly={false}
           onLinkCreated={handleLinkCreated}
+          rationale={currentRefClaim?.rationale}
         />
       </Box>
     );
@@ -2082,7 +2141,7 @@ const GameSpace: React.FC<GameSpaceProps> = ({
             transition="all 0.3s ease"
             opacity={ghostScore !== null ? 0.4 : 1}
           >
-            {userScore}
+            {userScore.toFixed(1)}
           </Text>
           {ghostScore !== null && (
             <Text
@@ -2098,7 +2157,7 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                 },
               }}
             >
-              {ghostScore}
+              {ghostScore.toFixed(1)}
             </Text>
           )}
         </Box>
@@ -2510,6 +2569,7 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                         stance={claim.stance}
                         confidence={claim.confidence}
                         support_level={claim.support_level}
+                        rationale={claim.rationale}
                         hasLink={claim.hasLink}
                         onReassess={() => {
                           if (selectedTaskClaimIndex !== null) {
@@ -2678,6 +2738,12 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                 ? draggedClaimVeracity
                 : undefined;
             })()}
+            rationale={
+              enrichedReferenceClaims.length > 0 &&
+              focusedReferenceClaimIndex < enrichedReferenceClaims.length
+                ? enrichedReferenceClaims[focusedReferenceClaimIndex].rationale
+                : undefined
+            }
           />
         );
       })()}
