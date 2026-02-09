@@ -273,6 +273,10 @@ export class GraphNode implements d3.SimulationNodeDatum {
   rating_source?: string;
   publisher_id?: number;
   author_id?: number;
+  rating?: number;
+  claimCount?: number;
+  veracity_score?: number;
+  confidence_level?: number;
 
   /*
  

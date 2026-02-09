@@ -999,5 +999,43 @@ export default function createMiscRoutes({ query, pool, db }) {
     }
   });
 
+  // ───────────────────────────────────────────────────────────
+  // Image Serving with Auto Extension Detection
+  // ───────────────────────────────────────────────────────────
+  router.get("/api/image/:type/:id", (req, res) => {
+    const { type, id } = req.params;
+
+    // Validate type
+    const validTypes = ['authors', 'publishers', 'content'];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({ error: 'Invalid type. Must be authors, publishers, or content' });
+    }
+
+    // Navigate up to backend directory from routes/misc
+    const backendDir = path.resolve(__dirname, "../../../");
+    const imageDir = path.join(backendDir, `assets/images/${type}`);
+
+    // Build base filename without extension
+    // Handle the singular form correctly
+    const singularType = type === 'content' ? 'content' : type.slice(0, -1);
+    const baseFilename = `${singularType}_id_${id}`;
+
+    // Try different extensions in order of preference
+    const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+
+    for (const ext of extensions) {
+      const fullPath = path.join(imageDir, baseFilename + ext);
+
+      if (fs.existsSync(fullPath)) {
+        console.log(`✅ Serving image: ${fullPath}`);
+        return res.sendFile(fullPath);
+      }
+    }
+
+    // No image found with any extension
+    console.log(`❌ No image found for ${type}/${id} (tried ${extensions.join(', ')})`);
+    return res.status(404).json({ error: 'Image not found' });
+  });
+
   return router;
 }

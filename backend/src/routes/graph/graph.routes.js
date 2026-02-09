@@ -28,7 +28,11 @@ export default function createGraphRoutes({ query, pool }) {
     }
 
     try {
-      const nodes = await query(nodeSql, [entity, entity, entity, entity]);
+      // Task entityType needs 5 params due to AI evidence rating calculation
+      const nodeParams = entityType === 'task'
+        ? [entity, entity, entity, entity, entity]
+        : [entity, entity, entity, entity];
+      const nodes = await query(nodeSql, nodeParams);
       const links = await query(linkSql, [entity, entity, entity, entity]);
 
       // Ensure JSON-safe response
@@ -65,7 +69,11 @@ export default function createGraphRoutes({ query, pool }) {
     console.log(entity);
     try {
       // 1. Base nodes/links
-      const nodes = await query(nodeSql, [entity, entity, entity, entity]);
+      // Task entityType needs 5 params due to AI evidence rating calculation
+      const nodeParams = entityType === 'task'
+        ? [entity, entity, entity, entity, entity]
+        : [entity, entity, entity, entity];
+      const nodes = await query(nodeSql, nodeParams);
       const links = await query(linkSql, [entity, entity, entity, entity]);
 
       // 2. Only claims & links actually connected to the task

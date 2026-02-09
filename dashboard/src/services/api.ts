@@ -32,8 +32,8 @@ export const fetchNewGraphDataFromLegacyRoute = async (
     console.log("[API] raw links:", data.links.length, data.links);
 
     const nodes = data.nodes.map(
-      (node: GraphNode) =>
-        new GraphNode(
+      (node: GraphNode) => {
+        const graphNode = new GraphNode(
           node.id,
           node.label,
           node.type,
@@ -44,7 +44,17 @@ export const fetchNewGraphDataFromLegacyRoute = async (
           node.claim_id,
           node.publisher_id,
           node.author_id
-        )
+        );
+        // Preserve additional fields like rating, claimCount, etc
+        Object.assign(graphNode, {
+          rating: node.rating,
+          claimCount: node.claimCount,
+          veracity_score: node.veracity_score,
+          confidence_level: node.confidence_level
+        });
+        console.log(`📊 Node ${node.id} (${node.type}): rating=${node.rating}, veracity_score=${node.veracity_score}`);
+        return graphNode;
+      }
     );
 
     console.log(data.nodes, "nodes", data.links, "links");

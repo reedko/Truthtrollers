@@ -32,7 +32,9 @@ interface RelationshipMapProps {
   leftX: number;
   rightX: number;
   onLineClick?: (link: ClaimLink) => void;
+  onLineHover?: (link: ClaimLink) => void;
   claimLinks: ClaimLink[];
+  isModalOpen?: boolean;
 }
 
 const RelationshipMap: React.FC<RelationshipMapProps> = ({
@@ -45,7 +47,9 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
   leftX,
   rightX,
   onLineClick,
+  onLineHover,
   claimLinks,
+  isModalOpen = false,
 }) => {
   const [rightCenters, setRightCenters] = useState<Record<number, number>>({});
   const containerRef = useRef<HTMLDivElement>(null);
@@ -53,6 +57,8 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
   const adjustedLeftX = leftX - 12;
   const adjustedRightX = rightX + 15;
   const [hasMeasuredContainer, setHasMeasuredContainer] = useState(false);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [hoveredLinkId, setHoveredLinkId] = useState<string | null>(null);
 
   /*   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -82,7 +88,13 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
       observer.observe(containerRef.current);
     }
 
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      // Clear hover timeout on unmount
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+    };
   }, []);
   useLayoutEffect(() => {
     const measure = () => {
@@ -225,14 +237,66 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
                "rgba(100, 150, 255, 0.5)") // light blue for nuance
             : baseColor;
 
+          const linkId = link.id || i.toString();
+
+          const handleMouseEnter = () => {
+            setHoveredLinkId(linkId);
+            // Clear any existing timeout
+            if (hoverTimeoutRef.current) {
+              clearTimeout(hoverTimeoutRef.current);
+            }
+            // Set 2-second timeout to trigger onLineHover
+            hoverTimeoutRef.current = setTimeout(() => {
+              onLineHover?.(link);
+            }, 2000);
+          };
+
+          const handleMouseLeave = () => {
+            setHoveredLinkId(null);
+            // Clear timeout if user stops hovering
+            if (hoverTimeoutRef.current) {
+              clearTimeout(hoverTimeoutRef.current);
+              hoverTimeoutRef.current = null;
+            }
+          };
+
+          // Apply fade effect when modal is open
+          const opacity = isModalOpen ? 0.15 : 1;
+          const activeOpacity = hoveredLinkId === linkId ? 1 : opacity;
+
           return (
             <g
-              key={link.id || i}
+              key={linkId}
               onClick={() => onLineClick?.(link)}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
               style={{ cursor: "pointer", pointerEvents: "auto" }}
             >
-              <circle cx={adjustedLeftX} cy={y1} r="8" fill="blue" />
-              <circle cx={adjustedRightX} cy={y2} r="8" fill="red" />
+              {/* Invisible thicker line for easier hover detection */}
+              <line
+                x1={adjustedLeftX}
+                y1={y1}
+                x2={adjustedRightX}
+                y2={y2}
+                stroke="transparent"
+                strokeWidth={20}
+                style={{ cursor: "pointer", pointerEvents: "auto" }}
+              />
+
+              <circle
+                cx={adjustedLeftX}
+                cy={y1}
+                r="8"
+                fill="blue"
+                opacity={activeOpacity}
+              />
+              <circle
+                cx={adjustedRightX}
+                cy={y2}
+                r="8"
+                fill="red"
+                opacity={activeOpacity}
+              />
 
               <title>
                 {`${isAISuggested ? "🤖 AI " : "✓ "}${
@@ -241,16 +305,19 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
                   "Nuances"
                 } • ${Math.abs(link.confidence * 100).toFixed(0)}%`}
               </title>
+
+              {/* Visible line */}
               <line
-                key={link.id || i}
+                key={linkId}
                 x1={adjustedLeftX}
                 y1={y1}
                 x2={adjustedRightX}
                 y2={y2}
                 stroke={strokeColor}
-                strokeWidth={4}
+                strokeWidth={hoveredLinkId === linkId ? 6 : 4}
                 strokeDasharray={isAISuggested ? "8,4" : undefined}
                 markerStart="url(#arrowhead)"
+                opacity={activeOpacity}
                 style={{ cursor: "pointer", pointerEvents: "auto" }}
               />
             </g>

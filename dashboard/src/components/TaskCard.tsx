@@ -13,11 +13,14 @@ import {
   Select,
   useDisclosure,
   useToast,
+  IconButton,
 } from "@chakra-ui/react";
 import { BiChevronDown } from "react-icons/bi";
+import { FiTrash2 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { useRef, useState, memo, useEffect } from "react";
 import { useTaskStore } from "../store/useTaskStore";
+import { useAuthStore } from "../store/useAuthStore";
 import AssignUserModal from "./modals/AssignUserModal";
 import ReferenceModal from "./modals/ReferenceModal";
 import { Task } from "../../../shared/entities/types";
@@ -55,9 +58,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   const { setSelectedTask, selectedRedirect } = useTaskStore();
   const fetchAssignedUsers = useTaskStore((s) => s.fetchAssignedUsers);
+  const fetchTasksForUser = useTaskStore((s) => s.fetchTasksForUser);
   const assignedUsers = useTaskStore((s) =>
     activeTask ? s.assignedUsers[activeTask.content_id] : undefined
   );
+  const user = useAuthStore((s) => s.user);
 
   const {
     isOpen: isAssignOpen,
@@ -123,6 +128,58 @@ const TaskCard: React.FC<TaskCardProps> = ({
     openModal();
   };
 
+  const handleDelete = async () => {
+    if (!user?.user_id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to delete tasks",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (!window.confirm(`Delete "${activeTask.content_name}"?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/tasks/${activeTask.content_id}?userId=${user.user_id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (response.ok) {
+        toast({
+          title: "Task deleted",
+          description: "The task has been removed from your list",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+
+        // Refresh the task list
+        if (user.user_id) {
+          fetchTasksForUser(user.user_id);
+        }
+      } else {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to delete task");
+      }
+    } catch (error: any) {
+      toast({
+        title: "Delete failed",
+        description: error.message || "An error occurred while deleting the task",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
   // Keep height predictable but not forcing width
   const cardHeight = hideMeta
     ? compact
@@ -151,9 +208,27 @@ const TaskCard: React.FC<TaskCardProps> = ({
       >
         <div className="mr-glow-bar mr-glow-bar-blue" />
         <div className="mr-scanlines" />
-        <Text className="mr-badge mr-badge-blue" fontSize="md" textAlign="center">
-          Content Details
-        </Text>
+
+        {/* Title bar with delete button */}
+        <Box position="relative" mb={1}>
+          <Text className="mr-badge mr-badge-blue" fontSize="md" textAlign="center">
+            Content Details
+          </Text>
+          <IconButton
+            aria-label="Delete task"
+            icon={<FiTrash2 />}
+            onClick={handleDelete}
+            size="xs"
+            colorScheme="red"
+            variant="ghost"
+            position="absolute"
+            top="0"
+            right="0"
+            zIndex={10}
+            opacity={0.7}
+            _hover={{ opacity: 1 }}
+          />
+        </Box>
 
         {Array.isArray(task) && task.length > 1 ? (
           <Select

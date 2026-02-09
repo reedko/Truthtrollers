@@ -15,6 +15,8 @@ type NodeData = {
   type: string;
   claim_id?: number;
   content_id?: number;
+  author_id?: number;
+  publisher_id?: number;
   url?: string;
   rating?: string | number;
   veracity_score?: number;
@@ -519,14 +521,22 @@ const NodeCard: React.FC<NodeCardProps> = ({
         : type === "publisher"
           ? 3
           : 0;
-  const thumbnailPath =
-    {
-      0: `ttlogo11.png`,
-      1: `authors/author_id_${data.author_id || id.replace("autho-", "")}.png`,
-      2: `content/content_id_${data.content_id || id.replace("conte-", "")}.png`,
-      3: `publishers/publisher_id_${data.publisher_id || id.replace("publi-", "")}.png`,
-    }[group] || `ttlogo11.png`;
-  const thumbnailUrl = `${API_BASE_URL}/assets/images/${thumbnailPath}`;
+  // Use new API endpoint that auto-detects image extension
+  let thumbnailUrl;
+  if (type === "author") {
+    const authorId = data.author_id || id.replace("autho-", "");
+    thumbnailUrl = `${API_BASE_URL}/api/image/authors/${authorId}`;
+  } else if (type === "task" || type === "reference") {
+    const contentId = data.content_id || id.replace("conte-", "");
+    thumbnailUrl = `${API_BASE_URL}/api/image/content/${contentId}`;
+  } else if (type === "publisher") {
+    const publisherId = data.publisher_id || id.replace("publi-", "");
+    thumbnailUrl = `${API_BASE_URL}/api/image/publishers/${publisherId}`;
+  } else {
+    thumbnailUrl = `${API_BASE_URL}/assets/images/ttlogo11.png`;
+  }
+
+  console.log(`🎴 NodeCard ${id} (${type}): author_id=${data.author_id}, publisher_id=${data.publisher_id}, content_id=${data.content_id}, thumbnailUrl=${thumbnailUrl}`);
 
   // Special handling for unified claim cards
   if (type === "unifiedClaim") {
@@ -1858,30 +1868,42 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             opacity: (ele: any) => {
               return ele.data("dimmed") ? 0.3 : 1.0;
             },
-            // Use background image - same logic as MR cards
+            // Z-index: rated nodes in foreground
+            "z-index": (ele: any) => {
+              const rating = ele.data("rating");
+              // Nodes with ratings get higher z-index
+              if (rating != null && rating !== 0) {
+                return 100 + Math.abs(rating); // Higher ratings even more in front
+              }
+              return 1; // Default z-index
+            },
+            // Use background image - use new API endpoint that auto-detects extension
             "background-image": (ele: any) => {
               const data = ele.data();
               const type = data.type;
               const nodeId = ele.id();
 
-              const API_BASE_URL = "https://localhost:5001";
+              const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
 
-              // Determine group and build thumbnail path (same as MR cards)
-              let thumbnailPath = "";
+              // Use new API endpoint for auto extension detection
+              let fullUrl;
               if (type === "author") {
                 const authorId = data.author_id || nodeId.replace("autho-", "");
-                thumbnailPath = `authors/author_id_${authorId}.png`;
+                fullUrl = `${API_BASE_URL}/api/image/authors/${authorId}`;
+                console.log(`🎨 Author node ${nodeId}: author_id=${data.author_id}, computed authorId=${authorId}`);
               } else if (type === "task" || type === "reference") {
                 const contentId = data.content_id || nodeId.replace("conte-", "");
-                thumbnailPath = `content/content_id_${contentId}.png`;
+                fullUrl = `${API_BASE_URL}/api/image/content/${contentId}`;
               } else if (type === "publisher") {
                 const publisherId = data.publisher_id || nodeId.replace("publi-", "");
-                thumbnailPath = `publishers/publisher_id_${publisherId}.png`;
+                fullUrl = `${API_BASE_URL}/api/image/publishers/${publisherId}`;
+                console.log(`🎨 Publisher node ${nodeId}: publisher_id=${data.publisher_id}, computed publisherId=${publisherId}`);
               } else {
                 return null; // No image for claims
               }
 
-              return `${API_BASE_URL}/assets/images/${thumbnailPath}`;
+              console.log(`🖼️ Node ${nodeId} (${type}) background-image: ${fullUrl}`);
+              return fullUrl;
             },
             "background-fit": "cover",
             "background-clip": "node",
@@ -2684,44 +2706,71 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               />
               <Box
                 display="flex"
-                alignItems="center"
-                gap={3}
+                flexDirection="column"
+                gap={1}
                 position="relative"
                 zIndex={2}
               >
-                <Text
-                  fontSize="xs"
-                  textTransform="uppercase"
-                  letterSpacing="2px"
-                  fontWeight="600"
-                  color="#00a2ff"
-                  textShadow="0 0 8px rgba(0, 162, 255, 0.6)"
-                  whiteSpace="nowrap"
-                >
-                  {selectedNodeData.type === "task"
-                    ? "TASK"
-                    : selectedNodeData.type === "reference"
-                      ? "REFERENCE"
-                      : selectedNodeData.type === "author"
-                        ? "AUTHOR"
-                        : selectedNodeData.type === "publisher"
-                          ? "PUBLISHER"
-                          : selectedNodeData.type === "refClaim"
-                            ? "REF CLAIM"
-                            : "TASK CLAIM"}
-                </Text>
-                <Box w="1px" h="16px" bg="rgba(0, 162, 255, 0.3)" />
-                <Text
-                  fontSize="sm"
-                  fontWeight="300"
-                  color="#f1f5f9"
-                  letterSpacing="0.5px"
-                  lineHeight="1.3"
-                  flex={1}
-                  noOfLines={1}
-                >
-                  {selectedNodeData.label}
-                </Text>
+                <Box display="flex" alignItems="center" gap={3}>
+                  <Text
+                    fontSize="xs"
+                    textTransform="uppercase"
+                    letterSpacing="2px"
+                    fontWeight="600"
+                    color="#00a2ff"
+                    textShadow="0 0 8px rgba(0, 162, 255, 0.6)"
+                    whiteSpace="nowrap"
+                  >
+                    {selectedNodeData.type === "task"
+                      ? "TASK"
+                      : selectedNodeData.type === "reference"
+                        ? "REFERENCE"
+                        : selectedNodeData.type === "author"
+                          ? "AUTHOR"
+                          : selectedNodeData.type === "publisher"
+                            ? "PUBLISHER"
+                            : selectedNodeData.type === "refClaim"
+                              ? "REF CLAIM"
+                              : "TASK CLAIM"}
+                  </Text>
+                  <Box w="1px" h="16px" bg="rgba(0, 162, 255, 0.3)" />
+                  <Text
+                    fontSize="sm"
+                    fontWeight="300"
+                    color="#f1f5f9"
+                    letterSpacing="0.5px"
+                    lineHeight="1.3"
+                    flex={1}
+                    noOfLines={1}
+                  >
+                    {selectedNodeData.label}
+                  </Text>
+                  {/* Show rating if available */}
+                  {selectedNodeData.rating != null && selectedNodeData.rating !== 0 && (
+                    <>
+                      <Box w="1px" h="16px" bg="rgba(0, 162, 255, 0.3)" />
+                      <Text
+                        fontSize="xs"
+                        fontWeight="600"
+                        color={selectedNodeData.rating > 0 ? "#4ade80" : "#f87171"}
+                        textShadow={`0 0 8px ${selectedNodeData.rating > 0 ? "rgba(74, 222, 128, 0.6)" : "rgba(248, 113, 113, 0.6)"}`}
+                        whiteSpace="nowrap"
+                      >
+                        ⭐ {typeof selectedNodeData.rating === 'number' ? selectedNodeData.rating.toFixed(1) : selectedNodeData.rating}
+                      </Text>
+                    </>
+                  )}
+                </Box>
+                {/* Additional details for references */}
+                {selectedNodeData.type === "reference" && selectedNodeData.url && (
+                  <Text
+                    fontSize="xs"
+                    color="#94a3b8"
+                    noOfLines={1}
+                  >
+                    🔗 {selectedNodeData.url}
+                  </Text>
+                )}
               </Box>
             </Box>
           )}
