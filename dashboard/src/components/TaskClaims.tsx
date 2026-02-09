@@ -163,6 +163,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
           <Box
             key={claim.claim_id}
             ref={(el) => (claimRefs.current[claim.claim_id] = el)}
+            data-claim-id={claim.claim_id}
             background={hoveredClaimId === claim.claim_id ? "linear-gradient(135deg, rgba(0, 162, 255, 0.3), rgba(0, 162, 255, 0.2))" : "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"}
             backdropFilter="blur(20px)"
             color={hoveredClaimId === claim.claim_id ? "#ffffff" : "#f1f5f9"}

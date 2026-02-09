@@ -22,6 +22,16 @@ interface Props {
   ) => void;
   draggingClaim: Pick<Claim, "claim_id" | "claim_text"> | null;
   onVerifyClaim?: (claim: Claim) => void;
+  claimLinks?: Array<{
+    id?: string;
+    claimId: number;
+    referenceId: number;
+    sourceClaimId: number;
+    relation: "support" | "refute" | "nuance";
+    confidence: number;
+  }>;
+  taskClaims?: Claim[];
+  onClaimClick?: (claim: Claim) => void;
 }
 
 const DraggableReferenceClaimsModal: React.FC<Props> = ({
@@ -31,6 +41,9 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
   setDraggingClaim,
   draggingClaim,
   onVerifyClaim,
+  claimLinks = [],
+  taskClaims = [],
+  onClaimClick,
 }) => {
   // Position state for the floating box
   const [position, setPosition] = useState(() => ({
@@ -91,11 +104,158 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
     return () => document.removeEventListener("mousemove", move);
   }, [draggingClaim]);
 
+  // Track claim element positions for drawing lines
+  const claimRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const [lineData, setLineData] = useState<Array<{
+    x1: number;
+    y1: number;
+    x2: number;
+    y2: number;
+    relation: "support" | "refute" | "nuance";
+    isAI: boolean;
+  }>>([]);
+
+  // Helper: Check if a claim has connections
+  const getClaimConnections = (claimId: number) => {
+    return claimLinks.filter(
+      (link) => link.sourceClaimId === claimId &&
+                link.referenceId === reference?.reference_content_id
+    );
+  };
+
+  // Get all unique task claims connected to this reference
+  const getConnectedTaskClaims = () => {
+    if (!reference) return [];
+
+    const taskClaimIds = new Set<number>();
+    claimLinks.forEach((link) => {
+      if (link.referenceId === reference.reference_content_id) {
+        taskClaimIds.add(link.claimId);
+      }
+    });
+
+    return taskClaims.filter((claim) => taskClaimIds.has(claim.claim_id));
+  };
+
+  const connectedTaskClaims = getConnectedTaskClaims();
+
+  // Update line positions when modal moves or opens
+  React.useEffect(() => {
+    if (!isOpen || !reference) {
+      setLineData([]);
+      return;
+    }
+
+    const updateLines = () => {
+      const lines: typeof lineData = [];
+
+      // For each claim in the reference
+      const refClaims = typeof reference.claims === "string"
+        ? JSON.parse(reference.claims)
+        : reference.claims || [];
+
+      refClaims.forEach((claim: Claim) => {
+        const connections = getClaimConnections(claim.claim_id);
+
+        connections.forEach((link) => {
+          // Get position of claim in modal
+          const claimEl = claimRefs.current[claim.claim_id];
+          // Get position of task claim (using data attribute)
+          const taskClaimEl = document.querySelector(
+            `[data-claim-id="${link.claimId}"]`
+          ) as HTMLElement;
+
+          if (claimEl && taskClaimEl) {
+            const claimRect = claimEl.getBoundingClientRect();
+            const taskRect = taskClaimEl.getBoundingClientRect();
+
+            lines.push({
+              x1: claimRect.left,
+              y1: claimRect.top + claimRect.height / 2,
+              x2: taskRect.right,
+              y2: taskRect.top + taskRect.height / 2,
+              relation: link.relation,
+              isAI: link.id?.toString().startsWith("ai-") ?? false,
+            });
+          }
+        });
+      });
+
+      setLineData(lines);
+    };
+
+    // Update on mount and when position changes
+    const timer = setTimeout(updateLines, 100);
+    return () => clearTimeout(timer);
+  }, [isOpen, position, reference, claimLinks]);
+
   // If not open, render nothing!
   if (!isOpen) return null;
 
   return (
     <>
+      {/* SVG overlay for connection lines */}
+      {lineData.length > 0 && (
+        <Box
+          position="fixed"
+          top={0}
+          left={0}
+          width="100vw"
+          height="100vh"
+          pointerEvents="none"
+          zIndex={2400}
+        >
+          <svg
+            style={{
+              width: "100%",
+              height: "100%",
+              overflow: "visible",
+            }}
+          >
+            {lineData.map((line, i) => {
+              const color =
+                line.relation === "support" ? "#00ff00" :
+                line.relation === "refute" ? "#ff0000" :
+                "#00aaff";
+
+              const strokeColor = line.isAI
+                ? (line.relation === "support" ? "rgba(0, 255, 0, 0.7)" :
+                   line.relation === "refute" ? "rgba(255, 0, 0, 0.7)" :
+                   "rgba(0, 170, 255, 0.7)")
+                : color;
+
+              return (
+                <g key={i}>
+                  {/* Glow effect */}
+                  <line
+                    x1={line.x1}
+                    y1={line.y1}
+                    x2={line.x2}
+                    y2={line.y2}
+                    stroke={strokeColor}
+                    strokeWidth={12}
+                    strokeDasharray={line.isAI ? "8,4" : undefined}
+                    opacity={0.3}
+                    filter="blur(4px)"
+                  />
+                  {/* Main line - thicker and more visible */}
+                  <line
+                    x1={line.x1}
+                    y1={line.y1}
+                    x2={line.x2}
+                    y2={line.y2}
+                    stroke={strokeColor}
+                    strokeWidth={5}
+                    strokeDasharray={line.isAI ? "8,4" : undefined}
+                    opacity={0.95}
+                  />
+                </g>
+              );
+            })}
+          </svg>
+        </Box>
+      )}
+
       <Box
         className="mr-modal"
         position="fixed"
@@ -160,6 +320,50 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
               <Text>{reference?.topic || "N/A"}</Text>
             </Box>
             <Divider />
+
+            {/* Connected Task Claims Section */}
+            {connectedTaskClaims.length > 0 && (
+              <Box w="100%" bg="blue.900" p={3} borderRadius="md" border="2px solid #00aaff">
+                <Text fontWeight="bold" mb={2} color="blue.200">
+                  📌 Connected Task Claims:
+                </Text>
+                <VStack align="start" spacing={2}>
+                  {connectedTaskClaims.map((taskClaim) => {
+                    // Find what relation this task claim has
+                    const link = claimLinks.find(
+                      (l) =>
+                        l.claimId === taskClaim.claim_id &&
+                        l.referenceId === reference?.reference_content_id
+                    );
+
+                    return (
+                      <Box
+                        key={taskClaim.claim_id}
+                        w="100%"
+                        bg="blue.800"
+                        p={2}
+                        borderRadius="md"
+                        border={
+                          link?.relation === "support"
+                            ? "2px solid green"
+                            : link?.relation === "refute"
+                            ? "2px solid red"
+                            : "2px solid blue"
+                        }
+                      >
+                        <Text fontSize="xs" color="gray.400" mb={1}>
+                          Task Claim #{taskClaim.claim_id}
+                        </Text>
+                        <Text fontSize="sm" color="white">
+                          {taskClaim.claim_text}
+                        </Text>
+                      </Box>
+                    );
+                  })}
+                </VStack>
+              </Box>
+            )}
+            <Divider />
             <Box w="100%">
               <Text fontWeight="bold" mb={2}>
                 Associated Claims:
@@ -171,22 +375,51 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                     : reference.claims
                   ).map((claim: Claim) => {
                     const isSnippet = claim.claim_type === 'snippet';
+                    const connections = getClaimConnections(claim.claim_id);
+                    const hasConnection = connections.length > 0;
 
                     return (
                       <HStack key={claim.claim_id} align="start">
                         <Box
+                          ref={(el) => {
+                            claimRefs.current[claim.claim_id] = el;
+                          }}
+                          data-claim-ref-id={claim.claim_id}
                           flex="1"
                           bg={isSnippet ? "gray.800" : "black"}
                           color={isSnippet ? "gray.300" : "blue.300"}
                           px={2}
                           py={1}
                           borderRadius="md"
-                          border={isSnippet ? "1px solid #718096" : "1px solid blue"}
-                          borderLeft={isSnippet ? "4px solid #A0AEC0" : undefined}
+                          border={
+                            hasConnection
+                              ? connections[0].relation === "support"
+                                ? "2px solid green"
+                                : connections[0].relation === "refute"
+                                ? "2px solid red"
+                                : "2px solid blue"
+                              : isSnippet
+                              ? "1px solid #718096"
+                              : "1px solid blue"
+                          }
+                          borderLeft={isSnippet && !hasConnection ? "4px solid #A0AEC0" : undefined}
                           _hover={{ bg: isSnippet ? "gray.700" : "blue.200", color: "black" }}
                           onMouseDown={() => setDraggingClaim(claim)}
                           onMouseUp={() => setDraggingClaim(null)}
+                          onClick={() => {
+                            if (hasConnection && onClaimClick) {
+                              onClaimClick(claim);
+                            }
+                          }}
+                          cursor={hasConnection ? "pointer" : "grab"}
                         >
+                          {hasConnection && (
+                            <Text fontSize="xs" color="gray.400" mb={1}>
+                              {connections[0].relation === "support" ? "🟢 Supports" :
+                               connections[0].relation === "refute" ? "🔴 Refutes" :
+                               "🔵 Nuances"} task claim
+                            </Text>
+                          )}
                           {isSnippet ? (
                             <Text fontStyle="italic" fontSize="sm" opacity={0.9}>
                               " {claim.claim_text} "

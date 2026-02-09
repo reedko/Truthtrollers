@@ -76,7 +76,7 @@ router.get("/api/user-tasks/:user_id", async (req, res) => {
 
     FROM content t
     JOIN content_users cu ON t.content_id = cu.content_id
-    WHERE cu.user_id = ? AND t.content_type = 'task'
+    WHERE cu.user_id = ? AND t.content_type = 'task' AND (t.is_active IS NULL OR t.is_active = 1)
     GROUP BY t.content_id
   `;
   pool.query(sql, [user_id], (err, results) => {
@@ -191,6 +191,43 @@ router.get("/api/unified-tasks/:pivotType/:pivotId", (req, res) => {
     }
     res.json(results);
   });
+});
+
+/**
+ * DELETE /api/tasks/:id
+ * Soft delete (deactivate) a task
+ */
+router.delete("/api/tasks/:id", async (req, res) => {
+  const { id } = req.params;
+  const userId = req.query.userId || req.body.userId;
+
+  if (!userId) {
+    return res.status(400).json({ error: "User ID is required" });
+  }
+
+  try {
+    // Verify the user has access to this task
+    const accessCheck = await query(
+      `SELECT 1 FROM content_users WHERE content_id = ? AND user_id = ?`,
+      [id, userId]
+    );
+
+    if (accessCheck.length === 0) {
+      return res.status(403).json({ error: "You don't have access to this task" });
+    }
+
+    // Soft delete by setting is_active = 0
+    await query(
+      `UPDATE content SET is_active = 0 WHERE content_id = ?`,
+      [id]
+    );
+
+    logger.log(`✅ Task ${id} deactivated by user ${userId}`);
+    res.json({ success: true, message: "Task deleted successfully" });
+  } catch (err) {
+    logger.error("Error deleting task:", err);
+    res.status(500).json({ error: "Failed to delete task" });
+  }
 });
 
 /**

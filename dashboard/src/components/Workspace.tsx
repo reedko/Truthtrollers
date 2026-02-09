@@ -172,28 +172,56 @@ const Workspace: React.FC<WorkspaceProps> = ({
   }, [claims, references, computedHeight, onHeightChange]);
 
   const handleLineClick = async (link: ClaimLink) => {
-    try {
-      const [source, target] = await Promise.all([
-        fetchClaimById(link.sourceClaimId),
-        fetchClaimById(link.claimId),
-      ]);
+    // Count how many links connect to this reference
+    const linksToReference = claimLinks.filter(
+      (l) => l.referenceId === link.referenceId
+    );
 
-      console.log(source, "SOURCE", target, "TARET");
-      if (source && target) {
-        setSourceClaim({
-          claim_id: source.claim_id,
-          claim_text: source.claim_text,
-        });
-        setTargetClaim(target);
-        setIsClaimLinkModalOpen(true);
-        setSelectedClaimLink(link);
-      } else {
-        console.warn("❌ Claim(s) not found:", { source, target, link });
+    // If 1-2 links, open claim relationship box(es)
+    if (linksToReference.length <= 2) {
+      try {
+        const [source, target] = await Promise.all([
+          fetchClaimById(link.sourceClaimId),
+          fetchClaimById(link.claimId),
+        ]);
+
+        console.log(source, "SOURCE", target, "TARET");
+        if (source && target) {
+          setSourceClaim({
+            claim_id: source.claim_id,
+            claim_text: source.claim_text,
+          });
+          setTargetClaim(target);
+          setIsClaimLinkModalOpen(true);
+          setSelectedClaimLink(link);
+        } else {
+          console.warn("❌ Claim(s) not found:", { source, target, link });
+        }
+      } catch (err) {
+        console.error("🔥 Error fetching claims by ID:", err);
       }
-    } catch (err) {
-      console.error("🔥 Error fetching claims by ID:", err);
+      setReadOnly(true);
+    } else {
+      // 3+ links: open reference modal instead
+      const reference = references.find(
+        (ref) => ref.reference_content_id === link.referenceId
+      );
+      if (reference) {
+        setSelectedReference(reference);
+        setIsReferenceClaimsModalOpen(true);
+      }
     }
-    setReadOnly(true);
+  };
+
+  const handleLineHover = (link: ClaimLink) => {
+    // Find the reference for this link and open modal after 2s
+    const reference = references.find(
+      (ref) => ref.reference_content_id === link.referenceId
+    );
+    if (reference) {
+      setSelectedReference(reference);
+      setIsReferenceClaimsModalOpen(true);
+    }
   };
 
   const handleDeleteReference = async (
@@ -328,6 +356,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
             leftX={leftX} // 👈 You can adjust this to match TaskClaims column
             rightX={rightX} // 👈 Adjust to align with ReferenceList column
             onLineClick={handleLineClick}
+            onLineHover={handleLineHover}
+            isModalOpen={isReferenceClaimsModalOpen}
             claimLinks={[
               ...claimLinks, // User-created claim links
               // Convert AI evidence links to ClaimLink format
@@ -371,6 +401,31 @@ const Workspace: React.FC<WorkspaceProps> = ({
           setDraggingClaim={setDraggingClaim}
           draggingClaim={draggingClaim}
           onVerifyClaim={handleVerifyClaim}
+          claimLinks={claimLinks}
+          taskClaims={claims}
+          onClaimClick={async (claim: Claim) => {
+            // Find the link for this claim
+            const link = claimLinks.find(
+              (l) => l.sourceClaimId === claim.claim_id &&
+                     l.referenceId === selectedReference.reference_content_id
+            );
+            if (link) {
+              const [source, target] = await Promise.all([
+                fetchClaimById(link.sourceClaimId),
+                fetchClaimById(link.claimId),
+              ]);
+              if (source && target) {
+                setSourceClaim({
+                  claim_id: source.claim_id,
+                  claim_text: source.claim_text,
+                });
+                setTargetClaim(target);
+                setIsClaimLinkModalOpen(true);
+                setSelectedClaimLink(link);
+                setReadOnly(true);
+              }
+            }
+          }}
         />
       )}
       // ...

@@ -5,6 +5,8 @@ export const getNodesForEntity = (entityType) => {
           'task' AS type,
           CONCAT("conte-",t.content_id) AS id,
           t.content_id AS content_id,
+          NULL AS author_id,
+          NULL AS publisher_id,
           t.content_name AS label,
           t.url,
           (SELECT COUNT(*) FROM content_claims WHERE content_id = t.content_id) AS claimCount,
@@ -17,7 +19,9 @@ export const getNodesForEntity = (entityType) => {
         SELECT
           'author' AS type,
           CONCAT("autho-",a.author_id) AS id,
+          NULL AS content_id,
           a.author_id AS author_id,
+          NULL AS publisher_id,
           CONCAT(a.author_first_name, ' ', a.author_last_name) AS label,
           NULL AS url,
           NULL AS claimCount,
@@ -32,6 +36,8 @@ export const getNodesForEntity = (entityType) => {
         SELECT
           'publisher' AS type,
           CONCAT("publi-",p.publisher_id) AS id,
+          NULL AS content_id,
+          NULL AS author_id,
           p.publisher_id AS publisher_id,
           p.publisher_name AS label,
           NULL AS url,
@@ -48,10 +54,20 @@ export const getNodesForEntity = (entityType) => {
           'reference' AS type,
           CONCAT("conte-",lr.content_id) AS id,
           lr.content_id AS content_id,
+          NULL AS author_id,
+          NULL AS publisher_id,
           lr.content_name AS label,
           lr.url AS url,
           (SELECT COUNT(*) FROM content_claims WHERE content_id = lr.content_id) AS claimCount,
-          (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = lr.content_id) AS rating
+          (SELECT AVG(CASE
+            WHEN rcl.stance = 'support' THEN rcl.support_level
+            WHEN rcl.stance = 'refute' THEN -rcl.support_level
+            ELSE 0
+          END)
+          FROM reference_claim_links rcl
+          JOIN content_claims cc ON rcl.claim_id = cc.claim_id
+          WHERE rcl.reference_content_id = lr.content_id AND cc.content_id = ?
+          ) AS rating
         FROM content lr
         JOIN content_relations tr ON lr.content_id = tr.reference_content_id
         WHERE tr.content_id = ?
@@ -61,7 +77,8 @@ export const getNodesForEntity = (entityType) => {
 
   if (entityType === "author") {
     return `
-        SELECT 'author' AS type, CONCAT("autho-",a.author_id) AS id, a.author_id AS author_id,
+        SELECT 'author' AS type, CONCAT("autho-",a.author_id) AS id,
+               NULL AS content_id, a.author_id AS author_id, NULL AS publisher_id,
                CONCAT(a.author_first_name, ' ', a.author_last_name) AS label,
                NULL AS url,
                NULL AS claimCount,
@@ -71,7 +88,9 @@ export const getNodesForEntity = (entityType) => {
 
         UNION
 
-        SELECT 'task' AS type, CONCAT("conte-",t.content_id) AS id, t.content_id AS content_id, t.content_name AS label, t.url,
+        SELECT 'task' AS type, CONCAT("conte-",t.content_id) AS id,
+               t.content_id AS content_id, NULL AS author_id, NULL AS publisher_id,
+               t.content_name AS label, t.url,
                (SELECT COUNT(*) FROM content_claims WHERE content_id = t.content_id) AS claimCount,
                (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating
         FROM content t
@@ -81,7 +100,9 @@ export const getNodesForEntity = (entityType) => {
 
         UNION
 
-        SELECT 'reference' AS type, CONCAT("conte-",lr.content_id) AS id, lr.content_id AS content_id, lr.content_name AS label, lr.url AS url,
+        SELECT 'reference' AS type, CONCAT("conte-",lr.content_id) AS id,
+               lr.content_id AS content_id, NULL AS author_id, NULL AS publisher_id,
+               lr.content_name AS label, lr.url AS url,
                (SELECT COUNT(*) FROM content_claims WHERE content_id = lr.content_id) AS claimCount,
                (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = lr.content_id) AS rating
         FROM content lr
@@ -91,7 +112,9 @@ export const getNodesForEntity = (entityType) => {
 
         UNION
 
-        SELECT 'publisher' AS type, CONCAT("publi-",p.publisher_id) AS id, p.publisher_id AS publisher_id, p.publisher_name AS label,
+        SELECT 'publisher' AS type, CONCAT("publi-",p.publisher_id) AS id,
+               NULL AS content_id, NULL AS author_id, p.publisher_id AS publisher_id,
+               p.publisher_name AS label,
                NULL AS url,
                NULL AS claimCount,
                (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating
@@ -105,7 +128,9 @@ export const getNodesForEntity = (entityType) => {
 
   if (entityType === "publisher") {
     return `
-        SELECT 'publisher' AS type, CONCAT("publi-",p.publisher_id) AS id, p.publisher_id AS publisher_id, p.publisher_name AS label,
+        SELECT 'publisher' AS type, CONCAT("publi-",p.publisher_id) AS id,
+               NULL AS content_id, NULL AS author_id, p.publisher_id AS publisher_id,
+               p.publisher_name AS label,
                NULL AS url,
                NULL AS claimCount,
                (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating
@@ -114,7 +139,9 @@ export const getNodesForEntity = (entityType) => {
 
         UNION
 
-        SELECT 'task' AS type, CONCAT("conte-",t.content_id) AS id, t.content_id AS content_id, t.content_name AS label, t.url,
+        SELECT 'task' AS type, CONCAT("conte-",t.content_id) AS id,
+               t.content_id AS content_id, NULL AS author_id, NULL AS publisher_id,
+               t.content_name AS label, t.url,
                (SELECT COUNT(*) FROM content_claims WHERE content_id = t.content_id) AS claimCount,
                (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating
         FROM content t
@@ -124,7 +151,8 @@ export const getNodesForEntity = (entityType) => {
 
         UNION
 
-        SELECT 'author' AS type, CONCAT("autho-",a.author_id) AS id, a.author_id AS author_id,
+        SELECT 'author' AS type, CONCAT("autho-",a.author_id) AS id,
+               NULL AS content_id, a.author_id AS author_id, NULL AS publisher_id,
                CONCAT(a.author_first_name, ' ', a.author_last_name) AS label,
                NULL AS url,
                NULL AS claimCount,
@@ -137,7 +165,9 @@ export const getNodesForEntity = (entityType) => {
 
         UNION
 
-        SELECT 'reference' AS type, CONCAT("conte-",lr.content_id) AS id, lr.content_id AS content_id, lr.content_name AS label, lr.url AS url,
+        SELECT 'reference' AS type, CONCAT("conte-",lr.content_id) AS id,
+               lr.content_id AS content_id, NULL AS author_id, NULL AS publisher_id,
+               lr.content_name AS label, lr.url AS url,
                (SELECT COUNT(*) FROM content_claims WHERE content_id = lr.content_id) AS claimCount,
                (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = lr.content_id) AS rating
         FROM content lr
@@ -149,7 +179,9 @@ export const getNodesForEntity = (entityType) => {
 
   if (entityType === "reference") {
     return `
-        SELECT 'reference' AS type, CONCAT("conte-",lr.content_id) AS id, lr.content_id AS content_id, lr.content_name AS label, lr.url AS url,
+        SELECT 'reference' AS type, CONCAT("conte-",lr.content_id) AS id,
+               lr.content_id AS content_id, NULL AS author_id, NULL AS publisher_id,
+               lr.content_name AS label, lr.url AS url,
                (SELECT COUNT(*) FROM content_claims WHERE content_id = lr.content_id) AS claimCount,
                (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = lr.content_id) AS rating
         FROM content lr
@@ -157,7 +189,9 @@ export const getNodesForEntity = (entityType) => {
 
         UNION
 
-        SELECT 'task' AS type, CONCAT("conte-",t.content_id) AS id, t.content_id AS content_id, t.content_name AS label, t.url,
+        SELECT 'task' AS type, CONCAT("conte-",t.content_id) AS id,
+               t.content_id AS content_id, NULL AS author_id, NULL AS publisher_id,
+               t.content_name AS label, t.url,
                (SELECT COUNT(*) FROM content_claims WHERE content_id = t.content_id) AS claimCount,
                (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating
         FROM content t
@@ -167,7 +201,8 @@ export const getNodesForEntity = (entityType) => {
 
         UNION
 
-        SELECT 'author' AS type, CONCAT("autho-",a.author_id) AS id, a.author_id AS author_id,
+        SELECT 'author' AS type, CONCAT("autho-",a.author_id) AS id,
+               NULL AS content_id, a.author_id AS author_id, NULL AS publisher_id,
                CONCAT(a.author_first_name, ' ', a.author_last_name) AS label,
                NULL AS url,
                NULL AS claimCount,
@@ -180,7 +215,9 @@ export const getNodesForEntity = (entityType) => {
 
         UNION
 
-        SELECT 'publisher' AS type, CONCAT("publi-",p.publisher_id) AS id, p.publisher_id AS publisher_id, p.publisher_name AS label,
+        SELECT 'publisher' AS type, CONCAT("publi-",p.publisher_id) AS id,
+               NULL AS content_id, NULL AS author_id, p.publisher_id AS publisher_id,
+               p.publisher_name AS label,
                NULL AS url,
                NULL AS claimCount,
                (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating
