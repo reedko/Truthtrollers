@@ -17,8 +17,12 @@ type NodeData = {
   content_id?: number;
   url?: string;
   rating?: string | number;
+  veracity_score?: number;
+  confidence_level?: number;
   claimCount?: number;
   refCount?: number;
+  rationale?: string;
+  stance?: string;
 };
 
 // Minority Report Glassmorphic Card Overlay Component
@@ -27,6 +31,12 @@ interface NodeCardProps {
   containerRect: DOMRect;
   zoom: number;
   allNodes: NodeData[];
+  allLinks?: any[]; // For finding rationale
+  pinnedReferenceIds?: Set<number>;
+  onTogglePin?: (contentId: number) => void;
+  displayMode?: DisplayMode;
+  nodeSettings?: Record<string, { displayMode: DisplayMode }> | null;
+  onCycleDisplayMode?: (nodeId: string) => void;
 }
 
 const NodeCard: React.FC<NodeCardProps> = ({
@@ -34,13 +44,37 @@ const NodeCard: React.FC<NodeCardProps> = ({
   containerRect,
   zoom,
   allNodes,
+  allLinks,
+  pinnedReferenceIds,
+  onTogglePin,
+  displayMode: globalDisplayMode = 'mr_cards',
+  nodeSettings,
+  onCycleDisplayMode,
 }) => {
   const pos = node.renderedPosition();
   const data = node.data();
   const type = data.type;
   const id = node.id();
 
-  // Color schemes for different node types
+  // Check if this reference is pinned
+  const isPinned =
+    type === "reference" &&
+    data.content_id &&
+    pinnedReferenceIds?.has(data.content_id);
+
+  // Check if this node is dimmed (unpinned)
+  const isDimmed = data.dimmed;
+
+  // Find rationale from links (for refClaim nodes) - mapped from claim_links.notes
+  const linkData = allLinks?.find((link: any) => link.source === id || link.target === id);
+  const rationale = linkData?.rationale;
+  const stance = linkData?.stance;
+  const [showRationale, setShowRationale] = React.useState(false);
+
+  // Determine display mode for THIS node - use node-specific setting or fall back to global
+  const displayMode = nodeSettings?.[id]?.displayMode || globalDisplayMode;
+
+  // Color schemes for different node types (used by all modes)
   const colorSchemes = {
     task: {
       bg: "linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.05))",
@@ -69,6 +103,24 @@ const NodeCard: React.FC<NodeCardProps> = ({
       leftEdge:
         "linear-gradient(90deg, rgba(249, 115, 22, 0.3) 0%, rgba(249, 115, 22, 0) 100%)",
     },
+    refClaim: {
+      bg: "linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.05))",
+      border: "rgba(16, 185, 129, 0.25)",
+      text: "#6ee7b7",
+      glow: "0 0 20px rgba(16, 185, 129, 0.2)",
+      titleBg: "rgba(16, 185, 129, 0.15)",
+      leftEdge:
+        "linear-gradient(90deg, rgba(16, 185, 129, 0.4) 0%, rgba(16, 185, 129, 0) 100%)",
+    },
+    taskClaim: {
+      bg: "linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.05))",
+      border: "rgba(99, 102, 241, 0.25)",
+      text: "#a5b4fc",
+      glow: "0 0 20px rgba(99, 102, 241, 0.2)",
+      titleBg: "rgba(99, 102, 241, 0.15)",
+      leftEdge:
+        "linear-gradient(90deg, rgba(99, 102, 241, 0.4) 0%, rgba(99, 102, 241, 0) 100%)",
+    },
     author: {
       bg: "linear-gradient(135deg, rgba(251, 177, 160, 0.08), rgba(254, 215, 170, 0.05))",
       border: "rgba(251, 177, 160, 0.25)",
@@ -89,6 +141,370 @@ const NodeCard: React.FC<NodeCardProps> = ({
     },
   };
 
+  // CIRCLES MODE - clean circles with overlay badges
+  if (displayMode === 'circles') {
+    const veracityScore = data.veracity_score ?? data.rating;
+    const claimCount = data.claimCount;
+    const confidence = data.confidence_level;
+
+    return (
+      <>
+        {/* Rationale tooltip (shown on hover) */}
+        {showRationale && rationale && (
+          <div
+            style={{
+              position: "absolute",
+              left: `${pos.x - 100}px`,
+              top: `${pos.y - 100}px`,
+              width: "200px",
+              background: "rgba(15, 23, 42, 0.98)",
+              backdropFilter: "blur(12px)",
+              border: "2px solid rgba(139, 92, 246, 0.5)",
+              borderRadius: "12px",
+              padding: "12px",
+              fontSize: "11px",
+              lineHeight: "1.5",
+              color: "#e2e8f0",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.8), 0 0 20px rgba(139, 92, 246, 0.3)",
+              pointerEvents: "none",
+              transform: `scale(${zoom})`,
+              transformOrigin: "center",
+              zIndex: 1000,
+            }}
+          >
+            <div style={{ fontSize: "10px", fontWeight: "700", color: "#a78bfa", marginBottom: "6px" }}>
+              {stance?.toUpperCase()} - RATIONALE:
+            </div>
+            {rationale}
+          </div>
+        )}
+
+        {/* Info icon for rationale/notes (if available) */}
+        {rationale && (
+          <div
+            onMouseEnter={() => setShowRationale(true)}
+            onMouseLeave={() => setShowRationale(false)}
+            style={{
+              position: "absolute",
+              left: `${pos.x - 65}px`,
+              top: `${pos.y + 35}px`,
+              background: "rgba(139, 92, 246, 0.3)",
+              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(139, 92, 246, 0.5)",
+              borderRadius: "50%",
+              width: "24px",
+              height: "24px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "12px",
+              cursor: "help",
+              pointerEvents: "auto",
+              transform: `scale(${zoom})`,
+              transformOrigin: "center",
+              color: "#a78bfa",
+            }}
+            title="View AI Rationale"
+          >
+            ℹ️
+          </div>
+        )}
+
+        {/* Veracity badge - top-right */}
+        {veracityScore !== undefined && veracityScore !== null && (
+          <div
+            style={{
+              position: "absolute",
+              left: `${pos.x + 45}px`,
+              top: `${pos.y - 55}px`,
+              background: "rgba(15, 23, 42, 0.95)",
+              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(139, 92, 246, 0.4)",
+              borderRadius: "8px",
+              padding: "4px 8px",
+              fontSize: "11px",
+              fontWeight: "700",
+              color: "#a78bfa",
+              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.6), 0 0 12px rgba(139, 92, 246, 0.2)",
+              pointerEvents: "none",
+              transform: `scale(${zoom})`,
+              transformOrigin: "center",
+              opacity: isDimmed ? 0.4 : 1.0,
+            }}
+            title="Veracity Score"
+          >
+            ⭐ {typeof veracityScore === 'number' ? veracityScore.toFixed(1) : veracityScore}
+          </div>
+        )}
+
+        {/* Claim count badge - bottom-right (or confidence for claim nodes) */}
+        {(claimCount !== undefined && claimCount !== null && claimCount > 0) || (confidence !== undefined && confidence !== null) ? (
+          <div
+            style={{
+              position: "absolute",
+              left: `${pos.x + 45}px`,
+              top: `${pos.y + 35}px`,
+              background: "rgba(15, 23, 42, 0.95)",
+              backdropFilter: "blur(8px)",
+              border: confidence ? "1px solid rgba(251, 191, 36, 0.4)" : "1px solid rgba(16, 185, 129, 0.4)",
+              borderRadius: "8px",
+              padding: "4px 8px",
+              fontSize: "11px",
+              fontWeight: "700",
+              color: confidence ? "#fbbf24" : "#6ee7b7",
+              boxShadow: confidence
+                ? "0 2px 8px rgba(0, 0, 0, 0.6), 0 0 12px rgba(251, 191, 36, 0.2)"
+                : "0 2px 8px rgba(0, 0, 0, 0.6), 0 0 12px rgba(16, 185, 129, 0.2)",
+              pointerEvents: "none",
+              transform: `scale(${zoom})`,
+              transformOrigin: "center",
+              opacity: isDimmed ? 0.4 : 1.0,
+            }}
+            title={confidence ? "Confidence Level" : "Claim Count"}
+          >
+            {confidence ? `🎯 ${Math.round(confidence * 100)}%` : `📝 ${claimCount}`}
+          </div>
+        ) : null}
+
+        {/* Pin button for references */}
+        {type === "reference" && onTogglePin && data.content_id && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onTogglePin(data.content_id);
+            }}
+            style={{
+              position: "absolute",
+              left: `${pos.x - 65}px`,
+              top: `${pos.y - 55}px`,
+              background: isPinned
+                ? "rgba(251, 191, 36, 0.3)"
+                : "rgba(100, 116, 139, 0.3)",
+              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(100, 116, 139, 0.4)",
+              borderRadius: "8px",
+              padding: "4px 8px",
+              cursor: "pointer",
+              fontSize: "14px",
+              pointerEvents: "auto",
+              transform: `scale(${zoom})`,
+              transformOrigin: "center",
+            }}
+            title={isPinned ? "Unpin" : "Pin"}
+          >
+            {isPinned ? "📌" : "📍"}
+          </button>
+        )}
+
+        {/* Display mode cycle button */}
+        {onCycleDisplayMode && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onCycleDisplayMode(id);
+            }}
+            style={{
+              position: "absolute",
+              left: `${pos.x - 65}px`,
+              top: `${pos.y}px`,
+              background: "rgba(99, 102, 241, 0.3)",
+              backdropFilter: "blur(8px)",
+              border: "1px solid rgba(99, 102, 241, 0.5)",
+              borderRadius: "50%",
+              width: "24px",
+              height: "24px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              fontSize: "10px",
+              pointerEvents: "auto",
+              transform: `scale(${zoom})`,
+              transformOrigin: "center",
+              color: "#a5b4fc",
+            }}
+            title="Cycle display mode"
+          >
+            {displayMode === 'circles' ? '⚪' : displayMode === 'compact' ? '📊' : '🎴'}
+          </button>
+        )}
+      </>
+    );
+  }
+
+  // COMPACT MODE - smaller cards with just metrics
+  if (displayMode === 'compact') {
+    const scheme =
+      colorSchemes[type as keyof typeof colorSchemes] || colorSchemes.reference;
+
+    // Get metrics
+    const getCompactMetrics = () => {
+      if (type === "reference" || type === "task") {
+        const veracityScore = data.veracity_score ?? data.rating;
+        const claimCount = data.claimCount ?? allNodes.filter(
+          (n) => (type === "reference" ? n.type === "refClaim" : n.type === "taskClaim") && n.content_id === data.content_id,
+        ).length;
+        return [
+          { value: typeof veracityScore === 'number' ? veracityScore.toFixed(1) : (veracityScore ?? "-"), label: "⭐" },
+          { value: claimCount, label: "📝" },
+        ];
+      } else if (type === "refClaim" || type === "taskClaim") {
+        const veracityScore = data.veracity_score;
+        const confidence = data.confidence_level;
+        return [
+          { value: veracityScore ? veracityScore.toFixed(2) : "-", label: "⭐" },
+          { value: confidence ? Math.round(confidence * 100) + "%" : "-", label: "🎯" },
+        ];
+      } else if (type === "author" || type === "publisher") {
+        const rating = data.rating ?? "-";
+        return [{ value: typeof rating === 'number' ? rating.toFixed(1) : rating, label: "⭐" }];
+      }
+      return [];
+    };
+
+    const metrics = getCompactMetrics();
+
+    return (
+      <div
+        style={{
+          position: "absolute",
+          left: `${pos.x - 60}px`,
+          top: `${pos.y - 70}px`,
+          width: "120px",
+          height: "140px",
+          background: scheme.bg,
+          backdropFilter: "blur(6px)",
+          border: `1.5px solid ${scheme.border}`,
+          borderRadius: "10px",
+          boxShadow: `${scheme.glow}, 0 4px 16px rgba(0, 0, 0, 0.3)`,
+          pointerEvents: "none",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "8px",
+          transform: `scale(${zoom})`,
+          transformOrigin: "center center",
+          opacity: isDimmed ? 0.4 : 1.0, // Dim compact cards
+        }}
+      >
+        {/* Type badge */}
+        <div
+          style={{
+            fontSize: "9px",
+            color: scheme.text,
+            textTransform: "uppercase",
+            letterSpacing: "1px",
+            marginBottom: "4px",
+            fontWeight: "600",
+            opacity: 0.7,
+          }}
+        >
+          {type === "refClaim" ? "Ref" : type === "taskClaim" ? "Task" : type}
+        </div>
+
+        {/* Label */}
+        <div
+          style={{
+            color: scheme.text,
+            fontSize: "12px",
+            fontWeight: "600",
+            textAlign: "center",
+            lineHeight: "1.2",
+            marginBottom: "8px",
+            maxHeight: "48px",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            display: "-webkit-box",
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: "vertical",
+          }}
+        >
+          {data.label}
+        </div>
+
+        {/* Metrics */}
+        <div
+          style={{
+            display: "flex",
+            gap: "8px",
+            marginTop: "auto",
+          }}
+        >
+          {metrics.map((metric, idx) => (
+            <div
+              key={idx}
+              style={{
+                textAlign: "center",
+                fontSize: "16px",
+                fontWeight: "600",
+                color: scheme.text,
+              }}
+            >
+              <div>{metric.label}</div>
+              <div style={{ fontSize: "12px", marginTop: "2px" }}>{metric.value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Pin button for references */}
+        {type === "reference" && onTogglePin && data.content_id && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onTogglePin(data.content_id);
+            }}
+            style={{
+              position: "absolute",
+              top: "4px",
+              right: "4px",
+              background: isPinned
+                ? "rgba(251, 191, 36, 0.3)"
+                : "rgba(100, 116, 139, 0.3)",
+              border: "none",
+              borderRadius: "4px",
+              padding: "2px 4px",
+              cursor: "pointer",
+              fontSize: "12px",
+              pointerEvents: "auto",
+            }}
+            title={isPinned ? "Unpin" : "Pin"}
+          >
+            {isPinned ? "📌" : "📍"}
+          </button>
+        )}
+
+        {/* Display mode cycle button */}
+        {onCycleDisplayMode && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onCycleDisplayMode(id);
+            }}
+            style={{
+              position: "absolute",
+              top: "4px",
+              left: "4px",
+              background: "rgba(99, 102, 241, 0.3)",
+              border: "1px solid rgba(99, 102, 241, 0.5)",
+              borderRadius: "4px",
+              padding: "2px 4px",
+              cursor: "pointer",
+              fontSize: "10px",
+              pointerEvents: "auto",
+              color: scheme.text,
+            }}
+            title="Cycle display mode"
+          >
+            {displayMode === 'circles' ? '⚪' : displayMode === 'compact' ? '📊' : '🎴'}
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // MR_CARDS MODE - full Minority Report cards (original implementation)
+
   let scheme =
     colorSchemes[type as keyof typeof colorSchemes] || colorSchemes.reference;
 
@@ -106,9 +522,9 @@ const NodeCard: React.FC<NodeCardProps> = ({
   const thumbnailPath =
     {
       0: `ttlogo11.png`,
-      1: `authors/author_id_${id.replace("autho-", "")}.png`,
+      1: `authors/author_id_${data.author_id || id.replace("autho-", "")}.png`,
       2: `content/content_id_${data.content_id || id.replace("conte-", "")}.png`,
-      3: `publishers/publisher_id_${id.replace("publi-", "")}.png`,
+      3: `publishers/publisher_id_${data.publisher_id || id.replace("publi-", "")}.png`,
     }[group] || `ttlogo11.png`;
   const thumbnailUrl = `${API_BASE_URL}/assets/images/${thumbnailPath}`;
 
@@ -354,6 +770,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
+        opacity: isDimmed ? 0.4 : 1.0, // Dim MR cards
         transform: `scale(${zoom})`,
         transformOrigin: "center center",
       }}
@@ -506,6 +923,43 @@ const NodeCard: React.FC<NodeCardProps> = ({
           </div>
         ))}
       </div>
+
+      {/* Pin/Unpin Button for Reference Nodes */}
+      {type === "reference" && onTogglePin && data.content_id && (
+        <div
+          style={{
+            position: "absolute",
+            top: "8px",
+            right: "8px",
+            zIndex: 10,
+          }}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onTogglePin(data.content_id);
+            }}
+            style={{
+              background: isPinned
+                ? "linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(251, 191, 36, 0.2))"
+                : "linear-gradient(135deg, rgba(100, 116, 139, 0.3), rgba(100, 116, 139, 0.2))",
+              border: `1px solid ${isPinned ? "rgba(251, 191, 36, 0.6)" : "rgba(100, 116, 139, 0.4)"}`,
+              borderRadius: "8px",
+              padding: "6px 10px",
+              cursor: "pointer",
+              fontSize: "18px",
+              pointerEvents: "auto",
+              transition: "all 0.2s ease",
+              boxShadow: isPinned
+                ? "0 0 10px rgba(251, 191, 36, 0.3)"
+                : "0 2px 8px rgba(0, 0, 0, 0.3)",
+            }}
+            title={isPinned ? "Unpin from view" : "Pin to view"}
+          >
+            {isPinned ? "📌" : "📍"}
+          </button>
+        </div>
+      )}
     </div>
   );
 };
@@ -1094,6 +1548,8 @@ function restartAllThrobs(cy: cytoscape.Core, activatedNodeIds: Set<string>) {
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
 
+export type DisplayMode = 'mr_cards' | 'circles' | 'compact';
+
 interface CytoscapeMoleculeProps {
   nodes: {
     id: string;
@@ -1120,6 +1576,13 @@ interface CytoscapeMoleculeProps {
   }[];
   onNodeClick?: (node: GraphNode) => void;
   centerNodeId?: string;
+  pinnedReferenceIds?: Set<number>;
+  onTogglePin?: (contentId: number) => void;
+  displayMode?: DisplayMode;
+  savedPositions?: Record<string, { x: number; y: number }> | null;
+  onPositionsChange?: (positions: Record<string, { x: number; y: number }>) => void;
+  nodeSettings?: Record<string, { displayMode: DisplayMode }> | null;
+  onNodeSettingsChange?: (settings: Record<string, { displayMode: DisplayMode }>) => void;
 }
 
 type LinkData = CytoscapeMoleculeProps["links"][number];
@@ -1129,7 +1592,16 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
   links,
   onNodeClick,
   centerNodeId,
+  pinnedReferenceIds,
+  onTogglePin,
+  displayMode = 'mr_cards',
+  savedPositions,
+  onPositionsChange,
+  nodeSettings,
+  onNodeSettingsChange,
 }) => {
+  console.log("🔷 CytoscapeMolecule render with displayMode:", displayMode);
+
   const cyRef = useRef<HTMLDivElement>(null);
   const cyInstance = useRef<cytoscape.Core | null>(null);
   const activatedNodeIdsRef = useRef<Set<string>>(new Set());
@@ -1256,6 +1728,14 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       });
 
     const positionedNodes = baseNodes.map((n) => {
+      // Check if we have saved positions for this node
+      if (savedPositions && savedPositions[n.id]) {
+        return {
+          data: { ...n },
+          position: savedPositions[n.id],
+        };
+      }
+
       if (n.id === centerNode?.id) {
         return {
           data: { ...n },
@@ -1354,53 +1834,156 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         return { data: edgeData };
       });
 
-    const cy: cytoscape.Core = cytoscape({
-      container: cyRef.current,
-      elements: { nodes: positionedNodes, edges: initialEdges },
-      layout: { name: "preset" },
-      style: [
-        {
+    // Style configuration based on display mode
+    const getNodeStyle = () => {
+      if (displayMode === 'circles') {
+        return {
+          selector: "node",
+          style: {
+            shape: "ellipse",
+            width: 140,
+            height: 140,
+            label: (ele: any) => ele.data("label"),
+            "text-wrap": "wrap",
+            "text-max-width": "120px",
+            "text-valign": "bottom",
+            "text-halign": "center",
+            "text-margin-y": 8,
+            "font-size": "13px",
+            "font-weight": 600,
+            color: "#e2e8f0",
+            "text-outline-color": "#1e293b",
+            "text-outline-width": 2,
+            // Apply opacity for dimmed (unpinned) nodes
+            opacity: (ele: any) => {
+              return ele.data("dimmed") ? 0.3 : 1.0;
+            },
+            // Use background image - same logic as MR cards
+            "background-image": (ele: any) => {
+              const data = ele.data();
+              const type = data.type;
+              const nodeId = ele.id();
+
+              const API_BASE_URL = "https://localhost:5001";
+
+              // Determine group and build thumbnail path (same as MR cards)
+              let thumbnailPath = "";
+              if (type === "author") {
+                const authorId = data.author_id || nodeId.replace("autho-", "");
+                thumbnailPath = `authors/author_id_${authorId}.png`;
+              } else if (type === "task" || type === "reference") {
+                const contentId = data.content_id || nodeId.replace("conte-", "");
+                thumbnailPath = `content/content_id_${contentId}.png`;
+              } else if (type === "publisher") {
+                const publisherId = data.publisher_id || nodeId.replace("publi-", "");
+                thumbnailPath = `publishers/publisher_id_${publisherId}.png`;
+              } else {
+                return null; // No image for claims
+              }
+
+              return `${API_BASE_URL}/assets/images/${thumbnailPath}`;
+            },
+            "background-fit": "cover",
+            "background-clip": "node",
+            "background-color": (ele: any) => {
+              const type = ele.data("type");
+              // Fallback colors if no image
+              if (type === "task") return "#6366f1";
+              if (type === "reference") return "#10b981";
+              if (type === "unifiedClaim") return "#f97316";
+              if (type === "author") return "#a78bfa";
+              if (type === "publisher") return "#60a5fa";
+              return "#6366f1";
+            },
+            "background-opacity": 0.9,
+            "border-width": 3,
+            "border-color": (ele: any) => {
+              const type = ele.data("type");
+              if (type === "task") return "#6366f1";
+              if (type === "reference") return "#10b981";
+              if (type === "unifiedClaim") return "#f97316";
+              if (type === "author") return "#a78bfa";
+              if (type === "publisher") return "#60a5fa";
+              return "#6366f1";
+            },
+            "border-opacity": 0.8,
+          },
+        };
+      } else if (displayMode === 'compact') {
+        return {
+          selector: "node",
+          style: {
+            shape: "round-rectangle",
+            width: 120,
+            height: 140,
+            label: "",
+            "background-color": "rgba(0, 0, 0, 0)",
+            "background-opacity": 0,
+            "border-width": 12,
+            // @ts-ignore
+            "corner-radius": 10,
+            // Apply opacity for dimmed (unpinned) nodes
+            opacity: (ele: any) => {
+              return ele.data("dimmed") ? 0.3 : 1.0;
+            },
+            "border-color": (ele: any) => {
+              const type = ele.data("type");
+              if (type === "task") return "#00a2ff";
+              if (type === "reference") return "#4ade80";
+              if (type === "unifiedClaim") return "#fbbf24";
+              if (type === "author") return "#a78bfa";
+              if (type === "publisher") return "#00a2ff";
+              return "#00a2ff";
+            },
+            "border-opacity": 0.4,
+          },
+        };
+      } else {
+        // mr_cards mode
+        return {
           selector: "node",
           style: {
             shape: "round-rectangle",
             width: (ele: any) => {
               const type = ele.data("type");
-              return type === "unifiedClaim" ? 260 : 200; // Half of doubled size
+              return type === "unifiedClaim" ? 260 : 200;
             },
             height: (ele: any) => {
               const type = ele.data("type");
-              return type === "unifiedClaim" ? 320 : 240; // Half of doubled size
+              return type === "unifiedClaim" ? 320 : 240;
             },
-            label: "", // No label - it's in the card now
-            "text-wrap": "wrap",
-            "text-max-width": "110",
-            "text-valign": "center",
-            "text-halign": "center",
-            "font-size": "10px",
-            "font-weight": 600,
-            color: "rgba(0, 0, 0, 0)", // Hide text - overlays will show it
-            "text-outline-color": "rgba(0, 0, 0, 0)",
-            "text-outline-width": 0,
-            "text-background-color": "rgba(0, 0, 0, 0)",
-            "text-background-opacity": 0,
-            "background-color": "rgba(0, 0, 0, 0)", // Completely transparent box
+            label: "",
+            color: "rgba(0, 0, 0, 0)",
+            "background-color": "rgba(0, 0, 0, 0)",
             "background-opacity": 0,
             "border-width": 18,
-            // @ts-ignore - border-radius works but isn't in type definitions
-            "corner-radius": 16, // Match the overlay card border radius
+            // @ts-ignore
+            "corner-radius": 16,
+            // Apply opacity for dimmed (unpinned) nodes
+            opacity: (ele: any) => {
+              return ele.data("dimmed") ? 0.3 : 1.0;
+            },
             "border-color": (ele: any) => {
               const type = ele.data("type");
-              // Minority Report theme colors - matching mr-card colors
-              if (type === "task") return "#00a2ff"; // mr-blue
-              if (type === "reference") return "#4ade80"; // mr-green
-              if (type === "unifiedClaim") return "#fbbf24"; // mr-yellow
-              if (type === "author") return "#a78bfa"; // mr-purple
-              if (type === "publisher") return "#00a2ff"; // mr-blue
+              if (type === "task") return "#00a2ff";
+              if (type === "reference") return "#4ade80";
+              if (type === "unifiedClaim") return "#fbbf24";
+              if (type === "author") return "#a78bfa";
+              if (type === "publisher") return "#00a2ff";
               return "#00a2ff";
             },
             "border-opacity": 0.4,
           },
-        },
+        };
+      }
+    };
+
+    const cy: cytoscape.Core = cytoscape({
+      container: cyRef.current,
+      elements: { nodes: positionedNodes, edges: initialEdges },
+      layout: { name: "preset" },
+      style: [
+        getNodeStyle(),
         {
           selector: "edge",
           style: {
@@ -1444,6 +2027,16 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             "curve-style": "unbundled-bezier",
             "control-point-distances": [40],
             "control-point-weights": [0.5],
+            // Dim edges connected to dimmed nodes
+            opacity: (ele: any) => {
+              const sourceNode = ele.source();
+              const targetNode = ele.target();
+              const sourceDimmed = sourceNode.data("dimmed");
+              const targetDimmed = targetNode.data("dimmed");
+
+              // If either end is dimmed, dim the edge
+              return (sourceDimmed || targetDimmed) ? 0.2 : 1.0;
+            },
           },
         },
       ],
@@ -1488,6 +2081,18 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     cy.on("position", updateOverlays);
     cy.on("pan zoom", updateOverlays);
     cy.on("add remove", updateOverlays);
+
+    // Save positions when user finishes dragging nodes
+    cy.on("dragfree", "node", () => {
+      if (onPositionsChange) {
+        const positions: Record<string, { x: number; y: number }> = {};
+        cy.nodes().forEach((node) => {
+          const pos = node.position();
+          positions[node.id()] = { x: pos.x, y: pos.y };
+        });
+        onPositionsChange(positions);
+      }
+    });
 
     cy.on("mouseover", "edge", (event) => {
       const edge = event.target;
@@ -1725,7 +2330,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         cy.destroy();
       }
     };
-  }, [nodes, links]);
+  }, [nodes, links, displayMode]);
 
   // Reframe: rebuild graph with clicked node in center
   const reframe = async () => {
@@ -1984,17 +2589,35 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             }}
           />
 
-          {/* Minority Report Glassmorphic Overlays */}
+          {/* Node Overlays - render NodeCard for all display modes */}
           {containerRect &&
-            overlayNodes.map((node) => (
-              <NodeCard
-                key={node.id()}
-                node={node}
-                containerRect={containerRect}
-                zoom={zoomLevel}
-                allNodes={nodes}
-              />
-            ))}
+            overlayNodes.map((node) => {
+              return (
+                <NodeCard
+                  key={node.id()}
+                  node={node}
+                  containerRect={containerRect}
+                  zoom={zoomLevel}
+                  allNodes={nodes}
+                  allLinks={links}
+                  pinnedReferenceIds={pinnedReferenceIds}
+                  onTogglePin={onTogglePin}
+                  displayMode={displayMode}
+                  nodeSettings={nodeSettings}
+                  onCycleDisplayMode={(nodeId: string) => {
+                    const modes: DisplayMode[] = ['circles', 'compact', 'mr_cards'];
+                    const currentMode = nodeSettings?.[nodeId]?.displayMode || displayMode;
+                    const currentIndex = modes.indexOf(currentMode);
+                    const nextMode = modes[(currentIndex + 1) % modes.length];
+
+                    const newSettings = { ...(nodeSettings || {}), [nodeId]: { displayMode: nextMode } };
+                    if (onNodeSettingsChange) {
+                      onNodeSettingsChange(newSettings);
+                    }
+                  }}
+                />
+              );
+            })}
 
           {/* Hovered Node Text Popup - Cleaner Minority Report Style */}
           {hoveredNodePopup && (

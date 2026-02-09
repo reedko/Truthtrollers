@@ -1,32 +1,57 @@
 export const getNodesForEntity = (entityType) => {
   if (entityType === "task") {
     return `
-        SELECT 'task' AS type, CONCAT("conte-",t.content_id) AS id, t.content_id AS content_id, t.content_name AS label, t.url 
+        SELECT
+          'task' AS type,
+          CONCAT("conte-",t.content_id) AS id,
+          t.content_id AS content_id,
+          t.content_name AS label,
+          t.url,
+          (SELECT COUNT(*) FROM content_claims WHERE content_id = t.content_id) AS claimCount,
+          (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating
         FROM content t
         WHERE t.content_id = ?
 
         UNION
 
-        SELECT 'author' AS type, CONCAT("autho-",a.author_id) AS id, a.author_id AS author_id, 
-               CONCAT(a.author_first_name, ' ', a.author_last_name) AS label,
-               NULL AS url
+        SELECT
+          'author' AS type,
+          CONCAT("autho-",a.author_id) AS id,
+          a.author_id AS author_id,
+          CONCAT(a.author_first_name, ' ', a.author_last_name) AS label,
+          NULL AS url,
+          NULL AS claimCount,
+          (SELECT AVG(veracity_score) FROM author_ratings WHERE author_id = a.author_id) AS rating
         FROM authors a
         JOIN content_authors ca ON a.author_id = ca.author_id
         WHERE ca.content_id = ?
-        
+
 
         UNION
 
-        SELECT 'publisher' AS type, CONCAT("publi-",p.publisher_id) AS id, p.publisher_id AS publisher_id, p.publisher_name AS label, 
-               NULL AS url
+        SELECT
+          'publisher' AS type,
+          CONCAT("publi-",p.publisher_id) AS id,
+          p.publisher_id AS publisher_id,
+          p.publisher_name AS label,
+          NULL AS url,
+          NULL AS claimCount,
+          (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating
         FROM publishers p
         JOIN content_publishers tp ON p.publisher_id = tp.publisher_id
         WHERE tp.content_id = ?
-        
+
 
         UNION
 
-        SELECT 'reference' AS type, CONCAT("conte-",lr.content_id) AS id, lr.content_id AS content_id, lr.content_name AS label, lr.url AS url
+        SELECT
+          'reference' AS type,
+          CONCAT("conte-",lr.content_id) AS id,
+          lr.content_id AS content_id,
+          lr.content_name AS label,
+          lr.url AS url,
+          (SELECT COUNT(*) FROM content_claims WHERE content_id = lr.content_id) AS claimCount,
+          (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = lr.content_id) AS rating
         FROM content lr
         JOIN content_relations tr ON lr.content_id = tr.reference_content_id
         WHERE tr.content_id = ?
@@ -36,32 +61,40 @@ export const getNodesForEntity = (entityType) => {
 
   if (entityType === "author") {
     return `
-        SELECT 'author' AS type, CONCAT("autho-",a.author_id) AS id, a.author_id AS author_id, 
-               CONCAT(a.author_first_name, ' ', a.author_last_name) AS label, 
-               NULL AS url
+        SELECT 'author' AS type, CONCAT("autho-",a.author_id) AS id, a.author_id AS author_id,
+               CONCAT(a.author_first_name, ' ', a.author_last_name) AS label,
+               NULL AS url,
+               NULL AS claimCount,
+               (SELECT AVG(veracity_score) FROM author_ratings WHERE author_id = a.author_id) AS rating
         FROM authors a
         WHERE a.author_id = ?
 
         UNION
 
-        SELECT 'task' AS type, CONCAT("conte-",t.content_id) AS id, t.content_id AS content_id, t.content_name AS label, t.url
+        SELECT 'task' AS type, CONCAT("conte-",t.content_id) AS id, t.content_id AS content_id, t.content_name AS label, t.url,
+               (SELECT COUNT(*) FROM content_claims WHERE content_id = t.content_id) AS claimCount,
+               (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating
         FROM content t
         JOIN content_authors ca ON t.content_id = ca.content_id
         WHERE t.content_type='task' AND ca.author_id = ?
-        
+
 
         UNION
 
-        SELECT 'reference' AS type, CONCAT("conte-",lr.content_id) AS id, lr.content_id AS content_id, lr.content_name AS label, lr.url AS url
+        SELECT 'reference' AS type, CONCAT("conte-",lr.content_id) AS id, lr.content_id AS content_id, lr.content_name AS label, lr.url AS url,
+               (SELECT COUNT(*) FROM content_claims WHERE content_id = lr.content_id) AS claimCount,
+               (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = lr.content_id) AS rating
         FROM content lr
         JOIN content_authors ca ON lr.content_id = ca.content_id
         WHERE lr.content_type='reference' AND ca.author_id = ?
-        
+
 
         UNION
 
-        SELECT 'publisher' AS type, CONCAT("publi-",p.publisher_id) AS id, p.publisher_id AS publisher_id, p.publisher_name AS label, 
-               NULL AS url
+        SELECT 'publisher' AS type, CONCAT("publi-",p.publisher_id) AS id, p.publisher_id AS publisher_id, p.publisher_name AS label,
+               NULL AS url,
+               NULL AS claimCount,
+               (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating
         FROM publishers p
         JOIN content_publishers tp ON p.publisher_id = tp.publisher_id
         JOIN content_authors ca ON tp.content_id = ca.content_id
@@ -72,33 +105,41 @@ export const getNodesForEntity = (entityType) => {
 
   if (entityType === "publisher") {
     return `
-        SELECT 'publisher' AS type, CONCAT("publi-",p.publisher_id) AS id, p.publisher_id AS publisher_id, p.publisher_name AS label, 
-               NULL AS url
+        SELECT 'publisher' AS type, CONCAT("publi-",p.publisher_id) AS id, p.publisher_id AS publisher_id, p.publisher_name AS label,
+               NULL AS url,
+               NULL AS claimCount,
+               (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating
         FROM publishers p
         WHERE p.publisher_id = ?
 
         UNION
 
-        SELECT 'task' AS type, CONCAT("conte-",t.content_id) AS id, t.content_id AS content_id, t.content_name AS label, t.url
+        SELECT 'task' AS type, CONCAT("conte-",t.content_id) AS id, t.content_id AS content_id, t.content_name AS label, t.url,
+               (SELECT COUNT(*) FROM content_claims WHERE content_id = t.content_id) AS claimCount,
+               (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating
         FROM content t
         JOIN content_publishers tp ON t.content_id = tp.content_id
         WHERE t.content_type = 'task' AND tp.publisher_id = ?
-        
+
 
         UNION
 
-        SELECT 'author' AS type, CONCAT("autho-",a.author_id) AS id, a.author_id AS author_id, 
-               CONCAT(a.author_first_name, ' ', a.author_last_name) AS label, 
-               NULL AS url
+        SELECT 'author' AS type, CONCAT("autho-",a.author_id) AS id, a.author_id AS author_id,
+               CONCAT(a.author_first_name, ' ', a.author_last_name) AS label,
+               NULL AS url,
+               NULL AS claimCount,
+               (SELECT AVG(veracity_score) FROM author_ratings WHERE author_id = a.author_id) AS rating
         FROM authors a
         JOIN content_authors ca ON a.author_id = ca.author_id
         JOIN content_publishers tp ON ca.content_id = tp.content_id
         WHERE tp.publisher_id = ?
-        
+
 
         UNION
 
-        SELECT 'reference' AS type, CONCAT("conte-",lr.content_id) AS id, lr.content_id AS content_id, lr.content_name AS label, lr.url AS url
+        SELECT 'reference' AS type, CONCAT("conte-",lr.content_id) AS id, lr.content_id AS content_id, lr.content_name AS label, lr.url AS url,
+               (SELECT COUNT(*) FROM content_claims WHERE content_id = lr.content_id) AS claimCount,
+               (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = lr.content_id) AS rating
         FROM content lr
         JOIN content_publishers tp ON lr.content_id = tp.content_id
         WHERE lr.content_type = 'reference' AND tp.publisher_id = ?
@@ -108,33 +149,41 @@ export const getNodesForEntity = (entityType) => {
 
   if (entityType === "reference") {
     return `
-        SELECT 'reference' AS type, CONCAT("conte-",lr.content_id) AS id, lr.content_id AS content_id, lr.content_name AS label, lr.url AS url
+        SELECT 'reference' AS type, CONCAT("conte-",lr.content_id) AS id, lr.content_id AS content_id, lr.content_name AS label, lr.url AS url,
+               (SELECT COUNT(*) FROM content_claims WHERE content_id = lr.content_id) AS claimCount,
+               (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = lr.content_id) AS rating
         FROM content lr
         WHERE lr.content_id = ?
 
         UNION
 
-        SELECT 'task' AS type, CONCAT("conte-",t.content_id) AS id, t.content_id AS content_id, t.content_name AS label, t.url
+        SELECT 'task' AS type, CONCAT("conte-",t.content_id) AS id, t.content_id AS content_id, t.content_name AS label, t.url,
+               (SELECT COUNT(*) FROM content_claims WHERE content_id = t.content_id) AS claimCount,
+               (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating
         FROM content t
         JOIN content_relations tr ON t.content_id = tr.content_id
         WHERE tr.reference_content_id = ?
-        
+
 
         UNION
 
-        SELECT 'author' AS type, CONCAT("autho-",a.author_id) AS id, a.author_id AS author_id, 
-               CONCAT(a.author_first_name, ' ', a.author_last_name) AS label, 
-               NULL AS url
+        SELECT 'author' AS type, CONCAT("autho-",a.author_id) AS id, a.author_id AS author_id,
+               CONCAT(a.author_first_name, ' ', a.author_last_name) AS label,
+               NULL AS url,
+               NULL AS claimCount,
+               (SELECT AVG(veracity_score) FROM author_ratings WHERE author_id = a.author_id) AS rating
         FROM authors a
         JOIN content_authors ca ON a.author_id = ca.author_id
         JOIN content_relations tr ON ca.content_id = tr.reference_content_id
         WHERE tr.reference_content_id = ?
-        
+
 
         UNION
 
-        SELECT 'publisher' AS type, CONCAT("publi-",p.publisher_id) AS id, p.publisher_id AS publisher_id, p.publisher_name AS label, 
-               NULL AS url
+        SELECT 'publisher' AS type, CONCAT("publi-",p.publisher_id) AS id, p.publisher_id AS publisher_id, p.publisher_name AS label,
+               NULL AS url,
+               NULL AS claimCount,
+               (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating
         FROM publishers p
         JOIN content_publishers tp ON p.publisher_id = tp.publisher_id
         JOIN content_relations tr ON tp.content_id = tr.reference_content_id
@@ -289,12 +338,15 @@ export const getLinkedClaimsAndLinksForTask = (taskId, viewerId) => {
   const isValidViewer = Number.isInteger(viewerId);
   const claimNodeSql = `
     -- Task Claims
-    SELECT DISTINCT 
+    SELECT DISTINCT
       CONCAT('claim-', c.claim_id) AS id,
       c.claim_id,
       cc.content_id,
       c.claim_text AS label,
-      'taskClaim' AS type
+      'taskClaim' AS type,
+      c.veracity_score,
+      c.confidence_level,
+      (SELECT COUNT(*) FROM content_claims WHERE content_id = cc.content_id) AS claimCount
     FROM claims c
     JOIN content_claims cc ON c.claim_id = cc.claim_id
     WHERE cc.content_id = ?
@@ -302,12 +354,15 @@ export const getLinkedClaimsAndLinksForTask = (taskId, viewerId) => {
     UNION
 
     -- Reference Claims that link to the task's claims
-    SELECT DISTINCT 
+    SELECT DISTINCT
       CONCAT('claim-', c2.claim_id) AS id,
       c2.claim_id,
       cc2.content_id,
       c2.claim_text AS label,
-      'refClaim' AS type
+      'refClaim' AS type,
+      c2.veracity_score,
+      c2.confidence_level,
+      (SELECT COUNT(*) FROM content_claims WHERE content_id = cc2.content_id) AS claimCount
     FROM claim_links cl
     JOIN claims c2 ON c2.claim_id = cl.source_claim_id
     JOIN content_claims cc2 ON c2.claim_id = cc2.claim_id
@@ -319,13 +374,15 @@ export const getLinkedClaimsAndLinksForTask = (taskId, viewerId) => {
 
   const claimLinkSql = `
     -- Only include links where the target is a taskClaim for this task
-    SELECT 
+    SELECT
       cl.relationship AS relation,
+      cl.relationship AS stance,
       cl.support_level AS value,
       CONCAT('claim-', cl.source_claim_id) AS source,
       CONCAT('claim-', cl.target_claim_id) AS target,
       cl.claim_link_id,
-      cl.notes,
+      cl.notes AS rationale,
+      cl.confidence,
       cl.created_at
     FROM claim_links cl
     WHERE cl.target_claim_id IN (

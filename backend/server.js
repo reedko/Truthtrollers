@@ -41,6 +41,8 @@ import createTestimonialsRouter from "./src/routes/testimonials/index.js";
 import createMiscRouter from "./src/routes/misc/index.js";
 import createGraphRouter from "./src/routes/graph/index.js";
 import createEvidenceRouter from "./src/routes/evidence/index.js";
+import createPromptRoutes from "./src/routes/prompts.routes.js";
+import createMoleculeViewsRoutes from "./src/routes/molecule-views.routes.js";
 
 // Logger utility
 import { clearLogFile } from "./src/utils/logger.js";
@@ -178,6 +180,8 @@ app.use("/", createTestimonialsRouter({ query, pool })); // Testimonials routes:
 app.use("/", createMiscRouter({ query, pool, db })); // Misc routes: /api/upload-image, /api/youtube-transcript, PDF, etc.
 app.use("/", createGraphRouter({ query, pool })); // Graph routes: /api/get-graph-data (molecule map)
 app.use("/", createEvidenceRouter({ query, pool }));
+app.use("/", createPromptRoutes({ query })); // Prompt management routes: /api/prompts
+app.use("/", createMoleculeViewsRoutes({ query, pool })); // Molecule views routes: /api/molecule-views
 // ─────────────────────────────────────────────
 // Health + Simple Proxy (top-level, legacy behavior)
 // ─────────────────────────────────────────────

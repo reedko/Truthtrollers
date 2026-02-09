@@ -22,6 +22,7 @@ import TrueFalseGame from "./components/TrueFalseGame";
 import ExtensionDownloadPage from "./pages/ExtensionDownloadPage"; // ✅ NEW
 import GameSpacePage from "./pages/GameSpacePage";
 import LevelPage from "./pages/LevelPage";
+import TextPadPage from "./pages/TextPadPage";
 
 const router = createBrowserRouter([
   {
@@ -138,6 +139,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <ExtensionDownloadPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/textpad",
+        element: (
+          <ProtectedRoute>
+            <TextPadPage />
           </ProtectedRoute>
         ),
       },

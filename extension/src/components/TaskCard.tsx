@@ -83,27 +83,15 @@ const TaskCard: React.FC = () => {
     const storeUrl = useTaskStore.getState().currentUrl;
     if (typeof storeUrl === "string" && storeUrl) return storeUrl;
 
-    const { lastVisitedURL } = (await browser.storage.local.get(
-      "lastVisitedURL",
+    // Fallback: read currentUrl directly from storage (set by background before injection)
+    const { currentUrl } = (await browser.storage.local.get(
+      "currentUrl",
     )) as {
-      lastVisitedURL?: unknown;
+      currentUrl?: unknown;
     };
 
-    return typeof lastVisitedURL === "string" ? lastVisitedURL : "";
+    return typeof currentUrl === "string" ? currentUrl : "";
   }
-
-  useEffect(() => {
-    (async () => {
-      const { lastVisitedURL } = (await browser.storage.local.get(
-        "lastVisitedURL",
-      )) as {
-        lastVisitedURL?: string;
-      };
-      if (typeof lastVisitedURL === "string" && lastVisitedURL) {
-        useTaskStore.getState().setCurrentUrl(lastVisitedURL);
-      }
-    })();
-  }, []);
 
   useEffect(() => {
     // ✅ Retrieve task data from local storage

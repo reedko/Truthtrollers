@@ -36,32 +36,42 @@ export async function extractAuthors($) {
     });
   }
 
-  // ✅ Extract from author wrapper elements
-  $('[class*="author"][class*="wrapper"]').each((_, authorWrapper) => {
-    let name =
-      $(authorWrapper).find(".text-weight-semibold").text().trim() ||
-      $(authorWrapper).find('[class*="name"]').first().text().trim() ||
-      $(authorWrapper).find("strong").first().text().trim() ||
-      $(authorWrapper).find("a").first().text().trim();
+  // ✅ Extract from span.author-name (e.g. Brownstone byline)
+  // Skip any that live inside Related Articles containers
+  $('span.author-name').each((_, nameEl) => {
+    const $nameEl = $(nameEl);
 
-    let image = $(authorWrapper).find("img").first().attr("src") || null;
+    // Exclude if inside related posts container or a related post article
+    if ($nameEl.closest('.ast-single-related-posts-container, article.ast-related-post').length > 0) {
+      return;
+    }
 
-    if (name) {
+    const name = $nameEl.text().trim();
+
+    // img.avatar is a sibling inside the same <a> parent
+    const $parent = $nameEl.parent();
+
+    const image =
+      $parent.find("img.avatar").first().attr("src") ||
+      $parent.find("img.multiple_authors_guest_author_avatar").first().attr("src") ||
+      null;
+
+    if (name && name.length > 2 && !authors.find((a) => a.name === name)) {
       authors.push({
         name,
         description: null,
         image,
       });
-      logger.log("✨ Found author via [class*='author'][class*='wrapper']:", {
-        name,
-        image,
-      });
     }
   });
 
+  // If we already found authors, return early — skip all generic extractors
+  if (authors.length > 0) {
+    return authors;
+  }
+
   // ✅ Extract from JSON-LD
   $('script[type="application/ld+json"]').each((_, scriptTag) => {
-    logger.log("trying ld+json");
     try {
       let raw = $(scriptTag).text().trim() || "{}";
       // 🧽 Clean up malformed endings like stray semicolons or double JSON
@@ -77,7 +87,7 @@ export async function extractAuthors($) {
           : "{" + s + "}";
       });
 
-      entries.forEach((entry) => {
+      entries.forEach(() => {
         const metadata = JSON.parse(raw);
 
         // 🔍 Look directly for metadata.author

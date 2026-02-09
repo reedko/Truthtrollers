@@ -232,7 +232,7 @@ export const extractAuthors = async (
 ): Promise<Author[]> => {
   const authors: Author[] = [];
 
-  // ✅ Extract directly from article header
+  // ✅ Extract directly from article header (CHD-specific)
   const authorRegex =
     /<span class="chd-defender-article__authors-name">.*?<a.*?>(.*?)<\/a>/;
   const match = $.html().match(authorRegex);
@@ -245,18 +245,85 @@ export const extractAuthors = async (
       image: null,
     });
   }
-  $('[class*="author"][class*="wrapper"]').each((_, authorWrapper) => {
+
+  // ✅ Extract from Brownstone article byline (brownstone.org specific)
+  // Look for multiple_authors_guest_author_avatar images (in noscript or anywhere in main content)
+  const $mainContent = $("article, main, .entry-content, .post-content, #content").first();
+
+  if ($mainContent.length > 0) {
+    // First try noscript tags
+    $mainContent.find("noscript").each((_, noscript) => {
+      const noscriptHtml = $(noscript).html() || "";
+      // Parse the HTML inside noscript
+      const $noscriptContent = cheerio.load(noscriptHtml);
+      const authorName = $noscriptContent("img").attr("alt");
+      const authorImage = $noscriptContent("img").attr("src");
+
+      if (authorName && authorName.length > 2) {
+        if (!authors.find((a) => a.name === authorName)) {
+          authors.push({
+            name: authorName.trim(),
+            description: null,
+            image: authorImage || null,
+          });
+          console.log("🏛️ Found Brownstone author in noscript:", {
+            name: authorName,
+            image: authorImage,
+          });
+        }
+      }
+    });
+
+    // Also try direct img with avatar classes (outside noscript)
+    $mainContent.find("img.multiple_authors_guest_author_avatar, img.avatar").each((_, img) => {
+      const authorName = $(img).attr("alt");
+      const authorImage = $(img).attr("src");
+
+      if (authorName && authorName.length > 2 && !authorName.toLowerCase().includes("related")) {
+        if (!authors.find((a) => a.name === authorName)) {
+          authors.push({
+            name: authorName.trim(),
+            description: null,
+            image: authorImage || null,
+          });
+          console.log("🏛️ Found Brownstone author from avatar img:", {
+            name: authorName,
+            image: authorImage,
+          });
+        }
+      }
+    });
+  }
+
+  // If we found authors via Brownstone method, return early
+  if (authors.length > 0) {
+    console.log("✅ Found Brownstone authors, skipping generic extractors");
+    return authors;
+  }
+
+  // ✅ Extract from author wrapper elements (search ONLY in main content area)
+  const $searchArea = $("article, main, .entry-content, .post-content, #content").first();
+  const $scope = $searchArea.length > 0 ? $searchArea : $("body");
+
+  // Explicitly remove related/sidebar sections from search scope
+  const $filtered = $scope.clone();
+  $filtered.find('.related, .related-posts, .related-articles, .sidebar, .widget, ' +
+    '[class*="related"], [id*="related"]').remove();
+
+  $filtered.find('[class*="author"][class*="wrapper"]').each((_, authorWrapper) => {
+    const $wrapper = $(authorWrapper);
+
     // Try to get name from various possible elements inside the wrapper
     let name =
-      $(authorWrapper).find(".text-weight-semibold").text().trim() ||
-      $(authorWrapper).find('[class*="name"]').first().text().trim() ||
-      $(authorWrapper).find("strong").first().text().trim() ||
-      $(authorWrapper).find("a").first().text().trim();
+      $wrapper.find(".text-weight-semibold").text().trim() ||
+      $wrapper.find('[class*="name"]').first().text().trim() ||
+      $wrapper.find("strong").first().text().trim() ||
+      $wrapper.find("a").first().text().trim();
 
     // Try to get image src from common class or any img inside
-    let image = $(authorWrapper).find("img").first().attr("src") || null;
+    let image = $wrapper.find("img").first().attr("src") || null;
 
-    if (name) {
+    if (name && name.length > 2) {
       authors.push({
         name,
         description: null,
