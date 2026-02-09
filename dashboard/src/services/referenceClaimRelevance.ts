@@ -148,7 +148,7 @@ export function enrichClaimsWithRelevance(
         l.reference_claim_id === claim.claim_id
     );
 
-    const relevanceScore = calculateClaimRelevanceScore(link);
+    const relevanceScore = calculateClaimRelevanceScore(link ?? null);
 
     return {
       ...claim,

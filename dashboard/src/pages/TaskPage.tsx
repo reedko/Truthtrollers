@@ -1,5 +1,5 @@
 // src/pages/TaskPage.tsx
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Grid,
   GridItem,
@@ -8,45 +8,65 @@ import {
   Button,
   Box,
   VStack,
+  HStack,
+  Switch,
+  FormControl,
+  FormLabel,
 } from "@chakra-ui/react";
 import TaskGrid from "../components/TaskGrid";
 import { useShallow } from "zustand/react/shallow";
 import { useTaskStore } from "../store/useTaskStore";
+import { useAuthStore } from "../store/useAuthStore";
 import { useLocation } from "react-router-dom";
 
 export const TaskPage: React.FC = () => {
-  const content = useTaskStore(useShallow((state) => state.filteredTasks));
-  const fetchTasks = useTaskStore((state) => state.fetchTasks);
-  const loadMoreTasks = useTaskStore((state) => state.loadMoreTasks);
+  const assignedTasks = useTaskStore(useShallow((state) => state.assignedTasks));
+  const fetchTasksForUser = useTaskStore((state) => state.fetchTasksForUser);
+  const user = useAuthStore((s) => s.user);
   const location = useLocation();
   const redirectTo = location.state?.redirectTo || "/dashboard";
   const fetchInitiated = useRef(false);
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
-    if (!fetchInitiated.current) {
+    if (!fetchInitiated.current && user?.user_id) {
       fetchInitiated.current = true;
-      if (content.length === 0) {
-        fetchTasks();
-      }
+      fetchTasksForUser(user.user_id, showArchived);
     }
-  }, [content.length, fetchTasks]);
+  }, [user?.user_id, fetchTasksForUser]);
+
+  // Refetch when showArchived changes
+  useEffect(() => {
+    if (user?.user_id) {
+      fetchTasksForUser(user.user_id, showArchived);
+    }
+  }, [showArchived, user?.user_id, fetchTasksForUser]);
 
   return (
     <Box p={4}>
       <VStack align="center" spacing={4} w="100%">
-        <Heading size="lg" color="teal.300">
-          Active Tasks
-        </Heading>
+        <HStack w="100%" justify="space-between" align="center">
+          <Heading size="lg" color="teal.300">
+            My Tasks
+          </Heading>
 
-        {content.length === 0 ? (
-          <Text>No content matches the selected criteria.</Text>
+          <FormControl display="flex" alignItems="center" w="auto">
+            <FormLabel htmlFor="show-archived" mb="0" fontSize="sm">
+              Show Archived
+            </FormLabel>
+            <Switch
+              id="show-archived"
+              isChecked={showArchived}
+              onChange={(e) => setShowArchived(e.target.checked)}
+              colorScheme="teal"
+            />
+          </FormControl>
+        </HStack>
+
+        {assignedTasks.length === 0 ? (
+          <Text>No tasks found. {showArchived ? "Try unchecking 'Show Archived'." : ""}</Text>
         ) : (
-          <>
-            <TaskGrid content={content} />
-            <Button mt={4} onClick={() => loadMoreTasks()} colorScheme="teal">
-              Load More Tasks
-            </Button>
-          </>
+          <TaskGrid content={assignedTasks} />
         )}
       </VStack>
     </Box>

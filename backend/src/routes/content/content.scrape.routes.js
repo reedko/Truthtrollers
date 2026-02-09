@@ -243,13 +243,32 @@ export default function createContentScrapeRoutes({ query }) {
   // ============================================================
   router.post("/api/scrape-task", async (req, res) => {
     try {
-      const { url, raw_html, raw_text } = req.body;
+      const { url, raw_html, raw_text, force } = req.body;
 
       if (!url) {
         return res.status(400).json({
           success: false,
           error: "Missing required field: url",
         });
+      }
+
+      // Check if URL already exists (unless force=true)
+      if (!force) {
+        const existing = await query(
+          "SELECT content_id, content_name FROM content WHERE url = ? LIMIT 1",
+          [url]
+        );
+
+        if (existing.length > 0) {
+          return res.status(409).json({
+            success: false,
+            error: "URL already exists",
+            duplicate: true,
+            existing_content_id: existing[0].content_id,
+            existing_content_name: existing[0].content_name,
+            message: `This URL already exists as "${existing[0].content_name}". Set force=true to create anyway.`
+          });
+        }
       }
 
       let taskContentId;

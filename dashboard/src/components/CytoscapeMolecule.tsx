@@ -75,6 +75,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
 
   // Determine display mode for THIS node - use node-specific setting or fall back to global
   const displayMode = nodeSettings?.[id]?.displayMode || globalDisplayMode;
+  const currentDisplayMode = displayMode; // Store for button labels to avoid type narrowing
 
   // Color schemes for different node types (used by all modes)
   const colorSchemes = {
@@ -327,7 +328,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
             }}
             title="Cycle display mode"
           >
-            {displayMode === 'circles' ? '⚪' : displayMode === 'compact' ? '📊' : '🎴'}
+            {currentDisplayMode === 'circles' ? '⚪' : currentDisplayMode === 'compact' ? '📊' : '🎴'}
           </button>
         )}
       </>
@@ -498,7 +499,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
             }}
             title="Cycle display mode"
           >
-            {displayMode === 'circles' ? '⚪' : displayMode === 'compact' ? '📊' : '🎴'}
+            {currentDisplayMode === 'circles' ? '⚪' : currentDisplayMode === 'compact' ? '📊' : '🎴'}
           </button>
         )}
       </div>
@@ -2005,7 +2006,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       elements: { nodes: positionedNodes, edges: initialEdges },
       layout: { name: "preset" },
       style: [
-        getNodeStyle(),
+        getNodeStyle() as any,
         {
           selector: "edge",
           style: {

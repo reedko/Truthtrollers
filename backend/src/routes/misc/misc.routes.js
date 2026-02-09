@@ -36,7 +36,9 @@ const storage = multer.diskStorage({
     const ext = path.extname(file.originalname);
     const { type, id } = req.query;
     if (!type || !id) return cb(new Error("Missing type or id"));
-    cb(null, `${type.slice(0, -1)}_id_${id}${ext}`);
+    // Handle singular form correctly - 'content' stays as 'content', others remove trailing 's'
+    const singularType = type === 'content' ? 'content' : type.slice(0, -1);
+    cb(null, `${singularType}_id_${id}${ext}`);
   },
 });
 const upload = multer({ storage });
@@ -324,6 +326,9 @@ export default function createMiscRoutes({ query, pool, db }) {
     const { type, id } = req.query;
     const imagePath = `assets/images/${type}/${req.file.filename}`;
 
+    console.log(`📤 Upload-image: type=${type}, id=${id}, file=${req.file.filename}`);
+    console.log(`📁 Image path: ${imagePath}`);
+
     let updateSql = "";
     let column = "";
 
@@ -340,17 +345,28 @@ export default function createMiscRoutes({ query, pool, db }) {
         updateSql = "UPDATE users SET user_profile_image = ? WHERE user_id = ?";
         break;
       case "content":
-        updateSql = "UPDATE content SET thumbnail = ? WHERE content_id = ?";
+        // Update both thumbnail AND url for content (especially for TextPad submissions)
+        updateSql = "UPDATE content SET thumbnail = ?, url = ? WHERE content_id = ?";
         break;
       default:
         return res.status(400).json({ error: "Invalid type" });
     }
 
-    pool.query(updateSql, [imagePath, id], (err) => {
+    // For content, we need to update both thumbnail and url
+    const params = type === "content"
+      ? [imagePath, imagePath, id]  // thumbnail, url, content_id
+      : [imagePath, id];              // single field, id
+
+    console.log(`🔧 Executing SQL: ${updateSql} with`, params);
+
+    pool.query(updateSql, params, (err, result) => {
       if (err) {
-        console.error("Image update error:", err);
+        console.error("❌ Image update error:", err);
         return res.status(500).json({ error: "Failed to update image path" });
       }
+
+      console.log(`✅ Database updated:`, result);
+      console.log(`✅ Rows affected: ${result.affectedRows}`);
 
       return res.status(200).json({
         message: "Upload successful",

@@ -15,7 +15,7 @@ import {
   useBreakpointValue,
 } from "@chakra-ui/react";
 import { Outlet, useLocation, Link as RouterLink } from "react-router-dom";
-import { FiHome, FiBarChart2, FiMenu, FiUser, FiAward, FiEdit } from "react-icons/fi";
+import { FiHome, FiBarChart2, FiMenu, FiUser, FiAward, FiEdit, FiMail } from "react-icons/fi";
 import TopicList from "../components/TopicList";
 import TopContributors from "../components/TopContributors";
 import HotTopics from "../components/HotTopics";
@@ -88,6 +88,12 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
         <HStack spacing={2} mb={2}>
           <FiEdit />
           <Text>TextPad</Text>
+        </HStack>
+      </RouterLink>
+      <RouterLink to="/emailtest" onClick={handleClick("/emailtest")}>
+        <HStack spacing={2} mb={2}>
+          <FiMail />
+          <Text>Email Test</Text>
         </HStack>
       </RouterLink>
       {createLink("Extension", "/extension")}

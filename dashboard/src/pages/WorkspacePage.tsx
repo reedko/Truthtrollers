@@ -28,6 +28,11 @@ const WorkspacePage = () => {
   const selectedRedirect = useTaskStore((s) => s.selectedRedirect);
   const viewerId = useTaskStore((s) => s.viewingUserId);
 
+  // Set this as the active redirect target when mounted
+  useEffect(() => {
+    setRedirect("/workspace");
+  }, [setRedirect]);
+
   useEffect(() => {
     if (taskId) {
       fetchContentScores(taskId, null).then((scores) => {

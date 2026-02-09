@@ -52,11 +52,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const [activeTask, setActiveTask] = useState<Task | null>(
     Array.isArray(task) ? task[0] : task
   );
+  const [imageKey, setImageKey] = useState(Date.now()); // Force image reload
   const cardRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
 
-  const { setSelectedTask, selectedRedirect } = useTaskStore();
+  const { setSelectedTask, selectedRedirect, lastWorkPage } = useTaskStore();
   const fetchAssignedUsers = useTaskStore((s) => s.fetchAssignedUsers);
   const fetchTasksForUser = useTaskStore((s) => s.fetchTasksForUser);
   const assignedUsers = useTaskStore((s) =>
@@ -81,20 +82,58 @@ const TaskCard: React.FC<TaskCardProps> = ({
     else setActiveTask(task);
   }, [task]);
 
+  // Fetch assigned users when task changes
+  useEffect(() => {
+    if (activeTask && useStore) {
+      fetchAssignedUsers(activeTask.content_id);
+    }
+  }, [activeTask, useStore, fetchAssignedUsers]);
+
   const handleUpload = async (file: File, contentId: number) => {
-    const result = await uploadImage(contentId, file, "content");
-    if (result) {
+    try {
+      console.log('📤 Uploading image for content:', contentId);
+      const result = await uploadImage(contentId, file, "content");
+      console.log('✅ Upload result:', result);
+
+      if (result) {
+        toast({
+          title: "Image Uploaded",
+          description: "Task thumbnail updated!",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+
+        // Force re-fetch to get updated thumbnail
+        console.log('🔄 Fetching updated task...');
+        const updatedTask = await fetchTask(contentId);
+        console.log('📦 Updated task:', updatedTask);
+
+        if (updatedTask) {
+          setActiveTask(updatedTask);
+          setImageKey(Date.now()); // Force image reload by updating cache buster
+        } else {
+          console.error('❌ Failed to fetch updated task');
+        }
+      } else {
+        console.error('❌ Upload failed - no result returned');
+        toast({
+          title: "Upload Failed",
+          description: "Could not upload image. Please try again.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    } catch (error) {
+      console.error('❌ Upload error:', error);
       toast({
-        title: "Image Uploaded",
-        description: "Task thumbnail updated!",
-        status: "success",
+        title: "Upload Error",
+        description: error instanceof Error ? error.message : "An error occurred",
+        status: "error",
         duration: 3000,
         isClosable: true,
       });
-      const updatedTask = await fetchTask(contentId);
-      if (updatedTask) {
-        setActiveTask(updatedTask);
-      }
     }
   };
 
@@ -104,7 +143,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   const handleSelect = () => {
     setSelectedTask(activeTask);
-    navigate(selectedRedirect || "/dashboard");
+    // Redirect to last work page, or selectedRedirect if set, or default to workspace
+    const destination = selectedRedirect !== "/dashboard" ? selectedRedirect : lastWorkPage || "/workspace";
+    navigate(destination);
   };
 
   const handleDrillDown = () => {
@@ -145,6 +186,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
 
     try {
+      // Soft delete: set is_active = 0
       const response = await fetch(
         `${API_BASE_URL}/api/tasks/${activeTask.content_id}?userId=${user.user_id}`,
         {
@@ -154,25 +196,26 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
       if (response.ok) {
         toast({
-          title: "Task deleted",
-          description: "The task has been removed from your list",
+          title: "Task archived",
+          description: "The task has been removed from your active list",
           status: "success",
           duration: 3000,
           isClosable: true,
         });
 
-        // Refresh the task list
+        // Refresh the task list (will show archived if that toggle is on)
         if (user.user_id) {
-          fetchTasksForUser(user.user_id);
+          // Fetch with current show archived state - the page will handle this
+          fetchTasksForUser(user.user_id, false); // Default to not showing archived after delete
         }
       } else {
         const data = await response.json();
-        throw new Error(data.error || "Failed to delete task");
+        throw new Error(data.error || "Failed to archive task");
       }
     } catch (error: any) {
       toast({
-        title: "Delete failed",
-        description: error.message || "An error occurred while deleting the task",
+        title: "Archive failed",
+        description: error.message || "An error occurred while archiving the task",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -289,11 +332,46 @@ const TaskCard: React.FC<TaskCardProps> = ({
               transition="border 0.2s"
             >
               <Image
-                src={`${API_BASE_URL}/${activeTask.thumbnail}`}
+                src={`${API_BASE_URL}/api/image/content/${activeTask.content_id}?t=${imageKey}`}
                 alt="Thumbnail"
                 w="100%"
                 h="100%"
                 objectFit="cover"
+                fallback={
+                  <Box
+                    w="100%"
+                    h="100%"
+                    bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    flexDirection="column"
+                    position="relative"
+                    _hover={{
+                      bg: "linear-gradient(135deg, #764ba2 0%, #667eea 100%)",
+                    }}
+                  >
+                    <Text fontSize="6xl" mb={2} filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))">
+                      📝
+                    </Text>
+                    <Text
+                      fontSize="sm"
+                      color="white"
+                      fontWeight="bold"
+                      textShadow="0 1px 2px rgba(0,0,0,0.3)"
+                    >
+                      Text Document
+                    </Text>
+                    <Text
+                      fontSize="xs"
+                      color="whiteAlpha.800"
+                      mt={1}
+                      textShadow="0 1px 2px rgba(0,0,0,0.3)"
+                    >
+                      Click to upload image
+                    </Text>
+                  </Box>
+                }
               />
             </Box>
 
@@ -360,16 +438,24 @@ const TaskCard: React.FC<TaskCardProps> = ({
               as={Button}
               className="mr-button"
               flex="1"
+              rightIcon={<BiChevronDown />}
             >
               Users
             </MenuButton>
             <MenuList>
+              <MenuItem
+                onClick={() => handleOpenModal(onAssignOpen)}
+                fontWeight="bold"
+                color="blue.500"
+              >
+                + Assign User
+              </MenuItem>
               {(assignedUsers?.length ?? 0) > 0 ? (
                 (assignedUsers ?? []).map((u) => (
                   <MenuItem key={u.user_id}>{u.username}</MenuItem>
                 ))
               ) : (
-                <MenuItem>No Users Assigned</MenuItem>
+                <MenuItem isDisabled>No Users Assigned</MenuItem>
               )}
             </MenuList>
           </Menu>

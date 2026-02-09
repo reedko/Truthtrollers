@@ -13,6 +13,9 @@ import {
   Button,
   Link,
   useToast,
+  FormHelperText,
+  FormErrorMessage,
+  Text,
 } from "@chakra-ui/react";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import ReCAPTCHA from "react-google-recaptcha";
@@ -31,6 +34,28 @@ const Register: React.FC = () => {
   const toast = useToast();
   const navigate = useNavigate();
   const setAuth = useAuthStore((s) => s.setAuth);
+
+  // Password validation function
+  const validatePassword = (password: string): { valid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+
+    if (password.length < 10) {
+      errors.push("At least 10 characters");
+    }
+    if (!/[A-Z]/.test(password)) {
+      errors.push("At least one capital letter");
+    }
+    if (!/[0-9]/.test(password)) {
+      errors.push("At least one number");
+    }
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      errors.push("At least one special character");
+    }
+
+    return { valid: errors.length === 0, errors };
+  };
+
+  const passwordValidation = validatePassword(password);
 
   const handleRegister = async () => {
     try {
@@ -76,7 +101,7 @@ const Register: React.FC = () => {
     }
   };
 
-  const isFormValid = !!username && !!email && !!password && !!captchaToken;
+  const isFormValid = !!username && !!email && !!password && !!captchaToken && passwordValidation.valid;
 
   return (
     <Box maxW="420px" w="full" mx="auto" mt={{ base: 6, md: 12 }} px={4}>
@@ -104,7 +129,7 @@ const Register: React.FC = () => {
           />
         </FormControl>
 
-        <FormControl id="password" isRequired>
+        <FormControl id="password" isRequired isInvalid={password.length > 0 && !passwordValidation.valid}>
           <FormLabel>Password</FormLabel>
           <InputGroup>
             <Input
@@ -122,6 +147,20 @@ const Register: React.FC = () => {
               />
             </InputRightElement>
           </InputGroup>
+          {password.length > 0 && !passwordValidation.valid && (
+            <FormErrorMessage>
+              <VStack align="start" spacing={0}>
+                {passwordValidation.errors.map((error, idx) => (
+                  <Text key={idx} fontSize="xs">• {error}</Text>
+                ))}
+              </VStack>
+            </FormErrorMessage>
+          )}
+          {password.length === 0 && (
+            <FormHelperText fontSize="xs">
+              Min 10 chars, 1 capital, 1 number, 1 special character
+            </FormHelperText>
+          )}
         </FormControl>
 
         <Box display="flex" justifyContent="center" pt={2}>

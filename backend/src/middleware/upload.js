@@ -21,7 +21,9 @@ const storage = multer.diskStorage({
     const ext = path.extname(file.originalname);
     const { type, id } = req.query;
     if (!type || !id) return cb(new Error("Missing type or id"));
-    cb(null, `${type.slice(0, -1)}_id_${id}${ext}`);
+    // Handle singular form correctly - 'content' stays as 'content', others remove trailing 's'
+    const singularType = type === 'content' ? 'content' : type.slice(0, -1);
+    cb(null, `${singularType}_id_${id}${ext}`);
   },
 });
 

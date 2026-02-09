@@ -93,6 +93,7 @@ export function createApp() {
 
   // Static assets (unchanged behavior)
   app.use("/assets", express.static(path.join(__dirname, "..", "assets")));
+  app.use("/api/assets", express.static(path.join(__dirname, "..", "assets"))); // Production path
 
   // ───────────────────────────────────────────
   // V1 routes (preserved)

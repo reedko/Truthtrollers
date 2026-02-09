@@ -53,6 +53,7 @@ export interface TaskStoreState {
   selectedTaskId: number | null;
   selectedTask: Task | null;
   selectedRedirect: string;
+  lastWorkPage: string; // Last workspace/gamespace/molecule page visited
   currentPage: number;
   claimsByTask: { [taskId: number]: Claim[] };
   viewingUserId: number | null;
@@ -77,7 +78,7 @@ export interface TaskStoreState {
   setSelectedTask: (input: Task | number | null) => void;
   setRedirect: (path: string) => void;
   fetchTasks: () => Promise<void>;
-  fetchTasksForUser: (userId: number) => Promise<void>;
+  fetchTasksForUser: (userId: number, showInactive?: boolean) => Promise<void>;
   fetchUsers: () => Promise<void>;
   fetchAssignedUsers: (taskId: number) => Promise<void>;
   fetchAuthors: (taskId: number) => Promise<void>;
@@ -109,6 +110,7 @@ export const useTaskStore = create<TaskStoreState>()(
   persist(
     devtools((set, get) => ({
       content: [],
+      assignedTasks: [],
       filteredTasks: [],
       selectedTopic: undefined,
       searchQuery: "",
@@ -125,6 +127,7 @@ export const useTaskStore = create<TaskStoreState>()(
       selectedTask: null,
       selectedPivotTasks: [],
       selectedRedirect: "/dashboard",
+      lastWorkPage: "/workspace", // Default to workspace
       currentPage: 0,
       claimsByTask: {},
       viewingUserId: undefined,
@@ -161,7 +164,18 @@ export const useTaskStore = create<TaskStoreState>()(
 
       setViewingUserId: (id: number | null) => set({ viewingUserId: id }),
       setRedirect: (path) => {
-        set({ selectedRedirect: path });
+        // Never redirect to TextPad - it's a creation tool, not a work page
+        if (path === "/textpad") {
+          return;
+        }
+
+        // Track work pages (workspace, gamespace, molecule)
+        const workPages = ["/workspace", "/gamespace", "/molecule"];
+        if (workPages.includes(path)) {
+          set({ selectedRedirect: path, lastWorkPage: path });
+        } else {
+          set({ selectedRedirect: path });
+        }
       },
 
       setSelectedTask: (input) => {
@@ -234,8 +248,8 @@ export const useTaskStore = create<TaskStoreState>()(
         });
       },
 
-      fetchTasksForUser: async (userId: number) => {
-        const tasks = await fetchTasksForUserAPI(userId);
+      fetchTasksForUser: async (userId: number, showInactive = false) => {
+        const tasks = await fetchTasksForUserAPI(userId, showInactive);
         const authorsMap: Record<number, Author[]> = {};
         const publishersMap: Record<number, Publisher[]> = {};
         tasks.forEach((task) => {
@@ -379,6 +393,7 @@ export const useTaskStore = create<TaskStoreState>()(
           selectedTaskId: rest.selectedTaskId,
           selectedTask: rest.selectedTask,
           selectedRedirect: rest.selectedRedirect,
+          lastWorkPage: rest.lastWorkPage,
           viewingUserId: rest.viewingUserId,
         };
       },

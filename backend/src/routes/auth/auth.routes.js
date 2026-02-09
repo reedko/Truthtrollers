@@ -2,8 +2,10 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { verifyCaptcha } from "../../utils/captcha.js";
 import { createSessionLogger } from "../../utils/sessionLogger.js";
+import { sendPasswordResetEmail, sendPasswordChangedEmail } from "../../utils/emailService.js";
 
 export default function({ query, pool }) {
   const router = Router();
@@ -124,8 +126,9 @@ router.post("/api/login", async (req, res) => {
     }
   }
 
-  const sql = "SELECT * FROM users WHERE username = ?";
-  pool.query(sql, [username], async (err, results) => {
+  // Support login with username OR email
+  const sql = "SELECT * FROM users WHERE username = ? OR email = ?";
+  pool.query(sql, [username, username], async (err, results) => {
     if (err) {
       console.error("Error logging in user:", err);
       return res.status(500).json({ error: "Database query failed" });
@@ -163,14 +166,14 @@ router.post("/api/login", async (req, res) => {
       try {
         // Optionally: upsert/replace session for extension/device logins
         if (fingerprint) {
-          await pool.query(
+          await query(
             "REPLACE INTO user_sessions (device_fingerprint, user_id, jwt, updated_at) VALUES (?, ?, ?, NOW())",
             [fingerprint, user.user_id, token]
           );
         }
 
         // Log the login event
-        await pool.query(
+        await query(
           "INSERT INTO login_events (user_id, fingerprint, event_type, ip_address, details) VALUES (?, ?, 'login', ?, ?)",
           [
             user.user_id,
@@ -272,20 +275,200 @@ router.post("/api/logout", (req, res) => {
 
 /**
  * POST /api/reset-password
- * Reset user password (simplified)
+ * Request password reset - generates token and sends email
  */
-router.post("/api/reset-password", (req, res) => {
-  const { email, newPassword } = req.body;
-  const hashedPassword = bcrypt.hashSync(newPassword, 10);
+router.post("/api/reset-password", async (req, res) => {
+  const { email } = req.body;
 
-  pool.query(
-    "UPDATE users SET password = ? WHERE email = ?",
-    [hashedPassword, email],
-    (err, result) => {
-      if (err) return res.status(500).send(err);
-      res.status(200).send("Password reset successful.");
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  try {
+    // 1. Check if user exists
+    const users = await query("SELECT user_id, username, email FROM users WHERE email = ?", [email]);
+
+    if (users.length === 0) {
+      // Don't reveal if email exists or not (security best practice)
+      return res.status(200).json({
+        message: "If that email exists, a password reset link has been sent."
+      });
     }
-  );
+
+    const user = users[0];
+
+    // 2. Generate secure random token
+    const token = crypto.randomBytes(32).toString('hex');
+
+    // 3. Set expiration to 1 hour from now
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    // 4. Delete any existing tokens for this user
+    await query("DELETE FROM password_reset_tokens WHERE user_id = ?", [user.user_id]);
+
+    // 5. Store new token
+    await query(
+      "INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)",
+      [user.user_id, token, expiresAt]
+    );
+
+    // 6. Send email with reset link
+    await sendPasswordResetEmail(user.email, token, user.username);
+
+    // 7. Log the reset request
+    await query(
+      "INSERT INTO login_events (user_id, fingerprint, event_type, ip_address, details) VALUES (?, ?, 'password_reset_request', ?, ?)",
+      [user.user_id, 'email_reset', req.ip, JSON.stringify({ email })]
+    );
+
+    res.status(200).json({
+      message: "If that email exists, a password reset link has been sent."
+    });
+  } catch (error) {
+    console.error("Password reset request error:", error);
+    res.status(500).json({ error: "Failed to process password reset request" });
+  }
+});
+
+/**
+ * POST /api/test-email
+ * Test email sending functionality
+ */
+router.post("/api/test-email", async (req, res) => {
+  const { email, type } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  try {
+    if (type === "reset") {
+      // Test password reset email
+      const testToken = "test-token-" + Date.now();
+      await sendPasswordResetEmail(email, testToken, "TestUser");
+      res.status(200).json({
+        success: true,
+        message: "Password reset email sent successfully",
+        type: "reset"
+      });
+    } else if (type === "confirmation") {
+      // Test password changed confirmation email
+      await sendPasswordChangedEmail(email, "TestUser");
+      res.status(200).json({
+        success: true,
+        message: "Password confirmation email sent successfully",
+        type: "confirmation"
+      });
+    } else {
+      return res.status(400).json({ error: "Invalid email type. Use 'reset' or 'confirmation'" });
+    }
+  } catch (error) {
+    console.error("Email test error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "Failed to send test email"
+    });
+  }
+});
+
+/**
+ * POST /api/verify-reset-token
+ * Verify if a password reset token is valid
+ */
+router.post("/api/verify-reset-token", async (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ error: "Token is required" });
+  }
+
+  try {
+    const tokens = await query(
+      `SELECT prt.*, u.username, u.email
+       FROM password_reset_tokens prt
+       JOIN users u ON prt.user_id = u.user_id
+       WHERE prt.token = ? AND prt.used = FALSE AND prt.expires_at > NOW()`,
+      [token]
+    );
+
+    if (tokens.length === 0) {
+      return res.status(400).json({
+        valid: false,
+        error: "Invalid or expired token"
+      });
+    }
+
+    const tokenData = tokens[0];
+    res.status(200).json({
+      valid: true,
+      email: tokenData.email,
+      username: tokenData.username
+    });
+  } catch (error) {
+    console.error("Token verification error:", error);
+    res.status(500).json({ error: "Failed to verify token" });
+  }
+});
+
+/**
+ * POST /api/reset-password-with-token
+ * Complete password reset with valid token
+ */
+router.post("/api/reset-password-with-token", async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: "Token and new password are required" });
+  }
+
+  try {
+    // 1. Verify token is valid and not expired
+    const tokens = await query(
+      `SELECT prt.*, u.user_id, u.username, u.email
+       FROM password_reset_tokens prt
+       JOIN users u ON prt.user_id = u.user_id
+       WHERE prt.token = ? AND prt.used = FALSE AND prt.expires_at > NOW()`,
+      [token]
+    );
+
+    if (tokens.length === 0) {
+      return res.status(400).json({ error: "Invalid or expired token" });
+    }
+
+    const tokenData = tokens[0];
+
+    // 2. Hash the new password
+    const hashedPassword = bcrypt.hashSync(newPassword, 10);
+
+    // 3. Update user's password
+    await query(
+      "UPDATE users SET password = ? WHERE user_id = ?",
+      [hashedPassword, tokenData.user_id]
+    );
+
+    // 4. Mark token as used
+    await query(
+      "UPDATE password_reset_tokens SET used = TRUE WHERE token = ?",
+      [token]
+    );
+
+    // 5. Log the password change
+    await query(
+      "INSERT INTO login_events (user_id, fingerprint, event_type, ip_address, details) VALUES (?, ?, 'password_changed', ?, ?)",
+      [tokenData.user_id, 'email_reset', req.ip, JSON.stringify({ email: tokenData.email })]
+    );
+
+    // 6. Send confirmation email
+    await sendPasswordChangedEmail(tokenData.email, tokenData.username);
+
+    res.status(200).json({
+      message: "Password reset successful",
+      success: true
+    });
+  } catch (error) {
+    console.error("Password reset completion error:", error);
+    res.status(500).json({ error: "Failed to reset password" });
+  }
 });
 
   return router;

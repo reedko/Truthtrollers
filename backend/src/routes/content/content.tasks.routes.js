@@ -33,6 +33,13 @@ router.get("/api/tasks/:id", async (req, res) => {
  */
 router.get("/api/user-tasks/:user_id", async (req, res) => {
   const { user_id } = req.params;
+  const showInactive = req.query.showInactive === 'true';
+
+  // Build active filter based on query parameter
+  const activeFilter = showInactive
+    ? '' // Show all
+    : 'AND (t.is_active IS NULL OR t.is_active = 1)'; // Only active
+
   const sql = `
     SELECT
       t.*,
@@ -76,7 +83,7 @@ router.get("/api/user-tasks/:user_id", async (req, res) => {
 
     FROM content t
     JOIN content_users cu ON t.content_id = cu.content_id
-    WHERE cu.user_id = ? AND t.content_type = 'task' AND (t.is_active IS NULL OR t.is_active = 1)
+    WHERE cu.user_id = ? AND t.content_type = 'task' ${activeFilter}
     GROUP BY t.content_id
   `;
   pool.query(sql, [user_id], (err, results) => {
@@ -249,32 +256,13 @@ router.post("/api/submit-text", async (req, res) => {
 
     logger.log(`📝 [/api/submit-text] Received text submission (${text.length} chars) from user ${userId}`);
 
-    // Generate a unique document ID
-    const timestamp = Date.now();
-    const docId = `text_${timestamp}`;
-    const filename = `${docId}.txt`;
-
-    // Create file path
-    const docsDir = path.join(__dirname, "../../../assets/documents/tasks");
-    const filePath = path.join(docsDir, filename);
-
-    // Ensure directory exists
-    await fs.mkdir(docsDir, { recursive: true });
-
-    // Save text to file
-    await fs.writeFile(filePath, text, "utf-8");
-    logger.log(`✅ [/api/submit-text] Saved text to ${filename}`);
-
-    // Create a local URL reference
-    const localUrl = `local://documents/tasks/${filename}`;
-
     // Import necessary functions
     const { createContentInternal } = await import("../../storage/createContentInternal.js");
 
-    // Create task content row
+    // Create task content row FIRST to get content_id
     const taskContentId = await createContentInternal(query, {
       content_name: title || "Text Submission",
-      url: localUrl,
+      url: "pending", // Temporary - will update after saving file
       media_source: "TextPad",
       topic: "user-submitted",
       subtopics: [],
@@ -284,6 +272,29 @@ router.post("/api/submit-text", async (req, res) => {
     });
 
     logger.log(`✅ [/api/submit-text] Created task content_id=${taskContentId}`);
+
+    // Now save the file with content_id naming convention
+    const filename = `content_id_${taskContentId}.txt`;
+
+    // Save to same directory as other content assets
+    const contentDir = path.join(__dirname, "../../../assets/images/content");
+    const filePath = path.join(contentDir, filename);
+
+    // Ensure directory exists
+    await fs.mkdir(contentDir, { recursive: true });
+
+    // Save text to file
+    await fs.writeFile(filePath, text, "utf-8");
+    logger.log(`✅ [/api/submit-text] Saved text to ${filename}`);
+
+    // Update content record with correct file path
+    const thumbnailPath = `assets/images/content/${filename}`;
+    await query(
+      `UPDATE content SET url = ?, thumbnail = ? WHERE content_id = ?`,
+      [thumbnailPath, thumbnailPath, taskContentId]
+    );
+
+    logger.log(`✅ [/api/submit-text] Updated content record with file path`);
 
     // Associate with user
     await query(
@@ -403,7 +414,7 @@ router.post("/api/submit-text", async (req, res) => {
     res.json({
       success: true,
       content_id: taskContentId,
-      document_path: localUrl,
+      document_path: thumbnailPath,
       message: "Text submitted and processing started"
     });
 

@@ -43,6 +43,7 @@ const MoleculeMapPage = () => {
   const selectedTaskId = useTaskStore((s) => s.selectedTaskId);
   const viewerId = useTaskStore((s) => s.viewingUserId);
   const setSelectedTask = useTaskStore((s) => s.setSelectedTask);
+  const setRedirect = useTaskStore((s) => s.setRedirect);
 
   const [graphData, setGraphData] = useState<{
     nodes: GraphNode[];
@@ -67,6 +68,11 @@ const MoleculeMapPage = () => {
     const scores = await fetchContentScores(contentId, null);
     setVerimeterScore(scores?.verimeterScore ?? null);
   };
+
+  // Set this as the active redirect target when mounted
+  useEffect(() => {
+    setRedirect("/molecule");
+  }, [setRedirect]);
 
   // Load or create views for the selected task
   useEffect(() => {
@@ -141,10 +147,11 @@ const MoleculeMapPage = () => {
     }
 
     // Get pinned reference content IDs
-    const pinnedIds = new Set(
+    const pinnedIds: Set<number> = new Set(
       activeView.pins
         .filter((p) => p.is_pinned)
         .map((p) => p.reference_content_id)
+        .filter((id): id is number => id != null)
     );
 
     if (showPinnedOnly && activeView.pins.length > 0) {
@@ -178,18 +185,12 @@ const MoleculeMapPage = () => {
         // Dim unpinned references if there are any pins configured
         if (node.type === "reference" && activeView.pins.length > 0) {
           const isPinned = pinnedIds.has(node.content_id!);
-          return {
-            ...node,
-            dimmed: !isPinned, // Mark unpinned references as dimmed
-          };
+          return Object.assign(node, { dimmed: !isPinned });
         }
         // Dim refClaims that belong to unpinned references
         if (node.type === "refClaim" && activeView.pins.length > 0) {
           const isPinned = pinnedIds.has(node.content_id!);
-          return {
-            ...node,
-            dimmed: !isPinned,
-          };
+          return Object.assign(node, { dimmed: !isPinned });
         }
         return node;
       });
@@ -510,8 +511,8 @@ const MoleculeMapPage = () => {
   const activeView = views.find((v) => v.id === activeViewId);
   console.log("📋 Found activeView:", activeView);
 
-  const pinnedIds = activeView
-    ? new Set(activeView.pins.filter((p) => p.is_pinned).map((p) => p.reference_content_id))
+  const pinnedIds: Set<number> = activeView
+    ? new Set(activeView.pins.filter((p) => p.is_pinned).map((p) => p.reference_content_id).filter((id): id is number => id != null))
     : new Set();
   const currentDisplayMode = activeView?.display_mode || 'mr_cards';
 

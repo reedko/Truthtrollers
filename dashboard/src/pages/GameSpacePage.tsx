@@ -36,6 +36,11 @@ const GameSpacePage = () => {
   const selectedRedirect = useTaskStore((s) => s.selectedRedirect);
   const viewerId = useTaskStore((s) => s.viewingUserId);
 
+  // Set this as the active redirect target when mounted
+  useEffect(() => {
+    setRedirect("/gamespace");
+  }, [setRedirect]);
+
   // Try to restore selectedTask from content
   useEffect(() => {
     if (taskId && !task) {

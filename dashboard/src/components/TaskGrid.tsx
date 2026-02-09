@@ -40,7 +40,7 @@ const TaskGrid: React.FC<TaskGridProps> = memo(({ content }) => {
     >
       {content.map((task) => (
         <Box key={task.content_id} sx={cardWrapSx}>
-          <TaskCard task={task} useStore={false} compact={!!compact} />
+          <TaskCard task={task} useStore={true} compact={!!compact} />
         </Box>
       ))}
     </Flex>

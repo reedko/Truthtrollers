@@ -7,6 +7,7 @@ import { TaskPage } from "./pages/TaskPage";
 
 import VisionDashboard from "./components/Dashboard";
 import ForgotPassword from "./components/ForgotPassword";
+import ResetPassword from "./components/ResetPassword";
 import Login from "./components/Login";
 import Register from "./components/Register";
 import WorkspacePage from "./pages/WorkspacePage";
@@ -23,6 +24,7 @@ import ExtensionDownloadPage from "./pages/ExtensionDownloadPage"; // ✅ NEW
 import GameSpacePage from "./pages/GameSpacePage";
 import LevelPage from "./pages/LevelPage";
 import TextPadPage from "./pages/TextPadPage";
+import EmailTesterPage from "./pages/EmailTesterPage";
 
 const router = createBrowserRouter([
   {
@@ -34,6 +36,7 @@ const router = createBrowserRouter([
 
       { path: "/login", element: <Login /> },
       { path: "/forgot-password", element: <ForgotPassword /> },
+      { path: "/reset-password", element: <ResetPassword /> },
       { path: "/register", element: <Register /> },
 
       // 🔒 Protected Routes
@@ -147,6 +150,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <TextPadPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/emailtest",
+        element: (
+          <ProtectedRoute>
+            <EmailTesterPage />
           </ProtectedRoute>
         ),
       },

@@ -28,6 +28,7 @@ export interface ReferenceWithRelevance extends ReferenceWithClaims {
   confidence?: number;
   support_level?: number;
   hasLink: boolean;
+  created_at?: string;
 }
 
 /**

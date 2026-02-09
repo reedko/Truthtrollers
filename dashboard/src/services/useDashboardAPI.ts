@@ -333,8 +333,10 @@ export const fetchAssignedUsers = async (taskId: number): Promise<User[]> => {
  *
  */
 
-export const fetchTasksForUser = async (userId: number): Promise<Task[]> => {
-  const res = await axios.get(`${API_BASE_URL}/api/user-tasks/${userId}`);
+export const fetchTasksForUser = async (userId: number, showInactive = false): Promise<Task[]> => {
+  const res = await axios.get(`${API_BASE_URL}/api/user-tasks/${userId}`, {
+    params: { showInactive: showInactive ? 'true' : 'false' }
+  });
   return res.data;
 };
 
