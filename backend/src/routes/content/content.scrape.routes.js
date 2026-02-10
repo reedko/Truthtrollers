@@ -472,12 +472,12 @@ export default function createContentScrapeRoutes({ query }) {
                     llm: openAiLLM
                   });
 
-                  // Insert into claim_links
+                  // Insert into claim_links (use NULL user_id for AI-created links)
                   for (const match of claimMatches) {
                     await query(
                       `INSERT INTO claim_links
-                       (source_claim_id, target_claim_id, relationship, support_level, confidence, veracity_score, created_by_ai, notes)
-                       VALUES (?, ?, ?, ?, ?, ?, 1, ?)`,
+                       (source_claim_id, target_claim_id, relationship, support_level, confidence, veracity_score, created_by_ai, notes, user_id)
+                       VALUES (?, ?, ?, ?, ?, ?, 1, ?, NULL)`,
                       [
                         match.referenceClaimId,
                         match.taskClaimId,
@@ -671,12 +671,12 @@ export default function createContentScrapeRoutes({ query }) {
               llm: openAiLLM
             });
 
-            // Insert into claim_links
+            // Insert into claim_links (use NULL user_id for AI-created links)
             for (const match of claimMatches) {
               await query(
                 `INSERT INTO claim_links
-                 (source_claim_id, target_claim_id, relationship, support_level, confidence, veracity_score, created_by_ai, notes)
-                 VALUES (?, ?, ?, ?, ?, ?, 1, ?)`,
+                 (source_claim_id, target_claim_id, relationship, support_level, confidence, veracity_score, created_by_ai, notes, user_id)
+                 VALUES (?, ?, ?, ?, ?, ?, 1, ?, NULL)`,
                 [
                   match.referenceClaimId,
                   match.taskClaimId,

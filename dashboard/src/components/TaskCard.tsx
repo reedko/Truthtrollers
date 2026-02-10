@@ -53,6 +53,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
     Array.isArray(task) ? task[0] : task
   );
   const [imageKey, setImageKey] = useState(Date.now()); // Force image reload
+  const [imageError, setImageError] = useState(false); // Track if image failed to load
   const cardRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
@@ -80,6 +81,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   useEffect(() => {
     if (Array.isArray(task)) setActiveTask(task[0]);
     else setActiveTask(task);
+    setImageError(false); // Reset image error state when task changes
   }, [task]);
 
   // Fetch assigned users when task changes
@@ -112,6 +114,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         if (updatedTask) {
           setActiveTask(updatedTask);
           setImageKey(Date.now()); // Force image reload by updating cache buster
+          setImageError(false); // Reset error state to try loading the new image
         } else {
           console.error('❌ Failed to fetch updated task');
         }
@@ -331,48 +334,51 @@ const TaskCard: React.FC<TaskCardProps> = ({
               _hover={{ border: "2px solid #3182ce" }}
               transition="border 0.2s"
             >
-              <Image
-                src={`${API_BASE_URL}/api/image/content/${activeTask.content_id}?t=${imageKey}`}
-                alt="Thumbnail"
-                w="100%"
-                h="100%"
-                objectFit="cover"
-                fallback={
-                  <Box
-                    w="100%"
-                    h="100%"
-                    bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    flexDirection="column"
-                    position="relative"
-                    _hover={{
-                      bg: "linear-gradient(135deg, #764ba2 0%, #667eea 100%)",
-                    }}
+              {imageError ? (
+                <Box
+                  w="100%"
+                  h="100%"
+                  bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  flexDirection="column"
+                  position="relative"
+                  _hover={{
+                    bg: "linear-gradient(135deg, #764ba2 0%, #667eea 100%)",
+                  }}
+                >
+                  <Text fontSize="6xl" mb={2} filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))">
+                    📝
+                  </Text>
+                  <Text
+                    fontSize="sm"
+                    color="white"
+                    fontWeight="bold"
+                    textShadow="0 1px 2px rgba(0,0,0,0.3)"
                   >
-                    <Text fontSize="6xl" mb={2} filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))">
-                      📝
-                    </Text>
-                    <Text
-                      fontSize="sm"
-                      color="white"
-                      fontWeight="bold"
-                      textShadow="0 1px 2px rgba(0,0,0,0.3)"
-                    >
-                      Text Document
-                    </Text>
-                    <Text
-                      fontSize="xs"
-                      color="whiteAlpha.800"
-                      mt={1}
-                      textShadow="0 1px 2px rgba(0,0,0,0.3)"
-                    >
-                      Click to upload image
-                    </Text>
-                  </Box>
-                }
-              />
+                    Text Document
+                  </Text>
+                  <Text
+                    fontSize="xs"
+                    color="whiteAlpha.800"
+                    mt={1}
+                    textShadow="0 1px 2px rgba(0,0,0,0.3)"
+                  >
+                    Click to upload image
+                  </Text>
+                </Box>
+              ) : (
+                <Image
+                  src={`${API_BASE_URL}/api/image/content/${activeTask.content_id}?t=${imageKey}`}
+                  alt="Thumbnail"
+                  w="100%"
+                  h="100%"
+                  objectFit="cover"
+                  onError={() => setImageError(true)}
+                  loading="lazy"
+                />
+              )}
             </Box>
 
             <input

@@ -29,6 +29,11 @@ export default function TextPadPage() {
   const user = useAuthStore((s) => s.user);
 
   const handleSubmit = async () => {
+    // Prevent double submission
+    if (isSubmitting) {
+      return;
+    }
+
     if (!text.trim()) {
       toast({
         title: "Text required",

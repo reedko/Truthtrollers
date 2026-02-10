@@ -140,9 +140,8 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
   const getVeracityEmoji = (score: number) =>
     score > 5 ? "🟢" : score < 0 ? "🔴" : "⚪";
 
-  if (!activePublisher) return null;
-
-  const currentRatings = allRatings[activePublisher.publisher_id] || [];
+  // Show placeholder if no publisher
+  const currentRatings = activePublisher ? (allRatings[activePublisher.publisher_id] || []) : [];
   const avgBias = currentRatings.length
     ? avgScore(currentRatings, "bias_score")
     : "-";
@@ -178,6 +177,10 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
       isClosable: true,
     });
   };
+
+  // If no publisher, show placeholder
+  const displayName = activePublisher?.publisher_name || "Unknown Publisher";
+  const hasPublisher = !!activePublisher;
 
   return (
     <Center>
@@ -234,15 +237,15 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
               px={2}
               py={1}
             >
-              {publisherList[0]?.publisher_name || "Unnamed Publisher"}
+              {displayName}
             </Text>
           )}
 
           <Center>
             <Box
               as="button"
-              onClick={() => fileInputRef.current?.click()}
-              cursor="pointer"
+              onClick={() => hasPublisher && fileInputRef.current?.click()}
+              cursor={hasPublisher ? "pointer" : "not-allowed"}
               borderRadius="full"
               overflow="hidden"
               border="2px solid #ccc"
@@ -251,8 +254,9 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
               alignItems="center"
               justifyContent="center"
               marginBottom={"10px"}
+              opacity={hasPublisher ? 1 : 0.5}
             >
-              {activePublisher.publisher_icon ? (
+              {activePublisher?.publisher_icon ? (
                 <Image
                   src={`${import.meta.env.VITE_API_BASE_URL}/${
                     activePublisher.publisher_icon
@@ -263,7 +267,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
                 />
               ) : (
                 <Text fontSize="xs" color="gray.300">
-                  Upload
+                  {hasPublisher ? "Upload" : "No Icon"}
                 </Text>
               )}
             </Box>
@@ -272,7 +276,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
               accept="image/*"
               ref={fileInputRef}
               onChange={(e) => {
-                if (e.target.files?.[0]) {
+                if (e.target.files?.[0] && activePublisher) {
                   handleUpload(e.target.files[0], activePublisher.publisher_id);
                 }
               }}
@@ -301,7 +305,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
             </Flex>
           </HStack>
 
-          {activePublisher.description && (
+          {activePublisher?.description && (
             <Text
               className="mr-text-secondary"
               fontSize="sm"
@@ -312,6 +316,19 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
               {activePublisher.description}
             </Text>
           )}
+
+          {!hasPublisher && (
+            <Text
+              className="mr-text-secondary"
+              fontSize="sm"
+              mt={3}
+              px={2}
+              textAlign="center"
+              color="gray.500"
+            >
+              No publisher information available
+            </Text>
+          )}
         </Box>
 
         <Center>
@@ -320,6 +337,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
               onClick={onViewRatingsOpen}
               className="mr-button"
               flex="1"
+              isDisabled={!hasPublisher}
             >
               Ratings
             </Button>
@@ -328,6 +346,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
                 as={Button}
                 className="mr-button"
                 flex="1"
+                isDisabled={!hasPublisher}
               >
                 Actions
               </MenuButton>

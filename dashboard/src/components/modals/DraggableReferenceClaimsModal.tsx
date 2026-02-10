@@ -106,6 +106,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
 
   // Track claim element positions for drawing lines
   const claimRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [lineData, setLineData] = useState<Array<{
     x1: number;
     y1: number;
@@ -139,7 +140,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
 
   const connectedTaskClaims = getConnectedTaskClaims();
 
-  // Update line positions when modal moves or opens
+  // Update line positions when modal moves, opens, or scrolls
   React.useEffect(() => {
     if (!isOpen || !reference) {
       setLineData([]);
@@ -153,6 +154,10 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
       const refClaims = typeof reference.claims === "string"
         ? JSON.parse(reference.claims)
         : reference.claims || [];
+
+      // Get scroll container bounds to check visibility
+      const scrollContainer = scrollContainerRef.current;
+      const containerRect = scrollContainer?.getBoundingClientRect();
 
       refClaims.forEach((claim: Claim) => {
         const connections = getClaimConnections(claim.claim_id);
@@ -168,6 +173,17 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
           if (claimEl && taskClaimEl) {
             const claimRect = claimEl.getBoundingClientRect();
             const taskRect = taskClaimEl.getBoundingClientRect();
+
+            // Only draw lines for claims that are visible in the scroll container
+            if (containerRect) {
+              const isVisible =
+                claimRect.bottom >= containerRect.top &&
+                claimRect.top <= containerRect.bottom;
+
+              if (!isVisible) {
+                return; // Skip this line if claim is scrolled out of view
+              }
+            }
 
             lines.push({
               x1: claimRect.left,
@@ -186,7 +202,27 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
 
     // Update on mount and when position changes
     const timer = setTimeout(updateLines, 100);
-    return () => clearTimeout(timer);
+
+    // Throttled scroll handler for better performance
+    let scrollTimer: NodeJS.Timeout;
+    const throttledUpdateLines = () => {
+      if (scrollTimer) clearTimeout(scrollTimer);
+      scrollTimer = setTimeout(updateLines, 16); // ~60fps
+    };
+
+    // Add scroll listener to update lines when scrolling
+    const scrollContainer = scrollContainerRef.current;
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', throttledUpdateLines);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      if (scrollTimer) clearTimeout(scrollTimer);
+      if (scrollContainer) {
+        scrollContainer.removeEventListener('scroll', throttledUpdateLines);
+      }
+    };
   }, [isOpen, position, reference, claimLinks]);
 
   // If not open, render nothing!
@@ -297,7 +333,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
           />
         </Box>
 
-        <Box p={4} maxH="70vh" overflowY="auto">
+        <Box ref={scrollContainerRef} p={4} maxH="70vh" overflowY="auto">
           <VStack align="start" spacing={4}>
             <Box>
               <Text fontWeight="bold">Title:</Text>

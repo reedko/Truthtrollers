@@ -30,17 +30,16 @@ router.get("/api/tasks/:id", async (req, res) => {
 /**
  * GET /api/user-tasks/:user_id
  * Get tasks for a specific user
+ * When showInactive=true, shows ALL tasks (including unassigned and archived)
+ * When showInactive=false, shows all active tasks (with or without user assignment)
  */
 router.get("/api/user-tasks/:user_id", async (req, res) => {
   const { user_id } = req.params;
   const showInactive = req.query.showInactive === 'true';
 
-  // Build active filter based on query parameter
-  const activeFilter = showInactive
-    ? '' // Show all
-    : 'AND (t.is_active IS NULL OR t.is_active = 1)'; // Only active
-
-  const sql = `
+  // When showInactive is true, show ALL tasks (no filters)
+  // When false, show active tasks (no user filter - see all active tasks)
+  const sql = showInactive ? `
     SELECT
       t.*,
       (
@@ -82,11 +81,58 @@ router.get("/api/user-tasks/:user_id", async (req, res) => {
   ) AS publishers
 
     FROM content t
-    JOIN content_users cu ON t.content_id = cu.content_id
-    WHERE cu.user_id = ? AND t.content_type = 'task' ${activeFilter}
+    WHERE t.content_type = 'task'
+    GROUP BY t.content_id
+  ` : `
+    SELECT
+      t.*,
+      (
+        SELECT topic_name
+        FROM topics tt
+        JOIN content_topics ct ON tt.topic_id = ct.topic_id
+        WHERE ct.content_id = t.content_id
+        ORDER BY ct.topic_order ASC
+        LIMIT 1
+      ) AS topic,
+   (
+    SELECT JSON_ARRAYAGG(
+             JSON_OBJECT(
+               'author_id', a.author_id,
+               'author_first_name', IFNULL(a.author_first_name, ''),
+               'author_last_name', IFNULL(a.author_last_name, ''),
+               'author_title', IFNULL(a.author_title, ''),
+               'author_profile_pic', a.author_profile_pic,
+               'description', a.description
+             )
+           )
+    FROM content_authors ca
+    JOIN authors a ON ca.author_id = a.author_id
+    WHERE ca.content_id = t.content_id
+  ) AS authors,
+
+ (
+    SELECT JSON_ARRAYAGG(
+             JSON_OBJECT(
+               'publisher_id', p.publisher_id,
+               'publisher_name', p.publisher_name,
+               'publisher_icon', p.publisher_icon,
+               'description', p.description
+             )
+           )
+    FROM content_publishers cp
+    JOIN publishers p ON cp.publisher_id = p.publisher_id
+    WHERE cp.content_id = t.content_id
+  ) AS publishers
+
+    FROM content t
+    WHERE t.content_type = 'task' AND (t.is_active IS NULL OR t.is_active = 1)
     GROUP BY t.content_id
   `;
-  pool.query(sql, [user_id], (err, results) => {
+
+  // No params needed - showing all tasks based on is_active only
+  const params = [];
+
+  pool.query(sql, params, (err, results) => {
     if (err) {
       logger.error("❌ Error fetching user tasks:", err);
       return res.status(500).json({ error: "Query failed" });
@@ -273,11 +319,18 @@ router.post("/api/submit-text", async (req, res) => {
 
     logger.log(`✅ [/api/submit-text] Created task content_id=${taskContentId}`);
 
+    // Get username for publisher
+    const userRows = await query(
+      `SELECT username FROM users WHERE user_id = ?`,
+      [userId]
+    );
+    const username = userRows?.[0]?.username || `User${userId}`;
+
     // Now save the file with content_id naming convention
     const filename = `content_id_${taskContentId}.txt`;
 
-    // Save to same directory as other content assets
-    const contentDir = path.join(__dirname, "../../../assets/images/content");
+    // Save to documents/tasks directory (not images)
+    const contentDir = path.join(__dirname, "../../../assets/documents/tasks");
     const filePath = path.join(contentDir, filename);
 
     // Ensure directory exists
@@ -288,13 +341,69 @@ router.post("/api/submit-text", async (req, res) => {
     logger.log(`✅ [/api/submit-text] Saved text to ${filename}`);
 
     // Update content record with correct file path
-    const thumbnailPath = `assets/images/content/${filename}`;
+    const documentPath = `assets/documents/tasks/${filename}`;
     await query(
       `UPDATE content SET url = ?, thumbnail = ? WHERE content_id = ?`,
-      [thumbnailPath, thumbnailPath, taskContentId]
+      [documentPath, documentPath, taskContentId]
     );
 
     logger.log(`✅ [/api/submit-text] Updated content record with file path`);
+
+    // Create or find publisher for this user
+    let publisherId;
+    const existingPublisher = await query(
+      `SELECT publisher_id FROM publishers WHERE publisher_name = ?`,
+      [username]
+    );
+
+    if (existingPublisher.length > 0) {
+      publisherId = existingPublisher[0].publisher_id;
+      logger.log(`✅ [/api/submit-text] Found existing publisher for ${username} (ID: ${publisherId})`);
+    } else {
+      const publisherResult = await query(
+        `INSERT INTO publishers (publisher_name, description) VALUES (?, ?)`,
+        [username, `TextPad submissions by ${username}`]
+      );
+      publisherId = publisherResult.insertId;
+      logger.log(`✅ [/api/submit-text] Created new publisher for ${username} (ID: ${publisherId})`);
+    }
+
+    // Link publisher to content
+    await query(
+      `INSERT INTO content_publishers (content_id, publisher_id) VALUES (?, ?)
+       ON DUPLICATE KEY UPDATE publisher_id = publisher_id`,
+      [taskContentId, publisherId]
+    );
+
+    logger.log(`✅ [/api/submit-text] Linked publisher ${publisherId} to content ${taskContentId}`);
+
+    // Create or find author for this user
+    let authorId;
+    const existingAuthor = await query(
+      `SELECT author_id FROM authors WHERE author_first_name = ? AND author_last_name = ?`,
+      [username, '']
+    );
+
+    if (existingAuthor.length > 0) {
+      authorId = existingAuthor[0].author_id;
+      logger.log(`✅ [/api/submit-text] Found existing author for ${username} (ID: ${authorId})`);
+    } else {
+      const authorResult = await query(
+        `INSERT INTO authors (author_first_name, author_last_name, author_title) VALUES (?, ?, ?)`,
+        [username, '', 'TextPad User']
+      );
+      authorId = authorResult.insertId;
+      logger.log(`✅ [/api/submit-text] Created new author for ${username} (ID: ${authorId})`);
+    }
+
+    // Link author to content
+    await query(
+      `INSERT INTO content_authors (content_id, author_id) VALUES (?, ?)
+       ON DUPLICATE KEY UPDATE author_id = author_id`,
+      [taskContentId, authorId]
+    );
+
+    logger.log(`✅ [/api/submit-text] Linked author ${authorId} to content ${taskContentId}`);
 
     // Associate with user
     await query(
@@ -414,7 +523,7 @@ router.post("/api/submit-text", async (req, res) => {
     res.json({
       success: true,
       content_id: taskContentId,
-      document_path: thumbnailPath,
+      document_path: documentPath,
       message: "Text submitted and processing started"
     });
 

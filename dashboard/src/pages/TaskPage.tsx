@@ -52,7 +52,7 @@ export const TaskPage: React.FC = () => {
 
           <FormControl display="flex" alignItems="center" w="auto">
             <FormLabel htmlFor="show-archived" mb="0" fontSize="sm">
-              Show Archived
+              Show Archived & All
             </FormLabel>
             <Switch
               id="show-archived"
@@ -64,7 +64,7 @@ export const TaskPage: React.FC = () => {
         </HStack>
 
         {assignedTasks.length === 0 ? (
-          <Text>No tasks found. {showArchived ? "Try unchecking 'Show Archived'." : ""}</Text>
+          <Text>No tasks found. {showArchived ? "Try unchecking 'Show Archived & All'." : "Try checking 'Show Archived & All' to see all tasks."}</Text>
         ) : (
           <TaskGrid content={assignedTasks} />
         )}
