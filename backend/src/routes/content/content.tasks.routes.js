@@ -259,13 +259,27 @@ router.delete("/api/tasks/:id", async (req, res) => {
   }
 
   try {
-    // Verify the user has access to this task
+    // Check if user has access (either via content_users or as creator via publisher for TextPad)
     const accessCheck = await query(
       `SELECT 1 FROM content_users WHERE content_id = ? AND user_id = ?`,
       [id, userId]
     );
 
+    // For TextPad submissions, also check if user is the creator via publishers
+    let isCreator = false;
     if (accessCheck.length === 0) {
+      const creatorCheck = await query(
+        `SELECT 1 FROM content c
+         JOIN content_publishers cp ON c.content_id = cp.content_id
+         JOIN publishers p ON cp.publisher_id = p.publisher_id
+         JOIN users u ON u.username = p.publisher_name
+         WHERE c.content_id = ? AND c.media_source = 'TextPad' AND u.user_id = ?`,
+        [id, userId]
+      );
+      isCreator = creatorCheck.length > 0;
+    }
+
+    if (accessCheck.length === 0 && !isCreator) {
       return res.status(403).json({ error: "You don't have access to this task" });
     }
 

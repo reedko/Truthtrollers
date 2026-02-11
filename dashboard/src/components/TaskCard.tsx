@@ -255,25 +255,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
         <div className="mr-glow-bar mr-glow-bar-blue" />
         <div className="mr-scanlines" />
 
-        {/* Title bar with delete button */}
+        {/* Title bar */}
         <Box position="relative" mb={1}>
           <Text className="mr-badge mr-badge-blue" fontSize="md" textAlign="center">
             Content Details
           </Text>
-          <IconButton
-            aria-label="Delete task"
-            icon={<FiTrash2 />}
-            onClick={handleDelete}
-            size="xs"
-            colorScheme="red"
-            variant="ghost"
-            position="absolute"
-            top="0"
-            right="0"
-            zIndex={10}
-            opacity={0.7}
-            _hover={{ opacity: 1 }}
-          />
         </Box>
 
         {Array.isArray(task) && task.length > 1 ? (
@@ -446,7 +432,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
               flex="1"
               rightIcon={<BiChevronDown />}
             >
-              Users
+              Actions
             </MenuButton>
             <MenuList>
               <MenuItem
@@ -456,13 +442,26 @@ const TaskCard: React.FC<TaskCardProps> = ({
               >
                 + Assign User
               </MenuItem>
-              {(assignedUsers?.length ?? 0) > 0 ? (
-                (assignedUsers ?? []).map((u) => (
-                  <MenuItem key={u.user_id}>{u.username}</MenuItem>
-                ))
-              ) : (
-                <MenuItem isDisabled>No Users Assigned</MenuItem>
+              {assignedUsers && assignedUsers.length > 0 && (
+                <>
+                  {assignedUsers.map((u) => (
+                    <MenuItem key={u.user_id} pl={6}>
+                      👤 {u.username}
+                    </MenuItem>
+                  ))}
+                </>
               )}
+              {activeTask.media_source === "TextPad" && (
+                <MenuItem
+                  onClick={() => navigate(`/textpad?contentId=${activeTask.content_id}`)}
+                  icon={<span>📝</span>}
+                >
+                  Open in TextPad
+                </MenuItem>
+              )}
+              <MenuItem onClick={handleDelete} icon={<FiTrash2 />} color="red.400">
+                Archive Task
+              </MenuItem>
             </MenuList>
           </Menu>
         </HStack>

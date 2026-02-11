@@ -345,8 +345,9 @@ export default function createMiscRoutes({ query, pool, db }) {
         updateSql = "UPDATE users SET user_profile_image = ? WHERE user_id = ?";
         break;
       case "content":
-        // Update both thumbnail AND url for content (especially for TextPad submissions)
-        updateSql = "UPDATE content SET thumbnail = ?, url = ? WHERE content_id = ?";
+        // For TextPad submissions, only update thumbnail and keep URL pointing to text file
+        // For other content, update both thumbnail and url
+        updateSql = "UPDATE content SET thumbnail = ?, url = CASE WHEN media_source = 'TextPad' THEN url ELSE ? END WHERE content_id = ?";
         break;
       default:
         return res.status(400).json({ error: "Invalid type" });
@@ -354,7 +355,7 @@ export default function createMiscRoutes({ query, pool, db }) {
 
     // For content, we need to update both thumbnail and url
     const params = type === "content"
-      ? [imagePath, imagePath, id]  // thumbnail, url, content_id
+      ? [imagePath, imagePath, id]  // thumbnail, url (conditional), content_id
       : [imagePath, id];              // single field, id
 
     console.log(`🔧 Executing SQL: ${updateSql} with`, params);
