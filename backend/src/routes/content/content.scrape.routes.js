@@ -479,27 +479,33 @@ export default function createContentScrapeRoutes({ query }) {
                     llm: openAiLLM
                   });
 
-                  // Insert into claim_links (use NULL user_id for AI-created links)
-                  for (const match of claimMatches) {
+                  // ⚡ OPTIMIZATION: Batch insert claim_links instead of sequential inserts
+                  if (claimMatches.length > 0) {
+                    const values = claimMatches.map(match => [
+                      match.referenceClaimId,
+                      match.taskClaimId,
+                      match.stance, // 'supports' or 'refutes'
+                      match.supportLevel, // -1.2 to +1.2
+                      match.confidence, // 0.15-0.98
+                      match.veracityScore, // 0-1
+                      1, // created_by_ai
+                      match.rationale,
+                      null // user_id
+                    ]);
+
+                    // Batch insert all claim_links at once
+                    const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
+                    const flatValues = values.flat();
+
                     await query(
                       `INSERT INTO claim_links
                        (source_claim_id, target_claim_id, relationship, support_level, confidence, veracity_score, created_by_ai, notes, user_id)
-                       VALUES (?, ?, ?, ?, ?, ?, 1, ?, NULL)`,
-                      [
-                        match.referenceClaimId,
-                        match.taskClaimId,
-                        match.stance, // 'supports' or 'refutes'
-                        match.supportLevel, // -1.2 to +1.2
-                        match.confidence, // 0.15-0.98
-                        match.veracityScore, // 0-1
-                        match.rationale
-                      ]
+                       VALUES ${placeholders}`,
+                      flatValues
                     );
-                  }
 
-                  if (claimMatches.length > 0) {
                     logger.log(
-                      `✅ [/api/scrape-task] Created ${claimMatches.length} claim_links for reference ${ref.referenceContentId}`
+                      `✅ [/api/scrape-task] Batch created ${claimMatches.length} claim_links for reference ${ref.referenceContentId}`
                     );
                   }
                 } catch (linkErr) {
