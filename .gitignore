@@ -36,3 +36,12 @@ backend/.env dev
 backend/.env.prod
 
 extension/public/background.js
+
+# build/deploy bundles
+backend_bundle.tar.gz
+extension.tar.gz
+*.tar.gz
+
+# never commit node_modules
+node_modules/
+backend/node_modules/
