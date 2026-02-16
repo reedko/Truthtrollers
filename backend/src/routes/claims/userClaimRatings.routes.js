@@ -326,5 +326,88 @@ export default function createUserClaimRatingsRoutes({ query, pool }) {
     }
   });
 
+  /**
+   * GET /api/user-stats/:userId
+   * Get user statistics for dashboard
+   */
+  router.get("/api/user-stats/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId, 10);
+
+      // Get count of distinct tasks evaluated
+      const tasksEvaluated = await query(
+        `SELECT COUNT(DISTINCT task_claim_id) as count
+         FROM user_claim_ratings
+         WHERE user_id = ?`,
+        [userId]
+      );
+
+      // Get count of distinct claims evaluated
+      const claimsEvaluated = await query(
+        `SELECT COUNT(DISTINCT reference_claim_id) as count
+         FROM user_claim_ratings
+         WHERE user_id = ?`,
+        [userId]
+      );
+
+      // Get total ratings given
+      const ratingsGiven = await query(
+        `SELECT COUNT(*) as count
+         FROM user_claim_ratings
+         WHERE user_id = ?`,
+        [userId]
+      );
+
+      // Get average honesty score
+      const honestyScore = await query(
+        `SELECT AVG(honesty_score) as avgScore
+         FROM user_claim_ratings
+         WHERE user_id = ? AND honesty_score IS NOT NULL`,
+        [userId]
+      );
+
+      return res.json({
+        tasksEvaluated: tasksEvaluated[0]?.count || 0,
+        claimsEvaluated: claimsEvaluated[0]?.count || 0,
+        ratingsGiven: ratingsGiven[0]?.count || 0,
+        honestyScore: Math.round(honestyScore[0]?.avgScore || 0),
+      });
+    } catch (err) {
+      console.error("❌ /api/user-stats/:userId:", err);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  /**
+   * GET /api/user-rating-history/:userId
+   * Get complete rating history for a user
+   */
+  router.get("/api/user-rating-history/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId, 10);
+
+      const ratings = await query(
+        `SELECT
+          user_claim_rating_id,
+          reference_claim_id,
+          task_claim_id,
+          user_quality_rating,
+          ai_quality_rating,
+          ai_stance,
+          honesty_score,
+          created_at
+         FROM user_claim_ratings
+         WHERE user_id = ?
+         ORDER BY created_at DESC`,
+        [userId]
+      );
+
+      return res.json(ratings);
+    } catch (err) {
+      console.error("❌ /api/user-rating-history/:userId:", err);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
   return router;
 }

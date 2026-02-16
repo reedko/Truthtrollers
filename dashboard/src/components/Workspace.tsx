@@ -117,20 +117,33 @@ const Workspace: React.FC<WorkspaceProps> = ({
     fetchClaimsAndLinkedReferencesForTask(contentId, viewerId)
       .then((data) => {
         // Map the API results to the ClaimLink shape expected by the component.
-        const formattedLinks: ClaimLink[] = data.map((row) => ({
-          id: row.id.toString(),
-          claimId: row.left_claim_id, // from content_claims.target_claim_id
-          referenceId: row.right_reference_id, // from claims_references.reference_content_id
-          sourceClaimId: row.source_claim_id,
-          relation:
-            row.relationship === "supports"
-              ? "support"
-              : row.relationship === "refutes"
-              ? "refute"
-              : "support", // fallback for "related"
-          confidence: row.confidence || 0,
-          notes: row.notes || "",
-        }));
+        const formattedLinks: ClaimLink[] = data.map((row) => {
+          // Normalize relationship values
+          let normalizedRelation: "support" | "refute" | "nuance";
+          const rel = String(row.relationship); // Cast to string for comparison
+
+          if (rel === "supports" || rel === "support") {
+            normalizedRelation = "support";
+          } else if (rel === "refutes" || rel === "refute") {
+            normalizedRelation = "refute";
+          } else if (rel === "nuance") {
+            normalizedRelation = "nuance";
+          } else {
+            console.warn(`⚠️ Unknown relationship: "${row.relationship}", defaulting to "nuance"`);
+            normalizedRelation = "nuance";
+          }
+
+          return {
+            id: row.id.toString(),
+            claimId: row.left_claim_id, // from content_claims.target_claim_id
+            referenceId: row.right_reference_id, // from claims_references.reference_content_id
+            sourceClaimId: row.source_claim_id,
+            relation: normalizedRelation,
+            confidence: row.confidence || 0,
+            notes: row.notes || "",
+          };
+        });
+        console.log(`✅ Loaded ${formattedLinks.length} claim links for content ${contentId}`);
         setClaimLinks(formattedLinks);
       })
       .catch((error) => {

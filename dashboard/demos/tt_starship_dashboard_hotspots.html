@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TruthTrollers – Starship Helm (Hotspots → Panels)</title>
+  <style>
+    :root {
+      --cyan: rgba(110, 255, 245, 0.95);
+      --line: rgba(110, 255, 245, 0.22);
+      --glass: rgba(8, 20, 32, 0.70);
+      --glass2: rgba(8, 20, 32, 0.35);
+      --shadow: rgba(0,0,0,0.65);
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #050a12;
+      color: #dffcff;
+      font-family: var(--font);
+      overflow: hidden;
+    }
+
+    .stage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: #050a12;
+    }
+
+    .bg {
+      position: absolute;
+      inset: 0;
+      background-image: url("./tt_starship_helm.png");
+      background-size: cover;
+      background-position: center;
+      transform: scale(1.02);
+      filter: contrast(1.05) saturate(1.05);
+    }
+
+    /* subtle HUD scanlines */
+    .hud {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.50)),
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255,255,255,0.02),
+          rgba(255,255,255,0.02) 2px,
+          rgba(0,0,0,0) 6px,
+          rgba(0,0,0,0) 10px
+        );
+      opacity: 0.35;
+      mix-blend-mode: screen;
+    }
+
+    /* Invisible clickable regions (hotspots) */
+    .hotspot {
+      position: absolute;
+      border-radius: 18px;
+      cursor: pointer;
+      pointer-events: auto;
+      outline: none;
+    }
+
+    /* Debug mode: show hotspot outlines */
+    body.debug .hotspot {
+      border: 1px solid rgba(110,255,245,0.45);
+      background: rgba(110,255,245,0.08);
+      box-shadow: 0 0 0 1px rgba(110,255,245,0.12) inset;
+    }
+
+    /* Right-side panel drawer */
+    .drawer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      height: 100%;
+      width: min(460px, 92vw);
+      transform: translateX(110%);
+      transition: transform 220ms ease;
+      pointer-events: none;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      border-left: 1px solid rgba(110,255,245,0.16);
+      background: linear-gradient(180deg, rgba(10,28,42,0.92), rgba(4,10,18,0.82));
+      box-shadow: -30px 0 120px rgba(0,0,0,0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .drawer.open {
+      transform: translateX(0%);
+      pointer-events: auto;
+    }
+
+    .drawerHeader {
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      padding: 14px 14px;
+      border-bottom: 1px solid rgba(110,255,245,0.16);
+      gap: 10px;
+    }
+
+    .drawerTitle {
+      margin: 0;
+      font-size: 13px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(220,255,252,0.95);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .close {
+      border: 1px solid rgba(110,255,245,0.25);
+      background: rgba(0,0,0,0.25);
+      color: rgba(220,255,252,0.92);
+      border-radius: 12px;
+      padding: 8px 10px;
+      cursor: pointer;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: 11px;
+      flex: 0 0 auto;
+    }
+    .close:hover { border-color: rgba(110,255,245,0.55); }
+
+    .drawerBody {
+      padding: 14px;
+      overflow: auto;
+      color: rgba(220,255,252,0.86);
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
+    .note {
+      font-size: 12px;
+      opacity: 0.86;
+      border-left: 2px solid rgba(110,255,245,0.35);
+      padding-left: 10px;
+      margin: 10px 0;
+    }
+
+    .kpi {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 12px 0;
+    }
+    .kpi .box {
+      border: 1px solid rgba(110,255,245,0.14);
+      border-radius: 12px;
+      padding: 10px;
+      background: rgba(0,0,0,0.18);
+    }
+    .kpi .num {
+      font-size: 20px;
+      color: var(--cyan);
+      letter-spacing: 0.04em;
+    }
+    .kpi .cap {
+      font-size: 10px;
+      opacity: 0.85;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .list {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(110,255,245,0.12);
+      background: rgba(0,0,0,0.18);
+    }
+    .item .left {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+    .item .name {
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .item .meta {
+      font-size: 11px;
+      opacity: 0.78;
+    }
+    .btn {
+      font-size: 11px;
+      padding: 7px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(110,255,245,0.22);
+      background: rgba(0,0,0,0.25);
+      color: rgba(220,255,252,0.92);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      user-select: none;
+      flex: 0 0 auto;
+    }
+    .btn:hover {
+      border-color: rgba(110,255,245,0.55);
+    }
+
+    .drawerFooter {
+      padding: 12px 14px;
+      border-top: 1px solid rgba(110,255,245,0.14);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+      color: rgba(220,255,252,0.72);
+    }
+
+    /* Quick help strip */
+    .help {
+      position: absolute;
+      left: 14px;
+      bottom: 14px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      color: rgba(220,255,252,0.72);
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(110,255,245,0.14);
+      padding: 10px 12px;
+      border-radius: 999px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+    }
+
+    /* Hotspot placement (tuned to the generated image) */
+    /* Tip: toggle debug mode with "D" key to see outlines and adjust */
+    #hs_welcome { left: 13%; top: 13%; width: 45%; height: 20%; }
+    #hs_activity { left: 18%; top: 44%; width: 48%; height: 8%; }
+    #hs_assigned { left: 13%; top: 56%; width: 52%; height: 30%; }
+    #hs_additional { left: 67%; top: 56%; width: 20%; height: 28%; }
+    #hs_claims { left: 67%; top: 13%; width: 20%; height: 37%; }
+
+    @media (max-width: 900px) {
+      /* On mobile, hotspots are harder to hit. Make them bigger. */
+      #hs_welcome { left: 6%; top: 10%; width: 88%; height: 18%; }
+      #hs_claims { left: 6%; top: 30%; width: 88%; height: 16%; }
+      #hs_activity { left: 6%; top: 48%; width: 88%; height: 12%; }
+      #hs_assigned { left: 6%; top: 62%; width: 88%; height: 30%; }
+      #hs_additional { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="bg" aria-hidden="true"></div>
+    <div class="hud" aria-hidden="true"></div>
+
+    <!-- Hotspots: click ship-helm regions to open the drawer -->
+    <div class="hotspot" id="hs_welcome" data-panel="welcome" tabindex="0" aria-label="Open Bridge Briefing panel"></div>
+    <div class="hotspot" id="hs_activity" data-panel="activity" tabindex="0" aria-label="Open Activity panel"></div>
+    <div class="hotspot" id="hs_assigned" data-panel="assigned" tabindex="0" aria-label="Open Assigned Tasks panel"></div>
+    <div class="hotspot" id="hs_additional" data-panel="additional" tabindex="0" aria-label="Open Additional Tasks panel"></div>
+    <div class="hotspot" id="hs_claims" data-panel="claims" tabindex="0" aria-label="Open Claims Verified panel"></div>
+
+    <!-- Drawer -->
+    <aside class="drawer" id="drawer" aria-hidden="true">
+      <div class="drawerHeader">
+        <h2 class="drawerTitle" id="drawerTitle">Panel</h2>
+        <button class="close" id="closeBtn">Close</button>
+      </div>
+      <div class="drawerBody" id="drawerBody"></div>
+      <div class="drawerFooter">
+        <div>Tip: press <b>D</b> to toggle hotspot outlines</div>
+        <button class="btn" id="goBtn">Go</button>
+      </div>
+    </aside>
+
+    <div class="help">Click the helm areas to open panels • Esc closes • Press D to show hotspot boxes</div>
+
+    <script>
+      const drawer = document.getElementById('drawer');
+      const drawerTitle = document.getElementById('drawerTitle');
+      const drawerBody = document.getElementById('drawerBody');
+      const closeBtn = document.getElementById('closeBtn');
+      const goBtn = document.getElementById('goBtn');
+
+      let currentPanel = null;
+
+      const panels = {
+        welcome: {
+          title: 'Bridge Briefing',
+          goLabel: 'TextPad',
+          goHint: '/textpad',
+          body: `
+            <div style="font-size: 18px; color: rgba(110,255,245,0.95); margin-bottom: 6px;">Welcome, reedko@gmail.com 👋</div>
+            <div class="note">This is the ship’s bridge: identity + mission + urgent actions.</div>
+            <div class="kpi">
+              <div class="box"><div class="num">28</div><div class="cap">Assigned</div></div>
+              <div class="box"><div class="num">264</div><div class="cap">Verifications</div></div>
+              <div class="box"><div class="num">0</div><div class="cap">Flags</div></div>
+            </div>
+            <b>Quick actions</b>
+            <ul>
+              <li>Paste a paragraph in <b>TextPad</b> → create a new task</li>
+              <li>Select a task → open <b>Workspace</b></li>
+              <li>Evaluate fast in <b>Game</b> mode</li>
+            </ul>
+          `
+        },
+        activity: {
+          title: 'Activity Console',
+          goLabel: 'Toggle',
+          goHint: 'My ↔ Site',
+          body: `
+            <div class="note">This is where you flip between <b>My Activity</b> and <b>Site Activity</b> (same chart, different query).</div>
+            <div class="kpi">
+              <div class="box"><div class="num">24%</div><div class="cap">Week progress</div></div>
+              <div class="box"><div class="num">73</div><div class="cap">Tasks touched</div></div>
+              <div class="box"><div class="num">1.1k</div><div class="cap">Links</div></div>
+            </div>
+            <b>Implementation hooks</b>
+            <ul>
+              <li>Button group: <code>my</code> | <code>site</code></li>
+              <li>API: <code>/api/activity?scope=my</code> vs <code>scope=site</code></li>
+              <li>Cache both for instant flipping</li>
+            </ul>
+          `
+        },
+        assigned: {
+          title: 'Assigned Tasks',
+          goLabel: 'Workspace',
+          goHint: '/workspace',
+          body: `
+            <div class="note">This drawer is your task launcher. Each row should route to Workspace / Game with active task set in store.</div>
+            <div class="list">
+              <div class="item">
+                <div class="left">
+                  <div class="name">RFK Jr. disparaged vaccines dozens of times…</div>
+                  <div class="meta">Priority: High • Mode: Verify</div>
+                </div>
+                <button class="btn" data-action="openTask">Verify</button>
+              </div>
+              <div class="item">
+                <div class="left">
+                  <div class="name">Fact-checking Fortune: Has Polio Vaccine Saved…</div>
+                  <div class="meta">Priority: Medium • Mode: Evaluate</div>
+                </div>
+                <button class="btn" data-action="openTask">Evaluate</button>
+              </div>
+              <div class="item">
+                <div class="left">
+                  <div class="name">Study links heavy drinking to brain injury…</div>
+                  <div class="meta">Priority: Medium • Mode: Verify</div>
+                </div>
+                <button class="btn" data-action="openTask">Verify</button>
+              </div>
+            </div>
+            <div class="note">Later: replace this static list with your real <code>assignedTasks</code>.</div>
+          `
+        },
+        additional: {
+          title: 'Community Ops Tasks',
+          goLabel: 'Queues',
+          goHint: '/evaluate',
+          body: `
+            <div class="note">Third-tier trust: people verifying verifiers. This is where the Wikipedia-style layer lives.</div>
+            <div class="list">
+              <div class="item">
+                <div class="left">
+                  <div class="name">Evaluate other user ratings</div>
+                  <div class="meta">Queue: 2 ratings</div>
+                </div>
+                <button class="btn" data-action="openQueue">Evaluate</button>
+              </div>
+              <div class="item">
+                <div class="left">
+                  <div class="name">Evaluate other users</div>
+                  <div class="meta">Queue: 8 users</div>
+                </div>
+                <button class="btn" data-action="openQueue">Evaluate</button>
+              </div>
+              <div class="item">
+                <div class="left">
+                  <div class="name">Vet pending claims</div>
+                  <div class="meta">Queue: 5 claims</div>
+                </div>
+                <button class="btn" data-action="openQueue">Evaluate</button>
+              </div>
+            </div>
+          `
+        },
+        claims: {
+          title: 'Claims Verified Console',
+          goLabel: 'Alerts',
+          goHint: '/dashboard#alerts',
+          body: `
+            <div class="note">Use this as a small status stack: verified count, evaluation rate, and “system alerts”.</div>
+            <div class="kpi">
+              <div class="box"><div class="num">0</div><div class="cap">Verified</div></div>
+              <div class="box"><div class="num">0%</div><div class="cap">Eval rate</div></div>
+              <div class="box"><div class="num">—</div><div class="cap">Risk</div></div>
+            </div>
+            <b>Later indicators</b>
+            <ul>
+              <li>Brigading detector (rating spikes)</li>
+              <li>Disagreement hotspots (high variance)</li>
+              <li>Unlinked-claim backlog</li>
+            </ul>
+          `
+        }
+      };
+
+      function openDrawer(key) {
+        currentPanel = key;
+        const p = panels[key];
+        if (!p) return;
+
+        drawerTitle.textContent = p.title;
+        drawerBody.innerHTML = p.body;
+        goBtn.textContent = p.goLabel || 'Go';
+        goBtn.title = p.goHint || '';
+        drawer.classList.add('open');
+        drawer.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeDrawer() {
+        drawer.classList.remove('open');
+        drawer.setAttribute('aria-hidden', 'true');
+        currentPanel = null;
+      }
+
+      // Hotspot clicks
+      document.querySelectorAll('.hotspot').forEach(hs => {
+        hs.addEventListener('click', () => openDrawer(hs.dataset.panel));
+        hs.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openDrawer(hs.dataset.panel);
+          }
+        });
+      });
+
+      // Close
+      closeBtn.addEventListener('click', closeDrawer);
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeDrawer();
+        if (e.key.toLowerCase() === 'd') document.body.classList.toggle('debug');
+      });
+
+      // Demo buttons inside drawer
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+
+        if (btn.dataset.action === 'openTask') {
+          alert('Wire me: set active task + navigate to /workspace or /game');
+        }
+        if (btn.dataset.action === 'openQueue') {
+          alert('Wire me: navigate to /evaluate/* queue');
+        }
+      });
+
+      // "Go" button: placeholder (swap with router navigation in React)
+      goBtn.addEventListener('click', () => {
+        if (!currentPanel) return;
+        const hint = panels[currentPanel]?.goHint || '';
+        alert('Go → ' + hint + ' (replace this with real navigation)');
+      });
+    </script>
+  </div>
+</body>
+</html>

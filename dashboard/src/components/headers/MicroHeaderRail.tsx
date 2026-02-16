@@ -79,15 +79,11 @@ export default function MicroHeaderRail({
         px={3}
         py={2}
         overflowX="auto"
-        overflowY="hidden" // ⬅ keep vertical from affecting layout
         align="stretch"
         h="calc(88px + 16px)" // ⬅ tile height (88) + vertical padding (8+8)
         sx={{
           scrollSnapType: "x mandatory",
           WebkitOverflowScrolling: "touch",
-          touchAction: "pan-x", // ⬅ only horizontal gestures on the rail
-          overscrollBehaviorX: "contain",
-          overscrollBehaviorY: "none", // ⬅ don’t bubble vertical scroll through the rail
           "::-webkit-scrollbar": { display: "none" },
           msOverflowStyle: "none",
           scrollbarWidth: "none",
@@ -196,16 +192,29 @@ export default function MicroHeaderRail({
         onClose={closeTile}
         placement="bottom"
         size="full"
+        closeOnOverlayClick={true}
+        closeOnEsc={true}
       >
-        <DrawerOverlay />
+        <DrawerOverlay
+          bg="blackAlpha.700"
+          backdropFilter="blur(4px)"
+          onClick={closeTile}
+        />
         <DrawerContent>
-          <DrawerCloseButton />
+          <DrawerCloseButton size="lg" />
           <DrawerHeader>
-            {open === "score" && "Score"}
-            {open === "task" && "Content Details"}
-            {open === "publisher" && "Publisher Details"}
-            {open === "author" && "Author Details"}
-            {open === "progress" && "Progress"}
+            <VStack spacing={0} align="start">
+              <Text>
+                {open === "score" && "Score"}
+                {open === "task" && "Content Details"}
+                {open === "publisher" && "Publisher Details"}
+                {open === "author" && "Author Details"}
+                {open === "progress" && "Progress"}
+              </Text>
+              <Text fontSize="xs" color="gray.500">
+                Tap outside or swipe down to close
+              </Text>
+            </VStack>
           </DrawerHeader>
           <DrawerBody>
             {open === "score" && (
@@ -273,22 +282,87 @@ function Tile({
   onClick: () => void;
   label: string;
 }) {
+  // MR color mapping per label
+  const getColorForLabel = (label: string) => {
+    switch (label) {
+      case "Score":
+        return {
+          gradient: "linear-gradient(90deg, rgba(139, 92, 246, 0.5) 0%, rgba(139, 92, 246, 0) 100%)",
+          glow: "rgba(139, 92, 246, 0.4)",
+          border: "rgba(139, 92, 246, 0.4)",
+        };
+      case "Task":
+        return {
+          gradient: "linear-gradient(90deg, rgba(0, 162, 255, 0.5) 0%, rgba(0, 162, 255, 0) 100%)",
+          glow: "rgba(0, 162, 255, 0.4)",
+          border: "rgba(0, 162, 255, 0.4)",
+        };
+      case "Publisher":
+        return {
+          gradient: "linear-gradient(90deg, rgba(6, 182, 212, 0.5) 0%, rgba(6, 182, 212, 0) 100%)",
+          glow: "rgba(6, 182, 212, 0.4)",
+          border: "rgba(6, 182, 212, 0.4)",
+        };
+      case "Author":
+        return {
+          gradient: "linear-gradient(90deg, rgba(251, 146, 60, 0.5) 0%, rgba(251, 146, 60, 0) 100%)",
+          glow: "rgba(251, 146, 60, 0.4)",
+          border: "rgba(251, 146, 60, 0.4)",
+        };
+      case "Progress":
+        return {
+          gradient: "linear-gradient(90deg, rgba(74, 222, 128, 0.5) 0%, rgba(74, 222, 128, 0) 100%)",
+          glow: "rgba(74, 222, 128, 0.4)",
+          border: "rgba(74, 222, 128, 0.4)",
+        };
+      default:
+        return {
+          gradient: "linear-gradient(90deg, rgba(139, 92, 246, 0.5) 0%, rgba(139, 92, 246, 0) 100%)",
+          glow: "rgba(139, 92, 246, 0.4)",
+          border: "rgba(139, 92, 246, 0.4)",
+        };
+    }
+  };
+
+  const colors = getColorForLabel(label);
+
   return (
     <Box
       onClick={onClick}
-      bg="stat2Gradient"
+      position="relative"
+      overflow="hidden"
+      bg="rgba(0, 0, 0, 0.6)"
+      backdropFilter="blur(20px)"
       border="1px solid"
-      borderColor="whiteAlpha.300"
-      borderRadius="lg"
+      borderColor={colors.border}
+      borderRadius="8px"
       p={3}
       minW="180px"
       maxW="220px"
       h="88px"
       cursor="pointer"
       userSelect="none"
-      boxShadow="md"
+      boxShadow="0 4px 24px rgba(0, 0, 0, 0.6)"
       scrollSnapAlign="start"
+      transition="all 0.2s ease"
+      _hover={{
+        transform: "translateY(-2px)",
+        boxShadow: `0 6px 30px ${colors.glow}`,
+      }}
       _active={{ transform: "scale(0.98)" }}
+      sx={{
+        "&::before": {
+          content: '""',
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "8px",
+          height: "100%",
+          background: colors.gradient,
+          pointerEvents: "none",
+          zIndex: 1,
+        },
+      }}
     >
       <VStack align="stretch" spacing={1} h="100%">
         <Text fontSize="xs" color="whiteAlpha.700">

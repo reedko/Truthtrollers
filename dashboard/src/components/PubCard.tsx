@@ -39,7 +39,7 @@ interface PubCardProps {
 
 const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
   const [activePublisher, setActivePublisher] = useState<Publisher | null>(
-    publishers[0]
+    publishers[0],
   );
   const [ratings, setRatings] = useState<PublisherRating[]>([]);
   const [publisherList, setPublisherList] = useState<Publisher[]>(publishers);
@@ -89,7 +89,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
     const loadRatings = async () => {
       if (activePublisher) {
         const ratings = await fetchPublisherRatings(
-          activePublisher.publisher_id
+          activePublisher.publisher_id,
         );
         setRatings(ratings);
       }
@@ -99,7 +99,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
 
   const handleRatingsUpdate = (
     publisherId: number,
-    updated: PublisherRating[]
+    updated: PublisherRating[],
   ) => {
     setAllRatings((prev) => ({
       ...prev,
@@ -121,8 +121,8 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
       if (updatedPublisher) {
         setPublisherList((prev) =>
           prev.map((a) =>
-            a.publisher_id === publisherId ? updatedPublisher : a
-          )
+            a.publisher_id === publisherId ? updatedPublisher : a,
+          ),
         );
         setActivePublisher(updatedPublisher);
       }
@@ -141,7 +141,9 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
     score > 5 ? "🟢" : score < 0 ? "🔴" : "⚪";
 
   // Show placeholder if no publisher
-  const currentRatings = activePublisher ? (allRatings[activePublisher.publisher_id] || []) : [];
+  const currentRatings = activePublisher
+    ? allRatings[activePublisher.publisher_id] || []
+    : [];
   const avgBias = currentRatings.length
     ? avgScore(currentRatings, "bias_score")
     : "-";
@@ -158,15 +160,15 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
       prev.map((p) =>
         p.publisher_id === activePublisher.publisher_id
           ? { ...p, description: newBio }
-          : p
-      )
+          : p,
+      ),
     );
 
     // 🔄 Update activePublisher
     setActivePublisher((prev) =>
       prev && prev.publisher_id === activePublisher.publisher_id
         ? { ...prev, description: newBio }
-        : prev
+        : prev,
     );
 
     toast({
@@ -198,7 +200,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
         <div className="mr-scanlines" />
         <Box>
           <Center>
-            <Text className="mr-badge mr-badge-yellow" fontSize="md" mb={2}>
+            <Text className="mr-badge mr-badge-yellow" fontSize="sm" mb={1}>
               Publisher Details
             </Text>
           </Center>
@@ -209,7 +211,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
               value={activePublisher?.publisher_id}
               onChange={(e) => {
                 const selected = publisherList.find(
-                  (p) => p.publisher_id === parseInt(e.target.value)
+                  (p) => p.publisher_id === parseInt(e.target.value),
                 );
                 if (selected) setActivePublisher(selected);
               }}
@@ -289,18 +291,14 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
               <Text className="mr-metric-label">Bias</Text>
               <Flex align="center" gap={1}>
                 <Text>{getBiasEmoji(parseFloat(avgBias))}</Text>
-                <Text className="mr-metric-value">
-                  {avgBias}
-                </Text>
+                <Text className="mr-metric-value">{avgBias}</Text>
               </Flex>
             </Flex>
             <Flex direction="column" align="center" className="mr-metric">
               <Text className="mr-metric-label">Veracity</Text>
               <Flex align="center" gap={1}>
                 <Text>{getVeracityEmoji(parseFloat(avgVeracity))}</Text>
-                <Text className="mr-metric-value">
-                  {avgVeracity}
-                </Text>
+                <Text className="mr-metric-value">{avgVeracity}</Text>
               </Flex>
             </Flex>
           </HStack>
@@ -331,24 +329,27 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
           )}
         </Box>
 
-        <Center>
-          <HStack justify="center" spacing={2} w="100%">
+        <HStack spacing={2} w="100%">
+          <Box flex="1" minW={0}>
             <Button
               onClick={onViewRatingsOpen}
               className="mr-button"
-              flex="1"
+              w="100%"
               isDisabled={!hasPublisher}
             >
               Ratings
             </Button>
+          </Box>
+          <Box flex="1" minW={0}>
             <Menu>
               <MenuButton
                 as={Button}
                 className="mr-button"
-                flex="1"
+                w="100%"
+                pl="20px"
                 isDisabled={!hasPublisher}
               >
-                Actions
+                <Text ml={-2}>Actions</Text>
               </MenuButton>
               <MenuList>
                 <MenuItem onClick={() => onRatingOpen()}>
@@ -359,8 +360,8 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
                 </MenuItem>
               </MenuList>
             </Menu>
-          </HStack>
-        </Center>
+          </Box>
+        </HStack>
 
         <ViewRatingsModal
           isOpen={isViewRatingsOpen}

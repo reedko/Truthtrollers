@@ -49,7 +49,11 @@ interface AuthCardProps {
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false, contentId }) => {
+const AuthCard: React.FC<AuthCardProps> = ({
+  authors,
+  compact = false,
+  contentId,
+}) => {
   const {
     isOpen: isBioOpen,
     onOpen: onBioOpen,
@@ -110,7 +114,7 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false, contentId
       const updatedAuthor = await fetchAuthor(authorId);
       if (updatedAuthor) {
         setAuthorList((prev) =>
-          prev.map((a) => (a.author_id === authorId ? updatedAuthor : a))
+          prev.map((a) => (a.author_id === authorId ? updatedAuthor : a)),
         );
         setActiveAuthor(updatedAuthor);
       }
@@ -167,7 +171,7 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false, contentId
 
     const success = await removeAuthorFromContent(
       contentId,
-      activeAuthor.author_id
+      activeAuthor.author_id,
     );
 
     if (success) {
@@ -218,7 +222,7 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false, contentId
       <Box
         ref={cardRef}
         className="mr-card mr-card-purple"
-        p={4}
+        p={3}
         w="100%"
         height="405px"
         display="flex"
@@ -229,7 +233,7 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false, contentId
         <div className="mr-scanlines" />
         <Box>
           <Center>
-            <Text className="mr-badge mr-badge-purple" fontSize="md" mb={2}>
+            <Text className="mr-badge mr-badge-purple" fontSize="sm" mb={1}>
               Author Details
             </Text>
           </Center>
@@ -239,7 +243,7 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false, contentId
               value={activeAuthor?.author_id}
               onChange={(e) => {
                 const found = authors.find(
-                  (a) => a.author_id === Number(e.target.value)
+                  (a) => a.author_id === Number(e.target.value),
                 );
                 if (found) setActiveAuthor(found);
               }}
@@ -348,7 +352,12 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false, contentId
             </Flex>
           </HStack>
           <Box />
-          <Text className="mr-text-secondary" fontSize="sm" mt={1} textAlign="center">
+          <Text
+            className="mr-text-secondary"
+            fontSize="sm"
+            mt={1}
+            textAlign="center"
+          >
             {activeAuthor?.description || "No bio available."}
           </Text>
         </Box>
@@ -376,9 +385,7 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false, contentId
               </MenuItem>
               {contentId && (
                 <>
-                  <MenuItem onClick={onAddAuthorOpen}>
-                    ➕ Add Author
-                  </MenuItem>
+                  <MenuItem onClick={onAddAuthorOpen}>➕ Add Author</MenuItem>
                   {activeAuthor && authorList.length > 1 && (
                     <MenuItem onClick={handleRemoveAuthor} color="red.400">
                       🗑️ Remove Author
@@ -402,11 +409,11 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false, contentId
                 prev.map((a) =>
                   a.author_id === activeAuthor.author_id
                     ? { ...a, description: newBio }
-                    : a
-                )
+                    : a,
+                ),
               );
               setActiveAuthor((prev) =>
-                prev ? { ...prev, description: newBio } : prev
+                prev ? { ...prev, description: newBio } : prev,
               );
               toast({
                 title: "Bio Updated",
@@ -445,7 +452,8 @@ const AuthCard: React.FC<AuthCardProps> = ({ authors, compact = false, contentId
           >
             <VStack spacing={4} align="stretch">
               <Text className="mr-text-primary">
-                Enter the author's name (e.g., "John Smith" or "Dr. Jane Doe, PhD")
+                Enter the author's name (e.g., "John Smith" or "Dr. Jane Doe,
+                PhD")
               </Text>
               <Input
                 className="mr-input"

@@ -3,6 +3,7 @@ import {
   Box,
   Text,
   IconButton,
+  Button,
   Spinner,
   useToast,
   Popover,
@@ -10,6 +11,12 @@ import {
   PopoverContent,
   PopoverArrow,
   PopoverBody,
+  useBreakpointValue,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
 } from "@chakra-ui/react";
 import {
   ChevronLeftIcon,
@@ -73,6 +80,7 @@ interface PlayingCardProps {
   potentialPoints?: number; // Max points for perfect match
   veracityScore?: number; // AI truth rating
   onReassess?: () => void; // Callback to open reassess modal
+  isBeingDragged?: boolean; // Whether this card is currently being dragged
 }
 
 const PlayingCard: React.FC<PlayingCardProps> = ({
@@ -97,6 +105,7 @@ const PlayingCard: React.FC<PlayingCardProps> = ({
   potentialPoints,
   veracityScore,
   onReassess,
+  isBeingDragged = false,
 }) => {
   const typeColors = {
     task: {
@@ -179,49 +188,58 @@ const PlayingCard: React.FC<PlayingCardProps> = ({
         // position is controlled by style prop for stacking
         width: "320px", // Playing card width (2.5" at ~128dpi)
         height: isFocused ? "480px" : "60px", // Playing card height (3.75" expanded) or title only
-        background:
-          "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))",
-        backdropFilter: "blur(20px)",
-        border: `1px solid ${colors.border}`,
+        background: isBeingDragged
+          ? "transparent"
+          : "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))",
+        backdropFilter: isBeingDragged ? "none" : "blur(20px)",
+        border: isBeingDragged ? "none" : `1px solid ${colors.border}`,
         borderRadius: "12px",
-        boxShadow: isSelected
-          ? `0 12px 48px rgba(0, 0, 0, 0.8), 0 0 60px ${colors.border}, inset 0 1px 0 rgba(255, 255, 255, 0.15)`
-          : isFocused
+        boxShadow: isBeingDragged
+          ? "none"
+          : isSelected
             ? `0 12px 48px rgba(0, 0, 0, 0.8), 0 0 60px ${colors.border}, inset 0 1px 0 rgba(255, 255, 255, 0.15)`
-            : `0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px ${colors.border}, inset 0 1px 0 rgba(255, 255, 255, 0.1)`,
+            : isFocused
+              ? `0 12px 48px rgba(0, 0, 0, 0.8), 0 0 60px ${colors.border}, inset 0 1px 0 rgba(255, 255, 255, 0.15)`
+              : `0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px ${colors.border}, inset 0 1px 0 rgba(255, 255, 255, 0.1)`,
         cursor: "pointer",
         transition: "all 0.4s cubic-bezier(0.4, 0, 0.2, 1)",
         userSelect: "none",
         overflow: "hidden",
-        borderColor: isSelected
-          ? colors.border.replace("0.4", "0.8")
-          : colors.border,
+        borderColor: isBeingDragged
+          ? "transparent"
+          : isSelected
+            ? colors.border.replace("0.4", "0.8")
+            : colors.border,
       }}
     >
       {/* Left edge glow bar - 3D fade effect */}
-      <Box
-        position="absolute"
-        top={0}
-        left={0}
-        width="20px"
-        height="100%"
-        background={`linear-gradient(90deg, ${colors.border} 0%, transparent 100%)`}
-        pointerEvents="none"
-        zIndex={1}
-      />
+      {!isBeingDragged && (
+        <Box
+          position="absolute"
+          top={0}
+          left={0}
+          width="20px"
+          height="100%"
+          background={`linear-gradient(90deg, ${colors.border} 0%, transparent 100%)`}
+          pointerEvents="none"
+          zIndex={1}
+        />
+      )}
 
       {/* Scanlines overlay */}
-      <Box
-        position="absolute"
-        top={0}
-        left={0}
-        right={0}
-        bottom={0}
-        background="repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 162, 255, 0.03) 2px, rgba(0, 162, 255, 0.03) 4px)"
-        pointerEvents="none"
-        borderRadius="12px"
-        zIndex={2}
-      />
+      {!isBeingDragged && (
+        <Box
+          position="absolute"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          background="repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 162, 255, 0.03) 2px, rgba(0, 162, 255, 0.03) 4px)"
+          pointerEvents="none"
+          borderRadius="12px"
+          zIndex={2}
+        />
+      )}
 
       {/* Title Bar - Always Visible */}
       <Box
@@ -568,6 +586,7 @@ const ReferenceCard: React.FC<ReferenceCardProps> = ({
       onClick={onClick}
       onMouseEnter={onHover}
       style={style}
+      data-reference-index={index}
       sx={{
         position: "relative",
         width: "320px",
@@ -856,6 +875,7 @@ const GameSpace: React.FC<GameSpaceProps> = ({
   const [selectedTaskClaimIndex, setSelectedTaskClaimIndex] = useState<
     number | null
   >(null);
+  const [taskCardJustAppeared, setTaskCardJustAppeared] = useState(false);
   const [selectedReferenceIndex, setSelectedReferenceIndex] = useState<
     number | null
   >(null);
@@ -888,6 +908,8 @@ const GameSpace: React.FC<GameSpaceProps> = ({
 
   // Claim-level relevance state
   const [isAssessingClaims, setIsAssessingClaims] = useState(false);
+  const [assessmentProgress, setAssessmentProgress] = useState({ current: 0, total: 0 });
+  const cancelAssessmentRef = useRef(false); // Use ref for immediate cancellation
   const [enrichedReferenceClaims, setEnrichedReferenceClaims] = useState<
     ClaimWithRelevance[]
   >([]);
@@ -899,6 +921,10 @@ const GameSpace: React.FC<GameSpaceProps> = ({
   const [draggedClaimVeracity, setDraggedClaimVeracity] = useState<
     number | null
   >(null);
+
+  // 📱 MOBILE STATE
+  const isMobile = useBreakpointValue({ base: true, md: false });
+  const [mobileTabIndex, setMobileTabIndex] = useState(0); // 0=Claims, 1=Refs/RefClaims
 
   // Card stack constants for slide-deck style
   const TITLE_HEIGHT = 60; // Height of title bar
@@ -1088,6 +1114,7 @@ const GameSpace: React.FC<GameSpaceProps> = ({
 
       try {
         setIsAssessingClaims(true);
+        cancelAssessmentRef.current = false;
 
         console.log(
           `[GameSpace] Loading ${referenceClaims.length} reference claims`,
@@ -1114,15 +1141,62 @@ const GameSpace: React.FC<GameSpaceProps> = ({
           `[GameSpace] ${relevantLinks.length} links relevant to this reference`,
         );
 
-        // Check if we need to assess any claims using batch function
-        const { batchAssessReferenceClaims } =
+        // Find claims that need assessment
+        const claimsNeedingAssessment = referenceClaims.filter(
+          (claim) =>
+            !relevantLinks.some(
+              (link) => link.reference_claim_id === claim.claim_id
+            )
+        );
+
+        const ASSESSMENT_LIMIT = 10; // Only auto-assess first 10 claims
+        const claimsToAssess = claimsNeedingAssessment.slice(0, ASSESSMENT_LIMIT);
+
+        if (claimsNeedingAssessment.length > ASSESSMENT_LIMIT) {
+          console.warn(
+            `[GameSpace] ${claimsNeedingAssessment.length} claims need assessment, limiting to ${ASSESSMENT_LIMIT}`
+          );
+        }
+
+        // Assess claims one by one with progress updates
+        const { assessReferenceClaimRelevance } =
           await import("../services/referenceClaimRelevance");
 
-        const assessmentResult = await batchAssessReferenceClaims(
-          referenceClaims,
-          selectedTaskClaim.claim_id,
-          selectedTaskClaim.claim_text,
-        );
+        const newLinks = [];
+        setAssessmentProgress({ current: 0, total: claimsToAssess.length });
+
+        for (let i = 0; i < claimsToAssess.length; i++) {
+          if (cancelAssessmentRef.current) {
+            console.log(`[GameSpace] Assessment cancelled at ${i}/${claimsToAssess.length}`);
+            break;
+          }
+
+          const claim = claimsToAssess[i];
+          setAssessmentProgress({ current: i + 1, total: claimsToAssess.length });
+
+          try {
+            const { link } = await assessReferenceClaimRelevance(
+              claim.claim_id,
+              selectedTaskClaim.claim_id,
+              claim.claim_text,
+              selectedTaskClaim.claim_text
+            );
+
+            if (link) {
+              newLinks.push(link);
+            }
+          } catch (error) {
+            console.error(`[GameSpace] Error assessing claim ${claim.claim_id}:`, error);
+            // Continue with other claims
+          }
+        }
+
+        const allLinks = [...relevantLinks, ...newLinks];
+        const assessmentResult = { assessedCount: newLinks.length, links: allLinks };
+
+        if (cancelAssessmentRef.current) {
+          console.log(`[GameSpace] Cancelled after assessing ${newLinks.length} claims`);
+        }
 
         console.log(
           `[GameSpace] Batch assessment complete: ${assessmentResult.assessedCount} new assessments`,
@@ -1143,6 +1217,7 @@ const GameSpace: React.FC<GameSpaceProps> = ({
         console.log(`[GameSpace] About to set enriched claims:`, enriched);
         setEnrichedReferenceClaims(enriched);
         setIsAssessingClaims(false);
+        setAssessmentProgress({ current: 0, total: 0 });
         console.log(
           `[GameSpace] State updated - ${enriched.length} claims, isAssessingClaims=false`,
         );
@@ -1157,6 +1232,7 @@ const GameSpace: React.FC<GameSpaceProps> = ({
         }));
         setEnrichedReferenceClaims(fallback);
         setIsAssessingClaims(false);
+        setAssessmentProgress({ current: 0, total: 0 });
       }
     }
 
@@ -1191,26 +1267,122 @@ const GameSpace: React.FC<GameSpaceProps> = ({
     setFocusedCardIndex(index);
   };
 
+  const handleCardCycle = () => {
+    // Cycle to next card in stack
+    const nextIndex = (focusedCardIndex + 1) % displayedClaims.length;
+    setFocusedCardIndex(nextIndex);
+
+    // 📱 Auto-scroll to keep focused card centered on mobile
+    if (isMobile) {
+      setTimeout(() => {
+        const cardElement = document.querySelector(`[data-card-index="${nextIndex}"]`);
+        if (cardElement) {
+          cardElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest'
+          });
+        }
+      }, 50); // Small delay to let state update
+    }
+  };
+
   const handleReferenceHover = (index: number) => {
     setFocusedReferenceIndex(index);
   };
 
-  const handleTaskClaimClick = (index: number) => {
+  const handleReferenceCycle = () => {
+    // Cycle to next reference in stack
+    const nextIndex = (focusedReferenceIndex + 1) % displayedReferences.length;
+    setFocusedReferenceIndex(nextIndex);
+
+    // 📱 Auto-scroll to keep focused reference centered on mobile
+    if (isMobile) {
+      setTimeout(() => {
+        const refElement = document.querySelector(`[data-reference-index="${nextIndex}"]`);
+        if (refElement) {
+          refElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest'
+          });
+        }
+      }, 50); // Small delay to let state update
+    }
+  };
+
+  const handleTaskClaimClick = (index: number, displayIndex?: number) => {
+    // Already in focused mode - clicking exits
     if (selectedTaskClaimIndex === index && isFocusedMode) {
-      // Clicking the same task claim exits focused mode
       setSelectedTaskClaimIndex(null);
       setIsFocusedMode(false);
       setIsComparisonMode(false);
       setFocusedReferenceIndex(0);
-    } else {
-      // Select task claim and enter focused mode
+      setTaskCardJustAppeared(false);
+      return;
+    }
+
+    // 📱 MOBILE: Simple behavior - tap focused card to SELECT it
+    if (!isFocusedMode && isMobile && displayIndex !== undefined && displayIndex === focusedCardIndex) {
+      // TAP on focused card → SELECT IT (enter focused mode)
       setSelectedTaskClaimIndex(index);
       setFocusedCardIndex(index);
       setIsFocusedMode(true);
       setFocusedReferenceIndex(0);
       setSelectedReferenceIndex(null);
+      setTaskCardJustAppeared(true);
+      setMobileTabIndex(1);
+      // Auto-scroll to the top reference card
+      setTimeout(() => {
+        const firstRefElement = document.querySelector('[data-reference-index="0"]');
+        if (firstRefElement) {
+          firstRefElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest'
+          });
+        }
+      }, 600);
+      return;
+    }
+
+    // 📱 MOBILE: Tapping NON-focused card brings it to focus
+    if (!isFocusedMode && isMobile && displayIndex !== undefined && displayIndex !== focusedCardIndex) {
+      setFocusedCardIndex(displayIndex);
+      // Auto-scroll to keep it centered
+      setTimeout(() => {
+        const cardElement = document.querySelector(`[data-card-index="${displayIndex}"]`);
+        if (cardElement) {
+          cardElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest'
+          });
+        }
+      }, 50);
+      return;
+    }
+
+    // DESKTOP: Direct select
+    if (!isMobile) {
+      setSelectedTaskClaimIndex(index);
+      setFocusedCardIndex(index);
+      setIsFocusedMode(true);
+      setFocusedReferenceIndex(0);
+      setSelectedReferenceIndex(null);
+      setTaskCardJustAppeared(true);
     }
   };
+
+  // Reset animation state after animation completes
+  useEffect(() => {
+    if (taskCardJustAppeared) {
+      const timer = setTimeout(() => {
+        setTaskCardJustAppeared(false);
+      }, 500); // Match animation duration
+      return () => clearTimeout(timer);
+    }
+  }, [taskCardJustAppeared]);
 
   const handleBackToAllClaims = () => {
     // Exit reference claims mode and comparison mode
@@ -1223,15 +1395,47 @@ const GameSpace: React.FC<GameSpaceProps> = ({
     // Keep selectedTaskClaimIndex and isFocusedMode to stay on the task claim with references
   };
 
-  const handleReferenceClick = (index: number) => {
-    // Enter reference claims mode - show the claims stack for this reference
-    console.log(
-      `[GameSpace] Reference clicked, index: ${index}, entering reference claims mode`,
-    );
-    setSelectedReferenceIndex(index);
-    setFocusedReferenceIndex(index);
-    setIsReferenceClaimsMode(true);
-    setFocusedReferenceClaimIndex(0);
+  const handleReferenceClick = (index: number, displayIndex?: number) => {
+    // 📱 MOBILE: Simple behavior - tap focused reference to SELECT it
+    if (!isReferenceClaimsMode && isMobile && displayIndex !== undefined && displayIndex === focusedReferenceIndex) {
+      // TAP on focused reference → SELECT IT (enter reference claims mode)
+      console.log(`[GameSpace] Tap on reference ${index}, entering reference claims mode`);
+      setSelectedReferenceIndex(index);
+      setFocusedReferenceIndex(index);
+      setIsReferenceClaimsMode(true);
+      setFocusedReferenceClaimIndex(0);
+      setMobileTabIndex(1);
+      return;
+    }
+
+    // 📱 MOBILE: Tapping NON-focused reference brings it to focus
+    if (!isReferenceClaimsMode && isMobile && displayIndex !== undefined && displayIndex !== focusedReferenceIndex) {
+      setFocusedReferenceIndex(displayIndex);
+      // Auto-scroll to keep it centered
+      setTimeout(() => {
+        const refElement = document.querySelector(`[data-reference-index="${displayIndex}"]`);
+        if (refElement) {
+          refElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+            inline: 'nearest'
+          });
+        }
+      }, 50);
+      return;
+    }
+
+    // DESKTOP: Direct select (enter reference claims mode)
+    if (!isMobile || isReferenceClaimsMode) {
+      console.log(`[GameSpace] Reference clicked, index: ${index}, entering reference claims mode`);
+      setSelectedReferenceIndex(index);
+      setFocusedReferenceIndex(index);
+      setIsReferenceClaimsMode(true);
+      setFocusedReferenceClaimIndex(0);
+      if (isMobile) {
+        setMobileTabIndex(1);
+      }
+    }
   };
 
   const [isClickInProgress, setIsClickInProgress] = useState(false);
@@ -1243,6 +1447,8 @@ const GameSpace: React.FC<GameSpaceProps> = ({
   };
 
   const handleReferenceClaimClick = (claimIndex: number) => {
+    const claim = enrichedReferenceClaims[claimIndex];
+
     console.log("[Reference Claim Click]", {
       claimIndex,
       currentStackLength: enrichedReferenceClaims.length,
@@ -1251,8 +1457,16 @@ const GameSpace: React.FC<GameSpaceProps> = ({
     // Block hover events during click
     setIsClickInProgress(true);
 
+    // 📱 MOBILE: If tapping on the FOCUSED (top) card - it's ready for dragging
+    // Don't cycle or skip - let the user drag left/right
+    if (isMobile && claimIndex === 0) {
+      console.log("[Reference Claim Click] Tap on focused card - ready for dragging");
+      setIsClickInProgress(false);
+      return;
+    }
+
     // Get the clicked card's ID before reordering
-    const clickedCardId = enrichedReferenceClaims[claimIndex].claim_id;
+    const clickedCardId = claim.claim_id;
 
     // Move clicked claim to top of stack and focus it
     if (claimIndex !== 0) {
@@ -1507,15 +1721,15 @@ const GameSpace: React.FC<GameSpaceProps> = ({
   const [isDraggingRight, setIsDraggingRight] = useState(false);
   const taskClaimRef = useRef<HTMLDivElement | null>(null);
 
-  // Track mouse position globally when dragging
+  // Track mouse/touch position globally when dragging
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY });
+    const handleMove = (clientX: number, clientY: number) => {
+      setMousePosition({ x: clientX, y: clientY });
 
       if (!draggingClaim) return;
 
       // Detect dragging direction from start position
-      const dragDistance = e.clientX - dragStartPosition.x;
+      const dragDistance = clientX - dragStartPosition.x;
       setIsDraggingLeft(dragDistance < -30); // Moved 30px left
       setIsDraggingRight(dragDistance > 30); // Moved 30px right
 
@@ -1532,18 +1746,18 @@ const GameSpace: React.FC<GameSpaceProps> = ({
           verticalPadding;
 
         const isOver =
-          e.clientX >= rect.left &&
-          e.clientX <= rect.right &&
-          e.clientY >= expandedTop &&
-          e.clientY <= expandedBottom;
+          clientX >= rect.left &&
+          clientX <= rect.right &&
+          clientY >= expandedTop &&
+          clientY <= expandedBottom;
 
         // DEBUG: Log every 50px of movement to track detection
-        const debugFrequency = Math.floor(e.clientX / 50);
+        const debugFrequency = Math.floor(clientX / 50);
         if (debugFrequency !== (window as any).__lastDebugFreq) {
           (window as any).__lastDebugFreq = debugFrequency;
-          console.log("[Mouse Move Debug]", {
-            mouseX: e.clientX,
-            mouseY: e.clientY,
+          console.log("[Move Debug]", {
+            mouseX: clientX,
+            mouseY: clientY,
             taskClaimBounds: {
               left: Math.round(rect.left),
               right: Math.round(rect.right),
@@ -1567,33 +1781,58 @@ const GameSpace: React.FC<GameSpaceProps> = ({
       }
 
       // Check if over skip zone (right side of screen)
-      const isRightSide = e.clientX > window.innerWidth * 0.75;
+      const isRightSide = clientX > window.innerWidth * 0.75;
       setIsOverSkipZone(isRightSide);
     };
 
-    const handleMouseUp = () => {
+    const handleMouseMove = (e: MouseEvent) => {
+      handleMove(e.clientX, e.clientY);
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      // Only handle touch if we're actually dragging
+      if (!draggingClaim) return;
+
+      if (e.touches.length > 0) {
+        handleMove(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+
+    const handleEnd = () => {
       console.log(
-        "[handleMouseUp] Called - draggingClaim:",
+        "[handleEnd] Called - draggingClaim:",
         draggingClaim ? "exists" : "null",
       );
       if (draggingClaim) {
         console.log("[Drag End]", {
           isOverTaskClaim,
           isOverSkipZone,
+          isDraggingLeft,
+          isDraggingRight,
           taskClaimRef_current: taskClaimRef.current ? "exists" : "null",
           selectedTaskClaimIndex,
         });
 
-        if (isOverTaskClaim) {
-          // Dropped on task claim → LINK
-          console.log("[Drag End] Opening link modal");
+        // ✅ FIXED: Only link when dragging LEFT, only skip when dragging RIGHT
+        // On mobile, left drag auto-links without requiring collision detection
+        const shouldLink = isDraggingLeft && (isMobile || isOverTaskClaim);
+
+        if (shouldLink) {
+          // Dropped on task claim while dragging LEFT → LINK
+          console.log("[Drag End] Opening link modal (dragged left)", {
+            selectedTaskClaimIndex,
+            isReferenceClaimsMode,
+            enrichedReferenceClaimsLength: enrichedReferenceClaims.length,
+            isMobile,
+            isOverTaskClaim,
+          });
           handleLinkClaims();
-        } else if (isOverSkipZone) {
-          // Dropped on right side → SKIP
-          console.log("[Drag End] Skipping claim");
+        } else if (isDraggingRight) {
+          // Dragged RIGHT → SKIP (regardless of position)
+          console.log("[Drag End] Skipping claim (dragged right)");
           handleSkipClaim();
         } else {
-          console.log("[Drag End] Neither condition met - no action taken");
+          console.log("[Drag End] No valid action - drag wasn't strong enough in either direction");
         }
         setDraggingClaim(null);
         setIsOverTaskClaim(false);
@@ -1608,12 +1847,21 @@ const GameSpace: React.FC<GameSpaceProps> = ({
       }
     };
 
+    // Mouse events
     document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
+    document.addEventListener("mouseup", handleEnd);
+
+    // Touch events - passive: true allows normal scrolling
+    document.addEventListener("touchmove", handleTouchMove, { passive: true });
+    document.addEventListener("touchend", handleEnd, { passive: true });
+    document.addEventListener("touchcancel", handleEnd, { passive: true });
 
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mouseup", handleEnd);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handleEnd);
+      document.removeEventListener("touchcancel", handleEnd);
     };
   }, [
     draggingClaim,
@@ -1624,23 +1872,40 @@ const GameSpace: React.FC<GameSpaceProps> = ({
   ]);
 
   const handleLinkClaims = () => {
-    // Open modal to link the currently focused reference claim to task claim
+    // Open modal to link the top reference claim (index 0) to task claim
     console.log("[handleLinkClaims] Called", {
       enrichedReferenceClaims_length: enrichedReferenceClaims.length,
       focusedReferenceClaimIndex,
       isReferenceClaimsMode,
       selectedTaskClaimIndex,
       isClaimLinkModalOpen,
+      claims_length: claims.length,
     });
 
+    // The dragged card is always at index 0 (top of stack)
     if (
       enrichedReferenceClaims.length > 0 &&
-      focusedReferenceClaimIndex < enrichedReferenceClaims.length
+      selectedTaskClaimIndex !== null
     ) {
-      console.log("[handleLinkClaims] Setting modal open to TRUE");
+      console.log("[handleLinkClaims] ✅ CONDITIONS MET - Setting modal open to TRUE", {
+        refClaim: enrichedReferenceClaims[0],
+        taskClaim: claims[selectedTaskClaimIndex],
+      });
+      // Ensure focused index is 0 (the top/dragged card)
+      setFocusedReferenceClaimIndex(0);
       setIsClaimLinkModalOpen(true);
+
+      // Double check with a timeout
+      setTimeout(() => {
+        console.log("[handleLinkClaims] After setState - isClaimLinkModalOpen:", isClaimLinkModalOpen);
+      }, 100);
     } else {
-      console.log("[handleLinkClaims] Condition NOT met - modal will not open");
+      console.log("[handleLinkClaims] ❌ CONDITION NOT met - modal will not open", {
+        hasRefClaims: enrichedReferenceClaims.length > 0,
+        hasTaskClaim: selectedTaskClaimIndex !== null,
+        enrichedReferenceClaims,
+        selectedTaskClaimIndex,
+      });
     }
   };
 
@@ -2072,123 +2337,215 @@ const GameSpace: React.FC<GameSpaceProps> = ({
       }}
     >
       {/* Header */}
+      {/* 🎮 COMPACT HEADER - Title + Score in one line */}
       <Box
         position="absolute"
-        top="20px"
-        left="50%"
-        transform="translateX(-50%)"
-        textAlign="center"
-        zIndex={100}
-        background="rgba(0, 0, 0, 0.6)"
-        backdropFilter="blur(20px)"
-        px="32px"
-        py="10px"
-        borderRadius="8px"
-        border="1px solid rgba(0, 162, 255, 0.3)"
-        boxShadow="0 4px 24px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.2)"
-      >
-        <Text
-          fontSize="1.2rem"
-          fontWeight="200"
-          letterSpacing="6px"
-          color="#00a2ff"
-          textShadow="0 0 20px rgba(0, 162, 255, 0.8)"
-          textTransform="uppercase"
-        >
-          GAME SPACE {isFocusedMode ? "• FOCUSED" : ""}
-        </Text>
-      </Box>
-
-      {/* 🎮 SCORE DISPLAY - Centered below column headers, above VS */}
-      <Box
-        position="absolute"
-        top="200px"
+        top={isMobile ? "10px" : "20px"}
         left="50%"
         transform="translateX(-50%)"
         zIndex={100}
         background="rgba(0, 0, 0, 0.8)"
         backdropFilter="blur(20px)"
-        px="32px"
-        py="20px"
-        borderRadius="12px"
-        border="2px solid rgba(139, 92, 246, 0.5)"
-        boxShadow="0 4px 24px rgba(0, 0, 0, 0.6), 0 0 40px rgba(139, 92, 246, 0.3)"
+        px={isMobile ? "16px" : "32px"}
+        py="12px"
+        borderRadius="8px"
+        border="1px solid rgba(0, 162, 255, 0.3)"
+        boxShadow="0 4px 24px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.2)"
+        display="flex"
+        alignItems="center"
+        gap={isMobile ? 3 : 6}
+        maxW={isMobile ? "95%" : "auto"}
       >
         <Text
-          fontSize="0.7rem"
-          color="#a78bfa"
-          letterSpacing="2px"
+          fontSize={isMobile ? "0.8rem" : "1rem"}
+          fontWeight="200"
+          letterSpacing={isMobile ? "2px" : "4px"}
+          color="#00a2ff"
+          textShadow="0 0 20px rgba(0, 162, 255, 0.8)"
           textTransform="uppercase"
-          fontWeight="600"
-          mb="8px"
-          textAlign="center"
+          whiteSpace="nowrap"
         >
-          Score
+          GAME SPACE {!isMobile && isFocusedMode ? "• FOCUSED" : ""}
         </Text>
+
         <Box
           display="flex"
-          alignItems="baseline"
-          justifyContent="center"
-          gap="8px"
+          alignItems="center"
+          gap={2}
+          px={3}
+          py={1}
+          borderRadius="6px"
+          bg="rgba(139, 92, 246, 0.1)"
+          border="1px solid rgba(139, 92, 246, 0.3)"
         >
           <Text
-            fontSize="3rem"
-            fontWeight="700"
-            color={ghostScore !== null ? "#64748b" : "#a78bfa"}
-            textShadow={
-              ghostScore !== null ? "none" : "0 0 20px rgba(139, 92, 246, 0.8)"
-            }
-            transition="all 0.3s ease"
-            opacity={ghostScore !== null ? 0.4 : 1}
-          >
-            {userScore.toFixed(1)}
-          </Text>
-          {ghostScore !== null && (
-            <Text
-              fontSize="3rem"
-              fontWeight="700"
-              color="#22c55e"
-              textShadow="0 0 20px rgba(34, 197, 94, 0.8)"
-              animation="ghostPulse 1s ease-in-out infinite"
-              sx={{
-                "@keyframes ghostPulse": {
-                  "0%, 100%": { opacity: 1, transform: "scale(1)" },
-                  "50%": { opacity: 0.7, transform: "scale(1.05)" },
-                },
-              }}
-            >
-              {ghostScore.toFixed(1)}
-            </Text>
-          )}
-        </Box>
-        {ghostScore !== null && (
-          <Text
-            fontSize="0.8rem"
-            color="#22c55e"
-            textAlign="center"
-            mt="4px"
+            fontSize="0.6rem"
+            color="#a78bfa"
+            letterSpacing="1px"
+            textTransform="uppercase"
             fontWeight="600"
           >
-            {formatPoints(ghostScore - userScore)}
+            Score
           </Text>
-        )}
+          <Box display="flex" alignItems="baseline" gap="6px">
+            <Text
+              fontSize={isMobile ? "1.2rem" : "1.5rem"}
+              fontWeight="700"
+              color={ghostScore !== null ? "#64748b" : "#a78bfa"}
+              textShadow={
+                ghostScore !== null
+                  ? "none"
+                  : "0 0 20px rgba(139, 92, 246, 0.8)"
+              }
+              transition="all 0.3s ease"
+              opacity={ghostScore !== null ? 0.4 : 1}
+            >
+              {userScore.toFixed(1)}
+            </Text>
+            {ghostScore !== null && (
+              <>
+                <Text fontSize="1rem" color="#4ade80">
+                  →
+                </Text>
+                <Text
+                  fontSize={isMobile ? "1.2rem" : "1.5rem"}
+                  fontWeight="700"
+                  color="#22c55e"
+                  textShadow="0 0 20px rgba(34, 197, 94, 0.8)"
+                >
+                  {ghostScore.toFixed(1)}
+                </Text>
+              </>
+            )}
+          </Box>
+        </Box>
       </Box>
+
+      {/* 📱 Mobile Tabs */}
+      {isMobile && (
+        <Box maxW="600px" mx="auto" pt="70px" position="relative" zIndex={10}>
+          <Tabs
+            isFitted
+            variant="enclosed"
+            index={mobileTabIndex}
+            onChange={setMobileTabIndex}
+          >
+            <TabList
+              mb={2}
+              position="sticky"
+              top={0}
+              zIndex={10}
+              bg="transparent"
+              borderRadius="md"
+              border="none"
+            >
+              <Tab
+                position="relative"
+                overflow="hidden"
+                sx={{
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "8px",
+                    height: "100%",
+                    background:
+                      "linear-gradient(90deg, rgba(139, 92, 246, 0.5) 0%, rgba(139, 92, 246, 0) 100%)",
+                    pointerEvents: "none",
+                    zIndex: 1,
+                  },
+                }}
+                bg="rgba(139, 92, 246, 0.1)"
+                border="1px solid rgba(139, 92, 246, 0.4)"
+                borderRadius="6px"
+                color="#a78bfa"
+                fontWeight="500"
+                letterSpacing="1px"
+                textTransform="uppercase"
+                backdropFilter="blur(10px)"
+                transition="all 0.3s ease"
+                _hover={{
+                  bg: "rgba(139, 92, 246, 0.2)",
+                  boxShadow: "0 0 30px rgba(139, 92, 246, 0.4)",
+                  transform: "translateY(-2px)",
+                }}
+                _selected={{
+                  color: "#a78bfa",
+                  bg: "rgba(139, 92, 246, 0.2)",
+                  borderColor: "rgba(139, 92, 246, 0.6)",
+                  boxShadow: "0 0 20px rgba(139, 92, 246, 0.4)",
+                }}
+                _active={{
+                  transform: "translateY(0)",
+                }}
+              >
+                Task Claims
+              </Tab>
+              <Tab
+                position="relative"
+                overflow="hidden"
+                sx={{
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "8px",
+                    height: "100%",
+                    background:
+                      "linear-gradient(90deg, rgba(34, 197, 94, 0.5) 0%, rgba(34, 197, 94, 0) 100%)",
+                    pointerEvents: "none",
+                    zIndex: 1,
+                  },
+                }}
+                bg="rgba(34, 197, 94, 0.1)"
+                border="1px solid rgba(34, 197, 94, 0.4)"
+                borderRadius="6px"
+                color="#4ade80"
+                fontWeight="500"
+                letterSpacing="1px"
+                textTransform="uppercase"
+                backdropFilter="blur(10px)"
+                transition="all 0.3s ease"
+                _hover={{
+                  bg: "rgba(34, 197, 94, 0.2)",
+                  boxShadow: "0 0 30px rgba(34, 197, 94, 0.4)",
+                  transform: "translateY(-2px)",
+                }}
+                _selected={{
+                  color: "#4ade80",
+                  bg: "rgba(34, 197, 94, 0.2)",
+                  borderColor: "rgba(34, 197, 94, 0.6)",
+                  boxShadow: "0 0 20px rgba(34, 197, 94, 0.4)",
+                }}
+                _active={{
+                  transform: "translateY(0)",
+                }}
+              >
+                {isReferenceClaimsMode ? "Reference Claims" : "References"}
+              </Tab>
+            </TabList>
+          </Tabs>
+        </Box>
+      )}
 
       {/* Main Grid */}
       <Box
-        display="grid"
+        display={isMobile ? "block" : "grid"}
         gridTemplateColumns={isReferenceClaimsMode ? "1fr auto 1fr" : "1fr 1fr"}
         gap={6}
-        maxWidth="1800px"
+        maxWidth={isMobile ? "600px" : "1800px"}
         mx="auto"
-        pt="80px"
+        pt={isMobile ? "80px" : "140px"}
         position="relative"
         zIndex={1}
       >
         {/* Left Column - Task Claims Slide Deck */}
-        <Box>
+        <Box display={isMobile && mobileTabIndex !== 0 ? "none" : "block"}>
           <Box
-            mb={6}
+            mb={isMobile ? 1 : 6}
+            mt={isMobile ? "-60px" : 0}
             background="rgba(0, 0, 0, 0.6)"
             backdropFilter="blur(20px)"
             border="1px solid rgba(139, 92, 246, 0.4)"
@@ -2199,6 +2556,9 @@ const GameSpace: React.FC<GameSpaceProps> = ({
             display="flex"
             alignItems="center"
             gap={3}
+            position={isMobile && !isFocusedMode ? "sticky" : "relative"}
+            top={isMobile && !isFocusedMode ? "70px" : "auto"}
+            zIndex={isMobile && !isFocusedMode ? 15 : "auto"}
           >
             {isFocusedMode && (
               <IconButton
@@ -2230,8 +2590,11 @@ const GameSpace: React.FC<GameSpaceProps> = ({
               letterSpacing="2px"
               textShadow="0 0 8px rgba(139, 92, 246, 0.6)"
               flex={1}
+              cursor={isMobile && !isFocusedMode ? "pointer" : "default"}
+              onClick={isMobile && !isFocusedMode ? handleCardCycle : undefined}
+              _hover={isMobile && !isFocusedMode ? { opacity: 0.8 } : undefined}
             >
-              Task Claims
+              Task Claims {isMobile && !isFocusedMode && "→"}
             </Text>
           </Box>
 
@@ -2240,7 +2603,8 @@ const GameSpace: React.FC<GameSpaceProps> = ({
             position="relative"
             height={`${totalStackHeight}px`}
             mx="auto"
-            width="360px"
+            width={isMobile ? "100%" : "360px"}
+            maxWidth="360px"
           >
             {displayedClaims.map((claim, displayIndex) => {
               // Get the original index from the full claims array
@@ -2254,19 +2618,35 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                 <Box
                   key={claim.claim_id}
                   ref={isDropZone ? taskClaimRef : null}
+                  data-card-index={displayIndex}
                   position="absolute"
                   width="320px"
                   height="480px"
-                  left="20px"
+                  left="50%"
                   sx={{
                     ...(isFocusedMode
                       ? {
                           top: "0px",
-                          left: "50%",
                           transform: "translateX(-50%)",
                           zIndex: 200,
+                          ...(taskCardJustAppeared && isDropZone && {
+                            animation: "slideInFromLeft 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                            "@keyframes slideInFromLeft": {
+                              "0%": {
+                                transform: "translateX(-150%)",
+                                opacity: 0.7,
+                              },
+                              "100%": {
+                                transform: "translateX(-50%)",
+                                opacity: 1,
+                              },
+                            },
+                          }),
                         }
-                      : getCardStackStyle(displayIndex)),
+                      : {
+                          ...getCardStackStyle(displayIndex),
+                          transform: "translateX(-50%)",
+                        }),
                     boxShadow:
                       isDropZone && isOverTaskClaim
                         ? "0 0 40px rgba(34, 197, 94, 0.8), 0 0 80px rgba(34, 197, 94, 0.4)"
@@ -2289,9 +2669,9 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                       isFocusedMode
                     }
                     isSelected={originalIndex === selectedTaskClaimIndex}
-                    onClick={() => handleTaskClaimClick(originalIndex)}
+                    onClick={() => handleTaskClaimClick(originalIndex, displayIndex)}
                     onHover={() =>
-                      !isFocusedMode && handleCardHover(displayIndex)
+                      !isFocusedMode && !isMobile && handleCardHover(displayIndex)
                     }
                     style={{}}
                     index={originalIndex}
@@ -2306,7 +2686,8 @@ const GameSpace: React.FC<GameSpaceProps> = ({
         {/* Middle Column - VS Comparison Info */}
         {isReferenceClaimsMode &&
           selectedTaskClaimIndex !== null &&
-          enrichedReferenceClaims.length > 0 && (
+          enrichedReferenceClaims.length > 0 &&
+          !isMobile && (
             <Box
               display="flex"
               alignItems="flex-start"
@@ -2427,9 +2808,10 @@ const GameSpace: React.FC<GameSpaceProps> = ({
           )}
 
         {/* Right Column - Reference Cards OR Reference Claims Slide Deck */}
-        <Box>
+        <Box display={isMobile && mobileTabIndex !== 1 ? "none" : "block"}>
           <Box
-            mb={6}
+            mb={isMobile ? 2 : 6}
+            mt={isMobile ? "-60px" : 0}
             background="rgba(0, 0, 0, 0.6)"
             backdropFilter="blur(20px)"
             border="1px solid rgba(34, 197, 94, 0.4)"
@@ -2440,6 +2822,9 @@ const GameSpace: React.FC<GameSpaceProps> = ({
             display="flex"
             alignItems="center"
             justifyContent="space-between"
+            position={isMobile && isFocusedMode ? "sticky" : "relative"}
+            top={isMobile && isFocusedMode ? "70px" : "auto"}
+            zIndex={isMobile && isFocusedMode ? 15 : "auto"}
           >
             <Text
               color="#4ade80"
@@ -2450,8 +2835,24 @@ const GameSpace: React.FC<GameSpaceProps> = ({
               letterSpacing="2px"
               textShadow="0 0 8px rgba(34, 197, 94, 0.6)"
               flex={1}
+              cursor={
+                isMobile && !isReferenceClaimsMode && isFocusedMode
+                  ? "pointer"
+                  : "default"
+              }
+              onClick={
+                isMobile && !isReferenceClaimsMode && isFocusedMode
+                  ? handleReferenceCycle
+                  : undefined
+              }
+              _hover={
+                isMobile && !isReferenceClaimsMode && isFocusedMode
+                  ? { opacity: 0.8 }
+                  : undefined
+              }
             >
-              {isReferenceClaimsMode ? "Reference Claims" : "References"}
+              {isReferenceClaimsMode ? "Reference Claims" : "References"}{" "}
+              {isMobile && !isReferenceClaimsMode && isFocusedMode && "→"}
             </Text>
             {isReferenceClaimsMode && (
               <IconButton
@@ -2475,7 +2876,8 @@ const GameSpace: React.FC<GameSpaceProps> = ({
             position="relative"
             height={`${totalReferenceStackHeight}px`}
             mx="auto"
-            width="360px"
+            width={isMobile ? "100%" : "360px"}
+            maxWidth="360px"
           >
             {isReferenceClaimsMode ? (
               // Show reference claims as cards
@@ -2483,11 +2885,24 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                 <Box textAlign="center" p="60px" color="var(--mr-blue)">
                   <Spinner size="xl" color="var(--mr-blue)" mb={4} />
                   <Text fontSize="1.2rem" fontWeight="bold" mb={2}>
-                    Loading Claims...
+                    Assessing Claims...
                   </Text>
-                  <Text fontSize="0.9rem" opacity={0.8}>
-                    Assessing reference claims
-                  </Text>
+                  {assessmentProgress.total > 0 && (
+                    <Text fontSize="0.9rem" opacity={0.8} mb={3}>
+                      {assessmentProgress.current} of {assessmentProgress.total} claims
+                    </Text>
+                  )}
+                  <Button
+                    size="sm"
+                    colorScheme="red"
+                    variant="outline"
+                    onClick={() => {
+                      console.log("[GameSpace] User clicked cancel - stopping assessment");
+                      cancelAssessmentRef.current = true;
+                    }}
+                  >
+                    Stop Assessment
+                  </Button>
                 </Box>
               ) : enrichedReferenceClaims.length > 0 ? (
                 enrichedReferenceClaims.map((claim, claimIndex) => {
@@ -2503,48 +2918,120 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                       onClick={(e: React.MouseEvent) => {
                         e.preventDefault(); // Prevent any default scroll behavior
                       }}
+                      onContextMenu={(e: React.MouseEvent) => {
+                        // Prevent context menu on long press
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }}
                       onMouseDown={
                         isFocusedClaim
                           ? (e: React.MouseEvent) => {
-                              console.log(
-                                "[Drag Start] Setting draggingClaim and dragStartPosition",
-                                {
+                              const handleDragStart = (
+                                clientX: number,
+                                clientY: number,
+                              ) => {
+                                console.log(
+                                  "[Drag Start] Setting draggingClaim and dragStartPosition",
+                                  {
+                                    claim_id: claim.claim_id,
+                                    clientX,
+                                    clientY,
+                                  },
+                                );
+                                setDraggingClaim({
                                   claim_id: claim.claim_id,
-                                  mouseX: e.clientX,
-                                  mouseY: e.clientY,
-                                },
-                              );
-                              setDraggingClaim({
-                                claim_id: claim.claim_id,
-                                claim_text: claim.claim_text,
-                              });
-                              setDragStartPosition({
-                                x: e.clientX,
-                                y: e.clientY,
-                              });
+                                  claim_text: claim.claim_text,
+                                });
+                                setDragStartPosition({
+                                  x: clientX,
+                                  y: clientY,
+                                });
 
-                              // 🎮 Set dragging state for score preview
-                              setIsDragging(true);
-                              // Use support_level (relationship to task claim) not veracity_score (standalone truth)
-                              const claimVeracity =
-                                claim.support_level !== undefined
-                                  ? claim.support_level * 100 // Convert -1.2..+1.2 to -120..+120
-                                  : 0;
-                              console.log(
-                                `🎮 Drag start: support_level=${claim.support_level}, claimVeracity=${claimVeracity}`,
-                              );
-                              setDraggedClaimVeracity(claimVeracity);
-                              // Calculate ghost score (current + max possible points)
-                              const maxPoints = getMaxPossiblePoints();
-                              setGhostScore(userScore + maxPoints);
+                                // 📱 Switch to Task Claims tab on mobile when dragging to link
+                                if (isMobile) {
+                                  setMobileTabIndex(0);
+                                }
+
+                                // 🎮 Set dragging state for score preview
+                                setIsDragging(true);
+                                // Use support_level (relationship to task claim) not veracity_score (standalone truth)
+                                const claimVeracity =
+                                  claim.support_level !== undefined
+                                    ? claim.support_level * 100 // Convert -1.2..+1.2 to -120..+120
+                                    : 0;
+                                console.log(
+                                  `🎮 Drag start: support_level=${claim.support_level}, claimVeracity=${claimVeracity}`,
+                                );
+                                setDraggedClaimVeracity(claimVeracity);
+                                // Calculate ghost score (current + max possible points)
+                                const maxPoints = getMaxPossiblePoints();
+                                setGhostScore(userScore + maxPoints);
+                              };
+                              handleDragStart(e.clientX, e.clientY);
+                            }
+                          : undefined
+                      }
+                      onTouchStart={
+                        isFocusedClaim
+                          ? (e: React.TouchEvent) => {
+                              // Prevent context menu on long press
+                              e.preventDefault();
+
+                              const handleDragStart = (
+                                clientX: number,
+                                clientY: number,
+                              ) => {
+                                console.log(
+                                  "[Drag Start] Setting draggingClaim and dragStartPosition",
+                                  {
+                                    claim_id: claim.claim_id,
+                                    clientX,
+                                    clientY,
+                                  },
+                                );
+                                setDraggingClaim({
+                                  claim_id: claim.claim_id,
+                                  claim_text: claim.claim_text,
+                                });
+                                setDragStartPosition({
+                                  x: clientX,
+                                  y: clientY,
+                                });
+
+                                // 📱 Switch to Task Claims tab on mobile when dragging to link
+                                if (isMobile) {
+                                  setMobileTabIndex(0);
+                                }
+
+                                // 🎮 Set dragging state for score preview
+                                setIsDragging(true);
+                                const claimVeracity =
+                                  claim.support_level !== undefined
+                                    ? claim.support_level * 100
+                                    : 0;
+                                console.log(
+                                  `🎮 Drag start: support_level=${claim.support_level}, claimVeracity=${claimVeracity}`,
+                                );
+                                setDraggedClaimVeracity(claimVeracity);
+                                const maxPoints = getMaxPossiblePoints();
+                                setGhostScore(userScore + maxPoints);
+                              };
+                              if (e.touches.length > 0) {
+                                handleDragStart(
+                                  e.touches[0].clientX,
+                                  e.touches[0].clientY,
+                                );
+                              }
                             }
                           : undefined
                       }
                       sx={{
-                        opacity: isBeingDragged ? 0.3 : 1,
+                        opacity: isBeingDragged ? 0.15 : 1,
                         transition: "opacity 0.2s ease",
                         cursor: isFocusedClaim ? "grab" : "pointer",
                         userSelect: "none",
+                        pointerEvents: isBeingDragged ? "none" : "auto",
+                        WebkitTouchCallout: "none", // Disable iOS callout
                       }}
                     >
                       <PlayingCard
@@ -2561,7 +3048,7 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                         potentialPoints={getMaxPossiblePoints()}
                         isSelected={false}
                         onClick={() => handleReferenceClaimClick(claimIndex)}
-                        onHover={() => handleReferenceClaimHover(claimIndex)}
+                        onHover={() => !isMobile && handleReferenceClaimHover(claimIndex)}
                         style={{}}
                         index={claimIndex}
                         totalCards={enrichedReferenceClaims.length}
@@ -2571,6 +3058,7 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                         support_level={claim.support_level}
                         rationale={claim.rationale}
                         hasLink={claim.hasLink}
+                        isBeingDragged={isBeingDragged}
                         onReassess={() => {
                           if (selectedTaskClaimIndex !== null) {
                             const taskClaim = claims[selectedTaskClaimIndex];
@@ -2636,8 +3124,8 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                         reference={reference}
                         isFocused={displayIndex === focusedReferenceIndex}
                         isSelected={originalIndex === selectedReferenceIndex}
-                        onClick={() => handleReferenceClick(originalIndex)}
-                        onHover={() => handleReferenceHover(displayIndex)}
+                        onClick={() => handleReferenceClick(originalIndex, displayIndex)}
+                        onHover={() => !isMobile && handleReferenceHover(displayIndex)}
                         style={getReferenceStackStyle(displayIndex)}
                         index={displayIndex}
                         totalCards={displayedReferences.length}
@@ -2707,6 +3195,10 @@ const GameSpace: React.FC<GameSpaceProps> = ({
           isClaimLinkModalOpen,
           sourceClaim: sourceClaim ? "valid" : "null",
           targetClaim: selectedTaskClaimIndex !== null ? "valid" : "null",
+          isReferenceClaimsMode,
+          selectedTaskClaimIndex,
+          focusedReferenceClaimIndex,
+          enrichedReferenceClaimsLength: enrichedReferenceClaims.length,
         });
 
         if (!shouldRender) return null;

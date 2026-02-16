@@ -12,6 +12,7 @@ import {
 import { SearchIcon } from "@chakra-ui/icons";
 import { Claim } from "../../../shared/entities/types";
 import ClaimModal from "./modals/ClaimModal";
+import { ClaimLink } from "./RelationshipMap";
 
 interface TaskClaimsProps {
   claims: Claim[];
@@ -40,6 +41,7 @@ interface TaskClaimsProps {
     source?: Pick<Claim, "claim_id" | "claim_text"> | null;
   };
   onPickTargetForLink?: (target: Claim) => void;
+  claimLinks?: ClaimLink[];
 }
 
 const TaskClaims: React.FC<TaskClaimsProps> = ({
@@ -63,6 +65,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   taskId,
   linkSelection,
   onPickTargetForLink,
+  claimLinks = [],
 }) => {
   const claimRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
@@ -121,6 +124,30 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
     >
       <Heading size="sm">Claims</Heading>
 
+      {/* Link Mode Banner */}
+      {linkSelection?.active && linkSelection.source && (
+        <Box
+          mb={2}
+          p={3}
+          background="linear-gradient(135deg, rgba(128, 90, 213, 0.3), rgba(128, 90, 213, 0.2))"
+          backdropFilter="blur(20px)"
+          border="2px solid rgba(128, 90, 213, 0.6)"
+          borderRadius="12px"
+          boxShadow="0 4px 16px rgba(128, 90, 213, 0.4)"
+          width="100%"
+        >
+          <Text fontSize="sm" fontWeight="bold" color="#D6BCFA" mb={1}>
+            🔗 Link Mode Active
+          </Text>
+          <Text fontSize="xs" color="whiteAlpha.900" noOfLines={2}>
+            Linking from: "{linkSelection.source.claim_text}"
+          </Text>
+          <Text fontSize="xs" color="whiteAlpha.700" mt={2}>
+            🟢 Green = Supports • 🔴 Red = Refutes • 🟡 Yellow = Nuance
+          </Text>
+        </Box>
+      )}
+
       <Box
         as="button"
         background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
@@ -128,6 +155,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
         border="1px solid rgba(0, 162, 255, 0.4)"
         color="rgba(0, 162, 255, 1)"
         height="50px"
+        width="100%"
         px={3}
         py={2}
         borderRadius="12px"
@@ -159,33 +187,90 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
       {claims.length === 0 ? (
         <Text>No claims found.</Text>
       ) : (
-        claims.map((claim) => (
-          <Box
-            key={claim.claim_id}
-            ref={(el) => (claimRefs.current[claim.claim_id] = el)}
-            data-claim-id={claim.claim_id}
-            background={hoveredClaimId === claim.claim_id ? "linear-gradient(135deg, rgba(0, 162, 255, 0.3), rgba(0, 162, 255, 0.2))" : "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"}
-            backdropFilter="blur(20px)"
-            color={hoveredClaimId === claim.claim_id ? "#ffffff" : "#f1f5f9"}
-            px={3}
-            py={2}
-            borderRadius="12px"
-            border={
-              linkSelection?.active ? "2px dashed #38A169" : "1px solid rgba(167, 139, 250, 0.4)"
+        claims.map((claim) => {
+          // Find existing link between this task claim and the selected reference claim
+          const existingLink = linkSelection?.active && linkSelection.source
+            ? claimLinks.find(
+                (link) =>
+                  link.claimId === claim.claim_id &&
+                  link.sourceClaimId === linkSelection.source?.claim_id
+              )
+            : null;
+
+          // Determine border and background colors based on relationship
+          const getLinkColors = () => {
+            if (!linkSelection?.active) {
+              return {
+                border: "1px solid rgba(167, 139, 250, 0.4)",
+                background: "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))",
+                hoverBg: undefined,
+              };
             }
-            boxShadow={
-              hoveredClaimId === claim.claim_id
-                ? "0 12px 48px rgba(0, 0, 0, 0.8), 0 0 60px rgba(167, 139, 250, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
-                : "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(167, 139, 250, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+
+            if (existingLink) {
+              switch (existingLink.relation) {
+                case "support":
+                  return {
+                    border: "3px solid #38A169",
+                    background: "linear-gradient(135deg, rgba(56, 161, 105, 0.25), rgba(56, 161, 105, 0.15))",
+                    hoverBg: "rgba(56, 161, 105, 0.35)",
+                  };
+                case "refute":
+                  return {
+                    border: "3px solid #E53E3E",
+                    background: "linear-gradient(135deg, rgba(229, 62, 62, 0.25), rgba(229, 62, 62, 0.15))",
+                    hoverBg: "rgba(229, 62, 62, 0.35)",
+                  };
+                case "nuance":
+                  return {
+                    border: "3px solid #D69E2E",
+                    background: "linear-gradient(135deg, rgba(214, 158, 46, 0.25), rgba(214, 158, 46, 0.15))",
+                    hoverBg: "rgba(214, 158, 46, 0.35)",
+                  };
+                default:
+                  return {
+                    border: "2px dashed #805AD5",
+                    background: "linear-gradient(135deg, rgba(128, 90, 213, 0.2), rgba(128, 90, 213, 0.1))",
+                    hoverBg: "rgba(128, 90, 213, 0.3)",
+                  };
+              }
             }
-            _hover={
-              linkSelection?.active
-                ? { bg: "green.100", color: "black", cursor: "pointer" }
-                : {
-                    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(167, 139, 250, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
-                    transform: "translateY(-2px)"
-                  }
-            }
+
+            // Link mode active but no existing link - neutral highlight
+            return {
+              border: "2px dashed #805AD5",
+              background: "linear-gradient(135deg, rgba(128, 90, 213, 0.2), rgba(128, 90, 213, 0.1))",
+              hoverBg: "rgba(128, 90, 213, 0.3)",
+            };
+          };
+
+          const colors = getLinkColors();
+
+          return (
+            <Box
+              key={claim.claim_id}
+              ref={(el) => (claimRefs.current[claim.claim_id] = el)}
+              data-claim-id={claim.claim_id}
+              background={hoveredClaimId === claim.claim_id ? "linear-gradient(135deg, rgba(0, 162, 255, 0.3), rgba(0, 162, 255, 0.2))" : colors.background}
+              backdropFilter="blur(20px)"
+              color={hoveredClaimId === claim.claim_id ? "#ffffff" : "#f1f5f9"}
+              px={3}
+              py={2}
+              borderRadius="12px"
+              border={colors.border}
+              boxShadow={
+                hoveredClaimId === claim.claim_id
+                  ? "0 12px 48px rgba(0, 0, 0, 0.8), 0 0 60px rgba(167, 139, 250, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+                  : "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(167, 139, 250, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+              }
+              _hover={
+                linkSelection?.active
+                  ? { bg: colors.hoverBg, cursor: "pointer" }
+                  : {
+                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(167, 139, 250, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+                      transform: "translateY(-2px)"
+                    }
+              }
             width="100%"
             display="flex"
             alignItems="center"
@@ -254,7 +339,8 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
               />
             </HStack>
           </Box>
-        ))
+        );
+        })
       )}
 
       <ClaimModal

@@ -24,31 +24,66 @@ const code = `
 
 let activeScrapeTabId = null; // 👈 add this
 /** @param {string} url */
-async function syncTaskStateForUrl(url) {
+async function syncTaskStateForUrl(url, tabId = null) {
   try {
-    const resp = await fetch(`${BASE_URL}/api/check-content`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    });
-    const data = await resp.json();
-    const isDetected = !!data.exists;
-    const isCompleted =
-      isDetected && data.task && data.task.progress === "Completed";
-    const task = isDetected ? data.task : null;
+    console.log(`🔄 syncTaskStateForUrl: ${url}`);
+
+    // For Facebook feeds, also try to detect the specific post URL in viewport
+    let urlsToCheck = [url];
+    const isGenericFacebookUrl = url === "https://www.facebook.com" || url === "https://www.facebook.com/" ||
+                                  url === "https://facebook.com" || url === "https://facebook.com/";
+    const isFacebookFeed = (url.includes("facebook.com") || url.includes("fb.com")) &&
+                           !url.includes("/posts/") && !url.includes("/permalink");
+
+    if ((isGenericFacebookUrl || isFacebookFeed) && tabId) {
+      console.log(`🔵 [syncTaskState] Facebook feed detected, finding post in viewport...`);
+      // Check storage first to see if we already detected a post URL
+      const stored = await browser.storage.local.get('currentUrl');
+      if (stored.currentUrl && stored.currentUrl.includes('/posts/')) {
+        console.log(`✅ [syncTaskState] Using stored post URL: ${stored.currentUrl}`);
+        urlsToCheck = [stored.currentUrl, url];
+      }
+    }
+
+    // Try checking each URL until we find a match
+    let task = null;
+    let isDetected = false;
+    let isCompleted = false;
+    let matchedUrl = url;
+
+    for (const checkUrl of urlsToCheck) {
+      console.log(`  🔍 Checking URL: ${checkUrl}`);
+      const resp = await fetch(`${BASE_URL}/api/check-content`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: checkUrl }),
+      });
+
+      const data = await resp.json();
+      if (data.exists) {
+        isDetected = true;
+        isCompleted = true; // Simplified: if it exists in DB, it's been processed
+        task = data.task;
+        matchedUrl = checkUrl;
+        console.log(`✅ [syncTaskState] Found task at URL: ${checkUrl}, progress: ${data.task?.progress || 'NONE'}`);
+        break;
+      }
+    }
 
     // keep background store in sync (your current logic)
     const store = useTaskStore.getState();
     store.setTask(task);
-    store.setCurrentUrl(url);
+    store.setCurrentUrl(matchedUrl);
     store.setContentDetected(isCompleted);
 
     // and mirror to storage for TaskCard/panel to read
     await browser.storage.local.set({
       task,
-      currentUrl: url,
+      currentUrl: matchedUrl,
       contentDetected: isCompleted,
     });
+
+    console.log(`✅ [syncTaskState] Updated storage with matchedUrl: ${matchedUrl}`);
   } catch (e) {
     console.error("syncTaskStateForUrl failed:", e);
   }
@@ -353,12 +388,14 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     // [6] scrapeCompleted
     if (message.action === "scrapeCompleted") {
       console.log("✅ Scraping finished!");
+      console.log(`🔍 [scrapeCompleted] Received URL: ${message.url}`);
       isScraperActive = false;
       try {
         const storeObj = await browser.storage.local.get("activeScrapeTabId");
         const storedId = storeObj?.activeScrapeTabId ?? null;
         const tabId = storedId ?? activeScrapeTabId ?? sender.tab?.id ?? null;
         const url = message.url;
+        console.log(`🔍 [scrapeCompleted] Will call checkContentAndUpdatePopup with URL: ${url}`);
 
         if (!tabId) {
           console.warn("⚠️ No activeScrapeTabId found! Cannot show popup.");
@@ -891,6 +928,28 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
       return callBackendScrape("/api/scrape-task", message.payload);
     }
 
+    // [26] scrape Facebook post
+    if (message.action === "scrapeFacebookPostOnServer") {
+      console.log("🔵 [Background] Scraping Facebook post:", message.payload.url);
+      return callBackendScrape("/api/scrape-facebook-post", {
+        url: message.payload.url,
+        createContent: message.payload.createContent !== false, // Default true
+        // Include ALL extracted data from extension
+        raw_text: message.payload.postText,
+        title: message.payload.postText?.substring(0, 100),
+        authors: message.payload.authorName ? [{
+          author_first_name: message.payload.authorName.split(" ")[0] || "",
+          author_last_name: message.payload.authorName.split(" ").slice(1).join(" ") || "",
+        }] : undefined,
+        // Add images and metadata
+        images: message.payload.images || [],
+        timestamp: message.payload.timestamp,
+        reactionsCount: message.payload.reactionsCount || 0,
+        commentsCount: message.payload.commentsCount || 0,
+        sharesCount: message.payload.sharesCount || 0,
+      });
+    }
+
     // NOTE: scrapeReferenceOnServer removed - backend now processes
     // all references inline during evidence engine (no recursion needed)
 
@@ -992,30 +1051,121 @@ async function getReadOnlyDemoJwt() {
 }
 // ✅ Check if URL is in database & update popup
 async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
+  console.log(`🔍 [checkContent] Called with URL: ${url}, forceVisible: ${forceVisible}`);
+
   if (isDashboardUrl(url)) {
     console.log("🚫 Skipping popup injection on dashboard:", url);
     return;
   }
 
-  try {
-    const response = await fetch(`${BASE_URL}/api/check-content`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    });
+  // 🔵 For Facebook pages, check if we already have a stored post URL
+  let actualUrl = url;
+  const isGenericFacebookUrl = url === "https://www.facebook.com" || url === "https://www.facebook.com/" ||
+                                url === "https://facebook.com" || url === "https://facebook.com/";
+  const isFacebookFeed = (url.includes("facebook.com") || url.includes("fb.com")) && !url.includes("/posts/") && !url.includes("/permalink");
 
-    const data = await response.json();
+  console.log(`🔍 [checkContent] Facebook detection: isGeneric=${isGenericFacebookUrl}, isFeed=${isFacebookFeed}`);
+
+  if (isGenericFacebookUrl || isFacebookFeed) {
+    console.log("🔵 [Background] Facebook feed detected in checkContent");
+
+    // First, check if we have a stored post URL from a recent scrape
+    try {
+      const stored = await browser.storage.local.get('currentUrl');
+      console.log(`🔍 [checkContent] Storage check: currentUrl=${stored.currentUrl || 'NONE'}`);
+      if (stored.currentUrl && stored.currentUrl.includes('/posts/')) {
+        console.log(`✅ [Background] Using stored Facebook post URL: ${stored.currentUrl}`);
+        actualUrl = stored.currentUrl;
+      } else {
+        console.log("⚠️ [Background] No stored post URL, will check both feed URL and look for post in viewport");
+        // Note: We don't try to detect the URL here anymore - that happens in TaskCard on mount
+        // Just check with the feed URL for now
+      }
+    } catch (err) {
+      console.warn("⚠️ [Background] Failed to check storage for Facebook post URL:", err);
+    }
+  } else if (url.includes("facebook.com") || url.includes("fb.com")) {
+    console.log(`✅ [Background] Using provided Facebook post URL: ${url}`);
+  }
+
+  console.log(`🔍 [checkContent] Final actualUrl: ${actualUrl}`);
+
+  try {
+    // For Facebook feeds, try to check both the detected post URL and the feed URL
+    let urlsToCheck = [actualUrl];
+    if ((isGenericFacebookUrl || isFacebookFeed) && actualUrl !== url) {
+      // We have both a stored post URL and the current feed URL - check both
+      urlsToCheck = [actualUrl, url];
+      console.log(`🔍 [checkContent] Will check both URLs: ${actualUrl} and ${url}`);
+    } else {
+      console.log(`🔍 [checkContent] Will check single URL: ${actualUrl}`);
+    }
+
+    let data = null;
+    let matchedUrl = actualUrl;
+
+    // Try each URL until we find a match
+    for (const checkUrl of urlsToCheck) {
+      console.log(`🔍 [checkContent] Checking database for URL: ${checkUrl}`);
+      const response = await fetch(`${BASE_URL}/api/check-content`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: checkUrl }),
+      });
+
+      const result = await response.json();
+      console.log(`🔍 [checkContent] Database response for ${checkUrl}: exists=${result.exists}`);
+      if (result.exists) {
+        data = result;
+        matchedUrl = checkUrl;
+        console.log(`✅ [checkContent] Found task at URL: ${checkUrl}`);
+        break;
+      } else {
+        console.log(`❌ [checkContent] No task found for URL: ${checkUrl}`);
+      }
+    }
+
+    // If no match found, use the last response
+    if (!data) {
+      const response = await fetch(`${BASE_URL}/api/check-content`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: actualUrl }),
+      });
+      data = await response.json();
+      matchedUrl = actualUrl;
+    }
+
     const isDetected = data.exists;
-    const isCompleted = data.exists && data.task.progress === "Completed";
+    // Check if content is "completed" - for now, just use exists
+    // TODO: Properly implement progress tracking
+    const isCompleted = data.exists; // Simplified: if it exists in DB, it's been processed
     const task = data.exists ? data.task : null;
     const store = useTaskStore.getState();
 
+    if (data.exists) {
+      console.log(`🔍 [checkContent] Task exists, progress field: ${data.task?.progress || 'NONE'}`);
+    }
+
     if (task) {
       // ✅ Store task details in Zustand BEFORE attempting to render popup
+      console.log(`🔍 [checkContent] Task data:`, {
+        content_id: task.content_id,
+        content_name: task.content_name?.substring(0, 50),
+        progress: task.progress,
+        isCompleted: isCompleted,
+      });
 
       store.setTask(task);
-      store.setCurrentUrl(url);
+      store.setCurrentUrl(matchedUrl); // Use the URL that actually matched
       store.setContentDetected(isCompleted);
+
+      // Also update storage to persist the matched URL
+      await browser.storage.local.set({
+        task,
+        currentUrl: matchedUrl,
+        contentDetected: isCompleted,
+      });
 
       console.log("📌 Updated Zustand Store:", {
         task: store.task,
@@ -1025,9 +1175,16 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
     } else {
       // ❌ No task found → CLEAR previous task data
       store.setTask(null); // ✅ Ensures old data is removed
-      store.setCurrentUrl(url);
+      store.setCurrentUrl(matchedUrl);
       store.setContentDetected(false);
-      console.log("📌 Updated Zustand Store:", {
+
+      await browser.storage.local.set({
+        task: null,
+        currentUrl: matchedUrl,
+        contentDetected: false,
+      });
+
+      console.log("📌 Updated Zustand Store (NO TASK):", {
         task: store.task,
         url: store.currentUrl,
         detected: store.contentDetected,
@@ -1271,7 +1428,7 @@ browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   if (changeInfo.status === "complete") {
     try {
       // Prep TaskCard data regardless of page type
-      await syncTaskStateForUrl(cleanUrl);
+      await syncTaskStateForUrl(cleanUrl, tabId);
 
       // If it’s a top-level PDF, don't try to inject overlay
       if (await isTopLevelPdf(tabId, cleanUrl)) {

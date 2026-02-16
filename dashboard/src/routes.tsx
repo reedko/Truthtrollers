@@ -6,6 +6,8 @@ import ErrorPage from "./pages/ErrorPage";
 import { TaskPage } from "./pages/TaskPage";
 
 import VisionDashboard from "./components/Dashboard";
+import UserDashboard from "./components/UserDashboard";
+import RatingEvaluation from "./components/RatingEvaluation";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./components/ResetPassword";
 import Login from "./components/Login";
@@ -44,7 +46,31 @@ const router = createBrowserRouter([
         path: "/dashboard",
         element: (
           <ProtectedRoute>
+            <UserDashboard />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/user-dashboard",
+        element: (
+          <ProtectedRoute>
+            <UserDashboard />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/vision-dashboard",
+        element: (
+          <ProtectedRoute>
             <VisionDashboard />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/evaluate-ratings",
+        element: (
+          <ProtectedRoute>
+            <RatingEvaluation />
           </ProtectedRoute>
         ),
       },
@@ -59,6 +85,14 @@ const router = createBrowserRouter([
 
       {
         path: "/workspace",
+        element: (
+          <ProtectedRoute>
+            <WorkspacePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/workspace/:contentId",
         element: (
           <ProtectedRoute>
             <WorkspacePage />

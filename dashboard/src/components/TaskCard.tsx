@@ -4,6 +4,7 @@ import {
   Text,
   Button,
   Image,
+  Center,
   Progress,
   Menu,
   MenuButton,
@@ -13,9 +14,8 @@ import {
   Select,
   useDisclosure,
   useToast,
-  IconButton,
+  Tooltip,
 } from "@chakra-ui/react";
-import { BiChevronDown } from "react-icons/bi";
 import { FiTrash2 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { useRef, useState, memo, useEffect } from "react";
@@ -50,10 +50,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const navigate = useNavigate();
   const toast = useToast();
   const [activeTask, setActiveTask] = useState<Task | null>(
-    Array.isArray(task) ? task[0] : task
+    Array.isArray(task) ? task[0] : task,
   );
   const [imageKey, setImageKey] = useState(Date.now()); // Force image reload
   const [imageError, setImageError] = useState(false); // Track if image failed to load
+  const [isCompleted, setIsCompleted] = useState(false); // Track completion status
   const cardRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 });
@@ -62,7 +63,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const fetchAssignedUsers = useTaskStore((s) => s.fetchAssignedUsers);
   const fetchTasksForUser = useTaskStore((s) => s.fetchTasksForUser);
   const assignedUsers = useTaskStore((s) =>
-    activeTask ? s.assignedUsers[activeTask.content_id] : undefined
+    activeTask ? s.assignedUsers[activeTask.content_id] : undefined,
   );
   const user = useAuthStore((s) => s.user);
 
@@ -91,11 +92,36 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
   }, [activeTask, useStore, fetchAssignedUsers]);
 
+  // Check if task is completed
+  useEffect(() => {
+    const checkCompletion = async () => {
+      if (!activeTask || !user?.user_id) {
+        setIsCompleted(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/check-content?contentId=${activeTask.content_id}&userId=${user.user_id}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          setIsCompleted(data.isCompleted || false);
+        }
+      } catch (error) {
+        console.error("Error checking completion status:", error);
+        setIsCompleted(false);
+      }
+    };
+
+    checkCompletion();
+  }, [activeTask, user?.user_id]);
+
   const handleUpload = async (file: File, contentId: number) => {
     try {
-      console.log('📤 Uploading image for content:', contentId);
+      console.log("📤 Uploading image for content:", contentId);
       const result = await uploadImage(contentId, file, "content");
-      console.log('✅ Upload result:', result);
+      console.log("✅ Upload result:", result);
 
       if (result) {
         toast({
@@ -107,19 +133,19 @@ const TaskCard: React.FC<TaskCardProps> = ({
         });
 
         // Force re-fetch to get updated thumbnail
-        console.log('🔄 Fetching updated task...');
+        console.log("🔄 Fetching updated task...");
         const updatedTask = await fetchTask(contentId);
-        console.log('📦 Updated task:', updatedTask);
+        console.log("📦 Updated task:", updatedTask);
 
         if (updatedTask) {
           setActiveTask(updatedTask);
           setImageKey(Date.now()); // Force image reload by updating cache buster
           setImageError(false); // Reset error state to try loading the new image
         } else {
-          console.error('❌ Failed to fetch updated task');
+          console.error("❌ Failed to fetch updated task");
         }
       } else {
-        console.error('❌ Upload failed - no result returned');
+        console.error("❌ Upload failed - no result returned");
         toast({
           title: "Upload Failed",
           description: "Could not upload image. Please try again.",
@@ -129,10 +155,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
         });
       }
     } catch (error) {
-      console.error('❌ Upload error:', error);
+      console.error("❌ Upload error:", error);
       toast({
         title: "Upload Error",
-        description: error instanceof Error ? error.message : "An error occurred",
+        description:
+          error instanceof Error ? error.message : "An error occurred",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -147,7 +174,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const handleSelect = () => {
     setSelectedTask(activeTask);
     // Redirect to last work page, or selectedRedirect if set, or default to workspace
-    const destination = selectedRedirect !== "/dashboard" ? selectedRedirect : lastWorkPage || "/workspace";
+    const destination =
+      selectedRedirect !== "/dashboard"
+        ? selectedRedirect
+        : lastWorkPage || "/workspace";
     navigate(destination);
   };
 
@@ -194,7 +224,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         `${API_BASE_URL}/api/tasks/${activeTask.content_id}?userId=${user.user_id}`,
         {
           method: "DELETE",
-        }
+        },
       );
 
       if (response.ok) {
@@ -218,9 +248,117 @@ const TaskCard: React.FC<TaskCardProps> = ({
     } catch (error: any) {
       toast({
         title: "Archive failed",
-        description: error.message || "An error occurred while archiving the task",
+        description:
+          error.message || "An error occurred while archiving the task",
         status: "error",
         duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleMarkComplete = async () => {
+    if (!user?.user_id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to mark tasks complete",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/mark-task-complete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contentId: activeTask.content_id,
+          userId: user.user_id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to mark task complete");
+      }
+
+      toast({
+        title: "Task marked complete!",
+        description:
+          "The extension will now show this task when you visit the URL",
+        status: "success",
+        duration: 4000,
+        isClosable: true,
+      });
+
+      setIsCompleted(true);
+
+      // Optionally refresh the task list
+      if (user.user_id) {
+        fetchTasksForUser(user.user_id, false);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error marking task complete",
+        description: error.message || "An error occurred",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleMarkIncomplete = async () => {
+    if (!user?.user_id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to mark tasks incomplete",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/mark-task-incomplete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contentId: activeTask.content_id,
+          userId: user.user_id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to mark task incomplete");
+      }
+
+      toast({
+        title: "Task marked incomplete",
+        description: "Task has been marked as not completed",
+        status: "success",
+        duration: 4000,
+        isClosable: true,
+      });
+
+      setIsCompleted(false);
+
+      // Optionally refresh the task list
+      if (user.user_id) {
+        fetchTasksForUser(user.user_id, false);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error marking task incomplete",
+        description: error.message || "An error occurred",
+        status: "error",
+        duration: 3000,
         isClosable: true,
       });
     }
@@ -232,8 +370,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
       ? "200px"
       : "230px"
     : compact
-    ? "340px"
-    : "405px";
+      ? "340px"
+      : "405px";
 
   return (
     // Root wrapper MUST be full-width to avoid stagger;
@@ -256,11 +394,15 @@ const TaskCard: React.FC<TaskCardProps> = ({
         <div className="mr-scanlines" />
 
         {/* Title bar */}
-        <Box position="relative" mb={1}>
-          <Text className="mr-badge mr-badge-blue" fontSize="md" textAlign="center">
+        <Center>
+          <Text
+            className="mr-badge mr-badge-blue"
+            fontSize="sm"
+            mb={1}
+          >
             Content Details
           </Text>
-        </Box>
+        </Center>
 
         {Array.isArray(task) && task.length > 1 ? (
           <Select
@@ -268,7 +410,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             value={activeTask.content_id}
             onChange={(e) => {
               const next = task.find(
-                (t) => t.content_id === Number(e.target.value)
+                (t) => t.content_id === Number(e.target.value),
               );
               if (next) {
                 setActiveTask(next);
@@ -288,21 +430,31 @@ const TaskCard: React.FC<TaskCardProps> = ({
             ))}
           </Select>
         ) : (
-          <Text
-            mt={2}
-            fontWeight="semibold"
-            bg="whiteAlpha.700"
-            color="gray.800"
-            borderRadius="md"
-            noOfLines={2}
-            fontSize={compact ? "sm" : "md"}
-            textAlign="center"
-            mb={2}
-          >
-            <a href={activeTask.url} target="_blank" rel="noopener noreferrer">
-              {activeTask.content_name}
-            </a>
-          </Text>
+          <Tooltip label={activeTask.content_name} placement="top" hasArrow>
+            <Box
+              mt={2}
+              bg="whiteAlpha.700"
+              borderRadius="md"
+              mb={2}
+              minH={compact ? "40px" : "48px"}
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              px={2}
+            >
+              <Text
+                fontWeight="semibold"
+                color="gray.800"
+                noOfLines={2}
+                fontSize={compact ? "sm" : "md"}
+                textAlign="center"
+              >
+                <a href={activeTask.url} target="_blank" rel="noopener noreferrer">
+                  {activeTask.content_name}
+                </a>
+              </Text>
+            </Box>
+          </Tooltip>
         )}
 
         {!hideMeta && (
@@ -334,7 +486,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
                     bg: "linear-gradient(135deg, #764ba2 0%, #667eea 100%)",
                   }}
                 >
-                  <Text fontSize="6xl" mb={2} filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))">
+                  <Text
+                    fontSize="6xl"
+                    mb={2}
+                    filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))"
+                  >
                     📝
                   </Text>
                   <Text
@@ -380,24 +536,66 @@ const TaskCard: React.FC<TaskCardProps> = ({
             />
 
             {authors.length > 0 && (
-              <Text fontSize={compact ? "xs" : "sm"}>
-                <strong>Author:</strong>{" "}
-                {authors
-                  .map(
-                    (a) =>
-                      `${a.author_first_name} ${a.author_last_name} ${
-                        a.author_title || ""
-                      }`
-                  )
-                  .join(", ")}
-              </Text>
+              <HStack spacing={1} fontSize={compact ? "xs" : "sm"}>
+                <Text fontWeight="bold">by:</Text>
+                {authors.length === 1 ? (
+                  <Text noOfLines={1}>
+                    {authors[0].author_first_name} {authors[0].author_last_name}
+                  </Text>
+                ) : (
+                  <Menu placement="bottom-start">
+                    <MenuButton
+                      as={Text}
+                      cursor="pointer"
+                      color="blue.400"
+                      textDecoration="underline"
+                      noOfLines={1}
+                      _hover={{ color: "blue.300" }}
+                    >
+                      {authors[0].author_first_name} {authors[0].author_last_name}
+                      {authors.length > 1 && ` +${authors.length - 1}`}
+                    </MenuButton>
+                    <MenuList bg="gray.800" borderColor="blue.500" maxH="200px" overflowY="auto">
+                      {authors.map((a, idx) => (
+                        <MenuItem key={idx} bg="gray.800" _hover={{ bg: "gray.700" }}>
+                          {a.author_first_name} {a.author_last_name}
+                          {a.author_title && ` - ${a.author_title}`}
+                        </MenuItem>
+                      ))}
+                    </MenuList>
+                  </Menu>
+                )}
+              </HStack>
             )}
 
             {publishers.length > 0 && (
-              <Text fontSize={compact ? "xs" : "sm"}>
-                <strong>Publisher:</strong>{" "}
-                {publishers.map((p) => p.publisher_name).join(", ")}
-              </Text>
+              <HStack spacing={1} fontSize={compact ? "xs" : "sm"}>
+                <Text fontWeight="bold">Pub:</Text>
+                {publishers.length === 1 ? (
+                  <Text noOfLines={1}>{publishers[0].publisher_name}</Text>
+                ) : (
+                  <Menu placement="bottom-start">
+                    <MenuButton
+                      as={Text}
+                      cursor="pointer"
+                      color="blue.400"
+                      textDecoration="underline"
+                      noOfLines={1}
+                      _hover={{ color: "blue.300" }}
+                    >
+                      {publishers[0].publisher_name}
+                      {publishers.length > 1 && ` +${publishers.length - 1}`}
+                    </MenuButton>
+                    <MenuList bg="gray.800" borderColor="blue.500" maxH="200px" overflowY="auto">
+                      {publishers.map((p, idx) => (
+                        <MenuItem key={idx} bg="gray.800" _hover={{ bg: "gray.700" }}>
+                          {p.publisher_name}
+                        </MenuItem>
+                      ))}
+                    </MenuList>
+                  </Menu>
+                )}
+              </HStack>
             )}
 
             <Progress
@@ -405,67 +603,96 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 activeTask.progress === "Completed"
                   ? 100
                   : activeTask.progress === "Partially Complete"
-                  ? 50
-                  : 25
+                    ? 50
+                    : 25
               }
               colorScheme={
                 activeTask.progress === "Completed"
                   ? "green"
                   : activeTask.progress === "Partially Complete"
-                  ? "yellow"
-                  : "red"
+                    ? "yellow"
+                    : "red"
               }
               mt={2}
             />
           </Box>
         )}
 
-        <HStack justify="center" spacing={2} w="100%">
-          <Button className="mr-button" onClick={handleSelect} flex="1">
-            Select
-          </Button>
+        <HStack spacing={2} w="100%">
+          <Box flex="1" minW={0}>
+            <Button className="mr-button" onClick={handleSelect} w="100%">
+              Select
+            </Button>
+          </Box>
 
-          <Menu onOpen={handleAssignedUsersOpen}>
-            <MenuButton
-              as={Button}
-              className="mr-button"
-              flex="1"
-              rightIcon={<BiChevronDown />}
+          <Box flex="1" minW={0}>
+            <Menu
+              onOpen={handleAssignedUsersOpen}
+              closeOnBlur={true}
+              closeOnSelect={true}
+              placement="bottom"
+              strategy="fixed"
             >
-              Actions
-            </MenuButton>
-            <MenuList>
-              <MenuItem
-                onClick={() => handleOpenModal(onAssignOpen)}
-                fontWeight="bold"
-                color="blue.500"
-              >
-                + Assign User
-              </MenuItem>
-              {assignedUsers && assignedUsers.length > 0 && (
-                <>
-                  {assignedUsers.map((u) => (
-                    <MenuItem key={u.user_id} pl={6}>
-                      👤 {u.username}
-                    </MenuItem>
-                  ))}
-                </>
-              )}
-              {activeTask.media_source === "TextPad" && (
+              <MenuButton as={Button} className="mr-button" w="100%">
+                <Text ml={-2}>Actions</Text>
+              </MenuButton>
+              <MenuList zIndex={1500} minW="200px">
+                {isCompleted ? (
+                  <MenuItem
+                    onClick={handleMarkIncomplete}
+                    fontWeight="bold"
+                    color="orange.400"
+                    icon={<span>↻</span>}
+                  >
+                    Mark Incomplete
+                  </MenuItem>
+                ) : (
+                  <MenuItem
+                    onClick={handleMarkComplete}
+                    fontWeight="bold"
+                    color="green.500"
+                    icon={<span>✓</span>}
+                  >
+                    Mark Complete
+                  </MenuItem>
+                )}
                 <MenuItem
-                  onClick={() => navigate(`/textpad?contentId=${activeTask.content_id}`)}
-                  icon={<span>📝</span>}
+                  onClick={() => handleOpenModal(onAssignOpen)}
+                  fontWeight="bold"
+                  color="blue.500"
                 >
-                  Open in TextPad
+                  + Assign User
                 </MenuItem>
-              )}
-              <MenuItem onClick={handleDelete} icon={<FiTrash2 />} color="red.400">
-                Archive Task
-              </MenuItem>
-            </MenuList>
-          </Menu>
+                {assignedUsers && assignedUsers.length > 0 && (
+                  <>
+                    {assignedUsers.map((u) => (
+                      <MenuItem key={u.user_id} pl={6}>
+                        👤 {u.username}
+                      </MenuItem>
+                    ))}
+                  </>
+                )}
+                {activeTask.media_source === "TextPad" && (
+                  <MenuItem
+                    onClick={() =>
+                      navigate(`/textpad?contentId=${activeTask.content_id}`)
+                    }
+                    icon={<span>📝</span>}
+                  >
+                    Open in TextPad
+                  </MenuItem>
+                )}
+                <MenuItem
+                  onClick={handleDelete}
+                  icon={<FiTrash2 />}
+                  color="red.400"
+                >
+                  Archive Task
+                </MenuItem>
+              </MenuList>
+            </Menu>
+          </Box>
         </HStack>
-
         {isAssignOpen && (
           <AssignUserModal
             isOpen={isAssignOpen}

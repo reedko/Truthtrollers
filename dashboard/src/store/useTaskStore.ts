@@ -27,6 +27,7 @@ import {
   fetchUnifiedTasksByPivot,
   fetchClaimScoresForTask,
 } from "../services/useDashboardAPI";
+import { ensureArray } from "../utils/normalize";
 const normalizeUser = (u: any) =>
   ({
     user_id: Number(u?.user_id ?? u?.userId ?? u?.id),
@@ -253,12 +254,8 @@ export const useTaskStore = create<TaskStoreState>()(
         const authorsMap: Record<number, Author[]> = {};
         const publishersMap: Record<number, Publisher[]> = {};
         tasks.forEach((task) => {
-          authorsMap[task.content_id] = Array.isArray(task.authors)
-            ? task.authors
-            : [];
-          publishersMap[task.content_id] = Array.isArray(task.publishers)
-            ? task.publishers
-            : [];
+          authorsMap[task.content_id] = ensureArray<Author>(task.authors);
+          publishersMap[task.content_id] = ensureArray<Publisher>(task.publishers);
         });
         set({
           assignedTasks: tasks,

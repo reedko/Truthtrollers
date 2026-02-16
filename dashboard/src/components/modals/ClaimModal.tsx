@@ -78,8 +78,15 @@ const ClaimModal: React.FC<ClaimModalProps> = ({
           {readOnly ? (
             <>
               <Box mb={3}>
-                <Text fontWeight="bold">Claim:</Text>
-                <Text whiteSpace="pre-wrap">
+                <Text fontWeight="bold" mb={2}>Claim:</Text>
+                <Text
+                  whiteSpace="pre-wrap"
+                  wordBreak="break-word"
+                  overflowWrap="anywhere"
+                  lineHeight="1.6"
+                  maxH="300px"
+                  overflowY="auto"
+                >
                   {editingClaim?.claim_text || "—"}
                 </Text>
               </Box>

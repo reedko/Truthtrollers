@@ -6,6 +6,7 @@
 // ---------------------------------------------------------
 
 import browser from "webextension-polyfill";
+import { isFacebookPost, scrapeFacebookPost } from "./scrapeFacebookPost";
 
 type ScrapeBackendResponse = {
   success: boolean;
@@ -38,6 +39,14 @@ export async function scrapeContent(url: string): Promise<string | null> {
   const normUrl = url.trim();
 
   console.log(`🔎 scrapeContent (task):`, normUrl);
+
+  // ---------------------------------------
+  // 0. CHECK IF FACEBOOK POST - use special scraper
+  // ---------------------------------------
+  if (isFacebookPost(normUrl)) {
+    console.log("🔵 [Scraper] Detected Facebook post, using Facebook scraper");
+    return scrapeFacebookPost(true); // createContent = true
+  }
 
   // ---------------------------------------
   // 1. BUILD REQUEST PAYLOAD

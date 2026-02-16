@@ -22,6 +22,7 @@ import { useTaskScraper } from "../hooks/useTaskScraper";
 import TruthGauge from "./ModernArcGauge";
 import browser from "webextension-polyfill";
 import { Task } from "../entities/Task";
+import { getFacebookPostUrl, isFacebookPost } from "../services/scrapeFacebookPost";
 
 // Keep your base URL logic
 const BASE_URL =
@@ -61,7 +62,7 @@ const getProgressColor = (progress: string | null) => {
 };
 
 const TaskCard: React.FC = () => {
-  const { task, currentUrl, setTask } = useTaskStore();
+  const { task, currentUrl, setTask, setCurrentUrl } = useTaskStore();
   const { loading, error, scrapeTask } = useTaskScraper();
   const [visible, setVisible] = useState(false);
 
@@ -92,6 +93,37 @@ const TaskCard: React.FC = () => {
 
     return typeof currentUrl === "string" ? currentUrl : "";
   }
+
+  // Detect Facebook post URL on mount and update currentUrl
+  // BUT only if we don't already have a URL in storage
+  useEffect(() => {
+    const detectFacebookUrl = async () => {
+      const pageUrl = window.location.href;
+
+      // Only detect if on Facebook
+      if (!isFacebookPost(pageUrl)) return;
+
+      // Check if we already have a URL stored
+      const stored = await browser.storage.local.get('currentUrl');
+      if (stored.currentUrl && typeof stored.currentUrl === 'string') {
+        console.log(`🔵 [TaskCard] Already have stored URL: ${stored.currentUrl}`);
+        setCurrentUrl(stored.currentUrl);
+        return;
+      }
+
+      // Only if no stored URL, detect it (this opens embed dialog)
+      console.log(`🔵 [TaskCard] No stored URL, detecting Facebook post URL...`);
+      const postUrl = await getFacebookPostUrl();
+      if (postUrl) {
+        console.log(`🔵 [TaskCard] Detected Facebook post URL: ${postUrl}`);
+        setCurrentUrl(postUrl);
+        await browser.storage.local.set({ currentUrl: postUrl });
+      }
+    };
+
+    // Only run once on mount
+    detectFacebookUrl();
+  }, []); // Empty dependency array = only run once
 
   useEffect(() => {
     // ✅ Retrieve task data from local storage
@@ -324,7 +356,9 @@ const TaskCard: React.FC = () => {
                   color="white"
                   px={1}
                 >
-                  {task?.content_name || "Unknown Content"}
+                  {(task?.url && isFacebookPost(task.url)
+                    ? "Facebook Post"
+                    : task?.content_name) || "Unknown Content"}
                 </Text>
               </Tooltip>
             </Box>
@@ -364,7 +398,9 @@ const TaskCard: React.FC = () => {
                   color="#f1f5f9"
                 >
                   {task?.content_name ||
-                    currentUrl ||
+                    (currentUrl && isFacebookPost(currentUrl)
+                      ? "Facebook Post"
+                      : currentUrl) ||
                     document.title ||
                     "Current Page"}
                 </Text>

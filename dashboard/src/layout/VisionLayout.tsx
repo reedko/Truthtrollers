@@ -72,6 +72,12 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
           <Text>Dashboard</Text>
         </HStack>
       </RouterLink>
+      <RouterLink to="/tasks" onClick={handleClick("/tasks")}>
+        <HStack spacing={2} mb={2}>
+          <FiBarChart2 />
+          <Text>Tasks</Text>
+        </HStack>
+      </RouterLink>
       <RouterLink to="/gamespace" onClick={handleClick("/gamespace")}>
         <HStack spacing={2} mb={2}>
           <FiHome />
@@ -125,12 +131,6 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
           <HotTopics />
         </VStack>
       </Box>
-
-      {isTaskPage && selectedTaskId && (
-        <Box overflowY="auto" flex="1" w="full" mt={4} pr={1}>
-          <TopicList />
-        </Box>
-      )}
     </VStack>
   );
 };
@@ -150,6 +150,14 @@ const Sidebar: React.FC = () => (
     borderColor="gray.700"
     zIndex={100}
     display={{ base: "none", md: "flex" }}
+    overflowY="auto"
+    sx={{
+      '&::-webkit-scrollbar': {
+        display: 'none'
+      },
+      scrollbarWidth: 'none',
+      msOverflowStyle: 'none'
+    }}
   >
     <Text fontSize="2xl" fontWeight="bold" color="teal.300">
       Truthtrollers
@@ -264,7 +272,7 @@ const VisionLayout: React.FC = () => {
         ml={{ base: 0, md: SIDEBAR_WIDTH }}
         pt={{ base: "60px", md: HEADER_HEIGHT }}
         px={4}
-        minH="100vh"
+        pb={8}
       >
         <Outlet />
       </Box>

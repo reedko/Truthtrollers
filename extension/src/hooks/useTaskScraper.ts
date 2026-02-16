@@ -33,9 +33,17 @@ export const useTaskScraper = () => {
       await scrapeContent(initialUrl); // ✅ Backend does EVERYTHING (task + refs + claims + evidence)
       console.log("✅ Task and references fully scraped!");
 
+      // ✅ For Facebook posts, the actual post URL might have been detected during scraping
+      // Check storage for the updated URL (Facebook scraper stores the detected post URL)
+      const storageData = await browser.storage.local.get('currentUrl');
+      const scrapedUrl = storageData.currentUrl || initialUrl;
+
+      console.log(`🔍 [useTaskScraper] Initial URL: ${initialUrl}`);
+      console.log(`🔍 [useTaskScraper] Scraped URL: ${scrapedUrl}`);
+
       // ✅ Check the stored URL after scraping to see if user has navigated
       const finalUrl = store.currentUrl;
-      const userStillOnSamePage = finalUrl === initialUrl;
+      const userStillOnSamePage = finalUrl === initialUrl || finalUrl === scrapedUrl;
 
       console.log(
         userStillOnSamePage
@@ -46,7 +54,7 @@ export const useTaskScraper = () => {
       // ✅ Ensure the popup updates with the newly scraped task
       browser.runtime.sendMessage({
         action: "scrapeCompleted",
-        url: initialUrl, // ✅ Send the scraped URL
+        url: scrapedUrl, // ✅ Send the ACTUAL scraped URL (might be different for Facebook)
         forceVisible: userStillOnSamePage,
       });
     } catch (err) {

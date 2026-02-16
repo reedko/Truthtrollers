@@ -43,9 +43,9 @@ export const TaskPage: React.FC = () => {
   }, [showArchived, user?.user_id, fetchTasksForUser]);
 
   return (
-    <Box p={4}>
+    <Box p={{ base: 2, md: 6 }} maxW="100%">
       <VStack align="center" spacing={4} w="100%">
-        <HStack w="100%" justify="space-between" align="center">
+        <HStack w="100%" justify="space-between" align="center" px={{ base: 2, md: 0 }}>
           <Heading size="lg" color="teal.300">
             My Tasks
           </Heading>
@@ -66,7 +66,9 @@ export const TaskPage: React.FC = () => {
         {assignedTasks.length === 0 ? (
           <Text>No tasks found. {showArchived ? "Try unchecking 'Show Archived & All'." : "Try checking 'Show Archived & All' to see all tasks."}</Text>
         ) : (
-          <TaskGrid content={assignedTasks} />
+          <Box w="100%" px={{ base: 0, md: 4 }}>
+            <TaskGrid content={assignedTasks} />
+          </Box>
         )}
       </VStack>
     </Box>

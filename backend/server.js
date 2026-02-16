@@ -43,6 +43,7 @@ import createGraphRouter from "./src/routes/graph/index.js";
 import createEvidenceRouter from "./src/routes/evidence/index.js";
 import createPromptRoutes from "./src/routes/prompts.routes.js";
 import createMoleculeViewsRoutes from "./src/routes/molecule-views.routes.js";
+import createFacebookRoutes from "./src/routes/social/facebook.routes.js";
 
 // Logger utility
 import { clearLogFile } from "./src/utils/logger.js";
@@ -105,6 +106,9 @@ const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5001",
   "https://truthtrollers.com",
+  "http://truthtrollers.com",
+  "https://www.truthtrollers.com",
+  "http://www.truthtrollers.com",
   "chrome-extension://phacjklngoihnlhcadefaiokbacnagbf",
 ];
 
@@ -183,6 +187,7 @@ app.use("/", createGraphRouter({ query, pool })); // Graph routes: /api/get-grap
 app.use("/", createEvidenceRouter({ query, pool }));
 app.use("/", createPromptRoutes({ query })); // Prompt management routes: /api/prompts
 app.use("/", createMoleculeViewsRoutes({ query, pool })); // Molecule views routes: /api/molecule-views
+app.use("/", createFacebookRoutes({ query })); // Facebook scraping routes: /api/scrape-facebook-post
 // ─────────────────────────────────────────────
 // Health + Simple Proxy (top-level, legacy behavior)
 // ─────────────────────────────────────────────

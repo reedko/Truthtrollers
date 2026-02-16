@@ -11,9 +11,9 @@ import logger from "../utils/logger.js";
 // ========================================
 // CLAIM EXTRACTION MODE TOGGLE
 // ========================================
-// 'ranked': Extract 3-9 high-quality claims only (single LLM pass, efficient)
+// 'ranked': Extract 3-12 high-quality claims only (single LLM pass, efficient)
 // 'comprehensive': Extract all claims, then filter separately (for user ranking UI)
-const EXTRACTION_MODE = 'ranked';
+const EXTRACTION_MODE = 'comprehensive'; // Changed to comprehensive to capture more claims
 
 /**
  * processTaskClaims({
@@ -74,8 +74,8 @@ export async function processTaskClaims({ query, taskContentId, text, claimType 
     logger.log(`🟦 [ClaimFiltering] Scoring and filtering claims...`);
     claims = await extractor.filterAndRankClaims(
       claims,
-      5,      // maxClaims: keep top 5
-      0.6     // threshold: claims must score ≥ 0.6 average
+      10,     // maxClaims: keep top 10 (increased from 5 for more coverage)
+      0.4     // threshold: claims must score ≥ 0.4 average (lowered from 0.6 to be more permissive)
     );
 
     logger.log(`🟦 [ClaimFiltering] Filtered to ${claims.length} high-value claims`);

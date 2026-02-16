@@ -89,15 +89,27 @@ const Register: React.FC = () => {
 
       // 5️⃣ Send them into the app
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration failed:", error);
-      toast({
-        title: "Registration failed",
-        description: "Please check your details and try again.",
-        status: "error",
-        duration: 4000,
-        isClosable: true,
-      });
+
+      // Check if it's a beta access denied error
+      if (error.response?.data?.error === "BETA_ACCESS_DENIED") {
+        toast({
+          title: "Site Unavailable",
+          description: error.response.data.message || "The site is currently down for development. Please check back later!",
+          status: "warning",
+          duration: 8000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: "Registration failed",
+          description: "Please check your details and try again.",
+          status: "error",
+          duration: 4000,
+          isClosable: true,
+        });
+      }
     }
   };
 

@@ -92,15 +92,27 @@ const Login: React.FC = () => {
           });
         }
       }, 100);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Login error:", err);
-      toast({
-        title: "Login failed.",
-        description: "Invalid credentials or CAPTCHA failed.",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
+
+      // Check if it's a beta access denied error
+      if (err.response?.data?.error === "BETA_ACCESS_DENIED") {
+        toast({
+          title: "Site Unavailable",
+          description: err.response.data.message || "The site is currently down for development. Please check back later!",
+          status: "warning",
+          duration: 8000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: "Login failed.",
+          description: "Invalid credentials or CAPTCHA failed.",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
     }
   };
 

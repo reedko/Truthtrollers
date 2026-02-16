@@ -76,6 +76,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 View
               </MenuButton>
               <MenuList>
+                <MenuItem as={RouterLink} to="/tasks">
+                  Tasks
+                </MenuItem>
                 <MenuItem as={RouterLink} to="/workspace">
                   Workspace
                 </MenuItem>
@@ -215,6 +218,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
               <Menu>
                 <MenuButton as={Button}>View</MenuButton>
                 <MenuList>
+                  <MenuItem as={RouterLink} to="/tasks">
+                    Tasks
+                  </MenuItem>
                   <MenuItem as={RouterLink} to="/workspace">
                     Workspace
                   </MenuItem>

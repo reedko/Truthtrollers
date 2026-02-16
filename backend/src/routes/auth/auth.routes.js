@@ -47,6 +47,33 @@ router.post("/api/register", async (req, res) => {
     return res.status(403).json({ error: "Failed CAPTCHA verification" });
   }
 
+  // ✅ CHECK BETA ACCESS - only allowed emails can register
+  try {
+    const allowedUsers = await query(
+      "SELECT allowed FROM allowed_users WHERE email_address = ? AND allowed = TRUE",
+      [email]
+    );
+
+    if (allowedUsers.length === 0) {
+      await logRegistrationAttempt({
+        username,
+        email,
+        ipAddress,
+        success: false,
+        message: "Not on beta access list",
+      });
+      return res.status(403).json({
+        error: "BETA_ACCESS_DENIED",
+        message: "The site is currently down for development. Please check back later!"
+      });
+    }
+
+    console.log(`✅ Beta access confirmed for: ${email}`);
+  } catch (err) {
+    console.error("Error checking beta access:", err);
+    return res.status(500).json({ error: "Failed to verify beta access" });
+  }
+
   const hashedPassword = bcrypt.hashSync(password, 10);
   const sql = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
   const params = [username, hashedPassword, email];
@@ -104,16 +131,20 @@ router.post("/api/login", async (req, res) => {
   const { username, password, captcha, fingerprint } = req.body;
   const ipAddress = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
+  console.log(`🔐 Login attempt: username=${username}, skipCaptcha=${req.headers["x-skip-captcha"]}, ip=${ipAddress}`);
+
   // CAPTCHA bypass for extensions or post-registration
   const skipCaptcha = req.headers["x-skip-captcha"] === "true";
 
   if (!username || !password || (!skipCaptcha && !captcha)) {
-    return res.status(400).json({ error: "All fields are required." });
+    console.log(`❌ Login failed: Missing fields - username=${!!username}, password=${!!password}, captcha=${!!captcha}`);
+    return res.status(400).json({ error: "Missing required fields (username, password, or CAPTCHA)" });
   }
 
   if (!skipCaptcha) {
     const isHuman = await verifyCaptcha(captcha);
     if (!isHuman) {
+      console.log(`❌ Login failed: CAPTCHA verification failed for ${username}`);
       await logFailedLogin({
         username,
         ipAddress,
@@ -122,7 +153,7 @@ router.post("/api/login", async (req, res) => {
         fingerprint,
       });
 
-      return res.status(403).json({ error: "Failed CAPTCHA verification" });
+      return res.status(403).json({ error: "CAPTCHA verification failed - please try again" });
     }
   }
 
@@ -130,11 +161,12 @@ router.post("/api/login", async (req, res) => {
   const sql = "SELECT * FROM users WHERE username = ? OR email = ?";
   pool.query(sql, [username, username], async (err, results) => {
     if (err) {
-      console.error("Error logging in user:", err);
-      return res.status(500).json({ error: "Database query failed" });
+      console.error("❌ Login database error:", err);
+      return res.status(500).json({ error: "Database error - please try again later" });
     }
 
     if (results.length === 0) {
+      console.log(`❌ Login failed: User not found - ${username}`);
       await logFailedLogin({
         username,
         ipAddress,
@@ -142,13 +174,54 @@ router.post("/api/login", async (req, res) => {
         reason: "user_not_found",
         fingerprint,
       });
-      return res.status(404).send("User not found.");
+      return res.status(404).json({ error: "User not found - please check your username/email" });
     }
 
     const user = results[0];
+
+    // ✅ CHECK BETA ACCESS - verify user's email is on allowed list
+    try {
+      const allowedUsers = await query(
+        "SELECT allowed FROM allowed_users WHERE email_address = ? AND allowed = TRUE",
+        [user.email]
+      );
+
+      if (allowedUsers.length === 0) {
+        console.log(`❌ Login failed: Not on beta access list - ${user.email}`);
+        await logFailedLogin({
+          username,
+          ipAddress,
+          userAgent: req.headers["user-agent"],
+          reason: "beta_access_denied",
+          fingerprint,
+        });
+        return res.status(403).json({
+          error: "BETA_ACCESS_DENIED",
+          message: "The site is currently down for development. Please check back later!"
+        });
+      }
+
+      console.log(`✅ Beta access confirmed for: ${user.email}`);
+    } catch (betaErr) {
+      console.error("Error checking beta access:", betaErr);
+      return res.status(500).json({ error: "Failed to verify beta access" });
+    }
     const isValidPassword = bcrypt.compareSync(password, user.password);
 
-    if (isValidPassword) {
+    if (!isValidPassword) {
+      console.log(`❌ Login failed: Invalid password for ${username}`);
+      await logFailedLogin({
+        username,
+        ipAddress,
+        userAgent: req.headers["user-agent"],
+        reason: "invalid_password",
+        fingerprint,
+      });
+      return res.status(401).json({ error: "Invalid password - please try again" });
+    }
+
+    // Password is valid - proceed with login
+    try {
       const token = jwt.sign(
         {
           user_id: user.user_id,
@@ -160,33 +233,26 @@ router.post("/api/login", async (req, res) => {
       );
 
       // --- SESSION LOGIC ---
-      // For extension logins, fingerprint will be present.
-      // For dashboard logins, fallback to "manual_login" or generate as needed.
       const sessionFingerprint = fingerprint || "manual_login";
-      try {
-        // Optionally: upsert/replace session for extension/device logins
-        if (fingerprint) {
-          await query(
-            "REPLACE INTO user_sessions (device_fingerprint, user_id, jwt, updated_at) VALUES (?, ?, ?, NOW())",
-            [fingerprint, user.user_id, token]
-          );
-        }
 
-        // Log the login event
+      // Optionally: upsert/replace session for extension/device logins
+      if (fingerprint) {
         await query(
-          "INSERT INTO login_events (user_id, fingerprint, event_type, ip_address, details) VALUES (?, ?, 'login', ?, ?)",
-          [
-            user.user_id,
-            sessionFingerprint,
-            ipAddress,
-            JSON.stringify({ username, agent: req.headers["user-agent"] }),
-          ]
+          "REPLACE INTO user_sessions (device_fingerprint, user_id, jwt, updated_at) VALUES (?, ?, ?, NOW())",
+          [fingerprint, user.user_id, token]
         );
-      } catch (logErr) {
-        console.warn("Login event/session log failed:", logErr.message);
       }
 
-      // --- END SESSION LOGIC ---
+      // Log the login event
+      await query(
+        "INSERT INTO login_events (user_id, fingerprint, event_type, ip_address, details) VALUES (?, ?, 'login', ?, ?)",
+        [
+          user.user_id,
+          sessionFingerprint,
+          ipAddress,
+          JSON.stringify({ username, agent: req.headers["user-agent"] }),
+        ]
+      );
 
       await logSuccessfulLogin({
         userId: user.user_id,
@@ -195,7 +261,9 @@ router.post("/api/login", async (req, res) => {
         fingerprint: sessionFingerprint,
       });
 
-      res.status(200).json({
+      console.log(`✅ Login successful: ${username} (user_id=${user.user_id})`);
+
+      return res.status(200).json({
         auth: true,
         token,
         user: {
@@ -205,15 +273,9 @@ router.post("/api/login", async (req, res) => {
           user_profile_image: user.user_profile_image ?? null,
         },
       });
-    } else {
-      await logFailedLogin({
-        username,
-        ipAddress,
-        userAgent: req.headers["user-agent"],
-        reason: "Invalid credentials",
-        fingerprint,
-      });
-      res.status(401).send("Invalid credentials.");
+    } catch (loginErr) {
+      console.error("❌ Login session error:", loginErr);
+      return res.status(500).json({ error: "Failed to create session - please try again" });
     }
   });
 });

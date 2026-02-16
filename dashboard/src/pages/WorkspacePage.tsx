@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Box,
   Card,
@@ -15,9 +15,9 @@ import {
   updateScoresForContent,
   fetchContentScores,
 } from "../services/useDashboardAPI";
-import RefreshVerimeterButton from "../components/RefreshVerimeterButton";
 
 const WorkspacePage = () => {
+  const { contentId: routeContentId } = useParams<{ contentId?: string }>();
   const [verimeterScore, setVerimeterScore] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const navigate = useNavigate();
@@ -27,6 +27,17 @@ const WorkspacePage = () => {
   const setRedirect = useTaskStore((s) => s.setRedirect);
   const selectedRedirect = useTaskStore((s) => s.selectedRedirect);
   const viewerId = useTaskStore((s) => s.viewingUserId);
+
+  // If contentId is in route params, set it in the store
+  useEffect(() => {
+    if (routeContentId) {
+      const contentIdNum = parseInt(routeContentId, 10);
+      if (!isNaN(contentIdNum) && contentIdNum !== taskId) {
+        console.log("📍 Setting taskId from route param:", contentIdNum);
+        setSelectedTask(contentIdNum);
+      }
+    }
+  }, [routeContentId, taskId, setSelectedTask]);
 
   // Set this as the active redirect target when mounted
   useEffect(() => {
@@ -82,17 +93,10 @@ const WorkspacePage = () => {
     setRefreshKey((prev) => prev + 1);
   };
   return (
-    <Box p={4} display="flex" flexDirection="column" alignItems="center" w="100%">
-      <Box maxW="1400px" w="100%">
+    <Box p={4} w="100%">
+      <Box maxW="1400px" w="100%" mx="auto">
         <Card mb={6} mt={2}>
           <CardBody>
-            <Box mb={2}>
-              <RefreshVerimeterButton
-                targetClaimId={taskId}
-                onUpdated={setVerimeterScore} // pass callback for instant update
-                handleRefresh={handleVerimeterRefresh}
-              />
-            </Box>
             <UnifiedHeader refreshKey={refreshKey} />
           </CardBody>
         </Card>

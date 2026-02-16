@@ -21,7 +21,7 @@ import { persistTaskContent } from "../storage/persistContentAndEvidence.js";
 import * as cheerio from "cheerio";
 
 /**
- * scrapeTask(query, url, raw_html?)
+ * scrapeTask(query, url, raw_html?, mediaSource?, providedAuthors?)
  *  • Fetch HTML, PDF, or YouTube transcript (OR use provided raw_html)
  *  • Extract: text, title, authors, publisher, thumbnail
  *  • Extract DOM references
@@ -29,16 +29,22 @@ import * as cheerio from "cheerio";
  *  • Persist the task content row in DB
  *  • Returns: { taskContentId, text, metadata, domRefs, inlineRefs }
  */
-export async function scrapeTask(query, url, raw_html = null) {
+export async function scrapeTask(query, url, raw_html = null, mediaSource = null, providedAuthors = null) {
   try {
     logger.log(`🟦 [scrapeTask] Starting scrape for: ${url}`);
+    if (mediaSource) {
+      logger.log(`📌 [scrapeTask] Media source hint: ${mediaSource}`);
+    }
+    if (providedAuthors && providedAuthors.length > 0) {
+      logger.log(`👤 [scrapeTask] Using ${providedAuthors.length} provided author(s):`, providedAuthors);
+    }
 
     let $ = null;
     let text = "";
     let rawHtml = "";
     let title = "";
-    let authors = [];
-    let publisher = null;
+    let authors = providedAuthors || []; // Use provided authors if available
+    let publisher = mediaSource; // Use hint if provided, will be overridden if extracted
     let thumbnail = "";
     let domRefs = [];
     let inlineRefs = [];
@@ -118,11 +124,18 @@ export async function scrapeTask(query, url, raw_html = null) {
       title = (await getMainHeadline($)) || "Untitled Article";
     }
 
-    // merge HTML authors
-    const htmlAuthors = await extractAuthors($);
-    authors = mergeAuthors(authors, htmlAuthors);
+    // Only extract authors from HTML if not already provided
+    if (!providedAuthors || providedAuthors.length === 0) {
+      const htmlAuthors = await extractAuthors($);
+      authors = mergeAuthors(authors, htmlAuthors);
+    } else {
+      logger.log(`✅ [scrapeTask] Skipping HTML author extraction (using provided authors)`);
+    }
 
-    publisher = await extractPublisher($);
+    // Only extract publisher if not already provided via mediaSource
+    if (!publisher) {
+      publisher = await extractPublisher($);
+    }
 
     // Extract thumbnail if not already set (from PDF)
     if (!thumbnail) {

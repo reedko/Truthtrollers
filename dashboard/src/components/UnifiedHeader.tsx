@@ -7,11 +7,17 @@ import {
   Tooltip,
   Skeleton,
   SkeletonText,
-  useBreakpointValue, // ⬅️ NEW
+  Text,
+  useBreakpointValue,
+  Button,
+  HStack,
+  useToast,
 } from "@chakra-ui/react";
-import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
+import { ViewIcon, ViewOffIcon, ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
+import { keyframes } from "@emotion/react";
 import { useTaskStore } from "../store/useTaskStore";
 import { useUIStore } from "../store/useUIStore";
+import { useAuthStore } from "../store/useAuthStore";
 import TaskCard from "./TaskCard";
 import PubCard from "./PubCard";
 import AuthCard from "./AuthCard";
@@ -22,7 +28,20 @@ import { ensureArray } from "../utils/normalize";
 import { fetchContentScores } from "../services/useDashboardAPI";
 import MicroHeaderRail from "./headers/MicroHeaderRail";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+
 type Variant = "full" | "compact" | "micro"; // ⬅️ reintroduce micro
+
+// Animation for scroll hint
+const pulseAnimation = keyframes`
+  0%, 100% { opacity: 0.4; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(4px); }
+`;
+
+const pulseAnimationLeft = keyframes`
+  0%, 100% { opacity: 0.4; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(-4px); }
+`;
 
 interface UnifiedHeaderProps {
   pivotType?: "task" | "author" | "publisher" | "reference";
@@ -53,8 +72,11 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 }) => {
   const selectedTask = useTaskStore((s) => s.selectedTask);
   const fetchTasksByPivot = useTaskStore((s) => s.fetchTasksByPivot);
+  const fetchTasksForUser = useTaskStore((s) => s.fetchTasksForUser);
   const viewerId = useTaskStore((s) => s.viewingUserId);
   const verimeterScoreMap = useTaskStore((s) => s.verimeterScores || {});
+  const user = useAuthStore((s) => s.user);
+  const toast = useToast();
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [pivotTask, setPivotTask] = useState<Task | null>(null);
@@ -83,12 +105,25 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
   // 🔧 Spread across on desktop, stay centered single-column on phones
   const justify = useBreakpointValue<
-    "center" | "space-around" | "space-between"
+    "center" | "space-around" | "space-between" | "flex-start"
   >({
-    base: "center",
+    base: "flex-start", // start for horizontal scroll
     sm: "center",
     md: "space-around",
     lg: "space-between",
+  });
+
+  // 🔧 Enable horizontal scrolling on mobile
+  const flexWrap = useBreakpointValue<"wrap" | "nowrap">({
+    base: "nowrap", // no wrap on mobile = horizontal scroll
+    md: "wrap",     // wrap on desktop
+  });
+
+  const overflowX = useBreakpointValue<"auto" | "visible">({
+    base: "auto",    // scrollable on mobile
+    sm: "auto",      // still scrollable on tablet
+    md: "auto",      // always scrollable
+    lg: "visible",   // only disable scroll on large desktop
   });
 
   const resolvedPivotType =
@@ -163,12 +198,89 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   const isLoading = !pivotTask;
 
   // Card wrapper—forces identical widths, kills stagger
+  // On mobile (horizontal scroll), maintain minimum width
+  const cardMinWidth = useBreakpointValue({
+    base: "280px",  // mobile: fixed width for scrolling
+    md: "200px",    // desktop: can be smaller with wrap
+  });
+
+  const handleMarkComplete = async () => {
+    if (!user?.user_id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to mark tasks complete",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    if (!pivotTask?.content_id) {
+      toast({
+        title: "Error",
+        description: "No task selected",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/mark-task-complete`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contentId: pivotTask.content_id,
+            userId: user.user_id,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to mark task complete");
+      }
+
+      toast({
+        title: "Task marked complete!",
+        description: "The extension will now show this task when you visit the URL",
+        status: "success",
+        duration: 4000,
+        isClosable: true,
+      });
+
+      // Optionally refresh the task list
+      if (user.user_id) {
+        fetchTasksForUser(user.user_id, false);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error marking task complete",
+        description: error.message || "An error occurred",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
   const cardWrapSx = {
     "--card-w": `${CARD_W}px`,
-    flex: "0 0 var(--card-w)",
-    width: "min(100%, var(--card-w))",
+    flex: {
+      base: "0 0 280px",        // mobile: fixed width for horizontal scroll
+      md: "0 0 var(--card-w)",  // desktop: normal flex
+    },
+    width: {
+      base: "280px",                    // mobile: fixed
+      md: "min(100%, var(--card-w))",  // desktop: responsive
+    },
     maxWidth: "var(--card-w)",
-    minWidth: "200px",
+    minWidth: cardMinWidth,
     "> *": {
       width: "100% !important",
       maxWidth: "100% !important",
@@ -178,6 +290,67 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
   return (
     <Box position="relative" w="100%" px={0}>
+      {/* Scroll Direction Arrows - ON THE SIDES (semi-transparent) */}
+      {isHeaderVisible && (
+        <>
+          {/* Left Arrow */}
+          <Box
+            position="absolute"
+            left={0}
+            top="50%"
+            transform="translateY(-50%)"
+            zIndex={100}
+            display={{ base: "block", lg: "none" }}
+            pointerEvents="none"
+          >
+            <Box
+              bg="rgba(0, 0, 0, 0.4)"
+              backdropFilter="blur(12px)"
+              borderRadius="0 12px 12px 0"
+              p={2}
+              border="1px solid rgba(139, 92, 246, 0.4)"
+              borderLeft="none"
+              boxShadow="0 2px 12px rgba(139, 92, 246, 0.3)"
+              opacity={0.7}
+            >
+              <ChevronLeftIcon
+                boxSize={5}
+                color="#a78bfa"
+                animation={`${pulseAnimationLeft} 2s ease-in-out infinite`}
+              />
+            </Box>
+          </Box>
+
+          {/* Right Arrow */}
+          <Box
+            position="absolute"
+            right={0}
+            top="50%"
+            transform="translateY(-50%)"
+            zIndex={100}
+            display={{ base: "block", lg: "none" }}
+            pointerEvents="none"
+          >
+            <Box
+              bg="rgba(0, 0, 0, 0.4)"
+              backdropFilter="blur(12px)"
+              borderRadius="12px 0 0 12px"
+              p={2}
+              border="1px solid rgba(139, 92, 246, 0.4)"
+              borderRight="none"
+              boxShadow="0 2px 12px rgba(139, 92, 246, 0.3)"
+              opacity={0.7}
+            >
+              <ChevronRightIcon
+                boxSize={5}
+                color="#a78bfa"
+                animation={`${pulseAnimation} 2s ease-in-out infinite`}
+              />
+            </Box>
+          </Box>
+        </>
+      )}
+
       {/* View Density Toggle - Only visible when header is shown */}
       {allowToggle && isHeaderVisible && (
         <Tooltip
@@ -215,20 +388,68 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
           onSelectTask={setPivotTask}
         />
       ) : (
-        <Flex
-          wrap="wrap"
-          justify={justify} // ⬅️ spread on desktop, centered on phone
-          align="stretch"
-          columnGap={isMicro ? 2 : isCompact ? 3 : 4}
-          rowGap={isMicro ? 2 : isCompact ? 3 : 4}
-          mb={isMicro ? 2 : isCompact ? 3 : 6}
-          w="100%"
-          px={0}
-          mx={0}
-          sx={containerStyles}
-        >
+        <Box w="100%">
+          <Flex
+            wrap={flexWrap}
+            justify={justify} // ⬅️ spread on desktop, scrollable on phone
+            align="stretch"
+            columnGap={isMicro ? 2 : isCompact ? 3 : 4}
+            rowGap={isMicro ? 2 : isCompact ? 3 : 4}
+            mb={isMicro ? 2 : isCompact ? 3 : 6}
+            w="100%"
+            px={0}
+            mx={0}
+            overflowX={overflowX}
+            overflowY="visible"
+            sx={{
+              ...containerStyles,
+              // Mobile scroll indicators
+              WebkitOverflowScrolling: "touch",
+              scrollbarWidth: "thin",
+              "&::-webkit-scrollbar": {
+                height: "6px",
+              },
+              "&::-webkit-scrollbar-track": {
+                background: "rgba(0, 0, 0, 0.1)",
+              },
+              "&::-webkit-scrollbar-thumb": {
+                background: "rgba(139, 92, 246, 0.5)",
+                borderRadius: "3px",
+              },
+              "&::-webkit-scrollbar-thumb:hover": {
+                background: "rgba(139, 92, 246, 0.7)",
+              },
+            }}
+          >
           {/* BoolCard */}
-          <Box sx={cardWrapSx}>
+          <Box
+            sx={{
+              ...cardWrapSx,
+              position: "relative",
+              flexShrink: 0,
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "8px",
+                height: "100%",
+                background: "linear-gradient(90deg, rgba(139, 92, 246, 0.5) 0%, rgba(139, 92, 246, 0) 100%)",
+                pointerEvents: "none",
+                zIndex: 1,
+              },
+              "> *": {
+                ...cardWrapSx["> *"],
+                overflow: "hidden",
+                backdropFilter: "blur(10px)",
+                transition: "all 0.2s ease",
+              },
+              "&:hover > *": {
+                transform: "translateY(-2px)",
+                boxShadow: "0 0 30px rgba(139, 92, 246, 0.4)",
+              },
+            }}
+          >
             {isLoading ? (
               <Skeleton
                 borderRadius="lg"
@@ -248,7 +469,34 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
           </Box>
 
           {/* TaskCard */}
-          <Box sx={cardWrapSx}>
+          <Box
+            sx={{
+              ...cardWrapSx,
+              position: "relative",
+              flexShrink: 0,
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "8px",
+                height: "100%",
+                background: "linear-gradient(90deg, rgba(0, 162, 255, 0.5) 0%, rgba(0, 162, 255, 0) 100%)",
+                pointerEvents: "none",
+                zIndex: 1,
+              },
+              "> *": {
+                ...cardWrapSx["> *"],
+                overflow: "hidden",
+                backdropFilter: "blur(10px)",
+                transition: "all 0.2s ease",
+              },
+              "&:hover > *": {
+                transform: "translateY(-2px)",
+                boxShadow: "0 0 30px rgba(0, 162, 255, 0.4)",
+              },
+            }}
+          >
             {isLoading ? (
               <Box p={3} borderRadius="lg" bg="stat2Gradient">
                 <Skeleton height={isFull ? "18px" : "14px"} mb={3} />
@@ -267,7 +515,34 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
           </Box>
 
           {/* PubCard */}
-          <Box sx={cardWrapSx}>
+          <Box
+            sx={{
+              ...cardWrapSx,
+              position: "relative",
+              flexShrink: 0,
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "8px",
+                height: "100%",
+                background: "linear-gradient(90deg, rgba(6, 182, 212, 0.5) 0%, rgba(6, 182, 212, 0) 100%)",
+                pointerEvents: "none",
+                zIndex: 1,
+              },
+              "> *": {
+                ...cardWrapSx["> *"],
+                overflow: "hidden",
+                backdropFilter: "blur(10px)",
+                transition: "all 0.2s ease",
+              },
+              "&:hover > *": {
+                transform: "translateY(-2px)",
+                boxShadow: "0 0 30px rgba(6, 182, 212, 0.4)",
+              },
+            }}
+          >
             {isLoading ? (
               <Skeleton borderRadius="lg" height={isFull ? "180px" : "120px"} />
             ) : (
@@ -276,7 +551,34 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
           </Box>
 
           {/* AuthCard */}
-          <Box sx={cardWrapSx}>
+          <Box
+            sx={{
+              ...cardWrapSx,
+              position: "relative",
+              flexShrink: 0,
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "8px",
+                height: "100%",
+                background: "linear-gradient(90deg, rgba(251, 146, 60, 0.5) 0%, rgba(251, 146, 60, 0) 100%)",
+                pointerEvents: "none",
+                zIndex: 1,
+              },
+              "> *": {
+                ...cardWrapSx["> *"],
+                overflow: "hidden",
+                backdropFilter: "blur(10px)",
+                transition: "all 0.2s ease",
+              },
+              "&:hover > *": {
+                transform: "translateY(-2px)",
+                boxShadow: "0 0 30px rgba(251, 146, 60, 0.4)",
+              },
+            }}
+          >
             {isLoading ? (
               <Skeleton borderRadius="lg" height={isFull ? "180px" : "120px"} />
             ) : (
@@ -289,7 +591,34 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
           </Box>
 
           {/* ProgressCard — always show */}
-          <Box sx={cardWrapSx}>
+          <Box
+            sx={{
+              ...cardWrapSx,
+              position: "relative",
+              flexShrink: 0,
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "8px",
+                height: "100%",
+                background: "linear-gradient(90deg, rgba(74, 222, 128, 0.5) 0%, rgba(74, 222, 128, 0) 100%)",
+                pointerEvents: "none",
+                zIndex: 1,
+              },
+              "> *": {
+                ...cardWrapSx["> *"],
+                overflow: "hidden",
+                backdropFilter: "blur(10px)",
+                transition: "all 0.2s ease",
+              },
+              "&:hover > *": {
+                transform: "translateY(-2px)",
+                boxShadow: "0 0 30px rgba(74, 222, 128, 0.4)",
+              },
+            }}
+          >
             {isLoading ? (
               <Skeleton borderRadius="lg" height={isFull ? "180px" : "160px"} />
             ) : (
@@ -302,7 +631,30 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               />
             )}
           </Box>
-        </Flex>
+          </Flex>
+
+          {/* Action Buttons Row */}
+          {pivotTask && (
+            <Box w="100%" mt={4}>
+              <HStack justify="center" spacing={4}>
+                <Button
+                  className="mr-button"
+                  onClick={handleMarkComplete}
+                  bg="var(--mr-green-border)"
+                  color="var(--mr-green)"
+                  _hover={{
+                    bg: "var(--mr-green)",
+                    color: "black",
+                  }}
+                  size="md"
+                  leftIcon={<span>✓</span>}
+                >
+                  Mark Complete
+                </Button>
+              </HStack>
+            </Box>
+          )}
+        </Box>
       )}
     </Box>
   );

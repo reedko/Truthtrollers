@@ -16,7 +16,7 @@ export default function({ query, pool }) {
 
 // TODO: Import or define fetchImageWithPuppeteer
 // This function is used in addContent route but not defined in original server.js
-async function fetchImageWithPuppeteer(url) {
+async function fetchImageWithPuppeteer(_url) {
   throw new Error("fetchImageWithPuppeteer not implemented");
 }
 
@@ -163,16 +163,117 @@ WHERE t.content_type = 'task' AND t.content_id = ?
  * Check if content exists by URL
  */
 router.post("/api/check-content", (req, res) => {
-  const { url } = req.body;
+  const { url, userId } = req.body;
+  logger.log(`🔍 [/api/check-content] Checking URL: ${url}, userId: ${userId || 'none'}`);
+
   const sql = "SELECT * FROM content WHERE url = ?";
-  pool.query(sql, [url], (err, results) => {
-    if (err) return res.status(500).send({ error: err });
+  pool.query(sql, [url], async (err, results) => {
+    if (err) {
+      logger.error(`❌ [/api/check-content] Database error:`, err);
+      return res.status(500).send({ error: err });
+    }
     if (results.length > 0) {
-      res.send({ exists: true, task: results[0] });
+      const task = results[0];
+
+      // Check if user has completed this task
+      let isCompleted = false;
+      if (userId) {
+        try {
+          const completionCheck = await query(
+            `SELECT completed_at FROM content_users
+             WHERE content_id = ? AND user_id = ? AND completed_at IS NOT NULL`,
+            [task.content_id, userId]
+          );
+          isCompleted = completionCheck.length > 0;
+          logger.log(`✅ [/api/check-content] User completion status: ${isCompleted}`);
+        } catch (checkErr) {
+          logger.error(`❌ [/api/check-content] Error checking completion:`, checkErr);
+        }
+      }
+
+      logger.log(`✅ [/api/check-content] Found content: content_id=${task.content_id}, content_name="${task.content_name?.substring(0, 50)}...", completed=${isCompleted}`);
+      res.send({ exists: true, task: task, isCompleted });
     } else {
+      logger.log(`❌ [/api/check-content] No content found for URL: ${url}`);
       res.send({ exists: false });
     }
   });
+});
+
+/**
+ * POST /api/mark-task-complete
+ * Mark a task as completed for a user
+ */
+router.post("/api/mark-task-complete", async (req, res) => {
+  const { contentId, userId } = req.body;
+
+  if (!contentId || !userId) {
+    return res.status(400).json({ error: "contentId and userId are required" });
+  }
+
+  logger.log(`✅ [/api/mark-task-complete] Marking content_id=${contentId} as complete for user_id=${userId}`);
+
+  try {
+    // Check if content_users record exists
+    const existing = await query(
+      `SELECT * FROM content_users WHERE content_id = ? AND user_id = ?`,
+      [contentId, userId]
+    );
+
+    if (existing.length > 0) {
+      // Update existing record
+      await query(
+        `UPDATE content_users SET completed_at = NOW() WHERE content_id = ? AND user_id = ?`,
+        [contentId, userId]
+      );
+      logger.log(`✅ [/api/mark-task-complete] Updated existing record`);
+    } else {
+      // Create new record with completion
+      await query(
+        `INSERT INTO content_users (content_id, user_id, completed_at) VALUES (?, ?, NOW())`,
+        [contentId, userId]
+      );
+      logger.log(`✅ [/api/mark-task-complete] Created new record with completion`);
+    }
+
+    res.json({ success: true, message: "Task marked as complete" });
+  } catch (error) {
+    logger.error(`❌ [/api/mark-task-complete] Error:`, error);
+    res.status(500).json({ error: "Failed to mark task as complete" });
+  }
+});
+
+/**
+ * POST /api/mark-task-incomplete
+ * Mark a task as incomplete for a user
+ */
+router.post("/api/mark-task-incomplete", async (req, res) => {
+  const { contentId, userId } = req.body;
+
+  if (!contentId || !userId) {
+    return res.status(400).json({ error: "contentId and userId are required" });
+  }
+
+  logger.log(`⏸️ [/api/mark-task-incomplete] Marking content_id=${contentId} as incomplete for user_id=${userId}`);
+
+  try {
+    // Update existing record to set completed_at to NULL
+    const result = await query(
+      `UPDATE content_users SET completed_at = NULL WHERE content_id = ? AND user_id = ?`,
+      [contentId, userId]
+    );
+
+    if (result.affectedRows === 0) {
+      logger.log(`⚠️ [/api/mark-task-incomplete] No record found to update`);
+      return res.status(404).json({ error: "Task assignment not found" });
+    }
+
+    logger.log(`✅ [/api/mark-task-incomplete] Marked as incomplete`);
+    res.json({ success: true, message: "Task marked as incomplete" });
+  } catch (error) {
+    logger.error(`❌ [/api/mark-task-incomplete] Error:`, error);
+    res.status(500).json({ error: "Failed to mark task as incomplete" });
+  }
 });
 
 /**

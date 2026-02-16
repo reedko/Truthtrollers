@@ -243,7 +243,7 @@ export default function createContentScrapeRoutes({ query }) {
   // ============================================================
   router.post("/api/scrape-task", async (req, res) => {
     try {
-      const { url, raw_html, raw_text, force } = req.body;
+      const { url, raw_html, raw_text, force, media_source, authors: providedAuthors } = req.body;
 
       if (!url) {
         return res.status(400).json({
@@ -294,6 +294,13 @@ export default function createContentScrapeRoutes({ query }) {
           thumbnail,
           content, // DOM references
         } = req.body;
+
+        logger.log(`🧪 [/api/scrape-task] TESTING MODE data:`, {
+          content_name: content_name?.substring(0, 50) + '...' || 'NONE',
+          media_source,
+          thumbnail: thumbnail ? `${thumbnail.substring(0, 60)}...` : 'NONE',
+          authorsCount: authors?.length || 0,
+        });
 
         // Import legacy storage helpers
         const { createContentInternal } = await import(
@@ -357,7 +364,7 @@ export default function createContentScrapeRoutes({ query }) {
         }
 
         // Single-pass scraping
-        const scrapeResult = await scrapeTask(query, url, raw_html);
+        const scrapeResult = await scrapeTask(query, url, raw_html, media_source, providedAuthors);
 
         if (!scrapeResult) {
           return res.status(500).json({
@@ -544,6 +551,7 @@ export default function createContentScrapeRoutes({ query }) {
   //  NEW: Uses scrapeReference with pre-fetched text from evidence engine
   // ============================================================
   router.post("/api/scrape-reference", async (req, res) => {
+    const startTime = Date.now();
     try {
       const {
         url,
@@ -568,12 +576,13 @@ export default function createContentScrapeRoutes({ query }) {
       }
 
       logger.log(
-        `🟦 [/api/scrape-reference] Processing reference${taskContentId ? ` for task ${taskContentId}` : ''}: ${url}`
+        `🟦 [/api/scrape-reference] START Processing reference${taskContentId ? ` for task ${taskContentId}` : ''}: ${url}`
       );
 
       // -----------------------------------------------------------------
       // 1. SCRAPE REFERENCE (using pre-fetched HTML/text if available)
       // -----------------------------------------------------------------
+      logger.log(`  ⏱️  [1/5] Scraping reference...`);
       const scrapeResult = await scrapeReference(query, {
         url,
         raw_text,
@@ -582,6 +591,7 @@ export default function createContentScrapeRoutes({ query }) {
         authors,
         taskContentId,
       });
+      logger.log(`  ✅ [1/5] Scrape complete (${Date.now() - startTime}ms)`);
 
       if (!scrapeResult) {
         return res.status(500).json({
@@ -598,6 +608,7 @@ export default function createContentScrapeRoutes({ query }) {
       //    Otherwise, if taskContentId provided, use ALL task claims for context.
       //    This ensures context-aware extraction for manual dashboard scrapes.
       // -----------------------------------------------------------------
+      logger.log(`  ⏱️  [2/5] Fetching task claims for context...`);
       let taskClaimsContext = null;
       if (claimIds && Array.isArray(claimIds) && claimIds.length > 0) {
         // Specific claims provided (e.g., from claim detail page)
@@ -606,7 +617,7 @@ export default function createContentScrapeRoutes({ query }) {
           [claimIds]
         );
         taskClaimsContext = claimRows.map(row => row.claim_text);
-        logger.log(`🔍 [/api/scrape-reference] Using ${taskClaimsContext.length} specific claims for context`);
+        logger.log(`  ✅ [2/5] Using ${taskClaimsContext.length} specific claims for context (${Date.now() - startTime}ms)`);
       } else if (taskContentId) {
         // No specific claims, but we have a task — use ALL task claims as context
         const taskClaimRows = await query(
@@ -619,15 +630,13 @@ export default function createContentScrapeRoutes({ query }) {
         );
         if (taskClaimRows.length > 0) {
           taskClaimsContext = taskClaimRows.map(row => row.claim_text);
-          logger.log(`🔍 [/api/scrape-reference] Fetched ${taskClaimsContext.length} task claims from content_id=${taskContentId} for context:`);
-          taskClaimsContext.forEach((claim, i) => {
-            logger.log(`   ${i + 1}. "${claim}"`);
-          });
+          logger.log(`  ✅ [2/5] Fetched ${taskClaimsContext.length} task claims from content_id=${taskContentId} for context (${Date.now() - startTime}ms)`);
         } else {
-          logger.log(`⚠️  [/api/scrape-reference] No task claims found for content_id=${taskContentId}`);
+          logger.log(`  ⚠️  [2/5] No task claims found for content_id=${taskContentId}`);
         }
       }
 
+      logger.log(`  ⏱️  [3/5] Extracting reference claims via OpenAI (this may take 30-60s)...`);
       const refClaims = await processTaskClaims({
         query,
         taskContentId: referenceContentId,
@@ -635,6 +644,7 @@ export default function createContentScrapeRoutes({ query }) {
         claimType: "reference",
         taskClaimsContext,
       });
+      logger.log(`  ✅ [3/5] Extracted ${refClaims.length} reference claims (${Date.now() - startTime}ms)`);
 
       const refClaimIds = refClaims.map((c) => c.id);
 
@@ -649,6 +659,7 @@ export default function createContentScrapeRoutes({ query }) {
       } else if (taskContentId && claimIds && claimIds.length > 0) {
         // Auto-generate claim_links for manual scrapes with task context
         try {
+          logger.log(`  ⏱️  [4/5] Matching reference claims to task claims via AI...`);
           // Fetch task claims
           const taskClaimRows = await query(
             `SELECT c.claim_id, c.claim_text
@@ -665,11 +676,13 @@ export default function createContentScrapeRoutes({ query }) {
               text: row.claim_text
             }));
 
+            logger.log(`  ⏱️  Calling matchClaimsToTaskClaims with ${refClaims.length} ref claims and ${taskClaimsForMatching.length} task claims...`);
             const claimMatches = await matchClaimsToTaskClaims({
               referenceClaims: refClaims,
               taskClaims: taskClaimsForMatching,
               llm: openAiLLM
             });
+            logger.log(`  ✅ [4/5] Matched ${claimMatches.length} claims (${Date.now() - startTime}ms)`);
 
             // Insert into claim_links (use NULL user_id for AI-created links)
             for (const match of claimMatches) {
@@ -811,8 +824,9 @@ export default function createContentScrapeRoutes({ query }) {
       // -----------------------------------------------------------------
       // 4. Return success - no sub-references for references
       // -----------------------------------------------------------------
+      const totalTime = Date.now() - startTime;
       logger.log(
-        `✅ [/api/scrape-reference] Complete: reference content_id=${referenceContentId}`
+        `✅ [/api/scrape-reference] COMPLETE: reference content_id=${referenceContentId} (total time: ${totalTime}ms / ${(totalTime/1000).toFixed(1)}s)`
       );
 
       return res.json({

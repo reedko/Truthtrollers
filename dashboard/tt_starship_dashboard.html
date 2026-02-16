@@ -1,0 +1,671 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TruthTrollers – Starship Helm Dashboard (Mock)</title>
+  <style>
+    :root {
+      --cyan: rgba(110, 255, 245, 0.95);
+      --cyan2: rgba(110, 255, 245, 0.35);
+      --glass: rgba(8, 20, 32, 0.55);
+      --glass2: rgba(8, 20, 32, 0.25);
+      --line: rgba(110, 255, 245, 0.22);
+      --shadow: rgba(0,0,0,0.55);
+      --warning: rgba(255, 140, 90, 0.95);
+      --ok: rgba(90, 255, 140, 0.95);
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #050a12;
+      color: #dffcff;
+      font-family: var(--font);
+      overflow: hidden;
+    }
+
+    /* Stage */
+    .stage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background:
+        radial-gradient(1200px 700px at 50% 20%, rgba(110,255,245,0.08), transparent 55%),
+        radial-gradient(900px 500px at 80% 80%, rgba(255,140,90,0.05), transparent 55%),
+        #050a12;
+    }
+
+    /* Background image */
+    .bg {
+      position: absolute;
+      inset: 0;
+      background-image: url("./tt_starship_helm.png");
+      background-size: cover;
+      background-position: center;
+      filter: contrast(1.05) saturate(1.05);
+      transform: scale(1.02);
+    }
+
+    /* HUD overlay */
+    .hud {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(to bottom, rgba(0,0,0,0.35), rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.45)),
+        repeating-linear-gradient(
+          to bottom,
+          rgba(255,255,255,0.02),
+          rgba(255,255,255,0.02) 2px,
+          rgba(0,0,0,0) 6px,
+          rgba(0,0,0,0) 10px
+        );
+      mix-blend-mode: screen;
+      opacity: 0.45;
+    }
+
+    /* Hotspots */
+    .hotspot {
+      position: absolute;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, var(--glass), var(--glass2));
+      box-shadow: 0 20px 60px var(--shadow);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      cursor: pointer;
+      pointer-events: auto;
+      transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+      overflow: hidden;
+    }
+
+    .hotspot::before {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      background: radial-gradient(600px 150px at 20% 0%, rgba(110,255,245,0.18), transparent 60%);
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .hotspot:hover {
+      transform: translateY(-2px) scale(1.006);
+      border-color: rgba(110,255,245,0.45);
+      box-shadow: 0 24px 70px rgba(0,0,0,0.62);
+    }
+
+    .hotspot.active {
+      border-color: rgba(110,255,245,0.85);
+      box-shadow: 0 30px 90px rgba(0,0,0,0.72);
+      background: linear-gradient(180deg, rgba(12, 36, 52, 0.78), rgba(6, 18, 30, 0.45));
+      transform: translateY(-3px) scale(1.01);
+    }
+
+    .titlebar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px 8px;
+      border-bottom: 1px solid rgba(110,255,245,0.12);
+    }
+
+    .label {
+      letter-spacing: 0.22em;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: rgba(210,255,252,0.9);
+      text-shadow: 0 0 18px rgba(110,255,245,0.22);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chip {
+      font-size: 11px;
+      padding: 6px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(110,255,245,0.2);
+      background: rgba(0,0,0,0.28);
+      color: rgba(220,255,252,0.92);
+      letter-spacing: 0.08em;
+      user-select: none;
+    }
+
+    .content {
+      padding: 12px;
+      font-size: 13px;
+      color: rgba(220,255,252,0.85);
+      line-height: 1.35;
+    }
+
+    .kpi {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 8px;
+    }
+    .kpi .box {
+      border: 1px solid rgba(110,255,245,0.14);
+      border-radius: 12px;
+      padding: 10px;
+      background: rgba(0,0,0,0.18);
+    }
+    .kpi .num {
+      font-size: 20px;
+      color: var(--cyan);
+      letter-spacing: 0.04em;
+    }
+    .kpi .cap {
+      font-size: 10px;
+      opacity: 0.85;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    .list {
+      margin-top: 10px;
+      display: grid;
+      gap: 8px;
+      max-height: 180px;
+      overflow: auto;
+      padding-right: 6px;
+    }
+    .item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(110,255,245,0.12);
+      background: rgba(0,0,0,0.18);
+    }
+    .item .left {
+      display: grid;
+      gap: 4px;
+      min-width: 0;
+    }
+    .item .name {
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .item .meta {
+      font-size: 11px;
+      opacity: 0.78;
+    }
+    .btn {
+      font-size: 11px;
+      padding: 7px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(110,255,245,0.22);
+      background: rgba(0,0,0,0.25);
+      color: rgba(220,255,252,0.92);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      cursor: pointer;
+      user-select: none;
+    }
+    .btn:hover {
+      border-color: rgba(110,255,245,0.55);
+    }
+
+    /* Layout: positions tuned for 16:9 and this background */
+    /* You can tweak these numbers to align with your actual live UI */
+    #welcome {
+      left: 13%;
+      top: 11%;
+      width: 44%;
+      height: 20%;
+    }
+
+    #activity {
+      left: 13%;
+      top: 33%;
+      width: 52%;
+      height: 16%;
+    }
+
+    #assigned {
+      left: 13%;
+      top: 51%;
+      width: 52%;
+      height: 34%;
+    }
+
+    #additional {
+      left: 67%;
+      top: 51%;
+      width: 20%;
+      height: 34%;
+    }
+
+    #claims {
+      left: 67%;
+      top: 11%;
+      width: 20%;
+      height: 38%;
+    }
+
+    /* Modal */
+    .modal {
+      position: absolute;
+      inset: 0;
+      display: none;
+      place-items: center;
+      background: rgba(0,0,0,0.6);
+      pointer-events: auto;
+    }
+    .modal.open { display: grid; }
+
+    .modalCard {
+      width: min(880px, 92vw);
+      border-radius: 18px;
+      border: 1px solid rgba(110,255,245,0.25);
+      background: linear-gradient(180deg, rgba(10,28,42,0.95), rgba(4,10,18,0.85));
+      box-shadow: 0 30px 120px rgba(0,0,0,0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      overflow: hidden;
+    }
+
+    .modalHeader {
+      display:flex;
+      justify-content: space-between;
+      align-items:center;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(110,255,245,0.16);
+    }
+
+    .modalHeader h2 {
+      margin: 0;
+      font-size: 14px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(220,255,252,0.95);
+    }
+
+    .close {
+      border: 1px solid rgba(110,255,245,0.25);
+      background: rgba(0,0,0,0.25);
+      color: rgba(220,255,252,0.92);
+      border-radius: 12px;
+      padding: 8px 10px;
+      cursor: pointer;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-size: 11px;
+    }
+    .close:hover { border-color: rgba(110,255,245,0.55); }
+
+    .modalBody {
+      padding: 16px;
+      color: rgba(220,255,252,0.85);
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
+    .grid2 {
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .note {
+      font-size: 12px;
+      opacity: 0.85;
+      border-left: 2px solid rgba(110,255,245,0.35);
+      padding-left: 10px;
+    }
+
+    /* Help strip */
+    .help {
+      position: absolute;
+      left: 50%;
+      bottom: 12px;
+      transform: translateX(-50%);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      color: rgba(220,255,252,0.72);
+      background: rgba(0,0,0,0.25);
+      border: 1px solid rgba(110,255,245,0.14);
+      padding: 10px 12px;
+      border-radius: 999px;
+      pointer-events: none;
+      backdrop-filter: blur(10px);
+    }
+
+    /* Mobile fallback */
+    @media (max-width: 900px) {
+      #welcome, #activity, #assigned, #additional, #claims {
+        left: 6%;
+        width: 88%;
+      }
+      #welcome { top: 8%; height: 18%; }
+      #claims { top: 28%; height: 18%; }
+      #activity { top: 48%; height: 14%; }
+      #assigned { top: 64%; height: 30%; }
+      #additional { display:none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="bg" aria-hidden="true"></div>
+    <div class="hud" aria-hidden="true"></div>
+
+    <!-- Welcome / Bridge briefing -->
+    <section class="hotspot" id="welcome" data-panel="welcome" tabindex="0" role="button" aria-label="Open Welcome panel">
+      <div class="titlebar">
+        <div class="label">Bridge Briefing</div>
+        <div class="chip">Status: Online</div>
+      </div>
+      <div class="content">
+        <div style="font-size: 22px; letter-spacing: 0.02em; color: var(--cyan); margin-bottom: 6px;">
+          Welcome, reedko@gmail.com 👋
+        </div>
+        <div>Track tasks, verify claims, and strengthen community trust.</div>
+        <div class="kpi">
+          <div class="box"><div class="num">28</div><div class="cap">Assigned</div></div>
+          <div class="box"><div class="num">264</div><div class="cap">Verifications</div></div>
+          <div class="box"><div class="num">0</div><div class="cap">Flags</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Activity toggle -->
+    <section class="hotspot" id="activity" data-panel="activity" tabindex="0" role="button" aria-label="Open Activity panel">
+      <div class="titlebar">
+        <div class="label">Activity</div>
+        <div class="chip">My ↔ Site</div>
+      </div>
+      <div class="content">
+        <div class="note">Click to flip between <b>My Activity</b> and <b>Site Activity</b>. This panel should become your “ship’s bridge” instrument cluster.</div>
+        <div class="kpi">
+          <div class="box"><div class="num">24%</div><div class="cap">Week progress</div></div>
+          <div class="box"><div class="num">73</div><div class="cap">Tasks touched</div></div>
+          <div class="box"><div class="num">1.1k</div><div class="cap">Links</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Assigned tasks -->
+    <section class="hotspot" id="assigned" data-panel="assigned" tabindex="0" role="button" aria-label="Open Assigned Tasks panel">
+      <div class="titlebar">
+        <div class="label">Assigned Tasks</div>
+        <div class="chip">Scroll</div>
+      </div>
+      <div class="content">
+        <div class="list" id="assignedList">
+          <div class="item">
+            <div class="left">
+              <div class="name">RFK Jr. disparaged vaccines dozens of times…</div>
+              <div class="meta">Priority: High • Mode: Verify</div>
+            </div>
+            <button class="btn" data-action="openTask">Verify</button>
+          </div>
+          <div class="item">
+            <div class="left">
+              <div class="name">Fact-checking Fortune: Has Polio Vaccine Saved…</div>
+              <div class="meta">Priority: Medium • Mode: Evaluate</div>
+            </div>
+            <button class="btn" data-action="openTask">Evaluate</button>
+          </div>
+          <div class="item">
+            <div class="left">
+              <div class="name">Stand up for the facts!</div>
+              <div class="meta">Priority: Low • Mode: Evaluate</div>
+            </div>
+            <button class="btn" data-action="openTask">Evaluate</button>
+          </div>
+          <div class="item">
+            <div class="left">
+              <div class="name">Study links heavy drinking to brain injury…</div>
+              <div class="meta">Priority: Medium • Mode: Verify</div>
+            </div>
+            <button class="btn" data-action="openTask">Verify</button>
+          </div>
+        </div>
+        <div class="note" style="margin-top:10px;">
+          Later: swap these cards for your real TaskCards and wire <code>Select / Evaluate</code> to routes.
+        </div>
+      </div>
+    </section>
+
+    <!-- Additional tasks (second tier / third tier) -->
+    <section class="hotspot" id="additional" data-panel="additional" tabindex="0" role="button" aria-label="Open Additional Tasks panel">
+      <div class="titlebar">
+        <div class="label">Additional Tasks</div>
+        <div class="chip">Community Ops</div>
+      </div>
+      <div class="content">
+        <div class="list">
+          <div class="item">
+            <div class="left">
+              <div class="name">Evaluate other user ratings</div>
+              <div class="meta">Queue: 2 ratings</div>
+            </div>
+            <button class="btn" data-action="openQueue">Evaluate</button>
+          </div>
+          <div class="item">
+            <div class="left">
+              <div class="name">Evaluate other users</div>
+              <div class="meta">Queue: 8 users</div>
+            </div>
+            <button class="btn" data-action="openQueue">Evaluate</button>
+          </div>
+          <div class="item">
+            <div class="left">
+              <div class="name">Vet pending claims</div>
+              <div class="meta">Queue: 5 claims</div>
+            </div>
+            <button class="btn" data-action="openQueue">Evaluate</button>
+          </div>
+        </div>
+        <div class="note" style="margin-top:10px;">
+          This is your “third tier”: people verifying verifiers. Keep it here on the Bridge.
+        </div>
+      </div>
+    </section>
+
+    <!-- Claims / status -->
+    <section class="hotspot" id="claims" data-panel="claims" tabindex="0" role="button" aria-label="Open Claims Verified panel">
+      <div class="titlebar">
+        <div class="label">Claims Verified</div>
+        <div class="chip">0</div>
+      </div>
+      <div class="content">
+        <div class="note">Use this as a status console: verified count, evaluation rate, and “system alerts” (flag spikes, brigading detection, etc.).</div>
+        <div class="kpi">
+          <div class="box"><div class="num">0</div><div class="cap">Verified</div></div>
+          <div class="box"><div class="num">0%</div><div class="cap">Eval rate</div></div>
+          <div class="box"><div class="num">—</div><div class="cap">Risk</div></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="help">Click any panel to “activate” it • Esc closes • This is a wired mock for your alpha experience</div>
+
+    <!-- Modal -->
+    <div class="modal" id="modal" aria-hidden="true">
+      <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modalHeader">
+          <h2 id="modalTitle">Panel</h2>
+          <button class="close" id="closeBtn">Close</button>
+        </div>
+        <div class="modalBody" id="modalBody"></div>
+      </div>
+    </div>
+
+    <script>
+      const panels = [...document.querySelectorAll('.hotspot')];
+      const modal = document.getElementById('modal');
+      const modalTitle = document.getElementById('modalTitle');
+      const modalBody = document.getElementById('modalBody');
+      const closeBtn = document.getElementById('closeBtn');
+
+      function openModal(title, bodyHtml) {
+        modalTitle.textContent = title;
+        modalBody.innerHTML = bodyHtml;
+        modal.classList.add('open');
+        modal.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeModal() {
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+      }
+
+      function activate(panelEl) {
+        panels.forEach(p => p.classList.remove('active'));
+        panelEl.classList.add('active');
+      }
+
+      panels.forEach(p => {
+        p.addEventListener('click', (e) => {
+          // avoid activating twice when clicking a button inside
+          const panel = e.currentTarget;
+          activate(panel);
+
+          const key = panel.dataset.panel;
+
+          const contentMap = {
+            welcome: {
+              title: 'Bridge Briefing',
+              body: `
+                <div class="note">This panel should become your “mission control”: quick identity + current objectives + urgent alerts.</div>
+                <div class="grid2">
+                  <div>
+                    <b>Suggested actions</b>
+                    <ul>
+                      <li>Submit text in <b>TextPad</b> → create a new verification task</li>
+                      <li>Pick an assigned task → open <b>Workspace</b></li>
+                      <li>Switch to <b>Game</b> mode for fast evaluation</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <b>Alpha guardrails</b>
+                    <ul>
+                      <li>Disable buggy scraping features</li>
+                      <li>Keep flows tight: Submit → Workspace → Link → Score</li>
+                      <li>Curate early users for signal quality</li>
+                    </ul>
+                  </div>
+                </div>
+              `
+            },
+            activity: {
+              title: 'Activity Console',
+              body: `
+                <div class="note">Wire this to a real toggle: <b>My Activity</b> vs <b>Site Activity</b> (same chart component, different query).</div>
+                <div style="margin-top:12px;">
+                  <b>Implementation idea</b>
+                  <ul>
+                    <li>Button group: <code>my</code> | <code>site</code></li>
+                    <li>Query params: <code>?scope=my</code> / <code>?scope=site</code></li>
+                    <li>Cache both so it feels instant</li>
+                  </ul>
+                </div>
+              `
+            },
+            assigned: {
+              title: 'Assigned Tasks',
+              body: `
+                <div class="note">Make each card route to a single “Task HQ” page: Workspace + Molecule + Game tabs in one place.</div>
+                <div style="margin-top:12px;">
+                  <b>Buttons</b>
+                  <ul>
+                    <li><b>Select</b> → sets active task + opens Workspace</li>
+                    <li><b>Evaluate</b> → opens Game mode on that task</li>
+                  </ul>
+                </div>
+              `
+            },
+            additional: {
+              title: 'Community Ops Tasks',
+              body: `
+                <div class="note">This is the “verification of verifiers” layer: ratings on ratings, users on users.</div>
+                <div style="margin-top:12px;">
+                  <b>Queues</b>
+                  <ul>
+                    <li>Evaluate other users’ ratings (anti-brigading + quality control)</li>
+                    <li>Evaluate contributors (credibility / expertise / behavior)</li>
+                    <li>Vet pending claims (third-tier “info vet”)</li>
+                  </ul>
+                </div>
+              `
+            },
+            claims: {
+              title: 'Claims Verified Console',
+              body: `
+                <div class="note">Make this a small “alerts/status” stack.</div>
+                <div style="margin-top:12px;">
+                  <b>Later indicators</b>
+                  <ul>
+                    <li>Brigading detector (sudden rating spikes)</li>
+                    <li>Disagreement hotspots (high variance on a claim)</li>
+                    <li>Unlinked-claim backlog</li>
+                  </ul>
+                </div>
+              `
+            }
+          };
+
+          const entry = contentMap[key];
+          if (entry) openModal(entry.title, entry.body);
+        });
+
+        p.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            p.click();
+          }
+        });
+      });
+
+      closeBtn.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+      });
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModal();
+      });
+
+      // Wire buttons inside lists (demo)
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-action]');
+        if (!btn) return;
+
+        e.stopPropagation();
+        const action = btn.dataset.action;
+
+        if (action === 'openTask') {
+          openModal('Task Action', `
+            <div class="note">In your real app, this should route to Workspace/Game for the selected task.</div>
+            <ul>
+              <li>Set active task in store</li>
+              <li>Navigate to <code>/workspace?task=...</code> or <code>/game?task=...</code></li>
+            </ul>
+          `);
+        } else if (action === 'openQueue') {
+          openModal('Queue Action', `
+            <div class="note">In your real app, this should route to the relevant evaluation queue.</div>
+            <ul>
+              <li><code>/evaluate/ratings</code></li>
+              <li><code>/evaluate/users</code></li>
+              <li><code>/evaluate/pending-claims</code></li>
+            </ul>
+          `);
+        }
+      });
+    </script>
+  </div>
+</body>
+</html>

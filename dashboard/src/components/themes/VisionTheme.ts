@@ -10,22 +10,18 @@ const theme = extendTheme({
   styles: {
     global: {
       html: {
-        height: "100%",
       },
       body: {
         bgGradient:
           "radial-gradient(circle at 75% 80%, rgba(94, 234, 212, 0.4), rgba(2, 0, 36, 0.95))",
         backgroundAttachment: "fixed",
-
         backgroundPosition: "center",
         color: "gray.100",
         margin: 0,
         padding: 0,
-
         boxSizing: "border-box",
       },
       "#root": {
-        height: "100%",
       },
     },
   },

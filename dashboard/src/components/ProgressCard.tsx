@@ -23,7 +23,7 @@ const ProgressCard: React.FC<ProgressCardProps> = ({
   return (
     <Box
       className="mr-card mr-card-purple"
-      p={5}
+      p={3}
       w="100%" // 👈 obey wrapper (no fixed 250px)
       h="405px"
       position="relative"
@@ -31,7 +31,7 @@ const ProgressCard: React.FC<ProgressCardProps> = ({
       <div className="mr-glow-bar mr-glow-bar-purple" />
       <div className="mr-scanlines" />
       <Center>
-        <Text className="mr-badge mr-badge-purple" fontSize="md" mb={3}>
+        <Text className="mr-badge mr-badge-purple" fontSize="sm" mb={1}>
           Progress Gauges
         </Text>
       </Center>

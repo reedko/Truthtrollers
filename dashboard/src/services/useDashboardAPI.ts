@@ -915,10 +915,17 @@ export const scrapeNewContent = async (url: string) => {
  */
 export const scrapeAndAddReference = async (url: string, taskId: number) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/scrape-reference`, {
-      url,
-      taskId,
-    });
+    // Increase timeout to 5 minutes for AI operations (claim extraction + matching)
+    const response = await axios.post(
+      `${API_BASE_URL}/api/scrape-reference`,
+      {
+        url,
+        taskContentId: taskId, // Fix: use taskContentId instead of taskId
+      },
+      {
+        timeout: 300000, // 5 minutes
+      }
+    );
 
     if (response.status === 200) {
       console.log("✅ Scraped reference added:", response.data);
@@ -926,6 +933,9 @@ export const scrapeAndAddReference = async (url: string, taskId: number) => {
     }
   } catch (error) {
     console.error("❌ Error scraping reference:", error);
+    if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
+      console.error("⏱️ Request timed out after 5 minutes");
+    }
   }
   return null;
 };

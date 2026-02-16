@@ -85,7 +85,7 @@ const BoolCard: React.FC<BoolCardProps> = ({
 
   // Parent (UnifiedHeader) should control width; we go full-width inside the slot.
   const container = {
-    p: isXs ? 2 : isSm ? 3 : 5,
+    p: 3,
     w: "100%",
     h: isXs
       ? dense
@@ -100,7 +100,7 @@ const BoolCard: React.FC<BoolCardProps> = ({
       : "405px",
   };
 
-  const titleFont = isXs ? "xs" : isSm ? "sm" : "md";
+  const titleFont = isXs ? "xs" : isSm ? "xs" : "sm";
   const labelFont = isXs ? "xs" : isSm ? "xs" : "sm";
 
   // Dial sizes — tiny in xs
@@ -134,7 +134,7 @@ const BoolCard: React.FC<BoolCardProps> = ({
         <Text
           className="mr-badge mr-badge-green"
           fontSize={titleFont}
-          mb={isXs ? 1 : isSm ? 2 : 3}
+          mb={1}
         >
           Veracity Gauges
         </Text>
