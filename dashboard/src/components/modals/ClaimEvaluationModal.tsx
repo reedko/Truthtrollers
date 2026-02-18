@@ -102,18 +102,28 @@ const ClaimEvaluationModal: React.FC<ClaimEvaluationModalProps> = ({
 
   useEffect(() => {
     if (claim?.content_id) {
-      fetchReferencesWithClaimsForTask(claim.content_id).then((refs) => {
-        setReferences(refs);
-      });
+      fetchReferencesWithClaimsForTask(claim.content_id)
+        .then((refs) => {
+          setReferences(refs);
+        })
+        .catch((error) => {
+          console.error("Error fetching references for task:", error);
+          setReferences([]); // Set empty array on error
+        });
     }
   }, [claim]);
 
   useEffect(() => {
     if (claim?.claim_id) {
-      fetchClaimSources(claim.claim_id).then((sources) => {
-        const ids = sources.map((s) => s.reference_content_id);
-        setLinkedReferenceIds(ids);
-      });
+      fetchClaimSources(claim.claim_id)
+        .then((sources) => {
+          const ids = sources.map((s) => s.reference_content_id);
+          setLinkedReferenceIds(ids);
+        })
+        .catch((error) => {
+          console.error("Error fetching claim sources:", error);
+          setLinkedReferenceIds([]); // Set empty array on error
+        });
     }
   }, [claim]);
 

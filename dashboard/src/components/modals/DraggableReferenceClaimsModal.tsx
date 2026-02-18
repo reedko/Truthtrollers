@@ -174,16 +174,19 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
             const claimRect = claimEl.getBoundingClientRect();
             const taskRect = taskClaimEl.getBoundingClientRect();
 
-            // Only draw lines for claims that are visible in the scroll container
+            // Skip if the reference claim is scrolled out of the modal
             if (containerRect) {
-              const isVisible =
+              const refClaimVisible =
                 claimRect.bottom >= containerRect.top &&
                 claimRect.top <= containerRect.bottom;
-
-              if (!isVisible) {
-                return; // Skip this line if claim is scrolled out of view
-              }
+              if (!refClaimVisible) return;
             }
+
+            // Skip if the task claim is scrolled fully off the viewport
+            const vh = window.innerHeight;
+            const taskClaimVisible =
+              taskRect.bottom > 0 && taskRect.top < vh;
+            if (!taskClaimVisible) return;
 
             lines.push({
               x1: claimRect.left,
@@ -210,11 +213,16 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
       scrollTimer = setTimeout(updateLines, 16); // ~60fps
     };
 
-    // Add scroll listener to update lines when scrolling
+    // Listen to the modal's own scroll container
     const scrollContainer = scrollContainerRef.current;
     if (scrollContainer) {
       scrollContainer.addEventListener('scroll', throttledUpdateLines);
     }
+
+    // Also listen to ALL scroll events on the page (capture phase catches any
+    // scrollable ancestor — workspace column, main layout, window, etc.)
+    // This keeps the task-claim end of each line tracking correctly.
+    window.addEventListener('scroll', throttledUpdateLines, true);
 
     return () => {
       clearTimeout(timer);
@@ -222,6 +230,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
       if (scrollContainer) {
         scrollContainer.removeEventListener('scroll', throttledUpdateLines);
       }
+      window.removeEventListener('scroll', throttledUpdateLines, true);
     };
   }, [isOpen, position, reference, claimLinks]);
 

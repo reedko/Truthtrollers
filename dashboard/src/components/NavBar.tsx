@@ -17,6 +17,7 @@ import ColorModeSwitch from "./ColorModeSwitch";
 import HeaderToggleSwitch from "./HeaderToggleSwitch";
 import { useTaskStore } from "../store/useTaskStore";
 import { AccountMenu } from "./AccountMenu";
+import { TourTriggerButton } from "./PlatformTour";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
@@ -112,6 +113,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
             </Menu>
           )}
 
+          <TourTriggerButton />
           <HeaderToggleSwitch />
           <ColorModeSwitch />
         </Flex>
@@ -256,6 +258,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
               </Menu>
             )}
 
+            <TourTriggerButton />
             <HeaderToggleSwitch />
             <ColorModeSwitch />
           </Flex>

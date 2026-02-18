@@ -22,7 +22,10 @@ import { useTaskScraper } from "../hooks/useTaskScraper";
 import TruthGauge from "./ModernArcGauge";
 import browser from "webextension-polyfill";
 import { Task } from "../entities/Task";
-import { getFacebookPostUrl, isFacebookPost } from "../services/scrapeFacebookPost";
+import {
+  getFacebookPostUrl,
+  isFacebookPost,
+} from "../services/scrapeFacebookPost";
 
 // Keep your base URL logic
 const BASE_URL =
@@ -85,9 +88,7 @@ const TaskCard: React.FC = () => {
     if (typeof storeUrl === "string" && storeUrl) return storeUrl;
 
     // Fallback: read currentUrl directly from storage (set by background before injection)
-    const { currentUrl } = (await browser.storage.local.get(
-      "currentUrl",
-    )) as {
+    const { currentUrl } = (await browser.storage.local.get("currentUrl")) as {
       currentUrl?: unknown;
     };
 
@@ -104,15 +105,19 @@ const TaskCard: React.FC = () => {
       if (!isFacebookPost(pageUrl)) return;
 
       // Check if we already have a URL stored
-      const stored = await browser.storage.local.get('currentUrl');
-      if (stored.currentUrl && typeof stored.currentUrl === 'string') {
-        console.log(`🔵 [TaskCard] Already have stored URL: ${stored.currentUrl}`);
+      const stored = await browser.storage.local.get("currentUrl");
+      if (stored.currentUrl && typeof stored.currentUrl === "string") {
+        console.log(
+          `🔵 [TaskCard] Already have stored URL: ${stored.currentUrl}`,
+        );
         setCurrentUrl(stored.currentUrl);
         return;
       }
 
       // Only if no stored URL, detect it (this opens embed dialog)
-      console.log(`🔵 [TaskCard] No stored URL, detecting Facebook post URL...`);
+      console.log(
+        `🔵 [TaskCard] No stored URL, detecting Facebook post URL...`,
+      );
       const postUrl = await getFacebookPostUrl();
       if (postUrl) {
         console.log(`🔵 [TaskCard] Detected Facebook post URL: ${postUrl}`);
@@ -155,23 +160,31 @@ const TaskCard: React.FC = () => {
     }
   }, []);
 
+  // Track thumbnail loading state to prevent showing wrong popup
+  const [thumbLoading, setThumbLoading] = React.useState(false);
+
   // Load the content thumbnail (dynamic) via background → blob
   useEffect(() => {
     (async () => {
+      if (!task?.thumbnail) {
+        setThumbBlob("");
+        setThumbLoading(false);
+        return;
+      }
+
+      setThumbLoading(true);
       try {
-        if (task?.thumbnail) {
-          const full = task.thumbnail.startsWith("http")
-            ? task.thumbnail
-            : `${BASE_URL}/${task.thumbnail}`;
-          const blobUrl = await getBlobUrl(full);
-          setThumbBlob(blobUrl);
-          blobPool.current.push(blobUrl);
-        } else {
-          setThumbBlob("");
-        }
+        const full = task.thumbnail.startsWith("http")
+          ? task.thumbnail
+          : `${BASE_URL}/${task.thumbnail}`;
+        const blobUrl = await getBlobUrl(full);
+        setThumbBlob(blobUrl);
+        blobPool.current.push(blobUrl);
       } catch (e) {
         console.warn("Thumb blob fetch failed:", e);
         setThumbBlob("");
+      } finally {
+        setThumbLoading(false);
       }
     })();
   }, [task?.thumbnail]);
@@ -277,7 +290,7 @@ const TaskCard: React.FC = () => {
           </HStack>
         </Box>
 
-        {imageUrl && task?.progress === "Completed" ? (
+        {!thumbLoading && imageUrl && task?.progress === "Completed" ? (
           <HStack
             spacing={1}
             align="flex-start"
@@ -330,6 +343,7 @@ const TaskCard: React.FC = () => {
             </Box>
           </HStack>
         ) : (
+          !thumbLoading &&
           imageUrl && (
             <Box
               display="flex"
@@ -342,7 +356,15 @@ const TaskCard: React.FC = () => {
           )
         )}
 
-        {imageUrl ? (
+        {thumbLoading ? (
+          <Box width="100%" py={4}>
+            <Center>
+              <Text color="#00a2ff" fontSize="sm">
+                Loading...
+              </Text>
+            </Center>
+          </Box>
+        ) : imageUrl ? (
           <Box width="280px">
             <Box width="100%" mb={2}>
               <Tooltip label={task?.content_name || "No title"} fontSize="sm">
@@ -366,7 +388,9 @@ const TaskCard: React.FC = () => {
             <Center mt={3}>
               <HStack spacing={3}>
                 <button className="mr-button" onClick={handleArgueClick}>
-                  <span style={{ position: "relative", zIndex: 1 }}>Argue</span>
+                  <span style={{ position: "relative", zIndex: 1 }}>
+                    Discuss
+                  </span>
                 </button>
                 <button
                   className="mr-button"

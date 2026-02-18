@@ -85,37 +85,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
     setImageError(false); // Reset image error state when task changes
   }, [task]);
 
-  // Fetch assigned users when task changes
-  useEffect(() => {
-    if (activeTask && useStore) {
-      fetchAssignedUsers(activeTask.content_id);
-    }
-  }, [activeTask, useStore, fetchAssignedUsers]);
-
-  // Check if task is completed
-  useEffect(() => {
-    const checkCompletion = async () => {
-      if (!activeTask || !user?.user_id) {
-        setIsCompleted(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/check-content?contentId=${activeTask.content_id}&userId=${user.user_id}`
-        );
-        if (response.ok) {
-          const data = await response.json();
-          setIsCompleted(data.isCompleted || false);
-        }
-      } catch (error) {
-        console.error("Error checking completion status:", error);
-        setIsCompleted(false);
-      }
-    };
-
-    checkCompletion();
-  }, [activeTask, user?.user_id]);
+  // Note: Removed per-card API calls for assigned users and completion status
+  // These should be batched at the page level to prevent performance issues
+  // when rendering many cards simultaneously
 
   const handleUpload = async (file: File, contentId: number) => {
     try {
@@ -441,6 +413,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
               alignItems="center"
               justifyContent="center"
               px={2}
+              cursor={activeTask.media_source === "TextPad" ? "pointer" : "default"}
+              onClick={() => {
+                if (activeTask.media_source === "TextPad") {
+                  navigate(`/textpad?contentId=${activeTask.content_id}`);
+                }
+              }}
+              _hover={activeTask.media_source === "TextPad" ? { bg: "whiteAlpha.800" } : {}}
             >
               <Text
                 fontWeight="semibold"
@@ -449,9 +428,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 fontSize={compact ? "sm" : "md"}
                 textAlign="center"
               >
-                <a href={activeTask.url} target="_blank" rel="noopener noreferrer">
-                  {activeTask.content_name}
-                </a>
+                {activeTask.media_source === "TextPad" ? (
+                  activeTask.content_name
+                ) : (
+                  <a href={activeTask.url} target="_blank" rel="noopener noreferrer">
+                    {activeTask.content_name}
+                  </a>
+                )}
               </Text>
             </Box>
           </Tooltip>
@@ -461,7 +444,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
           <Box flex="1" minH={0}>
             <Box
               as="button"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => {
+                if (activeTask.media_source === "TextPad") {
+                  navigate(`/textpad?contentId=${activeTask.content_id}`);
+                } else {
+                  fileInputRef.current?.click();
+                }
+              }}
               cursor="pointer"
               w="100%"
               h="150px"
@@ -507,7 +496,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
                     mt={1}
                     textShadow="0 1px 2px rgba(0,0,0,0.3)"
                   >
-                    Click to upload image
+                    {activeTask.media_source === "TextPad"
+                      ? "Click to view text"
+                      : "Click to upload image"}
                   </Text>
                 </Box>
               ) : (
@@ -518,7 +509,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
                   h="100%"
                   objectFit="cover"
                   onError={() => setImageError(true)}
-                  loading="lazy"
                 />
               )}
             </Box>

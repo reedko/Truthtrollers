@@ -36,6 +36,7 @@ interface TaskClaimsProps {
   editingClaim: Claim | null;
   setEditingClaim: (claim: Claim | null) => void;
   onVerifyClaim: (claim: Claim) => void;
+  onTaskClaimClick?: (claim: Claim) => void;
   linkSelection?: {
     active: boolean;
     source?: Pick<Claim, "claim_id" | "claim_text"> | null;
@@ -62,12 +63,17 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   editingClaim,
   setEditingClaim,
   onVerifyClaim,
+  onTaskClaimClick,
   taskId,
   linkSelection,
   onPickTargetForLink,
   claimLinks = [],
 }) => {
   const claimRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+  // Keep a ref to onDropReferenceClaim so handleMouseUp never captures a stale version
+  const onDropRef = useRef(onDropReferenceClaim);
+  onDropRef.current = onDropReferenceClaim;
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -93,11 +99,24 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
       setHoveredClaimId(null);
     };
 
-    const handleMouseUp = () => {
-      if (draggingClaim && hoveredClaimId !== null) {
-        const targetClaim = claims.find((c) => c.claim_id === hoveredClaimId);
-        if (targetClaim) {
-          onDropReferenceClaim(draggingClaim, targetClaim);
+    // Re-scan rects at release time — does NOT rely on stale hoveredClaimId state
+    const handleMouseUp = (e: MouseEvent) => {
+      if (!draggingClaim) return;
+
+      for (const claim of claims) {
+        const box = claimRefs.current[claim.claim_id];
+        if (box) {
+          const rect = box.getBoundingClientRect();
+          if (
+            e.clientX >= rect.left &&
+            e.clientX <= rect.right &&
+            e.clientY >= rect.top &&
+            e.clientY <= rect.bottom
+          ) {
+            onDropRef.current(draggingClaim, claim);
+            setHoveredClaimId(null);
+            return;
+          }
         }
       }
     };
@@ -109,7 +128,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [claims, draggingClaim, hoveredClaimId]);
+  }, [claims, draggingClaim]); // hoveredClaimId removed — mouseUp no longer depends on it
 
   return (
     <VStack
@@ -327,6 +346,20 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
                   onVerifyClaim(claim);
                 }}
               />
+              {onTaskClaimClick && (
+                <Tooltip label="Find relevant reference claims" hasArrow>
+                  <IconButton
+                    size="sm"
+                    colorScheme="teal"
+                    aria-label="Scan Relevance"
+                    icon={<span>🔍</span>}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onTaskClaimClick(claim);
+                    }}
+                  />
+                </Tooltip>
+              )}
               <IconButton
                 size="sm"
                 colorScheme="red"

@@ -2,8 +2,10 @@
 import React, { useEffect, useState } from "react";
 import {
   Box,
+  Badge,
   Button,
   FormLabel,
+  HStack,
   Slider,
   SliderFilledTrack,
   SliderThumb,
@@ -38,6 +40,8 @@ interface ClaimLinkOverlayProps {
   sourceClaimVeracity?: number; // AI truth rating of source claim
   // AI rationale from reference_claim_task_links
   rationale?: string;
+  // AI suggested support level (-1 to 1)
+  aiSupportLevel?: number | null;
 }
 
 const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
@@ -51,6 +55,7 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
   onScoreAwarded,
   sourceClaimVeracity,
   rationale,
+  aiSupportLevel,
 }) => {
   const toast = useToast();
   const setVerimeterScore = useTaskStore((s) => s.setVerimeterScore);
@@ -66,17 +71,40 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
     claimLink?.verimeter_score ?? null,
   );
 
-  // Update notes when modal opens or rationale changes
+  // Track whether the current values were AI-suggested (for badge display)
+  const [aiPrefilled, setAiPrefilled] = useState(false);
+
+  // When modal opens, sync notes + support level with AI suggestions
   useEffect(() => {
     if (isOpen && !isReadOnly && !claimLink?.notes) {
-      // Only populate if modal is open, not read-only, and no existing notes
       setNotes(rationale || "");
+
+      if (aiSupportLevel != null) {
+        setSupportLevel(aiSupportLevel);
+        if (aiSupportLevel === 0) setRelationship("nuanced");
+        else if (aiSupportLevel > 0) setRelationship("supports");
+        else setRelationship("refutes");
+        setAiPrefilled(true);
+      } else {
+        setSupportLevel(0);
+        setRelationship("nuanced");
+        setAiPrefilled(false);
+      }
     }
-  }, [isOpen, rationale, isReadOnly, claimLink?.notes]);
+
+    // Reset ai badge when modal closes
+    if (!isOpen) {
+      setAiPrefilled(false);
+      setSupportLevel(0);
+      setRelationship("nuanced");
+      setNotes("");
+    }
+  }, [isOpen, rationale, aiSupportLevel, isReadOnly, claimLink?.notes]);
 
   // Update relationship based on support level
   const handleSupportLevelChange = (val: number) => {
     setSupportLevel(val);
+    setAiPrefilled(false); // user is now manually adjusting
     if (val === 0) {
       setRelationship("nuanced");
     } else if (val > 0) {
@@ -210,7 +238,12 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
       </Text>
       <Text className="mr-text-secondary" mb={4}>{targetClaim?.claim_text}</Text>
 
-      <FormLabel className="mr-text-primary" mt={4}>Notes</FormLabel>
+      <HStack mb={1} mt={4} align="center" spacing={2}>
+        <FormLabel className="mr-text-primary" mb={0}>Notes</FormLabel>
+        {aiPrefilled && notes && (
+          <Badge colorScheme="purple" fontSize="2xs">✨ AI suggested</Badge>
+        )}
+      </HStack>
       {isReadOnly ? (
         <Text className="mr-text-secondary" fontStyle="italic" p={2} borderRadius="md">
           {claimLink?.notes || "No notes provided."}
@@ -220,7 +253,7 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
           className="mr-input"
           placeholder="Optional notes about this link..."
           value={notes}
-          onChange={(e) => setNotes(e.target.value)}
+          onChange={(e) => { setNotes(e.target.value); setAiPrefilled(false); }}
         />
       )}
 
@@ -246,10 +279,15 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
         </Box>
       ) : (
         <>
-          <FormLabel className="mr-text-primary" mb={1}>Support Level</FormLabel>
+          <HStack mb={1} align="center" spacing={2}>
+            <FormLabel className="mr-text-primary" mb={0}>Support Level</FormLabel>
+            {aiPrefilled && (
+              <Badge colorScheme="purple" fontSize="2xs">✨ AI suggested</Badge>
+            )}
+          </HStack>
           <Slider
             aria-label="support-slider"
-            defaultValue={0}
+            value={supportLevel}
             min={-1}
             max={1}
             step={0.1}

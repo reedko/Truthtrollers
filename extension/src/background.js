@@ -142,13 +142,16 @@ const addPublisherToServer = async (contentId, publisher) => {
 // ✅ Add Sources (References)
 const addSourcesToServer = async (taskId, content) => {
   try {
-    for (const lit_reference of content) {
-      await fetch(`${BASE_URL}/api/content/${taskId}/add-source`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lit_reference }),
-      });
-    }
+    // Batch all API calls in parallel instead of sequential loop
+    await Promise.all(
+      content.map((lit_reference) =>
+        fetch(`${BASE_URL}/api/content/${taskId}/add-source`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lit_reference }),
+        })
+      )
+    );
     return true;
   } catch (error) {
     console.error("Error adding sources:", error);

@@ -25,6 +25,7 @@ import { useTaskStore } from "../store/useTaskStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { decodeJwt } from "../utils/jwt";
 import { AccountMenu } from "../components/AccountMenu";
+import { PlatformTour } from "../components/PlatformTour";
 
 const SIDEBAR_WIDTH = "220px";
 const HEADER_HEIGHT = "160px";
@@ -276,6 +277,8 @@ const VisionLayout: React.FC = () => {
       >
         <Outlet />
       </Box>
+
+      <PlatformTour />
     </>
   );
 };

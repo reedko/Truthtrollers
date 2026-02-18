@@ -20,6 +20,8 @@ import {
   useToast,
   Grid,
   GridItem,
+  Image,
+  Select,
 } from "@chakra-ui/react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useNavigate } from "react-router-dom";
@@ -63,6 +65,7 @@ const UserDashboard: React.FC = () => {
     honestyScore: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [evaluationMode, setEvaluationMode] = useState<Record<number, string>>({});
 
   useEffect(() => {
     if (user?.user_id) {
@@ -168,7 +171,7 @@ const UserDashboard: React.FC = () => {
           >
             {/* Left Column: Welcome + Trending Topics */}
             <GridItem>
-              <VStack spacing={6} height="100%">
+              <VStack spacing={6} height="100%" className="user-dashboard-stats">
                 {/* Welcome Card */}
                 <Card
                   height="240px"
@@ -255,7 +258,7 @@ const UserDashboard: React.FC = () => {
 
             {/* Claim Activity Chart */}
             <GridItem>
-              <Box className="mr-card mr-card-purple" p={4} position="relative" height="100%">
+              <Box className="mr-card mr-card-purple claim-activity-chart" p={4} position="relative" height="100%">
                 <div className="mr-glow-bar mr-glow-bar-purple" />
                 <div className="mr-scanlines" />
                 <Box position="relative" zIndex={1}>
@@ -282,72 +285,205 @@ const UserDashboard: React.FC = () => {
           >
             {/* Assigned Tasks - 2/3 width */}
             <GridItem>
-              <Box className="mr-card mr-card-blue" position="relative" p={6}>
+              <Box className="mr-card mr-card-blue assigned-tasks-section" position="relative" p={6}>
                 <div className="mr-glow-bar mr-glow-bar-blue" />
                 <div className="mr-scanlines" />
                 <Box position="relative" zIndex={1}>
                   <Heading size="md" className="mr-heading" mb={4}>
                     My Assigned Tasks
                   </Heading>
-                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} maxH="600px" overflowY="auto">
+                  <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={6} maxH="700px" overflowY="auto" px={2}>
                     {assignedTasks.length === 0 ? (
                       <Box gridColumn="span 2" textAlign="center" py={8}>
-                        <Text className="mr-text-secondary">
+                        <Text className="mr-text-secondary" fontSize="lg" mb={3}>
                           No tasks assigned yet
                         </Text>
+                        <Text className="mr-text-muted" fontSize="sm" mb={4}>
+                          Go to the Tasks page to get some work assigned!
+                        </Text>
+                        <Button
+                          className="mr-button"
+                          size="sm"
+                          onClick={() => navigate("/tasks")}
+                        >
+                          Browse Tasks →
+                        </Button>
                       </Box>
                     ) : (
-                      assignedTasks.map((task) => (
-                        <Box
-                          key={task.content_id}
-                          className="mr-card mr-card-blue"
-                          p={4}
-                          position="relative"
-                          cursor="pointer"
-                          onClick={() => navigate(`/workspace/${task.content_id}`)}
-                          _hover={{
-                            transform: "translateY(-2px)",
-                            boxShadow: "0 8px 32px var(--mr-blue-glow)",
-                          }}
-                          transition="all 0.3s"
-                        >
-                          <div className="mr-glow-bar mr-glow-bar-blue" />
-                          <VStack align="start" spacing={2} position="relative" zIndex={1}>
-                            <Text className="mr-text-primary" fontSize="sm" fontWeight="bold" noOfLines={2}>
-                              {task.content_name}
-                            </Text>
-                            {task.media_source && (
-                              <Badge fontSize="xs" bg="var(--mr-purple-border)" color="var(--mr-purple)">
-                                {task.media_source}
-                              </Badge>
-                            )}
-                            <HStack spacing={2} w="100%">
-                              <Button
-                                className="mr-button"
-                                size="xs"
+                      assignedTasks.map((task) => {
+                        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+                        const mode = evaluationMode[task.content_id] || "workspace";
+
+                        return (
+                          <Box
+                            key={task.content_id}
+                            className="mr-card mr-card-blue"
+                            position="relative"
+                            borderRadius="xl"
+                            overflow="hidden"
+                            aspectRatio="2.5/3.5"
+                            maxW="220px"
+                            minH="280px"
+                            _hover={{
+                              transform: "translateY(-8px) scale(1.02)",
+                              boxShadow: "0 12px 48px var(--mr-blue-glow)",
+                            }}
+                            transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                            cursor="pointer"
+                          >
+                            <div className="mr-glow-bar mr-glow-bar-blue" />
+
+                            {/* Card Content */}
+                            <VStack
+                              align="stretch"
+                              spacing={0}
+                              height="100%"
+                              position="relative"
+                              zIndex={1}
+                              p={3}
+                            >
+                              {/* Thumbnail - Top Section */}
+                              <Box
                                 flex="1"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedTask(task);
-                                }}
+                                mb={2}
+                                borderRadius="lg"
+                                overflow="hidden"
+                                bg="var(--mr-bg-tertiary)"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="center"
                               >
-                                Select
-                              </Button>
-                              <Button
-                                className="mr-button"
+                                {task.thumbnail ? (
+                                  <Image
+                                    src={`${API_BASE_URL}/api/image/content/${task.content_id}`}
+                                    alt={task.content_name}
+                                    w="100%"
+                                    h="100%"
+                                    objectFit="cover"
+                                    fallback={
+                                      <Box
+                                        w="100%"
+                                        h="100%"
+                                        bg="var(--mr-purple-border)"
+                                        display="flex"
+                                        alignItems="center"
+                                        justifyContent="center"
+                                      >
+                                        <Text fontSize="4xl" color="var(--mr-purple)" fontWeight="bold">
+                                          {task.media_source?.[0] || "T"}
+                                        </Text>
+                                      </Box>
+                                    }
+                                  />
+                                ) : (
+                                  <Box
+                                    w="100%"
+                                    h="100%"
+                                    bg="var(--mr-purple-border)"
+                                    display="flex"
+                                    alignItems="center"
+                                    justifyContent="center"
+                                  >
+                                    <Text fontSize="4xl" color="var(--mr-purple)" fontWeight="bold">
+                                      {task.media_source?.[0] || "T"}
+                                    </Text>
+                                  </Box>
+                                )}
+                              </Box>
+
+                              {/* Title */}
+                              <Text
+                                className="mr-text-primary"
+                                fontSize="xs"
+                                fontWeight="bold"
+                                noOfLines={2}
+                                minH="32px"
+                                mb={1}
+                                textAlign="center"
+                              >
+                                {task.content_name}
+                              </Text>
+
+                              {/* Source Badge */}
+                              {task.media_source && (
+                                <Badge
+                                  fontSize="2xs"
+                                  bg="var(--mr-purple-border)"
+                                  color="var(--mr-purple)"
+                                  textAlign="center"
+                                  mb={2}
+                                >
+                                  {task.media_source}
+                                </Badge>
+                              )}
+
+                              {/* Evaluation Mode Dropdown */}
+                              <Select
                                 size="xs"
-                                flex="1"
-                                onClick={(e) => {
+                                value={mode}
+                                onChange={(e) => {
                                   e.stopPropagation();
-                                  navigate(`/workspace/${task.content_id}`);
+                                  setEvaluationMode({
+                                    ...evaluationMode,
+                                    [task.content_id]: e.target.value,
+                                  });
                                 }}
+                                bg="var(--mr-bg-tertiary)"
+                                borderColor="var(--mr-blue-border)"
+                                color="var(--mr-text-primary)"
+                                _hover={{ borderColor: "var(--mr-blue)" }}
+                                mb={2}
+                                fontSize="2xs"
                               >
-                                Evaluate
-                              </Button>
-                            </HStack>
-                          </VStack>
-                        </Box>
-                      ))
+                                <option value="workspace">Workspace</option>
+                                <option value="gamespace">GameSpace</option>
+                                <option value="molecule">Molecule</option>
+                              </Select>
+
+                              {/* Action Buttons */}
+                              <VStack spacing={1} w="100%">
+                                <Button
+                                  className="mr-button"
+                                  size="xs"
+                                  w="100%"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedTask(task);
+                                  }}
+                                  fontSize="2xs"
+                                >
+                                  Select
+                                </Button>
+                                <Button
+                                  className="mr-button"
+                                  size="xs"
+                                  w="100%"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const destination = mode === "workspace"
+                                      ? `/workspace`
+                                      : mode === "gamespace"
+                                      ? `/gamespace`
+                                      : `/molecule`;
+                                    setSelectedTask(task);
+                                    navigate(destination);
+                                  }}
+                                  bg="var(--mr-blue)"
+                                  color="black"
+                                  _hover={{
+                                    bg: "var(--mr-blue-border)",
+                                    transform: "scale(1.05)",
+                                  }}
+                                  fontSize="2xs"
+                                  fontWeight="bold"
+                                >
+                                  Evaluate →
+                                </Button>
+                              </VStack>
+                            </VStack>
+                          </Box>
+                        );
+                      })
                     )}
                   </SimpleGrid>
                 </Box>
@@ -355,7 +491,7 @@ const UserDashboard: React.FC = () => {
             </GridItem>
 
             {/* Other Tasks Sidebar - 1/3 width */}
-            <GridItem>
+            <GridItem className="other-tasks-section">
               <VStack spacing={4} align="stretch">
                 {/* Other Tasks */}
                 <Box className="mr-card mr-card-green" p={4} position="relative">

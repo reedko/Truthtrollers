@@ -37,8 +37,8 @@ router.get("/api/user-tasks/:user_id", async (req, res) => {
   const { user_id } = req.params;
   const showInactive = req.query.showInactive === 'true';
 
-  // When showInactive is true, show ALL tasks (no filters)
-  // When false, show active tasks (no user filter - see all active tasks)
+  // When showInactive is true, show ALL tasks assigned to this user
+  // When false, show only active tasks assigned to this user
   const sql = showInactive ? `
     SELECT
       t.*,
@@ -81,7 +81,8 @@ router.get("/api/user-tasks/:user_id", async (req, res) => {
   ) AS publishers
 
     FROM content t
-    WHERE t.content_type = 'task'
+    JOIN content_users cu ON t.content_id = cu.content_id
+    WHERE t.content_type = 'task' AND cu.user_id = ?
     GROUP BY t.content_id
   ` : `
     SELECT
@@ -125,16 +126,121 @@ router.get("/api/user-tasks/:user_id", async (req, res) => {
   ) AS publishers
 
     FROM content t
-    WHERE t.content_type = 'task' AND (t.is_active IS NULL OR t.is_active = 1)
+    JOIN content_users cu ON t.content_id = cu.content_id
+    WHERE t.content_type = 'task' AND cu.user_id = ? AND (t.is_active IS NULL OR t.is_active = 1)
     GROUP BY t.content_id
   `;
 
-  // No params needed - showing all tasks based on is_active only
-  const params = [];
+  // Filter by user_id
+  const params = [user_id];
 
   pool.query(sql, params, (err, results) => {
     if (err) {
       logger.error("❌ Error fetching user tasks:", err);
+      return res.status(500).json({ error: "Query failed" });
+    }
+    res.json(results);
+  });
+});
+
+/**
+ * GET /api/all-tasks
+ * Get ALL tasks (not filtered by user) for browsing
+ * When showInactive=true, shows ALL tasks including archived
+ * When showInactive=false, shows only active tasks
+ */
+router.get("/api/all-tasks", async (req, res) => {
+  const showInactive = req.query.showInactive === 'true';
+
+  const sql = showInactive ? `
+    SELECT
+      t.*,
+      (
+        SELECT topic_name
+        FROM topics tt
+        JOIN content_topics ct ON tt.topic_id = ct.topic_id
+        WHERE ct.content_id = t.content_id
+        ORDER BY ct.topic_order ASC
+        LIMIT 1
+      ) AS topic,
+      (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'author_id', a.author_id,
+            'author_first_name', IFNULL(a.author_first_name, ''),
+            'author_last_name', IFNULL(a.author_last_name, ''),
+            'author_title', IFNULL(a.author_title, ''),
+            'author_profile_pic', a.author_profile_pic,
+            'description', a.description
+          )
+        )
+        FROM content_authors ca
+        JOIN authors a ON ca.author_id = a.author_id
+        WHERE ca.content_id = t.content_id
+      ) AS authors,
+      (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'publisher_id', p.publisher_id,
+            'publisher_name', p.publisher_name,
+            'publisher_icon', p.publisher_icon,
+            'description', p.description
+          )
+        )
+        FROM content_publishers cp
+        JOIN publishers p ON cp.publisher_id = p.publisher_id
+        WHERE cp.content_id = t.content_id
+      ) AS publishers
+    FROM content t
+    WHERE t.content_type = 'task'
+    GROUP BY t.content_id
+  ` : `
+    SELECT
+      t.*,
+      (
+        SELECT topic_name
+        FROM topics tt
+        JOIN content_topics ct ON tt.topic_id = ct.topic_id
+        WHERE ct.content_id = t.content_id
+        ORDER BY ct.topic_order ASC
+        LIMIT 1
+      ) AS topic,
+      (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'author_id', a.author_id,
+            'author_first_name', IFNULL(a.author_first_name, ''),
+            'author_last_name', IFNULL(a.author_last_name, ''),
+            'author_title', IFNULL(a.author_title, ''),
+            'author_profile_pic', a.author_profile_pic,
+            'description', a.description
+          )
+        )
+        FROM content_authors ca
+        JOIN authors a ON ca.author_id = a.author_id
+        WHERE ca.content_id = t.content_id
+      ) AS authors,
+      (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'publisher_id', p.publisher_id,
+            'publisher_name', p.publisher_name,
+            'publisher_icon', p.publisher_icon,
+            'description', p.description
+          )
+        )
+        FROM content_publishers cp
+        JOIN publishers p ON cp.publisher_id = p.publisher_id
+        WHERE cp.content_id = t.content_id
+      ) AS publishers
+    FROM content t
+    WHERE t.content_type = 'task' AND (t.is_active IS NULL OR t.is_active = 1)
+    GROUP BY t.content_id
+  `;
+
+  pool.query(sql, [], (err, results) => {
+    if (err) {
+      logger.error("❌ Error fetching all tasks:", err);
       return res.status(500).json({ error: "Query failed" });
     }
     res.json(results);
@@ -303,26 +409,35 @@ router.delete("/api/tasks/:id", async (req, res) => {
  * Creates a task from user-provided text instead of a URL
  */
 router.post("/api/submit-text", async (req, res) => {
+  const { text, title, userId } = req.body;
+
+  if (!text || !text.trim()) {
+    return res.status(400).json({ error: "Text is required" });
+  }
+  if (!userId) {
+    return res.status(400).json({ error: "User ID is required" });
+  }
+
+  // Set up SSE stream so the client receives live progress updates
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  const send = (stage, message, percent, extra = {}) => {
+    res.write(`data: ${JSON.stringify({ stage, message, percent, ...extra })}\n\n`);
+  };
+
   try {
-    const { text, title, userId } = req.body;
-
-    if (!text || !text.trim()) {
-      return res.status(400).json({ error: "Text is required" });
-    }
-
-    if (!userId) {
-      return res.status(400).json({ error: "User ID is required" });
-    }
-
     logger.log(`📝 [/api/submit-text] Received text submission (${text.length} chars) from user ${userId}`);
 
-    // Import necessary functions
+    send("setup", "Creating task record…", 5);
+
     const { createContentInternal } = await import("../../storage/createContentInternal.js");
 
-    // Create task content row FIRST to get content_id
     const taskContentId = await createContentInternal(query, {
       content_name: title || "Text Submission",
-      url: "pending", // Temporary - will update after saving file
+      url: "pending",
       media_source: "TextPad",
       topic: "user-submitted",
       subtopics: [],
@@ -332,102 +447,49 @@ router.post("/api/submit-text", async (req, res) => {
     });
 
     logger.log(`✅ [/api/submit-text] Created task content_id=${taskContentId}`);
+    send("setup", "Saving document…", 15);
 
-    // Get username for publisher
-    const userRows = await query(
-      `SELECT username FROM users WHERE user_id = ?`,
-      [userId]
-    );
+    const userRows = await query(`SELECT username FROM users WHERE user_id = ?`, [userId]);
     const username = userRows?.[0]?.username || `User${userId}`;
 
-    // Now save the file with content_id naming convention
     const filename = `content_id_${taskContentId}.txt`;
-
-    // Save to documents/tasks directory (not images)
     const contentDir = path.join(__dirname, "../../../assets/documents/tasks");
     const filePath = path.join(contentDir, filename);
-
-    // Ensure directory exists
     await fs.mkdir(contentDir, { recursive: true });
-
-    // Save text to file
     await fs.writeFile(filePath, text, "utf-8");
     logger.log(`✅ [/api/submit-text] Saved text to ${filename}`);
 
-    // Update content record with correct file path
     const documentPath = `assets/documents/tasks/${filename}`;
-    await query(
-      `UPDATE content SET url = ?, thumbnail = ? WHERE content_id = ?`,
-      [documentPath, documentPath, taskContentId]
-    );
+    await query(`UPDATE content SET url = ?, thumbnail = ? WHERE content_id = ?`, [documentPath, documentPath, taskContentId]);
 
-    logger.log(`✅ [/api/submit-text] Updated content record with file path`);
+    send("setup", "Setting up metadata…", 25);
 
-    // Create or find publisher for this user
+    // Publisher
     let publisherId;
-    const existingPublisher = await query(
-      `SELECT publisher_id FROM publishers WHERE publisher_name = ?`,
-      [username]
-    );
-
+    const existingPublisher = await query(`SELECT publisher_id FROM publishers WHERE publisher_name = ?`, [username]);
     if (existingPublisher.length > 0) {
       publisherId = existingPublisher[0].publisher_id;
-      logger.log(`✅ [/api/submit-text] Found existing publisher for ${username} (ID: ${publisherId})`);
     } else {
-      const publisherResult = await query(
-        `INSERT INTO publishers (publisher_name, description) VALUES (?, ?)`,
-        [username, `TextPad submissions by ${username}`]
-      );
+      const publisherResult = await query(`INSERT INTO publishers (publisher_name, description) VALUES (?, ?)`, [username, `TextPad submissions by ${username}`]);
       publisherId = publisherResult.insertId;
-      logger.log(`✅ [/api/submit-text] Created new publisher for ${username} (ID: ${publisherId})`);
     }
+    await query(`INSERT INTO content_publishers (content_id, publisher_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE publisher_id = publisher_id`, [taskContentId, publisherId]);
 
-    // Link publisher to content
-    await query(
-      `INSERT INTO content_publishers (content_id, publisher_id) VALUES (?, ?)
-       ON DUPLICATE KEY UPDATE publisher_id = publisher_id`,
-      [taskContentId, publisherId]
-    );
-
-    logger.log(`✅ [/api/submit-text] Linked publisher ${publisherId} to content ${taskContentId}`);
-
-    // Create or find author for this user
+    // Author
     let authorId;
-    const existingAuthor = await query(
-      `SELECT author_id FROM authors WHERE author_first_name = ? AND author_last_name = ?`,
-      [username, '']
-    );
-
+    const existingAuthor = await query(`SELECT author_id FROM authors WHERE author_first_name = ? AND author_last_name = ?`, [username, '']);
     if (existingAuthor.length > 0) {
       authorId = existingAuthor[0].author_id;
-      logger.log(`✅ [/api/submit-text] Found existing author for ${username} (ID: ${authorId})`);
     } else {
-      const authorResult = await query(
-        `INSERT INTO authors (author_first_name, author_last_name, author_title) VALUES (?, ?, ?)`,
-        [username, '', 'TextPad User']
-      );
+      const authorResult = await query(`INSERT INTO authors (author_first_name, author_last_name, author_title) VALUES (?, ?, ?)`, [username, '', 'TextPad User']);
       authorId = authorResult.insertId;
-      logger.log(`✅ [/api/submit-text] Created new author for ${username} (ID: ${authorId})`);
     }
+    await query(`INSERT INTO content_authors (content_id, author_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE author_id = author_id`, [taskContentId, authorId]);
+    await query(`INSERT INTO content_users (content_id, user_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE user_id = user_id`, [taskContentId, userId]);
 
-    // Link author to content
-    await query(
-      `INSERT INTO content_authors (content_id, author_id) VALUES (?, ?)
-       ON DUPLICATE KEY UPDATE author_id = author_id`,
-      [taskContentId, authorId]
-    );
+    logger.log(`✅ [/api/submit-text] Assigned task ${taskContentId} to user ${userId}`);
+    send("claims", "Extracting claims from text…", 40);
 
-    logger.log(`✅ [/api/submit-text] Linked author ${authorId} to content ${taskContentId}`);
-
-    // Associate with user
-    await query(
-      `INSERT INTO content_users (content_id, user_id) VALUES (?, ?)
-       ON DUPLICATE KEY UPDATE user_id = user_id`,
-      [taskContentId, userId]
-    );
-
-    // Now process it through the evidence engine using the existing scrape-task logic
-    // Import the necessary processing functions
     const { processTaskClaims } = await import("../../core/processTaskClaims.js");
     const { runEvidenceEngine } = await import("../../core/runEvidenceEngine.js");
     const { matchClaimsToTaskClaims } = await import("../../core/matchClaims.js");
@@ -435,21 +497,15 @@ router.post("/api/submit-text", async (req, res) => {
     const { openAiLLM } = await import("../../core/openAiLLM.js");
     const { persistClaims } = await import("../../storage/persistClaims.js");
 
-    // Extract and process claims
-    logger.log(`🔍 [/api/submit-text] Extracting claims from text for content_id=${taskContentId}`);
-    const taskClaims = await processTaskClaims({
-      query,
-      taskContentId,
-      text
-    });
+    const taskClaims = await processTaskClaims({ query, taskContentId, text });
 
     if (taskClaims && taskClaims.length > 0) {
       logger.log(`✅ [/api/submit-text] Extracted ${taskClaims.length} claims`);
+      send("claims", `Found ${taskClaims.length} claim${taskClaims.length !== 1 ? "s" : ""}`, 50);
 
       const claimIds = taskClaims.map((c) => c.id);
 
-      // Run evidence engine to find supporting/contradicting evidence
-      logger.log(`🔬 [/api/submit-text] Running evidence engine for content_id=${taskContentId}`);
+      send("evidence", "Running evidence engine…", 60);
       const { aiReferences, failedCandidates, claimConfidenceMap } = await runEvidenceEngine({
         taskContentId,
         claimIds,
@@ -458,95 +514,67 @@ router.post("/api/submit-text", async (req, res) => {
 
       if (aiReferences && aiReferences.length > 0) {
         logger.log(`✅ [/api/submit-text] Evidence engine found ${aiReferences.length} references`);
+        send("evidence", `Found ${aiReferences.length} reference${aiReferences.length !== 1 ? "s" : ""}`, 70);
 
-        // Persist AI results (creates reference content and links)
-        await persistAIResults(query, {
-          contentId: taskContentId,
-          evidenceRefs: aiReferences,
-          claimIds,
-          claimConfidenceMap,
+        await persistAIResults(query, { contentId: taskContentId, evidenceRefs: aiReferences, claimIds, claimConfidenceMap });
+
+        const refsToProcess = aiReferences.filter((ref) => ref.referenceContentId);
+        send("references", `Processing ${refsToProcess.length} references…`, 75);
+
+        let refsDone = 0;
+        const claimExtractionPromises = refsToProcess.map(async (ref) => {
+          try {
+            if (ref.quote) {
+              await persistClaims(query, ref.referenceContentId, [ref.quote], "snippet", "snippet");
+            }
+            if (ref.cleanText) {
+              const extractedClaims = await processTaskClaims({
+                query,
+                taskContentId: ref.referenceContentId,
+                text: ref.cleanText,
+                claimType: "reference",
+                taskClaimsContext: taskClaims.map((c) => c.text),
+              });
+              if (extractedClaims.length > 0) {
+                const claimMatches = await matchClaimsToTaskClaims({
+                  referenceClaims: extractedClaims,
+                  taskClaims,
+                  llm: openAiLLM,
+                });
+                for (const match of claimMatches) {
+                  await query(
+                    `INSERT INTO claim_links (source_claim_id, target_claim_id, relationship, support_level, confidence, veracity_score, created_by_ai, notes, user_id)
+                     VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+                    [match.referenceClaimId, match.taskClaimId, match.stance, match.supportLevel, match.confidence, match.veracityScore, match.rationale, userId]
+                  );
+                }
+                logger.log(`✅ [/api/submit-text] Created ${claimMatches.length} claim_links for reference ${ref.referenceContentId}`);
+              }
+            }
+          } catch (err) {
+            logger.warn(`⚠️ [/api/submit-text] Failed to extract claims from reference:`, err.message);
+          }
+          refsDone++;
+          const pct = 75 + Math.round((refsDone / refsToProcess.length) * 20);
+          send("references", `Processed ${refsDone} / ${refsToProcess.length} references…`, pct);
         });
 
-        // Extract claims from each reference and match them to task claims
-        const claimExtractionPromises = aiReferences
-          .filter((ref) => ref.referenceContentId)
-          .map(async (ref) => {
-            try {
-              // Create snippet claim from search engine snippet
-              if (ref.quote) {
-                await persistClaims(
-                  query,
-                  ref.referenceContentId,
-                  [ref.quote],
-                  "snippet",
-                  "snippet"
-                );
-              }
-
-              // Extract reference claims from full text
-              if (ref.cleanText) {
-                const extractedClaims = await processTaskClaims({
-                  query,
-                  taskContentId: ref.referenceContentId,
-                  text: ref.cleanText,
-                  claimType: "reference",
-                  taskClaimsContext: taskClaims.map((c) => c.text),
-                });
-
-                if (extractedClaims.length > 0) {
-                  // Auto-generate claim_links with veracity scores
-                  const claimMatches = await matchClaimsToTaskClaims({
-                    referenceClaims: extractedClaims,
-                    taskClaims: taskClaims,
-                    llm: openAiLLM
-                  });
-
-                  // Insert into claim_links
-                  for (const match of claimMatches) {
-                    await query(
-                      `INSERT INTO claim_links
-                       (source_claim_id, target_claim_id, relationship, support_level, confidence, veracity_score, created_by_ai, notes, user_id)
-                       VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`,
-                      [
-                        match.referenceClaimId,
-                        match.taskClaimId,
-                        match.stance,
-                        match.supportLevel,
-                        match.confidence,
-                        match.veracityScore,
-                        match.rationale,
-                        userId
-                      ]
-                    );
-                  }
-
-                  logger.log(`✅ [/api/submit-text] Created ${claimMatches.length} claim_links for reference ${ref.referenceContentId}`);
-                }
-              }
-            } catch (err) {
-              logger.warn(`⚠️ [/api/submit-text] Failed to extract claims from reference:`, err.message);
-            }
-          });
-
         await Promise.all(claimExtractionPromises);
+      } else {
+        send("evidence", "No references found", 90);
       }
     } else {
       logger.log(`⚠️ [/api/submit-text] No claims extracted from text`);
+      send("claims", "No claims found in text", 90);
     }
 
-    res.json({
-      success: true,
-      content_id: taskContentId,
-      document_path: documentPath,
-      message: "Text submitted and processing started"
-    });
+    send("done", "Analysis complete!", 100, { content_id: taskContentId, document_path: documentPath });
+    res.end();
 
   } catch (error) {
     logger.error("❌ [/api/submit-text] Error:", error);
-    res.status(500).json({
-      success: false,
-      error: error.message || "Failed to process text submission"
-    });
+    send("error", error.message || "Failed to process text submission", 0);
+    res.end();
   }
 });
 

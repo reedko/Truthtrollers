@@ -85,5 +85,39 @@ router.post("/api/change-password", authenticateToken, (req, res) => {
   });
 });
 
+/**
+ * GET /api/user-status/:userId
+ * Check if a user is "new" (no completed tasks)
+ * Returns: { isNewUser: boolean, completedTasksCount: number }
+ */
+router.get("/api/user-status/:userId", async (req, res) => {
+  const userId = req.params.userId;
+
+  if (!userId) {
+    return res.status(400).json({ error: "User ID is required" });
+  }
+
+  try {
+    // Check if user has completed any tasks
+    const completedTasks = await query(
+      `SELECT COUNT(*) as count
+       FROM content_users
+       WHERE user_id = ? AND completed_at IS NOT NULL`,
+      [userId]
+    );
+
+    const completedCount = completedTasks[0]?.count || 0;
+    const isNewUser = completedCount === 0;
+
+    res.json({
+      isNewUser,
+      completedTasksCount: completedCount,
+    });
+  } catch (error) {
+    console.error("Error checking user status:", error);
+    res.status(500).json({ error: "Failed to check user status" });
+  }
+});
+
   return router;
 }

@@ -33,11 +33,6 @@ import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 
 import fetch from "node-fetch";
-import pLimit from "p-limit";
-
-// ⚡ OPTIMIZATION: Global fetch concurrency pool
-// Limits parallel fetches across ALL claims to prevent timeout pile-ups
-const fetchLimit = pLimit(10); // Max 10 concurrent URL fetches
 
 export async function runEvidenceEngine({
   taskContentId,
@@ -45,7 +40,6 @@ export async function runEvidenceEngine({
   readableText,
 }) {
   logger.log("🟣 [runEvidenceEngine] Starting evidence run…");
-  logger.log("⚡ [OPTIMIZATION] Using global fetch pool with 10 concurrent fetches");
 
   if (!taskContentId) throw new Error("Missing taskContentId");
   if (!Array.isArray(claimIds) || claimIds.length === 0)
@@ -144,21 +138,13 @@ export async function runEvidenceEngine({
             logger.log(`🌐 [Evidence] Fetching: ${cand.url}`);
 
             // ─────────────────────────────────────────────
-            // 1. FETCH and DETECT content type (with global concurrency limit)
+            // 1. FETCH and DETECT content type
             // ─────────────────────────────────────────────
-            const resp = await fetchLimit(async () => {
-              const controller = new AbortController();
-              const timeout = setTimeout(() => controller.abort(), 8000); // ⚡ OPTIMIZATION: 8s timeout (reduced from 15s)
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
 
-              try {
-                const response = await fetch(cand.url, { signal: controller.signal });
-                clearTimeout(timeout);
-                return response;
-              } catch (err) {
-                clearTimeout(timeout);
-                throw err;
-              }
-            });
+            const resp = await fetch(cand.url, { signal: controller.signal });
+            clearTimeout(timeout);
 
             const contentType = resp.headers.get('content-type') || '';
             const isPdf = contentType.includes('application/pdf') || cand.url.toLowerCase().match(/\.pdf($|\?)/);

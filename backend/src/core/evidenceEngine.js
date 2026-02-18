@@ -437,27 +437,14 @@ TASK:
 
       const candidates = await this.retrieveCandidates(claim, queries, opt);
 
-      // ⚡ OPTIMIZATION: Early exit on sufficient evidence
-      // Instead of fetching all candidates in parallel, fetch sequentially
-      // and stop when we have enough high-quality evidence
-      const evs = [];
-      const maxCandidates = opt.maxEvidenceCandidates || 4;
-      const sufficientEvidenceCount = 3; // Stop if we have 3 high-quality items
-      const qualityThreshold = 0.7; // Quality threshold for "good" evidence
-
-      for (let i = 0; i < Math.min(candidates.length, maxCandidates); i++) {
-        const candidateEvidence = await this.extractEvidence(claim, candidates[i], opt);
-        evs.push(...candidateEvidence);
-
-        // Check if we have enough high-quality evidence to stop early
-        const goodEvidence = evs.filter(e => e.quality >= qualityThreshold);
-        if (goodEvidence.length >= sufficientEvidenceCount) {
-          logger.log(
-            `⚡ [OPTIMIZATION] Early exit for ${claim.id}: ${goodEvidence.length} high-quality items found after ${i + 1}/${maxCandidates} candidates`
-          );
-          break;
-        }
-      }
+      // Process all candidates in parallel (parallel is faster than sequential early exit)
+      const evs = (
+        await Promise.all(
+          candidates
+            .slice(0, opt.maxEvidenceCandidates)
+            .map((c) => this.extractEvidence(claim, c, opt))
+        )
+      ).flat();
 
       logger.log(
         `🟨 [DEBUG] Evidence items returned for ${claim.id}:`,

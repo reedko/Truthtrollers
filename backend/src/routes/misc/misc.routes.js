@@ -1017,9 +1017,9 @@ export default function createMiscRoutes({ query, pool, db }) {
   });
 
   // ───────────────────────────────────────────────────────────
-  // Image Serving with Auto Extension Detection
+  // Image Serving with Auto Extension Detection (Async)
   // ───────────────────────────────────────────────────────────
-  router.get("/api/image/:type/:id", (req, res) => {
+  router.get("/api/image/:type/:id", async (req, res) => {
     const { type, id } = req.params;
 
     // Validate type
@@ -1040,12 +1040,18 @@ export default function createMiscRoutes({ query, pool, db }) {
     // Try different extensions in order of preference
     const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
 
+    // Use async file checking to avoid blocking the event loop
     for (const ext of extensions) {
       const fullPath = path.join(imageDir, baseFilename + ext);
 
-      if (fs.existsSync(fullPath)) {
-        console.log(`✅ Serving image: ${fullPath}`);
+      try {
+        // Check if file exists asynchronously
+        await fs.promises.access(fullPath, fs.constants.F_OK);
+        // File exists, serve it
         return res.sendFile(fullPath);
+      } catch (err) {
+        // File doesn't exist, continue to next extension
+        continue;
       }
     }
 

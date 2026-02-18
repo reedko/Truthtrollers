@@ -162,6 +162,14 @@ WHERE t.content_type = 'task' AND t.content_id = ?
  * POST /api/check-content
  * Check if content exists by URL
  */
+/**
+ * POST /api/check-content
+ * Check if content exists for a given URL
+ *
+ * SECURITY NOTE: This endpoint is intentionally public (no authentication required)
+ * because it's used by the browser extension to detect content before users log in.
+ * Only returns non-sensitive task metadata needed for the extension popup.
+ */
 router.post("/api/check-content", (req, res) => {
   const { url, userId } = req.body;
   logger.log(`🔍 [/api/check-content] Checking URL: ${url}, userId: ${userId || 'none'}`);
@@ -170,7 +178,7 @@ router.post("/api/check-content", (req, res) => {
   pool.query(sql, [url], async (err, results) => {
     if (err) {
       logger.error(`❌ [/api/check-content] Database error:`, err);
-      return res.status(500).send({ error: err });
+      return res.status(500).send({ error: "Database error" }); // Don't leak error details
     }
     if (results.length > 0) {
       const task = results[0];
