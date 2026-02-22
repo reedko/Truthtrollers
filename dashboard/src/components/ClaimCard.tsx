@@ -52,6 +52,9 @@ const ClaimCard: React.FC<ClaimCardProps> = ({
   const handleCloseModal = () => setModalOpen(false);
 
   const color = useColorModeValue("gray.100", "gray.700");
+  const gaugeGreen = useColorModeValue("#38a169", "#38A169");
+  const gaugeRed = useColorModeValue("#e53e3e", "#E53E3E");
+  const gaugeYellow = useColorModeValue("#d69e2e", "#D69E2E");
 
   useEffect(() => {
     const loadScore = async () => {
@@ -82,7 +85,7 @@ const ClaimCard: React.FC<ClaimCardProps> = ({
     const circumference = 2 * Math.PI * radius;
     const arcLength = (absPercent / 100) * circumference;
     const gaugeColor =
-      percent > 0 ? "#38A169" : percent < 0 ? "#E53E3E" : "#D69E2E";
+      percent > 0 ? gaugeGreen : percent < 0 ? gaugeRed : gaugeYellow;
 
     return (
       <Box
@@ -159,6 +162,7 @@ const ClaimCard: React.FC<ClaimCardProps> = ({
         borderRadius="md"
         borderWidth="1px"
         bg="rgba(0,0,0,0.25)"
+        color="white"
         _hover={{ bg: "rgba(0,0,0,0.35)", transform: "translateY(-1px)" }}
         transition="all 120ms ease"
       >

@@ -833,6 +833,86 @@ WHERE cc_task.content_id = ?
   });
 
   /**
+   * POST /api/bulk-claims-and-references
+   * Fetch all claims and their references for multiple tasks at once
+   * Request body: { taskIds: [1, 2, 3] }
+   * Returns: { claimsByTask: {...}, claimReferences: {...} }
+   */
+  router.post("/api/bulk-claims-and-references", async (req, res) => {
+    const { taskIds } = req.body;
+
+    if (!Array.isArray(taskIds) || taskIds.length === 0) {
+      return res.status(400).json({ error: "taskIds array required" });
+    }
+
+    try {
+      // Fetch all claims for all tasks in one query
+      const placeholders = taskIds.map(() => '?').join(',');
+      const claimsSql = `
+        SELECT
+          c.claim_id,
+          c.claim_text,
+          c.claim_type,
+          c.veracity_score,
+          c.confidence_level,
+          c.last_verified,
+          cc.relationship_type,
+          cc.content_id
+        FROM claims c
+        JOIN content_claims cc ON c.claim_id = cc.claim_id
+        WHERE cc.content_id IN (${placeholders})
+        ORDER BY cc.content_id, c.claim_id
+      `;
+
+      const claims = await query(claimsSql, taskIds);
+
+      // Group claims by task
+      const claimsByTask = {};
+      const allClaimIds = [];
+      claims.forEach(claim => {
+        if (!claimsByTask[claim.content_id]) {
+          claimsByTask[claim.content_id] = [];
+        }
+        claimsByTask[claim.content_id].push(claim);
+        allClaimIds.push(claim.claim_id);
+      });
+
+      // Fetch all claim references in one query
+      let claimReferences = {};
+      if (allClaimIds.length > 0) {
+        const refPlaceholders = allClaimIds.map(() => '?').join(',');
+        const refsSql = `
+          SELECT
+            claim_id,
+            reference_id,
+            support_level
+          FROM claim_references
+          WHERE claim_id IN (${refPlaceholders})
+          ORDER BY claim_id
+        `;
+
+        const refs = await query(refsSql, allClaimIds);
+
+        // Group references by claim
+        refs.forEach(ref => {
+          if (!claimReferences[ref.claim_id]) {
+            claimReferences[ref.claim_id] = [];
+          }
+          claimReferences[ref.claim_id].push({
+            referenceId: ref.reference_id,
+            supportLevel: ref.support_level
+          });
+        });
+      }
+
+      res.json({ claimsByTask, claimReferences });
+    } catch (err) {
+      console.error("❌ Error fetching bulk claims and references:", err);
+      res.status(500).json({ error: "Database query failed" });
+    }
+  });
+
+  /**
    * GET /api/failed-references/:taskContentId
    * Get references that failed to scrape (stance = "insufficient" or rationale LIKE "Failed%")
    * These need manual scraping via dashboard

@@ -1,5 +1,5 @@
 // src/components/MultiLineChart.tsx
-import { Box, Heading } from "@chakra-ui/react";
+import { Box, Heading, useColorModeValue } from "@chakra-ui/react";
 import {
   LineChart,
   Line,
@@ -20,28 +20,34 @@ const data = [
 ];
 
 const MultiLineChart = () => {
+  const headingColor = useColorModeValue("teal.600", "teal.200");
+  const gridColor = useColorModeValue("#cbd5e0", "#2D3748");
+  const axisColor = useColorModeValue("#4a5568", "#A0AEC0");
+  const verifiedColor = useColorModeValue("#38a169", "#38B2AC");
+  const pendingColor = useColorModeValue("#e53e3e", "#E53E3E");
+
   return (
     <Box w="100%" h="280px" p={4}>
-      <Heading size="md" color="teal.200" mb={3}>
+      <Heading size="md" color={headingColor} mb={3}>
         Claim Status Over Time
       </Heading>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#2D3748" />
-          <XAxis dataKey="name" stroke="#A0AEC0" />
-          <YAxis stroke="#A0AEC0" />
+          <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+          <XAxis dataKey="name" stroke={axisColor} />
+          <YAxis stroke={axisColor} />
           <Tooltip />
           <Legend />
           <Line
             type="monotone"
             dataKey="verified"
-            stroke="#38B2AC"
+            stroke={verifiedColor}
             strokeWidth={2}
           />
           <Line
             type="monotone"
             dataKey="pending"
-            stroke="#E53E3E"
+            stroke={pendingColor}
             strokeWidth={2}
           />
         </LineChart>

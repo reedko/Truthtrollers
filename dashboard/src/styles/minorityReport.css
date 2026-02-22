@@ -2,7 +2,7 @@
 
 :root {
   /* Color Palette */
-  --mr-bg-dark: #000000;
+  --mr-bg-dark: radial-gradient(circle at 75% 80%, rgba(94, 234, 212, 0.4), rgba(2, 0, 36, 0.95));
   --mr-bg-card: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
   --mr-bg-card-hover: linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95));
 
@@ -38,6 +38,21 @@
   --mr-radius-lg: 16px;
 }
 
+/* Light mode overrides — ensures text never disappears on light backgrounds */
+.chakra-ui-light {
+  --mr-bg-dark: radial-gradient(circle at bottom left, rgba(71, 85, 105, 0.6) 0%, rgba(148, 163, 184, 0.4) 30%, rgba(226, 232, 240, 0.3) 70%);
+  --mr-bg-card: radial-gradient(circle at bottom left, rgba(71, 85, 105, 0.15), rgba(148, 163, 184, 0.2));
+  --mr-bg-card-hover: radial-gradient(circle at bottom left, rgba(71, 85, 105, 0.25), rgba(148, 163, 184, 0.3));
+  --mr-text-primary: #1a202c;
+  --mr-text-secondary: #2d3748;
+  --mr-text-muted: #4a5568;
+  --mr-blue-border: rgba(71, 85, 105, 0.3);
+  --mr-purple-border: rgba(71, 85, 105, 0.3);
+  --mr-green-border: rgba(71, 85, 105, 0.3);
+  --mr-red-border: rgba(71, 85, 105, 0.3);
+  --mr-yellow-border: rgba(71, 85, 105, 0.3);
+}
+
 /* Base Card Style */
 .mr-card {
   position: relative;
@@ -45,63 +60,126 @@
   backdrop-filter: blur(20px);
   border: 1px solid var(--mr-blue-border);
   border-radius: var(--mr-radius-md);
-  box-shadow:
-    0 8px 32px rgba(0, 0, 0, 0.6),
-    0 0 40px var(--mr-blue-border),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   user-select: none;
 }
 
-.mr-card:hover {
-  background: var(--mr-bg-card-hover);
-  box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.8),
-    0 0 40px var(--mr-blue-border),
-    inset 0 1px 0 rgba(255, 255, 255, 0.15);
-  transform: translateY(-2px);
-}
-
-/* Color Variants */
-.mr-card-blue {
-  border-color: var(--mr-blue-border);
+.chakra-ui-dark .mr-card {
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.6),
     0 0 40px var(--mr-blue-border),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
+.chakra-ui-light .mr-card {
+  box-shadow:
+    0 2px 8px rgba(100, 116, 139, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.mr-card:hover {
+  background: var(--mr-bg-card-hover);
+  transform: translateY(-2px);
+}
+
+.chakra-ui-dark .mr-card:hover {
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.8),
+    0 0 40px var(--mr-blue-border),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.chakra-ui-light .mr-card:hover {
+  box-shadow:
+    0 4px 12px rgba(100, 116, 139, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Color Variants */
+.mr-card-blue {
+  border-color: var(--mr-blue-border);
+}
+
+.chakra-ui-dark .mr-card-blue {
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    0 0 40px var(--mr-blue-border),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.chakra-ui-light .mr-card-blue {
+  box-shadow:
+    0 2px 8px rgba(100, 116, 139, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
 .mr-card-purple {
   border-color: var(--mr-purple-border);
+}
+
+.chakra-ui-dark .mr-card-purple {
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.6),
     0 0 40px var(--mr-purple-border),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
+.chakra-ui-light .mr-card-purple {
+  box-shadow:
+    0 2px 8px rgba(100, 116, 139, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
 .mr-card-green {
   border-color: var(--mr-green-border);
+}
+
+.chakra-ui-dark .mr-card-green {
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.6),
     0 0 40px var(--mr-green-border),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
+.chakra-ui-light .mr-card-green {
+  box-shadow:
+    0 2px 8px rgba(100, 116, 139, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
 .mr-card-red {
   border-color: var(--mr-red-border);
+}
+
+.chakra-ui-dark .mr-card-red {
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.6),
     0 0 40px var(--mr-red-border),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
+.chakra-ui-light .mr-card-red {
+  box-shadow:
+    0 2px 8px rgba(100, 116, 139, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
 .mr-card-yellow {
   border-color: var(--mr-yellow-border);
+}
+
+.chakra-ui-dark .mr-card-yellow {
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.6),
     0 0 40px var(--mr-yellow-border),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.chakra-ui-light .mr-card-yellow {
+  box-shadow:
+    0 2px 8px rgba(100, 116, 139, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 /* Edge Glow Bar - 3D Fade Effect */
@@ -406,6 +484,8 @@
   width: 100%;
   min-height: 100vh;
   background: var(--mr-bg-dark);
+  background-attachment: fixed;
+  background-position: center;
   overflow: visible; /* Changed from hidden to allow scrolling */
 }
 

@@ -995,6 +995,28 @@ export const fetchClaimsWithEvidence = async (
 };
 
 /**
+ * Fetch all claims and their references for multiple tasks in one call
+ * Much faster than fetching individually
+ */
+export const fetchBulkClaimsAndReferences = async (
+  taskIds: number[]
+): Promise<{
+  claimsByTask: import("../../../shared/entities/types").ClaimsByTaskMap;
+  claimReferences: import("../../../shared/entities/types").ClaimReferenceMap;
+}> => {
+  try {
+    const res = await axios.post(
+      `${API_BASE_URL}/api/bulk-claims-and-references`,
+      { taskIds }
+    );
+    return res.data || { claimsByTask: {}, claimReferences: {} };
+  } catch (error) {
+    console.error("❌ Error fetching bulk claims and references:", error);
+    return { claimsByTask: {}, claimReferences: {} };
+  }
+};
+
+/**
  * Fetch failed references for a task
  * These are references that failed to scrape and need manual intervention
  */

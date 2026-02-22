@@ -3,6 +3,10 @@ import { extendTheme } from "@chakra-ui/react";
 const API_BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 
 const theme = extendTheme({
+  config: {
+    initialColorMode: "dark",
+    useSystemColorMode: false,
+  },
   fonts: {
     heading: "'DM Sans', sans-serif",
     body: "'DM Sans', sans-serif",

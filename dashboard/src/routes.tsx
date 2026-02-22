@@ -16,6 +16,7 @@ import WorkspacePage from "./pages/WorkspacePage";
 import MoleculeMapPage from "./pages/MoleculeMapPage";
 import QuadrantGridPage from "./pages/QuadrantGridPage";
 import DiscussionPage from "./pages/DiscussionPage";
+import ChatPage from "./pages/ChatPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AccountSettingsPage from "./pages/AccountSettingsPage";
 import LogoutPage from "./pages/LogoutPage";
@@ -184,6 +185,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <TextPadPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/chat",
+        element: (
+          <ProtectedRoute>
+            <ChatPage />
           </ProtectedRoute>
         ),
       },

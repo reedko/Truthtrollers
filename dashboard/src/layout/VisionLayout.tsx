@@ -13,13 +13,25 @@ import {
   DrawerHeader,
   DrawerBody,
   useBreakpointValue,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { Outlet, useLocation, Link as RouterLink } from "react-router-dom";
-import { FiHome, FiBarChart2, FiMenu, FiUser, FiAward, FiEdit, FiMail } from "react-icons/fi";
+import {
+  FiHome,
+  FiBarChart2,
+  FiMenu,
+  FiUser,
+  FiAward,
+  FiEdit,
+  FiMail,
+  FiMessageSquare,
+} from "react-icons/fi";
 import TopicList from "../components/TopicList";
 import TopContributors from "../components/TopContributors";
 import HotTopics from "../components/HotTopics";
 import CollapsibleTopics from "../components/CollapsibleTopics";
+import ChatBubble from "../components/ChatBubble";
+import PWAInstallBanner from "../components/PWAInstallBanner";
 import NavBar from "../components/NavBar";
 import { useTaskStore } from "../store/useTaskStore";
 import { useAuthStore } from "../store/useAuthStore";
@@ -27,7 +39,7 @@ import { decodeJwt } from "../utils/jwt";
 import { AccountMenu } from "../components/AccountMenu";
 import { PlatformTour } from "../components/PlatformTour";
 
-const SIDEBAR_WIDTH = "220px";
+const SIDEBAR_WIDTH = "200px";
 const HEADER_HEIGHT = "160px";
 
 const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
@@ -97,6 +109,12 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
           <Text>TextPad</Text>
         </HStack>
       </RouterLink>
+      <RouterLink to="/chat" onClick={handleClick("/chat")}>
+        <HStack spacing={2} mb={2}>
+          <FiMessageSquare />
+          <Text>Chat</Text>
+        </HStack>
+      </RouterLink>
       <RouterLink to="/emailtest" onClick={handleClick("/emailtest")}>
         <HStack spacing={2} mb={2}>
           <FiMail />
@@ -136,36 +154,48 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
   );
 };
 
-const Sidebar: React.FC = () => (
-  <VStack
-    as="nav"
-    color="white"
-    spacing={6}
-    p={4}
-    w={SIDEBAR_WIDTH}
-    h="100vh"
-    position="fixed"
-    top={0}
-    left={0}
-    borderRight="1px solid"
-    borderColor="gray.700"
-    zIndex={100}
-    display={{ base: "none", md: "flex" }}
-    overflowY="auto"
-    sx={{
-      '&::-webkit-scrollbar': {
-        display: 'none'
-      },
-      scrollbarWidth: 'none',
-      msOverflowStyle: 'none'
-    }}
-  >
-    <Text fontSize="2xl" fontWeight="bold" color="teal.300">
-      Truthtrollers
-    </Text>
-    <SidebarContent />
-  </VStack>
-);
+const Sidebar: React.FC = () => {
+  const sidebarColor = useColorModeValue("gray.700", "white");
+  const sidebarBorderColor = useColorModeValue("rgba(100, 116, 139, 0.25)", "gray.700");
+  const brandColor = useColorModeValue("gray.700", "teal.300");
+  const sidebarBg = useColorModeValue(
+    "radial-gradient(circle at bottom left, rgba(71, 85, 105, 0.3), rgba(148, 163, 184, 0.2))",
+    "transparent"
+  );
+
+  return (
+    <VStack
+      as="nav"
+      bgGradient={sidebarBg}
+      backdropFilter="blur(8px)"
+      color={sidebarColor}
+      spacing={6}
+      p={4}
+      w={SIDEBAR_WIDTH}
+      h="100vh"
+      position="fixed"
+      top={0}
+      left={0}
+      borderRight="1px solid"
+      borderColor={sidebarBorderColor}
+      zIndex={100}
+      display={{ base: "none", md: "flex" }}
+      overflowY="auto"
+      sx={{
+        "&::-webkit-scrollbar": {
+          display: "none",
+        },
+        scrollbarWidth: "none",
+        msOverflowStyle: "none",
+      }}
+    >
+      <Text fontSize="2xl" fontWeight="bold" color={brandColor}>
+        Truthtrollers
+      </Text>
+      <SidebarContent />
+    </VStack>
+  );
+};
 
 const VisionLayout: React.FC = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -173,6 +203,15 @@ const VisionLayout: React.FC = () => {
   const location = useLocation();
   const setAuth = useAuthStore((s) => s.setAuth);
   const menuBtnRef = useRef<HTMLButtonElement | null>(null);
+
+  // Color mode values
+  const drawerBg = useColorModeValue("rgba(255, 255, 255, 0.95)", "gray.900");
+  const drawerColor = useColorModeValue("gray.700", "white");
+  const headerBorderColor = useColorModeValue("rgba(100, 116, 139, 0.25)", "gray.700");
+  const headerBg = useColorModeValue(
+    "radial-gradient(circle at bottom left, rgba(71, 85, 105, 0.35), rgba(148, 163, 184, 0.2))",
+    "linear-gradient(to bottom, rgba(2,0,36,0.8), rgba(94,234,212,0.1))"
+  );
 
   // Auto-close drawer on route change
   useEffect(() => {
@@ -220,7 +259,7 @@ const VisionLayout: React.FC = () => {
           finalFocusRef={menuBtnRef}
         >
           <DrawerOverlay />
-          <DrawerContent bg="gray.900" color="white">
+          <DrawerContent bg={drawerBg} color={drawerColor}>
             <DrawerCloseButton />
             <DrawerHeader borderBottomWidth="1px">Menu</DrawerHeader>
             <DrawerBody>
@@ -244,9 +283,9 @@ const VisionLayout: React.FC = () => {
         alignItems="center"
         justifyContent="space-between"
         borderBottom="1px solid"
-        borderColor="gray.700"
+        borderColor={headerBorderColor}
         backdropFilter="blur(12px)"
-        background="linear-gradient(to bottom, rgba(2,0,36,0.8), rgba(94,234,212,0.1))"
+        background={headerBg}
       >
         <HStack spacing={2} align="center">
           {isMobile && (
@@ -279,6 +318,8 @@ const VisionLayout: React.FC = () => {
       </Box>
 
       <PlatformTour />
+      <ChatBubble />
+      <PWAInstallBanner />
     </>
   );
 };

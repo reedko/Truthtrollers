@@ -8,6 +8,7 @@ import {
   HStack,
   IconButton,
   Tooltip,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { SearchIcon } from "@chakra-ui/icons";
 import { Claim } from "../../../shared/entities/types";
@@ -74,6 +75,19 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   // Keep a ref to onDropReferenceClaim so handleMouseUp never captures a stale version
   const onDropRef = useRef(onDropReferenceClaim);
   onDropRef.current = onDropReferenceClaim;
+
+  // Color mode values
+  const defaultBg = useColorModeValue(
+    "radial-gradient(circle at bottom left, rgba(71, 85, 105, 0.15), rgba(148, 163, 184, 0.2))",
+    "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+  );
+  const defaultColor = useColorModeValue("gray.700", "#f1f5f9");
+  const hoveredBg = useColorModeValue(
+    "radial-gradient(circle at bottom left, rgba(71, 85, 105, 0.3), rgba(148, 163, 184, 0.35))",
+    "linear-gradient(135deg, rgba(0, 162, 255, 0.3), rgba(0, 162, 255, 0.2))"
+  );
+  const hoveredColor = useColorModeValue("gray.800", "#ffffff");
+  const borderColor = useColorModeValue("rgba(100, 116, 139, 0.3)", "rgba(167, 139, 250, 0.4)");
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -169,21 +183,27 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
 
       <Box
         as="button"
-        background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+        background={defaultBg}
         backdropFilter="blur(20px)"
-        border="1px solid rgba(0, 162, 255, 0.4)"
-        color="rgba(0, 162, 255, 1)"
+        border={`1px solid ${borderColor}`}
+        color={useColorModeValue("teal.600", "rgba(0, 162, 255, 1)")}
         height="50px"
         width="100%"
         px={3}
         py={2}
         borderRadius="12px"
-        boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+        boxShadow={useColorModeValue(
+          "0 2px 8px rgba(94, 234, 212, 0.2)",
+          "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+        )}
         position="relative"
         overflow="hidden"
         transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
         _hover={{
-          boxShadow: "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+          boxShadow: useColorModeValue(
+            "0 4px 12px rgba(94, 234, 212, 0.3)",
+            "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+          ),
           transform: "translateY(-2px)"
         }}
         onClick={() => {
@@ -220,8 +240,8 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
           const getLinkColors = () => {
             if (!linkSelection?.active) {
               return {
-                border: "1px solid rgba(167, 139, 250, 0.4)",
-                background: "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))",
+                border: `1px solid ${borderColor}`,
+                background: defaultBg,
                 hoverBg: undefined,
               };
             }
@@ -270,23 +290,32 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
               key={claim.claim_id}
               ref={(el) => (claimRefs.current[claim.claim_id] = el)}
               data-claim-id={claim.claim_id}
-              background={hoveredClaimId === claim.claim_id ? "linear-gradient(135deg, rgba(0, 162, 255, 0.3), rgba(0, 162, 255, 0.2))" : colors.background}
+              background={hoveredClaimId === claim.claim_id ? hoveredBg : colors.background}
               backdropFilter="blur(20px)"
-              color={hoveredClaimId === claim.claim_id ? "#ffffff" : "#f1f5f9"}
+              color={hoveredClaimId === claim.claim_id ? hoveredColor : defaultColor}
               px={3}
               py={2}
               borderRadius="12px"
               border={colors.border}
               boxShadow={
                 hoveredClaimId === claim.claim_id
-                  ? "0 12px 48px rgba(0, 0, 0, 0.8), 0 0 60px rgba(167, 139, 250, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
-                  : "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(167, 139, 250, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+                  ? useColorModeValue(
+                      "0 4px 12px rgba(94, 234, 212, 0.3)",
+                      "0 12px 48px rgba(0, 0, 0, 0.8), 0 0 60px rgba(167, 139, 250, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+                    )
+                  : useColorModeValue(
+                      "0 2px 8px rgba(94, 234, 212, 0.2)",
+                      "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(167, 139, 250, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+                    )
               }
               _hover={
                 linkSelection?.active
                   ? { bg: colors.hoverBg, cursor: "pointer" }
                   : {
-                      boxShadow: "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(167, 139, 250, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+                      boxShadow: useColorModeValue(
+                        "0 4px 12px rgba(94, 234, 212, 0.3)",
+                        "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(167, 139, 250, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+                      ),
                       transform: "translateY(-2px)"
                     }
               }

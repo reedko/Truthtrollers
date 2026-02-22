@@ -44,6 +44,8 @@ import createEvidenceRouter from "./src/routes/evidence/index.js";
 import createPromptRoutes from "./src/routes/prompts.routes.js";
 import createMoleculeViewsRoutes from "./src/routes/molecule-views.routes.js";
 import createFacebookRoutes from "./src/routes/social/facebook.routes.js";
+import createChatRouter from "./src/routes/chat.routes.js";
+import { initSocketServer } from "./src/realtime/socketServer.js";
 
 // Logger utility
 import { clearLogFile } from "./src/utils/logger.js";
@@ -112,10 +114,16 @@ const allowedOrigins = [
   "chrome-extension://phacjklngoihnlhcadefaiokbacnagbf",
 ];
 
+const isAllowedOrigin = (origin) =>
+  !origin ||
+  allowedOrigins.includes(origin) ||
+  origin.startsWith("chrome-extension://") ||
+  origin.startsWith("moz-extension://");
+
 app.use((req, res, next) => {
   if (req.method === "OPTIONS") {
     const origin = req.headers.origin;
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (isAllowedOrigin(origin)) {
       res.setHeader("Access-Control-Allow-Origin", origin || "*");
       res.setHeader("Vary", "Origin");
       res.setHeader("Access-Control-Allow-Credentials", "true");
@@ -138,7 +146,7 @@ app.use((req, res, next) => {
 app.use(
   cors({
     origin(origin, cb) {
-      if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+      if (isAllowedOrigin(origin)) return cb(null, true);
       cb(new Error("Not allowed by CORS"));
     },
     credentials: true,
@@ -188,6 +196,7 @@ app.use("/", createEvidenceRouter({ query, pool }));
 app.use("/", createPromptRoutes({ query })); // Prompt management routes: /api/prompts
 app.use("/", createMoleculeViewsRoutes({ query, pool })); // Molecule views routes: /api/molecule-views
 app.use("/", createFacebookRoutes({ query })); // Facebook scraping routes: /api/scrape-facebook-post
+app.use("/", createChatRouter({ pool }));      // Chat routes: /api/chat/*, /api/users/search
 // ─────────────────────────────────────────────
 // Health + Simple Proxy (top-level, legacy behavior)
 // ─────────────────────────────────────────────
@@ -249,6 +258,7 @@ await checkDatabaseConnection();
 // HTTP Server
 // ─────────────────────────────────────────────
 const httpServer = http.createServer(app);
+initSocketServer(httpServer, pool); // Attach Socket.io for real-time chat
 httpServer.listen(httpPort, () => {
   console.log(`🌐 HTTP server on http://localhost:${httpPort}`);
 });

@@ -52,11 +52,17 @@ export default defineConfig({
         target: "https://localhost:5001",
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
       "/assets": {
         target: "https://localhost:5001",
         changeOrigin: true,
         secure: false,
+      },
+      "/socket.io": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+        ws: true,
       },
     },
   },

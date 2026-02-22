@@ -11,6 +11,7 @@ import {
   MenuList,
   Spacer,
   Button,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
 import ColorModeSwitch from "./ColorModeSwitch";
@@ -30,6 +31,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
   const setSearchQuery = useTaskStore((s) => s.setSearchQuery);
   const selectedTaskId = useTaskStore((s) => s.selectedTaskId);
   const setRedirect = useTaskStore((s) => s.setRedirect);
+  const navColor = useColorModeValue("gray.700", "white");
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
@@ -92,6 +94,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 <MenuItem as={RouterLink} to="/textpad">
                   TextPad
                 </MenuItem>
+                <MenuItem as={RouterLink} to="/chat">
+                  Chat
+                </MenuItem>
                 <MenuItem as={RouterLink} to="/level">
                   Level
                 </MenuItem>
@@ -120,7 +125,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
       ) : (
         <Box>
           {/* Full Navigation Menu */}
-          <Box as="nav" p={3} color="white">
+          <Box as="nav" p={3} color={navColor}>
             <HStack spacing={6} wrap="wrap">
               <Link as={RouterLink} to="/extension">
                 Extension
@@ -170,6 +175,13 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 onClick={() => handleNavClick("/textpad")}
               >
                 TextPad
+              </Link>
+              <Link
+                as={RouterLink}
+                to="/chat"
+                onClick={() => handleNavClick("/chat")}
+              >
+                Chat
               </Link>
               <Link
                 as={RouterLink}
@@ -234,6 +246,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   </MenuItem>
                   <MenuItem as={RouterLink} to="/textpad">
                     TextPad
+                  </MenuItem>
+                  <MenuItem as={RouterLink} to="/chat">
+                    Chat
                   </MenuItem>
                   <MenuItem as={RouterLink} to="/level">
                     Level

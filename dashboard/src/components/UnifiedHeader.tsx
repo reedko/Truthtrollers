@@ -13,7 +13,12 @@ import {
   HStack,
   useToast,
 } from "@chakra-ui/react";
-import { ViewIcon, ViewOffIcon, ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
+import {
+  ViewIcon,
+  ViewOffIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "@chakra-ui/icons";
 import { keyframes } from "@emotion/react";
 import { useTaskStore } from "../store/useTaskStore";
 import { useUIStore } from "../store/useUIStore";
@@ -28,7 +33,8 @@ import { ensureArray } from "../utils/normalize";
 import { fetchContentScores } from "../services/useDashboardAPI";
 import MicroHeaderRail from "./headers/MicroHeaderRail";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 type Variant = "full" | "compact" | "micro"; // ⬅️ reintroduce micro
 
@@ -87,12 +93,14 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
   // 🔧 Auto-pick variant by breakpoint unless explicitly provided
   const bpVariant = useBreakpointValue<Variant>({
-    base: "micro", // phones
-    sm: "compact", // small tablets
-    md: "full", // desktop+
+    base: "micro",
+    sm: "micro",
+    md: "micro", // iPad-ish
+    lg: "full",
   });
+
   const [localVariant, setLocalVariant] = useState<Variant>(
-    variant ?? bpVariant ?? "full"
+    variant ?? bpVariant ?? "full",
   );
   useEffect(() => {
     if (variant) setLocalVariant(variant);
@@ -116,27 +124,25 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   // 🔧 Enable horizontal scrolling on mobile
   const flexWrap = useBreakpointValue<"wrap" | "nowrap">({
     base: "nowrap", // no wrap on mobile = horizontal scroll
-    md: "wrap",     // wrap on desktop
+    md: "nowrap", // wrap on desktop
   });
 
   const overflowX = useBreakpointValue<"auto" | "visible">({
-    base: "auto",    // scrollable on mobile
-    sm: "auto",      // still scrollable on tablet
-    md: "auto",      // always scrollable
-    lg: "visible",   // only disable scroll on large desktop
+    base: "auto",
+    lg: "visible",
   });
 
   const resolvedPivotType =
     (pivotType === "reference" ? "task" : pivotType) || "task";
   const resolvedPivotId =
-    pivotId !== undefined ? pivotId : selectedTask?.content_id ?? undefined;
+    pivotId !== undefined ? pivotId : (selectedTask?.content_id ?? undefined);
 
   useEffect(() => {
     const load = async () => {
       if (resolvedPivotId !== undefined) {
         const results = await fetchTasksByPivot(
           resolvedPivotType,
-          resolvedPivotId
+          resolvedPivotId,
         );
         setTasks(results);
         setPivotTask(results[0] || null);
@@ -162,7 +168,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
         setLiveVerimeter(
           result && result.verimeterScore !== undefined
             ? result.verimeterScore
-            : null
+            : null,
         );
       } catch {
         setLiveVerimeter(null);
@@ -174,16 +180,16 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
   const contentId = pivotTask?.content_id ?? null;
   const storeScore =
-    contentId != null ? verimeterScoreMap[contentId] ?? null : null;
+    contentId != null ? (verimeterScoreMap[contentId] ?? null) : null;
   const finalScore = verimeterScore ?? storeScore ?? liveVerimeter;
 
   const authors = useMemo(
     () => ensureArray<Author>(pivotTask?.authors),
-    [pivotTask]
+    [pivotTask],
   );
   const publishers = useMemo(
     () => ensureArray<Publisher>(pivotTask?.publishers),
-    [pivotTask]
+    [pivotTask],
   );
 
   const containerStyles = sticky
@@ -200,8 +206,8 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   // Card wrapper—forces identical widths, kills stagger
   // On mobile (horizontal scroll), maintain minimum width
   const cardMinWidth = useBreakpointValue({
-    base: "280px",  // mobile: fixed width for scrolling
-    md: "200px",    // desktop: can be smaller with wrap
+    base: "280px", // mobile: fixed width for scrolling
+    md: "200px", // desktop: can be smaller with wrap
   });
 
   const handleMarkComplete = async () => {
@@ -228,19 +234,16 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     }
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/mark-task-complete`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            contentId: pivotTask.content_id,
-            userId: user.user_id,
-          }),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/mark-task-complete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contentId: pivotTask.content_id,
+          userId: user.user_id,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to mark task complete");
@@ -248,7 +251,8 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
       toast({
         title: "Task marked complete!",
-        description: "The extension will now show this task when you visit the URL",
+        description:
+          "The extension will now show this task when you visit the URL",
         status: "success",
         duration: 4000,
         isClosable: true,
@@ -270,17 +274,33 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   };
 
   const cardWrapSx = {
-    "--card-w": `${CARD_W}px`,
+    "--card-max": `${CARD_W}px`,
+
+    // Mobile: fixed cards + horizontal scroll
     flex: {
-      base: "0 0 280px",        // mobile: fixed width for horizontal scroll
-      md: "0 0 var(--card-w)",  // desktop: normal flex
+      base: "0 0 280px",
+      lg: "1 1 0", // Desktop: allow shrinking/growing
     },
+
+    // Let the card width be responsive on desktop:
+    // - can shrink down to ~180px
+    // - prefers ~20vw
+    // - never exceeds CARD_W
     width: {
-      base: "280px",                    // mobile: fixed
-      md: "min(100%, var(--card-w))",  // desktop: responsive
+      base: "280px",
+      lg: "clamp(180px, 20vw, var(--card-max))",
     },
-    maxWidth: "var(--card-w)",
-    minWidth: cardMinWidth,
+
+    maxWidth: {
+      base: "280px",
+      lg: "var(--card-max)",
+    },
+
+    minWidth: {
+      base: "280px",
+      lg: "180px",
+    },
+
     "> *": {
       width: "100% !important",
       maxWidth: "100% !important",
@@ -369,7 +389,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
             zIndex={45}
             onClick={() =>
               setLocalVariant((v) =>
-                v === "full" ? "compact" : v === "compact" ? "micro" : "full"
+                v === "full" ? "compact" : v === "compact" ? "micro" : "full",
               )
             }
           />
@@ -393,8 +413,8 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
             wrap={flexWrap}
             justify={justify} // ⬅️ spread on desktop, scrollable on phone
             align="stretch"
-            columnGap={isMicro ? 2 : isCompact ? 3 : 4}
-            rowGap={isMicro ? 2 : isCompact ? 3 : 4}
+            columnGap={isMicro ? 2 : isCompact ? 2 : 3}
+            rowGap={isMicro ? 2 : isCompact ? 2 : 3}
             mb={isMicro ? 2 : isCompact ? 3 : 6}
             w="100%"
             px={0}
@@ -421,216 +441,230 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               },
             }}
           >
-          {/* BoolCard */}
-          <Box
-            sx={{
-              ...cardWrapSx,
-              position: "relative",
-              flexShrink: 0,
-              "&::before": {
-                content: '""',
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "8px",
-                height: "100%",
-                background: "linear-gradient(90deg, rgba(139, 92, 246, 0.5) 0%, rgba(139, 92, 246, 0) 100%)",
-                pointerEvents: "none",
-                zIndex: 1,
-              },
-              "> *": {
-                ...cardWrapSx["> *"],
-                overflow: "hidden",
-                backdropFilter: "blur(10px)",
-                transition: "all 0.2s ease",
-              },
-              "&:hover > *": {
-                transform: "translateY(-2px)",
-                boxShadow: "0 0 30px rgba(139, 92, 246, 0.4)",
-              },
-            }}
-          >
-            {isLoading ? (
-              <Skeleton
-                borderRadius="lg"
-                height={isFull ? "405px" : isCompact ? "220px" : "160px"} // micro shortest
-              />
-            ) : (
-              <BoolCard
-                verimeterScore={finalScore}
-                trollmeterScore={isFull ? trollmeterScore : undefined}
-                pro={isFull ? pro : undefined}
-                con={isFull ? con : undefined}
-                contentId={contentId ?? undefined}
-                size={isFull ? "md" : "sm"} // micro/compact => sm
-                dense={!isFull} // micro/compact => dense
-              />
-            )}
-          </Box>
+            {/* BoolCard */}
+            <Box
+              sx={{
+                ...cardWrapSx,
+                position: "relative",
+                flexShrink: 0,
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "8px",
+                  height: "100%",
+                  background:
+                    "linear-gradient(90deg, rgba(139, 92, 246, 0.5) 0%, rgba(139, 92, 246, 0) 100%)",
+                  pointerEvents: "none",
+                  zIndex: 1,
+                },
+                "> *": {
+                  ...cardWrapSx["> *"],
+                  overflow: "hidden",
+                  backdropFilter: "blur(10px)",
+                  transition: "all 0.2s ease",
+                },
+                "&:hover > *": {
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 0 30px rgba(139, 92, 246, 0.4)",
+                },
+              }}
+            >
+              {isLoading ? (
+                <Skeleton
+                  borderRadius="lg"
+                  height={isFull ? "405px" : isCompact ? "220px" : "160px"} // micro shortest
+                />
+              ) : (
+                <BoolCard
+                  verimeterScore={finalScore}
+                  trollmeterScore={isFull ? trollmeterScore : undefined}
+                  pro={isFull ? pro : undefined}
+                  con={isFull ? con : undefined}
+                  contentId={contentId ?? undefined}
+                  size={isFull ? "md" : "sm"} // micro/compact => sm
+                  dense={!isFull} // micro/compact => dense
+                />
+              )}
+            </Box>
 
-          {/* TaskCard */}
-          <Box
-            sx={{
-              ...cardWrapSx,
-              position: "relative",
-              flexShrink: 0,
-              "&::before": {
-                content: '""',
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "8px",
-                height: "100%",
-                background: "linear-gradient(90deg, rgba(0, 162, 255, 0.5) 0%, rgba(0, 162, 255, 0) 100%)",
-                pointerEvents: "none",
-                zIndex: 1,
-              },
-              "> *": {
-                ...cardWrapSx["> *"],
-                overflow: "hidden",
-                backdropFilter: "blur(10px)",
-                transition: "all 0.2s ease",
-              },
-              "&:hover > *": {
-                transform: "translateY(-2px)",
-                boxShadow: "0 0 30px rgba(0, 162, 255, 0.4)",
-              },
-            }}
-          >
-            {isLoading ? (
-              <Box p={3} borderRadius="lg" bg="stat2Gradient">
-                <Skeleton height={isFull ? "18px" : "14px"} mb={3} />
-                {isFull && <Skeleton height="150px" mb={2} />}
-                {isFull && <SkeletonText noOfLines={3} spacing="2" />}
-              </Box>
-            ) : (
-              <TaskCard
-                task={tasks}
-                useStore={false}
-                onSelect={setPivotTask}
-                compact={!isFull} // compact + micro
-                hideMeta={!isFull} // hide image/meta in micro & compact
-              />
-            )}
-          </Box>
+            {/* TaskCard */}
+            <Box
+              sx={{
+                ...cardWrapSx,
+                position: "relative",
+                flexShrink: 0,
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "8px",
+                  height: "100%",
+                  background:
+                    "linear-gradient(90deg, rgba(0, 162, 255, 0.5) 0%, rgba(0, 162, 255, 0) 100%)",
+                  pointerEvents: "none",
+                  zIndex: 1,
+                },
+                "> *": {
+                  ...cardWrapSx["> *"],
+                  overflow: "hidden",
+                  backdropFilter: "blur(10px)",
+                  transition: "all 0.2s ease",
+                },
+                "&:hover > *": {
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 0 30px rgba(0, 162, 255, 0.4)",
+                },
+              }}
+            >
+              {isLoading ? (
+                <Box p={3} borderRadius="lg" bg="stat2Gradient">
+                  <Skeleton height={isFull ? "18px" : "14px"} mb={3} />
+                  {isFull && <Skeleton height="150px" mb={2} />}
+                  {isFull && <SkeletonText noOfLines={3} spacing="2" />}
+                </Box>
+              ) : (
+                <TaskCard
+                  task={tasks}
+                  useStore={false}
+                  onSelect={setPivotTask}
+                  compact={!isFull} // compact + micro
+                  hideMeta={!isFull} // hide image/meta in micro & compact
+                />
+              )}
+            </Box>
 
-          {/* PubCard */}
-          <Box
-            sx={{
-              ...cardWrapSx,
-              position: "relative",
-              flexShrink: 0,
-              "&::before": {
-                content: '""',
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "8px",
-                height: "100%",
-                background: "linear-gradient(90deg, rgba(6, 182, 212, 0.5) 0%, rgba(6, 182, 212, 0) 100%)",
-                pointerEvents: "none",
-                zIndex: 1,
-              },
-              "> *": {
-                ...cardWrapSx["> *"],
-                overflow: "hidden",
-                backdropFilter: "blur(10px)",
-                transition: "all 0.2s ease",
-              },
-              "&:hover > *": {
-                transform: "translateY(-2px)",
-                boxShadow: "0 0 30px rgba(6, 182, 212, 0.4)",
-              },
-            }}
-          >
-            {isLoading ? (
-              <Skeleton borderRadius="lg" height={isFull ? "180px" : "120px"} />
-            ) : (
-              <PubCard publishers={publishers} compact={!isFull} />
-            )}
-          </Box>
+            {/* PubCard */}
+            <Box
+              sx={{
+                ...cardWrapSx,
+                position: "relative",
+                flexShrink: 0,
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "8px",
+                  height: "100%",
+                  background:
+                    "linear-gradient(90deg, rgba(6, 182, 212, 0.5) 0%, rgba(6, 182, 212, 0) 100%)",
+                  pointerEvents: "none",
+                  zIndex: 1,
+                },
+                "> *": {
+                  ...cardWrapSx["> *"],
+                  overflow: "hidden",
+                  backdropFilter: "blur(10px)",
+                  transition: "all 0.2s ease",
+                },
+                "&:hover > *": {
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 0 30px rgba(6, 182, 212, 0.4)",
+                },
+              }}
+            >
+              {isLoading ? (
+                <Skeleton
+                  borderRadius="lg"
+                  height={isFull ? "180px" : "120px"}
+                />
+              ) : (
+                <PubCard publishers={publishers} compact={!isFull} />
+              )}
+            </Box>
 
-          {/* AuthCard */}
-          <Box
-            sx={{
-              ...cardWrapSx,
-              position: "relative",
-              flexShrink: 0,
-              "&::before": {
-                content: '""',
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "8px",
-                height: "100%",
-                background: "linear-gradient(90deg, rgba(251, 146, 60, 0.5) 0%, rgba(251, 146, 60, 0) 100%)",
-                pointerEvents: "none",
-                zIndex: 1,
-              },
-              "> *": {
-                ...cardWrapSx["> *"],
-                overflow: "hidden",
-                backdropFilter: "blur(10px)",
-                transition: "all 0.2s ease",
-              },
-              "&:hover > *": {
-                transform: "translateY(-2px)",
-                boxShadow: "0 0 30px rgba(251, 146, 60, 0.4)",
-              },
-            }}
-          >
-            {isLoading ? (
-              <Skeleton borderRadius="lg" height={isFull ? "180px" : "120px"} />
-            ) : (
-              <AuthCard
-                authors={authors}
-                compact={!isFull}
-                contentId={contentId ?? undefined}
-              />
-            )}
-          </Box>
+            {/* AuthCard */}
+            <Box
+              sx={{
+                ...cardWrapSx,
+                position: "relative",
+                flexShrink: 0,
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "8px",
+                  height: "100%",
+                  background:
+                    "linear-gradient(90deg, rgba(251, 146, 60, 0.5) 0%, rgba(251, 146, 60, 0) 100%)",
+                  pointerEvents: "none",
+                  zIndex: 1,
+                },
+                "> *": {
+                  ...cardWrapSx["> *"],
+                  overflow: "hidden",
+                  backdropFilter: "blur(10px)",
+                  transition: "all 0.2s ease",
+                },
+                "&:hover > *": {
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 0 30px rgba(251, 146, 60, 0.4)",
+                },
+              }}
+            >
+              {isLoading ? (
+                <Skeleton
+                  borderRadius="lg"
+                  height={isFull ? "180px" : "120px"}
+                />
+              ) : (
+                <AuthCard
+                  authors={authors}
+                  compact={!isFull}
+                  contentId={contentId ?? undefined}
+                />
+              )}
+            </Box>
 
-          {/* ProgressCard — always show */}
-          <Box
-            sx={{
-              ...cardWrapSx,
-              position: "relative",
-              flexShrink: 0,
-              "&::before": {
-                content: '""',
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "8px",
-                height: "100%",
-                background: "linear-gradient(90deg, rgba(74, 222, 128, 0.5) 0%, rgba(74, 222, 128, 0) 100%)",
-                pointerEvents: "none",
-                zIndex: 1,
-              },
-              "> *": {
-                ...cardWrapSx["> *"],
-                overflow: "hidden",
-                backdropFilter: "blur(10px)",
-                transition: "all 0.2s ease",
-              },
-              "&:hover > *": {
-                transform: "translateY(-2px)",
-                boxShadow: "0 0 30px rgba(74, 222, 128, 0.4)",
-              },
-            }}
-          >
-            {isLoading ? (
-              <Skeleton borderRadius="lg" height={isFull ? "180px" : "160px"} />
-            ) : (
-              <ProgressCard
-                ProgressScore={0.2}
-                totalClaims={90}
-                verifiedClaims={27}
-                totalReferences={20}
-                verifiedReferences={10}
-              />
-            )}
-          </Box>
+            {/* ProgressCard — always show */}
+            <Box
+              sx={{
+                ...cardWrapSx,
+                position: "relative",
+                flexShrink: 0,
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "8px",
+                  height: "100%",
+                  background:
+                    "linear-gradient(90deg, rgba(74, 222, 128, 0.5) 0%, rgba(74, 222, 128, 0) 100%)",
+                  pointerEvents: "none",
+                  zIndex: 1,
+                },
+                "> *": {
+                  ...cardWrapSx["> *"],
+                  overflow: "hidden",
+                  backdropFilter: "blur(10px)",
+                  transition: "all 0.2s ease",
+                },
+                "&:hover > *": {
+                  transform: "translateY(-2px)",
+                  boxShadow: "0 0 30px rgba(74, 222, 128, 0.4)",
+                },
+              }}
+            >
+              {isLoading ? (
+                <Skeleton
+                  borderRadius="lg"
+                  height={isFull ? "180px" : "160px"}
+                />
+              ) : (
+                <ProgressCard
+                  ProgressScore={0.2}
+                  totalClaims={90}
+                  verifiedClaims={27}
+                  totalReferences={20}
+                  verifiedReferences={10}
+                />
+              )}
+            </Box>
           </Flex>
 
           {/* Action Buttons Row */}

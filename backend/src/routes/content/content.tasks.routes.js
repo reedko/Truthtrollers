@@ -84,6 +84,7 @@ router.get("/api/user-tasks/:user_id", async (req, res) => {
     JOIN content_users cu ON t.content_id = cu.content_id
     WHERE t.content_type = 'task' AND cu.user_id = ?
     GROUP BY t.content_id
+    ORDER BY t.content_id DESC
   ` : `
     SELECT
       t.*,
@@ -129,6 +130,7 @@ router.get("/api/user-tasks/:user_id", async (req, res) => {
     JOIN content_users cu ON t.content_id = cu.content_id
     WHERE t.content_type = 'task' AND cu.user_id = ? AND (t.is_active IS NULL OR t.is_active = 1)
     GROUP BY t.content_id
+    ORDER BY t.content_id DESC
   `;
 
   // Filter by user_id
@@ -194,6 +196,7 @@ router.get("/api/all-tasks", async (req, res) => {
     FROM content t
     WHERE t.content_type = 'task'
     GROUP BY t.content_id
+    ORDER BY t.content_id DESC
   ` : `
     SELECT
       t.*,
@@ -236,6 +239,7 @@ router.get("/api/all-tasks", async (req, res) => {
     FROM content t
     WHERE t.content_type = 'task' AND (t.is_active IS NULL OR t.is_active = 1)
     GROUP BY t.content_id
+    ORDER BY t.content_id DESC
   `;
 
   pool.query(sql, [], (err, results) => {

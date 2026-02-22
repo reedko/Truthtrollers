@@ -102,7 +102,11 @@ const Workspace: React.FC<WorkspaceProps> = ({
   // Hooks that use context - must be after all useState hooks, but BEFORE any early returns
   const isMobile = useBreakpointValue({ base: true, md: false });
   const setVerimeterScore = useTaskStore((s) => s.setVerimeterScore);
-  const bgColor = useColorModeValue("gray.50", "gray.800");
+  const bgColor = useColorModeValue(
+    "radial-gradient(circle at bottom left, rgba(71, 85, 105, 0.15), rgba(148, 163, 184, 0.2))",
+    "gray.800"
+  );
+  const borderColor = useColorModeValue("rgba(100, 116, 139, 0.25)", "gray.300");
   const user = useAuthStore((s) => s.user);
 
   const updateXPositionsAndHeight = () => {
@@ -395,12 +399,13 @@ const Workspace: React.FC<WorkspaceProps> = ({
       borderWidth="1px"
       borderRadius="lg"
       p={4}
-      bg={bgColor}
-      borderColor="gray.300"
+      bgGradient={bgColor}
+      backdropFilter="blur(8px)"
+      borderColor={borderColor}
       height={`${computedHeight}px`} // dynamic height computed above
       onMouseMove={(e) => setMousePosition({ x: e.clientX, y: e.clientY })}
     >
-      <Heading size="md" mb={2}>
+      <Heading size="md" mb={2} className="workspace-header">
         Claim Analysis
       </Heading>
       <Grid

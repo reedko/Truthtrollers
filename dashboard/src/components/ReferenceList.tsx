@@ -17,6 +17,7 @@ import {
   ModalCloseButton,
   IconButton,
   Badge,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import {
   LitReference,
@@ -56,6 +57,14 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
   const [isScrapeModalOpen, setIsScrapeModalOpen] = useState(false);
   const [retryUrl, setRetryUrl] = useState("");
 
+  // Color mode values
+  const defaultBg = useColorModeValue(
+    "linear-gradient(135deg, rgba(148, 163, 184, 0.2), rgba(203, 213, 225, 0.3))",
+    "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+  );
+  const defaultColor = useColorModeValue("gray.700", "#f1f5f9");
+  const borderColor = useColorModeValue("rgba(148, 163, 184, 0.3)", "rgba(59, 130, 246, 0.4)");
+
   // Fetch failed references when component mounts or taskId changes
   useEffect(() => {
     if (taskId) {
@@ -85,21 +94,27 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
         {/* 🔥 Button to Open ReferenceModal */}
         <Box
           as="button"
-          background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+          background={defaultBg}
           backdropFilter="blur(20px)"
-          border="1px solid rgba(0, 162, 255, 0.4)"
-          color="rgba(0, 162, 255, 1)"
+          border={`1px solid ${borderColor}`}
+          color={useColorModeValue("teal.600", "rgba(0, 162, 255, 1)")}
           height="50px"
           width="100%"
           px={3}
           py={2}
           borderRadius="12px"
-          boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+          boxShadow={useColorModeValue(
+            "0 2px 8px rgba(94, 234, 212, 0.2)",
+            "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+          )}
           position="relative"
           overflow="hidden"
           transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
           _hover={{
-            boxShadow: "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+            boxShadow: useColorModeValue(
+              "0 4px 12px rgba(94, 234, 212, 0.3)",
+              "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+            ),
             transform: "translateY(-2px)"
           }}
           onClick={() => setIsReferenceModalOpen(true)}
@@ -123,14 +138,17 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
             <Box
               key={ref.reference_content_id}
               data-ref-id={ref.reference_content_id} // 👈 for measuring
-              border="1px solid rgba(59, 130, 246, 0.4)"
-              background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+              border={`1px solid ${borderColor}`}
+              background={defaultBg}
               backdropFilter="blur(20px)"
-              color="#f1f5f9"
+              color={defaultColor}
               px={3}
               py={2}
               borderRadius="12px"
-              boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+              boxShadow={useColorModeValue(
+                "0 2px 8px rgba(94, 234, 212, 0.2)",
+                "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+              )}
               width="100%"
               display="flex"
               alignItems="center"
@@ -141,7 +159,10 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
               overflow="hidden"
               transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
               _hover={{
-                boxShadow: "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+                boxShadow: useColorModeValue(
+                  "0 4px 12px rgba(94, 234, 212, 0.3)",
+                  "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+                ),
                 transform: "translateY(-2px)"
               }}
             >

@@ -257,6 +257,8 @@ export default function TextPadPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   bg={isViewMode ? "rgba(15, 23, 42, 0.5)" : "rgba(15, 23, 42, 0.8)"}
+                  color="white"
+                  _placeholder={{ color: "gray.400" }}
                   borderColor="rgba(99, 102, 241, 0.3)"
                   _hover={{ borderColor: "rgba(99, 102, 241, 0.5)" }}
                   _focus={{ borderColor: "rgba(99, 102, 241, 0.7)", boxShadow: "0 0 0 1px rgba(99, 102, 241, 0.7)" }}
@@ -273,6 +275,8 @@ export default function TextPadPage() {
                   onChange={(e) => setText(e.target.value)}
                   minH="300px"
                   bg={isViewMode ? "rgba(15, 23, 42, 0.5)" : "rgba(15, 23, 42, 0.8)"}
+                  color="white"
+                  _placeholder={{ color: "gray.400" }}
                   borderColor="rgba(99, 102, 241, 0.3)"
                   _hover={{ borderColor: "rgba(99, 102, 241, 0.5)" }}
                   _focus={{ borderColor: "rgba(99, 102, 241, 0.7)", boxShadow: "0 0 0 1px rgba(99, 102, 241, 0.7)" }}
@@ -326,7 +330,7 @@ export default function TextPadPage() {
                       <HStack justify="space-between" mb={2}>
                         <HStack spacing={2}>
                           <Spinner size="xs" color="purple.400" />
-                          <Text fontSize="sm" color="gray.300">
+                          <Text fontSize="sm" color="white">
                             {submitProgress.message}
                           </Text>
                         </HStack>

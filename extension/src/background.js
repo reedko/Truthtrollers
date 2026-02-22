@@ -30,17 +30,26 @@ async function syncTaskStateForUrl(url, tabId = null) {
 
     // For Facebook feeds, also try to detect the specific post URL in viewport
     let urlsToCheck = [url];
-    const isGenericFacebookUrl = url === "https://www.facebook.com" || url === "https://www.facebook.com/" ||
-                                  url === "https://facebook.com" || url === "https://facebook.com/";
-    const isFacebookFeed = (url.includes("facebook.com") || url.includes("fb.com")) &&
-                           !url.includes("/posts/") && !url.includes("/permalink");
+    const isGenericFacebookUrl =
+      url === "https://www.facebook.com" ||
+      url === "https://www.facebook.com/" ||
+      url === "https://facebook.com" ||
+      url === "https://facebook.com/";
+    const isFacebookFeed =
+      (url.includes("facebook.com") || url.includes("fb.com")) &&
+      !url.includes("/posts/") &&
+      !url.includes("/permalink");
 
     if ((isGenericFacebookUrl || isFacebookFeed) && tabId) {
-      console.log(`🔵 [syncTaskState] Facebook feed detected, finding post in viewport...`);
+      console.log(
+        `🔵 [syncTaskState] Facebook feed detected, finding post in viewport...`,
+      );
       // Check storage first to see if we already detected a post URL
-      const stored = await browser.storage.local.get('currentUrl');
-      if (stored.currentUrl && stored.currentUrl.includes('/posts/')) {
-        console.log(`✅ [syncTaskState] Using stored post URL: ${stored.currentUrl}`);
+      const stored = await browser.storage.local.get("currentUrl");
+      if (stored.currentUrl && stored.currentUrl.includes("/posts/")) {
+        console.log(
+          `✅ [syncTaskState] Using stored post URL: ${stored.currentUrl}`,
+        );
         urlsToCheck = [stored.currentUrl, url];
       }
     }
@@ -65,7 +74,9 @@ async function syncTaskStateForUrl(url, tabId = null) {
         isCompleted = true; // Simplified: if it exists in DB, it's been processed
         task = data.task;
         matchedUrl = checkUrl;
-        console.log(`✅ [syncTaskState] Found task at URL: ${checkUrl}, progress: ${data.task?.progress || 'NONE'}`);
+        console.log(
+          `✅ [syncTaskState] Found task at URL: ${checkUrl}, progress: ${data.task?.progress || "NONE"}`,
+        );
         break;
       }
     }
@@ -83,7 +94,9 @@ async function syncTaskStateForUrl(url, tabId = null) {
       contentDetected: isCompleted,
     });
 
-    console.log(`✅ [syncTaskState] Updated storage with matchedUrl: ${matchedUrl}`);
+    console.log(
+      `✅ [syncTaskState] Updated storage with matchedUrl: ${matchedUrl}`,
+    );
   } catch (e) {
     console.error("syncTaskStateForUrl failed:", e);
   }
@@ -149,8 +162,8 @@ const addSourcesToServer = async (taskId, content) => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ lit_reference }),
-        })
-      )
+        }),
+      ),
     );
     return true;
   } catch (error) {
@@ -172,7 +185,7 @@ const fetchDiffbotData = async (articleUrl) => {
 
     if (!response.ok) {
       throw new Error(
-        `Diffbot pre-scrape failed with status: ${response.status}`
+        `Diffbot pre-scrape failed with status: ${response.status}`,
       );
     }
 
@@ -235,14 +248,14 @@ const fetchExternalPage = async (url) => {
 
     if (!response.ok) {
       console.error(
-        `❌ HTTP error: ${response.status} - ${response.statusText}`
+        `❌ HTTP error: ${response.status} - ${response.statusText}`,
       );
       throw new Error(`Failed to fetch page: ${response.status}`);
     }
 
     const jsonResponse = await response.json();
     console.log(
-      `✅ Received page content: ${jsonResponse.html?.length || 0} bytes`
+      `✅ Received page content: ${jsonResponse.html?.length || 0} bytes`,
     );
 
     return jsonResponse.html;
@@ -318,7 +331,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     if (message.action === "fetchDiffbotDataTest") {
       console.log(
         "🧪 [Background] Testing fetchDiffbotDataTest for:",
-        message.articleUrl
+        message.articleUrl,
       );
 
       try {
@@ -398,7 +411,9 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         const storedId = storeObj?.activeScrapeTabId ?? null;
         const tabId = storedId ?? activeScrapeTabId ?? sender.tab?.id ?? null;
         const url = message.url;
-        console.log(`🔍 [scrapeCompleted] Will call checkContentAndUpdatePopup with URL: ${url}`);
+        console.log(
+          `🔍 [scrapeCompleted] Will call checkContentAndUpdatePopup with URL: ${url}`,
+        );
 
         if (!tabId) {
           console.warn("⚠️ No activeScrapeTabId found! Cannot show popup.");
@@ -417,7 +432,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
             } catch (e) {
               console.warn(
                 "⚠️ checkContentAndUpdatePopup failed on viewer:",
-                e
+                e,
               );
             }
             try {
@@ -429,7 +444,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
             } catch (e) {
               console.warn(
                 "⚠️ Could not message viewer (no listener yet?):",
-                e
+                e,
               );
             }
           } else {
@@ -520,7 +535,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         .then((contentId) => {
           console.log(
             "✅ Background: Received taskId from backend:",
-            contentId
+            contentId,
           );
           const responsePayload = { contentId };
           console.log("🚀 Sending response to createTask.ts:", responsePayload);
@@ -558,12 +573,12 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
       console.log(`🔍 Received request to check DB for: ${message.url}`);
       return fetch(
         `${BASE_URL}/api/check-reference?url=${encodeURIComponent(
-          message.url
+          message.url,
         )}`,
         {
           method: "GET",
           headers: { "Content-Type": "application/json" },
-        }
+        },
       )
         .then((response) => response.json())
         .then((data) => {
@@ -737,7 +752,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     if (message.action === "fallbackYoutubeTranscript" && message.videoId) {
       try {
         const response = await fetch(
-          `${BASE_URL}/api/youtube-transcript/${message.videoId}`
+          `${BASE_URL}/api/youtube-transcript/${message.videoId}`,
         );
         const data = await response.json();
         if (data.success && data.transcriptText) {
@@ -904,7 +919,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
       console.log(fullUrl, "JKHHGFDS");
       try {
         const response = await fetch(
-          `${BASE_URL}/api/get-session-user?fingerprint=${deviceFingerprint}`
+          `${BASE_URL}/api/get-session-user?fingerprint=${deviceFingerprint}`,
         );
         const { jwt } = await response.json();
         if (response.ok && jwt) {
@@ -933,17 +948,27 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
 
     // [26] scrape Facebook post
     if (message.action === "scrapeFacebookPostOnServer") {
-      console.log("🔵 [Background] Scraping Facebook post:", message.payload.url);
+      console.log(
+        "🔵 [Background] Scraping Facebook post:",
+        message.payload.url,
+      );
       return callBackendScrape("/api/scrape-facebook-post", {
         url: message.payload.url,
         createContent: message.payload.createContent !== false, // Default true
         // Include ALL extracted data from extension
         raw_text: message.payload.postText,
         title: message.payload.postText?.substring(0, 100),
-        authors: message.payload.authorName ? [{
-          author_first_name: message.payload.authorName.split(" ")[0] || "",
-          author_last_name: message.payload.authorName.split(" ").slice(1).join(" ") || "",
-        }] : undefined,
+        authors: message.payload.authorName
+          ? [
+              {
+                author_first_name:
+                  message.payload.authorName.split(" ")[0] || "",
+                author_last_name:
+                  message.payload.authorName.split(" ").slice(1).join(" ") ||
+                  "",
+              },
+            ]
+          : undefined,
         // Add images and metadata
         images: message.payload.images || [],
         timestamp: message.payload.timestamp,
@@ -1054,7 +1079,9 @@ async function getReadOnlyDemoJwt() {
 }
 // ✅ Check if URL is in database & update popup
 async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
-  console.log(`🔍 [checkContent] Called with URL: ${url}, forceVisible: ${forceVisible}`);
+  console.log(
+    `🔍 [checkContent] Called with URL: ${url}, forceVisible: ${forceVisible}`,
+  );
 
   if (isDashboardUrl(url)) {
     console.log("🚫 Skipping popup injection on dashboard:", url);
@@ -1063,29 +1090,46 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
 
   // 🔵 For Facebook pages, check if we already have a stored post URL
   let actualUrl = url;
-  const isGenericFacebookUrl = url === "https://www.facebook.com" || url === "https://www.facebook.com/" ||
-                                url === "https://facebook.com" || url === "https://facebook.com/";
-  const isFacebookFeed = (url.includes("facebook.com") || url.includes("fb.com")) && !url.includes("/posts/") && !url.includes("/permalink");
+  const isGenericFacebookUrl =
+    url === "https://www.facebook.com" ||
+    url === "https://www.facebook.com/" ||
+    url === "https://facebook.com" ||
+    url === "https://facebook.com/";
+  const isFacebookFeed =
+    (url.includes("facebook.com") || url.includes("fb.com")) &&
+    !url.includes("/posts/") &&
+    !url.includes("/permalink");
 
-  console.log(`🔍 [checkContent] Facebook detection: isGeneric=${isGenericFacebookUrl}, isFeed=${isFacebookFeed}`);
+  console.log(
+    `🔍 [checkContent] Facebook detection: isGeneric=${isGenericFacebookUrl}, isFeed=${isFacebookFeed}`,
+  );
 
   if (isGenericFacebookUrl || isFacebookFeed) {
     console.log("🔵 [Background] Facebook feed detected in checkContent");
 
     // First, check if we have a stored post URL from a recent scrape
     try {
-      const stored = await browser.storage.local.get('currentUrl');
-      console.log(`🔍 [checkContent] Storage check: currentUrl=${stored.currentUrl || 'NONE'}`);
-      if (stored.currentUrl && stored.currentUrl.includes('/posts/')) {
-        console.log(`✅ [Background] Using stored Facebook post URL: ${stored.currentUrl}`);
+      const stored = await browser.storage.local.get("currentUrl");
+      console.log(
+        `🔍 [checkContent] Storage check: currentUrl=${stored.currentUrl || "NONE"}`,
+      );
+      if (stored.currentUrl && stored.currentUrl.includes("/posts/")) {
+        console.log(
+          `✅ [Background] Using stored Facebook post URL: ${stored.currentUrl}`,
+        );
         actualUrl = stored.currentUrl;
       } else {
-        console.log("⚠️ [Background] No stored post URL, will check both feed URL and look for post in viewport");
+        console.log(
+          "⚠️ [Background] No stored post URL, will check both feed URL and look for post in viewport",
+        );
         // Note: We don't try to detect the URL here anymore - that happens in TaskCard on mount
         // Just check with the feed URL for now
       }
     } catch (err) {
-      console.warn("⚠️ [Background] Failed to check storage for Facebook post URL:", err);
+      console.warn(
+        "⚠️ [Background] Failed to check storage for Facebook post URL:",
+        err,
+      );
     }
   } else if (url.includes("facebook.com") || url.includes("fb.com")) {
     console.log(`✅ [Background] Using provided Facebook post URL: ${url}`);
@@ -1099,7 +1143,9 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
     if ((isGenericFacebookUrl || isFacebookFeed) && actualUrl !== url) {
       // We have both a stored post URL and the current feed URL - check both
       urlsToCheck = [actualUrl, url];
-      console.log(`🔍 [checkContent] Will check both URLs: ${actualUrl} and ${url}`);
+      console.log(
+        `🔍 [checkContent] Will check both URLs: ${actualUrl} and ${url}`,
+      );
     } else {
       console.log(`🔍 [checkContent] Will check single URL: ${actualUrl}`);
     }
@@ -1116,8 +1162,24 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
         body: JSON.stringify({ url: checkUrl }),
       });
 
-      const result = await response.json();
-      console.log(`🔍 [checkContent] Database response for ${checkUrl}: exists=${result.exists}`);
+      const rawText = await response.text();
+      console.log(
+        `🔍 [checkContent] Raw response (status=${response.status}):`,
+        rawText.substring(0, 500),
+      );
+      let result;
+      try {
+        result = JSON.parse(rawText);
+      } catch (parseErr) {
+        console.error(
+          `❌ [checkContent] JSON parse failed for ${checkUrl}. Server returned:`,
+          rawText.substring(0, 1000),
+        );
+        continue;
+      }
+      console.log(
+        `🔍 [checkContent] Database response for ${checkUrl}: exists=${result.exists}`,
+      );
       if (result.exists) {
         data = result;
         matchedUrl = checkUrl;
@@ -1135,19 +1197,32 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: actualUrl }),
       });
-      data = await response.json();
+      const rawText = await response.text();
+      console.log(
+        `🔍 [checkContent] Fallback raw response (status=${response.status}):`,
+        rawText.substring(0, 500),
+      );
+      try {
+        data = JSON.parse(rawText);
+      } catch (parseErr) {
+        console.error(
+          `❌ [checkContent] Fallback JSON parse failed. Server returned:`,
+          rawText.substring(0, 1000),
+        );
+        data = { exists: false };
+      }
       matchedUrl = actualUrl;
     }
 
     const isDetected = data.exists;
-    // Check if content is "completed" - for now, just use exists
-    // TODO: Properly implement progress tracking
-    const isCompleted = data.exists; // Simplified: if it exists in DB, it's been processed
+    const isCompleted = data.exists && data.isCompleted;
     const task = data.exists ? data.task : null;
     const store = useTaskStore.getState();
 
     if (data.exists) {
-      console.log(`🔍 [checkContent] Task exists, progress field: ${data.task?.progress || 'NONE'}`);
+      console.log(
+        `🔍 [checkContent] Task exists, progress field: ${data.task?.progress || "NONE"}`,
+      );
     }
 
     if (task) {
@@ -1217,7 +1292,7 @@ async function showTaskCard(tabId, isDetected, forceVisible) {
       document.body.appendChild(popupRoot);
 
       popupRoot.className = ${JSON.stringify(
-        isDetected || forceVisible ? "task-card-visible" : "task-card-hidden"
+        isDetected || forceVisible ? "task-card-visible" : "task-card-hidden",
       )};
     })();
   `;
@@ -1367,7 +1442,7 @@ async function storeClaimsOnServer(contentId, claims, contentType) {
 async function storeTestimonialsOnServer(
   contentId,
   testimonials,
-  userId = null
+  userId = null,
 ) {
   const response = await fetch(`${BASE_URL}/api/testimonials/add`, {
     method: "POST",
@@ -1498,7 +1573,7 @@ browser.runtime.onMessageExternal.addListener((message, sender) => {
   if (message.action === "fetchPageContent") {
     console.log(
       "📩 Received EXTERNAL fetchPageContent request for:",
-      message.url
+      message.url,
     );
     return fetchExternalPage(message.url)
       .then((html) => {
@@ -1553,7 +1628,7 @@ browser.runtime.onMessageExternal.addListener((message, sender) => {
           console.warn(`⚠️ No tab found matching URL: ${message.url}`);
           console.log(
             `Available tabs:`,
-            tabs.map((t) => t.url)
+            tabs.map((t) => t.url),
           );
           return {
             success: false,
@@ -1562,7 +1637,7 @@ browser.runtime.onMessageExternal.addListener((message, sender) => {
         }
 
         console.log(
-          `✅ Found matching tab ID: ${matchingTab.id} in window ${matchingTab.windowId}`
+          `✅ Found matching tab ID: ${matchingTab.id} in window ${matchingTab.windowId}`,
         );
 
         // Execute script in the matching tab to get its HTML
@@ -1580,7 +1655,7 @@ browser.runtime.onMessageExternal.addListener((message, sender) => {
 
         const html = results[0].result;
         console.log(
-          `📄 Retrieved ${html.length} chars of HTML from tab ${matchingTab.id}`
+          `📄 Retrieved ${html.length} chars of HTML from tab ${matchingTab.id}`,
         );
 
         return { success: true, html };
@@ -1609,12 +1684,9 @@ async function pollForScrapeJob() {
   lastPollAt = Date.now();
 
   try {
-    const res = await fetch(
-      `${BASE_URL}/api/scrape-jobs/pending`,
-      {
-        credentials: "include",
-      }
-    );
+    const res = await fetch(`${BASE_URL}/api/scrape-jobs/pending`, {
+      credentials: "include",
+    });
 
     if (!res.ok) return;
 
@@ -1636,15 +1708,12 @@ async function handleScrapeJob(job) {
 
   try {
     // Step 1: Claim the job
-    await fetch(
-      `${BASE_URL}/api/scrape-jobs/${scrape_job_id}/claim`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ instance_id: INSTANCE_ID }),
-      }
-    );
+    await fetch(`${BASE_URL}/api/scrape-jobs/${scrape_job_id}/claim`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ instance_id: INSTANCE_ID }),
+    });
 
     let targetTab, url;
 
@@ -1653,7 +1722,10 @@ async function handleScrapeJob(job) {
 
     if (scrape_mode === "scrape_last_viewed") {
       // Use active tab
-      const activeTabs = await browser.tabs.query({ active: true, currentWindow: true });
+      const activeTabs = await browser.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
       if (!activeTabs || activeTabs.length === 0) {
         throw new Error("No active tab found");
       }
@@ -1661,7 +1733,9 @@ async function handleScrapeJob(job) {
       url = targetTab.url;
     } else if (scrape_mode === "scrape_specific_url") {
       // Find tab matching target_url
-      targetTab = tabs.find((t) => t.url === target_url || t.url?.startsWith(target_url));
+      targetTab = tabs.find(
+        (t) => t.url === target_url || t.url?.startsWith(target_url),
+      );
       if (!targetTab) {
         throw new Error(`No tab found for URL: ${target_url}`);
       }
@@ -1685,22 +1759,29 @@ async function handleScrapeJob(job) {
     // For viewer.html tabs, extract the actual PDF URL from query params
     if (isPdfViewer) {
       const urlParams = new URLSearchParams(new URL(targetTab.url).search);
-      actualUrl = urlParams.get('src');
+      actualUrl = urlParams.get("src");
     }
 
     // Simple PDF detection: try to fetch as PDF if URL suggests it might be one
-    const mightBePdf = url && (url.toLowerCase().includes('.pdf') || url.toLowerCase().includes('/download'));
+    const mightBePdf =
+      url &&
+      (url.toLowerCase().includes(".pdf") ||
+        url.toLowerCase().includes("/download"));
 
     if (isPdfViewer || mightBePdf) {
       // Try to extract as PDF
-      console.log(`[EXT] Attempting PDF extraction from tab ${targetTab.id} for ${actualUrl}`);
+      console.log(
+        `[EXT] Attempting PDF extraction from tab ${targetTab.id} for ${actualUrl}`,
+      );
 
       try {
         // Try to fetch the PDF blob from the loaded tab
         const pdfResponse = await fetch(actualUrl);
 
         if (!pdfResponse.ok) {
-          console.log(`[EXT] PDF fetch failed with status ${pdfResponse.status}, will try HTML extraction`);
+          console.log(
+            `[EXT] PDF fetch failed with status ${pdfResponse.status}, will try HTML extraction`,
+          );
           throw new Error("Not a PDF or fetch failed");
         }
 
@@ -1721,7 +1802,9 @@ async function handleScrapeJob(job) {
 
         if (!pdfRes.ok) {
           const errorText = await pdfRes.text();
-          console.log(`[EXT] PDF parsing failed: ${errorText}, will try HTML extraction`);
+          console.log(
+            `[EXT] PDF parsing failed: ${errorText}, will try HTML extraction`,
+          );
           throw new Error("PDF parsing failed");
         }
 
@@ -1730,19 +1813,25 @@ async function handleScrapeJob(job) {
           pdfText = pdfData.text;
           pdfTitle = pdfData.title || null;
           pdfAuthors = pdfData.authors || null;
-          console.log(`[EXT] ✅ Extracted ${pdfText.length} chars from PDF (title: ${pdfTitle})`);
+          console.log(
+            `[EXT] ✅ Extracted ${pdfText.length} chars from PDF (title: ${pdfTitle})`,
+          );
         } else {
           throw new Error("PDF parsing returned no text");
         }
       } catch (err) {
         // PDF extraction failed, fall back to HTML
-        console.log(`[EXT] PDF extraction failed (${err.message}), falling back to HTML extraction`);
+        console.log(
+          `[EXT] PDF extraction failed (${err.message}), falling back to HTML extraction`,
+        );
         const results = await browser.scripting.executeScript({
           target: { tabId: targetTab.id },
           func: () => document.documentElement.outerHTML,
         });
         raw_html = results[0].result;
-        console.log(`[EXT] Extracted ${raw_html.length} chars HTML from tab ${targetTab.id}`);
+        console.log(
+          `[EXT] Extracted ${raw_html.length} chars HTML from tab ${targetTab.id}`,
+        );
       }
     } else {
       // Extract HTML from regular webpage
@@ -1752,26 +1841,25 @@ async function handleScrapeJob(job) {
       });
 
       raw_html = results[0].result;
-      console.log(`[EXT] Extracted ${raw_html.length} chars from tab ${targetTab.id}`);
+      console.log(
+        `[EXT] Extracted ${raw_html.length} chars from tab ${targetTab.id}`,
+      );
     }
 
     // Step 4: Send to scrape-reference endpoint (not scrape-task - we don't want evidence engine)
-    const scrapeRes = await fetch(
-      `${BASE_URL}/api/scrape-reference`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          url: actualUrl,
-          raw_html: raw_html,
-          raw_text: pdfText, // Send PDF text if available
-          title: pdfTitle, // Send PDF title from metadata
-          authors: pdfAuthors, // Send PDF authors from metadata
-          taskContentId: task_content_id
-        }),
-      }
-    );
+    const scrapeRes = await fetch(`${BASE_URL}/api/scrape-reference`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        url: actualUrl,
+        raw_html: raw_html,
+        raw_text: pdfText, // Send PDF text if available
+        title: pdfTitle, // Send PDF title from metadata
+        authors: pdfAuthors, // Send PDF authors from metadata
+        taskContentId: task_content_id,
+      }),
+    });
 
     const scrapeResult = await scrapeRes.json();
 
@@ -1782,36 +1870,34 @@ async function handleScrapeJob(job) {
     const referenceContentId = scrapeResult.contentId;
 
     // Step 5: Mark job as completed
-    await fetch(
-      `${BASE_URL}/api/scrape-jobs/${scrape_job_id}/complete`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          content_id: referenceContentId,
-          instance_id: INSTANCE_ID,
-        }),
-      }
-    );
+    await fetch(`${BASE_URL}/api/scrape-jobs/${scrape_job_id}/complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        content_id: referenceContentId,
+        instance_id: INSTANCE_ID,
+      }),
+    });
 
-    console.log(`[EXT] ✅ Scrape job ${scrape_job_id} completed, reference_content_id: ${referenceContentId}`);
+    console.log(
+      `[EXT] ✅ Scrape job ${scrape_job_id} completed, reference_content_id: ${referenceContentId}`,
+    );
   } catch (err) {
     console.error(`[EXT] ❌ Scrape job ${scrape_job_id} failed:`, err.message);
 
     // Mark job as failed
-    await fetch(
-      `${BASE_URL}/api/scrape-jobs/${scrape_job_id}/fail`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          error_message: err.message,
-          instance_id: INSTANCE_ID,
-        }),
-      }
-    ).catch(failErr => console.error("[EXT] Failed to mark job as failed:", failErr));
+    await fetch(`${BASE_URL}/api/scrape-jobs/${scrape_job_id}/fail`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        error_message: err.message,
+        instance_id: INSTANCE_ID,
+      }),
+    }).catch((failErr) =>
+      console.error("[EXT] Failed to mark job as failed:", failErr),
+    );
   }
 }
 
@@ -1830,7 +1916,8 @@ browser.tabs.onUpdated.addListener((_, changeInfo, tab) => {
   if (
     changeInfo.status === "complete" &&
     tab.url &&
-    (tab.url.includes("localhost:5173") || tab.url.includes("truthtrollers.com"))
+    (tab.url.includes("localhost:5173") ||
+      tab.url.includes("truthtrollers.com"))
   ) {
     pollForScrapeJob();
   }

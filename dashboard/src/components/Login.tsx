@@ -5,10 +5,14 @@ import {
   FormControl,
   FormLabel,
   Input,
+  InputGroup,
+  InputRightElement,
+  IconButton,
   Stack,
   Heading,
   useToast,
 } from "@chakra-ui/react";
+import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import ReCAPTCHA from "react-google-recaptcha";
 import { useNavigate } from "react-router-dom";
 import { login } from "../services/authService";
@@ -20,6 +24,7 @@ const Login: React.FC = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const setAuth = useAuthStore((s) => s.setAuth);
   const navigate = useNavigate();
@@ -137,13 +142,24 @@ const Login: React.FC = () => {
 
           <FormControl id="password" isRequired>
             <FormLabel>Password</FormLabel>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Your password"
-              autoComplete="current-password"
-            />
+            <InputGroup>
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Your password"
+                autoComplete="current-password"
+              />
+              <InputRightElement>
+                <IconButton
+                  variant="ghost"
+                  size="sm"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  icon={showPassword ? <ViewOffIcon /> : <ViewIcon />}
+                  onClick={() => setShowPassword((v) => !v)}
+                />
+              </InputRightElement>
+            </InputGroup>
           </FormControl>
 
           <ReCAPTCHA

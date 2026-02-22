@@ -28,6 +28,7 @@ import { useNavigate } from "react-router-dom";
 import { useTaskStore } from "../store/useTaskStore";
 import VisionTheme from "./themes/VisionTheme";
 import ClaimProgressChart from "./ClaimProgressChart";
+import { fetchBulkClaimsAndReferences } from "../services/useDashboardAPI";
 
 interface Task {
   content_id: number;
@@ -66,6 +67,7 @@ const UserDashboard: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [evaluationMode, setEvaluationMode] = useState<Record<number, string>>({});
+  const [claimsLoaded, setClaimsLoaded] = useState(false);
 
   useEffect(() => {
     if (user?.user_id) {
@@ -74,6 +76,40 @@ const UserDashboard: React.FC = () => {
       fetchTasksForUser(user.user_id, false);
     }
   }, [user?.user_id, fetchTasksForUser]);
+
+  // Fetch claims and claim references for all assigned tasks IN ONE BULK CALL
+  useEffect(() => {
+    const fetchClaimsAndReferences = async () => {
+      if (claimsLoaded || assignedTasks.length === 0) return;
+
+      const startTime = Date.now();
+      console.log("[UserDashboard] Bulk fetching claims and references for", assignedTasks.length, "tasks");
+
+      try {
+        // Fetch ALL claims and references in ONE call
+        const taskIds = assignedTasks.map((task) => task.content_id);
+        const result = await fetchBulkClaimsAndReferences(taskIds);
+
+        console.log("[UserDashboard] Bulk fetch completed in", Date.now() - startTime, "ms");
+        console.log("[UserDashboard] Received:",
+          Object.keys(result.claimsByTask).length, "tasks with claims,",
+          Object.keys(result.claimReferences).length, "claims with references"
+        );
+
+        // Update the store with the fetched data
+        useTaskStore.setState({
+          claimsByTask: { ...useTaskStore.getState().claimsByTask, ...result.claimsByTask },
+          claimReferences: { ...useTaskStore.getState().claimReferences, ...result.claimReferences }
+        });
+
+        setClaimsLoaded(true);
+      } catch (error) {
+        console.error("[UserDashboard] Error fetching claims:", error);
+      }
+    };
+
+    fetchClaimsAndReferences();
+  }, [assignedTasks.length, claimsLoaded]);
 
   const fetchUserTasks = async () => {
     try {

@@ -27,6 +27,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001
 export const TaskPage: React.FC = () => {
   const assignedTasks = useTaskStore(useShallow((state) => state.assignedTasks));
   const fetchTasksForUser = useTaskStore((state) => state.fetchTasksForUser);
+  const selectedTopic = useTaskStore((state) => state.selectedTopic);
   const user = useAuthStore((s) => s.user);
   const location = useLocation();
   const redirectTo = location.state?.redirectTo || "/dashboard";
@@ -69,7 +70,10 @@ export const TaskPage: React.FC = () => {
     }
   }, [showArchived, filterMode, user?.user_id, fetchTasksForUser]);
 
-  const tasksToDisplay = filterMode === "all" ? allTasks : assignedTasks;
+  const baseTasks = filterMode === "all" ? allTasks : assignedTasks;
+  const tasksToDisplay = selectedTopic
+    ? baseTasks.filter((t) => t.topic === selectedTopic)
+    : baseTasks;
 
   return (
     <Box p={{ base: 2, md: 6 }} maxW="100%">
@@ -115,7 +119,8 @@ export const TaskPage: React.FC = () => {
 
         {tasksToDisplay.length === 0 ? (
           <Text>
-            No {filterMode === "assigned" ? "assigned " : ""}tasks found.
+            No {filterMode === "assigned" ? "assigned " : ""}tasks found
+            {selectedTopic ? ` for topic "${selectedTopic}"` : ""}.
             {showArchived ? " Try unchecking 'Include Archived'." : " Try checking 'Include Archived' to see more."}
           </Text>
         ) : (

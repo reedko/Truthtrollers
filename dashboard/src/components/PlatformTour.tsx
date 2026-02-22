@@ -31,10 +31,11 @@ interface TourStep {
   content: string;
   primaryLabel: string;
   secondaryLabel?: string;
-  specialAction?: "navigate-textpad" | "paste-title" | "paste-text" | "wait-for-submit" | "end";
+  specialAction?: "navigate-textpad" | "paste-title" | "paste-text" | "wait-for-submit" | "wait-for-ref-modal" | "wait-for-link-overlay" | "end";
 }
 
 const STEPS: TourStep[] = [
+  // ── Dashboard ────────────────────────────────────────────────────────────────
   {
     page: "dashboard",
     title: "Welcome to TruthTrollers! 👋",
@@ -76,6 +77,8 @@ const STEPS: TourStep[] = [
     secondaryLabel: "Skip tour",
     specialAction: "navigate-textpad",
   },
+
+  // ── TextPad ──────────────────────────────────────────────────────────────────
   {
     page: "textpad",
     target: ".textpad-title-input",
@@ -113,12 +116,64 @@ const STEPS: TourStep[] = [
       "Your text has been analyzed! Now click the \"Evaluate in Workspace\" button to start reviewing the claims and evidence.",
     primaryLabel: "Got it →",
   },
+
+  // ── Workspace ────────────────────────────────────────────────────────────────
   {
     page: "workspace",
+    target: ".workspace-header",
     title: "You're in the Workspace! 💪",
     content:
-      "On the left are claims extracted from your text. On the right, supporting and contradicting evidence. Evaluate how well each piece of evidence connects to its claim. Have fun!",
-    primaryLabel: "Start evaluating! →",
+      "This is where evidence meets claims. Three columns work together:\n\n• Left — Task Claims extracted from your text\n• Center — Relationship Map (AI-detected connections)\n• Right — References (evidence sources)\n\nLet's walk through each one.",
+    primaryLabel: "Show me →",
+  },
+  {
+    page: "workspace",
+    target: ".workspace-claims",
+    title: "Task Claims — Left Column",
+    content:
+      "These are the factual claims the AI extracted from your text.\n\n• ✏️ Edit the claim text\n• 🔍 (purple) Verify a claim externally\n• 🔍 (teal) Scan references for relevant evidence\n• 🗑️ Delete the claim\n\nClick any claim to read it in full.",
+    primaryLabel: "Next →",
+  },
+  {
+    page: "workspace",
+    target: ".workspace-references",
+    title: "References — Right Column",
+    content:
+      "These are web pages and articles found by the evidence engine that may support or contradict your claims.\n\nRight-click any reference card to open it in a new tab. Use '+ Add Reference' to add your own sources manually.",
+    primaryLabel: "Next →",
+  },
+  {
+    page: "workspace",
+    target: ".workspace-references",
+    title: "Open a Reference's Claims",
+    content:
+      "Click any reference card to open a floating panel showing the individual claims extracted from that source.\n\nThese reference claims are what you'll link to your task claims. Go ahead — click one now!",
+    primaryLabel: "I clicked one →",
+    specialAction: "wait-for-ref-modal",
+  },
+  {
+    page: "workspace",
+    target: ".mr-modal-header",
+    title: "Reference Claims Panel",
+    content:
+      "This floating panel shows claims from the selected reference. Drag it by its header to reposition it.\n\nBlue text = factual claims.  Italic gray = direct quotes.\n\nColored borders mean a claim is already linked:\n🟢 Supports · 🔴 Refutes · 🔵 Nuanced",
+    primaryLabel: "Next →",
+  },
+  {
+    page: "workspace",
+    title: "Link a Claim — Drag & Drop 🖱️",
+    content:
+      "Now the key move! Click and hold any reference claim in the panel, then drag it over a task claim on the left.\n\nThe task claim highlights as you hover — release the mouse to open the Claim Relationship panel.\n\nGive it a try!",
+    primaryLabel: "I'll try it! →",
+    specialAction: "wait-for-link-overlay",
+  },
+  {
+    page: "workspace",
+    target: ".mr-button",
+    title: "Claim Relationship Panel 🔗",
+    content:
+      "Define how the reference claim relates to the task claim:\n\n• Slider RIGHT (green ✅) = Supports the claim\n• Slider LEFT (red ⛔) = Refutes the claim\n• Center (yellow ⚖️) = Nuanced / Related\n\nAdd optional notes, then click 'Create Link'. A colored line will connect them in the map!",
+    primaryLabel: "Got it — create the link!",
     specialAction: "end",
   },
 ];
@@ -265,11 +320,22 @@ function applyHighlight(selector?: string) {
   }
 }
 
+// ─── Waiting message helper ────────────────────────────────────────────────────
+function waitingMessage(waitingFor: string): string {
+  switch (waitingFor) {
+    case "submit":       return "Waiting for submission…";
+    case "ref-modal":   return "Click a reference on the right to continue… 👉";
+    case "link-overlay": return "Drag a reference claim onto a task claim… 🖱️";
+    default:            return "Waiting…";
+  }
+}
+
 // ─── PlatformTour ─────────────────────────────────────────────────────────────
 export const PlatformTour: React.FC = () => {
   const [active, setActive] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
-  const [waitingForSubmit, setWaitingForSubmit] = useState(false);
+  // null = not waiting; "submit" | "ref-modal" | "link-overlay" = waiting for user action
+  const [waitingFor, setWaitingFor] = useState<string | null>(null);
   const [cardPos, setCardPos] = useState<CardPos | null>(null);
   const posTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -324,37 +390,64 @@ export const PlatformTour: React.FC = () => {
     }
   }, []);
 
-  // ── Auto-start on first dashboard visit ───────────────────────────────────
+  // ── Auto-start on first dashboard visit (especially for new users) ───────
   useEffect(() => {
     const hasSeenTour = localStorage.getItem("tourCompleted");
     const isAlreadyActive = localStorage.getItem(TOUR_ACTIVE_KEY) === "true";
     if (!hasSeenTour && !isAlreadyActive && location.pathname.includes("/dashboard")) {
-      const t = setTimeout(() => startTour(), 1500);
+      // Shorter delay (800ms) so new users see the tour faster after login
+      const t = setTimeout(() => startTour(), 800);
       return () => clearTimeout(t);
     }
   }, [location.pathname]); // eslint-disable-line
 
   // ── Detect TextPad submission complete (URL gains ?contentId) ─────────────
   useEffect(() => {
-    if ((active || waitingForSubmit) && location.search.includes("contentId")) {
-      if (stepIndex === 7 || waitingForSubmit) {
-        setWaitingForSubmit(false);
+    if ((active || waitingFor === "submit") && location.search.includes("contentId")) {
+      if (stepIndex === 7 || waitingFor === "submit") {
+        setWaitingFor(null);
         goToStep(8);
       }
     }
   }, [location.search]); // eslint-disable-line
 
+  // ── Poll for Reference Claims Modal opening ────────────────────────────────
+  useEffect(() => {
+    if (waitingFor !== "ref-modal") return;
+    const interval = setInterval(() => {
+      // .mr-modal is the className on DraggableReferenceClaimsModal's Box
+      if (document.querySelector(".mr-modal")) {
+        setWaitingFor(null);
+        goToStep(stepIndex + 1);
+      }
+    }, 400);
+    return () => clearInterval(interval);
+  }, [waitingFor, stepIndex]); // eslint-disable-line
+
+  // ── Poll for Claim Link Overlay opening ───────────────────────────────────
+  useEffect(() => {
+    if (waitingFor !== "link-overlay") return;
+    const interval = setInterval(() => {
+      // .mr-button is on the "Create Link" button inside ClaimLinkOverlay
+      if (document.querySelector(".mr-button")) {
+        setWaitingFor(null);
+        goToStep(stepIndex + 1);
+      }
+    }, 400);
+    return () => clearInterval(interval);
+  }, [waitingFor, stepIndex]); // eslint-disable-line
+
   // ── Highlight target element when step changes ────────────────────────────
   useEffect(() => {
-    if (!active || waitingForSubmit) { applyHighlight(undefined); return; }
+    if (!active || waitingFor) { applyHighlight(undefined); return; }
     const step = STEPS[stepIndex];
     const t = setTimeout(() => applyHighlight(step?.page === currentPage ? step?.target : undefined), 350);
     return () => clearTimeout(t);
-  }, [active, stepIndex, currentPage, waitingForSubmit]);
+  }, [active, stepIndex, currentPage, waitingFor]);
 
   // ── Stop tour on page change ───────────────────────────────────────────────
   useEffect(() => {
-    if (!waitingForSubmit) setCardPos(null);
+    if (!waitingFor) setCardPos(null);
   }, [currentPage]); // eslint-disable-line
 
   // ── Listen for restart event ──────────────────────────────────────────────
@@ -368,7 +461,7 @@ export const PlatformTour: React.FC = () => {
   const startTour = useCallback(() => {
     localStorage.setItem(TOUR_ACTIVE_KEY, "true");
     localStorage.setItem(TOUR_STEP_KEY, "0");
-    setWaitingForSubmit(false);
+    setWaitingFor(null);
     setStepIndex(0);
     setActive(true);
   }, []);
@@ -383,7 +476,7 @@ export const PlatformTour: React.FC = () => {
     localStorage.removeItem(TOUR_ACTIVE_KEY);
     localStorage.removeItem(TOUR_STEP_KEY);
     localStorage.setItem("tourCompleted", "true");
-    setWaitingForSubmit(false);
+    setWaitingFor(null);
     setActive(false);
     setCardPos(null);
   }, []);
@@ -406,8 +499,18 @@ export const PlatformTour: React.FC = () => {
         goToStep(stepIndex + 1);
         break;
       case "wait-for-submit":
-        // Collapse card to waiting indicator — let user click submit themselves
-        setWaitingForSubmit(true);
+        // Collapse to waiting indicator — user clicks Submit themselves
+        setWaitingFor("submit");
+        applyHighlight(undefined);
+        break;
+      case "wait-for-ref-modal":
+        // Collapse to waiting indicator — auto-advances when .mr-modal appears
+        setWaitingFor("ref-modal");
+        applyHighlight(undefined);
+        break;
+      case "wait-for-link-overlay":
+        // Collapse to waiting indicator — auto-advances when .mr-button appears
+        setWaitingFor("link-overlay");
         applyHighlight(undefined);
         break;
       case "end":
@@ -431,8 +534,8 @@ export const PlatformTour: React.FC = () => {
   const step = STEPS[stepIndex];
   const isOnCorrectPage = step?.page === currentPage;
 
-  // ── Waiting indicator (user needs to click Submit themselves) ──────────────
-  if (waitingForSubmit) {
+  // ── Waiting indicator (user needs to perform an action) ───────────────────
+  if (waitingFor) {
     return (
       <>
         <style>{highlightCSS}</style>
@@ -452,7 +555,7 @@ export const PlatformTour: React.FC = () => {
           gap={3}
         >
           <Spinner size="sm" color="white" />
-          <Text fontSize="sm" fontWeight="medium">Waiting for submission…</Text>
+          <Text fontSize="sm" fontWeight="medium">{waitingMessage(waitingFor)}</Text>
           <IconButton
             icon={<CloseIcon boxSize={2.5} />}
             aria-label="Cancel tour"
@@ -566,6 +669,9 @@ export const PlatformTour: React.FC = () => {
 };
 
 // ─── Highlight CSS ─────────────────────────────────────────────────────────────
+// NOTE: Only outline + animation — NO position or z-index changes.
+// Adding position/z-index to highlighted elements can create stacking contexts
+// that block the DraggableReferenceClaimsModal (z-index 2500) or its SVG overlay.
 const highlightCSS = `
   .tt-tour-highlight {
     outline: 3px solid #3182ce !important;
@@ -577,7 +683,6 @@ const highlightCSS = `
     0%, 100% { outline-color: #3182ce; outline-offset: 5px; }
     50%       { outline-color: #63b3ed; outline-offset: 8px; }
   }
-
 `;
 
 // ─── NavBar trigger button ────────────────────────────────────────────────────
@@ -591,7 +696,9 @@ export const TourTriggerButton: React.FC = () => {
       onClick={handleStart}
       size="sm"
       variant="ghost"
-      colorScheme="blue"
+      color="white"
+      _hover={{ bg: "whiteAlpha.200" }}
+      _active={{ bg: "whiteAlpha.300" }}
       leftIcon={<QuestionOutlineIcon />}
       aria-label="Start platform tour"
     >
