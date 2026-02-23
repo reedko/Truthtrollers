@@ -999,7 +999,8 @@ export const fetchClaimsWithEvidence = async (
  * Much faster than fetching individually
  */
 export const fetchBulkClaimsAndReferences = async (
-  taskIds: number[]
+  taskIds: number[],
+  viewerId: number | null
 ): Promise<{
   claimsByTask: import("../../../shared/entities/types").ClaimsByTaskMap;
   claimReferences: import("../../../shared/entities/types").ClaimReferenceMap;
@@ -1007,7 +1008,7 @@ export const fetchBulkClaimsAndReferences = async (
   try {
     const res = await axios.post(
       `${API_BASE_URL}/api/bulk-claims-and-references`,
-      { taskIds }
+      { taskIds, viewerId }
     );
     return res.data || { claimsByTask: {}, claimReferences: {} };
   } catch (error) {

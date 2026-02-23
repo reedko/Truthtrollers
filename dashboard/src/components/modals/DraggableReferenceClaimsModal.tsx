@@ -12,13 +12,13 @@ import {
 import { CloseIcon, Search2Icon } from "@chakra-ui/icons";
 import { Claim, ReferenceWithClaims } from "../../../../shared/entities/types";
 
-// Types for props
 interface Props {
+  anchorSelector?: string;
   isOpen: boolean;
   onClose: () => void;
   reference: ReferenceWithClaims | null;
   setDraggingClaim: (
-    claim: Pick<Claim, "claim_id" | "claim_text"> | null
+    claim: Pick<Claim, "claim_id" | "claim_text"> | null,
   ) => void;
   draggingClaim: Pick<Claim, "claim_id" | "claim_text"> | null;
   onVerifyClaim?: (claim: Claim) => void;
@@ -35,6 +35,7 @@ interface Props {
 }
 
 const DraggableReferenceClaimsModal: React.FC<Props> = ({
+  anchorSelector,
   isOpen,
   onClose,
   reference,
@@ -47,11 +48,103 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
 }) => {
   // Position state for the floating box
   const [position, setPosition] = useState(() => ({
-    x: window.innerWidth - 550, // About 500px width + padding
+    x: Math.max(100, window.innerWidth * 0.55 - 250),
     y: 100,
   }));
   const [dragging, setDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
+
+  // Tooltip for dragging claims
+  const tipRef = useRef<HTMLDivElement | null>(null);
+  React.useEffect(() => {
+    const move = (e: MouseEvent) => {
+      if (tipRef.current && draggingClaim) {
+        // keep your horizontal nudge if you want; it doesn't affect the link bug
+        tipRef.current.style.left = `${e.clientX + 10 - 400}px`;
+        tipRef.current.style.top = `${e.clientY + 10}px`;
+      }
+    };
+    document.addEventListener("mousemove", move);
+    return () => document.removeEventListener("mousemove", move);
+  }, [draggingClaim]);
+
+  // Track claim element positions for drawing lines
+  const claimRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const [lineData, setLineData] = useState<
+    Array<{
+      x1: number;
+      y1: number;
+      x2: number;
+      y2: number;
+      relation: "support" | "refute" | "nuance";
+      isAI: boolean;
+    }>
+  >([]);
+
+  // Helper: Check if a claim has connections
+  const getClaimConnections = (claimId: number) => {
+    return claimLinks.filter(
+      (link) =>
+        link.sourceClaimId === claimId &&
+        link.referenceId === reference?.reference_content_id,
+    );
+  };
+
+  // Get all unique task claims connected to this reference
+  const getConnectedTaskClaims = () => {
+    if (!reference) return [];
+
+    const taskClaimIds = new Set<number>();
+    claimLinks.forEach((link) => {
+      if (link.referenceId === reference.reference_content_id) {
+        taskClaimIds.add(link.claimId);
+      }
+    });
+
+    return taskClaims.filter((claim) => taskClaimIds.has(claim.claim_id));
+  };
+
+  const connectedTaskClaims = getConnectedTaskClaims();
+
+  // Reset modal position on open
+  // Reset modal position on open (anchor under the clicked reference if we have anchorPoint)
+  React.useEffect(() => {
+    if (!isOpen) return;
+
+    const modalWidth = 500; // matches desktop width
+    const padding = 16;
+    const headerSafeTop = 80; // keep it below your workspace header
+
+    // 1) If we have an exact click anchor, place modal under it
+
+    // 2) Otherwise, anchor to the reference list column
+    const anchor = anchorSelector
+      ? (document.querySelector(anchorSelector) as HTMLElement | null)
+      : null;
+
+    if (anchor) {
+      const r = anchor.getBoundingClientRect();
+
+      // Align close to the left edge of the ref column (no weird 50px drift)
+      const x = Math.min(
+        window.innerWidth - modalWidth - padding,
+        Math.max(padding, r.left + 8),
+      );
+
+      const y = Math.max(headerSafeTop, r.top + 12);
+
+      setPosition({ x, y });
+      return;
+    }
+
+    // 3) Fallback: right-ish
+    setPosition({
+      x: Math.max(padding, window.innerWidth - modalWidth - padding),
+      y: 100,
+    });
+  }, [isOpen, anchorSelector]);
 
   // Start drag on header
   const onMouseDown = (e: React.MouseEvent) => {
@@ -62,6 +155,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
     };
     document.body.style.userSelect = "none";
   };
+
   // Move
   const onMouseMove = (e: MouseEvent) => {
     if (!dragging) return;
@@ -70,6 +164,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
       y: e.clientY - dragOffset.current.y,
     });
   };
+
   // Stop drag
   const onMouseUp = () => {
     setDragging(false);
@@ -91,56 +186,11 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
     // eslint-disable-next-line
   }, [dragging]);
 
-  // Tooltip for dragging claims
-  const tipRef = useRef<HTMLDivElement | null>(null);
-  React.useEffect(() => {
-    const move = (e: MouseEvent) => {
-      if (tipRef.current && draggingClaim) {
-        tipRef.current.style.left = `${e.clientX + 10}px`;
-        tipRef.current.style.top = `${e.clientY + 10}px`;
-      }
-    };
-    document.addEventListener("mousemove", move);
-    return () => document.removeEventListener("mousemove", move);
-  }, [draggingClaim]);
-
-  // Track claim element positions for drawing lines
-  const claimRefs = useRef<Record<number, HTMLDivElement | null>>({});
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const [lineData, setLineData] = useState<Array<{
-    x1: number;
-    y1: number;
-    x2: number;
-    y2: number;
-    relation: "support" | "refute" | "nuance";
-    isAI: boolean;
-  }>>([]);
-
-  // Helper: Check if a claim has connections
-  const getClaimConnections = (claimId: number) => {
-    return claimLinks.filter(
-      (link) => link.sourceClaimId === claimId &&
-                link.referenceId === reference?.reference_content_id
-    );
-  };
-
-  // Get all unique task claims connected to this reference
-  const getConnectedTaskClaims = () => {
-    if (!reference) return [];
-
-    const taskClaimIds = new Set<number>();
-    claimLinks.forEach((link) => {
-      if (link.referenceId === reference.reference_content_id) {
-        taskClaimIds.add(link.claimId);
-      }
-    });
-
-    return taskClaims.filter((claim) => taskClaimIds.has(claim.claim_id));
-  };
-
-  const connectedTaskClaims = getConnectedTaskClaims();
-
-  // Update line positions when modal moves, opens, or scrolls
+  // ✅ IMPORTANT: update lines on:
+  // - modal move (position)
+  // - modal internal scroll (scrollContainerRef)
+  // - page scroll (window)
+  // - window resize
   React.useEffect(() => {
     if (!isOpen || !reference) {
       setLineData([]);
@@ -150,96 +200,97 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
     const updateLines = () => {
       const lines: typeof lineData = [];
 
-      // For each claim in the reference
-      const refClaims = typeof reference.claims === "string"
-        ? JSON.parse(reference.claims)
-        : reference.claims || [];
+      // Parse reference claims
+      const refClaims: Claim[] =
+        typeof reference.claims === "string"
+          ? JSON.parse(reference.claims)
+          : reference.claims || [];
 
-      // Get scroll container bounds to check visibility
-      const scrollContainer = scrollContainerRef.current;
-      const containerRect = scrollContainer?.getBoundingClientRect();
+      const modalContainer = document.querySelector(".mr-modal");
+      if (!modalContainer) return;
+      const modalRect = modalContainer.getBoundingClientRect();
 
-      refClaims.forEach((claim: Claim) => {
+      for (const claim of refClaims) {
         const connections = getClaimConnections(claim.claim_id);
 
-        connections.forEach((link) => {
-          // Get position of claim in modal
+        for (const link of connections) {
           const claimEl = claimRefs.current[claim.claim_id];
-          // Get position of task claim (using data attribute)
+          if (!claimEl) continue;
+
+          // ✅ LIVE: measure the task claim position each time (no caching)
           const taskClaimEl = document.querySelector(
-            `[data-claim-id="${link.claimId}"]`
-          ) as HTMLElement;
+            `[data-claim-id="${link.claimId}"]`,
+          ) as HTMLElement | null;
+          if (!taskClaimEl) continue;
 
-          if (claimEl && taskClaimEl) {
-            const claimRect = claimEl.getBoundingClientRect();
-            const taskRect = taskClaimEl.getBoundingClientRect();
+          const claimRect = claimEl.getBoundingClientRect();
+          const taskRect = taskClaimEl.getBoundingClientRect();
 
-            // Skip if the reference claim is scrolled out of the modal
-            if (containerRect) {
-              const refClaimVisible =
-                claimRect.bottom >= containerRect.top &&
-                claimRect.top <= containerRect.bottom;
-              if (!refClaimVisible) return;
-            }
+          // Skip if reference claim is out of modal viewport
+          const refClaimVisible =
+            claimRect.bottom >= modalRect.top &&
+            claimRect.top <= modalRect.bottom;
+          if (!refClaimVisible) continue;
 
-            // Skip if the task claim is scrolled fully off the viewport
-            const vh = window.innerHeight;
-            const taskClaimVisible =
-              taskRect.bottom > 0 && taskRect.top < vh;
-            if (!taskClaimVisible) return;
+          // ✅ No magic offsets. Attach to edges cleanly.
+          const x1 = claimRect.left; // or claimRect.right if you prefer
+          const y1 = claimRect.top + claimRect.height / 2;
 
-            lines.push({
-              x1: claimRect.left,
-              y1: claimRect.top + claimRect.height / 2,
-              x2: taskRect.right,
-              y2: taskRect.top + taskRect.height / 2,
-              relation: link.relation,
-              isAI: link.id?.toString().startsWith("ai-") ?? false,
-            });
-          }
-        });
-      });
+          const x2 = taskRect.right; // or taskRect.left if you prefer
+          const y2 = taskRect.top + taskRect.height / 2;
+
+          lines.push({
+            x1,
+            y1,
+            x2,
+            y2,
+            relation: link.relation,
+            isAI: link.id?.toString().startsWith("ai-") ?? false,
+          });
+        }
+      }
 
       setLineData(lines);
     };
 
-    // Update on mount and when position changes
-    const timer = setTimeout(updateLines, 100);
-
-    // Throttled scroll handler for better performance
-    let scrollTimer: NodeJS.Timeout;
-    const throttledUpdateLines = () => {
-      if (scrollTimer) clearTimeout(scrollTimer);
-      scrollTimer = setTimeout(updateLines, 16); // ~60fps
+    // rAF throttle (stable on scroll/resize)
+    let raf = 0;
+    const throttled = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        updateLines();
+      });
     };
 
-    // Listen to the modal's own scroll container
+    // Run once after mount/layout
+    throttled();
+
+    // Modal scroll
     const scrollContainer = scrollContainerRef.current;
     if (scrollContainer) {
-      scrollContainer.addEventListener('scroll', throttledUpdateLines);
+      scrollContainer.addEventListener("scroll", throttled, { passive: true });
     }
 
-    // Also listen to ALL scroll events on the page (capture phase catches any
-    // scrollable ancestor — workspace column, main layout, window, etc.)
-    // This keeps the task-claim end of each line tracking correctly.
-    window.addEventListener('scroll', throttledUpdateLines, true);
+    // ✅ Page scroll + resize (this is what fixes your bug)
+    window.addEventListener("scroll", throttled, { passive: true });
+    window.addEventListener("resize", throttled, { passive: true });
 
     return () => {
-      clearTimeout(timer);
-      if (scrollTimer) clearTimeout(scrollTimer);
+      if (raf) cancelAnimationFrame(raf);
       if (scrollContainer) {
-        scrollContainer.removeEventListener('scroll', throttledUpdateLines);
+        scrollContainer.removeEventListener("scroll", throttled as any);
       }
-      window.removeEventListener('scroll', throttledUpdateLines, true);
+      window.removeEventListener("scroll", throttled as any);
+      window.removeEventListener("resize", throttled as any);
     };
-  }, [isOpen, position, reference, claimLinks]);
+  }, [isOpen, reference, claimLinks, position]); // position makes lines update while dragging modal
 
-  // If not open, render nothing!
   if (!isOpen) return null;
 
   return (
     <>
-      {/* SVG overlay for connection lines */}
+      {/* SVG overlay (viewport coords) */}
       {lineData.length > 0 && (
         <Box
           position="fixed"
@@ -250,28 +301,25 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
           pointerEvents="none"
           zIndex={2400}
         >
-          <svg
-            style={{
-              width: "100%",
-              height: "100%",
-              overflow: "visible",
-            }}
-          >
+          <svg style={{ width: "100%", height: "100%", overflow: "visible" }}>
             {lineData.map((line, i) => {
               const color =
-                line.relation === "support" ? "#00ff00" :
-                line.relation === "refute" ? "#ff0000" :
-                "#00aaff";
+                line.relation === "support"
+                  ? "#00ff00"
+                  : line.relation === "refute"
+                    ? "#ff0000"
+                    : "#00aaff";
 
               const strokeColor = line.isAI
-                ? (line.relation === "support" ? "rgba(0, 255, 0, 0.7)" :
-                   line.relation === "refute" ? "rgba(255, 0, 0, 0.7)" :
-                   "rgba(0, 170, 255, 0.7)")
+                ? line.relation === "support"
+                  ? "rgba(0, 255, 0, 0.7)"
+                  : line.relation === "refute"
+                    ? "rgba(255, 0, 0, 0.7)"
+                    : "rgba(0, 170, 255, 0.7)"
                 : color;
 
               return (
                 <g key={i}>
-                  {/* Glow effect */}
                   <line
                     x1={line.x1}
                     y1={line.y1}
@@ -283,7 +331,6 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                     opacity={0.3}
                     filter="blur(4px)"
                   />
-                  {/* Main line - thicker and more visible */}
                   <line
                     x1={line.x1}
                     y1={line.y1}
@@ -304,8 +351,8 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
       <Box
         className="mr-modal"
         position="fixed"
-        left={position.x}
-        top={position.y}
+        left={`${position.x}px`}
+        top={`${position.y}px`}
         zIndex={2500}
         w={["90vw", "500px"]}
         maxW="95vw"
@@ -318,7 +365,6 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
         cursor={dragging ? "grabbing" : "default"}
         userSelect="none"
       >
-        {/* DRAG HANDLE */}
         <Box
           className="mr-modal-header"
           onMouseDown={onMouseDown}
@@ -366,19 +412,23 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
             </Box>
             <Divider />
 
-            {/* Connected Task Claims Section */}
             {connectedTaskClaims.length > 0 && (
-              <Box w="100%" bg="blue.900" p={3} borderRadius="md" border="2px solid #00aaff">
+              <Box
+                w="100%"
+                bg="blue.900"
+                p={3}
+                borderRadius="md"
+                border="2px solid #00aaff"
+              >
                 <Text fontWeight="bold" mb={2} color="blue.200">
                   📌 Connected Task Claims:
                 </Text>
                 <VStack align="start" spacing={2}>
                   {connectedTaskClaims.map((taskClaim) => {
-                    // Find what relation this task claim has
                     const link = claimLinks.find(
                       (l) =>
                         l.claimId === taskClaim.claim_id &&
-                        l.referenceId === reference?.reference_content_id
+                        l.referenceId === reference?.reference_content_id,
                     );
 
                     return (
@@ -392,8 +442,8 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                           link?.relation === "support"
                             ? "2px solid green"
                             : link?.relation === "refute"
-                            ? "2px solid red"
-                            : "2px solid blue"
+                              ? "2px solid red"
+                              : "2px solid blue"
                         }
                       >
                         <Text fontSize="xs" color="gray.400" mb={1}>
@@ -408,7 +458,9 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                 </VStack>
               </Box>
             )}
+
             <Divider />
+
             <Box w="100%">
               <Text fontWeight="bold" mb={2}>
                 Associated Claims:
@@ -419,7 +471,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                     ? JSON.parse(reference.claims)
                     : reference.claims
                   ).map((claim: Claim) => {
-                    const isSnippet = claim.claim_type === 'snippet';
+                    const isSnippet = claim.claim_type === "snippet";
                     const connections = getClaimConnections(claim.claim_id);
                     const hasConnection = connections.length > 0;
 
@@ -441,14 +493,21 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                               ? connections[0].relation === "support"
                                 ? "2px solid green"
                                 : connections[0].relation === "refute"
-                                ? "2px solid red"
-                                : "2px solid blue"
+                                  ? "2px solid red"
+                                  : "2px solid blue"
                               : isSnippet
-                              ? "1px solid #718096"
-                              : "1px solid blue"
+                                ? "1px solid #718096"
+                                : "1px solid blue"
                           }
-                          borderLeft={isSnippet && !hasConnection ? "4px solid #A0AEC0" : undefined}
-                          _hover={{ bg: isSnippet ? "gray.700" : "blue.200", color: "black" }}
+                          borderLeft={
+                            isSnippet && !hasConnection
+                              ? "4px solid #A0AEC0"
+                              : undefined
+                          }
+                          _hover={{
+                            bg: isSnippet ? "gray.700" : "blue.200",
+                            color: "black",
+                          }}
                           onMouseDown={() => setDraggingClaim(claim)}
                           onMouseUp={() => setDraggingClaim(null)}
                           onClick={() => {
@@ -460,19 +519,27 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                         >
                           {hasConnection && (
                             <Text fontSize="xs" color="gray.400" mb={1}>
-                              {connections[0].relation === "support" ? "🟢 Supports" :
-                               connections[0].relation === "refute" ? "🔴 Refutes" :
-                               "🔵 Nuances"} task claim
+                              {connections[0].relation === "support"
+                                ? "🟢 Supports"
+                                : connections[0].relation === "refute"
+                                  ? "🔴 Refutes"
+                                  : "🔵 Nuances"}{" "}
+                              task claim
                             </Text>
                           )}
                           {isSnippet ? (
-                            <Text fontStyle="italic" fontSize="sm" opacity={0.9}>
+                            <Text
+                              fontStyle="italic"
+                              fontSize="sm"
+                              opacity={0.9}
+                            >
                               " {claim.claim_text} "
                             </Text>
                           ) : (
                             claim.claim_text
                           )}
                         </Box>
+
                         <IconButton
                           size="sm"
                           colorScheme="purple"
@@ -488,6 +555,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
             </Box>
           </VStack>
         </Box>
+
         <Box
           p={4}
           borderBottomRadius="xl"
@@ -498,7 +566,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
           <Button onClick={onClose}>Close</Button>
         </Box>
       </Box>
-      {/* Floating tooltip while dragging */}
+
       {draggingClaim && (
         <Box
           ref={tipRef}

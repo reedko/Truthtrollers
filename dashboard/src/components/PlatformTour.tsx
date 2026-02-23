@@ -395,11 +395,22 @@ export const PlatformTour: React.FC = () => {
     const hasSeenTour = localStorage.getItem("tourCompleted");
     const isAlreadyActive = localStorage.getItem(TOUR_ACTIVE_KEY) === "true";
     if (!hasSeenTour && !isAlreadyActive && location.pathname.includes("/dashboard")) {
-      // Shorter delay (800ms) so new users see the tour faster after login
-      const t = setTimeout(() => startTour(), 800);
+      // Longer delay (1500ms) to ensure dashboard fully renders before tour starts
+      console.log("🎯 PlatformTour: New user detected, starting tour in 1.5s...");
+      const t = setTimeout(() => {
+        console.log("🚀 PlatformTour: Starting tour now!");
+        startTour();
+      }, 1500);
       return () => clearTimeout(t);
+    } else {
+      console.log("🔍 PlatformTour check:", {
+        hasSeenTour: !!hasSeenTour,
+        isAlreadyActive,
+        pathname: location.pathname,
+        shouldStart: !hasSeenTour && !isAlreadyActive && location.pathname.includes("/dashboard")
+      });
     }
-  }, [location.pathname]); // eslint-disable-line
+  }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Detect TextPad submission complete (URL gains ?contentId) ─────────────
   useEffect(() => {

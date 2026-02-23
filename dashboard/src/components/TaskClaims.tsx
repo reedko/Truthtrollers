@@ -23,7 +23,7 @@ interface TaskClaimsProps {
   draggingClaim: Pick<Claim, "claim_id" | "claim_text"> | null;
   onDropReferenceClaim: (
     sourceClaim: Pick<Claim, "claim_id" | "claim_text">,
-    targetClaim: Claim
+    targetClaim: Claim,
   ) => void;
   taskId: number;
   hoveredClaimId: number | null;
@@ -44,6 +44,8 @@ interface TaskClaimsProps {
   };
   onPickTargetForLink?: (target: Claim) => void;
   claimLinks?: ClaimLink[];
+  selectedReferenceId?: number;
+  isReferenceModalOpen?: boolean;
 }
 
 const TaskClaims: React.FC<TaskClaimsProps> = ({
@@ -69,6 +71,8 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   linkSelection,
   onPickTargetForLink,
   claimLinks = [],
+  selectedReferenceId,
+  isReferenceModalOpen = false,
 }) => {
   const claimRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
@@ -79,15 +83,18 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   // Color mode values
   const defaultBg = useColorModeValue(
     "radial-gradient(circle at bottom left, rgba(71, 85, 105, 0.15), rgba(148, 163, 184, 0.2))",
-    "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+    "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))",
   );
   const defaultColor = useColorModeValue("gray.700", "#f1f5f9");
   const hoveredBg = useColorModeValue(
     "radial-gradient(circle at bottom left, rgba(71, 85, 105, 0.3), rgba(148, 163, 184, 0.35))",
-    "linear-gradient(135deg, rgba(0, 162, 255, 0.3), rgba(0, 162, 255, 0.2))"
+    "linear-gradient(135deg, rgba(0, 162, 255, 0.3), rgba(0, 162, 255, 0.2))",
   );
   const hoveredColor = useColorModeValue("gray.800", "#ffffff");
-  const borderColor = useColorModeValue("rgba(100, 116, 139, 0.3)", "rgba(167, 139, 250, 0.4)");
+  const borderColor = useColorModeValue(
+    "rgba(100, 116, 139, 0.3)",
+    "rgba(167, 139, 250, 0.4)",
+  );
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -194,7 +201,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
         borderRadius="12px"
         boxShadow={useColorModeValue(
           "0 2px 8px rgba(94, 234, 212, 0.2)",
-          "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+          "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
         )}
         position="relative"
         overflow="hidden"
@@ -202,9 +209,9 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
         _hover={{
           boxShadow: useColorModeValue(
             "0 4px 12px rgba(94, 234, 212, 0.3)",
-            "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+            "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
           ),
-          transform: "translateY(-2px)"
+          transform: "translateY(-2px)",
         }}
         onClick={() => {
           setEditingClaim(null);
@@ -220,7 +227,9 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
           background="linear-gradient(90deg, rgba(0, 162, 255, 0.4) 0%, transparent 100%)"
           pointerEvents="none"
         />
-        <Text position="relative" zIndex={1}>+ Add Claim</Text>
+        <Text position="relative" zIndex={1}>
+          + Add Claim
+        </Text>
       </Box>
 
       {claims.length === 0 ? (
@@ -228,16 +237,66 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
       ) : (
         claims.map((claim) => {
           // Find existing link between this task claim and the selected reference claim
-          const existingLink = linkSelection?.active && linkSelection.source
-            ? claimLinks.find(
-                (link) =>
-                  link.claimId === claim.claim_id &&
-                  link.sourceClaimId === linkSelection.source?.claim_id
-              )
-            : null;
+          const existingLink =
+            linkSelection?.active && linkSelection.source
+              ? claimLinks.find(
+                  (link) =>
+                    link.claimId === claim.claim_id &&
+                    link.sourceClaimId === linkSelection.source?.claim_id,
+                )
+              : null;
+
+          // Check if this task claim is connected to the open reference modal
+          const isConnectedToSelectedReference =
+            isReferenceModalOpen &&
+            selectedReferenceId &&
+            claimLinks.some(
+              (link) =>
+                link.claimId === claim.claim_id &&
+                link.referenceId === selectedReferenceId,
+            );
 
           // Determine border and background colors based on relationship
           const getLinkColors = () => {
+            // Priority 1: Show connection to open reference modal
+            if (isConnectedToSelectedReference) {
+              const link = claimLinks.find(
+                (l) =>
+                  l.claimId === claim.claim_id &&
+                  l.referenceId === selectedReferenceId,
+              );
+
+              if (link) {
+                switch (link.relation) {
+                  case "support":
+                    return {
+                      border: "3px solid #38A169",
+                      background:
+                        "linear-gradient(135deg, rgba(56, 161, 105, 0.3), rgba(56, 161, 105, 0.2))",
+                      hoverBg: "rgba(56, 161, 105, 0.4)",
+                      boxShadow: "0 0 20px rgba(56, 161, 105, 0.6), 0 0 40px rgba(56, 161, 105, 0.3)",
+                    };
+                  case "refute":
+                    return {
+                      border: "3px solid #E53E3E",
+                      background:
+                        "linear-gradient(135deg, rgba(229, 62, 62, 0.3), rgba(229, 62, 62, 0.2))",
+                      hoverBg: "rgba(229, 62, 62, 0.4)",
+                      boxShadow: "0 0 20px rgba(229, 62, 62, 0.6), 0 0 40px rgba(229, 62, 62, 0.3)",
+                    };
+                  case "nuance":
+                    return {
+                      border: "3px solid #D69E2E",
+                      background:
+                        "linear-gradient(135deg, rgba(214, 158, 46, 0.3), rgba(214, 158, 46, 0.2))",
+                      hoverBg: "rgba(214, 158, 46, 0.4)",
+                      boxShadow: "0 0 20px rgba(214, 158, 46, 0.6), 0 0 40px rgba(214, 158, 46, 0.3)",
+                    };
+                }
+              }
+            }
+
+            // Priority 2: Link selection mode
             if (!linkSelection?.active) {
               return {
                 border: `1px solid ${borderColor}`,
@@ -251,25 +310,29 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
                 case "support":
                   return {
                     border: "3px solid #38A169",
-                    background: "linear-gradient(135deg, rgba(56, 161, 105, 0.25), rgba(56, 161, 105, 0.15))",
+                    background:
+                      "linear-gradient(135deg, rgba(56, 161, 105, 0.25), rgba(56, 161, 105, 0.15))",
                     hoverBg: "rgba(56, 161, 105, 0.35)",
                   };
                 case "refute":
                   return {
                     border: "3px solid #E53E3E",
-                    background: "linear-gradient(135deg, rgba(229, 62, 62, 0.25), rgba(229, 62, 62, 0.15))",
+                    background:
+                      "linear-gradient(135deg, rgba(229, 62, 62, 0.25), rgba(229, 62, 62, 0.15))",
                     hoverBg: "rgba(229, 62, 62, 0.35)",
                   };
                 case "nuance":
                   return {
                     border: "3px solid #D69E2E",
-                    background: "linear-gradient(135deg, rgba(214, 158, 46, 0.25), rgba(214, 158, 46, 0.15))",
+                    background:
+                      "linear-gradient(135deg, rgba(214, 158, 46, 0.25), rgba(214, 158, 46, 0.15))",
                     hoverBg: "rgba(214, 158, 46, 0.35)",
                   };
                 default:
                   return {
                     border: "2px dashed #805AD5",
-                    background: "linear-gradient(135deg, rgba(128, 90, 213, 0.2), rgba(128, 90, 213, 0.1))",
+                    background:
+                      "linear-gradient(135deg, rgba(128, 90, 213, 0.2), rgba(128, 90, 213, 0.1))",
                     hoverBg: "rgba(128, 90, 213, 0.3)",
                   };
               }
@@ -278,7 +341,8 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
             // Link mode active but no existing link - neutral highlight
             return {
               border: "2px dashed #805AD5",
-              background: "linear-gradient(135deg, rgba(128, 90, 213, 0.2), rgba(128, 90, 213, 0.1))",
+              background:
+                "linear-gradient(135deg, rgba(128, 90, 213, 0.2), rgba(128, 90, 213, 0.1))",
               hoverBg: "rgba(128, 90, 213, 0.3)",
             };
           };
@@ -290,23 +354,31 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
               key={claim.claim_id}
               ref={(el) => (claimRefs.current[claim.claim_id] = el)}
               data-claim-id={claim.claim_id}
-              background={hoveredClaimId === claim.claim_id ? hoveredBg : colors.background}
+              background={
+                hoveredClaimId === claim.claim_id
+                  ? hoveredBg
+                  : colors.background
+              }
               backdropFilter="blur(20px)"
-              color={hoveredClaimId === claim.claim_id ? hoveredColor : defaultColor}
+              color={
+                hoveredClaimId === claim.claim_id ? hoveredColor : defaultColor
+              }
               px={3}
               py={2}
               borderRadius="12px"
               border={colors.border}
               boxShadow={
-                hoveredClaimId === claim.claim_id
-                  ? useColorModeValue(
-                      "0 4px 12px rgba(94, 234, 212, 0.3)",
-                      "0 12px 48px rgba(0, 0, 0, 0.8), 0 0 60px rgba(167, 139, 250, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
-                    )
-                  : useColorModeValue(
-                      "0 2px 8px rgba(94, 234, 212, 0.2)",
-                      "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(167, 139, 250, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-                    )
+                colors.boxShadow
+                  ? colors.boxShadow
+                  : hoveredClaimId === claim.claim_id
+                    ? useColorModeValue(
+                        "0 4px 12px rgba(94, 234, 212, 0.3)",
+                        "0 12px 48px rgba(0, 0, 0, 0.8), 0 0 60px rgba(167, 139, 250, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+                      )
+                    : useColorModeValue(
+                        "0 2px 8px rgba(94, 234, 212, 0.2)",
+                        "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(167, 139, 250, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+                      )
               }
               _hover={
                 linkSelection?.active
@@ -314,94 +386,94 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
                   : {
                       boxShadow: useColorModeValue(
                         "0 4px 12px rgba(94, 234, 212, 0.3)",
-                        "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(167, 139, 250, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+                        "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(167, 139, 250, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
                       ),
-                      transform: "translateY(-2px)"
+                      transform: "translateY(-2px)",
                     }
               }
-            width="100%"
-            display="flex"
-            alignItems="center"
-            justifyContent="space-between"
-            cursor="pointer"
-            position="relative"
-            overflow="hidden"
-            transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
-            onClick={() => {
-              if (linkSelection?.active) {
-                onPickTargetForLink?.(claim);
-                return;
-              }
-              setSelectedClaim(claim);
-              setIsClaimViewModalOpen(true);
-            }}
-          >
-            <Box
-              position="absolute"
-              left={0}
-              top={0}
-              width="20px"
-              height="100%"
-              background="linear-gradient(90deg, rgba(167, 139, 250, 0.4) 0%, transparent 100%)"
-              pointerEvents="none"
-            />
-            <Tooltip
-              label={claim.claim_text}
-              hasArrow
-              isDisabled={!!draggingClaim}
+              width="100%"
+              display="flex"
+              alignItems="center"
+              justifyContent="space-between"
+              cursor="pointer"
+              position="relative"
+              overflow="hidden"
+              transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+              onClick={() => {
+                if (linkSelection?.active) {
+                  onPickTargetForLink?.(claim);
+                  return;
+                }
+                setSelectedClaim(claim);
+                setIsClaimViewModalOpen(true);
+              }}
             >
-              <Text flex="1" noOfLines={1} position="relative" zIndex={1}>
-                {claim.claim_text}
-              </Text>
-            </Tooltip>
-            <HStack spacing={2} position="relative" zIndex={1}>
-              <IconButton
-                size="sm"
-                aria-label="Edit"
-                icon={<span>✏️</span>}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEditingClaim(claim);
-                  setIsClaimModalOpen(true);
-                }}
+              <Box
+                position="absolute"
+                left={0}
+                top={0}
+                width="20px"
+                height="100%"
+                background="linear-gradient(90deg, rgba(167, 139, 250, 0.4) 0%, transparent 100%)"
+                pointerEvents="none"
               />
-              <IconButton
-                size="sm"
-                colorScheme="purple"
-                aria-label="Verify"
-                icon={<SearchIcon />}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onVerifyClaim(claim);
-                }}
-              />
-              {onTaskClaimClick && (
-                <Tooltip label="Find relevant reference claims" hasArrow>
-                  <IconButton
-                    size="sm"
-                    colorScheme="teal"
-                    aria-label="Scan Relevance"
-                    icon={<span>🔍</span>}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onTaskClaimClick(claim);
-                    }}
-                  />
-                </Tooltip>
-              )}
-              <IconButton
-                size="sm"
-                colorScheme="red"
-                aria-label="Delete"
-                icon={<span>🗑️</span>}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDeleteClaim(claim.claim_id);
-                }}
-              />
-            </HStack>
-          </Box>
-        );
+              <Tooltip
+                label={claim.claim_text}
+                hasArrow
+                isDisabled={!!draggingClaim}
+              >
+                <Text flex="1" noOfLines={1} position="relative" zIndex={1}>
+                  {claim.claim_text}
+                </Text>
+              </Tooltip>
+              <HStack spacing={2} position="relative" zIndex={1}>
+                <IconButton
+                  size="sm"
+                  aria-label="Edit"
+                  icon={<span>✏️</span>}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingClaim(claim);
+                    setIsClaimModalOpen(true);
+                  }}
+                />
+                <IconButton
+                  size="sm"
+                  colorScheme="purple"
+                  aria-label="Verify"
+                  icon={<SearchIcon />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onVerifyClaim(claim);
+                  }}
+                />
+                {onTaskClaimClick && (
+                  <Tooltip label="Find relevant reference claims" hasArrow>
+                    <IconButton
+                      size="sm"
+                      colorScheme="teal"
+                      aria-label="Scan Relevance"
+                      icon={<span>🔍</span>}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onTaskClaimClick(claim);
+                      }}
+                    />
+                  </Tooltip>
+                )}
+                <IconButton
+                  size="sm"
+                  colorScheme="red"
+                  aria-label="Delete"
+                  icon={<span>🗑️</span>}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteClaim(claim.claim_id);
+                  }}
+                />
+              </HStack>
+            </Box>
+          );
         })
       )}
 

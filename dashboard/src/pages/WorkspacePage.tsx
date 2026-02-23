@@ -100,9 +100,7 @@ const WorkspacePage = () => {
             <UnifiedHeader refreshKey={refreshKey} />
           </CardBody>
         </Card>
-        <Heading size="md" mb={4}>
-          Workspace
-        </Heading>
+        <Heading mb={4}>Workspace</Heading>
         <Workspace contentId={taskId} viewerId={viewerId} />
       </Box>
     </Box>

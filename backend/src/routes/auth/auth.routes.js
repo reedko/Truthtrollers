@@ -15,12 +15,26 @@ const { logSuccessfulLogin, logFailedLogin, logRegistrationAttempt } =
   createSessionLogger(query);
 
 /**
+ * Extract the real client IP from x-forwarded-for header
+ * x-forwarded-for format: "client_ip, proxy1_ip, proxy2_ip"
+ * We want just the first one (the actual user's IP)
+ */
+function getClientIP(req) {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (forwarded) {
+    // Take the first IP in the comma-separated list
+    return forwarded.split(',')[0].trim();
+  }
+  return req.socket.remoteAddress || 'unknown';
+}
+
+/**
  * POST /api/register
  * Register a new user
  */
 router.post("/api/register", async (req, res) => {
   const { username, password, email, captcha } = req.body;
-  const ipAddress = req.ip;
+  const ipAddress = getClientIP(req);
 
   if (!username || !password || !email || !captcha) {
     await logRegistrationAttempt({
@@ -29,6 +43,7 @@ router.post("/api/register", async (req, res) => {
       ipAddress,
       success: false,
       message: "Missing required fields or CAPTCHA",
+      userAgent: req.headers["user-agent"],
     });
     return res
       .status(400)
@@ -43,6 +58,7 @@ router.post("/api/register", async (req, res) => {
       ipAddress,
       success: false,
       message: "Failed CAPTCHA verification",
+      userAgent: req.headers["user-agent"],
     });
     return res.status(403).json({ error: "Failed CAPTCHA verification" });
   }
@@ -61,6 +77,7 @@ router.post("/api/register", async (req, res) => {
         ipAddress,
         success: false,
         message: "Not on beta access list",
+        userAgent: req.headers["user-agent"],
       });
       return res.status(403).json({
         error: "BETA_ACCESS_DENIED",
@@ -87,6 +104,7 @@ router.post("/api/register", async (req, res) => {
           ipAddress,
           success: false,
           message: "Duplicate username or email",
+          userAgent: req.headers["user-agent"],
         });
         return res
           .status(409)
@@ -100,6 +118,7 @@ router.post("/api/register", async (req, res) => {
         ipAddress,
         success: false,
         message: `Database error: ${err.message}`,
+        userAgent: req.headers["user-agent"],
       });
       return res.status(500).json({ error: "Database error." });
     }
@@ -111,6 +130,7 @@ router.post("/api/register", async (req, res) => {
       ipAddress,
       success: true,
       message: "Registration successful",
+      userAgent: req.headers["user-agent"],
     });
 
     res.status(201).json({
@@ -129,7 +149,7 @@ router.post("/api/register", async (req, res) => {
  */
 router.post("/api/login", async (req, res) => {
   const { username, password, captcha, fingerprint } = req.body;
-  const ipAddress = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+  const ipAddress = getClientIP(req);
 
   console.log(`🔐 Login attempt: username=${username}, skipCaptcha=${req.headers["x-skip-captcha"]}, ip=${ipAddress}`);
 
@@ -318,7 +338,7 @@ router.post("/api/logout", (req, res) => {
             [
               userId,
               fingerprint,
-              req.ip,
+              getClientIP(req),
               JSON.stringify({ agent: req.headers["user-agent"] }),
             ],
             (err3) => {
@@ -380,7 +400,7 @@ router.post("/api/reset-password", async (req, res) => {
     // 7. Log the reset request
     await query(
       "INSERT INTO login_events (user_id, fingerprint, event_type, ip_address, details) VALUES (?, ?, 'password_reset_request', ?, ?)",
-      [user.user_id, 'email_reset', req.ip, JSON.stringify({ email })]
+      [user.user_id, 'email_reset', getClientIP(req), JSON.stringify({ email })]
     );
 
     res.status(200).json({
@@ -517,7 +537,7 @@ router.post("/api/reset-password-with-token", async (req, res) => {
     // 5. Log the password change
     await query(
       "INSERT INTO login_events (user_id, fingerprint, event_type, ip_address, details) VALUES (?, ?, 'password_changed', ?, ?)",
-      [tokenData.user_id, 'email_reset', req.ip, JSON.stringify({ email: tokenData.email })]
+      [tokenData.user_id, 'email_reset', getClientIP(req), JSON.stringify({ email: tokenData.email })]
     );
 
     // 6. Send confirmation email

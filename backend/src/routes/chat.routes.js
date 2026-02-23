@@ -11,9 +11,9 @@ export default function createChatRouter({ pool }) {
       pool.query(sql, params, (err, rows) => (err ? reject(err) : resolve(rows)))
     );
 
-  // ── GET /chat/conversations ─────────────────────────────
+  // ── GET /api/chat/conversations ─────────────────────────────
   // Returns one row per conversation partner, latest message + unread count
-  router.get("/chat/conversations", authenticateToken, async (req, res) => {
+  router.get("/api/chat/conversations", authenticateToken, async (req, res) => {
     const userId = req.user.user_id;
     try {
       const rows = await q(
@@ -45,9 +45,9 @@ export default function createChatRouter({ pool }) {
     }
   });
 
-  // ── GET /chat/messages/:partnerId ───────────────────────
+  // ── GET /api/chat/messages/:partnerId ───────────────────────
   // Returns paginated messages between the logged-in user and a partner
-  router.get("/chat/messages/:partnerId", authenticateToken, async (req, res) => {
+  router.get("/api/chat/messages/:partnerId", authenticateToken, async (req, res) => {
     const userId = req.user.user_id;
     const partnerId = parseInt(req.params.partnerId);
     const limit = Math.min(parseInt(req.query.limit || "50"), 100);
@@ -73,8 +73,8 @@ export default function createChatRouter({ pool }) {
     }
   });
 
-  // ── POST /chat/push-subscribe ───────────────────────────
-  router.post("/chat/push-subscribe", authenticateToken, async (req, res) => {
+  // ── POST /api/chat/push-subscribe ───────────────────────────
+  router.post("/api/chat/push-subscribe", authenticateToken, async (req, res) => {
     const userId = req.user.user_id;
     const { endpoint, keys } = req.body;
     if (!endpoint || !keys?.p256dh || !keys?.auth) {
@@ -94,8 +94,8 @@ export default function createChatRouter({ pool }) {
     }
   });
 
-  // ── DELETE /chat/push-subscribe ─────────────────────────
-  router.delete("/chat/push-subscribe", authenticateToken, async (req, res) => {
+  // ── DELETE /api/chat/push-subscribe ─────────────────────────
+  router.delete("/api/chat/push-subscribe", authenticateToken, async (req, res) => {
     const userId = req.user.user_id;
     try {
       await q("DELETE FROM push_subscriptions WHERE user_id = ?", [userId]);
@@ -105,15 +105,15 @@ export default function createChatRouter({ pool }) {
     }
   });
 
-  // ── GET /chat/vapid-public-key ──────────────────────────
+  // ── GET /api/chat/vapid-public-key ──────────────────────────
   // Frontend needs the public VAPID key to subscribe
-  router.get("/chat/vapid-public-key", (_req, res) => {
+  router.get("/api/chat/vapid-public-key", (_req, res) => {
     res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
   });
 
-  // ── GET /users/search ───────────────────────────────────
+  // ── GET /api/users/search ───────────────────────────────────
   // Search users by username to start a DM
-  router.get("/users/search", authenticateToken, async (req, res) => {
+  router.get("/api/users/search", authenticateToken, async (req, res) => {
     const q2 = (req.query.q || "").trim();
     const userId = req.user.user_id;
     if (!q2) return res.json([]);
@@ -131,9 +131,9 @@ export default function createChatRouter({ pool }) {
     }
   });
 
-  // ── GET /users/all ──────────────────────────────────────
+  // ── GET /api/users/all ──────────────────────────────────────
   // Get all users (including current user)
-  router.get("/users/all", authenticateToken, async (req, res) => {
+  router.get("/api/users/all", authenticateToken, async (req, res) => {
     const userId = req.user.user_id;
     try {
       const rows = await q(
@@ -149,9 +149,9 @@ export default function createChatRouter({ pool }) {
     }
   });
 
-  // ── GET /users/online ───────────────────────────────────
+  // ── GET /api/users/online ───────────────────────────────────
   // Get all online users (including current user)
-  router.get("/users/online", authenticateToken, async (req, res) => {
+  router.get("/api/users/online", authenticateToken, async (req, res) => {
     const userId = req.user.user_id;
     console.log("[/users/online] Request from user_id:", userId);
     try {

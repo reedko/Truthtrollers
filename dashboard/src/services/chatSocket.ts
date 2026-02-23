@@ -127,7 +127,7 @@ export async function fetchConversations() {
   const jwt = useAuthStore.getState().user?.jwt;
   if (!jwt) return;
   try {
-    const res = await fetch(`${BASE_URL}/chat/conversations`, {
+    const res = await fetch(`${BASE_URL}/api/chat/conversations`, {
       headers: { Authorization: `Bearer ${jwt}` },
     });
     if (res.ok) {
@@ -144,7 +144,7 @@ export async function fetchConversations() {
 export async function fetchMessages(partnerId: number, before?: string): Promise<ChatMessage[]> {
   const jwt = useAuthStore.getState().user?.jwt;
   if (!jwt) return [];
-  const url = `${BASE_URL}/chat/messages/${partnerId}${before ? `?before=${before}` : ""}`;
+  const url = `${BASE_URL}/api/chat/messages/${partnerId}${before ? `?before=${before}` : ""}`;
   try {
     const res = await fetch(url, { headers: { Authorization: `Bearer ${jwt}` } });
     return res.ok ? res.json() : [];
@@ -156,7 +156,7 @@ export async function fetchMessages(partnerId: number, before?: string): Promise
 export async function searchUsers(q: string) {
   const jwt = useAuthStore.getState().user?.jwt;
   if (!jwt || !q.trim()) return [];
-  const url = `${BASE_URL}/users/search?q=${encodeURIComponent(q)}`;
+  const url = `${BASE_URL}/api/users/search?q=${encodeURIComponent(q)}`;
   try {
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${jwt}` },
@@ -175,7 +175,7 @@ export async function searchUsers(q: string) {
 export async function fetchAllUsers() {
   const jwt = useAuthStore.getState().user?.jwt;
   if (!jwt) return [];
-  const url = `${BASE_URL}/users/all`;
+  const url = `${BASE_URL}/api/users/all`;
   try {
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${jwt}` },
@@ -194,7 +194,7 @@ export async function fetchAllUsers() {
 export async function fetchOnlineUsers() {
   const jwt = useAuthStore.getState().user?.jwt;
   if (!jwt) return [];
-  const url = `${BASE_URL}/users/online`;
+  const url = `${BASE_URL}/api/users/online`;
   try {
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${jwt}` },

@@ -56,6 +56,9 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
   const [containerX, setContainerX] = useState(0);
   const adjustedLeftX = leftX - 12;
   const adjustedRightX = rightX + 15;
+
+  console.log('[RelationshipMap] leftX:', leftX, '-> adjustedLeftX:', adjustedLeftX);
+  console.log('[RelationshipMap] rightX:', rightX, '-> adjustedRightX:', adjustedRightX);
   const [hasMeasuredContainer, setHasMeasuredContainer] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [hoveredLinkId, setHoveredLinkId] = useState<string | null>(null);

@@ -58,7 +58,9 @@ const Workspace: React.FC<WorkspaceProps> = ({
   console.log("🟢 Workspace v3.0 loaded - Conditional hooks fixed");
   const [claims, setClaims] = useState<Claim[]>([]);
   const [claimLinks, setClaimLinks] = useState<ClaimLink[]>([]);
-  const [aiEvidenceLinks, setAIEvidenceLinks] = useState<import("../../../shared/entities/types").AIEvidenceLink[]>([]);
+  const [aiEvidenceLinks, setAIEvidenceLinks] = useState<
+    import("../../../shared/entities/types").AIEvidenceLink[]
+  >([]);
   const [refreshLinks, setRefreshLinks] = useState(false);
   const [references, setReferences] = useState<ReferenceWithClaims[]>([]);
   const [refreshReferences, setRefreshReferences] = useState(false);
@@ -92,21 +94,29 @@ const Workspace: React.FC<WorkspaceProps> = ({
   const [computedHeight, setComputedHeight] = useState(500);
   const [readOnly, setReadOnly] = useState<boolean>(false);
   const [selectedClaimLink, setSelectedClaimLink] = useState<ClaimLink | null>(
-    null
+    null,
   );
   const [linkRationale, setLinkRationale] = useState<string>("");
-  const [aiSuggestedSupportLevel, setAiSuggestedSupportLevel] = useState<number | null>(null);
-  const [isRelevanceScanModalOpen, setIsRelevanceScanModalOpen] = useState(false);
-  const [scanningTaskClaim, setScanningTaskClaim] = useState<Claim | null>(null);
+  const [aiSuggestedSupportLevel, setAiSuggestedSupportLevel] = useState<
+    number | null
+  >(null);
+  const [isRelevanceScanModalOpen, setIsRelevanceScanModalOpen] =
+    useState(false);
+  const [scanningTaskClaim, setScanningTaskClaim] = useState<Claim | null>(
+    null,
+  );
 
   // Hooks that use context - must be after all useState hooks, but BEFORE any early returns
   const isMobile = useBreakpointValue({ base: true, md: false });
   const setVerimeterScore = useTaskStore((s) => s.setVerimeterScore);
   const bgColor = useColorModeValue(
     "radial-gradient(circle at bottom left, rgba(71, 85, 105, 0.15), rgba(148, 163, 184, 0.2))",
-    "gray.800"
+    "gray.800",
   );
-  const borderColor = useColorModeValue("rgba(100, 116, 139, 0.25)", "gray.300");
+  const borderColor = useColorModeValue(
+    "rgba(100, 116, 139, 0.25)",
+    "gray.300",
+  );
   const user = useAuthStore((s) => s.user);
 
   const updateXPositionsAndHeight = () => {
@@ -141,7 +151,9 @@ const Workspace: React.FC<WorkspaceProps> = ({
           } else if (rel === "nuance") {
             normalizedRelation = "nuance";
           } else {
-            console.warn(`⚠️ Unknown relationship: "${row.relationship}", defaulting to "nuance"`);
+            console.warn(
+              `⚠️ Unknown relationship: "${row.relationship}", defaulting to "nuance"`,
+            );
             normalizedRelation = "nuance";
           }
 
@@ -155,7 +167,9 @@ const Workspace: React.FC<WorkspaceProps> = ({
             notes: row.notes || "",
           };
         });
-        console.log(`✅ Loaded ${formattedLinks.length} claim links for content ${contentId}`);
+        console.log(
+          `✅ Loaded ${formattedLinks.length} claim links for content ${contentId}`,
+        );
         setClaimLinks(formattedLinks);
       })
       .catch((error) => {
@@ -212,7 +226,10 @@ const Workspace: React.FC<WorkspaceProps> = ({
   }, [claims, references, computedHeight, onHeightChange]);
 
   const handleTaskClaimRelevanceScan = (claim: Claim) => {
-    console.log("[Workspace] Opening relevance scan for task claim:", claim.claim_id);
+    console.log(
+      "[Workspace] Opening relevance scan for task claim:",
+      claim.claim_id,
+    );
     setScanningTaskClaim(claim);
     setIsRelevanceScanModalOpen(true);
   };
@@ -220,7 +237,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
   const handleOpenLinkOverlayFromScan = (
     scanSourceClaim: { claim_id: number; claim_text: string },
     rationale: string,
-    supportLevel: number
+    supportLevel: number,
   ) => {
     // The scan's "source" claim is a reference claim; the target is the task claim being scanned
     setSourceClaim(scanSourceClaim);
@@ -233,13 +250,16 @@ const Workspace: React.FC<WorkspaceProps> = ({
     setIsClaimLinkModalOpen(true);
   };
 
-  const handleSelectReferenceClaim = async (claim: any, referenceId: number) => {
+  const handleSelectReferenceClaim = async (
+    claim: any,
+    referenceId: number,
+  ) => {
     // Close the relevance scan modal
     setIsRelevanceScanModalOpen(false);
 
     // Find the reference
     const reference = references.find(
-      (r) => r.reference_content_id === referenceId
+      (r) => r.reference_content_id === referenceId,
     );
 
     if (!reference) {
@@ -255,7 +275,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
   const handleLineClick = async (link: ClaimLink) => {
     // Count how many links connect to this reference
     const linksToReference = claimLinks.filter(
-      (l) => l.referenceId === link.referenceId
+      (l) => l.referenceId === link.referenceId,
     );
 
     // If 1-2 links, open claim relationship box(es)
@@ -263,13 +283,15 @@ const Workspace: React.FC<WorkspaceProps> = ({
       try {
         // Check if this is an AI evidence link (from reference_claim_links)
         // AI links have id like "ai-123" and don't have actual source claim IDs
-        const isAILink = link.id?.startsWith('ai-') ?? false;
+        const isAILink = link.id?.startsWith("ai-") ?? false;
 
         let source, target;
 
         if (isAILink) {
           // For AI links, find the original AI evidence link data
-          const aiLink = aiEvidenceLinks.find(ai => `ai-${ai.link_id}` === link.id);
+          const aiLink = aiEvidenceLinks.find(
+            (ai) => `ai-${ai.link_id}` === link.id,
+          );
 
           // Fetch target claim (task claim)
           target = await fetchClaimById(link.claimId);
@@ -277,8 +299,9 @@ const Workspace: React.FC<WorkspaceProps> = ({
           // Use the evidence text (quote) as the source claim
           source = {
             claim_id: 0, // Dummy ID for AI evidence
-            claim_text: aiLink?.quote || link.notes || "No evidence text available",
-            claim_type: "ai_evidence"
+            claim_text:
+              aiLink?.quote || link.notes || "No evidence text available",
+            claim_type: "ai_evidence",
           };
 
           // Set the AI rationale
@@ -312,7 +335,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
     } else {
       // 3+ links: open reference modal instead
       const reference = references.find(
-        (ref) => ref.reference_content_id === link.referenceId
+        (ref) => ref.reference_content_id === link.referenceId,
       );
       if (reference) {
         setSelectedReference(reference);
@@ -324,7 +347,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
   const handleLineHover = (link: ClaimLink) => {
     // Find the reference for this link and open modal after 2s
     const reference = references.find(
-      (ref) => ref.reference_content_id === link.referenceId
+      (ref) => ref.reference_content_id === link.referenceId,
     );
     if (reference) {
       setSelectedReference(reference);
@@ -334,7 +357,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
 
   const handleDeleteReference = async (
     contentId: number,
-    refId: number
+    refId: number,
   ): Promise<void> => {
     await deleteReferenceFromTask(contentId, refId);
 
@@ -343,7 +366,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
 
   const handleUpdateReference = async (
     referenceId: number,
-    title: string
+    title: string,
   ): Promise<void> => {
     await updateReference(referenceId, title);
     setRefreshReferences((prev) => !prev);
@@ -351,7 +374,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
 
   const handleDropReferenceClaim = (
     sourceClaim: Pick<Claim, "claim_id" | "claim_text">,
-    targetClaim: Claim
+    targetClaim: Claim,
   ) => {
     setSourceClaim(sourceClaim);
     setTargetClaim(targetClaim);
@@ -379,7 +402,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
     setVerimeterScore(contentId, scores?.verimeterScore ?? null);
     // 🔔 notify any listeners to refetch or re-read store
     window.dispatchEvent(
-      new CustomEvent("verimeter:updated", { detail: { contentId } })
+      new CustomEvent("verimeter:updated", { detail: { contentId } }),
     );
     // ✅ Refresh links so new lines appear in RelationshipMap
     setRefreshLinks((prev) => !prev);
@@ -400,7 +423,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
       borderRadius="lg"
       p={4}
       bgGradient={bgColor}
-      backdropFilter="blur(8px)"
+      // backdropFilter="blur(8px)"
       borderColor={borderColor}
       height={`${computedHeight}px`} // dynamic height computed above
       onMouseMove={(e) => setMousePosition({ x: e.clientX, y: e.clientY })}
@@ -413,7 +436,13 @@ const Workspace: React.FC<WorkspaceProps> = ({
         gap={4}
         height="100%"
       >
-        <Box ref={leftRef} minW="250px" maxW="400px" w="100%" className="workspace-claims">
+        <Box
+          ref={leftRef}
+          minW="250px"
+          maxW="400px"
+          w="100%"
+          className="workspace-claims"
+        >
           <TaskClaims
             claims={claims}
             onAddClaim={async (newClaim: Claim) => {
@@ -428,8 +457,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
               const saved = await updateClaim(updatedClaim);
               setClaims(
                 claims.map((c) =>
-                  c.claim_id === updatedClaim.claim_id ? updatedClaim : c
-                )
+                  c.claim_id === updatedClaim.claim_id ? updatedClaim : c,
+                ),
               );
             }}
             onDeleteClaim={(claimId) =>
@@ -453,6 +482,9 @@ const Workspace: React.FC<WorkspaceProps> = ({
             setIsClaimViewModalOpen={setIsClaimViewModalOpen}
             editingClaim={editingClaim}
             setEditingClaim={setEditingClaim}
+            selectedReferenceId={selectedReference?.reference_content_id}
+            isReferenceModalOpen={isReferenceClaimsModalOpen}
+            claimLinks={claimLinks}
           />
         </Box>
         <Box ref={containerRef} minW="100px" w="100%">
@@ -478,17 +510,26 @@ const Workspace: React.FC<WorkspaceProps> = ({
                 claimId: ai.task_claim_id,
                 referenceId: ai.reference_content_id,
                 sourceClaimId: ai.task_claim_id, // For AI links, source = task claim
-                relation: ai.stance === 'support' ? 'support' as const :
-                         ai.stance === 'refute' ? 'refute' as const :
-                         ai.stance === 'nuance' ? 'nuance' as const :
-                         'support' as const, // fallback
+                relation:
+                  ai.stance === "support"
+                    ? ("support" as const)
+                    : ai.stance === "refute"
+                      ? ("refute" as const)
+                      : ai.stance === "nuance"
+                        ? ("nuance" as const)
+                        : ("support" as const), // fallback
                 confidence: ai.support_level, // Use support_level for line thickness/opacity
-                notes: ai.rationale || '',
-              }))
+                notes: ai.rationale || "",
+              })),
             ]}
           />
         </Box>
-        <Box ref={rightRef} maxW="400px" w="100%" className="workspace-references">
+        <Box
+          ref={rightRef}
+          maxW="400px"
+          w="100%"
+          className="workspace-references"
+        >
           <ReferenceList
             references={references}
             onEditReference={handleUpdateReference}
@@ -507,6 +548,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
       </Grid>
       {selectedReference && (
         <DraggableReferenceClaimsModal
+          anchorSelector=".workspace-references"
           isOpen={isReferenceClaimsModalOpen}
           onClose={() => setIsReferenceClaimsModalOpen(false)}
           reference={selectedReference}
@@ -518,8 +560,9 @@ const Workspace: React.FC<WorkspaceProps> = ({
           onClaimClick={async (claim: Claim) => {
             // Find the link for this claim
             const link = claimLinks.find(
-              (l) => l.sourceClaimId === claim.claim_id &&
-                     l.referenceId === selectedReference.reference_content_id
+              (l) =>
+                l.sourceClaimId === claim.claim_id &&
+                l.referenceId === selectedReference.reference_content_id,
             );
             if (link) {
               const [source, target] = await Promise.all([
@@ -540,7 +583,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
           }}
         />
       )}
-      // ...
+
       <ClaimLinkOverlay
         isOpen={isClaimLinkModalOpen}
         onClose={() => {
@@ -583,8 +626,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
       {draggingClaim && hoveredClaimId && (
         <Box
           position="fixed"
-          top={mousePosition.y - 80} // 👈 push it above the cursor
-          left={mousePosition.x + 20}
+          top={mousePosition.y - 80 - 285} // Shift 400px up
+          left={mousePosition.x + 20 - 450} // Shift 400px left
           bg="gray.700"
           color="white"
           px={4}

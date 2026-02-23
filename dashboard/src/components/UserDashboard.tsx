@@ -57,6 +57,7 @@ const UserDashboard: React.FC = () => {
   const claimsByTask = useTaskStore((s) => s.claimsByTask);
   const claimReferences = useTaskStore((s) => s.claimReferences);
   const setSelectedTask = useTaskStore((s) => s.setSelectedTask);
+  const viewerId = useTaskStore((s) => s.viewingUserId);
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [stats, setStats] = useState<UserStats>({
@@ -80,15 +81,15 @@ const UserDashboard: React.FC = () => {
   // Fetch claims and claim references for all assigned tasks IN ONE BULK CALL
   useEffect(() => {
     const fetchClaimsAndReferences = async () => {
-      if (claimsLoaded || assignedTasks.length === 0) return;
+      if (claimsLoaded || assignedTasks.length === 0 || !viewerId) return;
 
       const startTime = Date.now();
-      console.log("[UserDashboard] Bulk fetching claims and references for", assignedTasks.length, "tasks");
+      console.log("[UserDashboard] Bulk fetching claims and references for", assignedTasks.length, "tasks, viewerId:", viewerId);
 
       try {
         // Fetch ALL claims and references in ONE call
         const taskIds = assignedTasks.map((task) => task.content_id);
-        const result = await fetchBulkClaimsAndReferences(taskIds);
+        const result = await fetchBulkClaimsAndReferences(taskIds, viewerId);
 
         console.log("[UserDashboard] Bulk fetch completed in", Date.now() - startTime, "ms");
         console.log("[UserDashboard] Received:",
@@ -109,7 +110,7 @@ const UserDashboard: React.FC = () => {
     };
 
     fetchClaimsAndReferences();
-  }, [assignedTasks.length, claimsLoaded]);
+  }, [assignedTasks.length, claimsLoaded, viewerId]);
 
   const fetchUserTasks = async () => {
     try {

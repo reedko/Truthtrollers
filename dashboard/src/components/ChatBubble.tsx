@@ -269,7 +269,6 @@ export default function ChatBubble() {
                             <HStack
                               key={u.user_id}
                               px={2} py={1} mt={1}
-                              cursor="pointer"
                               borderRadius="md"
                               _hover={{ bg: "rgba(0,162,255,0.1)" }}
                               onClick={() => {

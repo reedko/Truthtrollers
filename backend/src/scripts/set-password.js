@@ -20,12 +20,16 @@ if (!userId || !newPassword) {
   );
   process.exit(1);
 }
-`const db = await mysql.createConnection({
+console.log(`🔌 Connecting to database: ${process.env.DB_HOST}/${process.env.DB_DATABASE} as ${process.env.DB_USER}`);
+
+const db = await mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
 });
+
+console.log(`✅ Connected to database successfully`);
 
 // Verify user exists first
 const [rows] = await db.execute(

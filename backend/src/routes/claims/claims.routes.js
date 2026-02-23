@@ -63,7 +63,7 @@ export default function createClaimsRoutes({ query, pool }) {
        WHERE claim_id = :claim_id AND <%= user_id_cond %>`,
         user_id == null
           ? { claim_id } // if you allowed null user_id and there's only one per claim
-          : { claim_id, user_id }
+          : { claim_id, user_id },
       );
 
       // If you allow NULL user_id for multiple rows per claim, adjust the SELECT accordingly.
@@ -97,12 +97,12 @@ export default function createClaimsRoutes({ query, pool }) {
         // If you don't support null user_id, you can 400 here instead
         [rows] = await pool.execute(
           `SELECT * FROM claim_verifications WHERE claim_id = :claim_id`,
-          { claim_id }
+          { claim_id },
         );
       } else {
         [rows] = await pool.execute(
           `SELECT * FROM claim_verifications WHERE claim_id = :claim_id AND user_id = :user_id`,
-          { claim_id, user_id }
+          { claim_id, user_id },
         );
       }
       res.json({ ok: true, verifications: rows });
@@ -119,7 +119,7 @@ export default function createClaimsRoutes({ query, pool }) {
       if (!Number.isInteger(claimId)) return badReq(res, "claimId must be int");
       const [rows] = await pool.execute(
         `SELECT * FROM claim_verifications WHERE claim_id = :claimId ORDER BY updated_at DESC`,
-        { claimId }
+        { claimId },
       );
       res.json({ ok: true, verifications: rows });
     } catch (err) {
@@ -138,7 +138,7 @@ export default function createClaimsRoutes({ query, pool }) {
 
       const [result] = await pool.execute(
         `DELETE FROM claim_verifications WHERE claim_id = :claim_id AND user_id = :user_id`,
-        { claim_id, user_id }
+        { claim_id, user_id },
       );
       res.json({ ok: true, deleted: result.affectedRows });
     } catch (err) {
@@ -246,14 +246,14 @@ export default function createClaimsRoutes({ query, pool }) {
     try {
       const insertResult = await query(
         "INSERT INTO claims (claim_text, veracity_score, confidence_level, last_verified) VALUES (?, ?, ?, ?)",
-        [claim_text, veracity_score, confidence_level, formattedDate]
+        [claim_text, veracity_score, confidence_level, formattedDate],
       );
 
       const claimId = insertResult.insertId;
 
       await query(
         "INSERT INTO content_claims (content_id, claim_id, relationship_type) VALUES (?, ?, ?)",
-        [content_id, claimId, relationship_type]
+        [content_id, claimId, relationship_type],
       );
 
       res.json({ success: true, claimId });
@@ -279,13 +279,15 @@ export default function createClaimsRoutes({ query, pool }) {
 
     console.log(claimId, "To edit");
     if (!claim_text || !claimId) {
-      return res.status(400).json({ error: "claim_text and claim_id required" });
+      return res
+        .status(400)
+        .json({ error: "claim_text and claim_id required" });
     }
 
     try {
       await query(
         "UPDATE claims SET claim_text = ?, veracity_score = ?, confidence_level = ?, last_verified = ? WHERE claim_id = ?",
-        [claim_text, veracity_score, confidence_level, formattedDate, claimId]
+        [claim_text, veracity_score, confidence_level, formattedDate, claimId],
       );
 
       res.json({ success: true, claimId });
@@ -412,8 +414,8 @@ export default function createClaimsRoutes({ query, pool }) {
           row.relationship === "supports"
             ? "support"
             : row.relationship === "refutes"
-            ? "refute"
-            : "support", // fallback
+              ? "refute"
+              : "support", // fallback
         confidence: row.confidence,
         notes: row.notes,
         verimeter_score: row.verimeter_score ?? null,
@@ -491,11 +493,13 @@ WHERE cc_task.content_id = ?
     }
   });
 
-  router.get("/api/claims-and-linked-references/:contentId", async (req, res) => {
-    const contentId = req.params.contentId;
-    const viewerId = req.query.viewerId;
+  router.get(
+    "/api/claims-and-linked-references/:contentId",
+    async (req, res) => {
+      const contentId = req.params.contentId;
+      const viewerId = req.query.viewerId;
 
-    const sql = `
+      const sql = `
     SELECT
       CONCAT(cl.claim_link_id, cr.reference_content_id) AS id,
       cl.claim_link_id AS claim_link_id,
@@ -516,16 +520,17 @@ WHERE cc_task.content_id = ?
       ${viewerId ? "AND cl.user_id = ?" : ""}
   `;
 
-    const params = viewerId ? [contentId, viewerId] : [contentId];
+      const params = viewerId ? [contentId, viewerId] : [contentId];
 
-    try {
-      const claimsWithReferences = await query(sql, params);
-      res.json(claimsWithReferences);
-    } catch (err) {
-      console.error("Error fetching references with claims:", err);
-      res.status(500).json({ error: "Database error" });
-    }
-  });
+      try {
+        const claimsWithReferences = await query(sql, params);
+        res.json(claimsWithReferences);
+      } catch (err) {
+        console.error("Error fetching references with claims:", err);
+        res.status(500).json({ error: "Database error" });
+      }
+    },
+  );
 
   //add claims in batch for a content_id (as in a scrape)
   // and link the claim to the content_id
@@ -566,7 +571,7 @@ WHERE cc_task.content_id = ?
           // 1️⃣ **Check if claim already exists**
           const existingClaimResult = await query(
             "SELECT claim_id FROM claims WHERE claim_text = ?",
-            [cleanClaimText]
+            [cleanClaimText],
           );
           const existingClaim = Array.isArray(existingClaimResult)
             ? existingClaimResult
@@ -578,7 +583,7 @@ WHERE cc_task.content_id = ?
             // 2️⃣ **Insert new claim since it doesn't exist**
             const insertResult = await query(
               "INSERT INTO claims (claim_text) VALUES (?)",
-              [cleanClaimText]
+              [cleanClaimText],
             );
             claimId = insertResult?.insertId || null;
             isNewClaim = true; // ✅ Mark this claim as newly inserted
@@ -591,7 +596,7 @@ WHERE cc_task.content_id = ?
         if (!claimId) {
           console.warn(
             "⚠️ Skipping claim as claimId is undefined:",
-            cleanClaimText
+            cleanClaimText,
           );
           continue;
         }
@@ -601,17 +606,17 @@ WHERE cc_task.content_id = ?
           if (isNewClaim) {
             await query(
               "INSERT INTO content_claims (content_id, claim_id, relationship_type,user_id) VALUES (?,?,?,?)",
-              [content_id, claimId, content_type, user_id]
+              [content_id, claimId, content_type, user_id],
             );
             insertedCount++;
             console.log(
-              `🔗 Created new claim & linked to content: ${cleanClaimText}`
+              `🔗 Created new claim & linked to content: ${cleanClaimText}`,
             );
           } else {
             // 4️⃣ **If claim already existed, check if link exists first.**
             const existingLinkResult = await query(
               "SELECT cc_id FROM content_claims WHERE content_id = ? AND claim_id = ?",
-              [content_id, claimId]
+              [content_id, claimId],
             );
             const existingLink = Array.isArray(existingLinkResult)
               ? existingLinkResult
@@ -620,11 +625,11 @@ WHERE cc_task.content_id = ?
             if (existingLink.length === 0) {
               await query(
                 "INSERT INTO content_claims (content_id, claim_id, relationship_type) VALUES (?,?,?)",
-                [content_id, claimId, content_type]
+                [content_id, claimId, content_type],
               );
               insertedCount++;
               console.log(
-                `🔗 Linked existing claim to content: ${cleanClaimText}`
+                `🔗 Linked existing claim to content: ${cleanClaimText}`,
               );
             } else {
               console.log("✅ Claim already linked, skipping:", cleanClaimText);
@@ -660,7 +665,7 @@ WHERE cc_task.content_id = ?
       FROM claim_scores
       WHERE content_id = ? AND (user_id IS NULL OR user_id = ?)
     `,
-        [contentId, userId]
+        [contentId, userId],
       );
 
       const scoreMap = {};
@@ -691,7 +696,7 @@ WHERE cc_task.content_id = ?
       (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ claim_source_id: results.insertId });
-      }
+      },
     );
   });
 
@@ -737,7 +742,7 @@ WHERE cc_task.content_id = ?
       (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
-      }
+      },
     );
   });
 
@@ -839,15 +844,26 @@ WHERE cc_task.content_id = ?
    * Returns: { claimsByTask: {...}, claimReferences: {...} }
    */
   router.post("/api/bulk-claims-and-references", async (req, res) => {
-    const { taskIds } = req.body;
+    const { taskIds, viewerId } = req.body;
+
+    console.log(
+      "[bulk-claims] Received taskIds:",
+      taskIds,
+      "viewerId:",
+      viewerId,
+    );
 
     if (!Array.isArray(taskIds) || taskIds.length === 0) {
+      console.log("[bulk-claims] Invalid taskIds array");
       return res.status(400).json({ error: "taskIds array required" });
     }
 
     try {
       // Fetch all claims for all tasks in one query
-      const placeholders = taskIds.map(() => '?').join(',');
+      const placeholders = taskIds.map(() => "?").join(",");
+      console.log("[bulk-claims] SQL placeholders:", placeholders);
+
+      // Build SQL with same pattern as /api/claims/:content_id
       const claimsSql = `
         SELECT
           c.claim_id,
@@ -861,15 +877,25 @@ WHERE cc_task.content_id = ?
         FROM claims c
         JOIN content_claims cc ON c.claim_id = cc.claim_id
         WHERE cc.content_id IN (${placeholders})
+          ${viewerId ? "AND (cc.user_id IS NULL OR cc.user_id = ?)" : "AND cc.user_id IS NULL"}
         ORDER BY cc.content_id, c.claim_id
       `;
 
-      const claims = await query(claimsSql, taskIds);
+      const claimsParams = viewerId ? [...taskIds, viewerId] : taskIds;
+
+      console.log(
+        "[bulk-claims] Executing claims query with",
+        taskIds.length,
+        "tasks and viewerId:",
+        viewerId,
+      );
+      const claims = await query(claimsSql, claimsParams);
+      console.log("[bulk-claims] Found", claims.length, "claims");
 
       // Group claims by task
       const claimsByTask = {};
       const allClaimIds = [];
-      claims.forEach(claim => {
+      claims.forEach((claim) => {
         if (!claimsByTask[claim.content_id]) {
           claimsByTask[claim.content_id] = [];
         }
@@ -880,35 +906,52 @@ WHERE cc_task.content_id = ?
       // Fetch all claim references in one query
       let claimReferences = {};
       if (allClaimIds.length > 0) {
-        const refPlaceholders = allClaimIds.map(() => '?').join(',');
+        const refPlaceholders = allClaimIds.map(() => "?").join(",");
         const refsSql = `
           SELECT
             claim_id,
-            reference_id,
+            reference_content_id,
             support_level
-          FROM claim_references
+          FROM claims_references
           WHERE claim_id IN (${refPlaceholders})
           ORDER BY claim_id
         `;
 
+        console.log(
+          "[bulk-claims] Executing references query with",
+          allClaimIds.length,
+          "claim IDs",
+        );
         const refs = await query(refsSql, allClaimIds);
+        console.log("[bulk-claims] Found", refs.length, "references");
 
         // Group references by claim
-        refs.forEach(ref => {
+        refs.forEach((ref) => {
           if (!claimReferences[ref.claim_id]) {
             claimReferences[ref.claim_id] = [];
           }
           claimReferences[ref.claim_id].push({
-            referenceId: ref.reference_id,
-            supportLevel: ref.support_level
+            referenceId: ref.reference_content_id,
+            supportLevel: ref.support_level,
           });
         });
       }
 
+      console.log(
+        "[bulk-claims] Success! Returning",
+        Object.keys(claimsByTask).length,
+        "tasks with claims,",
+        Object.keys(claimReferences).length,
+        "claims with references",
+      );
       res.json({ claimsByTask, claimReferences });
     } catch (err) {
       console.error("❌ Error fetching bulk claims and references:", err);
-      res.status(500).json({ error: "Database query failed" });
+      console.error("❌ Stack trace:", err.stack);
+      console.error("❌ Task IDs received:", taskIds);
+      res
+        .status(500)
+        .json({ error: "Database query failed", details: err.message });
     }
   });
 

@@ -34,7 +34,7 @@ interface ReferenceListProps {
   onEditReference: (referenceId: number, title: string) => void;
   onDeleteReference: (referenceId: number) => void;
   taskId: number;
-  onReferenceClick: (ref: ReferenceWithClaims) => void;
+  onReferenceClick: (ref: ReferenceWithClaims, e: React.MouseEvent) => void;
   selectedReference: ReferenceWithClaims | null; // 👈 add this!
   onUpdateReferences?: () => void; // ✅ new
 }
@@ -53,25 +53,43 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
   const [editingReference, setEditingReference] =
     useState<ReferenceWithClaims | null>(null);
   const [newTitle, setNewTitle] = useState("");
-  const [failedReferenceIds, setFailedReferenceIds] = useState<Set<number>>(new Set());
+  const [failedReferenceIds, setFailedReferenceIds] = useState<Set<number>>(
+    new Set(),
+  );
   const [isScrapeModalOpen, setIsScrapeModalOpen] = useState(false);
   const [retryUrl, setRetryUrl] = useState("");
 
   // Color mode values
   const defaultBg = useColorModeValue(
     "linear-gradient(135deg, rgba(148, 163, 184, 0.2), rgba(203, 213, 225, 0.3))",
-    "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+    "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))",
   );
   const defaultColor = useColorModeValue("gray.700", "#f1f5f9");
-  const borderColor = useColorModeValue("rgba(148, 163, 184, 0.3)", "rgba(59, 130, 246, 0.4)");
+  const borderColor = useColorModeValue(
+    "rgba(148, 163, 184, 0.3)",
+    "rgba(59, 130, 246, 0.4)",
+  );
+
+  // Reference card shadows - must be called at top level, not inside map
+  const refBoxShadow = useColorModeValue(
+    "0 2px 8px rgba(94, 234, 212, 0.2)",
+    "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+  );
+  const refHoverShadow = useColorModeValue(
+    "0 4px 12px rgba(94, 234, 212, 0.3)",
+    "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+  );
 
   // Fetch failed references when component mounts or taskId changes
   useEffect(() => {
     if (taskId) {
       fetchFailedReferences(taskId).then((failedRefs) => {
-        const ids = new Set(failedRefs.map(ref => ref.content_id));
+        const ids = new Set(failedRefs.map((ref) => ref.content_id));
         setFailedReferenceIds(ids);
-        console.log(`📋 Found ${failedRefs.length} failed references for task ${taskId}:`, failedRefs);
+        console.log(
+          `📋 Found ${failedRefs.length} failed references for task ${taskId}:`,
+          failedRefs,
+        );
       });
     }
   }, [taskId, references]);
@@ -105,7 +123,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
           borderRadius="12px"
           boxShadow={useColorModeValue(
             "0 2px 8px rgba(94, 234, 212, 0.2)",
-            "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+            "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
           )}
           position="relative"
           overflow="hidden"
@@ -113,9 +131,9 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
           _hover={{
             boxShadow: useColorModeValue(
               "0 4px 12px rgba(94, 234, 212, 0.3)",
-              "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+              "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
             ),
-            transform: "translateY(-2px)"
+            transform: "translateY(-2px)",
           }}
           onClick={() => setIsReferenceModalOpen(true)}
         >
@@ -128,7 +146,9 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
             background="linear-gradient(90deg, rgba(0, 162, 255, 0.4) 0%, transparent 100%)"
             pointerEvents="none"
           />
-          <Text position="relative" zIndex={1}>+ Add Reference</Text>
+          <Text position="relative" zIndex={1}>
+            + Add Reference
+          </Text>
         </Box>
 
         {references.length === 0 ? (
@@ -145,10 +165,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
               px={3}
               py={2}
               borderRadius="12px"
-              boxShadow={useColorModeValue(
-                "0 2px 8px rgba(94, 234, 212, 0.2)",
-                "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-              )}
+              boxShadow={refBoxShadow}
               width="100%"
               display="flex"
               alignItems="center"
@@ -159,11 +176,8 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
               overflow="hidden"
               transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
               _hover={{
-                boxShadow: useColorModeValue(
-                  "0 4px 12px rgba(94, 234, 212, 0.3)",
-                  "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
-                ),
-                transform: "translateY(-2px)"
+                boxShadow: refHoverShadow,
+                transform: "translateY(-2px)",
               }}
             >
               <Box
@@ -175,14 +189,20 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                 background="linear-gradient(90deg, rgba(59, 130, 246, 0.4) 0%, transparent 100%)"
                 pointerEvents="none"
               />
-              <VStack align="start" flex="1" spacing={0} position="relative" zIndex={1}>
+              <VStack
+                align="start"
+                flex="1"
+                spacing={0}
+                position="relative"
+                zIndex={1}
+              >
                 <HStack spacing={2} width="100%" position="relative" zIndex={1}>
                   <Tooltip label={ref.content_name} hasArrow>
                     <Text
                       flex="1"
                       noOfLines={1}
-                      onClick={() => {
-                        onReferenceClick(ref);
+                      onClick={(e) => {
+                        onReferenceClick(ref, e);
                       }}
                       onContextMenu={(e) => {
                         e.preventDefault();
@@ -261,7 +281,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                 if (editingReference) {
                   onEditReference(
                     editingReference?.reference_content_id as number,
-                    newTitle
+                    newTitle,
                   );
                   setIsEditModalOpen(false);
                 }
