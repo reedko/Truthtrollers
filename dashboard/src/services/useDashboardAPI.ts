@@ -632,11 +632,16 @@ export const fetchReferencesForTask = async (contentId: number) => {
 };
 
 export const fetchReferencesWithClaimsForTask = async (
-  taskContentId: number
+  taskContentId: number,
+  viewerId?: number | null
 ): Promise<ReferenceWithClaims[]> => {
-  const response = await fetch(
-    `${API_BASE_URL}/api/content/${taskContentId}/references-with-claims`
-  );
+  const params = new URLSearchParams();
+  if (viewerId !== undefined && viewerId !== null) {
+    params.append('viewerId', viewerId.toString());
+  }
+
+  const url = `${API_BASE_URL}/api/content/${taskContentId}/references-with-claims${params.toString() ? '?' + params.toString() : ''}`;
+  const response = await fetch(url);
 
   if (!response.ok) {
     throw new Error("Failed to fetch references with claims");
@@ -992,9 +997,11 @@ export async function postDiscussionEntry(entry: Partial<DiscussionEntry>) {
 }
 
 export const fetchDiscussionEntries = async (
-  contentId: number
+  contentId: number,
+  viewerId?: number | null
 ): Promise<DiscussionEntry[]> => {
-  const res = await axios.get(`${API_BASE_URL}/api/discussion/${contentId}`);
+  const params = viewerId !== undefined && viewerId !== null ? { viewerId } : {};
+  const res = await axios.get(`${API_BASE_URL}/api/discussion/${contentId}`, { params });
   if (Array.isArray(res.data)) return res.data;
   return [];
 };

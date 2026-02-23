@@ -65,7 +65,7 @@ const MoleculeMapPage = () => {
 
   const handleVerimeterRefresh = async (contentId: number) => {
     await updateScoresForContent(contentId, viewerId);
-    const scores = await fetchContentScores(contentId, null);
+    const scores = await fetchContentScores(contentId, viewerId);
     setVerimeterScore(scores?.verimeterScore ?? null);
   };
 
@@ -79,10 +79,13 @@ const MoleculeMapPage = () => {
     const loadViews = async () => {
       console.log("📋 Loading views for task:", selectedTask?.content_id, "user:", viewerId);
 
-      if (!selectedTask || !viewerId) {
-        console.log("📋 Missing selectedTask or viewerId, skipping view load");
+      if (!selectedTask) {
+        console.log("📋 Missing selectedTask, skipping view load");
         return;
       }
+
+      // For View All mode (viewerId === null), we still want to load views
+      // but we'll need to handle the case where viewerId is null
 
       setLoadingViews(true);
       try {

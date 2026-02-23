@@ -207,7 +207,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
   }, [contentId, refreshLinks]);
 
   useEffect(() => {
-    fetchReferencesWithClaimsForTask(contentId)
+    fetchReferencesWithClaimsForTask(contentId, viewerId)
       .then((data) => {
         console.log("✅ references fetched:", data);
         setReferences(data);
@@ -216,7 +216,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
         console.error("Error fetching references:", error);
         setReferences([]); // Set empty array on error
       });
-  }, [contentId, refreshReferences]);
+  }, [contentId, refreshReferences, viewerId]);
 
   useEffect(() => {
     updateXPositionsAndHeight();

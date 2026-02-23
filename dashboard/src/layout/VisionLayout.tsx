@@ -234,6 +234,11 @@ const VisionLayout: React.FC = () => {
       };
       setAuth(demoUser, demoToken);
 
+      // Set default viewing user to demo user
+      if (demoUser.user_id) {
+        useTaskStore.getState().setViewingUserId(demoUser.user_id);
+      }
+
       // Remove ?demo=... from URL for aesthetics
       params.delete("demo");
       const newSearch = params.toString();

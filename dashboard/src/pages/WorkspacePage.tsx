@@ -46,11 +46,11 @@ const WorkspacePage = () => {
 
   useEffect(() => {
     if (taskId) {
-      fetchContentScores(taskId, null).then((scores) => {
+      fetchContentScores(taskId, viewerId).then((scores) => {
         setVerimeterScore(scores?.verimeterScore ?? null);
       });
     }
-  }, [taskId]);
+  }, [taskId, viewerId]);
 
   // Try to restore selectedTask from content
   useEffect(() => {
@@ -73,7 +73,8 @@ const WorkspacePage = () => {
     }
   }, [taskId, navigate, setRedirect, selectedRedirect]);
 
-  const isReady = taskId != null && task != null && viewerId != null;
+  // viewerId can be null for "View All" mode
+  const isReady = taskId != null && task != null;
 
   if (!isReady) {
     console.log("⏳ Not ready:", { taskId, task, viewerId });
@@ -87,7 +88,7 @@ const WorkspacePage = () => {
   const handleVerimeterRefresh = async (contentId: number) => {
     console.log("⚙️ Calling updateScoresForContent for", contentId, viewerId);
     await updateScoresForContent(contentId, viewerId);
-    const scores = await fetchContentScores(contentId, null);
+    const scores = await fetchContentScores(contentId, viewerId);
     console.log("✅ New fetched score:", scores);
     setVerimeterScore(scores?.verimeterScore ?? null);
     setRefreshKey((prev) => prev + 1);

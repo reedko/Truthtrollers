@@ -21,6 +21,7 @@ import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import ReCAPTCHA from "react-google-recaptcha";
 import { login, register } from "../services/authService";
 import { useAuthStore } from "../store/useAuthStore";
+import { useTaskStore } from "../store/useTaskStore";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { generateDeviceFingerprint } from "../utils/generateDeviceFingerprint";
 
@@ -78,6 +79,9 @@ const Register: React.FC = () => {
 
       // 4️⃣ Tell the store about our freshly‑minted user+token
       setAuth({ ...user, jwt: token, can_post: true }, token);
+
+      // Set default viewing user to registered user
+      useTaskStore.getState().setViewingUserId(user.user_id);
 
       toast({
         title: "Welcome!",

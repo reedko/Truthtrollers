@@ -45,10 +45,26 @@ const registerDiscussionRoutes = (app, query, pool) => {
 
   app.get("/api/discussion/:contentId", async (req, res) => {
     const { contentId } = req.params;
-    try {
-      const sql = `SELECT * FROM discussion_entries WHERE content_id = ? ORDER BY created_at DESC`;
-      const entries = await query(sql, [contentId]);
+    const { viewerId } = req.query;
 
+    try {
+      let sql, params;
+
+      if (viewerId && viewerId !== 'null') {
+        // User-specific view: only show discussions this user participated in
+        sql = `
+          SELECT * FROM discussion_entries
+          WHERE content_id = ? AND user_id = ?
+          ORDER BY created_at DESC
+        `;
+        params = [contentId, viewerId];
+      } else {
+        // View All: show all discussions
+        sql = `SELECT * FROM discussion_entries WHERE content_id = ? ORDER BY created_at DESC`;
+        params = [contentId];
+      }
+
+      const entries = await query(sql, params);
       res.json(entries);
     } catch (err) {
       console.error("❌ Error fetching entries:", err);

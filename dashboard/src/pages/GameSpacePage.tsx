@@ -64,11 +64,11 @@ const GameSpacePage = () => {
 
   // Fetch claims and references
   useEffect(() => {
-    if (taskId && viewerId !== null) {
+    if (taskId) {
       setIsLoading(true);
       Promise.all([
         fetchClaimsWithEvidence(taskId, viewerId),
-        fetchReferencesWithClaimsForTask(taskId),
+        fetchReferencesWithClaimsForTask(taskId, viewerId),
         fetchClaimsAndLinkedReferencesForTask(taskId, viewerId),
       ])
         .then(([claimsData, referencesData, linksData]) => {
@@ -92,7 +92,8 @@ const GameSpacePage = () => {
     }
   }, [taskId, viewerId]);
 
-  const isReady = taskId != null && task != null && viewerId != null;
+  // viewerId can be null for "View All" mode
+  const isReady = taskId != null && task != null;
 
   if (!isReady || isLoading) {
     return (

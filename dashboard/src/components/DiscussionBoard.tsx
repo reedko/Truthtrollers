@@ -70,7 +70,7 @@ const DiscussionBoard: React.FC<DiscussionBoardProps> = ({ contentId }) => {
   useEffect(() => {
     const load = async () => {
       const [allEntries, allClaims] = await Promise.all([
-        fetchDiscussionEntries(contentId),
+        fetchDiscussionEntries(contentId, viewerId),
         fetchClaimsForTask(contentId, viewerId),
       ]);
       setEntries(allEntries);
