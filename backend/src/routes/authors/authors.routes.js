@@ -137,18 +137,24 @@ export default function createAuthorsRoutes({ query, pool }) {
   });
 
   /**
-   * GET /api/authors/:authorId/ratings
-   * Get all ratings for an author
+   * GET /api/authors/:authorId/ratings (VIEWER-AWARE)
+   * Get all ratings for an author filtered by viewer context
    */
   router.get("/api/authors/:authorId/ratings", async (req, res) => {
     const { authorId } = req.params;
+    const viewerId = req.query.viewerId ? parseInt(req.query.viewerId) : null;
+    const currentUserId = req.user?.user_id || viewerId;
+
     try {
+      const userIdForRatings = viewerId !== null ? viewerId : currentUserId;
+
       const rows = await query(
         `SELECT ar.*, t.topic_name
          FROM author_ratings ar
          JOIN topics t ON ar.topic_id = t.topic_id
-         WHERE ar.author_id = ?`,
-        [authorId]
+         WHERE ar.author_id = ?
+           AND (? IS NULL OR ar.user_id = ?)`,
+        [authorId, userIdForRatings, userIdForRatings]
       );
       res.send(rows);
     } catch (err) {
@@ -159,11 +165,16 @@ export default function createAuthorsRoutes({ query, pool }) {
 
   /**
    * PUT /api/authors/:authorId/ratings
-   * Update author ratings (bulk replacement)
+   * Update author ratings (bulk replacement) - includes user_id
    */
   router.put("/api/authors/:authorId/ratings", async (req, res) => {
     const { authorId } = req.params;
     const { ratings } = req.body;
+    const userId = req.user?.user_id;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
 
     const connection = await new Promise((resolve, reject) => {
       pool.getConnection((err, conn) => {
@@ -173,18 +184,23 @@ export default function createAuthorsRoutes({ query, pool }) {
     });
 
     try {
+      // Delete only this user's ratings for this author
       await new Promise((resolve, reject) => {
-        connection.query("DELETE FROM author_ratings WHERE author_id = ?", [authorId], (err) => {
-          if (err) reject(err);
-          else resolve();
-        });
+        connection.query(
+          "DELETE FROM author_ratings WHERE author_id = ? AND user_id = ?",
+          [authorId, userId],
+          (err) => {
+            if (err) reject(err);
+            else resolve();
+          }
+        );
       });
 
       for (const r of ratings) {
         await new Promise((resolve, reject) => {
           connection.query(
-            `INSERT INTO author_ratings (author_id, topic_id, bias_score, veracity_score) VALUES (?, ?, ?, ?)`,
-            [authorId, r.topic_id, r.bias_score, r.veracity_score],
+            `INSERT INTO author_ratings (author_id, user_id, topic_id, bias_score, veracity_score) VALUES (?, ?, ?, ?, ?)`,
+            [authorId, userId, r.topic_id, r.bias_score, r.veracity_score],
             (err) => {
               if (err) reject(err);
               else resolve();
@@ -204,14 +220,29 @@ export default function createAuthorsRoutes({ query, pool }) {
 
   /**
    * PUT /api/authors/:authorRatingId/rating
-   * Update a single author rating
+   * Update a single author rating (user can only update their own)
    */
   router.put("/api/authors/:authorRatingId/rating", async (req, res) => {
     const { authorRatingId } = req.params;
     const { topic_id, source, url, bias_score, veracity_score, notes } =
       req.body.rating;
+    const userId = req.user?.user_id;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
 
     try {
+      // Verify ownership before updating
+      const [existing] = await query(
+        `SELECT user_id FROM author_ratings WHERE author_rating_id = ?`,
+        [authorRatingId]
+      );
+
+      if (!existing || existing.user_id !== userId) {
+        return res.status(403).json({ error: "Cannot update another user's rating" });
+      }
+
       await query(
         `UPDATE author_ratings
          SET topic_id = ?, source = ?, url = ?, bias_score = ?, veracity_score = ?, notes = ?, last_checked = NOW()
@@ -236,10 +267,15 @@ export default function createAuthorsRoutes({ query, pool }) {
 
   /**
    * POST /api/authors/add-rating
-   * Add new author rating
+   * Add new author rating (includes user_id)
    */
   router.post("/api/authors/add-rating", async (req, res) => {
     const { ratings } = req.body;
+    const userId = req.user?.user_id;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
 
     if (!ratings || !ratings.author_id || !ratings.topic_id) {
       return res
@@ -250,10 +286,11 @@ export default function createAuthorsRoutes({ query, pool }) {
     try {
       const result = await query(
         `INSERT INTO author_ratings
-          (author_id, topic_id, source, url, notes, bias_score, veracity_score)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          (author_id, user_id, topic_id, source, url, notes, bias_score, veracity_score)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           ratings.author_id,
+          userId,
           ratings.topic_id,
           ratings.source || null,
           ratings.url || null,

@@ -87,21 +87,25 @@ export default function createPublishersRoutes({ query, pool }) {
   });
 
   /**
-   * GET /api/publishers/:publisherId/ratings
-   * Get all ratings for a publisher
+   * GET /api/publishers/:publisherId/ratings (VIEWER-AWARE)
+   * Get all ratings for a publisher filtered by viewer context
    */
   router.get("/api/publishers/:publisherId/ratings", async (req, res) => {
     const { publisherId } = req.params;
+    const viewerId = req.query.viewerId ? parseInt(req.query.viewerId) : null;
+    const currentUserId = req.user?.user_id || viewerId;
 
     const sql = `
       SELECT pr.*, t.topic_name
       FROM publisher_ratings pr
       JOIN topics t ON pr.topic_id = t.topic_id
       WHERE pr.publisher_id = ?
+        AND (? IS NULL OR pr.user_id = ?)
     `;
 
     try {
-      const rows = await query(sql, [publisherId]);
+      const userIdForRatings = viewerId !== null ? viewerId : currentUserId;
+      const rows = await query(sql, [publisherId, userIdForRatings, userIdForRatings]);
 
       res.send(rows);
     } catch (err) {
@@ -130,11 +134,16 @@ export default function createPublishersRoutes({ query, pool }) {
 
   /**
    * PUT /api/publishers/:publisherId/ratings
-   * Update publisher ratings (bulk replacement)
+   * Update publisher ratings (bulk replacement) - includes user_id
    */
   router.put("/api/publishers/:publisherId/ratings", async (req, res) => {
     const { publisherId } = req.params;
     const { ratings } = req.body;
+    const userId = req.user?.user_id;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
 
     const connection = await new Promise((resolve, reject) => {
       pool.getConnection((err, conn) => {
@@ -144,10 +153,11 @@ export default function createPublishersRoutes({ query, pool }) {
     });
 
     try {
+      // Delete only this user's ratings for this publisher
       await new Promise((resolve, reject) => {
         connection.query(
-          "DELETE FROM publisher_ratings WHERE publisher_id = ?",
-          [publisherId],
+          "DELETE FROM publisher_ratings WHERE publisher_id = ? AND user_id = ?",
+          [publisherId, userId],
           (err) => {
             if (err) reject(err);
             else resolve();
@@ -158,10 +168,11 @@ export default function createPublishersRoutes({ query, pool }) {
       for (const r of ratings) {
         await new Promise((resolve, reject) => {
           connection.query(
-            `INSERT INTO publisher_ratings (publisher_id, topic_id, source, score, url, last_checked, bias_score, veracity_score)
-             VALUES (?, ?, ?, ?, ?, NOW(), ?, ?)`,
+            `INSERT INTO publisher_ratings (publisher_id, user_id, topic_id, source, score, url, last_checked, bias_score, veracity_score)
+             VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, ?)`,
             [
               publisherId,
+              userId,
               r.topic_id,
               r.source || null,
               r.score || null,
@@ -188,14 +199,29 @@ export default function createPublishersRoutes({ query, pool }) {
 
   /**
    * PUT /api/publishers/:publisherRatingId/rating
-   * Update a single publisher rating
+   * Update a single publisher rating (user can only update their own)
    */
   router.put("/api/publishers/:publisherRatingId/rating", async (req, res) => {
     const { publisherRatingId } = req.params;
     const { topic_id, source, url, bias_score, veracity_score, notes } =
       req.body.rating;
+    const userId = req.user?.user_id;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
 
     try {
+      // Verify ownership before updating
+      const [existing] = await query(
+        `SELECT user_id FROM publisher_ratings WHERE publisher_rating_id = ?`,
+        [publisherRatingId]
+      );
+
+      if (!existing || existing.user_id !== userId) {
+        return res.status(403).json({ error: "Cannot update another user's rating" });
+      }
+
       await query(
         `UPDATE publisher_ratings
          SET topic_id = ?, source = ?, url = ?, bias_score = ?, veracity_score = ?, notes = ?, last_checked = NOW()

@@ -109,6 +109,8 @@ export interface ReferenceWithClaims {
   }[];
 
   is_primary_source?: boolean;
+  is_system?: boolean; // TRUE = evidence engine ref (cannot be deleted by regular users)
+  added_by_user_id?: number | null; // NULL = system ref, otherwise user who added it
 }
 export type UnifiedReference = ReferenceWithClaims;
 // Claims

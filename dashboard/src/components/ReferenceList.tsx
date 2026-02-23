@@ -28,6 +28,7 @@ import ReferenceModal from "./modals/ReferenceModal";
 import ReferenceClaimsModal from "./modals/ReferenceClaimsModal";
 import ScrapeReferenceModal from "./ScrapeReferenceModal";
 import { fetchFailedReferences } from "../services/useDashboardAPI";
+import usePermissions from "../hooks/usePermissions";
 
 interface ReferenceListProps {
   references: ReferenceWithClaims[];
@@ -48,6 +49,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
   selectedReference,
   onUpdateReferences,
 }) => {
+  const { hasPermission } = usePermissions();
   const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingReference, setEditingReference] =

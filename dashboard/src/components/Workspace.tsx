@@ -15,6 +15,7 @@ import {
   fetchAIEvidenceLinks,
   updateReference,
   deleteReferenceFromTask,
+  hideReference,
   addClaim,
   updateClaim,
   addClaimLink,
@@ -43,6 +44,7 @@ import { useAuthStore } from "../store/useAuthStore";
 // imports at top:
 import { useBreakpointValue } from "@chakra-ui/react";
 import MobileWorkspaceShell from "./MobileWorkspaceShell";
+import usePermissions from "../hooks/usePermissions";
 
 interface WorkspaceProps {
   contentId: number;
@@ -56,6 +58,10 @@ const Workspace: React.FC<WorkspaceProps> = ({
   onHeightChange,
 }) => {
   console.log("🟢 Workspace v3.0 loaded - Conditional hooks fixed");
+
+  // Get user permissions for permission-based UI
+  const { hasPermission } = usePermissions();
+
   const [claims, setClaims] = useState<Claim[]>([]);
   const [claimLinks, setClaimLinks] = useState<ClaimLink[]>([]);
   const [aiEvidenceLinks, setAIEvidenceLinks] = useState<
@@ -359,7 +365,37 @@ const Workspace: React.FC<WorkspaceProps> = ({
     contentId: number,
     refId: number,
   ): Promise<void> => {
-    await deleteReferenceFromTask(contentId, refId);
+    // Find the reference to check if it's a system ref
+    const reference = references.find(
+      (ref) => ref.reference_content_id === refId
+    );
+
+    if (!reference) {
+      console.error("Reference not found");
+      return;
+    }
+
+    // Check if it's a system reference and user doesn't have permission to delete
+    const canDeleteSystemRefs = hasPermission("delete_system_references");
+
+    if (reference.is_system && !canDeleteSystemRefs) {
+      // Hide instead of delete for system refs
+      await hideReference(contentId, refId);
+      console.log("🔒 System reference hidden (not deleted)");
+    } else {
+      // Try to delete
+      try {
+        await deleteReferenceFromTask(contentId, refId);
+      } catch (error: any) {
+        // If delete fails, try to hide instead
+        if (error?.response?.data?.canHide) {
+          await hideReference(contentId, refId);
+          console.log("⚠️ Cannot delete - reference hidden instead");
+        } else {
+          throw error;
+        }
+      }
+    }
 
     setRefreshReferences((prev) => !prev);
   };

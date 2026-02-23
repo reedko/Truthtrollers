@@ -6,10 +6,11 @@ export default function createScoresRoutes({ query, pool }) {
   // NOTE: /api/live-verimeter-score/:claimId is handled by claims.routes.js
   // (removed duplicate to avoid conflicts)
 
-  // GET /api/content/:contentId/scores
+  // GET /api/content/:contentId/scores (VIEWER-AWARE)
   router.get("/api/content/:contentId/scores", async (req, res) => {
     const { contentId } = req.params;
-    const { userId } = req.body;
+    const viewerId = req.query.viewerId ? parseInt(req.query.viewerId) : null;
+    const currentUserId = req.user?.user_id || viewerId;
 
     try {
       // First check if content exists
@@ -25,6 +26,11 @@ export default function createScoresRoutes({ query, pool }) {
         });
       }
 
+      // Compute scores based on viewerId context
+      // If viewerId is null (View All), use current user
+      // If viewerId is set, use that user's claim links for calculation
+      const userIdForScore = viewerId !== null ? viewerId : currentUserId;
+
       let [row] = await query(
         "SELECT verimeter_score, trollmeter_score, pro_score, con_score FROM content_scores WHERE content_id = ?",
         [contentId]
@@ -35,7 +41,7 @@ export default function createScoresRoutes({ query, pool }) {
         try {
           await query("CALL compute_verimeter_for_content(?, ?)", [
             contentId,
-            userId,
+            userIdForScore,
           ]);
 
           await query("CALL compute_trollmeter_score(?)", [contentId]);
@@ -58,7 +64,10 @@ export default function createScoresRoutes({ query, pool }) {
         }
       }
 
-      res.json(row);
+      res.json({
+        ...row,
+        computedFor: viewerId !== null ? `user_${viewerId}` : 'all_users',
+      });
     } catch (err) {
       console.error(`❌ Error fetching scores for content ${contentId}:`, err.message);
       res.status(500).json({

@@ -709,6 +709,49 @@ export const deleteReferenceFromTask = async (
     );
   } catch (error) {
     console.error("❌ Error removing reference from task:", error);
+    throw error;
+  }
+};
+
+/**
+ * Hide a reference for the current user (soft-delete)
+ */
+export const hideReference = async (
+  taskContentId: number,
+  referenceContentId: number
+) => {
+  try {
+    await axios.post(`${API_BASE_URL}/api/references/hide`, {
+      taskContentId,
+      referenceContentId,
+    });
+    console.log(
+      `✅ Reference ${referenceContentId} hidden from Task ${taskContentId}`
+    );
+  } catch (error) {
+    console.error("❌ Error hiding reference:", error);
+    throw error;
+  }
+};
+
+/**
+ * Unhide a reference for the current user
+ */
+export const unhideReference = async (
+  taskContentId: number,
+  referenceContentId: number
+) => {
+  try {
+    await axios.post(`${API_BASE_URL}/api/references/unhide`, {
+      taskContentId,
+      referenceContentId,
+    });
+    console.log(
+      `✅ Reference ${referenceContentId} unhidden from Task ${taskContentId}`
+    );
+  } catch (error) {
+    console.error("❌ Error unhiding reference:", error);
+    throw error;
   }
 };
 
