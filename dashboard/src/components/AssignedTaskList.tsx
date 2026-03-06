@@ -51,7 +51,7 @@ const AssignedTaskList: React.FC<AssignedTaskListProps> = ({ tasks }) => {
       {/* Interface Selector */}
       <HStack justify="space-between" align="center">
         <Heading size="sm" className="mr-text-primary">
-          Assigned Tasks ({tasks.length})
+          Assigned Cases ({tasks.length})
         </Heading>
         <HStack spacing={2}>
           <Text className="mr-text-muted" fontSize="xs">

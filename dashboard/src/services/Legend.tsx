@@ -7,7 +7,7 @@ const Legend: React.FC = () => {
     { color: "#1f77b4", label: "Author" },
     { color: "#ff7f0e", label: "Task" },
     { color: "#2ca02c", label: "Publisher" },
-    { color: "#d62728", label: "Reference" },
+    { color: "#d62728", label: "Source" },
   ];
 
   return (

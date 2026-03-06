@@ -1,9 +1,11 @@
 // routes.tsx
+import React from "react";
 import { RouterProvider } from "react-router-dom";
 import { createBrowserRouter } from "react-router-dom";
 import VisionLayout from "./layout/VisionLayout";
 import ErrorPage from "./pages/ErrorPage";
 import { TaskPage } from "./pages/TaskPage";
+import { useTokenRefresh } from "./hooks/useTokenRefresh";
 
 import VisionDashboard from "./components/Dashboard";
 import UserDashboard from "./components/UserDashboard";
@@ -28,6 +30,8 @@ import GameSpacePage from "./pages/GameSpacePage";
 import LevelPage from "./pages/LevelPage";
 import TextPadPage from "./pages/TextPadPage";
 import EmailTesterPage from "./pages/EmailTesterPage";
+import TutorialGalleryPage from "./pages/TutorialGalleryPage";
+import AdminPanelPage from "./pages/AdminPanelPage";
 
 const router = createBrowserRouter([
   {
@@ -205,6 +209,22 @@ const router = createBrowserRouter([
         ),
       },
       {
+        path: "/tutorials",
+        element: (
+          <ProtectedRoute>
+            <TutorialGalleryPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/admin",
+        element: (
+          <ProtectedRoute>
+            <AdminPanelPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
         path: "/logout",
         element: <LogoutPage />,
       },
@@ -213,5 +233,19 @@ const router = createBrowserRouter([
 ]);
 
 export default function AppRouter() {
+  // Smart token refresh: refreshes at 20 min when tab is visible, or before API calls if near expiry
+  useTokenRefresh();
+
+  // Log token configuration once on app start
+  React.useEffect(() => {
+    console.log('═══════════════════════════════════════════════════════════');
+    console.log('🔐 [Token System] Configuration:');
+    console.log('   Token Duration: 60 minutes');
+    console.log('   Background Refresh: At 40 minutes (when tab visible)');
+    console.log('   API Interceptor Refresh: When < 5 minutes before any API call');
+    console.log('   Auto-logout on Expired Token: YES (immediate logout if expired)');
+    console.log('═══════════════════════════════════════════════════════════');
+  }, []);
+
   return <RouterProvider router={router} />;
 }

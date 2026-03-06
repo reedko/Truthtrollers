@@ -280,9 +280,9 @@ const TaskCard: React.FC = () => {
             <Text
               color="#00a2ff"
               fontWeight="400"
-              letterSpacing="3px"
+              letterSpacing="2px"
               textTransform="uppercase"
-              fontSize="xl"
+              fontSize="lg"
               fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
             >
               TruthTrollers
@@ -301,7 +301,7 @@ const TaskCard: React.FC = () => {
           >
             <Box flexShrink={0}>
               <TruthGauge
-                score={-0.73}
+                score={task?.verimeter_score ?? 0}
                 label="VERIMETER"
                 size={{ w: 170, h: 90 }}
                 normalize={false}
@@ -359,7 +359,11 @@ const TaskCard: React.FC = () => {
         {thumbLoading ? (
           <Box width="100%" py={4}>
             <Center>
-              <Text color="#00a2ff" fontSize="sm">
+              <Text
+                color="#00a2ff"
+                fontSize="sm"
+                fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+              >
                 Loading...
               </Text>
             </Center>
@@ -377,6 +381,7 @@ const TaskCard: React.FC = () => {
                   textOverflow="ellipsis"
                   color="white"
                   px={1}
+                  fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
                 >
                   {(task?.url && isFacebookPost(task.url)
                     ? "Facebook Post"
@@ -396,7 +401,7 @@ const TaskCard: React.FC = () => {
                   className="mr-button"
                   onClick={() => {
                     setVisible(false);
-                    const popupRoot = document.getElementById("popup-root");
+                    const popupRoot = document.getElementById("tt-popup-host");
                     if (popupRoot) {
                       popupRoot.classList.add("task-card-hidden");
                       popupRoot.classList.remove("task-card-visible");
@@ -420,6 +425,7 @@ const TaskCard: React.FC = () => {
                   fontSize="md"
                   noOfLines={2}
                   color="#f1f5f9"
+                  fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
                 >
                   {task?.content_name ||
                     (currentUrl && isFacebookPost(currentUrl)
@@ -456,6 +462,7 @@ const TaskCard: React.FC = () => {
                   align="center"
                   color="#f1f5f9"
                   fontWeight="500"
+                  fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
                 >
                   Not in database
                 </Text>
@@ -464,6 +471,7 @@ const TaskCard: React.FC = () => {
                   align="center"
                   color="#00a2ff"
                   fontWeight="600"
+                  fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
                 >
                   Add to TruthTrollers?
                 </Text>
@@ -485,10 +493,10 @@ const TaskCard: React.FC = () => {
                   className="mr-button"
                   onClick={() => {
                     setVisible(false);
-                    const popupRoot = document.getElementById("popup-root");
-                    if (popupRoot) {
-                      popupRoot.classList.add("task-card-hidden");
-                      popupRoot.classList.remove("task-card-visible");
+                    const host = document.getElementById("tt-popup-host");
+                    if (host) {
+                      host.classList.add("task-card-hidden");
+                      host.classList.remove("task-card-visible");
                     }
                   }}
                 >

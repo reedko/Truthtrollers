@@ -24,6 +24,12 @@ type Scores = {
   pro: number;
   con: number;
   contentId: number;
+  // Phase 4: Split scores
+  personalVerimeter?: number;
+  globalVerimeter?: number;
+  delta?: number;
+  deltaPercent?: number;
+  sentiment?: 'more_truthy' | 'more_skeptical' | 'aligned';
 };
 
 const BoolCard: React.FC<BoolCardProps> = ({
@@ -78,6 +84,29 @@ const BoolCard: React.FC<BoolCardProps> = ({
   const proScore = pro !== undefined ? pro : scores?.pro ?? 0;
   const conScore = con !== undefined ? con : scores?.con ?? 0;
   const totalVotes = proScore + conScore;
+
+  // Phase 4: Split scores
+  const personalScore = scores?.personalVerimeter ?? vScore;
+  const globalScore = scores?.globalVerimeter ?? vScore;
+  const delta = scores?.delta ?? 0;
+  const deltaPercent = scores?.deltaPercent ?? 0;
+  const sentiment = scores?.sentiment || 'aligned';
+
+  const getSentimentMessage = () => {
+    if (sentiment === 'more_truthy') {
+      return `You're ${Math.abs(deltaPercent)}% more truthy than consensus`;
+    } else if (sentiment === 'more_skeptical') {
+      return `You're ${Math.abs(deltaPercent)}% more skeptical than consensus`;
+    } else {
+      return 'Aligned with consensus';
+    }
+  };
+
+  const getSentimentColor = () => {
+    if (sentiment === 'more_truthy') return 'green.300';
+    if (sentiment === 'more_skeptical') return 'orange.300';
+    return 'teal.300';
+  };
 
   // ---------- sizing controls ----------
   const isXs = size === "xs";
@@ -173,6 +202,20 @@ const BoolCard: React.FC<BoolCardProps> = ({
                 size={verimeterGaugeSize}
               />
             </Center>
+            {/* Phase 4: Split score delta */}
+            {!dense && Math.abs(deltaPercent) > 5 && (
+              <Text
+                fontSize="2xs"
+                textAlign="center"
+                color={getSentimentColor()}
+                mt={1}
+                px={2}
+                background="blackAlpha.300"
+                borderRadius="md"
+              >
+                {getSentimentMessage()}
+              </Text>
+            )}
           </Box>
 
           {/* Trollmeter (hidden in dense mode) */}

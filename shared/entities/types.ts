@@ -117,7 +117,7 @@ export type UnifiedReference = ReferenceWithClaims;
 export interface Claim {
   claim_id: number;
   claim_text: string;
-  claim_type?: 'task' | 'reference' | 'snippet' | string; // NEW: Type of claim
+  claim_type?: "task" | "reference" | "snippet" | string; // NEW: Type of claim
   veracity_score: number;
   confidence_level: number;
   last_verified: string; // Timestamp as ISO string
@@ -138,7 +138,7 @@ export interface AIEvidenceLink {
   link_id: number;
   task_claim_id: number;
   reference_content_id: number;
-  stance: 'support' | 'refute' | 'nuance' | 'insufficient';
+  stance: "support" | "refute" | "nuance" | "insufficient";
   score: number; // 0-100 quality score
   confidence: number; // 0.15-0.98 confidence
   support_level: number; // -1.2 to +1.2 (stance * confidence * quality)
@@ -182,7 +182,7 @@ export interface LinkedClaim {
   claim_id: number;
   referenceId: number;
   sourceClaimId: number;
-  relation: string;
+  relationship: string;
   confidence: number | string;
   notes: string;
   verimeter_score: number | null;
@@ -234,6 +234,7 @@ export interface User {
   jwt?: string;
   isDemo?: boolean;
   user_profile_image?: string;
+  verimeter_score?: number | null;
 }
 
 // Relationships
@@ -279,18 +280,21 @@ export class GraphNode implements d3.SimulationNodeDatum {
   claimCount?: number;
   veracity_score?: number;
   confidence_level?: number;
+  // Phase 6: Provenance tracking
+  added_by_user_id?: number | null;
+  is_system?: boolean;
 
   /*
- 
+
   */
   get group(): number {
     return this.type === "author"
       ? 1
       : this.type === "task"
-      ? 2
-      : this.type === "publisher"
-      ? 3
-      : 4;
+        ? 2
+        : this.type === "publisher"
+          ? 3
+          : 4;
   }
 
   constructor(
@@ -303,7 +307,7 @@ export class GraphNode implements d3.SimulationNodeDatum {
     content_id?: number,
     claim_id?: number,
     publisher_id?: number,
-    author_id?: number
+    author_id?: number,
   ) {
     this.id = id;
     this.label = label;
@@ -383,7 +387,7 @@ export interface TaskData {
   is_retracted: boolean;
 }
 export function toReferenceWithClaims(
-  ref: LitReference | ReferenceWithClaims
+  ref: LitReference | ReferenceWithClaims,
 ): ReferenceWithClaims {
   if ("claims" in ref) return ref;
   return {

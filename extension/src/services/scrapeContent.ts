@@ -53,6 +53,7 @@ export async function scrapeContent(url: string): Promise<string | null> {
   // ---------------------------------------
   let payload: any = {
     url: normUrl,
+    force: true, // Allow re-scraping existing URLs
   };
 
   // For NON-PDF tasks: use already-loaded DOM (NO HTTP REQUEST!)

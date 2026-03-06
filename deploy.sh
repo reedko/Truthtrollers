@@ -58,6 +58,7 @@ rsync -azP --delete --partial --inplace \
   --exclude '.env' \
   --exclude '.env.*' \
   --exclude '*.log' \
+  --exclude 'assets/data/' \
   --exclude 'assets/documents/' \
   --exclude 'assets/images/content/' \
   --exclude 'assets/images/users/' \

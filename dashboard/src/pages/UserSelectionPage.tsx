@@ -57,13 +57,22 @@ export default function UserSelectionPage() {
   }, [toast]);
 
   const handleConfirm = () => {
+    const setViewScope = useTaskStore.getState().setViewScope;
+
     setViewingUserId(selectedId);
+
+    // Set scope based on selection
+    if (selectedId === null) {
+      setViewScope('all'); // View All Users
+    } else {
+      setViewScope('user'); // View specific user
+    }
+
     console.log(redirectTo, "LIJKUJYFDHFGDJ");
     navigate(redirectTo);
   };
 
   const handleCancel = () => {
-    setViewingUserId(null);
     navigate(redirectTo);
   };
 

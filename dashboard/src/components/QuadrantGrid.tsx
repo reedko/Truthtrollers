@@ -291,7 +291,7 @@ const QuadrantGrid: React.FC<QuadrantGridProps> = ({
   const getReferenceName = (claim: typeof nodes[number]) => {
     if (claim.type === "refClaim" && claim.content_id) {
       const reference = referenceNodes.find((ref) => ref.content_id === claim.content_id);
-      return reference?.label || `Reference ${claim.content_id}`;
+      return reference?.label || `Source ${claim.content_id}`;
     }
     return null;
   };

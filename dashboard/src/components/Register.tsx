@@ -81,7 +81,9 @@ const Register: React.FC = () => {
       setAuth({ ...user, jwt: token, can_post: true }, token);
 
       // Set default viewing user to registered user
-      useTaskStore.getState().setViewingUserId(user.user_id);
+      const taskStore = useTaskStore.getState();
+      taskStore.setViewingUserId(user.user_id);
+      taskStore.setViewScope('user');
 
       toast({
         title: "Welcome!",

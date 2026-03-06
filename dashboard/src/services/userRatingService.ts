@@ -68,7 +68,14 @@ export async function submitUserRating(
     throw new Error("Failed to submit user rating");
   }
 
-  return response.json();
+  const result = await response.json();
+
+  // Dispatch event to update activity stats
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('activity-updated'));
+  }
+
+  return result;
 }
 
 /**

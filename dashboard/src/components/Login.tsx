@@ -66,6 +66,7 @@ const Login: React.FC = () => {
 
       const taskStore = useTaskStore.getState();
       taskStore.setViewingUserId(user.user_id);
+      taskStore.setViewScope('user'); // Default to user view on login
 
       await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/store-extension-session`,

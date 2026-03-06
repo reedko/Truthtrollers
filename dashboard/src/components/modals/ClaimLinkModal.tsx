@@ -94,7 +94,7 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
       const response = await addClaimLink({
         source_claim_id: sourceClaim?.claim_id ?? 0,
         target_claim_id: targetClaim?.claim_id ?? 0,
-        user_id: 1,
+        user_id: viewerId || 1, // Use current viewer, fallback to 1
         relationship,
         support_level: supportLevel,
         notes: notes,

@@ -86,7 +86,7 @@ export default function createAuthorsRoutes({ query, pool }) {
         const authorId = result[0][0].authorId;
 
         if (authorId) {
-          const insertTaskAuthor = `INSERT INTO content_authors (content_id, author_id) VALUES (?, ?)`;
+          const insertTaskAuthor = `INSERT INTO content_authors (content_id, author_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE author_id = author_id`;
           await pool.query(insertTaskAuthor, [contentId, authorId]);
         }
       }

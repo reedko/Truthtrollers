@@ -315,7 +315,7 @@ function spawnPdftocairo(inputPdf, outputBase) {
   });
 }
 
-export default function createMiscRoutes({ query, pool, db }) {
+export default function createMiscRoutes({ query, pool }) {
   const router = Router();
 
   // ───────────────────────────────────────────────────────────
@@ -433,7 +433,7 @@ export default function createMiscRoutes({ query, pool, db }) {
     } = req.body;
 
     try {
-      const [result] = await db.query(
+      const [result] = await query(
         `INSERT INTO stored_content
          (url, content_type, media_source, content_name, raw_text, video_id, thumbnail, topic, subtopics, authors, publisher_name, is_retracted)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,

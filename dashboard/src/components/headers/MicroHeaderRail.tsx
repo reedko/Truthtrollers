@@ -105,7 +105,7 @@ export default function MicroHeaderRail({
           </Center>
         </Tile>
 
-        <Tile onClick={() => openTile("task")} label="Task">
+        <Tile onClick={() => openTile("task")} label="Case">
           <HStack w="100%" align="center" spacing={3}>
             {taskThumb ? (
               <Image
@@ -120,7 +120,7 @@ export default function MicroHeaderRail({
             )}
             <VStack spacing={0} align="start" flex={1}>
               <Text fontSize="xs" noOfLines={2}>
-                {pivotTask?.content_name ?? "No task"}
+                {pivotTask?.content_name ?? "No case"}
               </Text>
               <Badge mt={1} variant="subtle">
                 #{contentId ?? "—"}
@@ -291,7 +291,7 @@ function Tile({
           glow: "rgba(139, 92, 246, 0.4)",
           border: "rgba(139, 92, 246, 0.4)",
         };
-      case "Task":
+      case "Case":
         return {
           gradient: "linear-gradient(90deg, rgba(0, 162, 255, 0.5) 0%, rgba(0, 162, 255, 0) 100%)",
           glow: "rgba(0, 162, 255, 0.4)",

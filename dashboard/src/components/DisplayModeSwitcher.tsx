@@ -6,6 +6,7 @@ import {
   Tooltip,
   Box,
   Text,
+  useColorMode,
 } from "@chakra-ui/react";
 import type { DisplayMode } from "../services/moleculeViewsAPI";
 
@@ -18,6 +19,7 @@ const DisplayModeSwitcher: React.FC<DisplayModeSwitcherProps> = ({
   currentMode,
   onChange,
 }) => {
+  const { colorMode } = useColorMode();
   console.log("🎛️ DisplayModeSwitcher render with currentMode:", currentMode);
 
   const modes: Array<{ value: DisplayMode; label: string; icon: string; description: string }> = [
@@ -42,8 +44,14 @@ const DisplayModeSwitcher: React.FC<DisplayModeSwitcherProps> = ({
   ];
 
   return (
-    <Box>
-      <Text fontSize="xs" mb={2} color="gray.500" textTransform="uppercase" letterSpacing="1px">
+    <Box display="flex" alignItems="center" gap={2}>
+      <Text
+        fontSize="xs"
+        color={colorMode === "dark" ? "gray.400" : "gray.600"}
+        textTransform="uppercase"
+        letterSpacing="1px"
+        whiteSpace="nowrap"
+      >
         Display Mode
       </Text>
       <ButtonGroup size="sm" isAttached variant="outline">
@@ -55,10 +63,14 @@ const DisplayModeSwitcher: React.FC<DisplayModeSwitcherProps> = ({
                 onChange(mode.value);
               }}
               isActive={currentMode === mode.value}
-              _active={{
+              _active={colorMode === "dark" ? {
                 bg: "rgba(0, 162, 255, 0.2)",
                 borderColor: "#00a2ff",
                 color: "#00a2ff",
+              } : {
+                bg: "rgba(71, 85, 105, 0.15)",
+                borderColor: "#475569",
+                color: "#475569",
               }}
             >
               <span style={{ marginRight: "6px" }}>{mode.icon}</span>

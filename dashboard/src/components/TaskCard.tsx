@@ -17,7 +17,7 @@ import {
   Tooltip,
 } from "@chakra-ui/react";
 import { FiTrash2 } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useRef, useState, memo, useEffect } from "react";
 import { useTaskStore } from "../store/useTaskStore";
 import { useAuthStore } from "../store/useAuthStore";
@@ -26,6 +26,7 @@ import ReferenceModal from "./modals/ReferenceModal";
 import { Task } from "../../../shared/entities/types";
 import { extractMeta } from "../utils/normalize";
 import { uploadImage, fetchTask } from "../services/useDashboardAPI";
+import { api } from "../services/api";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
@@ -48,6 +49,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   onSelect,
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToast();
   const [activeTask, setActiveTask] = useState<Task | null>(
     Array.isArray(task) ? task[0] : task,
@@ -66,6 +68,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
     activeTask ? s.assignedUsers[activeTask.content_id] : undefined,
   );
   const user = useAuthStore((s) => s.user);
+
+  // Debug: Log user role
+  useEffect(() => {
+    console.log('[TaskCard] Current user:', user);
+    console.log('[TaskCard] User role:', user?.role);
+  }, [user]);
 
   const {
     isOpen: isAssignOpen,
@@ -222,6 +230,79 @@ const TaskCard: React.FC<TaskCardProps> = ({
         title: "Archive failed",
         description:
           error.message || "An error occurred while archiving the task",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleDeleteTask = async () => {
+    if (!user?.user_id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to delete tasks",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    const confirmDelete = window.confirm(
+      `⚠️ WARNING: This will permanently delete "${activeTask.content_name}" and ALL related data:\n\n` +
+      `• All claims\n` +
+      `• All claim links\n` +
+      `• All references\n` +
+      `• All ratings\n` +
+      `• All scores\n\n` +
+      `This action CANNOT be undone!\n\n` +
+      `Are you absolutely sure?`
+    );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      const response = await api.delete(`/api/delete-content/${activeTask.content_id}`);
+
+      toast({
+        title: "Task Deleted",
+        description: `Content ${activeTask.content_id} and all related data have been permanently deleted`,
+        status: "success",
+        duration: 4000,
+        isClosable: true,
+      });
+
+      // Refresh task list first
+      if (user?.user_id) {
+        await fetchTasksForUser(user.user_id, false);
+      }
+
+      // Clear selected task
+      setSelectedTask(null);
+
+      // If already on tasks page, reload to refresh the list
+      // Otherwise navigate to tasks page
+      if (location.pathname === '/tasks') {
+        window.location.reload();
+      } else {
+        navigate('/tasks');
+      }
+
+      // Navigate away if we're on a detail page for this task
+      const selectedTask = useTaskStore.getState().selectedTask;
+      if (selectedTask?.content_id === activeTask.content_id) {
+        navigate('/');
+      }
+
+    } catch (error: any) {
+      console.error("[DELETE TASK] Error:", error);
+      const errorMessage = error.response?.data?.error || error.message || "An error occurred";
+      toast({
+        title: "Error deleting task",
+        description: errorMessage,
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -670,6 +751,16 @@ const TaskCard: React.FC<TaskCardProps> = ({
                     icon={<span>📝</span>}
                   >
                     Open in TextPad
+                  </MenuItem>
+                )}
+                {user?.role === 'super_admin' && (
+                  <MenuItem
+                    onClick={handleDeleteTask}
+                    icon={<span>🗑️</span>}
+                    color="red.600"
+                    fontWeight="bold"
+                  >
+                    Delete Task (Permanent)
                   </MenuItem>
                 )}
                 <MenuItem

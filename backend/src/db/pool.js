@@ -1,34 +1,49 @@
 // /backend/src/db/pool.js
 // ────────────────────────────────────────────────────────────
-// Database connection setup matching temp/server.js
-// Uses `mysql` package (works with your MySQL auth setup)
+// Database connection setup using connection pool
+// Uses `mysql` package with proper connection pooling
 // ────────────────────────────────────────────────────────────
 import mysql from "mysql";
 import { promisify } from "util";
 
 // ────────────────────────────────────────────────────────────
-// Connection (for single queries)
+// Connection Pool (for all queries - handles reconnects automatically)
 // ────────────────────────────────────────────────────────────
-const db = mysql.createConnection({
+export const pool = mysql.createPool({
+  connectionLimit: 10,
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
   multipleStatements: true,
+  // Add reconnect logic
+  acquireTimeout: 10000,
+  waitForConnections: true,
+  queueLimit: 0,
 });
 
 // ────────────────────────────────────────────────────────────
-// Promisified query function (EXACTLY like original server.js)
+// Promisified query function using pool (handles errors better)
 // Returns rows directly (NOT [rows, fields])
-// Connection happens lazily on first query - no explicit connect()
+// Pool automatically handles connection errors and reconnects
 // ────────────────────────────────────────────────────────────
-export const query = promisify(db.query).bind(db);
+const poolQuery = promisify(pool.query).bind(pool);
+
+export const query = async (...args) => {
+  try {
+    return await poolQuery(...args);
+  } catch (error) {
+    console.error('❌ [Database] Query failed:', error.message);
+    // If connection error, the pool will automatically try to reconnect on next query
+    throw error;
+  }
+};
 
 // ────────────────────────────────────────────────────────────
-// Connection Pool (for callbacks & concurrent queries)
+// Legacy single connection (DEPRECATED - use pool instead)
+// Kept for backwards compatibility but should not be used
 // ────────────────────────────────────────────────────────────
-export const pool = mysql.createPool({
-  connectionLimit: 10,
+const db = mysql.createConnection({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,

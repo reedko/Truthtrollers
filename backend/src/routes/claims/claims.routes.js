@@ -1,5 +1,6 @@
 // /backend/src/routes/claims/claims.routes.js
 import { Router } from "express";
+import { logUserActivity } from "../../utils/logUserActivity.js";
 
 const okVerdict = new Set(["true", "false", "uncertain"]);
 
@@ -177,6 +178,27 @@ export default function createClaimsRoutes({ query, pool }) {
   router.get("/api/claims/:content_id", async (req, res) => {
     const { content_id } = req.params;
     const viewerId = req.query.viewerId;
+    const scope = req.query.scope || "user"; // 'user' | 'all' | 'admin'
+
+    let userFilter = "";
+    const params = [content_id];
+
+    // Apply filtering based on scope
+    if (scope === "admin") {
+      // Admin: show all claims including system and user-created
+      userFilter = ""; // No filter
+    } else if (scope === "all") {
+      // All Users: show system claims + all user claims
+      userFilter = ""; // No filter
+    } else {
+      // User View: show system claims + user's own claims
+      if (viewerId) {
+        userFilter = "AND (cc.user_id IS NULL OR cc.user_id = ?)";
+        params.push(viewerId);
+      } else {
+        userFilter = "AND cc.user_id IS NULL"; // Only system claims
+      }
+    }
 
     const sql = `
     SELECT
@@ -186,6 +208,7 @@ export default function createClaimsRoutes({ query, pool }) {
       c.confidence_level,
       c.last_verified,
       COALESCE(GROUP_CONCAT(DISTINCT cc.relationship_type ORDER BY cc.relationship_type SEPARATOR ', '), '') AS relationship_type,
+      ${scope === "admin" ? "cc.user_id AS created_by_user_id," : ""}
       COALESCE(
         JSON_ARRAYAGG(
           JSON_OBJECT(
@@ -202,15 +225,9 @@ export default function createClaimsRoutes({ query, pool }) {
     LEFT JOIN claims_references cr ON c.claim_id = cr.claim_id
     LEFT JOIN content ref ON cr.reference_content_id = ref.content_id
     WHERE cc.content_id = ?
-      ${
-        viewerId
-          ? "AND (cc.user_id IS NULL OR cc.user_id = ?)"
-          : "AND cc.user_id IS NULL"
-      }
+      ${userFilter}
     GROUP BY c.claim_id;
   `;
-
-    const params = viewerId ? [content_id, viewerId] : [content_id];
 
     pool.query(sql, params, async (err, results) => {
       if (err) {
@@ -330,9 +347,48 @@ export default function createClaimsRoutes({ query, pool }) {
       ];
 
       await query(sql, params);
+
+      // Log user activity
+      await logUserActivity(query, {
+        userId: user_id,
+        activityType: "claim_link_add",
+        claimId: source_claim_id,
+        linkId: null, // claim_link_id not returned by insert
+        metadata: {
+          targetClaimId: target_claim_id,
+          relationship,
+          supportLevel: support_level,
+          pointsEarned: points_earned,
+        },
+      });
+
       res.status(201).json({ message: "Claim link created", points_earned });
     } catch (err) {
       console.error("❌ Error inserting claim link:", err);
+      res.status(500).json({ error: "Database error" });
+    }
+  });
+
+  // DELETE claim link
+  router.delete("/api/delete-claim-link", async (req, res) => {
+    const { source_claim_id, target_claim_id } = req.body;
+
+    if (!source_claim_id || !target_claim_id) {
+      return res
+        .status(400)
+        .json({ error: "Missing source_claim_id or target_claim_id" });
+    }
+
+    try {
+      const sql = `DELETE FROM claim_links WHERE source_claim_id = ? AND target_claim_id = ?`;
+      await query(sql, [source_claim_id, target_claim_id]);
+
+      console.log(
+        `🗑️ Deleted claim link: ${source_claim_id} → ${target_claim_id}`,
+      );
+      res.json({ message: "Claim link deleted successfully" });
+    } catch (err) {
+      console.error("❌ Error deleting claim link:", err);
       res.status(500).json({ error: "Database error" });
     }
   });
@@ -498,6 +554,25 @@ WHERE cc_task.content_id = ?
     async (req, res) => {
       const contentId = req.params.contentId;
       const viewerId = req.query.viewerId;
+      const scope = req.query.scope || "user"; // 'user' | 'all' | 'admin'
+
+      let userFilter = "";
+      const params = [contentId];
+
+      // Apply filtering based on scope
+      if (scope === "admin") {
+        // Admin: show all links including disabled
+        userFilter = ""; // No user filter
+      } else if (scope === "all") {
+        // All Users: show all active links from all users
+        userFilter = ""; // No user filter
+      } else {
+        // User View: only show this user's links
+        if (viewerId) {
+          userFilter = "AND cl.user_id = ?";
+          params.push(viewerId);
+        }
+      }
 
       const sql = `
     SELECT
@@ -509,18 +584,19 @@ WHERE cc_task.content_id = ?
       cr.reference_content_id AS right_reference_id,
       cl.relationship,
       cl.support_level AS confidence,
-      cl.notes AS notes
+      cl.notes AS notes,
+      ${scope === "admin" ? "cl.user_id AS created_by_user_id," : ""}
+      ${scope === "admin" ? "cl.disabled AS is_disabled," : ""}
+      cl.created_at
     FROM claim_links cl
     JOIN content_claims cc_task ON cl.target_claim_id = cc_task.claim_id
     JOIN content_claims cc_ref ON cl.source_claim_id = cc_ref.claim_id
     JOIN content_relations cr ON cr.reference_content_id = cc_ref.content_id
     WHERE cc_task.content_id = cr.content_id
       AND cc_task.content_id = ?
-      AND cl.disabled = false
-      ${viewerId ? "AND cl.user_id = ?" : ""}
+      ${scope !== "admin" ? "AND cl.disabled = false" : ""}
+      ${userFilter}
   `;
-
-      const params = viewerId ? [contentId, viewerId] : [contentId];
 
       try {
         const claimsWithReferences = await query(sql, params);
@@ -793,13 +869,34 @@ WHERE cc_task.content_id = ?
    * GET /api/claims-with-evidence/:contentId
    * Get claims with their claim_type and snippet flag
    * Used to distinguish snippets from regular claims in UI
-   * Respects viewerId filtering like /api/claims/:content_id
+   * Respects viewerId and scope filtering
    */
   router.get("/api/claims-with-evidence/:contentId", async (req, res) => {
     const { contentId } = req.params;
     const viewerId = req.query.viewerId;
+    const scope = req.query.scope || "user"; // 'user' | 'all' | 'admin'
 
     try {
+      let userFilter = "";
+      const params = [contentId];
+
+      // Apply filtering based on scope
+      if (scope === "admin") {
+        // Admin: show all claims
+        userFilter = "";
+      } else if (scope === "all") {
+        // All Users: show all claims
+        userFilter = "";
+      } else {
+        // User View: show system claims + user's own claims
+        if (viewerId) {
+          userFilter = "AND (cc.user_id IS NULL OR cc.user_id = ?)";
+          params.push(viewerId);
+        } else {
+          userFilter = "AND cc.user_id IS NULL";
+        }
+      }
+
       const sql = `
         SELECT
           c.claim_id,
@@ -809,15 +906,13 @@ WHERE cc_task.content_id = ?
           c.confidence_level,
           c.last_verified,
           cc.relationship_type,
-          cc.content_id
+          cc.content_id,
+          ${scope === "admin" ? "cc.user_id AS created_by_user_id," : ""}
+          cc.created_at
         FROM claims c
         JOIN content_claims cc ON c.claim_id = cc.claim_id
         WHERE cc.content_id = ?
-          ${
-            viewerId
-              ? "AND (cc.user_id IS NULL OR cc.user_id = ?)"
-              : "AND cc.user_id IS NULL"
-          }
+          ${userFilter}
         ORDER BY
           CASE c.claim_type
             WHEN 'task' THEN 1
@@ -828,7 +923,6 @@ WHERE cc_task.content_id = ?
           c.claim_id
       `;
 
-      const params = viewerId ? [contentId, viewerId] : [contentId];
       const results = await query(sql, params);
       res.json(results);
     } catch (err) {

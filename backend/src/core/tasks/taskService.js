@@ -55,16 +55,17 @@ export async function getUnifiedTasksByPivot(pivotType, pivotId) {
   switch (pivotType) {
     case "task":
       sql = `
-        SELECT 
+        SELECT
           content_id AS taskContentId,
           url,
           content_name AS title,
           content AS text,
+          content_type,
           created_at,
           updated_at
         FROM content
         WHERE content_id = ?
-          AND content_type = 'task'
+          AND content_type IN ('task', 'reference')
       `;
       params = [pivotId];
       break;
@@ -76,12 +77,14 @@ export async function getUnifiedTasksByPivot(pivotType, pivotId) {
           c.url,
           c.content_name AS title,
           c.content AS text,
+          c.content_type,
           c.created_at,
           c.updated_at
         FROM content c
         JOIN content_authors ca ON ca.content_id = c.content_id
         WHERE ca.author_id = ?
-          AND c.content_type = 'task'
+          AND c.content_type IN ('task', 'reference')
+        ORDER BY c.created_at DESC
       `;
       params = [pivotId];
       break;
@@ -93,12 +96,14 @@ export async function getUnifiedTasksByPivot(pivotType, pivotId) {
           c.url,
           c.content_name AS title,
           c.content AS text,
+          c.content_type,
           c.created_at,
           c.updated_at
         FROM content c
         JOIN content_publishers cp ON cp.content_id = c.content_id
         WHERE cp.publisher_id = ?
-          AND c.content_type = 'task'
+          AND c.content_type IN ('task', 'reference')
+        ORDER BY c.created_at DESC
       `;
       params = [pivotId];
       break;
@@ -110,12 +115,14 @@ export async function getUnifiedTasksByPivot(pivotType, pivotId) {
           c.url,
           c.content_name AS title,
           c.content AS text,
+          c.content_type,
           c.created_at,
           c.updated_at
         FROM content c
-        JOIN content_relations cr ON cr.task_content_id = c.content_id
+        JOIN content_relations cr ON cr.content_id = c.content_id
         WHERE cr.reference_content_id = ?
-          AND c.content_type = 'task'
+          AND c.content_type IN ('task', 'reference')
+        ORDER BY c.created_at DESC
       `;
       params = [pivotId];
       break;

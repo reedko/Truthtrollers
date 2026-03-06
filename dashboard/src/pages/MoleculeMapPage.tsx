@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
   Heading,
@@ -11,11 +11,12 @@ import {
   Button,
   useToast,
   Hide,
+  useColorMode,
 } from "@chakra-ui/react";
 import CytoscapeMolecule from "../components/CytoscapeMolecule";
 import MoleculeViewTabs from "../components/MoleculeViewTabs";
 import DisplayModeSwitcher from "../components/DisplayModeSwitcher";
-import { useTaskStore } from "../store/useTaskStore";
+import { useTaskStore, ViewScope } from "../store/useTaskStore";
 import { fetchNewGraphDataFromLegacyRoute } from "../services/api";
 import { GraphNode, Link } from "../../../shared/entities/types";
 import UnifiedHeader from "../components/UnifiedHeader";
@@ -37,13 +38,18 @@ import {
 } from "../services/moleculeViewsAPI";
 
 const MoleculeMapPage = () => {
+  const { colorMode } = useColorMode();
   const navigate = useNavigate();
   const toast = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const selectedTask = useTaskStore((s) => s.selectedTask);
   const selectedTaskId = useTaskStore((s) => s.selectedTaskId);
   const viewerId = useTaskStore((s) => s.viewingUserId);
+  const viewScope = useTaskStore((s) => s.viewScope);
   const setSelectedTask = useTaskStore((s) => s.setSelectedTask);
   const setRedirect = useTaskStore((s) => s.setRedirect);
+  const setViewingUserId = useTaskStore((s) => s.setViewingUserId);
+  const setViewScope = useTaskStore((s) => s.setViewScope);
 
   const [graphData, setGraphData] = useState<{
     nodes: GraphNode[];
@@ -62,12 +68,45 @@ const MoleculeMapPage = () => {
   const [activeViewId, setActiveViewId] = useState<number | null>(null);
   const [loadingViews, setLoadingViews] = useState(true);
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
+  const [showReferenceAuthors, setShowReferenceAuthors] = useState(false); // OFF by default to keep graph readable
 
   const handleVerimeterRefresh = async (contentId: number) => {
     await updateScoresForContent(contentId, viewerId);
     const scores = await fetchContentScores(contentId, viewerId);
     setVerimeterScore(scores?.verimeterScore ?? null);
   };
+
+  // Phase 5: Read URL params on mount
+  useEffect(() => {
+    const viewerParam = searchParams.get('viewer');
+    const scopeParam = searchParams.get('scope') as ViewScope | null;
+
+    if (viewerParam) {
+      const viewerNum = viewerParam === 'null' ? null : parseInt(viewerParam, 10);
+      if (!isNaN(viewerNum as number) || viewerNum === null) {
+        setViewingUserId(viewerNum);
+      }
+    }
+
+    if (scopeParam && (scopeParam === 'user' || scopeParam === 'all' || scopeParam === 'admin')) {
+      setViewScope(scopeParam);
+    }
+  }, []);
+
+  // Phase 5: Update URL params when viewer/scope changes
+  useEffect(() => {
+    if (!selectedTaskId) return;
+
+    const newParams = new URLSearchParams();
+    if (viewerId !== null && viewerId !== undefined) {
+      newParams.set('viewer', viewerId.toString());
+    }
+    if (viewScope && viewScope !== 'user') {
+      newParams.set('scope', viewScope);
+    }
+
+    setSearchParams(newParams, { replace: true });
+  }, [viewerId, viewScope, selectedTaskId]);
 
   // Set this as the active redirect target when mounted
   useEffect(() => {
@@ -84,20 +123,25 @@ const MoleculeMapPage = () => {
         return;
       }
 
-      // For View All mode (viewerId === null), we still want to load views
-      // but we'll need to handle the case where viewerId is null
+      // For View All mode (viewerId === null), we skip view loading
+      // since views are user-specific
+      if (viewerId === null) {
+        console.log("📋 View All mode - skipping view load");
+        setLoadingViews(false);
+        return;
+      }
 
       setLoadingViews(true);
       try {
         let fetchedViews = await getMoleculeViews(selectedTask.content_id, viewerId);
         console.log("📋 Fetched views:", fetchedViews);
 
-        // If no views exist, create a default "All References" view
+        // If no views exist, create a default "All Sources" view
         if (fetchedViews.length === 0) {
           console.log("📋 No views found, creating default view");
           await createMoleculeView({
             contentId: selectedTask.content_id,
-            name: "All References",
+            name: "All Sources",
             isDefault: true,
             userId: viewerId,
           });
@@ -138,8 +182,36 @@ const MoleculeMapPage = () => {
 
   // Add dimming metadata to nodes or filter them based on showPinnedOnly toggle
   useEffect(() => {
+    // Helper: Determine if an author node is connected to the task (vs only to references)
+    const isTaskAuthor = (authorId: string): boolean => {
+      // Find the task node
+      const taskNode = graphData.nodes.find(n => n.type === 'task');
+      if (!taskNode) return false;
+
+      // Check if this author is linked to the task node
+      return graphData.links.some(link =>
+        (link.source === authorId && link.target === taskNode.id) ||
+        (link.target === authorId && link.source === taskNode.id)
+      );
+    };
+
+    // If no active view, still filter reference authors based on toggle
     if (!activeViewId || views.length === 0) {
-      setFilteredGraphData(graphData);
+      if (!showReferenceAuthors) {
+        const filteredNodes = graphData.nodes.filter(node => {
+          if (node.type === "author") {
+            return isTaskAuthor(node.id);
+          }
+          return true;
+        });
+        const filteredNodeIds = new Set(filteredNodes.map((n) => n.id));
+        const filteredLinks = graphData.links.filter(
+          (link) => filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target)
+        );
+        setFilteredGraphData({ nodes: filteredNodes, links: filteredLinks });
+      } else {
+        setFilteredGraphData(graphData);
+      }
       return;
     }
 
@@ -161,7 +233,11 @@ const MoleculeMapPage = () => {
       // FILTER MODE: Remove unpinned references completely
       const filteredNodes = graphData.nodes.filter((node) => {
         if (node.type === "task") return true;
-        if (node.type === "author") return true;
+        if (node.type === "author") {
+          // Always show task authors, hide reference authors based on toggle
+          if (isTaskAuthor(node.id)) return true;
+          return showReferenceAuthors;
+        }
         if (node.type === "publisher") return true;
         if (node.type === "taskClaim") return true;
         if (node.type === "reference") {
@@ -184,7 +260,7 @@ const MoleculeMapPage = () => {
       });
     } else {
       // DIM MODE: Add dimming metadata to nodes without filtering them out
-      const nodesWithDimming = graphData.nodes.map((node) => {
+      let nodesWithDimming = graphData.nodes.map((node) => {
         // Dim unpinned references if there are any pins configured
         if (node.type === "reference" && activeView.pins.length > 0) {
           const isPinned = pinnedIds.has(node.content_id!);
@@ -198,12 +274,27 @@ const MoleculeMapPage = () => {
         return node;
       });
 
+      // Filter out reference authors if toggle is off
+      if (!showReferenceAuthors) {
+        nodesWithDimming = nodesWithDimming.filter(node => {
+          if (node.type === "author") {
+            return isTaskAuthor(node.id);
+          }
+          return true;
+        });
+      }
+
+      const filteredNodeIds = new Set(nodesWithDimming.map((n) => n.id));
+      const filteredLinks = graphData.links.filter(
+        (link) => filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target)
+      );
+
       setFilteredGraphData({
         nodes: nodesWithDimming,
-        links: graphData.links, // Keep all links
+        links: filteredLinks,
       });
     }
-  }, [graphData, activeViewId, views, showPinnedOnly]);
+  }, [graphData, activeViewId, views, showPinnedOnly, showReferenceAuthors]);
 
   // View management handlers
   const handleViewChange = async (viewId: number) => {
@@ -301,7 +392,7 @@ const MoleculeMapPage = () => {
     );
 
     toast({
-      title: newPinStatus ? "Reference pinned" : "Reference unpinned",
+      title: newPinStatus ? "Source pinned" : "Source unpinned",
       status: "success",
       duration: 2000,
     });
@@ -524,7 +615,7 @@ const MoleculeMapPage = () => {
 
   return (
     <Box p={4}>
-      <Card mb={6} mt={2}>
+      <Card mb={2} mt={2}>
         <CardBody>
           <UnifiedHeader
             pivotType={
@@ -540,33 +631,33 @@ const MoleculeMapPage = () => {
         </CardBody>
       </Card>
 
-      <Heading size="md" mb={4}>
-        Relationship Graph
-      </Heading>
-
-      {/* Molecule View Tabs */}
-      <Box mb={4}>
-        <MoleculeViewTabs
-          views={views}
-          activeViewId={activeViewId}
-          onViewChange={handleViewChange}
-          onCreateView={handleCreateView}
-          onRenameView={handleRenameView}
-          onDeleteView={handleDeleteView}
-          onSetDefault={handleSetDefault}
-        />
-      </Box>
-
-      {/* Display Mode Switcher and View Filter */}
-      <Box mb={4} display="flex" gap={6} alignItems="flex-start">
+      {/* Display Mode Switcher, View Filter, and View Controls */}
+      <Box
+        mb={4}
+        display="flex"
+        gap={6}
+        alignItems="center"
+        justifyContent="space-between"
+        p={4}
+        borderRadius="12px"
+        bg={colorMode === "dark"
+          ? "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+          : "linear-gradient(135deg, rgba(100, 116, 139, 0.25) 0%, rgba(148, 163, 184, 0.3) 50%, rgba(71, 85, 105, 0.25) 100%)"}
+        backdropFilter="blur(20px)"
+        border="1px solid"
+        borderColor={colorMode === "dark" ? "rgba(0, 162, 255, 0.4)" : "rgba(71, 85, 105, 0.4)"}
+        boxShadow={colorMode === "dark"
+          ? "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+          : "0 4px 16px rgba(71, 85, 105, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.4)"}
+      >
         <DisplayModeSwitcher
           currentMode={currentDisplayMode}
           onChange={handleDisplayModeChange}
         />
 
         {/* Show Pinned Only Toggle */}
-        <Box>
-          <Text fontSize="xs" mb={2} color="gray.500" textTransform="uppercase" letterSpacing="1px">
+        <Box display="flex" alignItems="center" gap={2}>
+          <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"} textTransform="uppercase" letterSpacing="1px" whiteSpace="nowrap">
             View Filter
           </Text>
           <Button
@@ -578,6 +669,34 @@ const MoleculeMapPage = () => {
             {showPinnedOnly ? "📌 Pinned Only" : "👁️ Show All"}
           </Button>
         </Box>
+
+        {/* Show Reference Authors Toggle */}
+        <Box display="flex" alignItems="center" gap={2}>
+          <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"} textTransform="uppercase" letterSpacing="1px" whiteSpace="nowrap">
+            Authors
+          </Text>
+          <Button
+            size="sm"
+            onClick={() => setShowReferenceAuthors(!showReferenceAuthors)}
+            colorScheme={showReferenceAuthors ? "purple" : "gray"}
+            variant={showReferenceAuthors ? "solid" : "outline"}
+          >
+            {showReferenceAuthors ? "👥 All Authors" : "👤 Task Author Only"}
+          </Button>
+        </Box>
+
+        {/* Molecule View Tabs - Inline */}
+        <Box>
+          <MoleculeViewTabs
+            views={views}
+            activeViewId={activeViewId}
+            onViewChange={handleViewChange}
+            onCreateView={handleCreateView}
+            onRenameView={handleRenameView}
+            onDeleteView={handleDeleteView}
+            onSetDefault={handleSetDefault}
+          />
+        </Box>
       </Box>
 
       {filteredGraphData.nodes.length > 0 ? (
@@ -586,6 +705,7 @@ const MoleculeMapPage = () => {
             nodes={filteredGraphData.nodes}
             links={filteredGraphData.links}
             onNodeClick={handleNodeClick}
+            currentUserId={viewerId}
             centerNodeId={
               selectedNode?.id ||
               filteredGraphData.nodes.find((n) => n.type === "task")?.id

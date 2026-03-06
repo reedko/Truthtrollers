@@ -787,6 +787,7 @@ export async function scrapeFacebookPost(
       payload: {
         url: postData.url,
         raw_html: rawHtml,
+        force: true, // Allow re-scraping existing URLs
         // Facebook-specific preprocessing data
         media_source: "Facebook",
         authors: authorData ? [authorData] : undefined,

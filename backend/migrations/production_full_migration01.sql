@@ -320,10 +320,7 @@ SHOW TRIGGERS WHERE `Table` = 'claim_links';
 -- ============================================================================
 -- RESTORE ORIGINAL SETTINGS
 -- ============================================================================
-
-SET SQL_MODE=@OLD_SQL_MODE;
-SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
-SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+-- Session variables will reset when connection closes, so restoration not needed
 
 -- ============================================================================
 -- MIGRATION COMPLETE

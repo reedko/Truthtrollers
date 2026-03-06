@@ -6,11 +6,12 @@ export default function createScoresRoutes({ query, pool }) {
   // NOTE: /api/live-verimeter-score/:claimId is handled by claims.routes.js
   // (removed duplicate to avoid conflicts)
 
-  // GET /api/content/:contentId/scores (VIEWER-AWARE)
+  // GET /api/content/:contentId/scores (SPLIT SCORES: personal + global)
   router.get("/api/content/:contentId/scores", async (req, res) => {
     const { contentId } = req.params;
     const viewerId = req.query.viewerId ? parseInt(req.query.viewerId) : null;
     const currentUserId = req.user?.user_id || viewerId;
+    const scope = req.query.scope || 'user';
 
     try {
       // First check if content exists
@@ -26,46 +27,85 @@ export default function createScoresRoutes({ query, pool }) {
         });
       }
 
-      // Compute scores based on viewerId context
-      // If viewerId is null (View All), use current user
-      // If viewerId is set, use that user's claim links for calculation
-      const userIdForScore = viewerId !== null ? viewerId : currentUserId;
+      // Phase 4: Compute BOTH personal and global scores
+      const userIdForPersonal = viewerId !== null ? viewerId : currentUserId;
 
-      let [row] = await query(
+      // Compute personal score (for this user)
+      try {
+        await query("CALL compute_verimeter_for_content(?, ?)", [
+          contentId,
+          userIdForPersonal,
+        ]);
+      } catch (err) {
+        console.error(`❌ Error computing personal score:`, err.message);
+      }
+
+      // Get personal score
+      let [personalRow] = await query(
         "SELECT verimeter_score, trollmeter_score, pro_score, con_score FROM content_scores WHERE content_id = ?",
         [contentId]
       );
 
-      if (!row) {
-        // Run your stored procedures to populate the table
-        try {
-          await query("CALL compute_verimeter_for_content(?, ?)", [
-            contentId,
-            userIdForScore,
-          ]);
+      // Compute global score (all users - pass NULL)
+      let globalRow = null;
+      try {
+        await query("CALL compute_verimeter_for_content(?, ?)", [
+          contentId,
+          null, // NULL = all users
+        ]);
 
-          await query("CALL compute_trollmeter_score(?)", [contentId]);
-        } catch (err) {
-          console.error(`❌ Error computing scores for content ${contentId}:`, err.message);
-          return res.status(500).json({
-            error: "Failed to compute scores",
-            message: err.message
-          });
-        }
-
-        // Try again
-        [row] = await query(
-          "SELECT verimeter_score, trollmeter_score, pro_score, con_score FROM content_scores WHERE content_id = ?",
+        // Store global score temporarily
+        [globalRow] = await query(
+          "SELECT verimeter_score FROM content_scores WHERE content_id = ?",
           [contentId]
         );
-
-        if (!row) {
-          return res.status(404).json({ error: "Not found, even after compute" });
-        }
+      } catch (err) {
+        console.error(`❌ Error computing global score:`, err.message);
       }
 
+      // Restore personal score (so content_scores table shows user's score)
+      if (personalRow) {
+        await query(
+          "UPDATE content_scores SET verimeter_score = ?, trollmeter_score = ?, pro_score = ?, con_score = ? WHERE content_id = ?",
+          [
+            personalRow.verimeter_score,
+            personalRow.trollmeter_score,
+            personalRow.pro_score,
+            personalRow.con_score,
+            contentId,
+          ]
+        );
+      }
+
+      if (!personalRow) {
+        return res.status(404).json({ error: "Failed to compute scores" });
+      }
+
+      const personalScore = personalRow.verimeter_score || 0;
+      const globalScore = globalRow?.verimeter_score || personalScore;
+      const delta = personalScore - globalScore;
+      const deltaPercent = globalScore !== 0 ? ((delta / Math.abs(globalScore)) * 100) : 0;
+
       res.json({
-        ...row,
+        // Personal scores
+        verimeter_score: personalScore,
+        trollmeter_score: personalRow.trollmeter_score,
+        pro_score: personalRow.pro_score,
+        con_score: personalRow.con_score,
+
+        // Phase 4: Split scores
+        personal_verimeter: personalScore,
+        global_verimeter: globalScore,
+        delta: delta,
+        delta_percent: Math.round(deltaPercent),
+
+        // Sentiment description
+        sentiment: delta > 0.15
+          ? 'more_truthy'
+          : delta < -0.15
+            ? 'more_skeptical'
+            : 'aligned',
+
         computedFor: viewerId !== null ? `user_${viewerId}` : 'all_users',
       });
     } catch (err) {

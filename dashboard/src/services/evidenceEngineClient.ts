@@ -51,7 +51,14 @@ export async function runEvidenceEngine(
     throw new Error(`Evidence engine failed: ${error}`);
   }
 
-  return response.json();
+  const result = await response.json();
+
+  // Dispatch event to update activity stats
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('activity-updated'));
+  }
+
+  return result;
 }
 
 /**

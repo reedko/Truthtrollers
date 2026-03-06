@@ -76,7 +76,7 @@ const ClaimProgressChart: React.FC<ClaimProgressChartProps> = ({
       </Box>
       <SimpleGrid columns={4} spacing={3} mt={4} ml={20}>
         <IconStat icon="🗂️" label="Claims" value={claimCount} />
-        <IconStat icon="📚" label="References" value={referenceCount} />
+        <IconStat icon="📚" label="Sources" value={referenceCount} />
         <IconStat icon="🔗" label="Linked" value={linkedClaims} />
         <IconStat icon="👥" label="Users" value={assignedUsers} />
       </SimpleGrid>

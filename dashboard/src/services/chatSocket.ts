@@ -11,49 +11,58 @@ const SOCKET_URL = "";
 console.log("[chat] BASE_URL =", BASE_URL);
 
 let socket: Socket | null = null;
+let currentUserId: number | null = null;
 
-export function connectChat(jwt: string, myUserId: number): Socket {
-  if (socket?.connected) return socket;
+// Listen for token refresh events
+if (typeof window !== 'undefined') {
+  window.addEventListener('token-refreshed', ((event: CustomEvent) => {
+    const { token: newToken } = event.detail;
+    console.log('[chat] Token refreshed, reconnecting socket...');
 
-  socket = io(SOCKET_URL, {
-    auth: { token: jwt },
-    transports: ["websocket", "polling"],
-    reconnectionAttempts: 5,
-    reconnectionDelay: 2000,
-  });
+    if (socket && currentUserId) {
+      // Disconnect old socket
+      socket.disconnect();
+      // Reconnect with new token
+      socket = io(SOCKET_URL, {
+        auth: { token: newToken },
+        transports: ["websocket", "polling"],
+        reconnectionAttempts: 5,
+        reconnectionDelay: 2000,
+      });
+      setupSocketHandlers(socket, currentUserId);
+      console.log('[chat] Socket reconnected with new token');
+    }
+  }) as EventListener);
+}
 
+function setupSocketHandlers(sock: Socket, myUserId: number) {
   const store = useChatStore.getState();
 
-  socket.on("connect", () => {
-    console.log("[chat] connected:", socket!.id);
-    store.setSocket(socket);
-    // Load conversation list on connect
+  sock.on("connect", () => {
+    console.log("[chat] connected:", sock.id);
+    store.setSocket(sock);
     fetchConversations();
   });
 
-  socket.on("disconnect", () => {
+  sock.on("disconnect", () => {
     console.log("[chat] disconnected");
     store.setSocket(null);
   });
 
-  socket.on("connect_error", (err) => {
+  sock.on("connect_error", (err) => {
     console.warn("[chat] connect error:", err.message);
   });
 
-  socket.on("new_message", (msg: ChatMessage) => {
-    // Determine which partner this message belongs to
+  sock.on("new_message", (msg: ChatMessage) => {
     const partnerId = msg.sender_id === myUserId ? msg.recipient_id : msg.sender_id;
-
     const state = useChatStore.getState();
     const existing = state.messages[partnerId] || [];
 
-    // Avoid duplicates
     if (existing.some((m) => m.id === msg.id)) return;
 
     const updatedMessages = [...existing, msg];
     state.setMessages(partnerId, updatedMessages);
 
-    // Update conversation list
     const convs = [...state.conversations];
     const idx = convs.findIndex((c) => c.partner_id === partnerId);
     const isActive = state.activePartnerId === partnerId && state.isBubbleOpen;
@@ -66,7 +75,6 @@ export function connectChat(jwt: string, myUserId: number): Socket {
         unread_count: isActive ? 0 : convs[idx].unread_count + (msg.sender_id !== myUserId ? 1 : 0),
       };
     } else if (msg.sender_id !== myUserId) {
-      // New conversation partner
       convs.push({
         partner_id: partnerId,
         partner_username: msg.sender_username,
@@ -80,18 +88,16 @@ export function connectChat(jwt: string, myUserId: number): Socket {
     const unreadTotal = convs.reduce((sum, c) => sum + (c.unread_count || 0), 0);
     useChatStore.setState({ conversations: convs, unreadTotal });
 
-    // Mark as read immediately if this chat is open
     if (isActive && msg.sender_id !== myUserId) {
       markRead(partnerId);
     }
   });
 
-  socket.on("presence", ({ user_id, online }: { user_id: number; online: boolean }) => {
+  sock.on("presence", ({ user_id, online }: { user_id: number; online: boolean }) => {
     useChatStore.getState().setPresence(user_id, online);
   });
 
-  socket.on("messages_read", ({ by }: { by: number }) => {
-    // Update read_at for messages sent to this user
+  sock.on("messages_read", ({ by }: { by: number }) => {
     const state = useChatStore.getState();
     const msgs = state.messages[by];
     if (!msgs) return;
@@ -100,7 +106,20 @@ export function connectChat(jwt: string, myUserId: number): Socket {
     );
     state.setMessages(by, updated);
   });
+}
 
+export function connectChat(jwt: string, myUserId: number): Socket {
+  if (socket?.connected) return socket;
+
+  currentUserId = myUserId;
+  socket = io(SOCKET_URL, {
+    auth: { token: jwt },
+    transports: ["websocket", "polling"],
+    reconnectionAttempts: 5,
+    reconnectionDelay: 2000,
+  });
+
+  setupSocketHandlers(socket, myUserId);
   return socket;
 }
 

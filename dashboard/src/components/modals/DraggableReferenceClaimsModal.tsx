@@ -8,6 +8,7 @@ import {
   VStack,
   Divider,
   HStack,
+  useColorModeValue,
 } from "@chakra-ui/react";
 import { CloseIcon, Search2Icon } from "@chakra-ui/icons";
 import { Claim, ReferenceWithClaims } from "../../../../shared/entities/types";
@@ -60,13 +61,21 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
     const move = (e: MouseEvent) => {
       if (tipRef.current && draggingClaim) {
         // keep your horizontal nudge if you want; it doesn't affect the link bug
-        tipRef.current.style.left = `${e.clientX + 10 - 400}px`;
+        tipRef.current.style.left = `${e.clientX + 10}px`;
         tipRef.current.style.top = `${e.clientY + 10}px`;
       }
     };
+    const up = () => {
+      // Clear dragging state when mouse is released anywhere
+      setDraggingClaim(null);
+    };
     document.addEventListener("mousemove", move);
-    return () => document.removeEventListener("mousemove", move);
-  }, [draggingClaim]);
+    document.addEventListener("mouseup", up);
+    return () => {
+      document.removeEventListener("mousemove", move);
+      document.removeEventListener("mouseup", up);
+    };
+  }, [draggingClaim, setDraggingClaim]);
 
   // Track claim element positions for drawing lines
   const claimRefs = useRef<Record<number, HTMLDivElement | null>>({});
@@ -356,11 +365,11 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
         zIndex={2500}
         w={["90vw", "500px"]}
         maxW="95vw"
-        bg="gray.900"
-        color="white"
+        bg={useColorModeValue("white", "gray.900")}
+        color={useColorModeValue("gray.800", "white")}
         borderRadius="xl"
         boxShadow="2xl"
-        border="2px solid #333"
+        border={useColorModeValue("2px solid #ddd", "2px solid #333")}
         p={0}
         cursor={dragging ? "grabbing" : "default"}
         userSelect="none"
@@ -369,7 +378,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
           className="mr-modal-header"
           onMouseDown={onMouseDown}
           cursor="grab"
-          bg="gray.800"
+          bg={useColorModeValue("gray.100", "gray.800")}
           px={4}
           py={2}
           borderTopRadius="xl"
@@ -377,7 +386,11 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
           alignItems="center"
           justifyContent="space-between"
         >
-          <Heading size="sm" mb={0} color="teal.200">
+          <Heading
+            size="sm"
+            mb={0}
+            color={useColorModeValue("teal.600", "teal.200")}
+          >
             Reference Details
           </Heading>
           <IconButton
@@ -396,7 +409,10 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
             </Box>
             <Box>
               <Text fontWeight="bold">Source URL:</Text>
-              <Text color="blue.300" wordBreak="break-all">
+              <Text
+                color={useColorModeValue("blue.600", "blue.300")}
+                wordBreak="break-all"
+              >
                 <a
                   href={reference?.url}
                   target="_blank"
@@ -415,13 +431,20 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
             {connectedTaskClaims.length > 0 && (
               <Box
                 w="100%"
-                bg="blue.900"
+                bg={useColorModeValue("blue.50", "blue.900")}
                 p={3}
                 borderRadius="md"
-                border="2px solid #00aaff"
+                border={useColorModeValue(
+                  "2px solid #3182ce",
+                  "2px solid #00aaff",
+                )}
               >
-                <Text fontWeight="bold" mb={2} color="blue.200">
-                  📌 Connected Task Claims:
+                <Text
+                  fontWeight="bold"
+                  mb={2}
+                  color={useColorModeValue("blue.700", "blue.200")}
+                >
+                  📌 Connected Case Claims:
                 </Text>
                 <VStack align="start" spacing={2}>
                   {connectedTaskClaims.map((taskClaim) => {
@@ -435,7 +458,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                       <Box
                         key={taskClaim.claim_id}
                         w="100%"
-                        bg="blue.800"
+                        bg={useColorModeValue("blue.100", "blue.800")}
                         p={2}
                         borderRadius="md"
                         border={
@@ -446,10 +469,17 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                               : "2px solid blue"
                         }
                       >
-                        <Text fontSize="xs" color="gray.400" mb={1}>
+                        <Text
+                          fontSize="xs"
+                          color={useColorModeValue("gray.600", "gray.400")}
+                          mb={1}
+                        >
                           Task Claim #{taskClaim.claim_id}
                         </Text>
-                        <Text fontSize="sm" color="white">
+                        <Text
+                          fontSize="sm"
+                          color={useColorModeValue("gray.900", "white")}
+                        >
                           {taskClaim.claim_text}
                         </Text>
                       </Box>
@@ -483,8 +513,16 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                           }}
                           data-claim-ref-id={claim.claim_id}
                           flex="1"
-                          bg={isSnippet ? "gray.800" : "black"}
-                          color={isSnippet ? "gray.300" : "blue.300"}
+                          bg={
+                            isSnippet
+                              ? useColorModeValue("gray.100", "gray.800")
+                              : useColorModeValue("white", "black")
+                          }
+                          color={
+                            isSnippet
+                              ? useColorModeValue("gray.700", "gray.300")
+                              : useColorModeValue("blue.600", "blue.300")
+                          }
                           px={2}
                           py={1}
                           borderRadius="md"
@@ -505,8 +543,10 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                               : undefined
                           }
                           _hover={{
-                            bg: isSnippet ? "gray.700" : "blue.200",
-                            color: "black",
+                            bg: isSnippet
+                              ? useColorModeValue("gray.200", "gray.700")
+                              : useColorModeValue("blue.100", "blue.200"),
+                            color: useColorModeValue("gray.900", "black"),
                           }}
                           onMouseDown={() => setDraggingClaim(claim)}
                           onMouseUp={() => setDraggingClaim(null)}
@@ -518,7 +558,11 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                           cursor={hasConnection ? "pointer" : "grab"}
                         >
                           {hasConnection && (
-                            <Text fontSize="xs" color="gray.400" mb={1}>
+                            <Text
+                              fontSize="xs"
+                              color={useColorModeValue("gray.600", "gray.400")}
+                              mb={1}
+                            >
                               {connections[0].relation === "support"
                                 ? "🟢 Supports"
                                 : connections[0].relation === "refute"

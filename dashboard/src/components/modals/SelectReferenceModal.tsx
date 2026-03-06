@@ -95,8 +95,8 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
       if (onSelect) {
         await onSelect(referenceId);
         toast({
-          title: "Reference Selected!",
-          description: "Reference added to your list.",
+          title: "Source Selected!",
+          description: "Source added to your list.",
           status: "success",
           duration: 3000,
           isClosable: true,
@@ -105,8 +105,8 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
       } else if (claimId) {
         await addClaimSource(claimId, referenceId);
         toast({
-          title: "Reference Linked!",
-          description: "Reference linked to this claim.",
+          title: "Source Linked!",
+          description: "Source linked to this claim.",
           status: "success",
           duration: 3000,
           isClosable: true,
@@ -114,8 +114,8 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
       } else if (taskId) {
         await addReferenceToTask(taskId, referenceId);
         toast({
-          title: "Reference Added!",
-          description: "Reference added to task.",
+          title: "Source Added!",
+          description: "Source added to task.",
           status: "success",
           duration: 3000,
           isClosable: true,
@@ -131,7 +131,7 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
       console.error("Error linking reference:", err);
       toast({
         title: "Error",
-        description: "Failed to add reference.",
+        description: "Failed to add source.",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -143,12 +143,12 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
     <Modal isOpen={isOpen} onClose={onClose}>
       <ModalOverlay />
       <ModalContent className="mr-modal">
-        <ModalHeader className="mr-modal-header">Select a Reference</ModalHeader>
+        <ModalHeader className="mr-modal-header">Select a Source</ModalHeader>
         <ModalCloseButton />
         <ModalBody>
           <Input
             className="mr-input"
-            placeholder="Search references..."
+            placeholder="Search sources..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -179,7 +179,7 @@ const SelectReferenceModal: React.FC<SelectReferenceModalProps> = ({
                 </Tooltip>
               ))
             ) : (
-              <Text>No references found.</Text>
+              <Text>No sources found.</Text>
             )}
           </VStack>
         </ModalBody>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
   Spinner,
@@ -7,7 +7,7 @@ import {
 } from "@chakra-ui/react";
 import GameSpace from "../components/GameSpace";
 import UnifiedHeader from "../components/UnifiedHeader";
-import { useTaskStore } from "../store/useTaskStore";
+import { useTaskStore, ViewScope } from "../store/useTaskStore";
 import {
   fetchClaimsWithEvidence,
   fetchReferencesWithClaimsForTask,
@@ -27,6 +27,7 @@ const GameSpacePage = () => {
     reference_claim_id?: number;
   }>>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const navigate = useNavigate();
   const taskId = useTaskStore((s) => s.selectedTaskId);
@@ -35,6 +36,41 @@ const GameSpacePage = () => {
   const setRedirect = useTaskStore((s) => s.setRedirect);
   const selectedRedirect = useTaskStore((s) => s.selectedRedirect);
   const viewerId = useTaskStore((s) => s.viewingUserId);
+  const scope = useTaskStore((s) => s.viewScope);
+  const setViewingUserId = useTaskStore((s) => s.setViewingUserId);
+  const setViewScope = useTaskStore((s) => s.setViewScope);
+
+  // Phase 5: Read URL params on mount
+  useEffect(() => {
+    const viewerParam = searchParams.get('viewer');
+    const scopeParam = searchParams.get('scope') as ViewScope | null;
+
+    if (viewerParam) {
+      const viewerNum = viewerParam === 'null' ? null : parseInt(viewerParam, 10);
+      if (!isNaN(viewerNum as number) || viewerNum === null) {
+        setViewingUserId(viewerNum);
+      }
+    }
+
+    if (scopeParam && (scopeParam === 'user' || scopeParam === 'all' || scopeParam === 'admin')) {
+      setViewScope(scopeParam);
+    }
+  }, []);
+
+  // Phase 5: Update URL params when viewer/scope changes
+  useEffect(() => {
+    if (!taskId) return;
+
+    const newParams = new URLSearchParams();
+    if (viewerId !== null && viewerId !== undefined) {
+      newParams.set('viewer', viewerId.toString());
+    }
+    if (scope && scope !== 'user') {
+      newParams.set('scope', scope);
+    }
+
+    setSearchParams(newParams, { replace: true });
+  }, [viewerId, scope, taskId]);
 
   // Set this as the active redirect target when mounted
   useEffect(() => {
@@ -67,9 +103,9 @@ const GameSpacePage = () => {
     if (taskId) {
       setIsLoading(true);
       Promise.all([
-        fetchClaimsWithEvidence(taskId, viewerId),
-        fetchReferencesWithClaimsForTask(taskId, viewerId),
-        fetchClaimsAndLinkedReferencesForTask(taskId, viewerId),
+        fetchClaimsWithEvidence(taskId, viewerId, scope),
+        fetchReferencesWithClaimsForTask(taskId, viewerId, scope),
+        fetchClaimsAndLinkedReferencesForTask(taskId, viewerId, scope),
       ])
         .then(([claimsData, referencesData, linksData]) => {
           setClaims(claimsData);
@@ -90,7 +126,7 @@ const GameSpacePage = () => {
           setIsLoading(false);
         });
     }
-  }, [taskId, viewerId]);
+  }, [taskId, viewerId, scope]);
 
   // viewerId can be null for "View All" mode
   const isReady = taskId != null && task != null;

@@ -29,7 +29,7 @@ const UserConsensusBar: React.FC<UserConsensusBarProps> = ({
   const isTrueWinner = truePercent > falsePercent;
   const isFalseWinner = falsePercent > truePercent;
 
-  const renderVerticalLabel = (text: string) => (
+  const renderVerticalLabelx = (text: string) => (
     <VStack spacing={0} zIndex={1} pointerEvents="none">
       {text.split("").map((char, idx) => (
         <Text
@@ -44,11 +44,38 @@ const UserConsensusBar: React.FC<UserConsensusBarProps> = ({
       ))}
     </VStack>
   );
+  const renderVerticalLabel = (text: string) => (
+    <VStack spacing={0} zIndex={1} pointerEvents="none">
+      {text.split("").map((char, idx) => (
+        <Text
+          key={idx}
+          as="span" // 🔥 CRITICAL
+          display="block" // keep vertical stacking
+          fontSize="2xs"
+          fontWeight="bold"
+          color="white"
+          lineHeight="1"
+          m={0} // kill margin
+          p={0}
+          fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+        >
+          {char}
+        </Text>
+      ))}
+    </VStack>
+  );
 
   return (
     <Box ml="45px">
       <VStack spacing={2} align="center" h="180px" justify="center" mt="-10px">
-        <Text fontSize="sm" color="white" mb={5} ml={"-45px"} fontWeight="500">
+        <Text
+          fontSize="sm"
+          color="white"
+          mb={5}
+          ml={"-45px"}
+          fontWeight="500"
+          fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+        >
           CROWD
         </Text>
 
@@ -93,11 +120,16 @@ const UserConsensusBar: React.FC<UserConsensusBarProps> = ({
                 fontSize="sm"
                 fontWeight="bold"
                 color={isFalseWinner ? "red.300" : "gray.300"}
+                fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
               >
                 {falseCount}
               </Text>
               <Box h="1px" w="70%" bg="white" my="0px" />
-              <Text fontSize="sm" color="gray.400">
+              <Text
+                fontSize="sm"
+                color="gray.400"
+                fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+              >
                 {total}
               </Text>
             </VStack>
@@ -143,11 +175,16 @@ const UserConsensusBar: React.FC<UserConsensusBarProps> = ({
                 fontSize="sm"
                 fontWeight="bold"
                 color={isTrueWinner ? "green.300" : "gray.300"}
+                fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
               >
                 {trueCount}
               </Text>
               <Box h="1px" w="70%" bg="white" my="1px" />
-              <Text fontSize="sm" color="gray.400">
+              <Text
+                fontSize="sm"
+                color="gray.400"
+                fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+              >
                 {total}
               </Text>
             </VStack>

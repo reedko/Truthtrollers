@@ -71,7 +71,7 @@ const QuadrantGridPage = () => {
         // Create a GraphNode from the selected task
         const taskNode = new GraphNode(
           `conte-${selectedTaskId}`,
-          selectedTask.content_name || "Task",
+          selectedTask.content_name || "Case",
           "task",
           0,
           0,

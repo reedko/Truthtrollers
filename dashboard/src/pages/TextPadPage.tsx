@@ -369,7 +369,7 @@ export default function TextPadPage() {
               2. Searches for evidence supporting or contradicting each claim
             </Text>
             <Text fontSize="sm" color="gray.400">
-              3. Creates a task card with all findings for your review
+              3. Creates a case card with all findings for your review
             </Text>
           </VStack>
         </Box>

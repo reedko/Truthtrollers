@@ -9,6 +9,27 @@ import { extractVideoIdFromUrl } from "./services/parseYoutubeUrl";
 const BASE_URL =
   process.env.REACT_APP_EXTENSION_BASE_URL || "https://localhost:5001";
 
+// Initialize and persist device fingerprint
+let cachedFingerprint = null;
+
+async function getDeviceFingerprint() {
+  if (cachedFingerprint) return cachedFingerprint;
+
+  // Check if we have it in storage
+  const stored = await browser.storage.local.get("deviceFingerprint");
+  if (stored.deviceFingerprint) {
+    cachedFingerprint = stored.deviceFingerprint;
+    console.log("🧬 Using stored fingerprint:", cachedFingerprint);
+    return cachedFingerprint;
+  }
+
+  // Generate new fingerprint
+  cachedFingerprint = await generateExtensionFingerprint();
+  await browser.storage.local.set({ deviceFingerprint: cachedFingerprint });
+  console.log("🧬 Generated new fingerprint:", cachedFingerprint);
+  return cachedFingerprint;
+}
+
 const code = `
   (function() {
     let popupRoot = document.getElementById("popup-root");
@@ -22,7 +43,6 @@ const code = `
   })();
 `;
 
-let activeScrapeTabId = null; // 👈 add this
 /** @param {string} url */
 async function syncTaskStateForUrl(url, tabId = null) {
   try {
@@ -105,10 +125,15 @@ async function syncTaskStateForUrl(url, tabId = null) {
 // ✅ Create Task
 const addContent = async (taskData) => {
   try {
+    const fingerprint = await getDeviceFingerprint();
+
     const response = await fetch(`${BASE_URL}/api/addContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(taskData),
+      body: JSON.stringify({
+        ...taskData,
+        fingerprint, // Include fingerprint for user tracking
+      }),
     });
 
     const responseData = await response.json();
@@ -265,7 +290,9 @@ const fetchExternalPage = async (url) => {
   }
 };
 
-let isScraperActive = false; // ✅ Track scraper state
+// ✅ Track multiple simultaneous scrapes by tabId
+// Map<tabId, { url: string, startedAt: number }>
+const activeScrapes = new Map();
 
 let lastStoredUrl = "";
 
@@ -372,60 +399,83 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
 
     // [4] scrapingStarted
     if (message.action === "scrapingStarted") {
-      console.log("⏳ Scraping in progress... Blocking new injections.");
-      isScraperActive = true;
-      activeScrapeTabId = sender.tab?.id ?? null;
-      try {
-        await browser.storage.local.set({ activeScrapeTabId });
-      } catch (e) {
-        console.warn("Failed to persist activeScrapeTabId:", e);
+      const tabId = sender.tab?.id;
+      if (!tabId) {
+        console.warn("⚠️ scrapingStarted: No tab ID available");
+        return;
       }
+
+      console.log(`⏳ [Tab ${tabId}] Scraping started`);
+      activeScrapes.set(tabId, {
+        url: message.url || "unknown",
+        startedAt: Date.now()
+      });
+
+      console.log(`📊 Active scrapes: ${activeScrapes.size} tab(s) currently scraping`);
       return;
     }
 
-    // [5] scrapeStarted
+    // [5] scrapeStarted (alternative message - also track it)
     if (message.action === "scrapeStarted") {
-      console.log("⏳ Scraping started... Setting activeScrapeTabId");
-      try {
-        const tabs = await browser.tabs.query({
-          active: true,
-          currentWindow: true,
-        });
-        if (tabs.length && tabs[0].id) {
-          activeScrapeTabId = tabs[0].id;
-          await browser.storage.local.set({ activeScrapeTabId });
+      const tabId = sender.tab?.id;
+      if (!tabId) {
+        console.warn("⚠️ scrapeStarted: No tab ID available, trying to query active tab");
+        try {
+          const tabs = await browser.tabs.query({
+            active: true,
+            currentWindow: true,
+          });
+          if (tabs.length && tabs[0].id) {
+            const activeTabId = tabs[0].id;
+            console.log(`⏳ [Tab ${activeTabId}] Scraping started (via query)`);
+            activeScrapes.set(activeTabId, {
+              url: message.url || "unknown",
+              startedAt: Date.now()
+            });
+          }
+        } catch (err) {
+          console.error("❌ Error querying active tab:", err);
         }
-      } catch (err) {
-        console.error("❌ Error querying active tab:", err);
+        return;
       }
+
+      console.log(`⏳ [Tab ${tabId}] Scraping started`);
+      activeScrapes.set(tabId, {
+        url: message.url || "unknown",
+        startedAt: Date.now()
+      });
+      console.log(`📊 Active scrapes: ${activeScrapes.size} tab(s) currently scraping`);
       return;
     }
 
     // [6] scrapeCompleted
     if (message.action === "scrapeCompleted") {
-      console.log("✅ Scraping finished!");
-      console.log(`🔍 [scrapeCompleted] Received URL: ${message.url}`);
-      isScraperActive = false;
-      try {
-        const storeObj = await browser.storage.local.get("activeScrapeTabId");
-        const storedId = storeObj?.activeScrapeTabId ?? null;
-        const tabId = storedId ?? activeScrapeTabId ?? sender.tab?.id ?? null;
-        const url = message.url;
-        console.log(
-          `🔍 [scrapeCompleted] Will call checkContentAndUpdatePopup with URL: ${url}`,
-        );
+      const tabId = sender.tab?.id ?? null;
+      const url = message.url;
 
+      console.log(`✅ [Tab ${tabId}] Scraping finished!`);
+      console.log(`🔍 [scrapeCompleted] Received URL: ${url}`);
+
+      try {
         if (!tabId) {
-          console.warn("⚠️ No activeScrapeTabId found! Cannot show popup.");
+          console.warn("⚠️ No tab ID found! Cannot show popup.");
         } else {
+          // Remove this tab from active scrapes
+          const scrapeInfo = activeScrapes.get(tabId);
+          if (scrapeInfo) {
+            const duration = Date.now() - scrapeInfo.startedAt;
+            console.log(`⏱️ [Tab ${tabId}] Scrape took ${(duration / 1000).toFixed(1)}s`);
+            activeScrapes.delete(tabId);
+          }
+
+          console.log(`📊 Active scrapes remaining: ${activeScrapes.size} tab(s)`);
+
           // Is this the extension PDF viewer?
           const tab = await browser.tabs.get(tabId);
           const viewerPrefix = browser.runtime.getURL("viewer.html");
 
           if (tab?.url && tab.url.startsWith(viewerPrefix)) {
             // 🧠 We're on viewer.html → do NOT inject. Just tell it to refresh.
-            // 1) run the SAME content-refresh logic we use for normal pages
-            //    so the DB → extension sync actually happens
             try {
               await checkContentAndUpdatePopup(tabId, url, true);
               console.log("🟣 checkContentAndUpdatePopup ran for viewer.html");
@@ -453,11 +503,12 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
             await checkContentAndUpdatePopup(tabId, url, true);
           }
         }
-
-        await browser.storage.local.remove("activeScrapeTabId");
-        activeScrapeTabId = null;
       } catch (err) {
         console.error("❌ Error finishing scrape:", err);
+        // Make sure we clean up even on error
+        if (tabId && activeScrapes.has(tabId)) {
+          activeScrapes.delete(tabId);
+        }
       }
       return;
     }
@@ -909,34 +960,86 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         });
     }
 
+    // [23.5] fetchClaimScores
+    if (message.action === "fetchClaimScores") {
+      try {
+        const { contentId, userId } = message;
+        const url = `${BASE_URL}/api/content/${contentId}/scores${userId ? `?viewerId=${userId}` : ""}`;
+
+        const response = await fetch(url, {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          return { success: false, error: `HTTP ${response.status}` };
+        }
+
+        const data = await response.json();
+        return {
+          success: true,
+          verimeterScore: Number(data.verimeter_score) || 0,
+        };
+      } catch (err) {
+        console.error("[Background] fetchClaimScores error:", err);
+        return { success: false, error: err.message };
+      }
+    }
+
     // [24] openDiscussionTab
     if (message.fn === "openDiscussionTab") {
-      console.log("🧪 Argue button clicked");
-      const deviceFingerprint = await generateExtensionFingerprint();
+      console.log("🧪 Discuss button clicked");
+      const deviceFingerprint = await getDeviceFingerprint();
       console.log("🧬 Device Fingerprint:", deviceFingerprint);
 
       let fullUrl = message.url;
-      console.log(fullUrl, "JKHHGFDS");
+      let jwt = null;
+
       try {
+        // Look up session by fingerprint
         const response = await fetch(
-          `${BASE_URL}/api/get-session-user?fingerprint=${deviceFingerprint}`,
+          `${BASE_URL}/api/get-session-user?fingerprint=${encodeURIComponent(deviceFingerprint)}`,
         );
-        const { jwt } = await response.json();
-        if (response.ok && jwt) {
-          await browser.storage.local.set({ jwt });
-          fullUrl = message.url;
-          console.log("✅ Found session, using full access");
+
+        if (response.ok) {
+          const data = await response.json();
+          jwt = data.jwt;
+
+          if (jwt) {
+            console.log(
+              "✅ Found session, opening dashboard with authentication",
+            );
+
+            // Store JWT in extension storage for future use
+            await browser.storage.local.set({ jwt, user: data.user });
+
+            // Pass JWT to dashboard via URL so it can auto-login
+            const urlObj = new URL(fullUrl);
+            urlObj.searchParams.set("extJwt", jwt);
+            fullUrl = urlObj.toString();
+          } else {
+            throw new Error("No JWT in response");
+          }
         } else {
           throw new Error("Session lookup failed");
         }
       } catch (err) {
+        console.log(
+          "⚠️ No authenticated session found, using read-only demo mode",
+        );
         await browser.storage.local.remove("jwt");
         await browser.storage.local.remove("user");
+
         const demoJwt = await getReadOnlyDemoJwt(deviceFingerprint);
-        fullUrl = `${message.url}?demo=${encodeURIComponent(demoJwt)}`;
-        console.log("🔁 Falling back to demo session", fullUrl);
+        if (demoJwt) {
+          const urlObj = new URL(fullUrl);
+          urlObj.searchParams.set("demo", demoJwt);
+          fullUrl = urlObj.toString();
+          console.log("🔁 Falling back to demo session");
+        }
       }
-      console.log(fullUrl, "LJKJHJGFHJKK");
+
+      console.log("🚀 Opening dashboard:", fullUrl);
       await browser.tabs.create({ url: fullUrl });
       return;
     }
@@ -1234,6 +1337,29 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
         isCompleted: isCompleted,
       });
 
+      // Fetch verimeter score for this content
+      try {
+        const scoreResponse = await fetch(
+          `${BASE_URL}/api/content/${task.content_id}/scores`,
+          {
+            method: "GET",
+            credentials: "include",
+          },
+        );
+        if (scoreResponse.ok) {
+          const scoreData = await scoreResponse.json();
+          task.verimeter_score = Number(scoreData.verimeter_score) || 0;
+          console.log(
+            `✅ [checkContent] Fetched verimeter_score: ${task.verimeter_score}`,
+          );
+        }
+      } catch (scoreErr) {
+        console.warn(
+          `⚠️ [checkContent] Failed to fetch verimeter score:`,
+          scoreErr,
+        );
+      }
+
       store.setTask(task);
       store.setCurrentUrl(matchedUrl); // Use the URL that actually matched
       store.setContentDetected(isCompleted);
@@ -1281,7 +1407,7 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
 }
 
 // ✅ Injects & controls the task-card popup
-async function showTaskCard(tabId, isDetected, forceVisible) {
+async function showTaskCardx(tabId, isDetected, forceVisible) {
   const code = `
     (function() {
       let popupRoot = document.getElementById("popup-root");
@@ -1310,6 +1436,155 @@ async function showTaskCard(tabId, isDetected, forceVisible) {
 
         popupRoot.className =
           isDetected || forceVisible ? "task-card-visible" : "task-card-hidden";
+      },
+      args: [isDetected, forceVisible],
+    });
+
+    await browser.scripting.executeScript({
+      target: { tabId },
+      files: ["popup.js"],
+    });
+
+    console.log("✅ Task-card injected successfully");
+  } catch (err) {
+    console.error("❌ Error injecting task card:", err);
+  }
+}
+async function showTaskCard(tabId, isDetected, forceVisible) {
+  const code = `
+    (function() {
+      let popupRoot = document.getElementById("popup-root");
+      if (popupRoot) popupRoot.remove();
+
+      popupRoot = document.createElement("div");
+      popupRoot.id = "popup-root";
+      document.body.appendChild(popupRoot);
+
+      popupRoot.className = ${JSON.stringify(
+        isDetected || forceVisible ? "task-card-visible" : "task-card-hidden",
+      )};
+    })();
+  `;
+
+  try {
+    await browser.scripting.executeScript({
+      target: { tabId },
+      world: "MAIN", // 🔥 THIS IS THE FIX
+      func: (isDetected, forceVisible) => {
+        const oldHost = document.getElementById("tt-popup-host");
+        if (oldHost) oldHost.remove();
+
+        const host = document.createElement("div");
+        host.id = "tt-popup-host";
+        host.style.position = "fixed";
+        host.style.top = "10px";
+        host.style.right = "20px";
+        host.style.zIndex = "2147483647";
+        host.style.pointerEvents = "auto";
+        host.style.width = "320px";
+
+        host.className =
+          isDetected || forceVisible ? "task-card-visible" : "task-card-hidden";
+
+        document.body.appendChild(host);
+
+        const shadow = host.attachShadow({ mode: "open" });
+
+        const baseStyle = document.createElement("style");
+        baseStyle.textContent = `
+    :host { all: initial; }
+    *, *::before, *::after { box-sizing: border-box; }
+
+    /* Minority Report Button Styles */
+    .mr-button {
+      position: relative;
+      padding: 10px 24px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.85));
+      border: 1px solid rgba(0, 162, 255, 0.4);
+      border-radius: 6px;
+      color: #00a2ff;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(10px);
+      font-size: 0.75rem;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      overflow: hidden;
+    }
+
+    .mr-button::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 8px;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(0, 162, 255, 0.4) 0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .mr-button:hover {
+      background: linear-gradient(135deg, rgba(0, 162, 255, 0.2), rgba(0, 162, 255, 0.15));
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+      border-color: #00a2ff;
+    }
+
+    .mr-button:active {
+      transform: translateY(0);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 25px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    /* UserConsensusBar Pulsing Animation */
+    .pulsing-glow.true {
+      animation: pulse-green 1.6s infinite ease-in-out;
+    }
+
+    .pulsing-glow.false {
+      animation: pulse-red 1.6s infinite ease-in-out;
+    }
+
+    @keyframes pulse-green {
+      0% {
+        box-shadow: 0 0 8px rgba(0, 255, 0, 0.4);
+        transform: translateX(-0%) scale(0.97);
+      }
+      50% {
+        box-shadow: 0 0 26px rgba(0, 255, 0, 0.8);
+        transform: translateX(-0%) scale(1.03);
+      }
+      100% {
+        box-shadow: 0 0 8px rgba(0, 255, 0, 0.4);
+        transform: translateX(-0%) scale(0.97);
+      }
+    }
+
+    @keyframes pulse-red {
+      0% {
+        box-shadow: 0 0 8px rgba(255, 0, 0, 0.4);
+        transform: translateX(-0%) scale(0.97);
+      }
+      50% {
+        box-shadow: 0 0 26px rgba(255, 0, 0, 0.8);
+        transform: translateX(-0%) scale(1.03);
+      }
+      100% {
+        box-shadow: 0 0 8px rgba(255, 0, 0, 0.4);
+        transform: translateX(-0%) scale(0.97);
+      }
+    }
+  `;
+        shadow.appendChild(baseStyle);
+
+        const emotionHost = document.createElement("div");
+        emotionHost.id = "tt-emotion";
+        shadow.appendChild(emotionHost);
+
+        const mount = document.createElement("div");
+        mount.id = "popup-root";
+        shadow.appendChild(mount);
       },
       args: [isDetected, forceVisible],
     });
@@ -1672,7 +1947,7 @@ browser.runtime.onMessageExternal.addListener((message, sender) => {
 // Poll backend for pending scrape jobs and process them
 // ============================================================
 
-const POLL_INTERVAL_MS = 3000;
+const POLL_INTERVAL_MS = 10000; // 10 seconds - reduced from 3s to reduce DB load
 const INSTANCE_ID = `ext_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 let lastPollAt = 0;
 
@@ -1686,64 +1961,91 @@ async function pollForScrapeJob() {
   try {
     const res = await fetch(`${BASE_URL}/api/scrape-jobs/pending`, {
       credentials: "include",
+      signal: AbortSignal.timeout(10000) // 10 second timeout
     });
 
-    if (!res.ok) return;
+    if (!res.ok) {
+      console.error(`[EXT] ❌ Failed to fetch pending jobs: ${res.status} ${res.statusText}`);
+      return;
+    }
 
     const jobs = await res.json();
     if (!jobs || jobs.length === 0) return;
 
     // Process first job (FIFO)
     const job = jobs[0];
-    console.log("[EXT] Processing scrape job:", job.scrape_job_id);
+    console.log(`[EXT] 📋 Processing scrape job ${job.scrape_job_id}: mode=${job.scrape_mode}, url=${job.target_url || 'N/A'}, task=${job.task_content_id || 'N/A'}`);
 
     await handleScrapeJob(job);
   } catch (err) {
-    console.error("[EXT] Poll error:", err);
+    if (err.name === 'TimeoutError') {
+      console.error("[EXT] ❌ Poll timeout - backend may be overloaded or unreachable");
+    } else if (err.name === 'NetworkError') {
+      console.error("[EXT] ❌ Network error during poll - check connection to backend");
+    } else {
+      console.error("[EXT] ❌ Poll error:", err.message);
+      console.error("[EXT] 📍 Stack:", err.stack);
+    }
   }
 }
 
 async function handleScrapeJob(job) {
   const { scrape_job_id, scrape_mode, target_url, task_content_id } = job;
+  let jobClaimed = false;
 
   try {
     // Step 1: Claim the job
-    await fetch(`${BASE_URL}/api/scrape-jobs/${scrape_job_id}/claim`, {
+    const claimRes = await fetch(`${BASE_URL}/api/scrape-jobs/${scrape_job_id}/claim`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: JSON.stringify({ instance_id: INSTANCE_ID }),
+      signal: AbortSignal.timeout(10000) // 10 second timeout
     });
+
+    if (!claimRes.ok) {
+      const errorText = await claimRes.text().catch(() => 'unknown error');
+      console.log(`[EXT] ⚠️ Could not claim job ${scrape_job_id} - status ${claimRes.status} (${errorText})`);
+      return; // Job was claimed by another instance, skip it
+    }
+
+    jobClaimed = true;
+    console.log(`[EXT] ✅ Successfully claimed job ${scrape_job_id}`);
 
     let targetTab, url;
 
     // Step 2: Find the appropriate tab based on scrape mode
-    const tabs = await browser.tabs.query({});
+    console.log(`[EXT] 🔍 Finding target tab for mode: ${scrape_mode}`);
+    const tabs = await safeTabQuery({});
 
     if (scrape_mode === "scrape_last_viewed") {
       // Use active tab
-      const activeTabs = await browser.tabs.query({
+      const activeTabs = await safeTabQuery({
         active: true,
         currentWindow: true,
       });
       if (!activeTabs || activeTabs.length === 0) {
-        throw new Error("No active tab found");
+        throw new Error("No active tab found for scrape_last_viewed mode - user may have closed all tabs");
       }
       targetTab = activeTabs[0];
       url = targetTab.url;
+      console.log(`[EXT] 📍 Using active tab ${targetTab.id}: ${url}`);
     } else if (scrape_mode === "scrape_specific_url") {
       // Find tab matching target_url
       targetTab = tabs.find(
         (t) => t.url === target_url || t.url?.startsWith(target_url),
       );
       if (!targetTab) {
-        throw new Error(`No tab found for URL: ${target_url}`);
+        console.error(`[EXT] ❌ No tab found matching target URL: ${target_url}`);
+        console.log(`[EXT] 📋 Available tabs (${tabs.length}):`, tabs.map(t => ({ id: t.id, url: t.url })));
+        throw new Error(`No tab found for URL: ${target_url} - user may have closed the tab`);
       }
       url = targetTab.url;
+      console.log(`[EXT] 📍 Found tab ${targetTab.id} matching URL: ${url}`);
     }
 
     if (!targetTab?.id) {
-      throw new Error("Target tab not found");
+      throw new Error("Target tab not found - invalid scrape mode or no matching tab");
     }
 
     // Step 3: Check if this is a PDF
@@ -1776,36 +2078,41 @@ async function handleScrapeJob(job) {
 
       try {
         // Try to fetch the PDF blob from the loaded tab
-        const pdfResponse = await fetch(actualUrl);
+        console.log(`[EXT] 📥 Fetching PDF from: ${actualUrl}`);
+        const pdfResponse = await fetch(actualUrl, {
+          signal: AbortSignal.timeout(30000) // 30 second timeout
+        });
 
         if (!pdfResponse.ok) {
           console.log(
             `[EXT] PDF fetch failed with status ${pdfResponse.status}, will try HTML extraction`,
           );
-          throw new Error("Not a PDF or fetch failed");
+          throw new Error(`PDF fetch failed: HTTP ${pdfResponse.status}`);
         }
 
         const pdfBlob = await pdfResponse.arrayBuffer();
         console.log(`[EXT] Got blob from browser: ${pdfBlob.byteLength} bytes`);
 
         if (!pdfBlob || pdfBlob.byteLength === 0) {
-          throw new Error("Blob is empty");
+          throw new Error("Blob is empty - PDF may not be accessible");
         }
 
         // Send blob to backend for parsing
+        console.log(`[EXT] 📤 Sending ${pdfBlob.byteLength} bytes to backend for parsing...`);
         const pdfRes = await fetch(`${BASE_URL}/api/parse-pdf-blob`, {
           method: "POST",
           headers: { "Content-Type": "application/octet-stream" },
           credentials: "include",
           body: pdfBlob,
+          signal: AbortSignal.timeout(60000) // 60 second timeout for PDF parsing
         });
 
         if (!pdfRes.ok) {
           const errorText = await pdfRes.text();
           console.log(
-            `[EXT] PDF parsing failed: ${errorText}, will try HTML extraction`,
+            `[EXT] PDF parsing failed with status ${pdfRes.status}: ${errorText}, will try HTML extraction`,
           );
-          throw new Error("PDF parsing failed");
+          throw new Error(`PDF parsing failed: ${errorText}`);
         }
 
         const pdfData = await pdfRes.json();
@@ -1820,33 +2127,43 @@ async function handleScrapeJob(job) {
           throw new Error("PDF parsing returned no text");
         }
       } catch (err) {
+        // Enhanced error logging for PDF extraction failures
+        if (err.name === 'TimeoutError') {
+          console.error(`[EXT] ❌ PDF extraction timed out after 30 seconds`);
+        } else if (err.name === 'NetworkError') {
+          console.error(`[EXT] ❌ Network error while fetching PDF:`, err.message);
+        } else {
+          console.error(`[EXT] ❌ PDF extraction error:`, err.message);
+        }
         // PDF extraction failed, fall back to HTML
         console.log(
           `[EXT] PDF extraction failed (${err.message}), falling back to HTML extraction`,
         );
-        const results = await browser.scripting.executeScript({
-          target: { tabId: targetTab.id },
-          func: () => document.documentElement.outerHTML,
-        });
-        raw_html = results[0].result;
+        raw_html = await safeExecuteScript(
+          targetTab.id,
+          () => document.documentElement.outerHTML,
+          'PDF fallback HTML extraction'
+        );
         console.log(
           `[EXT] Extracted ${raw_html.length} chars HTML from tab ${targetTab.id}`,
         );
       }
     } else {
       // Extract HTML from regular webpage
-      const results = await browser.scripting.executeScript({
-        target: { tabId: targetTab.id },
-        func: () => document.documentElement.outerHTML,
-      });
+      raw_html = await safeExecuteScript(
+        targetTab.id,
+        () => document.documentElement.outerHTML,
+        'HTML extraction'
+      );
 
-      raw_html = results[0].result;
       console.log(
         `[EXT] Extracted ${raw_html.length} chars from tab ${targetTab.id}`,
       );
     }
 
     // Step 4: Send to scrape-reference endpoint (not scrape-task - we don't want evidence engine)
+    console.log(`[EXT] 📤 Sending scrape data to backend: url=${actualUrl}, html_length=${raw_html?.length || 0}, pdf_text_length=${pdfText?.length || 0}`);
+
     const scrapeRes = await fetch(`${BASE_URL}/api/scrape-reference`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1859,18 +2176,28 @@ async function handleScrapeJob(job) {
         authors: pdfAuthors, // Send PDF authors from metadata
         taskContentId: task_content_id,
       }),
+      signal: AbortSignal.timeout(120000) // 2 minute timeout for scrape API
     });
+
+    if (!scrapeRes.ok) {
+      const errorText = await scrapeRes.text();
+      console.error(`[EXT] ❌ Scrape API returned error ${scrapeRes.status}: ${errorText}`);
+      throw new Error(`Scrape API failed: ${scrapeRes.status} - ${errorText}`);
+    }
 
     const scrapeResult = await scrapeRes.json();
 
     if (!scrapeResult.success) {
+      console.error(`[EXT] ❌ Scrape result indicates failure:`, scrapeResult);
       throw new Error(scrapeResult.error || "Scrape failed");
     }
 
     const referenceContentId = scrapeResult.contentId;
+    console.log(`[EXT] ✅ Scrape successful, content_id: ${referenceContentId}`);
 
     // Step 5: Mark job as completed
-    await fetch(`${BASE_URL}/api/scrape-jobs/${scrape_job_id}/complete`, {
+    console.log(`[EXT] 📝 Marking job ${scrape_job_id} as completed...`);
+    const completeRes = await fetch(`${BASE_URL}/api/scrape-jobs/${scrape_job_id}/complete`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -1878,47 +2205,238 @@ async function handleScrapeJob(job) {
         content_id: referenceContentId,
         instance_id: INSTANCE_ID,
       }),
+      signal: AbortSignal.timeout(10000) // 10 second timeout
     });
 
+    if (!completeRes.ok) {
+      const errorText = await completeRes.text().catch(() => 'unknown error');
+      console.error(`[EXT] ⚠️ Failed to mark job as completed: ${completeRes.status} - ${errorText}`);
+      console.error(`[EXT] 📋 Job ${scrape_job_id} completed successfully but status update failed - backend will see stale 'claimed' status and reset after 5 min`);
+    }
+
     console.log(
-      `[EXT] ✅ Scrape job ${scrape_job_id} completed, reference_content_id: ${referenceContentId}`,
+      `[EXT] ✅ Scrape job ${scrape_job_id} completed successfully, reference_content_id: ${referenceContentId}`,
     );
   } catch (err) {
-    console.error(`[EXT] ❌ Scrape job ${scrape_job_id} failed:`, err.message);
+    console.error(`[EXT] ❌ Scrape job ${scrape_job_id} FAILED at step:`, err.message);
+    console.error(`[EXT] 📍 Error stack:`, err.stack);
+    console.error(`[EXT] 📋 Job details: mode=${scrape_mode}, url=${target_url || 'N/A'}, task=${task_content_id || 'N/A'}`);
 
-    // Mark job as failed
-    await fetch(`${BASE_URL}/api/scrape-jobs/${scrape_job_id}/fail`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        error_message: err.message,
-        instance_id: INSTANCE_ID,
-      }),
-    }).catch((failErr) =>
-      console.error("[EXT] Failed to mark job as failed:", failErr),
-    );
+    // Only mark as failed if we successfully claimed it
+    // Otherwise the job is still pending and another instance can try
+    if (jobClaimed) {
+      console.log(`[EXT] 📝 Marking job ${scrape_job_id} as failed...`);
+      try {
+        const failRes = await fetch(`${BASE_URL}/api/scrape-jobs/${scrape_job_id}/fail`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            error_message: err.message,
+            instance_id: INSTANCE_ID,
+          }),
+          signal: AbortSignal.timeout(10000) // 10 second timeout
+        });
+
+        if (!failRes.ok) {
+          const errorText = await failRes.text().catch(() => 'unknown error');
+          console.error(`[EXT] ⚠️ Failed to mark job as failed: ${failRes.status} - ${errorText}`);
+          console.log(`[EXT] 🔄 Job will be auto-reset to pending after 5 minutes by backend`);
+        } else {
+          console.log(`[EXT] ✅ Job ${scrape_job_id} marked as failed successfully`);
+        }
+      } catch (failErr) {
+        if (failErr.name === 'TimeoutError') {
+          console.error("[EXT] ❌ Timeout while marking job as failed - backend may be overloaded");
+        } else {
+          console.error("[EXT] ❌ Exception while marking job as failed:", failErr.message);
+        }
+        console.log(`[EXT] 🔄 Job will be auto-reset to pending after 5 minutes by backend`);
+      }
+    } else {
+      console.log(`[EXT] ⏭️ Job ${scrape_job_id} was not claimed by this instance, skipping fail marker`);
+    }
   }
 }
 
 // ---------- triggers ----------
 
 // Poll periodically (fallback)
-setInterval(pollForScrapeJob, POLL_INTERVAL_MS);
+setInterval(() => {
+  pollForScrapeJob().catch(err => {
+    console.error('[EXT] 🚨 Polling interval caught error:', err);
+  });
+}, POLL_INTERVAL_MS);
 
 // Poll when dashboard tab becomes active
 browser.tabs.onActivated.addListener(async () => {
-  await pollForScrapeJob();
+  try {
+    await pollForScrapeJob();
+  } catch (err) {
+    console.error('[EXT] 🚨 Tab activation polling caught error:', err);
+  }
 });
 
 // Poll when dashboard finishes loading
 browser.tabs.onUpdated.addListener((_, changeInfo, tab) => {
-  if (
-    changeInfo.status === "complete" &&
-    tab.url &&
-    (tab.url.includes("localhost:5173") ||
-      tab.url.includes("truthtrollers.com"))
-  ) {
-    pollForScrapeJob();
+  try {
+    if (
+      changeInfo.status === "complete" &&
+      tab.url &&
+      (tab.url.includes("localhost:5173") ||
+        tab.url.includes("truthtrollers.com"))
+    ) {
+      pollForScrapeJob().catch(err => {
+        console.error('[EXT] 🚨 Tab update polling caught error:', err);
+      });
+    }
+  } catch (err) {
+    console.error('[EXT] 🚨 Tab update listener caught error:', err);
+  }
+});
+
+// ============================================================
+// CRASH DETECTION & PREVENTION
+// Prevents extension crashes from locking up scrape jobs
+// ============================================================
+
+// Global error handler - catches uncaught errors
+self.addEventListener('error', (event) => {
+  console.error('[EXT] 🚨 UNCAUGHT ERROR:', event.error);
+  console.error('[EXT] 📍 Error message:', event.message);
+  console.error('[EXT] 📍 Error filename:', event.filename);
+  console.error('[EXT] 📍 Error line:', event.lineno);
+  console.error('[EXT] 📍 Stack:', event.error?.stack);
+
+  // Log crash to storage for detection
+  browser.storage.local.set({
+    lastCrash: {
+      timestamp: Date.now(),
+      error: event.message,
+      stack: event.error?.stack,
+      instanceId: INSTANCE_ID
+    }
+  }).catch(err => console.error('[EXT] Failed to log crash:', err));
+});
+
+// Global unhandled promise rejection handler
+self.addEventListener('unhandledrejection', (event) => {
+  console.error('[EXT] 🚨 UNHANDLED PROMISE REJECTION:', event.reason);
+  console.error('[EXT] 📍 Promise:', event.promise);
+
+  // Log crash to storage for detection
+  browser.storage.local.set({
+    lastCrash: {
+      timestamp: Date.now(),
+      error: `Unhandled promise rejection: ${event.reason}`,
+      stack: event.reason?.stack,
+      instanceId: INSTANCE_ID
+    }
+  }).catch(err => console.error('[EXT] Failed to log crash:', err));
+
+  // Prevent default to avoid console spam
+  event.preventDefault();
+});
+
+// Heartbeat system - updates every 30 seconds to prove extension is alive
+const HEARTBEAT_INTERVAL_MS = 30000;
+let lastHeartbeat = Date.now();
+
+setInterval(() => {
+  lastHeartbeat = Date.now();
+  browser.storage.local.set({
+    extensionHeartbeat: {
+      timestamp: lastHeartbeat,
+      instanceId: INSTANCE_ID,
+      activeJobs: 0 // Could track active jobs here if needed
+    }
+  }).catch(err => console.error('[EXT] Failed to update heartbeat:', err));
+}, HEARTBEAT_INTERVAL_MS);
+
+// On startup, check if we crashed previously
+browser.storage.local.get(['lastCrash', 'extensionHeartbeat']).then(result => {
+  if (result.lastCrash) {
+    const crashTime = result.lastCrash.timestamp;
+    const timeSinceCrash = Date.now() - crashTime;
+
+    // If crash was recent (< 5 minutes), log it
+    if (timeSinceCrash < 5 * 60 * 1000) {
+      console.error('[EXT] 🚨 EXTENSION RECOVERED FROM RECENT CRASH');
+      console.error('[EXT] 📍 Crash time:', new Date(crashTime).toISOString());
+      console.error('[EXT] 📍 Time since crash:', Math.round(timeSinceCrash / 1000), 'seconds');
+      console.error('[EXT] 📍 Crash error:', result.lastCrash.error);
+      console.error('[EXT] 📍 Previous instance:', result.lastCrash.instanceId);
+      console.error('[EXT] 📍 Current instance:', INSTANCE_ID);
+      console.log('[EXT] 🔄 Any jobs claimed by crashed instance will be auto-reset by backend after 5 minutes');
+    }
+
+    // Clear the crash record after logging
+    browser.storage.local.remove('lastCrash');
+  }
+
+  if (result.extensionHeartbeat) {
+    const lastBeat = result.extensionHeartbeat.timestamp;
+    const timeSinceLastBeat = Date.now() - lastBeat;
+
+    // If last heartbeat was > 2 minutes ago, extension was likely restarted
+    if (timeSinceLastBeat > 2 * 60 * 1000) {
+      console.warn('[EXT] ⚠️ Extension was inactive for', Math.round(timeSinceLastBeat / 1000), 'seconds');
+      console.log('[EXT] 📋 Previous instance:', result.extensionHeartbeat.instanceId);
+      console.log('[EXT] 📋 Current instance:', INSTANCE_ID);
+    }
+  }
+
+  console.log('[EXT] ✅ Crash detection and prevention initialized');
+  console.log('[EXT] 📋 Instance ID:', INSTANCE_ID);
+}).catch(err => {
+  console.error('[EXT] Failed to check crash status:', err);
+});
+
+// Enhanced error wrapper for critical async operations
+async function safeAsync(fn, context = 'unknown operation') {
+  try {
+    return await fn();
+  } catch (err) {
+    console.error(`[EXT] 🚨 Error in ${context}:`, err.message);
+    console.error(`[EXT] 📍 Stack:`, err.stack);
+    throw err; // Re-throw so caller can handle
+  }
+}
+
+// Wrap tab access to handle common failures
+async function safeTabQuery(queryInfo) {
+  try {
+    return await browser.tabs.query(queryInfo);
+  } catch (err) {
+    console.error('[EXT] ❌ Tab query failed:', err.message);
+    console.error('[EXT] 📍 Query:', JSON.stringify(queryInfo));
+    return [];
+  }
+}
+
+// Wrap script execution to handle failures
+async function safeExecuteScript(tabId, func, context = 'script execution') {
+  try {
+    const results = await browser.scripting.executeScript({
+      target: { tabId },
+      func
+    });
+    return results[0]?.result;
+  } catch (err) {
+    console.error(`[EXT] ❌ Script execution failed in ${context}:`, err.message);
+    console.error('[EXT] 📍 Tab ID:', tabId);
+    throw new Error(`Failed to execute script: ${err.message}`);
+  }
+}
+
+// ============================================================================
+// Tab close handler - clean up scrapes for closed tabs
+// ============================================================================
+browser.tabs.onRemoved.addListener((tabId) => {
+  if (activeScrapes.has(tabId)) {
+    const scrapeInfo = activeScrapes.get(tabId);
+    console.warn(`⚠️ [Tab ${tabId}] Tab closed during scrape of ${scrapeInfo.url}`);
+    activeScrapes.delete(tabId);
+    console.log(`📊 Active scrapes remaining: ${activeScrapes.size} tab(s)`);
   }
 });

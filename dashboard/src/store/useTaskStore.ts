@@ -33,6 +33,8 @@ const normalizeUser = (u: any) =>
     user_id: Number(u?.user_id ?? u?.userId ?? u?.id),
     username: String(u?.username ?? u?.name ?? u?.email ?? ""),
   } as User);
+export type ViewScope = 'all' | 'user' | 'admin';
+
 export interface TaskStoreState {
   verimeterScores: { [contentId: number]: number };
   content: Task[];
@@ -58,6 +60,7 @@ export interface TaskStoreState {
   currentPage: number;
   claimsByTask: { [taskId: number]: Claim[] };
   viewingUserId: number | null;
+  viewScope: ViewScope; // 'all' | 'user' | 'admin'
   selectedPivotTasks: Task[];
   hasHydrated: boolean;
   claimScores: {};
@@ -75,6 +78,7 @@ export interface TaskStoreState {
   setVerimeterScore: (contentId: number, score: number) => void;
   resetTasks: () => void;
   setViewingUserId: (id: number | null) => void;
+  setViewScope: (scope: ViewScope) => void;
   setSelectedPivotTasks: (tasks: Task[]) => void;
   setSelectedTask: (input: Task | number | null) => void;
   setRedirect: (path: string) => void;
@@ -132,6 +136,7 @@ export const useTaskStore = create<TaskStoreState>()(
       currentPage: 0,
       claimsByTask: {},
       viewingUserId: undefined,
+      viewScope: 'user', // Default to user view
       hasHydrated: false,
       verimeterScores: {},
       claimScores: {},
@@ -164,6 +169,7 @@ export const useTaskStore = create<TaskStoreState>()(
         })),
 
       setViewingUserId: (id: number | null) => set({ viewingUserId: id }),
+      setViewScope: (scope: ViewScope) => set({ viewScope: scope }),
       setRedirect: (path) => {
         // Never redirect to TextPad - it's a creation tool, not a work page
         if (path === "/textpad") {
@@ -392,6 +398,7 @@ export const useTaskStore = create<TaskStoreState>()(
           selectedRedirect: rest.selectedRedirect,
           lastWorkPage: rest.lastWorkPage,
           viewingUserId: rest.viewingUserId,
+          viewScope: rest.viewScope,
         };
       },
       onRehydrateStorage: () => () => {

@@ -110,7 +110,7 @@ const VisionDashboard: React.FC = () => {
                 <Box mb={4}>
                   <HStack>
                     <Heading size="md" className="mr-heading">
-                      Assigned Tasks
+                      Assigned Cases
                     </Heading>
                     <Button
                       className="mr-button"

@@ -4,7 +4,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import cytoscape, { EdgeSingular, NodeSingular } from "cytoscape";
-import { Box, Button, Text, useToast, CloseButton } from "@chakra-ui/react";
+import { Box, Button, Text, useToast, CloseButton, useColorMode } from "@chakra-ui/react";
 import { createPortal } from "react-dom";
 import { GraphNode } from "../../../shared/entities/types";
 
@@ -403,7 +403,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
             opacity: 0.7,
           }}
         >
-          {type === "refClaim" ? "Ref" : type === "taskClaim" ? "Task" : type}
+          {type === "refClaim" ? "Ref" : type === "taskClaim" ? "Case" : type}
         </div>
 
         {/* Label */}
@@ -537,7 +537,6 @@ const NodeCard: React.FC<NodeCardProps> = ({
     thumbnailUrl = `${API_BASE_URL}/assets/images/ttlogo11.png`;
   }
 
-  console.log(`🎴 NodeCard ${id} (${type}): author_id=${data.author_id}, publisher_id=${data.publisher_id}, content_id=${data.content_id}, thumbnailUrl=${thumbnailUrl}`);
 
   // Special handling for unified claim cards
   if (type === "unifiedClaim") {
@@ -1003,55 +1002,22 @@ export async function animateMoleculeScene({
   try {
     const contentId = node.data("content_id");
 
-  // Step 1: Restore positions if previous reference node was moved
-  if (
-    lastRefNode.current &&
-    lastRefOriginalPos.current &&
-    lastRefNode.current.id() !== node.id()
-  ) {
-    lastRefNode.current.position(lastRefOriginalPos.current);
-  }
-
-  if (Object.keys(originalNodePositions.current).length > 0) {
-    await restoreNodePositions(cy, originalNodePositions, animate);
-  }
-
-  // Step 2: Get ref and task claims and create unified claim cards
+  // Step 1: Get ref and task claims and relevant links
   const refClaims = nodes.filter(
-    (n) => n.type === "refClaim" && n.content_id === contentId,
+    (n) => n.type === "refClaim" && n.content_id === contentId
   );
   const claimLinks = links.filter((l) =>
-    refClaims.some((rc) => rc.id === l.source),
+    refClaims.some((rc) => rc.id === l.source)
   );
 
   const taskClaimMap = new Map(
-    nodes.filter((n) => n.type === "taskClaim").map((n) => [n.id, n]),
+    nodes.filter((n) => n.type === "taskClaim").map((n) => [n.id, n])
   );
 
-  // Create unified claims that combine refClaim + taskClaim
-  const unifiedClaims = claimLinks
-    .map((link) => {
-      const refClaim = refClaims.find((rc) => rc.id === link.source);
-      const taskClaim = taskClaimMap.get(link.target);
+  if (refClaims.length === 0 || claimLinks.length === 0) return;
 
-      if (!refClaim || !taskClaim) return null;
-
-      return {
-        id: `unified-${refClaim.id}-${taskClaim.id}`,
-        type: "unifiedClaim",
-        label: `${refClaim.label} → ${taskClaim.label}`,
-        refClaimLabel: refClaim.label,
-        taskClaimLabel: taskClaim.label,
-        relation: link.relation || "related",
-        notes: link.notes || "",
-        content_id: contentId,
-      };
-    })
-    .filter((x): x is NonNullable<typeof x> => !!x);
-
-  if (unifiedClaims.length === 0) return;
-
-  // Step 3: Scatter away from node using Corridor Arc pattern
+  // Step 2: Scatter away from node using Corridor Arc pattern
+  // Track the clicked reference for reset functionality
   lastRefOriginalPos.current = { ...node.position() };
   lastRefNode.current = node;
 
@@ -1062,94 +1028,147 @@ export async function animateMoleculeScene({
     animate,
   });
 
-  // Step 4: Fan out unified claim cards along the line between task and reference
-  // Position them closer to the reference, spread perpendicular to the connection line
+  // Step 3: Hide ref-to-task edge when showing claims
+  const refTaskEdges = cy.edges().filter((edge) => {
+    const source = edge.source();
+    const target = edge.target();
+    return (
+      (source.id() === node.id() && target.id() === taskNode.id()) ||
+      (source.id() === taskNode.id() && target.id() === node.id())
+    );
+  });
+  refTaskEdges.style('display', 'none');
+
+  // Step 4: Position claim nodes in arcs around their parent nodes
   const refPos = node.position();
   const taskPos = taskNode.position();
 
   // Calculate angle from task to reference
   const dx = refPos.x - taskPos.x;
   const dy = refPos.y - taskPos.y;
-  const distance = Math.sqrt(dx * dx + dy * dy);
   const angleToRef = Math.atan2(dy, dx);
 
-  // Position claims 60% of the way from task to reference
-  // This puts them outside the scatter radius (300-400px) but close to the reference
-  const centerDistance = distance * 0.65;
-  const centerX = taskPos.x + centerDistance * Math.cos(angleToRef);
-  const centerY = taskPos.y + centerDistance * Math.sin(angleToRef);
+  // Arc radius for claims - same for both ref and task
+  const claimArcRadius = 280;
 
-  // Spread claims perpendicular to the task-reference line
-  // Use larger spacing to avoid overlaps (cards are now 320px wide)
-  const spreadDistance = 370; // Distance between cards
-  const perpAngle = angleToRef + Math.PI / 2; // Perpendicular angle
+  // Arc span - how wide the arc of claims should be
+  const arcSpan = Math.PI / 1.5; // ~120 degrees
 
   const claimElements: cytoscape.ElementDefinition[] = [];
+  const edgeElements: cytoscape.ElementDefinition[] = [];
+  const animationData: Array<{ nodeId: string; x: number; y: number }> = [];
 
-  unifiedClaims.forEach((claim, i) => {
-    // Center the spread around the midpoint
-    const offset = (i - (unifiedClaims.length - 1) / 2) * spreadDistance;
+  // First pass: collect all data
+  claimLinks.forEach((link, i) => {
+    const refClaim = refClaims.find((rc) => rc.id === link.source);
+    const taskClaim = taskClaimMap.get(link.target);
 
-    const x = centerX + offset * Math.cos(perpAngle);
-    const y = centerY + offset * Math.sin(perpAngle);
+    if (!refClaim || !taskClaim) return;
 
-    // Add the unified claim node
-    const claimNode: cytoscape.ElementDefinition = {
-      data: claim,
-      position: { x: centerX, y: centerY }, // Start at center point
-    };
+    // Calculate arc position parameter (0 to 1) - reversed for taskClaims to align edges
+    const t = claimLinks.length > 1 ? i / (claimLinks.length - 1) : 0.5;
+    const tReversed = 1 - t; // Reverse order for task claims
 
-    cy.add(claimNode);
-    claimElements.push(claimNode);
+    // RefClaim: Arc around the reference node (bottom to top)
+    const refArcCenter = angleToRef + Math.PI; // Point toward task
+    const refArcStart = refArcCenter - arcSpan / 2;
+    const refAngle = refArcStart + t * arcSpan;
+    const refX = refPos.x + claimArcRadius * Math.cos(refAngle);
+    const refY = refPos.y + claimArcRadius * Math.sin(refAngle);
 
-    // Add edge from task to unified claim
-    const taskEdge: cytoscape.ElementDefinition = {
+    // TaskClaim: Arc around the task node (reversed, top to bottom, to align with refClaims)
+    const taskArcCenter = angleToRef; // Point toward reference
+    const taskArcStart = taskArcCenter - arcSpan / 2;
+    const taskAngle = taskArcStart + tReversed * arcSpan;
+    const taskX = taskPos.x + claimArcRadius * Math.cos(taskAngle);
+    const taskY = taskPos.y + claimArcRadius * Math.sin(taskAngle);
+
+    // Collect refClaim node if it doesn't exist
+    if (cy.getElementById(refClaim.id).length === 0) {
+      claimElements.push({
+        data: refClaim,
+        position: { x: refPos.x, y: refPos.y }, // Start at reference
+      });
+    }
+    animationData.push({ nodeId: refClaim.id, x: refX, y: refY });
+
+    // Collect taskClaim node if it doesn't exist
+    if (cy.getElementById(taskClaim.id).length === 0) {
+      claimElements.push({
+        data: taskClaim,
+        position: { x: taskPos.x, y: taskPos.y }, // Start at task
+      });
+    }
+    animationData.push({ nodeId: taskClaim.id, x: taskX, y: taskY });
+
+    // Collect edges
+    edgeElements.push({
       data: {
-        id: `edge-task-${claim.id}`,
+        id: `edge-ref-${node.id()}-refclaim-${refClaim.id}`,
+        source: node.id(),
+        target: refClaim.id,
+        relation: "contains",
+      },
+    });
+
+    edgeElements.push({
+      data: {
+        id: `edge-task-${taskNode.id()}-taskclaim-${taskClaim.id}`,
         source: taskNode.id(),
-        target: claim.id,
-        relation: claim.relation,
+        target: taskClaim.id,
+        relation: "contains",
       },
-    };
-    cy.add(taskEdge);
+    });
 
-    // Add edge from unified claim to reference
-    const refEdge: cytoscape.ElementDefinition = {
+    edgeElements.push({
       data: {
-        id: `edge-${claim.id}-ref`,
-        source: claim.id,
-        target: node.id(),
-        relation: claim.relation,
+        ...link,
+        id: `edge-refclaim-${refClaim.id}-taskclaim-${taskClaim.id}`,
+        relation: link.relation || "related",
       },
-    };
-    cy.add(refEdge);
+    });
+  });
 
-    // Animate to final position
-    const cyNode = cy.getElementById(claim.id);
-    if (animate) {
-      cyNode.animate(
-        { position: { x, y } },
-        { duration: 200, easing: "ease-out" },
-      );
-    } else {
-      cyNode.position({ x, y });
+  // Add all nodes and edges in batches
+  cy.batch(() => {
+    if (claimElements.length > 0) {
+      cy.add(claimElements);
+    }
+    if (edgeElements.length > 0) {
+      cy.add(edgeElements);
     }
   });
 
-    // Single fit at the end, no double animation
-    if (animate) {
-      cy.animate({
-        fit: { eles: cy.elements(), padding: 30 },
-        duration: 250,
+  // Animate all claim nodes to their final positions
+  if (animate) {
+    cy.batch(() => {
+      animationData.forEach(({ nodeId, x, y }) => {
+        const nodeEle = cy.getElementById(nodeId);
+        if (nodeEle.length > 0) {
+          nodeEle.animate(
+            { position: { x, y } },
+            { duration: 150, easing: "ease-out" }
+          );
+        }
       });
-    } else {
-      cy.fit(cy.elements(), 30);
-    }
+    });
+  } else {
+    cy.batch(() => {
+      animationData.forEach(({ nodeId, x, y }) => {
+        const nodeEle = cy.getElementById(nodeId);
+        if (nodeEle.length > 0) {
+          nodeEle.position({ x, y });
+        }
+      });
+    });
+  }
 
-    // Restart throbbing for activated nodes after animation
-    if (activatedNodeIds) {
-      restartAllThrobs(cy, activatedNodeIds);
-    }
+  // Don't auto-fit the view - let user control viewport
+
+  // Restart throbbing for activated nodes after animation
+  if (activatedNodeIds) {
+    restartAllThrobs(cy, activatedNodeIds);
+  }
   } catch (error) {
     console.error("animateMoleculeScene error:", error);
     // Try to restore state gracefully
@@ -1258,27 +1277,120 @@ async function corridorArcScatter({
     if (nodesToScatter.length === 0) return;
 
     // Distribute nodes along the arc with varying radius for depth/interest
-    const promises = nodesToScatter.map((node, i) => {
-      const t = i / Math.max(1, nodesToScatter.length - 1);
-      const angle = arcStartAngle + t * arcSpan;
+    // Batch position updates for better performance
+    if (animate) {
+      cy.batch(() => {
+        nodesToScatter.forEach((node, i) => {
+          const t = i / Math.max(1, nodesToScatter.length - 1);
+          const angle = arcStartAngle + t * arcSpan;
 
-      // Create a gentle wave pattern in the radius for visual interest
-      const waveOffset = Math.sin(t * Math.PI * 2) * 120;
-      const baseRadius = 650 + Math.abs(waveOffset); // Adjusted to match Vogel spiral scale
+          // Create a gentle wave pattern in the radius for visual interest
+          const waveOffset = Math.sin(t * Math.PI * 2) * 150;
+          const baseRadius = 850 + Math.abs(waveOffset); // Larger radius for better spacing
 
-      const newX = center.x + baseRadius * Math.cos(angle);
-      const newY = center.y + baseRadius * Math.sin(angle);
+          const newX = center.x + baseRadius * Math.cos(angle);
+          const newY = center.y + baseRadius * Math.sin(angle);
 
-      return animate
-        ? animateNode(node, { position: { x: newX, y: newY } }, 200)
-        : (node.position({ x: newX, y: newY }), Promise.resolve());
-    });
+          node.animate(
+            { position: { x: newX, y: newY } },
+            { duration: 150, easing: "ease-out" }
+          );
+        });
+      });
+    } else {
+      cy.batch(() => {
+        nodesToScatter.forEach((node, i) => {
+          const t = i / Math.max(1, nodesToScatter.length - 1);
+          const angle = arcStartAngle + t * arcSpan;
 
-    await Promise.all(promises);
+          const waveOffset = Math.sin(t * Math.PI * 2) * 150;
+          const baseRadius = 850 + Math.abs(waveOffset);
+
+          const newX = center.x + baseRadius * Math.cos(angle);
+          const newY = center.y + baseRadius * Math.sin(angle);
+
+          node.position({ x: newX, y: newY });
+        });
+      });
+    }
   } catch (error) {
     console.error("corridorArcScatter error:", error);
     // Continue gracefully - don't block the animation pipeline
   }
+}
+
+async function fartScatterAwayFromRef({
+  cy,
+  refNode,
+  taskNode,
+  radius = 300,
+  radiusStep = 40,
+  dipRange = 5,
+  animate = true,
+}: {
+  cy: cytoscape.Core;
+  refNode: NodeSingular;
+  taskNode: NodeSingular;
+  radius?: number;
+  radiusStep?: number;
+  dipRange?: number;
+  animate?: boolean;
+}): Promise<void> {
+  const center = taskNode.position();
+  const refPos = refNode.position();
+
+  const dx = refPos.x - center.x;
+  const dy = refPos.y - center.y;
+  const angleToRef = Math.atan2(dy, dx);
+
+  const arcSpan = (3 * Math.PI) / 2;
+  const startAngle = angleToRef + Math.PI - arcSpan / 2;
+
+  const nodesToScatter = cy
+    .nodes()
+    .filter((node) => {
+      const id = node.id();
+      const type = node.data("type");
+      return (
+        id !== refNode.id() &&
+        id !== taskNode.id() &&
+        ["reference", "author", "publisher"].includes(type)
+      );
+    })
+    .toArray() as cytoscape.NodeSingular[];
+
+  const centerIndex = (nodesToScatter.length - 1) / 2;
+
+  function valleyCurve(i: number): number {
+    const dist = Math.abs(i - centerIndex);
+    if (dist <= dipRange) {
+      return dist;
+    } else {
+      const decay = dist - dipRange;
+      return dipRange - decay * 0.7;
+    }
+  }
+
+  const optionsList = nodesToScatter.map((node, i) => {
+    const t = i / Math.max(1, nodesToScatter.length - 1);
+    const angle = startAngle + t * arcSpan;
+
+    const rOffset = Math.max(0, valleyCurve(i)) * radiusStep;
+    const effectiveRadius = radius + rOffset;
+
+    const newX = center.x + effectiveRadius * Math.cos(angle);
+    const newY = center.y + effectiveRadius * Math.sin(angle);
+
+    return { node, position: { x: newX, y: newY } };
+  });
+
+  const promises = optionsList.map(({ node, position }) =>
+    animate
+      ? animateNode(node, { position }, 200)
+      : (node.position(position), Promise.resolve())
+  );
+
+  await Promise.all(promises);
 }
 
 async function fanOutClaims({
@@ -1569,7 +1681,10 @@ interface CytoscapeMoleculeProps {
     claim_id?: number;
     content_id?: number;
     url?: string;
+    added_by_user_id?: number | null;
+    is_system?: boolean;
   }[];
+  currentUserId?: number | null;
   links: {
     id: string;
     source: string;
@@ -1610,9 +1725,10 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
   onPositionsChange,
   nodeSettings,
   onNodeSettingsChange,
+  currentUserId,
 }) => {
-  console.log("🔷 CytoscapeMolecule render with displayMode:", displayMode);
 
+  const { colorMode } = useColorMode();
   const cyRef = useRef<HTMLDivElement>(null);
   const cyInstance = useRef<cytoscape.Core | null>(null);
   const activatedNodeIdsRef = useRef<Set<string>>(new Set());
@@ -1650,6 +1766,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
   const lastRefNode = useRef<NodeSingular | null>(null);
   const lastRefOriginalPos = useRef<{ x: number; y: number } | null>(null);
+  const activeRefWithClaims = useRef<string | null>(null); // Track which ref is showing claims
   const originalNodePositions = useRef<
     Record<string, { x: number; y: number }>
   >({});
@@ -1667,8 +1784,12 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
   } | null>(null);
 
   useEffect(() => {
-    console.log("🧪 CytoscapeMolecule mount — received links:", links);
     if (!cyRef.current) return;
+
+    // Don't rebuild the graph while claims are visible - it would destroy them
+    if (activeRefWithClaims.current !== null) {
+      return;
+    }
 
     const centerX = 500;
     const centerY = 350;
@@ -1797,11 +1918,11 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     });
 
     const initialEdges = links
-      .filter((l) =>
-        positionedNodes.some(
-          (n) => n.data.id === l.source || n.data.id === l.target,
-        ),
-      )
+      .filter((l) => {
+        const sourceExists = positionedNodes.some((n) => n.data.id === l.source);
+        const targetExists = positionedNodes.some((n) => n.data.id === l.target);
+        return sourceExists && targetExists;
+      })
       .map((l) => {
         // Color edges based on claim aggregates for references
         const sourceNode = baseNodes.find((n) => n.id === l.source);
@@ -1852,8 +1973,16 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           selector: "node",
           style: {
             shape: "ellipse",
-            width: 140,
-            height: 140,
+            width: (ele: any) => {
+              const type = ele.data("type");
+              if (type === "refClaim" || type === "taskClaim") return 70;
+              return 140;
+            },
+            height: (ele: any) => {
+              const type = ele.data("type");
+              if (type === "refClaim" || type === "taskClaim") return 70;
+              return 140;
+            },
             label: (ele: any) => ele.data("label"),
             "text-wrap": "wrap",
             "text-max-width": "120px",
@@ -1891,19 +2020,16 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               if (type === "author") {
                 const authorId = data.author_id || nodeId.replace("autho-", "");
                 fullUrl = `${API_BASE_URL}/api/image/authors/${authorId}`;
-                console.log(`🎨 Author node ${nodeId}: author_id=${data.author_id}, computed authorId=${authorId}`);
               } else if (type === "task" || type === "reference") {
                 const contentId = data.content_id || nodeId.replace("conte-", "");
                 fullUrl = `${API_BASE_URL}/api/image/content/${contentId}`;
               } else if (type === "publisher") {
                 const publisherId = data.publisher_id || nodeId.replace("publi-", "");
                 fullUrl = `${API_BASE_URL}/api/image/publishers/${publisherId}`;
-                console.log(`🎨 Publisher node ${nodeId}: publisher_id=${data.publisher_id}, computed publisherId=${publisherId}`);
               } else {
                 return null; // No image for claims
               }
 
-              console.log(`🖼️ Node ${nodeId} (${type}) background-image: ${fullUrl}`);
               return fullUrl;
             },
             "background-fit": "cover",
@@ -1914,6 +2040,8 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               if (type === "task") return "#6366f1";
               if (type === "reference") return "#10b981";
               if (type === "unifiedClaim") return "#f97316";
+              if (type === "refClaim") return "#ec4899"; // Pink for reference claims
+              if (type === "taskClaim") return "#f59e0b"; // Amber for task claims
               if (type === "author") return "#a78bfa";
               if (type === "publisher") return "#60a5fa";
               return "#6366f1";
@@ -1925,6 +2053,8 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               if (type === "task") return "#6366f1";
               if (type === "reference") return "#10b981";
               if (type === "unifiedClaim") return "#f97316";
+              if (type === "refClaim") return "#ec4899"; // Pink for reference claims
+              if (type === "taskClaim") return "#f59e0b"; // Amber for task claims
               if (type === "author") return "#a78bfa";
               if (type === "publisher") return "#60a5fa";
               return "#6366f1";
@@ -1937,14 +2067,30 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           selector: "node",
           style: {
             shape: "round-rectangle",
-            width: 120,
-            height: 140,
+            width: (ele: any) => {
+              const type = ele.data("type");
+              if (type === "refClaim" || type === "taskClaim") return 60;
+              return 120;
+            },
+            height: (ele: any) => {
+              const type = ele.data("type");
+              if (type === "refClaim" || type === "taskClaim") return 70;
+              return 140;
+            },
             label: "",
             "background-color": "rgba(0, 0, 0, 0)",
             "background-opacity": 0,
-            "border-width": 12,
+            "border-width": (ele: any) => {
+              const type = ele.data("type");
+              if (type === "refClaim" || type === "taskClaim") return 6;
+              return 12;
+            },
             // @ts-ignore
-            "corner-radius": 10,
+            "corner-radius": (ele: any) => {
+              const type = ele.data("type");
+              if (type === "refClaim" || type === "taskClaim") return 5;
+              return 10;
+            },
             // Apply opacity for dimmed (unpinned) nodes
             opacity: (ele: any) => {
               return ele.data("dimmed") ? 0.3 : 1.0;
@@ -1954,6 +2100,8 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               if (type === "task") return "#00a2ff";
               if (type === "reference") return "#4ade80";
               if (type === "unifiedClaim") return "#fbbf24";
+              if (type === "refClaim") return "#ec4899"; // Pink for reference claims
+              if (type === "taskClaim") return "#f59e0b"; // Amber for task claims
               if (type === "author") return "#a78bfa";
               if (type === "publisher") return "#00a2ff";
               return "#00a2ff";
@@ -1969,19 +2117,29 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             shape: "round-rectangle",
             width: (ele: any) => {
               const type = ele.data("type");
+              if (type === "refClaim" || type === "taskClaim") return 130;
               return type === "unifiedClaim" ? 260 : 200;
             },
             height: (ele: any) => {
               const type = ele.data("type");
+              if (type === "refClaim" || type === "taskClaim") return 160;
               return type === "unifiedClaim" ? 320 : 240;
             },
             label: "",
             color: "rgba(0, 0, 0, 0)",
             "background-color": "rgba(0, 0, 0, 0)",
             "background-opacity": 0,
-            "border-width": 18,
+            "border-width": (ele: any) => {
+              const type = ele.data("type");
+              if (type === "refClaim" || type === "taskClaim") return 9;
+              return 18;
+            },
             // @ts-ignore
-            "corner-radius": 16,
+            "corner-radius": (ele: any) => {
+              const type = ele.data("type");
+              if (type === "refClaim" || type === "taskClaim") return 8;
+              return 16;
+            },
             // Apply opacity for dimmed (unpinned) nodes
             opacity: (ele: any) => {
               return ele.data("dimmed") ? 0.3 : 1.0;
@@ -1991,6 +2149,8 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               if (type === "task") return "#00a2ff";
               if (type === "reference") return "#4ade80";
               if (type === "unifiedClaim") return "#fbbf24";
+              if (type === "refClaim") return "#ec4899"; // Pink for reference claims
+              if (type === "taskClaim") return "#f59e0b"; // Amber for task claims
               if (type === "author") return "#a78bfa";
               if (type === "publisher") return "#00a2ff";
               return "#00a2ff";
@@ -2105,13 +2265,22 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     cy.on("pan zoom", updateOverlays);
     cy.on("add remove", updateOverlays);
 
-    // Save positions when user finishes dragging nodes
+    // Save positions when user finishes dragging nodes (exclude claim nodes)
     cy.on("dragfree", "node", () => {
+      // Don't save positions while claims are visible - it triggers a re-render that destroys claims
+      if (activeRefWithClaims.current !== null) {
+        return;
+      }
+
       if (onPositionsChange) {
         const positions: Record<string, { x: number; y: number }> = {};
         cy.nodes().forEach((node) => {
-          const pos = node.position();
-          positions[node.id()] = { x: pos.x, y: pos.y };
+          const type = node.data("type");
+          // Don't save positions for claim nodes (they're generated dynamically)
+          if (type !== "refClaim" && type !== "taskClaim") {
+            const pos = node.position();
+            positions[node.id()] = { x: pos.x, y: pos.y };
+          }
         });
         onPositionsChange(positions);
       }
@@ -2230,22 +2399,10 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
     // More logic (node click, layout updates, etc.) continues in next part
 
-    // 🧠 Keep track of last clicked node
-    const lastClickedNodeId = { current: null };
     // 📌 Main event handler
     cy.on("tap", "node", (event) => {
       const node = event.target;
       const type = node.data("type");
-      const contentId = node.data("content_id");
-
-      // ← FIRST: log every time a node is tapped
-      console.log("📌 [DEBUG] Node tapped:", node.id(), "type=", type);
-
-      if (node.id() === lastClickedNodeId.current) {
-        console.log("🛑 Same node clicked again — skipping.");
-        return;
-      }
-      lastClickedNodeId.current = node.id();
 
       // 🧊 Store initial layout if first interaction (no claims visible)
       if (cy.nodes('node[type *= "Claim"]').length === 0) {
@@ -2255,44 +2412,78 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       // 📦 Send clicked node to external handler
       if (onNodeClick) onNodeClick(node.data());
       setSelectedNodeData(node.data());
-      // 🧠 Handle unified claim node click
-      if (type === "unifiedClaim") {
-        const relation = node.data("relation") || "related";
-        const refClaimLabel = node.data("refClaimLabel") || "";
-        const taskClaimLabel = node.data("taskClaimLabel") || "";
-        const notes = node.data("notes") || "";
+      // 🧠 Handle claim node click - show both refClaim and taskClaim
+      if (type === "refClaim" || type === "taskClaim") {
+        const claimId = node.id();
+
+        // Find the edge connecting refClaim and taskClaim
+        const connectedEdge = cy
+          .edges()
+          .filter(
+            (edge) =>
+              edge.source().id() === claimId || edge.target().id() === claimId
+          )
+          .toArray()
+          .find((e) => ["supports", "refutes", "related"].includes(e.data("relation")));
+
+        const relation = connectedEdge?.data("relation") || "related";
+
+        // Get both refClaim and taskClaim nodes
+        let refClaimNode: NodeSingular | null = null;
+        let taskClaimNode: NodeSingular | null = null;
+
+        if (type === "refClaim") {
+          refClaimNode = node;
+          // Find connected taskClaim
+          if (connectedEdge && connectedEdge.isEdge()) {
+            const otherId = connectedEdge.source().id() === claimId
+              ? connectedEdge.target().id()
+              : connectedEdge.source().id();
+            taskClaimNode = cy.getElementById(otherId);
+          }
+        } else {
+          taskClaimNode = node;
+          // Find connected refClaim
+          if (connectedEdge && connectedEdge.isEdge()) {
+            const otherId = connectedEdge.source().id() === claimId
+              ? connectedEdge.target().id()
+              : connectedEdge.source().id();
+            refClaimNode = cy.getElementById(otherId);
+          }
+        }
 
         setSelectedClaim({
-          id: node.id(),
-          label: `${refClaimLabel}`,
-          taskClaimLabel: taskClaimLabel,
+          id: claimId,
+          label: refClaimNode?.data("label") || "Unknown claim",
+          taskClaimLabel: taskClaimNode?.data("label"),
           relation: relation,
-          notes: notes,
+          notes: node.data("rationale") || node.data("notes"),
         });
         return;
       }
 
-      // 🧽 Remove existing unified claims
-      const animate = true;
-      const claimNodes = cy.nodes('[type = "unifiedClaim"]');
-      cy.batch(() => {
-        claimNodes.remove();
-      });
-
-      // Only restore if layout was previously saved
-      if (
-        lastRefNode.current &&
-        lastRefOriginalPos.current &&
-        lastRefNode.current.id() !== node.id()
-      ) {
-        lastRefNode.current.position(lastRefOriginalPos.current);
-      }
-      if (Object.keys(originalNodePositions.current).length > 0) {
-        restoreNodePositions(cy, originalNodePositions, animate);
-      }
-
       // 📍 Handle reference click (show claims)
       if (type === "reference") {
+        const clickedRefId = node.id();
+
+        // If clicking the same ref that's already showing claims, do nothing
+        if (activeRefWithClaims.current === clickedRefId) {
+          return;
+        }
+
+        // Remove existing claim nodes only when clicking a DIFFERENT reference
+        const animate = true;
+        const claimNodes = cy.nodes('[type = "refClaim"], [type = "taskClaim"]');
+        cy.batch(() => {
+          claimNodes.remove();
+        });
+
+        // Show all ref-to-task edges before adding new claims
+        cy.edges().style('display', 'element');
+
+        // Update active ref tracker
+        activeRefWithClaims.current = clickedRefId;
+
         (async () => {
           await animateMoleculeScene({
             cy,
@@ -2310,6 +2501,11 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             activatedNodeIds: activatedNodeIdsRef.current,
           });
         })();
+      }
+
+      // 📍 Handle task click - do nothing, keep claims visible
+      if (type === "task") {
+        return;
       }
     });
 
@@ -2525,8 +2721,11 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     const cy = cyInstance.current;
     if (!cy) return;
 
-    // Remove all unified claim nodes and their edges
-    cy.nodes('[type = "unifiedClaim"]').forEach((node) => {
+    // Clear active ref tracker
+    activeRefWithClaims.current = null;
+
+    // Remove all claim nodes and their edges
+    cy.nodes('[type = "refClaim"], [type = "taskClaim"]').forEach((node) => {
       // Clear throb interval
       const interval = node.data("throbInterval");
       if (interval) clearInterval(interval);
@@ -2914,14 +3113,19 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               size="xs"
               onClick={() => setShowMobileHUD(true)}
               zIndex={1000}
-              bg="rgba(0, 162, 255, 0.1)"
+              bg={colorMode === "dark" ? "rgba(0, 162, 255, 0.1)" : "rgba(248, 250, 252, 0.9)"}
               backdropFilter="blur(10px)"
-              border="1px solid rgba(0, 162, 255, 0.3)"
-              color="#00a2ff"
-              _hover={{
+              border="1px solid"
+              borderColor={colorMode === "dark" ? "rgba(0, 162, 255, 0.3)" : "rgba(71, 85, 105, 0.3)"}
+              color={colorMode === "dark" ? "#00a2ff" : "#475569"}
+              _hover={colorMode === "dark" ? {
                 bg: "rgba(0, 162, 255, 0.2)",
                 borderColor: "#00a2ff",
                 boxShadow: "0 0 20px rgba(0, 162, 255, 0.3)",
+              } : {
+                bg: "rgba(241, 245, 249, 1)",
+                borderColor: "#475569",
+                boxShadow: "0 2px 8px rgba(71, 85, 105, 0.2)",
               }}
             >
               Show Controls
@@ -2935,14 +3139,19 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               position="absolute"
               left="16px"
               top="16px"
-              background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+              background={colorMode === "dark"
+                ? "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+                : "linear-gradient(135deg, rgba(100, 116, 139, 0.25) 0%, rgba(148, 163, 184, 0.3) 50%, rgba(71, 85, 105, 0.25) 100%)"}
               backdropFilter="blur(20px)"
-              color="#e2e8f0"
+              color={colorMode === "dark" ? "#e2e8f0" : "#1e293b"}
               borderRadius="12px"
               p="20px"
               zIndex={1000}
-              border="1px solid rgba(0, 162, 255, 0.4)"
-              boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+              border="1px solid"
+              borderColor={colorMode === "dark" ? "rgba(0, 162, 255, 0.4)" : "rgba(71, 85, 105, 0.4)"}
+              boxShadow={colorMode === "dark"
+                ? "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+                : "0 4px 16px rgba(71, 85, 105, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.4)"}
               width="200px"
               sx={{ overflow: "hidden" }}
             >
@@ -2953,7 +3162,9 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 top={0}
                 width="20px"
                 height="100%"
-                background="linear-gradient(90deg, rgba(0, 162, 255, 0.4) 0%, rgba(0, 162, 255, 0) 100%)"
+                background={colorMode === "dark"
+                  ? "linear-gradient(90deg, rgba(0, 162, 255, 0.4) 0%, rgba(0, 162, 255, 0) 100%)"
+                  : "linear-gradient(90deg, rgba(71, 85, 105, 0.3) 0%, rgba(71, 85, 105, 0) 100%)"}
                 pointerEvents="none"
                 zIndex={1}
               />
@@ -2963,8 +3174,8 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 position="absolute"
                 top="6px"
                 right="6px"
-                color="#00a2ff"
-                _hover={{ bg: "rgba(0, 162, 255, 0.2)" }}
+                color={colorMode === "dark" ? "#00a2ff" : "#475569"}
+                _hover={{ bg: colorMode === "dark" ? "rgba(0, 162, 255, 0.2)" : "rgba(71, 85, 105, 0.15)" }}
                 zIndex={2}
               />
               <Text
@@ -2973,8 +3184,8 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 textTransform="uppercase"
                 letterSpacing="2px"
                 fontWeight="300"
-                color="#00a2ff"
-                textShadow="0 0 8px rgba(0, 162, 255, 0.6)"
+                color={colorMode === "dark" ? "#00a2ff" : "#475569"}
+                textShadow={colorMode === "dark" ? "0 0 8px rgba(0, 162, 255, 0.6)" : "none"}
                 position="relative"
                 zIndex={2}
               >
@@ -2983,7 +3194,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               <Box
                 fontSize="xs"
                 lineHeight="1.6"
-                color="#cbd5e1"
+                color={colorMode === "dark" ? "#cbd5e1" : "#475569"}
                 position="relative"
                 zIndex={2}
               >
@@ -2996,7 +3207,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                     mr={2}
                     boxShadow="0 0 8px rgba(99, 102, 241, 0.4)"
                   />
-                  <Text fontSize="10px">Task</Text>
+                  <Text fontSize="10px">Case</Text>
                 </Box>
                 <Box display="flex" alignItems="center" mb={2}>
                   <Box
@@ -3007,7 +3218,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                     mr={2}
                     boxShadow="0 0 8px rgba(16, 185, 129, 0.4)"
                   />
-                  <Text fontSize="10px">Reference</Text>
+                  <Text fontSize="10px">Source</Text>
                 </Box>
                 <Box display="flex" alignItems="center" mb={2}>
                   <Box
@@ -3062,14 +3273,19 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               size="xs"
               onClick={() => setShowLegend(true)}
               zIndex={1000}
-              bg="rgba(0, 162, 255, 0.1)"
+              bg={colorMode === "dark" ? "rgba(0, 162, 255, 0.1)" : "rgba(248, 250, 252, 0.9)"}
               backdropFilter="blur(10px)"
-              border="1px solid rgba(0, 162, 255, 0.3)"
-              color="#00a2ff"
-              _hover={{
+              border="1px solid"
+              borderColor={colorMode === "dark" ? "rgba(0, 162, 255, 0.3)" : "rgba(71, 85, 105, 0.3)"}
+              color={colorMode === "dark" ? "#00a2ff" : "#475569"}
+              _hover={colorMode === "dark" ? {
                 bg: "rgba(0, 162, 255, 0.2)",
                 borderColor: "#00a2ff",
                 boxShadow: "0 0 20px rgba(0, 162, 255, 0.3)",
+              } : {
+                bg: "rgba(241, 245, 249, 1)",
+                borderColor: "#475569",
+                boxShadow: "0 2px 8px rgba(71, 85, 105, 0.2)",
               }}
             >
               Show Legend
@@ -3115,7 +3331,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 color: "#00a2ff",
               }}
             >
-              Reference Claim{" "}
+              Source Claim{" "}
               {selectedClaim.relation === "supports"
                 ? "✅ SUPPORTS"
                 : selectedClaim.relation === "refutes"

@@ -36,6 +36,63 @@ export async function extractAuthors($) {
     });
   }
 
+  // ✅ Extract from byline containers with author links and avatars
+  // Common pattern: <div class="byline"><a rel="author"><div class="avatar"><img></div><span class="name">Name</span></a></div>
+  const bylineSelectors = [
+    '.byline a[rel="author"]',
+    'a[rel="author"]',
+    '.author-info a[rel="author"]',
+    '.story-header a[rel="author"]',
+    'div[class*="byline"] a[href*="/author"]',
+    'div[class*="author"] a[href*="/author"]'
+  ];
+
+  bylineSelectors.forEach(selector => {
+    $(selector).each((_, authorLink) => {
+      const $link = $(authorLink);
+
+      // Skip if inside related posts
+      if ($link.closest('.ast-single-related-posts-container, article.ast-related-post, .related').length > 0) {
+        return;
+      }
+
+      // Try to find author name from various common patterns
+      let name =
+        $link.find('.name, .author-name, span[class*="name"]').first().text().trim() ||
+        $link.text().trim();
+
+      // Clean up name - remove dates, times, and extra whitespace
+      name = name.replace(/\s*\/\s*\d+.*$/g, '').trim();  // Remove "/ December 05, 2020" etc
+      name = name.replace(/\s+/g, ' ').trim();  // Normalize whitespace
+
+      if (!name || name.length < 2) return;
+
+      // Try to find author image from avatar containers or img tags
+      let image =
+        $link.find('.avatar img, div[class*="avatar"] img').first().attr('src') ||
+        $link.find('img').first().attr('src') ||
+        null;
+
+      // If we have srcset, extract the base URL (first one is usually fine)
+      if (!image) {
+        const srcset = $link.find('.avatar img, img').first().attr('srcset');
+        if (srcset) {
+          const match = srcset.match(/https?:\/\/[^\s,]+/);
+          if (match) image = match[0];
+        }
+      }
+
+      if (!authors.find((a) => a.name === name)) {
+        logger.log(`👤 Found author from byline structure: ${name}${image ? ' (with image)' : ''}`);
+        authors.push({
+          name,
+          description: null,
+          image,
+        });
+      }
+    });
+  });
+
   // ✅ Extract from span.author-name (e.g. Brownstone byline)
   // Skip any that live inside Related Articles containers
   $('span.author-name').each((_, nameEl) => {
@@ -65,12 +122,7 @@ export async function extractAuthors($) {
     }
   });
 
-  // If we already found authors, return early — skip all generic extractors
-  if (authors.length > 0) {
-    return authors;
-  }
-
-  // ✅ Extract from JSON-LD
+  // ✅ Extract from JSON-LD (even if we already have authors - dedupe will handle it)
   $('script[type="application/ld+json"]').each((_, scriptTag) => {
     try {
       let raw = $(scriptTag).text().trim() || "{}";
@@ -99,15 +151,19 @@ export async function extractAuthors($) {
 
         authorArray.forEach((author) => {
           if (author?.name) {
-            logger.log(
-              "👤 Found author from metadata.author array:",
-              author.name
-            );
-            authors.push({
-              name: author.name.trim(),
-              description: author.description || null,
-              image: author.image?.contentUrl || null,
-            });
+            const authorName = author.name.trim();
+            // Check for duplicates before pushing
+            if (!authors.find((a) => a.name === authorName)) {
+              logger.log(
+                "👤 Found author from metadata.author array:",
+                authorName
+              );
+              authors.push({
+                name: authorName,
+                description: author.description || null,
+                image: author.image?.contentUrl || null,
+              });
+            }
           }
         });
       });
@@ -126,9 +182,12 @@ export async function extractAuthors($) {
       logger.log("📦 Found author in meta tag:", rawAuthorNames);
       rawAuthorNames
         .split(/\s*and\s*|,\s*/)
-        .forEach((name) =>
-          authors.push({ name: name.trim(), description: null, image: null })
-        );
+        .forEach((name) => {
+          const authorName = name.trim();
+          if (!authors.find((a) => a.name === authorName)) {
+            authors.push({ name: authorName, description: null, image: null });
+          }
+        });
     }
   }
 
@@ -142,9 +201,12 @@ export async function extractAuthors($) {
         logger.log("📚 Found citation_author meta:", rawAuthorName);
         rawAuthorName
           .split(/\s*and\s*|,\s*/)
-          .forEach((name) =>
-            authors.push({ name: name.trim(), description: null, image: null })
-          );
+          .forEach((name) => {
+            const authorName = name.trim();
+            if (!authors.find((a) => a.name === authorName)) {
+              authors.push({ name: authorName, description: null, image: null });
+            }
+          });
       }
     });
   }
@@ -161,15 +223,18 @@ export async function extractAuthors($) {
           if (match && match[1]) {
             const chdData = JSON.parse(match[1]);
             if (chdData.contentAuthor) {
-              logger.log(
-                "🏥 Found author in chd_ga4_data:",
-                chdData.contentAuthor
-              );
-              authors.push({
-                name: chdData.contentAuthor,
-                description: chdData.contentAuthorTitle || null,
-                image: null,
-              });
+              const authorName = chdData.contentAuthor;
+              if (!authors.find((a) => a.name === authorName)) {
+                logger.log(
+                  "🏥 Found author in chd_ga4_data:",
+                  authorName
+                );
+                authors.push({
+                  name: authorName,
+                  description: chdData.contentAuthorTitle || null,
+                  image: null,
+                });
+              }
             }
           }
         } catch (err) {
@@ -179,11 +244,27 @@ export async function extractAuthors($) {
     });
   }
 
-  if (!authors.length) {
-    logger.warn("🚫 No authors found from any source.");
-  } else {
-    logger.log("✅ Total authors extracted:", authors);
+  // ✅ ALWAYS deduplicate authors by name before returning (belt-and-suspenders approach)
+  if (authors.length > 1) {
+    logger.log(`🔍 [extractAuthors] Pre-dedupe: Found ${authors.length} author entries`);
+    logger.log(`   Author names: ${authors.map(a => a.name).join(", ")}`);
   }
 
-  return authors;
+  const uniqueAuthors = authors.filter((author, index, self) =>
+    index === self.findIndex((a) => a.name === author.name)
+  );
+
+  const duplicatesRemoved = authors.length - uniqueAuthors.length;
+  if (duplicatesRemoved > 0) {
+    logger.warn(`⚠️  [extractAuthors] Removed ${duplicatesRemoved} duplicate author(s) during final deduplication`);
+    logger.warn(`   This indicates a bug in one of the extraction methods above!`);
+  }
+
+  if (!uniqueAuthors.length) {
+    logger.warn("🚫 No authors found from any source.");
+  } else {
+    logger.log(`✅ [extractAuthors] Returning ${uniqueAuthors.length} unique authors:`, uniqueAuthors.map(a => a.name).join(", "));
+  }
+
+  return uniqueAuthors;
 }

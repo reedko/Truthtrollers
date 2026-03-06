@@ -141,8 +141,10 @@ const Workspace: React.FC<WorkspaceProps> = ({
     }
   };
 
+  const scope = useTaskStore((s) => s.viewScope);
+
   useEffect(() => {
-    fetchClaimsAndLinkedReferencesForTask(contentId, viewerId)
+    fetchClaimsAndLinkedReferencesForTask(contentId, viewerId, scope)
       .then((data) => {
         // Map the API results to the ClaimLink shape expected by the component.
         const formattedLinks: ClaimLink[] = data.map((row) => {
@@ -181,17 +183,17 @@ const Workspace: React.FC<WorkspaceProps> = ({
       .catch((error) => {
         console.error("Error fetching claim links:", error);
       });
-  }, [contentId, refreshLinks, viewerId]);
+  }, [contentId, refreshLinks, viewerId, scope]);
 
   useEffect(() => {
     // Use new API that includes claim_type for snippet detection
-    fetchClaimsWithEvidence(contentId, viewerId)
+    fetchClaimsWithEvidence(contentId, viewerId, scope)
       .then(setClaims)
       .catch((error) => {
         console.error("Error fetching claims with evidence:", error);
         setClaims([]); // Set empty array on error to prevent undefined state
       });
-  }, [contentId, viewerId]);
+  }, [contentId, viewerId, scope]);
 
   useEffect(() => {
     // Fetch AI evidence links (reference_claim_links with support_level/stance)
@@ -207,7 +209,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
   }, [contentId, refreshLinks]);
 
   useEffect(() => {
-    fetchReferencesWithClaimsForTask(contentId, viewerId)
+    fetchReferencesWithClaimsForTask(contentId, viewerId, scope)
       .then((data) => {
         console.log("✅ references fetched:", data);
         setReferences(data);
@@ -216,7 +218,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
         console.error("Error fetching references:", error);
         setReferences([]); // Set empty array on error
       });
-  }, [contentId, refreshReferences, viewerId]);
+  }, [contentId, refreshReferences, viewerId, scope]);
 
   useEffect(() => {
     updateXPositionsAndHeight();
@@ -242,12 +244,19 @@ const Workspace: React.FC<WorkspaceProps> = ({
 
   const handleOpenLinkOverlayFromScan = (
     scanSourceClaim: { claim_id: number; claim_text: string },
+    scanTargetClaim: Claim,
     rationale: string,
     supportLevel: number,
   ) => {
     // The scan's "source" claim is a reference claim; the target is the task claim being scanned
+    console.log('[Workspace] handleOpenLinkOverlayFromScan called with:', {
+      sourceClaim: scanSourceClaim.claim_id,
+      targetClaim: scanTargetClaim.claim_id,
+      rationale,
+      supportLevel
+    });
     setSourceClaim(scanSourceClaim);
-    setTargetClaim(scanningTaskClaim);
+    setTargetClaim(scanTargetClaim);
     setLinkRationale(rationale);
     setAiSuggestedSupportLevel(supportLevel);
     setSelectedClaimLink(null);
@@ -365,36 +374,14 @@ const Workspace: React.FC<WorkspaceProps> = ({
     contentId: number,
     refId: number,
   ): Promise<void> => {
-    // Find the reference to check if it's a system ref
-    const reference = references.find(
-      (ref) => ref.reference_content_id === refId
-    );
-
-    if (!reference) {
-      console.error("Reference not found");
-      return;
-    }
-
-    // Check if it's a system reference and user doesn't have permission to delete
-    const canDeleteSystemRefs = hasPermission("delete_system_references");
-
-    if (reference.is_system && !canDeleteSystemRefs) {
-      // Hide instead of delete for system refs
+    // Phase 3: Always soft-delete (hide) for regular users
+    // Only admins can hard-delete via admin panel
+    try {
       await hideReference(contentId, refId);
-      console.log("🔒 System reference hidden (not deleted)");
-    } else {
-      // Try to delete
-      try {
-        await deleteReferenceFromTask(contentId, refId);
-      } catch (error: any) {
-        // If delete fails, try to hide instead
-        if (error?.response?.data?.canHide) {
-          await hideReference(contentId, refId);
-          console.log("⚠️ Cannot delete - reference hidden instead");
-        } else {
-          throw error;
-        }
-      }
+      console.log("✅ Reference hidden from your view");
+    } catch (error: any) {
+      console.error("❌ Error hiding reference:", error);
+      throw error;
     }
 
     setRefreshReferences((prev) => !prev);
@@ -430,7 +417,9 @@ const Workspace: React.FC<WorkspaceProps> = ({
   const headerPadding = 80; // extra space for headings, margins, etc.
   // Compute the workspace height based on the longer list:
   const handleLinkCreated = async () => {
-    const viewerId = useTaskStore.getState().viewingUserId;
+    const taskStore = useTaskStore.getState();
+    const viewerId = taskStore.viewingUserId;
+    const scope = taskStore.viewScope;
 
     // ✅ Update scores
     await updateScoresForContent(contentId, viewerId);
@@ -450,6 +439,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
         claims={claims}
         references={references}
         claimLinks={claimLinks}
+        viewerId={viewerId}
       />
     );
   }
@@ -505,6 +495,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
               setIsVerificationModalOpen(true);
             }}
             onTaskClaimClick={handleTaskClaimRelevanceScan}
+            onOpenLinkOverlay={handleOpenLinkOverlayFromScan}
             draggingClaim={draggingClaim}
             onDropReferenceClaim={handleDropReferenceClaim}
             taskId={contentId}
@@ -521,6 +512,9 @@ const Workspace: React.FC<WorkspaceProps> = ({
             selectedReferenceId={selectedReference?.reference_content_id}
             isReferenceModalOpen={isReferenceClaimsModalOpen}
             claimLinks={claimLinks}
+            references={references}
+            contentId={contentId}
+            viewerId={viewerId}
           />
         </Box>
         <Box ref={containerRef} minW="100px" w="100%">
@@ -658,12 +652,14 @@ const Workspace: React.FC<WorkspaceProps> = ({
         references={references}
         onSelectReferenceClaim={handleSelectReferenceClaim}
         onOpenLinkOverlay={handleOpenLinkOverlayFromScan}
+        contentId={contentId}
+        viewerId={viewerId}
       />
       {draggingClaim && hoveredClaimId && (
         <Box
           position="fixed"
-          top={mousePosition.y - 80 - 285} // Shift 400px up
-          left={mousePosition.x + 20 - 450} // Shift 400px left
+          top={mousePosition.y - 80} // Shift 400px up
+          left={mousePosition.x + 20} // Shift 400px left
           bg="gray.700"
           color="white"
           px={4}

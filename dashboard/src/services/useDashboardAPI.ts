@@ -416,12 +416,13 @@ export async function fetchClaimById(claimId: number): Promise<Claim> {
  */
 export const fetchClaimsAndLinkedReferencesForTask = async (
   contentId: number,
-  viewerId: number | null
+  viewerId: number | null,
+  scope?: 'user' | 'all' | 'admin'
 ): Promise<ClaimLinks[]> => {
   try {
     const response = await axios.get(
       `${API_BASE_URL}/api/claims-and-linked-references/${contentId}`,
-      { params: { viewerId } }
+      { params: { viewerId, scope } }
     );
 
     return response.data;
@@ -437,13 +438,14 @@ export const fetchClaimsAndLinkedReferencesForTask = async (
  */
 export const fetchClaimsForTask = async (
   contentId: number,
-  viewerId: number | null
+  viewerId: number | null,
+  scope?: 'user' | 'all' | 'admin'
 ): Promise<Claim[]> => {
   try {
     const response = await axios.get(
       `${API_BASE_URL}/api/claims/${contentId}`,
       {
-        params: { viewerId },
+        params: { viewerId, scope },
       }
     );
 
@@ -633,11 +635,15 @@ export const fetchReferencesForTask = async (contentId: number) => {
 
 export const fetchReferencesWithClaimsForTask = async (
   taskContentId: number,
-  viewerId?: number | null
+  viewerId?: number | null,
+  scope?: 'user' | 'all' | 'admin'
 ): Promise<ReferenceWithClaims[]> => {
   const params = new URLSearchParams();
   if (viewerId !== undefined && viewerId !== null) {
     params.append('viewerId', viewerId.toString());
+  }
+  if (scope) {
+    params.append('scope', scope);
   }
 
   const url = `${API_BASE_URL}/api/content/${taskContentId}/references-with-claims${params.toString() ? '?' + params.toString() : ''}`;
@@ -678,6 +684,12 @@ export const addClaimLink = async ({
       notes,
       points_earned,
     });
+
+    // Dispatch event to update activity stats
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('activity-updated'));
+    }
+
     return response.data;
   } catch (error) {
     console.error("❌ Error adding claim link:", error);
@@ -993,6 +1005,12 @@ export const scrapeAndAddReference = async (url: string, taskId: number) => {
  **/
 export async function postDiscussionEntry(entry: Partial<DiscussionEntry>) {
   const res = await axios.post(`${API_BASE_URL}/api/discussion`, entry);
+
+  // Dispatch event to update discussion stats (hot topics, top contributors)
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('discussion-posted'));
+  }
+
   return res.data;
 }
 
@@ -1030,12 +1048,13 @@ export const fetchAIEvidenceLinks = async (
  */
 export const fetchClaimsWithEvidence = async (
   contentId: number,
-  viewerId?: number | null
+  viewerId?: number | null,
+  scope?: 'user' | 'all' | 'admin'
 ): Promise<import("../../../shared/entities/types").Claim[]> => {
   try {
     const res = await axios.get(
       `${API_BASE_URL}/api/claims-with-evidence/${contentId}`,
-      { params: { viewerId } }
+      { params: { viewerId, scope } }
     );
     return res.data || [];
   } catch (error) {

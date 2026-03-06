@@ -41,7 +41,8 @@
         "assets/icons/icon-128.png",
         "assets/images/meter3.png",
         "popup.js",
-        "popup.css"
+        "popup.css",
+        "minorityReport.js"
       ],
       "matches": ["<all_urls>"]
     }

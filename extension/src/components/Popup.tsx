@@ -1,34 +1,70 @@
 import "./Popup.css";
-import { ChakraProvider } from "@chakra-ui/react";
+import "../styles/minorityReport.css";
+
 import React from "react";
-import TaskCard from "./TaskCard";
 import ReactDOM from "react-dom/client";
+import { ChakraProvider } from "@chakra-ui/react";
+import { CacheProvider } from "@emotion/react";
+import createCache from "@emotion/cache";
+
+import TaskCard from "./TaskCard";
 import VisionTheme from "../components/themes/VisionTheme";
 
-const Popup: React.FC = () => {
-  // Directly access the state from Zustand store
+function findShadowBits(): {
+  mount: HTMLElement;
+  emotionHost: HTMLElement;
+  shadowRoot: ShadowRoot;
+} | null {
+  const host = document.getElementById("tt-popup-host") as HTMLElement | null;
+  if (!host) return null;
+
+  const shadow = host.shadowRoot;
+  if (!shadow) return null;
+
+  const emotionHost = shadow.getElementById("tt-emotion") as HTMLElement | null;
+  const mount = shadow.getElementById("popup-root") as HTMLElement | null;
+
+  if (!emotionHost || !mount) return null;
+  return { mount, emotionHost, shadowRoot: shadow };
+}
+
+const PopupApp: React.FC<{ emotionHost: HTMLElement; shadowRoot: ShadowRoot }> = ({ emotionHost, shadowRoot }) => {
+  const cache = React.useMemo(
+    () =>
+      createCache({
+        key: "tt",
+        container: emotionHost, // ✅ Emotion/Chakra styles go into shadow
+      }),
+    [emotionHost],
+  );
 
   return (
-    <ChakraProvider theme={VisionTheme}>
-      <div>
+    <CacheProvider value={cache}>
+      <ChakraProvider
+        theme={VisionTheme}
+        portalConfig={{
+          containerRef: {
+            current: shadowRoot as unknown as HTMLElement
+          }
+        }}
+      >
         <TaskCard />
-      </div>
-    </ChakraProvider>
+      </ChakraProvider>
+    </CacheProvider>
   );
 };
 
-const popupRoot = document.getElementById("popup-root");
-if (popupRoot) {
-  popupRoot.style.position = "fixed";
-  popupRoot.style.top = "0";
-  popupRoot.style.right = "0";
-  popupRoot.style.zIndex = "9999";
-  console.log("Found popup-root, rendering Popup component...");
-  const root = ReactDOM.createRoot(popupRoot);
+const bits = findShadowBits();
 
-  root.render(<Popup />);
+if (!bits) {
+  console.error(
+    "Shadow mount not found (tt-popup-host -> shadowRoot -> #popup-root).",
+  );
 } else {
-  console.error("popup-root not found, cannot render Popup");
+  console.log("✅ Found shadow mount, rendering Popup...");
+  ReactDOM.createRoot(bits.mount).render(
+    <PopupApp emotionHost={bits.emotionHost} shadowRoot={bits.shadowRoot} />,
+  );
 }
 
-export default Popup;
+export default PopupApp;

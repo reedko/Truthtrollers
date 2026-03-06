@@ -76,14 +76,23 @@ const TruthGauge: React.FC<TruthGaugeProps> = ({
           mb={size?.h ? (size.h === 120 ? 5 : 3) : 5}
           textAlign="center"
         >
-          <Text fontSize="2xl" fontWeight="bold" color={activeColor}>
+          <Text
+            fontSize="2xl"
+            fontWeight="bold"
+            color={activeColor}
+            fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+          >
             {(score * 100).toFixed(0)}%
           </Text>
         </Box>
 
         {/* Label */}
         <Box mt={-3} textAlign="center">
-          <Text fontSize="md" color={tealGaugeTheme.colors.parchment}>
+          <Text
+            fontSize="md"
+            color={tealGaugeTheme.colors.parchment}
+            fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+          >
             {label}
           </Text>
         </Box>
@@ -98,6 +107,7 @@ const TruthGauge: React.FC<TruthGaugeProps> = ({
               position="absolute"
               left="-20px"
               bottom="10px"
+              fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
             >
               FALSE
             </Text>
@@ -108,6 +118,7 @@ const TruthGauge: React.FC<TruthGaugeProps> = ({
               position="absolute"
               right="-20px"
               bottom="10px"
+              fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
             >
               TRUE
             </Text>

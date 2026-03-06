@@ -78,6 +78,12 @@ const AuthCard: React.FC<AuthCardProps> = ({
   const cardRef = useRef<HTMLDivElement | null>(null);
   const [authorList, setAuthorList] = useState<Author[]>(authors);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const {
+    isOpen: isBioPopupOpen,
+    onOpen: onBioPopupOpen,
+    onClose: onBioPopupClose,
+  } = useDisclosure();
+
   useEffect(() => {
     if (authors.length > 0) {
       setAuthorList(authors);
@@ -352,14 +358,27 @@ const AuthCard: React.FC<AuthCardProps> = ({
             </Flex>
           </HStack>
           <Box />
-          <Text
-            className="mr-text-secondary"
-            fontSize="sm"
+          <Box
             mt={1}
             textAlign="center"
+            onClick={activeAuthor?.description && activeAuthor.description.length > 100 ? onBioPopupOpen : undefined}
+            cursor={activeAuthor?.description && activeAuthor.description.length > 100 ? "pointer" : "default"}
+            _hover={activeAuthor?.description && activeAuthor.description.length > 100 ? { opacity: 0.8 } : undefined}
           >
-            {activeAuthor?.description || "No bio available."}
-          </Text>
+            <Text
+              className="mr-text-secondary"
+              fontSize="sm"
+              noOfLines={2}
+              sx={{
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                display: "-webkit-box",
+                WebkitBoxOrient: "vertical",
+              }}
+            >
+              {activeAuthor?.description || "No bio available."}
+            </Text>
+          </Box>
         </Box>
         <Center>
           <Menu>
@@ -460,13 +479,37 @@ const AuthCard: React.FC<AuthCardProps> = ({
                 placeholder="Author name"
                 value={newAuthorName}
                 onChange={(e) => setNewAuthorName(e.target.value)}
-                onKeyPress={(e) => {
+                onKeyDown={(e) => {
                   if (e.key === "Enter") {
                     handleAddAuthor();
                   }
                 }}
               />
             </VStack>
+          </ResponsiveOverlay>
+        )}
+
+        {activeAuthor && (
+          <ResponsiveOverlay
+            isOpen={isBioPopupOpen}
+            onClose={onBioPopupClose}
+            title={`${activeAuthor.author_first_name} ${activeAuthor.author_last_name} - Bio`}
+            footer={
+              <Button onClick={onBioPopupClose} className="mr-button">
+                Close
+              </Button>
+            }
+            size="md"
+          >
+            <Box
+              maxH="400px"
+              overflowY="auto"
+              p={4}
+              className="mr-text-secondary"
+              fontSize="sm"
+            >
+              {activeAuthor.description || "No bio available."}
+            </Box>
           </ResponsiveOverlay>
         )}
       </Box>

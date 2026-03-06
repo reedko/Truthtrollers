@@ -56,7 +56,9 @@ export default function ResponsiveOverlay({
       isOpen={isOpen}
       onClose={onClose}
       size={size}
+      isCentered
       scrollBehavior="inside"
+      closeOnOverlayClick={true}
     >
       <ModalOverlay />
       <ModalContent className="mr-modal">

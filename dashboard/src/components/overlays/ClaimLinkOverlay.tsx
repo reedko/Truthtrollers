@@ -73,6 +73,7 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
 
   // Track whether the current values were AI-suggested (for badge display)
   const [aiPrefilled, setAiPrefilled] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // When modal opens, sync notes + support level with AI suggestions
   useEffect(() => {
@@ -98,6 +99,7 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
       setSupportLevel(0);
       setRelationship("nuanced");
       setNotes("");
+      setIsSubmitting(false);
     }
   }, [isOpen, rationale, aiSupportLevel, isReadOnly, claimLink?.notes]);
 
@@ -140,6 +142,9 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
   }, [isReadOnly, isOpen, targetClaim?.claim_id, viewerId, verimeterScore]);
 
   const handleSubmit = async () => {
+    if (isSubmitting) return; // Prevent duplicate submissions
+
+    setIsSubmitting(true);
     try {
       // Map "nuanced" to "related" for the API
       const apiRelationship = relationship === "nuanced" ? "related" : relationship;
@@ -162,6 +167,9 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
         points_earned: pointsEarned, // 🎮 Save to database
       });
 
+      // Link created successfully - notify parent
+      onLinkCreated?.();
+
       // 🎮 Award points locally
       if (onScoreAwarded && sourceClaimVeracity !== undefined) {
         onScoreAwarded(pointsEarned);
@@ -183,13 +191,17 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
         });
       }
 
-      onLinkCreated?.();
-
+      // Update scores (non-blocking - errors won't prevent modal close)
       const contentId = targetClaim?.content_id ?? null;
       if (contentId) {
-        await updateScoresForContent(contentId, viewerId);
-        const scores = await fetchContentScores(contentId, viewerId);
-        setVerimeterScore(contentId, scores?.verimeterScore ?? null);
+        try {
+          await updateScoresForContent(contentId, viewerId);
+          const scores = await fetchContentScores(contentId, viewerId);
+          setVerimeterScore(contentId, scores?.verimeterScore ?? null);
+        } catch (scoreErr) {
+          console.warn("Failed to update scores after link creation:", scoreErr);
+          // Don't show error toast - link was created successfully
+        }
       }
 
       onClose();
@@ -202,6 +214,8 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
         duration: 3000,
         isClosable: true,
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -211,10 +225,16 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
 
   const footer = !isReadOnly ? (
     <>
-      <Button className="mr-button" mr={3} onClick={handleSubmit}>
+      <Button
+        className="mr-button"
+        mr={3}
+        onClick={handleSubmit}
+        isLoading={isSubmitting}
+        isDisabled={isSubmitting}
+      >
         Create Link
       </Button>
-      <Button onClick={onClose}>Cancel</Button>
+      <Button onClick={onClose} isDisabled={isSubmitting}>Cancel</Button>
     </>
   ) : (
     <Button onClick={onClose}>Close</Button>

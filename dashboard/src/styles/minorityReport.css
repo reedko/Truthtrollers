@@ -399,18 +399,29 @@
 }
 
 /* Modal/Overlay Style */
-.mr-modal {
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9)) !important;
-  backdrop-filter: blur(20px) !important;
+.chakra-ui-dark .mr-modal {
+  background: linear-gradient(135deg, rgb(15, 23, 42), rgb(30, 41, 59)) !important;
   border: 2px solid var(--mr-blue-border) !important;
   border-radius: var(--mr-radius-lg) !important;
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.8),
     0 0 60px var(--mr-blue-border) !important;
   color: var(--mr-text-primary) !important;
+  z-index: 9999 !important;
 }
 
-.mr-modal-header {
+.chakra-ui-light .mr-modal {
+  background: linear-gradient(135deg, rgb(255, 255, 255), rgb(241, 245, 249)) !important;
+  border: 2px solid rgba(71, 85, 105, 0.3) !important;
+  border-radius: var(--mr-radius-lg) !important;
+  box-shadow:
+    0 4px 16px rgba(100, 116, 139, 0.2),
+    0 2px 8px rgba(71, 85, 105, 0.15) !important;
+  color: var(--mr-text-primary) !important;
+  z-index: 9999 !important;
+}
+
+.chakra-ui-dark .mr-modal-header {
   background: linear-gradient(90deg, var(--mr-blue-border), transparent) !important;
   border-bottom: 1px solid var(--mr-blue-border) !important;
   padding: 20px 24px !important;
@@ -422,8 +433,20 @@
   text-shadow: 0 0 10px var(--mr-blue-glow) !important;
 }
 
+.chakra-ui-light .mr-modal-header {
+  background: linear-gradient(90deg, rgba(71, 85, 105, 0.15), transparent) !important;
+  border-bottom: 1px solid rgba(71, 85, 105, 0.3) !important;
+  padding: 20px 24px !important;
+  font-size: 1.2rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase !important;
+  color: #475569 !important;
+  text-shadow: none !important;
+}
+
 /* Input Style */
-.mr-input {
+.chakra-ui-dark .mr-input {
   background: rgba(15, 23, 42, 0.6) !important;
   border: 1px solid var(--mr-blue-border) !important;
   border-radius: var(--mr-radius-sm) !important;
@@ -434,11 +457,29 @@
   transition: all 0.3s ease !important;
 }
 
-.mr-input:focus {
+.chakra-ui-light .mr-input {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border: 1px solid rgba(71, 85, 105, 0.3) !important;
+  border-radius: var(--mr-radius-sm) !important;
+  padding: 10px 16px !important;
+  color: var(--mr-text-primary) !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.5px !important;
+  transition: all 0.3s ease !important;
+}
+
+.chakra-ui-dark .mr-input:focus {
   outline: none !important;
   border-color: var(--mr-blue) !important;
   box-shadow: 0 0 20px var(--mr-blue-border) !important;
   background: rgba(15, 23, 42, 0.8) !important;
+}
+
+.chakra-ui-light .mr-input:focus {
+  outline: none !important;
+  border-color: #475569 !important;
+  box-shadow: 0 0 8px rgba(71, 85, 105, 0.3) !important;
+  background: rgba(255, 255, 255, 1) !important;
 }
 
 .mr-input::placeholder {

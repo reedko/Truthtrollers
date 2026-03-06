@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { userHasPermission, userHasRole } from "../../middleware/permissions.js";
+import { requirePermission, userHasPermission, userHasRole } from "../../middleware/permissions.js";
+import { authenticateToken } from "../../middleware/auth.js";
 
 export default function createReferencesRoutes({ query, pool }) {
   const router = Router();
@@ -24,15 +25,56 @@ export default function createReferencesRoutes({ query, pool }) {
     });
   });
 
-  //get references with claims for a content_id (VIEWER-FILTERED)
+  //get references with claims for a content_id (VIEWER-FILTERED + SCOPE)
   router.get(
     "/api/content/:task_content_id/references-with-claims",
     async (req, res) => {
       const { task_content_id } = req.params;
       const viewerId = req.query.viewerId ? parseInt(req.query.viewerId) : null;
+      const scope = req.query.scope || 'user'; // 'user' | 'all' | 'admin'
       const currentUserId = req.user?.user_id || viewerId; // Use JWT user if available
 
+      // 🔍 DEBUG LOGGING
+      console.log(`\n🔍 REFERENCES QUERY: task=${task_content_id}, viewerId=${viewerId}, scope=${scope}, currentUserId=${currentUserId}`);
+      process.stderr.write(`[${new Date().toISOString()}] 🔍 REFS: task=${task_content_id}, viewer=${viewerId}, scope=${scope}, currUser=${currentUserId}\n`);
+
       try {
+        let whereClause = '';
+        let params = [];
+
+        // Build WHERE clause based on scope
+        if (scope === 'admin') {
+          // Admin: show everything including provenance
+          whereClause = `
+            WHERE cr.content_id = ?
+            -- Admin sees all, including globally_removed
+          `;
+          params = [task_content_id];
+        } else if (scope === 'all') {
+          // All Users: global + all_users_added - globally_removed
+          whereClause = `
+            WHERE cr.content_id = ?
+              AND (cr.globally_removed IS NULL OR cr.globally_removed = FALSE)
+          `;
+          params = [task_content_id];
+        } else {
+          // User View: global + user_added - user_hidden
+          whereClause = `
+            WHERE cr.content_id = ?
+              AND (
+                -- Always show system refs (explicit TRUE or legacy NULL)
+                cr.is_system = TRUE
+                OR cr.is_system IS NULL
+                OR
+                -- Show user's own refs
+                ${viewerId ? 'cr.added_by_user_id = ?' : '1=1'}
+              )
+              AND (urv.is_hidden IS NULL OR urv.is_hidden = FALSE)
+              AND (cr.globally_removed IS NULL OR cr.globally_removed = FALSE)
+          `;
+          params = viewerId ? [task_content_id, viewerId] : [task_content_id];
+        }
+
         const SQL = `
         SELECT  c.content_id AS reference_content_id,
           c.content_name,
@@ -45,6 +87,7 @@ export default function createReferencesRoutes({ query, pool }) {
           c.subtopic,
           cr.added_by_user_id,
           cr.is_system,
+          ${scope === 'admin' ? 'cr.globally_removed, urv.is_hidden AS user_hidden,' : ''}
                COALESCE(JSON_ARRAYAGG(
                  JSON_OBJECT('claim_id', cl.claim_id, 'claim_text', cl.claim_text, 'claim_type', cl.claim_type)
                ), '[]') AS claims
@@ -52,28 +95,25 @@ export default function createReferencesRoutes({ query, pool }) {
         INNER JOIN content_relations cr ON c.content_id = cr.reference_content_id
         LEFT JOIN content_claims cc ON c.content_id = cc.content_id
         LEFT JOIN claims cl ON cc.claim_id = cl.claim_id
+        ${scope !== 'all' ? `
         LEFT JOIN user_reference_visibility urv
           ON urv.task_content_id = cr.content_id
           AND urv.reference_content_id = cr.reference_content_id
           AND urv.user_id = ?
-        WHERE cr.content_id = ?
-          AND (
-            -- Always show system refs
-            cr.is_system = TRUE
-            OR
-            -- Show user-added refs based on viewer context
-            ${viewerId === null
-              ? '1=1' // View All: show all user refs
-              : 'cr.added_by_user_id = ?'} -- Specific viewer: only their refs
-          )
-          AND (urv.is_hidden IS NULL OR urv.is_hidden = FALSE) -- Not hidden by this user
+        ` : ''}
+        ${whereClause}
         GROUP BY c.content_id
         `;
 
-        const params = viewerId === null
-          ? [currentUserId, task_content_id]
-          : [currentUserId, task_content_id, viewerId];
-        const referencesWithClaims = await query(SQL, params);
+        // Add currentUserId to params if needed for user_reference_visibility join
+        const finalParams = scope !== 'all'
+          ? [currentUserId, ...params]
+          : params;
+
+        const referencesWithClaims = await query(SQL, finalParams);
+
+        console.log(`✅ FOUND ${referencesWithClaims.length} references for task ${task_content_id}`);
+        process.stderr.write(`[${new Date().toISOString()}] ✅ FOUND ${referencesWithClaims.length} refs\n`);
 
         res.json(referencesWithClaims);
       } catch (err) {
@@ -174,7 +214,9 @@ export default function createReferencesRoutes({ query, pool }) {
     const taskContentId = req.body.taskContentId;
     const referenceContentId = req.body.referenceContentId;
     const userId = req.user?.user_id; // From JWT
-    const isSystemRef = req.body.isSystemRef || false; // Evidence engine sets this
+    // Default to system reference (evidence engine always creates system refs)
+    // Only mark as non-system if explicitly set to false
+    const isSystemRef = req.body.isSystemRef !== undefined ? req.body.isSystemRef : true;
 
     try {
       // Check if this task-reference pair already exists
@@ -308,6 +350,39 @@ export default function createReferencesRoutes({ query, pool }) {
     }
   });
 
+  // Admin-only: Hard delete a reference (globally_removed = TRUE)
+  router.delete("/api/references/admin-delete", requirePermission('delete_system_references'), async (req, res) => {
+    const { taskContentId, referenceContentId } = req.body;
+    const userId = req.user?.user_id;
+
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    if (!taskContentId || !referenceContentId) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    try {
+      // Set globally_removed = TRUE (admin hard-delete)
+      const sql = `
+        UPDATE content_relations
+        SET globally_removed = TRUE
+        WHERE content_id = ? AND reference_content_id = ?
+      `;
+      const result = await query(sql, [taskContentId, referenceContentId]);
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ error: "Reference relation not found" });
+      }
+
+      res.json({ message: "Reference permanently removed (admin delete)" });
+    } catch (err) {
+      console.error("Error admin-deleting reference:", err);
+      res.status(500).json({ error: "Error removing reference" });
+    }
+  });
+
   // Unhide reference for current user
   router.post("/api/references/unhide", async (req, res) => {
     const { taskContentId, referenceContentId } = req.body;
@@ -340,7 +415,7 @@ export default function createReferencesRoutes({ query, pool }) {
   });
 
   // Get user permissions (for frontend)
-  router.get("/api/user/permissions", async (req, res) => {
+  router.get("/api/user/permissions", authenticateToken, async (req, res) => {
     const userId = req.user?.user_id;
 
     if (!userId) {

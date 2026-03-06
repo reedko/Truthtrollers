@@ -9,9 +9,7 @@ import {
   SkeletonText,
   Text,
   useBreakpointValue,
-  Button,
-  HStack,
-  useToast,
+  useColorMode,
 } from "@chakra-ui/react";
 import {
   ViewIcon,
@@ -30,11 +28,14 @@ import BoolCard from "./BoolCard";
 import ProgressCard from "./ProgressCard";
 import { Author, Publisher, Task } from "../../../shared/entities/types";
 import { ensureArray } from "../utils/normalize";
-import { fetchContentScores } from "../services/useDashboardAPI";
+import {
+  fetchContentScores,
+  fetchLinkedClaimsForTask,
+  fetchClaimsForTask,
+  fetchReferencesForTask,
+} from "../services/useDashboardAPI";
 import MicroHeaderRail from "./headers/MicroHeaderRail";
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+import { ViewerScopeBadge } from "./ViewerScopeBadge";
 
 type Variant = "full" | "compact" | "micro"; // ⬅️ reintroduce micro
 
@@ -64,6 +65,58 @@ interface UnifiedHeaderProps {
 
 const CARD_W = 250; // single source of truth
 
+// Helper function to get verdict info based on verimeter score
+const getVerdictInfo = (
+  score: number | null,
+): {
+  color: string;
+  word: string;
+  interpretation: string;
+} => {
+  if (score === null || score === 0) {
+    return {
+      color: "gray.400",
+      word: "UNKNOWN",
+      interpretation: "No evidence assessment available yet",
+    };
+  }
+
+  // Convert to percentage (-100 to 100)
+  const percentage = (score - 0.5) * 200;
+
+  if (percentage <= -50) {
+    return {
+      color: "red.400",
+      word: "FALSE",
+      interpretation: "Evidence strongly suggests this is false",
+    };
+  } else if (percentage <= -15) {
+    return {
+      color: "red.300",
+      word: "FALSE",
+      interpretation: "Evidence nominally suggests this is false",
+    };
+  } else if (percentage < 15) {
+    return {
+      color: "yellow.400",
+      word: "NUANCED",
+      interpretation: "Evidence is inconclusive",
+    };
+  } else if (percentage < 50) {
+    return {
+      color: "green.300",
+      word: "TRUE",
+      interpretation: "Evidence nominally suggests this is true",
+    };
+  } else {
+    return {
+      color: "green.400",
+      word: "TRUE",
+      interpretation: "Evidence strongly suggests this is true",
+    };
+  }
+};
+
 const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   pivotType,
   pivotId,
@@ -76,17 +129,30 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   sticky = false,
   allowToggle = false,
 }) => {
+  const { colorMode } = useColorMode();
   const selectedTask = useTaskStore((s) => s.selectedTask);
   const fetchTasksByPivot = useTaskStore((s) => s.fetchTasksByPivot);
-  const fetchTasksForUser = useTaskStore((s) => s.fetchTasksForUser);
   const viewerId = useTaskStore((s) => s.viewingUserId);
   const verimeterScoreMap = useTaskStore((s) => s.verimeterScores || {});
   const user = useAuthStore((s) => s.user);
-  const toast = useToast();
+
+  // Debug: Log user role
+  useEffect(() => {
+    console.log("[UnifiedHeader] Current user:", user);
+    console.log("[UnifiedHeader] User role:", user?.role);
+  }, [user]);
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [pivotTask, setPivotTask] = useState<Task | null>(null);
   const [liveVerimeter, setLiveVerimeter] = useState<number | null>(null);
+  const [claimStats, setClaimStats] = useState({
+    totalClaimLinks: 0,
+    totalClaims: 0,
+    totalReferences: 0,
+    supportingLinks: 0,
+    refutingLinks: 0,
+    nuancedLinks: 0,
+  });
 
   // Use global header visibility state
   const isHeaderVisible = useUIStore((s) => s.isHeaderVisible);
@@ -178,6 +244,79 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pivotTask?.content_id, viewerId, refreshKey]);
 
+  // Fetch claim statistics for ProgressCard
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!pivotTask?.content_id) {
+        setClaimStats({
+          totalClaimLinks: 0,
+          totalClaims: 0,
+          totalReferences: 0,
+          supportingLinks: 0,
+          refutingLinks: 0,
+          nuancedLinks: 0,
+        });
+        return;
+      }
+
+      try {
+        // Fetch linked claims (user-created claim relationships)
+        const linkedClaims = await fetchLinkedClaimsForTask(
+          pivotTask.content_id,
+          viewerId,
+        );
+
+        // Fetch all claims
+        const claims = await fetchClaimsForTask(pivotTask.content_id, viewerId);
+
+        // Fetch all references
+        const refs = await fetchReferencesForTask(pivotTask.content_id);
+
+        console.log("Claim Stats Debug:", {
+          contentId: pivotTask.content_id,
+          viewerId,
+          linkedClaimsCount: linkedClaims.length,
+          linkedClaims: linkedClaims.map((l) => ({
+            relation: l.relationship,
+            id: l.claim_link_id,
+          })),
+          claimsCount: claims.length,
+          refsCount: refs.length,
+        });
+
+        // Count supporting, refuting, and nuanced links
+        const supportingLinks = linkedClaims.filter(
+          (link) => link.relationship === "supports",
+        ).length;
+        const refutingLinks = linkedClaims.filter(
+          (link) => link.relationship === "refutes",
+        ).length;
+        const nuancedLinks = linkedClaims.filter(
+          (link) => link.relationship === "related",
+        ).length;
+
+        console.log("Supporting/Refuting/Nuanced counts:", {
+          supportingLinks,
+          refutingLinks,
+          nuancedLinks,
+        });
+
+        setClaimStats({
+          totalClaimLinks: linkedClaims.length,
+          totalClaims: claims.length,
+          totalReferences: refs.length,
+          supportingLinks,
+          refutingLinks,
+          nuancedLinks,
+        });
+      } catch (error) {
+        console.error("Error fetching claim stats:", error);
+      }
+    };
+
+    fetchStats();
+  }, [pivotTask?.content_id, viewerId, refreshKey]);
+
   const contentId = pivotTask?.content_id ?? null;
   const storeScore =
     contentId != null ? (verimeterScoreMap[contentId] ?? null) : null;
@@ -204,75 +343,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   const isLoading = !pivotTask;
 
   // Card wrapper—forces identical widths, kills stagger
-  // On mobile (horizontal scroll), maintain minimum width
-  const cardMinWidth = useBreakpointValue({
-    base: "280px", // mobile: fixed width for scrolling
-    md: "200px", // desktop: can be smaller with wrap
-  });
-
-  const handleMarkComplete = async () => {
-    if (!user?.user_id) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to mark tasks complete",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-
-    if (!pivotTask?.content_id) {
-      toast({
-        title: "Error",
-        description: "No task selected",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-      return;
-    }
-
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/mark-task-complete`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contentId: pivotTask.content_id,
-          userId: user.user_id,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to mark task complete");
-      }
-
-      toast({
-        title: "Task marked complete!",
-        description:
-          "The extension will now show this task when you visit the URL",
-        status: "success",
-        duration: 4000,
-        isClosable: true,
-      });
-
-      // Optionally refresh the task list
-      if (user.user_id) {
-        fetchTasksForUser(user.user_id, false);
-      }
-    } catch (error: any) {
-      toast({
-        title: "Error marking task complete",
-        description: error.message || "An error occurred",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-  };
-
   const cardWrapSx = {
     "--card-max": `${CARD_W}px`,
 
@@ -324,18 +394,31 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
             pointerEvents="none"
           >
             <Box
-              bg="rgba(0, 0, 0, 0.4)"
+              bg={
+                colorMode === "dark"
+                  ? "rgba(0, 0, 0, 0.4)"
+                  : "rgba(255, 255, 255, 0.7)"
+              }
               backdropFilter="blur(12px)"
               borderRadius="0 12px 12px 0"
               p={2}
-              border="1px solid rgba(139, 92, 246, 0.4)"
+              border="1px solid"
+              borderColor={
+                colorMode === "dark"
+                  ? "rgba(100, 116, 139, 0.5)"
+                  : "rgba(71, 85, 105, 0.4)"
+              }
               borderLeft="none"
-              boxShadow="0 2px 12px rgba(139, 92, 246, 0.3)"
-              opacity={0.7}
+              boxShadow={
+                colorMode === "dark"
+                  ? "0 2px 12px rgba(100, 116, 139, 0.3)"
+                  : "0 2px 12px rgba(71, 85, 105, 0.2)"
+              }
+              opacity={0.8}
             >
               <ChevronLeftIcon
                 boxSize={5}
-                color="#a78bfa"
+                color={colorMode === "dark" ? "#94a3b8" : "#475569"}
                 animation={`${pulseAnimationLeft} 2s ease-in-out infinite`}
               />
             </Box>
@@ -352,18 +435,31 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
             pointerEvents="none"
           >
             <Box
-              bg="rgba(0, 0, 0, 0.4)"
+              bg={
+                colorMode === "dark"
+                  ? "rgba(0, 0, 0, 0.4)"
+                  : "rgba(255, 255, 255, 0.7)"
+              }
               backdropFilter="blur(12px)"
               borderRadius="12px 0 0 12px"
               p={2}
-              border="1px solid rgba(139, 92, 246, 0.4)"
+              border="1px solid"
+              borderColor={
+                colorMode === "dark"
+                  ? "rgba(100, 116, 139, 0.5)"
+                  : "rgba(71, 85, 105, 0.4)"
+              }
               borderRight="none"
-              boxShadow="0 2px 12px rgba(139, 92, 246, 0.3)"
-              opacity={0.7}
+              boxShadow={
+                colorMode === "dark"
+                  ? "0 2px 12px rgba(100, 116, 139, 0.3)"
+                  : "0 2px 12px rgba(71, 85, 105, 0.2)"
+              }
+              opacity={0.8}
             >
               <ChevronRightIcon
                 boxSize={5}
-                color="#a78bfa"
+                color={colorMode === "dark" ? "#94a3b8" : "#475569"}
                 animation={`${pulseAnimation} 2s ease-in-out infinite`}
               />
             </Box>
@@ -408,7 +504,83 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
           onSelectTask={setPivotTask}
         />
       ) : (
-        <Box w="100%">
+        <Box
+          w="100%"
+          p={4}
+          borderRadius="xl"
+          bg={
+            colorMode === "dark"
+              ? "radial-gradient(circle at top left, rgba(71, 85, 105, 0.15), rgba(30, 41, 59, 0.2))"
+              : "linear-gradient(135deg, rgba(100, 116, 139, 0.35) 0%, rgba(148, 163, 184, 0.45) 50%, rgba(71, 85, 105, 0.35) 100%)"
+          }
+          border="1px solid"
+          borderColor={colorMode === "dark" ? "gray.700" : "gray.400"}
+          boxShadow={
+            colorMode === "dark"
+              ? "0 4px 16px rgba(0, 0, 0, 0.3)"
+              : "0 4px 16px rgba(71, 85, 105, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.5)"
+          }
+        >
+          {/* Header Row: Case Tab and Viewer Badge */}
+
+          {/* NEW: Case Header Banner */}
+          <Box mb={4}>
+            {/* Case Name with Viewer Badge on same row */}
+            <Box position="relative" mb={2}>
+              <Flex justify="center" align="center">
+                <Text fontSize="xl" fontWeight="semibold">
+                  {pivotTask?.content_name || "Untitled Case"}
+                </Text>
+              </Flex>
+              <Box position="absolute" right={0} top={0}>
+                <ViewerScopeBadge />
+              </Box>
+            </Box>
+
+            {/* Verimeter Score with Verdict - Centered */}
+            <Box textAlign="center">
+              {(() => {
+                const verdictInfo = getVerdictInfo(finalScore);
+
+                return (
+                  <>
+                    <Flex justify="center" align="center" gap={3} mb={1}>
+                      <Text
+                        fontSize="3xl"
+                        fontWeight="bold"
+                        color={verdictInfo.color}
+                      >
+                        {finalScore
+                          ? finalScore !== 0
+                            ? (finalScore * 100).toFixed(0)
+                            : 0
+                          : 0}
+                        %
+                      </Text>
+                      <Text
+                        fontSize="2xl"
+                        fontWeight="bold"
+                        color={verdictInfo.color}
+                      >
+                        {verdictInfo.word}
+                      </Text>
+                    </Flex>
+
+                    {/* Plain Language Interpretation */}
+                    <Text fontSize="md" color="gray.300" mb={1}>
+                      {verdictInfo.interpretation}
+                    </Text>
+
+                    {/* Trace Reasoning Hint */}
+                    <Text fontSize="sm" color="gray.500">
+                      Click any source below to trace the reasoning path
+                    </Text>
+                  </>
+                );
+              })()}
+            </Box>
+          </Box>
+
           <Flex
             wrap={flexWrap}
             justify={justify} // ⬅️ spread on desktop, scrollable on phone
@@ -430,14 +602,23 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                 height: "6px",
               },
               "&::-webkit-scrollbar-track": {
-                background: "rgba(0, 0, 0, 0.1)",
+                background:
+                  colorMode === "dark"
+                    ? "rgba(0, 0, 0, 0.1)"
+                    : "rgba(203, 213, 225, 0.3)",
               },
               "&::-webkit-scrollbar-thumb": {
-                background: "rgba(139, 92, 246, 0.5)",
+                background:
+                  colorMode === "dark"
+                    ? "rgba(100, 116, 139, 0.5)"
+                    : "rgba(71, 85, 105, 0.6)",
                 borderRadius: "3px",
               },
               "&::-webkit-scrollbar-thumb:hover": {
-                background: "rgba(139, 92, 246, 0.7)",
+                background:
+                  colorMode === "dark"
+                    ? "rgba(100, 116, 139, 0.7)"
+                    : "rgba(71, 85, 105, 0.8)",
               },
             }}
           >
@@ -455,7 +636,9 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                   width: "8px",
                   height: "100%",
                   background:
-                    "linear-gradient(90deg, rgba(139, 92, 246, 0.5) 0%, rgba(139, 92, 246, 0) 100%)",
+                    colorMode === "dark"
+                      ? "linear-gradient(90deg, rgba(100, 116, 139, 0.5) 0%, rgba(100, 116, 139, 0) 100%)"
+                      : "linear-gradient(90deg, rgba(71, 85, 105, 0.5) 0%, rgba(71, 85, 105, 0) 100%)",
                   pointerEvents: "none",
                   zIndex: 1,
                 },
@@ -467,7 +650,10 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                 },
                 "&:hover > *": {
                   transform: "translateY(-2px)",
-                  boxShadow: "0 0 30px rgba(139, 92, 246, 0.4)",
+                  boxShadow:
+                    colorMode === "dark"
+                      ? "0 0 30px rgba(100, 116, 139, 0.4)"
+                      : "0 0 30px rgba(71, 85, 105, 0.3)",
                 },
               }}
             >
@@ -657,37 +843,23 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                 />
               ) : (
                 <ProgressCard
-                  ProgressScore={0.2}
-                  totalClaims={90}
-                  verifiedClaims={27}
-                  totalReferences={20}
-                  verifiedReferences={10}
+                  ProgressScore={
+                    claimStats.totalClaimLinks /
+                    Math.max(
+                      claimStats.totalClaims * claimStats.totalReferences,
+                      1,
+                    )
+                  }
+                  totalClaims={claimStats.totalClaims}
+                  verifiedClaims={claimStats.supportingLinks}
+                  totalReferences={claimStats.totalReferences}
+                  verifiedReferences={claimStats.refutingLinks}
+                  totalClaimLinks={claimStats.totalClaimLinks}
+                  nuancedLinks={claimStats.nuancedLinks}
                 />
               )}
             </Box>
           </Flex>
-
-          {/* Action Buttons Row */}
-          {pivotTask && (
-            <Box w="100%" mt={4}>
-              <HStack justify="center" spacing={4}>
-                <Button
-                  className="mr-button"
-                  onClick={handleMarkComplete}
-                  bg="var(--mr-green-border)"
-                  color="var(--mr-green)"
-                  _hover={{
-                    bg: "var(--mr-green)",
-                    color: "black",
-                  }}
-                  size="md"
-                  leftIcon={<span>✓</span>}
-                >
-                  Mark Complete
-                </Button>
-              </HStack>
-            </Box>
-          )}
         </Box>
       )}
     </Box>

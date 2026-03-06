@@ -44,6 +44,7 @@
   },
   "dependencies": {
     "@chakra-ui/react": "^2.9.4",
+    "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@types/puppeteer": "^7.0.4",

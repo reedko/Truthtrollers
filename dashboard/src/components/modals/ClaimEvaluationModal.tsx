@@ -200,7 +200,7 @@ const ClaimEvaluationModal: React.FC<ClaimEvaluationModalProps> = ({
                 />
                 <FormLabel>Select a Primary Source</FormLabel>
                 <Select
-                  placeholder="Choose a reference"
+                  placeholder="Choose a source"
                   value={selectedReferenceId ?? ""}
                   onChange={(e) =>
                     setSelectedReferenceId(Number(e.target.value))
@@ -230,7 +230,7 @@ const ClaimEvaluationModal: React.FC<ClaimEvaluationModalProps> = ({
               mr={3}
               colorScheme="blue"
             >
-              Add Reference
+              Add Source
             </Button>
 
             <Button className="mr-button" colorScheme="blue" onClick={handleSave}>

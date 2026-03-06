@@ -27,8 +27,8 @@ export const useTaskScraper = () => {
       // ✅ Store the starting URL in Zustand
       store.setCurrentUrl(initialUrl);
 
-      // ✅ Notify background that scraping is active
-      browser.runtime.sendMessage({ action: "scrapingStarted" });
+      // ✅ Notify background that scraping is active for this URL
+      browser.runtime.sendMessage({ action: "scrapingStarted", url: initialUrl });
 
       await scrapeContent(initialUrl); // ✅ Backend does EVERYTHING (task + refs + claims + evidence)
       console.log("✅ Task and references fully scraped!");

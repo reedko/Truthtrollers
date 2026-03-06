@@ -3,7 +3,7 @@ import { fetchIconForTopic } from "../../utils/fetchIconForTopic.js";
 
 const BASE_URL = process.env.REACT_APP_BASE_URL;
 
-export default function createTopicsRoutes({ query, pool, db }) {
+export default function createTopicsRoutes({ query, pool }) {
   const router = Router();
 
   // GET /api/content_topics
@@ -61,7 +61,7 @@ export default function createTopicsRoutes({ query, pool, db }) {
               console.log(callQuery, ":", cleanThumbnail, ":", topic.topic_id);
               try {
                 // Execute the procedure
-                db.query(callQuery, params);
+                await query(callQuery, params);
               } catch (err) {
                 console.error("Error inserting task:", err);
                 return res

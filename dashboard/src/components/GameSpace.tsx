@@ -2523,7 +2523,7 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                   transform: "translateY(0)",
                 }}
               >
-                {isReferenceClaimsMode ? "Reference Claims" : "References"}
+                {isReferenceClaimsMode ? "Source Claims" : "Sources"}
               </Tab>
             </TabList>
           </Tabs>
@@ -2851,12 +2851,12 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                   : undefined
               }
             >
-              {isReferenceClaimsMode ? "Reference Claims" : "References"}{" "}
+              {isReferenceClaimsMode ? "Source Claims" : "Sources"}{" "}
               {isMobile && !isReferenceClaimsMode && isFocusedMode && "→"}
             </Text>
             {isReferenceClaimsMode && (
               <IconButton
-                aria-label="Back to references"
+                aria-label="Back to sources"
                 icon={<ChevronLeftIcon boxSize={5} />}
                 onClick={handleBackToReferences}
                 size="sm"
@@ -3106,7 +3106,7 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                       Analyzing Evidence...
                     </Text>
                     <Text fontSize="0.9rem" opacity={0.8}>
-                      Finding relevant references for this claim
+                      Finding relevant sources for this claim
                     </Text>
                   </Box>
                 ) : // Show references as cards
@@ -3139,9 +3139,9 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                     color="#64748b"
                     fontSize="0.9rem"
                   >
-                    <Text mb="8px">No linked references found</Text>
+                    <Text mb="8px">No linked sources found</Text>
                     <Text fontSize="0.75rem" opacity={0.7}>
-                      This task claim has no connected references
+                      This task claim has no connected sources
                     </Text>
                   </Box>
                 )}
@@ -3170,8 +3170,8 @@ const GameSpace: React.FC<GameSpaceProps> = ({
         {isReferenceClaimsMode
           ? "💡 Hover claims to expand • Drag LEFT to LINK • Drag RIGHT to SKIP • ← to go back"
           : isFocusedMode
-            ? "💡 Hover over references to expand • Click reference to see its claims • ← to go back"
-            : "💡 Click task claim to focus on linked references • Hover cards to expand"}
+            ? "💡 Hover over sources to expand • Click source to see its claims • ← to go back"
+            : "💡 Click task claim to focus on linked sources • Hover cards to expand"}
       </Box>
 
       {/* Claim Link Modal - for linking reference claims to task claims */}

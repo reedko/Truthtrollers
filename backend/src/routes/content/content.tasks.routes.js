@@ -546,13 +546,25 @@ router.post("/api/submit-text", async (req, res) => {
                   llm: openAiLLM,
                 });
                 for (const match of claimMatches) {
-                  await query(
-                    `INSERT INTO claim_links (source_claim_id, target_claim_id, relationship, support_level, confidence, veracity_score, created_by_ai, notes, user_id)
-                     VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`,
-                    [match.referenceClaimId, match.taskClaimId, match.stance, match.supportLevel, match.confidence, match.veracityScore, match.rationale, userId]
-                  );
+                  try {
+                    // Map stance values: claim_links uses 'supports'/'refutes'/'related',
+                    // reference_claim_task_links uses 'support'/'refute'/'nuance'/'insufficient'
+                    let mappedStance = match.stance;
+                    if (match.stance === 'supports') mappedStance = 'support';
+                    else if (match.stance === 'refutes') mappedStance = 'refute';
+                    else if (match.stance === 'related') mappedStance = 'nuance';
+
+                    await query(
+                      `INSERT INTO reference_claim_task_links (reference_claim_id, task_claim_id, stance, score, confidence, support_level, rationale, quote, created_by_ai)
+                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+                      [match.referenceClaimId, match.taskClaimId, mappedStance, Math.round((match.veracityScore || 0.5) * 100), match.confidence, match.supportLevel, match.rationale, null]
+                    );
+                  } catch (insertErr) {
+                    logger.error(`❌ [/api/submit-text] Failed to insert AI-suggested link: ${insertErr.message}`);
+                    logger.error(`   refClaim=${match.referenceClaimId}, taskClaim=${match.taskClaimId}, stance=${match.stance}`);
+                  }
                 }
-                logger.log(`✅ [/api/submit-text] Created ${claimMatches.length} claim_links for reference ${ref.referenceContentId}`);
+                logger.log(`✅ [/api/submit-text] Created ${claimMatches.length} AI-suggested links (reference_claim_task_links) for reference ${ref.referenceContentId}`);
               }
             }
           } catch (err) {

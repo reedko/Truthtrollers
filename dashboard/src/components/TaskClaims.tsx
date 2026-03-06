@@ -11,8 +11,9 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 import { SearchIcon } from "@chakra-ui/icons";
-import { Claim } from "../../../shared/entities/types";
+import { Claim, ReferenceWithClaims } from "../../../shared/entities/types";
 import ClaimModal from "./modals/ClaimModal";
+import RelevanceScanModal from "./modals/RelevanceScanModal";
 import { ClaimLink } from "./RelationshipMap";
 
 interface TaskClaimsProps {
@@ -38,6 +39,12 @@ interface TaskClaimsProps {
   setEditingClaim: (claim: Claim | null) => void;
   onVerifyClaim: (claim: Claim) => void;
   onTaskClaimClick?: (claim: Claim) => void;
+  onOpenLinkOverlay?: (
+    scanSourceClaim: { claim_id: number; claim_text: string },
+    scanTargetClaim: Claim,
+    rationale: string,
+    supportLevel: number,
+  ) => void;
   linkSelection?: {
     active: boolean;
     source?: Pick<Claim, "claim_id" | "claim_text"> | null;
@@ -46,6 +53,9 @@ interface TaskClaimsProps {
   claimLinks?: ClaimLink[];
   selectedReferenceId?: number;
   isReferenceModalOpen?: boolean;
+  references?: ReferenceWithClaims[];
+  contentId?: number;
+  viewerId?: number | null;
 }
 
 const TaskClaims: React.FC<TaskClaimsProps> = ({
@@ -67,10 +77,14 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   setEditingClaim,
   onVerifyClaim,
   onTaskClaimClick,
+  onOpenLinkOverlay,
   taskId,
   linkSelection,
   onPickTargetForLink,
   claimLinks = [],
+  references = [],
+  contentId,
+  viewerId,
   selectedReferenceId,
   isReferenceModalOpen = false,
 }) => {
@@ -93,7 +107,30 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   const hoveredColor = useColorModeValue("gray.800", "#ffffff");
   const borderColor = useColorModeValue(
     "rgba(100, 116, 139, 0.3)",
-    "rgba(167, 139, 250, 0.4)",
+    "rgba(100, 116, 139, 0.5)",
+  );
+
+  // 🛠️ FIX: Move boxShadow useColorModeValue calls to top level (Rules of Hooks)
+  const boxShadowHovered = useColorModeValue(
+    "0 4px 12px rgba(71, 85, 105, 0.25)",
+    "0 12px 48px rgba(0, 0, 0, 0.8), 0 0 60px rgba(100, 116, 139, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+  );
+  const boxShadowDefault = useColorModeValue(
+    "0 2px 8px rgba(71, 85, 105, 0.15)",
+    "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(100, 116, 139, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+  );
+  const boxShadowHover = useColorModeValue(
+    "0 4px 12px rgba(71, 85, 105, 0.25)",
+    "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(100, 116, 139, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+  );
+  const addClaimButtonColor = useColorModeValue("teal.600", "rgba(0, 162, 255, 1)");
+  const addClaimButtonBoxShadow = useColorModeValue(
+    "0 2px 8px rgba(94, 234, 212, 0.2)",
+    "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+  );
+  const addClaimButtonHoverBoxShadow = useColorModeValue(
+    "0 4px 12px rgba(94, 234, 212, 0.3)",
+    "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
   );
 
   useEffect(() => {
@@ -193,24 +230,18 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
         background={defaultBg}
         backdropFilter="blur(20px)"
         border={`1px solid ${borderColor}`}
-        color={useColorModeValue("teal.600", "rgba(0, 162, 255, 1)")}
+        color={addClaimButtonColor}
         height="50px"
         width="100%"
         px={3}
         py={2}
         borderRadius="12px"
-        boxShadow={useColorModeValue(
-          "0 2px 8px rgba(94, 234, 212, 0.2)",
-          "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
-        )}
+        boxShadow={addClaimButtonBoxShadow}
         position="relative"
         overflow="hidden"
         transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
         _hover={{
-          boxShadow: useColorModeValue(
-            "0 4px 12px rgba(94, 234, 212, 0.3)",
-            "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
-          ),
+          boxShadow: addClaimButtonHoverBoxShadow,
           transform: "translateY(-2px)",
         }}
         onClick={() => {
@@ -371,23 +402,14 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
                 colors.boxShadow
                   ? colors.boxShadow
                   : hoveredClaimId === claim.claim_id
-                    ? useColorModeValue(
-                        "0 4px 12px rgba(94, 234, 212, 0.3)",
-                        "0 12px 48px rgba(0, 0, 0, 0.8), 0 0 60px rgba(167, 139, 250, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
-                      )
-                    : useColorModeValue(
-                        "0 2px 8px rgba(94, 234, 212, 0.2)",
-                        "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(167, 139, 250, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
-                      )
+                    ? boxShadowHovered
+                    : boxShadowDefault
               }
               _hover={
                 linkSelection?.active
                   ? { bg: colors.hoverBg, cursor: "pointer" }
                   : {
-                      boxShadow: useColorModeValue(
-                        "0 4px 12px rgba(94, 234, 212, 0.3)",
-                        "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(167, 139, 250, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
-                      ),
+                      boxShadow: boxShadowHover,
                       transform: "translateY(-2px)",
                     }
               }
@@ -447,20 +469,6 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
                     onVerifyClaim(claim);
                   }}
                 />
-                {onTaskClaimClick && (
-                  <Tooltip label="Find relevant reference claims" hasArrow>
-                    <IconButton
-                      size="sm"
-                      colorScheme="teal"
-                      aria-label="Scan Relevance"
-                      icon={<span>🔍</span>}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onTaskClaimClick(claim);
-                      }}
-                    />
-                  </Tooltip>
-                )}
                 <IconButton
                   size="sm"
                   colorScheme="red"
@@ -493,11 +501,17 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
           setEditingClaim(null);
         }}
       />
-      <ClaimModal
+      <RelevanceScanModal
         isOpen={isClaimViewModalOpen}
-        onClose={() => setIsClaimViewModalOpen(false)}
-        editingClaim={selectedClaim}
-        readOnly
+        onClose={() => {
+          setIsClaimViewModalOpen(false);
+          setSelectedClaim(null);
+        }}
+        taskClaim={selectedClaim}
+        references={references}
+        onOpenLinkOverlay={onOpenLinkOverlay}
+        contentId={contentId}
+        viewerId={viewerId}
       />
     </VStack>
   );

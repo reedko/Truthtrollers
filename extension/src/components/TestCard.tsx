@@ -1,85 +1,164 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Box,
   Button,
-  GridItem,
-  Progress,
-  Card,
-  CardBody,
-  CardHeader,
   Text,
-  Grid,
   VStack,
   HStack,
-  Spacer,
   Center,
+  Tooltip,
 } from "@chakra-ui/react";
 import "./Popup.css";
+import "../styles/minorityReport.css";
 import UserConsensusBar from "./UserConsensusBar";
-import useTaskStore from "../store/useTaskStore";
 import resizeImage from "../services/image-url";
-import { useTaskScraper } from "../hooks/useTaskScraper";
 import TruthGauge from "./ModernArcGauge";
-import { Stat } from "@chakra-ui/react";
-import { Tooltip } from "@chakra-ui/react";
 
 const BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 
-const getProgressColor = (progress: string | null) => {
-  switch (progress) {
-    case "Completed":
-      return "green";
-    case "Partially Complete":
-      return "yellow";
-    case "Awaiting Evaluation":
-      return "blue";
-    default:
-      return "red";
-  }
-};
+const TestCard: React.FC = () => {
+  // Mock state for testing
+  const [showCompleted, setShowCompleted] = useState(true);
+  const [showWithImage, setShowWithImage] = useState(true);
 
-const TaskCard: React.FC = () => {
-  // const { task, currentUrl, setTask } = useTaskStore(); // Hook to access Zustand
-  // const { loading, error, scrapeTask } = useTaskScraper(); // Use scraper hook
-  // const [visible, setVisible] = useState(false);
-
-  const imageUrl = "test";
-  // task && task.thumbnail ? `${BASE_URL}/${task.thumbnail}` : "";
-  const meter = `${BASE_URL}/assets/images/meter3.png`;
-  const logo = `${BASE_URL}/assets/images/miniLogo.png`;
+  // Mock data
+  const logo = "/assets/images/miniLogo.png";
+  const imageUrl = showWithImage ? `${BASE_URL}/assets/images/meter3.png` : "";
+  const task = {
+    content_name: "Absolute Immunity - by Some Author",
+    progress: showCompleted ? "Completed" : "Awaiting Evaluation",
+    url: "https://example.com/test",
+  };
 
   return (
-    <Box className="popup-box" width="300px" bg="stat5Gradient">
-      <VStack spacing={0} align="start">
-        <Box bg="cardGradient" className="logo-box" position="relative">
-          <HStack spacing="130">
-            <Box>{resizeImage(40, logo)}</Box>
-            <Text color="white">TruthTrollers</Text>
+    <Box
+      className="popup-box"
+      width="300px"
+      position="relative"
+      bgGradient="linear(135deg, rgba(10, 30, 60, 0.75), rgba(20, 50, 80, 0.7))"
+      sx={{
+        backgroundImage: `
+          linear-gradient(135deg, rgba(10, 30, 60, 0.75), rgba(20, 50, 80, 0.7)),
+          repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 162, 255, 0.08) 2px, rgba(0, 162, 255, 0.08) 4px)
+        `,
+      }}
+      border="1px solid rgba(0, 162, 255, 0.6)"
+      borderRadius="12px"
+      boxShadow="0 10px 40px rgba(0, 0, 0, 0.7), 0 0 50px rgba(0, 162, 255, 0.6), inset 0 2px 0 rgba(255, 255, 255, 0.2)"
+      overflow="hidden"
+      p={3}
+    >
+      <Box
+        position="absolute"
+        left={0}
+        top={0}
+        width="50px"
+        height="100%"
+        background="linear-gradient(90deg, rgba(0, 217, 255, 0.6) 0%, rgba(0, 217, 255, 0.4) 25%, rgba(0, 217, 255, 0.25) 50%, rgba(0, 217, 255, 0.1) 75%, transparent 100%)"
+        pointerEvents="none"
+      />
+      <VStack
+        spacing={2}
+        align="start"
+        position="relative"
+        zIndex={1}
+        style={{ background: "none" }}
+        width="100%"
+      >
+        {/* Logo Box */}
+        <Box
+          className="logo-box"
+          position="relative"
+          background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+          backdropFilter="blur(20px)"
+          border="1px solid rgba(0, 162, 255, 0.4)"
+          borderRadius="12px"
+          boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+          overflow="hidden"
+          p={2}
+          width="100%"
+        >
+          <Box
+            position="absolute"
+            left={0}
+            top={0}
+            width="30px"
+            height="100%"
+            background="linear-gradient(90deg, rgba(0, 162, 255, 0.6) 0%, transparent 100%)"
+            pointerEvents="none"
+          />
+          <HStack
+            spacing={2}
+            position="relative"
+            zIndex={1}
+            justify="space-between"
+            align="center"
+          >
+            <Box flexShrink={0}>{logo && resizeImage(40, logo)}</Box>
+            <Text
+              color="#00a2ff"
+              fontWeight="400"
+              letterSpacing="3px"
+              textTransform="uppercase"
+              fontSize="xl"
+              fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+              noOfLines={1}
+              overflow="hidden"
+              textOverflow="ellipsis"
+            >
+              TruthTrollers
+            </Text>
           </HStack>
         </Box>
-        {imageUrl && "Completed" === "Completed" ? (
-          <HStack spacing={1} align="center" width="290px">
-            <Box flex="0 0 70%">
-              <VStack spacing={1} align="center" mb={10} mt={1}>
-                <Text>VERDICT</Text>
-                <Spacer />
-                <TruthGauge
-                  score={-0.73}
-                  label="VERIMETER"
-                  size={{ w: 170, h: 90 }} // ⬅️ slightly narrower too
-                  normalize={false}
-                />
-              </VStack>
-            </Box>
 
-            <Box flex="0 0 30%" pl={-5}>
+        {/* Meters Section - Only show if completed and has image */}
+        {imageUrl && task?.progress === "Completed" ? (
+          <HStack
+            spacing={1}
+            align="flex-start"
+            width="100%"
+            justify="space-between"
+            mt={2}
+            px={1}
+          >
+            <Box flexShrink={0}>
+              <TruthGauge
+                score={-0.72}
+                label="VERIMETER"
+                size={{ w: 170, h: 90 }}
+                normalize={false}
+              />
+            </Box>
+            <Box
+              position="relative"
+              background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+              backdropFilter="blur(20px)"
+              border="1px solid rgba(0, 162, 255, 0.5)"
+              borderRadius="12px"
+              boxShadow="0 10px 40px rgba(0, 0, 0, 0.7), 0 0 50px rgba(0, 162, 255, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
+              overflow="hidden"
+              flexShrink={0}
+              width="70px"
+              height="180px"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+            >
               <Box
-                borderRadius="8px"
-                w="70px"
-                p={0}
-                bg="cardGradient"
-                mt={"30px"}
-                mr={"5px"}
+                position="absolute"
+                left={0}
+                top={0}
+                width="15px"
+                height="100%"
+                background="linear-gradient(90deg, rgba(0, 162, 255, 0.6) 0%, transparent 100%)"
+                pointerEvents="none"
+              />
+              <Box
+                position="relative"
+                zIndex={1}
+                transform="scale(0.85)"
+                ml={-35}
+                mr={-35}
               >
                 <UserConsensusBar trueCount={21} falseCount={71} total={121} />
               </Box>
@@ -87,21 +166,22 @@ const TaskCard: React.FC = () => {
           </HStack>
         ) : (
           imageUrl && (
-            <Box position="relative" left="25%">
+            <Box
+              display="flex"
+              justifyContent="center"
+              alignItems="center"
+              width="100%"
+            >
               {resizeImage(120, imageUrl)}
             </Box>
           )
         )}
 
+        {/* Content Section */}
         {imageUrl ? (
           <Box width="280px">
-            <Box width="100%">
-              <Tooltip
-                label={
-                  "task?.content_name ok but longer to test the long stuff lets go ggogogogogogogogogoggoogogogo"
-                }
-                fontSize="sm"
-              >
+            <Box width="100%" mb={2}>
+              <Tooltip label={task?.content_name || "No title"} fontSize="sm">
                 <Text
                   fontSize="lg"
                   fontWeight="bold"
@@ -112,104 +192,130 @@ const TaskCard: React.FC = () => {
                   color="white"
                   px={1}
                 >
-                  {
-                    "task?.content_name ok but longer to test the long stuff lets go ggogogogogogogogogoggoogogogo"
-                  }
+                  {task?.content_name || "Unknown Content"}
                 </Text>
               </Tooltip>
             </Box>
-            <Grid templateRows="repeat(2, 1fr)">
-              <GridItem>
-                <Text color="gray.600" fontSize="sm">
-                  Progress: {"task?.progress"}
-                </Text>
-              </GridItem>
-              <GridItem>
-                <Progress
-                  value={"Completed" === "Completed" ? 100 : 100}
-                  colorScheme={getProgressColor("Completed")}
-                  mt={2}
-                />
-              </GridItem>
-            </Grid>
-            <Text color="gray.600" fontSize="sm">
-              Media Source: {"task?.media_source"}
-            </Text>
 
-            <Center>
-              <HStack spacing={5}>
-                <Button variant="surface" bg="cardGradient" color="white">
-                  <a href={"#"} target="_blank" rel="noopener noreferrer">
-                    <div>Argue</div>
-                  </a>
-                </Button>
-                <Button
-                  variant="solid"
-                  bg="cardGradient"
-                  color="white"
-                  onClick={() => {}}
+            <Center mt={3}>
+              <HStack spacing={3}>
+                <button
+                  className="mr-button"
+                  onClick={() => alert("Discuss clicked")}
                 >
-                  <div>Close</div>
-                </Button>
+                  <span style={{ position: "relative", zIndex: 1 }}>
+                    Discuss
+                  </span>
+                </button>
+                <button
+                  className="mr-button"
+                  onClick={() => alert("Close clicked")}
+                >
+                  <span style={{ position: "relative", zIndex: 1 }}>Close</span>
+                </button>
               </HStack>
             </Center>
           </Box>
         ) : (
-          <Box>
-            <Box width="280px">
-              <Tooltip label={"task?.content_name"} fontSize="sm">
+          <Box width="100%">
+            <Box width="100%" mb={3}>
+              <Tooltip
+                label={task?.content_name || "Current Page"}
+                fontSize="sm"
+              >
                 <Text
                   fontWeight="bold"
                   fontSize="md"
-                  isTruncated
-                  whiteSpace="nowrap"
-                  overflow="hidden"
-                  textOverflow="ellipsis"
+                  noOfLines={2}
+                  color="#f1f5f9"
                 >
-                  {"task?.content_name"}
+                  {task?.content_name || "Current Page"}
                 </Text>
               </Tooltip>
             </Box>
-            <Text fontWeight="bold" fontSize="l" wrap="yes">
-              {"task?.content_name"}
-            </Text>
-            <Stat
-              p={2}
-              px={3}
-              py={1}
-              borderRadius="2xl"
-              shadow="md"
-              color="white"
-              bg="cardGradient"
-              w="full"
+            <Box
+              position="relative"
+              background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+              backdropFilter="blur(20px)"
+              border="1px solid rgba(0, 162, 255, 0.4)"
+              borderRadius="12px"
+              boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+              overflow="hidden"
+              p={4}
+              mb={2}
             >
-              <Text color="white" fontSize="md" align="center">
-                This document has not been added to Truthtrollers.
-              </Text>
-              <Text mt={4} color="white" fontSize="lg" align="center">
-                Would you like to Add?
-              </Text>
-            </Stat>
-            <Center>
-              <HStack spacing={5} mt={2}>
-                <Button variant="surface" bg="cardGradient" color="white">
-                  <div>Add</div>
-                </Button>
-                <Button
-                  variant="solid"
-                  bg="cardGradient"
-                  color="white"
-                  onClick={() => {}}
+              <Box
+                position="absolute"
+                left={0}
+                top={0}
+                width="30px"
+                height="100%"
+                background="linear-gradient(90deg, rgba(0, 162, 255, 0.6) 0%, transparent 100%)"
+                pointerEvents="none"
+              />
+              <VStack spacing={2} position="relative" zIndex={1}>
+                <Text
+                  fontSize="md"
+                  align="center"
+                  color="#f1f5f9"
+                  fontWeight="500"
                 >
-                  <div>Close</div>
-                </Button>
+                  Not in database
+                </Text>
+                <Text
+                  fontSize="lg"
+                  align="center"
+                  color="#00a2ff"
+                  fontWeight="600"
+                >
+                  Add to TruthTrollers?
+                </Text>
+              </VStack>
+            </Box>
+            <Center>
+              <HStack spacing={3} mt={2}>
+                <button
+                  className="mr-button"
+                  onClick={() => alert("Add clicked")}
+                >
+                  <span style={{ position: "relative", zIndex: 1 }}>Add</span>
+                </button>
+                <button
+                  className="mr-button"
+                  onClick={() => alert("Close clicked")}
+                >
+                  <span style={{ position: "relative", zIndex: 1 }}>Close</span>
+                </button>
               </HStack>
             </Center>
           </Box>
         )}
+
+        {/* Test Controls */}
+        <Box width="100%" mt={4} p={3} bg="rgba(0,0,0,0.5)" borderRadius="md">
+          <Text color="white" fontSize="sm" fontWeight="bold" mb={2}>
+            Test Controls:
+          </Text>
+          <VStack spacing={2} align="stretch">
+            <Button
+              size="sm"
+              onClick={() => setShowCompleted(!showCompleted)}
+              colorScheme={showCompleted ? "green" : "gray"}
+            >
+              {showCompleted ? "Completed" : "Not Completed"}
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => setShowWithImage(!showWithImage)}
+              colorScheme={showWithImage ? "blue" : "gray"}
+            >
+              {showWithImage ? "With Image" : "No Image"}
+            </Button>
+          </VStack>
+        </Box>
       </VStack>
     </Box>
   );
 };
 
-export default TaskCard;
+export default TestCard;

@@ -29,11 +29,11 @@ export default function OverlayRouter() {
     { title: React.ReactNode; body: React.ReactNode; footer?: React.ReactNode }
   > = {
     "ref-claims": {
-      title: payload?.reference?.content_name ?? "Reference",
+      title: payload?.reference?.content_name ?? "Source",
       body: <ReferenceClaimsPanel reference={payload?.reference} />,
     },
     "link-claims": {
-      title: "Link Reference Claim → Task Claim",
+      title: "Link Source Claim → Case Claim",
       body: <LinkClaimsPanel {...payload} />,
     },
     "verify-claim": {

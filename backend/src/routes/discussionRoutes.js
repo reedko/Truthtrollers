@@ -1,4 +1,5 @@
 import getCitationScore from "../utils/getCitationScore.js";
+import { logUserActivity } from "../utils/logUserActivity.js";
 
 const registerDiscussionRoutes = (app, query, pool) => {
   app.post("/api/discussion", async (req, res) => {
@@ -33,8 +34,21 @@ const registerDiscussionRoutes = (app, query, pool) => {
 
       const [newEntry] = await query(
         `SELECT * FROM discussion_entries WHERE id = ?`,
-        [result.insertId]
+        [result.insertId],
       );
+
+      // Log user activity
+      await logUserActivity(query, {
+        userId: user_id,
+        activityType: "discussion_post",
+        contentId: content_id,
+        claimId: linked_claim_id,
+        metadata: {
+          side,
+          hasCitation: !!citation_url,
+          citationScore: citation_score,
+        },
+      });
 
       res.status(201).json(newEntry);
     } catch (err) {
@@ -50,7 +64,7 @@ const registerDiscussionRoutes = (app, query, pool) => {
     try {
       let sql, params;
 
-      if (viewerId && viewerId !== 'null') {
+      if (viewerId && viewerId !== "null") {
         // User-specific view: only show discussions this user participated in
         sql = `
           SELECT * FROM discussion_entries
@@ -72,17 +86,17 @@ const registerDiscussionRoutes = (app, query, pool) => {
     }
   });
 
-  // Get top contributors (by number of posts, platform-wide)
+  // Get top contributors (by all activity types, platform-wide)
   app.get("/api/discussion/top-contributors", async (req, res) => {
     try {
       const sql = `
         SELECT
-          COALESCE(u.username, de.user, 'Anonymous') as user,
+          COALESCE(u.username, ua.username, 'Anonymous') as user,
           COUNT(*) as contributionCount,
-          MAX(de.created_at) as lastContribution
-        FROM discussion_entries de
-        LEFT JOIN users u ON de.user_id = u.user_id
-        GROUP BY COALESCE(u.username, de.user, 'Anonymous')
+          MAX(ua.created_at) as lastContribution
+        FROM user_activities ua
+        LEFT JOIN users u ON ua.user_id = u.user_id
+        GROUP BY COALESCE(u.username, ua.username, 'Anonymous')
         ORDER BY contributionCount DESC, lastContribution DESC
         LIMIT 3
       `;
@@ -91,9 +105,21 @@ const registerDiscussionRoutes = (app, query, pool) => {
       // If we don't have enough real contributors, add sample data
       if (contributors.length < 3) {
         const sampleContributors = [
-          { user: "FactChecker", contributionCount: 42, lastContribution: new Date().toISOString() },
-          { user: "TruthSeeker", contributionCount: 27, lastContribution: new Date(Date.now() - 3600000).toISOString() },
-          { user: "LogicLover", contributionCount: 15, lastContribution: new Date(Date.now() - 7200000).toISOString() },
+          {
+            user: "FactChecker",
+            contributionCount: 42,
+            lastContribution: new Date().toISOString(),
+          },
+          {
+            user: "TruthSeeker",
+            contributionCount: 27,
+            lastContribution: new Date(Date.now() - 3600000).toISOString(),
+          },
+          {
+            user: "LogicLover",
+            contributionCount: 15,
+            lastContribution: new Date(Date.now() - 7200000).toISOString(),
+          },
         ];
 
         // Merge real data with samples, taking only what we need to reach 3
@@ -107,21 +133,23 @@ const registerDiscussionRoutes = (app, query, pool) => {
     }
   });
 
-  // Get hot topics (tasks with most discussion activity)
+  // Get hot topics (tasks with most activity: views, evidence runs, discussions)
   app.get("/api/discussion/hot-topics", async (req, res) => {
     try {
       const sql = `
         SELECT
           c.content_id,
           c.content_name as task_title,
-          COUNT(*) as discussion_count,
-          SUM(CASE WHEN de.side = 'pro' THEN 1 ELSE 0 END) as pro_count,
-          SUM(CASE WHEN de.side = 'con' THEN 1 ELSE 0 END) as con_count
-        FROM discussion_entries de
-        JOIN content c ON de.content_id = c.content_id
+          COUNT(*) as activity_count,
+          SUM(CASE WHEN ua.activity_type = 'discussion_post' THEN 1 ELSE 0 END) as discussion_count,
+          0 as pro_count,
+          0 as con_count
+        FROM user_activities ua
+        JOIN content c ON ua.content_id = c.content_id
+        WHERE ua.activity_type IN ('task_view', 'evidence_run', 'discussion_post', 'claim_link_add', 'claim_link_evaluate')
         GROUP BY c.content_id, c.content_name
-        HAVING discussion_count > 0
-        ORDER BY discussion_count DESC, MAX(de.created_at) DESC
+        HAVING activity_count > 0
+        ORDER BY activity_count DESC, MAX(ua.created_at) DESC
         LIMIT 3
       `;
       let topics = await query(sql);
@@ -131,14 +159,14 @@ const registerDiscussionRoutes = (app, query, pool) => {
         const sampleTopics = [
           {
             content_id: 9999,
-            task_title: "Climate Change Evidence Analysis",
+            task_title: "Climate Change Evbidence Analysis",
             discussion_count: 34,
             pro_count: 21,
             con_count: 13,
           },
           {
             content_id: 9998,
-            task_title: "Social Media Impact Study",
+            task_title: "Social Media Imbpact Study",
             discussion_count: 28,
             pro_count: 15,
             con_count: 13,

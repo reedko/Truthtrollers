@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
-import { ChakraProvider, Box, Heading, Text, VStack } from "@chakra-ui/react";
+import { ChakraProvider, Box, Heading, Text, VStack, HStack } from "@chakra-ui/react";
+import TestCard from "./components/TestCard";
 import TaskCard from "./components/TaskCard";
 import theme from "./components/themes/VisionTheme";
 import useTaskStore from "./store/useTaskStore";
@@ -28,16 +29,12 @@ const Demo: React.FC = () => {
     });
     setCurrentUrl("https://example.com/test-article");
 
-    // Override TaskCard positioning for demo - CENTER IT
+    // Override TaskCard positioning for demo - STATIC (not fixed)
     const style = document.createElement('style');
     style.textContent = `
       .popup-box {
-        position: fixed !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        right: auto !important;
-        bottom: auto !important;
+        position: static !important;
+        transform: none !important;
       }
     `;
     document.head.appendChild(style);
@@ -248,8 +245,23 @@ const Demo: React.FC = () => {
           </VStack>
         </Box>
 
-        {/* TaskCard floats in top-right */}
-        <TaskCard />
+        {/* Cards Side by Side */}
+        <Box position="fixed" top={4} right={4} zIndex={1000}>
+          <HStack spacing={4} align="start">
+            <VStack spacing={2}>
+              <Text color="white" fontWeight="bold" bg="rgba(0,0,0,0.7)" px={3} py={1} borderRadius="md">
+                TestCard
+              </Text>
+              <TestCard />
+            </VStack>
+            <VStack spacing={2}>
+              <Text color="white" fontWeight="bold" bg="rgba(0,0,0,0.7)" px={3} py={1} borderRadius="md">
+                TaskCard
+              </Text>
+              <TaskCard />
+            </VStack>
+          </HStack>
+        </Box>
       </Box>
     </ChakraProvider>
   );

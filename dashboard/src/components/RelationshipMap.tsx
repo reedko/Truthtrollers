@@ -57,8 +57,6 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
   const adjustedLeftX = leftX - 12;
   const adjustedRightX = rightX + 15;
 
-  console.log('[RelationshipMap] leftX:', leftX, '-> adjustedLeftX:', adjustedLeftX);
-  console.log('[RelationshipMap] rightX:', rightX, '-> adjustedRightX:', adjustedRightX);
   const [hasMeasuredContainer, setHasMeasuredContainer] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [hoveredLinkId, setHoveredLinkId] = useState<string | null>(null);
@@ -129,10 +127,6 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
     };
   }, [rightItems, height]);
 
-  useEffect(() => {
-    console.log("📦 containerX updated:", containerX);
-  }, [containerX]);
-
   const links = claimLinks;
 
   const getLeftY = (index: number) =>
@@ -170,7 +164,6 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
     return null;
   }
   if (!leftItems.length || !rightItems.length || !links.length) {
-    console.log("⏳ Waiting for data before drawing links...");
     return null;
   }
 
@@ -211,11 +204,6 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
           const leftIndex = leftIndexMap.get(Number(link.claimId));
           const rightIndex = rightIndexMap.get(Number(link.referenceId));
           if (leftIndex === undefined || rightIndex === undefined) {
-            console.warn("❌ No index match:", {
-              link,
-              leftIndex,
-              rightIndex,
-            });
             return null;
           }
           const y1 = getLeftY(leftIndex);

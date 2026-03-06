@@ -82,10 +82,10 @@ function buildMolecule({
     r === "refute" ? "refutes" : "supports";
 
   const nodes: CytoscapeMoleculeProps["nodes"] = [
-    { id: taskNodeId, label: "Task", type: "task", content_id: contentId },
+    { id: taskNodeId, label: "Case", type: "task", content_id: contentId },
     ...references.map((r) => ({
       id: `conte-${r.reference_content_id}`,
-      label: r.content_name ?? `Ref ${r.reference_content_id}`,
+      label: r.content_name ?? `Src ${r.reference_content_id}`,
       type: "reference",
       content_id: r.reference_content_id,
     })),
@@ -148,6 +148,7 @@ type Props = {
   references: ReferenceWithClaims[];
   claimLinks: ClaimLink[];
   showHeader?: boolean;
+  viewerId?: number | null;
 };
 
 export default function MobileWorkspaceShell({
@@ -156,6 +157,7 @@ export default function MobileWorkspaceShell({
   references: initialReferences,
   claimLinks,
   showHeader = false,
+  viewerId = null,
 }: Props) {
   // Local state for claims and references that can be updated
   const [claims, setClaims] = useState<Claim[]>(initialClaims);
@@ -368,6 +370,9 @@ export default function MobileWorkspaceShell({
               }}
               onPickTargetForLink={chooseTarget}
               claimLinks={claimLinks}
+              references={references}
+              contentId={contentId}
+              viewerId={viewerId}
             />
           </TabPanel>
 

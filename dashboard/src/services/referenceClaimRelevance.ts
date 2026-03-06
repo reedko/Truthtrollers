@@ -22,6 +22,7 @@ export interface ReferenceClaimTaskLink {
   created_by_ai: boolean;
   verified_by_user_id?: number;
   created_at: string;
+  source_table?: string; // Added to distinguish real links from AI assessments
 }
 
 export interface ClaimWithRelevance extends Claim {
@@ -150,6 +151,10 @@ export function enrichClaimsWithRelevance(
 
     const relevanceScore = calculateClaimRelevanceScore(link ?? null);
 
+    // Only treat as "hasLink" if it's an actual manual link from claim_links
+    // AI assessments from reference_claim_task_links are just suggestions
+    const isActualLink = link?.source_table?.includes('claim_links') ?? false;
+
     return {
       ...claim,
       relevanceScore,
@@ -157,7 +162,7 @@ export function enrichClaimsWithRelevance(
       confidence: link?.confidence,
       support_level: link?.support_level,
       rationale: link?.rationale,
-      hasLink: !!link,
+      hasLink: isActualLink,
     };
   });
 }

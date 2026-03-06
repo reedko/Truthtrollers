@@ -152,8 +152,8 @@ const UserDashboard: React.FC = () => {
       }
 
       toast({
-        title: "Task marked complete!",
-        description: "The extension will now show this task when you visit the URL",
+        title: "Case marked complete!",
+        description: "The extension will now show this case when you visit the URL",
         status: "success",
         duration: 4000,
       });
@@ -320,14 +320,14 @@ const UserDashboard: React.FC = () => {
             }}
             gap={6}
           >
-            {/* Assigned Tasks - 2/3 width */}
+            {/* Assigned Cases - 2/3 width */}
             <GridItem>
               <Box className="mr-card mr-card-blue assigned-tasks-section" position="relative" p={6}>
                 <div className="mr-glow-bar mr-glow-bar-blue" />
                 <div className="mr-scanlines" />
                 <Box position="relative" zIndex={1}>
                   <Heading size="md" className="mr-heading" mb={4}>
-                    My Assigned Tasks
+                    My Assigned Cases
                   </Heading>
                   <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={6} maxH="700px" overflowY="auto" px={2}>
                     {assignedTasks.length === 0 ? (

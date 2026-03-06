@@ -16,6 +16,7 @@ export interface Task {
   details: string; // Link to the task details
   topic: string;
   subtopic: string;
+  verimeter_score?: number; // -1 to 1 score
 }
 
 export interface Author {

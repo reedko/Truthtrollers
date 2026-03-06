@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TruthTrollers Meters Test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #1a202c;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: white;
+    }
+
+    .popup-container {
+      width: 400px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
+      border: 1px solid rgba(0, 162, 255, 0.5);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+    }
+
+    .header {
+      position: relative;
+      padding: 12px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
+      border: 1px solid rgba(0, 162, 255, 0.5);
+      margin-bottom: 16px;
+    }
+
+    .header::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 15px;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(0, 162, 255, 0.6) 0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo {
+      width: 40px;
+      height: 40px;
+      background: #00a2ff;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .title {
+      color: #00a2ff;
+      font-weight: 400;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-size: 18px;
+      font-family: Futura, 'Century Gothic', 'Avenir Next', sans-serif;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 300px;
+    }
+
+    .meters-container {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .verimeter-container {
+      flex-shrink: 0;
+      width: 155px;
+      height: 85px;
+      position: relative;
+    }
+
+    .verimeter-arc {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    .verimeter-arc svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .verimeter-content {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .verimeter-score {
+      font-size: 24px;
+      font-weight: bold;
+      color: #00a2ff;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .verimeter-label {
+      font-size: 14px;
+      color: #e5d5b5;
+      line-height: 1;
+    }
+
+    .verimeter-ticks {
+      position: absolute;
+      bottom: 20px;
+      left: 0;
+      width: 100%;
+      padding: 0 8px;
+    }
+
+    .verimeter-false, .verimeter-true {
+      position: absolute;
+      font-size: 12px;
+      font-weight: bold;
+      bottom: 10px;
+    }
+
+    .verimeter-false {
+      color: #fc8181;
+      left: -20px;
+    }
+
+    .verimeter-true {
+      color: #68d391;
+      right: -20px;
+    }
+
+    .trollmeter-container {
+      position: relative;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9));
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(0, 162, 255, 0.5);
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7), 0 0 50px rgba(0, 162, 255, 0.5);
+      overflow: hidden;
+      flex-shrink: 0;
+      width: 75px;
+      height: 150px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+    }
+
+    .trollmeter-container::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 15px;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(0, 162, 255, 0.6) 0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .trollmeter-content {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100%;
+      justify-content: center;
+      margin-left: 20px;
+    }
+
+    .crowd-label {
+      font-size: 12px;
+      color: white;
+      font-weight: 500;
+      margin-bottom: 8px;
+      margin-left: -20px;
+    }
+
+    .bars-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      height: 100px;
+      width: 80px;
+    }
+
+    .bar-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .bar {
+      position: relative;
+      width: 18px;
+      height: 80px;
+      background: #2d3748;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: #fc8181;
+      transition: height 0.8s ease;
+    }
+
+    .bar-fill.true {
+      background: #68d391;
+    }
+
+    .bar-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .bar-label span {
+      font-size: 11px;
+      font-weight: bold;
+      color: white;
+      line-height: 0.7;
+    }
+
+    .bar-numbers {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      margin-top: 0;
+    }
+
+    .bar-count {
+      font-size: 12px;
+      font-weight: bold;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+
+    .bar-count.false {
+      color: #fc8181;
+    }
+
+    .bar-count.true {
+      color: #68d391;
+    }
+
+    .bar-divider {
+      height: 1px;
+      width: 70%;
+      background: white;
+      margin: 2px 0;
+    }
+
+    .bar-total {
+      font-size: 12px;
+      color: #a0aec0;
+      line-height: 1;
+      margin-top: 2px;
+    }
+
+    .controls {
+      margin-top: 20px;
+      padding: 16px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+    }
+
+    .control-group {
+      margin-bottom: 12px;
+    }
+
+    .control-group label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 4px;
+      color: #a0aec0;
+    }
+
+    .control-group input {
+      width: 100%;
+      padding: 4px 8px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(0, 162, 255, 0.3);
+      border-radius: 4px;
+      color: white;
+      font-size: 12px;
+    }
+
+    .instructions {
+      margin-top: 20px;
+      padding: 16px;
+      background: rgba(0, 162, 255, 0.1);
+      border: 1px solid rgba(0, 162, 255, 0.3);
+      border-radius: 8px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .instructions h3 {
+      margin-top: 0;
+      color: #00a2ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="popup-container">
+    <div class="header">
+      <div class="header-content">
+        <div class="logo"></div>
+        <div class="title" id="title">TruthTrollers</div>
+      </div>
+    </div>
+
+    <div class="meters-container">
+      <!-- Verimeter -->
+      <div class="verimeter-container">
+        <div class="verimeter-arc">
+          <svg viewBox="0 0 100 50" preserveAspectRatio="none">
+            <path d="M 5 50 A 45 45 0 0 1 95 50" fill="none" stroke="#222" stroke-width="8"/>
+            <path id="verimeter-path" d="M 5 50 A 45 45 0 0 1 95 50" fill="none" stroke="#00a2ff" stroke-width="8" stroke-dasharray="141.37" stroke-dashoffset="70.685"/>
+          </svg>
+        </div>
+        <div class="verimeter-content">
+          <div class="verimeter-score" id="verimeter-score">-10%</div>
+          <div class="verimeter-label" id="verimeter-label">VERIMETER</div>
+        </div>
+        <div class="verimeter-ticks">
+          <span class="verimeter-false">FALSE</span>
+          <span class="verimeter-true">TRUE</span>
+        </div>
+      </div>
+
+      <!-- TrollMeter -->
+      <div class="trollmeter-container">
+        <div class="trollmeter-content">
+          <div class="crowd-label">CROWD</div>
+          <div class="bars-container">
+            <!-- FALSE Bar -->
+            <div class="bar-stack">
+              <div class="bar">
+                <div class="bar-fill" id="false-fill" style="height: 58.7%;"></div>
+                <div class="bar-label">
+                  <span>F</span>
+                  <span>A</span>
+                  <span>L</span>
+                  <span>S</span>
+                  <span>E</span>
+                </div>
+              </div>
+              <div class="bar-numbers">
+                <div class="bar-count false" id="false-count">71</div>
+                <div class="bar-divider"></div>
+                <div class="bar-total" id="false-total">121</div>
+              </div>
+            </div>
+
+            <!-- TRUE Bar -->
+            <div class="bar-stack">
+              <div class="bar">
+                <div class="bar-fill true" id="true-fill" style="height: 17.4%;"></div>
+                <div class="bar-label">
+                  <span>T</span>
+                  <span>R</span>
+                  <span>U</span>
+                  <span>E</span>
+                </div>
+              </div>
+              <div class="bar-numbers">
+                <div class="bar-count true" id="true-count">21</div>
+                <div class="bar-divider"></div>
+                <div class="bar-total" id="true-total">121</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <h3 style="margin-top: 0; color: #00a2ff;">CSS Controls - Edit values and press Enter</h3>
+
+    <div class="control-group">
+      <label>Title font-size (px)</label>
+      <input type="number" id="title-fontsize" value="18">
+    </div>
+
+    <div class="control-group">
+      <label>Title letter-spacing (px)</label>
+      <input type="number" id="title-spacing" value="2">
+    </div>
+
+    <div class="control-group">
+      <label>Bar label font-size (px)</label>
+      <input type="number" id="bar-label-fontsize" value="11">
+    </div>
+
+    <div class="control-group">
+      <label>Bar label line-height</label>
+      <input type="number" step="0.1" id="bar-label-lineheight" value="0.7">
+    </div>
+
+    <div class="control-group">
+      <label>Bar numbers font-size (px)</label>
+      <input type="number" id="bar-numbers-fontsize" value="12">
+    </div>
+
+    <div class="control-group">
+      <label>Bar numbers margin-top (px)</label>
+      <input type="number" id="bar-numbers-margintop" value="0">
+    </div>
+
+    <div class="control-group">
+      <label>Verimeter score margin-bottom (px)</label>
+      <input type="number" id="verimeter-score-mb" value="4">
+    </div>
+
+    <div class="control-group">
+      <label>Verimeter label font-size (px)</label>
+      <input type="number" id="verimeter-label-fontsize" value="14">
+    </div>
+
+    <div class="control-group">
+      <label>Verimeter FALSE/TRUE font-size (px)</label>
+      <input type="number" id="verimeter-ticks-fontsize" value="12">
+    </div>
+
+    <div class="control-group">
+      <label>Verimeter FALSE/TRUE bottom (px)</label>
+      <input type="number" id="verimeter-ticks-bottom" value="10">
+    </div>
+  </div>
+
+  <div class="instructions">
+    <h3>Instructions:</h3>
+    <ul>
+      <li>Edit the CSS values above to adjust spacing and sizing</li>
+      <li>Press Enter or click outside the input to apply changes</li>
+      <li>When you find values that work, let me know and I'll update the React components</li>
+      <li>Right-click on any element and "Inspect" to tweak in DevTools</li>
+      <li>Check the Console for the CSS selectors you can modify</li>
+    </ul>
+  </div>
+
+  <script>
+    // Title controls
+    document.getElementById('title-fontsize').addEventListener('change', (e) => {
+      document.getElementById('title').style.fontSize = e.target.value + 'px';
+    });
+
+    document.getElementById('title-spacing').addEventListener('change', (e) => {
+      document.getElementById('title').style.letterSpacing = e.target.value + 'px';
+    });
+
+    // Bar label controls
+    document.getElementById('bar-label-fontsize').addEventListener('change', (e) => {
+      document.querySelectorAll('.bar-label span').forEach(el => {
+        el.style.fontSize = e.target.value + 'px';
+      });
+    });
+
+    document.getElementById('bar-label-lineheight').addEventListener('change', (e) => {
+      document.querySelectorAll('.bar-label span').forEach(el => {
+        el.style.lineHeight = e.target.value;
+      });
+    });
+
+    // Bar numbers controls
+    document.getElementById('bar-numbers-fontsize').addEventListener('change', (e) => {
+      document.querySelectorAll('.bar-count, .bar-total').forEach(el => {
+        el.style.fontSize = e.target.value + 'px';
+      });
+    });
+
+    document.getElementById('bar-numbers-margintop').addEventListener('change', (e) => {
+      document.querySelectorAll('.bar-numbers').forEach(el => {
+        el.style.marginTop = e.target.value + 'px';
+      });
+    });
+
+    // Verimeter score controls
+    document.getElementById('verimeter-score-mb').addEventListener('change', (e) => {
+      document.getElementById('verimeter-score').style.marginBottom = e.target.value + 'px';
+    });
+
+    // Verimeter label controls
+    document.getElementById('verimeter-label-fontsize').addEventListener('change', (e) => {
+      document.getElementById('verimeter-label').style.fontSize = e.target.value + 'px';
+    });
+
+    // Verimeter ticks controls
+    document.getElementById('verimeter-ticks-fontsize').addEventListener('change', (e) => {
+      document.querySelector('.verimeter-false').style.fontSize = e.target.value + 'px';
+      document.querySelector('.verimeter-true').style.fontSize = e.target.value + 'px';
+    });
+
+    document.getElementById('verimeter-ticks-bottom').addEventListener('change', (e) => {
+      document.querySelector('.verimeter-false').style.bottom = e.target.value + 'px';
+      document.querySelector('.verimeter-true').style.bottom = e.target.value + 'px';
+    });
+
+    console.log('CSS Selectors you can modify in DevTools:');
+    console.log('.title - Title text');
+    console.log('.bar-label span - Vertical FALSE/TRUE letters');
+    console.log('.bar-count - Count numbers (71, 21)');
+    console.log('.bar-total - Total numbers (121)');
+    console.log('.verimeter-score - Percentage score');
+    console.log('.verimeter-label - VERIMETER label');
+    console.log('.verimeter-false, .verimeter-true - FALSE/TRUE under gauge');
+  </script>
+</body>
+</html>

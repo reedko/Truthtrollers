@@ -2,9 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Box, Text, VStack, HStack, Progress, Spinner } from "@chakra-ui/react";
 import { keyframes } from "@emotion/react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
+import { api } from "../services/api";
 
 interface HotTopic {
   content_id: number;
@@ -28,8 +26,9 @@ const HotTopics: React.FC = () => {
   useEffect(() => {
     const fetchHotTopics = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/discussion/hot-topics`);
+        const res = await api.get("/api/discussion/hot-topics");
         const data = res.data || [];
+        console.log(res, "LKJHG");
 
         // If no data from API, use fallback sample data
         if (data.length === 0) {
@@ -90,11 +89,20 @@ const HotTopics: React.FC = () => {
       }
     };
 
+    // Initial fetch
     fetchHotTopics();
 
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchHotTopics, 30000);
-    return () => clearInterval(interval);
+    // Listen for new discussion posts to refresh stats
+    const handleDiscussionPosted = () => {
+      console.log("🔄 [HotTopics] New discussion posted, refreshing...");
+      fetchHotTopics();
+    };
+
+    window.addEventListener("discussion-posted", handleDiscussionPosted);
+
+    return () => {
+      window.removeEventListener("discussion-posted", handleDiscussionPosted);
+    };
   }, []);
 
   const handleTopicClick = (contentId: number) => {
@@ -157,136 +165,145 @@ const HotTopics: React.FC = () => {
         {/* Topics List */}
         <VStack spacing={2} align="stretch">
           {topics.map((topic, index) => {
-              const total = topic.discussion_count;
-              const proPercent = total > 0 ? (topic.pro_count / total) * 100 : 50;
-              const conPercent = total > 0 ? (topic.con_count / total) * 100 : 50;
+            const total = topic.discussion_count;
+            const proPercent = total > 0 ? (topic.pro_count / total) * 100 : 50;
+            const conPercent = total > 0 ? (topic.con_count / total) * 100 : 50;
 
-              return (
-                <Box
-                  key={topic.content_id}
-                  p={2}
-                  background={
-                    index === 0
-                      ? "rgba(0, 162, 255, 0.1)"
-                      : "rgba(15, 23, 42, 0.5)"
-                  }
-                  border={
-                    index === 0
-                      ? "1px solid rgba(0, 162, 255, 0.4)"
-                      : "1px solid rgba(100, 116, 139, 0.2)"
-                  }
-                  borderRadius="6px"
-                  cursor="pointer"
-                  transition="all 0.3s ease"
-                  _hover={{
-                    background: "rgba(0, 162, 255, 0.15)",
-                    borderColor: "rgba(0, 162, 255, 0.5)",
-                    transform: "translateX(2px)",
-                  }}
-                  onClick={() => handleTopicClick(topic.content_id)}
-                  sx={
-                    index === 0
-                      ? {
-                          animation: `${pulseGlow} 3s ease-in-out infinite`,
-                        }
-                      : {}
-                  }
-                >
-                  <VStack spacing={2} align="stretch">
-                    {/* Topic Title */}
-                    <HStack spacing={2}>
-                      {/* Rank Badge */}
+            return (
+              <Box
+                key={topic.content_id}
+                p={2}
+                background={
+                  index === 0
+                    ? "rgba(0, 162, 255, 0.1)"
+                    : "rgba(15, 23, 42, 0.5)"
+                }
+                border={
+                  index === 0
+                    ? "1px solid rgba(0, 162, 255, 0.4)"
+                    : "1px solid rgba(100, 116, 139, 0.2)"
+                }
+                borderRadius="6px"
+                cursor="pointer"
+                transition="all 0.3s ease"
+                _hover={{
+                  background: "rgba(0, 162, 255, 0.15)",
+                  borderColor: "rgba(0, 162, 255, 0.5)",
+                  transform: "translateX(2px)",
+                }}
+                onClick={() => handleTopicClick(topic.content_id)}
+                sx={
+                  index === 0
+                    ? {
+                        animation: `${pulseGlow} 3s ease-in-out infinite`,
+                      }
+                    : {}
+                }
+              >
+                <VStack spacing={2} align="stretch">
+                  {/* Topic Title */}
+                  <HStack spacing={2}>
+                    {/* Rank Badge */}
+                    <Box
+                      minW="18px"
+                      h="18px"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      background={
+                        index === 0
+                          ? "linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.1))"
+                          : "rgba(100, 116, 139, 0.2)"
+                      }
+                      borderRadius="4px"
+                      fontSize="0.6rem"
+                      fontWeight="700"
+                      color={index === 0 ? "#f87171" : "#94a3b8"}
+                    >
+                      {index + 1}
+                    </Box>
+
+                    <Text
+                      fontSize="0.7rem"
+                      fontWeight="600"
+                      color="#e2e8f0"
+                      isTruncated
+                      flex={1}
+                    >
+                      {topic.task_title}
+                    </Text>
+
+                    {/* Discussion Count Badge */}
+                    <Box
+                      px={2}
+                      py={0.5}
+                      background="rgba(0, 162, 255, 0.2)"
+                      borderRadius="4px"
+                      fontSize="0.6rem"
+                      fontWeight="700"
+                      color="#60a5fa"
+                    >
+                      {total}
+                    </Box>
+                  </HStack>
+
+                  {/* Pro/Con Split Visualization */}
+                  <VStack spacing={1} align="stretch">
+                    {/* Split Bar */}
+                    <HStack
+                      spacing={0}
+                      h="6px"
+                      borderRadius="3px"
+                      overflow="hidden"
+                    >
                       <Box
-                        minW="18px"
-                        h="18px"
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                        background={
-                          index === 0
-                            ? "linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.1))"
-                            : "rgba(100, 116, 139, 0.2)"
-                        }
-                        borderRadius="4px"
-                        fontSize="0.6rem"
-                        fontWeight="700"
-                        color={index === 0 ? "#f87171" : "#94a3b8"}
-                      >
-                        {index + 1}
-                      </Box>
-
-                      <Text
-                        fontSize="0.7rem"
-                        fontWeight="600"
-                        color="#e2e8f0"
-                        isTruncated
-                        flex={1}
-                      >
-                        {topic.task_title}
-                      </Text>
-
-                      {/* Discussion Count Badge */}
+                        flex={proPercent}
+                        background="linear-gradient(90deg, rgba(34, 197, 94, 0.6), rgba(34, 197, 94, 0.3))"
+                        boxShadow="0 0 8px rgba(34, 197, 94, 0.4)"
+                      />
                       <Box
-                        px={2}
-                        py={0.5}
-                        background="rgba(0, 162, 255, 0.2)"
-                        borderRadius="4px"
-                        fontSize="0.6rem"
-                        fontWeight="700"
-                        color="#60a5fa"
-                      >
-                        {total}
-                      </Box>
+                        flex={conPercent}
+                        background="linear-gradient(90deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.6))"
+                        boxShadow="0 0 8px rgba(239, 68, 68, 0.4)"
+                      />
                     </HStack>
 
-                    {/* Pro/Con Split Visualization */}
-                    <VStack spacing={1} align="stretch">
-                      {/* Split Bar */}
-                      <HStack spacing={0} h="6px" borderRadius="3px" overflow="hidden">
+                    {/* Legend */}
+                    <HStack
+                      spacing={3}
+                      justify="space-between"
+                      fontSize="0.55rem"
+                    >
+                      <HStack spacing={1}>
                         <Box
-                          flex={proPercent}
-                          background="linear-gradient(90deg, rgba(34, 197, 94, 0.6), rgba(34, 197, 94, 0.3))"
-                          boxShadow="0 0 8px rgba(34, 197, 94, 0.4)"
+                          w="4px"
+                          h="4px"
+                          borderRadius="50%"
+                          background="#4ade80"
+                          boxShadow="0 0 4px rgba(34, 197, 94, 0.6)"
                         />
+                        <Text color="#4ade80" fontWeight="600">
+                          {topic.pro_count} Pro
+                        </Text>
+                      </HStack>
+                      <HStack spacing={1}>
+                        <Text color="#f87171" fontWeight="600">
+                          {topic.con_count} Con
+                        </Text>
                         <Box
-                          flex={conPercent}
-                          background="linear-gradient(90deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.6))"
-                          boxShadow="0 0 8px rgba(239, 68, 68, 0.4)"
+                          w="4px"
+                          h="4px"
+                          borderRadius="50%"
+                          background="#f87171"
+                          boxShadow="0 0 4px rgba(239, 68, 68, 0.6)"
                         />
                       </HStack>
-
-                      {/* Legend */}
-                      <HStack spacing={3} justify="space-between" fontSize="0.55rem">
-                        <HStack spacing={1}>
-                          <Box
-                            w="4px"
-                            h="4px"
-                            borderRadius="50%"
-                            background="#4ade80"
-                            boxShadow="0 0 4px rgba(34, 197, 94, 0.6)"
-                          />
-                          <Text color="#4ade80" fontWeight="600">
-                            {topic.pro_count} Pro
-                          </Text>
-                        </HStack>
-                        <HStack spacing={1}>
-                          <Text color="#f87171" fontWeight="600">
-                            {topic.con_count} Con
-                          </Text>
-                          <Box
-                            w="4px"
-                            h="4px"
-                            borderRadius="50%"
-                            background="#f87171"
-                            boxShadow="0 0 4px rgba(239, 68, 68, 0.6)"
-                          />
-                        </HStack>
-                      </HStack>
-                    </VStack>
+                    </HStack>
                   </VStack>
-                </Box>
-              );
-            })}
+                </VStack>
+              </Box>
+            );
+          })}
         </VStack>
       </Box>
     </Box>

@@ -12,7 +12,7 @@ interface NodeType {
 }
 
 const initialNodes: NodeType[] = [
-  { id: "task-1", type: "task", label: "Main Task" },
+  { id: "task-1", type: "task", label: "Main Case" },
   { id: "claim-1", type: "claim", label: "Claim A", relation: "supports" },
   { id: "claim-2", type: "claim", label: "Claim B", relation: "refutes" },
   { id: "claim-3", type: "claim", label: "Claim C", relation: "supports" },

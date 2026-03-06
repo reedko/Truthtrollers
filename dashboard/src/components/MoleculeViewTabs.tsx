@@ -1,12 +1,7 @@
-// Tabbed view component for molecule views
+// View selector component for molecule views
 import React, { useState } from "react";
 import {
   Box,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
   Button,
   IconButton,
   Input,
@@ -24,6 +19,7 @@ import {
   ModalFooter,
   ModalCloseButton,
   useDisclosure,
+  useColorMode,
 } from "@chakra-ui/react";
 import { AddIcon, EditIcon, DeleteIcon, SettingsIcon } from "@chakra-ui/icons";
 import type { MoleculeView } from "../services/moleculeViewsAPI";
@@ -47,6 +43,7 @@ const MoleculeViewTabs: React.FC<MoleculeViewTabsProps> = ({
   onDeleteView,
   onSetDefault,
 }) => {
+  const { colorMode } = useColorMode();
   const [newViewName, setNewViewName] = useState("");
   const [editingViewId, setEditingViewId] = useState<number | null>(null);
   const [editingName, setEditingName] = useState("");
@@ -63,8 +60,6 @@ const MoleculeViewTabs: React.FC<MoleculeViewTabsProps> = ({
     onOpen: onEditOpen,
     onClose: onEditClose,
   } = useDisclosure();
-
-  const activeIndex = views.findIndex((v) => v.id === activeViewId);
 
   const handleCreateView = async () => {
     if (!newViewName.trim()) {
@@ -153,82 +148,90 @@ const MoleculeViewTabs: React.FC<MoleculeViewTabsProps> = ({
     onEditOpen();
   };
 
+  const activeView = views.find((v) => v.id === activeViewId);
+
   return (
     <Box>
-      <Tabs
-        index={activeIndex === -1 ? 0 : activeIndex}
-        onChange={(index) => onViewChange(views[index]?.id)}
-        variant="enclosed"
-        colorScheme="blue"
-      >
-        <HStack justify="space-between" mb={2}>
-          <TabList>
+      <HStack spacing={2}>
+        {/* View Selector Menu */}
+        <Menu>
+          <MenuButton
+            as={Button}
+            size="sm"
+            variant="outline"
+            colorScheme="blue"
+            rightIcon={<span>▼</span>}
+          >
+            {activeView?.name || "Select View"}
+            {activeView?.is_default && " ⭐"}
+          </MenuButton>
+          <MenuList
+            bg={colorMode === "dark" ? "gray.800" : "white"}
+            borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"}
+            zIndex={2500}
+          >
             {views.map((view) => (
-              <Tab
+              <MenuItem
                 key={view.id}
-                _selected={{
-                  color: "#00a2ff",
-                  borderColor: "rgba(0, 162, 255, 0.6)",
-                  bg: "rgba(0, 162, 255, 0.1)",
-                }}
+                onClick={() => onViewChange(view.id)}
+                bg={view.id === activeViewId ? (colorMode === "dark" ? "rgba(0, 162, 255, 0.2)" : "rgba(71, 85, 105, 0.1)") : undefined}
+                fontWeight={view.id === activeViewId ? "bold" : "normal"}
               >
                 {view.name}
                 {view.is_default && " ⭐"}
-              </Tab>
+              </MenuItem>
             ))}
-          </TabList>
+          </MenuList>
+        </Menu>
 
-          <HStack>
-            <Button
+        {/* New View Button */}
+        <Button
+          size="sm"
+          leftIcon={<AddIcon />}
+          onClick={onCreateOpen}
+          colorScheme="blue"
+          variant="ghost"
+        >
+          New View
+        </Button>
+
+        {/* Settings Menu */}
+        {activeView && (
+          <Menu>
+            <MenuButton
+              as={IconButton}
+              icon={<SettingsIcon />}
               size="sm"
-              leftIcon={<AddIcon />}
-              onClick={onCreateOpen}
-              colorScheme="blue"
               variant="ghost"
+              aria-label="View options"
+            />
+            <MenuList
+              bg={colorMode === "dark" ? "gray.800" : "white"}
+              borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"}
+              zIndex={2500}
             >
-              New View
-            </Button>
-          </HStack>
-        </HStack>
-
-        <TabPanels>
-          {views.map((view) => (
-            <TabPanel key={view.id} p={0}>
-              <HStack justify="flex-end" mt={2} mb={2}>
-                <Menu>
-                  <MenuButton
-                    as={IconButton}
-                    icon={<SettingsIcon />}
-                    size="sm"
-                    variant="ghost"
-                    aria-label="View options"
-                  />
-                  <MenuList>
-                    <MenuItem icon={<EditIcon />} onClick={() => openEditModal(view)}>
-                      Rename View
-                    </MenuItem>
-                    <MenuItem
-                      icon={<span>⭐</span>}
-                      onClick={() => onSetDefault(view.id)}
-                      isDisabled={view.is_default}
-                    >
-                      Set as Default
-                    </MenuItem>
-                    <MenuItem
-                      icon={<DeleteIcon />}
-                      onClick={() => handleDeleteView(view.id)}
-                      color="red.500"
-                      isDisabled={views.length <= 1}
-                    >
-                      Delete View
-                    </MenuItem>
-                  </MenuList>
-                </Menu>
-              </HStack>
-            </TabPanel>
-          ))}
-        </TabPanels>
-      </Tabs>
+              <MenuItem icon={<EditIcon />} onClick={() => openEditModal(activeView)}>
+                Rename View
+              </MenuItem>
+              <MenuItem
+                icon={<span>⭐</span>}
+                onClick={() => onSetDefault(activeView.id)}
+                isDisabled={activeView.is_default}
+              >
+                Set as Default
+              </MenuItem>
+              <MenuItem
+                icon={<DeleteIcon />}
+                onClick={() => handleDeleteView(activeView.id)}
+                color="red.500"
+                isDisabled={views.length <= 1}
+              >
+                Delete View
+              </MenuItem>
+            </MenuList>
+          </Menu>
+        )}
+      </HStack>
 
       {/* Create View Modal */}
       <Modal isOpen={isCreateOpen} onClose={onCreateClose}>

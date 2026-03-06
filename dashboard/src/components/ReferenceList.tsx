@@ -109,7 +109,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
         pl={4}
         width="100%"
       >
-        <Heading size="sm">References</Heading>
+        <Heading size="sm">Sources</Heading>
 
         {/* 🔥 Button to Open ReferenceModal */}
         <Box
@@ -149,12 +149,12 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
             pointerEvents="none"
           />
           <Text position="relative" zIndex={1}>
-            + Add Reference
+            + Add Source
           </Text>
         </Box>
 
         {references.length === 0 ? (
-          <Text>No References Found</Text>
+          <Text>No Sources Found</Text>
         ) : (
           references.map((ref) => (
             <Box
@@ -267,7 +267,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
       <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Edit Reference Title</ModalHeader>
+          <ModalHeader>Edit Source Title</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <Input

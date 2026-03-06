@@ -3,6 +3,7 @@ import { Router } from "express";
 
 import { runEvidenceEngine } from "../../core/runEvidenceEngine.js";
 import { persistAIResults } from "../../storage/persistAIResults.js";
+import { logUserActivity } from "../../utils/logUserActivity.js";
 
 export default function createEvidenceRoutes({ query, pool }) {
   const router = Router();
@@ -36,6 +37,19 @@ export default function createEvidenceRoutes({ query, pool }) {
         evidenceRefs: engineOut.aiReferences || [],
         claimIds: claimIds || [],
         claimConfidenceMap: engineOut.claimConfidenceMap || new Map(),
+      });
+
+      // Step 3 — Log user activity for engagement tracking
+      await logUserActivity(query, {
+        userId: req.user?.user_id || null,
+        username: req.user?.username || null,
+        activityType: 'evidence_run',
+        contentId: taskContentId,
+        metadata: {
+          claimCount: claimIds.length,
+          textLength: readableText?.length || 0,
+          referencesFound: (engineOut.aiReferences || []).length
+        }
       });
 
       return res.json({

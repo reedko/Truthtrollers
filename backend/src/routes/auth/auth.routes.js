@@ -10,8 +10,8 @@ import { sendPasswordResetEmail, sendPasswordChangedEmail } from "../../utils/em
 export default function({ query, pool }) {
   const router = Router();
 
-// Create session logger
-const { logSuccessfulLogin, logFailedLogin, logRegistrationAttempt } =
+// Create session logger (logSuccessfulLogin removed - now handled inline)
+const { logFailedLogin, logRegistrationAttempt } =
   createSessionLogger(query);
 
 /**
@@ -21,11 +21,23 @@ const { logSuccessfulLogin, logFailedLogin, logRegistrationAttempt } =
  */
 function getClientIP(req) {
   const forwarded = req.headers["x-forwarded-for"];
+  const socketAddr = req.socket.remoteAddress;
+
+  // 🔍 DIAGNOSTIC: Log raw IP data
+  if (forwarded || socketAddr) {
+    process.stderr.write(`[IP DEBUG] forwarded="${forwarded}" (len=${forwarded?.length}), socket="${socketAddr}" (len=${socketAddr?.length})\n`);
+  }
+
   if (forwarded) {
     // Take the first IP in the comma-separated list
-    return forwarded.split(',')[0].trim();
+    const firstIP = forwarded.split(',')[0].trim();
+    process.stderr.write(`[IP DEBUG] Using first IP from x-forwarded-for: "${firstIP}" (len=${firstIP.length})\n`);
+    return firstIP;
   }
-  return req.socket.remoteAddress || 'unknown';
+
+  const result = socketAddr || 'unknown';
+  process.stderr.write(`[IP DEBUG] Using socket address: "${result}" (len=${result.length})\n`);
+  return result;
 }
 
 /**
@@ -34,7 +46,8 @@ function getClientIP(req) {
  */
 router.post("/api/register", async (req, res) => {
   const { username, password, email, captcha } = req.body;
-  const ipAddress = getClientIP(req);
+  const rawIP = getClientIP(req);
+  const ipAddress = rawIP ? String(rawIP).substring(0, 100) : 'unknown';
 
   if (!username || !password || !email || !captcha) {
     await logRegistrationAttempt({
@@ -149,8 +162,17 @@ router.post("/api/register", async (req, res) => {
  */
 router.post("/api/login", async (req, res) => {
   const { username, password, captcha, fingerprint } = req.body;
-  const ipAddress = getClientIP(req);
+  const rawIP = getClientIP(req);
 
+  // 🛡️ DEFENSIVE: Truncate IP to 100 chars MAX (DB limit)
+  const ipAddress = rawIP ? String(rawIP).substring(0, 100) : 'unknown';
+
+  if (rawIP && rawIP.length > 100) {
+    process.stderr.write(`[${new Date().toISOString()}] ⚠️ IP TRUNCATED: original=${rawIP.length} chars, truncated to 100\n`);
+  }
+
+  // Write directly to stderr for immediate logging
+  process.stderr.write(`[${new Date().toISOString()}] 🔐 LOGIN ATTEMPT: user=${username}, ip=${ipAddress} (len=${ipAddress?.length})\n`);
   console.log(`🔐 Login attempt: username=${username}, skipCaptcha=${req.headers["x-skip-captcha"]}, ip=${ipAddress}`);
 
   // CAPTCHA bypass for extensions or post-registration
@@ -242,25 +264,67 @@ router.post("/api/login", async (req, res) => {
 
     // Password is valid - proceed with login
     try {
+      // Get user's role(s) from user_roles table BEFORE creating JWT
+      let userRole = 'user'; // default role
+      try {
+        const userRoles = await query(`
+          SELECT r.name
+          FROM user_roles ur
+          JOIN roles r ON ur.role_id = r.role_id
+          WHERE ur.user_id = ?
+        `, [user.user_id]);
+
+        // Use the first role found, prioritize super_admin if present
+        if (userRoles.length > 0) {
+          const roleNames = userRoles.map(row => row.name);
+          userRole = roleNames.includes('super_admin') ? 'super_admin' : roleNames[0];
+        }
+      } catch (roleErr) {
+        console.error("Error fetching user role:", roleErr);
+        // Continue with default role
+      }
+
+      // Create JWT with role included
       const token = jwt.sign(
         {
           user_id: user.user_id,
           username: user.username,
           can_post: true,
+          role: userRole,
         },
         process.env.JWT_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "60m" } // 60 minute sessions
       );
 
       // --- SESSION LOGIC ---
-      const sessionFingerprint = fingerprint || "manual_login";
+      // Always create session for ALL logins (web browser + extension)
+      // Use fingerprint if provided, otherwise use IP address as identifier
+      const sessionFingerprint = fingerprint || `web_${ipAddress}`;
 
-      // Optionally: upsert/replace session for extension/device logins
-      if (fingerprint) {
+      try {
+        // Truncate IP if too long (safety measure)
+        const safeIpAddress = ipAddress ? String(ipAddress).substring(0, 100) : 'unknown';
+
+        // Create/update session for this login
         await query(
-          "REPLACE INTO user_sessions (device_fingerprint, user_id, jwt, updated_at) VALUES (?, ?, ?, NOW())",
-          [fingerprint, user.user_id, token]
+          `INSERT INTO user_sessions (device_fingerprint, user_id, jwt, updated_at, login_time, ip_address)
+           VALUES (?, ?, ?, NOW(), NOW(), ?)
+           ON DUPLICATE KEY UPDATE
+             jwt = VALUES(jwt),
+             updated_at = NOW(),
+             login_time = NOW(),
+             ip_address = VALUES(ip_address)`,
+          [sessionFingerprint, user.user_id, token, safeIpAddress]
         );
+
+        console.log(`✅ Session created/updated: user=${user.user_id}, fingerprint=${sessionFingerprint}`);
+      } catch (sessionErr) {
+        // Log error prominently but don't fail the login
+        process.stderr.write(`🚨 FAILED TO CREATE SESSION: ${sessionErr.message} (code: ${sessionErr.code}, sqlState: ${sessionErr.sqlState})\n`);
+        console.error('🚨 Session creation failed:', sessionErr);
+        console.error('  User ID:', user.user_id);
+        console.error('  Fingerprint:', sessionFingerprint);
+        console.error('  IP:', ipAddress);
       }
 
       // Log the login event
@@ -274,14 +338,17 @@ router.post("/api/login", async (req, res) => {
         ]
       );
 
-      await logSuccessfulLogin({
-        userId: user.user_id,
-        jwt: token,
-        ipAddress,
-        fingerprint: sessionFingerprint,
-      });
+      // Session already created above, no need for logSuccessfulLogin
 
-      console.log(`✅ Login successful: ${username} (user_id=${user.user_id})`);
+      // Decode token to log expiration
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const expiresAt = new Date(decoded.exp * 1000);
+      const now = new Date();
+
+      console.log(`✅ Login successful: ${username} (user_id=${user.user_id}, role=${userRole})`);
+      console.log(`   Token issued at: ${now.toLocaleTimeString()}`);
+      console.log(`   Token expires at: ${expiresAt.toLocaleTimeString()}`);
+      console.log(`   Token duration: 60 minutes\n`);
 
       return res.status(200).json({
         auth: true,
@@ -291,6 +358,7 @@ router.post("/api/login", async (req, res) => {
           username: user.username,
           can_post: true,
           user_profile_image: user.user_profile_image ?? null,
+          role: userRole,
         },
       });
     } catch (loginErr) {
@@ -309,6 +377,9 @@ router.post("/api/logout", (req, res) => {
   if (!fingerprint) {
     return res.status(400).json({ error: "Missing fingerprint" });
   }
+
+  const rawIP = getClientIP(req);
+  const ipAddress = rawIP ? String(rawIP).substring(0, 100) : 'unknown';
 
   // 1. First, get the user_id for audit logging
   pool.query(
@@ -338,7 +409,7 @@ router.post("/api/logout", (req, res) => {
             [
               userId,
               fingerprint,
-              getClientIP(req),
+              ipAddress,
               JSON.stringify({ agent: req.headers["user-agent"] }),
             ],
             (err3) => {
@@ -398,9 +469,11 @@ router.post("/api/reset-password", async (req, res) => {
     await sendPasswordResetEmail(user.email, token, user.username);
 
     // 7. Log the reset request
+    const rawIP = getClientIP(req);
+    const ipAddress = rawIP ? String(rawIP).substring(0, 100) : 'unknown';
     await query(
       "INSERT INTO login_events (user_id, fingerprint, event_type, ip_address, details) VALUES (?, ?, 'password_reset_request', ?, ?)",
-      [user.user_id, 'email_reset', getClientIP(req), JSON.stringify({ email })]
+      [user.user_id, 'email_reset', ipAddress, JSON.stringify({ email })]
     );
 
     res.status(200).json({
@@ -535,9 +608,11 @@ router.post("/api/reset-password-with-token", async (req, res) => {
     );
 
     // 5. Log the password change
+    const rawIP = getClientIP(req);
+    const ipAddress = rawIP ? String(rawIP).substring(0, 100) : 'unknown';
     await query(
       "INSERT INTO login_events (user_id, fingerprint, event_type, ip_address, details) VALUES (?, ?, 'password_changed', ?, ?)",
-      [tokenData.user_id, 'email_reset', getClientIP(req), JSON.stringify({ email: tokenData.email })]
+      [tokenData.user_id, 'email_reset', ipAddress, JSON.stringify({ email: tokenData.email })]
     );
 
     // 6. Send confirmation email
@@ -550,6 +625,120 @@ router.post("/api/reset-password-with-token", async (req, res) => {
   } catch (error) {
     console.error("Password reset completion error:", error);
     res.status(500).json({ error: "Failed to reset password" });
+  }
+});
+
+/**
+ * POST /api/refresh-token
+ * Refresh JWT token to extend session
+ */
+router.post("/api/refresh-token", async (req, res) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  const now = new Date();
+  console.log(`\n🔄 [${now.toLocaleTimeString()}] Token refresh request received`);
+
+  if (!token) {
+    console.error(`❌ [${now.toLocaleTimeString()}] Token refresh FAILED: No token provided`);
+    return res.status(401).json({ error: "No token provided" });
+  }
+
+  try {
+    // Verify the current token (even if close to expiration)
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Calculate how much time was remaining on old token
+    const oldExpiresAt = new Date(decoded.exp * 1000);
+    const timeRemaining = oldExpiresAt - now;
+    const minutesRemaining = Math.floor(timeRemaining / 1000 / 60);
+
+    console.log(`   User: ${decoded.username} (ID: ${decoded.user_id})`);
+    console.log(`   Old token expires at: ${oldExpiresAt.toLocaleTimeString()}`);
+    console.log(`   Time remaining on old token: ${minutesRemaining} minutes`);
+
+    // Get fresh user role from database
+    let userRole = 'user';
+    try {
+      const userRoles = await query(`
+        SELECT r.name
+        FROM user_roles ur
+        JOIN roles r ON ur.role_id = r.role_id
+        WHERE ur.user_id = ?
+      `, [decoded.user_id]);
+
+      if (userRoles.length > 0) {
+        const roleNames = userRoles.map(row => row.name);
+        userRole = roleNames.includes('super_admin') ? 'super_admin' : roleNames[0];
+      }
+    } catch (roleErr) {
+      console.error("Error fetching user role during token refresh:", roleErr);
+    }
+
+    // Issue a new token with extended expiration (include role in JWT)
+    const newToken = jwt.sign(
+      {
+        user_id: decoded.user_id,
+        username: decoded.username,
+        can_post: decoded.can_post || true,
+        role: userRole,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "60m" } // 60 minute sessions
+    );
+
+    // Update session to keep user appearing online
+    try {
+      const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      const safeIpAddress = ipAddress ? String(ipAddress).substring(0, 100) : 'unknown';
+      const sessionFingerprint = `web_${ipAddress}`; // Match login fingerprint format
+
+      await query(
+        `UPDATE user_sessions
+         SET jwt = ?, updated_at = NOW()
+         WHERE user_id = ? AND device_fingerprint = ?`,
+        [newToken, decoded.user_id, sessionFingerprint]
+      );
+
+      console.log(`✅ Session updated for user ${decoded.user_id}`);
+    } catch (sessionErr) {
+      console.error('⚠️ Failed to update session during token refresh:', sessionErr.message);
+      // Don't fail the refresh if session update fails
+    }
+
+    // Decode new token to log expiration
+    const newDecoded = jwt.verify(newToken, process.env.JWT_SECRET);
+    const newExpiresAt = new Date(newDecoded.exp * 1000);
+
+    console.log(`✅ [${now.toLocaleTimeString()}] Token refreshed successfully`);
+    console.log(`   New token expires at: ${newExpiresAt.toLocaleTimeString()}`);
+    console.log(`   New token duration: 60 minutes\n`);
+
+    return res.status(200).json({
+      token: newToken,
+      user: {
+        user_id: decoded.user_id,
+        username: decoded.username,
+        can_post: decoded.can_post || true,
+        role: userRole,
+      },
+    });
+  } catch (error) {
+    const errorTime = new Date();
+    console.error(`\n❌ [${errorTime.toLocaleTimeString()}] Token refresh FAILED`);
+    console.error(`   Error type: ${error.name}`);
+    console.error(`   Error message: ${error.message}`);
+
+    if (error.name === 'TokenExpiredError') {
+      const expiredAt = new Date(error.expiredAt);
+      console.error(`   Token expired at: ${expiredAt.toLocaleTimeString()}`);
+      console.error(`   Current time: ${errorTime.toLocaleTimeString()}`);
+      console.error(`   Token was expired for: ${Math.floor((errorTime - expiredAt) / 1000 / 60)} minutes`);
+    }
+    console.error(`   Full error:`, error);
+    console.error('');
+
+    return res.status(401).json({ error: "Invalid or expired token" });
   }
 });
 

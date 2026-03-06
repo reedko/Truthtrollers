@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Box, Text, VStack, HStack, Avatar, Spinner } from "@chakra-ui/react";
 import { keyframes } from "@emotion/react";
-import axios from "axios";
-
-const API_BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
+import { api } from "../services/api";
 
 interface Contributor {
   user: string;
@@ -24,7 +22,7 @@ const TopContributors: React.FC = () => {
   useEffect(() => {
     const fetchTopContributors = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/api/discussion/top-contributors`);
+        const res = await api.get("/api/discussion/top-contributors");
         const data = res.data || [];
 
         // If no data from API, use fallback sample data
@@ -50,11 +48,22 @@ const TopContributors: React.FC = () => {
       }
     };
 
+    // Initial fetch
     fetchTopContributors();
 
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchTopContributors, 30000);
-    return () => clearInterval(interval);
+    // Listen for new activity to refresh stats
+    const handleActivityUpdate = () => {
+      console.log('🔄 [TopContributors] Activity detected, refreshing...');
+      fetchTopContributors();
+    };
+
+    window.addEventListener('discussion-posted', handleActivityUpdate);
+    window.addEventListener('activity-updated', handleActivityUpdate);
+
+    return () => {
+      window.removeEventListener('discussion-posted', handleActivityUpdate);
+      window.removeEventListener('activity-updated', handleActivityUpdate);
+    };
   }, []);
 
   if (loading) {

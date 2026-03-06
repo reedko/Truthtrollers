@@ -141,9 +141,9 @@ const TopStatsPanel: React.FC<TopStatsPanelProps> = ({
 
           <CardBody>
             <VStack spacing={4}>
-              <StatCard label="Assigned Tasks" value={tasks.length} />
+              <StatCard label="Assigned Cases" value={tasks.length} />
               <StatCard
-                label="Verification Tasks"
+                label="Verification Cases"
                 value={verificationTasks.length}
               />
             </VStack>

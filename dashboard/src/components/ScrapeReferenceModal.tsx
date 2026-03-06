@@ -109,8 +109,8 @@ const ScrapeReferenceModal: React.FC<{
             await useTaskStore.getState().fetchReferences(Number(taskId));
 
             toast({
-              title: "Reference Added!",
-              description: "The reference has been successfully scraped and linked.",
+              title: "Source Added!",
+              description: "The source has been successfully scraped and linked.",
               status: "success",
               duration: 3000,
               isClosable: true,
@@ -176,7 +176,7 @@ const ScrapeReferenceModal: React.FC<{
       <ModalOverlay />
       <ModalContent className="mr-modal">
         <ModalHeader className="mr-modal-header">
-          {initialUrl ? "🔄 Retry Failed Scrape" : "Scrape a New Reference"}
+          {initialUrl ? "🔄 Retry Failed Scrape" : "Scrape a New Source"}
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody>
@@ -184,7 +184,7 @@ const ScrapeReferenceModal: React.FC<{
             {/* ✅ Show source of URL */}
             {url && (
               <Text fontSize="sm" color={initialUrl ? "orange.600" : "gray.500"}>
-                {initialUrl ? "⚠️ Failed Reference:" : "Last Visited:"}{" "}
+                {initialUrl ? "⚠️ Failed Source:" : "Last Visited:"}{" "}
                 <Text as="span" fontWeight="bold" color={initialUrl ? "orange.700" : "blue.600"}>
                   {url}
                 </Text>

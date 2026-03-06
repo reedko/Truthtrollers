@@ -49,18 +49,31 @@ const ExtensionDownloadPage: React.FC = () => {
           </Button> */}
         </HStack>
 
-        <Alert status="info" borderRadius="md">
+        <Alert status="warning" borderRadius="md">
           <AlertIcon />
-          This ZIP contains the <Code>extension/</Code> folder as an unpacked
-          extension. You can load it in Chrome/Edge via Developer Mode. For
-          Firefox, use temporary add-on loading.
+          <VStack align="start" spacing={1}>
+            <Text fontWeight="bold">
+              Important: You must UNZIP the downloaded file first!
+            </Text>
+            <Text fontSize="sm">
+              The ZIP contains the <Code>extension/</Code> folder as an unpacked
+              extension. Extract it completely before loading in your browser.
+            </Text>
+          </VStack>
         </Alert>
 
         <Divider />
 
         <Heading size="md">Chrome / Edge (Unpacked)</Heading>
         <OrderedList spacing={2}>
-          <ListItem>Extract the ZIP to a folder on your computer.</ListItem>
+          <ListItem>
+            <b>Download and UNZIP:</b> Extract the ZIP file to a permanent folder on your computer
+            (e.g., <Code>~/Documents/TruthTrollers/extension</Code>).
+            <Alert status="info" mt={2} fontSize="sm">
+              <AlertIcon />
+              Don't delete this folder after installation — the browser loads the extension from this location.
+            </Alert>
+          </ListItem>
           <ListItem>
             Open <Code>chrome://extensions</Code> (or{" "}
             <Code>edge://extensions</Code>).
@@ -89,7 +102,13 @@ const ExtensionDownloadPage: React.FC = () => {
           Firefox (Temporary Add-on)
         </Heading>
         <OrderedList spacing={2}>
-          <ListItem>Extract the ZIP to a folder.</ListItem>
+          <ListItem>
+            <b>Download and UNZIP:</b> Extract the ZIP file to a permanent folder on your computer.
+            <Alert status="info" mt={2} fontSize="sm">
+              <AlertIcon />
+              Keep the extracted folder — Firefox loads from this location.
+            </Alert>
+          </ListItem>
           <ListItem>
             Open <Code>about:debugging#/runtime/this-firefox</Code>.
           </ListItem>

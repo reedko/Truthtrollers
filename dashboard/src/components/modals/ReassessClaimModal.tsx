@@ -27,16 +27,16 @@ interface ReassessClaimModalProps {
   onReassessComplete?: () => void;
 }
 
-const DEFAULT_SYSTEM_PROMPT = `You are assessing whether a reference claim is relevant to a task claim.
+const DEFAULT_SYSTEM_PROMPT = `You are assessing whether a source claim is relevant to a task claim.
 
 Guidelines:
-- "support": Reference claim provides evidence FOR the task claim
-- "refute": Reference claim provides evidence AGAINST the task claim
-- "nuance": Reference claim adds context or partial support/refutation
-- "insufficient": Reference claim is not relevant or doesn't provide meaningful evidence
+- "support": Source claim provides evidence FOR the task claim
+- "refute": Source claim provides evidence AGAINST the task claim
+- "nuance": Source claim adds context or partial support/refutation
+- "insufficient": Source claim is not relevant or doesn't provide meaningful evidence
 
 - confidence: 0-1 (how certain you are of the stance)
-- quality: 0-1.2 (how strong/useful the reference claim is as evidence)
+- quality: 0-1.2 (how strong/useful the source claim is as evidence)
 - rationale: 1-2 sentences explaining WHY this stance applies`;
 
 const ReassessClaimModal: React.FC<ReassessClaimModalProps> = ({
@@ -160,7 +160,7 @@ const ReassessClaimModal: React.FC<ReassessClaimModalProps> = ({
         {/* Claims */}
         <Box>
           <Text className="mr-text-primary" fontWeight="bold" mb={2}>
-            Task Claim:
+            Case Claim:
           </Text>
           <Text className="mr-text-secondary" fontSize="sm" p={2} bg="rgba(0,0,0,0.2)" borderRadius="md">
             {taskClaimText}

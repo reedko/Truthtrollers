@@ -34,6 +34,41 @@ import { Readability } from "@mozilla/readability";
 
 import fetch from "node-fetch";
 
+/**
+ * Helper: Ensure content_relations record exists linking reference to task
+ * This is critical - without it, references are orphaned in the database
+ */
+async function ensureContentRelation(query, taskContentId, referenceContentId) {
+  try {
+    // Check if relation already exists
+    const existing = await query(
+      `SELECT 1 FROM content_relations WHERE content_id = ? AND reference_content_id = ?`,
+      [taskContentId, referenceContentId]
+    );
+
+    if (existing.length === 0) {
+      // Insert the relation with is_system=1 (AI-created)
+      await query(
+        `INSERT INTO content_relations (content_id, reference_content_id, added_by_user_id, is_system) VALUES (?, ?, NULL, 1)`,
+        [taskContentId, referenceContentId]
+      );
+      logger.log(
+        `🔗 [Evidence] Linked reference ${referenceContentId} to task ${taskContentId}`
+      );
+    } else {
+      logger.log(
+        `✓ [Evidence] Relation already exists: task ${taskContentId} → reference ${referenceContentId}`
+      );
+    }
+  } catch (err) {
+    logger.error(
+      `❌ [Evidence] Failed to create content_relation for task ${taskContentId} → reference ${referenceContentId}:`,
+      err
+    );
+    // Don't throw - we want to continue processing other references
+  }
+}
+
 export async function runEvidenceEngine({
   taskContentId,
   claimIds,
@@ -300,6 +335,11 @@ export async function runEvidenceEngine({
                 `⚠️  [Evidence] Created stub for failed reference: ${cand.url} → content_id=${stubContentId}`
               );
 
+              // ─────────────────────────────────────────────
+              // CRITICAL: Link reference to task via content_relations
+              // ─────────────────────────────────────────────
+              await ensureContentRelation(query, taskContentId, stubContentId);
+
               // Calculate quality for this candidate
               const base = cand.score ?? 0;
               const boost = cand.domain?.match(
@@ -353,6 +393,11 @@ export async function runEvidenceEngine({
             logger.log(
               `✅ [Evidence] Created reference content_id=${referenceContentId}`
             );
+
+            // ─────────────────────────────────────────────
+            // CRITICAL: Link reference to task via content_relations
+            // ─────────────────────────────────────────────
+            await ensureContentRelation(query, taskContentId, referenceContentId);
 
             // ─────────────────────────────────────────────
             // 6. PERSIST AUTHORS & PUBLISHERS
@@ -413,6 +458,11 @@ export async function runEvidenceEngine({
             logger.log(
               `⚠️  [Evidence] Created stub for failed reference: ${cand.url} → content_id=${stubContentId}`
             );
+
+            // ─────────────────────────────────────────────
+            // CRITICAL: Link reference to task via content_relations
+            // ─────────────────────────────────────────────
+            await ensureContentRelation(query, taskContentId, stubContentId);
 
             // Calculate quality for this candidate
             const base = cand.score ?? 0;

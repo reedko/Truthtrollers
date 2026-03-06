@@ -18,7 +18,7 @@ export default function ReferenceClaimsPanel({
   return (
     <VStack align="stretch" spacing={3}>
       {claims.length === 0 ? (
-        <Box opacity={0.7}>No claims extracted for this reference yet.</Box>
+        <Box opacity={0.7}>No claims extracted for this source yet.</Box>
       ) : (
         claims.map((c) => (
           <Box

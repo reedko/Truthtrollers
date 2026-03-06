@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Box,
   Card,
@@ -10,7 +10,7 @@ import {
 } from "@chakra-ui/react";
 import Workspace from "../components/Workspace";
 import UnifiedHeader from "../components/UnifiedHeader";
-import { useTaskStore } from "../store/useTaskStore";
+import { useTaskStore, ViewScope } from "../store/useTaskStore";
 import {
   updateScoresForContent,
   fetchContentScores,
@@ -18,6 +18,7 @@ import {
 
 const WorkspacePage = () => {
   const { contentId: routeContentId } = useParams<{ contentId?: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [verimeterScore, setVerimeterScore] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const navigate = useNavigate();
@@ -27,6 +28,28 @@ const WorkspacePage = () => {
   const setRedirect = useTaskStore((s) => s.setRedirect);
   const selectedRedirect = useTaskStore((s) => s.selectedRedirect);
   const viewerId = useTaskStore((s) => s.viewingUserId);
+  const viewScope = useTaskStore((s) => s.viewScope);
+  const setViewingUserId = useTaskStore((s) => s.setViewingUserId);
+  const setViewScope = useTaskStore((s) => s.setViewScope);
+
+  // Phase 5: Read URL params on mount (viewer, scope)
+  useEffect(() => {
+    const viewerParam = searchParams.get('viewer');
+    const scopeParam = searchParams.get('scope') as ViewScope | null;
+
+    if (viewerParam) {
+      const viewerNum = viewerParam === 'null' ? null : parseInt(viewerParam, 10);
+      if (!isNaN(viewerNum as number) || viewerNum === null) {
+        console.log("🔗 Setting viewerId from URL param:", viewerNum);
+        setViewingUserId(viewerNum);
+      }
+    }
+
+    if (scopeParam && (scopeParam === 'user' || scopeParam === 'all' || scopeParam === 'admin')) {
+      console.log("🔗 Setting scope from URL param:", scopeParam);
+      setViewScope(scopeParam);
+    }
+  }, []); // Only on mount
 
   // If contentId is in route params, set it in the store
   useEffect(() => {
@@ -38,6 +61,29 @@ const WorkspacePage = () => {
       }
     }
   }, [routeContentId, taskId, setSelectedTask]);
+
+  // Phase 5: Update URL params when viewer/scope changes
+  useEffect(() => {
+    if (!taskId) return;
+
+    const newParams = new URLSearchParams();
+
+    if (viewerId !== null && viewerId !== undefined) {
+      newParams.set('viewer', viewerId.toString());
+    }
+
+    if (viewScope && viewScope !== 'user') {
+      newParams.set('scope', viewScope);
+    }
+
+    // Update URL without navigation (replace history)
+    const newSearch = newParams.toString();
+    const currentSearch = searchParams.toString();
+
+    if (newSearch !== currentSearch) {
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [viewerId, viewScope, taskId]);
 
   // Set this as the active redirect target when mounted
   useEffect(() => {

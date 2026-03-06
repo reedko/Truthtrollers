@@ -28,12 +28,16 @@ export default function createGraphRoutes({ query, pool }) {
     }
 
     try {
-      // Task entityType needs 5 params due to AI evidence rating calculation
+      // Task entityType needs 6 params for nodes (task, task authors, reference authors, publisher, references x2)
+      // Task entityType needs 4 params for links (task author, task publisher, task references, reference authors)
       const nodeParams = entityType === 'task'
-        ? [entity, entity, entity, entity, entity]
+        ? [entity, entity, entity, entity, entity, entity]
+        : [entity, entity, entity, entity];
+      const linkParams = entityType === 'task'
+        ? [entity, entity, entity, entity]
         : [entity, entity, entity, entity];
       const nodes = await query(nodeSql, nodeParams);
-      const links = await query(linkSql, [entity, entity, entity, entity]);
+      const links = await query(linkSql, linkParams);
 
       // Ensure JSON-safe response
       res.json({
@@ -49,7 +53,7 @@ export default function createGraphRoutes({ query, pool }) {
   // GET /api/full-graph/:taskId
   // Full graph route - includes base entity graph + claim nodes and claim links for a task
   router.get("/api/full-graph/:taskId", async (req, res) => {
-    const { entity, entityType } = req.query;
+    const { entity, entityType, viewScope } = req.query;
     const taskId = parseInt(req.params.taskId);
     const viewerId = req.query.viewerId ? parseInt(req.query.viewerId) : null;
 
@@ -69,16 +73,20 @@ export default function createGraphRoutes({ query, pool }) {
     console.log(entity);
     try {
       // 1. Base nodes/links
-      // Task entityType needs 5 params due to AI evidence rating calculation
+      // Task entityType needs 6 params for nodes (task, task authors, reference authors, publisher, references x2)
+      // Task entityType needs 4 params for links (task author, task publisher, task references, reference authors)
       const nodeParams = entityType === 'task'
-        ? [entity, entity, entity, entity, entity]
+        ? [entity, entity, entity, entity, entity, entity]
+        : [entity, entity, entity, entity];
+      const linkParams = entityType === 'task'
+        ? [entity, entity, entity, entity]
         : [entity, entity, entity, entity];
       const nodes = await query(nodeSql, nodeParams);
-      const links = await query(linkSql, [entity, entity, entity, entity]);
+      const links = await query(linkSql, linkParams);
 
       // 2. Only claims & links actually connected to the task
       const { claimNodeSql, claimNodeParams, claimLinkSql, claimLinkParams } =
-        getLinkedClaimsAndLinksForTask(taskId, viewerId);
+        getLinkedClaimsAndLinksForTask(taskId, viewerId, viewScope);
       const claimNodes = await query(claimNodeSql, claimNodeParams);
       const claimLinks = await query(claimLinkSql, claimLinkParams);
 

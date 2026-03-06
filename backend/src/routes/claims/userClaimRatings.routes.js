@@ -3,6 +3,7 @@
  * Routes for user claim quality ratings and scoring
  */
 import { Router } from "express";
+import { logUserActivity } from "../../utils/logUserActivity.js";
 
 export default function createUserClaimRatingsRoutes({ query, pool }) {
   const router = Router();
@@ -72,6 +73,19 @@ export default function createUserClaimRatingsRoutes({ query, pool }) {
           ]
         );
 
+        // Log user activity
+        await logUserActivity(query, {
+          userId,
+          activityType: 'claim_link_evaluate',
+          claimId: taskClaimId,
+          metadata: {
+            referenceClaimId,
+            userRating: userQualityRating,
+            aiRating: aiQualityRating,
+            honestyScore
+          }
+        });
+
         return res.json({
           success: true,
           updated: true,
@@ -100,6 +114,19 @@ export default function createUserClaimRatingsRoutes({ query, pool }) {
           honestyScore,
         ]
       );
+
+      // Log user activity
+      await logUserActivity(query, {
+        userId,
+        activityType: 'claim_link_evaluate',
+        claimId: taskClaimId,
+        metadata: {
+          referenceClaimId,
+          userRating: userQualityRating,
+          aiRating: aiQualityRating,
+          honestyScore
+        }
+      });
 
       return res.json({
         success: true,

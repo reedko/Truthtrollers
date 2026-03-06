@@ -37,7 +37,34 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: () => {
-        console.log("🚪 Logging out, clearing Zustand auth");
+        const user = get().user;
+        const token = get().token;
+
+        console.log("🚪 LOGOUT TRIGGERED - Clearing Zustand auth");
+        console.log(`   User being logged out: ${user?.username} (ID: ${user?.user_id})`);
+        console.log(`   Stack trace:`, new Error().stack);
+
+        // Log token status at logout
+        if (token) {
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const expiresAt = payload.exp * 1000;
+            const now = Date.now();
+            const wasExpired = expiresAt < now;
+            const minutesRemaining = Math.floor((expiresAt - now) / 1000 / 60);
+
+            console.log(`   Token status at logout: ${wasExpired ? 'EXPIRED' : 'VALID'}`);
+            console.log(`   Token expired at: ${new Date(expiresAt).toLocaleTimeString()}`);
+            console.log(`   Current time: ${new Date(now).toLocaleTimeString()}`);
+            if (wasExpired) {
+              console.log(`   Token was expired ${Math.abs(minutesRemaining)} minutes ago`);
+            } else {
+              console.log(`   Token still had ${minutesRemaining} minutes remaining`);
+            }
+          } catch (error) {
+            console.error('   Could not parse token at logout:', error);
+          }
+        }
 
         set({ user: null, token: null });
       },

@@ -70,9 +70,46 @@ export default function createContentScrapeRoutes({ query }) {
   /**
    * GET /api/scrape-jobs/pending
    * Extension → get pending scrape jobs
+   * Also auto-resets abandoned jobs stuck in 'claimed' status for > 5 minutes
    */
   router.get("/api/scrape-jobs/pending", async (_, res) => {
     try {
+      // First, check for and log any stuck jobs
+      const stuckJobsSql = `
+        SELECT scrape_job_id, claimed_by_instance_id, claimed_at, scrape_mode, target_url
+        FROM scrape_jobs
+        WHERE status = 'claimed'
+          AND claimed_at IS NOT NULL
+          AND TIMESTAMPDIFF(MINUTE, claimed_at, NOW()) > 5
+      `;
+
+      const stuckJobs = await query(stuckJobsSql);
+      if (stuckJobs.length > 0) {
+        logger.log(`⚠️ [SCRAPE RECOVERY] Found ${stuckJobs.length} abandoned job(s) stuck in 'claimed' status:`);
+        stuckJobs.forEach(job => {
+          const minutesStuck = Math.floor((Date.now() - new Date(job.claimed_at).getTime()) / 60000);
+          logger.log(`  - Job ${job.scrape_job_id}: claimed ${minutesStuck}min ago by ${job.claimed_by_instance_id}, mode=${job.scrape_mode}, url=${job.target_url || 'N/A'}`);
+        });
+      }
+
+      // Reset any jobs that have been 'claimed' for more than 5 minutes
+      // This prevents jobs from getting stuck if extension crashes
+      const resetSql = `
+        UPDATE scrape_jobs
+        SET status = 'pending',
+            claimed_by_instance_id = NULL,
+            claimed_at = NULL
+        WHERE status = 'claimed'
+          AND claimed_at IS NOT NULL
+          AND TIMESTAMPDIFF(MINUTE, claimed_at, NOW()) > 5
+      `;
+
+      const resetResult = await query(resetSql);
+      if (resetResult.affectedRows > 0) {
+        logger.log(`✅ [SCRAPE RECOVERY] Reset ${resetResult.affectedRows} abandoned job(s) back to pending`);
+      }
+
+      // Now fetch pending jobs
       const sql = `
         SELECT
           scrape_job_id,
@@ -88,9 +125,15 @@ export default function createContentScrapeRoutes({ query }) {
       `;
 
       const jobs = await query(sql);
+
+      // Log if we have pending jobs waiting to be processed
+      if (jobs.length > 0) {
+        logger.log(`📋 [SCRAPE JOBS] ${jobs.length} pending job(s) available for processing`);
+      }
+
       res.json(jobs);
     } catch (err) {
-      logger.error("❌ Error fetching pending scrape jobs:", err);
+      logger.error("❌ [SCRAPE JOBS] Error fetching pending scrape jobs:", err);
       res.status(500).json({ error: "Failed to fetch pending jobs" });
     }
   });
@@ -142,6 +185,20 @@ export default function createContentScrapeRoutes({ query }) {
     const { instance_id } = req.body;
 
     try {
+      // First check the current state of the job
+      const checkSql = `SELECT scrape_job_id, status, claimed_by_instance_id FROM scrape_jobs WHERE scrape_job_id = ?`;
+      const [currentJob] = await query(checkSql, [id]);
+
+      if (!currentJob) {
+        logger.log(`⚠️ [SCRAPE CLAIM] Job ${id} not found (instance: ${instance_id})`);
+        return res.status(404).json({ error: "Job not found" });
+      }
+
+      if (currentJob.status !== 'pending') {
+        logger.log(`⚠️ [SCRAPE CLAIM] Job ${id} cannot be claimed - status is '${currentJob.status}' (already claimed by: ${currentJob.claimed_by_instance_id || 'unknown'})`);
+        return res.status(409).json({ error: "Job already claimed or not found" });
+      }
+
       const sql = `
         UPDATE scrape_jobs
         SET status = 'claimed',
@@ -154,13 +211,14 @@ export default function createContentScrapeRoutes({ query }) {
       const result = await query(sql, [instance_id, id]);
 
       if (result.affectedRows === 0) {
+        logger.log(`⚠️ [SCRAPE CLAIM] Job ${id} claim race condition - another instance claimed it first`);
         return res.status(409).json({ error: "Job already claimed or not found" });
       }
 
-      logger.log(`✅ Scrape job ${id} claimed by instance ${instance_id}`);
+      logger.log(`✅ [SCRAPE CLAIM] Job ${id} claimed by instance ${instance_id}`);
       res.json({ ok: true });
     } catch (err) {
-      logger.error(`❌ Error claiming scrape job ${id}:`, err);
+      logger.error(`❌ [SCRAPE CLAIM] Error claiming scrape job ${id}:`, err);
       res.status(500).json({ error: "Failed to claim job" });
     }
   });
@@ -174,6 +232,25 @@ export default function createContentScrapeRoutes({ query }) {
     const { content_id, instance_id } = req.body;
 
     try {
+      // Check current state before updating
+      const checkSql = `SELECT scrape_job_id, status, claimed_by_instance_id, scrape_mode, target_url FROM scrape_jobs WHERE scrape_job_id = ?`;
+      const [currentJob] = await query(checkSql, [id]);
+
+      if (!currentJob) {
+        logger.log(`⚠️ [SCRAPE COMPLETE] Job ${id} not found when trying to mark complete (instance: ${instance_id})`);
+        return res.status(404).json({ error: "Job not found" });
+      }
+
+      if (currentJob.status !== 'claimed') {
+        logger.log(`⚠️ [SCRAPE COMPLETE] Job ${id} cannot be completed - status is '${currentJob.status}' (instance: ${instance_id})`);
+        return res.status(409).json({ error: "Job not in claimed state" });
+      }
+
+      if (currentJob.claimed_by_instance_id !== instance_id) {
+        logger.log(`⚠️ [SCRAPE COMPLETE] Job ${id} claimed by different instance (claimed by: ${currentJob.claimed_by_instance_id}, trying to complete: ${instance_id})`);
+        return res.status(409).json({ error: "Job not claimed by this instance" });
+      }
+
       const sql = `
         UPDATE scrape_jobs
         SET status = 'completed',
@@ -187,15 +264,16 @@ export default function createContentScrapeRoutes({ query }) {
       const result = await query(sql, [content_id, id, instance_id]);
 
       if (result.affectedRows === 0) {
+        logger.log(`⚠️ [SCRAPE COMPLETE] Job ${id} could not be updated to completed (race condition?)`);
         return res.status(409).json({
           error: "Job not found, not claimed by this instance, or already completed"
         });
       }
 
-      logger.log(`✅ Scrape job ${id} completed with content_id ${content_id}`);
+      logger.log(`✅ [SCRAPE COMPLETE] Job ${id} completed successfully by ${instance_id}, content_id=${content_id}, mode=${currentJob.scrape_mode}, url=${currentJob.target_url || 'N/A'}`);
       res.json({ ok: true, content_id });
     } catch (err) {
-      logger.error(`❌ Error completing scrape job ${id}:`, err);
+      logger.error(`❌ [SCRAPE COMPLETE] Error completing scrape job ${id}:`, err);
       res.status(500).json({ error: "Failed to complete job" });
     }
   });
@@ -209,6 +287,25 @@ export default function createContentScrapeRoutes({ query }) {
     const { error_message, instance_id } = req.body;
 
     try {
+      // Check current state before updating
+      const checkSql = `SELECT scrape_job_id, status, claimed_by_instance_id, scrape_mode, target_url FROM scrape_jobs WHERE scrape_job_id = ?`;
+      const [currentJob] = await query(checkSql, [id]);
+
+      if (!currentJob) {
+        logger.log(`⚠️ [SCRAPE FAIL] Job ${id} not found when trying to mark failed (instance: ${instance_id}, error: ${error_message})`);
+        return res.status(404).json({ error: "Job not found" });
+      }
+
+      if (currentJob.status !== 'claimed') {
+        logger.log(`⚠️ [SCRAPE FAIL] Job ${id} cannot be marked failed - status is '${currentJob.status}' (instance: ${instance_id}, error: ${error_message})`);
+        return res.status(409).json({ error: "Job not in claimed state" });
+      }
+
+      if (currentJob.claimed_by_instance_id !== instance_id) {
+        logger.log(`⚠️ [SCRAPE FAIL] Job ${id} claimed by different instance (claimed by: ${currentJob.claimed_by_instance_id}, trying to fail: ${instance_id})`);
+        return res.status(409).json({ error: "Job not claimed by this instance" });
+      }
+
       const sql = `
         UPDATE scrape_jobs
         SET status = 'failed',
@@ -222,15 +319,16 @@ export default function createContentScrapeRoutes({ query }) {
       const result = await query(sql, [error_message, id, instance_id]);
 
       if (result.affectedRows === 0) {
+        logger.log(`⚠️ [SCRAPE FAIL] Job ${id} could not be updated to failed (race condition?)`);
         return res.status(409).json({
           error: "Job not found, not claimed by this instance, or already processed"
         });
       }
 
-      logger.log(`⚠️ Scrape job ${id} failed: ${error_message}`);
+      logger.log(`❌ [SCRAPE FAIL] Job ${id} marked as failed by ${instance_id}, mode=${currentJob.scrape_mode}, url=${currentJob.target_url || 'N/A'}, error: ${error_message}`);
       res.json({ ok: true });
     } catch (err) {
-      logger.error(`❌ Error marking scrape job ${id} as failed:`, err);
+      logger.error(`❌ [SCRAPE FAIL] Error marking scrape job ${id} as failed:`, err);
       res.status(500).json({ error: "Failed to mark job as failed" });
     }
   });
@@ -424,14 +522,35 @@ export default function createContentScrapeRoutes({ query }) {
 
       // -----------------------------------------------------------------
       // 6. Extract claims FROM references (reference internal claims)
-      //    Process in parallel for speed
+      //    Process in batches to prevent connection pool exhaustion
       //    For each reference:
       //    a) Create snippet claim FIRST (from search engine snippet)
       //    b) Then extract reference claims (from full text)
       // -----------------------------------------------------------------
-      const claimExtractionPromises = aiReferences
-        .filter((ref) => ref.referenceContentId)
-        .map(async (ref) => {
+
+      // Filter valid references (exclude self-references)
+      const validReferences = aiReferences.filter((ref) => {
+        // Filter out references without content_id
+        if (!ref.referenceContentId) return false;
+
+        // Filter out self-references (reference is same as task)
+        if (ref.referenceContentId === taskContentId) {
+          logger.log(
+            `⏭️  [/api/scrape-task] Skipping self-reference: reference ${ref.referenceContentId} is the same as task ${taskContentId}`
+          );
+          return false;
+        }
+
+        return true;
+      });
+
+      logger.log(`🔄 [/api/scrape-task] Processing ${validReferences.length} references sequentially to prevent pool exhaustion`);
+
+      // Process references SEQUENTIALLY instead of parallel to prevent:
+      // 1. Database connection pool exhaustion (limit: 10 connections)
+      // 2. OpenAI API rate limiting
+      // 3. Race conditions and mixed responses
+      for (const ref of validReferences) {
           try {
             // a) Create snippet claim from search engine snippet
             if (ref.quote) {
@@ -479,33 +598,41 @@ export default function createContentScrapeRoutes({ query }) {
                     llm: openAiLLM
                   });
 
-                  // ⚡ OPTIMIZATION: Batch insert claim_links instead of sequential inserts
+                  // ⚡ OPTIMIZATION: Batch insert AI-suggested links instead of sequential inserts
                   if (claimMatches.length > 0) {
-                    const values = claimMatches.map(match => [
-                      match.referenceClaimId,
-                      match.taskClaimId,
-                      match.stance, // 'supports' or 'refutes'
-                      match.supportLevel, // -1.2 to +1.2
-                      match.confidence, // 0.15-0.98
-                      match.veracityScore, // 0-1
-                      1, // created_by_ai
-                      match.rationale,
-                      null // user_id
-                    ]);
+                    const values = claimMatches.map(match => {
+                      // Map stance values: 'supports' -> 'support', 'refutes' -> 'refute', 'related' -> 'nuance'
+                      let mappedStance = match.stance;
+                      if (match.stance === 'supports') mappedStance = 'support';
+                      else if (match.stance === 'refutes') mappedStance = 'refute';
+                      else if (match.stance === 'related') mappedStance = 'nuance';
 
-                    // Batch insert all claim_links at once
+                      return [
+                        match.referenceClaimId,
+                        match.taskClaimId,
+                        mappedStance,
+                        Math.round((match.veracityScore || 0.5) * 100), // score: 0-100
+                        match.confidence, // 0.15-0.98
+                        match.supportLevel, // -1.2 to +1.2
+                        match.rationale,
+                        null, // quote
+                        1 // created_by_ai
+                      ];
+                    });
+
+                    // Batch insert all AI-suggested links at once
                     const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
                     const flatValues = values.flat();
 
                     await query(
-                      `INSERT INTO claim_links
-                       (source_claim_id, target_claim_id, relationship, support_level, confidence, veracity_score, created_by_ai, notes, user_id)
+                      `INSERT INTO reference_claim_task_links
+                       (reference_claim_id, task_claim_id, stance, score, confidence, support_level, rationale, quote, created_by_ai)
                        VALUES ${placeholders}`,
                       flatValues
                     );
 
                     logger.log(
-                      `✅ [/api/scrape-task] Batch created ${claimMatches.length} claim_links for reference ${ref.referenceContentId}`
+                      `✅ [/api/scrape-task] Batch created ${claimMatches.length} AI-suggested links (reference_claim_task_links) for reference ${ref.referenceContentId}`
                     );
                   }
                 } catch (linkErr) {
@@ -522,10 +649,9 @@ export default function createContentScrapeRoutes({ query }) {
               err.message
             );
           }
-        });
+      }
 
-      // Wait for all claim extractions to complete
-      await Promise.all(claimExtractionPromises);
+      logger.log(`✅ [/api/scrape-task] Completed processing ${validReferences.length} references`);
 
       // -----------------------------------------------------------------
       // 7. Return unified reference set to extension
@@ -584,6 +710,53 @@ export default function createContentScrapeRoutes({ query }) {
       logger.log(
         `🟦 [/api/scrape-reference] START Processing reference${taskContentId ? ` for task ${taskContentId}` : ''}: ${url}`
       );
+
+      // -----------------------------------------------------------------
+      // 0. CHECK FOR DUPLICATE URL
+      // If reference already exists, reuse it and ensure content_relations link
+      // -----------------------------------------------------------------
+      const existing = await query(
+        "SELECT content_id, content_name FROM content WHERE url = ? LIMIT 1",
+        [url]
+      );
+
+      if (existing.length > 0) {
+        const existingContentId = existing[0].content_id;
+        logger.log(
+          `♻️  [/api/scrape-reference] Reference already exists: content_id=${existingContentId} ("${existing[0].content_name}")`
+        );
+
+        // Ensure content_relations link exists (if taskContentId provided)
+        if (taskContentId) {
+          const relationCheck = await query(
+            `SELECT 1 FROM content_relations WHERE content_id = ? AND reference_content_id = ?`,
+            [taskContentId, existingContentId]
+          );
+
+          if (relationCheck.length === 0) {
+            await query(
+              `INSERT INTO content_relations (content_id, reference_content_id, added_by_user_id, is_system) VALUES (?, ?, ?, ?)`,
+              [taskContentId, existingContentId, null, 1]
+            );
+            logger.log(
+              `🔗 [/api/scrape-reference] Created content_relations: task ${taskContentId} → reference ${existingContentId}`
+            );
+          } else {
+            logger.log(
+              `✓ [/api/scrape-reference] Content_relations already exists: task ${taskContentId} → reference ${existingContentId}`
+            );
+          }
+        }
+
+        // Return existing reference immediately (skip scraping and claim extraction)
+        return res.json({
+          success: true,
+          contentId: existingContentId,
+          duplicate: true,
+          message: `Reference already exists as "${existing[0].content_name}"`,
+          duration: Date.now() - startTime,
+        });
+      }
 
       // -----------------------------------------------------------------
       // 1. SCRAPE REFERENCE (using pre-fetched HTML/text if available)
@@ -665,45 +838,52 @@ export default function createContentScrapeRoutes({ query }) {
       } else if (taskContentId && claimIds && claimIds.length > 0) {
         // Auto-generate claim_links for manual scrapes with task context
         try {
-          logger.log(`  ⏱️  [4/5] Matching reference claims to task claims via AI...`);
-          // Fetch task claims
-          const taskClaimRows = await query(
-            `SELECT c.claim_id, c.claim_text
-             FROM content_claims cc
-             JOIN claims c ON cc.claim_id = c.claim_id
-             WHERE cc.content_id = ?
-             AND cc.relationship_type IN ('task', 'content')`,
-            [taskContentId]
-          );
+            logger.log(`  ⏱️  [4/5] Matching reference claims to task claims via AI...`);
+            // Fetch task claims
+            const taskClaimRows = await query(
+              `SELECT c.claim_id, c.claim_text
+               FROM content_claims cc
+               JOIN claims c ON cc.claim_id = c.claim_id
+               WHERE cc.content_id = ?
+               AND cc.relationship_type IN ('task', 'content')`,
+              [taskContentId]
+            );
 
-          if (taskClaimRows.length > 0) {
-            const taskClaimsForMatching = taskClaimRows.map(row => ({
-              id: row.claim_id,
-              text: row.claim_text
-            }));
+            if (taskClaimRows.length > 0) {
+              const taskClaimsForMatching = taskClaimRows.map(row => ({
+                id: row.claim_id,
+                text: row.claim_text
+              }));
 
-            logger.log(`  ⏱️  Calling matchClaimsToTaskClaims with ${refClaims.length} ref claims and ${taskClaimsForMatching.length} task claims...`);
-            const claimMatches = await matchClaimsToTaskClaims({
-              referenceClaims: refClaims,
-              taskClaims: taskClaimsForMatching,
-              llm: openAiLLM
-            });
+              logger.log(`  ⏱️  Calling matchClaimsToTaskClaims with ${refClaims.length} ref claims and ${taskClaimsForMatching.length} task claims...`);
+              const claimMatches = await matchClaimsToTaskClaims({
+                referenceClaims: refClaims,
+                taskClaims: taskClaimsForMatching,
+                llm: openAiLLM
+              });
             logger.log(`  ✅ [4/5] Matched ${claimMatches.length} claims (${Date.now() - startTime}ms)`);
 
-            // Insert into claim_links (use NULL user_id for AI-created links)
+            // Insert into reference_claim_task_links (AI-suggested links)
             for (const match of claimMatches) {
+              // Map stance values: 'supports' -> 'support', 'refutes' -> 'refute', 'related' -> 'nuance'
+              let mappedStance = match.stance;
+              if (match.stance === 'supports') mappedStance = 'support';
+              else if (match.stance === 'refutes') mappedStance = 'refute';
+              else if (match.stance === 'related') mappedStance = 'nuance';
+
               await query(
-                `INSERT INTO claim_links
-                 (source_claim_id, target_claim_id, relationship, support_level, confidence, veracity_score, created_by_ai, notes, user_id)
-                 VALUES (?, ?, ?, ?, ?, ?, 1, ?, NULL)`,
+                `INSERT INTO reference_claim_task_links
+                 (reference_claim_id, task_claim_id, stance, score, confidence, support_level, rationale, quote, created_by_ai)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
                 [
                   match.referenceClaimId,
                   match.taskClaimId,
-                  match.stance,
-                  match.supportLevel,
+                  mappedStance,
+                  Math.round((match.veracityScore || 0.5) * 100),
                   match.confidence,
-                  match.veracityScore,
-                  match.rationale
+                  match.supportLevel,
+                  match.rationale,
+                  null
                 ]
               );
             }
@@ -846,7 +1026,13 @@ export default function createContentScrapeRoutes({ query }) {
         },
       });
     } catch (err) {
-      logger.error("❌ Error in /api/scrape-reference:", err);
+      const elapsed = Date.now() - startTime;
+      logger.error(`❌ [SCRAPE REFERENCE ERROR] Failed after ${elapsed}ms`);
+      logger.error(`   URL: ${req.body.url}`);
+      logger.error(`   Task ID: ${req.body.taskContentId || 'N/A'}`);
+      logger.error(`   Error: ${err.message}`);
+      logger.error(`   Stack: ${err.stack}`);
+
       return res.status(500).json({
         success: false,
         error: err.message || "Internal server error in /api/scrape-reference",

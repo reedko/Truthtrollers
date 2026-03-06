@@ -2,6 +2,35 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+// ═══════════════════════════════════════════════
+// GLOBAL ERROR HANDLERS - Catch all uncaught errors
+// ═══════════════════════════════════════════════
+process.on('uncaughtException', (error) => {
+  const errMsg = `
+🔥🔥🔥 UNCAUGHT EXCEPTION 🔥🔥🔥
+Time: ${new Date().toISOString()}
+Error: ${error.message}
+Stack: ${error.stack}
+🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+`;
+  process.stderr.write(errMsg);
+  console.error(errMsg);
+  // Don't exit - let PM2 handle restart if needed
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  const errMsg = `
+⚠️⚠️⚠️ UNHANDLED PROMISE REJECTION ⚠️⚠️⚠️
+Time: ${new Date().toISOString()}
+Reason: ${reason}
+Promise: ${promise}
+Stack: ${reason?.stack || 'No stack trace'}
+⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
+`;
+  process.stderr.write(errMsg);
+  console.error(errMsg);
+});
+
 import fs from "fs-extra";
 import http from "http";
 import https from "https";
@@ -45,6 +74,8 @@ import createPromptRoutes from "./src/routes/prompts.routes.js";
 import createMoleculeViewsRoutes from "./src/routes/molecule-views.routes.js";
 import createFacebookRoutes from "./src/routes/social/facebook.routes.js";
 import createChatRouter from "./src/routes/chat.routes.js";
+import createTutorialsRouter from "./src/routes/tutorials/tutorials.routes.js";
+import createAdminRouter from "./src/routes/admin/admin.routes.js";
 import { initSocketServer } from "./src/realtime/socketServer.js";
 
 // Logger utility
@@ -54,18 +85,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // ─────────────────────────────────────────────
-// Database Setup (inline)
+// Database Setup (using connection pool for auto-reconnect)
 // ─────────────────────────────────────────────
-const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
-  multipleStatements: true,
-});
-
-const query = promisify(db.query).bind(db);
-
 const pool = mysql.createPool({
   connectionLimit: 10,
   host: process.env.DB_HOST,
@@ -73,7 +94,23 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
   multipleStatements: true,
+  // Auto-reconnect configuration
+  acquireTimeout: 10000,
+  waitForConnections: true,
+  queueLimit: 0,
 });
+
+// Use pool for all queries (provides automatic reconnection)
+const poolQuery = promisify(pool.query).bind(pool);
+
+const query = async (...args) => {
+  try {
+    return await poolQuery(...args);
+  } catch (error) {
+    console.error('❌ [Database] Query failed:', error.message);
+    throw error;
+  }
+};
 
 // ─────────────────────────────────────────────
 // TLS / HTTPS Setup
@@ -146,15 +183,28 @@ app.use((req, res, next) => {
 app.use(
   cors({
     origin(origin, cb) {
-      if (isAllowedOrigin(origin)) return cb(null, true);
+      if (isAllowedOrigin(origin)) {
+        return cb(null, true);
+      }
+      // Log CORS rejections immediately
+      const errMsg = `🚫 CORS BLOCKED: origin=${origin} at ${new Date().toISOString()}\n`;
+      process.stderr.write(errMsg);
+      console.error(errMsg);
       cb(new Error("Not allowed by CORS"));
     },
     credentials: true,
   })
 );
 
-app.use(bodyParser.json({ limit: "50mb" }));
-app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
+// 🔍 REQUEST LOGGER - Log EVERY request that reaches Express
+app.use((req, res, next) => {
+  const logMsg = `[${new Date().toISOString()}] ${req.method} ${req.path} | Origin: ${req.headers.origin || 'none'} | IP: ${req.headers['x-forwarded-for'] || req.socket.remoteAddress}\n`;
+  process.stderr.write(logMsg);
+  next();
+});
+
+app.use(bodyParser.json({ limit: "500mb" }));
+app.use(bodyParser.urlencoded({ extended: true, limit: "500mb" }));
 app.use(cookieParser());
 
 // ─────────────────────────────────────────────
@@ -162,6 +212,33 @@ app.use(cookieParser());
 // ─────────────────────────────────────────────
 app.use("/assets", express.static(path.join(__dirname, "assets")));
 app.use("/api/assets", express.static(path.join(__dirname, "assets"))); // Production path
+
+// ─────────────────────────────────────────────
+// 🚨 TEMPORARY HACK - REVERT THIS LATER 🚨
+// ─────────────────────────────────────────────
+// Production nginx config has: location /api/ { proxy_pass http://localhost:3000/; }
+// The trailing slash in proxy_pass strips /api/ from the request.
+// Example: /api/login → backend receives /login
+// This middleware adds /api back so routes like router.post("/api/login") work.
+//
+// TODO: Figure out why this broke after latest deploy - login was working before.
+//       This is a band-aid fix until we identify the root cause.
+//       Added: 2026-03-04
+app.use((req, res, next) => {
+  // Skip if already has /api prefix, or is a static/special route
+  if (req.path.startsWith('/api/') ||
+      req.path.startsWith('/assets') ||
+      req.path === '/health' ||
+      req.path === '/proxy' ||
+      req.path === '/' ||
+      req.path.startsWith('/socket.io')) {
+    return next();
+  }
+
+  // Add /api prefix for nginx-stripped requests
+  req.url = '/api' + req.url;
+  next();
+});
 
 // ─────────────────────────────────────────────
 // V1 register-style routes
@@ -188,15 +265,17 @@ app.use("/", createPublishersRouter({ query, pool })); // Publishers routes: /ap
 app.use("/", createClaimsRouter({ query, pool })); // Claims routes: /api/claims, /api/claim-verifications, etc.
 app.use("/", createReferencesRouter({ query, pool })); // References routes: /api/references, /api/content/:id/auth_references, etc.
 app.use("/", createScoresRouter({ query, pool })); // Scores routes: /api/live-verimeter-score, /api/content/:id/scores, etc.
-app.use("/", createTopicsRouter({ query, pool, db })); // Topics routes: /api/topics, etc.
+app.use("/", createTopicsRouter({ query, pool })); // Topics routes: /api/topics, etc.
 app.use("/", createTestimonialsRouter({ query, pool })); // Testimonials routes: /api/testimonials/add, etc.
-app.use("/", createMiscRouter({ query, pool, db })); // Misc routes: /api/upload-image, /api/youtube-transcript, PDF, etc.
+app.use("/", createMiscRouter({ query, pool })); // Misc routes: /api/upload-image, /api/youtube-transcript, PDF, etc.
 app.use("/", createGraphRouter({ query, pool })); // Graph routes: /api/get-graph-data (molecule map)
 app.use("/", createEvidenceRouter({ query, pool }));
 app.use("/", createPromptRoutes({ query })); // Prompt management routes: /api/prompts
 app.use("/", createMoleculeViewsRoutes({ query, pool })); // Molecule views routes: /api/molecule-views
 app.use("/", createFacebookRoutes({ query })); // Facebook scraping routes: /api/scrape-facebook-post
 app.use("/", createChatRouter({ pool }));      // Chat routes: /api/chat/*, /api/users/search
+app.use("/", createTutorialsRouter({ query })); // Tutorial videos routes: /api/tutorials
+app.use("/", createAdminRouter({ query }));     // Admin routes: /api/admin/*, super_admin only
 // ─────────────────────────────────────────────
 // Health + Simple Proxy (top-level, legacy behavior)
 // ─────────────────────────────────────────────

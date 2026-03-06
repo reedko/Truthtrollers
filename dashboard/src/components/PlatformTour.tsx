@@ -31,7 +31,7 @@ interface TourStep {
   content: string;
   primaryLabel: string;
   secondaryLabel?: string;
-  specialAction?: "navigate-textpad" | "paste-title" | "paste-text" | "wait-for-submit" | "wait-for-ref-modal" | "wait-for-link-overlay" | "end";
+  specialAction?: "navigate-textpad" | "paste-title" | "paste-text" | "wait-for-submit" | "wait-for-ref-modal" | "wait-for-link-overlay" | "wait-for-task-assignment" | "branch-full-tutorial" | "branch-extension" | "navigate-extension-page" | "end";
 }
 
 const STEPS: TourStep[] = [
@@ -44,6 +44,81 @@ const STEPS: TourStep[] = [
     primaryLabel: "Let's go →",
     secondaryLabel: "Skip tour",
   },
+  // ── Branch: Choose Tutorial Path ─────────────────────────────────────────────
+  {
+    page: "dashboard",
+    title: "Choose Your Path 🛤️",
+    content:
+      "You have two options:\n\nA. Full Platform Tutorial — Walk through submitting text, extracting claims, and linking evidence (takes ~5-10 minutes)\n\nB. Extension Installation — Quick guide to install the browser extension for capturing web content",
+    primaryLabel: "A. Full Tutorial (TaskPad) →",
+    secondaryLabel: "B. Install Extension →",
+    specialAction: "branch-full-tutorial",
+  },
+
+  // ── Extension Installation Branch ────────────────────────────────────────────
+  {
+    page: "extension",
+    title: "Extension Installation Guide 🧩",
+    content:
+      "The TruthTrollers browser extension lets you capture web content directly from any page.\n\nWe'll walk through:\n1. Downloading the ZIP\n2. Unzipping to a permanent folder\n3. Loading it in your browser\n\nLet's get started!",
+    primaryLabel: "Let's do it! →",
+    secondaryLabel: "Skip to dashboard",
+  },
+  {
+    page: "extension",
+    target: "button[href*='extension.zip']",
+    title: "Step 1 — Download the ZIP 📦",
+    content:
+      "👇 Click the highlighted button below to download the extension.\n\n⚠️ Important: The ZIP will download to your Downloads folder. You'll need to UNZIP it in the next step!\n\nClick the button and the tutorial will automatically advance.",
+    primaryLabel: "I downloaded it →",
+  },
+  {
+    page: "extension",
+    title: "Step 2 — Unzip the File 📂",
+    content:
+      "1. Go to your Downloads folder\n2. Find 'truthtrollers_extension.zip'\n3. Double-click to unzip it (creates 'truthtrollers_extension' folder)\n4. Move that folder somewhere permanent like:\n   • ~/Documents/TruthTrollers/extension\n   • Desktop/TruthTrollers/extension\n\n⚠️ Don't delete this folder — the browser loads from it!",
+    primaryLabel: "Done unzipping →",
+  },
+  {
+    page: "extension",
+    title: "Step 3 — Open Browser Extensions 🌐",
+    content:
+      "Now let's load it in your browser!\n\nClick the button below for your browser, OR manually open:\n\nChrome/Edge: chrome://extensions\nFirefox: about:debugging#/runtime/this-firefox\n\nOnce that page opens, come back here and click Next!",
+    primaryLabel: "Extensions page is open →",
+    secondaryLabel: "Copy chrome://extensions",
+  },
+  {
+    page: "extension",
+    target: "ol",
+    title: "Step 4 — Enable Developer Mode ⚙️",
+    content:
+      "On the extensions page you just opened:\n\nChrome/Edge:\n• Look for 'Developer mode' toggle in the TOP RIGHT\n• Turn it ON (it should turn blue)\n• You'll see new buttons appear: 'Load unpacked', 'Pack extension', etc.\n\nFirefox:\n• Click the 'Load Temporary Add-on...' button\n• (No developer mode needed)",
+    primaryLabel: "Developer mode is ON →",
+  },
+  {
+    page: "extension",
+    title: "Step 5 — Load Unpacked Extension 📥",
+    content:
+      "Almost there!\n\nChrome/Edge:\n• Click 'Load unpacked' button\n• Navigate to where you unzipped the folder\n• Select the 'truthtrollers_extension' folder (not the .zip!)\n• Click 'Select Folder'\n\nFirefox:\n• Click 'Load Temporary Add-on'\n• Navigate to the unzipped folder\n• Select 'manifest.json' inside it\n• Click 'Open'",
+    primaryLabel: "Extension loaded! →",
+  },
+  {
+    page: "extension",
+    title: "Step 6 — Pin the Extension 📌",
+    content:
+      "You should now see 'TruthTrollers Extension' in your extensions list!\n\nTo make it easy to access:\n\n• Click the puzzle piece icon 🧩 in your browser toolbar\n• Find 'TruthTrollers Extension'\n• Click the pin icon 📌 next to it\n\nNow the TruthTrollers icon will always be visible in your toolbar!",
+    primaryLabel: "I pinned it! →",
+  },
+  {
+    page: "extension",
+    title: "Extension Installed! 🎉",
+    content:
+      "Congratulations! The TruthTrollers extension is now installed and ready to use.\n\n✅ Extension loaded\n✅ Icon pinned to toolbar\n\nClick the TruthTrollers icon on any web page to:\n• Capture content\n• Send it to your dashboard\n• Analyze claims and find evidence\n\nReady to start fact-checking the web!",
+    primaryLabel: "Finish tour",
+    specialAction: "end",
+  },
+
+  // ── Full Tutorial Branch (Original Dashboard Tour) ──────────────────────────
   {
     page: "dashboard",
     target: ".claim-activity-chart",
@@ -57,7 +132,31 @@ const STEPS: TourStep[] = [
     target: ".assigned-tasks-section",
     title: "Your Assigned Content",
     content:
-      "These are the articles, statements, and posts you've been assigned to evaluate. It's empty right now — we'll fix that! Each card has a dropdown to choose Workspace, GameSpace, or Molecule, then hit Evaluate.",
+      "These are the articles, statements, and posts you've been assigned to evaluate. It's empty right now — but let's fix that! We'll grab your first task from the platform.",
+    primaryLabel: "Let's get a task! →",
+  },
+  {
+    page: "tasks",
+    title: "The Tasks Page 📋",
+    content:
+      "This is where all available content lives. You can browse articles, statements, and posts that need fact-checking. Let's assign one to yourself so you have something to work with!",
+    primaryLabel: "Got it →",
+  },
+  {
+    page: "tasks",
+    target: ".mr-card",
+    title: "Case Cards",
+    content:
+      "Each card shows a piece of content that needs evaluation. You can see:\n• The title and source\n• When it was submitted\n• Current veracity score (if available)\n\nClick on any case card to assign it to yourself!",
+    primaryLabel: "I'll pick one →",
+    specialAction: "wait-for-task-assignment",
+  },
+  {
+    page: "dashboard",
+    target: ".assigned-tasks-section",
+    title: "Task Assigned! 🎉",
+    content:
+      "Great! Now you have a task in your Assigned Content section. This is where you'll find all the content you're actively working on. You can switch between Workspace, GameSpace, or Molecule to evaluate it.",
     primaryLabel: "Next →",
   },
   {
@@ -104,7 +203,7 @@ const STEPS: TourStep[] = [
     target: ".textpad-submit",
     title: "Step 3 — Submit for Analysis",
     content:
-      "Go ahead and click the Submit button when you're ready!\n\nThe evidence engine will extract claims and search for supporting or contradicting evidence. This takes 1–3 minutes. ☕",
+      "👇 Click the highlighted Submit button below when you're ready!\n\nThe evidence engine will extract claims and search for supporting or contradicting evidence. This takes 1–3 minutes. ☕\n\n(Or wait 8 seconds and I'll click it for you!)",
     primaryLabel: "Got it!",
     specialAction: "wait-for-submit",
   },
@@ -123,7 +222,7 @@ const STEPS: TourStep[] = [
     target: ".workspace-header",
     title: "You're in the Workspace! 💪",
     content:
-      "This is where evidence meets claims. Three columns work together:\n\n• Left — Task Claims extracted from your text\n• Center — Relationship Map (AI-detected connections)\n• Right — References (evidence sources)\n\nLet's walk through each one.",
+      "This is where evidence meets claims. Three columns work together:\n\n• Left — Task Claims extracted from your text\n• Center — Relationship Map (connections between claims)\n• Right — Sources (evidence sources)\n\nLet's walk through the new workflow.",
     primaryLabel: "Show me →",
   },
   {
@@ -131,49 +230,51 @@ const STEPS: TourStep[] = [
     target: ".workspace-claims",
     title: "Task Claims — Left Column",
     content:
-      "These are the factual claims the AI extracted from your text.\n\n• ✏️ Edit the claim text\n• 🔍 (purple) Verify a claim externally\n• 🔍 (teal) Scan references for relevant evidence\n• 🗑️ Delete the claim\n\nClick any claim to read it in full.",
+      "These are the factual claims the AI extracted from your text.\n\nEach claim card has quick actions:\n• ✏️ Edit the claim text\n• 🔍 Verify claim externally\n• 🗑️ Delete the claim\n\n👉 Click the BIG BUTTON with the claim text to open the claim panel!",
     primaryLabel: "Next →",
+  },
+  {
+    page: "workspace",
+    title: "Task Claim Panel — The Hub 🎯",
+    content:
+      "When you click a task claim button, a panel opens showing:\n\n• The claim text at the top\n• Verified links (solid lines) — human-verified connections\n• AI suggested links (dotted lines) — need human verification\n• Quick Scan — search existing AI sources for relevant claims\n• Deep Scan — search ALL sources for relevant claims\n\nLet's understand the difference between dotted and solid lines...",
+    primaryLabel: "Tell me more →",
+  },
+  {
+    page: "workspace",
+    title: "Dotted vs Solid Lines ⚡",
+    content:
+      "This is KEY to understanding the Verimeter score:\n\n━━━ Solid Lines = Human Verified ✅\n• These count toward the Verimeter score\n• A human has confirmed the relevance and stance\n• Trustworthy evidence\n\n┄┄┄ Dotted Lines = AI Suggestions 🤖\n• These DON'T count for the score (yet!)\n• Need human verification to become solid\n• Click 'Create Link' button to verify and promote to solid",
+    primaryLabel: "Got it! →",
   },
   {
     page: "workspace",
     target: ".workspace-references",
-    title: "References — Right Column",
+    title: "Sources — Right Column",
     content:
-      "These are web pages and articles found by the evidence engine that may support or contradict your claims.\n\nRight-click any reference card to open it in a new tab. Use '+ Add Reference' to add your own sources manually.",
+      "These are web pages and articles found by the evidence engine that may support or contradict your claims.\n\n• Click a source card to see its extracted claims\n• Right-click to open in new tab\n• Use '+ Add Source' to add your own sources\n\nThe AI has already scanned these for relevant claims!",
     primaryLabel: "Next →",
   },
   {
     page: "workspace",
-    target: ".workspace-references",
-    title: "Open a Reference's Claims",
+    title: "Quick Scan vs Deep Scan 🔍",
     content:
-      "Click any reference card to open a floating panel showing the individual claims extracted from that source.\n\nThese reference claims are what you'll link to your task claims. Go ahead — click one now!",
-    primaryLabel: "I clicked one →",
-    specialAction: "wait-for-ref-modal",
+      "Two ways to find more evidence:\n\n⚡ Quick Scan\n• Searches only AI-linked sources\n• Fast (~10 seconds)\n• Good for checking existing evidence\n\n🌊 Deep Scan\n• Searches ALL sources in the list\n• Slower (~30-60 seconds)\n• Finds connections AI might have missed\n\nBoth show results as dotted-line suggestions you can verify!",
+    primaryLabel: "Makes sense! →",
   },
   {
     page: "workspace",
-    target: ".mr-modal-header",
-    title: "Reference Claims Panel",
+    title: "Verifying AI Suggestions 🎓",
     content:
-      "This floating panel shows claims from the selected reference. Drag it by its header to reposition it.\n\nBlue text = factual claims.  Italic gray = direct quotes.\n\nColored borders mean a claim is already linked:\n🟢 Supports · 🔴 Refutes · 🔵 Nuanced",
-    primaryLabel: "Next →",
+      "When you see dotted-line AI suggestions:\n\n1. Read the suggested source claim\n2. Read your task claim\n3. Decide if they're actually related\n4. Click 'Create Link' button\n5. Set the relationship:\n   • Supports (green) ✅\n   • Refutes (red) ⛔\n   • Nuanced (yellow) ⚖️\n6. Add optional notes\n7. Submit!\n\nThe dotted line becomes solid and counts toward the Verimeter! 🎉",
+    primaryLabel: "Ready to try! →",
   },
   {
     page: "workspace",
-    title: "Link a Claim — Drag & Drop 🖱️",
+    title: "You're All Set! 🚀",
     content:
-      "Now the key move! Click and hold any reference claim in the panel, then drag it over a task claim on the left.\n\nThe task claim highlights as you hover — release the mouse to open the Claim Relationship panel.\n\nGive it a try!",
-    primaryLabel: "I'll try it! →",
-    specialAction: "wait-for-link-overlay",
-  },
-  {
-    page: "workspace",
-    target: ".mr-button",
-    title: "Claim Relationship Panel 🔗",
-    content:
-      "Define how the reference claim relates to the task claim:\n\n• Slider RIGHT (green ✅) = Supports the claim\n• Slider LEFT (red ⛔) = Refutes the claim\n• Center (yellow ⚖️) = Nuanced / Related\n\nAdd optional notes, then click 'Create Link'. A colored line will connect them in the map!",
-    primaryLabel: "Got it — create the link!",
+      "You now know how to:\n\n✅ Click task claim buttons to open the claim panel\n✅ Distinguish between dotted (AI) and solid (verified) links\n✅ Use Quick Scan for fast results\n✅ Use Deep Scan for thorough analysis\n✅ Verify AI suggestions to build the Verimeter score\n\nStart clicking claims and verifying evidence!\n\nThe more you verify, the more accurate the truth score becomes. 💪",
+    primaryLabel: "Finish tour",
     specialAction: "end",
   },
 ];
@@ -323,10 +424,11 @@ function applyHighlight(selector?: string) {
 // ─── Waiting message helper ────────────────────────────────────────────────────
 function waitingMessage(waitingFor: string): string {
   switch (waitingFor) {
-    case "submit":       return "Waiting for submission…";
-    case "ref-modal":   return "Click a reference on the right to continue… 👉";
-    case "link-overlay": return "Drag a reference claim onto a task claim… 🖱️";
-    default:            return "Waiting…";
+    case "submit":             return "⏳ Analyzing your text… (1-3 minutes)";
+    case "ref-modal":          return "👉 Click any source card on the right to continue";
+    case "link-overlay":       return "🖱️ Drag a source claim onto a task claim to continue";
+    case "task-assignment":    return "👆 Click any case card to assign it to yourself";
+    default:                   return "⏳ Waiting…";
   }
 }
 
@@ -337,7 +439,9 @@ export const PlatformTour: React.FC = () => {
   // null = not waiting; "submit" | "ref-modal" | "link-overlay" = waiting for user action
   const [waitingFor, setWaitingFor] = useState<string | null>(null);
   const [cardPos, setCardPos] = useState<CardPos | null>(null);
+  const [offerAutoSubmit, setOfferAutoSubmit] = useState(false);
   const posTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoSubmitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -346,9 +450,30 @@ export const PlatformTour: React.FC = () => {
     if (location.pathname.includes("/dashboard")) return "dashboard";
     if (location.pathname.includes("/textpad")) return "textpad";
     if (location.pathname.includes("/workspace")) return "workspace";
+    if (location.pathname.includes("/extension")) return "extension";
     if (location.pathname.includes("/tasks")) return "tasks";
     return "dashboard";
   })();
+
+  // ─── Core helpers (defined early so useEffects can reference them) ─────────
+  const goToStep = useCallback((idx: number) => {
+    localStorage.setItem(TOUR_STEP_KEY, String(idx));
+    setStepIndex(idx);
+    setOfferAutoSubmit(false);
+    if (autoSubmitTimerRef.current) {
+      clearTimeout(autoSubmitTimerRef.current);
+      autoSubmitTimerRef.current = null;
+    }
+  }, []);
+
+  const startTour = useCallback(() => {
+    localStorage.setItem(TOUR_ACTIVE_KEY, "true");
+    localStorage.setItem(TOUR_STEP_KEY, "0");
+    setWaitingFor(null);
+    setStepIndex(0);
+    setActive(true);
+    // Navigation will be handled by the auto-navigate useEffect
+  }, []);
 
   // ── Recompute card position ────────────────────────────────────────────────
   const refreshPos = useCallback(() => {
@@ -415,9 +540,10 @@ export const PlatformTour: React.FC = () => {
   // ── Detect TextPad submission complete (URL gains ?contentId) ─────────────
   useEffect(() => {
     if ((active || waitingFor === "submit") && location.search.includes("contentId")) {
-      if (stepIndex === 7 || waitingFor === "submit") {
+      // After submission, advance to next step (works regardless of current step index)
+      if (waitingFor === "submit") {
         setWaitingFor(null);
-        goToStep(8);
+        goToStep(stepIndex + 1);
       }
     }
   }, [location.search]); // eslint-disable-line
@@ -428,6 +554,7 @@ export const PlatformTour: React.FC = () => {
     const interval = setInterval(() => {
       // .mr-modal is the className on DraggableReferenceClaimsModal's Box
       if (document.querySelector(".mr-modal")) {
+        console.log("✅ [Tour] Reference modal detected - advancing!");
         setWaitingFor(null);
         goToStep(stepIndex + 1);
       }
@@ -441,12 +568,42 @@ export const PlatformTour: React.FC = () => {
     const interval = setInterval(() => {
       // .mr-button is on the "Create Link" button inside ClaimLinkOverlay
       if (document.querySelector(".mr-button")) {
+        console.log("✅ [Tour] Claim link overlay detected - advancing!");
         setWaitingFor(null);
         goToStep(stepIndex + 1);
       }
     }, 400);
     return () => clearInterval(interval);
   }, [waitingFor, stepIndex]); // eslint-disable-line
+
+  // ── Detect task card click (task assignment) ──────────────────────────────
+  useEffect(() => {
+    if (waitingFor !== "task-assignment") return;
+
+    const handleTaskClick = (e: Event) => {
+      console.log("✅ [Tour] Task card clicked - user is selecting a task!");
+      // Don't prevent default - let the task selection happen
+      // After a short delay, navigate back to dashboard
+      setTimeout(() => {
+        console.log("✅ [Tour] Navigating back to dashboard to show assigned task");
+        setWaitingFor(null);
+        navigate("/dashboard");
+        goToStep(stepIndex + 1);
+      }, 1000);
+    };
+
+    // Listen for clicks on any task card
+    const taskCards = document.querySelectorAll(".mr-card");
+    taskCards.forEach((card) => {
+      card.addEventListener("click", handleTaskClick, { once: true });
+    });
+
+    return () => {
+      taskCards.forEach((card) => {
+        card.removeEventListener("click", handleTaskClick);
+      });
+    };
+  }, [waitingFor, stepIndex, navigate, goToStep]); // eslint-disable-line
 
   // ── Highlight target element when step changes ────────────────────────────
   useEffect(() => {
@@ -468,19 +625,97 @@ export const PlatformTour: React.FC = () => {
     return () => window.removeEventListener("restartTour", handle);
   }); // eslint-disable-line
 
-  // ─── Core helpers ──────────────────────────────────────────────────────────
-  const startTour = useCallback(() => {
-    localStorage.setItem(TOUR_ACTIVE_KEY, "true");
-    localStorage.setItem(TOUR_STEP_KEY, "0");
-    setWaitingFor(null);
-    setStepIndex(0);
-    setActive(true);
-  }, []);
+  // ── Auto-navigate to the correct page for the current step ────────────────
+  useEffect(() => {
+    if (!active) return;
+    const step = STEPS[stepIndex];
+    if (step && step.page !== currentPage) {
+      console.log(`🧭 [Tour] Auto-navigating from ${currentPage} to ${step.page}`);
+      const pageMap: Record<string, string> = {
+        dashboard: "/dashboard",
+        textpad: "/textpad",
+        workspace: "/workspace",
+        extension: "/extension",
+        tasks: "/tasks",
+      };
+      const targetPath = pageMap[step.page];
+      if (targetPath) {
+        navigate(targetPath);
+      }
+    }
+  }, [active, stepIndex, currentPage, navigate]);
 
-  const goToStep = useCallback((idx: number) => {
-    localStorage.setItem(TOUR_STEP_KEY, String(idx));
-    setStepIndex(idx);
-  }, []);
+  // ── Detect clicks on highlighted elements ──────────────────────────────────
+  useEffect(() => {
+    if (!active || waitingFor) return;
+    const step = STEPS[stepIndex];
+    if (!step?.target) return;
+
+    const targetSelector = step.target; // Store in variable for closure
+    const element = document.querySelector(targetSelector);
+    if (!element) return;
+
+    const handleClick = (e: Event) => {
+      console.log(`✅ [Tour] User clicked target element: ${targetSelector}`);
+
+      // For submit button, move to waiting state
+      if (targetSelector === '.textpad-submit') {
+        console.log('✅ [Tour] User clicked submit - entering wait state');
+        setOfferAutoSubmit(false);
+        setWaitingFor("submit");
+        applyHighlight(undefined);
+        if (autoSubmitTimerRef.current) {
+          clearTimeout(autoSubmitTimerRef.current);
+          autoSubmitTimerRef.current = null;
+        }
+      }
+      // For download button, let the click happen and advance
+      else if (targetSelector.includes('extension.zip')) {
+        setTimeout(() => {
+          console.log("✅ [Tour] Download initiated - advancing!");
+          goToStep(stepIndex + 1);
+        }, 500);
+      }
+      // For other interactive elements, advance immediately
+      else {
+        goToStep(stepIndex + 1);
+      }
+    };
+
+    element.addEventListener('click', handleClick);
+    return () => element.removeEventListener('click', handleClick);
+  }, [active, stepIndex, waitingFor, goToStep]);
+
+  // ── Monitor submit button and offer auto-click after delay ─────────────────
+  useEffect(() => {
+    // Clear any existing timer
+    if (autoSubmitTimerRef.current) {
+      clearTimeout(autoSubmitTimerRef.current);
+      autoSubmitTimerRef.current = null;
+    }
+    setOfferAutoSubmit(false);
+
+    if (!active || waitingFor) return;
+    const step = STEPS[stepIndex];
+
+    // Check if this is the submit step
+    if (step?.specialAction === 'wait-for-submit' && step?.target === '.textpad-submit') {
+      console.log('👀 [Tour] Monitoring submit button...');
+
+      // After 8 seconds, offer to auto-click
+      autoSubmitTimerRef.current = setTimeout(() => {
+        console.log('⏰ [Tour] 8 seconds passed, offering auto-submit');
+        setOfferAutoSubmit(true);
+      }, 8000);
+    }
+
+    return () => {
+      if (autoSubmitTimerRef.current) {
+        clearTimeout(autoSubmitTimerRef.current);
+        autoSubmitTimerRef.current = null;
+      }
+    };
+  }, [active, stepIndex, waitingFor]);
 
   const endTour = useCallback(() => {
     applyHighlight(undefined);
@@ -490,6 +725,11 @@ export const PlatformTour: React.FC = () => {
     setWaitingFor(null);
     setActive(false);
     setCardPos(null);
+    setOfferAutoSubmit(false);
+    if (autoSubmitTimerRef.current) {
+      clearTimeout(autoSubmitTimerRef.current);
+      autoSubmitTimerRef.current = null;
+    }
   }, []);
 
   const handlePrimary = useCallback(() => {
@@ -497,6 +737,20 @@ export const PlatformTour: React.FC = () => {
     if (!step) return;
 
     switch (step.specialAction) {
+      case "branch-full-tutorial":
+        // Jump to step 10 (full tutorial starts after extension branch)
+        // Steps 0-1: intro+branch, 2-9: extension branch, 10+: full tutorial
+        goToStep(10);
+        break;
+      case "branch-extension":
+        // Jump to step 2 (extension installation starts)
+        navigate("/extension");
+        goToStep(2);
+        break;
+      case "navigate-extension-page":
+        goToStep(stepIndex + 1);
+        navigate("/extension");
+        break;
       case "navigate-textpad":
         goToStep(stepIndex + 1);
         navigate("/textpad");
@@ -510,9 +764,21 @@ export const PlatformTour: React.FC = () => {
         goToStep(stepIndex + 1);
         break;
       case "wait-for-submit":
-        // Collapse to waiting indicator — user clicks Submit themselves
-        setWaitingFor("submit");
-        applyHighlight(undefined);
+        // If offering auto-submit, click the button for them
+        if (offerAutoSubmit) {
+          const submitBtn = document.querySelector('.textpad-submit') as HTMLButtonElement;
+          if (submitBtn) {
+            console.log('🤖 [Tour] Auto-clicking submit button for user');
+            submitBtn.click();
+            setOfferAutoSubmit(false);
+            setWaitingFor("submit");
+            applyHighlight(undefined);
+          }
+        } else {
+          // Collapse to waiting indicator — user clicks Submit themselves
+          setWaitingFor("submit");
+          applyHighlight(undefined);
+        }
         break;
       case "wait-for-ref-modal":
         // Collapse to waiting indicator — auto-advances when .mr-modal appears
@@ -522,6 +788,11 @@ export const PlatformTour: React.FC = () => {
       case "wait-for-link-overlay":
         // Collapse to waiting indicator — auto-advances when .mr-button appears
         setWaitingFor("link-overlay");
+        applyHighlight(undefined);
+        break;
+      case "wait-for-task-assignment":
+        // Collapse to waiting indicator — auto-advances when task is assigned
+        setWaitingFor("task-assignment");
         applyHighlight(undefined);
         break;
       case "end":
@@ -535,9 +806,32 @@ export const PlatformTour: React.FC = () => {
 
   const handleSecondary = useCallback(() => {
     const step = STEPS[stepIndex];
-    if (step?.secondaryLabel === "Skip tour") endTour();
-    else goToStep(stepIndex + 1);
-  }, [stepIndex, goToStep, endTour]);
+    if (step?.secondaryLabel === "Skip tour") {
+      endTour();
+    } else if (step?.secondaryLabel === "B. Install Extension →") {
+      // Branch to extension installation and navigate to page
+      navigate("/extension");
+      goToStep(2); // Jump to step 2 (extension intro)
+    } else if (step?.secondaryLabel === "Skip to dashboard") {
+      // Return to dashboard and end tour
+      navigate("/dashboard");
+      endTour();
+    } else if (step?.secondaryLabel === "Copy chrome://extensions") {
+      // Copy chrome://extensions to clipboard
+      navigator.clipboard.writeText("chrome://extensions").then(() => {
+        console.log("✅ Copied chrome://extensions to clipboard");
+        // Could show a toast notification here
+      }).catch((err) => {
+        console.error("Failed to copy:", err);
+      });
+      // Don't advance - let them stay on this step
+    } else if (step?.secondaryLabel === "I'll type my own →" || step?.secondaryLabel === "I'll enter my own →") {
+      // Skip auto-fill, just advance
+      goToStep(stepIndex + 1);
+    } else {
+      goToStep(stepIndex + 1);
+    }
+  }, [stepIndex, goToStep, endTour, navigate]);
 
   // ─── Render ────────────────────────────────────────────────────────────────
   if (!active) return null;
@@ -659,13 +953,27 @@ export const PlatformTour: React.FC = () => {
           <Text fontSize="sm" color="gray.600" whiteSpace="pre-line" lineHeight="1.7">
             {step.content}
           </Text>
+          {offerAutoSubmit && step.specialAction === 'wait-for-submit' && (
+            <Box mt={3} p={2} bg="green.50" borderRadius="md" border="1px solid" borderColor="green.200">
+              <Text fontSize="xs" color="green.700" fontWeight="medium">
+                💡 Ready? Click the green button below and I'll submit it for you!
+              </Text>
+            </Box>
+          )}
         </Box>
 
         {/* Buttons */}
         <Box px={5} pb={4}>
           <VStack spacing={2} align="stretch">
-            <Button colorScheme="blue" size="sm" onClick={handlePrimary} w="100%">
-              {step.primaryLabel}
+            <Button
+              colorScheme={offerAutoSubmit && step.specialAction === 'wait-for-submit' ? "green" : "blue"}
+              size="sm"
+              onClick={handlePrimary}
+              w="100%"
+            >
+              {offerAutoSubmit && step.specialAction === 'wait-for-submit'
+                ? "🤖 Click for me!"
+                : step.primaryLabel}
             </Button>
             {step.secondaryLabel && (
               <Button variant="ghost" size="sm" color="gray.500" onClick={handleSecondary} w="100%">

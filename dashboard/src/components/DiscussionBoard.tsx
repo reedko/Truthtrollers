@@ -64,6 +64,7 @@ const DiscussionBoard: React.FC<DiscussionBoardProps> = ({ contentId }) => {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [linkedClaimId, setLinkedClaimId] = useState<number | null>(null);
   const viewerId = useTaskStore((s) => s.viewingUserId);
+  const scope = useTaskStore((s) => s.viewScope);
   const user = useAuthStore((s) => s.user);
   const readOnly = !user || user.can_post === false;
 
@@ -71,13 +72,13 @@ const DiscussionBoard: React.FC<DiscussionBoardProps> = ({ contentId }) => {
     const load = async () => {
       const [allEntries, allClaims] = await Promise.all([
         fetchDiscussionEntries(contentId, viewerId),
-        fetchClaimsForTask(contentId, viewerId),
+        fetchClaimsForTask(contentId, viewerId, scope),
       ]);
       setEntries(allEntries);
       setClaims(allClaims);
     };
     load();
-  }, [contentId, viewerId]);
+  }, [contentId, viewerId, scope]);
 
   const handleNewEntry = (entry: DiscussionEntry) =>
     setEntries((prev) => [...prev, entry]);

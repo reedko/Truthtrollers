@@ -5,6 +5,7 @@ import createContentTasksRoutes from "./content.tasks.routes.js";
 import createContentMetadataRoutes from "./content.metadata.routes.js";
 import createContentUrlTrackingRoutes from "./content.url-tracking.routes.js";
 import createContentScrapeRoutes from "./content.scrape.routes.js";
+import createDeleteContentRoutes from "./deleteContent.routes.js";
 
 export default function createContentRouter({ query, pool }) {
   const router = Router();
@@ -15,6 +16,7 @@ export default function createContentRouter({ query, pool }) {
   router.use("/", createContentMetadataRoutes({ query, pool }));
   router.use("/", createContentUrlTrackingRoutes({ query, pool }));
   router.use("/", createContentScrapeRoutes({ query, pool }));
+  router.use("/", createDeleteContentRoutes({ query, pool }));
 
   return router;
 }

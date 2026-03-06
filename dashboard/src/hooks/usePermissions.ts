@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import axios from "axios";
-
-const API_URL = process.env.VITE_API_BASE_URL || "http://localhost:5001";
+import { api } from "../services/api";
+import { useAuthStore } from "../store/useAuthStore";
 
 interface PermissionsData {
   permissions: string[];
@@ -14,20 +13,32 @@ const usePermissions = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const user = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
+
   useEffect(() => {
+    // Don't fetch permissions if user is not logged in or has no token
+    if (!user || !token) {
+      setPermissions([]);
+      setRoles([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     const fetchPermissions = async () => {
       try {
         setLoading(true);
-        const response = await axios.get<PermissionsData>(
-          `${API_URL}/api/user/permissions`,
-          { withCredentials: true }
-        );
+        const response = await api.get<PermissionsData>("/api/user/permissions");
         setPermissions(response.data.permissions);
         setRoles(response.data.roles);
         setError(null);
-      } catch (err) {
-        console.error("Error fetching permissions:", err);
-        setError("Failed to fetch permissions");
+      } catch (err: any) {
+        // Silently handle 401 errors - they're expected when not authenticated
+        if (err?.response?.status !== 401) {
+          console.error("Error fetching permissions:", err);
+        }
+        setError(err?.response?.status === 401 ? null : "Failed to fetch permissions");
         setPermissions([]);
         setRoles([]);
       } finally {
@@ -36,7 +47,7 @@ const usePermissions = () => {
     };
 
     fetchPermissions();
-  }, []);
+  }, [user, token]);
 
   const hasPermission = useCallback(
     (permissionName: string): boolean => {

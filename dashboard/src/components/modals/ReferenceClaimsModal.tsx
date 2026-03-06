@@ -125,7 +125,7 @@ const ReferenceClaimsModal: React.FC<Props> = ({
           pr={{ base: "calc(env(safe-area-inset-right) + 56px)", md: 6 }}
         >
           <Text noOfLines={2}>
-            {reference?.content_name || "Reference Claims"}
+            {reference?.content_name || "Source Claims"}
           </Text>
         </ModalHeader>
 

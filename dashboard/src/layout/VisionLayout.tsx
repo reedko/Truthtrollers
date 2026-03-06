@@ -25,6 +25,7 @@ import {
   FiEdit,
   FiMail,
   FiMessageSquare,
+  FiVideo,
 } from "react-icons/fi";
 import TopicList from "../components/TopicList";
 import TopContributors from "../components/TopContributors";
@@ -38,6 +39,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import { decodeJwt } from "../utils/jwt";
 import { AccountMenu } from "../components/AccountMenu";
 import { PlatformTour } from "../components/PlatformTour";
+import { TokenStatusIndicator } from "../components/TokenStatusIndicator";
 
 const SIDEBAR_WIDTH = "200px";
 const HEADER_HEIGHT = "160px";
@@ -115,6 +117,12 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
           <Text>Chat</Text>
         </HStack>
       </RouterLink>
+      <RouterLink to="/tutorials" onClick={handleClick("/tutorials")}>
+        <HStack spacing={2} mb={2}>
+          <FiVideo />
+          <Text>Tutorials</Text>
+        </HStack>
+      </RouterLink>
       <RouterLink to="/emailtest" onClick={handleClick("/emailtest")}>
         <HStack spacing={2} mb={2}>
           <FiMail />
@@ -136,11 +144,16 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
         </HStack>
       </RouterLink>
 
-      <HStack spacing={2} mb={2} align="center">
-        <FiUser />
-        <AccountMenu />
-        <Text>Account</Text>
-      </HStack>
+      <VStack spacing={2} mb={2} align="stretch" w="full">
+        <HStack spacing={2} align="center">
+          <FiUser />
+          <AccountMenu />
+          <Text>Account</Text>
+        </HStack>
+        <Box pl={6}>
+          <TokenStatusIndicator />
+        </Box>
+      </VStack>
 
       {/* Activity Widgets */}
       <Box w="full" mt={6}>
@@ -236,7 +249,9 @@ const VisionLayout: React.FC = () => {
 
       // Set default viewing user to demo user
       if (demoUser.user_id) {
-        useTaskStore.getState().setViewingUserId(demoUser.user_id);
+        const taskStore = useTaskStore.getState();
+        taskStore.setViewingUserId(demoUser.user_id);
+        taskStore.setViewScope('user');
       }
 
       // Remove ?demo=... from URL for aesthetics

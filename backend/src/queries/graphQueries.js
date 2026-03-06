@@ -10,7 +10,9 @@ export const getNodesForEntity = (entityType) => {
           t.content_name AS label,
           t.url,
           (SELECT COUNT(*) FROM content_claims WHERE content_id = t.content_id) AS claimCount,
-          (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating
+          (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating,
+          NULL AS added_by_user_id,
+          NULL AS is_system
         FROM content t
         WHERE t.content_id = ?
 
@@ -25,11 +27,31 @@ export const getNodesForEntity = (entityType) => {
           CONCAT(a.author_first_name, ' ', a.author_last_name) AS label,
           NULL AS url,
           NULL AS claimCount,
-          (SELECT AVG(veracity_score) FROM author_ratings WHERE author_id = a.author_id) AS rating
+          (SELECT AVG(veracity_score) FROM author_ratings WHERE author_id = a.author_id) AS rating,
+          NULL AS added_by_user_id,
+          NULL AS is_system
         FROM authors a
         JOIN content_authors ca ON a.author_id = ca.author_id
         WHERE ca.content_id = ?
 
+        UNION
+
+        SELECT
+          'author' AS type,
+          CONCAT("autho-",a.author_id) AS id,
+          NULL AS content_id,
+          a.author_id AS author_id,
+          NULL AS publisher_id,
+          CONCAT(a.author_first_name, ' ', a.author_last_name) AS label,
+          NULL AS url,
+          NULL AS claimCount,
+          (SELECT AVG(veracity_score) FROM author_ratings WHERE author_id = a.author_id) AS rating,
+          NULL AS added_by_user_id,
+          NULL AS is_system
+        FROM authors a
+        JOIN content_authors ca ON a.author_id = ca.author_id
+        JOIN content_relations tr ON ca.content_id = tr.reference_content_id
+        WHERE tr.content_id = ?
 
         UNION
 
@@ -42,7 +64,9 @@ export const getNodesForEntity = (entityType) => {
           p.publisher_name AS label,
           NULL AS url,
           NULL AS claimCount,
-          (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating
+          (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating,
+          NULL AS added_by_user_id,
+          NULL AS is_system
         FROM publishers p
         JOIN content_publishers tp ON p.publisher_id = tp.publisher_id
         WHERE tp.content_id = ?
@@ -67,7 +91,9 @@ export const getNodesForEntity = (entityType) => {
           FROM reference_claim_links rcl
           JOIN content_claims cc ON rcl.claim_id = cc.claim_id
           WHERE rcl.reference_content_id = lr.content_id AND cc.content_id = ?
-          ) AS rating
+          ) AS rating,
+          tr.added_by_user_id,
+          tr.is_system
         FROM content lr
         JOIN content_relations tr ON lr.content_id = tr.reference_content_id
         WHERE tr.content_id = ?
@@ -235,9 +261,9 @@ export const getNodesForEntity = (entityType) => {
 export const getLinksForEntity = (entityType) => {
   if (entityType === "task") {
     return `
-      SELECT 
-        'authored' AS type, 
-        CONCAT("conte-", ca.content_id) AS source, 
+      SELECT
+        'authored' AS type,
+        CONCAT("conte-", ca.content_id) AS source,
         CONCAT("autho-", ca.author_id) AS target,
         CONCAT("conte-", ca.content_id, "_autho-", ca.author_id) AS id
       FROM content_authors ca
@@ -245,9 +271,9 @@ export const getLinksForEntity = (entityType) => {
 
       UNION
 
-      SELECT 
-        'published_by' AS type, 
-        CONCAT("conte-", tp.content_id) AS source, 
+      SELECT
+        'published_by' AS type,
+        CONCAT("conte-", tp.content_id) AS source,
         CONCAT("publi-", tp.publisher_id) AS target,
         CONCAT("conte-", tp.content_id, "_publi-", tp.publisher_id) AS id
       FROM content_publishers tp
@@ -255,12 +281,23 @@ export const getLinksForEntity = (entityType) => {
 
       UNION
 
-      SELECT 
-        'references' AS type, 
-        CONCAT("conte-", tr.content_id) AS source, 
+      SELECT
+        'references' AS type,
+        CONCAT("conte-", tr.content_id) AS source,
         CONCAT("conte-", tr.reference_content_id) AS target,
         CONCAT("conte-", tr.content_id, "_conte-", tr.reference_content_id) AS id
       FROM content_relations tr
+      WHERE tr.content_id = ?
+
+      UNION
+
+      SELECT
+        'ref_authored' AS type,
+        CONCAT("conte-", ca.content_id) AS source,
+        CONCAT("autho-", ca.author_id) AS target,
+        CONCAT("conte-", ca.content_id, "_autho-", ca.author_id) AS id
+      FROM content_authors ca
+      JOIN content_relations tr ON ca.content_id = tr.reference_content_id
       WHERE tr.content_id = ?
     `;
   }
@@ -370,9 +407,13 @@ export const getLinksForEntity = (entityType) => {
 
 // graphQueries.js
 
-export const getLinkedClaimsAndLinksForTask = (taskId, viewerId) => {
-  console.log("👁️ viewerId in fetchNewGraphDataFromLegacyRoute:", viewerId);
-  const isValidViewer = Number.isInteger(viewerId);
+export const getLinkedClaimsAndLinksForTask = (taskId, viewerId, viewScope) => {
+  console.log("👁️ viewerId in fetchNewGraphDataFromLegacyRoute:", viewerId, "viewScope:", viewScope);
+
+  // When viewScope is 'all', show all users' links
+  // When viewScope is 'user' (or undefined for backward compatibility), filter by user
+  const shouldFilterByUser = viewScope !== 'all' && Number.isInteger(viewerId);
+
   const claimNodeSql = `
     -- Task Claims
     SELECT DISTINCT
@@ -406,7 +447,7 @@ export const getLinkedClaimsAndLinksForTask = (taskId, viewerId) => {
     WHERE cl.target_claim_id IN (
       SELECT claim_id FROM content_claims WHERE content_id = ?
     )
-   ${isValidViewer ? "AND cl.user_id = ?" : ""}
+   ${shouldFilterByUser ? "AND (cl.user_id = ? OR cl.user_id IS NULL)" : ""}
   `;
 
   const claimLinkSql = `
@@ -425,14 +466,14 @@ export const getLinkedClaimsAndLinksForTask = (taskId, viewerId) => {
     WHERE cl.target_claim_id IN (
       SELECT claim_id FROM content_claims WHERE content_id = ?
     )
-    ${isValidViewer ? "AND cl.user_id = ?" : ""}
+    ${shouldFilterByUser ? "AND (cl.user_id = ? OR cl.user_id IS NULL)" : ""}
   `;
-  console.log("ViewerId", viewerId, "<---");
-  const claimNodeParams = isValidViewer
+  console.log("ViewerId", viewerId, "shouldFilterByUser:", shouldFilterByUser, "<---");
+  const claimNodeParams = shouldFilterByUser
     ? [taskId, taskId, viewerId]
     : [taskId, taskId];
 
-  const claimLinkParams = isValidViewer
+  const claimLinkParams = shouldFilterByUser
     ? [taskId, viewerId] // ← NOTE: viewerId *second*
     : [taskId];
 

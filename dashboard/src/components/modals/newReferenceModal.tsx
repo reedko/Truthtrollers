@@ -91,8 +91,8 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
     if (typeof taskId === "number") {
       await deleteReferenceFromTask(taskId, id);
       toast({
-        title: "Reference Removed from Task!",
-        description: "The reference was removed from the task.",
+        title: "Source Removed from Task!",
+        description: "The source was removed from the task.",
         status: "warning",
         duration: 3000,
         isClosable: true,
@@ -100,8 +100,8 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
     } else if (typeof claimId === "number") {
       await deleteClaimSource(id);
       toast({
-        title: "Reference Unlinked from Claim!",
-        description: "The reference was removed from this claim.",
+        title: "Source Unlinked from Claim!",
+        description: "The source was removed from this claim.",
         status: "warning",
         duration: 3000,
         isClosable: true,
@@ -116,11 +116,11 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalOverlay />
         <ModalContent className="mr-modal">
-          <ModalHeader className="mr-modal-header">Manage References</ModalHeader>
+          <ModalHeader className="mr-modal-header">Manage Sources</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <VStack align="start" spacing={3}>
-              <Text fontWeight="bold">Existing References:</Text>
+              <Text fontWeight="bold">Existing Sources:</Text>
               {activeReferences.length > 0 ? (
                 activeReferences.map((ref) => (
                   <HStack
@@ -158,7 +158,7 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
                   </HStack>
                 ))
               ) : (
-                <Text>No references found.</Text>
+                <Text>No sources found.</Text>
               )}
             </VStack>
           </ModalBody>
@@ -171,7 +171,7 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
               onClick={() => setIsScrapeOpen(true)}
               ml={2}
             >
-              Scrape New Reference
+              Scrape New Source
             </Button>
             <Button colorScheme="red" onClick={onClose} ml={3}>
               Close
