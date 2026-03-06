@@ -22,10 +22,13 @@ import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { Task } from "../../../shared/entities/types";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 export const TaskPage: React.FC = () => {
-  const assignedTasks = useTaskStore(useShallow((state) => state.assignedTasks));
+  const assignedTasks = useTaskStore(
+    useShallow((state) => state.assignedTasks),
+  );
   const fetchTasksForUser = useTaskStore((state) => state.fetchTasksForUser);
   const selectedTopic = useTaskStore((state) => state.selectedTopic);
   const user = useAuthStore((s) => s.user);
@@ -40,7 +43,7 @@ export const TaskPage: React.FC = () => {
   const fetchAllTasks = async (includeArchived: boolean) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/all-tasks`, {
-        params: { showInactive: includeArchived }
+        params: { showInactive: includeArchived },
       });
       setAllTasks(response.data);
     } catch (error) {
@@ -78,9 +81,16 @@ export const TaskPage: React.FC = () => {
   return (
     <Box p={{ base: 2, md: 6 }} maxW="100%">
       <VStack align="center" spacing={4} w="100%">
-        <HStack w="100%" justify="space-between" align="center" px={{ base: 2, md: 0 }} wrap="wrap" gap={4}>
+        <HStack
+          w="100%"
+          justify="space-between"
+          align="center"
+          px={{ base: 2, md: 0 }}
+          wrap="wrap"
+          gap={4}
+        >
           <Heading size="lg" color="teal.300" className="tasks-page-header">
-            Tasks
+            Cases
           </Heading>
 
           <HStack spacing={4} wrap="wrap">
@@ -92,7 +102,9 @@ export const TaskPage: React.FC = () => {
               <Select
                 id="filter-mode"
                 value={filterMode}
-                onChange={(e) => setFilterMode(e.target.value as "all" | "assigned")}
+                onChange={(e) =>
+                  setFilterMode(e.target.value as "all" | "assigned")
+                }
                 w="140px"
                 size="sm"
                 className="tasks-filter"
@@ -121,7 +133,9 @@ export const TaskPage: React.FC = () => {
           <Text>
             No {filterMode === "assigned" ? "assigned " : ""}tasks found
             {selectedTopic ? ` for topic "${selectedTopic}"` : ""}.
-            {showArchived ? " Try unchecking 'Include Archived'." : " Try checking 'Include Archived' to see more."}
+            {showArchived
+              ? " Try unchecking 'Include Archived'."
+              : " Try checking 'Include Archived' to see more."}
           </Text>
         ) : (
           <Box w="100%" px={{ base: 0, md: 4 }}>

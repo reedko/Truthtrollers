@@ -4,7 +4,14 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import cytoscape, { EdgeSingular, NodeSingular } from "cytoscape";
-import { Box, Button, Text, useToast, CloseButton, useColorMode } from "@chakra-ui/react";
+import {
+  Box,
+  Button,
+  Text,
+  useToast,
+  CloseButton,
+  useColorMode,
+} from "@chakra-ui/react";
 import { createPortal } from "react-dom";
 import { GraphNode } from "../../../shared/entities/types";
 
@@ -49,7 +56,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
   allLinks,
   pinnedReferenceIds,
   onTogglePin,
-  displayMode: globalDisplayMode = 'mr_cards',
+  displayMode: globalDisplayMode = "mr_cards",
   nodeSettings,
   onCycleDisplayMode,
 }) => {
@@ -68,7 +75,9 @@ const NodeCard: React.FC<NodeCardProps> = ({
   const isDimmed = data.dimmed;
 
   // Find rationale from links (for refClaim nodes) - mapped from claim_links.notes
-  const linkData = allLinks?.find((link: any) => link.source === id || link.target === id);
+  const linkData = allLinks?.find(
+    (link: any) => link.source === id || link.target === id,
+  );
   const rationale = linkData?.rationale;
   const stance = linkData?.stance;
   const [showRationale, setShowRationale] = React.useState(false);
@@ -145,7 +154,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
   };
 
   // CIRCLES MODE - clean circles with overlay badges
-  if (displayMode === 'circles') {
+  if (displayMode === "circles") {
     const veracityScore = data.veracity_score ?? data.rating;
     const claimCount = data.claimCount;
     const confidence = data.confidence_level;
@@ -168,14 +177,22 @@ const NodeCard: React.FC<NodeCardProps> = ({
               fontSize: "11px",
               lineHeight: "1.5",
               color: "#e2e8f0",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.8), 0 0 20px rgba(139, 92, 246, 0.3)",
+              boxShadow:
+                "0 8px 32px rgba(0, 0, 0, 0.8), 0 0 20px rgba(139, 92, 246, 0.3)",
               pointerEvents: "none",
               transform: `scale(${zoom})`,
               transformOrigin: "center",
               zIndex: 1000,
             }}
           >
-            <div style={{ fontSize: "10px", fontWeight: "700", color: "#a78bfa", marginBottom: "6px" }}>
+            <div
+              style={{
+                fontSize: "10px",
+                fontWeight: "700",
+                color: "#a78bfa",
+                marginBottom: "6px",
+              }}
+            >
               {stance?.toUpperCase()} - RATIONALE:
             </div>
             {rationale}
@@ -228,7 +245,8 @@ const NodeCard: React.FC<NodeCardProps> = ({
               fontSize: "11px",
               fontWeight: "700",
               color: "#a78bfa",
-              boxShadow: "0 2px 8px rgba(0, 0, 0, 0.6), 0 0 12px rgba(139, 92, 246, 0.2)",
+              boxShadow:
+                "0 2px 8px rgba(0, 0, 0, 0.6), 0 0 12px rgba(139, 92, 246, 0.2)",
               pointerEvents: "none",
               transform: `scale(${zoom})`,
               transformOrigin: "center",
@@ -236,12 +254,16 @@ const NodeCard: React.FC<NodeCardProps> = ({
             }}
             title="Veracity Score"
           >
-            ⭐ {typeof veracityScore === 'number' ? veracityScore.toFixed(1) : veracityScore}
+            ⭐{" "}
+            {typeof veracityScore === "number"
+              ? veracityScore.toFixed(1)
+              : veracityScore}
           </div>
         )}
 
         {/* Claim count badge - bottom-right (or confidence for claim nodes) */}
-        {(claimCount !== undefined && claimCount !== null && claimCount > 0) || (confidence !== undefined && confidence !== null) ? (
+        {(claimCount !== undefined && claimCount !== null && claimCount > 0) ||
+        (confidence !== undefined && confidence !== null) ? (
           <div
             style={{
               position: "absolute",
@@ -249,7 +271,9 @@ const NodeCard: React.FC<NodeCardProps> = ({
               top: `${pos.y + 35}px`,
               background: "rgba(15, 23, 42, 0.95)",
               backdropFilter: "blur(8px)",
-              border: confidence ? "1px solid rgba(251, 191, 36, 0.4)" : "1px solid rgba(16, 185, 129, 0.4)",
+              border: confidence
+                ? "1px solid rgba(251, 191, 36, 0.4)"
+                : "1px solid rgba(16, 185, 129, 0.4)",
               borderRadius: "8px",
               padding: "4px 8px",
               fontSize: "11px",
@@ -265,7 +289,9 @@ const NodeCard: React.FC<NodeCardProps> = ({
             }}
             title={confidence ? "Confidence Level" : "Claim Count"}
           >
-            {confidence ? `🎯 ${Math.round(confidence * 100)}%` : `📝 ${claimCount}`}
+            {confidence
+              ? `🎯 ${Math.round(confidence * 100)}%`
+              : `📝 ${claimCount}`}
           </div>
         ) : null}
 
@@ -328,7 +354,11 @@ const NodeCard: React.FC<NodeCardProps> = ({
             }}
             title="Cycle display mode"
           >
-            {currentDisplayMode === 'circles' ? '⚪' : currentDisplayMode === 'compact' ? '📊' : '🎴'}
+            {currentDisplayMode === "circles"
+              ? "⚪"
+              : currentDisplayMode === "compact"
+                ? "📊"
+                : "🎴"}
           </button>
         )}
       </>
@@ -336,7 +366,7 @@ const NodeCard: React.FC<NodeCardProps> = ({
   }
 
   // COMPACT MODE - smaller cards with just metrics
-  if (displayMode === 'compact') {
+  if (displayMode === "compact") {
     const scheme =
       colorSchemes[type as keyof typeof colorSchemes] || colorSchemes.reference;
 
@@ -344,23 +374,45 @@ const NodeCard: React.FC<NodeCardProps> = ({
     const getCompactMetrics = () => {
       if (type === "reference" || type === "task") {
         const veracityScore = data.veracity_score ?? data.rating;
-        const claimCount = data.claimCount ?? allNodes.filter(
-          (n) => (type === "reference" ? n.type === "refClaim" : n.type === "taskClaim") && n.content_id === data.content_id,
-        ).length;
+        const claimCount =
+          data.claimCount ??
+          allNodes.filter(
+            (n) =>
+              (type === "reference"
+                ? n.type === "refClaim"
+                : n.type === "taskClaim") && n.content_id === data.content_id,
+          ).length;
         return [
-          { value: typeof veracityScore === 'number' ? veracityScore.toFixed(1) : (veracityScore ?? "-"), label: "⭐" },
+          {
+            value:
+              typeof veracityScore === "number"
+                ? veracityScore.toFixed(1)
+                : (veracityScore ?? "-"),
+            label: "⭐",
+          },
           { value: claimCount, label: "📝" },
         ];
       } else if (type === "refClaim" || type === "taskClaim") {
         const veracityScore = data.veracity_score;
         const confidence = data.confidence_level;
         return [
-          { value: veracityScore ? veracityScore.toFixed(2) : "-", label: "⭐" },
-          { value: confidence ? Math.round(confidence * 100) + "%" : "-", label: "🎯" },
+          {
+            value: veracityScore ? veracityScore.toFixed(2) : "-",
+            label: "⭐",
+          },
+          {
+            value: confidence ? Math.round(confidence * 100) + "%" : "-",
+            label: "🎯",
+          },
         ];
       } else if (type === "author" || type === "publisher") {
         const rating = data.rating ?? "-";
-        return [{ value: typeof rating === 'number' ? rating.toFixed(1) : rating, label: "⭐" }];
+        return [
+          {
+            value: typeof rating === "number" ? rating.toFixed(1) : rating,
+            label: "⭐",
+          },
+        ];
       }
       return [];
     };
@@ -445,7 +497,9 @@ const NodeCard: React.FC<NodeCardProps> = ({
               }}
             >
               <div>{metric.label}</div>
-              <div style={{ fontSize: "12px", marginTop: "2px" }}>{metric.value}</div>
+              <div style={{ fontSize: "12px", marginTop: "2px" }}>
+                {metric.value}
+              </div>
             </div>
           ))}
         </div>
@@ -499,7 +553,11 @@ const NodeCard: React.FC<NodeCardProps> = ({
             }}
             title="Cycle display mode"
           >
-            {currentDisplayMode === 'circles' ? '⚪' : currentDisplayMode === 'compact' ? '📊' : '🎴'}
+            {currentDisplayMode === "circles"
+              ? "⚪"
+              : currentDisplayMode === "compact"
+                ? "📊"
+                : "🎴"}
           </button>
         )}
       </div>
@@ -536,7 +594,6 @@ const NodeCard: React.FC<NodeCardProps> = ({
   } else {
     thumbnailUrl = `${API_BASE_URL}/assets/images/ttlogo11.png`;
   }
-
 
   // Special handling for unified claim cards
   if (type === "unifiedClaim") {
@@ -1002,157 +1059,157 @@ export async function animateMoleculeScene({
   try {
     const contentId = node.data("content_id");
 
-  // Step 1: Get ref and task claims and relevant links
-  const refClaims = nodes.filter(
-    (n) => n.type === "refClaim" && n.content_id === contentId
-  );
-  const claimLinks = links.filter((l) =>
-    refClaims.some((rc) => rc.id === l.source)
-  );
-
-  const taskClaimMap = new Map(
-    nodes.filter((n) => n.type === "taskClaim").map((n) => [n.id, n])
-  );
-
-  if (refClaims.length === 0 || claimLinks.length === 0) return;
-
-  // Step 2: Scatter away from node using Corridor Arc pattern
-  // Track the clicked reference for reset functionality
-  lastRefOriginalPos.current = { ...node.position() };
-  lastRefNode.current = node;
-
-  await corridorArcScatter({
-    cy,
-    refNode: node,
-    taskNode,
-    animate,
-  });
-
-  // Step 3: Hide ref-to-task edge when showing claims
-  const refTaskEdges = cy.edges().filter((edge) => {
-    const source = edge.source();
-    const target = edge.target();
-    return (
-      (source.id() === node.id() && target.id() === taskNode.id()) ||
-      (source.id() === taskNode.id() && target.id() === node.id())
+    // Step 1: Get ref and task claims and relevant links
+    const refClaims = nodes.filter(
+      (n) => n.type === "refClaim" && n.content_id === contentId,
     );
-  });
-  refTaskEdges.style('display', 'none');
+    const claimLinks = links.filter((l) =>
+      refClaims.some((rc) => rc.id === l.source),
+    );
 
-  // Step 4: Position claim nodes in arcs around their parent nodes
-  const refPos = node.position();
-  const taskPos = taskNode.position();
+    const taskClaimMap = new Map(
+      nodes.filter((n) => n.type === "taskClaim").map((n) => [n.id, n]),
+    );
 
-  // Calculate angle from task to reference
-  const dx = refPos.x - taskPos.x;
-  const dy = refPos.y - taskPos.y;
-  const angleToRef = Math.atan2(dy, dx);
+    if (refClaims.length === 0 || claimLinks.length === 0) return;
 
-  // Arc radius for claims - same for both ref and task
-  const claimArcRadius = 280;
+    lastRefOriginalPos.current = { ...node.position() };
+    lastRefNode.current = node;
 
-  // Arc span - how wide the arc of claims should be
-  const arcSpan = Math.PI / 1.5; // ~120 degrees
-
-  const claimElements: cytoscape.ElementDefinition[] = [];
-  const edgeElements: cytoscape.ElementDefinition[] = [];
-  const animationData: Array<{ nodeId: string; x: number; y: number }> = [];
-
-  // First pass: collect all data
-  claimLinks.forEach((link, i) => {
-    const refClaim = refClaims.find((rc) => rc.id === link.source);
-    const taskClaim = taskClaimMap.get(link.target);
-
-    if (!refClaim || !taskClaim) return;
-
-    // Calculate arc position parameter (0 to 1) - reversed for taskClaims to align edges
-    const t = claimLinks.length > 1 ? i / (claimLinks.length - 1) : 0.5;
-    const tReversed = 1 - t; // Reverse order for task claims
-
-    // RefClaim: Arc around the reference node (bottom to top)
-    const refArcCenter = angleToRef + Math.PI; // Point toward task
-    const refArcStart = refArcCenter - arcSpan / 2;
-    const refAngle = refArcStart + t * arcSpan;
-    const refX = refPos.x + claimArcRadius * Math.cos(refAngle);
-    const refY = refPos.y + claimArcRadius * Math.sin(refAngle);
-
-    // TaskClaim: Arc around the task node (reversed, top to bottom, to align with refClaims)
-    const taskArcCenter = angleToRef; // Point toward reference
-    const taskArcStart = taskArcCenter - arcSpan / 2;
-    const taskAngle = taskArcStart + tReversed * arcSpan;
-    const taskX = taskPos.x + claimArcRadius * Math.cos(taskAngle);
-    const taskY = taskPos.y + claimArcRadius * Math.sin(taskAngle);
-
-    // Collect refClaim node if it doesn't exist
-    if (cy.getElementById(refClaim.id).length === 0) {
-      claimElements.push({
-        data: refClaim,
-        position: { x: refPos.x, y: refPos.y }, // Start at reference
-      });
-    }
-    animationData.push({ nodeId: refClaim.id, x: refX, y: refY });
-
-    // Collect taskClaim node if it doesn't exist
-    if (cy.getElementById(taskClaim.id).length === 0) {
-      claimElements.push({
-        data: taskClaim,
-        position: { x: taskPos.x, y: taskPos.y }, // Start at task
-      });
-    }
-    animationData.push({ nodeId: taskClaim.id, x: taskX, y: taskY });
-
-    // Collect edges
-    edgeElements.push({
-      data: {
-        id: `edge-ref-${node.id()}-refclaim-${refClaim.id}`,
-        source: node.id(),
-        target: refClaim.id,
-        relation: "contains",
-      },
-    });
-
-    edgeElements.push({
-      data: {
-        id: `edge-task-${taskNode.id()}-taskclaim-${taskClaim.id}`,
-        source: taskNode.id(),
-        target: taskClaim.id,
-        relation: "contains",
-      },
-    });
-
-    edgeElements.push({
-      data: {
-        ...link,
-        id: `edge-refclaim-${refClaim.id}-taskclaim-${taskClaim.id}`,
-        relation: link.relation || "related",
-      },
-    });
-  });
-
-  // Add all nodes and edges in batches
-  cy.batch(() => {
-    if (claimElements.length > 0) {
-      cy.add(claimElements);
-    }
-    if (edgeElements.length > 0) {
-      cy.add(edgeElements);
-    }
-  });
-
-  // Animate all claim nodes to their final positions
-  if (animate) {
     cy.batch(() => {
-      animationData.forEach(({ nodeId, x, y }) => {
-        const nodeEle = cy.getElementById(nodeId);
-        if (nodeEle.length > 0) {
-          nodeEle.animate(
-            { position: { x, y } },
-            { duration: 150, easing: "ease-out" }
-          );
-        }
+      cy.nodes('[type = "refClaim"], [type = "taskClaim"]').remove();
+    });
+
+    let taskPos = taskNode.position();
+    let refPos = node.position();
+    let dx = refPos.x - taskPos.x;
+    let dy = refPos.y - taskPos.y;
+    let angleToRef = Math.atan2(dy, dx);
+
+    const optimalDistance = 950;
+    const newRefX = taskPos.x + optimalDistance * Math.cos(angleToRef);
+    const newRefY = taskPos.y + optimalDistance * Math.sin(angleToRef);
+
+    node.position({ x: newRefX, y: newRefY });
+
+    // Arrange other sources immediately without animation
+    arrangeSourcesAroundCase({
+      cy,
+      clickedRefNode: node,
+      taskNode,
+    });
+
+    taskPos = taskNode.position();
+    refPos = node.position();
+    dx = refPos.x - taskPos.x;
+    dy = refPos.y - taskPos.y;
+    angleToRef = Math.atan2(dy, dx);
+    const refTaskEdges = cy.edges().filter((edge) => {
+      const source = edge.source();
+      const target = edge.target();
+      return (
+        (source.id() === node.id() && target.id() === taskNode.id()) ||
+        (source.id() === taskNode.id() && target.id() === node.id())
+      );
+    });
+    refTaskEdges.style("display", "none");
+
+    // Step 8: Position claim nodes in arcs around their parent nodes
+    // (positions already recalculated above)
+
+    // Arc radius for claims - tighter for source claims to prevent overlap
+    const taskClaimArcRadius = 280;
+    const refClaimArcRadius = 300; // Give claims more breathing room from source
+
+    // Arc span - how wide the arc of claims should be
+    const arcSpan = Math.PI / 1.5; // ~120 degrees
+
+    const claimElements: cytoscape.ElementDefinition[] = [];
+    const edgeElements: cytoscape.ElementDefinition[] = [];
+    const animationData: Array<{ nodeId: string; x: number; y: number }> = [];
+
+    // First pass: collect all data
+    claimLinks.forEach((link, i) => {
+      const refClaim = refClaims.find((rc) => rc.id === link.source);
+      const taskClaim = taskClaimMap.get(link.target);
+
+      if (!refClaim || !taskClaim) return;
+
+      // Calculate arc position parameter (0 to 1) - reversed for taskClaims to align edges
+      const t = claimLinks.length > 1 ? i / (claimLinks.length - 1) : 0.5;
+      const tReversed = 1 - t; // Reverse order for task claims
+
+      // RefClaim: Arc around the reference node (bottom to top) - smaller radius
+      const refArcCenter = angleToRef + Math.PI; // Point toward task
+      const refArcStart = refArcCenter - arcSpan / 2;
+      const refAngle = refArcStart + t * arcSpan;
+      const refX = refPos.x + refClaimArcRadius * Math.cos(refAngle);
+      const refY = refPos.y + refClaimArcRadius * Math.sin(refAngle);
+
+      // TaskClaim: Arc around the task node (reversed, top to bottom, to align with refClaims)
+      const taskArcCenter = angleToRef; // Point toward reference
+      const taskArcStart = taskArcCenter - arcSpan / 2;
+      const taskAngle = taskArcStart + tReversed * arcSpan;
+      const taskX = taskPos.x + taskClaimArcRadius * Math.cos(taskAngle);
+      const taskY = taskPos.y + taskClaimArcRadius * Math.sin(taskAngle);
+
+      // Collect refClaim node if it doesn't exist
+      if (cy.getElementById(refClaim.id).length === 0) {
+        claimElements.push({
+          data: refClaim,
+          position: { x: refPos.x, y: refPos.y }, // Start at reference
+        });
+      }
+      animationData.push({ nodeId: refClaim.id, x: refX, y: refY });
+
+      // Collect taskClaim node if it doesn't exist
+      if (cy.getElementById(taskClaim.id).length === 0) {
+        claimElements.push({
+          data: taskClaim,
+          position: { x: taskPos.x, y: taskPos.y }, // Start at task
+        });
+      }
+      animationData.push({ nodeId: taskClaim.id, x: taskX, y: taskY });
+
+      // Collect edges
+      edgeElements.push({
+        data: {
+          id: `edge-ref-${node.id()}-refclaim-${refClaim.id}`,
+          source: node.id(),
+          target: refClaim.id,
+          relation: "contains",
+        },
+      });
+
+      edgeElements.push({
+        data: {
+          id: `edge-task-${taskNode.id()}-taskclaim-${taskClaim.id}`,
+          source: taskNode.id(),
+          target: taskClaim.id,
+          relation: "contains",
+        },
+      });
+
+      edgeElements.push({
+        data: {
+          ...link,
+          id: `edge-refclaim-${refClaim.id}-taskclaim-${taskClaim.id}`,
+          relation: link.relation || "related",
+        },
       });
     });
-  } else {
+
+    // Add all nodes and edges in batches
+    cy.batch(() => {
+      if (claimElements.length > 0) {
+        cy.add(claimElements);
+      }
+      if (edgeElements.length > 0) {
+        cy.add(edgeElements);
+      }
+    });
+
+    // Position all claim nodes directly - no animation
     cy.batch(() => {
       animationData.forEach(({ nodeId, x, y }) => {
         const nodeEle = cy.getElementById(nodeId);
@@ -1161,14 +1218,14 @@ export async function animateMoleculeScene({
         }
       });
     });
-  }
 
-  // Don't auto-fit the view - let user control viewport
+    // Fit view to show all nodes with optimal zoom
+    cy.fit(cy.nodes(), 50);
 
-  // Restart throbbing for activated nodes after animation
-  if (activatedNodeIds) {
-    restartAllThrobs(cy, activatedNodeIds);
-  }
+    // Restart throbbing for activated nodes after animation
+    if (activatedNodeIds) {
+      restartAllThrobs(cy, activatedNodeIds);
+    }
   } catch (error) {
     console.error("animateMoleculeScene error:", error);
     // Try to restore state gracefully
@@ -1234,6 +1291,87 @@ function animateNodes(
   });
 }
 
+// Arrange source nodes in a 3/4 circle arc around the CASE node
+function arrangeSourcesAroundCase({
+  cy,
+  clickedRefNode,
+  taskNode,
+}: {
+  cy: cytoscape.Core;
+  clickedRefNode: NodeSingular;
+  taskNode: NodeSingular;
+}): void {
+  const center = taskNode.position();
+  const clickedRefPos = clickedRefNode.position();
+
+  const dx = clickedRefPos.x - center.x;
+  const dy = clickedRefPos.y - center.y;
+  const angleToClickedRef = Math.atan2(dy, dx);
+
+  // Separate references from authors/publishers
+  const otherReferences = cy
+    .nodes()
+    .filter((node) => {
+      const id = node.id();
+      const type = node.data("type");
+      return (
+        id !== clickedRefNode.id() &&
+        id !== taskNode.id() &&
+        type === "reference"
+      );
+    })
+    .toArray() as cytoscape.NodeSingular[];
+
+  // Don't move authors and publishers - keep them in original positions
+  if (otherReferences.length === 0) return;
+
+  // 3/4 circle arc (270 degrees)
+  const arcSpan = (Math.PI * 3) / 2;
+  const arcStartAngle = angleToClickedRef + Math.PI / 4;
+
+  // Calculate if nodes can fit on single arc without overlapping
+  const baseRadius = 550;
+  const nodeWidth = 120; // Approximate node width
+  const minNodeSpacing = 20; // Minimum gap between nodes
+  const requiredSpacing = nodeWidth + minNodeSpacing;
+
+  // Calculate arc length and how many nodes can fit
+  const arcLength = baseRadius * arcSpan;
+  const maxNodesOnSingleArc = Math.floor(arcLength / requiredSpacing);
+
+  let arcsNeeded = 1;
+  if (otherReferences.length > maxNodesOnSingleArc) {
+    arcsNeeded = Math.ceil(otherReferences.length / maxNodesOnSingleArc);
+  }
+
+  const radiusStagger = 140;
+
+  cy.batch(() => {
+    otherReferences.forEach((node, i) => {
+      // Determine which arc this node goes on
+      const arcIndex = arcsNeeded === 1 ? 0 : Math.floor(i / maxNodesOnSingleArc);
+      const positionInArc = arcsNeeded === 1 ? i : i % maxNodesOnSingleArc;
+      const nodesInThisArc = arcsNeeded === 1
+        ? otherReferences.length
+        : (arcIndex === arcsNeeded - 1
+          ? otherReferences.length - (arcIndex * maxNodesOnSingleArc)
+          : maxNodesOnSingleArc);
+
+      // Calculate position parameter (0 to 1) for this arc
+      const t = nodesInThisArc > 1 ? positionInArc / (nodesInThisArc - 1) : 0.5;
+      const angle = arcStartAngle + t * arcSpan;
+
+      // Calculate radius based on which arc
+      const radius = baseRadius + (arcIndex * radiusStagger);
+
+      const newX = center.x + radius * Math.cos(angle);
+      const newY = center.y + radius * Math.sin(angle);
+
+      node.position({ x: newX, y: newY });
+    });
+  });
+}
+
 async function corridorArcScatter({
   cy,
   refNode,
@@ -1293,7 +1431,7 @@ async function corridorArcScatter({
 
           node.animate(
             { position: { x: newX, y: newY } },
-            { duration: 150, easing: "ease-out" }
+            { duration: 150, easing: "ease-out" },
           );
         });
       });
@@ -1387,7 +1525,7 @@ async function fartScatterAwayFromRef({
   const promises = optionsList.map(({ node, position }) =>
     animate
       ? animateNode(node, { position }, 200)
-      : (node.position(position), Promise.resolve())
+      : (node.position(position), Promise.resolve()),
   );
 
   await Promise.all(promises);
@@ -1671,7 +1809,7 @@ function restartAllThrobs(cy: cytoscape.Core, activatedNodeIds: Set<string>) {
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
 
-export type DisplayMode = 'mr_cards' | 'circles' | 'compact';
+export type DisplayMode = "mr_cards" | "circles" | "compact";
 
 interface CytoscapeMoleculeProps {
   nodes: {
@@ -1706,9 +1844,13 @@ interface CytoscapeMoleculeProps {
   onTogglePin?: (contentId: number) => void;
   displayMode?: DisplayMode;
   savedPositions?: Record<string, { x: number; y: number }> | null;
-  onPositionsChange?: (positions: Record<string, { x: number; y: number }>) => void;
+  onPositionsChange?: (
+    positions: Record<string, { x: number; y: number }>,
+  ) => void;
   nodeSettings?: Record<string, { displayMode: DisplayMode }> | null;
-  onNodeSettingsChange?: (settings: Record<string, { displayMode: DisplayMode }>) => void;
+  onNodeSettingsChange?: (
+    settings: Record<string, { displayMode: DisplayMode }>,
+  ) => void;
 }
 
 type LinkData = CytoscapeMoleculeProps["links"][number];
@@ -1720,14 +1862,13 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
   centerNodeId,
   pinnedReferenceIds,
   onTogglePin,
-  displayMode = 'mr_cards',
+  displayMode = "mr_cards",
   savedPositions,
   onPositionsChange,
   nodeSettings,
   onNodeSettingsChange,
   currentUserId,
 }) => {
-
   const { colorMode } = useColorMode();
   const cyRef = useRef<HTMLDivElement>(null);
   const cyInstance = useRef<cytoscape.Core | null>(null);
@@ -1786,9 +1927,42 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
   useEffect(() => {
     if (!cyRef.current) return;
 
-    // Don't rebuild the graph while claims are visible - it would destroy them
-    if (activeRefWithClaims.current !== null) {
-      return;
+    // If claims are visible when data changes, clear them first before rebuilding
+    if (activeRefWithClaims.current !== null && cyInstance.current) {
+      try {
+        const cy = cyInstance.current;
+
+        // Clear active ref tracker
+        activeRefWithClaims.current = null;
+
+        // Remove all claim nodes and their edges
+        cy.batch(() => {
+          cy.nodes('[type = "refClaim"], [type = "taskClaim"]').forEach((node) => {
+            // Clear throb interval
+            const interval = node.data("throbInterval");
+            if (interval) clearInterval(interval);
+            node.remove();
+          });
+        });
+
+        // Show all ref-to-task edges again
+        cy.edges().forEach((edge) => {
+          const source = edge.source();
+          const target = edge.target();
+          if (source && target) {
+            const isRefTaskEdge =
+              (source.data("type") === "reference" && target.data("type") === "task") ||
+              (source.data("type") === "task" && target.data("type") === "reference");
+            if (isRefTaskEdge) {
+              edge.style("display", "element");
+            }
+          }
+        });
+      } catch (error) {
+        console.error("Error clearing claims during rebuild:", error);
+        // Reset the ref and continue
+        activeRefWithClaims.current = null;
+      }
     }
 
     const centerX = 500;
@@ -1919,8 +2093,12 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
     const initialEdges = links
       .filter((l) => {
-        const sourceExists = positionedNodes.some((n) => n.data.id === l.source);
-        const targetExists = positionedNodes.some((n) => n.data.id === l.target);
+        const sourceExists = positionedNodes.some(
+          (n) => n.data.id === l.source,
+        );
+        const targetExists = positionedNodes.some(
+          (n) => n.data.id === l.target,
+        );
         return sourceExists && targetExists;
       })
       .map((l) => {
@@ -1968,11 +2146,30 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
     // Style configuration based on display mode
     const getNodeStyle = () => {
-      if (displayMode === 'circles') {
+      if (displayMode === "circles") {
         return {
           selector: "node",
           style: {
-            shape: "ellipse",
+            shape: (ele: any) => {
+              const type = ele.data("type");
+              if (type === "refClaim" || type === "taskClaim")
+                return "round-triangle";
+              return "ellipse";
+            },
+            // Point direction for claim nodes (triangular shapes)
+            "shape-polygon-points": (ele: any) => {
+              const type = ele.data("type");
+              // Custom points for a pac-man style 3/4 circle
+              // This creates a wedge pointing right
+              if (type === "taskClaim") {
+                // Task claim points left (toward source claims on the right)
+                return "-1 -0.7  -1 0.7  1 0";
+              } else if (type === "refClaim") {
+                // Source claim points right (toward task claims on the left)
+                return "1 -0.7  1 0.7  -1 0";
+              }
+              return undefined;
+            },
             width: (ele: any) => {
               const type = ele.data("type");
               if (type === "refClaim" || type === "taskClaim") return 70;
@@ -2013,7 +2210,8 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               const type = data.type;
               const nodeId = ele.id();
 
-              const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
+              const API_BASE_URL =
+                import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
 
               // Use new API endpoint for auto extension detection
               let fullUrl;
@@ -2021,10 +2219,12 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 const authorId = data.author_id || nodeId.replace("autho-", "");
                 fullUrl = `${API_BASE_URL}/api/image/authors/${authorId}`;
               } else if (type === "task" || type === "reference") {
-                const contentId = data.content_id || nodeId.replace("conte-", "");
+                const contentId =
+                  data.content_id || nodeId.replace("conte-", "");
                 fullUrl = `${API_BASE_URL}/api/image/content/${contentId}`;
               } else if (type === "publisher") {
-                const publisherId = data.publisher_id || nodeId.replace("publi-", "");
+                const publisherId =
+                  data.publisher_id || nodeId.replace("publi-", "");
                 fullUrl = `${API_BASE_URL}/api/image/publishers/${publisherId}`;
               } else {
                 return null; // No image for claims
@@ -2062,11 +2262,26 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             "border-opacity": 0.8,
           },
         };
-      } else if (displayMode === 'compact') {
+      } else if (displayMode === "compact") {
         return {
           selector: "node",
           style: {
-            shape: "round-rectangle",
+            shape: (ele: any) => {
+              const type = ele.data("type");
+              if (type === "refClaim" || type === "taskClaim")
+                return "round-triangle";
+              return "round-rectangle";
+            },
+            // Point direction for claim nodes
+            "shape-polygon-points": (ele: any) => {
+              const type = ele.data("type");
+              if (type === "taskClaim") {
+                return "-1 -0.7  -1 0.7  1 0";
+              } else if (type === "refClaim") {
+                return "1 -0.7  1 0.7  -1 0";
+              }
+              return undefined;
+            },
             width: (ele: any) => {
               const type = ele.data("type");
               if (type === "refClaim" || type === "taskClaim") return 60;
@@ -2114,7 +2329,22 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         return {
           selector: "node",
           style: {
-            shape: "round-rectangle",
+            shape: (ele: any) => {
+              const type = ele.data("type");
+              if (type === "refClaim" || type === "taskClaim")
+                return "round-triangle";
+              return "round-rectangle";
+            },
+            // Point direction for claim nodes
+            "shape-polygon-points": (ele: any) => {
+              const type = ele.data("type");
+              if (type === "taskClaim") {
+                return "-1 -0.7  -1 0.7  1 0";
+              } else if (type === "refClaim") {
+                return "1 -0.7  1 0.7  -1 0";
+              }
+              return undefined;
+            },
             width: (ele: any) => {
               const type = ele.data("type");
               if (type === "refClaim" || type === "taskClaim") return 130;
@@ -2218,7 +2448,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               const targetDimmed = targetNode.data("dimmed");
 
               // If either end is dimmed, dim the edge
-              return (sourceDimmed || targetDimmed) ? 0.2 : 1.0;
+              return sourceDimmed || targetDimmed ? 0.2 : 1.0;
             },
           },
         },
@@ -2421,10 +2651,12 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           .edges()
           .filter(
             (edge) =>
-              edge.source().id() === claimId || edge.target().id() === claimId
+              edge.source().id() === claimId || edge.target().id() === claimId,
           )
           .toArray()
-          .find((e) => ["supports", "refutes", "related"].includes(e.data("relation")));
+          .find((e) =>
+            ["supports", "refutes", "related"].includes(e.data("relation")),
+          );
 
         const relation = connectedEdge?.data("relation") || "related";
 
@@ -2436,18 +2668,20 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           refClaimNode = node;
           // Find connected taskClaim
           if (connectedEdge && connectedEdge.isEdge()) {
-            const otherId = connectedEdge.source().id() === claimId
-              ? connectedEdge.target().id()
-              : connectedEdge.source().id();
+            const otherId =
+              connectedEdge.source().id() === claimId
+                ? connectedEdge.target().id()
+                : connectedEdge.source().id();
             taskClaimNode = cy.getElementById(otherId);
           }
         } else {
           taskClaimNode = node;
           // Find connected refClaim
           if (connectedEdge && connectedEdge.isEdge()) {
-            const otherId = connectedEdge.source().id() === claimId
-              ? connectedEdge.target().id()
-              : connectedEdge.source().id();
+            const otherId =
+              connectedEdge.source().id() === claimId
+                ? connectedEdge.target().id()
+                : connectedEdge.source().id();
             refClaimNode = cy.getElementById(otherId);
           }
         }
@@ -2473,13 +2707,15 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
         // Remove existing claim nodes only when clicking a DIFFERENT reference
         const animate = true;
-        const claimNodes = cy.nodes('[type = "refClaim"], [type = "taskClaim"]');
+        const claimNodes = cy.nodes(
+          '[type = "refClaim"], [type = "taskClaim"]',
+        );
         cy.batch(() => {
           claimNodes.remove();
         });
 
         // Show all ref-to-task edges before adding new claims
-        cy.edges().style('display', 'element');
+        cy.edges().style("display", "element");
 
         // Update active ref tracker
         activeRefWithClaims.current = clickedRefId;
@@ -2827,12 +3063,20 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                   displayMode={displayMode}
                   nodeSettings={nodeSettings}
                   onCycleDisplayMode={(nodeId: string) => {
-                    const modes: DisplayMode[] = ['circles', 'compact', 'mr_cards'];
-                    const currentMode = nodeSettings?.[nodeId]?.displayMode || displayMode;
+                    const modes: DisplayMode[] = [
+                      "circles",
+                      "compact",
+                      "mr_cards",
+                    ];
+                    const currentMode =
+                      nodeSettings?.[nodeId]?.displayMode || displayMode;
                     const currentIndex = modes.indexOf(currentMode);
                     const nextMode = modes[(currentIndex + 1) % modes.length];
 
-                    const newSettings = { ...(nodeSettings || {}), [nodeId]: { displayMode: nextMode } };
+                    const newSettings = {
+                      ...(nodeSettings || {}),
+                      [nodeId]: { displayMode: nextMode },
+                    };
                     if (onNodeSettingsChange) {
                       onNodeSettingsChange(newSettings);
                     }
@@ -2922,9 +3166,9 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                     whiteSpace="nowrap"
                   >
                     {selectedNodeData.type === "task"
-                      ? "TASK"
+                      ? "CASE"
                       : selectedNodeData.type === "reference"
-                        ? "REFERENCE"
+                        ? "SOURCE"
                         : selectedNodeData.type === "author"
                           ? "AUTHOR"
                           : selectedNodeData.type === "publisher"
@@ -2934,43 +3178,70 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                               : "TASK CLAIM"}
                   </Text>
                   <Box w="1px" h="16px" bg="rgba(0, 162, 255, 0.3)" />
-                  <Text
-                    fontSize="sm"
-                    fontWeight="300"
-                    color="#f1f5f9"
-                    letterSpacing="0.5px"
-                    lineHeight="1.3"
-                    flex={1}
-                    noOfLines={1}
-                  >
-                    {selectedNodeData.label}
-                  </Text>
-                  {/* Show rating if available */}
-                  {selectedNodeData.rating != null && selectedNodeData.rating !== 0 && (
-                    <>
-                      <Box w="1px" h="16px" bg="rgba(0, 162, 255, 0.3)" />
-                      <Text
-                        fontSize="xs"
-                        fontWeight="600"
-                        color={selectedNodeData.rating > 0 ? "#4ade80" : "#f87171"}
-                        textShadow={`0 0 8px ${selectedNodeData.rating > 0 ? "rgba(74, 222, 128, 0.6)" : "rgba(248, 113, 113, 0.6)"}`}
-                        whiteSpace="nowrap"
-                      >
-                        ⭐ {typeof selectedNodeData.rating === 'number' ? selectedNodeData.rating.toFixed(1) : selectedNodeData.rating}
-                      </Text>
-                    </>
+                  {selectedNodeData.url ? (
+                    <Text
+                      as="a"
+                      href={selectedNodeData.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      fontSize="sm"
+                      fontWeight="300"
+                      color="#f1f5f9"
+                      letterSpacing="0.5px"
+                      lineHeight="1.3"
+                      flex={1}
+                      noOfLines={1}
+                      cursor="pointer"
+                      title={selectedNodeData.url}
+                      _hover={{
+                        color: "#00a2ff",
+                        textDecoration: "underline",
+                      }}
+                    >
+                      {selectedNodeData.label}
+                    </Text>
+                  ) : (
+                    <Text
+                      fontSize="sm"
+                      fontWeight="300"
+                      color="#f1f5f9"
+                      letterSpacing="0.5px"
+                      lineHeight="1.3"
+                      flex={1}
+                      noOfLines={1}
+                    >
+                      {selectedNodeData.label}
+                    </Text>
                   )}
+                  {/* Show rating if available */}
+                  {selectedNodeData.rating != null &&
+                    selectedNodeData.rating !== 0 && (
+                      <>
+                        <Box w="1px" h="16px" bg="rgba(0, 162, 255, 0.3)" />
+                        <Text
+                          fontSize="xs"
+                          fontWeight="600"
+                          color={
+                            selectedNodeData.rating > 0 ? "#4ade80" : "#f87171"
+                          }
+                          textShadow={`0 0 8px ${selectedNodeData.rating > 0 ? "rgba(74, 222, 128, 0.6)" : "rgba(248, 113, 113, 0.6)"}`}
+                          whiteSpace="nowrap"
+                        >
+                          ⭐{" "}
+                          {typeof selectedNodeData.rating === "number"
+                            ? selectedNodeData.rating.toFixed(1)
+                            : selectedNodeData.rating}
+                        </Text>
+                      </>
+                    )}
                 </Box>
                 {/* Additional details for references */}
-                {selectedNodeData.type === "reference" && selectedNodeData.url && (
-                  <Text
-                    fontSize="xs"
-                    color="#94a3b8"
-                    noOfLines={1}
-                  >
-                    🔗 {selectedNodeData.url}
-                  </Text>
-                )}
+                {selectedNodeData.type === "reference" &&
+                  selectedNodeData.url && (
+                    <Text fontSize="xs" color="#94a3b8" noOfLines={1}>
+                      🔗 {selectedNodeData.url}
+                    </Text>
+                  )}
               </Box>
             </Box>
           )}
@@ -2987,7 +3258,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               color="#e2e8f0"
               borderRadius="12px"
               p="20px"
-              zIndex={1000}
+              zIndex={99}
               border="1px solid rgba(0, 162, 255, 0.4)"
               boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
               width="200px"
@@ -3113,20 +3384,32 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               size="xs"
               onClick={() => setShowMobileHUD(true)}
               zIndex={1000}
-              bg={colorMode === "dark" ? "rgba(0, 162, 255, 0.1)" : "rgba(248, 250, 252, 0.9)"}
+              bg={
+                colorMode === "dark"
+                  ? "rgba(0, 162, 255, 0.1)"
+                  : "rgba(248, 250, 252, 0.9)"
+              }
               backdropFilter="blur(10px)"
               border="1px solid"
-              borderColor={colorMode === "dark" ? "rgba(0, 162, 255, 0.3)" : "rgba(71, 85, 105, 0.3)"}
+              borderColor={
+                colorMode === "dark"
+                  ? "rgba(0, 162, 255, 0.3)"
+                  : "rgba(71, 85, 105, 0.3)"
+              }
               color={colorMode === "dark" ? "#00a2ff" : "#475569"}
-              _hover={colorMode === "dark" ? {
-                bg: "rgba(0, 162, 255, 0.2)",
-                borderColor: "#00a2ff",
-                boxShadow: "0 0 20px rgba(0, 162, 255, 0.3)",
-              } : {
-                bg: "rgba(241, 245, 249, 1)",
-                borderColor: "#475569",
-                boxShadow: "0 2px 8px rgba(71, 85, 105, 0.2)",
-              }}
+              _hover={
+                colorMode === "dark"
+                  ? {
+                      bg: "rgba(0, 162, 255, 0.2)",
+                      borderColor: "#00a2ff",
+                      boxShadow: "0 0 20px rgba(0, 162, 255, 0.3)",
+                    }
+                  : {
+                      bg: "rgba(241, 245, 249, 1)",
+                      borderColor: "#475569",
+                      boxShadow: "0 2px 8px rgba(71, 85, 105, 0.2)",
+                    }
+              }
             >
               Show Controls
             </Button>
@@ -3139,19 +3422,27 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               position="absolute"
               left="16px"
               top="16px"
-              background={colorMode === "dark"
-                ? "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-                : "linear-gradient(135deg, rgba(100, 116, 139, 0.25) 0%, rgba(148, 163, 184, 0.3) 50%, rgba(71, 85, 105, 0.25) 100%)"}
+              background={
+                colorMode === "dark"
+                  ? "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+                  : "linear-gradient(135deg, rgba(100, 116, 139, 0.25) 0%, rgba(148, 163, 184, 0.3) 50%, rgba(71, 85, 105, 0.25) 100%)"
+              }
               backdropFilter="blur(20px)"
               color={colorMode === "dark" ? "#e2e8f0" : "#1e293b"}
               borderRadius="12px"
               p="20px"
               zIndex={1000}
               border="1px solid"
-              borderColor={colorMode === "dark" ? "rgba(0, 162, 255, 0.4)" : "rgba(71, 85, 105, 0.4)"}
-              boxShadow={colorMode === "dark"
-                ? "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-                : "0 4px 16px rgba(71, 85, 105, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.4)"}
+              borderColor={
+                colorMode === "dark"
+                  ? "rgba(0, 162, 255, 0.4)"
+                  : "rgba(71, 85, 105, 0.4)"
+              }
+              boxShadow={
+                colorMode === "dark"
+                  ? "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+                  : "0 4px 16px rgba(71, 85, 105, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.4)"
+              }
               width="200px"
               sx={{ overflow: "hidden" }}
             >
@@ -3162,9 +3453,11 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 top={0}
                 width="20px"
                 height="100%"
-                background={colorMode === "dark"
-                  ? "linear-gradient(90deg, rgba(0, 162, 255, 0.4) 0%, rgba(0, 162, 255, 0) 100%)"
-                  : "linear-gradient(90deg, rgba(71, 85, 105, 0.3) 0%, rgba(71, 85, 105, 0) 100%)"}
+                background={
+                  colorMode === "dark"
+                    ? "linear-gradient(90deg, rgba(0, 162, 255, 0.4) 0%, rgba(0, 162, 255, 0) 100%)"
+                    : "linear-gradient(90deg, rgba(71, 85, 105, 0.3) 0%, rgba(71, 85, 105, 0) 100%)"
+                }
                 pointerEvents="none"
                 zIndex={1}
               />
@@ -3175,7 +3468,12 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 top="6px"
                 right="6px"
                 color={colorMode === "dark" ? "#00a2ff" : "#475569"}
-                _hover={{ bg: colorMode === "dark" ? "rgba(0, 162, 255, 0.2)" : "rgba(71, 85, 105, 0.15)" }}
+                _hover={{
+                  bg:
+                    colorMode === "dark"
+                      ? "rgba(0, 162, 255, 0.2)"
+                      : "rgba(71, 85, 105, 0.15)",
+                }}
                 zIndex={2}
               />
               <Text
@@ -3185,7 +3483,11 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 letterSpacing="2px"
                 fontWeight="300"
                 color={colorMode === "dark" ? "#00a2ff" : "#475569"}
-                textShadow={colorMode === "dark" ? "0 0 8px rgba(0, 162, 255, 0.6)" : "none"}
+                textShadow={
+                  colorMode === "dark"
+                    ? "0 0 8px rgba(0, 162, 255, 0.6)"
+                    : "none"
+                }
                 position="relative"
                 zIndex={2}
               >
@@ -3222,14 +3524,27 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 </Box>
                 <Box display="flex" alignItems="center" mb={2}>
                   <Box
-                    w="12px"
-                    h="12px"
-                    bg="#f97316"
-                    borderRadius="3px"
+                    w="0"
+                    h="0"
+                    borderTop="5px solid transparent"
+                    borderBottom="5px solid transparent"
+                    borderLeft="8px solid #f59e0b"
                     mr={2}
-                    boxShadow="0 0 8px rgba(249, 115, 22, 0.4)"
+                    filter="drop-shadow(0 0 4px rgba(245, 158, 11, 0.4))"
                   />
-                  <Text fontSize="10px">Claims</Text>
+                  <Text fontSize="10px">Case Claim</Text>
+                </Box>
+                <Box display="flex" alignItems="center" mb={2}>
+                  <Box
+                    w="0"
+                    h="0"
+                    borderTop="5px solid transparent"
+                    borderBottom="5px solid transparent"
+                    borderRight="8px solid #ec4899"
+                    mr={2}
+                    filter="drop-shadow(0 0 4px rgba(236, 72, 153, 0.4))"
+                  />
+                  <Text fontSize="10px">Source Claim</Text>
                 </Box>
                 <Box display="flex" alignItems="center" mb={2}>
                   <Box
@@ -3273,20 +3588,32 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               size="xs"
               onClick={() => setShowLegend(true)}
               zIndex={1000}
-              bg={colorMode === "dark" ? "rgba(0, 162, 255, 0.1)" : "rgba(248, 250, 252, 0.9)"}
+              bg={
+                colorMode === "dark"
+                  ? "rgba(0, 162, 255, 0.1)"
+                  : "rgba(248, 250, 252, 0.9)"
+              }
               backdropFilter="blur(10px)"
               border="1px solid"
-              borderColor={colorMode === "dark" ? "rgba(0, 162, 255, 0.3)" : "rgba(71, 85, 105, 0.3)"}
+              borderColor={
+                colorMode === "dark"
+                  ? "rgba(0, 162, 255, 0.3)"
+                  : "rgba(71, 85, 105, 0.3)"
+              }
               color={colorMode === "dark" ? "#00a2ff" : "#475569"}
-              _hover={colorMode === "dark" ? {
-                bg: "rgba(0, 162, 255, 0.2)",
-                borderColor: "#00a2ff",
-                boxShadow: "0 0 20px rgba(0, 162, 255, 0.3)",
-              } : {
-                bg: "rgba(241, 245, 249, 1)",
-                borderColor: "#475569",
-                boxShadow: "0 2px 8px rgba(71, 85, 105, 0.2)",
-              }}
+              _hover={
+                colorMode === "dark"
+                  ? {
+                      bg: "rgba(0, 162, 255, 0.2)",
+                      borderColor: "#00a2ff",
+                      boxShadow: "0 0 20px rgba(0, 162, 255, 0.3)",
+                    }
+                  : {
+                      bg: "rgba(241, 245, 249, 1)",
+                      borderColor: "#475569",
+                      boxShadow: "0 2px 8px rgba(71, 85, 105, 0.2)",
+                    }
+              }
             >
               Show Legend
             </Button>

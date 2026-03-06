@@ -14,6 +14,11 @@ import {
   DrawerBody,
   useBreakpointValue,
   useColorModeValue,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Button,
 } from "@chakra-ui/react";
 import { Outlet, useLocation, Link as RouterLink } from "react-router-dom";
 import {
@@ -21,11 +26,11 @@ import {
   FiBarChart2,
   FiMenu,
   FiUser,
-  FiAward,
-  FiEdit,
-  FiMail,
-  FiMessageSquare,
   FiVideo,
+  FiDownload,
+  FiGrid,
+  FiTool,
+  FiMessageSquare,
 } from "react-icons/fi";
 import TopicList from "../components/TopicList";
 import TopContributors from "../components/TopContributors";
@@ -70,17 +75,14 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
     if (!selectedTaskId) setRedirect(path);
   };
 
-  const createLink = (label: string, path: string) => (
-    <RouterLink to={path} onClick={handleClick(path)}>
-      <HStack spacing={2} mb={2}>
-        <FiBarChart2 />
-        <Text>{label}</Text>
-      </HStack>
-    </RouterLink>
-  );
-
   return (
     <VStack align="start" spacing={4} w="full">
+      <RouterLink to="/tutorials" onClick={handleClick("/tutorials")}>
+        <HStack spacing={2} mb={2}>
+          <FiVideo />
+          <Text>Tutorial Videos</Text>
+        </HStack>
+      </RouterLink>
       <RouterLink to="/dashboard" onClick={handleClick("/dashboard")}>
         <HStack spacing={2} mb={2}>
           <FiHome />
@@ -90,59 +92,121 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
       <RouterLink to="/tasks" onClick={handleClick("/tasks")}>
         <HStack spacing={2} mb={2}>
           <FiBarChart2 />
-          <Text>Tasks</Text>
+          <Text>Cases</Text>
         </HStack>
       </RouterLink>
-      <RouterLink to="/gamespace" onClick={handleClick("/gamespace")}>
+      <RouterLink to="/extension" onClick={handleClick("/extension")}>
         <HStack spacing={2} mb={2}>
-          <FiHome />
-          <Text>GameSpace</Text>
+          <FiDownload />
+          <Text>Extension</Text>
         </HStack>
       </RouterLink>
-      <RouterLink to="/level" onClick={handleClick("/level")}>
-        <HStack spacing={2} mb={2}>
-          <FiAward />
-          <Text>Level</Text>
-        </HStack>
-      </RouterLink>
-      <RouterLink to="/textpad" onClick={handleClick("/textpad")}>
-        <HStack spacing={2} mb={2}>
-          <FiEdit />
-          <Text>TextPad</Text>
-        </HStack>
-      </RouterLink>
-      <RouterLink to="/chat" onClick={handleClick("/chat")}>
-        <HStack spacing={2} mb={2}>
-          <FiMessageSquare />
-          <Text>Chat</Text>
-        </HStack>
-      </RouterLink>
-      <RouterLink to="/tutorials" onClick={handleClick("/tutorials")}>
-        <HStack spacing={2} mb={2}>
-          <FiVideo />
-          <Text>Tutorials</Text>
-        </HStack>
-      </RouterLink>
-      <RouterLink to="/emailtest" onClick={handleClick("/emailtest")}>
-        <HStack spacing={2} mb={2}>
-          <FiMail />
-          <Text>Email Test</Text>
-        </HStack>
-      </RouterLink>
-      {createLink("Extension", "/extension")}
-      {createLink("Workspace", selectedTaskId ? "/workspace" : "/tasks")}
-      {createLink("Molecule", selectedTaskId ? "/molecule" : "/tasks")}
-      {createLink(
-        "Discussion",
-        selectedTaskId ? `/discussion/${selectedTaskId}` : "/tasks",
-      )}
 
-      <RouterLink to="/game" onClick={handleClick("/game")}>
-        <HStack spacing={2} mb={2}>
-          <FiHome />
-          <Text>Game</Text>
-        </HStack>
-      </RouterLink>
+      {/* Workbench Menu */}
+      <Menu>
+        <MenuButton
+          as={Button}
+          size="sm"
+          variant="ghost"
+          leftIcon={<FiTool />}
+          justifyContent="flex-start"
+          w="full"
+        >
+          Workbench
+        </MenuButton>
+        <MenuList>
+          <MenuItem
+            as={RouterLink}
+            to="/textpad"
+            onClick={handleClick("/textpad")}
+          >
+            TextPad
+          </MenuItem>
+          <MenuItem
+            as={RouterLink}
+            to={selectedTaskId ? "/workspace" : "/tasks"}
+            onClick={handleClick("/workspace")}
+          >
+            Workspace
+          </MenuItem>
+          <MenuItem
+            as={RouterLink}
+            to={selectedTaskId ? "/molecule" : "/tasks"}
+            onClick={handleClick("/molecule")}
+          >
+            Molecule
+          </MenuItem>
+          <MenuItem
+            as={RouterLink}
+            to="/quadrantgrid"
+            onClick={handleClick("/quadrantgrid")}
+          >
+            QuadrantGrid
+          </MenuItem>
+        </MenuList>
+      </Menu>
+
+      {/* Community Menu */}
+      <Menu>
+        <MenuButton
+          as={Button}
+          size="sm"
+          variant="ghost"
+          leftIcon={<FiMessageSquare />}
+          justifyContent="flex-start"
+          w="full"
+        >
+          Community
+        </MenuButton>
+        <MenuList>
+          <MenuItem as={RouterLink} to="/chat" onClick={handleClick("/chat")}>
+            Chat
+          </MenuItem>
+          <MenuItem
+            as={RouterLink}
+            to={selectedTaskId ? `/discussion/${selectedTaskId}` : "/tasks"}
+            onClick={handleClick("/discussion")}
+          >
+            Discussion Board
+          </MenuItem>
+        </MenuList>
+      </Menu>
+
+      {/* Gaming Menu */}
+      <Menu>
+        <MenuButton
+          as={Button}
+          size="sm"
+          variant="ghost"
+          leftIcon={<FiGrid />}
+          justifyContent="flex-start"
+          w="full"
+        >
+          Gaming
+        </MenuButton>
+        <MenuList>
+          <MenuItem as={RouterLink} to="/game" onClick={handleClick("/game")}>
+            Game
+          </MenuItem>
+          <MenuItem
+            as={RouterLink}
+            to="/gamespace"
+            onClick={handleClick("/gamespace")}
+          >
+            GameSpace
+          </MenuItem>
+          <MenuItem as={RouterLink} to="/level" onClick={handleClick("/level")}>
+            Level
+          </MenuItem>
+          <MenuItem
+            as={RouterLink}
+            to="/truefalse"
+            onClick={handleClick("/truefalse")}
+          >
+            TrueFalse Game
+          </MenuItem>
+        </MenuList>
+      </Menu>
 
       <VStack spacing={2} mb={2} align="stretch" w="full">
         <HStack spacing={2} align="center">
@@ -169,11 +233,14 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
 
 const Sidebar: React.FC = () => {
   const sidebarColor = useColorModeValue("gray.700", "white");
-  const sidebarBorderColor = useColorModeValue("rgba(100, 116, 139, 0.25)", "gray.700");
+  const sidebarBorderColor = useColorModeValue(
+    "rgba(100, 116, 139, 0.25)",
+    "gray.700",
+  );
   const brandColor = useColorModeValue("gray.700", "teal.300");
   const sidebarBg = useColorModeValue(
     "radial-gradient(circle at bottom left, rgba(71, 85, 105, 0.3), rgba(148, 163, 184, 0.2))",
-    "transparent"
+    "transparent",
   );
 
   return (
@@ -203,7 +270,7 @@ const Sidebar: React.FC = () => {
       }}
     >
       <Text fontSize="2xl" fontWeight="bold" color={brandColor}>
-        Truthtrollers
+        TruthTrollers
       </Text>
       <SidebarContent />
     </VStack>
@@ -220,10 +287,13 @@ const VisionLayout: React.FC = () => {
   // Color mode values
   const drawerBg = useColorModeValue("rgba(255, 255, 255, 0.95)", "gray.900");
   const drawerColor = useColorModeValue("gray.700", "white");
-  const headerBorderColor = useColorModeValue("rgba(100, 116, 139, 0.25)", "gray.700");
+  const headerBorderColor = useColorModeValue(
+    "rgba(100, 116, 139, 0.25)",
+    "gray.700",
+  );
   const headerBg = useColorModeValue(
     "radial-gradient(circle at bottom left, rgba(71, 85, 105, 0.35), rgba(148, 163, 184, 0.2))",
-    "linear-gradient(to bottom, rgba(2,0,36,0.8), rgba(94,234,212,0.1))"
+    "linear-gradient(to bottom, rgba(2,0,36,0.8), rgba(94,234,212,0.1))",
   );
 
   // Auto-close drawer on route change
@@ -251,7 +321,7 @@ const VisionLayout: React.FC = () => {
       if (demoUser.user_id) {
         const taskStore = useTaskStore.getState();
         taskStore.setViewingUserId(demoUser.user_id);
-        taskStore.setViewScope('user');
+        taskStore.setViewScope("user");
       }
 
       // Remove ?demo=... from URL for aesthetics

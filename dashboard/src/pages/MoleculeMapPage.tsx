@@ -8,15 +8,16 @@ import {
   Center,
   Card,
   CardBody,
-  Button,
   useToast,
   Hide,
   useColorMode,
+  Select,
 } from "@chakra-ui/react";
 import CytoscapeMolecule from "../components/CytoscapeMolecule";
 import MoleculeViewTabs from "../components/MoleculeViewTabs";
 import DisplayModeSwitcher from "../components/DisplayModeSwitcher";
 import { useTaskStore, ViewScope } from "../store/useTaskStore";
+import { ViewerScopeBadge } from "../components/ViewerScopeBadge";
 import { fetchNewGraphDataFromLegacyRoute } from "../services/api";
 import { GraphNode, Link } from "../../../shared/entities/types";
 import UnifiedHeader from "../components/UnifiedHeader";
@@ -260,16 +261,16 @@ const MoleculeMapPage = () => {
       });
     } else {
       // DIM MODE: Add dimming metadata to nodes without filtering them out
-      let nodesWithDimming = graphData.nodes.map((node) => {
+      let nodesWithDimming = graphData.nodes.map((node): GraphNode => {
         // Dim unpinned references if there are any pins configured
         if (node.type === "reference" && activeView.pins.length > 0) {
           const isPinned = pinnedIds.has(node.content_id!);
-          return Object.assign(node, { dimmed: !isPinned });
+          return Object.assign(Object.create(Object.getPrototypeOf(node)), { ...node, dimmed: !isPinned });
         }
         // Dim refClaims that belong to unpinned references
         if (node.type === "refClaim" && activeView.pins.length > 0) {
           const isPinned = pinnedIds.has(node.content_id!);
-          return Object.assign(node, { dimmed: !isPinned });
+          return Object.assign(Object.create(Object.getPrototypeOf(node)), { ...node, dimmed: !isPinned });
         }
         return node;
       });
@@ -608,7 +609,7 @@ const MoleculeMapPage = () => {
   const pinnedIds: Set<number> = activeView
     ? new Set(activeView.pins.filter((p) => p.is_pinned).map((p) => p.reference_content_id).filter((id): id is number => id != null))
     : new Set();
-  const currentDisplayMode = activeView?.display_mode || 'mr_cards';
+  const currentDisplayMode = activeView?.display_mode || 'circles';
 
   console.log("🎨 Current display mode:", currentDisplayMode);
   console.log("🎨 Active view:", activeView);
@@ -631,11 +632,11 @@ const MoleculeMapPage = () => {
         </CardBody>
       </Card>
 
-      {/* Display Mode Switcher, View Filter, and View Controls */}
+      {/* Control Bar */}
       <Box
         mb={4}
         display="flex"
-        gap={6}
+        gap={4}
         alignItems="center"
         justifyContent="space-between"
         p={4}
@@ -649,44 +650,67 @@ const MoleculeMapPage = () => {
         boxShadow={colorMode === "dark"
           ? "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
           : "0 4px 16px rgba(71, 85, 105, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.4)"}
+        position="relative"
+        zIndex={100}
+        flexWrap="wrap"
       >
+        {/* Molecule Label Box */}
+        <Box
+          bg={colorMode === "dark" ? "whiteAlpha.100" : "blackAlpha.50"}
+          px={3}
+          py={2}
+          borderRadius="md"
+          backdropFilter="blur(8px)"
+          border="1px solid"
+          borderColor={colorMode === "dark" ? "whiteAlpha.200" : "blackAlpha.200"}
+        >
+          <Heading size="md">Molecule</Heading>
+        </Box>
+
         <DisplayModeSwitcher
           currentMode={currentDisplayMode}
           onChange={handleDisplayModeChange}
         />
 
-        {/* Show Pinned Only Toggle */}
+        {/* View Filter Dropdown */}
         <Box display="flex" alignItems="center" gap={2}>
           <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"} textTransform="uppercase" letterSpacing="1px" whiteSpace="nowrap">
             View Filter
           </Text>
-          <Button
+          <Select
             size="sm"
-            onClick={() => setShowPinnedOnly(!showPinnedOnly)}
-            colorScheme={showPinnedOnly ? "blue" : "gray"}
-            variant={showPinnedOnly ? "solid" : "outline"}
+            width="150px"
+            value={showPinnedOnly ? "pinned" : "all"}
+            onChange={(e) => setShowPinnedOnly(e.target.value === "pinned")}
+            bg={colorMode === "dark" ? "gray.700" : "white"}
           >
-            {showPinnedOnly ? "📌 Pinned Only" : "👁️ Show All"}
-          </Button>
+            <option value="all">👁️ Show All</option>
+            <option value="pinned">📌 Pinned Only</option>
+          </Select>
         </Box>
 
-        {/* Show Reference Authors Toggle */}
+        {/* Authors Dropdown */}
         <Box display="flex" alignItems="center" gap={2}>
           <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"} textTransform="uppercase" letterSpacing="1px" whiteSpace="nowrap">
             Authors
           </Text>
-          <Button
+          <Select
             size="sm"
-            onClick={() => setShowReferenceAuthors(!showReferenceAuthors)}
-            colorScheme={showReferenceAuthors ? "purple" : "gray"}
-            variant={showReferenceAuthors ? "solid" : "outline"}
+            width="180px"
+            value={showReferenceAuthors ? "all" : "task"}
+            onChange={(e) => setShowReferenceAuthors(e.target.value === "all")}
+            bg={colorMode === "dark" ? "gray.700" : "white"}
           >
-            {showReferenceAuthors ? "👥 All Authors" : "👤 Task Author Only"}
-          </Button>
+            <option value="task">👤 Task Author Only</option>
+            <option value="all">👥 All Authors</option>
+          </Select>
         </Box>
 
-        {/* Molecule View Tabs - Inline */}
-        <Box>
+        {/* Views Dropdown */}
+        <Box display="flex" alignItems="center" gap={2}>
+          <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"} textTransform="uppercase" letterSpacing="1px" whiteSpace="nowrap">
+            Views
+          </Text>
           <MoleculeViewTabs
             views={views}
             activeViewId={activeViewId}
@@ -697,6 +721,9 @@ const MoleculeMapPage = () => {
             onSetDefault={handleSetDefault}
           />
         </Box>
+
+        {/* Viewer Scope Badge */}
+        <ViewerScopeBadge />
       </Box>
 
       {filteredGraphData.nodes.length > 0 ? (

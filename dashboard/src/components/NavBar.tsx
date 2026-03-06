@@ -11,6 +11,7 @@ import {
   MenuList,
   Spacer,
   Button,
+  Text,
   useColorModeValue,
 } from "@chakra-ui/react";
 import { Link as RouterLink } from "react-router-dom";
@@ -80,7 +81,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
               </MenuButton>
               <MenuList>
                 <MenuItem as={RouterLink} to="/tasks">
-                  Tasks
+                  Cases
                 </MenuItem>
                 <MenuItem as={RouterLink} to="/workspace">
                   Workspace
@@ -88,23 +89,8 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 <MenuItem as={RouterLink} to="/molecule">
                   Graph
                 </MenuItem>
-                <MenuItem as={RouterLink} to="/quadrantgrid">
-                  QuadrantGrid
-                </MenuItem>
                 <MenuItem as={RouterLink} to="/textpad">
                   TextPad
-                </MenuItem>
-                <MenuItem as={RouterLink} to="/chat">
-                  Chat
-                </MenuItem>
-                <MenuItem as={RouterLink} to="/level">
-                  Level
-                </MenuItem>
-                <MenuItem as={RouterLink} to="/game">
-                  Game
-                </MenuItem>
-                <MenuItem as={RouterLink} to="/gamespace">
-                  GameSpace
                 </MenuItem>
                 <MenuItem
                   as={RouterLink}
@@ -127,84 +113,97 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
           {/* Full Navigation Menu */}
           <Box as="nav" p={3} color={navColor}>
             <HStack spacing={6} wrap="wrap">
-              <Link as={RouterLink} to="/extension">
-                Extension
+              <Link as={RouterLink} to="/tutorials">
+                Tutorial Videos
               </Link>
-              <Link as={RouterLink} to="/tasks">
-                Tasks
-              </Link>
-
               <Link as={RouterLink} to="/dashboard">
                 Dashboard
               </Link>
-
-              <Link
-                as={RouterLink}
-                to="/workspace"
-                onClick={() => handleNavClick("/workspace")}
-              >
-                Workspace
+              <Link as={RouterLink} to="/tasks">
+                Cases
               </Link>
-
-              <Link
-                as={RouterLink}
-                to="/molecule"
-                onClick={() => handleNavClick("/molecule")}
-              >
-                Molecule
+              <Link as={RouterLink} to="/extension">
+                Extension
               </Link>
-
-              <Link
-                as={RouterLink}
-                to="/quadrantgrid"
-                onClick={() => handleNavClick("/quadrantgrid")}
-              >
-                QuadrantGrid
-              </Link>
-
-              <Link
-                as={RouterLink}
-                to={selectedTaskId ? `/discussion/${selectedTaskId}` : "/tasks"}
-                onClick={() => handleNavClick("/discussion")}
-              >
-                Discussion
-              </Link>
-              <Link
-                as={RouterLink}
-                to="/textpad"
-                onClick={() => handleNavClick("/textpad")}
-              >
-                TextPad
-              </Link>
-              <Link
-                as={RouterLink}
-                to="/chat"
-                onClick={() => handleNavClick("/chat")}
-              >
-                Chat
-              </Link>
-              <Link
-                as={RouterLink}
-                to="/level"
-                onClick={() => handleNavClick("/level")}
-              >
-                Level
-              </Link>
-              <Link
-                as={RouterLink}
-                to="/game"
-                onClick={() => handleNavClick("/game")}
-              >
-                Game
-              </Link>
-              <Link
-                as={RouterLink}
-                to="/gamespace"
-                onClick={() => handleNavClick("/gamespace")}
-              >
-                GameSpace
-              </Link>
-              <AccountMenu />
+              <Menu>
+                <MenuButton as={Button} size="sm" variant="ghost">
+                  Workbench
+                </MenuButton>
+                <MenuList>
+                  <MenuItem
+                    as={RouterLink}
+                    to="/textpad"
+                    onClick={() => handleNavClick("/textpad")}
+                  >
+                    TextPad
+                  </MenuItem>
+                  <MenuItem
+                    as={RouterLink}
+                    to="/workspace"
+                    onClick={() => handleNavClick("/workspace")}
+                  >
+                    Workspace
+                  </MenuItem>
+                  <MenuItem
+                    as={RouterLink}
+                    to="/molecule"
+                    onClick={() => handleNavClick("/molecule")}
+                  >
+                    Molecule
+                  </MenuItem>
+                  <MenuItem
+                    as={RouterLink}
+                    to="/quadrantgrid"
+                    onClick={() => handleNavClick("/quadrantgrid")}
+                  >
+                    QuadrantGrid
+                  </MenuItem>
+                </MenuList>
+              </Menu>
+              <Menu>
+                <MenuButton as={Button} size="sm" variant="ghost">
+                  Community
+                </MenuButton>
+                <MenuList>
+                  <MenuItem
+                    as={RouterLink}
+                    to="/chat"
+                    onClick={() => handleNavClick("/chat")}
+                  >
+                    Chat
+                  </MenuItem>
+                  <MenuItem
+                    as={RouterLink}
+                    to={selectedTaskId ? `/discussion/${selectedTaskId}` : "/tasks"}
+                    onClick={() => handleNavClick("/discussion")}
+                  >
+                    Discussion Board
+                  </MenuItem>
+                </MenuList>
+              </Menu>
+              <Menu>
+                <MenuButton as={Button} size="sm" variant="ghost">
+                  Gaming
+                </MenuButton>
+                <MenuList>
+                  <MenuItem as={RouterLink} to="/game">
+                    Game
+                  </MenuItem>
+                  <MenuItem as={RouterLink} to="/gamespace">
+                    GameSpace
+                  </MenuItem>
+                  <MenuItem as={RouterLink} to="/level">
+                    Level
+                  </MenuItem>
+                  <MenuItem as={RouterLink} to="/truefalse">
+                    TrueFalse Game
+                  </MenuItem>
+                </MenuList>
+              </Menu>
+              <HStack spacing={2}>
+                <AccountMenu />
+                <Text>Account</Text>
+              </HStack>
             </HStack>
           </Box>
 
@@ -233,7 +232,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 <MenuButton as={Button}>View</MenuButton>
                 <MenuList>
                   <MenuItem as={RouterLink} to="/tasks">
-                    Tasks
+                    Cases
                   </MenuItem>
                   <MenuItem as={RouterLink} to="/workspace">
                     Workspace
@@ -241,23 +240,8 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   <MenuItem as={RouterLink} to="/molecule">
                     Molecule
                   </MenuItem>
-                  <MenuItem as={RouterLink} to="/quadrantgrid">
-                    QuadrantGrid
-                  </MenuItem>
                   <MenuItem as={RouterLink} to="/textpad">
                     TextPad
-                  </MenuItem>
-                  <MenuItem as={RouterLink} to="/chat">
-                    Chat
-                  </MenuItem>
-                  <MenuItem as={RouterLink} to="/level">
-                    Level
-                  </MenuItem>
-                  <MenuItem as={RouterLink} to="/game">
-                    Game
-                  </MenuItem>
-                  <MenuItem as={RouterLink} to="/gamespace">
-                    GameSpace
                   </MenuItem>
                   <MenuItem
                     as={RouterLink}

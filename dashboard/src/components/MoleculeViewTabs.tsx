@@ -5,7 +5,6 @@ import {
   Button,
   IconButton,
   Input,
-  HStack,
   useToast,
   Menu,
   MenuButton,
@@ -152,86 +151,90 @@ const MoleculeViewTabs: React.FC<MoleculeViewTabsProps> = ({
 
   return (
     <Box>
-      <HStack spacing={2}>
-        {/* View Selector Menu */}
-        <Menu>
-          <MenuButton
-            as={Button}
-            size="sm"
-            variant="outline"
-            colorScheme="blue"
-            rightIcon={<span>▼</span>}
-          >
-            {activeView?.name || "Select View"}
-            {activeView?.is_default && " ⭐"}
-          </MenuButton>
-          <MenuList
-            bg={colorMode === "dark" ? "gray.800" : "white"}
-            borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"}
-            zIndex={2500}
-          >
-            {views.map((view) => (
-              <MenuItem
-                key={view.id}
-                onClick={() => onViewChange(view.id)}
-                bg={view.id === activeViewId ? (colorMode === "dark" ? "rgba(0, 162, 255, 0.2)" : "rgba(71, 85, 105, 0.1)") : undefined}
-                fontWeight={view.id === activeViewId ? "bold" : "normal"}
-              >
+      {/* Consolidated View Selector Menu */}
+      <Menu>
+        <MenuButton
+          as={Button}
+          size="sm"
+          variant="outline"
+          colorScheme="blue"
+          rightIcon={<span>▼</span>}
+        >
+          {activeView?.name || "Select View"}
+          {activeView?.is_default && " ⭐"}
+        </MenuButton>
+        <MenuList
+          bg={colorMode === "dark" ? "gray.800" : "white"}
+          borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"}
+          zIndex={2500}
+        >
+          {views.map((view) => (
+            <MenuItem
+              key={view.id}
+              onClick={() => onViewChange(view.id)}
+              bg={view.id === activeViewId ? (colorMode === "dark" ? "rgba(0, 162, 255, 0.2)" : "rgba(71, 85, 105, 0.1)") : undefined}
+              fontWeight={view.id === activeViewId ? "bold" : "normal"}
+              display="flex"
+              justifyContent="space-between"
+            >
+              <span>
                 {view.name}
                 {view.is_default && " ⭐"}
-              </MenuItem>
-            ))}
-          </MenuList>
-        </Menu>
+              </span>
+              {/* Settings submenu for each view */}
+              <Menu>
+                <MenuButton
+                  as={IconButton}
+                  icon={<SettingsIcon />}
+                  size="xs"
+                  variant="ghost"
+                  aria-label="View settings"
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent view selection when clicking gear
+                  }}
+                />
+                <MenuList
+                  bg={colorMode === "dark" ? "gray.800" : "white"}
+                  borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"}
+                  zIndex={2600}
+                >
+                  <MenuItem icon={<EditIcon />} onClick={() => openEditModal(view)}>
+                    Rename View
+                  </MenuItem>
+                  <MenuItem
+                    icon={<span>⭐</span>}
+                    onClick={() => onSetDefault(view.id)}
+                    isDisabled={view.is_default}
+                  >
+                    Set as Default
+                  </MenuItem>
+                  <MenuItem
+                    icon={<DeleteIcon />}
+                    onClick={() => handleDeleteView(view.id)}
+                    color="red.500"
+                    isDisabled={views.length <= 1}
+                  >
+                    Delete View
+                  </MenuItem>
+                </MenuList>
+              </Menu>
+            </MenuItem>
+          ))}
 
-        {/* New View Button */}
-        <Button
-          size="sm"
-          leftIcon={<AddIcon />}
-          onClick={onCreateOpen}
-          colorScheme="blue"
-          variant="ghost"
-        >
-          New View
-        </Button>
-
-        {/* Settings Menu */}
-        {activeView && (
-          <Menu>
-            <MenuButton
-              as={IconButton}
-              icon={<SettingsIcon />}
-              size="sm"
-              variant="ghost"
-              aria-label="View options"
-            />
-            <MenuList
-              bg={colorMode === "dark" ? "gray.800" : "white"}
-              borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"}
-              zIndex={2500}
-            >
-              <MenuItem icon={<EditIcon />} onClick={() => openEditModal(activeView)}>
-                Rename View
-              </MenuItem>
-              <MenuItem
-                icon={<span>⭐</span>}
-                onClick={() => onSetDefault(activeView.id)}
-                isDisabled={activeView.is_default}
-              >
-                Set as Default
-              </MenuItem>
-              <MenuItem
-                icon={<DeleteIcon />}
-                onClick={() => handleDeleteView(activeView.id)}
-                color="red.500"
-                isDisabled={views.length <= 1}
-              >
-                Delete View
-              </MenuItem>
-            </MenuList>
-          </Menu>
-        )}
-      </HStack>
+          {/* Add New View Option */}
+          <MenuItem
+            icon={<AddIcon />}
+            onClick={onCreateOpen}
+            borderTop="1px solid"
+            borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"}
+            mt={1}
+            pt={2}
+            fontWeight="semibold"
+          >
+            + New View
+          </MenuItem>
+        </MenuList>
+      </Menu>
 
       {/* Create View Modal */}
       <Modal isOpen={isCreateOpen} onClose={onCreateClose}>

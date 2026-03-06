@@ -121,7 +121,7 @@ const ProgressCard: React.FC<ProgressCardProps> = ({
 
       <Center mb={2}>
         <Text className="mr-badge mr-badge-purple" fontSize="sm">
-          Claim Statistics
+          Case Statistics
         </Text>
       </Center>
 

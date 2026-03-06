@@ -106,19 +106,19 @@ export const ViewerScopeBadge: React.FC<ViewerScopeBadgeProps> = ({
     <>
       <Flex
         align="center"
-        gap={2}
+        gap={1.5}
         bg={colorMode === "dark" ? "whiteAlpha.100" : "blackAlpha.50"}
-        px={3}
+        px={2.5}
         py={2}
         borderRadius="md"
         backdropFilter="blur(8px)"
         border="1px solid"
         borderColor={colorMode === "dark" ? "whiteAlpha.200" : "blackAlpha.200"}
         position="relative"
-        zIndex={100}
+        zIndex={1000}
       >
-        <Icon as={getScopeIcon()} boxSize={4} color={colorMode === "dark" ? `${getScopeColor()}.400` : `${getScopeColor()}.600`} />
-        <Text fontSize="sm" fontWeight="medium" color={colorMode === "dark" ? "whiteAlpha.900" : "gray.700"}>
+        <Icon as={getScopeIcon()} boxSize={3.5} color={colorMode === "dark" ? `${getScopeColor()}.400` : `${getScopeColor()}.600`} />
+        <Text fontSize="xs" fontWeight="medium" color={colorMode === "dark" ? "whiteAlpha.900" : "gray.700"}>
           {viewScope === 'user' ? 'Viewing as:' : 'Viewing:'}
         </Text>
         <Menu>
@@ -129,10 +129,12 @@ export const ViewerScopeBadge: React.FC<ViewerScopeBadgeProps> = ({
             variant="ghost"
             colorScheme={getScopeColor()}
             _hover={{ bg: colorMode === "dark" ? `${getScopeColor()}.700` : `${getScopeColor()}.100` }}
+            fontSize="xs"
+            px={2}
           >
             {getScopeLabel()}
           </MenuButton>
-          <MenuList bg={colorMode === "dark" ? "gray.800" : "white"} borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"} zIndex={10001}>
+          <MenuList bg={colorMode === "dark" ? "gray.800" : "white"} borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"} zIndex={99999}>
             <MenuItem
               icon={<Icon as={FiUser} />}
               onClick={() => handleScopeChange('user')}

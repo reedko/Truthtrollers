@@ -7,10 +7,14 @@ import {
   Heading,
   Spinner,
   Center,
+  Select,
+  Text,
+  useColorMode,
 } from "@chakra-ui/react";
 import Workspace from "../components/Workspace";
 import UnifiedHeader from "../components/UnifiedHeader";
 import { useTaskStore, ViewScope } from "../store/useTaskStore";
+import { ViewerScopeBadge } from "../components/ViewerScopeBadge";
 import {
   updateScoresForContent,
   fetchContentScores,
@@ -21,7 +25,9 @@ const WorkspacePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [verimeterScore, setVerimeterScore] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [linkFilter, setLinkFilter] = useState<'all' | 'user' | 'ai'>('all');
   const navigate = useNavigate();
+  const { colorMode } = useColorMode();
   const taskId = useTaskStore((s) => s.selectedTaskId);
   const task = useTaskStore((s) => s.selectedTask);
   const setSelectedTask = useTaskStore((s) => s.setSelectedTask);
@@ -147,8 +153,64 @@ const WorkspacePage = () => {
             <UnifiedHeader refreshKey={refreshKey} />
           </CardBody>
         </Card>
-        <Heading mb={4}>Workspace</Heading>
-        <Workspace contentId={taskId} viewerId={viewerId} />
+
+        {/* Control Bar */}
+        <Box
+          mb={4}
+          display="flex"
+          gap={6}
+          alignItems="center"
+          justifyContent="space-between"
+          p={4}
+          borderRadius="12px"
+          bg={colorMode === "dark"
+            ? "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+            : "linear-gradient(135deg, rgba(100, 116, 139, 0.25) 0%, rgba(148, 163, 184, 0.3) 50%, rgba(71, 85, 105, 0.25) 100%)"}
+          backdropFilter="blur(20px)"
+          border="1px solid"
+          borderColor={colorMode === "dark" ? "rgba(0, 162, 255, 0.4)" : "rgba(71, 85, 105, 0.4)"}
+          boxShadow={colorMode === "dark"
+            ? "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+            : "0 4px 16px rgba(71, 85, 105, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.4)"}
+          position="relative"
+          zIndex={100}
+        >
+          {/* Workspace Label Box */}
+          <Box
+            bg={colorMode === "dark" ? "whiteAlpha.100" : "blackAlpha.50"}
+            px={3}
+            py={2}
+            borderRadius="md"
+            backdropFilter="blur(8px)"
+            border="1px solid"
+            borderColor={colorMode === "dark" ? "whiteAlpha.200" : "blackAlpha.200"}
+          >
+            <Heading size="md">Workspace</Heading>
+          </Box>
+
+          {/* Link Filter */}
+          <Box display="flex" alignItems="center" gap={2}>
+            <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"} textTransform="uppercase" letterSpacing="1px" whiteSpace="nowrap">
+              Link Filter
+            </Text>
+            <Select
+              size="sm"
+              width="150px"
+              value={linkFilter}
+              onChange={(e) => setLinkFilter(e.target.value as 'all' | 'user' | 'ai')}
+              bg={colorMode === "dark" ? "gray.700" : "white"}
+            >
+              <option value="all">All Links</option>
+              <option value="user">User Links</option>
+              <option value="ai">AI Links</option>
+            </Select>
+          </Box>
+
+          {/* Viewer Scope Badge */}
+          <ViewerScopeBadge />
+        </Box>
+
+        <Workspace contentId={taskId} viewerId={viewerId} linkFilter={linkFilter} />
       </Box>
     </Box>
   );

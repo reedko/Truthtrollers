@@ -1,11 +1,9 @@
 // Display mode switcher for molecule visualization
 import React from "react";
 import {
-  ButtonGroup,
-  Button,
-  Tooltip,
   Box,
   Text,
+  Select,
   useColorMode,
 } from "@chakra-ui/react";
 import type { DisplayMode } from "../services/moleculeViewsAPI";
@@ -22,24 +20,21 @@ const DisplayModeSwitcher: React.FC<DisplayModeSwitcherProps> = ({
   const { colorMode } = useColorMode();
   console.log("🎛️ DisplayModeSwitcher render with currentMode:", currentMode);
 
-  const modes: Array<{ value: DisplayMode; label: string; icon: string; description: string }> = [
+  const modes: Array<{ value: DisplayMode; label: string; icon: string }> = [
     {
       value: "circles",
-      label: "Circles",
+      label: "⚪ Circles",
       icon: "⚪",
-      description: "Simple circles - clean and organized",
     },
     {
       value: "compact",
-      label: "Compact",
+      label: "📊 Compact",
       icon: "📊",
-      description: "Compact cards with key metrics",
     },
     {
       value: "mr_cards",
-      label: "Detailed",
+      label: "🎴 Detailed",
       icon: "🎴",
-      description: "Full Minority Report style cards",
     },
   ];
 
@@ -54,31 +49,22 @@ const DisplayModeSwitcher: React.FC<DisplayModeSwitcherProps> = ({
       >
         Display Mode
       </Text>
-      <ButtonGroup size="sm" isAttached variant="outline">
+      <Select
+        size="sm"
+        width="150px"
+        value={currentMode}
+        onChange={(e) => {
+          console.log("🎛️ Mode dropdown changed:", e.target.value);
+          onChange(e.target.value as DisplayMode);
+        }}
+        bg={colorMode === "dark" ? "gray.700" : "white"}
+      >
         {modes.map((mode) => (
-          <Tooltip key={mode.value} label={mode.description} placement="top">
-            <Button
-              onClick={() => {
-                console.log("🎛️ Mode button clicked:", mode.value);
-                onChange(mode.value);
-              }}
-              isActive={currentMode === mode.value}
-              _active={colorMode === "dark" ? {
-                bg: "rgba(0, 162, 255, 0.2)",
-                borderColor: "#00a2ff",
-                color: "#00a2ff",
-              } : {
-                bg: "rgba(71, 85, 105, 0.15)",
-                borderColor: "#475569",
-                color: "#475569",
-              }}
-            >
-              <span style={{ marginRight: "6px" }}>{mode.icon}</span>
-              {mode.label}
-            </Button>
-          </Tooltip>
+          <option key={mode.value} value={mode.value}>
+            {mode.label}
+          </option>
         ))}
-      </ButtonGroup>
+      </Select>
     </Box>
   );
 };

@@ -15,6 +15,28 @@ const GraphLegend = () => {
     />
   );
 
+  const triangleLeft = (color: string) => (
+    <Box
+      w="0"
+      h="0"
+      borderTop="5px solid transparent"
+      borderBottom="5px solid transparent"
+      borderLeft={`8px solid ${color}`}
+      filter={`drop-shadow(0 0 2px ${color})`}
+    />
+  );
+
+  const triangleRight = (color: string) => (
+    <Box
+      w="0"
+      h="0"
+      borderTop="5px solid transparent"
+      borderBottom="5px solid transparent"
+      borderRight={`8px solid ${color}`}
+      filter={`drop-shadow(0 0 2px ${color})`}
+    />
+  );
+
   const colorLine = (color: string) => (
     <Box
       height="4px"
@@ -62,10 +84,10 @@ const GraphLegend = () => {
             {colorCircle("#00b894")} <Text color={colorMode === "dark" ? "gray.200" : "gray.700"}>Source</Text>
           </HStack>
           <HStack>
-            {colorCircle("#f59e0b", true)} <Text color={colorMode === "dark" ? "gray.200" : "gray.700"} fontSize="xs">Case Claim</Text>
+            {triangleLeft("#f59e0b")} <Text color={colorMode === "dark" ? "gray.200" : "gray.700"} fontSize="xs">Case Claim</Text>
           </HStack>
           <HStack>
-            {colorCircle("#ec4899", true)} <Text color={colorMode === "dark" ? "gray.200" : "gray.700"} fontSize="xs">Source Claim</Text>
+            {triangleRight("#ec4899")} <Text color={colorMode === "dark" ? "gray.200" : "gray.700"} fontSize="xs">Source Claim</Text>
           </HStack>
         </Box>
 

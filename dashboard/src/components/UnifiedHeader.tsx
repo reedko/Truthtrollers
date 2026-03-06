@@ -35,7 +35,6 @@ import {
   fetchReferencesForTask,
 } from "../services/useDashboardAPI";
 import MicroHeaderRail from "./headers/MicroHeaderRail";
-import { ViewerScopeBadge } from "./ViewerScopeBadge";
 
 type Variant = "full" | "compact" | "micro"; // ⬅️ reintroduce micro
 
@@ -525,16 +524,13 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
           {/* NEW: Case Header Banner */}
           <Box mb={4}>
-            {/* Case Name with Viewer Badge on same row */}
-            <Box position="relative" mb={2}>
+            {/* Case Name */}
+            <Box mb={2}>
               <Flex justify="center" align="center">
                 <Text fontSize="xl" fontWeight="semibold">
                   {pivotTask?.content_name || "Untitled Case"}
                 </Text>
               </Flex>
-              <Box position="absolute" right={0} top={0}>
-                <ViewerScopeBadge />
-              </Box>
             </Box>
 
             {/* Verimeter Score with Verdict - Centered */}

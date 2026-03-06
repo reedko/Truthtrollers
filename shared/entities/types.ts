@@ -283,6 +283,8 @@ export class GraphNode implements d3.SimulationNodeDatum {
   // Phase 6: Provenance tracking
   added_by_user_id?: number | null;
   is_system?: boolean;
+  // Visual state for molecule view
+  dimmed?: boolean;
 
   /*
 

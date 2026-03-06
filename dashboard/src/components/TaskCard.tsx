@@ -71,8 +71,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   // Debug: Log user role
   useEffect(() => {
-    console.log('[TaskCard] Current user:', user);
-    console.log('[TaskCard] User role:', user?.role);
+    console.log("[TaskCard] Current user:", user);
+    console.log("[TaskCard] User role:", user?.role);
   }, [user]);
 
   const {
@@ -251,13 +251,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
     const confirmDelete = window.confirm(
       `⚠️ WARNING: This will permanently delete "${activeTask.content_name}" and ALL related data:\n\n` +
-      `• All claims\n` +
-      `• All claim links\n` +
-      `• All references\n` +
-      `• All ratings\n` +
-      `• All scores\n\n` +
-      `This action CANNOT be undone!\n\n` +
-      `Are you absolutely sure?`
+        `• All claims\n` +
+        `• All claim links\n` +
+        `• All references\n` +
+        `• All ratings\n` +
+        `• All scores\n\n` +
+        `This action CANNOT be undone!\n\n` +
+        `Are you absolutely sure?`,
     );
 
     if (!confirmDelete) {
@@ -265,7 +265,9 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
 
     try {
-      const response = await api.delete(`/api/delete-content/${activeTask.content_id}`);
+      const response = await api.delete(
+        `/api/delete-content/${activeTask.content_id}`,
+      );
 
       toast({
         title: "Task Deleted",
@@ -285,21 +287,21 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
       // If already on tasks page, reload to refresh the list
       // Otherwise navigate to tasks page
-      if (location.pathname === '/tasks') {
+      if (location.pathname === "/tasks") {
         window.location.reload();
       } else {
-        navigate('/tasks');
+        navigate("/tasks");
       }
 
       // Navigate away if we're on a detail page for this task
       const selectedTask = useTaskStore.getState().selectedTask;
       if (selectedTask?.content_id === activeTask.content_id) {
-        navigate('/');
+        navigate("/");
       }
-
     } catch (error: any) {
       console.error("[DELETE TASK] Error:", error);
-      const errorMessage = error.response?.data?.error || error.message || "An error occurred";
+      const errorMessage =
+        error.response?.data?.error || error.message || "An error occurred";
       toast({
         title: "Error deleting task",
         description: errorMessage,
@@ -448,12 +450,8 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
         {/* Title bar */}
         <Center>
-          <Text
-            className="mr-badge mr-badge-blue"
-            fontSize="sm"
-            mb={1}
-          >
-            Content Details
+          <Text className="mr-badge mr-badge-blue" fontSize="sm" mb={1}>
+            Case Details
           </Text>
         </Center>
 
@@ -494,13 +492,19 @@ const TaskCard: React.FC<TaskCardProps> = ({
               alignItems="center"
               justifyContent="center"
               px={2}
-              cursor={activeTask.media_source === "TextPad" ? "pointer" : "default"}
+              cursor={
+                activeTask.media_source === "TextPad" ? "pointer" : "default"
+              }
               onClick={() => {
                 if (activeTask.media_source === "TextPad") {
                   navigate(`/textpad?contentId=${activeTask.content_id}`);
                 }
               }}
-              _hover={activeTask.media_source === "TextPad" ? { bg: "whiteAlpha.800" } : {}}
+              _hover={
+                activeTask.media_source === "TextPad"
+                  ? { bg: "whiteAlpha.800" }
+                  : {}
+              }
             >
               <Text
                 fontWeight="semibold"
@@ -512,7 +516,11 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 {activeTask.media_source === "TextPad" ? (
                   activeTask.content_name
                 ) : (
-                  <a href={activeTask.url} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={activeTask.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     {activeTask.content_name}
                   </a>
                 )}
@@ -623,12 +631,22 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       noOfLines={1}
                       _hover={{ color: "blue.300" }}
                     >
-                      {authors[0].author_first_name} {authors[0].author_last_name}
+                      {authors[0].author_first_name}{" "}
+                      {authors[0].author_last_name}
                       {authors.length > 1 && ` +${authors.length - 1}`}
                     </MenuButton>
-                    <MenuList bg="gray.800" borderColor="blue.500" maxH="200px" overflowY="auto">
+                    <MenuList
+                      bg="gray.800"
+                      borderColor="blue.500"
+                      maxH="200px"
+                      overflowY="auto"
+                    >
                       {authors.map((a, idx) => (
-                        <MenuItem key={idx} bg="gray.800" _hover={{ bg: "gray.700" }}>
+                        <MenuItem
+                          key={idx}
+                          bg="gray.800"
+                          _hover={{ bg: "gray.700" }}
+                        >
                           {a.author_first_name} {a.author_last_name}
                           {a.author_title && ` - ${a.author_title}`}
                         </MenuItem>
@@ -657,9 +675,18 @@ const TaskCard: React.FC<TaskCardProps> = ({
                       {publishers[0].publisher_name}
                       {publishers.length > 1 && ` +${publishers.length - 1}`}
                     </MenuButton>
-                    <MenuList bg="gray.800" borderColor="blue.500" maxH="200px" overflowY="auto">
+                    <MenuList
+                      bg="gray.800"
+                      borderColor="blue.500"
+                      maxH="200px"
+                      overflowY="auto"
+                    >
                       {publishers.map((p, idx) => (
-                        <MenuItem key={idx} bg="gray.800" _hover={{ bg: "gray.700" }}>
+                        <MenuItem
+                          key={idx}
+                          bg="gray.800"
+                          _hover={{ bg: "gray.700" }}
+                        >
                           {p.publisher_name}
                         </MenuItem>
                       ))}
@@ -753,7 +780,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                     Open in TextPad
                   </MenuItem>
                 )}
-                {user?.role === 'super_admin' && (
+                {user?.role === "super_admin" && (
                   <MenuItem
                     onClick={handleDeleteTask}
                     icon={<span>🗑️</span>}

@@ -26,12 +26,23 @@ const TOUR_ACTIVE_KEY = "tt_tour_active";
 // ─── Tour step definitions ─────────────────────────────────────────────────────
 interface TourStep {
   page: string;
-  target?: string;       // CSS selector to highlight + point to
+  target?: string; // CSS selector to highlight + point to
   title: string;
   content: string;
   primaryLabel: string;
   secondaryLabel?: string;
-  specialAction?: "navigate-textpad" | "paste-title" | "paste-text" | "wait-for-submit" | "wait-for-ref-modal" | "wait-for-link-overlay" | "wait-for-task-assignment" | "branch-full-tutorial" | "branch-extension" | "navigate-extension-page" | "end";
+  specialAction?:
+    | "navigate-textpad"
+    | "paste-title"
+    | "paste-text"
+    | "wait-for-submit"
+    | "wait-for-ref-modal"
+    | "wait-for-link-overlay"
+    | "wait-for-task-assignment"
+    | "branch-full-tutorial"
+    | "branch-extension"
+    | "navigate-extension-page"
+    | "end";
 }
 
 const STEPS: TourStep[] = [
@@ -132,12 +143,12 @@ const STEPS: TourStep[] = [
     target: ".assigned-tasks-section",
     title: "Your Assigned Content",
     content:
-      "These are the articles, statements, and posts you've been assigned to evaluate. It's empty right now — but let's fix that! We'll grab your first task from the platform.",
-    primaryLabel: "Let's get a task! →",
+      "These are the articles, statements, and posts you've been assigned to evaluate. It's empty right now — but let's fix that! We'll grab your first case from the platform.",
+    primaryLabel: "Let's get a case! →",
   },
   {
     page: "tasks",
-    title: "The Tasks Page 📋",
+    title: "The Cases Page 📋",
     content:
       "This is where all available content lives. You can browse articles, statements, and posts that need fact-checking. Let's assign one to yourself so you have something to work with!",
     primaryLabel: "Got it →",
@@ -147,31 +158,31 @@ const STEPS: TourStep[] = [
     target: ".mr-card",
     title: "Case Cards",
     content:
-      "Each card shows a piece of content that needs evaluation. You can see:\n• The title and source\n• When it was submitted\n• Current veracity score (if available)\n\nClick on any case card to assign it to yourself!",
+      "Each card shows a piece of content that needs evaluation. You can see:\n• The title and source\n• When it was submitted\n• Current veracity score (if available)\n\nClick SELECT on any case card to assign it to yourself!",
     primaryLabel: "I'll pick one →",
     specialAction: "wait-for-task-assignment",
   },
   {
     page: "dashboard",
     target: ".assigned-tasks-section",
-    title: "Task Assigned! 🎉",
+    title: "Case Assigned! 🎉",
     content:
-      "Great! Now you have a task in your Assigned Content section. This is where you'll find all the content you're actively working on. You can switch between Workspace, GameSpace, or Molecule to evaluate it.",
+      "Great! Now you have a case in your Assigned Content section. This is where you'll find all the content you're actively working on. You can access Workspace and Molecule from the Workbench menu to evaluate it.",
     primaryLabel: "Next →",
   },
   {
     page: "dashboard",
     target: ".other-tasks-section",
-    title: "Other Tasks",
+    title: "Other Activities",
     content:
-      "Beyond rating content you can also: rate authors and publishers for credibility, evaluate other users' rating quality, verify specific claims, and browse all available tasks on the platform.",
+      "Beyond rating content you can also: rate authors and publishers for credibility, evaluate other users' rating quality, verify specific claims, and browse all available cases on the platform.",
     primaryLabel: "Next →",
   },
   {
     page: "dashboard",
     title: "Let's Try It Out! 🚀",
     content:
-      "The best way to learn is by doing. Let's submit some text to the evidence engine using a real example — a claim about Minnesota protesters. Click below to head to TextPad.",
+      "The best way to learn is by doing. Let's submit some text to the evidence engine using a real example — a claim about Minnesota protesters. Click below to head to TextPad (found in the Workbench menu).",
     primaryLabel: "Go to TextPad →",
     secondaryLabel: "Skip tour",
     specialAction: "navigate-textpad",
@@ -212,7 +223,7 @@ const STEPS: TourStep[] = [
     target: ".textpad-evaluate-button",
     title: "Analysis Complete! 🎉",
     content:
-      "Your text has been analyzed! Now click the \"Evaluate in Workspace\" button to start reviewing the claims and evidence.",
+      'Your text has been analyzed! Now click the "Evaluate in Workspace" button to start reviewing the claims and evidence.',
     primaryLabel: "Got it →",
   },
 
@@ -222,22 +233,22 @@ const STEPS: TourStep[] = [
     target: ".workspace-header",
     title: "You're in the Workspace! 💪",
     content:
-      "This is where evidence meets claims. Three columns work together:\n\n• Left — Task Claims extracted from your text\n• Center — Relationship Map (connections between claims)\n• Right — Sources (evidence sources)\n\nLet's walk through the new workflow.",
+      "This is where evidence meets claims. Three columns work together:\n\n• Left — Case Claims extracted from your text\n• Center — Relationship Map (connections between claims)\n• Right — Sources (evidence sources)\n\nLet's walk through the new workflow.",
     primaryLabel: "Show me →",
   },
   {
     page: "workspace",
     target: ".workspace-claims",
-    title: "Task Claims — Left Column",
+    title: "Case Claims — Left Column",
     content:
       "These are the factual claims the AI extracted from your text.\n\nEach claim card has quick actions:\n• ✏️ Edit the claim text\n• 🔍 Verify claim externally\n• 🗑️ Delete the claim\n\n👉 Click the BIG BUTTON with the claim text to open the claim panel!",
     primaryLabel: "Next →",
   },
   {
     page: "workspace",
-    title: "Task Claim Panel — The Hub 🎯",
+    title: "Case Claim Panel — The Hub 🎯",
     content:
-      "When you click a task claim button, a panel opens showing:\n\n• The claim text at the top\n• Verified links (solid lines) — human-verified connections\n• AI suggested links (dotted lines) — need human verification\n• Quick Scan — search existing AI sources for relevant claims\n• Deep Scan — search ALL sources for relevant claims\n\nLet's understand the difference between dotted and solid lines...",
+      "When you click a case claim button, a panel opens showing:\n\n• The claim text at the top\n• Verified links (solid lines) — human-verified connections\n• AI suggested links (dotted lines) — need human verification\n• Quick Scan — search existing AI sources for relevant claims\n• Deep Scan — search ALL sources for relevant claims\n\nLet's understand the difference between dotted and solid lines...",
     primaryLabel: "Tell me more →",
   },
   {
@@ -266,14 +277,14 @@ const STEPS: TourStep[] = [
     page: "workspace",
     title: "Verifying AI Suggestions 🎓",
     content:
-      "When you see dotted-line AI suggestions:\n\n1. Read the suggested source claim\n2. Read your task claim\n3. Decide if they're actually related\n4. Click 'Create Link' button\n5. Set the relationship:\n   • Supports (green) ✅\n   • Refutes (red) ⛔\n   • Nuanced (yellow) ⚖️\n6. Add optional notes\n7. Submit!\n\nThe dotted line becomes solid and counts toward the Verimeter! 🎉",
+      "When you see dotted-line AI suggestions:\n\n1. Read the suggested source claim\n2. Read your case claim\n3. Decide if they're actually related\n4. Click 'Create Link' button\n5. Set the relationship:\n   • Supports (green) ✅\n   • Refutes (red) ⛔\n   • Nuanced (yellow) ⚖️\n6. Add optional notes\n7. Submit!\n\nThe dotted line becomes solid and counts toward the Verimeter! 🎉",
     primaryLabel: "Ready to try! →",
   },
   {
     page: "workspace",
     title: "You're All Set! 🚀",
     content:
-      "You now know how to:\n\n✅ Click task claim buttons to open the claim panel\n✅ Distinguish between dotted (AI) and solid (verified) links\n✅ Use Quick Scan for fast results\n✅ Use Deep Scan for thorough analysis\n✅ Verify AI suggestions to build the Verimeter score\n\nStart clicking claims and verifying evidence!\n\nThe more you verify, the more accurate the truth score becomes. 💪",
+      "You now know how to:\n\n✅ Click case claim buttons to open the claim panel\n✅ Distinguish between dotted (AI) and solid (verified) links\n✅ Use Quick Scan for fast results\n✅ Use Deep Scan for thorough analysis\n✅ Verify AI suggestions to build the Verimeter score\n\nStart clicking claims and verifying evidence!\n\nThe more you verify, the more accurate the truth score becomes. 💪",
     primaryLabel: "Finish tour",
     specialAction: "end",
   },
@@ -319,7 +330,10 @@ function positionCard(selector: string): CardPos | null {
       top: r.bottom + GAP + ARROW,
       left,
       arrowDir: "top",
-      arrowAlong: Math.max(ARROW + 2, Math.min(cx - left - ARROW, CARD_W - ARROW * 2 - 2)),
+      arrowAlong: Math.max(
+        ARROW + 2,
+        Math.min(cx - left - ARROW, CARD_W - ARROW * 2 - 2),
+      ),
     };
   }
   // ── try above ──
@@ -329,7 +343,10 @@ function positionCard(selector: string): CardPos | null {
       top: r.top - GAP - ARROW - CARD_H_EST,
       left,
       arrowDir: "bottom",
-      arrowAlong: Math.max(ARROW + 2, Math.min(cx - left - ARROW, CARD_W - ARROW * 2 - 2)),
+      arrowAlong: Math.max(
+        ARROW + 2,
+        Math.min(cx - left - ARROW, CARD_W - ARROW * 2 - 2),
+      ),
     };
   }
   // ── try right ──
@@ -339,7 +356,10 @@ function positionCard(selector: string): CardPos | null {
       top,
       left: r.right + GAP + ARROW,
       arrowDir: "left",
-      arrowAlong: Math.max(ARROW + 2, Math.min(cy - top - ARROW, CARD_H_EST - ARROW * 2 - 2)),
+      arrowAlong: Math.max(
+        ARROW + 2,
+        Math.min(cy - top - ARROW, CARD_H_EST - ARROW * 2 - 2),
+      ),
     };
   }
   // ── fallback left ──
@@ -348,7 +368,10 @@ function positionCard(selector: string): CardPos | null {
     top,
     left: Math.max(8, r.left - GAP - ARROW - CARD_W),
     arrowDir: "right",
-    arrowAlong: Math.max(ARROW + 2, Math.min(cy - top - ARROW, CARD_H_EST - ARROW * 2 - 2)),
+    arrowAlong: Math.max(
+      ARROW + 2,
+      Math.min(cy - top - ARROW, CARD_H_EST - ARROW * 2 - 2),
+    ),
   };
 }
 
@@ -412,9 +435,9 @@ function ArrowTip({ dir, along }: { dir: ArrowDir; along: number }) {
 
 // ─── Highlight helper ──────────────────────────────────────────────────────────
 function applyHighlight(selector?: string) {
-  document.querySelectorAll(".tt-tour-highlight").forEach((el) =>
-    el.classList.remove("tt-tour-highlight")
-  );
+  document
+    .querySelectorAll(".tt-tour-highlight")
+    .forEach((el) => el.classList.remove("tt-tour-highlight"));
   if (selector) {
     const el = document.querySelector(selector);
     if (el) el.classList.add("tt-tour-highlight");
@@ -424,11 +447,16 @@ function applyHighlight(selector?: string) {
 // ─── Waiting message helper ────────────────────────────────────────────────────
 function waitingMessage(waitingFor: string): string {
   switch (waitingFor) {
-    case "submit":             return "⏳ Analyzing your text… (1-3 minutes)";
-    case "ref-modal":          return "👉 Click any source card on the right to continue";
-    case "link-overlay":       return "🖱️ Drag a source claim onto a task claim to continue";
-    case "task-assignment":    return "👆 Click any case card to assign it to yourself";
-    default:                   return "⏳ Waiting…";
+    case "submit":
+      return "⏳ Analyzing your text… (1-3 minutes)";
+    case "ref-modal":
+      return "👉 Click any source card on the right to continue";
+    case "link-overlay":
+      return "🖱️ Drag a source claim onto a case claim to continue";
+    case "task-assignment":
+      return "👆 Click any case card to assign it to yourself";
+    default:
+      return "⏳ Waiting…";
   }
 }
 
@@ -479,7 +507,10 @@ export const PlatformTour: React.FC = () => {
   const refreshPos = useCallback(() => {
     if (!active) return;
     const step = STEPS[stepIndex];
-    if (!step || step.page !== currentPage) { setCardPos(null); return; }
+    if (!step || step.page !== currentPage) {
+      setCardPos(null);
+      return;
+    }
 
     if (step.target) {
       const pos = positionCard(step.target);
@@ -519,9 +550,15 @@ export const PlatformTour: React.FC = () => {
   useEffect(() => {
     const hasSeenTour = localStorage.getItem("tourCompleted");
     const isAlreadyActive = localStorage.getItem(TOUR_ACTIVE_KEY) === "true";
-    if (!hasSeenTour && !isAlreadyActive && location.pathname.includes("/dashboard")) {
+    if (
+      !hasSeenTour &&
+      !isAlreadyActive &&
+      location.pathname.includes("/dashboard")
+    ) {
       // Longer delay (1500ms) to ensure dashboard fully renders before tour starts
-      console.log("🎯 PlatformTour: New user detected, starting tour in 1.5s...");
+      console.log(
+        "🎯 PlatformTour: New user detected, starting tour in 1.5s...",
+      );
       const t = setTimeout(() => {
         console.log("🚀 PlatformTour: Starting tour now!");
         startTour();
@@ -532,14 +569,20 @@ export const PlatformTour: React.FC = () => {
         hasSeenTour: !!hasSeenTour,
         isAlreadyActive,
         pathname: location.pathname,
-        shouldStart: !hasSeenTour && !isAlreadyActive && location.pathname.includes("/dashboard")
+        shouldStart:
+          !hasSeenTour &&
+          !isAlreadyActive &&
+          location.pathname.includes("/dashboard"),
       });
     }
   }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Detect TextPad submission complete (URL gains ?contentId) ─────────────
   useEffect(() => {
-    if ((active || waitingFor === "submit") && location.search.includes("contentId")) {
+    if (
+      (active || waitingFor === "submit") &&
+      location.search.includes("contentId")
+    ) {
       // After submission, advance to next step (works regardless of current step index)
       if (waitingFor === "submit") {
         setWaitingFor(null);
@@ -585,7 +628,9 @@ export const PlatformTour: React.FC = () => {
       // Don't prevent default - let the task selection happen
       // After a short delay, navigate back to dashboard
       setTimeout(() => {
-        console.log("✅ [Tour] Navigating back to dashboard to show assigned task");
+        console.log(
+          "✅ [Tour] Navigating back to dashboard to show assigned task",
+        );
         setWaitingFor(null);
         navigate("/dashboard");
         goToStep(stepIndex + 1);
@@ -607,9 +652,16 @@ export const PlatformTour: React.FC = () => {
 
   // ── Highlight target element when step changes ────────────────────────────
   useEffect(() => {
-    if (!active || waitingFor) { applyHighlight(undefined); return; }
+    if (!active || waitingFor) {
+      applyHighlight(undefined);
+      return;
+    }
     const step = STEPS[stepIndex];
-    const t = setTimeout(() => applyHighlight(step?.page === currentPage ? step?.target : undefined), 350);
+    const t = setTimeout(
+      () =>
+        applyHighlight(step?.page === currentPage ? step?.target : undefined),
+      350,
+    );
     return () => clearTimeout(t);
   }, [active, stepIndex, currentPage, waitingFor]);
 
@@ -630,7 +682,9 @@ export const PlatformTour: React.FC = () => {
     if (!active) return;
     const step = STEPS[stepIndex];
     if (step && step.page !== currentPage) {
-      console.log(`🧭 [Tour] Auto-navigating from ${currentPage} to ${step.page}`);
+      console.log(
+        `🧭 [Tour] Auto-navigating from ${currentPage} to ${step.page}`,
+      );
       const pageMap: Record<string, string> = {
         dashboard: "/dashboard",
         textpad: "/textpad",
@@ -659,8 +713,8 @@ export const PlatformTour: React.FC = () => {
       console.log(`✅ [Tour] User clicked target element: ${targetSelector}`);
 
       // For submit button, move to waiting state
-      if (targetSelector === '.textpad-submit') {
-        console.log('✅ [Tour] User clicked submit - entering wait state');
+      if (targetSelector === ".textpad-submit") {
+        console.log("✅ [Tour] User clicked submit - entering wait state");
         setOfferAutoSubmit(false);
         setWaitingFor("submit");
         applyHighlight(undefined);
@@ -670,7 +724,7 @@ export const PlatformTour: React.FC = () => {
         }
       }
       // For download button, let the click happen and advance
-      else if (targetSelector.includes('extension.zip')) {
+      else if (targetSelector.includes("extension.zip")) {
         setTimeout(() => {
           console.log("✅ [Tour] Download initiated - advancing!");
           goToStep(stepIndex + 1);
@@ -682,8 +736,8 @@ export const PlatformTour: React.FC = () => {
       }
     };
 
-    element.addEventListener('click', handleClick);
-    return () => element.removeEventListener('click', handleClick);
+    element.addEventListener("click", handleClick);
+    return () => element.removeEventListener("click", handleClick);
   }, [active, stepIndex, waitingFor, goToStep]);
 
   // ── Monitor submit button and offer auto-click after delay ─────────────────
@@ -699,12 +753,15 @@ export const PlatformTour: React.FC = () => {
     const step = STEPS[stepIndex];
 
     // Check if this is the submit step
-    if (step?.specialAction === 'wait-for-submit' && step?.target === '.textpad-submit') {
-      console.log('👀 [Tour] Monitoring submit button...');
+    if (
+      step?.specialAction === "wait-for-submit" &&
+      step?.target === ".textpad-submit"
+    ) {
+      console.log("👀 [Tour] Monitoring submit button...");
 
       // After 8 seconds, offer to auto-click
       autoSubmitTimerRef.current = setTimeout(() => {
-        console.log('⏰ [Tour] 8 seconds passed, offering auto-submit');
+        console.log("⏰ [Tour] 8 seconds passed, offering auto-submit");
         setOfferAutoSubmit(true);
       }, 8000);
     }
@@ -756,19 +813,25 @@ export const PlatformTour: React.FC = () => {
         navigate("/textpad");
         break;
       case "paste-title":
-        window.dispatchEvent(new CustomEvent("tourFillTitle", { detail: { title: DEMO_TITLE } }));
+        window.dispatchEvent(
+          new CustomEvent("tourFillTitle", { detail: { title: DEMO_TITLE } }),
+        );
         goToStep(stepIndex + 1);
         break;
       case "paste-text":
-        window.dispatchEvent(new CustomEvent("tourFillText", { detail: { text: DEMO_TEXT } }));
+        window.dispatchEvent(
+          new CustomEvent("tourFillText", { detail: { text: DEMO_TEXT } }),
+        );
         goToStep(stepIndex + 1);
         break;
       case "wait-for-submit":
         // If offering auto-submit, click the button for them
         if (offerAutoSubmit) {
-          const submitBtn = document.querySelector('.textpad-submit') as HTMLButtonElement;
+          const submitBtn = document.querySelector(
+            ".textpad-submit",
+          ) as HTMLButtonElement;
           if (submitBtn) {
-            console.log('🤖 [Tour] Auto-clicking submit button for user');
+            console.log("🤖 [Tour] Auto-clicking submit button for user");
             submitBtn.click();
             setOfferAutoSubmit(false);
             setWaitingFor("submit");
@@ -818,14 +881,20 @@ export const PlatformTour: React.FC = () => {
       endTour();
     } else if (step?.secondaryLabel === "Copy chrome://extensions") {
       // Copy chrome://extensions to clipboard
-      navigator.clipboard.writeText("chrome://extensions").then(() => {
-        console.log("✅ Copied chrome://extensions to clipboard");
-        // Could show a toast notification here
-      }).catch((err) => {
-        console.error("Failed to copy:", err);
-      });
+      navigator.clipboard
+        .writeText("chrome://extensions")
+        .then(() => {
+          console.log("✅ Copied chrome://extensions to clipboard");
+          // Could show a toast notification here
+        })
+        .catch((err) => {
+          console.error("Failed to copy:", err);
+        });
       // Don't advance - let them stay on this step
-    } else if (step?.secondaryLabel === "I'll type my own →" || step?.secondaryLabel === "I'll enter my own →") {
+    } else if (
+      step?.secondaryLabel === "I'll type my own →" ||
+      step?.secondaryLabel === "I'll enter my own →"
+    ) {
       // Skip auto-fill, just advance
       goToStep(stepIndex + 1);
     } else {
@@ -860,7 +929,9 @@ export const PlatformTour: React.FC = () => {
           gap={3}
         >
           <Spinner size="sm" color="white" />
-          <Text fontSize="sm" fontWeight="medium">{waitingMessage(waitingFor)}</Text>
+          <Text fontSize="sm" fontWeight="medium">
+            {waitingMessage(waitingFor)}
+          </Text>
           <IconButton
             icon={<CloseIcon boxSize={2.5} />}
             aria-label="Cancel tour"
@@ -950,13 +1021,26 @@ export const PlatformTour: React.FC = () => {
           <Heading size="sm" color="gray.800" mb={2}>
             {step.title}
           </Heading>
-          <Text fontSize="sm" color="gray.600" whiteSpace="pre-line" lineHeight="1.7">
+          <Text
+            fontSize="sm"
+            color="gray.600"
+            whiteSpace="pre-line"
+            lineHeight="1.7"
+          >
             {step.content}
           </Text>
-          {offerAutoSubmit && step.specialAction === 'wait-for-submit' && (
-            <Box mt={3} p={2} bg="green.50" borderRadius="md" border="1px solid" borderColor="green.200">
+          {offerAutoSubmit && step.specialAction === "wait-for-submit" && (
+            <Box
+              mt={3}
+              p={2}
+              bg="green.50"
+              borderRadius="md"
+              border="1px solid"
+              borderColor="green.200"
+            >
               <Text fontSize="xs" color="green.700" fontWeight="medium">
-                💡 Ready? Click the green button below and I'll submit it for you!
+                💡 Ready? Click the green button below and I'll submit it for
+                you!
               </Text>
             </Box>
           )}
@@ -966,17 +1050,27 @@ export const PlatformTour: React.FC = () => {
         <Box px={5} pb={4}>
           <VStack spacing={2} align="stretch">
             <Button
-              colorScheme={offerAutoSubmit && step.specialAction === 'wait-for-submit' ? "green" : "blue"}
+              colorScheme={
+                offerAutoSubmit && step.specialAction === "wait-for-submit"
+                  ? "green"
+                  : "blue"
+              }
               size="sm"
               onClick={handlePrimary}
               w="100%"
             >
-              {offerAutoSubmit && step.specialAction === 'wait-for-submit'
+              {offerAutoSubmit && step.specialAction === "wait-for-submit"
                 ? "🤖 Click for me!"
                 : step.primaryLabel}
             </Button>
             {step.secondaryLabel && (
-              <Button variant="ghost" size="sm" color="gray.500" onClick={handleSecondary} w="100%">
+              <Button
+                variant="ghost"
+                size="sm"
+                color="gray.500"
+                onClick={handleSecondary}
+                w="100%"
+              >
                 {step.secondaryLabel}
               </Button>
             )}

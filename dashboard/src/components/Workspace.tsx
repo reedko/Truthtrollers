@@ -6,7 +6,6 @@ import {
   Card,
   CardBody,
   Grid,
-  Heading,
   useColorModeValue,
 } from "@chakra-ui/react";
 import {
@@ -50,12 +49,14 @@ interface WorkspaceProps {
   contentId: number;
   viewerId: number | null;
   onHeightChange?: (height: number) => void;
+  linkFilter: 'all' | 'user' | 'ai';
 }
 // Workspace Component v3.0 - Fixed Conditional Hooks
 const Workspace: React.FC<WorkspaceProps> = ({
   contentId,
   viewerId,
   onHeightChange,
+  linkFilter,
 }) => {
   console.log("🟢 Workspace v3.0 loaded - Conditional hooks fixed");
 
@@ -454,9 +455,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
       height={`${computedHeight}px`} // dynamic height computed above
       onMouseMove={(e) => setMousePosition({ x: e.clientX, y: e.clientY })}
     >
-      <Heading size="md" mb={2} className="workspace-header">
-        Claim Analysis
-      </Heading>
       <Grid
         templateColumns="2fr 2fr 2fr" // mobile → stacked, desktop → middle flexes more
         gap={4}
@@ -532,26 +530,37 @@ const Workspace: React.FC<WorkspaceProps> = ({
             onLineClick={handleLineClick}
             onLineHover={handleLineHover}
             isModalOpen={isReferenceClaimsModalOpen}
-            claimLinks={[
-              ...claimLinks, // User-created claim links
-              // Convert AI evidence links to ClaimLink format
-              ...aiEvidenceLinks.map((ai) => ({
-                id: `ai-${ai.link_id}`,
-                claimId: ai.task_claim_id,
-                referenceId: ai.reference_content_id,
-                sourceClaimId: ai.task_claim_id, // For AI links, source = task claim
-                relation:
-                  ai.stance === "support"
-                    ? ("support" as const)
-                    : ai.stance === "refute"
-                      ? ("refute" as const)
-                      : ai.stance === "nuance"
-                        ? ("nuance" as const)
-                        : ("support" as const), // fallback
-                confidence: ai.support_level, // Use support_level for line thickness/opacity
-                notes: ai.rationale || "",
-              })),
-            ]}
+            claimLinks={(() => {
+              // Combine user and AI links
+              const allLinks = [
+                ...claimLinks, // User-created claim links
+                // Convert AI evidence links to ClaimLink format
+                ...aiEvidenceLinks.map((ai) => ({
+                  id: `ai-${ai.link_id}`,
+                  claimId: ai.task_claim_id,
+                  referenceId: ai.reference_content_id,
+                  sourceClaimId: ai.task_claim_id, // For AI links, source = task claim
+                  relation:
+                    ai.stance === "support"
+                      ? ("support" as const)
+                      : ai.stance === "refute"
+                        ? ("refute" as const)
+                        : ai.stance === "nuance"
+                          ? ("nuance" as const)
+                          : ("support" as const), // fallback
+                  confidence: ai.support_level, // Use support_level for line thickness/opacity
+                  notes: ai.rationale || "",
+                })),
+              ];
+
+              // Apply filter based on linkFilter state
+              if (linkFilter === 'user') {
+                return allLinks.filter(link => !link.id?.toString().startsWith('ai-'));
+              } else if (linkFilter === 'ai') {
+                return allLinks.filter(link => link.id?.toString().startsWith('ai-'));
+              }
+              return allLinks; // 'all' - no filtering
+            })()}
           />
         </Box>
         <Box

@@ -65,7 +65,7 @@ export default function MicroHeaderRail({
   const taskThumb = useMemo(
     () =>
       pivotTask?.thumbnail ? `${API_BASE_URL}/${pivotTask.thumbnail}` : "",
-    [pivotTask]
+    [pivotTask],
   );
   const publisher = publishers?.[0];
   const author = authors?.[0];
@@ -206,7 +206,7 @@ export default function MicroHeaderRail({
             <VStack spacing={0} align="start">
               <Text>
                 {open === "score" && "Score"}
-                {open === "task" && "Content Details"}
+                {open === "task" && "Case Details"}
                 {open === "publisher" && "Publisher Details"}
                 {open === "author" && "Author Details"}
                 {open === "progress" && "Progress"}
@@ -287,37 +287,43 @@ function Tile({
     switch (label) {
       case "Score":
         return {
-          gradient: "linear-gradient(90deg, rgba(139, 92, 246, 0.5) 0%, rgba(139, 92, 246, 0) 100%)",
+          gradient:
+            "linear-gradient(90deg, rgba(139, 92, 246, 0.5) 0%, rgba(139, 92, 246, 0) 100%)",
           glow: "rgba(139, 92, 246, 0.4)",
           border: "rgba(139, 92, 246, 0.4)",
         };
       case "Case":
         return {
-          gradient: "linear-gradient(90deg, rgba(0, 162, 255, 0.5) 0%, rgba(0, 162, 255, 0) 100%)",
+          gradient:
+            "linear-gradient(90deg, rgba(0, 162, 255, 0.5) 0%, rgba(0, 162, 255, 0) 100%)",
           glow: "rgba(0, 162, 255, 0.4)",
           border: "rgba(0, 162, 255, 0.4)",
         };
       case "Publisher":
         return {
-          gradient: "linear-gradient(90deg, rgba(6, 182, 212, 0.5) 0%, rgba(6, 182, 212, 0) 100%)",
+          gradient:
+            "linear-gradient(90deg, rgba(6, 182, 212, 0.5) 0%, rgba(6, 182, 212, 0) 100%)",
           glow: "rgba(6, 182, 212, 0.4)",
           border: "rgba(6, 182, 212, 0.4)",
         };
       case "Author":
         return {
-          gradient: "linear-gradient(90deg, rgba(251, 146, 60, 0.5) 0%, rgba(251, 146, 60, 0) 100%)",
+          gradient:
+            "linear-gradient(90deg, rgba(251, 146, 60, 0.5) 0%, rgba(251, 146, 60, 0) 100%)",
           glow: "rgba(251, 146, 60, 0.4)",
           border: "rgba(251, 146, 60, 0.4)",
         };
       case "Progress":
         return {
-          gradient: "linear-gradient(90deg, rgba(74, 222, 128, 0.5) 0%, rgba(74, 222, 128, 0) 100%)",
+          gradient:
+            "linear-gradient(90deg, rgba(74, 222, 128, 0.5) 0%, rgba(74, 222, 128, 0) 100%)",
           glow: "rgba(74, 222, 128, 0.4)",
           border: "rgba(74, 222, 128, 0.4)",
         };
       default:
         return {
-          gradient: "linear-gradient(90deg, rgba(139, 92, 246, 0.5) 0%, rgba(139, 92, 246, 0) 100%)",
+          gradient:
+            "linear-gradient(90deg, rgba(139, 92, 246, 0.5) 0%, rgba(139, 92, 246, 0) 100%)",
           glow: "rgba(139, 92, 246, 0.4)",
           border: "rgba(139, 92, 246, 0.4)",
         };
