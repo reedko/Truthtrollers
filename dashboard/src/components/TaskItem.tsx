@@ -21,7 +21,7 @@ export const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
       </Text>
       <Text>Assigned: {task.assigned}</Text>
       <Text>Progress: {task.progress}</Text>
-      <Text>Users: {task.users}</Text>
+      <Text>Users: {Array.isArray(task.users) ? task.users.map(u => u.username).join(", ") : task.users}</Text>
       <Text>Description: {description}</Text> {/* Displaying the description */}
       <Link href={`/task-details/${task.content_id}`} color="blue.500">
         View Details

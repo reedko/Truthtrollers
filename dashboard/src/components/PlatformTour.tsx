@@ -31,6 +31,7 @@ interface TourStep {
   content: string;
   primaryLabel: string;
   secondaryLabel?: string;
+  tertiaryLabel?: string;
   specialAction?:
     | "navigate-textpad"
     | "paste-title"
@@ -41,6 +42,7 @@ interface TourStep {
     | "wait-for-task-assignment"
     | "branch-full-tutorial"
     | "branch-extension"
+    | "branch-video-gallery"
     | "navigate-extension-page"
     | "end";
 }
@@ -60,9 +62,10 @@ const STEPS: TourStep[] = [
     page: "dashboard",
     title: "Choose Your Path 🛤️",
     content:
-      "You have two options:\n\nA. Full Platform Tutorial — Walk through submitting text, extracting claims, and linking evidence (takes ~5-10 minutes)\n\nB. Extension Installation — Quick guide to install the browser extension for capturing web content",
-    primaryLabel: "A. Full Tutorial (TaskPad) →",
-    secondaryLabel: "B. Install Extension →",
+      "You have three options:\n\n1. Full Platform Tutorial — Walk through submitting text, extracting claims, and linking evidence (takes ~5-10 minutes)\n\n2. Tutorial Video Gallery — Watch video tutorials at your own pace\n\n3. Extension Installation — Quick guide to install the browser extension for capturing web content",
+    primaryLabel: "1. Full Tutorial →",
+    secondaryLabel: "2. Video Gallery →",
+    tertiaryLabel: "3. Install Extension →",
     specialAction: "branch-full-tutorial",
   },
 
@@ -214,8 +217,8 @@ const STEPS: TourStep[] = [
     target: ".textpad-submit",
     title: "Step 3 — Submit for Analysis",
     content:
-      "👇 Click the highlighted Submit button below when you're ready!\n\nThe evidence engine will extract claims and search for supporting or contradicting evidence. This takes 1–3 minutes. ☕\n\n(Or wait 8 seconds and I'll click it for you!)",
-    primaryLabel: "Got it!",
+      "👇 Click the highlighted Submit button to start the analysis!\n\nThe evidence engine will extract claims and search for supporting or contradicting evidence. This takes 1–3 minutes. ☕\n\n(Or click the button below to auto-submit!)",
+    primaryLabel: "Submit for Me!",
     specialAction: "wait-for-submit",
   },
   {
@@ -296,7 +299,7 @@ const TOTAL_STEPS = STEPS.length;
 const CARD_W = 360;
 const CARD_H_EST = 260;
 const ARROW = 14;
-const GAP = 12;
+const GAP = 20; // Increased from 12 to prevent covering buttons
 
 type ArrowDir = "top" | "bottom" | "left" | "right" | "none";
 
@@ -323,31 +326,63 @@ function positionCard(selector: string): CardPos | null {
   // Clamp card so it stays in viewport vertically
   const clampTop = (t: number) => Math.max(8, Math.min(t, vh - CARD_H_EST - 8));
 
-  // ── try below ──
-  if (r.bottom + GAP + ARROW + CARD_H_EST < vh) {
-    const left = clampLeft(cx - CARD_W / 2);
-    return {
-      top: r.bottom + GAP + ARROW,
-      left,
-      arrowDir: "top",
-      arrowAlong: Math.max(
-        ARROW + 2,
-        Math.min(cx - left - ARROW, CARD_W - ARROW * 2 - 2),
-      ),
-    };
-  }
-  // ── try above ──
-  if (r.top - GAP - ARROW - CARD_H_EST > 0) {
-    const left = clampLeft(cx - CARD_W / 2);
-    return {
-      top: r.top - GAP - ARROW - CARD_H_EST,
-      left,
-      arrowDir: "bottom",
-      arrowAlong: Math.max(
-        ARROW + 2,
-        Math.min(cx - left - ARROW, CARD_W - ARROW * 2 - 2),
-      ),
-    };
+  // For submit buttons and important CTAs, prefer positioning above to avoid covering
+  const preferAbove = selector.includes("submit") || selector.includes("button");
+
+  if (preferAbove) {
+    // ── try above first ──
+    if (r.top - GAP - ARROW - CARD_H_EST > 0) {
+      const left = clampLeft(cx - CARD_W / 2);
+      return {
+        top: r.top - GAP - ARROW - CARD_H_EST,
+        left,
+        arrowDir: "bottom",
+        arrowAlong: Math.max(
+          ARROW + 2,
+          Math.min(cx - left - ARROW, CARD_W - ARROW * 2 - 2),
+        ),
+      };
+    }
+    // ── try below if above doesn't fit ──
+    if (r.bottom + GAP + ARROW + CARD_H_EST < vh) {
+      const left = clampLeft(cx - CARD_W / 2);
+      return {
+        top: r.bottom + GAP + ARROW,
+        left,
+        arrowDir: "top",
+        arrowAlong: Math.max(
+          ARROW + 2,
+          Math.min(cx - left - ARROW, CARD_W - ARROW * 2 - 2),
+        ),
+      };
+    }
+  } else {
+    // ── try below ──
+    if (r.bottom + GAP + ARROW + CARD_H_EST < vh) {
+      const left = clampLeft(cx - CARD_W / 2);
+      return {
+        top: r.bottom + GAP + ARROW,
+        left,
+        arrowDir: "top",
+        arrowAlong: Math.max(
+          ARROW + 2,
+          Math.min(cx - left - ARROW, CARD_W - ARROW * 2 - 2),
+        ),
+      };
+    }
+    // ── try above ──
+    if (r.top - GAP - ARROW - CARD_H_EST > 0) {
+      const left = clampLeft(cx - CARD_W / 2);
+      return {
+        top: r.top - GAP - ARROW - CARD_H_EST,
+        left,
+        arrowDir: "bottom",
+        arrowAlong: Math.max(
+          ARROW + 2,
+          Math.min(cx - left - ARROW, CARD_W - ARROW * 2 - 2),
+        ),
+      };
+    }
   }
   // ── try right ──
   if (r.right + GAP + ARROW + CARD_W < vw) {
@@ -480,6 +515,7 @@ export const PlatformTour: React.FC = () => {
     if (location.pathname.includes("/workspace")) return "workspace";
     if (location.pathname.includes("/extension")) return "extension";
     if (location.pathname.includes("/tasks")) return "tasks";
+    if (location.pathname.includes("/tutorials")) return "tutorials";
     return "dashboard";
   })();
 
@@ -691,6 +727,7 @@ export const PlatformTour: React.FC = () => {
         workspace: "/workspace",
         extension: "/extension",
         tasks: "/tasks",
+        tutorials: "/tutorials",
       };
       const targetPath = pageMap[step.page];
       if (targetPath) {
@@ -825,20 +862,18 @@ export const PlatformTour: React.FC = () => {
         goToStep(stepIndex + 1);
         break;
       case "wait-for-submit":
-        // If offering auto-submit, click the button for them
-        if (offerAutoSubmit) {
-          const submitBtn = document.querySelector(
-            ".textpad-submit",
-          ) as HTMLButtonElement;
-          if (submitBtn) {
-            console.log("🤖 [Tour] Auto-clicking submit button for user");
-            submitBtn.click();
-            setOfferAutoSubmit(false);
-            setWaitingFor("submit");
-            applyHighlight(undefined);
-          }
+        // Always click the submit button when "Got it!" is clicked
+        const submitBtn = document.querySelector(
+          ".textpad-submit",
+        ) as HTMLButtonElement;
+        if (submitBtn) {
+          console.log("🤖 [Tour] Auto-clicking submit button for user");
+          submitBtn.click();
+          setOfferAutoSubmit(false);
+          setWaitingFor("submit");
+          applyHighlight(undefined);
         } else {
-          // Collapse to waiting indicator — user clicks Submit themselves
+          // If button not found, just enter waiting state
           setWaitingFor("submit");
           applyHighlight(undefined);
         }
@@ -871,6 +906,10 @@ export const PlatformTour: React.FC = () => {
     const step = STEPS[stepIndex];
     if (step?.secondaryLabel === "Skip tour") {
       endTour();
+    } else if (step?.secondaryLabel === "2. Video Gallery →") {
+      // Navigate to tutorial gallery and end tour
+      navigate("/tutorials");
+      endTour();
     } else if (step?.secondaryLabel === "B. Install Extension →") {
       // Branch to extension installation and navigate to page
       navigate("/extension");
@@ -901,6 +940,17 @@ export const PlatformTour: React.FC = () => {
       goToStep(stepIndex + 1);
     }
   }, [stepIndex, goToStep, endTour, navigate]);
+
+  const handleTertiary = useCallback(() => {
+    const step = STEPS[stepIndex];
+    if (step?.tertiaryLabel === "3. Install Extension →") {
+      // Branch to extension installation and navigate to page
+      navigate("/extension");
+      goToStep(2); // Jump to step 2 (extension intro)
+    } else {
+      goToStep(stepIndex + 1);
+    }
+  }, [stepIndex, goToStep, navigate]);
 
   // ─── Render ────────────────────────────────────────────────────────────────
   if (!active) return null;
@@ -1039,8 +1089,7 @@ export const PlatformTour: React.FC = () => {
               borderColor="green.200"
             >
               <Text fontSize="xs" color="green.700" fontWeight="medium">
-                💡 Ready? Click the green button below and I'll submit it for
-                you!
+                💡 Time's up! Click the button below and I'll submit it for you!
               </Text>
             </Box>
           )}
@@ -1060,7 +1109,7 @@ export const PlatformTour: React.FC = () => {
               w="100%"
             >
               {offerAutoSubmit && step.specialAction === "wait-for-submit"
-                ? "🤖 Click for me!"
+                ? "Submit Now!"
                 : step.primaryLabel}
             </Button>
             {step.secondaryLabel && (
@@ -1072,6 +1121,17 @@ export const PlatformTour: React.FC = () => {
                 w="100%"
               >
                 {step.secondaryLabel}
+              </Button>
+            )}
+            {step.tertiaryLabel && (
+              <Button
+                variant="ghost"
+                size="sm"
+                color="gray.500"
+                onClick={handleTertiary}
+                w="100%"
+              >
+                {step.tertiaryLabel}
               </Button>
             )}
           </VStack>

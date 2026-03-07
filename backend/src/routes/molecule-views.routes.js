@@ -75,7 +75,7 @@ export default function createMoleculeViewsRoutes({ query, pool }) {
    * Create a new view/tab for a task
    */
   router.post("/api/molecule-views", async (req, res) => {
-    const { contentId, name, isDefault = false, displayMode = 'mr_cards', userId } = req.body;
+    const { contentId, name, isDefault = false, displayMode = 'circles', userId } = req.body;
 
     if (!contentId || !name || !userId) {
       return res.status(400).json({ error: "contentId, name, and userId are required" });

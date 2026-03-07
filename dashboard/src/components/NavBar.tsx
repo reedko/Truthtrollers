@@ -3,7 +3,6 @@ import {
   Flex,
   HStack,
   Image,
-  Input,
   Link,
   Menu,
   MenuButton,
@@ -20,6 +19,7 @@ import HeaderToggleSwitch from "./HeaderToggleSwitch";
 import { useTaskStore } from "../store/useTaskStore";
 import { AccountMenu } from "./AccountMenu";
 import { TourTriggerButton } from "./PlatformTour";
+import SearchInput from "./SearchInput";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
@@ -29,14 +29,9 @@ interface NavBarProps {
 }
 
 const NavBar: React.FC<NavBarProps> = ({ compact }) => {
-  const setSearchQuery = useTaskStore((s) => s.setSearchQuery);
   const selectedTaskId = useTaskStore((s) => s.selectedTaskId);
   const setRedirect = useTaskStore((s) => s.setRedirect);
   const navColor = useColorModeValue("gray.700", "white");
-
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event.target.value);
-  };
 
   const handleNavClick = (target: string) => {
     if (!selectedTaskId) {
@@ -65,14 +60,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
             </Box>
           </HStack>
 
-          <Input
-            placeholder="Search..."
-            onChange={handleSearchChange}
-            fontSize="xs"
-            size="sm"
-            width="130px"
-            mx={2}
-          />
+          <Box width="200px" mx={2}>
+            <SearchInput />
+          </Box>
 
           {selectedTaskId && (
             <Menu>
@@ -217,13 +207,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
               />
             </RouterLink>
 
-            <Input
-              placeholder="Search content..."
-              onChange={handleSearchChange}
-              marginLeft="20px"
-              maxWidth="1000px"
-              flex="1"
-            />
+            <Box marginLeft="20px" maxWidth="1000px" flex="1">
+              <SearchInput />
+            </Box>
 
             <Spacer />
 

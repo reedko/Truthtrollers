@@ -1349,20 +1349,22 @@ function arrangeSourcesAroundCase({
   cy.batch(() => {
     otherReferences.forEach((node, i) => {
       // Determine which arc this node goes on
-      const arcIndex = arcsNeeded === 1 ? 0 : Math.floor(i / maxNodesOnSingleArc);
+      const arcIndex =
+        arcsNeeded === 1 ? 0 : Math.floor(i / maxNodesOnSingleArc);
       const positionInArc = arcsNeeded === 1 ? i : i % maxNodesOnSingleArc;
-      const nodesInThisArc = arcsNeeded === 1
-        ? otherReferences.length
-        : (arcIndex === arcsNeeded - 1
-          ? otherReferences.length - (arcIndex * maxNodesOnSingleArc)
-          : maxNodesOnSingleArc);
+      const nodesInThisArc =
+        arcsNeeded === 1
+          ? otherReferences.length
+          : arcIndex === arcsNeeded - 1
+            ? otherReferences.length - arcIndex * maxNodesOnSingleArc
+            : maxNodesOnSingleArc;
 
       // Calculate position parameter (0 to 1) for this arc
       const t = nodesInThisArc > 1 ? positionInArc / (nodesInThisArc - 1) : 0.5;
       const angle = arcStartAngle + t * arcSpan;
 
       // Calculate radius based on which arc
-      const radius = baseRadius + (arcIndex * radiusStagger);
+      const radius = baseRadius + arcIndex * radiusStagger;
 
       const newX = center.x + radius * Math.cos(angle);
       const newY = center.y + radius * Math.sin(angle);
@@ -1908,6 +1910,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
   const lastRefNode = useRef<NodeSingular | null>(null);
   const lastRefOriginalPos = useRef<{ x: number; y: number } | null>(null);
   const activeRefWithClaims = useRef<string | null>(null); // Track which ref is showing claims
+  const isReframedGraph = useRef<boolean>(false); // Track if graph was reframed (don't rebuild on position changes)
   const originalNodePositions = useRef<
     Record<string, { x: number; y: number }>
   >({});
@@ -1918,14 +1921,24 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
   );
   const [containerRect, setContainerRect] = useState<DOMRect | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [forceRebuild, setForceRebuild] = useState<number>(0); // Toggle to force useEffect rebuild
   const [hoveredNodePopup, setHoveredNodePopup] = useState<{
     label: string;
     x: number;
     y: number;
   } | null>(null);
+  const [highlightedType, setHighlightedType] = useState<string | null>(null);
 
   useEffect(() => {
     if (!cyRef.current) return;
+
+    // If graph was reframed, don't rebuild - let users drag nodes freely
+    if (isReframedGraph.current) {
+      console.log(
+        "⏭️ Skipping graph rebuild - reframed graph, preserving user positions",
+      );
+      return;
+    }
 
     // If claims are visible when data changes, clear them first before rebuilding
     if (activeRefWithClaims.current !== null && cyInstance.current) {
@@ -1937,12 +1950,14 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
         // Remove all claim nodes and their edges
         cy.batch(() => {
-          cy.nodes('[type = "refClaim"], [type = "taskClaim"]').forEach((node) => {
-            // Clear throb interval
-            const interval = node.data("throbInterval");
-            if (interval) clearInterval(interval);
-            node.remove();
-          });
+          cy.nodes('[type = "refClaim"], [type = "taskClaim"]').forEach(
+            (node) => {
+              // Clear throb interval
+              const interval = node.data("throbInterval");
+              if (interval) clearInterval(interval);
+              node.remove();
+            },
+          );
         });
 
         // Show all ref-to-task edges again
@@ -1951,8 +1966,10 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           const target = edge.target();
           if (source && target) {
             const isRefTaskEdge =
-              (source.data("type") === "reference" && target.data("type") === "task") ||
-              (source.data("type") === "task" && target.data("type") === "reference");
+              (source.data("type") === "reference" &&
+                target.data("type") === "task") ||
+              (source.data("type") === "task" &&
+                target.data("type") === "reference");
             if (isRefTaskEdge) {
               edge.style("display", "element");
             }
@@ -2156,20 +2173,6 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 return "round-triangle";
               return "ellipse";
             },
-            // Point direction for claim nodes (triangular shapes)
-            "shape-polygon-points": (ele: any) => {
-              const type = ele.data("type");
-              // Custom points for a pac-man style 3/4 circle
-              // This creates a wedge pointing right
-              if (type === "taskClaim") {
-                // Task claim points left (toward source claims on the right)
-                return "-1 -0.7  -1 0.7  1 0";
-              } else if (type === "refClaim") {
-                // Source claim points right (toward task claims on the left)
-                return "1 -0.7  1 0.7  -1 0";
-              }
-              return undefined;
-            },
             width: (ele: any) => {
               const type = ele.data("type");
               if (type === "refClaim" || type === "taskClaim") return 70;
@@ -2246,8 +2249,20 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               if (type === "publisher") return "#60a5fa";
               return "#6366f1";
             },
-            "background-opacity": 0.9,
-            "border-width": 3,
+            "background-opacity": (ele: any) => {
+              const type = ele.data("type");
+              const highlighted = ele.data("highlightedType");
+              // Dim nodes that don't match highlighted type
+              if (highlighted && highlighted !== type) return 0.2;
+              return 0.9;
+            },
+            "border-width": (ele: any) => {
+              const type = ele.data("type");
+              const highlighted = ele.data("highlightedType");
+              // Thicker border for highlighted type
+              if (highlighted && highlighted === type) return 15;
+              return 8;
+            },
             "border-color": (ele: any) => {
               const type = ele.data("type");
               if (type === "task") return "#6366f1";
@@ -2259,7 +2274,13 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               if (type === "publisher") return "#60a5fa";
               return "#6366f1";
             },
-            "border-opacity": 0.8,
+            "border-opacity": (ele: any) => {
+              const type = ele.data("type");
+              const highlighted = ele.data("highlightedType");
+              // Dim borders that don't match highlighted type
+              if (highlighted && highlighted !== type) return 0.2;
+              return 1.0;
+            },
           },
         };
       } else if (displayMode === "compact") {
@@ -2271,16 +2292,6 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               if (type === "refClaim" || type === "taskClaim")
                 return "round-triangle";
               return "round-rectangle";
-            },
-            // Point direction for claim nodes
-            "shape-polygon-points": (ele: any) => {
-              const type = ele.data("type");
-              if (type === "taskClaim") {
-                return "-1 -0.7  -1 0.7  1 0";
-              } else if (type === "refClaim") {
-                return "1 -0.7  1 0.7  -1 0";
-              }
-              return undefined;
             },
             width: (ele: any) => {
               const type = ele.data("type");
@@ -2334,16 +2345,6 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               if (type === "refClaim" || type === "taskClaim")
                 return "round-triangle";
               return "round-rectangle";
-            },
-            // Point direction for claim nodes
-            "shape-polygon-points": (ele: any) => {
-              const type = ele.data("type");
-              if (type === "taskClaim") {
-                return "-1 -0.7  -1 0.7  1 0";
-              } else if (type === "refClaim") {
-                return "1 -0.7  1 0.7  -1 0";
-              }
-              return undefined;
             },
             width: (ele: any) => {
               const type = ele.data("type");
@@ -2440,15 +2441,27 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             "curve-style": "unbundled-bezier",
             "control-point-distances": [40],
             "control-point-weights": [0.5],
-            // Dim edges connected to dimmed nodes
+            // Dim edges connected to dimmed nodes or non-highlighted nodes
             opacity: (ele: any) => {
               const sourceNode = ele.source();
               const targetNode = ele.target();
               const sourceDimmed = sourceNode.data("dimmed");
               const targetDimmed = targetNode.data("dimmed");
 
-              // If either end is dimmed, dim the edge
-              return sourceDimmed || targetDimmed ? 0.2 : 1.0;
+              // Dim if either end is dimmed
+              if (sourceDimmed || targetDimmed) return 0.2;
+
+              // Dim if highlightedType is set and neither end matches
+              const highlighted = ele.data("highlightedType");
+              if (highlighted) {
+                const sourceType = sourceNode.data("type");
+                const targetType = targetNode.data("type");
+                if (sourceType !== highlighted && targetType !== highlighted) {
+                  return 0.2;
+                }
+              }
+
+              return 1.0;
             },
           },
         },
@@ -2778,6 +2791,12 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     });
 
     return () => {
+      // Don't destroy graph if it's been reframed - preserve user's work
+      if (isReframedGraph.current) {
+        console.log("⏭️ Skipping cleanup - reframed graph, preserving nodes");
+        return;
+      }
+
       if (cy) {
         cy.nodes(".throb").forEach((node: any) => {
           clearInterval(node.data("throbInterval"));
@@ -2785,7 +2804,26 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         cy.destroy();
       }
     };
-  }, [nodes, links, displayMode]);
+  }, [nodes, links, displayMode, forceRebuild]);
+
+  // Update node styles when highlightedType changes
+  useEffect(() => {
+    const cy = cyInstance.current;
+    if (!cy) return;
+
+    // Store highlightedType on each node's data so style functions can access it
+    cy.nodes().forEach((node) => {
+      node.data("highlightedType", highlightedType);
+    });
+
+    // Store on edges too
+    cy.edges().forEach((edge) => {
+      edge.data("highlightedType", highlightedType);
+    });
+
+    // Force Cytoscape to recalculate all styles
+    cy.style().update();
+  }, [highlightedType]);
 
   // Reframe: rebuild graph with clicked node in center
   const reframe = async () => {
@@ -2856,6 +2894,9 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       const publishers = newNodes.filter((n: any) => n.type === "publisher");
       const tasks = newNodes.filter((n: any) => n.type === "task");
 
+      // Find the case/task node (should be at center regardless of what was clicked)
+      const caseNode = tasks.find((n: any) => n.id !== selectedId) || tasks[0];
+
       // Nautilus spiral parameters - gentle growth matching initial layout
       const refCount = references.length;
       const clamp = (min: number, max: number, value: number) =>
@@ -2866,7 +2907,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
       const positionedNodes: any[] = [];
 
-      // Position center node
+      // Center the node that was clicked (whatever it is)
       if (centerNode) {
         positionedNodes.push({
           data: centerNode,
@@ -2876,7 +2917,8 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
       // Position other nodes based on type
       newNodes.forEach((n: any) => {
-        if (n.id === selectedId) return; // Skip center node
+        // Skip the node we already positioned at center
+        if (centerNode && n.id === centerNode.id) return;
 
         let x = centerX;
         let y = centerY;
@@ -2896,14 +2938,14 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         } else if (n.type === "author") {
           // Authors on left
           const authorIndex = authors.findIndex((a: any) => a.id === n.id);
-          x = centerX - 1200;
+          x = centerX - 950;
           y = centerY + (authorIndex - authors.length / 2) * 150;
         } else if (n.type === "publisher") {
           // Publishers on right
           const publisherIndex = publishers.findIndex(
             (p: any) => p.id === n.id,
           );
-          x = centerX + 1200;
+          x = centerX + 950;
           y = centerY + (publisherIndex - publishers.length / 2) * 150;
         }
 
@@ -2922,6 +2964,17 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
       // Fit view
       cy.fit(cy.elements(), 50);
+
+      // CRITICAL: Update originalNodePositions with the NEW reframed positions
+      // This makes the reframe layout the new "baseline" for dragging
+      originalNodePositions.current = {};
+      cy.nodes().forEach((node) => {
+        originalNodePositions.current[node.id()] = { ...node.position() };
+      });
+
+      // Mark graph as reframed so useEffect doesn't rebuild it
+      isReframedGraph.current = true;
+      console.log("✅ Graph reframed - position tracking disabled");
 
       // Restart throbbing for all activated nodes after reframe
       restartAllThrobs(cy, activatedNodeIdsRef.current);
@@ -2960,15 +3013,20 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     // Clear active ref tracker
     activeRefWithClaims.current = null;
 
+    // Reset the reframed flag so graph can be rebuilt normally
+    isReframedGraph.current = false;
+    console.log(
+      "🔄 Reset clicked - re-enabling graph rebuilds, will rebuild original nautilus",
+    );
+
     // Remove all claim nodes and their edges
     cy.nodes('[type = "refClaim"], [type = "taskClaim"]').forEach((node) => {
-      // Clear throb interval
       const interval = node.data("throbInterval");
       if (interval) clearInterval(interval);
       node.remove();
     });
 
-    // Restore all original node positions
+    // Restore all original node positions IF we have them
     if (Object.keys(originalNodePositions.current).length > 0) {
       Object.entries(originalNodePositions.current).forEach(([id, pos]) => {
         const node = cy.getElementById(id);
@@ -2996,11 +3054,14 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
     toast({
       title: "Graph Reset",
-      description: "All nodes are now visible",
+      description: "Returning to original nautilus layout",
       status: "info",
       duration: 2000,
       isClosable: true,
     });
+
+    // Force a rebuild by incrementing forceRebuild, which will trigger the useEffect
+    setForceRebuild((prev) => prev + 1);
   };
 
   return (
@@ -3491,7 +3552,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 position="relative"
                 zIndex={2}
               >
-                Legend
+                Legend {highlightedType && "(Filtering)"}
               </Text>
               <Box
                 fontSize="xs"
@@ -3500,7 +3561,22 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 position="relative"
                 zIndex={2}
               >
-                <Box display="flex" alignItems="center" mb={2}>
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  mb={2}
+                  cursor="pointer"
+                  onClick={() =>
+                    setHighlightedType(
+                      highlightedType === "task" ? null : "task",
+                    )
+                  }
+                  opacity={
+                    highlightedType && highlightedType !== "task" ? 0.4 : 1
+                  }
+                  transition="opacity 0.2s"
+                  _hover={{ opacity: 1 }}
+                >
                   <Box
                     w="12px"
                     h="12px"
@@ -3509,9 +3585,26 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                     mr={2}
                     boxShadow="0 0 8px rgba(99, 102, 241, 0.4)"
                   />
-                  <Text fontSize="10px">Case</Text>
+                  <Text fontSize="10px">
+                    Case {highlightedType === "task" && "✓"}
+                  </Text>
                 </Box>
-                <Box display="flex" alignItems="center" mb={2}>
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  mb={2}
+                  cursor="pointer"
+                  onClick={() =>
+                    setHighlightedType(
+                      highlightedType === "reference" ? null : "reference",
+                    )
+                  }
+                  opacity={
+                    highlightedType && highlightedType !== "reference" ? 0.4 : 1
+                  }
+                  transition="opacity 0.2s"
+                  _hover={{ opacity: 1 }}
+                >
                   <Box
                     w="12px"
                     h="12px"
@@ -3520,9 +3613,26 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                     mr={2}
                     boxShadow="0 0 8px rgba(16, 185, 129, 0.4)"
                   />
-                  <Text fontSize="10px">Source</Text>
+                  <Text fontSize="10px">
+                    Source {highlightedType === "reference" && "✓"}
+                  </Text>
                 </Box>
-                <Box display="flex" alignItems="center" mb={2}>
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  mb={2}
+                  cursor="pointer"
+                  onClick={() =>
+                    setHighlightedType(
+                      highlightedType === "taskClaim" ? null : "taskClaim",
+                    )
+                  }
+                  opacity={
+                    highlightedType && highlightedType !== "taskClaim" ? 0.4 : 1
+                  }
+                  transition="opacity 0.2s"
+                  _hover={{ opacity: 1 }}
+                >
                   <Box
                     w="0"
                     h="0"
@@ -3532,9 +3642,26 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                     mr={2}
                     filter="drop-shadow(0 0 4px rgba(245, 158, 11, 0.4))"
                   />
-                  <Text fontSize="10px">Case Claim</Text>
+                  <Text fontSize="10px">
+                    Case Claim {highlightedType === "taskClaim" && "✓"}
+                  </Text>
                 </Box>
-                <Box display="flex" alignItems="center" mb={2}>
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  mb={2}
+                  cursor="pointer"
+                  onClick={() =>
+                    setHighlightedType(
+                      highlightedType === "refClaim" ? null : "refClaim",
+                    )
+                  }
+                  opacity={
+                    highlightedType && highlightedType !== "refClaim" ? 0.4 : 1
+                  }
+                  transition="opacity 0.2s"
+                  _hover={{ opacity: 1 }}
+                >
                   <Box
                     w="0"
                     h="0"
@@ -3544,9 +3671,26 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                     mr={2}
                     filter="drop-shadow(0 0 4px rgba(236, 72, 153, 0.4))"
                   />
-                  <Text fontSize="10px">Source Claim</Text>
+                  <Text fontSize="10px">
+                    Source Claim {highlightedType === "refClaim" && "✓"}
+                  </Text>
                 </Box>
-                <Box display="flex" alignItems="center" mb={2}>
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  mb={2}
+                  cursor="pointer"
+                  onClick={() =>
+                    setHighlightedType(
+                      highlightedType === "author" ? null : "author",
+                    )
+                  }
+                  opacity={
+                    highlightedType && highlightedType !== "author" ? 0.4 : 1
+                  }
+                  transition="opacity 0.2s"
+                  _hover={{ opacity: 1 }}
+                >
                   <Box
                     w="12px"
                     h="12px"
@@ -3555,9 +3699,26 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                     mr={2}
                     boxShadow="0 0 8px rgba(251, 177, 160, 0.4)"
                   />
-                  <Text fontSize="10px">Author</Text>
+                  <Text fontSize="10px">
+                    Author {highlightedType === "author" && "✓"}
+                  </Text>
                 </Box>
-                <Box display="flex" alignItems="center" mb={3}>
+                <Box
+                  display="flex"
+                  alignItems="center"
+                  mb={3}
+                  cursor="pointer"
+                  onClick={() =>
+                    setHighlightedType(
+                      highlightedType === "publisher" ? null : "publisher",
+                    )
+                  }
+                  opacity={
+                    highlightedType && highlightedType !== "publisher" ? 0.4 : 1
+                  }
+                  transition="opacity 0.2s"
+                  _hover={{ opacity: 1 }}
+                >
                   <Box
                     w="12px"
                     h="12px"
@@ -3566,7 +3727,9 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                     mr={2}
                     boxShadow="0 0 8px rgba(129, 236, 236, 0.4)"
                   />
-                  <Text fontSize="10px">Publisher</Text>
+                  <Text fontSize="10px">
+                    Publisher {highlightedType === "publisher" && "✓"}
+                  </Text>
                 </Box>
                 <Box
                   pt={3}

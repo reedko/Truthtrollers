@@ -451,7 +451,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         {/* Title bar */}
         <Center>
           <Text className="mr-badge mr-badge-blue" fontSize="sm" mb={1}>
-            Case Details
+            {activeTask?.content_type === "reference" ? "Source Details" : "Case Details"}
           </Text>
         </Center>
 

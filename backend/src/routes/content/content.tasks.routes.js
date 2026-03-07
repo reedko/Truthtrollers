@@ -146,6 +146,145 @@ router.get("/api/user-tasks/:user_id", async (req, res) => {
 });
 
 /**
+ * GET /api/search-tasks
+ * Search tasks by name and/or topic
+ * Query params: q (search query), showInactive (boolean)
+ */
+router.get("/api/search-tasks", async (req, res) => {
+  const { q, showInactive } = req.query;
+  const includeInactive = showInactive === 'true';
+
+  if (!q || !q.trim()) {
+    return res.status(400).json({ error: "Search query is required" });
+  }
+
+  const searchTerm = `%${q.trim()}%`;
+
+  const sql = includeInactive ? `
+    SELECT
+      t.*,
+      (
+        SELECT topic_name
+        FROM topics tt
+        JOIN content_topics ct ON tt.topic_id = ct.topic_id
+        WHERE ct.content_id = t.content_id
+        ORDER BY ct.topic_order ASC
+        LIMIT 1
+      ) AS topic,
+      (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'author_id', a.author_id,
+            'author_first_name', IFNULL(a.author_first_name, ''),
+            'author_last_name', IFNULL(a.author_last_name, ''),
+            'author_title', IFNULL(a.author_title, ''),
+            'author_profile_pic', a.author_profile_pic,
+            'description', a.description
+          )
+        )
+        FROM content_authors ca
+        JOIN authors a ON ca.author_id = a.author_id
+        WHERE ca.content_id = t.content_id
+      ) AS authors,
+      (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'publisher_id', p.publisher_id,
+            'publisher_name', p.publisher_name,
+            'publisher_icon', p.publisher_icon,
+            'description', p.description
+          )
+        )
+        FROM content_publishers cp
+        JOIN publishers p ON cp.publisher_id = p.publisher_id
+        WHERE cp.content_id = t.content_id
+      ) AS publishers
+    FROM content t
+    WHERE t.content_type IN ('task', 'reference')
+      AND (
+        t.content_name LIKE ?
+        OR IFNULL(t.url, '') LIKE ?
+        OR IFNULL(t.details, '') LIKE ?
+        OR EXISTS (
+          SELECT 1 FROM content_topics ct
+          JOIN topics tp ON ct.topic_id = tp.topic_id
+          WHERE ct.content_id = t.content_id AND tp.topic_name LIKE ?
+        )
+      )
+    GROUP BY t.content_id
+    ORDER BY
+      t.content_name LIKE ? DESC,
+      t.content_type = 'task' DESC,
+      t.content_id DESC
+  ` : `
+    SELECT
+      t.*,
+      (
+        SELECT topic_name
+        FROM topics tt
+        JOIN content_topics ct ON tt.topic_id = ct.topic_id
+        WHERE ct.content_id = t.content_id
+        ORDER BY ct.topic_order ASC
+        LIMIT 1
+      ) AS topic,
+      (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'author_id', a.author_id,
+            'author_first_name', IFNULL(a.author_first_name, ''),
+            'author_last_name', IFNULL(a.author_last_name, ''),
+            'author_title', IFNULL(a.author_title, ''),
+            'author_profile_pic', a.author_profile_pic,
+            'description', a.description
+          )
+        )
+        FROM content_authors ca
+        JOIN authors a ON ca.author_id = a.author_id
+        WHERE ca.content_id = t.content_id
+      ) AS authors,
+      (
+        SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'publisher_id', p.publisher_id,
+            'publisher_name', p.publisher_name,
+            'publisher_icon', p.publisher_icon,
+            'description', p.description
+          )
+        )
+        FROM content_publishers cp
+        JOIN publishers p ON cp.publisher_id = p.publisher_id
+        WHERE cp.content_id = t.content_id
+      ) AS publishers
+    FROM content t
+    WHERE t.content_type IN ('task', 'reference')
+      AND (t.is_active IS NULL OR t.is_active = 1)
+      AND (
+        t.content_name LIKE ?
+        OR IFNULL(t.url, '') LIKE ?
+        OR IFNULL(t.details, '') LIKE ?
+        OR EXISTS (
+          SELECT 1 FROM content_topics ct
+          JOIN topics tp ON ct.topic_id = tp.topic_id
+          WHERE ct.content_id = t.content_id AND tp.topic_name LIKE ?
+        )
+      )
+    GROUP BY t.content_id
+    ORDER BY
+      t.content_name LIKE ? DESC,
+      t.content_type = 'task' DESC,
+      t.content_id DESC
+  `;
+
+  pool.query(sql, [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm], (err, results) => {
+    if (err) {
+      logger.error("❌ Error searching tasks:", err);
+      return res.status(500).json({ error: "Search query failed" });
+    }
+    res.json(results);
+  });
+});
+
+/**
  * GET /api/all-tasks
  * Get ALL tasks (not filtered by user) for browsing
  * When showInactive=true, shows ALL tasks including archived

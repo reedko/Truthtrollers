@@ -184,15 +184,21 @@ const MoleculeViewTabs: React.FC<MoleculeViewTabsProps> = ({
               {/* Settings submenu for each view */}
               <Menu>
                 <MenuButton
-                  as={IconButton}
-                  icon={<SettingsIcon />}
-                  size="xs"
-                  variant="ghost"
-                  aria-label="View settings"
+                  as={Box}
+                  cursor="pointer"
+                  display="inline-flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  w="24px"
+                  h="24px"
+                  borderRadius="md"
+                  _hover={{ bg: colorMode === "dark" ? "whiteAlpha.200" : "gray.100" }}
                   onClick={(e) => {
                     e.stopPropagation(); // Prevent view selection when clicking gear
                   }}
-                />
+                >
+                  <SettingsIcon boxSize={3} />
+                </MenuButton>
                 <MenuList
                   bg={colorMode === "dark" ? "gray.800" : "white"}
                   borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"}

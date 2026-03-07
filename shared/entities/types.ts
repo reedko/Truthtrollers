@@ -23,6 +23,7 @@ export interface Task {
   thumbnail: string;
   media_source?: string; // From extension
   url: string;
+  content_type?: string; // "task" or "reference"
   assigned: "assigned" | "unassigned";
   progress: TaskProgress;
   users: User[]; // Ensuring this is always an array

@@ -55,7 +55,6 @@ export const fetchNewGraphDataFromLegacyRoute = async (
           added_by_user_id: node.added_by_user_id,
           is_system: node.is_system
         });
-        console.log(`📊 Node ${node.id} (${node.type}): rating=${node.rating}, veracity_score=${node.veracity_score}`);
         return graphNode;
       }
     );

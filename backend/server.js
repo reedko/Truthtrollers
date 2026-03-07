@@ -76,6 +76,7 @@ import createFacebookRoutes from "./src/routes/social/facebook.routes.js";
 import createChatRouter from "./src/routes/chat.routes.js";
 import createTutorialsRouter from "./src/routes/tutorials/tutorials.routes.js";
 import createAdminRouter from "./src/routes/admin/admin.routes.js";
+import createSearchAnalysisRouter from "./src/routes/search-analysis.routes.js";
 import { initSocketServer } from "./src/realtime/socketServer.js";
 
 // Logger utility
@@ -274,6 +275,7 @@ app.use("/", createPromptRoutes({ query })); // Prompt management routes: /api/p
 app.use("/", createMoleculeViewsRoutes({ query, pool })); // Molecule views routes: /api/molecule-views
 app.use("/", createFacebookRoutes({ query })); // Facebook scraping routes: /api/scrape-facebook-post
 app.use("/", createChatRouter({ pool }));      // Chat routes: /api/chat/*, /api/users/search
+app.use("/", createSearchAnalysisRouter({ query, pool })); // Search analysis routes: /api/search-analysis
 app.use("/", createTutorialsRouter({ query })); // Tutorial videos routes: /api/tutorials
 app.use("/", createAdminRouter({ query }));     // Admin routes: /api/admin/*, super_admin only
 // ─────────────────────────────────────────────

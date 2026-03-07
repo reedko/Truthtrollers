@@ -32,6 +32,7 @@ import TextPadPage from "./pages/TextPadPage";
 import EmailTesterPage from "./pages/EmailTesterPage";
 import TutorialGalleryPage from "./pages/TutorialGalleryPage";
 import AdminPanelPage from "./pages/AdminPanelPage";
+import SearchResultsPage from "./pages/SearchResultsPage";
 
 const router = createBrowserRouter([
   {
@@ -84,6 +85,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <TaskPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/search",
+        element: (
+          <ProtectedRoute>
+            <SearchResultsPage />
           </ProtectedRoute>
         ),
       },

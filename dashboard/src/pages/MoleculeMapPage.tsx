@@ -144,6 +144,7 @@ const MoleculeMapPage = () => {
             contentId: selectedTask.content_id,
             name: "All Sources",
             isDefault: true,
+            displayMode: 'circles',
             userId: viewerId,
           });
           fetchedViews = await getMoleculeViews(selectedTask.content_id, viewerId);
@@ -311,6 +312,7 @@ const MoleculeMapPage = () => {
       contentId: selectedTask.content_id,
       name,
       isDefault: false,
+      displayMode: 'circles',
       userId: viewerId,
     });
 
