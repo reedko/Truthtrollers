@@ -37,7 +37,7 @@ const storage = multer.diskStorage({
     const { type, id } = req.query;
     if (!type || !id) return cb(new Error("Missing type or id"));
     // Handle singular form correctly - 'content' stays as 'content', others remove trailing 's'
-    const singularType = type === 'content' ? 'content' : type.slice(0, -1);
+    const singularType = type === "content" ? "content" : type.slice(0, -1);
     cb(null, `${singularType}_id_${id}${ext}`);
   },
 });
@@ -191,7 +191,7 @@ function isSubtitleLine(s) {
   // classic subtitle telltales; many lowercase words, no credentials
   if (
     /\b(study|report|review|analysis|cohort|trial|outcome|outcomes|systematic|meta-?analysis)\b/i.test(
-      s
+      s,
     )
   ) {
     if (!/\b(PhD|MD|MS|MPH|DO|RN|DDS|DVM)\b/.test(s) && !looksLikePerson(s))
@@ -208,7 +208,7 @@ function isSubtitleLine(s) {
 
 function looksLikeAffiliation(s) {
   return /(university|department|division|school|institute|center|centre|health system|hospital|detroit|michigan|wayne state)/i.test(
-    s
+    s,
   );
 }
 
@@ -288,7 +288,7 @@ function looksLikeSubtitlePhrase(s) {
 function looksLikePerson(s) {
   // "Firstname M. Lastname" or "Firstname Lastname" (allow hyphen/apos)
   return /\b[A-Z][a-z]+(?:[-'][A-Z][a-z]+)?(?:\s+[A-Z]\.)?\s+[A-Z][a-z]+(?:[-'][A-Z][a-z]+)?\b/.test(
-    s
+    s,
   );
 }
 
@@ -326,7 +326,9 @@ export default function createMiscRoutes({ query, pool }) {
     const { type, id } = req.query;
     const imagePath = `assets/images/${type}/${req.file.filename}`;
 
-    console.log(`📤 Upload-image: type=${type}, id=${id}, file=${req.file.filename}`);
+    console.log(
+      `📤 Upload-image: type=${type}, id=${id}, file=${req.file.filename}`,
+    );
     console.log(`📁 Image path: ${imagePath}`);
 
     let updateSql = "";
@@ -347,16 +349,18 @@ export default function createMiscRoutes({ query, pool }) {
       case "content":
         // For TextPad submissions, only update thumbnail and keep URL pointing to text file
         // For other content, update both thumbnail and url
-        updateSql = "UPDATE content SET thumbnail = ?, url = CASE WHEN media_source = 'TextPad' THEN url ELSE ? END WHERE content_id = ?";
+        updateSql =
+          "UPDATE content SET thumbnail = ?, url = CASE WHEN media_source = 'TextPad' THEN url ELSE ? END WHERE content_id = ?";
         break;
       default:
         return res.status(400).json({ error: "Invalid type" });
     }
 
     // For content, we need to update both thumbnail and url
-    const params = type === "content"
-      ? [imagePath, imagePath, id]  // thumbnail, url (conditional), content_id
-      : [imagePath, id];              // single field, id
+    const params =
+      type === "content"
+        ? [imagePath, imagePath, id] // thumbnail, url (conditional), content_id
+        : [imagePath, id]; // single field, id
 
     console.log(`🔧 Executing SQL: ${updateSql} with`, params);
 
@@ -405,7 +409,7 @@ export default function createMiscRoutes({ query, pool }) {
       const transcriptText = await getYoutubeTranscriptWithPuppeteer(
         videoId,
         html,
-        url
+        url,
       ); // optionally use html or url
       res.json({ success: true, transcriptText });
     } catch (err) {
@@ -450,10 +454,12 @@ export default function createMiscRoutes({ query, pool }) {
           JSON.stringify(authors || []),
           publisherName,
           is_retracted || false,
-        ]
+        ],
       );
 
-      res.status(200).json({ success: true, stored_content_id: result.insertId });
+      res
+        .status(200)
+        .json({ success: true, stored_content_id: result.insertId });
     } catch (err) {
       console.error("❌ Failed to store content:", err);
       res.status(500).json({ success: false, error: err.message });
@@ -500,11 +506,13 @@ export default function createMiscRoutes({ query, pool }) {
       const headRes = await fetch(url, {
         method: "HEAD",
         headers: DEFAULT_HEADERS,
-        redirect: "follow"
+        redirect: "follow",
       });
       const contentType = headRes.headers.get("content-type") || "";
       const isPdf = contentType.includes("application/pdf");
-      console.log(`📋 Content-Type for ${url}: ${contentType} → isPdf: ${isPdf}`);
+      console.log(
+        `📋 Content-Type for ${url}: ${contentType} → isPdf: ${isPdf}`,
+      );
       res.json({ isPdf });
     } catch (e) {
       console.error(`❌ check-pdf-head error for ${url}:`, e.message);
@@ -514,75 +522,119 @@ export default function createMiscRoutes({ query, pool }) {
 
   // New endpoint: parse PDF from blob (sent by extension after loading in browser)
   // Use express.raw() middleware to get raw binary data
-  router.post("/api/parse-pdf-blob", express.raw({ type: 'application/octet-stream', limit: '50mb' }), async (req, res) => {
-    console.log("📩 /api/parse-pdf-blob route hit, blob size:", req.body?.length || 0, "type:", typeof req.body);
+  router.post(
+    "/api/parse-pdf-blob",
+    express.raw({ type: "application/octet-stream", limit: "50mb" }),
+    async (req, res) => {
+      console.log(
+        "📩 /api/parse-pdf-blob route hit, blob size:",
+        req.body?.length || 0,
+        "type:",
+        typeof req.body,
+      );
 
-    try {
-      // Validate we received data
-      if (!req.body) {
-        return res.status(400).json({ success: false, error: "No PDF data received (body is null/undefined)" });
+      try {
+        // Validate we received data
+        if (!req.body) {
+          return res
+            .status(400)
+            .json({
+              success: false,
+              error: "No PDF data received (body is null/undefined)",
+            });
+        }
+
+        // req.body should be the raw PDF buffer
+        let buffer;
+        if (Buffer.isBuffer(req.body)) {
+          buffer = req.body;
+        } else if (req.body instanceof ArrayBuffer) {
+          buffer = Buffer.from(req.body);
+        } else if (typeof req.body === "object" && req.body.type === "Buffer") {
+          buffer = Buffer.from(req.body.data);
+        } else {
+          console.error(
+            "❌ Unexpected req.body type:",
+            typeof req.body,
+            req.body.constructor?.name,
+          );
+          return res
+            .status(400)
+            .json({
+              success: false,
+              error: `Invalid data type: ${typeof req.body}`,
+            });
+        }
+
+        if (!buffer || buffer.length < 100) {
+          return res
+            .status(400)
+            .json({
+              success: false,
+              error: `PDF data too small: ${buffer?.length || 0} bytes`,
+            });
+        }
+
+        console.log(`📦 Processing PDF buffer: ${buffer.length} bytes`);
+
+        const parsed = await pdfParse(buffer);
+
+        let fullText = (parsed.text || "").replace(/\r/g, "");
+
+        // Strip XMP metadata
+        fullText = fullText.replace(
+          /<\?xpacket[\s\S]*?<\?xpacket end.*?\?>/gi,
+          "",
+        );
+        fullText = fullText.replace(/<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/gi, "");
+        fullText = fullText.replace(/<rdf:RDF[\s\S]*?<\/rdf:RDF>/gi, "");
+        fullText = fullText.replace(/\n{3,}/g, "\n\n").trim();
+
+        const infoTitle = (
+          parsed.info && parsed.info.Title ? parsed.info.Title : ""
+        ).trim();
+        const infoAuthor = (
+          parsed.info && parsed.info.Author ? parsed.info.Author : ""
+        ).trim();
+
+        const head = fullText.slice(0, 4000);
+        const lines = head
+          .split(/\n+/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+
+        const title = chooseTitle(infoTitle, lines, "PDF");
+        const authors = choosePdfAuthors(infoAuthor, lines);
+
+        console.log("📄 Parsed PDF from blob:", {
+          title,
+          authors,
+          textLength: fullText.length,
+        });
+
+        res.json({
+          success: true,
+          text: fullText,
+          title: title || "",
+          authors: authors,
+          rawAuthor: infoAuthor,
+        });
+      } catch (err) {
+        console.error("❌ PDF blob parse failed:", err);
+        const errorMsg = err.message || String(err);
+        const isInvalidPdf =
+          errorMsg.includes("Invalid PDF") ||
+          errorMsg.includes("PDF structure");
+
+        res.status(500).json({
+          success: false,
+          error: isInvalidPdf
+            ? "This PDF has an invalid structure that cannot be parsed."
+            : `PDF parsing error: ${errorMsg}`,
+        });
       }
-
-      // req.body should be the raw PDF buffer
-      let buffer;
-      if (Buffer.isBuffer(req.body)) {
-        buffer = req.body;
-      } else if (req.body instanceof ArrayBuffer) {
-        buffer = Buffer.from(req.body);
-      } else if (typeof req.body === 'object' && req.body.type === 'Buffer') {
-        buffer = Buffer.from(req.body.data);
-      } else {
-        console.error("❌ Unexpected req.body type:", typeof req.body, req.body.constructor?.name);
-        return res.status(400).json({ success: false, error: `Invalid data type: ${typeof req.body}` });
-      }
-
-      if (!buffer || buffer.length < 100) {
-        return res.status(400).json({ success: false, error: `PDF data too small: ${buffer?.length || 0} bytes` });
-      }
-
-      console.log(`📦 Processing PDF buffer: ${buffer.length} bytes`);
-
-      const parsed = await pdfParse(buffer);
-
-      let fullText = (parsed.text || "").replace(/\r/g, "");
-
-      // Strip XMP metadata
-      fullText = fullText.replace(/<\?xpacket[\s\S]*?<\?xpacket end.*?\?>/gi, '');
-      fullText = fullText.replace(/<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/gi, '');
-      fullText = fullText.replace(/<rdf:RDF[\s\S]*?<\/rdf:RDF>/gi, '');
-      fullText = fullText.replace(/\n{3,}/g, '\n\n').trim();
-
-      const infoTitle = (parsed.info && parsed.info.Title ? parsed.info.Title : "").trim();
-      const infoAuthor = (parsed.info && parsed.info.Author ? parsed.info.Author : "").trim();
-
-      const head = fullText.slice(0, 4000);
-      const lines = head.split(/\n+/).map((s) => s.trim()).filter(Boolean);
-
-      const title = chooseTitle(infoTitle, lines, "PDF");
-      const authors = choosePdfAuthors(infoAuthor, lines);
-
-      console.log("📄 Parsed PDF from blob:", { title, authors, textLength: fullText.length });
-
-      res.json({
-        success: true,
-        text: fullText,
-        title: title || "",
-        authors: authors,
-        rawAuthor: infoAuthor,
-      });
-    } catch (err) {
-      console.error("❌ PDF blob parse failed:", err);
-      const errorMsg = err.message || String(err);
-      const isInvalidPdf = errorMsg.includes('Invalid PDF') || errorMsg.includes('PDF structure');
-
-      res.status(500).json({
-        success: false,
-        error: isInvalidPdf
-          ? "This PDF has an invalid structure that cannot be parsed."
-          : `PDF parsing error: ${errorMsg}`
-      });
-    }
-  });
+    },
+  );
 
   router.post("/api/fetch-pdf-text", async (req, res) => {
     const { url } = req.body;
@@ -591,16 +643,19 @@ export default function createMiscRoutes({ query, pool }) {
     try {
       // Use browser-like headers to avoid getting blocked
       const response = await fetch(url, {
-        headers: DEFAULT_HEADERS
+        headers: DEFAULT_HEADERS,
       });
 
       // Check if we got HTML instead of PDF (access denied, etc)
-      const contentType = response.headers.get('content-type') || '';
-      if (contentType.includes('text/html')) {
-        console.error("❌ Server returned HTML instead of PDF - likely access denied or requires browser");
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("text/html")) {
+        console.error(
+          "❌ Server returned HTML instead of PDF - likely access denied or requires browser",
+        );
         return res.status(403).send({
           success: false,
-          error: "PDF fetch blocked - server requires browser access. Use extension to load PDF in tab instead."
+          error:
+            "PDF fetch blocked - server requires browser access. Use extension to load PDF in tab instead.",
         });
       }
 
@@ -609,22 +664,29 @@ export default function createMiscRoutes({ query, pool }) {
 
       let fullText = (parsed.text || "").replace(/\r/g, "");
 
-      console.log(`📄 Raw PDF text length: ${fullText.length} chars, ${parsed.numpages} pages`);
+      console.log(
+        `📄 Raw PDF text length: ${fullText.length} chars, ${parsed.numpages} pages`,
+      );
       console.log(`📄 First 500 chars of raw text:`, fullText.slice(0, 500));
 
       // Strip XMP metadata blocks that pdf-parse sometimes includes
       // These blocks start with <?xpacket and end with <?xpacket end
       const beforeMetadataStrip = fullText.length;
-      fullText = fullText.replace(/<\?xpacket[\s\S]*?<\?xpacket end.*?\?>/gi, '');
+      fullText = fullText.replace(
+        /<\?xpacket[\s\S]*?<\?xpacket end.*?\?>/gi,
+        "",
+      );
 
       // Also strip other common metadata patterns
-      fullText = fullText.replace(/<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/gi, '');
-      fullText = fullText.replace(/<rdf:RDF[\s\S]*?<\/rdf:RDF>/gi, '');
+      fullText = fullText.replace(/<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/gi, "");
+      fullText = fullText.replace(/<rdf:RDF[\s\S]*?<\/rdf:RDF>/gi, "");
 
       // Clean up excessive whitespace
-      fullText = fullText.replace(/\n{3,}/g, '\n\n').trim();
+      fullText = fullText.replace(/\n{3,}/g, "\n\n").trim();
 
-      console.log(`📄 After metadata strip: ${fullText.length} chars (removed ${beforeMetadataStrip - fullText.length} chars)`);
+      console.log(
+        `📄 After metadata strip: ${fullText.length} chars (removed ${beforeMetadataStrip - fullText.length} chars)`,
+      );
       console.log(`📄 First 500 chars after cleanup:`, fullText.slice(0, 500));
 
       const infoTitle = (
@@ -644,7 +706,11 @@ export default function createMiscRoutes({ query, pool }) {
       const title = chooseTitle(infoTitle, lines, url);
       const authors = choosePdfAuthors(infoAuthor, lines);
 
-      console.log("📄 Final inferred PDF metadata:", { title, authors, textLength: fullText.length });
+      console.log("📄 Final inferred PDF metadata:", {
+        title,
+        authors,
+        textLength: fullText.length,
+      });
 
       res.send({
         success: true,
@@ -656,13 +722,14 @@ export default function createMiscRoutes({ query, pool }) {
     } catch (err) {
       console.error("❌ PDF parse failed:", err);
       const errorMsg = err.message || String(err);
-      const isInvalidPdf = errorMsg.includes('Invalid PDF') || errorMsg.includes('PDF structure');
+      const isInvalidPdf =
+        errorMsg.includes("Invalid PDF") || errorMsg.includes("PDF structure");
 
       res.status(500).send({
         success: false,
         error: isInvalidPdf
           ? "This PDF has an invalid structure that cannot be parsed. The PDF may be corrupted or use a non-standard format."
-          : `PDF parsing error: ${errorMsg}`
+          : `PDF parsing error: ${errorMsg}`,
       });
     }
   });
@@ -702,7 +769,7 @@ export default function createMiscRoutes({ query, pool }) {
       const finalImagePath = path.join(
         backendDir,
         "assets/pdf-thumbnails",
-        `thumb-${Date.now()}.png`
+        `thumb-${Date.now()}.png`,
       );
       fs.mkdirSync(path.dirname(finalImagePath), { recursive: true });
 
@@ -714,7 +781,7 @@ export default function createMiscRoutes({ query, pool }) {
 
       // 6) Return a public URL to the generated thumbnail
       const publicUrl = `${BASE_URL}/assets/pdf-thumbnails/${path.basename(
-        finalImagePath
+        finalImagePath,
       )}`;
       console.log(publicUrl, "PDF IMAGE URL");
       res.send({ success: true, imageUrl: publicUrl });
@@ -729,7 +796,7 @@ export default function createMiscRoutes({ query, pool }) {
     if (!url) return res.status(400).send("missing url");
     const r = await fetch(url, {
       redirect: "follow",
-      headers: DEFAULT_HEADERS
+      headers: DEFAULT_HEADERS,
     });
     if (!r.ok) return res.status(r.status).send("upstream error");
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -913,7 +980,7 @@ export default function createMiscRoutes({ query, pool }) {
     } catch (axiosError) {
       console.warn(
         "⚠️ Axios failed, falling back to Puppeteer...",
-        axiosError.message
+        axiosError.message,
       );
     }
 
@@ -1023,22 +1090,27 @@ export default function createMiscRoutes({ query, pool }) {
     const { type, id } = req.params;
 
     // Validate type
-    const validTypes = ['authors', 'publishers', 'content'];
+    const validTypes = ["authors", "publishers", "content"];
     if (!validTypes.includes(type)) {
-      return res.status(400).json({ error: 'Invalid type. Must be authors, publishers, or content' });
+      return res
+        .status(400)
+        .json({
+          error: "Invalid type. Must be authors, publishers, or content",
+        });
     }
 
     // Navigate up to backend directory from routes/misc
     const backendDir = path.resolve(__dirname, "../../../");
     const imageDir = path.join(backendDir, `assets/images/${type}`);
-
+    const defImageDir = path.join(backendDir, `assets/images/${type}`);
     // Build base filename without extension
     // Handle the singular form correctly
-    const singularType = type === 'content' ? 'content' : type.slice(0, -1);
+    const singularType = type === "content" ? "content" : type.slice(0, -1);
     const baseFilename = `${singularType}_id_${id}`;
+    const defFilename = `${singularType}_id_default.png`;
 
     // Try different extensions in order of preference
-    const extensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+    const extensions = [".jpg", ".jpeg", ".png", ".gif", ".webp"];
 
     // Use async file checking to avoid blocking the event loop
     for (const ext of extensions) {
@@ -1055,9 +1127,13 @@ export default function createMiscRoutes({ query, pool }) {
       }
     }
 
-    // No image found with any extension
-    console.log(`❌ No image found for ${type}/${id} (tried ${extensions.join(', ')})`);
-    return res.status(404).json({ error: 'Image not found' });
+    const defFullPath = path.join(defImageDir, defFilename);
+    try {
+      await fs.promises.access(defFullPath, fs.constants.F_OK);
+      return res.sendFile(defFullPath);
+    } catch (err) {
+      return res.status(404).json({ error: "Image not found" });
+    }
   });
 
   return router;

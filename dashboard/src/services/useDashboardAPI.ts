@@ -1,4 +1,4 @@
-import axios from "axios";
+import { api } from "./api";
 import {
   Task,
   User,
@@ -111,7 +111,7 @@ export const fetchClaimScores = async (
   viewerId: number | null
 ): Promise<{ [claimId: number]: number }> => {
   try {
-    const res = await axios.get(
+    const res = await api.get(
       `${API_BASE_URL}/api/content/${contentId}/claim-scores`,
       {
         params: { viewerId },
@@ -134,7 +134,7 @@ export const fetchTrollmeterScore = async (taskContentId: number) => {
 
 // 🔵 AUTHOR BIO
 export const updateAuthorBio = async (authorId: number, newBio: string) => {
-  const res = await axios.put(`${API_BASE_URL}/api/authors/${authorId}/bio`, {
+  const res = await api.put(`${API_BASE_URL}/api/authors/${authorId}/bio`, {
     description: newBio,
   });
   return res.data;
@@ -144,7 +144,7 @@ export const updatePublisherBio = async (
   publisherId: number,
   newBio: string
 ) => {
-  const res = await axios.put(
+  const res = await api.put(
     `${API_BASE_URL}/api/publishers/${publisherId}/bio`,
     {
       description: newBio,
@@ -157,7 +157,7 @@ export const updatePublisherBio = async (
 export const fetchAuthorRatings = async (
   authorId: number
 ): Promise<AuthorRating[]> => {
-  const res = await axios.get(
+  const res = await api.get(
     `${API_BASE_URL}/api/authors/${authorId}/ratings`
   );
   return res.data;
@@ -168,7 +168,7 @@ export const updateAuthorRatings = async (
   authorId: number,
   ratings: AuthorRating[]
 ) => {
-  const res = await axios.put(
+  const res = await api.put(
     `${API_BASE_URL}/api/authors/${authorId}/ratings`,
     { ratings }
   );
@@ -182,13 +182,13 @@ export const updateAuthorRating = async (
 ) => {
   let res;
   if (authorRatingId !== 0) {
-    res = await axios.put(
+    res = await api.put(
       `${API_BASE_URL}/api/authors/${authorRatingId}/rating`,
       { ratings }
     );
   } else {
     //add a new rating
-    res = await axios.post(`${API_BASE_URL}/api/authors/add-rating`, {
+    res = await api.post(`${API_BASE_URL}/api/authors/add-rating`, {
       ratings,
     });
   }
@@ -198,7 +198,7 @@ export const updateAuthorRating = async (
 // 🔵 PUBLISHER RATINGS
 export const fetchPublisherRatings = async (publisherId: number) => {
   try {
-    const res = await axios.get(
+    const res = await api.get(
       `${API_BASE_URL}/api/publishers/${publisherId}/ratings`
     );
 
@@ -212,7 +212,7 @@ export const fetchPublisherRatings = async (publisherId: number) => {
 //get ratings topics
 
 export const fetchRatingTopics = async () => {
-  const res = await axios.get(`${API_BASE_URL}/api/publishers/ratings-topics`);
+  const res = await api.get(`${API_BASE_URL}/api/publishers/ratings-topics`);
   return res.data;
 };
 
@@ -220,7 +220,7 @@ export const updatePublisherRatings = async (
   publisherId: number,
   ratings: PublisherRating[]
 ) => {
-  const res = await axios.put(
+  const res = await api.put(
     `${API_BASE_URL}/api/publishers/${publisherId}/ratings`,
     {
       ratings,
@@ -234,7 +234,7 @@ export const updatePublisherRating = async (
   publisherRatingId: number,
   rating: PublisherRating
 ) => {
-  const res = await axios.put(
+  const res = await api.put(
     `${API_BASE_URL}/api/publishers/${publisherRatingId}/rating`,
     {
       rating,
@@ -290,7 +290,7 @@ export async function fetchTaskClaimsWithRatings(
  */
 export const fetchTasks = async (page = 1, limit = 100): Promise<Task[]> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/content`, {
+    const response = await api.get(`${API_BASE_URL}/api/content`, {
       params: { page, limit },
     });
     return response.data;
@@ -305,7 +305,7 @@ export const fetchTasks = async (page = 1, limit = 100): Promise<Task[]> => {
  */
 export const fetchTask = async (contentId: number): Promise<Task | null> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/content/${contentId}`);
+    const response = await api.get(`${API_BASE_URL}/api/content/${contentId}`);
     return response.data;
   } catch (error) {
     console.error("❌ Error fetching task:", error);
@@ -318,7 +318,7 @@ export const fetchTask = async (contentId: number): Promise<Task | null> => {
  */
 export const fetchAssignedUsers = async (taskId: number): Promise<User[]> => {
   try {
-    const response = await axios.get(
+    const response = await api.get(
       `${API_BASE_URL}/api/content/${taskId}/get-users`
     );
     return response.data;
@@ -334,7 +334,7 @@ export const fetchAssignedUsers = async (taskId: number): Promise<User[]> => {
  */
 
 export const fetchTasksForUser = async (userId: number, showInactive = false): Promise<Task[]> => {
-  const res = await axios.get(`${API_BASE_URL}/api/user-tasks/${userId}`, {
+  const res = await api.get(`${API_BASE_URL}/api/user-tasks/${userId}`, {
     params: { showInactive: showInactive ? 'true' : 'false' }
   });
   return res.data;
@@ -408,7 +408,7 @@ export const fetchLinkedClaimsForTaskClaim = async (
 //fetch a claim by claim id
 //
 export async function fetchClaimById(claimId: number): Promise<Claim> {
-  const response = await axios.get(`${API_BASE_URL}/api/claim/${claimId}`);
+  const response = await api.get(`${API_BASE_URL}/api/claim/${claimId}`);
   return response.data[0];
 }
 /**
@@ -420,7 +420,7 @@ export const fetchClaimsAndLinkedReferencesForTask = async (
   scope?: 'user' | 'all' | 'admin'
 ): Promise<ClaimLinks[]> => {
   try {
-    const response = await axios.get(
+    const response = await api.get(
       `${API_BASE_URL}/api/claims-and-linked-references/${contentId}`,
       { params: { viewerId, scope } }
     );
@@ -442,7 +442,7 @@ export const fetchClaimsForTask = async (
   scope?: 'user' | 'all' | 'admin'
 ): Promise<Claim[]> => {
   try {
-    const response = await axios.get(
+    const response = await api.get(
       `${API_BASE_URL}/api/claims/${contentId}`,
       {
         params: { viewerId, scope },
@@ -475,7 +475,7 @@ export async function submitClaimEvaluation(data: {
   reference_id: number;
   evaluation_text: string;
 }) {
-  return await axios.post(`${API_BASE_URL}/api/claim_verifications`, data);
+  return await api.post(`${API_BASE_URL}/api/claim_verifications`, data);
 }
 // ✅ Add a new claim (with full metadata)
 export const addClaim = async (claimData: {
@@ -487,7 +487,7 @@ export const addClaim = async (claimData: {
   relationship_type?: string;
 }) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/claims`, claimData);
+    const response = await api.post(`${API_BASE_URL}/api/claims`, claimData);
     console.log("✅ Claim added:", response.data);
     return response.data;
   } catch (error) {
@@ -499,7 +499,7 @@ export const addClaim = async (claimData: {
 // ✅ Update an existing claim
 export const updateClaim = async (claim: Claim): Promise<Claim> => {
   try {
-    const response = await axios.put(
+    const response = await api.put(
       `${API_BASE_URL}/api/claims/${claim.claim_id}`,
       claim
     );
@@ -521,7 +521,7 @@ export const addClaimSource = async (
   isPrimary: boolean = false,
   userId?: number
 ): Promise<{ claim_source_id: number }> => {
-  const response = await axios.post(`${API_BASE_URL}/api/claim-sources`, {
+  const response = await api.post(`${API_BASE_URL}/api/claim-sources`, {
     claim_id: claimId,
     reference_content_id: referenceContentId,
     is_primary: isPrimary,
@@ -542,7 +542,7 @@ export const fetchClaimSources = async (
     url: string;
   }[]
 > => {
-  const response = await axios.get(
+  const response = await api.get(
     `${API_BASE_URL}/api/claim-sources/${claimId}`
   );
   return response.data;
@@ -553,7 +553,7 @@ export const updateClaimSource = async (
   newReferenceId: number,
   notes: string
 ): Promise<void> => {
-  await axios.put(`${API_BASE_URL}/api/claim-sources/${claim_sources_id}`, {
+  await api.put(`${API_BASE_URL}/api/claim-sources/${claim_sources_id}`, {
     new_reference_id: newReferenceId,
     notes: notes,
   });
@@ -562,7 +562,7 @@ export const updateClaimSource = async (
 export const deleteClaimSource = async (
   claim_sources_id: number
 ): Promise<void> => {
-  await axios.delete(`${API_BASE_URL}/api/claim-sources/${claim_sources_id}`);
+  await api.delete(`${API_BASE_URL}/api/claim-sources/${claim_sources_id}`);
 };
 
 /**
@@ -577,7 +577,7 @@ export const updateReference = async (
       title,
       content_id: reference_content_id,
     });
-    await axios.put(`${API_BASE_URL}/api/updateReference`, {
+    await api.put(`${API_BASE_URL}/api/updateReference`, {
       content_id: reference_content_id,
       title, // Send title in the request body
     });
@@ -591,7 +591,7 @@ export const updateReference = async (
  */
 export const deleteClaim = async (claimId: number) => {
   try {
-    await axios.delete(`${API_BASE_URL}/api/claims/${claimId}`);
+    await api.delete(`${API_BASE_URL}/api/claims/${claimId}`);
   } catch (error) {
     console.error("❌ Error deleting claim:", error);
   }
@@ -607,7 +607,7 @@ export const fetchAllReferences = async (searchTerm: string, page: number) => {
       searchTerm && searchTerm !== "all"
         ? encodeURIComponent(searchTerm)
         : "all";
-    const response = await axios.get(
+    const response = await api.get(
       `${API_BASE_URL}/api/references/${searchQuery}?page=${page}`
     );
 
@@ -623,7 +623,7 @@ export const fetchAllReferences = async (searchTerm: string, page: number) => {
  */
 export const fetchReferencesForTask = async (contentId: number) => {
   try {
-    const response = await axios.get(
+    const response = await api.get(
       `${API_BASE_URL}/api/content/${contentId}/source-references`
     );
     return response.data;
@@ -675,7 +675,7 @@ export const addClaimLink = async ({
   points_earned?: number;
 }) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/claim-links`, {
+    const response = await api.post(`${API_BASE_URL}/api/claim-links`, {
       source_claim_id,
       target_claim_id,
       user_id,
@@ -702,7 +702,7 @@ export const addClaimLink = async ({
  */
 export const getClaimLinkScore = async (contentId: number, userId: number): Promise<number> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/claim-links/score/${contentId}?userId=${userId}`);
+    const response = await api.get(`${API_BASE_URL}/api/claim-links/score/${contentId}?userId=${userId}`);
     return response.data.totalScore || 0;
   } catch (error) {
     console.error("❌ Error fetching claim link score:", error);
@@ -718,7 +718,7 @@ export const deleteReferenceFromTask = async (
   referenceContentId: number
 ) => {
   try {
-    await axios.delete(`${API_BASE_URL}/api/remove-content-relation`, {
+    await api.delete(`${API_BASE_URL}/api/remove-content-relation`, {
       data: { taskContentId, referenceContentId },
     });
     console.log(
@@ -738,7 +738,7 @@ export const hideReference = async (
   referenceContentId: number
 ) => {
   try {
-    await axios.post(`${API_BASE_URL}/api/references/hide`, {
+    await api.post(`${API_BASE_URL}/api/references/hide`, {
       taskContentId,
       referenceContentId,
     });
@@ -759,7 +759,7 @@ export const unhideReference = async (
   referenceContentId: number
 ) => {
   try {
-    await axios.post(`${API_BASE_URL}/api/references/unhide`, {
+    await api.post(`${API_BASE_URL}/api/references/unhide`, {
       taskContentId,
       referenceContentId,
     });
@@ -777,7 +777,7 @@ export const unhideReference = async (
  */
 export const fetchClaimReferences = async (claimId: number) => {
   try {
-    const response = await axios.get(
+    const response = await api.get(
       `${API_BASE_URL}/api/claims/${claimId}/references`
     );
     return response.data;
@@ -792,7 +792,7 @@ export const fetchClaimReferences = async (claimId: number) => {
  */
 export const fetchAuthors = async (taskId: number): Promise<Author[]> => {
   try {
-    const response = await axios.get(
+    const response = await api.get(
       `${API_BASE_URL}/api/content/${taskId}/authors`
     );
     return response.data;
@@ -807,7 +807,7 @@ export const fetchAuthors = async (taskId: number): Promise<Author[]> => {
  */
 export const fetchAuthor = async (authorId: number): Promise<Author | null> => {
   try {
-    const response = await axios.get(
+    const response = await api.get(
       `${API_BASE_URL}/api/content/${authorId}/author`
     );
     return response.data[0];
@@ -825,7 +825,7 @@ export const addAuthorsToContent = async (
   authors: Array<{ name: string; description?: string; image?: string }>
 ): Promise<boolean> => {
   try {
-    await axios.post(`${API_BASE_URL}/api/content/${contentId}/authors`, {
+    await api.post(`${API_BASE_URL}/api/content/${contentId}/authors`, {
       contentId,
       authors,
     });
@@ -844,7 +844,7 @@ export const removeAuthorFromContent = async (
   authorId: number
 ): Promise<boolean> => {
   try {
-    await axios.delete(
+    await api.delete(
       `${API_BASE_URL}/api/content/${contentId}/authors/${authorId}`
     );
     return true;
@@ -859,7 +859,7 @@ export const removeAuthorFromContent = async (
  */
 export const fetchPublishers = async (taskId: number): Promise<Publisher[]> => {
   try {
-    const response = await axios.get(
+    const response = await api.get(
       `${API_BASE_URL}/api/content/${taskId}/publishers`
     );
     return response.data;
@@ -876,7 +876,7 @@ export const fetchPublisher = async (
   publisherId: number
 ): Promise<Publisher | null> => {
   try {
-    const response = await axios.get(
+    const response = await api.get(
       `${API_BASE_URL}/api/content/${publisherId}/publisher`
     );
     return response.data[0];
@@ -890,7 +890,7 @@ export const fetchPublisher = async (
  */
 export const fetchUsers = async (): Promise<User[]> => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/api/all-users`);
+    const response = await api.get(`${API_BASE_URL}/api/all-users`);
     return response.data;
   } catch (error) {
     console.error("❌ Error fetching users:", error);
@@ -906,7 +906,7 @@ export const addReferenceToTask = async (
   referenceContentId: number
 ) => {
   try {
-    await axios.post(`${API_BASE_URL}/api/add-content-relation`, {
+    await api.post(`${API_BASE_URL}/api/add-content-relation`, {
       taskContentId,
       referenceContentId,
     });
@@ -925,7 +925,7 @@ export const addReferenceToClaim = async (
   supportLevel: number
 ) => {
   try {
-    await axios.post(`${API_BASE_URL}/api/claims/add-claim-reference`, {
+    await api.post(`${API_BASE_URL}/api/claims/add-claim-reference`, {
       claimId,
       referenceId,
       userId,
@@ -943,7 +943,7 @@ export const addReferenceToClaim = async (
  */
 export const searchExistingContent = async (query: string) => {
   try {
-    const response = await axios.get(
+    const response = await api.get(
       `${API_BASE_URL}/api/search-content?query=${encodeURIComponent(query)}`
     );
     return response.data;
@@ -960,7 +960,7 @@ export const searchExistingContent = async (query: string) => {
  */
 export const scrapeNewContent = async (url: string) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/api/scrape-content`, {
+    const response = await api.post(`${API_BASE_URL}/api/scrape-content`, {
       url,
     });
     return response.data;
@@ -976,7 +976,7 @@ export const scrapeNewContent = async (url: string) => {
 export const scrapeAndAddReference = async (url: string, taskId: number) => {
   try {
     // Increase timeout to 5 minutes for AI operations (claim extraction + matching)
-    const response = await axios.post(
+    const response = await api.post(
       `${API_BASE_URL}/api/scrape-reference`,
       {
         url,
@@ -991,9 +991,9 @@ export const scrapeAndAddReference = async (url: string, taskId: number) => {
       console.log("✅ Scraped reference added:", response.data);
       return response.data;
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ Error scraping reference:", error);
-    if (axios.isAxiosError(error) && error.code === 'ECONNABORTED') {
+    if (error.code === 'ECONNABORTED') {
       console.error("⏱️ Request timed out after 5 minutes");
     }
   }
@@ -1004,7 +1004,7 @@ export const scrapeAndAddReference = async (url: string, taskId: number) => {
  ** Discussions
  **/
 export async function postDiscussionEntry(entry: Partial<DiscussionEntry>) {
-  const res = await axios.post(`${API_BASE_URL}/api/discussion`, entry);
+  const res = await api.post(`${API_BASE_URL}/api/discussion`, entry);
 
   // Dispatch event to update discussion stats (hot topics, top contributors)
   if (typeof window !== 'undefined') {
@@ -1019,7 +1019,7 @@ export const fetchDiscussionEntries = async (
   viewerId?: number | null
 ): Promise<DiscussionEntry[]> => {
   const params = viewerId !== undefined && viewerId !== null ? { viewerId } : {};
-  const res = await axios.get(`${API_BASE_URL}/api/discussion/${contentId}`, { params });
+  const res = await api.get(`${API_BASE_URL}/api/discussion/${contentId}`, { params });
   if (Array.isArray(res.data)) return res.data;
   return [];
 };
@@ -1032,7 +1032,7 @@ export const fetchAIEvidenceLinks = async (
   contentId: number
 ): Promise<import("../../../shared/entities/types").AIEvidenceLink[]> => {
   try {
-    const res = await axios.get(
+    const res = await api.get(
       `${API_BASE_URL}/api/reference-claim-links/${contentId}`
     );
     return res.data || [];
@@ -1052,7 +1052,7 @@ export const fetchClaimsWithEvidence = async (
   scope?: 'user' | 'all' | 'admin'
 ): Promise<import("../../../shared/entities/types").Claim[]> => {
   try {
-    const res = await axios.get(
+    const res = await api.get(
       `${API_BASE_URL}/api/claims-with-evidence/${contentId}`,
       { params: { viewerId, scope } }
     );
@@ -1075,7 +1075,7 @@ export const fetchBulkClaimsAndReferences = async (
   claimReferences: import("../../../shared/entities/types").ClaimReferenceMap;
 }> => {
   try {
-    const res = await axios.post(
+    const res = await api.post(
       `${API_BASE_URL}/api/bulk-claims-and-references`,
       { taskIds, viewerId }
     );
@@ -1094,7 +1094,7 @@ export const fetchFailedReferences = async (
   taskContentId: number
 ): Promise<import("../../../shared/entities/types").FailedReference[]> => {
   try {
-    const res = await axios.get(
+    const res = await api.get(
       `${API_BASE_URL}/api/failed-references/${taskContentId}`
     );
     return res.data || [];

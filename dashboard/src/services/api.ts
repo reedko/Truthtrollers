@@ -76,91 +76,50 @@ export const api = axios.create({
 });
 
 // Attach the JWT on every request automatically
-// Also auto-refresh if token is near expiry
-let isRefreshing = false;
 api.interceptors.request.use(async (config) => {
-  const { token, setAuth, logout } = useAuthStore.getState();
+  const { token } = useAuthStore.getState();
 
   if (token) {
-    // Check if token is near expiry (within 5 minutes)
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const expiresAt = payload.exp * 1000;
-      const now = Date.now();
-      const timeUntilExpiry = expiresAt - now;
-      const minutesRemaining = Math.floor(timeUntilExpiry / 1000 / 60);
-      const FIVE_MINUTES = 5 * 60 * 1000;
-
-      console.log(`🔍 [API Interceptor] Request to ${config.url} - Token has ${minutesRemaining} min remaining (expires at ${new Date(expiresAt).toLocaleTimeString()})`);
-
-      // If token is already expired
-      if (timeUntilExpiry <= 0) {
-        console.error('🚨 [API Interceptor] Token is EXPIRED! Auto-logging out...');
-        console.log(`   Token expired at: ${new Date(expiresAt).toLocaleTimeString()}`);
-        console.log(`   Current time: ${new Date(now).toLocaleTimeString()}`);
-        logout();
-        throw new Error('Token expired');
-      }
-
-      // If token expires in less than 5 minutes and we're not already refreshing, refresh it
-      if (timeUntilExpiry < FIVE_MINUTES && !isRefreshing && config.url !== '/api/refresh-token') {
-        isRefreshing = true;
-        console.log(`⚠️ [API Interceptor] Token expiring soon (${minutesRemaining} min), attempting refresh...`);
-        console.log(`   Request URL: ${config.url}`);
-        console.log(`   Token expires at: ${new Date(expiresAt).toLocaleTimeString()}`);
-
-        try {
-          const refreshStartTime = Date.now();
-          const response = await axios.post(
-            `${config.baseURL}/api/refresh-token`,
-            {},
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-
-          const refreshDuration = Date.now() - refreshStartTime;
-          const { token: newToken, user: updatedUser } = response.data;
-
-          // Parse new token to show expiration
-          const newPayload = JSON.parse(atob(newToken.split('.')[1]));
-          const newExpiresAt = newPayload.exp * 1000;
-          const newMinutesRemaining = Math.floor((newExpiresAt - Date.now()) / 1000 / 60);
-
-          setAuth(updatedUser, newToken);
-          console.log(`✅ [API Interceptor] Token refreshed successfully in ${refreshDuration}ms`);
-          console.log(`   New token expires at: ${new Date(newExpiresAt).toLocaleTimeString()} (${newMinutesRemaining} min from now)`);
-          console.log(`   User: ${updatedUser.username} (ID: ${updatedUser.user_id})`);
-
-          // Use the new token for this request
-          config.headers = config.headers ?? {};
-          config.headers.Authorization = `Bearer ${newToken}`;
-        } catch (error: any) {
-          console.error('❌ [API Interceptor] Token refresh FAILED - Auto-logging out');
-          console.error(`   Error: ${error.message}`);
-          console.error(`   Request that triggered refresh: ${config.url}`);
-          console.error(`   Token had ${minutesRemaining} min remaining when refresh was attempted`);
-          if (error.response) {
-            console.error(`   Backend response status: ${error.response.status}`);
-            console.error(`   Backend response data:`, error.response.data);
-          }
-          logout();
-          throw error;
-        } finally {
-          isRefreshing = false;
-        }
-      } else {
-        // Token is fine, just attach it
-        config.headers = config.headers ?? {};
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-    } catch (error: any) {
-      console.error('❌ [API Interceptor] Error parsing token:', error);
-      console.error('   Token value (first 20 chars):', token.substring(0, 20) + '...');
-      config.headers = config.headers ?? {};
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-  } else {
-    console.log(`🔓 [API Interceptor] No token available for request to ${config.url}`);
+    config.headers = config.headers ?? {};
+    config.headers.Authorization = `Bearer ${token}`;
   }
 
   return config;
 });
+
+// Response interceptor: retry on 401 with token refresh (only if truly unauthorized)
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    // If 401 and we haven't retried yet, try refreshing token ONCE
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      const { token, setAuth, logout } = useAuthStore.getState();
+
+      if (token) {
+        try {
+          const response = await axios.post(
+            `${API_BASE_URL}/api/refresh-token`,
+            {},
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+
+          const { token: newToken, user: updatedUser } = response.data;
+          setAuth(updatedUser, newToken);
+
+          // Retry original request with new token
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return api(originalRequest);
+        } catch (refreshError) {
+          // Token refresh failed - log out
+          logout();
+          return Promise.reject(refreshError);
+        }
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);

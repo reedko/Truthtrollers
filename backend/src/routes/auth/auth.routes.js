@@ -293,7 +293,7 @@ router.post("/api/login", async (req, res) => {
           role: userRole,
         },
         process.env.JWT_SECRET,
-        { expiresIn: "60m" } // 60 minute sessions
+        { expiresIn: "30d" } // 30 day sessions - users stay logged in
       );
 
       // --- SESSION LOGIC ---
@@ -684,7 +684,7 @@ router.post("/api/refresh-token", async (req, res) => {
         role: userRole,
       },
       process.env.JWT_SECRET,
-      { expiresIn: "60m" } // 60 minute sessions
+      { expiresIn: "30d" } // 30 day sessions - users stay logged in
     );
 
     // Update session to keep user appearing online

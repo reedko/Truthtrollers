@@ -600,17 +600,8 @@ export const PlatformTour: React.FC = () => {
         startTour();
       }, 1500);
       return () => clearTimeout(t);
-    } else {
-      console.log("🔍 PlatformTour check:", {
-        hasSeenTour: !!hasSeenTour,
-        isAlreadyActive,
-        pathname: location.pathname,
-        shouldStart:
-          !hasSeenTour &&
-          !isAlreadyActive &&
-          location.pathname.includes("/dashboard"),
-      });
     }
+    // Tour not needed - user has already seen it
   }, [location.pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Detect TextPad submission complete (URL gains ?contentId) ─────────────

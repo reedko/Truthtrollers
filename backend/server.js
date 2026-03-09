@@ -197,10 +197,13 @@ app.use(
   })
 );
 
-// 🔍 REQUEST LOGGER - Log EVERY request that reaches Express
+// 🔍 REQUEST LOGGER - Log EVERY request that reaches Express (except image requests)
 app.use((req, res, next) => {
-  const logMsg = `[${new Date().toISOString()}] ${req.method} ${req.path} | Origin: ${req.headers.origin || 'none'} | IP: ${req.headers['x-forwarded-for'] || req.socket.remoteAddress}\n`;
-  process.stderr.write(logMsg);
+  // Skip logging for image API requests to reduce console spam
+  if (!req.path.startsWith('/api/image/')) {
+    const logMsg = `[${new Date().toISOString()}] ${req.method} ${req.path} | Origin: ${req.headers.origin || 'none'} | IP: ${req.headers['x-forwarded-for'] || req.socket.remoteAddress}\n`;
+    process.stderr.write(logMsg);
+  }
   next();
 });
 

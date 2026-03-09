@@ -171,11 +171,13 @@ const MoleculeViewTabs: React.FC<MoleculeViewTabsProps> = ({
           {views.map((view) => (
             <MenuItem
               key={view.id}
+              as="div"
               onClick={() => onViewChange(view.id)}
               bg={view.id === activeViewId ? (colorMode === "dark" ? "rgba(0, 162, 255, 0.2)" : "rgba(71, 85, 105, 0.1)") : undefined}
               fontWeight={view.id === activeViewId ? "bold" : "normal"}
               display="flex"
               justifyContent="space-between"
+              cursor="pointer"
             >
               <span>
                 {view.name}

@@ -1,6 +1,7 @@
 // /backend/src/routes/authors/authors.routes.js
 import { Router } from "express";
 import { parseAuthorName } from "../../utils/parseAuthorName.js";
+import { authenticateToken } from "../../middleware/auth.js";
 
 export default function createAuthorsRoutes({ query, pool }) {
   const router = Router();
@@ -167,7 +168,7 @@ export default function createAuthorsRoutes({ query, pool }) {
    * PUT /api/authors/:authorId/ratings
    * Update author ratings (bulk replacement) - includes user_id
    */
-  router.put("/api/authors/:authorId/ratings", async (req, res) => {
+  router.put("/api/authors/:authorId/ratings", authenticateToken, async (req, res) => {
     const { authorId } = req.params;
     const { ratings } = req.body;
     const userId = req.user?.user_id;
@@ -222,7 +223,7 @@ export default function createAuthorsRoutes({ query, pool }) {
    * PUT /api/authors/:authorRatingId/rating
    * Update a single author rating (user can only update their own)
    */
-  router.put("/api/authors/:authorRatingId/rating", async (req, res) => {
+  router.put("/api/authors/:authorRatingId/rating", authenticateToken, async (req, res) => {
     const { authorRatingId } = req.params;
     const { topic_id, source, url, bias_score, veracity_score, notes } =
       req.body.rating;
@@ -269,7 +270,7 @@ export default function createAuthorsRoutes({ query, pool }) {
    * POST /api/authors/add-rating
    * Add new author rating (includes user_id)
    */
-  router.post("/api/authors/add-rating", async (req, res) => {
+  router.post("/api/authors/add-rating", authenticateToken, async (req, res) => {
     const { ratings } = req.body;
     const userId = req.user?.user_id;
 

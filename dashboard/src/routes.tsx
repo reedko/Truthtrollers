@@ -242,19 +242,8 @@ const router = createBrowserRouter([
 ]);
 
 export default function AppRouter() {
-  // Smart token refresh: refreshes at 20 min when tab is visible, or before API calls if near expiry
+  // Token refresh hook (currently disabled - tokens last 30 days)
   useTokenRefresh();
-
-  // Log token configuration once on app start
-  React.useEffect(() => {
-    console.log('═══════════════════════════════════════════════════════════');
-    console.log('🔐 [Token System] Configuration:');
-    console.log('   Token Duration: 60 minutes');
-    console.log('   Background Refresh: At 40 minutes (when tab visible)');
-    console.log('   API Interceptor Refresh: When < 5 minutes before any API call');
-    console.log('   Auto-logout on Expired Token: YES (immediate logout if expired)');
-    console.log('═══════════════════════════════════════════════════════════');
-  }, []);
 
   return <RouterProvider router={router} />;
 }

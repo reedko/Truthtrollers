@@ -65,9 +65,22 @@ rsync -azP --delete --partial --inplace \
   --exclude 'assets/images/authors/' \
   --exclude 'assets/images/publishers/' \
   --exclude 'assets/pdf-thumbnails/' \
+  --exclude 'assets/videos/' \
   --exclude 'temp/' \
   --exclude 'temp-out/' \
   backend/ "$SERVER:$BACKEND_PATH/"
+
+echo "🖼️  Sync default images → server (fallbacks for missing images)..."
+rsync -azP --partial --inplace \
+  backend/assets/images/content/content_id_default.png \
+  "$SERVER:$BACKEND_PATH/assets/images/content/" 2>/dev/null || true
+rsync -azP --partial --inplace \
+  backend/assets/images/authors/author_id_default.png \
+  "$SERVER:$BACKEND_PATH/assets/images/authors/" 2>/dev/null || true
+rsync -azP --partial --inplace \
+  backend/assets/images/publishers/publisher_id_default.png \
+  "$SERVER:$BACKEND_PATH/assets/images/publishers/" 2>/dev/null || true
+echo "✅ Default images synced (or skipped if not found)"
 
 echo "🖥 Remote steps: perms, logs, restart..."
 ssh "$SERVER" << EOF

@@ -28,7 +28,6 @@ const HotTopics: React.FC = () => {
       try {
         const res = await api.get("/api/discussion/hot-topics");
         const data = res.data || [];
-        console.log(res, "LKJHG");
 
         // If no data from API, use fallback sample data
         if (data.length === 0) {

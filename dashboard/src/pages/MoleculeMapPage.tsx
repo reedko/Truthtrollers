@@ -69,6 +69,7 @@ const MoleculeMapPage = () => {
   const [activeViewId, setActiveViewId] = useState<number | null>(null);
   const [loadingViews, setLoadingViews] = useState(true);
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
+  const [dimUnpinned, setDimUnpinned] = useState(true); // Dim unpinned nodes (default: true)
   const [showReferenceAuthors, setShowReferenceAuthors] = useState(false); // OFF by default to keep graph readable
 
   const handleVerimeterRefresh = async (contentId: number) => {
@@ -263,13 +264,13 @@ const MoleculeMapPage = () => {
     } else {
       // DIM MODE: Add dimming metadata to nodes without filtering them out
       let nodesWithDimming = graphData.nodes.map((node): GraphNode => {
-        // Dim unpinned references if there are any pins configured
-        if (node.type === "reference" && activeView.pins.length > 0) {
+        // Dim unpinned references if there are any pins configured AND dimUnpinned is true
+        if (node.type === "reference" && activeView.pins.length > 0 && dimUnpinned) {
           const isPinned = pinnedIds.has(node.content_id!);
           return Object.assign(Object.create(Object.getPrototypeOf(node)), { ...node, dimmed: !isPinned });
         }
         // Dim refClaims that belong to unpinned references
-        if (node.type === "refClaim" && activeView.pins.length > 0) {
+        if (node.type === "refClaim" && activeView.pins.length > 0 && dimUnpinned) {
           const isPinned = pinnedIds.has(node.content_id!);
           return Object.assign(Object.create(Object.getPrototypeOf(node)), { ...node, dimmed: !isPinned });
         }
@@ -296,7 +297,7 @@ const MoleculeMapPage = () => {
         links: filteredLinks,
       });
     }
-  }, [graphData, activeViewId, views, showPinnedOnly, showReferenceAuthors]);
+  }, [graphData, activeViewId, views, showPinnedOnly, dimUnpinned, showReferenceAuthors]);
 
   // View management handlers
   const handleViewChange = async (viewId: number) => {
@@ -681,12 +682,25 @@ const MoleculeMapPage = () => {
           </Text>
           <Select
             size="sm"
-            width="150px"
-            value={showPinnedOnly ? "pinned" : "all"}
-            onChange={(e) => setShowPinnedOnly(e.target.value === "pinned")}
+            width="180px"
+            value={showPinnedOnly ? "pinned" : (dimUnpinned ? "prominent" : "equal")}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "pinned") {
+                setShowPinnedOnly(true);
+                setDimUnpinned(true);
+              } else if (val === "prominent") {
+                setShowPinnedOnly(false);
+                setDimUnpinned(true);
+              } else {
+                setShowPinnedOnly(false);
+                setDimUnpinned(false);
+              }
+            }}
             bg={colorMode === "dark" ? "gray.700" : "white"}
           >
-            <option value="all">👁️ Show All</option>
+            <option value="prominent">👁️ All (Prominent)</option>
+            <option value="equal">👁️ All (Equal)</option>
             <option value="pinned">📌 Pinned Only</option>
           </Select>
         </Box>
