@@ -754,7 +754,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                   height={isFull ? "180px" : "120px"}
                 />
               ) : (
-                <PubCard publishers={publishers} compact={!isFull} />
+                <PubCard publishers={publishers} compact={!isFull} contentId={contentId ?? undefined} />
               )}
             </Box>
 

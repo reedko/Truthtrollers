@@ -31,6 +31,7 @@ import { Author, AuthorRating } from "../../../shared/entities/types";
 import { useRef, useState, useEffect } from "react";
 import AuthBioModal from "./modals/AuthBioModal";
 import AuthRatingModal from "./modals/AuthRatingModal";
+import CredibilityInfoModal from "./modals/CredibilityInfoModal";
 import ResponsiveOverlay from "./overlays/ResponsiveOverlay";
 import {
   uploadImage,
@@ -82,6 +83,11 @@ const AuthCard: React.FC<AuthCardProps> = ({
     isOpen: isBioPopupOpen,
     onOpen: onBioPopupOpen,
     onClose: onBioPopupClose,
+  } = useDisclosure();
+  const {
+    isOpen: isCredibilityOpen,
+    onOpen: onCredibilityOpen,
+    onClose: onCredibilityClose,
   } = useDisclosure();
 
   useEffect(() => {
@@ -402,6 +408,9 @@ const AuthCard: React.FC<AuthCardProps> = ({
               >
                 📊 Manage Ratings
               </MenuItem>
+              <MenuItem onClick={() => onCredibilityOpen()}>
+                🔍 Check Credibility
+              </MenuItem>
               {contentId && (
                 <>
                   <MenuItem onClick={onAddAuthorOpen}>➕ Add Author</MenuItem>
@@ -511,6 +520,16 @@ const AuthCard: React.FC<AuthCardProps> = ({
               {activeAuthor.description || "No bio available."}
             </Box>
           </ResponsiveOverlay>
+        )}
+
+        {activeAuthor && isCredibilityOpen && (
+          <CredibilityInfoModal
+            isOpen={isCredibilityOpen}
+            onClose={onCredibilityClose}
+            entityType="author"
+            entityId={activeAuthor.author_id}
+            entityName={`${activeAuthor.author_first_name} ${activeAuthor.author_last_name}`}
+          />
         )}
       </Box>
     </Center>

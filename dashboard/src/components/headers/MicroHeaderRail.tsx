@@ -251,10 +251,10 @@ export default function MicroHeaderRail({
             )}
 
             {open === "publisher" && (
-              <PubCard publishers={publishers} compact />
+              <PubCard publishers={publishers} compact contentId={contentId ?? undefined} />
             )}
 
-            {open === "author" && <AuthCard authors={authors} compact />}
+            {open === "author" && <AuthCard authors={authors} compact contentId={contentId ?? undefined} />}
 
             {open === "progress" && (
               <ProgressCard

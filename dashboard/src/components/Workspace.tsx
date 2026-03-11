@@ -58,8 +58,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
   onHeightChange,
   linkFilter,
 }) => {
-  console.log("🟢 Workspace v3.0 loaded - Conditional hooks fixed");
-
   // Get user permissions for permission-based UI
   const { hasPermission } = usePermissions();
 

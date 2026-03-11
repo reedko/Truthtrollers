@@ -152,11 +152,22 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       const enriched = enrichClaimsWithRelevance(all, taskClaim.claim_id, existingLinks);
       const sorted = sortClaimsByRelevance(enriched);
 
-      // Show all claims with ANY assessment (AI or manual)
-      // Check if they have a stance (all assessed claims have a stance)
-      const assessed = sorted.filter((c) => c.stance !== undefined);
+      // 🎯 FILTER: Only show relevant claims
+      // - Manual links (hasLink = true) are always shown
+      // - AI assessments must be meaningful (not "insufficient" with low scores)
+      const assessed = sorted.filter((c) => {
+        if (!c.stance) return false; // No assessment at all
+        if (c.hasLink) return true; // Always show manual links
 
-      console.log(`🔍 [RelevanceScan] After enriching: ${assessed.length} claims assessed (${assessed.filter(c => c.hasLink).length} manual links, ${assessed.filter(c => !c.hasLink).length} AI assessments)`);
+        // For AI assessments, filter out irrelevant ones
+        const isIrrelevant = c.stance === 'insufficient' &&
+                            Math.abs(c.relevanceScore) < 10 &&
+                            (c.confidence ?? 0) < 0.5;
+
+        return !isIrrelevant;
+      });
+
+      console.log(`🔍 [RelevanceScan] After enriching and filtering: ${assessed.length} claims (${assessed.filter(c => c.hasLink).length} manual links, ${assessed.filter(c => !c.hasLink).length} AI assessments)`);
       setTopClaims(assessed);
     } catch (err) {
       console.error("[RelevanceScan] Error loading existing links:", err);
@@ -285,8 +296,19 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       const enriched = enrichClaimsWithRelevance(claims, taskClaim.claim_id, allLinks);
       const sorted = sortClaimsByRelevance(enriched);
 
-      // Show top 12 claims (both linked and unlinked)
-      const top12 = sorted.slice(0, 12);
+      // 🎯 FILTER: Show only relevant claims
+      const relevant = sorted.filter((c) => {
+        if (!c.stance) return false;
+        if (c.hasLink) return true; // Always show manual links
+
+        // Filter out irrelevant AI assessments
+        const isIrrelevant = c.stance === 'insufficient' &&
+                            Math.abs(c.relevanceScore) < 10 &&
+                            (c.confidence ?? 0) < 0.5;
+        return !isIrrelevant;
+      });
+
+      const top12 = relevant.slice(0, 12);
       const withLinks = top12.filter((c) => c.hasLink);
 
       setTopClaims(top12);
@@ -388,6 +410,7 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
     if (stance === "support") return "✓ SUPPORTS";
     if (stance === "refute") return "✗ REFUTES";
     if (stance === "nuance") return "~ NUANCED";
+    if (stance === "insufficient") return "⊘ INSUFFICIENT";
     return "? UNKNOWN";
   };
 
@@ -529,32 +552,46 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                   >
                     {/* 🔍 DEBUG: Show IDs for each claim */}
                     <Box mb={2} p={1} bg={colorMode === "dark" ? "purple.900" : "purple.100"} borderRadius="sm" fontSize="10px" fontFamily="monospace">
-                      <Text color={colorMode === "dark" ? "purple.300" : "purple.700"}>Src Content: {referenceId ?? 'null'} | Src Claim: {claim.claim_id}</Text>
+                      <Text color={colorMode === "dark" ? "purple.300" : "purple.700"}>Source Content: {referenceId ?? 'null'} | Source Claim: {claim.claim_id}</Text>
                     </Box>
 
                     <HStack justify="space-between" mb={2} wrap="wrap" gap={1}>
-                      <HStack spacing={2}>
+                      <HStack spacing={2} wrap="wrap">
                         <Badge colorScheme="blue" fontSize="xs">#{index + 1}</Badge>
                         <Badge colorScheme={stanceColor} fontSize="xs">
                           {getStanceLabel(claim.stance)}
                         </Badge>
-                        <Badge colorScheme="purple" fontSize="xs">
-                          Score: {Math.round(claim.relevanceScore)}
-                        </Badge>
+                        <Tooltip label="Relevance score: -100 (strongly refutes) to +100 (strongly supports)">
+                          <Badge colorScheme="purple" fontSize="xs" cursor="help">
+                            Relevance: {Math.round(claim.relevanceScore)}
+                          </Badge>
+                        </Tooltip>
+                        <Tooltip label={`AI confidence in this assessment: ${Math.round((claim.confidence ?? 0) * 100)}%`}>
+                          <Badge colorScheme="teal" fontSize="xs" cursor="help">
+                            Confidence: {Math.round((claim.confidence ?? 0) * 100)}%
+                          </Badge>
+                        </Tooltip>
                       </HStack>
-                      <Tooltip label={`Confidence: ${Math.round((claim.confidence ?? 0) * 100)}%`}>
-                        <Badge colorScheme="teal" fontSize="xs">
-                          {Math.round((claim.confidence ?? 0) * 100)}% conf.
-                        </Badge>
-                      </Tooltip>
                     </HStack>
 
-                    <Text fontSize="sm" mb={1} color={colorMode === "dark" ? "gray.100" : "gray.800"}>{claim.claim_text}</Text>
+                    <Text fontSize="sm" mb={2} color={colorMode === "dark" ? "gray.100" : "gray.800"}>{claim.claim_text}</Text>
 
                     {reference && (
-                      <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"} mb={1}>
-                        From: {reference.content_name}
-                      </Text>
+                      <VStack align="start" spacing={1} mb={2}>
+                        <Text fontSize="xs" fontWeight="semibold" color={colorMode === "dark" ? "blue.300" : "blue.600"}>
+                          Source: {reference.content_name}
+                        </Text>
+                        {reference.publisher_name && (
+                          <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"}>
+                            Publisher: {reference.publisher_name}
+                          </Text>
+                        )}
+                        {reference.author_name && (
+                          <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"}>
+                            Author: {reference.author_name}
+                          </Text>
+                        )}
+                      </VStack>
                     )}
 
                     {claim.rationale && (

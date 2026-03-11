@@ -1,6 +1,6 @@
 -- Migration: Create user_claim_ratings table
 -- Tracks user assessments of reference claim quality (for honesty scoring)
-
+use truthtrollers;
 CREATE TABLE IF NOT EXISTS user_claim_ratings (
   user_claim_rating_id INT PRIMARY KEY AUTO_INCREMENT,
   user_id INT NOT NULL,

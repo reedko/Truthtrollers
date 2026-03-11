@@ -855,6 +855,43 @@ export const removeAuthorFromContent = async (
 };
 
 /**
+ * Add publishers to content.
+ */
+export const addPublishersToContent = async (
+  contentId: number,
+  publishers: Array<{ name: string }>
+): Promise<boolean> => {
+  try {
+    await api.post(`${API_BASE_URL}/api/content/${contentId}/publishers`, {
+      contentId,
+      publisher: publishers[0], // Backend expects single publisher object
+    });
+    return true;
+  } catch (error) {
+    console.error("❌ Error adding publishers to content:", error);
+    return false;
+  }
+};
+
+/**
+ * Remove a publisher from content.
+ */
+export const removePublisherFromContent = async (
+  contentId: number,
+  publisherId: number
+): Promise<boolean> => {
+  try {
+    await api.delete(
+      `${API_BASE_URL}/api/content/${contentId}/publishers/${publisherId}`
+    );
+    return true;
+  } catch (error) {
+    console.error("❌ Error removing publisher from content:", error);
+    return false;
+  }
+};
+
+/**
  * Fetch all publishers associated with a task.
  */
 export const fetchPublishers = async (taskId: number): Promise<Publisher[]> => {

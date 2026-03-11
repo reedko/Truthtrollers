@@ -1,8 +1,0 @@
-backend/assets/images/content/content_id_8382.png
-backend/assets/images/content/content_id_8383.png
-backend/assets/images/content/content_id_8384.png
-backend/assets/images/content/content_id_8386.png
-backend/assets/images/content/content_id_8388.png
-backend/assets/images/content/content_id_8395.png
-backend/assets/images/content/content_id_8398.png
-backend/assets/images/content/content_id_8407.png

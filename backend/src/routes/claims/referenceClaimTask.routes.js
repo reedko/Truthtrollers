@@ -199,6 +199,21 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
         taskClaimText,
       });
 
+      // 🎯 FILTER: Don't store irrelevant assessments (insufficient stance with low quality/confidence)
+      const isIrrelevant = assessment.stance === 'insufficient' &&
+                          (assessment.quality < 0.4 || assessment.confidence < 0.4);
+
+      if (isIrrelevant) {
+        console.log(`[Assess Claim] Skipping irrelevant assessment - stance: ${assessment.stance}, quality: ${assessment.quality}, confidence: ${assessment.confidence}`);
+        return res.json({
+          assessed: true,
+          link: null, // No link created - claim is irrelevant
+          assessment,
+          skipped: true,
+          reason: 'insufficient_relevance'
+        });
+      }
+
       // Insert into database
       const result = await query(
         `INSERT INTO reference_claim_task_links (

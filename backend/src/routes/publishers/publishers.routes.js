@@ -67,6 +67,23 @@ export default function createPublishersRoutes({ query, pool }) {
   });
 
   /**
+   * DELETE /api/content/:contentId/publishers/:publisherId
+   * Remove publisher from content
+   */
+  router.delete("/api/content/:contentId/publishers/:publisherId", async (req, res) => {
+    const { contentId, publisherId } = req.params;
+
+    try {
+      const sql = `DELETE FROM content_publishers WHERE content_id = ? AND publisher_id = ?`;
+      await query(sql, [contentId, publisherId]);
+      res.status(200).send("Publisher removed successfully");
+    } catch (error) {
+      console.error("Error removing publisher:", error);
+      res.status(500).send("Error removing publisher");
+    }
+  });
+
+  /**
    * PUT /api/publishers/:publisherId/bio
    * Update publisher bio/description
    */

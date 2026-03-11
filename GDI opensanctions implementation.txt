@@ -1,0 +1,331 @@
+     backend/src/services/external/gdi.service.js
+     // /backend/src/services/external/gdi.service.js
+     import axios from 'axios';
+     /**
+      * Global Disinformation Index API Service
+      * Provides credibility scoring for publishers and 
+     URLs
+      */
+     class GDIService {
+       constructor() {
+         this.baseUrl = process.env.GDI_API_URL ||
+     'https://api.disinformationindex.org/v1';
+     … +206 lines (ctrl+o to expand)
+
+⏺ Now I'll create the OpenSanctions service module:
+
+⏺ Write(backend/src/services/external/opensanctions.service.js)
+  ⎿  Wrote 338 lines to                                   
+     backend/src/services/external/opensanctions.service.js
+
+     // /backend/src/services/external/opensanctions.servic
+     e.js
+     import axios from 'axios';
+     /**
+      * OpenSanctions API Service
+      * Screens authors, publishers, and organizations 
+     against sanctions lists,
+      * politically exposed persons (PEPs), and other 
+     watchlists
+      */
+     class OpenSanctionsService {
+       constructor() {
+     … +328 lines (ctrl+o to expand)
+
+⏺ Now let's create a combined credibility service that
+  orchestrates both GDI and OpenSanctions:
+
+⏺ Write(backend/src/services/external/credibility.service.js)
+  ⎿  Wrote 290 lines to                                   
+     backend/src/services/external/credibility.service.js
+     // 
+     /backend/src/services/external/credibility.service.js
+     import gdiService from './gdi.service.js';
+     import opensanctionsService from
+     './opensanctions.service.js';
+     /**
+      * Combined Credibility Service
+      * Orchestrates credibility checks across multiple 
+     external services
+      */
+     class CredibilityService {
+       /**
+     … +280 lines (ctrl+o to expand)
+
+⏺ Now let's create an index file for the services:
+
+⏺ Write(backend/src/services/external/index.js)
+  ⎿  Wrote 5 lines to                                     
+     backend/src/services/external/index.js
+     // /backend/src/services/external/index.js
+     export { default as gdiService } from
+     './gdi.service.js';
+     export { default as opensanctionsService } from
+     './opensanctions.service.js';
+     export { default as credibilityService } from
+     './credibility.service.js';
+
+⏺ Now let's create a database migration to store
+  credibility check results:
+
+⏺ Write(backend/migrations/add-credibility-checks.js)
+  ⎿  Wrote 186 lines to                              
+     backend/migrations/add-credibility-checks.js
+     // /backend/migrations/add-credibility-checks.js
+     import mysql from "mysql";
+     import dotenv from "dotenv";
+     dotenv.config();
+     const pool = mysql.createPool({
+       connectionLimit: 10,
+       host: process.env.DB_HOST,
+       user: process.env.DB_USER,
+     … +176 lines (ctrl+o to expand)
+
+⏺ Now let's create API routes for the credibility checks:
+
+⏺ Write(backend/src/routes/credibility/credibility.routes.js)
+  ⎿  Wrote 360 lines to                                   
+     backend/src/routes/credibility/credibility.routes.js
+     // 
+     /backend/src/routes/credibility/credibility.routes.js
+     import { Router } from "express";
+     import { authenticateToken } from
+     "../../middleware/auth.js";
+     import { credibilityService } from
+     "../../services/external/index.js";
+     export default function createCredibilityRoutes({ 
+     query, pool }) {
+       const router = Router();
+       /**
+        * POST /api/credibility/author/:authorId/check
+     … +350 lines (ctrl+o to expand)
+
+⏺ Write(backend/src/routes/credibility/index.js)
+  ⎿  Wrote 13 lines to                                    
+     backend/src/routes/credibility/index.js
+     // /backend/src/routes/credibility/index.js
+     import { Router } from "express";
+     import createCredibilityRoutes from
+     "./credibility.routes.js";
+     export default function createCredibilityRouter({ 
+     query, pool }) {
+       const router = Router();
+       // Mount credibility routes
+       router.use("/", createCredibilityRoutes({ query,
+     pool }));
+     … +3 lines (ctrl+o to expand)
+
+⏺ Now let's update the server.js to include the credibility
+   routes:
+
+⏺ Read(backend/server.js)
+  ⎿  Read 40 lines
+
+⏺ Update(backend/server.js)
+  ⎿  Updated backend/server.js with 1 addition          
+       77    import createTutorialsRouter from "./src/ro
+            utes/tutorials/tutorials.routes.js";
+       78    import createAdminRouter from 
+            "./src/routes/admin/admin.routes.js";
+       79    import createSearchAnalysisRouter from 
+            "./src/routes/search-analysis.routes.js";
+       80 +  import createCredibilityRouter from 
+          + "./src/routes/credibility/index.js";
+       81    import { initSocketServer } from 
+            "./src/realtime/socketServer.js";
+       82    
+       83    // Logger utility
+
+⏺ Now let's find where the routes are mounted and add the
+  credibility router:
+
+⏺ Read(backend/server.js)
+  ⎿  Read 80 lines
+
+⏺ Read(backend/server.js)
+  ⎿  Read 20 lines
+
+⏺ Update(backend/server.js)
+  ⎿  Updated backend/server.js with 1 addition          
+       282    app.use("/", createSearchAnalysisRouter({ 
+             query, pool })); // Search analysis routes:
+              /api/search-analysis
+       283    app.use("/", createTutorialsRouter({ query
+              })); // Tutorial videos routes: 
+             /api/tutorials
+       284    app.use("/", createAdminRouter({ query 
+             }));     // Admin routes: /api/admin/*, 
+             super_admin only
+       285 +  app.use("/", createCredibilityRouter({ 
+           + query, pool })); // Credibility checks: 
+           + /api/credibility/*
+       286    // ───────────────────────────────────────
+             ──────
+       287    // Health + Simple Proxy (top-level, 
+             legacy behavior)
+       288    // ───────────────────────────────────────
+             ──────
+
+⏺ Now let's create a README for the credibility modules
+  with documentation on API keys and usage:
+
+⏺ Write(backend/CREDIBILITY_MODULES.md)
+  ⎿  Wrote 305 lines to backend/CREDIBILITY_MODULES.md    
+     # Credibility Checking Modules
+     This document describes the credibility checking
+     modules for authors, publishers, and content using
+     external APIs.
+     ## Overview
+     The credibility system integrates with two external
+     services:
+     - **Global Disinformation Index (GDI)**: Provides
+     credibility scores for publishers and URLs
+     - **OpenSanctions**: Screens authors and publishers
+     against sanctions lists, PEPs, and watchlists
+     … +295 lines (ctrl+o to expand)
+
+⏺ Now let's update the .env file to include placeholders
+  for the API keys:
+
+⏺ Read(backend/.env)
+  ⎿  Read 38 lines
+
+⏺ Update(backend/.env)
+  ⎿  Updated backend/.env with 7 additions and 1 removal
+       35    DEV_TRUST_SELF_SIGNED=true
+       36    VAPID_PUBLIC_KEY=BPWx5diJjWJdx2GcLNr4HnovfI
+            Lc00lTVA-9cUutEmq4_J4Q-STijXcoT9z7uf97HeKQQM
+            pxUi8juQL6jvMZD7c
+       37    VAPID_PRIVATE_KEY=tAj1U63L142XjtWn_6bgsa8K_
+            CEFDvStComnZAouyCc
+       38 -  VAPID_EMAIL=mailto:admin@truthtrollers.com
+       38   \ No newline at end of file
+       39 +  VAPID_EMAIL=mailto:admin@truthtrollers.com
+       40 +  
+       41 +  # Credibility checking services
+       42 +  GDI_API_URL=https://api.disinformationindex
+          + .org/v1
+       43 +  GDI_API_KEY=
+       44 +  OPENSANCTIONS_API_URL=https://api.opensanct
+          + ions.org/match/default
+       45 +  OPENSANCTIONS_API_KEY=
+       46   \ No newline at end of file
+
+⏺ Now let's also update the .env.prod file:
+
+⏺ Read(backend/.env.prod)
+  ⎿  Read 29 lines
+
+⏺ Update(backend/.env.prod)
+  ⎿  Updated backend/.env.prod with 7 additions and 1     
+     removal
+       26    TAVILY_API_KEY=tvly-dev-uSjTbzHDsaHrSqJCNzo
+            m5xks2HNtoClu
+       27    VAPID_PUBLIC_KEY=BPWx5diJjWJdx2GcLNr4HnovfI
+            Lc00lTVA-9cUutEmq4_J4Q-STijXcoT9z7uf97HeKQQM
+            pxUi8juQL6jvMZD7c
+       28    VAPID_PRIVATE_KEY=tAj1U63L142XjtWn_6bgsa8K_
+            CEFDvStComnZAouyCc
+       29 -  VAPID_EMAIL=mailto:admin@truthtrollers.com
+       29   \ No newline at end of file
+       30 +  VAPID_EMAIL=mailto:admin@truthtrollers.com
+       31 +  
+       32 +  # Credibility checking services
+       33 +  GDI_API_URL=https://api.disinformationindex
+          + .org/v1
+       34 +  GDI_API_KEY=
+       35 +  OPENSANCTIONS_API_URL=https://api.opensanct
+          + ions.org/match/default
+       36 +  OPENSANCTIONS_API_KEY=
+       37   \ No newline at end of file
+
+⏺ Perfect! I've successfully built complete modules for
+  accessing both the Global Disinformation Index (GDI) and
+  OpenSanctions APIs. Here's what I've created:
+
+  What's Been Built
+
+  1. Service Modules (backend/src/services/external/)
+
+  - gdi.service.js: Module for GDI API
+    - Check publisher domains for credibility scores
+    - Check specific URLs
+    - Batch check multiple publishers
+    - Normalizes responses with risk levels
+  (low/medium/high/critical)
+  - opensanctions.service.js: Module for OpenSanctions API
+    - Search for people (authors) against sanctions lists,
+  PEPs, watchlists
+    - Search for organizations (publishers)
+    - Screens against crime databases, sanctions,
+  politically exposed persons
+    - Provides detailed match information with scores
+  - credibility.service.js: Unified orchestration layer
+    - Coordinates checks across both services
+    - Links to author_id, publisher_id, content_id
+    - Calculates overall risk levels
+    - Handles batch operations
+
+  2. Database Schema 
+  (backend/migrations/add-credibility-checks.js)
+
+  Creates tables to store all credibility check results:
+  - author_credibility_checks - OpenSanctions results for
+  authors
+  - publisher_credibility_checks - GDI + OpenSanctions
+  results for publishers
+  - content_credibility_checks - GDI results for content
+  URLs
+  - Summary views for easy querying of latest checks
+
+  3. API Endpoints (backend/src/routes/credibility/)
+
+  Full REST API for credibility checks:
+  - POST /api/credibility/author/:authorId/check - Check
+  author
+  - POST /api/credibility/publisher/:publisherId/check -
+  Check publisher
+  - POST /api/credibility/content/:contentId/check - Check
+  content URL
+  - GET /api/credibility/author/:authorId/history - Get
+  check history
+  - GET /api/credibility/publisher/:publisherId/history -
+  Get check history
+  - GET /api/credibility/summary/authors - Get high-risk
+  authors
+  - GET /api/credibility/summary/publishers - Get high-risk
+   publishers
+  - POST /api/credibility/batch/authors - Batch check
+  authors
+  - POST /api/credibility/batch/publishers - Batch check
+  publishers
+  - GET /api/credibility/service-status - Check API
+  configuration
+
+  4. Integration
+
+  - Added credibility router to server.js
+  - Updated .env and .env.prod with API key placeholders
+  - Created comprehensive documentation in
+  CREDIBILITY_MODULES.md
+
+  Next Steps
+
+  1. Get API Keys:
+    - Sign up for GDI API access at
+  https://disinformationindex.org/
+    - Get OpenSanctions API key at
+  https://www.opensanctions.org/api/
+    - Add keys to your .env files
+  2. Run Migration:
+  node backend/migrations/add-credibility-checks.js
+  3. Start Using:
+    - The endpoints are ready to use immediately
+    - All checks are stored in the database
+    - Results include risk levels, scores, and detailed
+  match information
+
+  The modules handle errors gracefully, support rate
+  limiting, and provide standardized risk levels across
+  both services. Check out CREDIBILITY_MODULES.md for
+  detailed usage examples!

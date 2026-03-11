@@ -26,18 +26,24 @@ import {
   fetchPublisherRatings,
   fetchPublisher,
   updatePublisherBio,
+  addPublishersToContent,
+  removePublisherFromContent,
+  fetchPublishers,
 } from "../services/useDashboardAPI";
 import PubRatingModal from "./modals/PubRatingModal";
 import PubBioModal from "./modals/PubBioModal";
 import ViewRatingsModal from "./modals/ViewRatingsModal";
+import CredibilityInfoModal from "./modals/CredibilityInfoModal";
+import ResponsiveOverlay from "./overlays/ResponsiveOverlay";
 import { useEffect, useRef, useState } from "react";
 
 interface PubCardProps {
   publishers: Publisher[];
   compact?: boolean;
+  contentId?: number;
 }
 
-const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
+const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentId }) => {
   const [activePublisher, setActivePublisher] = useState<Publisher | null>(
     publishers[0],
   );
@@ -65,6 +71,17 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
     onOpen: onBioOpen,
     onClose: onBioClose,
   } = useDisclosure();
+  const {
+    isOpen: isCredibilityOpen,
+    onOpen: onCredibilityOpen,
+    onClose: onCredibilityClose,
+  } = useDisclosure();
+  const {
+    isOpen: isAddPublisherOpen,
+    onOpen: onAddPublisherOpen,
+    onClose: onAddPublisherClose,
+  } = useDisclosure();
+  const [newPublisherName, setNewPublisherName] = useState("");
 
   useEffect(() => {
     if (publishers.length > 0) {
@@ -178,6 +195,87 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
       duration: 3000,
       isClosable: true,
     });
+  };
+
+  const handleAddPublisher = async () => {
+    if (!contentId || !newPublisherName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a publisher name",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    const success = await addPublishersToContent(contentId, [
+      { name: newPublisherName.trim() },
+    ]);
+
+    if (success) {
+      toast({
+        title: "Publisher Added",
+        description: "Publisher has been added to content",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      // Refresh publisher list
+      const updatedPublishers = await fetchPublishers(contentId);
+      setPublisherList(updatedPublishers);
+      if (updatedPublishers.length > 0) {
+        setActivePublisher(updatedPublishers[updatedPublishers.length - 1]);
+      }
+
+      setNewPublisherName("");
+      onAddPublisherClose();
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to add publisher",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleRemovePublisher = async () => {
+    if (!contentId || !activePublisher) return;
+
+    const success = await removePublisherFromContent(
+      contentId,
+      activePublisher.publisher_id,
+    );
+
+    if (success) {
+      toast({
+        title: "Publisher Removed",
+        description: "Publisher has been removed from content",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      // Refresh publisher list
+      const updatedPublishers = await fetchPublishers(contentId);
+      setPublisherList(updatedPublishers);
+      if (updatedPublishers.length > 0) {
+        setActivePublisher(updatedPublishers[0]);
+      } else {
+        setActivePublisher(null);
+      }
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to remove publisher",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   // If no publisher, show placeholder
@@ -358,6 +456,21 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
                 <MenuItem onClick={() => onBioOpen()}>
                   ✏️ Edit Description
                 </MenuItem>
+                <MenuItem onClick={() => onCredibilityOpen()}>
+                  🔍 Check Credibility
+                </MenuItem>
+                {contentId && (
+                  <>
+                    <MenuItem onClick={onAddPublisherOpen}>
+                      ➕ Add Publisher
+                    </MenuItem>
+                    {activePublisher && publisherList.length > 1 && (
+                      <MenuItem onClick={handleRemovePublisher} color="red.400">
+                        🗑️ Remove Publisher
+                      </MenuItem>
+                    )}
+                  </>
+                )}
               </MenuList>
             </Menu>
           </Box>
@@ -386,6 +499,50 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact }) => {
             currentBio={activePublisher.description}
             onSave={handleSaveBio}
           />
+        )}
+
+        {activePublisher && isCredibilityOpen && (
+          <CredibilityInfoModal
+            isOpen={isCredibilityOpen}
+            onClose={onCredibilityClose}
+            entityType="publisher"
+            entityId={activePublisher.publisher_id}
+            entityName={activePublisher.publisher_name}
+          />
+        )}
+
+        {contentId && (
+          <ResponsiveOverlay
+            isOpen={isAddPublisherOpen}
+            onClose={onAddPublisherClose}
+            title="Add Publisher"
+            footer={
+              <>
+                <Button className="mr-button" mr={3} onClick={handleAddPublisher}>
+                  Add
+                </Button>
+                <Button onClick={onAddPublisherClose}>Cancel</Button>
+              </>
+            }
+            size="md"
+          >
+            <VStack spacing={4} align="stretch">
+              <Text className="mr-text-primary">
+                Enter the publisher's name (e.g., "The New York Times" or "BBC News")
+              </Text>
+              <Input
+                className="mr-input"
+                placeholder="Publisher name"
+                value={newPublisherName}
+                onChange={(e) => setNewPublisherName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleAddPublisher();
+                  }
+                }}
+              />
+            </VStack>
+          </ResponsiveOverlay>
         )}
       </Box>
     </Center>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   Box,
@@ -38,8 +38,28 @@ const WorkspacePage = () => {
   const setViewingUserId = useTaskStore((s) => s.setViewingUserId);
   const setViewScope = useTaskStore((s) => s.setViewScope);
 
-  // Phase 5: Read URL params on mount (viewer, scope)
+  // Refs to prevent circular updates between URL params and store
+  const isInitialMount = useRef(true);
+  const isUpdatingFromUrl = useRef(false);
+  const isUpdatingUrl = useRef(false);
+
+  // 🎯 CONSOLIDATED: Initialize from route params and URL params on mount only
   useEffect(() => {
+    if (!isInitialMount.current) return;
+
+    isInitialMount.current = false;
+    isUpdatingFromUrl.current = true;
+
+    // 1. Set taskId from route param
+    if (routeContentId) {
+      const contentIdNum = parseInt(routeContentId, 10);
+      if (!isNaN(contentIdNum)) {
+        console.log("📍 Setting taskId from route param:", contentIdNum);
+        setSelectedTask(contentIdNum);
+      }
+    }
+
+    // 2. Set viewer and scope from URL params
     const viewerParam = searchParams.get('viewer');
     const scopeParam = searchParams.get('scope') as ViewScope | null;
 
@@ -55,22 +75,21 @@ const WorkspacePage = () => {
       console.log("🔗 Setting scope from URL param:", scopeParam);
       setViewScope(scopeParam);
     }
+
+    // Allow URL updates after this initial sync
+    setTimeout(() => {
+      isUpdatingFromUrl.current = false;
+    }, 100);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only on mount
 
-  // If contentId is in route params, set it in the store
+  // 🎯 CONSOLIDATED: Sync store state back to URL params (but prevent circular updates)
   useEffect(() => {
-    if (routeContentId) {
-      const contentIdNum = parseInt(routeContentId, 10);
-      if (!isNaN(contentIdNum) && contentIdNum !== taskId) {
-        console.log("📍 Setting taskId from route param:", contentIdNum);
-        setSelectedTask(contentIdNum);
-      }
-    }
-  }, [routeContentId, taskId, setSelectedTask]);
-
-  // Phase 5: Update URL params when viewer/scope changes
-  useEffect(() => {
+    // Don't update URL if we're still initializing from URL
+    if (isUpdatingFromUrl.current || isUpdatingUrl.current) return;
     if (!taskId) return;
+
+    isUpdatingUrl.current = true;
 
     const newParams = new URLSearchParams();
 
@@ -87,15 +106,24 @@ const WorkspacePage = () => {
     const currentSearch = searchParams.toString();
 
     if (newSearch !== currentSearch) {
+      console.log("🔄 Updating URL params:", newSearch);
       setSearchParams(newParams, { replace: true });
     }
+
+    // Allow next update after a brief delay
+    setTimeout(() => {
+      isUpdatingUrl.current = false;
+    }, 100);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewerId, viewScope, taskId]);
 
-  // Set this as the active redirect target when mounted
+  // Set redirect target on mount only
   useEffect(() => {
     setRedirect("/workspace");
-  }, [setRedirect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
 
+  // Fetch verimeter scores when taskId or viewerId changes
   useEffect(() => {
     if (taskId) {
       fetchContentScores(taskId, viewerId).then((scores) => {
@@ -104,7 +132,7 @@ const WorkspacePage = () => {
     }
   }, [taskId, viewerId]);
 
-  // Try to restore selectedTask from content
+  // Try to restore selectedTask from content list if missing
   useEffect(() => {
     if (taskId && !task) {
       const all = useTaskStore.getState().content;
@@ -114,16 +142,18 @@ const WorkspacePage = () => {
         setSelectedTask(match);
       }
     }
-  }, [taskId, task, setSelectedTask]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskId, task]);
 
-  // Redirect if no taskId
+  // Redirect if no taskId (separate effect to avoid re-running unnecessarily)
   useEffect(() => {
     if (!taskId) {
       console.warn("⛔ No taskId — redirecting to /tasks");
       if (!selectedRedirect) setRedirect("/workspace");
       navigate("/tasks");
     }
-  }, [taskId, navigate, setRedirect, selectedRedirect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskId]);
 
   // viewerId can be null for "View All" mode
   const isReady = taskId != null && task != null;
