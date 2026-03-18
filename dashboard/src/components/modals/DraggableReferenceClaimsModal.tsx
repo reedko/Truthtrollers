@@ -10,7 +10,7 @@ import {
   HStack,
   useColorModeValue,
 } from "@chakra-ui/react";
-import { CloseIcon, Search2Icon } from "@chakra-ui/icons";
+import { CloseIcon, Search2Icon, EditIcon, DeleteIcon } from "@chakra-ui/icons";
 import { Claim, ReferenceWithClaims } from "../../../../shared/entities/types";
 
 interface Props {
@@ -23,6 +23,8 @@ interface Props {
   ) => void;
   draggingClaim: Pick<Claim, "claim_id" | "claim_text"> | null;
   onVerifyClaim?: (claim: Claim) => void;
+  onEditClaim?: (claim: Claim) => void;
+  onDeleteClaim?: (claimId: number) => void;
   claimLinks?: Array<{
     id?: string;
     claimId: number;
@@ -43,10 +45,37 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
   setDraggingClaim,
   draggingClaim,
   onVerifyClaim,
+  onEditClaim,
+  onDeleteClaim,
   claimLinks = [],
   taskClaims = [],
   onClaimClick,
 }) => {
+  // ✅ ALL HOOKS MUST BE AT THE TOP - BEFORE ANY CONDITIONAL LOGIC
+  // Color mode values - define all at once to avoid circular references
+  const bgColor = useColorModeValue("white", "gray.900");
+  const textColor = useColorModeValue("gray.800", "white");
+  const borderColor = useColorModeValue("2px solid #ddd", "2px solid #333");
+  const headerBg = useColorModeValue("gray.100", "gray.800");
+  const headingColor = useColorModeValue("teal.600", "teal.200");
+  const linkColor = useColorModeValue("blue.600", "blue.300");
+  const connectedBg = useColorModeValue("blue.50", "blue.900");
+  const connectedBorder = useColorModeValue("2px solid #90CDF4", "2px solid #2C5282");
+  const connectedTextColor = useColorModeValue("blue.700", "blue.200");
+  const badgeBg = useColorModeValue("blue.100", "blue.800");
+  const metaColor = useColorModeValue("gray.600", "gray.400");
+  const claimTextColor = useColorModeValue("gray.900", "white");
+  const supportBg = useColorModeValue("gray.100", "gray.800");
+  const supportTextLight = useColorModeValue("gray.700", "gray.300");
+  const supportTextDark = useColorModeValue("blue.600", "blue.300");
+  const highlightBgLight = useColorModeValue("gray.200", "gray.700");
+  const highlightBgDark = useColorModeValue("blue.100", "blue.200");
+  const highlightTextColor = useColorModeValue("gray.900", "black");
+  const hoverBg = useColorModeValue("gray.50", "gray.700");
+  const snippetBg = useColorModeValue("gray.100", "gray.800");
+  const snippetColor = useColorModeValue("gray.700", "gray.300");
+  const normalBg = useColorModeValue("white", "black");
+
   // Position state for the floating box
   const [position, setPosition] = useState(() => ({
     x: Math.max(100, window.innerWidth * 0.55 - 250),
@@ -365,11 +394,11 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
         zIndex={2500}
         w={["90vw", "500px"]}
         maxW="95vw"
-        bg={useColorModeValue("white", "gray.900")}
-        color={useColorModeValue("gray.800", "white")}
+        bg={bgColor}
+        color={textColor}
         borderRadius="xl"
         boxShadow="2xl"
-        border={useColorModeValue("2px solid #ddd", "2px solid #333")}
+        border={borderColor}
         p={0}
         cursor={dragging ? "grabbing" : "default"}
         userSelect="none"
@@ -378,7 +407,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
           className="mr-modal-header"
           onMouseDown={onMouseDown}
           cursor="grab"
-          bg={useColorModeValue("gray.100", "gray.800")}
+          bg={headerBg}
           px={4}
           py={2}
           borderTopRadius="xl"
@@ -389,7 +418,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
           <Heading
             size="sm"
             mb={0}
-            color={useColorModeValue("teal.600", "teal.200")}
+            color={headingColor}
           >
             Reference Details
           </Heading>
@@ -410,7 +439,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
             <Box>
               <Text fontWeight="bold">Source URL:</Text>
               <Text
-                color={useColorModeValue("blue.600", "blue.300")}
+                color={linkColor}
                 wordBreak="break-all"
               >
                 <a
@@ -471,14 +500,14 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                       >
                         <Text
                           fontSize="xs"
-                          color={useColorModeValue("gray.600", "gray.400")}
+                          color={metaColor}
                           mb={1}
                         >
                           Task Claim #{taskClaim.claim_id}
                         </Text>
                         <Text
                           fontSize="sm"
-                          color={useColorModeValue("gray.900", "white")}
+                          color={claimTextColor}
                         >
                           {taskClaim.claim_text}
                         </Text>
@@ -515,13 +544,13 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                           flex="1"
                           bg={
                             isSnippet
-                              ? useColorModeValue("gray.100", "gray.800")
-                              : useColorModeValue("white", "black")
+                              ? snippetBg
+                              : normalBg
                           }
                           color={
                             isSnippet
-                              ? useColorModeValue("gray.700", "gray.300")
-                              : useColorModeValue("blue.600", "blue.300")
+                              ? snippetColor
+                              : linkColor
                           }
                           px={2}
                           py={1}
@@ -544,9 +573,9 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                           }
                           _hover={{
                             bg: isSnippet
-                              ? useColorModeValue("gray.200", "gray.700")
-                              : useColorModeValue("blue.100", "blue.200"),
-                            color: useColorModeValue("gray.900", "black"),
+                              ? highlightBgLight
+                              : highlightBgDark,
+                            color: highlightTextColor,
                           }}
                           onMouseDown={() => setDraggingClaim(claim)}
                           onMouseUp={() => setDraggingClaim(null)}
@@ -560,7 +589,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                           {hasConnection && (
                             <Text
                               fontSize="xs"
-                              color={useColorModeValue("gray.600", "gray.400")}
+                              color={metaColor}
                               mb={1}
                             >
                               {connections[0].relation === "support"
@@ -584,13 +613,39 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                           )}
                         </Box>
 
-                        <IconButton
-                          size="sm"
-                          colorScheme="purple"
-                          aria-label="Verify claim"
-                          icon={<Search2Icon />}
-                          onClick={() => onVerifyClaim?.(claim)}
-                        />
+                        <HStack spacing={2}>
+                          <IconButton
+                            size="sm"
+                            aria-label="Edit"
+                            icon={<span>✏️</span>}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onEditClaim) onEditClaim(claim);
+                            }}
+                          />
+                          {onVerifyClaim && (
+                            <IconButton
+                              size="sm"
+                              colorScheme="purple"
+                              aria-label="Verify"
+                              icon={<Search2Icon />}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onVerifyClaim(claim);
+                              }}
+                            />
+                          )}
+                          <IconButton
+                            size="sm"
+                            colorScheme="red"
+                            aria-label="Delete"
+                            icon={<span>🗑️</span>}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onDeleteClaim) onDeleteClaim(claim.claim_id);
+                            }}
+                          />
+                        </HStack>
                       </HStack>
                     );
                   })}

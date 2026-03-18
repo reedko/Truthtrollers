@@ -16,6 +16,7 @@ type ScrapeBackendResponse = {
     ai?: any[];
   };
   error?: string;
+  message?: string;
 };
 
 /**
@@ -91,7 +92,11 @@ export async function scrapeContent(url: string): Promise<string | null> {
   }
 
   if (!backendResp || !backendResp.success || !backendResp.contentId) {
-    console.error("❌ Backend scrape failed:", backendResp?.error);
+    const errorMsg = backendResp?.message || backendResp?.error || "Unknown error";
+    console.error("❌ Backend scrape failed:", errorMsg);
+
+    // Show user-friendly error message
+    alert(`Unable to analyze this content:\n\n${errorMsg}`);
     return null;
   }
 

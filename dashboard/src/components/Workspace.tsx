@@ -17,6 +17,7 @@ import {
   hideReference,
   addClaim,
   updateClaim,
+  updateClaimWithEvidence,
   addClaimLink,
 } from "../services/useDashboardAPI";
 import TaskClaims from "./TaskClaims";
@@ -31,8 +32,12 @@ import DraggableReferenceClaimsModal from "./modals/DraggableReferenceClaimsModa
 import ClaimEvaluationModal from "./modals/ClaimEvaluationModal";
 import RelevanceScanModal from "./modals/RelevanceScanModal";
 import RelationshipMap, { ClaimLink } from "./RelationshipMap";
-import { fetchClaimById } from "../services/useDashboardAPI"; // or wherever
-import { fetchClaimsAndLinkedReferencesForTask } from "../services/useDashboardAPI";
+import {
+  fetchClaimById,
+  fetchClaimsAndLinkedReferencesForTask,
+  deleteClaim,
+  fetchClaimsForTask
+} from "../services/useDashboardAPI";
 import {
   updateScoresForContent,
   fetchContentScores,
@@ -49,7 +54,8 @@ interface WorkspaceProps {
   contentId: number;
   viewerId: number | null;
   onHeightChange?: (height: number) => void;
-  linkFilter: 'all' | 'user' | 'ai';
+  linkFilter: "all" | "user" | "ai";
+  bubbleStyle?: boolean;
 }
 // Workspace Component v3.0 - Fixed Conditional Hooks
 const Workspace: React.FC<WorkspaceProps> = ({
@@ -57,6 +63,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
   viewerId,
   onHeightChange,
   linkFilter,
+  bubbleStyle = false,
 }) => {
   // Get user permissions for permission-based UI
   const { hasPermission } = usePermissions();
@@ -114,6 +121,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
   // Hooks that use context - must be after all useState hooks, but BEFORE any early returns
   const isMobile = useBreakpointValue({ base: true, md: false });
   const setVerimeterScore = useTaskStore((s) => s.setVerimeterScore);
+  const selectedTask = useTaskStore((s) => s.selectedTask);
   const bgColor = useColorModeValue(
     "radial-gradient(circle at bottom left, rgba(71, 85, 105, 0.15), rgba(148, 163, 184, 0.2))",
     "gray.800",
@@ -139,7 +147,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
       setComputedHeight(fullHeight);
     }
   };
-
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
   const scope = useTaskStore((s) => s.viewScope);
 
   useEffect(() => {
@@ -248,11 +257,11 @@ const Workspace: React.FC<WorkspaceProps> = ({
     supportLevel: number,
   ) => {
     // The scan's "source" claim is a reference claim; the target is the task claim being scanned
-    console.log('[Workspace] handleOpenLinkOverlayFromScan called with:', {
+    console.log("[Workspace] handleOpenLinkOverlayFromScan called with:", {
       sourceClaim: scanSourceClaim.claim_id,
       targetClaim: scanTargetClaim.claim_id,
       rationale,
-      supportLevel
+      supportLevel,
     });
     setSourceClaim(scanSourceClaim);
     setTargetClaim(scanTargetClaim);
@@ -447,16 +456,23 @@ const Workspace: React.FC<WorkspaceProps> = ({
       borderWidth="1px"
       borderRadius="lg"
       p={4}
-      bgGradient={bgColor}
-      // backdropFilter="blur(8px)"
+      bgGradient={!bubbleStyle ? bgColor : undefined}
+      bgImage={bubbleStyle ? `${API_BASE_URL}/assets/neb3.jpg` : undefined}
+      bgSize={bubbleStyle ? "cover" : undefined}
+      bgPosition={bubbleStyle ? "center" : undefined}
+      bgRepeat="no-repeat"
       borderColor={borderColor}
-      height={`${computedHeight}px`} // dynamic height computed above
+      minHeight={`${computedHeight}px`} // dynamic min height computed above
       onMouseMove={(e) => setMousePosition({ x: e.clientX, y: e.clientY })}
+      position="relative"
+      overflow="visible"
     >
       <Grid
         templateColumns="2fr 2fr 2fr" // mobile → stacked, desktop → middle flexes more
         gap={4}
         height="100%"
+        position="relative"
+        zIndex={1}
       >
         <Box
           ref={leftRef}
@@ -464,6 +480,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
           maxW="400px"
           w="100%"
           className="workspace-claims"
+          bg={bubbleStyle ? "transparent" : undefined}
         >
           <TaskClaims
             claims={claims}
@@ -475,13 +492,55 @@ const Workspace: React.FC<WorkspaceProps> = ({
               });
               setClaims([...claims, { ...newClaim, claim_id: saved.claimId }]);
             }}
-            onEditClaim={async (updatedClaim: Claim) => {
-              const saved = await updateClaim(updatedClaim);
-              setClaims(
-                claims.map((c) =>
-                  c.claim_id === updatedClaim.claim_id ? updatedClaim : c,
-                ),
-              );
+            onEditClaim={async (updatedClaim: Claim & { runEvidence?: boolean }) => {
+              const runEvidence = updatedClaim.runEvidence ?? false;
+
+              if (runEvidence) {
+                // Use new API with evidence re-run
+                try {
+                  const result = await updateClaimWithEvidence(
+                    updatedClaim,
+                    true,
+                    viewerId || undefined
+                  );
+
+                  // Update claim in state
+                  setClaims(
+                    claims.map((c) =>
+                      c.claim_id === updatedClaim.claim_id ? updatedClaim : c,
+                    ),
+                  );
+
+                  // Show success feedback
+                  console.log('Evidence run complete:', result.summary);
+                  if (result.evidence) {
+                    console.log(`Found ${result.evidence.referencesFound} new references`);
+                  }
+
+                  // Reload claims and references to show new evidence
+                  const updatedClaims = await fetchClaimsWithEvidence(contentId, viewerId, scope);
+                  setClaims(updatedClaims);
+                  setRefreshLinks(!refreshLinks);
+                  setRefreshReferences(!refreshReferences);
+                } catch (error) {
+                  console.error('Failed to update claim with evidence:', error);
+                  // Fall back to regular update
+                  await updateClaim(updatedClaim);
+                  setClaims(
+                    claims.map((c) =>
+                      c.claim_id === updatedClaim.claim_id ? updatedClaim : c,
+                    ),
+                  );
+                }
+              } else {
+                // Just update claim without running evidence
+                const saved = await updateClaim(updatedClaim);
+                setClaims(
+                  claims.map((c) =>
+                    c.claim_id === updatedClaim.claim_id ? updatedClaim : c,
+                  ),
+                );
+              }
             }}
             onDeleteClaim={(claimId) =>
               setClaims(claims.filter((claim) => claim.claim_id !== claimId))
@@ -511,9 +570,15 @@ const Workspace: React.FC<WorkspaceProps> = ({
             references={references}
             contentId={contentId}
             viewerId={viewerId}
+            bubbleStyle={bubbleStyle}
           />
         </Box>
-        <Box ref={containerRef} minW="100px" w="100%">
+        <Box
+          ref={containerRef}
+          minW="100px"
+          w="100%"
+          bg={bubbleStyle ? "transparent" : undefined}
+        >
           {/* Middle column reserved */}
           <RelationshipMap
             key={`${leftX}-${rightX}-${claims.length}-${references.length}-${aiEvidenceLinks.length}`}
@@ -552,10 +617,14 @@ const Workspace: React.FC<WorkspaceProps> = ({
               ];
 
               // Apply filter based on linkFilter state
-              if (linkFilter === 'user') {
-                return allLinks.filter(link => !link.id?.toString().startsWith('ai-'));
-              } else if (linkFilter === 'ai') {
-                return allLinks.filter(link => link.id?.toString().startsWith('ai-'));
+              if (linkFilter === "user") {
+                return allLinks.filter(
+                  (link) => !link.id?.toString().startsWith("ai-"),
+                );
+              } else if (linkFilter === "ai") {
+                return allLinks.filter((link) =>
+                  link.id?.toString().startsWith("ai-"),
+                );
               }
               return allLinks; // 'all' - no filtering
             })()}
@@ -566,6 +635,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
           maxW="400px"
           w="100%"
           className="workspace-references"
+          bg={bubbleStyle ? "transparent" : undefined}
         >
           <ReferenceList
             references={references}
@@ -580,6 +650,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
             }}
             selectedReference={selectedReference}
             onUpdateReferences={() => setRefreshReferences((prev) => !prev)}
+            bubbleStyle={bubbleStyle}
+            claimLinks={claimLinks}
           />
         </Box>
       </Grid>
@@ -592,6 +664,28 @@ const Workspace: React.FC<WorkspaceProps> = ({
           setDraggingClaim={setDraggingClaim}
           draggingClaim={draggingClaim}
           onVerifyClaim={handleVerifyClaim}
+          onEditClaim={(claim: Claim) => {
+            setEditingClaim(claim);
+            setIsClaimModalOpen(true);
+          }}
+          onDeleteClaim={async (claimId: number) => {
+            if (window.confirm('Are you sure you want to delete this claim?')) {
+              await deleteClaim(claimId);
+              // Refresh claims
+              if (selectedTask?.content_id) {
+                const updatedClaims = await fetchClaimsForTask(selectedTask.content_id, user?.user_id || null);
+                setClaims(updatedClaims);
+              }
+              // Refresh reference modal
+              if (selectedReference) {
+                const updatedRef = await fetchReferencesWithClaimsForTask(selectedTask?.content_id || 0, user?.user_id || null);
+                const refreshedRef = updatedRef.find(r => r.reference_content_id === selectedReference.reference_content_id);
+                if (refreshedRef) {
+                  setSelectedReference(refreshedRef);
+                }
+              }
+            }
+          }}
           claimLinks={claimLinks}
           taskClaims={claims}
           onClaimClick={async (claim: Claim) => {

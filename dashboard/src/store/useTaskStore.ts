@@ -136,7 +136,7 @@ export const useTaskStore = create<TaskStoreState>()(
       currentPage: 0,
       claimsByTask: {},
       viewingUserId: undefined,
-      viewScope: 'user', // Default to user view
+      viewScope: 'all', // Default to all (equal) view
       hasHydrated: false,
       verimeterScores: {},
       claimScores: {},

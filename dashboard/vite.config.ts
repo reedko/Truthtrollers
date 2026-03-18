@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react";
 import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
-
+console.log("USING dashboard vite.config.ts");
 // Load environment variables from backend/.env
 const env =
   dotenv.config({ path: path.resolve(__dirname, "../backend/.env") }).parsed ||
@@ -15,7 +15,7 @@ const envKeys: Record<string, string> = Object.keys(env).reduce(
     acc[`process.env.${key}`] = JSON.stringify(env[key]);
     return acc;
   },
-  {}
+  {},
 );
 
 const keyPath = env.SSL_KEY_PATH as string | undefined;
@@ -52,7 +52,7 @@ export default defineConfig({
         target: "https://localhost:5001",
         changeOrigin: true,
         secure: false,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        rewrite: (path) => path.replace(/^\/api/, ""),
       },
       "/assets": {
         target: "https://localhost:5001",
@@ -69,6 +69,9 @@ export default defineConfig({
 
   build: {
     outDir: "dist",
+    sourcemap: true, // lets browser show real file/line
+    minify: false, // keeps bundle readable while debugging
+    target: "esnext",
     rollupOptions: {
       output: {
         assetFileNames: "scripts/[name]-[hash][extname]",

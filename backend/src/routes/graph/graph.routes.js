@@ -4,6 +4,10 @@ import {
   getNodesForEntity,
   getLinksForEntity,
   getLinkedClaimsAndLinksForTask,
+  getCaseClaimsForTask,
+  getSourceToClaimLinks,
+  getUnlinkedSourcesForTask,
+  getAISuggestedLinksForUnlinkedSources,
 } from "../../queries/graphQueries.js";
 
 export default function createGraphRoutes({ query, pool }) {
@@ -98,6 +102,51 @@ export default function createGraphRoutes({ query, pool }) {
     } catch (err) {
       console.error("🌐 Full Graph Error:", err);
       res.status(500).json({ error: "Failed to build full graph" });
+    }
+  });
+
+  // GET /api/case-claim-expansion/:taskId
+  // Fetch case claims and their connections to sources for the expanded view
+  router.get("/api/case-claim-expansion/:taskId", async (req, res) => {
+    const taskId = parseInt(req.params.taskId);
+    const viewerId = req.query.viewerId ? parseInt(req.query.viewerId) : null;
+    const viewScope = req.query.viewScope || 'user';
+
+    if (!taskId) {
+      return res.status(400).json({ error: "Missing taskId parameter" });
+    }
+
+    try {
+      // 1. Get all case claims for this task
+      const caseClaimsSql = getCaseClaimsForTask(taskId);
+      const caseClaims = await query(caseClaimsSql, [taskId]);
+
+      // 2. Get source-to-claim links (both user and AI)
+      const sourceToClaimLinksSql = getSourceToClaimLinks(taskId, viewerId, viewScope);
+      const shouldFilterByUser = viewScope !== 'all' && Number.isInteger(viewerId);
+      const sourceToClaimParams = shouldFilterByUser ? [taskId, viewerId] : [taskId];
+      const sourceToClaimLinks = await query(sourceToClaimLinksSql, sourceToClaimParams);
+
+      // 3. Get unlinked sources (sources without any claim links)
+      const unlinkedSourcesSql = getUnlinkedSourcesForTask(taskId, viewerId, viewScope);
+      const unlinkedSourcesParams = shouldFilterByUser
+        ? [taskId, taskId, viewerId]
+        : [taskId, taskId];
+      const unlinkedSources = await query(unlinkedSourcesSql, unlinkedSourcesParams);
+
+      // 4. Get AI-suggested links for positioning
+      const aiSuggestedLinksSql = getAISuggestedLinksForUnlinkedSources(taskId);
+      const aiSuggestedLinks = await query(aiSuggestedLinksSql, [taskId, taskId]);
+
+      res.json({
+        caseClaims: JSON.parse(JSON.stringify(caseClaims)),
+        sourceToClaimLinks: JSON.parse(JSON.stringify(sourceToClaimLinks)),
+        unlinkedSources: JSON.parse(JSON.stringify(unlinkedSources)),
+        aiSuggestedLinks: JSON.parse(JSON.stringify(aiSuggestedLinks)),
+      });
+    } catch (err) {
+      console.error("🌐 Case Claim Expansion Error:", err);
+      res.status(500).json({ error: "Failed to fetch case claim expansion data", details: err.message });
     }
   });
 

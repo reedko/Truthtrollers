@@ -21,6 +21,7 @@ import { ViewerScopeBadge } from "../components/ViewerScopeBadge";
 import { fetchNewGraphDataFromLegacyRoute } from "../services/api";
 import { GraphNode, Link } from "../../../shared/entities/types";
 import UnifiedHeader from "../components/UnifiedHeader";
+import StickyTitleBar from "../components/StickyTitleBar";
 import GraphLegend from "../components/GraphLegend";
 import {
   updateScoresForContent,
@@ -69,7 +70,7 @@ const MoleculeMapPage = () => {
   const [activeViewId, setActiveViewId] = useState<number | null>(null);
   const [loadingViews, setLoadingViews] = useState(true);
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
-  const [dimUnpinned, setDimUnpinned] = useState(true); // Dim unpinned nodes (default: true)
+  const [dimUnpinned, setDimUnpinned] = useState(false); // Dim unpinned nodes (default: true)
   const [showReferenceAuthors, setShowReferenceAuthors] = useState(false); // OFF by default to keep graph readable
 
   const handleVerimeterRefresh = async (contentId: number) => {
@@ -80,17 +81,21 @@ const MoleculeMapPage = () => {
 
   // Phase 5: Read URL params on mount
   useEffect(() => {
-    const viewerParam = searchParams.get('viewer');
-    const scopeParam = searchParams.get('scope') as ViewScope | null;
+    const viewerParam = searchParams.get("viewer");
+    const scopeParam = searchParams.get("scope") as ViewScope | null;
 
     if (viewerParam) {
-      const viewerNum = viewerParam === 'null' ? null : parseInt(viewerParam, 10);
+      const viewerNum =
+        viewerParam === "null" ? null : parseInt(viewerParam, 10);
       if (!isNaN(viewerNum as number) || viewerNum === null) {
         setViewingUserId(viewerNum);
       }
     }
 
-    if (scopeParam && (scopeParam === 'user' || scopeParam === 'all' || scopeParam === 'admin')) {
+    if (
+      scopeParam &&
+      (scopeParam === "user" || scopeParam === "all" || scopeParam === "admin")
+    ) {
       setViewScope(scopeParam);
     }
   }, []);
@@ -101,10 +106,10 @@ const MoleculeMapPage = () => {
 
     const newParams = new URLSearchParams();
     if (viewerId !== null && viewerId !== undefined) {
-      newParams.set('viewer', viewerId.toString());
+      newParams.set("viewer", viewerId.toString());
     }
-    if (viewScope && viewScope !== 'user') {
-      newParams.set('scope', viewScope);
+    if (viewScope && viewScope !== "user") {
+      newParams.set("scope", viewScope);
     }
 
     setSearchParams(newParams, { replace: true });
@@ -118,7 +123,12 @@ const MoleculeMapPage = () => {
   // Load or create views for the selected task
   useEffect(() => {
     const loadViews = async () => {
-      console.log("📋 Loading views for task:", selectedTask?.content_id, "user:", viewerId);
+      console.log(
+        "📋 Loading views for task:",
+        selectedTask?.content_id,
+        "user:",
+        viewerId,
+      );
 
       if (!selectedTask) {
         console.log("📋 Missing selectedTask, skipping view load");
@@ -135,7 +145,10 @@ const MoleculeMapPage = () => {
 
       setLoadingViews(true);
       try {
-        let fetchedViews = await getMoleculeViews(selectedTask.content_id, viewerId);
+        let fetchedViews = await getMoleculeViews(
+          selectedTask.content_id,
+          viewerId,
+        );
         console.log("📋 Fetched views:", fetchedViews);
 
         // If no views exist, create a default "All Sources" view
@@ -145,10 +158,13 @@ const MoleculeMapPage = () => {
             contentId: selectedTask.content_id,
             name: "All Sources",
             isDefault: true,
-            displayMode: 'circles',
+            displayMode: "circles",
             userId: viewerId,
           });
-          fetchedViews = await getMoleculeViews(selectedTask.content_id, viewerId);
+          fetchedViews = await getMoleculeViews(
+            selectedTask.content_id,
+            viewerId,
+          );
           console.log("📋 Created and fetched new views:", fetchedViews);
         }
 
@@ -188,20 +204,21 @@ const MoleculeMapPage = () => {
     // Helper: Determine if an author node is connected to the task (vs only to references)
     const isTaskAuthor = (authorId: string): boolean => {
       // Find the task node
-      const taskNode = graphData.nodes.find(n => n.type === 'task');
+      const taskNode = graphData.nodes.find((n) => n.type === "task");
       if (!taskNode) return false;
 
       // Check if this author is linked to the task node
-      return graphData.links.some(link =>
-        (link.source === authorId && link.target === taskNode.id) ||
-        (link.target === authorId && link.source === taskNode.id)
+      return graphData.links.some(
+        (link) =>
+          (link.source === authorId && link.target === taskNode.id) ||
+          (link.target === authorId && link.source === taskNode.id),
       );
     };
 
     // If no active view, still filter reference authors based on toggle
     if (!activeViewId || views.length === 0) {
       if (!showReferenceAuthors) {
-        const filteredNodes = graphData.nodes.filter(node => {
+        const filteredNodes = graphData.nodes.filter((node) => {
           if (node.type === "author") {
             return isTaskAuthor(node.id);
           }
@@ -209,7 +226,9 @@ const MoleculeMapPage = () => {
         });
         const filteredNodeIds = new Set(filteredNodes.map((n) => n.id));
         const filteredLinks = graphData.links.filter(
-          (link) => filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target)
+          (link) =>
+            filteredNodeIds.has(link.source) &&
+            filteredNodeIds.has(link.target),
         );
         setFilteredGraphData({ nodes: filteredNodes, links: filteredLinks });
       } else {
@@ -229,7 +248,7 @@ const MoleculeMapPage = () => {
       activeView.pins
         .filter((p) => p.is_pinned)
         .map((p) => p.reference_content_id)
-        .filter((id): id is number => id != null)
+        .filter((id): id is number => id != null),
     );
 
     if (showPinnedOnly && activeView.pins.length > 0) {
@@ -254,7 +273,8 @@ const MoleculeMapPage = () => {
 
       const filteredNodeIds = new Set(filteredNodes.map((n) => n.id));
       const filteredLinks = graphData.links.filter(
-        (link) => filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target)
+        (link) =>
+          filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target),
       );
 
       setFilteredGraphData({
@@ -265,21 +285,35 @@ const MoleculeMapPage = () => {
       // DIM MODE: Add dimming metadata to nodes without filtering them out
       let nodesWithDimming = graphData.nodes.map((node): GraphNode => {
         // Dim unpinned references if there are any pins configured AND dimUnpinned is true
-        if (node.type === "reference" && activeView.pins.length > 0 && dimUnpinned) {
+        if (
+          node.type === "reference" &&
+          activeView.pins.length > 0 &&
+          dimUnpinned
+        ) {
           const isPinned = pinnedIds.has(node.content_id!);
-          return Object.assign(Object.create(Object.getPrototypeOf(node)), { ...node, dimmed: !isPinned });
+          return Object.assign(Object.create(Object.getPrototypeOf(node)), {
+            ...node,
+            dimmed: !isPinned,
+          });
         }
         // Dim refClaims that belong to unpinned references
-        if (node.type === "refClaim" && activeView.pins.length > 0 && dimUnpinned) {
+        if (
+          node.type === "refClaim" &&
+          activeView.pins.length > 0 &&
+          dimUnpinned
+        ) {
           const isPinned = pinnedIds.has(node.content_id!);
-          return Object.assign(Object.create(Object.getPrototypeOf(node)), { ...node, dimmed: !isPinned });
+          return Object.assign(Object.create(Object.getPrototypeOf(node)), {
+            ...node,
+            dimmed: !isPinned,
+          });
         }
         return node;
       });
 
       // Filter out reference authors if toggle is off
       if (!showReferenceAuthors) {
-        nodesWithDimming = nodesWithDimming.filter(node => {
+        nodesWithDimming = nodesWithDimming.filter((node) => {
           if (node.type === "author") {
             return isTaskAuthor(node.id);
           }
@@ -289,7 +323,8 @@ const MoleculeMapPage = () => {
 
       const filteredNodeIds = new Set(nodesWithDimming.map((n) => n.id));
       const filteredLinks = graphData.links.filter(
-        (link) => filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target)
+        (link) =>
+          filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target),
       );
 
       setFilteredGraphData({
@@ -297,7 +332,14 @@ const MoleculeMapPage = () => {
         links: filteredLinks,
       });
     }
-  }, [graphData, activeViewId, views, showPinnedOnly, dimUnpinned, showReferenceAuthors]);
+  }, [
+    graphData,
+    activeViewId,
+    views,
+    showPinnedOnly,
+    dimUnpinned,
+    showReferenceAuthors,
+  ]);
 
   // View management handlers
   const handleViewChange = async (viewId: number) => {
@@ -313,7 +355,7 @@ const MoleculeMapPage = () => {
       contentId: selectedTask.content_id,
       name,
       isDefault: false,
-      displayMode: 'circles',
+      displayMode: "circles",
       userId: viewerId,
     });
 
@@ -323,7 +365,10 @@ const MoleculeMapPage = () => {
 
   const handleRenameView = async (viewId: number, newName: string) => {
     if (!viewerId) return;
-    const updatedView = await updateMoleculeView(viewId, { name: newName, userId: viewerId });
+    const updatedView = await updateMoleculeView(viewId, {
+      name: newName,
+      userId: viewerId,
+    });
     setViews(views.map((v) => (v.id === viewId ? updatedView : v)));
   };
 
@@ -346,7 +391,7 @@ const MoleculeMapPage = () => {
       views.map((v) => ({
         ...v,
         is_default: v.id === viewId,
-      }))
+      })),
     );
   };
 
@@ -358,15 +403,19 @@ const MoleculeMapPage = () => {
 
     // Find current pin status
     const currentPin = activeView.pins.find(
-      (p) => p.reference_content_id === referenceContentId
+      (p) => p.reference_content_id === referenceContentId,
     );
     const newPinStatus = currentPin ? !currentPin.is_pinned : true;
 
     // Update via API
-    await updatePin(activeViewId, {
-      referenceContentId,
-      isPinned: newPinStatus,
-    }, viewerId);
+    await updatePin(
+      activeViewId,
+      {
+        referenceContentId,
+        isPinned: newPinStatus,
+      },
+      viewerId,
+    );
 
     // Update local state
     setViews(
@@ -374,7 +423,7 @@ const MoleculeMapPage = () => {
         if (v.id !== activeViewId) return v;
 
         const existingPinIndex = v.pins.findIndex(
-          (p) => p.reference_content_id === referenceContentId
+          (p) => p.reference_content_id === referenceContentId,
         );
 
         if (existingPinIndex >= 0) {
@@ -389,10 +438,16 @@ const MoleculeMapPage = () => {
           // Add new pin
           return {
             ...v,
-            pins: [...v.pins, { reference_content_id: referenceContentId, is_pinned: newPinStatus }],
+            pins: [
+              ...v.pins,
+              {
+                reference_content_id: referenceContentId,
+                is_pinned: newPinStatus,
+              },
+            ],
           };
         }
-      })
+      }),
     );
 
     toast({
@@ -408,10 +463,17 @@ const MoleculeMapPage = () => {
   // Handle position changes (debounced to avoid excessive API calls)
   const handlePositionsChange = useCallback(
     (positions: Record<string, { x: number; y: number }>) => {
-      console.log("💾 handlePositionsChange called", { activeViewId, viewerId, positionCount: Object.keys(positions).length });
+      console.log("💾 handlePositionsChange called", {
+        activeViewId,
+        viewerId,
+        positionCount: Object.keys(positions).length,
+      });
 
       if (!activeViewId || !viewerId) {
-        console.error("💾 Cannot save positions: missing activeViewId or viewerId", { activeViewId, viewerId });
+        console.error(
+          "💾 Cannot save positions: missing activeViewId or viewerId",
+          { activeViewId, viewerId },
+        );
         return;
       }
 
@@ -423,15 +485,18 @@ const MoleculeMapPage = () => {
       // Set new timeout to save after 1 second of inactivity
       positionSaveTimeout.current = setTimeout(async () => {
         try {
-          console.log("💾 Attempting to save positions...", { viewId: activeViewId, userId: viewerId });
+          console.log("💾 Attempting to save positions...", {
+            viewId: activeViewId,
+            userId: viewerId,
+          });
           await updateViewPositions(activeViewId, positions, viewerId);
           console.log("💾 Positions saved successfully for view", activeViewId);
 
           // Update local state
           setViews((prevViews) =>
             prevViews.map((v) =>
-              v.id === activeViewId ? { ...v, positions } : v
-            )
+              v.id === activeViewId ? { ...v, positions } : v,
+            ),
           );
         } catch (error: any) {
           console.error("💾 Failed to save positions:", error);
@@ -445,7 +510,7 @@ const MoleculeMapPage = () => {
         }
       }, 1000);
     },
-    [activeViewId, viewerId, toast]
+    [activeViewId, viewerId, toast],
   );
 
   // Handle display mode change
@@ -461,11 +526,16 @@ const MoleculeMapPage = () => {
 
     try {
       console.log("🎨 Updating molecule view with mode:", mode);
-      await updateMoleculeView(activeViewId, { displayMode: mode, userId: viewerId });
+      await updateMoleculeView(activeViewId, {
+        displayMode: mode,
+        userId: viewerId,
+      });
 
       console.log("🎨 View updated, updating local state");
       setViews(
-        views.map((v) => (v.id === activeViewId ? { ...v, display_mode: mode } : v))
+        views.map((v) =>
+          v.id === activeViewId ? { ...v, display_mode: mode } : v,
+        ),
       );
 
       console.log("🎨 Display mode updated successfully to:", mode);
@@ -518,17 +588,17 @@ const MoleculeMapPage = () => {
         // ─── ADD THESE LOGS ───────────────────────────────────────────────────
         console.log(
           "🔍 [DEBUG] ALL NODES:",
-          result.nodes.map((n) => `${n.id} (type=${n.type})`)
+          result.nodes.map((n) => `${n.id} (type=${n.type})`),
         );
         console.log(
           "🔍 [DEBUG] ALL LINKS:",
-          result.links.map((l) => `${l.id}: ${l.source}→${l.target}`)
+          result.links.map((l) => `${l.id}: ${l.source}→${l.target}`),
         );
         console.log(
           "🔍 [DEBUG] CLAIM NODES:",
           result.nodes.filter(
-            (n) => n.type === "refClaim" || n.type === "taskClaim"
-          )
+            (n) => n.type === "refClaim" || n.type === "taskClaim",
+          ),
         );
         console.log(
           "🔍 [DEBUG] CLAIM LINKS:",
@@ -537,8 +607,8 @@ const MoleculeMapPage = () => {
               l.source.startsWith("refClaim") ||
               l.source.startsWith("taskClaim") ||
               l.target.startsWith("refClaim") ||
-              l.target.startsWith("taskClaim")
-          )
+              l.target.startsWith("taskClaim"),
+          ),
         );
         // ─────────────────────────────────────────────────────────────────────
 
@@ -610,15 +680,23 @@ const MoleculeMapPage = () => {
   console.log("📋 Found activeView:", activeView);
 
   const pinnedIds: Set<number> = activeView
-    ? new Set(activeView.pins.filter((p) => p.is_pinned).map((p) => p.reference_content_id).filter((id): id is number => id != null))
+    ? new Set(
+        activeView.pins
+          .filter((p) => p.is_pinned)
+          .map((p) => p.reference_content_id)
+          .filter((id): id is number => id != null),
+      )
     : new Set();
-  const currentDisplayMode = activeView?.display_mode || 'circles';
+  const currentDisplayMode = activeView?.display_mode || "circles";
 
   console.log("🎨 Current display mode:", currentDisplayMode);
   console.log("🎨 Active view:", activeView);
 
   return (
     <Box p={4}>
+      {/* Sticky Title Bar - Always visible initially */}
+      <StickyTitleBar alwaysVisible={true} />
+
       <Card mb={2} mt={2}>
         <CardBody>
           <UnifiedHeader
@@ -644,15 +722,23 @@ const MoleculeMapPage = () => {
         justifyContent="space-between"
         p={4}
         borderRadius="12px"
-        bg={colorMode === "dark"
-          ? "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-          : "linear-gradient(135deg, rgba(100, 116, 139, 0.25) 0%, rgba(148, 163, 184, 0.3) 50%, rgba(71, 85, 105, 0.25) 100%)"}
+        bg={
+          colorMode === "dark"
+            ? "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+            : "linear-gradient(135deg, rgba(100, 116, 139, 0.25) 0%, rgba(148, 163, 184, 0.3) 50%, rgba(71, 85, 105, 0.25) 100%)"
+        }
         backdropFilter="blur(20px)"
         border="1px solid"
-        borderColor={colorMode === "dark" ? "rgba(0, 162, 255, 0.4)" : "rgba(71, 85, 105, 0.4)"}
-        boxShadow={colorMode === "dark"
-          ? "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-          : "0 4px 16px rgba(71, 85, 105, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.4)"}
+        borderColor={
+          colorMode === "dark"
+            ? "rgba(0, 162, 255, 0.4)"
+            : "rgba(71, 85, 105, 0.4)"
+        }
+        boxShadow={
+          colorMode === "dark"
+            ? "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+            : "0 4px 16px rgba(71, 85, 105, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.4)"
+        }
         position="relative"
         zIndex={100}
         flexWrap="wrap"
@@ -665,7 +751,9 @@ const MoleculeMapPage = () => {
           borderRadius="md"
           backdropFilter="blur(8px)"
           border="1px solid"
-          borderColor={colorMode === "dark" ? "whiteAlpha.200" : "blackAlpha.200"}
+          borderColor={
+            colorMode === "dark" ? "whiteAlpha.200" : "blackAlpha.200"
+          }
         >
           <Heading size="md">Molecule</Heading>
         </Box>
@@ -677,13 +765,21 @@ const MoleculeMapPage = () => {
 
         {/* View Filter Dropdown */}
         <Box display="flex" alignItems="center" gap={2}>
-          <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"} textTransform="uppercase" letterSpacing="1px" whiteSpace="nowrap">
+          <Text
+            fontSize="xs"
+            color={colorMode === "dark" ? "gray.400" : "gray.600"}
+            textTransform="uppercase"
+            letterSpacing="1px"
+            whiteSpace="nowrap"
+          >
             View Filter
           </Text>
           <Select
             size="sm"
             width="180px"
-            value={showPinnedOnly ? "pinned" : (dimUnpinned ? "prominent" : "equal")}
+            value={
+              showPinnedOnly ? "pinned" : dimUnpinned ? "prominent" : "equal"
+            }
             onChange={(e) => {
               const val = e.target.value;
               if (val === "pinned") {
@@ -699,15 +795,21 @@ const MoleculeMapPage = () => {
             }}
             bg={colorMode === "dark" ? "gray.700" : "white"}
           >
-            <option value="prominent">👁️ All (Prominent)</option>
             <option value="equal">👁️ All (Equal)</option>
+            <option value="prominent">👁️ All (Prominent)</option>
             <option value="pinned">📌 Pinned Only</option>
           </Select>
         </Box>
 
         {/* Authors Dropdown */}
         <Box display="flex" alignItems="center" gap={2}>
-          <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"} textTransform="uppercase" letterSpacing="1px" whiteSpace="nowrap">
+          <Text
+            fontSize="xs"
+            color={colorMode === "dark" ? "gray.400" : "gray.600"}
+            textTransform="uppercase"
+            letterSpacing="1px"
+            whiteSpace="nowrap"
+          >
             Authors
           </Text>
           <Select
@@ -724,7 +826,13 @@ const MoleculeMapPage = () => {
 
         {/* Views Dropdown */}
         <Box display="flex" alignItems="center" gap={2}>
-          <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"} textTransform="uppercase" letterSpacing="1px" whiteSpace="nowrap">
+          <Text
+            fontSize="xs"
+            color={colorMode === "dark" ? "gray.400" : "gray.600"}
+            textTransform="uppercase"
+            letterSpacing="1px"
+            whiteSpace="nowrap"
+          >
             Views
           </Text>
           <MoleculeViewTabs
@@ -764,11 +872,14 @@ const MoleculeMapPage = () => {
               // Update local state immediately
               setViews((prevViews) =>
                 prevViews.map((v) =>
-                  v.id === activeViewId ? { ...v, node_settings: settings } : v
-                )
+                  v.id === activeViewId ? { ...v, node_settings: settings } : v,
+                ),
               );
               // Save to backend
-              updateMoleculeView(activeViewId, { nodeSettings: settings, userId: viewerId }).catch((error) => {
+              updateMoleculeView(activeViewId, {
+                nodeSettings: settings,
+                userId: viewerId,
+              }).catch((error) => {
                 console.error("Failed to save node settings:", error);
               });
             }}

@@ -113,7 +113,18 @@ export default function createReferencesRoutes({ query, pool }) {
         const referencesWithClaims = await query(SQL, finalParams);
 
         console.log(`✅ FOUND ${referencesWithClaims.length} references for task ${task_content_id}`);
-        process.stderr.write(`[${new Date().toISOString()}] ✅ FOUND ${referencesWithClaims.length} refs\n`);
+
+        // Count total claims across all references
+        let totalClaimsCount = 0;
+        referencesWithClaims.forEach(ref => {
+          const claims = Array.isArray(ref.claims)
+            ? ref.claims
+            : (typeof ref.claims === 'string' ? JSON.parse(ref.claims) : []);
+          console.log(`   📦 Ref "${ref.content_name}" has ${claims.length} claims`);
+          totalClaimsCount += claims.length;
+        });
+        console.log(`📊 TOTAL CLAIMS across all references: ${totalClaimsCount}`);
+        process.stderr.write(`[${new Date().toISOString()}] ✅ FOUND ${referencesWithClaims.length} refs with ${totalClaimsCount} total claims\n`);
 
         res.json(referencesWithClaims);
       } catch (err) {

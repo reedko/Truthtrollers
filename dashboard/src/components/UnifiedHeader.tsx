@@ -520,63 +520,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               : "0 4px 16px rgba(71, 85, 105, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.5)"
           }
         >
-          {/* Header Row: Case Tab and Viewer Badge */}
-
-          {/* NEW: Case Header Banner */}
-          <Box mb={4}>
-            {/* Case Name */}
-            <Box mb={2}>
-              <Flex justify="center" align="center">
-                <Text fontSize="xl" fontWeight="semibold">
-                  {pivotTask?.content_name || "Untitled Case"}
-                </Text>
-              </Flex>
-            </Box>
-
-            {/* Verimeter Score with Verdict - Centered */}
-            <Box textAlign="center">
-              {(() => {
-                const verdictInfo = getVerdictInfo(finalScore);
-
-                return (
-                  <>
-                    <Flex justify="center" align="center" gap={3} mb={1}>
-                      <Text
-                        fontSize="3xl"
-                        fontWeight="bold"
-                        color={verdictInfo.color}
-                      >
-                        {finalScore
-                          ? finalScore !== 0
-                            ? (finalScore * 100).toFixed(0)
-                            : 0
-                          : 0}
-                        %
-                      </Text>
-                      <Text
-                        fontSize="2xl"
-                        fontWeight="bold"
-                        color={verdictInfo.color}
-                      >
-                        {verdictInfo.word}
-                      </Text>
-                    </Flex>
-
-                    {/* Plain Language Interpretation */}
-                    <Text fontSize="md" color="gray.300" mb={1}>
-                      {verdictInfo.interpretation}
-                    </Text>
-
-                    {/* Trace Reasoning Hint */}
-                    <Text fontSize="sm" color="gray.500">
-                      Click any source below to trace the reasoning path
-                    </Text>
-                  </>
-                );
-              })()}
-            </Box>
-          </Box>
-
           <Flex
             wrap={flexWrap}
             justify={justify} // ⬅️ spread on desktop, scrollable on phone

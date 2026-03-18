@@ -15,6 +15,27 @@ import {
 import { createPortal } from "react-dom";
 import { GraphNode } from "../../../shared/entities/types";
 
+// Import refactored modules
+import {
+  animateMoleculeScene,
+  startThrobbing,
+  restartAllThrobs,
+  arrangeSourcesAroundCase,
+  saveNodePositions,
+  getCytoscapeStyles,
+  EdgeTooltip,
+  ClaimModal,
+  EdgeModal,
+  NodePopup,
+  ContextMenu,
+  ContextMenuItem,
+  API_BASE_URL,
+  DisplayMode,
+  NodeCard,
+  expandCaseWithClaims,
+  collapseCaseClaims,
+} from "./cytoscape";
+
 // Forward declaration - will be properly defined after CytoscapeMoleculeProps
 type NodeData = {
   id: string;
@@ -34,1784 +55,8 @@ type NodeData = {
   stance?: string;
 };
 
-// Minority Report Glassmorphic Card Overlay Component
-interface NodeCardProps {
-  node: cytoscape.NodeSingular;
-  containerRect: DOMRect;
-  zoom: number;
-  allNodes: NodeData[];
-  allLinks?: any[]; // For finding rationale
-  pinnedReferenceIds?: Set<number>;
-  onTogglePin?: (contentId: number) => void;
-  displayMode?: DisplayMode;
-  nodeSettings?: Record<string, { displayMode: DisplayMode }> | null;
-  onCycleDisplayMode?: (nodeId: string) => void;
-}
 
-const NodeCard: React.FC<NodeCardProps> = ({
-  node,
-  containerRect,
-  zoom,
-  allNodes,
-  allLinks,
-  pinnedReferenceIds,
-  onTogglePin,
-  displayMode: globalDisplayMode = "mr_cards",
-  nodeSettings,
-  onCycleDisplayMode,
-}) => {
-  const pos = node.renderedPosition();
-  const data = node.data();
-  const type = data.type;
-  const id = node.id();
 
-  // Check if this reference is pinned
-  const isPinned =
-    type === "reference" &&
-    data.content_id &&
-    pinnedReferenceIds?.has(data.content_id);
-
-  // Check if this node is dimmed (unpinned)
-  const isDimmed = data.dimmed;
-
-  // Find rationale from links (for refClaim nodes) - mapped from claim_links.notes
-  const linkData = allLinks?.find(
-    (link: any) => link.source === id || link.target === id,
-  );
-  const rationale = linkData?.rationale;
-  const stance = linkData?.stance;
-  const [showRationale, setShowRationale] = React.useState(false);
-
-  // Determine display mode for THIS node - use node-specific setting or fall back to global
-  const displayMode = nodeSettings?.[id]?.displayMode || globalDisplayMode;
-  const currentDisplayMode = displayMode; // Store for button labels to avoid type narrowing
-
-  // Color schemes for different node types (used by all modes)
-  const colorSchemes = {
-    task: {
-      bg: "linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.05))",
-      border: "rgba(99, 102, 241, 0.25)",
-      text: "#a5b4fc",
-      glow: "0 0 20px rgba(99, 102, 241, 0.2)",
-      titleBg: "rgba(99, 102, 241, 0.15)",
-      leftEdge:
-        "linear-gradient(90deg, rgba(99, 102, 241, 0.4) 0%, rgba(99, 102, 241, 0) 100%)",
-    },
-    reference: {
-      bg: "linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.05))",
-      border: "rgba(16, 185, 129, 0.25)",
-      text: "#6ee7b7",
-      glow: "0 0 20px rgba(16, 185, 129, 0.2)",
-      titleBg: "rgba(16, 185, 129, 0.15)",
-      leftEdge:
-        "linear-gradient(90deg, rgba(16, 185, 129, 0.4) 0%, rgba(16, 185, 129, 0) 100%)",
-    },
-    unifiedClaim: {
-      bg: "linear-gradient(135deg, rgba(249, 115, 22, 0.06), rgba(234, 88, 12, 0.04))",
-      border: "rgba(249, 115, 22, 0.2)",
-      text: "#fed7aa",
-      glow: "0 0 15px rgba(249, 115, 22, 0.15)",
-      titleBg: "rgba(249, 115, 22, 0.12)",
-      leftEdge:
-        "linear-gradient(90deg, rgba(249, 115, 22, 0.3) 0%, rgba(249, 115, 22, 0) 100%)",
-    },
-    refClaim: {
-      bg: "linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.05))",
-      border: "rgba(16, 185, 129, 0.25)",
-      text: "#6ee7b7",
-      glow: "0 0 20px rgba(16, 185, 129, 0.2)",
-      titleBg: "rgba(16, 185, 129, 0.15)",
-      leftEdge:
-        "linear-gradient(90deg, rgba(16, 185, 129, 0.4) 0%, rgba(16, 185, 129, 0) 100%)",
-    },
-    taskClaim: {
-      bg: "linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.05))",
-      border: "rgba(99, 102, 241, 0.25)",
-      text: "#a5b4fc",
-      glow: "0 0 20px rgba(99, 102, 241, 0.2)",
-      titleBg: "rgba(99, 102, 241, 0.15)",
-      leftEdge:
-        "linear-gradient(90deg, rgba(99, 102, 241, 0.4) 0%, rgba(99, 102, 241, 0) 100%)",
-    },
-    author: {
-      bg: "linear-gradient(135deg, rgba(251, 177, 160, 0.08), rgba(254, 215, 170, 0.05))",
-      border: "rgba(251, 177, 160, 0.25)",
-      text: "#fecaca",
-      glow: "0 0 20px rgba(251, 177, 160, 0.2)",
-      titleBg: "rgba(251, 177, 160, 0.15)",
-      leftEdge:
-        "linear-gradient(90deg, rgba(251, 177, 160, 0.4) 0%, rgba(251, 177, 160, 0) 100%)",
-    },
-    publisher: {
-      bg: "linear-gradient(135deg, rgba(129, 236, 236, 0.08), rgba(103, 232, 249, 0.05))",
-      border: "rgba(129, 236, 236, 0.25)",
-      text: "#a5f3fc",
-      glow: "0 0 20px rgba(129, 236, 236, 0.2)",
-      titleBg: "rgba(129, 236, 236, 0.15)",
-      leftEdge:
-        "linear-gradient(90deg, rgba(129, 236, 236, 0.4) 0%, rgba(129, 236, 236, 0) 100%)",
-    },
-  };
-
-  // CIRCLES MODE - clean circles with overlay badges
-  if (displayMode === "circles") {
-    const veracityScore = data.veracity_score ?? data.rating;
-    const claimCount = data.claimCount;
-    const confidence = data.confidence_level;
-
-    return (
-      <>
-        {/* Rationale tooltip (shown on hover) */}
-        {showRationale && rationale && (
-          <div
-            style={{
-              position: "absolute",
-              left: `${pos.x - 100}px`,
-              top: `${pos.y - 100}px`,
-              width: "200px",
-              background: "rgba(15, 23, 42, 0.98)",
-              backdropFilter: "blur(12px)",
-              border: "2px solid rgba(139, 92, 246, 0.5)",
-              borderRadius: "12px",
-              padding: "12px",
-              fontSize: "11px",
-              lineHeight: "1.5",
-              color: "#e2e8f0",
-              boxShadow:
-                "0 8px 32px rgba(0, 0, 0, 0.8), 0 0 20px rgba(139, 92, 246, 0.3)",
-              pointerEvents: "none",
-              transform: `scale(${zoom})`,
-              transformOrigin: "center",
-              zIndex: 1000,
-            }}
-          >
-            <div
-              style={{
-                fontSize: "10px",
-                fontWeight: "700",
-                color: "#a78bfa",
-                marginBottom: "6px",
-              }}
-            >
-              {stance?.toUpperCase()} - RATIONALE:
-            </div>
-            {rationale}
-          </div>
-        )}
-
-        {/* Info icon for rationale/notes (if available) */}
-        {rationale && (
-          <div
-            onMouseEnter={() => setShowRationale(true)}
-            onMouseLeave={() => setShowRationale(false)}
-            style={{
-              position: "absolute",
-              left: `${pos.x - 65}px`,
-              top: `${pos.y + 35}px`,
-              background: "rgba(139, 92, 246, 0.3)",
-              backdropFilter: "blur(8px)",
-              border: "1px solid rgba(139, 92, 246, 0.5)",
-              borderRadius: "50%",
-              width: "24px",
-              height: "24px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "12px",
-              cursor: "help",
-              pointerEvents: "auto",
-              transform: `scale(${zoom})`,
-              transformOrigin: "center",
-              color: "#a78bfa",
-            }}
-            title="View AI Rationale"
-          >
-            ℹ️
-          </div>
-        )}
-
-        {/* Veracity badge - top-right */}
-        {veracityScore !== undefined && veracityScore !== null && (
-          <div
-            style={{
-              position: "absolute",
-              left: `${pos.x + 45}px`,
-              top: `${pos.y - 55}px`,
-              background: "rgba(15, 23, 42, 0.95)",
-              backdropFilter: "blur(8px)",
-              border: "1px solid rgba(139, 92, 246, 0.4)",
-              borderRadius: "8px",
-              padding: "4px 8px",
-              fontSize: "11px",
-              fontWeight: "700",
-              color: "#a78bfa",
-              boxShadow:
-                "0 2px 8px rgba(0, 0, 0, 0.6), 0 0 12px rgba(139, 92, 246, 0.2)",
-              pointerEvents: "none",
-              transform: `scale(${zoom})`,
-              transformOrigin: "center",
-              opacity: isDimmed ? 0.4 : 1.0,
-            }}
-            title="Veracity Score"
-          >
-            ⭐{" "}
-            {typeof veracityScore === "number"
-              ? veracityScore.toFixed(1)
-              : veracityScore}
-          </div>
-        )}
-
-        {/* Claim count badge - bottom-right (or confidence for claim nodes) */}
-        {(claimCount !== undefined && claimCount !== null && claimCount > 0) ||
-        (confidence !== undefined && confidence !== null) ? (
-          <div
-            style={{
-              position: "absolute",
-              left: `${pos.x + 45}px`,
-              top: `${pos.y + 35}px`,
-              background: "rgba(15, 23, 42, 0.95)",
-              backdropFilter: "blur(8px)",
-              border: confidence
-                ? "1px solid rgba(251, 191, 36, 0.4)"
-                : "1px solid rgba(16, 185, 129, 0.4)",
-              borderRadius: "8px",
-              padding: "4px 8px",
-              fontSize: "11px",
-              fontWeight: "700",
-              color: confidence ? "#fbbf24" : "#6ee7b7",
-              boxShadow: confidence
-                ? "0 2px 8px rgba(0, 0, 0, 0.6), 0 0 12px rgba(251, 191, 36, 0.2)"
-                : "0 2px 8px rgba(0, 0, 0, 0.6), 0 0 12px rgba(16, 185, 129, 0.2)",
-              pointerEvents: "none",
-              transform: `scale(${zoom})`,
-              transformOrigin: "center",
-              opacity: isDimmed ? 0.4 : 1.0,
-            }}
-            title={confidence ? "Confidence Level" : "Claim Count"}
-          >
-            {confidence
-              ? `🎯 ${Math.round(confidence * 100)}%`
-              : `📝 ${claimCount}`}
-          </div>
-        ) : null}
-
-        {/* Pin button for references */}
-        {type === "reference" && onTogglePin && data.content_id && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onTogglePin(data.content_id);
-            }}
-            style={{
-              position: "absolute",
-              left: `${pos.x - 65}px`,
-              top: `${pos.y - 55}px`,
-              background: isPinned
-                ? "rgba(251, 191, 36, 0.3)"
-                : "rgba(100, 116, 139, 0.3)",
-              backdropFilter: "blur(8px)",
-              border: "1px solid rgba(100, 116, 139, 0.4)",
-              borderRadius: "8px",
-              padding: "4px 8px",
-              cursor: "pointer",
-              fontSize: "14px",
-              pointerEvents: "auto",
-              transform: `scale(${zoom})`,
-              transformOrigin: "center",
-            }}
-            title={isPinned ? "Unpin" : "Pin"}
-          >
-            {isPinned ? "📌" : "📍"}
-          </button>
-        )}
-
-        {/* Display mode cycle button */}
-        {onCycleDisplayMode && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onCycleDisplayMode(id);
-            }}
-            style={{
-              position: "absolute",
-              left: `${pos.x - 65}px`,
-              top: `${pos.y}px`,
-              background: "rgba(99, 102, 241, 0.3)",
-              backdropFilter: "blur(8px)",
-              border: "1px solid rgba(99, 102, 241, 0.5)",
-              borderRadius: "50%",
-              width: "24px",
-              height: "24px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-              fontSize: "10px",
-              pointerEvents: "auto",
-              transform: `scale(${zoom})`,
-              transformOrigin: "center",
-              color: "#a5b4fc",
-            }}
-            title="Cycle display mode"
-          >
-            {currentDisplayMode === "circles"
-              ? "⚪"
-              : currentDisplayMode === "compact"
-                ? "📊"
-                : "🎴"}
-          </button>
-        )}
-      </>
-    );
-  }
-
-  // COMPACT MODE - smaller cards with just metrics
-  if (displayMode === "compact") {
-    const scheme =
-      colorSchemes[type as keyof typeof colorSchemes] || colorSchemes.reference;
-
-    // Get metrics
-    const getCompactMetrics = () => {
-      if (type === "reference" || type === "task") {
-        const veracityScore = data.veracity_score ?? data.rating;
-        const claimCount =
-          data.claimCount ??
-          allNodes.filter(
-            (n) =>
-              (type === "reference"
-                ? n.type === "refClaim"
-                : n.type === "taskClaim") && n.content_id === data.content_id,
-          ).length;
-        return [
-          {
-            value:
-              typeof veracityScore === "number"
-                ? veracityScore.toFixed(1)
-                : (veracityScore ?? "-"),
-            label: "⭐",
-          },
-          { value: claimCount, label: "📝" },
-        ];
-      } else if (type === "refClaim" || type === "taskClaim") {
-        const veracityScore = data.veracity_score;
-        const confidence = data.confidence_level;
-        return [
-          {
-            value: veracityScore ? veracityScore.toFixed(2) : "-",
-            label: "⭐",
-          },
-          {
-            value: confidence ? Math.round(confidence * 100) + "%" : "-",
-            label: "🎯",
-          },
-        ];
-      } else if (type === "author" || type === "publisher") {
-        const rating = data.rating ?? "-";
-        return [
-          {
-            value: typeof rating === "number" ? rating.toFixed(1) : rating,
-            label: "⭐",
-          },
-        ];
-      }
-      return [];
-    };
-
-    const metrics = getCompactMetrics();
-
-    return (
-      <div
-        style={{
-          position: "absolute",
-          left: `${pos.x - 60}px`,
-          top: `${pos.y - 70}px`,
-          width: "120px",
-          height: "140px",
-          background: scheme.bg,
-          backdropFilter: "blur(6px)",
-          border: `1.5px solid ${scheme.border}`,
-          borderRadius: "10px",
-          boxShadow: `${scheme.glow}, 0 4px 16px rgba(0, 0, 0, 0.3)`,
-          pointerEvents: "none",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "8px",
-          transform: `scale(${zoom})`,
-          transformOrigin: "center center",
-          opacity: isDimmed ? 0.4 : 1.0, // Dim compact cards
-        }}
-      >
-        {/* Type badge */}
-        <div
-          style={{
-            fontSize: "9px",
-            color: scheme.text,
-            textTransform: "uppercase",
-            letterSpacing: "1px",
-            marginBottom: "4px",
-            fontWeight: "600",
-            opacity: 0.7,
-          }}
-        >
-          {type === "refClaim" ? "Ref" : type === "taskClaim" ? "Case" : type}
-        </div>
-
-        {/* Label */}
-        <div
-          style={{
-            color: scheme.text,
-            fontSize: "12px",
-            fontWeight: "600",
-            textAlign: "center",
-            lineHeight: "1.2",
-            marginBottom: "8px",
-            maxHeight: "48px",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            display: "-webkit-box",
-            WebkitLineClamp: 3,
-            WebkitBoxOrient: "vertical",
-          }}
-        >
-          {data.label}
-        </div>
-
-        {/* Metrics */}
-        <div
-          style={{
-            display: "flex",
-            gap: "8px",
-            marginTop: "auto",
-          }}
-        >
-          {metrics.map((metric, idx) => (
-            <div
-              key={idx}
-              style={{
-                textAlign: "center",
-                fontSize: "16px",
-                fontWeight: "600",
-                color: scheme.text,
-              }}
-            >
-              <div>{metric.label}</div>
-              <div style={{ fontSize: "12px", marginTop: "2px" }}>
-                {metric.value}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Pin button for references */}
-        {type === "reference" && onTogglePin && data.content_id && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onTogglePin(data.content_id);
-            }}
-            style={{
-              position: "absolute",
-              top: "4px",
-              right: "4px",
-              background: isPinned
-                ? "rgba(251, 191, 36, 0.3)"
-                : "rgba(100, 116, 139, 0.3)",
-              border: "none",
-              borderRadius: "4px",
-              padding: "2px 4px",
-              cursor: "pointer",
-              fontSize: "12px",
-              pointerEvents: "auto",
-            }}
-            title={isPinned ? "Unpin" : "Pin"}
-          >
-            {isPinned ? "📌" : "📍"}
-          </button>
-        )}
-
-        {/* Display mode cycle button */}
-        {onCycleDisplayMode && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onCycleDisplayMode(id);
-            }}
-            style={{
-              position: "absolute",
-              top: "4px",
-              left: "4px",
-              background: "rgba(99, 102, 241, 0.3)",
-              border: "1px solid rgba(99, 102, 241, 0.5)",
-              borderRadius: "4px",
-              padding: "2px 4px",
-              cursor: "pointer",
-              fontSize: "10px",
-              pointerEvents: "auto",
-              color: scheme.text,
-            }}
-            title="Cycle display mode"
-          >
-            {currentDisplayMode === "circles"
-              ? "⚪"
-              : currentDisplayMode === "compact"
-                ? "📊"
-                : "🎴"}
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  // MR_CARDS MODE - full Minority Report cards (original implementation)
-
-  let scheme =
-    colorSchemes[type as keyof typeof colorSchemes] || colorSchemes.reference;
-
-  // Get thumbnail URL (needed for all card types including unifiedClaim)
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
-  const group =
-    type === "author"
-      ? 1
-      : type === "task" || type === "reference"
-        ? 2
-        : type === "publisher"
-          ? 3
-          : 0;
-  // Use new API endpoint that auto-detects image extension
-  let thumbnailUrl;
-  if (type === "author") {
-    const authorId = data.author_id || id.replace("autho-", "");
-    thumbnailUrl = `${API_BASE_URL}/api/image/authors/${authorId}`;
-  } else if (type === "task" || type === "reference") {
-    const contentId = data.content_id || id.replace("conte-", "");
-    thumbnailUrl = `${API_BASE_URL}/api/image/content/${contentId}`;
-  } else if (type === "publisher") {
-    const publisherId = data.publisher_id || id.replace("publi-", "");
-    thumbnailUrl = `${API_BASE_URL}/api/image/publishers/${publisherId}`;
-  } else {
-    thumbnailUrl = `${API_BASE_URL}/assets/images/ttlogo11.png`;
-  }
-
-  // Special handling for unified claim cards
-  if (type === "unifiedClaim") {
-    const relation = data.relation || "related";
-    const refClaimText = data.refClaimLabel || "";
-    const taskClaimText = data.taskClaimLabel || "";
-
-    return (
-      <div
-        style={{
-          position: "absolute",
-          left: `${pos.x - 130}px`,
-          top: `${pos.y - 160}px`,
-          width: "260px",
-          height: "320px",
-          background: scheme.bg,
-          backdropFilter: "blur(6px)",
-          border: `1.5px solid ${scheme.border}`,
-          borderRadius: "16px",
-          boxShadow: `${scheme.glow}, 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)`,
-          pointerEvents: "none",
-          transition: "all 0.3s ease",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-          transform: `scale(${zoom})`,
-          transformOrigin: "center center",
-        }}
-      >
-        {/* Background watermark thumbnail - reduced size */}
-        <div
-          style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "60%",
-            height: "60%",
-            backgroundImage: `url(${thumbnailUrl})`,
-            backgroundSize: "contain",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-            opacity: 0.08,
-            zIndex: 0,
-          }}
-        />
-
-        {/* 3D Left Edge Fade */}
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            width: "20px",
-            height: "100%",
-            background: scheme.leftEdge,
-            pointerEvents: "none",
-            zIndex: 1,
-          }}
-        />
-
-        {/* Content container */}
-        <div
-          style={{
-            position: "relative",
-            zIndex: 2,
-            display: "flex",
-            flexDirection: "column",
-            height: "100%",
-            padding: "8px",
-          }}
-        >
-          {/* Ref Claim (top) */}
-          <div
-            style={{
-              flex: "1",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "6px",
-              background: "rgba(16, 185, 129, 0.1)",
-              borderRadius: "8px",
-              marginBottom: "6px",
-            }}
-          >
-            <div
-              style={{
-                color: "#6ee7b7",
-                fontSize: "32px",
-                fontWeight: "600",
-                lineHeight: "1.4",
-                textAlign: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                display: "-webkit-box",
-                WebkitLineClamp: 4,
-                WebkitBoxOrient: "vertical",
-                textShadow: `0 0 6px rgba(110, 231, 183, 0.4), 0 1px 2px rgba(0, 0, 0, 0.8)`,
-              }}
-            >
-              {refClaimText}
-            </div>
-          </div>
-
-          {/* Relation (middle) */}
-          <div
-            style={{
-              padding: "6px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background:
-                relation === "supports"
-                  ? "rgba(16, 185, 129, 0.2)"
-                  : relation === "refutes"
-                    ? "rgba(239, 68, 68, 0.2)"
-                    : "rgba(251, 191, 36, 0.2)",
-              borderRadius: "8px",
-              marginBottom: "6px",
-            }}
-          >
-            <span
-              style={{
-                fontSize: "35px",
-                fontWeight: "700",
-                textTransform: "uppercase",
-                letterSpacing: "3px",
-                color:
-                  relation === "supports"
-                    ? "#10b981"
-                    : relation === "refutes"
-                      ? "#ef4444"
-                      : "#fbbf24",
-                textShadow: `0 0 10px ${
-                  relation === "supports"
-                    ? "rgba(16, 185, 129, 0.6)"
-                    : relation === "refutes"
-                      ? "rgba(239, 68, 68, 0.6)"
-                      : "rgba(251, 191, 36, 0.6)"
-                }`,
-              }}
-            >
-              {relation === "supports"
-                ? "✅ SUPPORTS"
-                : relation === "refutes"
-                  ? "❌ REFUTES"
-                  : "RELATED"}
-            </span>
-          </div>
-
-          {/* Task Claim (bottom) */}
-          <div
-            style={{
-              flex: "1",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "6px",
-              background: "rgba(99, 102, 241, 0.1)",
-              borderRadius: "8px",
-            }}
-          >
-            <div
-              style={{
-                color: "#a5b4fc",
-                fontSize: "32px",
-                fontWeight: "600",
-                lineHeight: "1.4",
-                textAlign: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                display: "-webkit-box",
-                WebkitLineClamp: 4,
-                WebkitBoxOrient: "vertical",
-                textShadow: `0 0 6px rgba(165, 180, 252, 0.4), 0 1px 2px rgba(0, 0, 0, 0.8)`,
-              }}
-            >
-              {taskClaimText}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Format type name for title bar
-  const typeLabel =
-    type === "refClaim"
-      ? "Ref Claim"
-      : type === "taskClaim"
-        ? "Task Claim"
-        : type.charAt(0).toUpperCase() + type.slice(1);
-
-  // Get metrics based on node type
-  const getMetrics = (): Array<{ value: string | number; label: string }> => {
-    if (type === "reference") {
-      const rating = data.rating ?? "-";
-      const contentId = data.content_id;
-      // Count refClaims from original data by matching content_id
-      const claimCount = allNodes.filter(
-        (n) => n.type === "refClaim" && n.content_id === contentId,
-      ).length;
-      return [
-        { value: rating, label: "Rating" },
-        { value: claimCount, label: "Claims" },
-      ];
-    } else if (type === "task") {
-      // Count taskClaims from original data
-      const claimCount = allNodes.filter((n) => n.type === "taskClaim").length;
-      // Count reference nodes from original data
-      const refCount = allNodes.filter((n) => n.type === "reference").length;
-      return [
-        { value: claimCount, label: "Claims" },
-        { value: refCount, label: "Refs" },
-      ];
-    } else if (type === "author" || type === "publisher") {
-      const rating = data.rating ?? "-";
-      return [{ value: rating, label: "Rating" }];
-    } else if (type === "refClaim" || type === "taskClaim") {
-      // For claims, could show relation type or confidence
-      return [];
-    }
-    return [];
-  };
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: `${pos.x - 100}px`,
-        top: `${pos.y - 120}px`,
-        width: "200px",
-        height: "240px",
-        background: scheme.bg,
-        backdropFilter: "blur(6px)",
-        border: `1.5px solid ${scheme.border}`,
-        borderRadius: "16px",
-        boxShadow: `${scheme.glow}, 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)`,
-        pointerEvents: "none",
-        transition: "all 0.3s ease",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-        opacity: isDimmed ? 0.4 : 1.0, // Dim MR cards
-        transform: `scale(${zoom})`,
-        transformOrigin: "center center",
-      }}
-    >
-      {/* 3D Left Edge Fade */}
-      <div
-        style={{
-          position: "absolute",
-          left: 0,
-          top: 0,
-          width: "20px",
-          height: "100%",
-          background: scheme.leftEdge,
-          pointerEvents: "none",
-          zIndex: 1,
-        }}
-      />
-
-      {/* Transparent Title Bar */}
-      <div
-        style={{
-          background: scheme.titleBg,
-          backdropFilter: "blur(5px)",
-          padding: "2px 4px",
-          borderTopLeftRadius: "14px",
-          borderTopRightRadius: "14px",
-          borderBottom: `1px solid ${scheme.border}`,
-        }}
-      >
-        <div
-          style={{
-            color: scheme.text,
-            fontSize: "27px",
-            fontWeight: "700",
-            textAlign: "center",
-            textTransform: "uppercase",
-            letterSpacing: "2px",
-            textShadow: `0 0 8px ${scheme.text}60, 0 1px 2px rgba(0, 0, 0, 0.9)`,
-          }}
-        >
-          {typeLabel}
-        </div>
-      </div>
-
-      {/* Content area - image + text */}
-      <div
-        style={{
-          flex: 1,
-          overflow: "hidden",
-          pointerEvents: "none",
-        }}
-      >
-        {/* Thumbnail Area - scrolls out of frame */}
-        <div
-          style={{
-            height: "100px",
-            display: "flex",
-            alignItems: "flex-start",
-            justifyContent: "center",
-            padding: "0",
-            position: "relative",
-            zIndex: 0,
-          }}
-        >
-          <img
-            src={thumbnailUrl}
-            alt={data.label}
-            style={{
-              maxWidth: "60%",
-              maxHeight: "100%",
-              objectFit: "contain",
-              filter: "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5))",
-              opacity: 0.9,
-            }}
-            onError={(e) => {
-              // Fallback to placeholder if image fails to load
-              e.currentTarget.style.display = "none";
-            }}
-          />
-        </div>
-
-        {/* Label Text */}
-        <div
-          style={{
-            padding: "5px 8px",
-            color: scheme.text,
-            fontSize: "30px",
-            fontWeight: "600",
-            textAlign: "center",
-            lineHeight: "1.3",
-            textShadow: `0 0 6px ${scheme.text}40, 0 1px 2px rgba(0, 0, 0, 0.8)`,
-          }}
-        >
-          {data.label}
-        </div>
-      </div>
-
-      {/* Metrics Footer */}
-      <div
-        style={{
-          background: scheme.titleBg,
-          backdropFilter: "blur(5px)",
-          padding: "4px 2px",
-          borderTop: `1px solid ${scheme.border}`,
-          borderBottomLeftRadius: "14px",
-          borderBottomRightRadius: "14px",
-          display: "grid",
-          gridTemplateColumns: `repeat(${Math.min(
-            getMetrics().length,
-            3,
-          )}, 1fr)`,
-          gap: "2px",
-        }}
-      >
-        {getMetrics().map((metric, idx) => (
-          <div
-            key={idx}
-            style={{
-              textAlign: "center",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-            }}
-          >
-            <span
-              style={{
-                display: "block",
-                fontSize: "40px",
-                fontWeight: "400",
-                color: scheme.text,
-                textShadow: `0 0 8px ${scheme.text}60, 0 1px 2px rgba(0, 0, 0, 0.9)`,
-                marginBottom: "5px",
-              }}
-            >
-              {metric.value}
-            </span>
-            <span
-              style={{
-                display: "block",
-                fontSize: "20px",
-                color: scheme.text,
-                textTransform: "uppercase",
-                letterSpacing: "2px",
-                fontWeight: "500",
-                opacity: 0.9,
-              }}
-            >
-              {metric.label}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* Pin/Unpin Button for Reference Nodes */}
-      {type === "reference" && onTogglePin && data.content_id && (
-        <div
-          style={{
-            position: "absolute",
-            top: "8px",
-            right: "8px",
-            zIndex: 10,
-          }}
-        >
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onTogglePin(data.content_id);
-            }}
-            style={{
-              background: isPinned
-                ? "linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(251, 191, 36, 0.2))"
-                : "linear-gradient(135deg, rgba(100, 116, 139, 0.3), rgba(100, 116, 139, 0.2))",
-              border: `1px solid ${isPinned ? "rgba(251, 191, 36, 0.6)" : "rgba(100, 116, 139, 0.4)"}`,
-              borderRadius: "8px",
-              padding: "6px 10px",
-              cursor: "pointer",
-              fontSize: "18px",
-              pointerEvents: "auto",
-              transition: "all 0.2s ease",
-              boxShadow: isPinned
-                ? "0 0 10px rgba(251, 191, 36, 0.3)"
-                : "0 2px 8px rgba(0, 0, 0, 0.3)",
-            }}
-            title={isPinned ? "Unpin from view" : "Pin to view"}
-          >
-            {isPinned ? "📌" : "📍"}
-          </button>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export async function animateMoleculeScene({
-  cy,
-  node,
-  taskNode,
-  nodes,
-  links,
-  originalNodePositions,
-  lastRefNode,
-  lastRefOriginalPos,
-  animate = true,
-  activatedNodeIds,
-}: {
-  cy: cytoscape.Core;
-  node: NodeSingular;
-  taskNode: NodeSingular;
-  nodes: NodeData[];
-  links: LinkData[];
-  originalNodePositions: React.MutableRefObject<
-    Record<string, cytoscape.Position>
-  >;
-  lastRefNode: React.MutableRefObject<NodeSingular | null>;
-  lastRefOriginalPos: React.MutableRefObject<{ x: number; y: number } | null>;
-  animate?: boolean;
-  activatedNodeIds?: Set<string>;
-}) {
-  try {
-    const contentId = node.data("content_id");
-
-    // Step 1: Get ref and task claims and relevant links
-    const refClaims = nodes.filter(
-      (n) => n.type === "refClaim" && n.content_id === contentId,
-    );
-    const claimLinks = links.filter((l) =>
-      refClaims.some((rc) => rc.id === l.source),
-    );
-
-    const taskClaimMap = new Map(
-      nodes.filter((n) => n.type === "taskClaim").map((n) => [n.id, n]),
-    );
-
-    if (refClaims.length === 0 || claimLinks.length === 0) return;
-
-    lastRefOriginalPos.current = { ...node.position() };
-    lastRefNode.current = node;
-
-    cy.batch(() => {
-      cy.nodes('[type = "refClaim"], [type = "taskClaim"]').remove();
-    });
-
-    let taskPos = taskNode.position();
-    let refPos = node.position();
-    let dx = refPos.x - taskPos.x;
-    let dy = refPos.y - taskPos.y;
-    let angleToRef = Math.atan2(dy, dx);
-
-    const optimalDistance = 950;
-    const newRefX = taskPos.x + optimalDistance * Math.cos(angleToRef);
-    const newRefY = taskPos.y + optimalDistance * Math.sin(angleToRef);
-
-    node.position({ x: newRefX, y: newRefY });
-
-    // Arrange other sources immediately without animation
-    arrangeSourcesAroundCase({
-      cy,
-      clickedRefNode: node,
-      taskNode,
-    });
-
-    taskPos = taskNode.position();
-    refPos = node.position();
-    dx = refPos.x - taskPos.x;
-    dy = refPos.y - taskPos.y;
-    angleToRef = Math.atan2(dy, dx);
-    const refTaskEdges = cy.edges().filter((edge) => {
-      const source = edge.source();
-      const target = edge.target();
-      return (
-        (source.id() === node.id() && target.id() === taskNode.id()) ||
-        (source.id() === taskNode.id() && target.id() === node.id())
-      );
-    });
-    refTaskEdges.style("display", "none");
-
-    // Step 8: Position claim nodes in arcs around their parent nodes
-    // (positions already recalculated above)
-
-    // Arc radius for claims - tighter for source claims to prevent overlap
-    const taskClaimArcRadius = 280;
-    const refClaimArcRadius = 300; // Give claims more breathing room from source
-
-    // Arc span - how wide the arc of claims should be
-    const arcSpan = Math.PI / 1.5; // ~120 degrees
-
-    const claimElements: cytoscape.ElementDefinition[] = [];
-    const edgeElements: cytoscape.ElementDefinition[] = [];
-    const animationData: Array<{ nodeId: string; x: number; y: number }> = [];
-
-    // First pass: collect all data
-    claimLinks.forEach((link, i) => {
-      const refClaim = refClaims.find((rc) => rc.id === link.source);
-      const taskClaim = taskClaimMap.get(link.target);
-
-      if (!refClaim || !taskClaim) return;
-
-      // Calculate arc position parameter (0 to 1) - reversed for taskClaims to align edges
-      const t = claimLinks.length > 1 ? i / (claimLinks.length - 1) : 0.5;
-      const tReversed = 1 - t; // Reverse order for task claims
-
-      // RefClaim: Arc around the reference node (bottom to top) - smaller radius
-      const refArcCenter = angleToRef + Math.PI; // Point toward task
-      const refArcStart = refArcCenter - arcSpan / 2;
-      const refAngle = refArcStart + t * arcSpan;
-      const refX = refPos.x + refClaimArcRadius * Math.cos(refAngle);
-      const refY = refPos.y + refClaimArcRadius * Math.sin(refAngle);
-
-      // TaskClaim: Arc around the task node (reversed, top to bottom, to align with refClaims)
-      const taskArcCenter = angleToRef; // Point toward reference
-      const taskArcStart = taskArcCenter - arcSpan / 2;
-      const taskAngle = taskArcStart + tReversed * arcSpan;
-      const taskX = taskPos.x + taskClaimArcRadius * Math.cos(taskAngle);
-      const taskY = taskPos.y + taskClaimArcRadius * Math.sin(taskAngle);
-
-      // Collect refClaim node if it doesn't exist
-      if (cy.getElementById(refClaim.id).length === 0) {
-        claimElements.push({
-          data: refClaim,
-          position: { x: refPos.x, y: refPos.y }, // Start at reference
-        });
-      }
-      animationData.push({ nodeId: refClaim.id, x: refX, y: refY });
-
-      // Collect taskClaim node if it doesn't exist
-      if (cy.getElementById(taskClaim.id).length === 0) {
-        claimElements.push({
-          data: taskClaim,
-          position: { x: taskPos.x, y: taskPos.y }, // Start at task
-        });
-      }
-      animationData.push({ nodeId: taskClaim.id, x: taskX, y: taskY });
-
-      // Collect edges
-      edgeElements.push({
-        data: {
-          id: `edge-ref-${node.id()}-refclaim-${refClaim.id}`,
-          source: node.id(),
-          target: refClaim.id,
-          relation: "contains",
-        },
-      });
-
-      edgeElements.push({
-        data: {
-          id: `edge-task-${taskNode.id()}-taskclaim-${taskClaim.id}`,
-          source: taskNode.id(),
-          target: taskClaim.id,
-          relation: "contains",
-        },
-      });
-
-      edgeElements.push({
-        data: {
-          ...link,
-          id: `edge-refclaim-${refClaim.id}-taskclaim-${taskClaim.id}`,
-          relation: link.relation || "related",
-        },
-      });
-    });
-
-    // Add all nodes and edges in batches
-    cy.batch(() => {
-      if (claimElements.length > 0) {
-        cy.add(claimElements);
-      }
-      if (edgeElements.length > 0) {
-        cy.add(edgeElements);
-      }
-    });
-
-    // Position all claim nodes directly - no animation
-    cy.batch(() => {
-      animationData.forEach(({ nodeId, x, y }) => {
-        const nodeEle = cy.getElementById(nodeId);
-        if (nodeEle.length > 0) {
-          nodeEle.position({ x, y });
-        }
-      });
-    });
-
-    // Fit view to show all nodes with optimal zoom
-    cy.fit(cy.nodes(), 50);
-
-    // Restart throbbing for activated nodes after animation
-    if (activatedNodeIds) {
-      restartAllThrobs(cy, activatedNodeIds);
-    }
-  } catch (error) {
-    console.error("animateMoleculeScene error:", error);
-    // Try to restore state gracefully
-    if (activatedNodeIds) {
-      restartAllThrobs(cy, activatedNodeIds);
-    }
-  }
-}
-
-function animateNode(
-  node: NodeSingular,
-  options: { position: { x: number; y: number } },
-  duration = 200,
-): Promise<void> {
-  return new Promise((resolve) => {
-    // Safety timeout in case animation doesn't complete
-    const timeout = setTimeout(() => {
-      console.warn("Animation timeout for node:", node.id());
-      resolve();
-    }, duration + 500);
-
-    node.animate(options, {
-      duration,
-      easing: "ease-out",
-      complete: () => {
-        clearTimeout(timeout);
-        resolve();
-      },
-    });
-  });
-}
-function animateNodes(
-  nodes: cytoscape.SingularElementArgument[],
-  optionsList: { position: { x: number; y: number } }[],
-  duration = 250,
-): Promise<void> {
-  return new Promise((resolve) => {
-    if (nodes.length === 0) {
-      resolve();
-      return;
-    }
-
-    // Safety timeout in case animations don't complete
-    const timeout = setTimeout(() => {
-      console.warn("Animation timeout for", nodes.length, "nodes");
-      resolve();
-    }, duration + 1000);
-
-    let finished = 0;
-    nodes.forEach((node, i) => {
-      node.animate(optionsList[i], {
-        duration,
-        easing: "ease-out",
-        complete: () => {
-          finished++;
-          if (finished === nodes.length) {
-            clearTimeout(timeout);
-            resolve();
-          }
-        },
-      });
-    });
-  });
-}
-
-// Arrange source nodes in a 3/4 circle arc around the CASE node
-function arrangeSourcesAroundCase({
-  cy,
-  clickedRefNode,
-  taskNode,
-}: {
-  cy: cytoscape.Core;
-  clickedRefNode: NodeSingular;
-  taskNode: NodeSingular;
-}): void {
-  const center = taskNode.position();
-  const clickedRefPos = clickedRefNode.position();
-
-  const dx = clickedRefPos.x - center.x;
-  const dy = clickedRefPos.y - center.y;
-  const angleToClickedRef = Math.atan2(dy, dx);
-
-  // Separate references from authors/publishers
-  const otherReferences = cy
-    .nodes()
-    .filter((node) => {
-      const id = node.id();
-      const type = node.data("type");
-      return (
-        id !== clickedRefNode.id() &&
-        id !== taskNode.id() &&
-        type === "reference"
-      );
-    })
-    .toArray() as cytoscape.NodeSingular[];
-
-  // Don't move authors and publishers - keep them in original positions
-  if (otherReferences.length === 0) return;
-
-  // 3/4 circle arc (270 degrees)
-  const arcSpan = (Math.PI * 3) / 2;
-  const arcStartAngle = angleToClickedRef + Math.PI / 4;
-
-  // Calculate if nodes can fit on single arc without overlapping
-  const baseRadius = 550;
-  const nodeWidth = 120; // Approximate node width
-  const minNodeSpacing = 20; // Minimum gap between nodes
-  const requiredSpacing = nodeWidth + minNodeSpacing;
-
-  // Calculate arc length and how many nodes can fit
-  const arcLength = baseRadius * arcSpan;
-  const maxNodesOnSingleArc = Math.floor(arcLength / requiredSpacing);
-
-  let arcsNeeded = 1;
-  if (otherReferences.length > maxNodesOnSingleArc) {
-    arcsNeeded = Math.ceil(otherReferences.length / maxNodesOnSingleArc);
-  }
-
-  const radiusStagger = 140;
-
-  cy.batch(() => {
-    otherReferences.forEach((node, i) => {
-      // Determine which arc this node goes on
-      const arcIndex =
-        arcsNeeded === 1 ? 0 : Math.floor(i / maxNodesOnSingleArc);
-      const positionInArc = arcsNeeded === 1 ? i : i % maxNodesOnSingleArc;
-      const nodesInThisArc =
-        arcsNeeded === 1
-          ? otherReferences.length
-          : arcIndex === arcsNeeded - 1
-            ? otherReferences.length - arcIndex * maxNodesOnSingleArc
-            : maxNodesOnSingleArc;
-
-      // Calculate position parameter (0 to 1) for this arc
-      const t = nodesInThisArc > 1 ? positionInArc / (nodesInThisArc - 1) : 0.5;
-      const angle = arcStartAngle + t * arcSpan;
-
-      // Calculate radius based on which arc
-      const radius = baseRadius + arcIndex * radiusStagger;
-
-      const newX = center.x + radius * Math.cos(angle);
-      const newY = center.y + radius * Math.sin(angle);
-
-      node.position({ x: newX, y: newY });
-    });
-  });
-}
-
-async function corridorArcScatter({
-  cy,
-  refNode,
-  taskNode,
-  animate = true,
-}: {
-  cy: cytoscape.Core;
-  refNode: NodeSingular;
-  taskNode: NodeSingular;
-  animate?: boolean;
-}): Promise<void> {
-  try {
-    const center = taskNode.position();
-    const refPos = refNode.position();
-
-    // Calculate angle from center to clicked reference
-    const dx = refPos.x - center.x;
-    const dy = refPos.y - center.y;
-    const angleToRef = Math.atan2(dy, dx);
-
-    // Opposite angle - where we'll put the arc
-    const oppositeAngle = angleToRef + Math.PI;
-
-    // Create a wide semicircular arc on the opposite side
-    const arcSpan = Math.PI * 1.1; // 198 degrees - wide semicircle
-    const arcStartAngle = oppositeAngle - arcSpan / 2;
-
-    const nodesToScatter = cy
-      .nodes()
-      .filter((node) => {
-        const id = node.id();
-        const type = node.data("type");
-        return (
-          id !== refNode.id() &&
-          id !== taskNode.id() &&
-          ["reference", "author", "publisher"].includes(type)
-        );
-      })
-      .toArray() as cytoscape.NodeSingular[];
-
-    if (nodesToScatter.length === 0) return;
-
-    // Distribute nodes along the arc with varying radius for depth/interest
-    // Batch position updates for better performance
-    if (animate) {
-      cy.batch(() => {
-        nodesToScatter.forEach((node, i) => {
-          const t = i / Math.max(1, nodesToScatter.length - 1);
-          const angle = arcStartAngle + t * arcSpan;
-
-          // Create a gentle wave pattern in the radius for visual interest
-          const waveOffset = Math.sin(t * Math.PI * 2) * 150;
-          const baseRadius = 850 + Math.abs(waveOffset); // Larger radius for better spacing
-
-          const newX = center.x + baseRadius * Math.cos(angle);
-          const newY = center.y + baseRadius * Math.sin(angle);
-
-          node.animate(
-            { position: { x: newX, y: newY } },
-            { duration: 150, easing: "ease-out" },
-          );
-        });
-      });
-    } else {
-      cy.batch(() => {
-        nodesToScatter.forEach((node, i) => {
-          const t = i / Math.max(1, nodesToScatter.length - 1);
-          const angle = arcStartAngle + t * arcSpan;
-
-          const waveOffset = Math.sin(t * Math.PI * 2) * 150;
-          const baseRadius = 850 + Math.abs(waveOffset);
-
-          const newX = center.x + baseRadius * Math.cos(angle);
-          const newY = center.y + baseRadius * Math.sin(angle);
-
-          node.position({ x: newX, y: newY });
-        });
-      });
-    }
-  } catch (error) {
-    console.error("corridorArcScatter error:", error);
-    // Continue gracefully - don't block the animation pipeline
-  }
-}
-
-async function fartScatterAwayFromRef({
-  cy,
-  refNode,
-  taskNode,
-  radius = 300,
-  radiusStep = 40,
-  dipRange = 5,
-  animate = true,
-}: {
-  cy: cytoscape.Core;
-  refNode: NodeSingular;
-  taskNode: NodeSingular;
-  radius?: number;
-  radiusStep?: number;
-  dipRange?: number;
-  animate?: boolean;
-}): Promise<void> {
-  const center = taskNode.position();
-  const refPos = refNode.position();
-
-  const dx = refPos.x - center.x;
-  const dy = refPos.y - center.y;
-  const angleToRef = Math.atan2(dy, dx);
-
-  const arcSpan = (3 * Math.PI) / 2;
-  const startAngle = angleToRef + Math.PI - arcSpan / 2;
-
-  const nodesToScatter = cy
-    .nodes()
-    .filter((node) => {
-      const id = node.id();
-      const type = node.data("type");
-      return (
-        id !== refNode.id() &&
-        id !== taskNode.id() &&
-        ["reference", "author", "publisher"].includes(type)
-      );
-    })
-    .toArray() as cytoscape.NodeSingular[];
-
-  const centerIndex = (nodesToScatter.length - 1) / 2;
-
-  function valleyCurve(i: number): number {
-    const dist = Math.abs(i - centerIndex);
-    if (dist <= dipRange) {
-      return dist;
-    } else {
-      const decay = dist - dipRange;
-      return dipRange - decay * 0.7;
-    }
-  }
-
-  const optionsList = nodesToScatter.map((node, i) => {
-    const t = i / Math.max(1, nodesToScatter.length - 1);
-    const angle = startAngle + t * arcSpan;
-
-    const rOffset = Math.max(0, valleyCurve(i)) * radiusStep;
-    const effectiveRadius = radius + rOffset;
-
-    const newX = center.x + effectiveRadius * Math.cos(angle);
-    const newY = center.y + effectiveRadius * Math.sin(angle);
-
-    return { node, position: { x: newX, y: newY } };
-  });
-
-  const promises = optionsList.map(({ node, position }) =>
-    animate
-      ? animateNode(node, { position }, 200)
-      : (node.position(position), Promise.resolve()),
-  );
-
-  await Promise.all(promises);
-}
-
-async function fanOutClaims({
-  cy,
-  claimsWithRelation,
-  sourceNode,
-  targetNode,
-  minDistance = 100,
-  arcSpan = Math.PI / 2,
-  centerShiftFactor = 90,
-  animate = true,
-}: {
-  cy: cytoscape.Core;
-  claimsWithRelation: {
-    claim: NodeData;
-    relation: "supports" | "refutes" | "related";
-    notes: string;
-  }[];
-  sourceNode: NodeSingular;
-  targetNode: NodeSingular;
-  minDistance?: number;
-  arcSpan?: number;
-  centerShiftFactor?: number;
-  animate?: boolean;
-}): Promise<cytoscape.ElementDefinition[]> {
-  const isRef = sourceNode.data("type") === "reference";
-  const originalPos = { ...sourceNode.position() };
-  const targetPos = targetNode.position();
-  const dx = targetPos.x - originalPos.x;
-  const dy = targetPos.y - originalPos.y;
-  const angleRadians = Math.atan2(dy, dx);
-  const arcPadding = centerShiftFactor * claimsWithRelation.length;
-
-  if (isRef) {
-    const shiftedPos = {
-      x: originalPos.x - arcPadding * Math.cos(angleRadians),
-      y: originalPos.y - arcPadding * Math.sin(angleRadians),
-    };
-    sourceNode.position(shiftedPos);
-  }
-
-  const arcCenter = sourceNode.position();
-  const neededArcLength =
-    Math.max(2, claimsWithRelation.length - 1) * minDistance;
-  const radius = neededArcLength / arcSpan;
-  const added: cytoscape.ElementDefinition[] = [];
-
-  claimsWithRelation.forEach(({ claim, relation, notes }) => {
-    if (!cy.getElementById(claim.id).nonempty()) {
-      cy.add({ data: claim });
-      added.push({ data: claim });
-    }
-    const edgeId = `edge-${claim.id}-${sourceNode.id()}`;
-    if (!cy.getElementById(edgeId).nonempty()) {
-      added.push({
-        data: {
-          id: edgeId,
-          source: claim.id,
-          target: sourceNode.id(),
-          relation,
-          notes,
-        },
-      });
-    }
-  });
-
-  const promises = claimsWithRelation.map(({ claim }, i) => {
-    const angle =
-      -arcSpan / 2 +
-      (i / (claimsWithRelation.length - 1 || 1)) * arcSpan +
-      angleRadians;
-    const x = arcCenter.x + radius * Math.cos(angle);
-    const y = arcCenter.y + radius * Math.sin(angle);
-
-    const claimNode = cy.getElementById(claim.id).first() as NodeSingular;
-    claimNode.position(arcCenter);
-
-    if (animate) {
-      return animateNode(claimNode, { position: { x, y } }, 200);
-    } else {
-      claimNode.position({ x, y });
-      return Promise.resolve();
-    }
-  });
-
-  Promise.all(promises);
-  return added;
-}
-
-function bellValley(
-  i: number,
-  center: number,
-  maxHeight: number,
-  range: number,
-) {
-  const dist = Math.abs(i - center);
-  if (dist <= range) {
-    return (dist / range) * maxHeight; // rising edge
-  } else {
-    return (1 - (dist - range) / (center - range)) * maxHeight; // falling edge
-  }
-}
-
-function smartRadialPush({
-  cy,
-  center,
-  excludeIds,
-  minRadius,
-  maxRadius = 800,
-}: {
-  cy: cytoscape.Core;
-  center: { x: number; y: number };
-  excludeIds: string[];
-  minRadius: number;
-  maxRadius?: number;
-}) {
-  const usedAngles = new Set<number>();
-
-  cy.nodes().forEach((node) => {
-    const id = node.id();
-    const type = node.data("type");
-
-    if (
-      excludeIds.includes(id) ||
-      !["reference", "author", "publisher"].includes(type)
-    ) {
-      return;
-    }
-
-    const pos = node.position();
-    const dx = pos.x - center.x;
-    const dy = pos.y - center.y;
-    let angle = Math.atan2(dy, dx);
-
-    while (usedAngles.has(angle)) {
-      angle += 0.1;
-    }
-    usedAngles.add(angle);
-
-    const r = Math.min(maxRadius, minRadius + 200);
-    const newX = center.x + r * Math.cos(angle);
-    const newY = center.y + r * Math.sin(angle);
-
-    console.log(
-      `🔄 Smart-pushing ${id} to (${newX.toFixed(1)}, ${newY.toFixed(1)})`,
-    );
-
-    node.animate(
-      { position: { x: newX, y: newY } },
-      { duration: 200, easing: "ease-out" },
-    );
-  });
-}
-function pushAwayOtherNodes(
-  cy: cytoscape.Core,
-  center: { x: number; y: number },
-  excludeIds: string[],
-  distance: number = 300,
-) {
-  cy.nodes().forEach((node) => {
-    const id = node.id();
-    const type = node.data("type");
-    if (
-      !excludeIds.includes(id) &&
-      ["reference", "author", "publisher"].includes(type)
-    ) {
-      const pos = node.position();
-      const dx = pos.x - center.x;
-      const dy = pos.y - center.y;
-      const mag = Math.sqrt(dx * dx + dy * dy) || 1;
-      const normX = dx / mag;
-      const normY = dy / mag;
-      const newX = pos.x + normX * distance;
-      const newY = pos.y + normY * distance;
-
-      console.log(
-        `🧼 Pushing ${type} node ${id} from (${pos.x}, ${pos.y}) to (${newX}, ${newY})`,
-      );
-
-      node.animate(
-        { position: { x: newX, y: newY } },
-        { duration: 400, easing: "ease-in-out" },
-      );
-    }
-  });
-}
-
-function saveNodePositions(
-  cy: cytoscape.Core,
-  store: React.MutableRefObject<any>,
-) {
-  store.current = {};
-  cy.nodes().forEach((node) => {
-    const id = node.id();
-    const type = node.data("type");
-    if (["reference", "author", "publisher"].includes(type)) {
-      store.current[id] = { ...node.position() };
-    }
-  });
-}
-
-async function restoreNodePositions(
-  cy: cytoscape.Core,
-  store: React.MutableRefObject<Record<string, cytoscape.Position>>,
-  animate: boolean = true,
-): Promise<void> {
-  try {
-    const promises: Promise<void>[] = [];
-
-    Object.entries(store.current).forEach(([id, pos]) => {
-      const coll = cy.getElementById(id);
-      if (coll.length > 0 && coll.isNode()) {
-        const nodeToRestore = coll.first() as NodeSingular;
-        if (animate) {
-          promises.push(animateNode(nodeToRestore, { position: pos }, 200));
-        } else {
-          nodeToRestore.position(pos);
-          promises.push(Promise.resolve());
-        }
-      }
-    });
-
-    await Promise.all(promises);
-  } catch (error) {
-    console.error("restoreNodePositions error:", error);
-    // Continue gracefully
-  }
-}
-
-// ---- CytoscapeThrobbage™ ----
-function startThrobbing(node: any) {
-  // Clear any existing throb first
-  const existingInterval = node.data("throbInterval");
-  if (existingInterval) {
-    clearInterval(existingInterval);
-  }
-
-  let growing = true;
-  const minWidth = node.width();
-  const minHeight = node.height();
-  const maxWidth = minWidth * 1.07;
-  const maxHeight = minHeight * 1.07;
-  let throbInterval = setInterval(() => {
-    // Check if node still exists before animating
-    if (!node || node.removed()) {
-      clearInterval(throbInterval);
-      return;
-    }
-    node.animate(
-      {
-        style: {
-          width: growing ? maxWidth : minWidth,
-          height: growing ? maxHeight : minHeight,
-        },
-      },
-      {
-        duration: 380,
-        complete: () => {
-          growing = !growing;
-        },
-      },
-    );
-  }, 420);
-  node.data("throbInterval", throbInterval);
-  node.addClass("throb");
-}
-
-// Restart throbbing for all activated nodes
-function restartAllThrobs(cy: cytoscape.Core, activatedNodeIds: Set<string>) {
-  cy.nodes().forEach((node) => {
-    if (activatedNodeIds.has(node.id()) && !node.data("throbInterval")) {
-      startThrobbing(node);
-    }
-  });
-}
-// All other unchanged code is retained as-is
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
-
-export type DisplayMode = "mr_cards" | "circles" | "compact";
 
 interface CytoscapeMoleculeProps {
   nodes: {
@@ -1928,9 +173,40 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     y: number;
   } | null>(null);
   const [highlightedType, setHighlightedType] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    items: ContextMenuItem[];
+  } | null>(null);
+  const [caseExpanded, setCaseExpanded] = useState<boolean>(false);
+  const snapshotNodesRef = useRef<typeof nodes | null>(null);
+  const snapshotLinksRef = useRef<typeof links | null>(null);
 
   useEffect(() => {
+    console.log("🔄 useEffect triggered - caseExpanded:", caseExpanded, "nodes:", nodes.length, "links:", links.length);
+
     if (!cyRef.current) return;
+
+    // CRITICAL: Check if case claims exist in the actual graph
+    const caseClaimsExist = cyInstance.current ? cyInstance.current.nodes('[type="caseClaim"]').length > 0 : false;
+
+    // BLOCK if case claims are visible - check both state and actual graph
+    if (caseExpanded || caseClaimsExist) {
+      console.log(
+        "🛑 BLOCKED: Case claims exist in graph - skipping rebuild (state:", caseExpanded, "actual:", caseClaimsExist, ")",
+      );
+      // Store snapshot when first blocking
+      if (!snapshotNodesRef.current) {
+        snapshotNodesRef.current = nodes;
+        snapshotLinksRef.current = links;
+        console.log("📸 Saved nodes/links snapshot for when claims collapse");
+      }
+      return;
+    }
+
+    // Clear snapshot when rebuilding (claims have been collapsed)
+    snapshotNodesRef.current = null;
+    snapshotLinksRef.current = null;
 
     // If graph was reframed, don't rebuild - let users drag nodes freely
     if (isReframedGraph.current) {
@@ -2509,9 +785,21 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     cy.on("add remove", updateOverlays);
 
     // Save positions when user finishes dragging nodes (exclude claim nodes)
-    cy.on("dragfree", "node", () => {
-      // Don't save positions while claims are visible - it triggers a re-render that destroys claims
+    cy.on("dragfree", "node", (event) => {
+      // Check if case claims exist in graph - more reliable than state
+      const caseClaimsExist = cy.nodes('[type="caseClaim"]').length > 0;
+
+      // STOP EVERYTHING if case claims are visible
+      if (caseClaimsExist) {
+        console.log("🛑 Case claims exist - BLOCKING dragfree completely");
+        event.stopPropagation();
+        event.preventDefault();
+        return false;
+      }
+
+      // Don't save positions while ref claims are visible - it triggers a re-render that destroys claims
       if (activeRefWithClaims.current !== null) {
+        console.log("🛑 Ref claims visible - ignoring dragfree");
         return;
       }
 
@@ -2520,11 +808,12 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         cy.nodes().forEach((node) => {
           const type = node.data("type");
           // Don't save positions for claim nodes (they're generated dynamically)
-          if (type !== "refClaim" && type !== "taskClaim") {
+          if (type !== "refClaim" && type !== "taskClaim" && type !== "caseClaim") {
             const pos = node.position();
             positions[node.id()] = { x: pos.x, y: pos.y };
           }
         });
+        console.log("💾 Saving node positions");
         onPositionsChange(positions);
       }
     });
@@ -2790,7 +1079,70 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       });
     });
 
+    // 🎯 Handle right-click on case/task nodes - expand/collapse case claims
+    cy.on("cxttap", 'node[type="task"]', (event) => {
+      const node = event.target;
+      const contentId = node.data("content_id");
+      const nodeId = node.id();
+
+      console.log("🖱️ Right-clicked on case node:", nodeId, "contentId:", contentId);
+
+      // Check if case claims currently exist in the graph
+      const caseClaimsExist = cy.nodes('[type="caseClaim"]').length > 0;
+      console.log("📊 Case claims currently visible:", caseClaimsExist);
+
+      // Get rendered position for context menu
+      const renderedPos = node.renderedPosition();
+
+      setContextMenu({
+        x: renderedPos.x,
+        y: renderedPos.y,
+        items: [
+          {
+            label: caseClaimsExist ? "Collapse Claims" : "Show Claims",
+            icon: caseClaimsExist ? "📥" : "📤",
+            action: async () => {
+              console.log("📤 Context menu action triggered");
+              // Get fresh node reference from cy instance
+              const freshNode = cy.getElementById(nodeId);
+
+              // Check again at action time
+              const claimsNowExist = cy.nodes('[type="caseClaim"]').length > 0;
+
+              if (claimsNowExist) {
+                console.log("📥 Collapsing case claims...");
+                collapseCaseClaims(cy, freshNode);
+                setCaseExpanded(false);
+              } else {
+                console.log("📤 Expanding case claims for contentId:", contentId);
+                try {
+                  await expandCaseWithClaims({
+                    cy,
+                    caseNode: freshNode,
+                    contentId,
+                    viewerId: currentUserId || undefined,
+                    viewScope: "user",
+                  });
+                  console.log("✅ Expansion complete");
+                  setCaseExpanded(true);
+                } catch (error) {
+                  console.error("❌ Error expanding case claims:", error);
+                }
+              }
+            },
+          },
+        ],
+      });
+    });
+
     return () => {
+      // Don't destroy graph if case claims are visible
+      const caseClaimsExist = cy ? cy.nodes('[type="caseClaim"]').length > 0 : false;
+      if (caseClaimsExist) {
+        console.log("⏭️ SKIPPING CLEANUP - case claims visible, preserving graph");
+        return;
+      }
+
       // Don't destroy graph if it's been reframed - preserve user's work
       if (isReframedGraph.current) {
         console.log("⏭️ Skipping cleanup - reframed graph, preserving nodes");
@@ -2798,6 +1150,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       }
 
       if (cy) {
+        console.log("🗑️ Cleaning up and destroying graph");
         cy.nodes(".throb").forEach((node: any) => {
           clearInterval(node.data("throbInterval"));
         });
@@ -3997,6 +2350,15 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           </div>,
           document.body,
         )}
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={contextMenu.items}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </>
   );
 };

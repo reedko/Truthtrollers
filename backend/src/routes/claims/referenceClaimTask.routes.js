@@ -261,6 +261,70 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
   });
 
   /**
+   * POST /api/reference-claim-links/approve
+   * Approve an AI-suggested reference-to-claim link (for Claim Duel)
+   * Body: { claim_id, reference_content_id, user_id, stance, support_level }
+   */
+  router.post("/api/reference-claim-links/approve", async (req, res) => {
+    try {
+      const { claim_id, reference_content_id, user_id, stance, support_level } = req.body;
+
+      if (!claim_id || !reference_content_id || !user_id) {
+        return res.status(400).json({
+          error: "Missing required fields: claim_id, reference_content_id, user_id"
+        });
+      }
+
+      console.log(`[Approve Link] User ${user_id} approving ref ${reference_content_id} → claim ${claim_id} with stance: ${stance}`);
+
+      // Update the existing AI-suggested link to mark it as verified
+      const result = await query(
+        `UPDATE reference_claim_links
+         SET verified_by_user_id = ?,
+             stance = COALESCE(?, stance),
+             support_level = COALESCE(?, support_level),
+             verified_at = NOW()
+         WHERE claim_id = ? AND reference_content_id = ?`,
+        [user_id, stance, support_level, claim_id, reference_content_id]
+      );
+
+      if (result.affectedRows === 0) {
+        // No existing link found - create a new one
+        await query(
+          `INSERT INTO reference_claim_links (
+            claim_id,
+            reference_content_id,
+            stance,
+            support_level,
+            verified_by_user_id,
+            created_by_ai,
+            verified_at
+          ) VALUES (?, ?, ?, ?, ?, false, NOW())`,
+          [claim_id, reference_content_id, stance || 'support', support_level || 1.0, user_id]
+        );
+        console.log(`[Approve Link] Created new link`);
+      } else {
+        console.log(`[Approve Link] Updated existing AI link to user-verified`);
+      }
+
+      // Fetch the updated/created link
+      const link = await query(
+        `SELECT * FROM reference_claim_links
+         WHERE claim_id = ? AND reference_content_id = ? AND verified_by_user_id = ?`,
+        [claim_id, reference_content_id, user_id]
+      );
+
+      return res.json({
+        success: true,
+        link: link[0]
+      });
+    } catch (err) {
+      console.error("❌ /api/reference-claim-links/approve:", err);
+      return res.status(500).json({ error: err.message });
+    }
+  });
+
+  /**
    * POST /api/reassess-claim-relevance
    * Delete existing assessment and create new one with optional custom prompts
    * Body: { referenceClaimId, taskClaimId, referenceClaimText, taskClaimText, systemPrompt?, customInstructions? }

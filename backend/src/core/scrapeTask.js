@@ -110,7 +110,36 @@ export async function scrapeTask(query, url, raw_html = null, mediaSource = null
       const cleanHtml = cleanForReadability(rawHtml);
       const $clean = cheerio.load(cleanHtml);
 
-      let extracted = $clean.text().trim();
+      // Try to find main content area first (common article selectors)
+      let extracted = "";
+      const contentSelectors = [
+        'article',
+        '[role="main"]',
+        'main',
+        '.article-content',
+        '.post-content',
+        '.entry-content',
+        '.content',
+        '#content',
+        '.article-body',
+        '.story-body',
+      ];
+
+      for (const selector of contentSelectors) {
+        const content = $clean(selector).text().trim();
+        if (content.length > 200) {
+          extracted = content;
+          logger.log(`📝 [scrapeTask] Found content via selector: ${selector}`);
+          break;
+        }
+      }
+
+      // Fallback: get all text if no content area found
+      if (!extracted) {
+        extracted = $clean.text().trim();
+        logger.log(`📝 [scrapeTask] Using full page text (no content selector matched)`);
+      }
+
       if (extracted.length > 60000) extracted = extracted.slice(0, 60000);
 
       text = extracted;
@@ -195,10 +224,41 @@ export async function scrapeTask(query, url, raw_html = null, mediaSource = null
 // UTILITIES
 // ─────────────────────────────────────────────
 
+/**
+ * cleanForReadability - Clean HTML for TEXT EXTRACTION ONLY
+ *
+ * NOTE: This is ONLY used for extracting readable text content.
+ * The original $ object with full HTML/meta tags is preserved
+ * and used separately for metadata extraction (authors, publisher, etc.)
+ */
 function cleanForReadability(html) {
   if (!html) return "";
   const $ = cheerio.load(html);
-  $("script, style, link").remove();
+
+  // Remove scripts, styles, and non-content elements
+  $("script, style, link, noscript, iframe, embed, object").remove();
+
+  // Remove common ad/banner/overlay selectors
+  $("[class*='ad-'], [id*='ad-'], [class*='banner'], [id*='banner']").remove();
+  $("[class*='popup'], [id*='popup'], [class*='modal'], [id*='modal']").remove();
+  $("[class*='overlay'], [id*='overlay']").remove();
+  $("[class*='promo'], [id*='promo']").remove();
+  $("[class*='newsletter'], [id*='newsletter']").remove();
+  $("[class*='subscribe'], [id*='subscribe']").remove();
+
+  // Remove navigation, header, footer, sidebar elements
+  // (But keep <header> as it might contain article headers in some layouts)
+  $("nav, footer, aside").remove();
+
+  // Remove common non-content class/id names
+  $(".navigation, .navbar, .menu, .sidebar, .footer").remove();
+  $(".social, .share, .comments, .related, .recommended").remove();
+  $("#navigation, #navbar, #menu, #sidebar, #footer").remove();
+
+  // Remove hidden elements (often used for overlays/modals)
+  $("[style*='display: none'], [style*='display:none']").remove();
+  $(".hidden, .hide, .invisible").remove();
+
   return $.html();
 }
 

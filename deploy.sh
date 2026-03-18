@@ -15,6 +15,68 @@ ENV_DEV="backend/.env.dev"
 echo "🔎 Preflight: SSH connectivity..."
 ssh -o BatchMode=yes -o ConnectTimeout=10 "$SERVER" "echo '✅ SSH OK'"
 
+# Check if --no-backup flag is set
+SKIP_BACKUP=${1:-}
+if [[ "$SKIP_BACKUP" == "--no-backup" ]]; then
+  echo "⏭️  Skipping backup (--no-backup flag set)"
+else
+  echo "💾 Creating incremental backup on production server..."
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+ssh -o ConnectTimeout=30 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 "$SERVER" bash << EOF
+set -e
+
+# Create backup directory if it doesn't exist
+mkdir -p /root/backups
+
+# Find the most recent backup to use as a reference
+LATEST_BACKUP=\$(ls -td /root/backups/backup_* 2>/dev/null | head -1)
+
+# Create timestamped backup
+BACKUP_DIR="/root/backups/backup_${TIMESTAMP}"
+echo "Creating incremental backup at \$BACKUP_DIR..."
+
+# Backup backend code (excluding node_modules and temp files)
+# Using --link-dest for hard links to unchanged files from previous backup
+mkdir -p \$BACKUP_DIR/backend
+if [ -n "\$LATEST_BACKUP" ] && [ -d "\$LATEST_BACKUP/backend" ]; then
+  echo "Using \$LATEST_BACKUP as reference (hard-linking unchanged files)"
+  rsync -a --link-dest="\$LATEST_BACKUP/backend" \
+    --exclude 'node_modules' --exclude 'temp/' --exclude 'temp-out/' --exclude '*.log' \
+    $BACKEND_PATH/ \$BACKUP_DIR/backend/
+else
+  echo "No previous backup found, creating full backup"
+  rsync -a --exclude 'node_modules' --exclude 'temp/' --exclude 'temp-out/' --exclude '*.log' \
+    $BACKEND_PATH/ \$BACKUP_DIR/backend/
+fi
+
+# Backup frontend
+mkdir -p \$BACKUP_DIR/frontend
+if [ -n "\$LATEST_BACKUP" ] && [ -d "\$LATEST_BACKUP/frontend" ]; then
+  rsync -a --link-dest="\$LATEST_BACKUP/frontend" \
+    $FRONTEND_PATH/ \$BACKUP_DIR/frontend/
+else
+  rsync -a $FRONTEND_PATH/ \$BACKUP_DIR/frontend/
+fi
+
+# Create backup info file
+BACKUP_SIZE=\$(du -sh \$BACKUP_DIR | cut -f1)
+cat > \$BACKUP_DIR/backup_info.txt << BACKUPINFO
+Backup created: \$(date)
+Backend path: $BACKEND_PATH
+Frontend path: $FRONTEND_PATH
+Backup size: \$BACKUP_SIZE
+Reference backup: \${LATEST_BACKUP:-none}
+BACKUPINFO
+
+echo "✅ Incremental backup created: \$BACKUP_DIR size: \$BACKUP_SIZE"
+
+# Keep only last 10 backups
+cd /root/backups
+ls -t | tail -n +11 | xargs -r rm -rf
+echo "✅ Old backups cleaned keeping last 10"
+EOF
+fi
+
 echo "🔐 Temporarily switching backend/.env to PROD for build steps..."
 
 HAD_ENV=0
@@ -52,22 +114,22 @@ echo "📤 Sync dashboard dist → server..."
 rsync -azP --delete --partial --inplace \
   dashboard/dist/ "$SERVER:$FRONTEND_PATH/"
 
-echo "📦 Sync backend code → server (excluding env + node_modules + user content)..."
-rsync -azP --delete --partial --inplace \
-  --exclude 'node_modules' \
-  --exclude '.env' \
-  --exclude '.env.*' \
-  --exclude '*.log' \
+echo "📦 Sync backend code → server (excluding user content)..."
+rsync -azP --partial --inplace \
+  --exclude '.env*' \
   --exclude 'assets/data/' \
   --exclude 'assets/documents/' \
   --exclude 'assets/images/content/' \
   --exclude 'assets/images/users/' \
   --exclude 'assets/images/authors/' \
   --exclude 'assets/images/publishers/' \
+  --exclude 'assets/images/tutorials/' \
   --exclude 'assets/pdf-thumbnails/' \
   --exclude 'assets/videos/' \
   --exclude 'temp/' \
   --exclude 'temp-out/' \
+  --exclude 'node_modules' \
+  --exclude '*.log' \
   backend/ "$SERVER:$BACKEND_PATH/"
 
 echo "🖼️  Sync default images → server (fallbacks for missing images)..."
@@ -82,13 +144,34 @@ rsync -azP --partial --inplace \
   "$SERVER:$BACKEND_PATH/assets/images/publishers/" 2>/dev/null || true
 echo "✅ Default images synced (or skipped if not found)"
 
-echo "🖥 Remote steps: perms, logs, restart..."
-ssh "$SERVER" << EOF
+echo "🔄 Re-establishing SSH connection..."
+ssh -o BatchMode=yes -o ConnectTimeout=10 "$SERVER" "echo '✅ Connection refreshed'"
+
+echo "🖥 Remote steps: Redis check, perms, logs, restart..."
+ssh -o ConnectTimeout=30 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 "$SERVER" bash << EOF
 set -e
+
+# Check if Redis is installed, if not install it
+if ! command -v redis-server &> /dev/null; then
+  echo "📦 Redis not found, installing..."
+  apt-get update -qq
+  apt-get install -y redis-server
+  systemctl enable redis-server
+  systemctl start redis-server
+  echo "✅ Redis installed and started"
+else
+  echo "✅ Redis already installed"
+  # Ensure it's running
+  if ! systemctl is-active --quiet redis-server; then
+    echo "🔄 Starting Redis..."
+    systemctl start redis-server
+  fi
+fi
 
 # Frontend permissions (nginx serves these)
 chown -R nginx:nginx $FRONTEND_PATH/
-chmod 644 $FRONTEND_PATH/favicon.png $FRONTEND_PATH/manifest.json $FRONTEND_PATH/sw.js 2>/dev/null || true
+find $FRONTEND_PATH -type f -exec chmod 644 {} \;
+find $FRONTEND_PATH -type d -exec chmod 755 {} \;
 
 # Backend permissions (Node.js runs these)
 chown -R root:root $BACKEND_PATH/

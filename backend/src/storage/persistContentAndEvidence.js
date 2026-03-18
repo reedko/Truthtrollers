@@ -10,6 +10,21 @@ import { persistAuthors } from "./persistAuthors.js";
 import { persistPublishers } from "./persistPublishers.js";
 
 /**
+ * sanitizeText - Remove or replace problematic characters (emojis, special chars)
+ * that might cause database encoding issues
+ */
+function sanitizeText(text) {
+  if (!text) return text;
+
+  // Remove 4-byte UTF-8 characters (emojis, some special symbols)
+  // This regex matches characters outside the Basic Multilingual Plane
+  return text.replace(/[\u{10000}-\u{10FFFF}]/gu, '');
+
+  // Alternative: Replace with descriptive text
+  // return text.replace(/[\u{10000}-\u{10FFFF}]/gu, '[emoji]');
+}
+
+/**
  * persistTaskContent(query, { url, title, rawText, publisher, authors, thumbnail })
  *
  * Creates a task content row and persists associated authors and publisher.
@@ -28,14 +43,14 @@ export async function persistTaskContent(
   try {
     // 1. Create task content row
     const taskContentId = await createContentInternal(query, {
-      content_name: title,
+      content_name: sanitizeText(title),
       url,
-      media_source: publisher || "Unknown",
+      media_source: sanitizeText(publisher || "Unknown"),
       topic: "Research", // Default topic for tasks
       subtopics: [],
       content_type: "task",
       thumbnail,
-      details: rawText?.slice(0, 500) || "",
+      details: sanitizeText(rawText?.slice(0, 500) || ""),
     });
 
     logger.log(`✅ Created task content_id=${taskContentId}`);

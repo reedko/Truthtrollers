@@ -13,7 +13,7 @@ import logger from "../utils/logger.js";
 // ========================================
 // 'ranked': Extract 3-12 high-quality claims only (single LLM pass, efficient)
 // 'comprehensive': Extract all claims, then filter separately (for user ranking UI)
-const EXTRACTION_MODE = 'comprehensive'; // Changed to comprehensive to capture more claims
+const EXTRACTION_MODE = 'ranked'; // Use ranked mode for faster processing (1 LLM call vs 2)
 
 /**
  * processTaskClaims({

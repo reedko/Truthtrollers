@@ -17,7 +17,7 @@ import {
   useToast,
   Tooltip,
   HStack,
-  Switch,
+  Badge,
   FormLabel,
   Textarea,
 } from "@chakra-ui/react";
@@ -40,6 +40,9 @@ interface ClaimLinkModalProps {
   claimLink?: ClaimLink | null;
   onLinkCreated?: () => void;
   verimeter_score?: number;
+  initialNotes?: string; // AI-generated rationale to pre-fill notes
+  initialRelationship?: "supports" | "refutes";
+  initialSupportLevel?: number;
 }
 
 const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
@@ -51,16 +54,21 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
   claimLink,
   onLinkCreated,
   verimeter_score,
+  initialNotes,
+  initialRelationship,
+  initialSupportLevel,
 }) => {
   const toast = useToast();
   const setVerimeterScore = useTaskStore((s) => s.setVerimeterScore);
   const viewerId = useTaskStore((s) => s.viewingUserId);
 
-  const [supportLevel, setSupportLevel] = useState(0);
-  const [relationship, setRelationship] = useState<"supports" | "refutes">(
-    "supports",
-  );
-  const [notes, setNote] = useState(claimLink?.notes || "");
+  // Convert initial support level from -1 to 1 range to -100 to 100 range
+  const initialLevel = initialSupportLevel !== undefined
+    ? initialSupportLevel * 100
+    : (initialRelationship === 'refutes' ? -50 : 50);
+
+  const [supportLevel, setSupportLevel] = useState(initialLevel);
+  const [notes, setNote] = useState(claimLink?.notes || initialNotes || "");
   const [verimeterScore, setLocalVerimeterScore] = useState<number | null>(
     claimLink?.verimeter_score ?? null,
   );
@@ -89,20 +97,36 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
     }
   }, [isReadOnly, isOpen, targetClaim?.claim_id, viewerId, verimeterScore]);
 
+  // Helper function to determine relationship and color based on support level
+  const getStanceInfo = (level: number) => {
+    if (level >= 10) {
+      return { relationship: 'supports', label: 'Supports', color: 'green' };
+    } else if (level <= -10) {
+      return { relationship: 'refutes', label: 'Refutes', color: 'red' };
+    } else {
+      return { relationship: 'related', label: 'Nuanced', color: 'blue' };
+    }
+  };
+
+  const stanceInfo = getStanceInfo(supportLevel);
+
   const handleSubmit = async () => {
     try {
+      // Convert support level from -100 to 100 range to -1 to 1 for database storage
+      const normalizedSupportLevel = supportLevel / 100;
+
       const response = await addClaimLink({
         source_claim_id: sourceClaim?.claim_id ?? 0,
         target_claim_id: targetClaim?.claim_id ?? 0,
         user_id: viewerId || 1, // Use current viewer, fallback to 1
-        relationship,
-        support_level: supportLevel,
+        relationship: stanceInfo.relationship as 'supports' | 'refutes' | 'related',
+        support_level: normalizedSupportLevel,
         notes: notes,
       });
 
       toast({
         title: "Claim link created",
-        description: `Link: ${relationship} (${supportLevel})`,
+        description: `${stanceInfo.label} (${supportLevel > 0 ? '+' : ''}${supportLevel})`,
         status: "success",
         duration: 3000,
         isClosable: true,
@@ -184,37 +208,34 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
             </Box>
           ) : (
             <>
-              <FormLabel mb={1}>Relationship:</FormLabel>
-              <HStack mb={4}>
-                <Tooltip label="Does this support or refute the claim?">
-                  <Switch
-                    isChecked={relationship === "supports"}
-                    onChange={(e) =>
-                      setRelationship(e.target.checked ? "supports" : "refutes")
-                    }
-                    colorScheme="green"
-                  />
-                </Tooltip>
-                <Text>{relationship}</Text>
+              <FormLabel mb={1}>Support Level (-100 to 100)</FormLabel>
+              <HStack mb={2} justify="space-between">
+                <Badge colorScheme={stanceInfo.color} fontSize="lg" px={3} py={1}>
+                  {stanceInfo.label}
+                </Badge>
+                <Text fontWeight="bold" fontSize="lg">
+                  {supportLevel > 0 ? '+' : ''}{supportLevel}
+                </Text>
               </HStack>
-
-              <FormLabel mb={1}>Support Level</FormLabel>
               <Slider
                 aria-label="support-slider"
-                defaultValue={0}
-                min={-1}
-                max={1}
-                step={0.1}
+                value={supportLevel}
+                min={-100}
+                max={100}
+                step={1}
                 onChange={(val) => setSupportLevel(val)}
+                colorScheme={stanceInfo.color}
               >
-                <SliderTrack>
-                  <SliderFilledTrack />
+                <SliderTrack bg="gray.200">
+                  <SliderFilledTrack bg={`${stanceInfo.color}.400`} />
                 </SliderTrack>
-                <SliderThumb />
+                <SliderThumb boxSize={6} />
               </Slider>
-              <Box mt={2} textAlign="center">
-                <Text>Level: {supportLevel.toFixed(1)}</Text>
-              </Box>
+              <HStack mt={2} justify="space-between" fontSize="xs" color="gray.500">
+                <Text>-100 Refute</Text>
+                <Text>0 Nuanced</Text>
+                <Text>+100 Support</Text>
+              </HStack>
             </>
           )}
         </ModalBody>

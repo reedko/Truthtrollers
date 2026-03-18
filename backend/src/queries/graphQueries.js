@@ -484,3 +484,112 @@ export const getLinkedClaimsAndLinksForTask = (taskId, viewerId, viewScope) => {
     claimLinkParams,
   };
 };
+
+/**
+ * Get case claims for a task for the claim expansion view
+ * Returns claims that belong to the task (case)
+ */
+export const getCaseClaimsForTask = (taskId) => {
+  return `
+    SELECT
+      CONCAT('caseClaim-', c.claim_id) AS id,
+      c.claim_id,
+      c.claim_text AS label,
+      'caseClaim' AS type,
+      cc.content_id,
+      c.veracity_score,
+      c.confidence_level,
+      (SELECT COUNT(DISTINCT rcl.reference_content_id)
+       FROM reference_claim_links rcl
+       WHERE rcl.claim_id = c.claim_id) AS linkedSourceCount
+    FROM claims c
+    JOIN content_claims cc ON c.claim_id = cc.claim_id
+    WHERE cc.content_id = ?
+    ORDER BY c.claim_id
+  `;
+};
+
+/**
+ * Get source-to-case-claim links (both user-approved and AI-suggested)
+ * This connects reference nodes to case claim nodes
+ */
+export const getSourceToClaimLinks = (taskId, viewerId, viewScope) => {
+  const shouldFilterByUser = viewScope !== 'all' && Number.isInteger(viewerId);
+
+  return `
+    SELECT DISTINCT
+      CONCAT('conte-', rcl.reference_content_id) AS source,
+      CONCAT('caseClaim-', rcl.claim_id) AS target,
+      CONCAT('conte-', rcl.reference_content_id, '-caseClaim-', rcl.claim_id) AS id,
+      rcl.stance AS relation,
+      rcl.support_level AS value,
+      rcl.rationale AS notes,
+      rcl.rationale,
+      CASE
+        WHEN rcl.verified_by_user_id IS NULL THEN 'ai-suggested'
+        ELSE 'user-approved'
+      END AS linkType,
+      rcl.confidence,
+      rcl.verified_by_user_id AS user_id,
+      rcl.reference_content_id,
+      rcl.claim_id
+    FROM reference_claim_links rcl
+    JOIN content_claims cc ON rcl.claim_id = cc.claim_id
+    WHERE cc.content_id = ?
+    ${shouldFilterByUser ? "AND (rcl.verified_by_user_id = ? OR rcl.verified_by_user_id IS NULL)" : ""}
+    ORDER BY rcl.reference_content_id, rcl.claim_id
+  `;
+};
+
+/**
+ * Get sources that don't have any claim links
+ * These will be connected to the case with dotted lines
+ */
+export const getUnlinkedSourcesForTask = (taskId, viewerId, viewScope) => {
+  const shouldFilterByUser = viewScope !== 'all' && Number.isInteger(viewerId);
+
+  return `
+    SELECT DISTINCT
+      tr.reference_content_id,
+      CONCAT('conte-', tr.reference_content_id) AS sourceId
+    FROM content_relations tr
+    WHERE tr.content_id = ?
+    AND tr.reference_content_id NOT IN (
+      SELECT DISTINCT rcl.reference_content_id
+      FROM reference_claim_links rcl
+      JOIN content_claims cc ON rcl.claim_id = cc.claim_id
+      WHERE cc.content_id = ?
+      ${shouldFilterByUser ? "AND (rcl.verified_by_user_id = ? OR rcl.verified_by_user_id IS NULL)" : ""}
+    )
+  `;
+};
+
+/**
+ * Get AI-suggested links for sources that don't have user-approved links yet
+ * This is used to position sources around suggested claims when no user link exists
+ */
+export const getAISuggestedLinksForUnlinkedSources = (taskId) => {
+  return `
+    SELECT DISTINCT
+      CONCAT('conte-', rcl.reference_content_id) AS source,
+      CONCAT('caseClaim-', rcl.claim_id) AS target,
+      CONCAT('conte-', rcl.reference_content_id, '-caseClaim-', rcl.claim_id, '-ai') AS id,
+      rcl.stance AS relation,
+      rcl.support_level AS value,
+      rcl.confidence,
+      'ai-suggested' AS linkType
+    FROM reference_claim_links rcl
+    JOIN content_claims cc ON rcl.claim_id = cc.claim_id
+    WHERE cc.content_id = ?
+    AND rcl.verified_by_user_id IS NULL
+    AND rcl.reference_content_id NOT IN (
+      SELECT DISTINCT reference_content_id
+      FROM reference_claim_links
+      WHERE claim_id IN (
+        SELECT claim_id FROM content_claims WHERE content_id = ?
+      )
+      AND verified_by_user_id IS NOT NULL
+    )
+    ORDER BY rcl.confidence DESC
+  `;
+};

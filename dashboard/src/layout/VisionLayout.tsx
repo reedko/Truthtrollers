@@ -19,6 +19,7 @@ import {
   MenuList,
   MenuItem,
   Button,
+  Image,
 } from "@chakra-ui/react";
 import { Outlet, useLocation, Link as RouterLink } from "react-router-dom";
 import {
@@ -47,7 +48,10 @@ import { PlatformTour } from "../components/PlatformTour";
 import { TokenStatusIndicator } from "../components/TokenStatusIndicator";
 
 const SIDEBAR_WIDTH = "200px";
-const HEADER_HEIGHT = "160px";
+const HEADER_HEIGHT = "50px"; // Reduced from 160px to 50px
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
 
 const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
   onNavigate,
@@ -246,7 +250,7 @@ const Sidebar: React.FC = () => {
   return (
     <VStack
       as="nav"
-      bgGradient={sidebarBg}
+      background={sidebarBg}
       backdropFilter="blur(8px)"
       color={sidebarColor}
       spacing={6}
@@ -269,9 +273,14 @@ const Sidebar: React.FC = () => {
         msOverflowStyle: "none",
       }}
     >
-      <Text fontSize="2xl" fontWeight="bold" color={brandColor}>
-        TruthTrollers
-      </Text>
+      <RouterLink to="/">
+        <Image
+          src={`${API_BASE_URL}/assets/ttlogo11.png`}
+          boxSize="120px"
+          objectFit="contain"
+          mx="auto"
+        />
+      </RouterLink>
       <SidebarContent />
     </VStack>
   );
@@ -366,7 +375,7 @@ const VisionLayout: React.FC = () => {
         top={0}
         left={{ base: 0, md: SIDEBAR_WIDTH }}
         right={0}
-        zIndex={90}
+        zIndex={1000}
         h={{ base: "60px", md: HEADER_HEIGHT }}
         px={4}
         display="flex"

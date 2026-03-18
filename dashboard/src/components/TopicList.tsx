@@ -60,17 +60,27 @@ const TopicList: React.FC = () => {
             All Topics
           </Button>
         </ListItem>
-        {topics.map((topic) => (
+        {topics.map((topic) => {
+          // Only render image if thumbnail exists and is valid
+          const hasValidThumbnail = topic.thumbnail && topic.thumbnail.trim() !== '';
+
+          return (
           <ListItem key={topic.topic_id}>
             <HStack alignItems="start" spacing={2}>
-              <Image
-                src={`${API_BASE_URL}/${topic.thumbnail}`}
-                alt={`${topic.topic_name} Thumbnail`}
-                borderRadius="md"
-                boxSize="40px"
-                objectFit="cover"
-                backgroundColor={"teal.50"}
-              />
+              {hasValidThumbnail && (
+                <Image
+                  src={topic.thumbnail}
+                  alt={`${topic.topic_name} Thumbnail`}
+                  borderRadius="md"
+                  boxSize="40px"
+                  objectFit="cover"
+                  backgroundColor={"teal.50"}
+                  onError={(e) => {
+                    // Hide image if it fails to load
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              )}
               <Button
                 justifyContent="start"
                 textAlign="left"
@@ -97,7 +107,8 @@ const TopicList: React.FC = () => {
               </Button>
             </HStack>
           </ListItem>
-        ))}
+          );
+        })}
       </List>
     </VStack>
   );

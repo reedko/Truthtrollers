@@ -11,6 +11,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useTaskStore } from "../store/useTaskStore";
 import { fetchTaskById } from "../services/useDashboardAPI";
 import UnifiedHeader from "../components/UnifiedHeader";
+import StickyTitleBar from "../components/StickyTitleBar";
 import DiscussionBoard from "../components/DiscussionBoard";
 
 const DiscussionPage: React.FC = () => {
@@ -51,6 +52,9 @@ const DiscussionPage: React.FC = () => {
 
   return (
     <Box p={4}>
+      {/* Sticky Title Bar - Always visible initially */}
+      <StickyTitleBar alwaysVisible={true} />
+
       <Card mt={2} mb={6}>
         <CardBody>
           <UnifiedHeader />

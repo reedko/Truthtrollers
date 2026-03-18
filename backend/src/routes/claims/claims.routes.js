@@ -729,30 +729,42 @@ WHERE cc_task.content_id = ?
     const { contentId } = req.params;
     const userId = req.query.viewerId ?? null;
 
+    console.log(`📊 [claim-scores] Fetching scores for contentId=${contentId}, userId=${userId}`);
+
     try {
-      await query("CALL compute_verimeter_for_content(?, ?)", [
+      // Use simple SP that just averages support_level without publisher weighting
+      console.log(`📊 [claim-scores] Calling SP: compute_simple_verimeter_for_content`);
+      await query("CALL compute_simple_verimeter_for_content(?, ?)", [
         contentId,
         userId,
       ]);
+      console.log(`✅ [claim-scores] SP completed`);
 
+      // Query claim_scores - note: unique key is on (claim_id, user_id), NOT content_id
+      // So we join with content_claims to filter by content_id
       const results = await query(
         `
-      SELECT claim_id, verimeter_score
-      FROM claim_scores
-      WHERE content_id = ? AND (user_id IS NULL OR user_id = ?)
+      SELECT cs.claim_id, cs.verimeter_score
+      FROM claim_scores cs
+      JOIN content_claims cc ON cs.claim_id = cc.claim_id
+      WHERE cc.content_id = ?
+        AND (cs.user_id IS NULL OR cs.user_id = ?)
     `,
         [contentId, userId],
       );
+
+      console.log(`📊 [claim-scores] Found ${results.length} claim scores:`, results);
 
       const scoreMap = {};
       for (const row of results) {
         scoreMap[row.claim_id] = Number(row.verimeter_score);
       }
 
+      console.log(`📊 [claim-scores] Returning scoreMap:`, scoreMap);
       res.json(scoreMap);
     } catch (err) {
-      console.error("Error fetching claim scores:", err);
-      res.status(500).json({ error: "Failed to fetch claim scores" });
+      console.error("❌ [claim-scores] Error:", err);
+      res.status(500).json({ error: "Failed to fetch claim scores", details: err.message });
     }
   });
 

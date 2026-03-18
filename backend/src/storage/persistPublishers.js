@@ -3,7 +3,6 @@
 import logger from "../utils/logger.js";
 
 export async function persistPublishers(query, contentId, publisher = null) {
-  logger.log(contentId, publisher, ":pufsdfadf");
   if (!contentId || !publisher || !publisher.publisher_name) return null;
 
   const {
@@ -16,11 +15,10 @@ export async function persistPublishers(query, contentId, publisher = null) {
   const rows = await query(
     `
       CALL InsertOrGetPublisher(?, ?, ?, @publisherId);
-     
+
     `,
     [publisher_name, publisher_owner, publisher_icon]
   );
-  logger.log(rows, ":PUBLISHERS");
   const publisherId = rows[0][0].publisherId;
 
   // Link content ↔ publisher

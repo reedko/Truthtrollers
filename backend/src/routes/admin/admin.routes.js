@@ -8,9 +8,13 @@ import express from "express";
 import logger from "../../utils/logger.js";
 import { authenticateToken } from "../../middleware/auth.js";
 import { isOnline } from "../../realtime/socketServer.js";
+import createMigrateCanonicalHashRouter from "./migrate-canonical-hash.routes.js";
 
 export default function createAdminRouter({ query }) {
   const router = express.Router();
+
+  // Mount migration routes
+  router.use("/", createMigrateCanonicalHashRouter({ query }));
 
   // ──────────────────────────────────────────────────────────────────
   // GET /api/admin/online-users

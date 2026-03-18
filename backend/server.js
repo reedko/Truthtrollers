@@ -78,10 +78,14 @@ import createTutorialsRouter from "./src/routes/tutorials/tutorials.routes.js";
 import createAdminRouter from "./src/routes/admin/admin.routes.js";
 import createSearchAnalysisRouter from "./src/routes/search-analysis.routes.js";
 import createCredibilityRouter from "./src/routes/credibility/index.js";
+import createAnalyticsRouter from "./src/routes/analytics.routes.js";
 import { initSocketServer } from "./src/realtime/socketServer.js";
 
 // Logger utility
 import { clearLogFile } from "./src/utils/logger.js";
+
+// Redis caching (optional)
+import { initRedis, getRedisClient } from "./src/db/redis.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -255,16 +259,20 @@ app.use((req, res, next) => {
 registerBeaconRoutes(app, query, pool);
 registerDiscussionRoutes(app, query, pool);
 app.use("/api/analyze-content", analyzeContentRoute);
+app.use("/", createAnalyticsRouter({ query, pool }));  // Analytics routes: /api/track-visit, /api/analytics/*
 
 // ─────────────────────────────────────────────
 // V2 modular routers, all mounted flat under /api
 // Each index.js composes its internal *.routes.js files.
 // The individual route files *do not* have /api prefix.
 // ─────────────────────────────────────────────
+// Initialize redisClient as null (will be set after Redis initialization)
+let redisClient = null;
+
 // Mount new modular routes (routes already include /api in their paths)
 app.use("/", createAuthRouter({ query, pool })); // Auth routes: /api/register, /api/login, etc.
 app.use("/", createUsersRouter({ query, pool })); // User routes: /api/all-users, /api/change-email, etc.
-app.use("/", createContentRouter({ query, pool })); // Content routes: /api/content, /api/tasks, etc.
+app.use("/", createContentRouter({ query, pool, redisClient })); // Content routes: /api/content, /api/tasks, /api/lookup-by-hash, etc.
 app.use("/", createAuthorsRouter({ query, pool })); // Authors routes: /api/authors, /api/content/:id/authors, etc.
 app.use("/", createPublishersRouter({ query, pool })); // Publishers routes: /api/publishers, /api/content/:id/publishers, etc.
 app.use("/", createClaimsRouter({ query, pool })); // Claims routes: /api/claims, /api/claim-verifications, etc.
@@ -339,6 +347,10 @@ async function checkDatabaseConnection() {
 
 // Check DB before starting servers
 await checkDatabaseConnection();
+
+// Initialize Redis (optional, gracefully degrades if unavailable)
+await initRedis();
+redisClient = getRedisClient();
 
 // ─────────────────────────────────────────────
 // HTTP Server

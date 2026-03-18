@@ -305,6 +305,77 @@ router.put("/api/tutorials/:id", authenticateToken, async (req, res) => {
 });
 
 // ──────────────────────────────────────────────────────────────────
+// PUT /api/tutorials/:id/thumbnail
+// Update thumbnail for tutorial video (super_admin only)
+// ──────────────────────────────────────────────────────────────────
+router.put(
+  "/api/tutorials/:id/thumbnail",
+  authenticateToken,
+  upload.single("thumbnail"),
+  async (req, res) => {
+    const { id } = req.params;
+    const userRole = req.user?.role;
+
+    if (userRole !== "super_admin") {
+      return res.status(403).json({
+        error: "Only super_admin users can update tutorial thumbnails"
+      });
+    }
+
+    const thumbnailFile = req.file;
+    if (!thumbnailFile) {
+      return res.status(400).json({ error: "No thumbnail file uploaded" });
+    }
+
+    try {
+      // Get old thumbnail URL to delete old file
+      const existing = await query(
+        "SELECT thumbnail_url FROM tutorial_videos WHERE tutorial_video_id = ?",
+        [id]
+      );
+
+      if (existing.length === 0) {
+        // Clean up uploaded file
+        if (thumbnailFile?.path) fs.unlinkSync(thumbnailFile.path);
+        return res.status(404).json({ error: "Tutorial video not found" });
+      }
+
+      // Generate new thumbnail URL
+      const thumbnailUrl = `/assets/images/tutorials/${thumbnailFile.filename}`;
+
+      // Update database
+      const result = await query(
+        "UPDATE tutorial_videos SET thumbnail_url = ? WHERE tutorial_video_id = ?",
+        [thumbnailUrl, id]
+      );
+
+      // Delete old thumbnail file if it exists
+      const oldThumbnailUrl = existing[0].thumbnail_url;
+      if (oldThumbnailUrl) {
+        const oldFilename = oldThumbnailUrl.split("/").pop();
+        const oldPath = path.join(__dirname, "../../../assets/images/tutorials", oldFilename);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+          logger.log(`🗑️  Deleted old thumbnail: ${oldFilename}`);
+        }
+      }
+
+      logger.log(`✅ Tutorial video ${id} thumbnail updated to ${thumbnailFile.filename}`);
+      res.json({
+        success: true,
+        thumbnail_url: thumbnailUrl,
+        message: "Thumbnail updated successfully"
+      });
+    } catch (err) {
+      logger.error("❌ Error updating thumbnail:", err);
+      // Clean up uploaded file on error
+      if (thumbnailFile?.path) fs.unlinkSync(thumbnailFile.path);
+      res.status(500).json({ error: "Failed to update thumbnail" });
+    }
+  }
+);
+
+// ──────────────────────────────────────────────────────────────────
 // DELETE /api/tutorials/:id
 // Soft delete tutorial video (super_admin only)
 // ──────────────────────────────────────────────────────────────────

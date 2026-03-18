@@ -16,6 +16,7 @@ export const pool = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
   multipleStatements: true,
+  charset: 'utf8mb4', // Support emojis and 4-byte UTF-8 characters
   // Add reconnect logic
   acquireTimeout: 10000,
   waitForConnections: true,
@@ -49,4 +50,5 @@ const db = mysql.createConnection({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
   multipleStatements: true,
+  charset: 'utf8mb4', // Support emojis and 4-byte UTF-8 characters
 });

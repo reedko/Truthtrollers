@@ -102,6 +102,8 @@ export interface ReferenceWithClaims {
   progress?: string;
   details?: string;
   media_source?: string;
+  publisher_name?: string;
+  author_name?: string;
   topic?: string;
   subtopic?: string;
   claims: {

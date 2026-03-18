@@ -1,5 +1,5 @@
 // src/components/TaskClaims.tsx
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   VStack,
   Heading,
@@ -9,6 +9,13 @@ import {
   IconButton,
   Tooltip,
   useColorModeValue,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button,
 } from "@chakra-ui/react";
 import { SearchIcon } from "@chakra-ui/icons";
 import { Claim, ReferenceWithClaims } from "../../../shared/entities/types";
@@ -56,6 +63,7 @@ interface TaskClaimsProps {
   references?: ReferenceWithClaims[];
   contentId?: number;
   viewerId?: number | null;
+  bubbleStyle?: boolean;
 }
 
 const TaskClaims: React.FC<TaskClaimsProps> = ({
@@ -87,12 +95,20 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   viewerId,
   selectedReferenceId,
   isReferenceModalOpen = false,
+  bubbleStyle = false,
 }) => {
   const claimRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   // Keep a ref to onDropReferenceClaim so handleMouseUp never captures a stale version
   const onDropRef = useRef(onDropReferenceClaim);
   onDropRef.current = onDropReferenceClaim;
+
+  // Evidence confirmation dialog state
+  const [showEvidencePrompt, setShowEvidencePrompt] = useState(false);
+  const [pendingEdit, setPendingEdit] = useState<{
+    claim: Claim;
+    originalText: string;
+  } | null>(null);
 
   // Color mode values
   const defaultBg = useColorModeValue(
@@ -113,24 +129,27 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   // 🛠️ FIX: Move boxShadow useColorModeValue calls to top level (Rules of Hooks)
   const boxShadowHovered = useColorModeValue(
     "0 4px 12px rgba(71, 85, 105, 0.25)",
-    "0 12px 48px rgba(0, 0, 0, 0.8), 0 0 60px rgba(100, 116, 139, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+    "0 12px 48px rgba(0, 0, 0, 0.8), 0 0 60px rgba(100, 116, 139, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
   );
   const boxShadowDefault = useColorModeValue(
     "0 2px 8px rgba(71, 85, 105, 0.15)",
-    "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(100, 116, 139, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+    "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(100, 116, 139, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
   );
   const boxShadowHover = useColorModeValue(
     "0 4px 12px rgba(71, 85, 105, 0.25)",
-    "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(100, 116, 139, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+    "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(100, 116, 139, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
   );
-  const addClaimButtonColor = useColorModeValue("teal.600", "rgba(0, 162, 255, 1)");
+  const addClaimButtonColor = useColorModeValue(
+    "teal.600",
+    "rgba(0, 162, 255, 1)",
+  );
   const addClaimButtonBoxShadow = useColorModeValue(
     "0 2px 8px rgba(94, 234, 212, 0.2)",
-    "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+    "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
   );
   const addClaimButtonHoverBoxShadow = useColorModeValue(
     "0 4px 12px rgba(94, 234, 212, 0.3)",
-    "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+    "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
   );
 
   useEffect(() => {
@@ -192,12 +211,13 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
     <VStack
       align="start"
       spacing={2}
-      borderRight="1px solid gray"
+      borderRight={bubbleStyle ? "none" : "1px solid gray"}
       pr={4}
       alignSelf="flex-start"
       //overflowY="auto"
       //maxHeight="800px"
       width="100%"
+      bg={bubbleStyle ? "transparent" : undefined}
     >
       <Heading size="sm">Claims</Heading>
 
@@ -301,27 +321,51 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
                 switch (link.relation) {
                   case "support":
                     return {
-                      border: "3px solid #38A169",
-                      background:
-                        "linear-gradient(135deg, rgba(56, 161, 105, 0.3), rgba(56, 161, 105, 0.2))",
+                      border: bubbleStyle
+                        ? "6px solid #38A169"
+                        : "3px solid #38A169",
+                      background: bubbleStyle
+                        ? "transparent"
+                        : "linear-gradient(135deg, rgba(56, 161, 105, 0.3), rgba(56, 161, 105, 0.2))",
                       hoverBg: "rgba(56, 161, 105, 0.4)",
-                      boxShadow: "0 0 20px rgba(56, 161, 105, 0.6), 0 0 40px rgba(56, 161, 105, 0.3)",
+                      boxShadow: bubbleStyle
+                        ? "0 0 30px rgba(56, 161, 105, 0.8), 0 0 60px rgba(56, 161, 105, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.2)"
+                        : "0 0 20px rgba(56, 161, 105, 0.6), 0 0 40px rgba(56, 161, 105, 0.3)",
+                      animation: bubbleStyle
+                        ? "pulse-green 1.5s ease-in-out infinite"
+                        : undefined,
                     };
                   case "refute":
                     return {
-                      border: "3px solid #E53E3E",
-                      background:
-                        "linear-gradient(135deg, rgba(229, 62, 62, 0.3), rgba(229, 62, 62, 0.2))",
+                      border: bubbleStyle
+                        ? "6px solid #E53E3E"
+                        : "3px solid #E53E3E",
+                      background: bubbleStyle
+                        ? "transparent"
+                        : "linear-gradient(135deg, rgba(229, 62, 62, 0.3), rgba(229, 62, 62, 0.2))",
                       hoverBg: "rgba(229, 62, 62, 0.4)",
-                      boxShadow: "0 0 20px rgba(229, 62, 62, 0.6), 0 0 40px rgba(229, 62, 62, 0.3)",
+                      boxShadow: bubbleStyle
+                        ? "0 0 30px rgba(229, 62, 62, 0.8), 0 0 60px rgba(229, 62, 62, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.2)"
+                        : "0 0 20px rgba(229, 62, 62, 0.6), 0 0 40px rgba(229, 62, 62, 0.3)",
+                      animation: bubbleStyle
+                        ? "pulse-red 1.5s ease-in-out infinite"
+                        : undefined,
                     };
                   case "nuance":
                     return {
-                      border: "3px solid #D69E2E",
-                      background:
-                        "linear-gradient(135deg, rgba(214, 158, 46, 0.3), rgba(214, 158, 46, 0.2))",
+                      border: bubbleStyle
+                        ? "6px solid #D69E2E"
+                        : "3px solid #D69E2E",
+                      background: bubbleStyle
+                        ? "transparent"
+                        : "linear-gradient(135deg, rgba(214, 158, 46, 0.3), rgba(214, 158, 46, 0.2))",
                       hoverBg: "rgba(214, 158, 46, 0.4)",
-                      boxShadow: "0 0 20px rgba(214, 158, 46, 0.6), 0 0 40px rgba(214, 158, 46, 0.3)",
+                      boxShadow: bubbleStyle
+                        ? "0 0 30px rgba(214, 158, 46, 0.8), 0 0 60px rgba(214, 158, 46, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.2)"
+                        : "0 0 20px rgba(214, 158, 46, 0.6), 0 0 40px rgba(214, 158, 46, 0.3)",
+                      animation: bubbleStyle
+                        ? "pulse-blue 1.5s ease-in-out infinite"
+                        : undefined,
                     };
                 }
               }
@@ -340,30 +384,49 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
               switch (existingLink.relation) {
                 case "support":
                   return {
-                    border: "3px solid #38A169",
-                    background:
-                      "linear-gradient(135deg, rgba(56, 161, 105, 0.25), rgba(56, 161, 105, 0.15))",
+                    border: bubbleStyle
+                      ? "6px solid #38A169"
+                      : "3px solid #38A169",
+                    background: bubbleStyle
+                      ? "transparent"
+                      : "linear-gradient(135deg, rgba(56, 161, 105, 0.25), rgba(56, 161, 105, 0.15))",
                     hoverBg: "rgba(56, 161, 105, 0.35)",
+                    animation: bubbleStyle
+                      ? "pulse-green 1.5s ease-in-out infinite"
+                      : undefined,
                   };
                 case "refute":
                   return {
-                    border: "3px solid #E53E3E",
-                    background:
-                      "linear-gradient(135deg, rgba(229, 62, 62, 0.25), rgba(229, 62, 62, 0.15))",
+                    border: bubbleStyle
+                      ? "6px solid #E53E3E"
+                      : "3px solid #E53E3E",
+                    background: bubbleStyle
+                      ? "transparent"
+                      : "linear-gradient(135deg, rgba(229, 62, 62, 0.25), rgba(229, 62, 62, 0.15))",
                     hoverBg: "rgba(229, 62, 62, 0.35)",
+                    animation: bubbleStyle
+                      ? "pulse-red 1.5s ease-in-out infinite"
+                      : undefined,
                   };
                 case "nuance":
                   return {
-                    border: "3px solid #D69E2E",
-                    background:
-                      "linear-gradient(135deg, rgba(214, 158, 46, 0.25), rgba(214, 158, 46, 0.15))",
+                    border: bubbleStyle
+                      ? "6px solid #D69E2E"
+                      : "3px solid #D69E2E",
+                    background: bubbleStyle
+                      ? "transparent"
+                      : "linear-gradient(135deg, rgba(214, 158, 46, 0.25), rgba(214, 158, 46, 0.15))",
                     hoverBg: "rgba(214, 158, 46, 0.35)",
+                    animation: bubbleStyle
+                      ? "pulse-blue 1.5s ease-in-out infinite"
+                      : undefined,
                   };
                 default:
                   return {
                     border: "2px dashed #805AD5",
-                    background:
-                      "linear-gradient(135deg, rgba(128, 90, 213, 0.2), rgba(128, 90, 213, 0.1))",
+                    background: bubbleStyle
+                      ? "transparent"
+                      : "linear-gradient(135deg, rgba(128, 90, 213, 0.2), rgba(128, 90, 213, 0.1))",
                     hoverBg: "rgba(128, 90, 213, 0.3)",
                   };
               }
@@ -372,8 +435,9 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
             // Link mode active but no existing link - neutral highlight
             return {
               border: "2px dashed #805AD5",
-              background:
-                "linear-gradient(135deg, rgba(128, 90, 213, 0.2), rgba(128, 90, 213, 0.1))",
+              background: bubbleStyle
+                ? "transparent"
+                : "linear-gradient(135deg, rgba(128, 90, 213, 0.2), rgba(128, 90, 213, 0.1))",
               hoverBg: "rgba(128, 90, 213, 0.3)",
             };
           };
@@ -386,17 +450,18 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
               ref={(el) => (claimRefs.current[claim.claim_id] = el)}
               data-claim-id={claim.claim_id}
               background={
-                hoveredClaimId === claim.claim_id
-                  ? hoveredBg
-                  : colors.background
+                bubbleStyle
+                  ? "transparent"
+                  : hoveredClaimId === claim.claim_id
+                    ? hoveredBg
+                    : colors.background
               }
-              backdropFilter="blur(20px)"
               color={
                 hoveredClaimId === claim.claim_id ? hoveredColor : defaultColor
               }
-              px={3}
-              py={2}
-              borderRadius="12px"
+              px={bubbleStyle ? 4 : 3}
+              py={bubbleStyle ? 3 : 2}
+              borderRadius={bubbleStyle ? "30px" : "12px"}
               border={colors.border}
               boxShadow={
                 colors.boxShadow
@@ -410,7 +475,9 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
                   ? { bg: colors.hoverBg, cursor: "pointer" }
                   : {
                       boxShadow: boxShadowHover,
-                      transform: "translateY(-2px)",
+                      transform: bubbleStyle
+                        ? "scale(1.15) rotate(2deg)"
+                        : "translateY(-2px)",
                     }
               }
               width="100%"
@@ -419,8 +486,80 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
               justifyContent="space-between"
               cursor="pointer"
               position="relative"
-              overflow="hidden"
-              transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+              overflow="visible"
+              transition="all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)"
+              fontFamily={
+                bubbleStyle
+                  ? "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive"
+                  : "inherit"
+              }
+              fontWeight={bubbleStyle ? "bold" : "normal"}
+              fontSize={bubbleStyle ? "md" : "sm"}
+              sx={{
+                animation: colors.animation,
+                ...(bubbleStyle && {
+                  "&::before": {
+                    content: '""',
+                    position: "absolute",
+                    top: "5%",
+                    left: "10%",
+                    width: "50%",
+                    height: "40%",
+                    background:
+                      "radial-gradient(ellipse at top left, rgba(255, 255, 255, 0.7), transparent 50%)",
+                    borderRadius: "50%",
+                    pointerEvents: "none",
+                  },
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    bottom: "8%",
+                    right: "12%",
+                    width: "30%",
+                    height: "25%",
+                    background:
+                      "radial-gradient(ellipse at bottom right, rgba(255, 255, 255, 0.4), transparent 60%)",
+                    borderRadius: "50%",
+                    pointerEvents: "none",
+                  },
+                }),
+                "@keyframes pulse-green": {
+                  "0%, 100%": {
+                    boxShadow:
+                      "0 0 30px rgba(56, 161, 105, 0.8), 0 0 60px rgba(56, 161, 105, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
+                    transform: "translateY(0px) scale(1)",
+                  },
+                  "50%": {
+                    boxShadow:
+                      "0 0 60px rgba(56, 161, 105, 1), 0 0 120px rgba(56, 161, 105, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
+                    transform: "translateY(-3px) scale(1.03)",
+                  },
+                },
+                "@keyframes pulse-red": {
+                  "0%, 100%": {
+                    boxShadow:
+                      "0 0 30px rgba(229, 62, 62, 0.8), 0 0 60px rgba(229, 62, 62, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
+                    transform: "translateY(0px) scale(1)",
+                  },
+                  "50%": {
+                    boxShadow:
+                      "0 0 60px rgba(229, 62, 62, 1), 0 0 120px rgba(229, 62, 62, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
+                    transform: "translateY(-3px) scale(1.03)",
+                  },
+                },
+                "@keyframes pulse-blue": {
+                  "0%, 100%": {
+                    boxShadow:
+                      "0 0 30px rgba(214, 158, 46, 0.8), 0 0 60px rgba(214, 158, 46, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
+                    transform: "translateY(0px) scale(1)",
+                  },
+                  "50%": {
+                    boxShadow:
+                      "0 0 60px rgba(214, 158, 46, 1), 0 0 120px rgba(214, 158, 46, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
+                    transform: "translateY(-3px) scale(1.03)",
+                  },
+                },
+              }}
               onClick={() => {
                 if (linkSelection?.active) {
                   onPickTargetForLink?.(claim);
@@ -430,15 +569,17 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
                 setIsClaimViewModalOpen(true);
               }}
             >
-              <Box
-                position="absolute"
-                left={0}
-                top={0}
-                width="20px"
-                height="100%"
-                background="linear-gradient(90deg, rgba(167, 139, 250, 0.4) 0%, transparent 100%)"
-                pointerEvents="none"
-              />
+              {!bubbleStyle && (
+                <Box
+                  position="absolute"
+                  left={0}
+                  top={0}
+                  width="20px"
+                  height="100%"
+                  background="linear-gradient(90deg, rgba(167, 139, 250, 0.4) 0%, transparent 100%)"
+                  pointerEvents="none"
+                />
+              )}
               <Tooltip
                 label={claim.claim_text}
                 hasArrow
@@ -494,9 +635,24 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
         editingClaim={editingClaim}
         onSave={(claim: Claim) => {
           if (claim.claim_id) {
-            onEditClaim(claim);
+            // Check if claim text changed
+            const original = claims.find(c => c.claim_id === claim.claim_id);
+            if (original && original.claim_text !== claim.claim_text) {
+              // Text changed - show evidence prompt
+              setPendingEdit({
+                claim,
+                originalText: original.claim_text
+              });
+              setShowEvidencePrompt(true);
+              setIsClaimModalOpen(false);
+            } else {
+              // Just metadata changed - update directly
+              onEditClaim(claim);
+              setIsClaimModalOpen(false);
+            }
           } else {
             onAddClaim({ ...claim, content_id: taskId });
+            setIsClaimModalOpen(false);
           }
           setEditingClaim(null);
         }}
@@ -513,6 +669,83 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
         contentId={contentId}
         viewerId={viewerId}
       />
+
+      {/* Evidence Confirmation Modal */}
+      <Modal
+        isOpen={showEvidencePrompt}
+        onClose={() => {
+          setShowEvidencePrompt(false);
+          setPendingEdit(null);
+        }}
+        size="lg"
+      >
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Run Evidence for Updated Claim?</ModalHeader>
+          <ModalBody>
+            <VStack align="stretch" spacing={4}>
+              <Box>
+                <Text fontWeight="semibold" mb={1}>
+                  Original:
+                </Text>
+                <Text
+                  p={3}
+                  bg={useColorModeValue("red.50", "red.900")}
+                  borderRadius="md"
+                  color={useColorModeValue("red.700", "red.200")}
+                >
+                  {pendingEdit?.originalText}
+                </Text>
+              </Box>
+              <Box>
+                <Text fontWeight="semibold" mb={1}>
+                  Updated:
+                </Text>
+                <Text
+                  p={3}
+                  bg={useColorModeValue("green.50", "green.900")}
+                  borderRadius="md"
+                  color={useColorModeValue("green.700", "green.200")}
+                >
+                  {pendingEdit?.claim.claim_text}
+                </Text>
+              </Box>
+              <Text color={useColorModeValue("gray.600", "gray.400")}>
+                Would you like to run the evidence engine to find sources for the updated claim? This may take 30-60 seconds.
+              </Text>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              colorScheme="blue"
+              mr={3}
+              onClick={() => {
+                if (pendingEdit) {
+                  // Pass runEvidence: true to parent handler
+                  onEditClaim({ ...pendingEdit.claim, runEvidence: true } as any);
+                }
+                setShowEvidencePrompt(false);
+                setPendingEdit(null);
+              }}
+            >
+              Yes, Run Evidence
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                if (pendingEdit) {
+                  // Pass runEvidence: false to parent handler
+                  onEditClaim({ ...pendingEdit.claim, runEvidence: false } as any);
+                }
+                setShowEvidencePrompt(false);
+                setPendingEdit(null);
+              }}
+            >
+              No, Skip Evidence
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </VStack>
   );
 };

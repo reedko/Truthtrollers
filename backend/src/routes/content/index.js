@@ -5,9 +5,11 @@ import createContentTasksRoutes from "./content.tasks.routes.js";
 import createContentMetadataRoutes from "./content.metadata.routes.js";
 import createContentUrlTrackingRoutes from "./content.url-tracking.routes.js";
 import createContentScrapeRoutes from "./content.scrape.routes.js";
+import createContentLookupRoutes from "./content.lookup.routes.js";
 import createDeleteContentRoutes from "./deleteContent.routes.js";
+import createContentIncrementalRoutes from "./content.incremental.routes.js";
 
-export default function createContentRouter({ query, pool }) {
+export default function createContentRouter({ query, pool, redisClient }) {
   const router = Router();
 
   // Mount content sub-routers with dependencies
@@ -16,7 +18,9 @@ export default function createContentRouter({ query, pool }) {
   router.use("/", createContentMetadataRoutes({ query, pool }));
   router.use("/", createContentUrlTrackingRoutes({ query, pool }));
   router.use("/", createContentScrapeRoutes({ query, pool }));
+  router.use("/", createContentLookupRoutes({ query, redisClient })); // Passive lookup routes
   router.use("/", createDeleteContentRoutes({ query, pool }));
+  router.use("/", createContentIncrementalRoutes({ query })); // NEW: Incremental claim updates
 
   return router;
 }

@@ -231,24 +231,25 @@ export default function TutorialGalleryPage() {
     try {
       setUpdating(true);
 
-      const formData = new FormData();
-      if (editThumbnail) formData.append("thumbnail", editThumbnail);
-      formData.append("title", editTitle);
-      formData.append("description", editDescription);
-      formData.append("category", editCategory);
-
+      // Update text fields
       await api.put(`/api/tutorials/${editingVideo.tutorial_video_id}`, {
         title: editTitle,
         description: editDescription,
         category: editCategory,
       });
 
-      // If there's a thumbnail, upload it separately
+      // Update thumbnail if a new one was selected
       if (editThumbnail) {
         const thumbnailFormData = new FormData();
         thumbnailFormData.append("thumbnail", editThumbnail);
-        // We'd need a separate endpoint for thumbnail upload, or include it in the update
-        // For now, let's skip thumbnail update
+
+        await api.put(
+          `/api/tutorials/${editingVideo.tutorial_video_id}/thumbnail`,
+          thumbnailFormData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        );
       }
 
       toast({
@@ -390,7 +391,7 @@ export default function TutorialGalleryPage() {
                 <Box bg="black" position="relative">
                   {video.thumbnail_url ? (
                     <img
-                      src={video.thumbnail_url}
+                      src={`${import.meta.env.VITE_API_BASE_URL || "https://localhost:5001"}${video.thumbnail_url}`}
                       alt={video.title}
                       style={{ width: "100%", height: "100%", objectFit: "cover" }}
                     />

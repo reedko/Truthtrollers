@@ -343,6 +343,16 @@ export default function createContentScrapeRoutes({ query }) {
     try {
       const { url, raw_html, raw_text, force, media_source, authors: providedAuthors } = req.body;
 
+      logger.log(`\n${'='.repeat(80)}`);
+      logger.log(`🔵 [/api/scrape-task] RECEIVED REQUEST`);
+      logger.log(`🔵 URL: ${url}`);
+      logger.log(`🔵 Media source: ${media_source || 'not provided'}`);
+      logger.log(`🔵 Force: ${force}`);
+      logger.log(`🔵 Has raw_html: ${!!raw_html} (${raw_html?.length || 0} chars)`);
+      logger.log(`🔵 Has raw_text: ${!!raw_text}`);
+      logger.log(`🔵 Provided authors: ${providedAuthors?.length || 0}`);
+      logger.log(`${'='.repeat(80)}\n`);
+
       if (!url) {
         return res.status(400).json({
           success: false,
@@ -368,6 +378,24 @@ export default function createContentScrapeRoutes({ query }) {
           });
         }
       }
+
+      // ═════════════════════════════════════════════════════════════
+      // EARLY VALIDATION: Check OpenAI API accessibility BEFORE any DB writes
+      // ═════════════════════════════════════════════════════════════
+      logger.log("🔍 [/api/scrape-task] Checking OpenAI API accessibility...");
+      const { openAiLLM } = await import("../../core/openAiLLM.js");
+      const apiCheck = await openAiLLM.testConnection();
+
+      if (!apiCheck.accessible) {
+        logger.error("❌ [/api/scrape-task] OpenAI API not accessible:", apiCheck.error);
+        return res.status(503).json({
+          success: false,
+          error: "AI_SERVICE_UNAVAILABLE",
+          message: apiCheck.userMessage,
+          technicalError: apiCheck.error,
+        });
+      }
+      logger.log("✅ [/api/scrape-task] OpenAI API is accessible");
 
       let taskContentId;
       let text;
@@ -528,7 +556,7 @@ export default function createContentScrapeRoutes({ query }) {
       //    b) Then extract reference claims (from full text)
       // -----------------------------------------------------------------
 
-      // Filter valid references (exclude self-references)
+      // Filter valid references (exclude self-references and short text)
       const validReferences = aiReferences.filter((ref) => {
         // Filter out references without content_id
         if (!ref.referenceContentId) return false;
@@ -541,18 +569,34 @@ export default function createContentScrapeRoutes({ query }) {
           return false;
         }
 
+        // Filter out references with insufficient text (<500 chars)
+        // These rarely extract useful claims and waste LLM calls
+        if (ref.cleanText && ref.cleanText.length < 500) {
+          logger.log(
+            `⏭️  [/api/scrape-task] Skipping reference with insufficient text (${ref.cleanText.length} chars): ${ref.url}`
+          );
+          return false;
+        }
+
         return true;
       });
 
-      logger.log(`🔄 [/api/scrape-task] Processing ${validReferences.length} references sequentially to prevent pool exhaustion`);
+      logger.log(`🔄 [/api/scrape-task] Processing ${validReferences.length} references in batches of 3 for optimal performance`);
 
-      // Process references SEQUENTIALLY instead of parallel to prevent:
-      // 1. Database connection pool exhaustion (limit: 10 connections)
-      // 2. OpenAI API rate limiting
-      // 3. Race conditions and mixed responses
-      for (const ref of validReferences) {
-          try {
-            // a) Create snippet claim from search engine snippet
+      // Track processing stats
+      let processedSuccessfully = 0;
+      let failedReferences = [];
+
+      // Process references in BATCHES OF 3 to balance speed vs resource usage:
+      // - Database pool: 10 connections, 3 refs × 3 connections/ref = 9 connections (safe)
+      // - OpenAI rate limit: 3 refs × 3 LLM calls/ref = 9 RPM (well under typical 60-90 RPM limit)
+      // - 3× faster than sequential, but prevents pool exhaustion
+      const BATCH_SIZE = 3;
+
+      // Helper function to process a single reference
+      const processReference = async (ref) => {
+        try {
+          // a) Create snippet claim from search engine snippet
             if (ref.quote) {
               await persistClaims(
                 query,
@@ -592,11 +636,16 @@ export default function createContentScrapeRoutes({ query }) {
 
                 // c) Auto-generate claim_links (reference claims → task claims with veracity scores)
                 try {
+                  logger.log(`🔗 [/api/scrape-task] Calling matchClaimsToTaskClaims for reference ${ref.referenceContentId}...`);
+                  logger.log(`   Reference claims: ${extractedClaims.length}, Task claims: ${taskClaims.length}`);
+
                   const claimMatches = await matchClaimsToTaskClaims({
                     referenceClaims: extractedClaims,
                     taskClaims: taskClaims,
                     llm: openAiLLM
                   });
+
+                  logger.log(`🔗 [/api/scrape-task] matchClaimsToTaskClaims returned ${claimMatches.length} matches`);
 
                   // ⚡ OPTIMIZATION: Batch insert AI-suggested links instead of sequential inserts
                   if (claimMatches.length > 0) {
@@ -634,24 +683,72 @@ export default function createContentScrapeRoutes({ query }) {
                     logger.log(
                       `✅ [/api/scrape-task] Batch created ${claimMatches.length} AI-suggested links (reference_claim_task_links) for reference ${ref.referenceContentId}`
                     );
+                  } else {
+                    logger.warn(
+                      `⚠️  [/api/scrape-task] No AI-suggested links created for reference ${ref.referenceContentId} (0 matches from LLM)`
+                    );
                   }
                 } catch (linkErr) {
-                  logger.warn(
-                    `⚠️  [/api/scrape-task] Failed to create claim_links for reference ${ref.referenceContentId}:`,
+                  logger.error(
+                    `❌ [/api/scrape-task] Failed to create claim_links for reference ${ref.referenceContentId}:`,
                     linkErr.message
                   );
+                  logger.error(`   Stack:`, linkErr.stack);
+                  failedReferences.push({
+                    url: ref.url,
+                    contentId: ref.referenceContentId,
+                    error: `Failed to create claim links: ${linkErr.message}`,
+                  });
                 }
               }
             }
-          } catch (err) {
-            logger.warn(
-              `⚠️  [/api/scrape-task] Failed to extract claims from reference ${ref.referenceContentId}:`,
-              err.message
-            );
-          }
+
+          // Mark as successfully processed
+          processedSuccessfully++;
+          return { success: true };
+
+        } catch (err) {
+          logger.error(
+            `❌ [/api/scrape-task] Failed to process reference ${ref.referenceContentId}:`,
+            err.message
+          );
+          logger.error(`   URL: ${ref.url}`);
+          logger.error(`   Error type: ${err.name}`);
+          logger.error(`   Stack:`, err.stack);
+
+          failedReferences.push({
+            url: ref.url,
+            contentId: ref.referenceContentId,
+            error: err.message,
+          });
+          return { success: false, error: err.message };
+        }
+      };
+
+      // Process references in batches
+      for (let i = 0; i < validReferences.length; i += BATCH_SIZE) {
+        const batch = validReferences.slice(i, i + BATCH_SIZE);
+        logger.log(`📦 [/api/scrape-task] Processing batch ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} references)`);
+
+        // Process batch in parallel
+        await Promise.all(batch.map(ref => processReference(ref)));
+
+        logger.log(`✅ [/api/scrape-task] Batch ${Math.floor(i / BATCH_SIZE) + 1} complete`);
       }
 
-      logger.log(`✅ [/api/scrape-task] Completed processing ${validReferences.length} references`);
+      logger.log(`\n${'='.repeat(80)}`);
+      logger.log(`📊 [/api/scrape-task] REFERENCE PROCESSING SUMMARY`);
+      logger.log(`   Total references: ${validReferences.length}`);
+      logger.log(`   Successfully processed: ${processedSuccessfully}`);
+      logger.log(`   Failed: ${failedReferences.length}`);
+      if (failedReferences.length > 0) {
+        logger.log(`\n   Failed references:`);
+        failedReferences.forEach((failed, i) => {
+          logger.log(`   ${i + 1}. ${failed.url}`);
+          logger.log(`      Error: ${failed.error}`);
+        });
+      }
+      logger.log(`${'='.repeat(80)}\n`);
 
       // -----------------------------------------------------------------
       // 7. Return unified reference set to extension
@@ -671,6 +768,17 @@ export default function createContentScrapeRoutes({ query }) {
       });
     } catch (err) {
       logger.error("❌ Error in /api/scrape-task:", err);
+
+      // Special handling for region blocks and other user-facing errors
+      if (err.code === "REGION_BLOCKED" || err.userMessage) {
+        return res.status(503).json({
+          success: false,
+          error: "AI_SERVICE_UNAVAILABLE",
+          message: err.userMessage || err.message,
+          technicalError: err.message,
+        });
+      }
+
       return res.status(500).json({
         success: false,
         error: err.message || "Internal server error in /api/scrape-task",

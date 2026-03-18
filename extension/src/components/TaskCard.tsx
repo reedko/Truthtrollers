@@ -218,7 +218,6 @@ const TaskCard: React.FC = () => {
       className="popup-box"
       width="300px"
       position="relative"
-      bgGradient="linear(135deg, rgba(10, 30, 60, 0.75), rgba(20, 50, 80, 0.7))"
       sx={{
         backgroundImage: `
           linear-gradient(135deg, rgba(10, 30, 60, 0.75), rgba(20, 50, 80, 0.7)),

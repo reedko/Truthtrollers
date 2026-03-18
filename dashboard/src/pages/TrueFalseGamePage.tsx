@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Box, Heading, Text, VStack, Button, useToast } from "@chakra-ui/react";
-import { fetchLinkedClaimsForTask } from "../services/useDashboardAPI";
+import { fetchClaimsForTask, fetchClaimScoresForTask } from "../services/useDashboardAPI";
 import { useTaskStore } from "../store/useTaskStore";
 import UnifiedHeader from "../components/UnifiedHeader";
+import StickyTitleBar from "../components/StickyTitleBar";
 
 interface ClaimItem {
   claim_id: number;
@@ -23,11 +24,27 @@ const TrueFalseQuizGame: React.FC = () => {
   useEffect(() => {
     const loadClaims = async () => {
       if (!selectedTask || !viewerId) return;
-      const result = await fetchLinkedClaimsForTask(
+
+      // Fetch claims for the task
+      const fetchedClaims = await fetchClaimsForTask(
         selectedTask.content_id,
         viewerId
       );
-      setClaims(result);
+
+      // Fetch verimeter scores for those claims
+      const scores = await fetchClaimScoresForTask(
+        selectedTask.content_id,
+        viewerId
+      );
+
+      // Merge claims with their verimeter scores
+      const claimsWithScores = fetchedClaims.map((claim) => ({
+        claim_id: claim.claim_id,
+        claim_text: claim.claim_text,
+        verimeter_score: scores[claim.claim_id] ?? null,
+      }));
+
+      setClaims(claimsWithScores);
     };
     loadClaims();
   }, [selectedTask, viewerId]);
@@ -58,6 +75,9 @@ const TrueFalseQuizGame: React.FC = () => {
 
   return (
     <Box p={6} minH="100vh" bg="gray.950">
+      {/* Sticky Title Bar - Always visible initially */}
+      <StickyTitleBar alwaysVisible={true} />
+
       <UnifiedHeader />
 
       <Box

@@ -410,83 +410,198 @@ async function extractUrlFromEmbedDialog(postElement: Element): Promise<string |
 }
 
 /**
+ * Find the root post container by traversing up from a known child element
+ * until we find a node that contains all key post elements.
+ */
+function findPostContainerFromDescendant(el: Element): Element | null {
+  console.log("🔍 [Facebook] Traversing up from element to find post container...");
+  let node: Element | null = el;
+  const maxDepth = 20; // Prevent infinite loops
+  let depth = 0;
+
+  while (node && node !== document.body && depth < maxDepth) {
+    // Check if this node contains all the key post elements
+    const hasProfile = !!node.querySelector('[data-ad-rendering-role="profile_name"]');
+    const hasStory = !!node.querySelector('[data-ad-rendering-role="story_message"]');
+    const hasActions = !!node.querySelector('[aria-label="Actions for this post"]');
+
+    console.log(`  🔍 Depth ${depth}: profile=${hasProfile}, story=${hasStory}, actions=${hasActions}`);
+
+    // If we found a node with all three, this is likely the post root
+    if (hasProfile && hasStory && hasActions) {
+      console.log(`✅ [Facebook] Found post container at depth ${depth}`);
+      return node;
+    }
+
+    node = node.parentElement;
+    depth++;
+  }
+
+  console.warn("⚠️ [Facebook] Could not find post container (reached max depth or body)");
+  return null;
+}
+
+/**
+ * Find all Facebook posts in the DOM using stable selectors
+ */
+function findAllPosts(): Element[] {
+  console.log("🔍 [Facebook] Searching for all posts in DOM...");
+
+  // Start from profile names (most reliable anchor point)
+  const profileLinks = Array.from(document.querySelectorAll('[data-ad-rendering-role="profile_name"] a[role="link"]'));
+  console.log(`🔍 [Facebook] Found ${profileLinks.length} profile links with [data-ad-rendering-role="profile_name"]`);
+
+  const posts: Element[] = [];
+  const seenPosts = new Set<Element>();
+
+  for (let i = 0; i < profileLinks.length; i++) {
+    const profileLink = profileLinks[i];
+    console.log(`\n🔍 [Facebook] Processing profile link ${i + 1}/${profileLinks.length}`);
+
+    const postContainer = findPostContainerFromDescendant(profileLink as Element);
+
+    if (postContainer && !seenPosts.has(postContainer)) {
+      seenPosts.add(postContainer);
+      posts.push(postContainer);
+      console.log(`✅ [Facebook] Added unique post container (total: ${posts.length})`);
+    } else if (postContainer) {
+      console.log(`⏭️ [Facebook] Skipped duplicate post container`);
+    }
+  }
+
+  console.log(`\n✅ [Facebook] Found ${posts.length} unique posts in DOM`);
+  return posts;
+}
+
+/**
+ * Extract post URL from the post container using /posts/ links
+ */
+function extractPostUrlFromContainer(postContainer: Element): string | null {
+  console.log("🔍 [Facebook] Extracting post URL from container...");
+
+  // Strategy 1: Look for comment links with the post ID
+  // Format: https://www.facebook.com/groups/[GROUP_ID]/posts/[POST_ID]/?comment_id=...
+  const commentLinks = Array.from(postContainer.querySelectorAll('a[href*="/posts/"][href*="comment_id"]'));
+  console.log(`🔍 [Facebook] Found ${commentLinks.length} comment links with /posts/ and comment_id`);
+
+  for (let i = 0; i < commentLinks.length; i++) {
+    const link = commentLinks[i];
+    const href = link.getAttribute('href');
+    console.log(`  🔍 Comment link ${i + 1}: ${href?.substring(0, 100)}...`);
+    if (href) {
+      // Extract the base post URL (remove comment_id and query params)
+      const match = href.match(/(https:\/\/www\.facebook\.com\/groups\/[^\/]+\/posts\/[^\/\?]+)/);
+      if (match) {
+        console.log(`✅ [Facebook] Found post URL from comment link: ${match[1]}`);
+        return match[1];
+      }
+    }
+  }
+
+  // Strategy 2: Look for any links with "/posts/" pattern
+  const postLinks = Array.from(postContainer.querySelectorAll('a[href*="/posts/"]'));
+  console.log(`🔍 [Facebook] Found ${postLinks.length} total links with /posts/`);
+
+  for (let i = 0; i < postLinks.length; i++) {
+    const link = postLinks[i];
+    const href = link.getAttribute('href');
+    console.log(`  🔍 Post link ${i + 1}: ${href?.substring(0, 100)}...`);
+    if (href) {
+      // If it's a full URL
+      if (href.startsWith('http')) {
+        const match = href.match(/(https:\/\/www\.facebook\.com\/groups\/[^\/]+\/posts\/[^\/\?]+)/);
+        if (match) {
+          console.log(`✅ [Facebook] Found post URL from post link: ${match[1]}`);
+          return match[1];
+        }
+      }
+      // If it's a relative URL, construct the full URL
+      else {
+        const match = href.match(/\/groups\/([^\/]+)\/posts\/([^\/\?]+)/);
+        if (match) {
+          const fullUrl = `https://www.facebook.com/groups/${match[1]}/posts/${match[2]}`;
+          console.log(`✅ [Facebook] Found post URL from relative link: ${fullUrl}`);
+          return fullUrl;
+        }
+      }
+    }
+  }
+
+  console.warn('⚠️ [Facebook] Could not find post URL in container');
+  return null;
+}
+
+/**
  * Find the post in the viewport (middle of screen)
  * Returns the post element and its URL
  */
 export async function findPostInViewport(): Promise<{ element: Element; url: string } | null> {
   console.log("🔵 [Facebook] Finding post in viewport...");
 
-  // Get all post containers - Facebook uses various article/div structures
-  const posts = Array.from(
-    document.querySelectorAll(
-      'div[role="article"], div[data-pagelet*="FeedUnit"], div[data-ad-preview="message"]'
-    )
-  );
+  // Get all posts using stable selectors
+  const posts = findAllPosts();
 
   if (posts.length === 0) {
     console.log("⚠️ [Facebook] No posts found in DOM");
     return null;
   }
 
-  console.log(`🔵 [Facebook] Found ${posts.length} posts, finding one in viewport...`);
+  console.log(`🔵 [Facebook] Found ${posts.length} posts in DOM`);
 
   // Get viewport center
   const viewportHeight = window.innerHeight;
   const viewportCenter = viewportHeight / 2;
+  console.log(`🔵 [Facebook] Viewport height: ${viewportHeight}px, center: ${viewportCenter}px`);
 
   // Find post closest to center of viewport
   let closestPost: Element | null = null;
   let closestDistance = Infinity;
 
-  for (const post of posts) {
+  for (let i = 0; i < posts.length; i++) {
+    const post = posts[i];
     const rect = post.getBoundingClientRect();
     const postCenter = rect.top + rect.height / 2;
     const distance = Math.abs(postCenter - viewportCenter);
 
-    if (distance < closestDistance && rect.top < viewportHeight && rect.bottom > 0) {
-      closestDistance = distance;
-      closestPost = post;
+    console.log(`  📏 Post ${i + 1}: top=${rect.top.toFixed(0)}, bottom=${rect.bottom.toFixed(0)}, center=${postCenter.toFixed(0)}, distance=${distance.toFixed(0)}`);
+
+    // Check if post is in viewport
+    if (rect.top < viewportHeight && rect.bottom > 0) {
+      console.log(`    ✅ Post ${i + 1} is in viewport`);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestPost = post;
+        console.log(`    🎯 Post ${i + 1} is now the closest (distance: ${distance.toFixed(0)}px)`);
+      }
+    } else {
+      console.log(`    ⏭️ Post ${i + 1} is NOT in viewport`);
     }
   }
 
   if (!closestPost) {
-    console.log("⚠️ [Facebook] No post in viewport");
+    console.log("⚠️ [Facebook] No posts in viewport");
     return null;
   }
 
-  // IMPORTANT: The menu button might not be inside the article div
-  // It could be in a parent container or sibling element
-  // Let's find the actual post container that includes the menu button
-  let postContainer = closestPost;
+  console.log(`\n✅ [Facebook] Found post in viewport (distance from center: ${closestDistance.toFixed(0)}px)`);
 
-  // Try to find parent that contains both the post content AND the menu button
-  let currentElement: Element | null = closestPost;
-  let depth = 0;
+  // Strategy 1: Try to extract URL from embed dialog (most reliable)
+  console.log("\n🔵 [Facebook] Strategy 1: Trying embed dialog...");
+  let postUrl = await extractUrlFromEmbedDialog(closestPost);
 
-  while (currentElement && depth < 5) {
-    const hasMenuButton = currentElement.querySelector('[aria-label*="Actions for"]') !== null;
-    if (hasMenuButton) {
-      console.log(`🔵 [Facebook] Found container with menu button at depth ${depth}`);
-      postContainer = currentElement;
-      break;
-    }
-    currentElement = currentElement.parentElement;
-    depth++;
+  // Strategy 2: Fall back to extracting from /posts/ links in the container
+  if (!postUrl) {
+    console.log("\n🔵 [Facebook] Strategy 2: Embed failed, trying /posts/ links...");
+    postUrl = extractPostUrlFromContainer(closestPost);
   }
-
-  console.log(`🔵 [Facebook] Using post container: ${postContainer.tagName}, has menu: ${postContainer.querySelector('[aria-label*="Actions for"]') !== null}`);
-
-  // Extract post URL by programmatically accessing the Embed dialog
-  // This is the most reliable way since Facebook removed URLs from the feed DOM
-  const postUrl = await extractUrlFromEmbedDialog(postContainer);
 
   if (!postUrl) {
-    console.log("⚠️ [Facebook] Could not extract post URL from embed dialog");
+    console.log("❌ [Facebook] Could not extract post URL (both strategies failed)");
     return null;
   }
 
-  console.log(`✅ [Facebook] Found post in viewport: ${postUrl}`);
-  return { element: postContainer, url: postUrl };
+  console.log(`\n✅ [Facebook] Successfully extracted post URL: ${postUrl}`);
+  return { element: closestPost, url: postUrl };
 }
 
 /**
@@ -542,8 +657,9 @@ export function extractFacebookPostFromDOM(
     }
   }
 
-  // Extract author name
+  // Extract author name - use stable Facebook selectors
   const authorSelectors = [
+    '[data-ad-rendering-role="profile_name"] a[role="link"]', // Most stable
     'h2 a[role="link"]',
     'a[aria-label*="profile"]',
     'strong a[role="link"]',
@@ -554,7 +670,10 @@ export function extractFacebookPostFromDOM(
     const el = container.querySelector(selector);
     if (el && el.textContent && el.textContent.length > 0) {
       authorName = el.textContent.trim();
+      console.log(`✅ [Facebook] Found author name: "${authorName}" (selector: ${selector})`);
       break;
+    } else {
+      console.log(`⚠️ [Facebook] No author found with selector: ${selector}`);
     }
   }
 
@@ -703,6 +822,23 @@ export async function scrapeFacebookPost(
     return null;
   }
 
+  // CRITICAL: Validate that we have a real post URL, not just www.facebook.com
+  const urlIsValid = postData.url &&
+    postData.url !== 'https://www.facebook.com' &&
+    postData.url !== 'https://www.facebook.com/' &&
+    postData.url !== 'http://www.facebook.com' &&
+    postData.url !== 'http://www.facebook.com/' &&
+    (postData.url.includes('/posts/') || postData.url.includes('/permalink') ||
+     postData.url.includes('/photo') || postData.url.includes('/videos/'));
+
+  if (!urlIsValid) {
+    console.error(`❌ [Facebook] Could not extract valid post URL. Got: ${postData.url}`);
+    console.error(`❌ [Facebook] This usually means the post is not accessible or embed dialog failed`);
+    return null;
+  }
+
+  console.log(`✅ [Facebook] Valid post URL detected: ${postData.url}`);
+
   // Get the HTML of the post container for backend processing
   const postElement = postInViewport ? postInViewport.element : document.body;
   const rawHtml = postElement.outerHTML;
@@ -725,31 +861,53 @@ export async function scrapeFacebookPost(
   let authorData = null;
   if (postData.authorName) {
     // Try to find author profile image (the small avatar/icon next to author name)
-    // Strategy 1: Find the author link, then find the image inside it
     let authorImage = null;
 
-    // Look for author link by aria-label or text content
-    const authorLinks = Array.from(postElement.querySelectorAll('a[role="link"]')) as HTMLAnchorElement[];
+    // Strategy 1: Look for image near the stable profile_name element
+    const profileNameElement = postElement.querySelector('[data-ad-rendering-role="profile_name"]');
+    if (profileNameElement) {
+      console.log("🔍 [Facebook] Searching for author image near profile_name element...");
 
-    for (const link of authorLinks) {
-      const linkText = link.textContent?.trim() || '';
-      const ariaLabel = link.getAttribute('aria-label') || '';
-
-      if (linkText === postData.authorName || ariaLabel.includes(postData.authorName)) {
-        // Found the author link! Look for an image inside or near it
-        const img = link.querySelector('img') as HTMLImageElement;
+      // Look in the same parent container
+      let parent = profileNameElement.parentElement;
+      let depth = 0;
+      while (parent && depth < 3) {
+        const img = parent.querySelector('img') as HTMLImageElement;
         if (img && img.src && img.src.includes('fbcdn')) {
           authorImage = img.src;
-          console.log(`✅ [Facebook] Found author profile image in author link: ${authorImage.substring(0, 60)}...`);
+          console.log(`✅ [Facebook] Found author profile image near profile_name (depth ${depth}): ${authorImage.substring(0, 60)}...`);
           break;
         }
+        parent = parent.parentElement;
+        depth++;
+      }
+    }
 
-        // Also check siblings (sometimes image is next to the link, not inside)
-        const prevSibling = link.previousElementSibling?.querySelector('img') as HTMLImageElement;
-        if (prevSibling && prevSibling.src && prevSibling.src.includes('fbcdn')) {
-          authorImage = prevSibling.src;
-          console.log(`✅ [Facebook] Found author profile image near author link: ${authorImage.substring(0, 60)}...`);
-          break;
+    // Strategy 2: Look for author link by aria-label or text content
+    if (!authorImage) {
+      console.log("🔍 [Facebook] Searching for author image via author links...");
+      const authorLinks = Array.from(postElement.querySelectorAll('a[role="link"]')) as HTMLAnchorElement[];
+
+      for (const link of authorLinks) {
+        const linkText = link.textContent?.trim() || '';
+        const ariaLabel = link.getAttribute('aria-label') || '';
+
+        if (linkText === postData.authorName || ariaLabel.includes(postData.authorName)) {
+          // Found the author link! Look for an image inside or near it
+          const img = link.querySelector('img') as HTMLImageElement;
+          if (img && img.src && img.src.includes('fbcdn')) {
+            authorImage = img.src;
+            console.log(`✅ [Facebook] Found author profile image in author link: ${authorImage.substring(0, 60)}...`);
+            break;
+          }
+
+          // Also check siblings (sometimes image is next to the link, not inside)
+          const prevSibling = link.previousElementSibling?.querySelector('img') as HTMLImageElement;
+          if (prevSibling && prevSibling.src && prevSibling.src.includes('fbcdn')) {
+            authorImage = prevSibling.src;
+            console.log(`✅ [Facebook] Found author profile image near author link: ${authorImage.substring(0, 60)}...`);
+            break;
+          }
         }
       }
     }
@@ -782,6 +940,15 @@ export async function scrapeFacebookPost(
 
   // Send to backend via background script - use the regular scrape-task pipeline
   try {
+    console.log(`\n${'='.repeat(80)}`);
+    console.log(`🚀 [Facebook] SENDING TO BACKEND`);
+    console.log(`🚀 URL: ${postData.url}`);
+    console.log(`🚀 Post text length: ${postData.postText?.length || 0}`);
+    console.log(`🚀 Author: ${postData.authorName || 'none'}`);
+    console.log(`🚀 Images: ${postData.images?.length || 0}`);
+    console.log(`🚀 HTML length: ${rawHtml.length}`);
+    console.log(`${'='.repeat(80)}\n`);
+
     const response = await browser.runtime.sendMessage({
       action: "scrapeTaskOnServer",
       payload: {
@@ -798,10 +965,14 @@ export async function scrapeFacebookPost(
         subtopics: ["facebook"],
         thumbnail: postData.images?.[0] || null,
       },
-    }) as { success: boolean; contentId?: string; error?: string };
+    }) as { success: boolean; contentId?: string; error?: string; message?: string };
 
     if (!response || !response.success) {
-      console.error("❌ [Facebook] Backend scrape failed:", response?.error);
+      const errorMsg = response?.message || response?.error || "Unknown error";
+      console.error("❌ [Facebook] Backend scrape failed:", errorMsg);
+
+      // Show user-friendly error message
+      alert(`Unable to analyze this Facebook post:\n\n${errorMsg}`);
       return null;
     }
 

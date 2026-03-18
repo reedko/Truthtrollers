@@ -15,7 +15,7 @@ import {
   HStack,
   useBreakpointValue,
 } from "@chakra-ui/react";
-import { Search2Icon } from "@chakra-ui/icons";
+import { Search2Icon, EditIcon, DeleteIcon } from "@chakra-ui/icons";
 import { Claim, ReferenceWithClaims } from "../../../../shared/entities/types";
 import { Global, css } from "@emotion/react";
 import { motion } from "framer-motion";
@@ -33,6 +33,8 @@ interface Props {
   draggingClaim: Pick<Claim, "claim_id" | "claim_text"> | null;
   onVerifyClaim?: (claim: Claim) => void;
   onStartLink?: (claim: Pick<Claim, "claim_id" | "claim_text">) => void;
+  onEditClaim?: (claim: Claim) => void;
+  onDeleteClaim?: (claimId: number) => void;
 }
 
 const ReferenceClaimsModal: React.FC<Props> = ({
@@ -43,6 +45,8 @@ const ReferenceClaimsModal: React.FC<Props> = ({
   draggingClaim,
   onVerifyClaim,
   onStartLink,
+  onEditClaim,
+  onDeleteClaim,
 }) => {
   const isMobile = useBreakpointValue({ base: true, md: false });
 
@@ -195,6 +199,20 @@ const ReferenceClaimsModal: React.FC<Props> = ({
                       >
                         {claim.claim_text}
                       </Box>
+                      <IconButton
+                        size="sm"
+                        colorScheme="blue"
+                        aria-label="Edit claim"
+                        icon={<EditIcon />}
+                        onClick={() => onEditClaim?.(claim)}
+                      />
+                      <IconButton
+                        size="sm"
+                        colorScheme="red"
+                        aria-label="Delete claim"
+                        icon={<DeleteIcon />}
+                        onClick={() => onDeleteClaim?.(claim.claim_id)}
+                      />
                       <IconButton
                         size="sm"
                         colorScheme="purple"

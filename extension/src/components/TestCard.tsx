@@ -25,7 +25,7 @@ const TestCard: React.FC = () => {
   const logo = "/assets/images/miniLogo.png";
   const imageUrl = showWithImage ? `${BASE_URL}/assets/images/meter3.png` : "";
   const task = {
-    content_name: "Absolute Immunity - by Some Author",
+    content_name: "About TruthTrollers - RKO",
     progress: showCompleted ? "Completed" : "Awaiting Evaluation",
     url: "https://example.com/test",
   };
@@ -35,12 +35,11 @@ const TestCard: React.FC = () => {
       className="popup-box"
       width="300px"
       position="relative"
-      bgGradient="linear(135deg, rgba(10, 30, 60, 0.75), rgba(20, 50, 80, 0.7))"
-      sx={{
+      style={{
         backgroundImage: `
-          linear-gradient(135deg, rgba(10, 30, 60, 0.75), rgba(20, 50, 80, 0.7)),
-          repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 162, 255, 0.08) 2px, rgba(0, 162, 255, 0.08) 4px)
-        `,
+      linear-gradient(135deg, rgba(10, 30, 60, 0.75), rgba(20, 50, 80, 0.7)),
+      repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 162, 255, 0.08) 2px, rgba(0, 162, 255, 0.08) 4px)
+    `,
       }}
       border="1px solid rgba(0, 162, 255, 0.6)"
       borderRadius="12px"
@@ -123,7 +122,7 @@ const TestCard: React.FC = () => {
           >
             <Box flexShrink={0}>
               <TruthGauge
-                score={-0.72}
+                score={1.0}
                 label="VERIMETER"
                 size={{ w: 170, h: 90 }}
                 normalize={false}
@@ -160,7 +159,7 @@ const TestCard: React.FC = () => {
                 ml={-35}
                 mr={-35}
               >
-                <UserConsensusBar trueCount={21} falseCount={71} total={121} />
+                <UserConsensusBar trueCount={121} falseCount={0} total={121} />
               </Box>
             </Box>
           </HStack>
@@ -290,29 +289,6 @@ const TestCard: React.FC = () => {
             </Center>
           </Box>
         )}
-
-        {/* Test Controls */}
-        <Box width="100%" mt={4} p={3} bg="rgba(0,0,0,0.5)" borderRadius="md">
-          <Text color="white" fontSize="sm" fontWeight="bold" mb={2}>
-            Test Controls:
-          </Text>
-          <VStack spacing={2} align="stretch">
-            <Button
-              size="sm"
-              onClick={() => setShowCompleted(!showCompleted)}
-              colorScheme={showCompleted ? "green" : "gray"}
-            >
-              {showCompleted ? "Completed" : "Not Completed"}
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => setShowWithImage(!showWithImage)}
-              colorScheme={showWithImage ? "blue" : "gray"}
-            >
-              {showWithImage ? "With Image" : "No Image"}
-            </Button>
-          </VStack>
-        </Box>
       </VStack>
     </Box>
   );

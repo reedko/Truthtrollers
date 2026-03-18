@@ -16,7 +16,7 @@ const theme = extendTheme({
       html: {
       },
       body: {
-        bgGradient: props.colorMode === "dark"
+        background: props.colorMode === "dark"
           ? "radial-gradient(circle at 75% 80%, rgba(94, 234, 212, 0.4), rgba(2, 0, 36, 0.95))"
           : "linear-gradient(to bottom, #cbd5e1 0%, #e2e8f0 30%, #f1f5f9 60%, #e2e8f0 100%)",
         backgroundAttachment: "fixed",
@@ -80,7 +80,7 @@ const theme = extendTheme({
     Card: {
       baseStyle: (props: any) => ({
         container: {
-          bgGradient: props.colorMode === "dark"
+          background: props.colorMode === "dark"
             ? "radial-gradient(circle at 70% 70%, rgba(72, 187, 215, 0.25), rgba(45, 55, 72, 1))"
             : "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(240, 245, 250, 0.9) 100%)",
           borderRadius: "2xl",

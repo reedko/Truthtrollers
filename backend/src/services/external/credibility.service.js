@@ -1,6 +1,8 @@
 // /backend/src/services/external/credibility.service.js
 import gdiService from './gdi.service.js';
 import opensanctionsService from './opensanctions.service.js';
+import courtlistenerService from './courtlistener.service.js';
+import cfpbService from './cfpb.service.js';
 
 /**
  * Combined Credibility Service
@@ -9,7 +11,7 @@ import opensanctionsService from './opensanctions.service.js';
 class CredibilityService {
   /**
    * Check credibility for an author
-   * Runs OpenSanctions screening
+   * Runs OpenSanctions, CourtListener, and Caselaw checks
    * @param {Object} author - Author object with name and metadata
    * @param {number} authorId - Database author ID
    * @returns {Promise<Object>} Combined credibility results
@@ -40,9 +42,42 @@ class CredibilityService {
       };
     }
 
+    // Check CourtListener for legal cases
+    if (courtlistenerService.isConfigured()) {
+      try {
+        const clResult = await courtlistenerService.checkAuthor(author);
+        results.services.courtlistener = clResult;
+      } catch (error) {
+        console.error('CourtListener check failed for author:', error.message);
+        results.services.courtlistener = {
+          error: 'check_failed',
+          message: error.message
+        };
+      }
+    } else {
+      results.services.courtlistener = {
+        error: 'not_configured',
+        message: 'CourtListener API not configured'
+      };
+    }
+
+    // Check CFPB (mostly for completeness, rarely applies to individuals)
+    try {
+      const cfpbResult = await cfpbService.checkAuthor(author);
+      results.services.cfpb = cfpbResult;
+    } catch (error) {
+      console.error('CFPB check failed for author:', error.message);
+      results.services.cfpb = {
+        error: 'check_failed',
+        message: error.message
+      };
+    }
+
     // Calculate overall risk level
     results.overall_risk = this.calculateOverallRisk([
-      results.services.opensanctions
+      results.services.opensanctions,
+      results.services.courtlistener,
+      results.services.cfpb
     ]);
 
     return results;
@@ -50,7 +85,7 @@ class CredibilityService {
 
   /**
    * Check credibility for a publisher
-   * Runs GDI and OpenSanctions checks
+   * Runs GDI, OpenSanctions, CourtListener, Caselaw, and CFPB checks
    * @param {Object} publisher - Publisher object with name, domain, and metadata
    * @param {number} publisherId - Database publisher ID
    * @returns {Promise<Object>} Combined credibility results
@@ -105,10 +140,43 @@ class CredibilityService {
       };
     }
 
+    // Check CourtListener for legal cases
+    if (courtlistenerService.isConfigured()) {
+      try {
+        const clResult = await courtlistenerService.checkPublisher(publisher);
+        results.services.courtlistener = clResult;
+      } catch (error) {
+        console.error('CourtListener check failed for publisher:', error.message);
+        results.services.courtlistener = {
+          error: 'check_failed',
+          message: error.message
+        };
+      }
+    } else {
+      results.services.courtlistener = {
+        error: 'not_configured',
+        message: 'CourtListener API not configured'
+      };
+    }
+
+    // Check CFPB for consumer complaints
+    try {
+      const cfpbResult = await cfpbService.checkPublisher(publisher);
+      results.services.cfpb = cfpbResult;
+    } catch (error) {
+      console.error('CFPB check failed for publisher:', error.message);
+      results.services.cfpb = {
+        error: 'check_failed',
+        message: error.message
+      };
+    }
+
     // Calculate overall risk level
     results.overall_risk = this.calculateOverallRisk([
       results.services.gdi,
-      results.services.opensanctions
+      results.services.opensanctions,
+      results.services.courtlistener,
+      results.services.cfpb
     ]);
 
     return results;
@@ -275,11 +343,23 @@ class CredibilityService {
     return {
       gdi: {
         configured: gdiService.isConfigured(),
-        name: 'Global Disinformation Index'
+        name: 'Global Disinformation Index',
+        description: 'Media bias and disinformation ratings'
       },
       opensanctions: {
         configured: opensanctionsService.isConfigured(),
-        name: 'OpenSanctions'
+        name: 'OpenSanctions',
+        description: 'Sanctions, PEPs, and watchlist screening'
+      },
+      courtlistener: {
+        configured: courtlistenerService.isConfigured(),
+        name: 'CourtListener (Free Law Project)',
+        description: 'Federal and state court case search'
+      },
+      cfpb: {
+        configured: cfpbService.isConfigured(),
+        name: 'Consumer Financial Protection Bureau',
+        description: 'Consumer complaint database'
       }
     };
   }

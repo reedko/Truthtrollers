@@ -75,90 +75,94 @@ const projects = [
 
 const TaskProjectsPanel: React.FC = () => {
   return (
-    <Card height="100%" bg="blackAlpha.600" color="white" overflow="hidden">
-      <CardBody>
-        <Heading size="md" mb={4} color="teal.200">
-          Task Projects
-        </Heading>
+    <Box className="mr-card mr-card-green" height="100%" p={4} position="relative">
+      <div className="mr-glow-bar mr-glow-bar-green" />
+      <div className="mr-scanlines" />
 
-        {/* Column headers */}
-        <Grid
-          templateColumns="180px 150px 100px 1fr 40px"
-          gap={3}
-          pb={2}
-          borderBottom="1px solid #444"
-        >
-          <Text fontSize="sm" color="gray.400">
-            Publisher
-          </Text>
-          <Text fontSize="sm" color="gray.400">
-            Authors
-          </Text>
-          <Text fontSize="sm" color="gray.400">
-            Date
-          </Text>
-          <Text fontSize="sm" color="gray.400">
-            Progress
-          </Text>
-          <Box /> {/* spacer for % */}
-        </Grid>
+      <Heading size="md" mb={4} className="mr-heading">
+        TASK PROJECTS
+      </Heading>
 
-        <VStack spacing={4} align="stretch" mt={2}>
-          {projects.map((proj, i) => (
-            <Grid
-              key={i}
-              templateColumns="180px 150px 100px 1fr 40px"
-              gap={3}
-              alignItems="center"
-              borderBottom="1px solid #222"
-              pb={1}
-              pr={1}
-            >
-              {/* Publisher column */}
-              <HStack>
-                <Image
-                  src={proj.publisher.logo}
-                  boxSize="32px"
-                  borderRadius="md"
-                  alt={proj.publisher.name}
-                />
-                <Text fontSize="sm" fontWeight="bold">
-                  {proj.publisher.name}
-                </Text>
-              </HStack>
+      {/* Column headers */}
+      <Grid
+        templateColumns="180px 150px 100px 1fr 40px"
+        gap={3}
+        pb={2}
+        borderBottom="1px solid rgba(0, 255, 200, 0.3)"
+      >
+        <Text fontSize="xs" className="mr-text-secondary" textTransform="uppercase">
+          Publisher
+        </Text>
+        <Text fontSize="xs" className="mr-text-secondary" textTransform="uppercase">
+          Authors
+        </Text>
+        <Text fontSize="xs" className="mr-text-secondary" textTransform="uppercase">
+          Date
+        </Text>
+        <Text fontSize="xs" className="mr-text-secondary" textTransform="uppercase">
+          Progress
+        </Text>
+        <Box /> {/* spacer for % */}
+      </Grid>
 
-              {/* Authors */}
-              <HStack spacing={-1}>
-                {proj.authors.map((src, j) => (
-                  <Avatar key={j} src={src} size="xs" border="1px solid #222" />
-                ))}
-              </HStack>
-
-              {/* Date */}
-              <Text fontSize="sm" color="gray.400">
-                {proj.date}
-              </Text>
-
-              {/* Progress bar */}
-              <Progress
-                value={proj.progress}
-                size="sm"
-                colorScheme="teal"
+      <VStack spacing={3} align="stretch" mt={2}>
+        {projects.map((proj, i) => (
+          <Grid
+            key={i}
+            templateColumns="180px 150px 100px 1fr 40px"
+            gap={3}
+            alignItems="center"
+            borderBottom="1px solid rgba(0, 255, 200, 0.1)"
+            pb={2}
+            pr={1}
+          >
+            {/* Publisher column */}
+            <HStack>
+              <Image
+                src={proj.publisher.logo}
+                boxSize="28px"
                 borderRadius="md"
-                bg="gray.700"
-                hasStripe
-                isAnimated
+                alt={proj.publisher.name}
               />
-
-              {/* % text */}
-              <Text fontSize="xs" textAlign="right" color="gray.300">
-                {proj.progress}%
+              <Text fontSize="xs" className="mr-text-primary" fontWeight="bold">
+                {proj.publisher.name}
               </Text>
-            </Grid>
-          ))}
-        </VStack>
-      </CardBody>
-    </Card>
+            </HStack>
+
+            {/* Authors */}
+            <HStack spacing={-1}>
+              {proj.authors.map((src, j) => (
+                <Avatar key={j} src={src} size="xs" border="1px solid rgba(0, 255, 200, 0.3)" />
+              ))}
+            </HStack>
+
+            {/* Date */}
+            <Text fontSize="xs" className="mr-text-secondary">
+              {proj.date}
+            </Text>
+
+            {/* Progress bar */}
+            <Progress
+              value={proj.progress}
+              size="sm"
+              colorScheme="cyan"
+              borderRadius="sm"
+              bg="rgba(0, 0, 0, 0.3)"
+              sx={{
+                '& > div': {
+                  background: 'linear-gradient(90deg, rgba(0, 255, 200, 0.6), rgba(0, 200, 255, 0.8))',
+                }
+              }}
+            />
+
+            {/* % text */}
+            <Text fontSize="xs" textAlign="right" className="mr-text-primary" fontWeight="bold">
+              {proj.progress}%
+            </Text>
+          </Grid>
+        ))}
+      </VStack>
+    </Box>
   );
 };
 

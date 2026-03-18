@@ -10,9 +10,12 @@ import {
   Select,
   Text,
   useColorMode,
+  Switch,
+  HStack,
 } from "@chakra-ui/react";
 import Workspace from "../components/Workspace";
 import UnifiedHeader from "../components/UnifiedHeader";
+import StickyTitleBar from "../components/StickyTitleBar";
 import { useTaskStore, ViewScope } from "../store/useTaskStore";
 import { ViewerScopeBadge } from "../components/ViewerScopeBadge";
 import {
@@ -26,6 +29,7 @@ const WorkspacePage = () => {
   const [verimeterScore, setVerimeterScore] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [linkFilter, setLinkFilter] = useState<'all' | 'user' | 'ai'>('all');
+  const [bubbleStyle, setBubbleStyle] = useState<boolean>(false);
   const navigate = useNavigate();
   const { colorMode } = useColorMode();
   const taskId = useTaskStore((s) => s.selectedTaskId);
@@ -177,6 +181,9 @@ const WorkspacePage = () => {
   };
   return (
     <Box p={4} w="100%">
+      {/* Sticky Title Bar - Always visible initially */}
+      <StickyTitleBar alwaysVisible={true} />
+
       <Box maxW="1400px" w="100%" mx="auto">
         <Card mb={6} mt={2}>
           <CardBody>
@@ -236,11 +243,24 @@ const WorkspacePage = () => {
             </Select>
           </Box>
 
+          {/* 3D Bubble Toggle */}
+          <HStack spacing={2}>
+            <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"} textTransform="uppercase" letterSpacing="1px" whiteSpace="nowrap">
+              3D Bubble
+            </Text>
+            <Switch
+              isChecked={bubbleStyle}
+              onChange={(e) => setBubbleStyle(e.target.checked)}
+              colorScheme="purple"
+              size="sm"
+            />
+          </HStack>
+
           {/* Viewer Scope Badge */}
           <ViewerScopeBadge />
         </Box>
 
-        <Workspace contentId={taskId} viewerId={viewerId} linkFilter={linkFilter} />
+        <Workspace contentId={taskId} viewerId={viewerId} linkFilter={linkFilter} bubbleStyle={bubbleStyle} />
       </Box>
     </Box>
   );

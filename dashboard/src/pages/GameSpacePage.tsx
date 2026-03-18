@@ -7,6 +7,7 @@ import {
 } from "@chakra-ui/react";
 import GameSpace from "../components/GameSpace";
 import UnifiedHeader from "../components/UnifiedHeader";
+import StickyTitleBar from "../components/StickyTitleBar";
 import { useTaskStore, ViewScope } from "../store/useTaskStore";
 import {
   fetchClaimsWithEvidence,
@@ -158,6 +159,9 @@ const GameSpacePage = () => {
 
   return (
     <Box>
+      {/* Sticky Title Bar - Always visible initially */}
+      <StickyTitleBar alwaysVisible={true} />
+
       {/* UnifiedHeader */}
       <Box className="mr-card mr-card-blue" mb={6} p={4} position="relative">
         <div className="mr-glow-bar mr-glow-bar-blue" />

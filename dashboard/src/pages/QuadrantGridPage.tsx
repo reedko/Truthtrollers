@@ -11,6 +11,7 @@ import { useTaskStore } from "../store/useTaskStore";
 import { fetchNewGraphDataFromLegacyRoute } from "../services/api";
 import { GraphNode, Link } from "../../../shared/entities/types";
 import UnifiedHeader from "../components/UnifiedHeader";
+import StickyTitleBar from "../components/StickyTitleBar";
 import {
   updateScoresForContent,
   fetchContentScores,
@@ -131,6 +132,9 @@ const QuadrantGridPage = () => {
 
   return (
     <Box>
+      {/* Sticky Title Bar - Always visible initially */}
+      <StickyTitleBar alwaysVisible={true} />
+
       {/* UnifiedHeader */}
       <Box className="mr-card mr-card-blue" mb={6} p={4} position="relative">
         <div className="mr-glow-bar mr-glow-bar-blue" />

@@ -33,23 +33,46 @@ import EmailTesterPage from "./pages/EmailTesterPage";
 import TutorialGalleryPage from "./pages/TutorialGalleryPage";
 import AdminPanelPage from "./pages/AdminPanelPage";
 import SearchResultsPage from "./pages/SearchResultsPage";
+import CredibilityPage from "./pages/CredibilityPage";
+import LandingPage from "./pages/LandingPage";
+import AboutPage from "./pages/AboutPage";
+import ClaimDuelPage from "./pages/ClaimDuelPage";
+import TrueFalseGamePage from "./pages/TrueFalseGamePage";
 
 const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <LandingPage />,
+    errorElement: <ErrorPage />,
+  },
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPassword />,
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPassword />,
+  },
+  {
+    path: "/register",
+    element: <Register />,
+  },
+  {
+    path: "/about",
+    element: <AboutPage />,
+  },
   {
     path: "/",
     element: <VisionLayout />,
     errorElement: <ErrorPage />,
     children: [
-      { index: true, element: <Login /> },
-
-      { path: "/login", element: <Login /> },
-      { path: "/forgot-password", element: <ForgotPassword /> },
-      { path: "/reset-password", element: <ResetPassword /> },
-      { path: "/register", element: <Register /> },
-
       // 🔒 Protected Routes
       {
-        path: "/dashboard",
+        path: "dashboard",
         element: (
           <ProtectedRoute>
             <UserDashboard />
@@ -57,7 +80,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/user-dashboard",
+        path: "user-dashboard",
         element: (
           <ProtectedRoute>
             <UserDashboard />
@@ -65,7 +88,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/vision-dashboard",
+        path: "vision-dashboard",
         element: (
           <ProtectedRoute>
             <VisionDashboard />
@@ -73,7 +96,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/evaluate-ratings",
+        path: "evaluate-ratings",
         element: (
           <ProtectedRoute>
             <RatingEvaluation />
@@ -81,7 +104,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/tasks",
+        path: "tasks",
         element: (
           <ProtectedRoute>
             <TaskPage />
@@ -89,16 +112,32 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/search",
+        path: "search",
         element: (
           <ProtectedRoute>
             <SearchResultsPage />
           </ProtectedRoute>
         ),
       },
+      {
+        path: "credibility",
+        element: (
+          <ProtectedRoute>
+            <CredibilityPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "claim-duel",
+        element: (
+          <ProtectedRoute>
+            <ClaimDuelPage />
+          </ProtectedRoute>
+        ),
+      },
 
       {
-        path: "/workspace",
+        path: "workspace",
         element: (
           <ProtectedRoute>
             <WorkspacePage />
@@ -106,7 +145,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/workspace/:contentId",
+        path: "workspace/:contentId",
         element: (
           <ProtectedRoute>
             <WorkspacePage />
@@ -114,7 +153,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/gamespace",
+        path: "gamespace",
         element: (
           <ProtectedRoute>
             <GameSpacePage />
@@ -122,7 +161,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/level",
+        path: "level",
         element: (
           <ProtectedRoute>
             <LevelPage />
@@ -130,7 +169,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/molecule",
+        path: "molecule",
         element: (
           <ProtectedRoute>
             <MoleculeMapPage />
@@ -138,7 +177,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/quadrantgrid",
+        path: "quadrantgrid",
         element: (
           <ProtectedRoute>
             <QuadrantGridPage />
@@ -146,7 +185,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/discussion/:contentId",
+        path: "discussion/:contentId",
         element: (
           <ProtectedRoute>
             <DiscussionPage />
@@ -154,7 +193,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/account",
+        path: "account",
         element: (
           <ProtectedRoute>
             <AccountSettingsPage />
@@ -162,7 +201,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/select-user",
+        path: "select-user",
         element: (
           <ProtectedRoute>
             <UserSelectionPage />
@@ -170,7 +209,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/game",
+        path: "game",
         element: (
           <ProtectedRoute>
             <GamePreview />
@@ -178,7 +217,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/game/truefalse",
+        path: "game/truefalse",
         element: (
           <ProtectedRoute>
             <TrueFalseGame />
@@ -186,7 +225,15 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/extension", // ✅ NEW
+        path: "truefalse",
+        element: (
+          <ProtectedRoute>
+            <TrueFalseGamePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "extension", // ✅ NEW
         element: (
           <ProtectedRoute>
             <ExtensionDownloadPage />
@@ -194,7 +241,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/textpad",
+        path: "textpad",
         element: (
           <ProtectedRoute>
             <TextPadPage />
@@ -202,7 +249,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/chat",
+        path: "chat",
         element: (
           <ProtectedRoute>
             <ChatPage />
@@ -210,7 +257,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/emailtest",
+        path: "emailtest",
         element: (
           <ProtectedRoute>
             <EmailTesterPage />
@@ -218,7 +265,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/tutorials",
+        path: "tutorials",
         element: (
           <ProtectedRoute>
             <TutorialGalleryPage />
@@ -226,7 +273,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/admin",
+        path: "admin",
         element: (
           <ProtectedRoute>
             <AdminPanelPage />
@@ -234,7 +281,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/logout",
+        path: "logout",
         element: <LogoutPage />,
       },
     ],

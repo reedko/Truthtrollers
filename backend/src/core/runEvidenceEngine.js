@@ -504,7 +504,7 @@ export async function runEvidenceEngine({
     {
       limits: {
         queriesPerClaim: 4, // ← Increased from 3 to 4 for more diverse queries
-        candidates: 12, // ← Try more URLs per claim
+        candidates: 6, // ← Reduced from 12 to 6 for faster processing with fewer failed fetches
         evidencePerDoc: 2, // ← Increased from 1 to 2 to get more evidence per doc
       },
       maxParallelClaims: Infinity, // Process all claims in parallel (was 3)
@@ -524,7 +524,7 @@ export async function runEvidenceEngine({
     enableWeb: true,
     topKQueries: 6,
     searchEngine: "hybrid",
-    topKCandidates: 12,
+    topKCandidates: 6, // ← Reduced from 12 to 6 for faster processing
     maxEvidencePerDoc: 2,
     preferDomains: [],
     avoidDomains: [],

@@ -511,6 +511,44 @@ export const updateClaim = async (claim: Claim): Promise<Claim> => {
   }
 };
 
+// ✅ Update claim with evidence re-run option
+export const updateClaimWithEvidence = async (
+  claim: Claim,
+  runEvidence: boolean = true,
+  userId?: number
+): Promise<{
+  success: boolean;
+  claim: Claim;
+  evidenceRun: boolean;
+  summary?: {
+    added: number;
+    removed: number;
+    unchanged: number;
+    total: number;
+  };
+  evidence?: {
+    referencesFound: number;
+    referencesProcessed: number;
+    failedCandidates: Array<{ url: string; title: string; reason: string }>;
+  };
+}> => {
+  try {
+    const response = await api.put(
+      `${API_BASE_URL}/api/claims/${claim.claim_id}/edit`,
+      {
+        newText: claim.claim_text,
+        runEvidence,
+        userId,
+      }
+    );
+    console.log("✅ Claim updated with evidence:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("❌ Error updating claim with evidence:", error);
+    throw error;
+  }
+};
+
 /**
  * Associate a selected reference with a claim
  */
