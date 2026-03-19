@@ -24,6 +24,7 @@ import { useTaskStore } from "../store/useTaskStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { fetchReferenceClaimTaskLinks } from "../services/referenceClaimRelevance";
 import VerimeterMeter from "../components/VerimeterMeter";
+import ClaimLinkOverlay from "../components/overlays/ClaimLinkOverlay";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
@@ -73,6 +74,8 @@ export const FoxCasePage: React.FC = () => {
   const [currentCandidateIndex, setCurrentCandidateIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [availableCaseClaims, setAvailableCaseClaims] = useState<any[]>([]);
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [modalSupportLevel, setModalSupportLevel] = useState(0);
 
   // Load available case claims when case changes
   useEffect(() => {
@@ -282,6 +285,35 @@ export const FoxCasePage: React.FC = () => {
     }
   };
 
+  const handleRelationshipClick = (relationshipType: 'supports' | 'refutes' | 'context') => {
+    if (!candidates[currentCandidateIndex]) return;
+
+    const currentCandidate = candidates[currentCandidateIndex];
+
+    // Calculate support level based on relationship and AI confidence
+    let supportLevel = 0;
+    if (relationshipType === 'supports') {
+      supportLevel = currentCandidate.ai_confidence || 1.0;
+    } else if (relationshipType === 'refutes') {
+      supportLevel = -(currentCandidate.ai_confidence || 1.0);
+    } else if (relationshipType === 'context') {
+      supportLevel = currentCandidate.ai_confidence ? currentCandidate.ai_confidence * 0.5 : 0.5;
+    }
+
+    setModalSupportLevel(supportLevel);
+    setIsLinkModalOpen(true);
+  };
+
+  const handleLinkCreated = async () => {
+    // Reload focus claim to update verimeter score
+    if (focusClaim?.claim_id) {
+      await loadFocusClaim(focusClaim.claim_id);
+    }
+    // Move to next candidate
+    handleNextCandidate();
+    setIsLinkModalOpen(false);
+  };
+
   const handleSelectClaim = (claimId: number) => {
     loadFocusClaim(claimId);
   };
@@ -381,7 +413,7 @@ export const FoxCasePage: React.FC = () => {
 
         {/* Main Workspace - 3 columns */}
         <Grid
-          templateColumns="450px minmax(500px, 560px) 340px"
+          templateColumns="450px 720px 340px"
           gap={6}
           w="full"
           alignItems="start"
@@ -476,7 +508,9 @@ export const FoxCasePage: React.FC = () => {
                 borderColor="rgba(113, 219, 255, 0.22)"
                 boxShadow="inset 0 0 0 1px rgba(255, 255, 255, 0.03)"
                 p={6}
-                minH="520px"
+                w="100%"
+                maxW="450px"
+                minH="600px"
                 position="relative"
               >
                 {/* Arrow Indicator */}
@@ -725,23 +759,18 @@ export const FoxCasePage: React.FC = () => {
               {/* Scrolling Source Claims */}
               <Box
                 flex="1"
-                overflowX="auto"
+                overflowX="hidden"
                 overflowY="hidden"
-                css={{
-                  "&::-webkit-scrollbar": {
-                    height: "8px",
-                  },
-                  "&::-webkit-scrollbar-track": {
-                    background: "transparent",
-                  },
-                  "&::-webkit-scrollbar-thumb": {
-                    background: "rgba(113, 219, 255, 0.35)",
-                    borderRadius: "999px",
-                  },
-                }}
+                position="relative"
               >
-                <HStack spacing={4} align="stretch" pb={2}>
-                  {candidates.slice(currentCandidateIndex, currentCandidateIndex + 1).map((candidate, idx) => (
+                <Flex
+                  align="stretch"
+                  pb={2}
+                  position="relative"
+                  transition="transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+                  transform={`translateX(calc(${720 / 2}px - ${520 / 2}px - ${currentCandidateIndex * (520 + 20)}px))`}
+                >
+                  {candidates.map((candidate, idx) => (
                     <Box
                       key={idx}
                       bg="linear-gradient(180deg, rgba(14, 24, 40, 0.82), rgba(9, 16, 29, 0.72))"
@@ -751,11 +780,15 @@ export const FoxCasePage: React.FC = () => {
                       boxShadow="inset 0 0 0 1px rgba(255, 255, 255, 0.03)"
                       p={6}
                       pl={8}
-                      minH="240px"
-                      w="440px"
-                      minW="440px"
-                      maxW="440px"
+                      w="520px"
+                      minW="520px"
+                      minH="600px"
                       position="relative"
+                      flexShrink={0}
+                      mr={5}
+                      opacity={idx === currentCandidateIndex ? 1 : 0.5}
+                      transition="opacity 0.4s ease"
+                      pointerEvents={idx === currentCandidateIndex ? "auto" : "none"}
                     >
                       {/* Curved edge on source cards too */}
                       <Box
@@ -853,7 +886,7 @@ export const FoxCasePage: React.FC = () => {
                               fontWeight="800"
                               color="#ff6c88"
                             >
-                              {Math.round(candidate.relevance_score || 0)}
+                              {Math.round((candidate.relevance_score || 0) * 100)}
                             </Text>
                           </Box>
 
@@ -952,6 +985,7 @@ export const FoxCasePage: React.FC = () => {
                               borderColor: "rgba(255, 108, 136, 0.4)",
                               bg: "rgba(255, 108, 136, 0.18)",
                             }}
+                            onClick={() => handleRelationshipClick('refutes')}
                           >
                             Refute
                           </Button>
@@ -969,6 +1003,7 @@ export const FoxCasePage: React.FC = () => {
                               borderColor: "rgba(120, 168, 255, 0.4)",
                               bg: "rgba(120, 168, 255, 0.18)",
                             }}
+                            onClick={() => handleRelationshipClick('context')}
                           >
                             Nuance
                           </Button>
@@ -986,6 +1021,7 @@ export const FoxCasePage: React.FC = () => {
                               borderColor: "rgba(97, 239, 184, 0.4)",
                               bg: "rgba(97, 239, 184, 0.18)",
                             }}
+                            onClick={() => handleRelationshipClick('supports')}
                           >
                             Support
                           </Button>
@@ -999,7 +1035,7 @@ export const FoxCasePage: React.FC = () => {
                       <Text color="#89a9bf">No source claims available</Text>
                     </Flex>
                   )}
-                </HStack>
+                </Flex>
               </Box>
 
               {/* Navigation Buttons */}
@@ -1308,6 +1344,31 @@ export const FoxCasePage: React.FC = () => {
           </DrawerBody>
         </DrawerContent>
       </Drawer>
+
+      {/* Claim Link Modal */}
+      {candidates[currentCandidateIndex] && focusClaim && (
+        <ClaimLinkOverlay
+          isOpen={isLinkModalOpen}
+          onClose={() => setIsLinkModalOpen(false)}
+          sourceClaim={{
+            claim_id: candidates[currentCandidateIndex].claim_id,
+            claim_text: candidates[currentCandidateIndex].claim_text
+          }}
+          targetClaim={{
+            ...focusClaim,
+            claim_id: focusClaim.claim_id,
+            claim_text: focusClaim.claim_text,
+            content_id: selectedTask?.content_id,
+            veracity_score: focusClaim.verimeter_score || 0,
+            confidence_level: 0,
+            last_verified: new Date().toISOString(),
+            references: []
+          }}
+          onLinkCreated={handleLinkCreated}
+          rationale={candidates[currentCandidateIndex].ai_rationale}
+          aiSupportLevel={modalSupportLevel}
+        />
+      )}
     </Box>
   );
 };
