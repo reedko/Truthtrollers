@@ -46,6 +46,7 @@ import { decodeJwt } from "../utils/jwt";
 import { AccountMenu } from "../components/AccountMenu";
 import { PlatformTour } from "../components/PlatformTour";
 import { TokenStatusIndicator } from "../components/TokenStatusIndicator";
+import { GlobalProgressIndicator } from "../components/GlobalProgressIndicator";
 
 const SIDEBAR_WIDTH = "200px";
 const HEADER_HEIGHT = "50px"; // Reduced from 160px to 50px
@@ -146,6 +147,13 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
             onClick={handleClick("/quadrantgrid")}
           >
             QuadrantGrid
+          </MenuItem>
+          <MenuItem
+            as={RouterLink}
+            to={selectedTaskId ? `/foxcase/${selectedTaskId}` : "/foxcase"}
+            onClick={handleClick("/foxcase")}
+          >
+            FoxCase
           </MenuItem>
         </MenuList>
       </Menu>
@@ -292,6 +300,7 @@ const VisionLayout: React.FC = () => {
   const location = useLocation();
   const setAuth = useAuthStore((s) => s.setAuth);
   const menuBtnRef = useRef<HTMLButtonElement | null>(null);
+  const backgroundJobs = useTaskStore((s) => s.backgroundJobs);
 
   // Color mode values
   const drawerBg = useColorModeValue("rgba(255, 255, 255, 0.95)", "gray.900");
@@ -419,6 +428,10 @@ const VisionLayout: React.FC = () => {
       <PlatformTour />
       <ChatBubble />
       <PWAInstallBanner />
+      <GlobalProgressIndicator
+        isActive={backgroundJobs.length > 0}
+        message={backgroundJobs[0]?.message || 'Processing...'}
+      />
     </>
   );
 };

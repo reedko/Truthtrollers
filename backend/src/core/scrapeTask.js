@@ -26,17 +26,26 @@ import * as cheerio from "cheerio";
  *  • Extract: text, title, authors, publisher, thumbnail
  *  • Extract DOM references
  *  • Extract inline references from text
- *  • Persist the task content row in DB
+ *  • Persist the task content row clasudein DB
  *  • Returns: { taskContentId, text, metadata, domRefs, inlineRefs }
  */
-export async function scrapeTask(query, url, raw_html = null, mediaSource = null, providedAuthors = null) {
+export async function scrapeTask(
+  query,
+  url,
+  raw_html = null,
+  mediaSource = null,
+  providedAuthors = null,
+) {
   try {
     logger.log(`🟦 [scrapeTask] Starting scrape for: ${url}`);
     if (mediaSource) {
       logger.log(`📌 [scrapeTask] Media source hint: ${mediaSource}`);
     }
     if (providedAuthors && providedAuthors.length > 0) {
-      logger.log(`👤 [scrapeTask] Using ${providedAuthors.length} provided author(s):`, providedAuthors);
+      logger.log(
+        `👤 [scrapeTask] Using ${providedAuthors.length} provided author(s):`,
+        providedAuthors,
+      );
     }
 
     let $ = null;
@@ -56,7 +65,9 @@ export async function scrapeTask(query, url, raw_html = null, mediaSource = null
 
     // Use provided HTML if available (from extension's current page DOM)
     if (raw_html) {
-      logger.log(`✅ [scrapeTask] Using provided HTML (${raw_html.length} chars, no fetch!)`);
+      logger.log(
+        `✅ [scrapeTask] Using provided HTML (${raw_html.length} chars, no fetch!)`,
+      );
       $ = cheerio.load(raw_html);
       rawHtml = raw_html;
     }
@@ -113,16 +124,16 @@ export async function scrapeTask(query, url, raw_html = null, mediaSource = null
       // Try to find main content area first (common article selectors)
       let extracted = "";
       const contentSelectors = [
-        'article',
+        "article",
         '[role="main"]',
-        'main',
-        '.article-content',
-        '.post-content',
-        '.entry-content',
-        '.content',
-        '#content',
-        '.article-body',
-        '.story-body',
+        "main",
+        ".article-content",
+        ".post-content",
+        ".entry-content",
+        ".content",
+        "#content",
+        ".article-body",
+        ".story-body",
       ];
 
       for (const selector of contentSelectors) {
@@ -137,7 +148,9 @@ export async function scrapeTask(query, url, raw_html = null, mediaSource = null
       // Fallback: get all text if no content area found
       if (!extracted) {
         extracted = $clean.text().trim();
-        logger.log(`📝 [scrapeTask] Using full page text (no content selector matched)`);
+        logger.log(
+          `📝 [scrapeTask] Using full page text (no content selector matched)`,
+        );
       }
 
       if (extracted.length > 60000) extracted = extracted.slice(0, 60000);
@@ -158,7 +171,9 @@ export async function scrapeTask(query, url, raw_html = null, mediaSource = null
       const htmlAuthors = await extractAuthors($);
       authors = mergeAuthors(authors, htmlAuthors);
     } else {
-      logger.log(`✅ [scrapeTask] Skipping HTML author extraction (using provided authors)`);
+      logger.log(
+        `✅ [scrapeTask] Skipping HTML author extraction (using provided authors)`,
+      );
     }
 
     // Only extract publisher if not already provided via mediaSource
@@ -170,7 +185,9 @@ export async function scrapeTask(query, url, raw_html = null, mediaSource = null
     if (!thumbnail) {
       thumbnail = getBestImage($, url) || "";
       if (thumbnail) {
-        logger.log(`🖼️  [scrapeTask] Extracted thumbnail: ${thumbnail.slice(0, 80)}...`);
+        logger.log(
+          `🖼️  [scrapeTask] Extracted thumbnail: ${thumbnail.slice(0, 80)}...`,
+        );
       }
     }
 
@@ -240,7 +257,9 @@ function cleanForReadability(html) {
 
   // Remove common ad/banner/overlay selectors
   $("[class*='ad-'], [id*='ad-'], [class*='banner'], [id*='banner']").remove();
-  $("[class*='popup'], [id*='popup'], [class*='modal'], [id*='modal']").remove();
+  $(
+    "[class*='popup'], [id*='popup'], [class*='modal'], [id*='modal']",
+  ).remove();
   $("[class*='overlay'], [id*='overlay']").remove();
   $("[class*='promo'], [id*='promo']").remove();
   $("[class*='newsletter'], [id*='newsletter']").remove();

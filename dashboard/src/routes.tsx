@@ -38,6 +38,7 @@ import LandingPage from "./pages/LandingPage";
 import AboutPage from "./pages/AboutPage";
 import ClaimDuelPage from "./pages/ClaimDuelPage";
 import TrueFalseGamePage from "./pages/TrueFalseGamePage";
+import { FoxCasePage } from "./pages/FoxCasePage";
 
 const router = createBrowserRouter([
   {
@@ -132,6 +133,30 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <ClaimDuelPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "claim-duel/:taskId",
+        element: (
+          <ProtectedRoute>
+            <ClaimDuelPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "foxcase",
+        element: (
+          <ProtectedRoute>
+            <FoxCasePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "foxcase/:taskId",
+        element: (
+          <ProtectedRoute>
+            <FoxCasePage />
           </ProtectedRoute>
         ),
       },

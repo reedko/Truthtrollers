@@ -101,6 +101,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 <MenuItem as={RouterLink} to="/claim-duel">
                   Claim Duel
                 </MenuItem>
+                <MenuItem as={RouterLink} to="/foxcase">
+                  FoxCase
+                </MenuItem>
               </MenuList>
             </Menu>
           )}
@@ -188,6 +191,14 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   >
                     Claim Duel
                   </MenuItem>
+                  <MenuItem
+                    as={RouterLink}
+                    to="/foxcase"
+                    onClick={() => handleNavClick("/foxcase")}
+                    fontSize="md"
+                  >
+                    FoxCase
+                  </MenuItem>
                 </MenuList>
               </Menu>
               <Menu>
@@ -269,6 +280,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                     </MenuItem>
                     <MenuItem as={RouterLink} to="/claim-duel" fontSize="md">
                       Claim Duel
+                    </MenuItem>
+                    <MenuItem as={RouterLink} to="/foxcase" fontSize="md">
+                      FoxCase
                     </MenuItem>
                     <MenuItem as={RouterLink} to="/textpad" fontSize="md">
                       TextPad

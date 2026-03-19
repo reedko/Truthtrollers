@@ -152,19 +152,29 @@ ssh -o ConnectTimeout=30 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 "$SE
 set -e
 
 # Check if Redis is installed, if not install it
-if ! command -v redis-server &> /dev/null; then
+if ! command -v redis-server &> /dev/null && ! command -v redis-cli &> /dev/null; then
   echo "📦 Redis not found, installing..."
-  apt-get update -qq
-  apt-get install -y redis-server
-  systemctl enable redis-server
-  systemctl start redis-server
+  # Detect package manager and install
+  if command -v dnf &> /dev/null; then
+    dnf install -y redis
+  elif command -v yum &> /dev/null; then
+    yum install -y redis
+  elif command -v apt-get &> /dev/null; then
+    apt-get update -qq
+    apt-get install -y redis-server
+  else
+    echo "❌ Could not detect package manager (dnf/yum/apt-get)"
+    exit 1
+  fi
+  systemctl enable redis
+  systemctl start redis
   echo "✅ Redis installed and started"
 else
   echo "✅ Redis already installed"
-  # Ensure it's running
-  if ! systemctl is-active --quiet redis-server; then
+  # Ensure it's running (works for both redis and redis-server service names)
+  if ! systemctl is-active --quiet redis 2>/dev/null && ! systemctl is-active --quiet redis-server 2>/dev/null; then
     echo "🔄 Starting Redis..."
-    systemctl start redis-server
+    systemctl start redis 2>/dev/null || systemctl start redis-server 2>/dev/null || true
   fi
 fi
 

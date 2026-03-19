@@ -370,6 +370,9 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                         colorScheme="orange"
                         onClick={(e) => {
                           e.stopPropagation();
+                          // Open URL in new tab so user can visit the page
+                          window.open(ref.url, "_blank");
+                          // Pre-fill the scrape modal with this URL
                           setRetryUrl(ref.url || "");
                           setIsScrapeModalOpen(true);
                         }}

@@ -18,8 +18,10 @@
 import { openAiLLM } from "./openAiLLM.js";
 import { tavilySearch } from "./tavilySearch.js";
 import { bingSearch } from "./bingSearch.js";
+import { duckDuckGoSearch } from "./duckDuckGoSearch.js";
 import { EvidenceEngine } from "./evidenceEngine.js";
 import { query } from "../db/pool.js";
+import PromptManager from "./promptManager.js";
 import { createContentInternal } from "../storage/createContentInternal.js";
 import { persistAuthors } from "../storage/persistAuthors.js";
 import { persistPublishers } from "../storage/persistPublishers.js";
@@ -97,9 +99,13 @@ export async function runEvidenceEngine({
   // Track failed candidates for UI fallback (manual dashboard scrape)
   const failedCandidates = [];
 
+  // Initialize promptManager for database-driven prompts
+  const promptManager = new PromptManager(query);
+
   const engine = new EvidenceEngine(
     {
       llm: openAiLLM,
+      promptManager,
       search: {
         internal: tavilySearch.internal ?? (() => []),
         web: async (opts) => {
@@ -142,6 +148,16 @@ export async function runEvidenceEngine({
             }),
           ]);
           return [...(tav || []), ...(bing || [])];
+        },
+        // Fringe search for low-quality sources (DuckDuckGo - less filtered)
+        fringe: async (opts) => {
+          const start = Date.now();
+          const results = await duckDuckGoSearch.web(opts);
+          const duration = Date.now() - start;
+          logger.log(
+            `⏱️  [BENCHMARK] DuckDuckGo (fringe) took ${duration}ms for query: "${opts.query}"`
+          );
+          return results;
         },
       },
       fetcher: {
@@ -531,6 +547,14 @@ export async function runEvidenceEngine({
     maxCharsPerDoc: 8000,
     enableRedTeam: false,
     maxEvidenceCandidates: 4, // ← Increased from 2 to 4 references per claim
+
+    // ═══════════════════════════════════════════════════════════════════
+    // FRINGE SOURCE DISCOVERY (Two-Pass Search)
+    // ═══════════════════════════════════════════════════════════════════
+    enableFringeSearch: true,  // ← Enable second pass for low-quality sources
+    topKFringeQueries: 3,      // ← Number of fringe queries per claim
+    topKFringeCandidates: 3,   // ← Number of fringe candidates to fetch
+    maxFringeEvidenceCandidates: 2, // ← Extract evidence from 2 fringe sources
   };
 
   const results = await engine.run(claims, null, runOptions);
@@ -547,10 +571,12 @@ export async function runEvidenceEngine({
   // Transform results into persistAIResults format
   // Group evidence by URL to avoid duplicates
   const evidenceByUrl = new Map();
+  const fringeSourcesFound = []; // Track fringe sources for credibility mapping
 
   for (let claimIndex = 0; claimIndex < results.length; claimIndex++) {
     const claimResult = results[claimIndex];
     const evidenceItems = claimResult.evidence || [];
+    const fringeItems = claimResult.fringeEvidence || [];
 
     for (const ev of evidenceItems) {
       if (!ev.url) continue;

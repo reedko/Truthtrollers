@@ -36,6 +36,35 @@ export async function extractAuthors($) {
     });
   }
 
+  // ✅ Fox News specific: author-byline with author-headshot
+  // Pattern: <div class="author-byline"><span class="author-headshot"><img src="..." alt="Name"></span> By <a href="/person/s/name">Name</a></div>
+  $('.author-byline').each((_, byline) => {
+    const $byline = $(byline);
+
+    // Get author image from author-headshot
+    const image = $byline.find('.author-headshot img').first().attr('src') || null;
+
+    // Get author name from link or alt text
+    let name = $byline.find('a[href*="/person"]').first().text().trim();
+
+    // Fallback to img alt if no link found
+    if (!name) {
+      name = $byline.find('.author-headshot img').first().attr('alt') || '';
+    }
+
+    // Clean up name
+    name = name.replace(/^By\s+/i, '').trim();
+
+    if (name && name.length > 2 && !authors.find((a) => a.name === name)) {
+      logger.log(`👤 Found author from Fox News byline: ${name}${image ? ' (with image)' : ''}`);
+      authors.push({
+        name,
+        description: null,
+        image,
+      });
+    }
+  });
+
   // ✅ Extract from byline containers with author links and avatars
   // Common pattern: <div class="byline"><a rel="author"><div class="avatar"><img></div><span class="name">Name</span></a></div>
   const bylineSelectors = [

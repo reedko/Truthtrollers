@@ -1,0 +1,1147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TruthTrollers — Claim Focus / Bracket Hybrid</title>
+    <style>
+      :root {
+        --bg-deep: #041018;
+        --bg-mid: #0b1d29;
+        --bg-soft: #112b37;
+        --panel: rgba(9, 20, 32, 0.56);
+        --panel-strong: rgba(12, 24, 38, 0.72);
+        --line: rgba(126, 207, 255, 0.22);
+        --line-strong: rgba(148, 221, 255, 0.46);
+        --text: #e4f4ff;
+        --muted: #89a9bf;
+        --green: #61efb8;
+        --green-soft: rgba(97, 239, 184, 0.13);
+        --red: #ff6c88;
+        --red-soft: rgba(255, 108, 136, 0.13);
+        --blue: #78a8ff;
+        --blue-soft: rgba(120, 168, 255, 0.14);
+        --cyan: #71dbff;
+        --lav: #a796ff;
+        --curve-1: rgba(113, 219, 255, 0.23);
+        --curve-2: rgba(167, 150, 255, 0.18);
+        --curve-3: rgba(97, 239, 184, 0.18);
+        --shadow: 0 22px 70px rgba(0, 0, 0, 0.4);
+        --radius-xl: 28px;
+        --radius-lg: 22px;
+        --radius-md: 16px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        color: var(--text);
+        min-height: 100vh;
+        background:
+          radial-gradient(
+            circle at 85% 85%,
+            rgba(97, 239, 184, 0.22),
+            transparent 0 22%
+          ),
+          radial-gradient(
+            circle at 78% 88%,
+            rgba(113, 219, 255, 0.18),
+            transparent 0 34%
+          ),
+          radial-gradient(
+            circle at 90% 90%,
+            rgba(71, 145, 118, 0.24),
+            transparent 0 46%
+          ),
+          linear-gradient(
+            180deg,
+            #041018 0%,
+            #071520 32%,
+            #0a1a25 70%,
+            #0d2330 100%
+          );
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(130, 195, 255, 0.05) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(130, 195, 255, 0.05) 1px, transparent 1px);
+        background-size: 40px 40px;
+        mask-image: radial-gradient(
+          circle at center,
+          black 50%,
+          transparent 95%
+        );
+        opacity: 0.32;
+      }
+
+      .app {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        padding: 24px;
+        display: grid;
+        gap: 18px;
+      }
+
+      .glass {
+        position: relative;
+        background: linear-gradient(
+          180deg,
+          rgba(15, 28, 46, 0.68),
+          rgba(8, 16, 27, 0.62)
+        );
+        border: 1px solid var(--line);
+        border-radius: var(--radius-xl);
+        box-shadow:
+          var(--shadow),
+          inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        overflow: hidden;
+      }
+
+      .glass::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 255, 255, 0.07),
+          transparent 26%,
+          transparent 70%,
+          rgba(113, 219, 255, 0.05)
+        );
+        pointer-events: none;
+      }
+
+      .curve-edge::after {
+        content: "";
+        position: absolute;
+        left: -10px;
+        top: 18px;
+        bottom: 18px;
+        width: 22px;
+        border-radius: 18px;
+        background: linear-gradient(
+          180deg,
+          var(--curve-1),
+          var(--curve-2) 46%,
+          var(--curve-3)
+        );
+        box-shadow: 0 0 18px rgba(113, 219, 255, 0.12);
+        filter: blur(0.1px);
+        pointer-events: none;
+      }
+
+      .topbar {
+        display: grid;
+        grid-template-columns: 1.3fr 1fr auto;
+        gap: 16px;
+      }
+
+      .hud {
+        padding: 16px 18px;
+        min-height: 84px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 8px;
+      }
+
+      .eyebrow {
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .title-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      .title {
+        font-size: 20px;
+        font-weight: 760;
+      }
+
+      .subtle {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 13px;
+        border-radius: 999px;
+        border: 1px solid var(--line-strong);
+        background: rgba(255, 255, 255, 0.035);
+        white-space: nowrap;
+        font-size: 13px;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 12px var(--green);
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: 400px minmax(500px, 560px) 340px;
+        gap: 18px;
+        align-items: start;
+      }
+
+      .panel {
+        padding: 18px;
+      }
+
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .panel-title {
+        font-size: 18px;
+        font-weight: 760;
+      }
+
+      button {
+        font: inherit;
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      .outline-btn,
+      .action-btn {
+        padding: 11px 14px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.035);
+        transition: 180ms ease;
+      }
+
+      .outline-btn:hover,
+      .action-btn:hover {
+        transform: translateY(-1px);
+        border-color: var(--line-strong);
+      }
+
+      .case-card {
+        position: relative;
+        padding: 18px;
+        border-radius: 24px;
+        border: 1px solid rgba(113, 219, 255, 0.22);
+        background: linear-gradient(
+          180deg,
+          rgba(10, 21, 35, 0.78),
+          rgba(10, 18, 29, 0.68)
+        );
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+        min-height: 520px;
+      }
+
+      .case-card::after {
+        content: "";
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-top: 12px solid transparent;
+        border-bottom: 12px solid transparent;
+        border-left: 16px solid rgba(113, 219, 255, 0.35);
+        filter: drop-shadow(0 0 8px rgba(113, 219, 255, 0.18));
+        opacity: 0.9;
+      }
+
+      .score-row {
+        display: flex;
+        align-items: stretch;
+        gap: 14px;
+        margin-bottom: 16px;
+      }
+
+      .score-stack {
+        flex: 1;
+        display: grid;
+        gap: 10px;
+      }
+
+      .score-label-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .score-chip {
+        padding: 10px 12px;
+        border-radius: 14px;
+        border: 1px solid rgba(113, 219, 255, 0.2);
+        background: rgba(255, 255, 255, 0.035);
+        color: var(--cyan);
+        font-weight: 800;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      .claim-text {
+        margin-top: 8px;
+        font-size: 24px;
+        line-height: 1.3;
+        font-weight: 690;
+      }
+
+      .badge-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 18px;
+      }
+
+      .stat-badge {
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        background: rgba(255, 255, 255, 0.035);
+        padding: 12px 14px;
+        min-height: 78px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 4px;
+      }
+
+      .stat-badge .label {
+        text-transform: uppercase;
+        letter-spacing: 0.09em;
+        font-size: 11px;
+        color: rgba(228, 244, 255, 0.8);
+      }
+
+      .stat-badge .value {
+        font-size: 22px;
+        font-weight: 820;
+      }
+
+      .theme-green {
+        background: linear-gradient(
+          180deg,
+          var(--green-soft),
+          rgba(255, 255, 255, 0.03)
+        );
+        border-color: rgba(97, 239, 184, 0.2);
+      }
+      .theme-green .value,
+      .theme-green .label {
+        color: var(--green);
+      }
+
+      .theme-red {
+        background: linear-gradient(
+          180deg,
+          var(--red-soft),
+          rgba(255, 255, 255, 0.03)
+        );
+        border-color: rgba(255, 108, 136, 0.2);
+      }
+      .theme-red .value,
+      .theme-red .label {
+        color: var(--red);
+      }
+
+      .theme-blue {
+        background: linear-gradient(
+          180deg,
+          var(--blue-soft),
+          rgba(255, 255, 255, 0.03)
+        );
+        border-color: rgba(120, 168, 255, 0.22);
+      }
+      .theme-blue .value,
+      .theme-blue .label {
+        color: var(--blue);
+      }
+
+      .theme-cyan {
+        background: linear-gradient(
+          180deg,
+          rgba(113, 219, 255, 0.12),
+          rgba(255, 255, 255, 0.03)
+        );
+        border-color: rgba(113, 219, 255, 0.22);
+      }
+      .theme-cyan .value,
+      .theme-cyan .label {
+        color: var(--cyan);
+      }
+
+      .change-claim {
+        width: 100%;
+        margin-top: 16px;
+        text-align: left;
+        padding: 14px 16px;
+        border-radius: 16px;
+        border: 1px solid rgba(113, 219, 255, 0.24);
+        background: linear-gradient(
+          180deg,
+          rgba(14, 31, 50, 0.86),
+          rgba(7, 16, 28, 0.8)
+        );
+      }
+
+      .focus-panel {
+        padding: 18px;
+        min-height: 760px;
+        display: grid;
+        grid-template-rows: auto auto auto 1fr auto;
+        gap: 16px;
+        max-width: 560px;
+      }
+
+      .progress-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.035);
+        width: 100%;
+      }
+
+      .progress-bar {
+        height: 10px;
+        flex: 1;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .progress-bar > span {
+        display: block;
+        height: 100%;
+        width: 39%;
+        background: linear-gradient(90deg, var(--cyan), var(--blue));
+        box-shadow: 0 0 18px rgba(113, 219, 255, 0.2);
+      }
+
+      .score-progress .progress-bar > span {
+        width: 64%;
+        background: linear-gradient(
+          90deg,
+          rgba(120, 205, 160, 0.7),
+          var(--green)
+        );
+        box-shadow: 0 0 16px rgba(97, 239, 184, 0.18);
+      }
+
+      .source-list {
+        display: flex;
+        gap: 14px;
+        align-items: stretch;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x mandatory;
+        padding: 4px 56px 8px 56px;
+        margin: 0 -38px;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(113, 219, 255, 0.45) transparent;
+      }
+
+      .source-list::-webkit-scrollbar {
+        height: 8px;
+      }
+
+      .source-list::-webkit-scrollbar-track {
+        background: transparent;
+      }
+
+      .source-list::-webkit-scrollbar-thumb {
+        background: rgba(113, 219, 255, 0.35);
+        border-radius: 999px;
+      }
+
+      .source-claim-card {
+        position: relative;
+        padding: 18px 18px 16px 28px;
+        border-radius: 24px;
+        border: 1px solid rgba(113, 219, 255, 0.18);
+        background: linear-gradient(
+          180deg,
+          rgba(14, 24, 40, 0.82),
+          rgba(9, 16, 29, 0.72)
+        );
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+        min-height: 240px;
+        width: 440px;
+        min-width: 440px;
+        max-width: 440px;
+        flex: 0 0 440px;
+        scroll-snap-align: center;
+      }
+
+      .source-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: start;
+      }
+
+      .source-name {
+        font-size: 15px;
+        font-weight: 760;
+      }
+
+      .source-claim-text {
+        margin-top: 12px;
+        font-size: 21px;
+        line-height: 1.36;
+        font-weight: 670;
+      }
+
+      .rationale-box {
+        margin-top: 14px;
+        padding: 14px 15px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.035);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        font-size: 14px;
+        line-height: 1.45;
+        color: #d4e9ff;
+      }
+
+      .micro-badges {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .micro-badge {
+        width: 100%;
+        min-width: 0;
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        background: rgba(255, 255, 255, 0.035);
+        padding: 10px 12px;
+        min-height: 72px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .micro-badge .label {
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 10px;
+        margin-bottom: 4px;
+      }
+
+      .micro-badge .value {
+        font-size: 18px;
+        font-weight: 800;
+      }
+
+      .source-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding-top: 6px;
+      }
+
+      .action-btn.support {
+        border-color: rgba(97, 239, 184, 0.24);
+        color: var(--green);
+      }
+      .action-btn.refute {
+        border-color: rgba(255, 108, 136, 0.24);
+        color: var(--red);
+      }
+      .action-btn.nuance {
+        border-color: rgba(120, 168, 255, 0.24);
+        color: var(--blue);
+      }
+      .action-btn.next {
+        border-color: rgba(113, 219, 255, 0.24);
+        color: var(--cyan);
+      }
+
+      .side-stack {
+        display: grid;
+        gap: 16px;
+      }
+
+      .info-box {
+        padding: 16px;
+      }
+
+      .impact-card {
+        margin-top: 12px;
+        border-radius: 18px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.035);
+        padding: 15px;
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+      }
+
+      .impact-delta {
+        font-size: 32px;
+        font-weight: 900;
+        color: var(--green);
+      }
+
+      .bar-rows {
+        margin-top: 14px;
+        display: grid;
+        gap: 10px;
+      }
+
+      .bar-row {
+        display: grid;
+        grid-template-columns: 82px 1fr 46px;
+        gap: 10px;
+        align-items: center;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .bar {
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        overflow: hidden;
+      }
+
+      .bar > span {
+        display: block;
+        height: 100%;
+        border-radius: 999px;
+      }
+
+      .bar.author > span {
+        width: 71%;
+        background: linear-gradient(90deg, var(--blue), var(--cyan));
+      }
+      .bar.publisher > span {
+        width: 83%;
+        background: linear-gradient(90deg, var(--green), var(--cyan));
+      }
+      .bar.reliability > span {
+        width: 76%;
+        background: linear-gradient(90deg, var(--lav), var(--blue));
+      }
+
+      ul.meta-list {
+        list-style: none;
+        padding: 0;
+        margin: 12px 0 0;
+        display: grid;
+        gap: 10px;
+      }
+
+      .meta-list li {
+        padding: 11px 13px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.03);
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 14px;
+      }
+
+      .phone-frame {
+        margin-top: 8px;
+        border-radius: 30px;
+        padding: 14px;
+        border: 1px solid rgba(113, 219, 255, 0.18);
+        background: linear-gradient(
+          180deg,
+          rgba(8, 15, 24, 0.9),
+          rgba(13, 23, 35, 0.8)
+        );
+      }
+
+      .phone-screen {
+        border-radius: 24px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: linear-gradient(
+          180deg,
+          rgba(10, 20, 32, 0.88),
+          rgba(8, 14, 24, 0.84)
+        );
+      }
+
+      .phone-header,
+      .phone-body {
+        padding: 12px;
+      }
+
+      .phone-card {
+        position: relative;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 12px 12px 12px 20px;
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      .phone-tags {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+
+      .phone-tag {
+        font-size: 11px;
+        padding: 7px 10px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      @media (max-width: 1320px) {
+        .workspace {
+          grid-template-columns: 400px minmax(420px, 1fr);
+        }
+        .side-stack {
+          grid-column: 1 / -1;
+          grid-template-columns: repeat(3, 1fr);
+        }
+      }
+
+      @media (max-width: 980px) {
+        .topbar,
+        .workspace,
+        .side-stack {
+          grid-template-columns: 1fr;
+        }
+        .focus-panel {
+          min-height: auto;
+          max-width: none;
+        }
+        .source-list {
+          margin: 0 -18px;
+          padding: 4px 28px 8px 28px;
+        }
+        .source-claim-card {
+          width: min(84vw, 440px);
+          min-width: min(84vw, 440px);
+          max-width: min(84vw, 440px);
+          flex-basis: min(84vw, 440px);
+        }
+        .case-card::after {
+          right: 10px;
+          border-left-width: 14px;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .app {
+          padding: 12px;
+        }
+        .badge-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+        .source-claim-card {
+          padding-left: 24px;
+        }
+        .source-claim-text {
+          font-size: 18px;
+        }
+        .claim-text {
+          font-size: 20px;
+        }
+        .title {
+          font-size: 18px;
+        }
+        .micro-badges {
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+        .source-list {
+          margin: 0 -12px;
+          padding: 4px 24px 8px 24px;
+        }
+        .progress-wrap {
+          padding: 12px 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <section class="topbar">
+        <div class="glass hud curve-edge">
+          <div class="eyebrow">TruthTrollers / Claim Focus</div>
+          <div class="title-row">
+            <div>
+              <div class="title">
+                Pinned case claim + scrolling source claims
+              </div>
+              <div class="subtle">
+                Synced badges across panels, curved left glow, green-blue
+                lower-right radiation.
+              </div>
+            </div>
+            <div class="pill">
+              <span class="dot"></span> Live verimeter active
+            </div>
+          </div>
+        </div>
+
+        <div class="glass hud curve-edge">
+          <div class="title-row">
+            <div>
+              <div class="eyebrow">Case rating</div>
+              <div class="title">+28 leaning true</div>
+            </div>
+            <div class="subtle">Confidence 71</div>
+          </div>
+        </div>
+
+        <div class="glass hud curve-edge" style="min-width: 182px">
+          <div class="eyebrow">Relevant stack</div>
+          <div class="title">8 / 19</div>
+          <div class="subtle">Source claims reviewed</div>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <aside class="glass panel curve-edge">
+          <div class="panel-header">
+            <div>
+              <div class="eyebrow">Pinned case claim</div>
+              <div class="panel-title">Case claim focus</div>
+            </div>
+            <button class="outline-btn">Change claim</button>
+          </div>
+
+          <div class="case-card">
+            <div class="score-row">
+              <div class="score-stack">
+                <div class="progress-wrap">
+                  <span class="eyebrow" style="color: var(--text)"
+                    >Progress</span
+                  >
+                  <div class="progress-bar"><span></span></div>
+                  <span class="subtle">Claim 8 of 19</span>
+                </div>
+                <div class="score-label-row"></div>
+                <div class="score-label-row">
+                  <div>
+                    <div class="eyebrow">Claim rating</div>
+                    <div class="subtle">Verimeter / live update</div>
+                  </div>
+                  <div class="score-chip">Score +28</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="eyebrow">Claim text</div>
+            <div class="claim-text">
+              “COVID vaccines do not increase long-term chronic disease risk
+              compared with unvaccinated populations.”
+            </div>
+
+            <div class="badge-grid">
+              <div class="stat-badge theme-cyan">
+                <div class="label">Evidence</div>
+                <div class="value">16</div>
+              </div>
+              <div class="stat-badge theme-green">
+                <div class="label">Supports</div>
+                <div class="value">9</div>
+              </div>
+              <div class="stat-badge theme-red">
+                <div class="label">Refutes</div>
+                <div class="value">4</div>
+              </div>
+              <div class="stat-badge theme-blue">
+                <div class="label">Nuance</div>
+                <div class="value">3</div>
+              </div>
+            </div>
+
+            <button class="change-claim">Browse other case claims →</button>
+          </div>
+        </aside>
+
+        <main class="glass focus-panel curve-edge">
+          <div class="panel-header" style="margin-bottom: 0">
+            <div>
+              <div class="eyebrow">Source claim stream</div>
+              <div class="panel-title">Relevant claims scrolling by</div>
+            </div>
+            <div class="pill">Horizontal card rail</div>
+          </div>
+
+          <div
+            class="progress-wrap score-progress"
+            style="
+              border-color: rgba(97, 239, 184, 0.12);
+              background: rgba(97, 239, 184, 0.05);
+            "
+          >
+            <span class="eyebrow" style="color: var(--green)">Score</span>
+            <div class="progress-bar"><span></span></div>
+            <span class="subtle">64%</span>
+          </div>
+
+          <div class="source-list">
+            <article class="source-claim-card curve-edge">
+              <div class="source-top">
+                <div>
+                  <div class="eyebrow">Source claim</div>
+                  <div class="source-name">
+                    New England Journal study summary
+                  </div>
+                </div>
+                <div class="pill">Current best fit</div>
+              </div>
+
+              <div class="rationale-box">
+                <div class="eyebrow">AI rationale / claim-link notes</div>
+                Directly addresses chronic disease outcomes and explicitly
+                compares vaccinated and unvaccinated cohorts over follow-up
+                time.
+              </div>
+
+              <div class="micro-badges">
+                <div class="micro-badge theme-red">
+                  <div class="label">Relevance</div>
+                  <div class="value">92</div>
+                </div>
+                <div class="micro-badge theme-blue">
+                  <div class="label">Confidence</div>
+                  <div class="value">88</div>
+                </div>
+                <div class="micro-badge theme-green">
+                  <div class="label">Support</div>
+                  <div class="value">+0.84</div>
+                </div>
+              </div>
+
+              <div class="source-claim-text">
+                “In matched population cohorts, vaccination status was not
+                associated with higher long-term chronic inflammatory disease
+                incidence over the follow-up window.”
+              </div>
+            </article>
+
+            <article class="source-claim-card curve-edge">
+              <div class="source-top">
+                <div>
+                  <div class="eyebrow">Source claim</div>
+                  <div class="source-name">Health outcomes review article</div>
+                </div>
+                <div class="pill">Alternative candidate</div>
+              </div>
+
+              <div class="rationale-box">
+                <div class="eyebrow">AI rationale / claim-link notes</div>
+                Good support signal, but broader and less direct. Better as
+                secondary evidence unless the detail panel reveals stronger
+                source context.
+              </div>
+
+              <div class="micro-badges">
+                <div class="micro-badge theme-red">
+                  <div class="label">Relevance</div>
+                  <div class="value">74</div>
+                </div>
+                <div class="micro-badge theme-blue">
+                  <div class="label">Confidence</div>
+                  <div class="value">69</div>
+                </div>
+                <div class="micro-badge theme-green">
+                  <div class="label">Support</div>
+                  <div class="value">+0.66</div>
+                </div>
+              </div>
+
+              <div class="source-claim-text">
+                “Available evidence continues to support an acceptable overall
+                safety profile for current vaccination programs across broad
+                populations.”
+              </div>
+            </article>
+
+            <article class="source-claim-card curve-edge">
+              <div class="source-top">
+                <div>
+                  <div class="eyebrow">Source claim</div>
+                  <div class="source-name">Cohort follow-up commentary</div>
+                </div>
+                <div class="pill">Next candidate</div>
+              </div>
+
+              <div class="rationale-box">
+                <div class="eyebrow">AI rationale / claim-link notes</div>
+                This one is partially visible on purpose so the user feels the
+                rail continues and can flick sideways through the evidence
+                queue.
+              </div>
+
+              <div class="micro-badges">
+                <div class="micro-badge theme-red">
+                  <div class="label">Relevance</div>
+                  <div class="value">63</div>
+                </div>
+                <div class="micro-badge theme-blue">
+                  <div class="label">Confidence</div>
+                  <div class="value">72</div>
+                </div>
+                <div class="micro-badge theme-green">
+                  <div class="label">Support</div>
+                  <div class="value">+0.41</div>
+                </div>
+              </div>
+
+              <div class="source-claim-text">
+                “Long-term monitoring did not identify a statistically
+                meaningful chronic disease signal, though subgroup analysis
+                remained limited.”
+              </div>
+            </article>
+          </div>
+
+          <div class="source-actions">
+            <button class="action-btn next">Skip to next relevant claim</button>
+            <button class="action-btn support">Support → open detail</button>
+            <button class="action-btn refute">Refute → open detail</button>
+            <button class="action-btn nuance">Nuance → open detail</button>
+          </div>
+        </main>
+
+        <aside class="side-stack">
+          <section class="glass info-box curve-edge">
+            <div class="eyebrow">Projected impact</div>
+            <div class="panel-title">If current claim is linked</div>
+            <div class="impact-card">
+              <div>
+                <div class="subtle">Verimeter shift</div>
+                <div class="impact-delta">+5</div>
+              </div>
+              <div>
+                <div class="subtle">Confidence</div>
+                <div class="title" style="font-size: 18px">71 → 76</div>
+              </div>
+            </div>
+            <div class="bar-rows">
+              <div class="bar-row">
+                <span>Author</span>
+                <div class="bar author"><span></span></div>
+                <span>71</span>
+              </div>
+              <div class="bar-row">
+                <span>Publisher</span>
+                <div class="bar publisher"><span></span></div>
+                <span>83</span>
+              </div>
+              <div class="bar-row">
+                <span>Reliability</span>
+                <div class="bar reliability"><span></span></div>
+                <span>76</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="glass info-box curve-edge">
+            <div class="eyebrow">Synced badge language</div>
+            <div class="panel-title">Color mapping</div>
+            <ul class="meta-list">
+              <li>
+                <span style="color: var(--green)">Supports / Support</span
+                ><strong>Green</strong>
+              </li>
+              <li>
+                <span style="color: var(--red)">Refutes / Relevance</span
+                ><strong>Red</strong>
+              </li>
+              <li>
+                <span style="color: var(--blue)">Nuance / Confidence</span
+                ><strong>Blue</strong>
+              </li>
+            </ul>
+          </section>
+
+          <section class="glass info-box curve-edge">
+            <div class="eyebrow">Phone pass</div>
+            <div class="panel-title">Mobile visual direction</div>
+            <div class="phone-frame">
+              <div class="phone-screen">
+                <div class="phone-header">
+                  <div class="eyebrow">Pinned claim</div>
+                  <div
+                    style="font-weight: 760; font-size: 14px; margin-top: 4px"
+                  >
+                    Claim focus + swipe source stream
+                  </div>
+                </div>
+                <div class="phone-card curve-edge">
+                  <div style="font-size: 13px; font-weight: 700">
+                    Vaccines do not increase chronic disease risk…
+                  </div>
+                  <div class="phone-tags">
+                    <span class="phone-tag theme-green">Supports 9</span>
+                    <span class="phone-tag theme-red">Refutes 4</span>
+                    <span class="phone-tag theme-blue">Nuance 3</span>
+                  </div>
+                </div>
+                <div class="phone-card curve-edge">
+                  <div style="font-size: 12px; color: var(--muted)">
+                    Source claim
+                  </div>
+                  <div
+                    style="margin-top: 4px; font-size: 13px; line-height: 1.35"
+                  >
+                    Matched cohorts showed no rise in chronic inflammatory
+                    incidence…
+                  </div>
+                  <div class="phone-tags">
+                    <span class="phone-tag theme-red">Rel 92</span>
+                    <span class="phone-tag theme-blue">Conf 88</span>
+                    <span class="phone-tag theme-green">Supp +.84</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </section>
+    </div>
+  </body>
+</html>

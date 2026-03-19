@@ -44,7 +44,7 @@ import { useTaskStore } from '../store/useTaskStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { addClaimLink, fetchLiveVerimeterScore, fetchClaimScoresForTask } from '../services/useDashboardAPI';
 import { fetchReferenceClaimTaskLinks } from '../services/referenceClaimRelevance';
-import ClaimLinkModal from '../components/modals/ClaimLinkModal';
+import ClaimLinkOverlay from '../components/overlays/ClaimLinkOverlay';
 import VerimeterMeter from '../components/VerimeterMeter';
 
 const API_BASE_URL = import.meta.env.VITE_BASE_URL || 'https://localhost:5001';
@@ -111,7 +111,6 @@ export default function ClaimDuelPage() {
 
   // Modal state for claim linking
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalRelationship, setModalRelationship] = useState<'supports' | 'refutes'>('supports');
   const [modalSupportLevel, setModalSupportLevel] = useState(0);
 
   // Refs for syncing claim box heights
@@ -399,9 +398,16 @@ export default function ClaimDuelPage() {
       console.log('📊 AI-suggested (score > 0):', allCandidates.filter(c => c.relevance_score > 0).length);
       console.log('📊 Has existing link:', allCandidates.filter(c => c.existing_link).length);
 
-      // 🎯 SHOW ALL CLAIMS: Allow users to review all candidates, not just AI-suggested ones
-      // Sort by: 1) Already linked, 2) AI-suggested (score > 0), 3) All others
-      const relevantCandidates = allCandidates.sort((a, b) => {
+      // 🎯 FILTER TO ONLY RELEVANT CLAIMS: Show only claims that are AI-suggested OR already linked
+      // This prevents showing all 197 irrelevant claims for every case claim
+      const filteredCandidates = allCandidates.filter(c =>
+        c.relevance_score > 0 || c.existing_link
+      );
+
+      console.log('🔍 Filtered to relevant candidates:', filteredCandidates.length);
+
+      // Sort by: 1) Already linked, 2) AI-suggested by score
+      const relevantCandidates = filteredCandidates.sort((a, b) => {
         // Already linked claims first
         if (a.existing_link && !b.existing_link) return -1;
         if (!a.existing_link && b.existing_link) return 1;
@@ -505,7 +511,6 @@ export default function ClaimDuelPage() {
     else if (relationshipType === 'context') supportLevel = currentCandidate.ai_confidence ? currentCandidate.ai_confidence * 0.5 : 0.5;
     else if (relationshipType === 'duplicate') supportLevel = 1.0;
 
-    setModalRelationship(relationshipMap[relationshipType]);
     setModalSupportLevel(supportLevel);
     setIsModalOpen(true);
   };
@@ -797,13 +802,15 @@ export default function ClaimDuelPage() {
               </Badge>
             </HStack>
             {/* Verimeter Bar for Mobile */}
-            <Box mt={2} position="relative" zIndex={1}>
-              <VerimeterMeter
-                score={focusClaim.verimeter_score / 100}
-                width="100%"
-                showInterpretation={false}
-              />
-            </Box>
+            {focusClaim.verimeter_score !== undefined && (
+              <Box mt={2} position="relative" zIndex={1}>
+                <VerimeterMeter
+                  score={focusClaim.verimeter_score / 100}
+                  width="100%"
+                  showInterpretation={false}
+                />
+              </Box>
+            )}
           </Box>
         </Box>
       )}
@@ -1653,18 +1660,26 @@ export default function ClaimDuelPage() {
 
       {/* Claim Link Modal */}
       {currentCandidate && focusClaim && (
-        <ClaimLinkModal
+        <ClaimLinkOverlay
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           sourceClaim={{
-            claim_id: currentCandidate.source_claim_id,
+            claim_id: currentCandidate.source_claim_id || currentCandidate.claim_id,
             claim_text: currentCandidate.claim_text
           }}
-          targetClaim={focusClaim as any}
+          targetClaim={{
+            ...focusClaim,
+            claim_id: focusClaim.claim_id,
+            claim_text: focusClaim.claim_text,
+            content_id: selectedTask?.content_id,
+            veracity_score: focusClaim.verimeter_score || 0,
+            confidence_level: 0,
+            last_verified: new Date().toISOString(),
+            references: []
+          }}
           onLinkCreated={handleModalLinkCreated}
-          initialNotes={currentCandidate.ai_rationale}
-          initialRelationship={modalRelationship}
-          initialSupportLevel={modalSupportLevel}
+          rationale={currentCandidate.ai_rationale}
+          aiSupportLevel={modalSupportLevel}
         />
       )}
 

@@ -828,10 +828,15 @@ export default function createContentScrapeRoutes({ query }) {
         [url]
       );
 
+      let existingContentId = null;
+      let existingContentName = null;
+      let isRetryScrape = false;
+
       if (existing.length > 0) {
-        const existingContentId = existing[0].content_id;
+        existingContentId = existing[0].content_id;
+        existingContentName = existing[0].content_name;
         logger.log(
-          `♻️  [/api/scrape-reference] Reference already exists: content_id=${existingContentId} ("${existing[0].content_name}")`
+          `♻️  [/api/scrape-reference] Reference already exists: content_id=${existingContentId} ("${existingContentName}")`
         );
 
         // Ensure content_relations link exists (if taskContentId provided)
@@ -856,20 +861,35 @@ export default function createContentScrapeRoutes({ query }) {
           }
         }
 
-        // Return existing reference immediately (skip scraping and claim extraction)
-        return res.json({
-          success: true,
-          contentId: existingContentId,
-          duplicate: true,
-          message: `Reference already exists as "${existing[0].content_name}"`,
-          duration: Date.now() - startTime,
-        });
+        // 🔄 RETRY SCRAPE: If we have raw_html/raw_text, DON'T return early
+        // Instead, continue to claim extraction and evidence engine
+        isRetryScrape = !!(raw_html || raw_text) && taskContentId;
+
+        if (isRetryScrape) {
+          logger.log(`🔄 [/api/scrape-reference] RETRY SCRAPE DETECTED - Will extract claims and run evidence engine`);
+          logger.log(`   📋 URL: ${url}`);
+          logger.log(`   🆔 Existing content_id: ${existingContentId}`);
+          logger.log(`   📄 Has raw_html: ${!!raw_html} (${raw_html?.length || 0} chars)`);
+          logger.log(`   📝 Has raw_text: ${!!raw_text} (${raw_text?.length || 0} chars)`);
+          logger.log(`   🎯 Task content_id: ${taskContentId}`);
+          // Don't return - continue to claim extraction below
+        } else {
+          // Not a retry scrape - just return the duplicate
+          return res.json({
+            success: true,
+            contentId: existingContentId,
+            duplicate: true,
+            message: `Reference already exists as "${existing[0].content_name}"`,
+            duration: Date.now() - startTime,
+          });
+        }
       }
 
       // -----------------------------------------------------------------
       // 1. SCRAPE REFERENCE (using pre-fetched HTML/text if available)
+      // For retry scrapes, scrapeReference will update existing content with authors/metadata
       // -----------------------------------------------------------------
-      logger.log(`  ⏱️  [1/5] Scraping reference...`);
+      logger.log(`  ⏱️  [1/5] Scraping reference${isRetryScrape ? ' (RETRY SCRAPE - will update existing content with metadata)' : ''}...`);
       const scrapeResult = await scrapeReference(query, {
         url,
         raw_text,

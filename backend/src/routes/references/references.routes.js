@@ -331,7 +331,7 @@ export default function createReferencesRoutes({ query, pool }) {
   });
 
   // Hide reference for current user (soft-delete per user)
-  router.post("/api/references/hide", async (req, res) => {
+  router.post("/api/references/hide", authenticateToken, async (req, res) => {
     const { taskContentId, referenceContentId } = req.body;
     const userId = req.user?.user_id;
 
@@ -395,7 +395,7 @@ export default function createReferencesRoutes({ query, pool }) {
   });
 
   // Unhide reference for current user
-  router.post("/api/references/unhide", async (req, res) => {
+  router.post("/api/references/unhide", authenticateToken, async (req, res) => {
     const { taskContentId, referenceContentId } = req.body;
     const userId = req.user?.user_id;
 

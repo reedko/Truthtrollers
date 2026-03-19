@@ -60,6 +60,9 @@ const ScrapeReferenceModal: React.FC<{
 
     setIsScraping(true);
 
+    // Start background job tracking
+    const jobId = useTaskStore.getState().startBackgroundJob(`Scraping: ${url.substring(0, 40)}...`);
+
     try {
       console.log("🚀 Creating scrape job for:", url);
 
@@ -108,6 +111,9 @@ const ScrapeReferenceModal: React.FC<{
             // ✅ Re-fetch the latest references
             await useTaskStore.getState().fetchReferences(Number(taskId));
 
+            // End background job
+            useTaskStore.getState().endBackgroundJob(jobId);
+
             toast({
               title: "Source Added!",
               description: "The source has been successfully scraped and linked.",
@@ -120,6 +126,9 @@ const ScrapeReferenceModal: React.FC<{
             setIsScraping(false);
             return true;
           } else if (jobStatus.status === 'failed') {
+            // End background job
+            useTaskStore.getState().endBackgroundJob(jobId);
+
             toast({
               title: "Scrape Failed",
               description: jobStatus.error_message || "The extension failed to scrape the page.",
@@ -144,6 +153,9 @@ const ScrapeReferenceModal: React.FC<{
         if (done || attempts >= maxAttempts) {
           clearInterval(pollInterval);
           if (attempts >= maxAttempts) {
+            // End background job on timeout
+            useTaskStore.getState().endBackgroundJob(jobId);
+
             toast({
               title: "Timeout",
               description: "Scrape job is taking longer than expected. Check extension console.",
@@ -157,6 +169,10 @@ const ScrapeReferenceModal: React.FC<{
       }, 2000);
     } catch (error) {
       console.error("❌ Error in scraping reference:", error);
+
+      // End background job on error
+      useTaskStore.getState().endBackgroundJob(jobId);
+
       toast({
         title: "Scrape Error",
         description: `Error: ${
@@ -181,6 +197,15 @@ const ScrapeReferenceModal: React.FC<{
         <ModalCloseButton />
         <ModalBody>
           <VStack align="start" spacing={4} width="100%">
+            {/* ✅ Retry scrape instructions */}
+            {initialUrl && (
+              <Text fontSize="sm" color="orange.600" bg="orange.50" p={3} borderRadius="md" borderLeft="4px solid" borderColor="orange.400">
+                📋 <strong>Retry Scrape Instructions:</strong><br/>
+                The page has been opened in a new tab. Some sites have anti-robot protections (captcha, Cloudflare, etc.).
+                Once the page is fully loaded and you've passed any verification steps, navigate back to this tab and click "Scrape Reference" to complete the re-scrape.
+              </Text>
+            )}
+
             {/* ✅ Show source of URL */}
             {url && (
               <Text fontSize="sm" color={initialUrl ? "orange.600" : "gray.500"}>

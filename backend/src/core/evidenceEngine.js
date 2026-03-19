@@ -37,14 +37,55 @@ export class EvidenceEngine {
     const label = `[EV][queries][${claim.id}]`;
     logger.time(label);
 
-    const system =
-      "You generate diverse, high-precision search queries for fact-checking.";
-    const user = `Claim: ${claim.text}\nContext: ${JSON.stringify(
-      ctx ?? {}
-    )}\nTask: Produce ${n} queries across intents.`;
+    // Default fallback prompts if database load fails
+    const fallbackSystem =
+      "You generate diverse, high-precision search queries for fact-checking. CRITICAL: You must create queries designed to find sources that SUPPORT, REFUTE, and provide NUANCED perspectives on the claim.";
+    const fallbackUser = `Claim: {{claimText}}\nContext: {{context}}\n\nTask: Produce {{n}} queries across intents with the following distribution:
+- At least 2 queries designed to find sources that SUPPORT the claim (prefer 3)
+- At least 2 queries designed to find sources that REFUTE the claim (prefer 3)
+- At least 1 query designed to find sources that provide NUANCED perspective on the claim (prefer 3)
+- The remaining queries can cover background or factbox information
+
+IMPORTANT: Design your queries to actively seek out sources with different perspectives. For refute queries, look for credible counterarguments, debunking sites, fact-checks, or alternative evidence. For support queries, look for sources that would confirm or provide evidence for the claim. For nuance queries, look for sources that provide context, caveats, or partial support/refutation.`;
+
+    let system = fallbackSystem;
+    let user = fallbackUser;
+
+    // Try to load from database if promptManager is available
+    if (this.deps.promptManager) {
+      try {
+        const systemPrompt = await this.deps.promptManager.getPrompt(
+          'evidence_query_generation_system',
+          { system: fallbackSystem, user: '', parameters: {} }
+        );
+        const userPrompt = await this.deps.promptManager.getPrompt(
+          'evidence_query_generation_user',
+          { system: '', user: fallbackUser, parameters: { n: 6 } }
+        );
+
+        system = systemPrompt.system;
+        user = userPrompt.user
+          .replace(/\{\{claimText\}\}/g, claim.text)
+          .replace(/\{\{context\}\}/g, JSON.stringify(ctx ?? {}))
+          .replace(/\{\{n\}\}/g, n);
+      } catch (err) {
+        logger.warn(`⚠️ [EvidenceEngine] Error loading DB prompts, using fallback:`, err.message);
+        // Use fallback - replace template variables
+        user = fallbackUser
+          .replace(/\{\{claimText\}\}/g, claim.text)
+          .replace(/\{\{context\}\}/g, JSON.stringify(ctx ?? {}))
+          .replace(/\{\{n\}\}/g, n);
+      }
+    } else {
+      // No promptManager, use fallback with template replacement
+      user = fallbackUser
+        .replace(/\{\{claimText\}\}/g, claim.text)
+        .replace(/\{\{context\}\}/g, JSON.stringify(ctx ?? {}))
+        .replace(/\{\{n\}\}/g, n);
+    }
 
     const schema =
-      '{"queries":[{"query":"...","intent":"support|refute|background|factbox"}]}';
+      '{"queries":[{"query":"...","intent":"support|refute|nuance|background|factbox"}]}';
 
     const out = await this.deps.llm.generate({
       system,
@@ -69,6 +110,79 @@ export class EvidenceEngine {
       qs,
       (q) => `${q.intent}|${String(q.query || "").toLowerCase()}`
     );
+  }
+
+  /**
+   * Generate fringe-seeking queries to find low-quality refutations
+   * Used in two-pass search to map source credibility
+   */
+  generateFringeQueries(claim, claimType = null, n = 3) {
+    logger.log(`🔍 [EV][fringe-queries][${claim.id}] Generating fringe queries for claim type: ${claimType || 'unknown'}`);
+
+    const baseQueries = [
+      { query: `${claim.text} hoax`, intent: 'refute-fringe' },
+      { query: `${claim.text} false flag`, intent: 'refute-fringe' },
+      { query: `${claim.text} conspiracy theory`, intent: 'refute-fringe' },
+    ];
+
+    // Claim-type specific fringe sites and keywords
+    const typeSpecificQueries = {
+      antisemitism: [
+        { query: `site:gab.com ${claim.text}`, intent: 'refute-fringe' },
+        { query: `site:bitchute.com ${claim.text}`, intent: 'refute-fringe' },
+        { query: `"antisemitism myth" ${claim.text}`, intent: 'refute-fringe' },
+      ],
+      vaccines: [
+        { query: `site:naturalnews.com ${claim.text}`, intent: 'refute-fringe' },
+        { query: `site:childrenshealthdefense.org ${claim.text}`, intent: 'refute-fringe' },
+        { query: `"vaccine dangers coverup" ${claim.text}`, intent: 'refute-fringe' },
+      ],
+      climate: [
+        { query: `site:wattsupwiththat.com ${claim.text}`, intent: 'refute-fringe' },
+        { query: `"climate hoax" ${claim.text}`, intent: 'refute-fringe' },
+      ],
+      covid: [
+        { query: `site:naturalnews.com ${claim.text}`, intent: 'refute-fringe' },
+        { query: `"covid hoax" ${claim.text}`, intent: 'refute-fringe' },
+        { query: `"plandemic" ${claim.text}`, intent: 'refute-fringe' },
+      ],
+      pesticides: [
+        { query: `site:naturalnews.com ${claim.text}`, intent: 'refute-fringe' },
+        { query: `"pesticide safety" ${claim.text}`, intent: 'refute-fringe' },
+      ],
+    };
+
+    const specific = typeSpecificQueries[claimType] || [];
+    const allQueries = [...baseQueries, ...specific];
+
+    const fringeQueries = allQueries.slice(0, n).map(q => ({
+      claimId: claim.id,
+      query: q.query,
+      intent: q.intent,
+    }));
+
+    logger.log(`🔍 [DEBUG] Fringe queries for ${claim.id}:`, fringeQueries);
+
+    return dedupe(
+      fringeQueries,
+      (q) => `${q.intent}|${String(q.query || "").toLowerCase()}`
+    );
+  }
+
+  /**
+   * Detect claim type from text (simple keyword matching)
+   */
+  detectClaimType(claimText) {
+    const text = claimText.toLowerCase();
+
+    if (text.match(/antisemit|jewish|jew|israel|zion/)) return 'antisemitism';
+    if (text.match(/vaccine|vax|immuniz/)) return 'vaccines';
+    if (text.match(/climate|global warming|carbon|emissions/)) return 'climate';
+    if (text.match(/election|vote|ballot|fraud/)) return 'election';
+    if (text.match(/covid|coronavirus|pandemic/)) return 'covid';
+    if (text.match(/pesticide|herbicide|glyphosate/)) return 'pesticides';
+
+    return null;
   }
 
   async retrieveCandidates(claim, queries, opt) {
@@ -456,6 +570,71 @@ TASK:
         adj = await this.redTeam(claim, adj, evs);
       }
 
+      // ═══════════════════════════════════════════════════════════════════
+      // PASS 2: FRINGE SOURCE DISCOVERY (if enabled)
+      // ═══════════════════════════════════════════════════════════════════
+      let fringeEvidence = [];
+      let fringeQueries = [];
+      let fringeCandidates = [];
+
+      if (opt.enableFringeSearch) {
+        logger.log(`🔍 [EV][fringe][${claim.id}] Starting fringe source discovery...`);
+
+        // Detect claim type for targeted fringe searches
+        const claimType = this.detectClaimType(claim.text);
+        logger.log(`🔍 [EV][fringe][${claim.id}] Detected claim type: ${claimType || 'unknown'}`);
+
+        // Generate fringe-seeking queries
+        fringeQueries = this.generateFringeQueries(
+          claim,
+          claimType,
+          opt.topKFringeQueries ?? 3
+        );
+
+        // Only search for fringe sources if primary verdict is strong support
+        // (this is where we expect to find low-quality refutations)
+        if (adj.finalVerdict === 'support' && adj.confidence > 0.7) {
+          logger.log(`🔍 [EV][fringe][${claim.id}] Primary verdict is strong support - searching for fringe refutations...`);
+
+          // Use fringe search engine (DuckDuckGo) if available
+          const fringeSearchEngine = this.deps.search.fringe || this.deps.search.web;
+
+          fringeCandidates = await this.retrieveCandidates(
+            claim,
+            fringeQueries,
+            {
+              ...opt,
+              enableWeb: true,
+              enableInternal: false,
+              topKCandidates: opt.topKFringeCandidates ?? 3,
+              preferDomains: [], // Don't filter - we WANT fringe sources
+              avoidDomains: [],  // Don't filter
+            }
+          );
+
+          // Extract evidence from fringe sources (fewer candidates)
+          fringeEvidence = (
+            await Promise.all(
+              fringeCandidates
+                .slice(0, opt.maxFringeEvidenceCandidates ?? 2)
+                .map((c) => this.extractEvidence(claim, c, opt))
+            )
+          ).flat();
+
+          logger.log(
+            `🔍 [EV][fringe][${claim.id}] Found ${fringeEvidence.length} fringe evidence items`
+          );
+
+          // Tag fringe evidence for credibility analysis
+          fringeEvidence.forEach(ev => {
+            ev.isFringe = true;
+            ev.fringeReason = 'Found via fringe-seeking queries';
+          });
+        } else {
+          logger.log(`🔍 [EV][fringe][${claim.id}] Skipping fringe search (verdict not strong support or low confidence)`);
+        }
+      }
+
       const row = {
         claim,
         context: ctx,
@@ -464,6 +643,10 @@ TASK:
         candidates,
         evidence: evs,
         adjudication: adj,
+        // Add fringe data
+        fringeQueries,
+        fringeCandidates,
+        fringeEvidence,
       };
 
       results[index] = row;

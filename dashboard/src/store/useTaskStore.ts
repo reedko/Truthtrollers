@@ -35,6 +35,12 @@ const normalizeUser = (u: any) =>
   } as User);
 export type ViewScope = 'all' | 'user' | 'admin';
 
+export interface BackgroundJob {
+  id: string;
+  message: string;
+  startedAt: number;
+}
+
 export interface TaskStoreState {
   verimeterScores: { [contentId: number]: number };
   content: Task[];
@@ -64,6 +70,7 @@ export interface TaskStoreState {
   selectedPivotTasks: Task[];
   hasHydrated: boolean;
   claimScores: {};
+  backgroundJobs: BackgroundJob[];
   toggleAssignedUserLocal: (
     taskId: number,
     user: Pick<User, "user_id" | "username">
@@ -109,6 +116,8 @@ export interface TaskStoreState {
   setSelectedTopic: (topicName: string | undefined) => void;
   setSearchQuery: (query: string) => void;
   loadMoreTasks: () => Promise<void>;
+  startBackgroundJob: (message: string) => string;
+  endBackgroundJob: (id: string) => void;
 }
 
 export const useTaskStore = create<TaskStoreState>()(
@@ -140,6 +149,7 @@ export const useTaskStore = create<TaskStoreState>()(
       hasHydrated: false,
       verimeterScores: {},
       claimScores: {},
+      backgroundJobs: [],
 
       setClaimScores: (taskId: number, scores: { [claimId: number]: number }) =>
         set((s) => ({
@@ -148,6 +158,20 @@ export const useTaskStore = create<TaskStoreState>()(
             [taskId]: scores,
           },
         })),
+
+      startBackgroundJob: (message: string) => {
+        const id = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        set((s) => ({
+          backgroundJobs: [...s.backgroundJobs, { id, message, startedAt: Date.now() }],
+        }));
+        return id;
+      },
+
+      endBackgroundJob: (id: string) => {
+        set((s) => ({
+          backgroundJobs: s.backgroundJobs.filter((job) => job.id !== id),
+        }));
+      },
 
       fetchClaimScores: async (taskId: number) => {
         const { viewingUserId } = get();

@@ -154,7 +154,7 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} isCentered size="lg">
+    <Modal isOpen={isOpen} onClose={onClose} isCentered size="claimLink">
       <ModalOverlay />
       <ModalContent className="mr-modal">
         <ModalHeader className="mr-modal-header">

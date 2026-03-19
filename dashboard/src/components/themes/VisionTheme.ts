@@ -77,6 +77,68 @@ const theme = extendTheme({
     },
   },
   components: {
+    Modal: {
+      baseStyle: (props: any) => ({
+        overlay: {
+          bg: "rgba(0, 0, 0, 0.6)",
+        },
+        dialog: {
+          bg: props.colorMode === "dark"
+            ? "rgba(15, 23, 42, 0.95)"
+            : "rgba(255, 255, 255, 0.95)",
+          borderRadius: "2xl",
+          border: "2px solid",
+          borderColor: props.colorMode === "dark"
+            ? "rgba(94, 234, 212, 0.5)"
+            : "rgba(100, 120, 200, 0.5)",
+          boxShadow: props.colorMode === "dark"
+            ? "0 25px 50px -12px rgba(0, 255, 255, 0.5), 0 0 0 1px rgba(94, 234, 212, 0.3)"
+            : "0 25px 50px -12px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(100, 120, 200, 0.3)",
+        },
+        header: {
+          color: props.colorMode === "dark" ? "cyan.300" : "blue.700",
+          fontWeight: "bold",
+          borderBottom: "1px solid",
+          borderColor: props.colorMode === "dark"
+            ? "rgba(94, 234, 212, 0.2)"
+            : "rgba(100, 120, 200, 0.2)",
+          pb: 4,
+        },
+        body: {
+          color: props.colorMode === "dark" ? "gray.100" : "gray.800",
+        },
+        footer: {
+          borderTop: "1px solid",
+          borderColor: props.colorMode === "dark"
+            ? "rgba(94, 234, 212, 0.2)"
+            : "rgba(100, 120, 200, 0.2)",
+          pt: 4,
+        },
+      }),
+      sizes: {
+        // Custom z-index layers for different modal types
+        claimLink: {
+          dialog: {
+            maxW: "600px",
+            zIndex: 10000,
+          },
+          overlay: {
+            zIndex: 9999,
+            bg: "rgba(0, 0, 0, 0.75)",
+          },
+        },
+        claimDetail: {
+          dialog: {
+            zIndex: 9000, // High - Claim detail modals
+          },
+        },
+        standard: {
+          dialog: {
+            zIndex: 1400, // Standard modals
+          },
+        },
+      },
+    },
     Card: {
       baseStyle: (props: any) => ({
         container: {
