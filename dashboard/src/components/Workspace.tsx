@@ -7,6 +7,7 @@ import {
   CardBody,
   Grid,
   useColorModeValue,
+  useToast,
 } from "@chakra-ui/react";
 import {
   fetchClaimsWithEvidence,
@@ -131,6 +132,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
     "gray.300",
   );
   const user = useAuthStore((s) => s.user);
+  const toast = useToast();
 
   const updateXPositionsAndHeight = () => {
     if (leftRef.current && rightRef.current && containerRef.current) {
@@ -229,10 +231,25 @@ const Workspace: React.FC<WorkspaceProps> = ({
   }, [contentId, refreshReferences, viewerId, scope]);
 
   useEffect(() => {
-    updateXPositionsAndHeight();
-    window.addEventListener("resize", updateXPositionsAndHeight);
-    return () =>
-      window.removeEventListener("resize", updateXPositionsAndHeight);
+    // 🔧 PERF: Debounce resize handler and use RAF for DOM measurements
+    const handleResize = () => {
+      requestAnimationFrame(updateXPositionsAndHeight);
+    };
+
+    let resizeTimeout: number;
+    const debouncedResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = window.setTimeout(handleResize, 150);
+    };
+
+    // Initial calculation
+    requestAnimationFrame(updateXPositionsAndHeight);
+
+    window.addEventListener("resize", debouncedResize);
+    return () => {
+      clearTimeout(resizeTimeout);
+      window.removeEventListener("resize", debouncedResize);
+    };
   }, [claims, references]);
 
   useEffect(() => {
@@ -387,12 +404,30 @@ const Workspace: React.FC<WorkspaceProps> = ({
     try {
       await hideReference(contentId, refId);
       console.log("✅ Reference hidden from your view");
+
+      // Show success toast
+      toast({
+        title: "Source removed",
+        description: "The source has been hidden from your view",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      // Refresh the references list
+      setRefreshReferences((prev) => !prev);
     } catch (error: any) {
       console.error("❌ Error hiding reference:", error);
-      throw error;
-    }
 
-    setRefreshReferences((prev) => !prev);
+      // Show error toast
+      toast({
+        title: "Error removing source",
+        description: error.response?.data?.error || error.message || "Failed to remove source. Please make sure you're logged in.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
 
   const handleUpdateReference = async (
@@ -669,16 +704,36 @@ const Workspace: React.FC<WorkspaceProps> = ({
             setIsClaimModalOpen(true);
           }}
           onDeleteClaim={async (claimId: number) => {
-            if (window.confirm('Are you sure you want to delete this claim?')) {
-              await deleteClaim(claimId);
+            if (window.confirm('Are you sure you want to hide this claim?')) {
+              if (!user?.user_id) {
+                toast({
+                  title: "Cannot hide claim",
+                  description: "You must be logged in to hide claims",
+                  status: "error",
+                  duration: 3000,
+                  isClosable: true,
+                });
+                return;
+              }
+
+              await deleteClaim(claimId, user.user_id);
+
+              toast({
+                title: "Claim hidden",
+                description: "The claim has been hidden from your view",
+                status: "success",
+                duration: 3000,
+                isClosable: true,
+              });
+
               // Refresh claims
               if (selectedTask?.content_id) {
-                const updatedClaims = await fetchClaimsForTask(selectedTask.content_id, user?.user_id || null);
+                const updatedClaims = await fetchClaimsForTask(selectedTask.content_id, user.user_id);
                 setClaims(updatedClaims);
               }
               // Refresh reference modal
               if (selectedReference) {
-                const updatedRef = await fetchReferencesWithClaimsForTask(selectedTask?.content_id || 0, user?.user_id || null);
+                const updatedRef = await fetchReferencesWithClaimsForTask(selectedTask?.content_id || 0, user.user_id);
                 const refreshedRef = updatedRef.find(r => r.reference_content_id === selectedReference.reference_content_id);
                 if (refreshedRef) {
                   setSelectedReference(refreshedRef);

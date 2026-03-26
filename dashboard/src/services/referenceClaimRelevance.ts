@@ -103,6 +103,13 @@ export async function assessReferenceClaimRelevance(
     }
 
     const result = await response.json();
+
+    // Handle case where claim was assessed but deemed irrelevant
+    if (result.skipped || !result.link) {
+      console.log(`[Claim Assessment] Skipped - ${result.reason || 'irrelevant'}`);
+      return { didAssess: true, link: undefined };
+    }
+
     console.log(`[Claim Assessment] Complete - stance: ${result.link.stance}`);
 
     return { didAssess: true, link: result.link };
@@ -225,22 +232,30 @@ export async function batchAssessReferenceClaims(
 
     // Assess each claim (could be parallelized, but being conservative for API usage)
     const newLinks: ReferenceClaimTaskLink[] = [];
+    let skippedCount = 0;
     for (const claim of claimsNeedingAssessment) {
-      const { link } = await assessReferenceClaimRelevance(
-        claim.claim_id,
-        taskClaimId,
-        claim.claim_text,
-        taskClaimText
-      );
-      if (link) {
-        newLinks.push(link);
+      try {
+        const { link } = await assessReferenceClaimRelevance(
+          claim.claim_id,
+          taskClaimId,
+          claim.claim_text,
+          taskClaimText
+        );
+        if (link) {
+          newLinks.push(link);
+        } else {
+          skippedCount++;
+        }
+      } catch (error) {
+        console.error(`[Batch Assessment] Failed to assess claim ${claim.claim_id}:`, error);
+        skippedCount++;
       }
     }
 
     const allLinks = [...existingLinks, ...newLinks];
 
     console.log(
-      `[Batch Assessment] Complete - ${newLinks.length} new assessments`
+      `[Batch Assessment] Complete - ${newLinks.length} new assessments, ${skippedCount} skipped as irrelevant`
     );
 
     return { assessedCount: newLinks.length, links: allLinks };

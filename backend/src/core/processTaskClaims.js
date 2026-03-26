@@ -20,13 +20,17 @@ const EXTRACTION_MODE = 'ranked'; // Use ranked mode for faster processing (1 LL
  *    query,
  *    taskContentId,
  *    text,
- *    claimType = 'task'
+ *    claimType = 'task',
+ *    taskClaimsContext = null,
+ *    clearOldLinks = false
  * })
+ *
+ * @param clearOldLinks - If true, clear existing content_claims links before persisting (for re-scraping)
  *
  * Returns:
  *    [{ id: claimId, text }]
  */
-export async function processTaskClaims({ query, taskContentId, text, claimType = 'task', taskClaimsContext = null }) {
+export async function processTaskClaims({ query, taskContentId, text, claimType = 'task', taskClaimsContext = null, clearOldLinks = false }) {
   logger.log("🟩 [processTaskClaims] Extracting + storing claims…");
   if (taskClaimsContext && taskClaimsContext.length > 0) {
     logger.log(`📋 [processTaskClaims] Context-aware mode: ${taskClaimsContext.length} task claims provided:`);
@@ -46,6 +50,9 @@ export async function processTaskClaims({ query, taskContentId, text, claimType 
     return [];
   }
 
+  logger.log(`📝 [processTaskClaims] Text length: ${text.length} chars, first 300 chars: "${text.substring(0, 300).replace(/\s+/g, ' ')}..."`);
+
+
   // -----------------------------------------------------
   // 1. Claim extraction (LLM)
   // -----------------------------------------------------
@@ -64,7 +71,14 @@ export async function processTaskClaims({ query, taskContentId, text, claimType 
   let claims = extraction.claims || [];
   logger.log(`🟩 Extracted ${claims.length} claims`);
 
-  if (claims.length === 0) return [];
+  if (claims.length === 0) {
+    logger.warn(`⚠️ [processTaskClaims] No claims extracted! This may indicate:`);
+    logger.warn(`   - The article text is too technical/scientific for claim extraction`);
+    logger.warn(`   - The LLM failed to find verifiable factual claims`);
+    logger.warn(`   - The text extraction captured non-content areas`);
+    logger.warn(`   Text sample (first 500 chars): "${text.substring(0, 500).replace(/\s+/g, ' ')}"`);
+    return [];
+  }
 
   // -----------------------------------------------------
   // 1.5. Filter and rank claims (ONLY in comprehensive mode)
@@ -90,10 +104,10 @@ export async function processTaskClaims({ query, taskContentId, text, claimType 
 
   // -----------------------------------------------------
   // 2. Persist claims (batch)
-  // persistClaims(query, contentId, claimsArray, relationshipType, claimType)
+  // persistClaims(query, contentId, claimsArray, relationshipType, claimType, clearOldLinks)
   // returns array of new claimIds
   // -----------------------------------------------------
-  const claimIds = await persistClaims(query, taskContentId, claims, claimType, claimType);
+  const claimIds = await persistClaims(query, taskContentId, claims, claimType, claimType, clearOldLinks);
 
   if (!Array.isArray(claimIds)) {
     throw new Error("persistClaims returned invalid claimIds");

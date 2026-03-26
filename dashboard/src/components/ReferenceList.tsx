@@ -387,7 +387,8 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                     size="sm"
                     variant="ghost"
                     aria-label="Edit"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       setEditingReference(ref);
                       setNewTitle(ref.content_name);
                       setIsEditModalOpen(true);
@@ -400,7 +401,10 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                     colorScheme="red"
                     aria-label="Delete"
                     icon={<span>🗑️</span>}
-                    onClick={() => onDeleteReference(ref.reference_content_id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteReference(ref.reference_content_id);
+                    }}
                   />
                 </HStack>
               </Box>

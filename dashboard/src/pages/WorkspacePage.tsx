@@ -21,6 +21,7 @@ import { ViewerScopeBadge } from "../components/ViewerScopeBadge";
 import {
   updateScoresForContent,
   fetchContentScores,
+  fetchAIEvidenceLinks,
 } from "../services/useDashboardAPI";
 
 const WorkspacePage = () => {
@@ -29,6 +30,7 @@ const WorkspacePage = () => {
   const [verimeterScore, setVerimeterScore] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [linkFilter, setLinkFilter] = useState<'all' | 'user' | 'ai'>('all');
+  const [hasCheckedUserLinks, setHasCheckedUserLinks] = useState(false);
   const [bubbleStyle, setBubbleStyle] = useState<boolean>(false);
   const navigate = useNavigate();
   const { colorMode } = useColorMode();
@@ -95,29 +97,33 @@ const WorkspacePage = () => {
 
     isUpdatingUrl.current = true;
 
-    const newParams = new URLSearchParams();
+    // 🔧 PERF: Debounce URL updates to prevent excessive history changes
+    const timeoutId = setTimeout(() => {
+      const newParams = new URLSearchParams();
 
-    if (viewerId !== null && viewerId !== undefined) {
-      newParams.set('viewer', viewerId.toString());
-    }
+      if (viewerId !== null && viewerId !== undefined) {
+        newParams.set('viewer', viewerId.toString());
+      }
 
-    if (viewScope && viewScope !== 'user') {
-      newParams.set('scope', viewScope);
-    }
+      if (viewScope && viewScope !== 'user') {
+        newParams.set('scope', viewScope);
+      }
 
-    // Update URL without navigation (replace history)
-    const newSearch = newParams.toString();
-    const currentSearch = searchParams.toString();
+      // Update URL without navigation (replace history)
+      const newSearch = newParams.toString();
+      const currentSearch = searchParams.toString();
 
-    if (newSearch !== currentSearch) {
-      console.log("🔄 Updating URL params:", newSearch);
-      setSearchParams(newParams, { replace: true });
-    }
+      if (newSearch !== currentSearch) {
+        setSearchParams(newParams, { replace: true });
+      }
 
-    // Allow next update after a brief delay
-    setTimeout(() => {
       isUpdatingUrl.current = false;
-    }, 100);
+    }, 200); // Debounce 200ms
+
+    return () => {
+      clearTimeout(timeoutId);
+      isUpdatingUrl.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewerId, viewScope, taskId]);
 
@@ -135,6 +141,19 @@ const WorkspacePage = () => {
       });
     }
   }, [taskId, viewerId]);
+
+  // Check for user-created links and default filter to 'user' if they exist
+  useEffect(() => {
+    if (taskId && !hasCheckedUserLinks) {
+      fetchAIEvidenceLinks(taskId).then((links) => {
+        const hasUserLinks = links.some((link) => !link.created_by_ai);
+        if (hasUserLinks) {
+          setLinkFilter('user');
+        }
+        setHasCheckedUserLinks(true);
+      });
+    }
+  }, [taskId, hasCheckedUserLinks]);
 
   // Try to restore selectedTask from content list if missing
   useEffect(() => {

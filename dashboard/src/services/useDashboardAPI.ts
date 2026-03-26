@@ -625,14 +625,38 @@ export const updateReference = async (
   }
 };
 /**
- * Delete a claim
+ * Hide a claim for the current user (soft-delete per user)
  */
-export const deleteClaim = async (claimId: number) => {
+export const hideClaim = async (claimId: number, userId: number) => {
   try {
-    await api.delete(`${API_BASE_URL}/api/claims/${claimId}`);
+    await api.post(`${API_BASE_URL}/api/claims/hide`, { claimId, userId });
   } catch (error) {
-    console.error("❌ Error deleting claim:", error);
+    console.error("❌ Error hiding claim:", error);
+    throw error;
   }
+};
+
+/**
+ * Unhide a claim for the current user
+ */
+export const unhideClaim = async (claimId: number, userId: number) => {
+  try {
+    await api.post(`${API_BASE_URL}/api/claims/unhide`, { claimId, userId });
+  } catch (error) {
+    console.error("❌ Error unhiding claim:", error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a claim (deprecated - use hideClaim instead)
+ */
+export const deleteClaim = async (claimId: number, userId?: number) => {
+  if (!userId) {
+    console.warn("deleteClaim called without userId - claim will not be hidden");
+    return;
+  }
+  return hideClaim(claimId, userId);
 };
 
 /** --------------------- 📚 REFERENCES FUNCTIONS --------------------- **/

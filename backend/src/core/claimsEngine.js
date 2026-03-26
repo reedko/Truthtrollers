@@ -18,132 +18,36 @@ export class ClaimExtractor {
     const topicSuffix = includeTopicsAndTestimonials ? '_with_topics' : '_no_topics';
     const promptName = `${modePrefix}${topicSuffix}`;
 
-    //FALLBACK PROMPTS (in case DB fetch fails)
-    const fallbackSystem = "You are a precise claim extraction assistant. You must return strictly valid JSON.";
+    // All prompts are now stored in the database - no hardcoded fallbacks
 
-    const fallbackRankedWithTopics = `TASKS
-1) Identify the single most general topic (max 2 words).
-2) List 2–5 specific subtopics under that topic.
-3) Extract ONLY the ${minClaims}-${maxClaims} MOST IMPORTANT, VERIFIABLE claims from the text.
-
-   RANKING CRITERIA (prioritize in this order):
-   a) MATERIALITY: Central to the article's main thesis or argument
-   b) CONTROVERSY: Genuinely disputed, surprising, or counterintuitive
-   c) SPECIFICITY: Concrete, falsifiable, with numbers/dates/names
-
-   REQUIREMENTS:
-   - Each claim must be FALSIFIABLE: can be proven true or false with evidence
-   - Each claim must be SELF-CONTAINED: resolve pronouns, include full context (time/place/subject/numbers)
-   - INCLUDE: Claims with concrete data (numbers, percentages, dates, named entities)
-   - AVOID: Vague statements ("there was a study"), obvious facts, opinions, background context
-   - Phrase each claim as a complete, specific sentence
-
-   EXAMPLES:
-   ✅ GOOD: "Cancer prescreening programs led to 1 million overtreatment cases in the US from 2000-2020"
-   ✅ GOOD: "PSA testing for prostate cancer has an 80% false positive rate"
-   ❌ BAD: "There was a study about cancer tests" (too vague)
-   ❌ BAD: "Some people think prescreening is bad" (opinion, not falsifiable)
-
-   Return ONLY the top ${maxClaims} claims that meet these criteria. Quality over quantity.
-
-4) Extract any testimonials/first-person case studies if present (objects with "text", optional "name", optional "imageUrl").`;
-
-    const fallbackRankedNoTopics = `TASKS
-1) Extract ONLY the ${minClaims}-${maxClaims} MOST IMPORTANT, VERIFIABLE claims from the text.
-
-   RANKING CRITERIA (prioritize in this order):
-   a) MATERIALITY: Central to the article's main thesis or argument
-   b) CONTROVERSY: Genuinely disputed, surprising, or counterintuitive
-   c) SPECIFICITY: Concrete, falsifiable, with numbers/dates/names
-
-   REQUIREMENTS:
-   - Each claim must be FALSIFIABLE: can be proven true or false with evidence
-   - Each claim must be SELF-CONTAINED: resolve pronouns, include full context (time/place/subject/numbers)
-   - INCLUDE: Claims with concrete data (numbers, percentages, dates, named entities)
-   - AVOID: Vague statements ("there was a study"), obvious facts, opinions, background context
-   - Phrase each claim as a complete, specific sentence
-
-   EXAMPLES:
-   ✅ GOOD: "Cancer prescreening programs led to 1 million overtreatment cases in the US from 2000-2020"
-   ✅ GOOD: "PSA testing for prostate cancer has an 80% false positive rate"
-   ❌ BAD: "There was a study about cancer tests" (too vague)
-   ❌ BAD: "Some people think prescreening is bad" (opinion, not falsifiable)
-
-   Return ONLY the top ${maxClaims} claims that meet these criteria. Quality over quantity.
-
-2) Do NOT invent topics or testimonials in this mode.`;
-
-    const fallbackComprehensiveWithTopics = `TASKS
-1) Identify the single most general topic (max 2 words).
-2) List 2–5 specific subtopics under that topic.
-3) Extract DISTINCT factual claims from the text.
-   - Return AT LEAST ${minClaims} and AT MOST ${maxClaims} claims, if available.
-   - Each claim must be independently verifiable, one atomic assertion per item.
-   - Each claim must be SELF-CONTAINED: resolve pronouns, include context (time/place/subject).
-   - Prefer claims with numbers, dates, named entities, locations, or concrete actions.
-   - Avoid duplicates, paraphrases, opinions, or vague summaries.
-   - Phrase each claim as a full sentence.
-   - Example: "Trump won 2016 US election" NOT "He won the election"
-
-4) Extract any testimonials/first-person case studies if present (objects with "text", optional "name", optional "imageUrl").
-   - Deduplicate against the main text if overlapping.`;
-
-    const fallbackComprehensiveNoTopics = `TASKS
-1) Extract DISTINCT factual claims from the text ONLY.
-   - Return AT LEAST ${minClaims} and AT MOST ${maxClaims} claims, if available.
-   - Each claim must be independently verifiable, one atomic assertion per item.
-   - Each claim must be SELF-CONTAINED: resolve pronouns, include context (time/place/subject).
-   - Prefer claims with numbers, dates, named entities, locations, or concrete actions.
-   - Avoid duplicates, paraphrases, opinions, or vague summaries.
-   - Phrase each claim as a full sentence.
-   - Example: "Trump won 2016 US election" NOT "He won the election"
-
-2) Do NOT invent topics or testimonials in this mode.`;
-
-    // Map to fallback user prompts
-    const fallbackMap = {
-      'claim_extraction_ranked_with_topics': fallbackRankedWithTopics,
-      'claim_extraction_ranked_no_topics': fallbackRankedNoTopics,
-      'claim_extraction_comprehensive_with_topics': fallbackComprehensiveWithTopics,
-      'claim_extraction_comprehensive_no_topics': fallbackComprehensiveNoTopics,
-    };
-
-    const fallback = {
-      system: fallbackSystem,
-      user: fallbackMap[promptName] || fallbackRankedNoTopics,
-      parameters: { minClaims, maxClaims },
-    };
-
-    // Try to load from database if promptManager is available
-    if (this.promptManager) {
-      try {
-        // Load system prompt
-        const systemPrompt = await this.promptManager.getPrompt(
-          'claim_extraction_ranked_system',
-          { system: fallbackSystem, user: '', parameters: {} }
-        );
-
-        // Load user prompt
-        const userPrompt = await this.promptManager.getPrompt(promptName, fallback);
-
-        // Replace template variables in user prompt
-        let userText = userPrompt.user
-          .replace(/\{\{minClaims\}\}/g, minClaims)
-          .replace(/\{\{maxClaims\}\}/g, maxClaims);
-
-        return {
-          system: systemPrompt.system,
-          user: userText,
-          parameters: { ...userPrompt.parameters, minClaims, maxClaims },
-        };
-      } catch (err) {
-        console.warn(`⚠️ [ClaimExtractor] Error loading DB prompts, using fallback:`, err.message);
-        return fallback;
-      }
+    // Load from database - promptManager is required
+    if (!this.promptManager) {
+      throw new Error('[ClaimExtractor] PromptManager is required - all prompts must be loaded from database');
     }
 
-    // No promptManager, use fallback
-    return fallback;
+    try {
+      // Load system prompt
+      const systemPrompt = await this.promptManager.getPrompt(
+        'claim_extraction_ranked_system'
+      );
+
+      // Load user prompt
+      const userPrompt = await this.promptManager.getPrompt(promptName);
+
+      // Replace template variables in user prompt
+      let userText = userPrompt.user
+        .replace(/\{\{minClaims\}\}/g, minClaims)
+        .replace(/\{\{maxClaims\}\}/g, maxClaims);
+
+      return {
+        system: systemPrompt.system,
+        user: userText,
+        parameters: { ...userPrompt.parameters, minClaims, maxClaims },
+      };
+    } catch (err) {
+      console.error(`❌ [ClaimExtractor] Error loading prompts from database:`, err.message);
+      throw err;
+    }
   }
 
   /**
@@ -254,10 +158,17 @@ Return JSON: {"specificity": X, "controversy": Y, "materiality": Z, "reasoning":
     let minClaims, maxClaims;
 
     if (extractionMode === 'ranked') {
-      // RANKED MODE: Extract fewer, higher-quality claims only
-      minClaims = 3;
-      maxClaims = 12; // Increased to capture more notable quotes/evidence
-      // Don't scale with token length - keep it tight
+      // RANKED MODE: Extract high-quality claims, increased to capture comparative/causal claims
+      minClaims = 5;
+      maxClaims = 18; // Increased to capture atomic claims (studies, comparisons, causal claims separately)
+      // Scale slightly with article length to capture all important claims
+      if (tokenLength > 5000 && tokenLength <= 9000) {
+        minClaims = 8;
+        maxClaims = 24;
+      } else if (tokenLength > 9000) {
+        minClaims = 12;
+        maxClaims = 30;
+      }
     } else {
       // COMPREHENSIVE MODE: Extract all claims for user ranking
       minClaims = 5;
@@ -296,103 +207,6 @@ Return JSON: {"specificity": X, "controversy": Y, "materiality": Z, "reasoning":
 
     const system = prompts.system;
     const tasks = prompts.user;
-
-    // Keep the old hardcoded prompts below for reference (not used if DB load succeeds)
-    // ========================================
-    // RANKED MODE: Extract only high-value claims (FALLBACK - not used if DB works)
-    // ========================================
-    const rankedTasks_UNUSED = includeTopicsAndTestimonials
-      ? `
-TASKS
-1) Identify the single most general topic (max 2 words).
-2) List 2–5 specific subtopics under that topic.
-3) Extract ONLY the ${minClaims}-${maxClaims} MOST IMPORTANT, VERIFIABLE claims from the text.
-
-   RANKING CRITERIA (prioritize in this order):
-   a) MATERIALITY: Central to the article's main thesis or argument
-   b) CONTROVERSY: Genuinely disputed, surprising, or counterintuitive
-   c) SPECIFICITY: Concrete, falsifiable, with numbers/dates/names
-
-   REQUIREMENTS:
-   - Each claim must be FALSIFIABLE: can be proven true or false with evidence
-   - Each claim must be SELF-CONTAINED: resolve pronouns, include full context (time/place/subject/numbers)
-   - INCLUDE: Claims with concrete data (numbers, percentages, dates, named entities)
-   - AVOID: Vague statements ("there was a study"), obvious facts, opinions, background context
-   - Phrase each claim as a complete, specific sentence
-
-   EXAMPLES:
-   ✅ GOOD: "Cancer prescreening programs led to 1 million overtreatment cases in the US from 2000-2020"
-   ✅ GOOD: "PSA testing for prostate cancer has an 80% false positive rate"
-   ❌ BAD: "There was a study about cancer tests" (too vague)
-   ❌ BAD: "Some people think prescreening is bad" (opinion, not falsifiable)
-
-   Return ONLY the top ${maxClaims} claims that meet these criteria. Quality over quantity.
-
-4) Extract any testimonials/first-person case studies if present (objects with "text", optional "name", optional "imageUrl").
-`
-      : `
-TASKS
-1) Extract ONLY the ${minClaims}-${maxClaims} MOST IMPORTANT, VERIFIABLE claims from the text.
-
-   RANKING CRITERIA (prioritize in this order):
-   a) MATERIALITY: Central to the article's main thesis or argument
-   b) CONTROVERSY: Genuinely disputed, surprising, or counterintuitive
-   c) SPECIFICITY: Concrete, falsifiable, with numbers/dates/names
-
-   REQUIREMENTS:
-   - Each claim must be FALSIFIABLE: can be proven true or false with evidence
-   - Each claim must be SELF-CONTAINED: resolve pronouns, include full context (time/place/subject/numbers)
-   - INCLUDE: Claims with concrete data (numbers, percentages, dates, named entities)
-   - AVOID: Vague statements ("there was a study"), obvious facts, opinions, background context
-   - Phrase each claim as a complete, specific sentence
-
-   EXAMPLES:
-   ✅ GOOD: "Cancer prescreening programs led to 1 million overtreatment cases in the US from 2000-2020"
-   ✅ GOOD: "PSA testing for prostate cancer has an 80% false positive rate"
-   ❌ BAD: "There was a study about cancer tests" (too vague)
-   ❌ BAD: "Some people think prescreening is bad" (opinion, not falsifiable)
-
-   Return ONLY the top ${maxClaims} claims that meet these criteria. Quality over quantity.
-
-2) Do NOT invent topics or testimonials in this mode.
-`;
-
-    // ========================================
-    // COMPREHENSIVE MODE: Extract all claims for user ranking
-    // ========================================
-    const comprehensiveTasks = includeTopicsAndTestimonials
-      ? `
-TASKS
-1) Identify the single most general topic (max 2 words).
-2) List 2–5 specific subtopics under that topic.
-3) Extract DISTINCT factual claims from the text.
-   - Return AT LEAST ${minClaims} and AT MOST ${maxClaims} claims, if available.
-   - Each claim must be independently verifiable, one atomic assertion per item.
-   - Each claim must be SELF-CONTAINED: resolve pronouns, include context (time/place/subject).
-   - Prefer claims with numbers, dates, named entities, locations, or concrete actions.
-   - Avoid duplicates, paraphrases, opinions, or vague summaries.
-   - Phrase each claim as a full sentence.
-   - Example: "Trump won 2016 US election" NOT "He won the election"
-
-4) Extract any testimonials/first-person case studies if present (objects with "text", optional "name", optional "imageUrl").
-   - Deduplicate against the main text if overlapping.
-`
-      : `
-TASKS
-1) Extract DISTINCT factual claims from the text ONLY.
-   - Return AT LEAST ${minClaims} and AT MOST ${maxClaims} claims, if available.
-   - Each claim must be independently verifiable, one atomic assertion per item.
-   - Each claim must be SELF-CONTAINED: resolve pronouns, include context (time/place/subject).
-   - Prefer claims with numbers, dates, named entities, locations, or concrete actions.
-   - Avoid duplicates, paraphrases, opinions, or vague summaries.
-   - Phrase each claim as a full sentence.
-   - Example: "Trump won 2016 US election" NOT "He won the election"
-
-2) Do NOT invent topics or testimonials in this mode.
-`;
-
-    // tasks is already set from DB prompts above
-    // const tasks = extractionMode === 'ranked' ? rankedTasks : comprehensiveTasks;
 
     const outputShape = `
 OUTPUT (STRICT JSON):

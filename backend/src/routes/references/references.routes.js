@@ -89,12 +89,15 @@ export default function createReferencesRoutes({ query, pool }) {
           cr.is_system,
           ${scope === 'admin' ? 'cr.globally_removed, urv.is_hidden AS user_hidden,' : ''}
                COALESCE(JSON_ARRAYAGG(
-                 JSON_OBJECT('claim_id', cl.claim_id, 'claim_text', cl.claim_text, 'claim_type', cl.claim_type)
+                 IF((ucv.is_hidden IS NULL OR ucv.is_hidden = FALSE) AND cl.claim_id IS NOT NULL,
+                    JSON_OBJECT('claim_id', cl.claim_id, 'claim_text', cl.claim_text, 'claim_type', cl.claim_type),
+                    NULL)
                ), '[]') AS claims
          FROM content c
         INNER JOIN content_relations cr ON c.content_id = cr.reference_content_id
         LEFT JOIN content_claims cc ON c.content_id = cc.content_id
         LEFT JOIN claims cl ON cc.claim_id = cl.claim_id
+        LEFT JOIN user_claim_visibility ucv ON cl.claim_id = ucv.claim_id AND ucv.user_id = ?
         ${scope !== 'all' ? `
         LEFT JOIN user_reference_visibility urv
           ON urv.task_content_id = cr.content_id
@@ -105,10 +108,10 @@ export default function createReferencesRoutes({ query, pool }) {
         GROUP BY c.content_id
         `;
 
-        // Add currentUserId to params if needed for user_reference_visibility join
+        // Add currentUserId to params for user_claim_visibility and user_reference_visibility joins
         const finalParams = scope !== 'all'
-          ? [currentUserId, ...params]
-          : params;
+          ? [currentUserId, currentUserId, ...params]  // First for ucv, second for urv
+          : [currentUserId, ...params];  // Only ucv for 'all' scope
 
         const referencesWithClaims = await query(SQL, finalParams);
 
@@ -126,7 +129,19 @@ export default function createReferencesRoutes({ query, pool }) {
         console.log(`📊 TOTAL CLAIMS across all references: ${totalClaimsCount}`);
         process.stderr.write(`[${new Date().toISOString()}] ✅ FOUND ${referencesWithClaims.length} refs with ${totalClaimsCount} total claims\n`);
 
-        res.json(referencesWithClaims);
+        // Filter out null claims from the arrays (hidden claims)
+        const filteredReferences = referencesWithClaims.map(ref => {
+          let claims = Array.isArray(ref.claims)
+            ? ref.claims
+            : (typeof ref.claims === 'string' ? JSON.parse(ref.claims) : []);
+
+          // Remove null entries (hidden claims)
+          claims = claims.filter(claim => claim !== null && claim.claim_id !== null);
+
+          return { ...ref, claims };
+        });
+
+        res.json(filteredReferences);
       } catch (err) {
         console.error("Error fetching references with claims:", err);
         res.status(500).json({ error: "Database error" });

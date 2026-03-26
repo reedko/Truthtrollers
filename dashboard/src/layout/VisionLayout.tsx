@@ -143,17 +143,17 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
           </MenuItem>
           <MenuItem
             as={RouterLink}
-            to="/quadrantgrid"
-            onClick={handleClick("/quadrantgrid")}
+            to="/credibility"
+            onClick={handleClick("/credibility")}
           >
-            QuadrantGrid
+            Credibility
           </MenuItem>
           <MenuItem
             as={RouterLink}
-            to={selectedTaskId ? `/foxcase/${selectedTaskId}` : "/foxcase"}
-            onClick={handleClick("/foxcase")}
+            to="/casefocus"
+            onClick={handleClick("/casefocus")}
           >
-            FoxCase
+            CaseFocus
           </MenuItem>
         </MenuList>
       </Menu>
@@ -210,12 +210,49 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
           <MenuItem as={RouterLink} to="/level" onClick={handleClick("/level")}>
             Level
           </MenuItem>
+        </MenuList>
+      </Menu>
+
+      {/* GrabBag Menu */}
+      <Menu>
+        <MenuButton
+          as={Button}
+          size="sm"
+          variant="ghost"
+          leftIcon={<FiGrid />}
+          justifyContent="flex-start"
+          w="full"
+        >
+          GrabBag
+        </MenuButton>
+        <MenuList>
+          <MenuItem
+            as={RouterLink}
+            to="/quadrantgrid"
+            onClick={handleClick("/quadrantgrid")}
+          >
+            QuadrantGrid
+          </MenuItem>
+          <MenuItem
+            as={RouterLink}
+            to="/claim-duel"
+            onClick={handleClick("/claim-duel")}
+          >
+            Claim Duel
+          </MenuItem>
           <MenuItem
             as={RouterLink}
             to="/truefalse"
             onClick={handleClick("/truefalse")}
           >
             TrueFalse Game
+          </MenuItem>
+          <MenuItem
+            as={RouterLink}
+            to="/casefocus"
+            onClick={handleClick("/casefocus")}
+          >
+            CaseFocus
           </MenuItem>
         </MenuList>
       </Menu>

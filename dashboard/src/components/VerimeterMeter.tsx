@@ -152,4 +152,5 @@ const VerimeterMeter: React.FC<VerimeterMeterProps> = ({
   );
 };
 
-export default VerimeterMeter;
+// 🔧 PERF: Memoize to prevent unnecessary re-renders
+export default React.memo(VerimeterMeter);

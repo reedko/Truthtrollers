@@ -20,6 +20,7 @@ import { tavilySearch } from "./tavilySearch.js";
 import { bingSearch } from "./bingSearch.js";
 import { duckDuckGoSearch } from "./duckDuckGoSearch.js";
 import { EvidenceEngine } from "./evidenceEngine.js";
+import { SourceQualityScorer } from "./sourceQualityScorer.js";
 import { query } from "../db/pool.js";
 import PromptManager from "./promptManager.js";
 import { createContentInternal } from "../storage/createContentInternal.js";
@@ -27,6 +28,7 @@ import { persistAuthors } from "../storage/persistAuthors.js";
 import { persistPublishers } from "../storage/persistPublishers.js";
 import { extractAuthors } from "../utils/extractAuthors.js";
 import { extractPublisher } from "../utils/extractPublisher.js";
+import { extractInlineRefs } from "../utils/extractInlineRefs.js";
 import { getMainHeadline } from "../utils/getMainHeadline.js";
 import { getBestImage } from "../utils/getBestImage.js";
 import logger from "../utils/logger.js";
@@ -81,6 +83,16 @@ export async function runEvidenceEngine({
   if (!taskContentId) throw new Error("Missing taskContentId");
   if (!Array.isArray(claimIds) || claimIds.length === 0)
     throw new Error("No claims passed to EvidenceEngine");
+
+  // Fetch task URL to exclude it from being used as its own reference
+  const taskRows = await query(
+    `SELECT url FROM content WHERE content_id = ?`,
+    [taskContentId]
+  );
+  const taskUrl = taskRows?.[0]?.url || null;
+  if (taskUrl) {
+    logger.log(`🚫 [Evidence] Will skip task URL as reference: ${taskUrl}`);
+  }
 
   // Fetch claim text from DB
   const rows = await query(
@@ -183,7 +195,12 @@ export async function runEvidenceEngine({
                 cached.claimIndices.push(claimIndex);
               }
 
-              return cached.cleanText;
+              // Return object with cleanText + citationCount to avoid re-parsing
+              return {
+                cleanText: cached.cleanText,
+                citationCount: cached.citationCount || 0,
+                isProcessed: true, // Flag that this is already processed
+              };
             }
 
             logger.log(`🌐 [Evidence] Fetching: ${cand.url}`);
@@ -249,7 +266,7 @@ export async function runEvidenceEngine({
             // ─────────────────────────────────────────────
             // 2. EXTRACT METADATA based on content type
             // ─────────────────────────────────────────────
-            let title, authors, publisher, thumbnail, cleanText;
+            let title, authors, publisher, thumbnail, cleanText, citationCount = 0;
 
             if (isPdf) {
               // PDF metadata extraction
@@ -275,6 +292,19 @@ export async function runEvidenceEngine({
               publisher = null; // PDFs don't have publishers in same way
               thumbnail = ""; // PDFs don't have thumbnails from evidence engine
               cleanText = pdfExtractedText?.slice(0, 60000) || "";
+
+              // Extract inline citations from PDF text
+              if (cleanText.length >= 100) {
+                try {
+                  const inlineRefs = extractInlineRefs(cleanText);
+                  citationCount = inlineRefs?.length || 0;
+                  logger.log(
+                    `📚 [Evidence] Extracted ${citationCount} inline citations from PDF: ${cand.url}`
+                  );
+                } catch (err) {
+                  logger.warn(`⚠️ [Evidence] Citation extraction failed: ${err.message}`);
+                }
+              }
             } else {
               // ─────────────────────────────────────────────
               // 2. PARSE HTML (for metadata extraction)
@@ -322,6 +352,23 @@ export async function runEvidenceEngine({
                 );
                 $("script, style, link, noscript").remove();
                 cleanText = $.text().replace(/\s+/g, " ").trim().slice(0, 60000);
+              }
+
+              // ─────────────────────────────────────────────
+              // 4.5. EXTRACT CITATIONS (for quality scoring)
+              // Must be done INSIDE this block where $ is in scope
+              // ─────────────────────────────────────────────
+              if (cleanText.length >= 100) {
+                try {
+                  const inlineRefs = extractInlineRefs(cleanText);
+                  const domRefs = $('a[href]').length;
+                  citationCount = (inlineRefs?.length || 0) + domRefs;
+                  logger.log(
+                    `📚 [Evidence] Extracted ${citationCount} citations (${inlineRefs?.length || 0} inline + ${domRefs} DOM) from ${cand.url}`
+                  );
+                } catch (err) {
+                  logger.warn(`⚠️ [Evidence] Citation extraction failed: ${err.message}`);
+                }
               }
             }
 
@@ -416,6 +463,23 @@ export async function runEvidenceEngine({
             await ensureContentRelation(query, taskContentId, referenceContentId);
 
             // ─────────────────────────────────────────────
+            // 5.5. SAVE FULL CLEANED TEXT (for quality analysis)
+            // ─────────────────────────────────────────────
+            try {
+              await query(
+                `UPDATE content SET content_text = ? WHERE content_id = ?`,
+                [cleanText, referenceContentId]
+              );
+              logger.log(
+                `📝 [Evidence] Saved content_text (${cleanText.length} chars) for content_id=${referenceContentId}`
+              );
+            } catch (err) {
+              logger.warn(
+                `⚠️ [Evidence] Failed to save content_text for content_id=${referenceContentId}: ${err.message}`
+              );
+            }
+
+            // ─────────────────────────────────────────────
             // 6. PERSIST AUTHORS & PUBLISHERS
             // ─────────────────────────────────────────────
             await persistAuthors(query, referenceContentId, authors);
@@ -424,9 +488,15 @@ export async function runEvidenceEngine({
             }
 
             // ─────────────────────────────────────────────
+            // 6.5. QUALITY SCORES WILL BE SAVED FROM EVIDENCE ITEMS
+            // (already extracted in extractEvidence via combined LLM call)
+            // We'll save them after evidence extraction when we have the scores
+            // ─────────────────────────────────────────────
+
+            // ─────────────────────────────────────────────
             // 7. CACHE REFERENCE METADATA (including search snippet)
             // ─────────────────────────────────────────────
-            // Calculate quality for this candidate
+            // Calculate quality for this candidate (simple 0-1.2 scale for ranking)
             const base = cand.score ?? 0;
             const boost = cand.domain?.match(
               /(reuters|apnews|nature|nih|who|gov|\.edu)/i
@@ -443,6 +513,7 @@ export async function runEvidenceEngine({
               cleanText,
               snippet: cand.snippet || "", // Store search snippet for fallback
               quality, // Store quality for later use
+              citationCount, // Store citation count for quality scoring
               claimIndices: claimIndex !== -1 ? [claimIndex] : [], // Track which claim requested this
             });
 
@@ -450,7 +521,12 @@ export async function runEvidenceEngine({
               `🎯 [Evidence] Fully processed reference: ${cand.url} → content_id=${referenceContentId}`
             );
 
-            return cleanText;
+            // Return object with cleanText + citationCount to avoid re-parsing in evidenceEngine
+            return {
+              cleanText,
+              citationCount,
+              isProcessed: true, // Flag that this is already processed
+            };
           } catch (err) {
             logger.warn(
               `⚠️  [Evidence] Fetch failed for ${cand.url}: ${err.message}`
@@ -533,28 +609,66 @@ export async function runEvidenceEngine({
     }
   );
 
+  // ═══════════════════════════════════════════════════════════════════
+  // LOAD EVIDENCE SEARCH MODE FROM DATABASE
+  // ═══════════════════════════════════════════════════════════════════
+  let searchMode = 'fringe_on_support'; // Default
+  let modeConfig = {};
+
+  try {
+    const configRows = await query(
+      `SELECT config_value FROM evidence_search_config WHERE config_key = 'search_mode'`
+    );
+    if (configRows && configRows.length > 0) {
+      searchMode = configRows[0].config_value;
+    }
+
+    const modeConfigRows = await query(
+      `SELECT config_value FROM evidence_search_config WHERE config_key = 'mode_config'`
+    );
+    if (modeConfigRows && modeConfigRows.length > 0) {
+      const allConfigs = JSON.parse(modeConfigRows[0].config_value);
+      modeConfig = allConfigs[searchMode] || {};
+    }
+
+    logger.log(`🔧 [Evidence] Search mode: ${searchMode}`);
+    logger.log(`🔧 [Evidence] Mode config:`, modeConfig);
+  } catch (err) {
+    logger.warn(`⚠️ [Evidence] Failed to load search config, using defaults:`, err.message);
+  }
+
   // engine.run(claims, contexts, opt)
   // contexts can be null/undefined if not needed
   const runOptions = {
     enableInternal: true,
     enableWeb: true,
-    topKQueries: 6,
     searchEngine: "hybrid",
-    topKCandidates: 6, // ← Reduced from 12 to 6 for faster processing
-    maxEvidencePerDoc: 2,
     preferDomains: [],
     avoidDomains: [],
     maxCharsPerDoc: 8000,
     enableRedTeam: false,
-    maxEvidenceCandidates: 4, // ← Increased from 2 to 4 references per claim
 
-    // ═══════════════════════════════════════════════════════════════════
-    // FRINGE SOURCE DISCOVERY (Two-Pass Search)
-    // ═══════════════════════════════════════════════════════════════════
-    enableFringeSearch: true,  // ← Enable second pass for low-quality sources
-    topKFringeQueries: 3,      // ← Number of fringe queries per claim
-    topKFringeCandidates: 3,   // ← Number of fringe candidates to fetch
-    maxFringeEvidenceCandidates: 2, // ← Extract evidence from 2 fringe sources
+    // Apply mode-specific config (or fallback to defaults)
+    queriesPerClaim: modeConfig.queriesPerClaim || 6,
+    topKQueries: modeConfig.queriesPerClaim || 6,
+    topKCandidates: modeConfig.queriesPerClaim || 6,
+    maxEvidencePerDoc: 2,
+    maxEvidenceCandidates: modeConfig.maxEvidenceCandidates || 4,
+
+    // Mode-specific settings
+    enableFringeSearch: modeConfig.enableFringeSearch || false,
+    topKFringeQueries: modeConfig.topKFringeQueries || 3,
+    topKFringeCandidates: modeConfig.topKFringeCandidates || 3,
+    maxFringeEvidenceCandidates: modeConfig.maxFringeEvidenceCandidates || 2,
+
+    enableBalancedSearch: modeConfig.enableBalancedSearch || false,
+    supportQueries: modeConfig.supportQueries || 3,
+    refuteQueries: modeConfig.refuteQueries || 3,
+    nuanceQueries: modeConfig.nuanceQueries || 3,
+    targetSupport: modeConfig.targetSupport || 3,
+    targetRefute: modeConfig.targetRefute || 3,
+    targetNuance: modeConfig.targetNuance || 3,
+    excludeUrl: taskUrl, // Exclude task URL from being used as its own reference
   };
 
   const results = await engine.run(claims, null, runOptions);
@@ -586,6 +700,61 @@ export async function runEvidenceEngine({
       if (!refData) {
         logger.warn(`⚠️  [Evidence] No cached data for ${ev.url}, skipping`);
         continue;
+      }
+
+      // ─────────────────────────────────────────────
+      // Save quality scores to database (from combined LLM call)
+      // ─────────────────────────────────────────────
+      if (ev.qualityScores && refData.referenceContentId) {
+        try {
+          const qs = ev.qualityScores;
+          await query(
+            `INSERT INTO source_quality_scores (
+              content_id, author_transparency, publisher_transparency,
+              evidence_density, claim_specificity, correction_behavior,
+              domain_reputation, sensationalism_score, monetization_pressure,
+              original_reporting, quality_score, risk_score, quality_tier,
+              scored_by, scoring_model
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'ai', 'gpt-4o-mini')
+            ON DUPLICATE KEY UPDATE
+              author_transparency = VALUES(author_transparency),
+              publisher_transparency = VALUES(publisher_transparency),
+              evidence_density = VALUES(evidence_density),
+              claim_specificity = VALUES(claim_specificity),
+              correction_behavior = VALUES(correction_behavior),
+              domain_reputation = VALUES(domain_reputation),
+              sensationalism_score = VALUES(sensationalism_score),
+              monetization_pressure = VALUES(monetization_pressure),
+              original_reporting = VALUES(original_reporting),
+              quality_score = VALUES(quality_score),
+              risk_score = VALUES(risk_score),
+              quality_tier = VALUES(quality_tier),
+              scored_at = CURRENT_TIMESTAMP`,
+            [
+              refData.referenceContentId,
+              qs.author_transparency || 5,
+              qs.publisher_transparency || 5,
+              qs.evidence_density || 5,
+              qs.claim_specificity || 5,
+              qs.correction_behavior || 5,
+              qs.domain_reputation || 5,
+              qs.sensationalism_score || 5,
+              qs.monetization_pressure || 5,
+              qs.original_reporting || 5,
+              qs.quality_score || 5,
+              qs.risk_score || 5,
+              qs.quality_tier || 'mid',
+            ]
+          );
+
+          logger.log(
+            `📊 [Evidence] Saved quality scores: ${qs.quality_tier} (${qs.quality_score}/10) for content_id=${refData.referenceContentId}`
+          );
+        } catch (err) {
+          logger.warn(
+            `⚠️ [Evidence] Failed to save quality scores for content_id=${refData.referenceContentId}: ${err.message}`
+          );
+        }
       }
 
       const existing = evidenceByUrl.get(ev.url);

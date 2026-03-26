@@ -33,20 +33,36 @@ export class EvidenceEngine {
     this.cfg = cfg;
   }
 
-  async generateQueries(claim, ctx, n = 6) {
+  async generateQueries(claim, ctx, n = 6, searchMode = null) {
     const label = `[EV][queries][${claim.id}]`;
     logger.time(label);
 
-    // Default fallback prompts if database load fails
-    const fallbackSystem =
-      "You generate diverse, high-precision search queries for fact-checking. CRITICAL: You must create queries designed to find sources that SUPPORT, REFUTE, and provide NUANCED perspectives on the claim.";
-    const fallbackUser = `Claim: {{claimText}}\nContext: {{context}}\n\nTask: Produce {{n}} queries across intents with the following distribution:
+    // Adjust prompt based on search mode
+    let fallbackSystem, fallbackUser;
+
+    if (searchMode?.enableBalancedSearch) {
+      logger.log(`🎯 [EV][queries][${claim.id}] BALANCED SEARCH MODE ACTIVE - Targeting ${searchMode.supportQueries} support, ${searchMode.refuteQueries} refute, ${searchMode.nuanceQueries} nuance`);
+      // Mode 3: Balanced search - explicitly request support/refute/nuance
+      fallbackSystem = "You generate diverse search queries for fact-checking. CRITICAL: Create EQUAL numbers of queries for sources that SUPPORT, REFUTE, and provide NUANCED perspectives on the claim.";
+      fallbackUser = `Claim: {{claimText}}\nContext: {{context}}\n\nTask: Produce EXACTLY {{n}} queries with BALANCED intent distribution:
+- ${searchMode.supportQueries || 3} queries to find sources that SUPPORT the claim
+- ${searchMode.refuteQueries || 3} queries to find sources that REFUTE the claim
+- ${searchMode.nuanceQueries || 3} queries to find sources that provide NUANCED perspective
+
+CRITICAL: Design queries to actively find OPPOSING viewpoints. For refute queries, search for debunking, fact-checks, counterarguments, alternative interpretations. For support queries, search for confirmatory evidence, corroboration, similar findings. For nuance queries, search for context, caveats, limitations, partial agreements.`;
+    } else {
+      logger.log(`🎯 [EV][queries][${claim.id}] Standard search mode`);
+
+      // Mode 1 & 2: Standard query generation
+      fallbackSystem = "You generate diverse, high-precision search queries for fact-checking. CRITICAL: You must create queries designed to find sources that SUPPORT, REFUTE, and provide NUANCED perspectives on the claim.";
+      fallbackUser = `Claim: {{claimText}}\nContext: {{context}}\n\nTask: Produce {{n}} queries across intents with the following distribution:
 - At least 2 queries designed to find sources that SUPPORT the claim (prefer 3)
 - At least 2 queries designed to find sources that REFUTE the claim (prefer 3)
 - At least 1 query designed to find sources that provide NUANCED perspective on the claim (prefer 3)
 - The remaining queries can cover background or factbox information
 
 IMPORTANT: Design your queries to actively seek out sources with different perspectives. For refute queries, look for credible counterarguments, debunking sites, fact-checks, or alternative evidence. For support queries, look for sources that would confirm or provide evidence for the claim. For nuance queries, look for sources that provide context, caveats, or partial support/refutation.`;
+    }
 
     let system = fallbackSystem;
     let user = fallbackUser;
@@ -266,9 +282,20 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
       }
     }
 
-    const finalCandidates = Array.from(best.values())
+    let finalCandidates = Array.from(best.values())
       .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
       .slice(0, topK);
+
+    // Filter out excluded URL (e.g., task URL to prevent self-referencing)
+    if (opt.excludeUrl) {
+      const beforeCount = finalCandidates.length;
+      finalCandidates = finalCandidates.filter(c => c.url !== opt.excludeUrl);
+      if (beforeCount > finalCandidates.length) {
+        logger.log(
+          `🚫 [Evidence] Filtered out task URL from candidates: ${opt.excludeUrl}`
+        );
+      }
+    }
 
     logger.log(
       `🟩 [DEBUG] Candidates for ${claim.id}: ${finalCandidates.length} results, scores: ${finalCandidates.map(c => c.score?.toFixed(2) || 'null').join(', ')}`
@@ -284,42 +311,81 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
     const fetchLabel = `[EV][fetch][${claim.id}][${shortUrl}]`;
     logger.time(fetchLabel);
 
-    const html = await this.deps.fetcher.getText(cand, claim);
+    const fetchResult = await this.deps.fetcher.getText(cand, claim);
     logger.timeEnd(fetchLabel);
 
-    if (!html) {
+    if (!fetchResult) {
       logger.log(`🟥 [DEBUG] No text for ${claim.id} from ${shortUrl}`);
       return [];
     }
 
-    // Extract clean text from HTML for LLM processing
-    let cleanText = html;
-    try {
-      const cheerio = await import("cheerio");
-      const $ = cheerio.load(html);
-      $("script, style, link, noscript").remove();
-      cleanText = $.text().replace(/\s+/g, " ").trim();
-    } catch (err) {
-      // If HTML parsing fails, use original text as-is
-      logger.warn(`⚠️ Failed to parse HTML for ${shortUrl}, using raw text`);
+    // Handle both old format (string) and new format (object with cleanText + citationCount)
+    let cleanText, citationCount, html;
+
+    if (typeof fetchResult === 'object' && fetchResult.isProcessed) {
+      // New format: already processed by runEvidenceEngine
+      cleanText = fetchResult.cleanText;
+      citationCount = fetchResult.citationCount || 0;
+      html = cleanText; // Store for raw_text field
+      logger.log(
+        `♻️  [Evidence] Using pre-processed text (${citationCount} citations) from ${shortUrl}`
+      );
+    } else {
+      // Old format: raw HTML/text that needs parsing
+      html = typeof fetchResult === 'string' ? fetchResult : fetchResult.cleanText || '';
+      cleanText = html;
+      citationCount = 0;
+
+      try {
+        const cheerio = await import("cheerio");
+        const $ = cheerio.load(html);
+
+        // Extract citation count before removing elements
+        const domRefs = $('a[href]').length;
+
+        $("script, style, link, noscript").remove();
+        cleanText = $.text().replace(/\s+/g, " ").trim();
+
+        // Extract inline citations from text
+        const { extractInlineRefs } = await import("../utils/extractInlineRefs.js");
+        const inlineRefs = extractInlineRefs(cleanText);
+        citationCount = (inlineRefs?.length || 0) + domRefs;
+
+        logger.log(
+          `📚 [Evidence] Extracted ${citationCount} citations (${inlineRefs?.length || 0} inline + ${domRefs} DOM) from ${shortUrl}`
+        );
+      } catch (err) {
+        // If HTML parsing fails, use original text as-is
+        logger.warn(`⚠️ Failed to parse HTML for ${shortUrl}, using raw text`);
+      }
     }
 
     const maxChars = opt.maxCharsPerDoc ?? 8000;
     const maxEvidencePerDoc = opt.maxEvidencePerDoc ?? 2;
 
-    // Use shared quote extraction utility
-    const { extractQuotesFromText } = await import("../utils/extractQuote.js");
+    // Use COMBINED quote extraction + quality scoring (saves 1 LLM call per source)
+    const { extractQuotesAndScoreQuality } = await import("../utils/extractQuote.js");
 
-    const llmLabel = `[EV][llm-evidence][${claim.id}][${shortUrl}]`;
+    const llmLabel = `[EV][llm-evidence+quality][${claim.id}][${shortUrl}]`;
     logger.time(llmLabel);
 
-    const items = await extractQuotesFromText({
+    const result = await extractQuotesAndScoreQuality({
       claimText: claim.text,
       fullText: cleanText,
       sourceTitle: cand.title || cand.url,
+      url: cand.url || "",
+      domain: cand.domain || "",
+      metadata: {
+        author: "unknown", // Will be extracted later in runEvidenceEngine
+        publisher: "unknown",
+        citationCount, // Use actual extracted citations for evidence_density
+      },
       maxChars,
       maxQuotes: maxEvidencePerDoc,
     });
+
+    const items = result.quotes || [];
+    const qualityScores = result.qualityScores;
 
     logger.timeEnd(llmLabel);
 
@@ -329,7 +395,7 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
     );
 
     logger.log(
-      `📙 [DEBUG] Parsed ${items.length} evidence items for ${claim.id}/${shortUrl}`
+      `📙 [DEBUG] Parsed ${items.length} evidence items + quality=${qualityScores?.quality_tier || 'unknown'} for ${claim.id}/${shortUrl}`
     );
 
     const quality = (c) => {
@@ -362,6 +428,7 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
         quality: quality(cand),
         location: it.location || undefined,
         raw_text: html, // ← Save original HTML to avoid re-fetching and allow metadata extraction
+        qualityScores, // ← Add quality scores from combined LLM call
       });
     }
 
@@ -546,7 +613,8 @@ TASK:
       const queries = await this.generateQueries(
         claim,
         ctx,
-        opt.topKQueries ?? 3
+        opt.topKQueries ?? opt.queriesPerClaim ?? 6,
+        opt // Pass full options for balanced search mode detection
       );
 
       const candidates = await this.retrieveCandidates(claim, queries, opt);
@@ -595,9 +663,6 @@ TASK:
         // (this is where we expect to find low-quality refutations)
         if (adj.finalVerdict === 'support' && adj.confidence > 0.7) {
           logger.log(`🔍 [EV][fringe][${claim.id}] Primary verdict is strong support - searching for fringe refutations...`);
-
-          // Use fringe search engine (DuckDuckGo) if available
-          const fringeSearchEngine = this.deps.search.fringe || this.deps.search.web;
 
           fringeCandidates = await this.retrieveCandidates(
             claim,

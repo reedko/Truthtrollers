@@ -38,7 +38,8 @@ import LandingPage from "./pages/LandingPage";
 import AboutPage from "./pages/AboutPage";
 import ClaimDuelPage from "./pages/ClaimDuelPage";
 import TrueFalseGamePage from "./pages/TrueFalseGamePage";
-import { FoxCasePage } from "./pages/FoxCasePage";
+import { CaseFocusPage } from "./pages/CaseFocusPage";
+import SourceQualityPage from "./pages/SourceQualityPage";
 
 const router = createBrowserRouter([
   {
@@ -145,18 +146,18 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "foxcase",
+        path: "casefocus",
         element: (
           <ProtectedRoute>
-            <FoxCasePage />
+            <CaseFocusPage />
           </ProtectedRoute>
         ),
       },
       {
-        path: "foxcase/:taskId",
+        path: "casefocus/:taskId",
         element: (
           <ProtectedRoute>
-            <FoxCasePage />
+            <CaseFocusPage />
           </ProtectedRoute>
         ),
       },
@@ -302,6 +303,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <AdminPanelPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "source-quality/:contentId",
+        element: (
+          <ProtectedRoute>
+            <SourceQualityPage />
           </ProtectedRoute>
         ),
       },

@@ -118,44 +118,84 @@ export async function scrapeTask(
 
     // fallback: get readable text from HTML
     if (!text) {
-      const cleanHtml = cleanForReadability(rawHtml);
-      const $clean = cheerio.load(cleanHtml);
+      // Special handling for journal articles (ScienceDirect, etc.)
+      // These sites use React and the content is in the rendered DOM
+      const isJournalSite = url.includes('sciencedirect.com') || url.includes('elsevier.com');
 
-      // Try to find main content area first (common article selectors)
-      let extracted = "";
-      const contentSelectors = [
-        "article",
-        '[role="main"]',
-        "main",
-        ".article-content",
-        ".post-content",
-        ".entry-content",
-        ".content",
-        "#content",
-        ".article-body",
-        ".story-body",
-      ];
+      if (isJournalSite) {
+        const $raw = cheerio.load(rawHtml);
+        const combinedText = $raw('.Abstracts, .Body').text().trim();
 
-      for (const selector of contentSelectors) {
-        const content = $clean(selector).text().trim();
-        if (content.length > 200) {
-          extracted = content;
-          logger.log(`📝 [scrapeTask] Found content via selector: ${selector}`);
-          break;
+        if (combinedText.length > 500) {
+          logger.log(`✅ [scrapeTask] Journal site detected, using .Abstracts + .Body from raw HTML: ${combinedText.length} chars`);
+          text = combinedText;
+          // Skip the rest of the extraction - we have what we need
+        } else {
+          logger.log(`⚠️ [scrapeTask] Journal site detected but .Abstracts/.Body found only ${combinedText.length} chars`);
         }
       }
 
-      // Fallback: get all text if no content area found
-      if (!extracted) {
-        extracted = $clean.text().trim();
-        logger.log(
-          `📝 [scrapeTask] Using full page text (no content selector matched)`,
-        );
+      // If we didn't get text from journal-specific extraction, continue with normal flow
+      if (!text) {
+        const cleanHtml = cleanForReadability(rawHtml);
+        const $clean = cheerio.load(cleanHtml);
+
+        // Try to find main content area first (common article selectors)
+        let extracted = "";
+        const contentSelectors = [
+          // Journal-specific selectors (higher priority)
+          "#abstracts, #body",  // ScienceDirect journals: combine abstract + body
+          ".Abstracts, .Body",  // ScienceDirect alternative class-based
+          ".Abstracts",         // Try abstract alone
+          ".Body",              // Try body alone
+          "#body",              // Try body ID alone
+
+          // Generic article selectors
+          "article",
+          ".article-content",
+          ".post-content",
+          ".entry-content",
+          ".article-body",
+          ".story-body",
+          '[role="main"]',      // Moved down - often includes navigation
+          "main",
+          ".content",
+          "#content",
+        ];
+
+        for (let i = 0; i < contentSelectors.length; i++) {
+          const selector = contentSelectors[i];
+          const content = $clean(selector).text().trim();
+          logger.log(`🔍 [scrapeTask] Testing selector "${selector}": ${content.length} chars`);
+
+          // Journal-specific selectors (first 5) have lower threshold
+          const isJournalSelector = i < 5;
+          const threshold = isJournalSelector ? 100 : 200;
+
+          if (content.length > threshold) {
+            extracted = content;
+            logger.log(`📝 [scrapeTask] Found content via selector: ${selector} (${content.length} chars, threshold: ${threshold})`);
+            break;
+          }
+        }
+
+        // Fallback: get all text if no content area found
+        if (!extracted) {
+          extracted = $clean.text().trim();
+          logger.log(
+            `📝 [scrapeTask] Using full page text (no content selector matched) (${extracted.length} chars)`,
+          );
+        }
+
+        if (extracted.length > 60000) {
+          logger.log(`⚠️ [scrapeTask] Text truncated from ${extracted.length} to 60000 chars`);
+          extracted = extracted.slice(0, 60000);
+        }
+
+        text = extracted;
       }
 
-      if (extracted.length > 60000) extracted = extracted.slice(0, 60000);
-
-      text = extracted;
+      logger.log(`📝 [scrapeTask] Final extracted text: ${text.length} chars, first 200: "${text.substring(0, 200).replace(/\s+/g, ' ')}"`);
     }
 
     // ─────────────────────────────────────────────

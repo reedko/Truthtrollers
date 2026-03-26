@@ -126,6 +126,8 @@ export default function AdminPanelPage() {
   const [loginFilter, setLoginFilter] = useState<string>("all");
   const [registrationFilter, setRegistrationFilter] = useState<string>("all");
   const [loginEventFilter, setLoginEventFilter] = useState<string>("all");
+  const [evidenceMode, setEvidenceMode] = useState<string>("fringe_on_support");
+  const [evidenceModeLoading, setEvidenceModeLoading] = useState(false);
 
   // Redirect if not super admin
   useEffect(() => {
@@ -157,6 +159,7 @@ export default function AdminPanelPage() {
         loadLoginAttempts(),
         loadRegistrationAttempts(),
         loadLoginEvents(),
+        loadEvidenceConfig(),
       ]);
     } catch (error) {
       console.error("Failed to load admin data:", error);
@@ -167,6 +170,50 @@ export default function AdminPanelPage() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadEvidenceConfig = async () => {
+    try {
+      const response = await api.get("/api/evidence-config");
+      const mode = response.data.currentMode || "fringe_on_support";
+      console.log("📊 Loaded evidence mode from server:", mode);
+      setEvidenceMode(mode);
+    } catch (error) {
+      console.error("Failed to load evidence config:", error);
+    }
+  };
+
+  const handleEvidenceModeChange = async (newMode: string) => {
+    try {
+      setEvidenceModeLoading(true);
+      console.log("📝 Updating evidence mode to:", newMode);
+      const response = await api.put("/api/evidence-config/mode", { mode: newMode });
+
+      // Update local state with the confirmed mode from server
+      const confirmedMode = response.data.mode || newMode;
+      console.log("✅ Server confirmed mode:", confirmedMode);
+      setEvidenceMode(confirmedMode);
+
+      toast({
+        title: "Evidence Search Mode Updated",
+        description: `Mode changed to: ${newMode.replace(/_/g, ' ')}`,
+        status: "success",
+        duration: 3000,
+      });
+    } catch (error: any) {
+      console.error("❌ Failed to update evidence mode:", error);
+      // On error, reload the config to restore the actual database value
+      await loadEvidenceConfig();
+
+      toast({
+        title: "Failed to update mode",
+        description: error.response?.data?.error || "Unknown error",
+        status: "error",
+        duration: 5000,
+      });
+    } finally {
+      setEvidenceModeLoading(false);
     }
   };
 
@@ -351,6 +398,7 @@ export default function AdminPanelPage() {
           <TabList>
             <Tab>Online Users</Tab>
             <Tab>Recent Activity</Tab>
+            <Tab>Evidence Config</Tab>
             <Tab>Login Attempts</Tab>
             <Tab>Login Events</Tab>
             <Tab>Registrations</Tab>
@@ -493,6 +541,77 @@ export default function AdminPanelPage() {
                       </Table>
                     </Box>
                   )}
+                </CardBody>
+              </Card>
+            </TabPanel>
+
+            {/* Evidence Search Config Tab */}
+            <TabPanel>
+              <Card bg="rgba(0, 229, 255, 0.05)" borderColor="cyan.400" borderWidth="1px">
+                <CardHeader>
+                  <Heading size="md">Evidence Search Configuration</Heading>
+                  <Text fontSize="sm" color="gray.400" mt={2}>
+                    Configure how the evidence engine searches for sources
+                  </Text>
+                </CardHeader>
+                <CardBody>
+                  <VStack spacing={6} align="stretch">
+                    <Box>
+                      <Text fontWeight="bold" mb={2}>Current Search Mode:</Text>
+                      <Select
+                        value={evidenceMode}
+                        onChange={(e) => handleEvidenceModeChange(e.target.value)}
+                        isDisabled={evidenceModeLoading}
+                        bg="gray.800"
+                        borderColor="cyan.500"
+                      >
+                        <option value="high_quality_only">
+                          1. High Quality Only - Tavily + Bing only
+                        </option>
+                        <option value="fringe_on_support">
+                          2. Fringe on Support - High quality + fringe when strong support (CURRENT DEFAULT)
+                        </option>
+                        <option value="balanced_all_claims">
+                          3. Balanced All Claims - 2-3 support, 2-3 refute, 2-3 nuance per claim
+                        </option>
+                      </Select>
+                    </Box>
+
+                    <Box p={4} bg="rgba(0, 229, 255, 0.1)" borderRadius="md">
+                      <VStack align="start" spacing={3}>
+                        <Text fontWeight="bold" color="cyan.300">Mode Descriptions:</Text>
+
+                        <Box>
+                          <Text fontWeight="semibold">1. High Quality Only</Text>
+                          <Text fontSize="sm" color="gray.400">
+                            Search only high-quality sources (Tavily + Bing). Fastest, most credible results.
+                          </Text>
+                        </Box>
+
+                        <Box>
+                          <Text fontWeight="semibold">2. Fringe on Support (Default)</Text>
+                          <Text fontSize="sm" color="gray.400">
+                            High-quality sources for Pass 1. If claim has strong support (confidence {">"} 0.7),
+                            search DuckDuckGo for fringe sources to map which low-credibility sites dispute well-documented facts.
+                          </Text>
+                        </Box>
+
+                        <Box>
+                          <Text fontWeight="semibold">3. Balanced All Claims</Text>
+                          <Text fontSize="sm" color="gray.400">
+                            For EVERY claim, actively search for 2-3 sources that support, 2-3 that refute,
+                            and 2-3 that provide nuanced perspectives. Ensures balanced evidence regardless of claim type.
+                          </Text>
+                        </Box>
+                      </VStack>
+                    </Box>
+
+                    {evidenceModeLoading && (
+                      <Center>
+                        <Spinner color="cyan.400" />
+                      </Center>
+                    )}
+                  </VStack>
                 </CardBody>
               </Card>
             </TabPanel>

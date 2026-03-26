@@ -220,10 +220,12 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       }
     };
     load();
-  }, [resolvedPivotType, resolvedPivotId, selectedTask, fetchTasksByPivot]);
+    // 🔧 PERF: Removed fetchTasksByPivot from deps to prevent loop
+  }, [resolvedPivotType, resolvedPivotId, selectedTask]);
 
   useEffect(() => {
-    const fetchScore = async () => {
+    // 🔧 PERF: Debounce score fetching to prevent rapid API calls
+    const timeoutId = setTimeout(async () => {
       if (!pivotTask?.content_id) {
         setLiveVerimeter(null);
         return;
@@ -238,14 +240,16 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       } catch {
         setLiveVerimeter(null);
       }
-    };
-    fetchScore();
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pivotTask?.content_id, viewerId, refreshKey]);
 
   // Fetch claim statistics for ProgressCard
   useEffect(() => {
-    const fetchStats = async () => {
+    // 🔧 PERF: Debounce and batch API calls to reduce load
+    const timeoutId = setTimeout(async () => {
       if (!pivotTask?.content_id) {
         setClaimStats({
           totalClaimLinks: 0,
@@ -259,29 +263,12 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       }
 
       try {
-        // Fetch linked claims (user-created claim relationships)
-        const linkedClaims = await fetchLinkedClaimsForTask(
-          pivotTask.content_id,
-          viewerId,
-        );
-
-        // Fetch all claims
-        const claims = await fetchClaimsForTask(pivotTask.content_id, viewerId);
-
-        // Fetch all references
-        const refs = await fetchReferencesForTask(pivotTask.content_id);
-
-        console.log("Claim Stats Debug:", {
-          contentId: pivotTask.content_id,
-          viewerId,
-          linkedClaimsCount: linkedClaims.length,
-          linkedClaims: linkedClaims.map((l) => ({
-            relation: l.relationship,
-            id: l.claim_link_id,
-          })),
-          claimsCount: claims.length,
-          refsCount: refs.length,
-        });
+        // 🔧 PERF: Fetch all data in parallel instead of sequentially
+        const [linkedClaims, claims, refs] = await Promise.all([
+          fetchLinkedClaimsForTask(pivotTask.content_id, viewerId),
+          fetchClaimsForTask(pivotTask.content_id, viewerId),
+          fetchReferencesForTask(pivotTask.content_id),
+        ]);
 
         // Count supporting, refuting, and nuanced links
         const supportingLinks = linkedClaims.filter(
@@ -294,12 +281,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
           (link) => link.relationship === "related",
         ).length;
 
-        console.log("Supporting/Refuting/Nuanced counts:", {
-          supportingLinks,
-          refutingLinks,
-          nuancedLinks,
-        });
-
         setClaimStats({
           totalClaimLinks: linkedClaims.length,
           totalClaims: claims.length,
@@ -311,9 +292,9 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       } catch (error) {
         console.error("Error fetching claim stats:", error);
       }
-    };
+    }, 300); // 300ms debounce
 
-    fetchStats();
+    return () => clearTimeout(timeoutId);
   }, [pivotTask?.content_id, viewerId, refreshKey]);
 
   const contentId = pivotTask?.content_id ?? null;

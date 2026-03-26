@@ -181,7 +181,8 @@ export default function createClaimsRoutes({ query, pool }) {
     const scope = req.query.scope || "user"; // 'user' | 'all' | 'admin'
 
     let userFilter = "";
-    const params = [content_id];
+    // viewerId first for the JOIN, then content_id for WHERE clause
+    const params = [viewerId || null, content_id];
 
     // Apply filtering based on scope
     if (scope === "admin") {
@@ -224,7 +225,9 @@ export default function createClaimsRoutes({ query, pool }) {
     LEFT JOIN content_claims cc ON c.claim_id = cc.claim_id
     LEFT JOIN claims_references cr ON c.claim_id = cr.claim_id
     LEFT JOIN content ref ON cr.reference_content_id = ref.content_id
+    LEFT JOIN user_claim_visibility ucv ON c.claim_id = ucv.claim_id AND ucv.user_id = ?
     WHERE cc.content_id = ?
+      AND (ucv.is_hidden IS NULL OR ucv.is_hidden = FALSE)
       ${userFilter}
     GROUP BY c.claim_id;
   `;
@@ -890,7 +893,8 @@ WHERE cc_task.content_id = ?
 
     try {
       let userFilter = "";
-      const params = [contentId];
+      // viewerId first for the JOIN, then contentId for WHERE clause
+      const params = [viewerId || null, contentId];
 
       // Apply filtering based on scope
       if (scope === "admin") {
@@ -923,7 +927,9 @@ WHERE cc_task.content_id = ?
           cc.created_at
         FROM claims c
         JOIN content_claims cc ON c.claim_id = cc.claim_id
+        LEFT JOIN user_claim_visibility ucv ON c.claim_id = ucv.claim_id AND ucv.user_id = ?
         WHERE cc.content_id = ?
+          AND (ucv.is_hidden IS NULL OR ucv.is_hidden = FALSE)
           ${userFilter}
         ORDER BY
           CASE c.claim_type
@@ -1091,6 +1097,73 @@ WHERE cc_task.content_id = ?
     } catch (err) {
       console.error("❌ Error fetching failed references:", err);
       res.status(500).json({ error: "Database query failed" });
+    }
+  });
+
+  // Hide claim for current user (soft-delete per user)
+  router.post("/api/claims/hide", async (req, res) => {
+    const { claimId, userId } = req.body;
+
+    console.log(`🔍 Hide claim request - claimId: ${claimId}, userId: ${userId}`);
+
+    if (!userId) {
+      console.log("❌ No userId provided");
+      return res.status(400).json({ error: "userId required" });
+    }
+
+    if (!claimId) {
+      console.log("❌ No claimId provided");
+      return res.status(400).json({ error: "Missing claimId" });
+    }
+
+    try {
+      const sql = `
+        INSERT INTO user_claim_visibility
+          (user_id, claim_id, is_hidden, hidden_at)
+        VALUES (?, ?, TRUE, NOW())
+        ON DUPLICATE KEY UPDATE
+          is_hidden = TRUE,
+          hidden_at = NOW()
+      `;
+      console.log(`📝 Executing SQL with userId=${userId}, claimId=${claimId}`);
+      const result = await query(sql, [userId, claimId]);
+      console.log(`✅ Query result:`, result);
+
+      console.log(`🗑️ Claim ${claimId} hidden for user ${userId}`);
+      res.json({ message: "Claim hidden successfully" });
+    } catch (err) {
+      console.error("❌ Error hiding claim:", err);
+      res.status(500).json({ error: "Error hiding claim" });
+    }
+  });
+
+  // Unhide claim for current user
+  router.post("/api/claims/unhide", async (req, res) => {
+    const { claimId, userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: "userId required" });
+    }
+
+    if (!claimId) {
+      return res.status(400).json({ error: "Missing claimId" });
+    }
+
+    try {
+      const sql = `
+        INSERT INTO user_claim_visibility
+          (user_id, claim_id, is_hidden, hidden_at)
+        VALUES (?, ?, FALSE, NULL)
+        ON DUPLICATE KEY UPDATE
+          is_hidden = FALSE,
+          hidden_at = NULL
+      `;
+      await query(sql, [userId, claimId]);
+
+      res.json({ message: "Claim unhidden successfully" });
+    } catch (err) {
+      console.error("Error unhiding claim:", err);
+      res.status(500).json({ error: "Error unhiding claim" });
     }
   });
 

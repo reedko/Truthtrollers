@@ -275,6 +275,7 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       setScanProgress({ current: 0, total: toAssess.length });
 
       const newLinks = [];
+      let skippedAsIrrelevant = 0;
       for (let i = 0; i < toAssess.length; i++) {
         const claim = toAssess[i];
         setScanProgress({ current: i + 1, total: toAssess.length });
@@ -285,7 +286,11 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
             claim.claim_text,
             taskClaim.claim_text
           );
-          if (link) newLinks.push(link);
+          if (link) {
+            newLinks.push(link);
+          } else {
+            skippedAsIrrelevant++;
+          }
         } catch (err) {
           console.error(`Failed to assess claim ${claim.claim_id}:`, err);
         }
@@ -314,15 +319,27 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       setTopClaims(top12);
 
       const scanModeLabel = scanMode === 'quick' ? 'Quick' : 'Deep';
+
+      // Build toast description
+      let toastDescription = '';
+      if (newLinks.length > 0) {
+        toastDescription = `Showing ${top12.length} top claims (${withLinks.length} linked, ${top12.length - withLinks.length} AI suggestions)`;
+        if (skippedAsIrrelevant > 0) {
+          toastDescription += `. ${skippedAsIrrelevant} claims filtered as irrelevant`;
+        }
+      } else if (skippedAsIrrelevant > 0) {
+        toastDescription = `Assessed ${toAssess.length} claims but all ${skippedAsIrrelevant} were deemed irrelevant (insufficient evidence or low confidence)`;
+      } else if (scanMode === 'quick') {
+        toastDescription = "All claims in linked references already assessed. Try Deep Scan for more.";
+      } else {
+        toastDescription = "All claims were already assessed";
+      }
+
       toast({
-        title: newLinks.length > 0 ? `${scanModeLabel} Scan: Found ${newLinks.length} new assessments` : `${scanModeLabel} Scan: No new assessments`,
-        description: newLinks.length > 0
-          ? `Showing ${top12.length} top claims (${withLinks.length} linked, ${top12.length - withLinks.length} unlinked)`
-          : scanMode === 'quick'
-          ? "All claims in linked references already assessed. Try Deep Scan for more."
-          : "All claims were already assessed",
+        title: newLinks.length > 0 ? `${scanModeLabel} Scan: Found ${newLinks.length} new assessments` : `${scanModeLabel} Scan: No new relevant claims`,
+        description: toastDescription,
         status: newLinks.length > 0 ? "success" : "info",
-        duration: 3000,
+        duration: 5000,
       });
     } catch (err) {
       console.error("[Relevance Scan] Error:", err);

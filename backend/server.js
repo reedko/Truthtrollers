@@ -79,6 +79,7 @@ import createAdminRouter from "./src/routes/admin/admin.routes.js";
 import createSearchAnalysisRouter from "./src/routes/search-analysis.routes.js";
 import createCredibilityRouter from "./src/routes/credibility/index.js";
 import createAnalyticsRouter from "./src/routes/analytics.routes.js";
+import createEvidenceConfigRoutes from "./src/routes/evidence-config.routes.js";
 import { initSocketServer } from "./src/realtime/socketServer.js";
 
 // Logger utility
@@ -260,6 +261,7 @@ registerBeaconRoutes(app, query, pool);
 registerDiscussionRoutes(app, query, pool);
 app.use("/api/analyze-content", analyzeContentRoute);
 app.use("/", createAnalyticsRouter({ query, pool }));  // Analytics routes: /api/track-visit, /api/analytics/*
+app.use("/", createEvidenceConfigRoutes({ query, pool }));  // Evidence config routes: /api/evidence-config
 
 // ─────────────────────────────────────────────
 // V2 modular routers, all mounted flat under /api

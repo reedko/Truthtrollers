@@ -116,6 +116,9 @@ rsync -azP --delete --partial --inplace \
 
 echo "📦 Sync backend code → server (excluding user content)..."
 rsync -azP --partial --inplace \
+  --include 'assets/images/content/content_id_default.png' \
+  --include 'assets/images/authors/author_id_default.png' \
+  --include 'assets/images/publishers/publisher_id_default.png' \
   --exclude '.env*' \
   --exclude 'assets/data/' \
   --exclude 'assets/documents/' \
@@ -132,23 +135,8 @@ rsync -azP --partial --inplace \
   --exclude '*.log' \
   backend/ "$SERVER:$BACKEND_PATH/"
 
-echo "🖼️  Sync default images → server (fallbacks for missing images)..."
-rsync -azP --partial --inplace \
-  backend/assets/images/content/content_id_default.png \
-  "$SERVER:$BACKEND_PATH/assets/images/content/" 2>/dev/null || true
-rsync -azP --partial --inplace \
-  backend/assets/images/authors/author_id_default.png \
-  "$SERVER:$BACKEND_PATH/assets/images/authors/" 2>/dev/null || true
-rsync -azP --partial --inplace \
-  backend/assets/images/publishers/publisher_id_default.png \
-  "$SERVER:$BACKEND_PATH/assets/images/publishers/" 2>/dev/null || true
-echo "✅ Default images synced (or skipped if not found)"
-
-echo "🔄 Re-establishing SSH connection..."
-ssh -o BatchMode=yes -o ConnectTimeout=10 "$SERVER" "echo '✅ Connection refreshed'"
-
 echo "🖥 Remote steps: Redis check, perms, logs, restart..."
-ssh -o ConnectTimeout=30 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 "$SERVER" bash << EOF
+ssh -o ConnectTimeout=60 -o ServerAliveInterval=15 -o ServerAliveCountMax=6 "$SERVER" bash << EOF
 set -e
 
 # Check if Redis is installed, if not install it

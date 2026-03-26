@@ -781,14 +781,24 @@ const TaskCard: React.FC<TaskCardProps> = ({
                   </MenuItem>
                 )}
                 {user?.role === "super_admin" && (
-                  <MenuItem
-                    onClick={handleDeleteTask}
-                    icon={<span>🗑️</span>}
-                    color="red.600"
-                    fontWeight="bold"
-                  >
-                    Delete Task (Permanent)
-                  </MenuItem>
+                  <>
+                    <MenuItem
+                      onClick={() => navigate(`/source-quality/${activeTask.content_id}`)}
+                      icon={<span>📊</span>}
+                      color="blue.400"
+                      fontWeight="bold"
+                    >
+                      Source Quality Analysis
+                    </MenuItem>
+                    <MenuItem
+                      onClick={handleDeleteTask}
+                      icon={<span>🗑️</span>}
+                      color="red.600"
+                      fontWeight="bold"
+                    >
+                      Delete Task (Permanent)
+                    </MenuItem>
+                  </>
                 )}
                 <MenuItem
                   onClick={handleDelete}

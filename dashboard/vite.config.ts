@@ -4,6 +4,23 @@ import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
 console.log("USING dashboard vite.config.ts");
+
+// Plugin to suppress harmless WebSocket errors
+function suppressWebSocketErrors() {
+  return {
+    name: 'suppress-ws-errors',
+    configureServer(server: any) {
+      server.ws.on('error', (error: any) => {
+        // Suppress "socket ended by other party" errors (happens on tab close/refresh)
+        if (error.message?.includes('ended by the other party')) {
+          return; // Silently ignore
+        }
+        // Log other errors normally
+        console.error('WebSocket error:', error);
+      });
+    },
+  };
+}
 // Load environment variables from backend/.env
 const env =
   dotenv.config({ path: path.resolve(__dirname, "../backend/.env") }).parsed ||
@@ -47,6 +64,10 @@ export default defineConfig({
     ...(httpsOptions ? { https: httpsOptions } : {}),
     port: 5173,
     strictPort: true,
+    hmr: {
+      overlay: true,
+      clientPort: 5173,
+    },
     proxy: {
       "/api": {
         target: "https://localhost:5001",

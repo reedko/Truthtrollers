@@ -668,7 +668,8 @@ router.post("/api/submit-text", async (req, res) => {
         const claimExtractionPromises = refsToProcess.map(async (ref) => {
           try {
             if (ref.quote) {
-              await persistClaims(query, ref.referenceContentId, [ref.quote], "snippet", "snippet");
+              // Clear old snippet links before persisting new snippet
+              await persistClaims(query, ref.referenceContentId, [ref.quote], "snippet", "snippet", true);
             }
             if (ref.cleanText) {
               const extractedClaims = await processTaskClaims({
@@ -677,6 +678,7 @@ router.post("/api/submit-text", async (req, res) => {
                 text: ref.cleanText,
                 claimType: "reference",
                 taskClaimsContext: taskClaims.map((c) => c.text),
+                clearOldLinks: true,  // Clear old reference links before extracting new claims
               });
               if (extractedClaims.length > 0) {
                 const claimMatches = await matchClaimsToTaskClaims({

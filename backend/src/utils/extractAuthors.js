@@ -65,6 +65,29 @@ export async function extractAuthors($) {
     }
   });
 
+  // ✅ ScienceDirect specific: .author-group with buttons and links
+  // Pattern: <div class="author-group"><button><span class="given-name">First</span> <span class="text surname">Last</span></button>, <a><span class="given-name">First</span> <span class="text surname">Last</span></a></div>
+  $('.author-group button[data-xocs-content-type="author"], .author-group a[href*="/author"]').each((_, element) => {
+    const $element = $(element);
+
+    // Extract given name and surname separately
+    const givenName = $element.find('.given-name').text().trim();
+    const surname = $element.find('.text.surname, .surname').text().trim();
+
+    if (givenName && surname) {
+      const name = `${givenName} ${surname}`;
+
+      if (!authors.find((a) => a.name === name)) {
+        logger.log(`👤 Found author from ScienceDirect author-group: ${name}`);
+        authors.push({
+          name,
+          description: null,
+          image: null,
+        });
+      }
+    }
+  });
+
   // ✅ Extract from byline containers with author links and avatars
   // Common pattern: <div class="byline"><a rel="author"><div class="avatar"><img></div><span class="name">Name</span></a></div>
   const bylineSelectors = [

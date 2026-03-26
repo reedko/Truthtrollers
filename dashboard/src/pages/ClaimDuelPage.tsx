@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Box,
   Card,
@@ -92,13 +92,7 @@ export default function ClaimDuelPage() {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const isMobile = useBreakpointValue({ base: true, md: false });
 
-  // Debug: Log current task on mount and when it changes
-  useEffect(() => {
-    console.log('🎯 ClaimDuelPage mounted/updated');
-    console.log('   Selected case:', selectedTask);
-    console.log('   Case ID:', selectedTask?.content_id);
-    console.log('   User:', user?.user_id);
-  }, [selectedTask, user]);
+  // 🔧 PERF: Removed debug logging that runs on every render
 
   const [focusClaim, setFocusClaim] = useState<FocusClaim | null>(null);
   const [candidates, setCandidates] = useState<CandidateClaim[]>([]);
@@ -150,29 +144,45 @@ export default function ClaimDuelPage() {
 
   // Sync claim box heights
   useEffect(() => {
+    // 🔧 PERF: Debounce height calculations to avoid constant recalcs
     const syncHeights = () => {
       if (caseClaimBoxRef.current && sourceClaimBoxRef.current) {
-        // Reset heights first
-        caseClaimBoxRef.current.style.minHeight = 'auto';
-        sourceClaimBoxRef.current.style.minHeight = 'auto';
+        // Use requestAnimationFrame to batch DOM operations
+        requestAnimationFrame(() => {
+          if (!caseClaimBoxRef.current || !sourceClaimBoxRef.current) return;
 
-        // Get natural heights
-        const caseHeight = caseClaimBoxRef.current.scrollHeight;
-        const sourceHeight = sourceClaimBoxRef.current.scrollHeight;
+          // Reset heights first
+          caseClaimBoxRef.current.style.minHeight = 'auto';
+          sourceClaimBoxRef.current.style.minHeight = 'auto';
 
-        // Set both to max height
-        const maxHeight = Math.max(caseHeight, sourceHeight);
-        caseClaimBoxRef.current.style.minHeight = `${maxHeight}px`;
-        sourceClaimBoxRef.current.style.minHeight = `${maxHeight}px`;
+          // Get natural heights
+          const caseHeight = caseClaimBoxRef.current.scrollHeight;
+          const sourceHeight = sourceClaimBoxRef.current.scrollHeight;
+
+          // Set both to max height
+          const maxHeight = Math.max(caseHeight, sourceHeight);
+          caseClaimBoxRef.current.style.minHeight = `${maxHeight}px`;
+          sourceClaimBoxRef.current.style.minHeight = `${maxHeight}px`;
+        });
       }
     };
 
-    // Sync on mount and when content changes
-    syncHeights();
+    // Debounce the sync function
+    const timeoutId = setTimeout(syncHeights, 100);
 
-    // Also sync on window resize
-    window.addEventListener('resize', syncHeights);
-    return () => window.removeEventListener('resize', syncHeights);
+    // Debounced resize handler
+    let resizeTimeout: number;
+    const handleResize = () => {
+      clearTimeout(resizeTimeout);
+      resizeTimeout = window.setTimeout(syncHeights, 150);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => {
+      clearTimeout(timeoutId);
+      clearTimeout(resizeTimeout);
+      window.removeEventListener('resize', handleResize);
+    };
   }, [focusClaim, currentCandidateIndex, candidates]);
 
   // Load available case claims when case changes
@@ -566,8 +576,16 @@ export default function ClaimDuelPage() {
     await loadFocusClaim(claimId);
   };
 
-  const currentCandidate = candidates[currentCandidateIndex];
-  const progressPercent = candidates.length > 0 ? ((currentCandidateIndex + 1) / candidates.length) * 100 : 0;
+  // 🔧 PERF: Memoize expensive calculations
+  const currentCandidate = useMemo(
+    () => candidates[currentCandidateIndex],
+    [candidates, currentCandidateIndex]
+  );
+
+  const progressPercent = useMemo(
+    () => candidates.length > 0 ? ((currentCandidateIndex + 1) / candidates.length) * 100 : 0,
+    [candidates.length, currentCandidateIndex]
+  );
 
   // Show appropriate message if no case selected
   if (!selectedTask?.content_id) {
