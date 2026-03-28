@@ -22,9 +22,10 @@
  * - monetization_pressure: Popups, affiliate stuffing, clickbait structure
  */
 export class SourceQualityScorer {
-  constructor(llm = null, query = null) {
+  constructor(llm = null, query = null, promptManager = null) {
     this.llm = llm;
     this.query = query; // Database query function
+    this.promptManager = promptManager; // Prompt manager for DB prompts
   }
 
   /**
@@ -70,13 +71,18 @@ export class SourceQualityScorer {
     url,
     domain,
   }) {
-    const system = "You are a source quality evaluator. Return only valid JSON with scores 0-10 (matching GameSpace scoring scale).";
+    // Fallback prompts (used if DB load fails)
+    const fallbackSystem = "You are a source quality evaluator. Return only valid JSON with scores 0-10 (matching GameSpace scoring scale).";
 
     const citationInfo = metadata.citationCount !== undefined
       ? `- Citations Extracted: ${metadata.citationCount} citations/references found`
       : '';
 
-    const user = `
+    const citationNote = metadata.citationCount !== undefined
+      ? `Note: ${metadata.citationCount} citations were extracted from this source.`
+      : '';
+
+    const fallbackUser = `
 Evaluate this source across multiple quality dimensions. Score each 0-10 (same scale as GameSpace points).
 
 SOURCE METADATA:
@@ -105,7 +111,7 @@ TRANSPARENCY:
 
 EVIDENCE QUALITY:
 3. evidence_density: Citations, documents, data, primary source quotations?
-   ${metadata.citationCount !== undefined ? `Note: ${metadata.citationCount} citations were extracted from this source.` : ''}
+   ${citationNote}
    10 = Extensive citations and primary sources (15+ citations)
    5 = Some evidence, limited citations (3-10 citations)
    0 = Opinion without evidence (0-2 citations)
@@ -151,6 +157,37 @@ Return JSON:
   "reasoning": "brief explanation"
 }
 `.trim();
+
+    let system = fallbackSystem;
+    let user = fallbackUser;
+
+    // Try to load from database if promptManager is available
+    if (this.promptManager) {
+      try {
+        const systemPrompt = await this.promptManager.getPrompt(
+          'source_quality_evaluation_system',
+          { system: fallbackSystem, user: '', parameters: {} }
+        );
+
+        const userPrompt = await this.promptManager.getPrompt(
+          'source_quality_evaluation_user',
+          { system: '', user: fallbackUser, parameters: {} }
+        );
+
+        system = systemPrompt.system;
+        user = userPrompt.user
+          .replace(/\{\{url\}\}/g, url || 'unknown')
+          .replace(/\{\{domain\}\}/g, domain || 'unknown')
+          .replace(/\{\{author\}\}/g, metadata.author || 'unknown')
+          .replace(/\{\{publisher\}\}/g, metadata.publisher || 'unknown')
+          .replace(/\{\{date\}\}/g, metadata.date || 'unknown')
+          .replace(/\{\{citationInfo\}\}/g, citationInfo)
+          .replace(/\{\{contentPreview\}\}/g, content_text.substring(0, 2000))
+          .replace(/\{\{citationNote\}\}/g, citationNote);
+      } catch (err) {
+        console.warn('[SourceQuality] Error loading DB prompts, using fallback:', err.message);
+      }
+    }
 
     const schemaHint = `{
   "author_transparency": 5.0,

@@ -154,37 +154,29 @@ Return JSON: {"specificity": X, "controversy": Y, "materiality": Z, "reasoning":
     extractionMode = 'ranked', // 'ranked' = top quality only, 'comprehensive' = extract all for user ranking
     taskClaimsContext = null,   // array of task claim strings for context-aware reference extraction
   }) {
-    // Claim extraction bounds based on mode
-    let minClaims, maxClaims;
+    // Load prompts first to get max_claims from database
+    const promptPreview = await this.loadClaimExtractionPrompts(
+      extractionMode,
+      includeTopicsAndTestimonials,
+      5, // temporary minClaims for loading
+      12 // temporary maxClaims for loading
+    );
 
-    if (extractionMode === 'ranked') {
-      // RANKED MODE: Extract high-quality claims, increased to capture comparative/causal claims
-      minClaims = 5;
-      maxClaims = 18; // Increased to capture atomic claims (studies, comparisons, causal claims separately)
-      // Scale slightly with article length to capture all important claims
-      if (tokenLength > 5000 && tokenLength <= 9000) {
-        minClaims = 8;
-        maxClaims = 24;
-      } else if (tokenLength > 9000) {
-        minClaims = 12;
-        maxClaims = 30;
-      }
+    // Get max_claims from database (default to 12 if not set)
+    const dbMaxClaims = promptPreview.parameters?.max_claims || 12;
+
+    // Set minClaims based on article length (same logic as before)
+    let minClaims;
+    if (tokenLength > 9000) {
+      minClaims = 8;
+    } else if (tokenLength > 5000) {
+      minClaims = 6;
     } else {
-      // COMPREHENSIVE MODE: Extract all claims for user ranking
       minClaims = 5;
-      maxClaims = 12;
-
-      if (tokenLength > 2500 && tokenLength <= 5000) {
-        minClaims = 8;
-        maxClaims = 16;
-      } else if (tokenLength > 5000 && tokenLength <= 9000) {
-        minClaims = 12;
-        maxClaims = 24;
-      } else if (tokenLength > 9000) {
-        minClaims = 16;
-        maxClaims = 30;
-      }
     }
+
+    // maxClaims comes from database
+    const maxClaims = dbMaxClaims;
 
     const testimonialsText =
       includeTopicsAndTestimonials &&

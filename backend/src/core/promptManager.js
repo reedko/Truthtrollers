@@ -31,7 +31,7 @@ class PromptManager {
 
       // Fetch from database
       const results = await this.query(
-        `SELECT prompt_type, prompt_text, parameters
+        `SELECT prompt_type, prompt_text, parameters, max_claims, min_sources, max_sources
          FROM llm_prompts
          WHERE prompt_name = ? AND is_active = TRUE
          ORDER BY version DESC
@@ -52,6 +52,17 @@ class PromptManager {
       const parameters = typeof row.parameters === 'string'
         ? JSON.parse(row.parameters)
         : row.parameters || {};
+
+      // Include max_claims and source limits in parameters if they exist
+      if (row.max_claims !== null && row.max_claims !== undefined) {
+        parameters.max_claims = row.max_claims;
+      }
+      if (row.min_sources !== null && row.min_sources !== undefined) {
+        parameters.min_sources = row.min_sources;
+      }
+      if (row.max_sources !== null && row.max_sources !== undefined) {
+        parameters.max_sources = row.max_sources;
+      }
 
       let prompt;
       if (row.prompt_type === 'combined') {

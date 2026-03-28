@@ -13,8 +13,9 @@
  * - Novelty/importance (may be important despite sparse retrieval)
  */
 export class ClaimTriageEngine {
-  constructor(llm = null) {
+  constructor(llm = null, promptManager = null) {
     this.llm = llm; // Optional: for AI-based triage decisions
+    this.promptManager = promptManager; // Prompt manager for DB prompts
   }
 
   /**
@@ -154,9 +155,10 @@ export class ClaimTriageEngine {
       return this.triageClaim({ claim, retrievalEvidence, claimProperties });
     }
 
-    const system = "You are a claim triage classifier. Return only valid JSON.";
+    // Fallback prompts (used if DB load fails)
+    const fallbackSystem = "You are a claim triage classifier. Return only valid JSON.";
 
-    const user = `
+    const fallbackUser = `
 Given this extracted claim and retrieval evidence, determine whether it should proceed to public evaluation.
 
 CLAIM: "${claim}"
@@ -197,6 +199,40 @@ Return JSON: {
   "confidence": 0.0-1.0
 }
 `.trim();
+
+    let system = fallbackSystem;
+    let user = fallbackUser;
+
+    // Try to load from database if promptManager is available
+    if (this.promptManager) {
+      try {
+        const systemPrompt = await this.promptManager.getPrompt(
+          'claim_triage_system',
+          { system: fallbackSystem, user: '', parameters: {} }
+        );
+
+        const userPrompt = await this.promptManager.getPrompt(
+          'claim_triage_user',
+          { system: '', user: fallbackUser, parameters: {} }
+        );
+
+        system = systemPrompt.system;
+        user = userPrompt.user
+          .replace(/\{\{claim\}\}/g, claim)
+          .replace(/\{\{retrieval_count\}\}/g, retrievalEvidence.retrieval_count || 0)
+          .replace(/\{\{distinct_source_count\}\}/g, retrievalEvidence.distinct_source_count || 0)
+          .replace(/\{\{max_relevance\}\}/g, retrievalEvidence.max_relevance || 0)
+          .replace(/\{\{avg_top3_relevance\}\}/g, retrievalEvidence.avg_top3_relevance || 0)
+          .replace(/\{\{quality_weighted_evidence_mass\}\}/g, retrievalEvidence.quality_weighted_evidence_mass || 0)
+          .replace(/\{\{claim_centrality\}\}/g, claimProperties.claim_centrality || 0.5)
+          .replace(/\{\{claim_specificity\}\}/g, claimProperties.claim_specificity || 0.5)
+          .replace(/\{\{claim_consequence\}\}/g, claimProperties.claim_consequence || 0.5)
+          .replace(/\{\{claim_contestability\}\}/g, claimProperties.claim_contestability || 0.5)
+          .replace(/\{\{claim_novelty\}\}/g, claimProperties.claim_novelty || 0.5);
+      } catch (err) {
+        console.warn('[ClaimTriage] Error loading DB prompts, using fallback:', err.message);
+      }
+    }
 
     const schemaHint = '{"triage_status":"ACTIVE_EVALUATION","reasoning":"","confidence":0.0}';
 

@@ -203,18 +203,26 @@ export async function extractAuthors($) {
 
         authorArray.forEach((author) => {
           if (author?.name) {
-            const authorName = author.name.trim();
-            // Check for duplicates before pushing
-            if (!authors.find((a) => a.name === authorName)) {
-              logger.log(
-                "👤 Found author from metadata.author array:",
-                authorName
-              );
-              authors.push({
-                name: authorName,
-                description: author.description || null,
-                image: author.image?.contentUrl || null,
-              });
+            // Handle case where author.name might be an object or non-string
+            const rawName = typeof author.name === 'string'
+              ? author.name
+              : (author.name?.name || author.name?.toString() || '');
+
+            const authorName = rawName.trim();
+
+            if (authorName && authorName.length > 0) {
+              // Check for duplicates before pushing
+              if (!authors.find((a) => a.name === authorName)) {
+                logger.log(
+                  "👤 Found author from metadata.author array:",
+                  authorName
+                );
+                authors.push({
+                  name: authorName,
+                  description: author.description || null,
+                  image: author.image?.contentUrl || null,
+                });
+              }
             }
           }
         });

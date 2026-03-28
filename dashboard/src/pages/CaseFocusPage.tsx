@@ -151,7 +151,7 @@ export const CaseFocusPage: React.FC = () => {
     styleMode === "mr1"
       ? {} // Transparent for MR1, showing weave pattern
       : {
-          bg: "linear-gradient(180deg, rgba(15, 28, 46, 0.68), rgba(8, 16, 27, 0.62))",
+          bg: "linear-gradient(180deg, rgba(15, 28, 46, 0.45), rgba(8, 16, 27, 0.40))",
         };
 
   const getPanelBorder = () =>
@@ -1270,72 +1270,12 @@ export const CaseFocusPage: React.FC = () => {
         {/* Main Workspace - 3 columns */}
         {focusClaim && (
           <Box position="relative" w="full">
-            {/* Style Toggle - Positioned at top right */}
-            <HStack spacing={2} position="absolute" top="-6px" right="0" zIndex={100}>
-              <Text
-                fontSize="11px"
-                color="#89a9bf"
-                textTransform="uppercase"
-                letterSpacing="0.1em"
-              >
-                Style:
-              </Text>
-              <Button
-                size="sm"
-                bg={
-                  styleMode === "mr1"
-                    ? "rgba(113, 219, 255, 0.2)"
-                    : "rgba(255, 255, 255, 0.05)"
-                }
-                border="1px solid"
-                borderColor={
-                  styleMode === "mr1"
-                    ? "rgba(113, 219, 255, 0.4)"
-                    : "rgba(255, 255, 255, 0.1)"
-                }
-                color={styleMode === "mr1" ? "#71dbff" : "#89a9bf"}
-                fontSize="10px"
-                px={3}
-                onClick={() => setStyleMode("mr1")}
-                _hover={{
-                  bg: "rgba(113, 219, 255, 0.25)",
-                  borderColor: "rgba(113, 219, 255, 0.5)",
-                }}
-              >
-                MR1
-              </Button>
-              <Button
-                size="sm"
-                bg={
-                  styleMode === "mr2"
-                    ? "rgba(113, 219, 255, 0.2)"
-                    : "rgba(255, 255, 255, 0.05)"
-                }
-                border="1px solid"
-                borderColor={
-                  styleMode === "mr2"
-                    ? "rgba(113, 219, 255, 0.4)"
-                    : "rgba(255, 255, 255, 0.1)"
-                }
-                color={styleMode === "mr2" ? "#71dbff" : "#89a9bf"}
-                fontSize="10px"
-                px={3}
-                onClick={() => setStyleMode("mr2")}
-                _hover={{
-                  bg: "rgba(113, 219, 255, 0.25)",
-                  borderColor: "rgba(113, 219, 255, 0.5)",
-                }}
-              >
-                MR2
-              </Button>
-            </HStack>
-
             <Grid
               templateColumns="480px 780px 360px"
               gap={8}
               w="full"
               alignItems="start"
-              mt="32px"
+              mt="8px"
             >
             {/* Left: Case Claim Focus */}
             <Box
@@ -1378,19 +1318,19 @@ export const CaseFocusPage: React.FC = () => {
               {/* MR1: Blue weave pattern */}
               {styleMode === "mr1" && (
                 <>
-                  {/* Blue weave pattern base - lighter at burst, darker away */}
+                  {/* Radiant glow from lower right corner */}
                   <Box
                     position="absolute"
                     inset="0"
-                    bgGradient="linear(135deg, rgba(113, 219, 255, 0.18) 0%, rgba(50, 120, 180, 0.25) 100%)"
+                    bgGradient="radial-gradient(circle at bottom right, rgba(113, 219, 255, 0.28) 0%, rgba(50, 120, 180, 0.15) 35%, transparent 70%)"
                     pointerEvents="none"
                     zIndex={0}
                   />
-                  {/* Weave pattern overlay */}
+                  {/* Tight scanline pattern like unified header cards */}
                   <Box
                     position="absolute"
                     inset="0"
-                    bgImage="repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(113, 219, 255, 0.08) 10px, rgba(113, 219, 255, 0.08) 11px), repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(71, 183, 255, 0.08) 10px, rgba(71, 183, 255, 0.08) 11px)"
+                    bgImage="repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 162, 255, 0.03) 2px, rgba(0, 162, 255, 0.03) 4px)"
                     pointerEvents="none"
                     zIndex={0}
                   />
@@ -2107,19 +2047,19 @@ export const CaseFocusPage: React.FC = () => {
               {/* MR1: Blue weave pattern */}
               {styleMode === "mr1" && (
                 <>
-                  {/* Blue weave pattern base - lighter at burst, darker away */}
+                  {/* Radiant glow from lower right corner */}
                   <Box
                     position="absolute"
                     inset="0"
-                    bgGradient="linear(135deg, rgba(113, 219, 255, 0.18) 0%, rgba(50, 120, 180, 0.25) 100%)"
+                    bgGradient="radial-gradient(circle at bottom right, rgba(113, 219, 255, 0.28) 0%, rgba(50, 120, 180, 0.15) 35%, transparent 70%)"
                     pointerEvents="none"
                     zIndex={0}
                   />
-                  {/* Weave pattern overlay */}
+                  {/* Tight scanline pattern like unified header cards */}
                   <Box
                     position="absolute"
                     inset="0"
-                    bgImage="repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(113, 219, 255, 0.08) 10px, rgba(113, 219, 255, 0.08) 11px), repeating-linear-gradient(-45deg, transparent, transparent 10px, rgba(71, 183, 255, 0.08) 10px, rgba(71, 183, 255, 0.08) 11px)"
+                    bgImage="repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 162, 255, 0.03) 2px, rgba(0, 162, 255, 0.03) 4px)"
                     pointerEvents="none"
                     zIndex={0}
                   />
@@ -2858,7 +2798,7 @@ export const CaseFocusPage: React.FC = () => {
             <VStack spacing={4}>
               {/* Source Claim Card */}
               <Box
-                bg="linear-gradient(180deg, rgba(15, 28, 46, 0.35), rgba(8, 16, 27, 0.30))"
+                bg="linear-gradient(180deg, rgba(15, 28, 46, 0.25), rgba(8, 16, 27, 0.20))"
                 borderRadius="28px"
                 border="1px solid"
                 borderColor="rgba(126, 207, 255, 0.22)"
@@ -2990,7 +2930,7 @@ export const CaseFocusPage: React.FC = () => {
 
               {/* AI Rationale */}
               <Box
-                bg="linear-gradient(180deg, rgba(15, 28, 46, 0.35), rgba(8, 16, 27, 0.30))"
+                bg="linear-gradient(180deg, rgba(15, 28, 46, 0.25), rgba(8, 16, 27, 0.20))"
                 borderRadius="28px"
                 border="1px solid"
                 borderColor="rgba(126, 207, 255, 0.22)"
@@ -3042,6 +2982,39 @@ export const CaseFocusPage: React.FC = () => {
                   </Text>
                 </VStack>
               </Box>
+
+              {/* Style Toggle - Right under AI RATIONALEx box */}
+              <HStack spacing={2} justify="flex-end" mt={2}>
+                <Text fontSize="11px" color="#89a9bf" textTransform="uppercase" letterSpacing="0.1em">
+                  Style:
+                </Text>
+                <Button
+                  size="sm"
+                  bg={styleMode === "mr1" ? "rgba(113, 219, 255, 0.2)" : "rgba(255, 255, 255, 0.05)"}
+                  border="1px solid"
+                  borderColor={styleMode === "mr1" ? "rgba(113, 219, 255, 0.4)" : "rgba(255, 255, 255, 0.1)"}
+                  color={styleMode === "mr1" ? "#71dbff" : "#89a9bf"}
+                  fontSize="10px"
+                  px={3}
+                  onClick={() => setStyleMode("mr1")}
+                  _hover={{ bg: "rgba(113, 219, 255, 0.25)", borderColor: "rgba(113, 219, 255, 0.5)" }}
+                >
+                  MR1
+                </Button>
+                <Button
+                  size="sm"
+                  bg={styleMode === "mr2" ? "rgba(113, 219, 255, 0.2)" : "rgba(255, 255, 255, 0.05)"}
+                  border="1px solid"
+                  borderColor={styleMode === "mr2" ? "rgba(113, 219, 255, 0.4)" : "rgba(255, 255, 255, 0.1)"}
+                  color={styleMode === "mr2" ? "#71dbff" : "#89a9bf"}
+                  fontSize="10px"
+                  px={3}
+                  onClick={() => setStyleMode("mr2")}
+                  _hover={{ bg: "rgba(113, 219, 255, 0.25)", borderColor: "rgba(113, 219, 255, 0.5)" }}
+                >
+                  MR2
+                </Button>
+              </HStack>
             </VStack>
           </Grid>
           </Box>

@@ -15,11 +15,12 @@ import { SourceQualityScorer } from './sourceQualityScorer.js';
  * 5. Provide UI display recommendations
  */
 export class ClaimEvaluationClassifier {
-  constructor(llm = null, query = null) {
+  constructor(llm = null, query = null, promptManager = null) {
     this.llm = llm;
     this.query = query;
-    this.triageEngine = new ClaimTriageEngine(llm);
-    this.qualityScorer = new SourceQualityScorer(llm, query);
+    this.promptManager = promptManager;
+    this.triageEngine = new ClaimTriageEngine(llm, promptManager);
+    this.qualityScorer = new SourceQualityScorer(llm, query, promptManager);
   }
 
   /**
@@ -57,9 +58,10 @@ export class ClaimEvaluationClassifier {
     source_document_text,
     source_document_metadata,
   }) {
-    const system = "You are a claim property evaluator. Return only valid JSON with scores 0.00-1.00.";
+    // Fallback prompts (used if DB load fails)
+    const fallbackSystem = "You are a claim property evaluator. Return only valid JSON with scores 0.00-1.00.";
 
-    const user = `
+    const fallbackUser = `
 Evaluate this claim across multiple dimensions. Score each 0.00-1.00.
 
 CLAIM: "${claim_text}"
@@ -104,6 +106,31 @@ Return JSON:
   "reasoning": "brief explanation"
 }
 `.trim();
+
+    let system = fallbackSystem;
+    let user = fallbackUser;
+
+    // Try to load from database if promptManager is available
+    if (this.promptManager) {
+      try {
+        const systemPrompt = await this.promptManager.getPrompt(
+          'claim_properties_evaluation_system',
+          { system: fallbackSystem, user: '', parameters: {} }
+        );
+
+        const userPrompt = await this.promptManager.getPrompt(
+          'claim_properties_evaluation_user',
+          { system: '', user: fallbackUser, parameters: {} }
+        );
+
+        system = systemPrompt.system;
+        user = userPrompt.user
+          .replace(/\{\{claim_text\}\}/g, claim_text)
+          .replace(/\{\{source_document_preview\}\}/g, source_document_text.substring(0, 1500));
+      } catch (err) {
+        console.warn('[ClaimClassifier] Error loading DB prompts, using fallback:', err.message);
+      }
+    }
 
     const schemaHint = `{
   "claim_centrality": 0.50,

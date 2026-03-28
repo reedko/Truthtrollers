@@ -263,6 +263,10 @@ app.use("/api/analyze-content", analyzeContentRoute);
 app.use("/", createAnalyticsRouter({ query, pool }));  // Analytics routes: /api/track-visit, /api/analytics/*
 app.use("/", createEvidenceConfigRoutes({ query, pool }));  // Evidence config routes: /api/evidence-config
 
+// LLM Prompts configuration routes
+import createLLMPromptsRouter from './src/routes/llm-prompts.routes.js';
+app.use("/api/llm-prompts", createLLMPromptsRouter({ query, pool }));
+
 // ─────────────────────────────────────────────
 // V2 modular routers, all mounted flat under /api
 // Each index.js composes its internal *.routes.js files.

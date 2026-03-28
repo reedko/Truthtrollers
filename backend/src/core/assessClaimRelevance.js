@@ -13,6 +13,7 @@ import { openAiLLM } from "./openAiLLM.js";
  * @param {string} params.taskClaimText - Claim from the task
  * @param {string} [params.systemPrompt] - Optional custom system prompt
  * @param {string} [params.customInstructions] - Optional additional instructions
+ * @param {Object} [params.promptManager] - Optional prompt manager for DB prompts
  * @returns {Promise<Object>} Assessment with stance, confidence, rationale
  */
 export async function assessClaimRelevance({
@@ -20,6 +21,7 @@ export async function assessClaimRelevance({
   taskClaimText,
   systemPrompt,
   customInstructions,
+  promptManager,
 }) {
   const defaultSystem = `You are assessing whether a reference claim is relevant to a task claim.
 
@@ -33,9 +35,7 @@ Guidelines:
 - quality: 0-1.2 (how strong/useful the reference claim is as evidence)
 - rationale: 1-2 sentences explaining WHY this stance applies`;
 
-  const system = systemPrompt || defaultSystem;
-
-  let user = `TASK CLAIM:
+  const defaultUser = `TASK CLAIM:
 "${taskClaimText}"
 
 REFERENCE CLAIM:
@@ -43,8 +43,40 @@ REFERENCE CLAIM:
 
 Analyze whether the reference claim supports, refutes, nuances, or is insufficient for evaluating the task claim.`;
 
-  if (customInstructions) {
-    user += `\n\nADDITIONAL INSTRUCTIONS:\n${customInstructions}`;
+  let system = systemPrompt || defaultSystem;
+  let user = defaultUser;
+
+  // Try to load from database if promptManager is available
+  if (promptManager && !systemPrompt) {
+    try {
+      const systemPromptDB = await promptManager.getPrompt(
+        'claim_relevance_assessment_system',
+        { system: defaultSystem, user: '', parameters: {} }
+      );
+
+      const userPromptDB = await promptManager.getPrompt(
+        'claim_relevance_assessment_user',
+        { system: '', user: defaultUser, parameters: {} }
+      );
+
+      system = systemPromptDB.system;
+      user = userPromptDB.user
+        .replace(/\{\{taskClaimText\}\}/g, taskClaimText)
+        .replace(/\{\{referenceClaimText\}\}/g, referenceClaimText)
+        .replace(/\{\{customInstructions\}\}/g, customInstructions ? `\n\nADDITIONAL INSTRUCTIONS:\n${customInstructions}` : '');
+    } catch (err) {
+      console.warn('[assessClaimRelevance] Error loading DB prompts, using fallback:', err.message);
+      // Use default fallback
+      user = defaultUser;
+      if (customInstructions) {
+        user += `\n\nADDITIONAL INSTRUCTIONS:\n${customInstructions}`;
+      }
+    }
+  } else {
+    // No promptManager or custom systemPrompt provided
+    if (customInstructions) {
+      user += `\n\nADDITIONAL INSTRUCTIONS:\n${customInstructions}`;
+    }
   }
 
   const schemaHint = `{

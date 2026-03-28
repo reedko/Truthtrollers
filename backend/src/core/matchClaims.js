@@ -13,9 +13,10 @@ import logger from "../utils/logger.js";
  * @param {Array} params.referenceClaims - Array of { id, text } from processTaskClaims
  * @param {Array} params.taskClaims - Array of { id, text } from original task
  * @param {Object} params.llm - LLM instance with generate() method
+ * @param {Object} params.promptManager - Optional prompt manager for DB prompts
  * @returns {Array} matches - Array of claim link objects
  */
-export async function matchClaimsToTaskClaims({ referenceClaims, taskClaims, llm }) {
+export async function matchClaimsToTaskClaims({ referenceClaims, taskClaims, llm, promptManager }) {
   if (!referenceClaims || referenceClaims.length === 0) {
     logger.log('🔗 [matchClaims] No reference claims to match');
     return [];
@@ -28,8 +29,8 @@ export async function matchClaimsToTaskClaims({ referenceClaims, taskClaims, llm
 
   logger.log(`🔗 [matchClaims] Matching ${referenceClaims.length} reference claims to ${taskClaims.length} task claims`);
 
-  // Build prompt for LLM
-  const system = `You are a fact-checking assistant that analyzes how reference claims relate to task claims.
+  // Fallback prompts (used if DB load fails)
+  const fallbackSystem = `You are a fact-checking assistant that analyzes how reference claims relate to task claims.
 
 For each reference claim, determine:
 1. Which task claim(s) it addresses (if any)
@@ -48,12 +49,15 @@ For each reference claim, determine:
 
 Return ONLY matches where the reference claim meaningfully addresses a task claim.`;
 
-  const user = `
+  const taskClaimsList = taskClaims.map((tc, i) => `[T${i + 1}] ${tc.text}`).join('\n');
+  const referenceClaimsList = referenceClaims.map((rc, i) => `[R${i + 1}] ${rc.text}`).join('\n');
+
+  const fallbackUser = `
 TASK CLAIMS (what we're fact-checking):
-${taskClaims.map((tc, i) => `[T${i + 1}] ${tc.text}`).join('\n')}
+${taskClaimsList}
 
 REFERENCE CLAIMS (from evidence source):
-${referenceClaims.map((rc, i) => `[R${i + 1}] ${rc.text}`).join('\n')}
+${referenceClaimsList}
 
 For each reference claim that addresses a task claim, return a match object.
 ONLY include matches where there's a clear relationship.
@@ -72,6 +76,31 @@ Return valid JSON array:
 ]
 
 If no reference claims address any task claims, return empty array [].`;
+
+  let system = fallbackSystem;
+  let user = fallbackUser;
+
+  // Try to load from database if promptManager is available
+  if (promptManager) {
+    try {
+      const systemPrompt = await promptManager.getPrompt(
+        'claim_matching_system',
+        { system: fallbackSystem, user: '', parameters: {} }
+      );
+
+      const userPrompt = await promptManager.getPrompt(
+        'claim_matching_user',
+        { system: '', user: fallbackUser, parameters: {} }
+      );
+
+      system = systemPrompt.system;
+      user = userPrompt.user
+        .replace(/\{\{taskClaims\}\}/g, taskClaimsList)
+        .replace(/\{\{referenceClaims\}\}/g, referenceClaimsList);
+    } catch (err) {
+      logger.warn('[matchClaims] Error loading DB prompts, using fallback:', err.message);
+    }
+  }
 
   const schemaHint = `[
   {

@@ -118,85 +118,80 @@ export async function scrapeTask(
 
     // fallback: get readable text from HTML
     if (!text) {
-      // Special handling for journal articles (ScienceDirect, etc.)
-      // These sites use React and the content is in the rendered DOM
+      // Detect site type for intelligent selector priority
       const isJournalSite = url.includes('sciencedirect.com') || url.includes('elsevier.com');
+      const isSubstack = url.includes('substack.com');
 
-      if (isJournalSite) {
-        const $raw = cheerio.load(rawHtml);
-        const combinedText = $raw('.Abstracts, .Body').text().trim();
+      // Load raw HTML and remove scripts/styles (but keep content structure)
+      const $raw = cheerio.load(rawHtml);
+      $raw("script, style, noscript").remove(); // Remove scripts/styles from raw HTML
 
-        if (combinedText.length > 500) {
-          logger.log(`✅ [scrapeTask] Journal site detected, using .Abstracts + .Body from raw HTML: ${combinedText.length} chars`);
-          text = combinedText;
-          // Skip the rest of the extraction - we have what we need
-        } else {
-          logger.log(`⚠️ [scrapeTask] Journal site detected but .Abstracts/.Body found only ${combinedText.length} chars`);
+      // Load fully cleaned HTML (removes content divs, nav, comments, etc.)
+      const cleanHtml = cleanForReadability(rawHtml);
+      const $clean = cheerio.load(cleanHtml);
+
+      // Unified selector cascade - site-specific selectors first, then generic
+      // Each entry: { selector, useRaw, minChars, description }
+      const selectorCascade = [
+        // Substack-specific selectors (only tested for Substack URLs)
+        ...(isSubstack ? [
+          { selector: ".available-content .body.markup", useRaw: true, minChars: 100, desc: "Substack article body" },
+          { selector: ".available-content", useRaw: true, minChars: 100, desc: "Substack content container" },
+        ] : []),
+
+        // Journal-specific selectors (only tested for journal URLs)
+        ...(isJournalSite ? [
+          { selector: ".Abstracts, .Body", useRaw: true, minChars: 100, desc: "Journal abstract + body (raw)" },
+          { selector: "#abstracts, #body", useRaw: false, minChars: 100, desc: "Journal abstract + body (clean)" },
+          { selector: ".Abstracts", useRaw: false, minChars: 100, desc: "Journal abstract only" },
+          { selector: ".Body", useRaw: false, minChars: 100, desc: "Journal body only" },
+          { selector: "#body", useRaw: false, minChars: 100, desc: "Journal body ID" },
+        ] : []),
+
+        // Generic article selectors (tested for all URLs)
+        { selector: "article", useRaw: false, minChars: 200, desc: "HTML5 article tag" },
+        { selector: ".article-content", useRaw: false, minChars: 200, desc: "Article content class" },
+        { selector: ".post-content", useRaw: false, minChars: 200, desc: "Post content class" },
+        { selector: ".entry-content", useRaw: false, minChars: 200, desc: "Entry content class" },
+        { selector: ".article-body", useRaw: false, minChars: 200, desc: "Article body class" },
+        { selector: ".story-body", useRaw: false, minChars: 200, desc: "Story body class" },
+        { selector: '[role="main"]', useRaw: false, minChars: 200, desc: "Main role (may include nav)" },
+        { selector: "main", useRaw: false, minChars: 200, desc: "Main tag" },
+        { selector: ".content", useRaw: false, minChars: 200, desc: "Content class" },
+        { selector: "#content", useRaw: false, minChars: 200, desc: "Content ID" },
+      ];
+
+      let extracted = "";
+      for (const { selector, useRaw, minChars, desc } of selectorCascade) {
+        const $ = useRaw ? $raw : $clean;
+        const content = $(selector).text().trim();
+        const htmlType = useRaw ? "raw" : "clean";
+        logger.log(`🔍 [scrapeTask] Testing "${selector}" (${htmlType}): ${content.length} chars - ${desc}`);
+
+        if (content.length > minChars) {
+          extracted = content;
+          logger.log(`📝 [scrapeTask] ✓ Selected "${selector}" (${htmlType}): ${content.length} chars`);
+          break;
         }
       }
 
-      // If we didn't get text from journal-specific extraction, continue with normal flow
-      if (!text) {
-        const cleanHtml = cleanForReadability(rawHtml);
-        const $clean = cheerio.load(cleanHtml);
-
-        // Try to find main content area first (common article selectors)
-        let extracted = "";
-        const contentSelectors = [
-          // Journal-specific selectors (higher priority)
-          "#abstracts, #body",  // ScienceDirect journals: combine abstract + body
-          ".Abstracts, .Body",  // ScienceDirect alternative class-based
-          ".Abstracts",         // Try abstract alone
-          ".Body",              // Try body alone
-          "#body",              // Try body ID alone
-
-          // Generic article selectors
-          "article",
-          ".article-content",
-          ".post-content",
-          ".entry-content",
-          ".article-body",
-          ".story-body",
-          '[role="main"]',      // Moved down - often includes navigation
-          "main",
-          ".content",
-          "#content",
-        ];
-
-        for (let i = 0; i < contentSelectors.length; i++) {
-          const selector = contentSelectors[i];
-          const content = $clean(selector).text().trim();
-          logger.log(`🔍 [scrapeTask] Testing selector "${selector}": ${content.length} chars`);
-
-          // Journal-specific selectors (first 5) have lower threshold
-          const isJournalSelector = i < 5;
-          const threshold = isJournalSelector ? 100 : 200;
-
-          if (content.length > threshold) {
-            extracted = content;
-            logger.log(`📝 [scrapeTask] Found content via selector: ${selector} (${content.length} chars, threshold: ${threshold})`);
-            break;
-          }
-        }
-
-        // Fallback: get all text if no content area found
-        if (!extracted) {
-          extracted = $clean.text().trim();
-          logger.log(
-            `📝 [scrapeTask] Using full page text (no content selector matched) (${extracted.length} chars)`,
-          );
-        }
-
-        if (extracted.length > 60000) {
-          logger.log(`⚠️ [scrapeTask] Text truncated from ${extracted.length} to 60000 chars`);
-          extracted = extracted.slice(0, 60000);
-        }
-
-        text = extracted;
+      // Fallback: get all text if no content area found
+      if (!extracted) {
+        extracted = $clean.text().trim();
+        logger.log(
+          `📝 [scrapeTask] Using full page text (no selector matched) (${extracted.length} chars)`,
+        );
       }
 
-      logger.log(`📝 [scrapeTask] Final extracted text: ${text.length} chars, first 200: "${text.substring(0, 200).replace(/\s+/g, ' ')}"`);
+      if (extracted.length > 60000) {
+        logger.log(`⚠️ [scrapeTask] Text truncated from ${extracted.length} to 60000 chars`);
+        extracted = extracted.slice(0, 60000);
+      }
+
+      text = extracted;
     }
+
+    logger.log(`📝 [scrapeTask] Final extracted text: ${text.length} chars, first 200: "${text.substring(0, 200).replace(/\s+/g, ' ')}"`);
 
     // ─────────────────────────────────────────────
     // 3. EXTRACT METADATA: title, authors, publisher

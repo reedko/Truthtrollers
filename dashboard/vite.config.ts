@@ -51,7 +51,7 @@ const httpsOptions = hasCert
 
 export default defineConfig({
   base: "/", // keeps paths root-relative in HTML
-  plugins: [react()],
+  plugins: [react(), suppressWebSocketErrors()],
   define: envKeys,
   resolve: {
     alias: {

@@ -3,40 +3,21 @@ import {
   Box,
   Container,
   Heading,
-  Grid,
   VStack,
   HStack,
-  Text,
   Badge,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Spinner,
   useToast,
-  Card,
-  CardHeader,
-  CardBody,
   Tabs,
   TabList,
   TabPanels,
   Tab,
   TabPanel,
-  Center,
-  Icon,
-  Flex,
-  Select,
 } from "@chakra-ui/react";
-import { FiUsers, FiActivity, FiBarChart2, FiClock } from "react-icons/fi";
 import { api } from "../services/api";
 import { useAuthStore } from "../store/useAuthStore";
 import { useNavigate } from "react-router-dom";
+import EvidenceOpsPanel from "../components/admin/EvidenceOpsPanel";
+import UserOpsPanel from "../components/admin/UserOpsPanel";
 
 interface OnlineUser {
   user_id: number;
@@ -126,8 +107,6 @@ export default function AdminPanelPage() {
   const [loginFilter, setLoginFilter] = useState<string>("all");
   const [registrationFilter, setRegistrationFilter] = useState<string>("all");
   const [loginEventFilter, setLoginEventFilter] = useState<string>("all");
-  const [evidenceMode, setEvidenceMode] = useState<string>("fringe_on_support");
-  const [evidenceModeLoading, setEvidenceModeLoading] = useState(false);
 
   // Redirect if not super admin
   useEffect(() => {
@@ -159,7 +138,6 @@ export default function AdminPanelPage() {
         loadLoginAttempts(),
         loadRegistrationAttempts(),
         loadLoginEvents(),
-        loadEvidenceConfig(),
       ]);
     } catch (error) {
       console.error("Failed to load admin data:", error);
@@ -170,50 +148,6 @@ export default function AdminPanelPage() {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadEvidenceConfig = async () => {
-    try {
-      const response = await api.get("/api/evidence-config");
-      const mode = response.data.currentMode || "fringe_on_support";
-      console.log("📊 Loaded evidence mode from server:", mode);
-      setEvidenceMode(mode);
-    } catch (error) {
-      console.error("Failed to load evidence config:", error);
-    }
-  };
-
-  const handleEvidenceModeChange = async (newMode: string) => {
-    try {
-      setEvidenceModeLoading(true);
-      console.log("📝 Updating evidence mode to:", newMode);
-      const response = await api.put("/api/evidence-config/mode", { mode: newMode });
-
-      // Update local state with the confirmed mode from server
-      const confirmedMode = response.data.mode || newMode;
-      console.log("✅ Server confirmed mode:", confirmedMode);
-      setEvidenceMode(confirmedMode);
-
-      toast({
-        title: "Evidence Search Mode Updated",
-        description: `Mode changed to: ${newMode.replace(/_/g, ' ')}`,
-        status: "success",
-        duration: 3000,
-      });
-    } catch (error: any) {
-      console.error("❌ Failed to update evidence mode:", error);
-      // On error, reload the config to restore the actual database value
-      await loadEvidenceConfig();
-
-      toast({
-        title: "Failed to update mode",
-        description: error.response?.data?.error || "Unknown error",
-        status: "error",
-        duration: 5000,
-      });
-    } finally {
-      setEvidenceModeLoading(false);
     }
   };
 
@@ -287,627 +221,130 @@ export default function AdminPanelPage() {
     }
   };
 
-  const getActivityBadgeColor = (type: string) => {
-    const colors: Record<string, string> = {
-      evidence_run: "purple",
-      claim_link_add: "green",
-      claim_link_evaluate: "blue",
-      task_view: "gray",
-      discussion_post: "orange",
-    };
-    return colors[type] || "gray";
-  };
-
-  const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (seconds < 60) return `${seconds}s ago`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  };
-
   if (user?.role !== "super_admin") {
     return null;
   }
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack spacing={8} align="stretch">
-        {/* Header */}
-        <HStack justify="space-between">
-          <Heading size="xl" color="cyan.400">
-            Admin Panel
-          </Heading>
-          <Badge colorScheme="purple" fontSize="md" px={3} py={1}>
-            Super Admin
-          </Badge>
-        </HStack>
+    <Box
+      minH="100vh"
+      bg="radial-gradient(circle at bottom right, rgba(0, 162, 255, 0.15) 0%, rgba(2, 0, 36, 0.95) 50%)"
+      position="relative"
+    >
+      {/* Scanline overlay for entire page */}
+      <Box
+        position="fixed"
+        inset="0"
+        bgImage="repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 162, 255, 0.02) 2px, rgba(0, 162, 255, 0.02) 4px)"
+        pointerEvents="none"
+        zIndex={0}
+      />
 
-        {/* Stats Overview */}
-        {loading && !stats ? (
-          <Center py={10}>
-            <Spinner size="xl" color="cyan.400" />
-          </Center>
-        ) : stats ? (
-          <Grid
-            templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }}
-            gap={6}
-          >
-            <Card bg="rgba(0, 229, 255, 0.05)" borderColor="cyan.400" borderWidth="1px">
-              <CardBody>
-                <Stat>
-                  <Flex align="center" mb={2}>
-                    <Icon as={FiUsers} boxSize={5} color="cyan.400" mr={2} />
-                    <StatLabel>Total Users</StatLabel>
-                  </Flex>
-                  <StatNumber color="cyan.400">{stats.totalUsers}</StatNumber>
-                  <StatHelpText>{onlineUsers.length} online now</StatHelpText>
-                </Stat>
-              </CardBody>
-            </Card>
+      <Container maxW="container.xl" py={8} position="relative" zIndex={1}>
+        <VStack spacing={8} align="stretch">
+          {/* Header */}
+          <HStack justify="space-between">
+            <VStack align="start" spacing={1}>
+              <Heading
+                size="2xl"
+                bgGradient="linear(to-r, cyan.300, blue.400)"
+                bgClip="text"
+                textShadow="0 0 20px rgba(0, 162, 255, 0.5)"
+              >
+                Admin Panel
+              </Heading>
+              <HStack>
+                <Badge
+                  colorScheme="purple"
+                  fontSize="md"
+                  px={3}
+                  py={1}
+                  borderRadius="md"
+                  boxShadow="0 0 10px rgba(139, 92, 246, 0.3)"
+                >
+                  Super Admin
+                </Badge>
+                <Badge
+                  colorScheme="cyan"
+                  fontSize="sm"
+                  px={2}
+                  py={1}
+                  borderRadius="md"
+                  variant="outline"
+                >
+                  {user?.username}
+                </Badge>
+              </HStack>
+            </VStack>
+          </HStack>
 
-            <Card bg="rgba(0, 229, 255, 0.05)" borderColor="cyan.400" borderWidth="1px">
-              <CardBody>
-                <Stat>
-                  <Flex align="center" mb={2}>
-                    <Icon as={FiBarChart2} boxSize={5} color="cyan.400" mr={2} />
-                    <StatLabel>Total Content</StatLabel>
-                  </Flex>
-                  <StatNumber color="cyan.400">{stats.totalContent}</StatNumber>
-                  <StatHelpText>{stats.totalClaims} claims</StatHelpText>
-                </Stat>
-              </CardBody>
-            </Card>
+          {/* Main Tabs - User Ops vs Evidence Ops */}
+          <Tabs variant="unstyled" colorScheme="cyan">
+            <TabList
+              bg="rgba(15, 23, 42, 0.6)"
+              backdropFilter="blur(10px)"
+              borderRadius="md"
+              p={1}
+              borderWidth="1px"
+              borderColor="rgba(0, 162, 255, 0.3)"
+            >
+              <Tab
+                _selected={{
+                  bg: "linear-gradient(135deg, rgba(0, 162, 255, 0.3), rgba(139, 92, 246, 0.2))",
+                  color: "cyan.300",
+                  boxShadow: "0 0 20px rgba(0, 162, 255, 0.3)",
+                }}
+                borderRadius="md"
+                fontWeight="bold"
+                fontSize="lg"
+                color="gray.400"
+                transition="all 0.3s"
+              >
+                User Operations
+              </Tab>
+              <Tab
+                _selected={{
+                  bg: "linear-gradient(135deg, rgba(0, 162, 255, 0.3), rgba(139, 92, 246, 0.2))",
+                  color: "cyan.300",
+                  boxShadow: "0 0 20px rgba(0, 162, 255, 0.3)",
+                }}
+                borderRadius="md"
+                fontWeight="bold"
+                fontSize="lg"
+                color="gray.400"
+                transition="all 0.3s"
+              >
+                Evidence Operations
+              </Tab>
+            </TabList>
 
-            <Card bg="rgba(0, 229, 255, 0.05)" borderColor="cyan.400" borderWidth="1px">
-              <CardBody>
-                <Stat>
-                  <Flex align="center" mb={2}>
-                    <Icon as={FiActivity} boxSize={5} color="cyan.400" mr={2} />
-                    <StatLabel>Activities (24h)</StatLabel>
-                  </Flex>
-                  <StatNumber color="cyan.400">{stats.activitiesLast24h}</StatNumber>
-                  <StatHelpText>Last 24 hours</StatHelpText>
-                </Stat>
-              </CardBody>
-            </Card>
-
-            <Card bg="rgba(0, 229, 255, 0.05)" borderColor="cyan.400" borderWidth="1px">
-              <CardBody>
-                <Stat>
-                  <Flex align="center" mb={2}>
-                    <Icon as={FiActivity} boxSize={5} color="cyan.400" mr={2} />
-                    <StatLabel>Activities (7d)</StatLabel>
-                  </Flex>
-                  <StatNumber color="cyan.400">{stats.activitiesLast7d}</StatNumber>
-                  <StatHelpText>Last 7 days</StatHelpText>
-                </Stat>
-              </CardBody>
-            </Card>
-          </Grid>
-        ) : null}
-
-        {/* Tabs for different views */}
-        <Tabs variant="soft-rounded" colorScheme="cyan">
-          <TabList>
-            <Tab>Online Users</Tab>
-            <Tab>Recent Activity</Tab>
-            <Tab>Evidence Config</Tab>
-            <Tab>Login Attempts</Tab>
-            <Tab>Login Events</Tab>
-            <Tab>Registrations</Tab>
-            <Tab>Top Contributors</Tab>
-          </TabList>
-
-          <TabPanels>
-            {/* Online Users Tab */}
-            <TabPanel>
-              <Card bg="rgba(0, 229, 255, 0.05)" borderColor="cyan.400" borderWidth="1px">
-                <CardHeader>
-                  <HStack justify="space-between">
-                    <Heading size="md">
-                      Online Users ({onlineUsers.length})
-                    </Heading>
-                    <HStack>
-                      <Icon as={FiClock} color="cyan.400" />
-                      <Text fontSize="sm" color="gray.400">
-                        Active in last 15 minutes
-                      </Text>
-                    </HStack>
-                  </HStack>
-                </CardHeader>
-                <CardBody>
-                  {loading ? (
-                    <Center py={10}>
-                      <Spinner color="cyan.400" />
-                    </Center>
-                  ) : onlineUsers.length === 0 ? (
-                    <Center py={10}>
-                      <Text color="gray.500">No users currently online</Text>
-                    </Center>
-                  ) : (
-                    <Box overflowX="auto" overflowY="auto" maxH="600px">
-                      <Table variant="simple" size="sm">
-                        <Thead>
-                          <Tr>
-                            <Th>Username</Th>
-                            <Th>Email</Th>
-                            <Th>Role</Th>
-                            <Th>Last Active</Th>
-                            <Th>Member Since</Th>
-                          </Tr>
-                        </Thead>
-                        <Tbody>
-                          {onlineUsers.map((user) => (
-                            <Tr key={user.user_id}>
-                              <Td>
-                                <HStack>
-                                  <Box
-                                    w={2}
-                                    h={2}
-                                    borderRadius="full"
-                                    bg="green.400"
-                                  />
-                                  <Text fontWeight="bold">{user.username}</Text>
-                                </HStack>
-                              </Td>
-                              <Td>{user.email}</Td>
-                              <Td>
-                                <Badge colorScheme={user.role === "super_admin" ? "purple" : "blue"}>
-                                  {user.role}
-                                </Badge>
-                              </Td>
-                              <Td>{formatTimeAgo(user.last_active)}</Td>
-                              <Td>
-                                {new Date(user.user_since).toLocaleDateString()}
-                              </Td>
-                            </Tr>
-                          ))}
-                        </Tbody>
-                      </Table>
-                    </Box>
-                  )}
-                </CardBody>
-              </Card>
-            </TabPanel>
-
-            {/* Recent Activity Tab */}
-            <TabPanel>
-              <Card bg="rgba(0, 229, 255, 0.05)" borderColor="cyan.400" borderWidth="1px">
-                <CardHeader>
-                  <HStack justify="space-between">
-                    <Heading size="md">
-                      Recent Activity ({activities.length})
-                    </Heading>
-                    <Select
-                      value={activityFilter}
-                      onChange={(e) => setActivityFilter(e.target.value)}
-                      w="200px"
-                      size="sm"
-                    >
-                      <option value="all">All Activities</option>
-                      <option value="evidence_run">Evidence Runs</option>
-                      <option value="claim_link_add">Claim Links Added</option>
-                      <option value="claim_link_evaluate">Link Evaluations</option>
-                      <option value="task_view">Case Views</option>
-                      <option value="discussion_post">Discussion Posts</option>
-                    </Select>
-                  </HStack>
-                </CardHeader>
-                <CardBody>
-                  {loading ? (
-                    <Center py={10}>
-                      <Spinner color="cyan.400" />
-                    </Center>
-                  ) : activities.length === 0 ? (
-                    <Center py={10}>
-                      <Text color="gray.500">No recent activities</Text>
-                    </Center>
-                  ) : (
-                    <Box overflowX="auto" overflowY="auto" maxH="600px">
-                      <Table variant="simple" size="sm">
-                        <Thead>
-                          <Tr>
-                            <Th>User</Th>
-                            <Th>Activity</Th>
-                            <Th>Content</Th>
-                            <Th>Time</Th>
-                          </Tr>
-                        </Thead>
-                        <Tbody>
-                          {activities.map((activity) => (
-                            <Tr key={activity.activity_id}>
-                              <Td>
-                                {activity.user_username || activity.username || "Guest"}
-                              </Td>
-                              <Td>
-                                <Badge colorScheme={getActivityBadgeColor(activity.activity_type)}>
-                                  {activity.activity_type.replace(/_/g, " ")}
-                                </Badge>
-                              </Td>
-                              <Td>
-                                {activity.content_title || `Content #${activity.content_id}`}
-                              </Td>
-                              <Td>{formatTimeAgo(activity.created_at)}</Td>
-                            </Tr>
-                          ))}
-                        </Tbody>
-                      </Table>
-                    </Box>
-                  )}
-                </CardBody>
-              </Card>
-            </TabPanel>
-
-            {/* Evidence Search Config Tab */}
-            <TabPanel>
-              <Card bg="rgba(0, 229, 255, 0.05)" borderColor="cyan.400" borderWidth="1px">
-                <CardHeader>
-                  <Heading size="md">Evidence Search Configuration</Heading>
-                  <Text fontSize="sm" color="gray.400" mt={2}>
-                    Configure how the evidence engine searches for sources
-                  </Text>
-                </CardHeader>
-                <CardBody>
-                  <VStack spacing={6} align="stretch">
-                    <Box>
-                      <Text fontWeight="bold" mb={2}>Current Search Mode:</Text>
-                      <Select
-                        value={evidenceMode}
-                        onChange={(e) => handleEvidenceModeChange(e.target.value)}
-                        isDisabled={evidenceModeLoading}
-                        bg="gray.800"
-                        borderColor="cyan.500"
-                      >
-                        <option value="high_quality_only">
-                          1. High Quality Only - Tavily + Bing only
-                        </option>
-                        <option value="fringe_on_support">
-                          2. Fringe on Support - High quality + fringe when strong support (CURRENT DEFAULT)
-                        </option>
-                        <option value="balanced_all_claims">
-                          3. Balanced All Claims - 2-3 support, 2-3 refute, 2-3 nuance per claim
-                        </option>
-                      </Select>
-                    </Box>
-
-                    <Box p={4} bg="rgba(0, 229, 255, 0.1)" borderRadius="md">
-                      <VStack align="start" spacing={3}>
-                        <Text fontWeight="bold" color="cyan.300">Mode Descriptions:</Text>
-
-                        <Box>
-                          <Text fontWeight="semibold">1. High Quality Only</Text>
-                          <Text fontSize="sm" color="gray.400">
-                            Search only high-quality sources (Tavily + Bing). Fastest, most credible results.
-                          </Text>
-                        </Box>
-
-                        <Box>
-                          <Text fontWeight="semibold">2. Fringe on Support (Default)</Text>
-                          <Text fontSize="sm" color="gray.400">
-                            High-quality sources for Pass 1. If claim has strong support (confidence {">"} 0.7),
-                            search DuckDuckGo for fringe sources to map which low-credibility sites dispute well-documented facts.
-                          </Text>
-                        </Box>
-
-                        <Box>
-                          <Text fontWeight="semibold">3. Balanced All Claims</Text>
-                          <Text fontSize="sm" color="gray.400">
-                            For EVERY claim, actively search for 2-3 sources that support, 2-3 that refute,
-                            and 2-3 that provide nuanced perspectives. Ensures balanced evidence regardless of claim type.
-                          </Text>
-                        </Box>
-                      </VStack>
-                    </Box>
-
-                    {evidenceModeLoading && (
-                      <Center>
-                        <Spinner color="cyan.400" />
-                      </Center>
-                    )}
-                  </VStack>
-                </CardBody>
-              </Card>
-            </TabPanel>
-
-            {/* Login Attempts Tab */}
-            <TabPanel>
-              <Card bg="rgba(0, 229, 255, 0.05)" borderColor="cyan.400" borderWidth="1px">
-                <CardHeader>
-                  <HStack justify="space-between">
-                    <Heading size="md">
-                      Login Attempts ({loginAttempts.length})
-                    </Heading>
-                    <Select
-                      value={loginFilter}
-                      onChange={(e) => setLoginFilter(e.target.value)}
-                      w="200px"
-                      size="sm"
-                    >
-                      <option value="all">All Attempts</option>
-                      <option value="true">Successful</option>
-                      <option value="false">Failed</option>
-                    </Select>
-                  </HStack>
-                </CardHeader>
-                <CardBody>
-                  {loading ? (
-                    <Center py={10}>
-                      <Spinner color="cyan.400" />
-                    </Center>
-                  ) : loginAttempts.length === 0 ? (
-                    <Center py={10}>
-                      <Text color="gray.500">No login attempts found</Text>
-                    </Center>
-                  ) : (
-                    <Box overflowX="auto" overflowY="auto" maxH="600px">
-                      <Table variant="simple" size="sm">
-                        <Thead>
-                          <Tr>
-                            <Th>Status</Th>
-                            <Th>Username</Th>
-                            <Th>IP Address</Th>
-                            <Th>Reason</Th>
-                            <Th>Time</Th>
-                          </Tr>
-                        </Thead>
-                        <Tbody>
-                          {loginAttempts.map((attempt) => (
-                            <Tr key={attempt.id}>
-                              <Td>
-                                <Badge colorScheme={attempt.success ? "green" : "red"}>
-                                  {attempt.success ? "Success" : "Failed"}
-                                </Badge>
-                              </Td>
-                              <Td fontWeight={attempt.success ? "bold" : "normal"}>
-                                {attempt.resolved_username || attempt.username}
-                              </Td>
-                              <Td fontFamily="monospace" fontSize="xs">
-                                {attempt.ip_address}
-                              </Td>
-                              <Td>
-                                {attempt.reason ? (
-                                  <Badge colorScheme="orange" fontSize="xs">
-                                    {attempt.reason.replace(/_/g, " ")}
-                                  </Badge>
-                                ) : (
-                                  <Text color="gray.500">-</Text>
-                                )}
-                              </Td>
-                              <Td>{formatTimeAgo(attempt.created_at)}</Td>
-                            </Tr>
-                          ))}
-                        </Tbody>
-                      </Table>
-                    </Box>
-                  )}
-                </CardBody>
-              </Card>
-            </TabPanel>
-
-            {/* Login Events Tab */}
-            <TabPanel>
-              <Card bg="rgba(0, 229, 255, 0.05)" borderColor="cyan.400" borderWidth="1px">
-                <CardHeader>
-                  <HStack justify="space-between">
-                    <Heading size="md">
-                      Login Events ({loginEvents.length})
-                    </Heading>
-                    <Select
-                      value={loginEventFilter}
-                      onChange={(e) => setLoginEventFilter(e.target.value)}
-                      w="200px"
-                      size="sm"
-                    >
-                      <option value="all">All Events</option>
-                      <option value="login">Logins</option>
-                      <option value="logout">Logouts</option>
-                      <option value="password_reset_request">Password Resets</option>
-                      <option value="password_changed">Password Changed</option>
-                    </Select>
-                  </HStack>
-                </CardHeader>
-                <CardBody>
-                  {loading ? (
-                    <Center py={10}>
-                      <Spinner color="cyan.400" />
-                    </Center>
-                  ) : loginEvents.length === 0 ? (
-                    <Center py={10}>
-                      <Text color="gray.500">No login events found</Text>
-                    </Center>
-                  ) : (
-                    <Box overflowX="auto" overflowY="auto" maxH="600px">
-                      <Table variant="simple" size="sm">
-                        <Thead>
-                          <Tr>
-                            <Th>Event Type</Th>
-                            <Th>Username</Th>
-                            <Th>IP Address</Th>
-                            <Th>Details</Th>
-                            <Th>Time</Th>
-                          </Tr>
-                        </Thead>
-                        <Tbody>
-                          {loginEvents.map((event) => (
-                            <Tr key={event.id}>
-                              <Td>
-                                <Badge
-                                  colorScheme={
-                                    event.event_type === 'login' ? 'green' :
-                                    event.event_type === 'logout' ? 'gray' :
-                                    event.event_type === 'password_reset_request' ? 'orange' :
-                                    'blue'
-                                  }
-                                >
-                                  {event.event_type.replace(/_/g, ' ')}
-                                </Badge>
-                              </Td>
-                              <Td fontWeight="bold">
-                                {event.username || `User #${event.user_id}`}
-                              </Td>
-                              <Td fontFamily="monospace" fontSize="xs">
-                                {event.ip_address}
-                              </Td>
-                              <Td fontSize="xs" color="gray.400">
-                                {event.details ?
-                                  (() => {
-                                    try {
-                                      const details = JSON.parse(event.details);
-                                      return details.username || details.email || '-';
-                                    } catch {
-                                      return '-';
-                                    }
-                                  })()
-                                  : '-'
-                                }
-                              </Td>
-                              <Td>{formatTimeAgo(event.created_at)}</Td>
-                            </Tr>
-                          ))}
-                        </Tbody>
-                      </Table>
-                    </Box>
-                  )}
-                </CardBody>
-              </Card>
-            </TabPanel>
-
-            {/* Registration Attempts Tab */}
-            <TabPanel>
-              <Card bg="rgba(0, 229, 255, 0.05)" borderColor="cyan.400" borderWidth="1px">
-                <CardHeader>
-                  <HStack justify="space-between">
-                    <Heading size="md">
-                      Registration Attempts ({registrationAttempts.length})
-                    </Heading>
-                    <Select
-                      value={registrationFilter}
-                      onChange={(e) => setRegistrationFilter(e.target.value)}
-                      w="200px"
-                      size="sm"
-                    >
-                      <option value="all">All Attempts</option>
-                      <option value="true">Successful</option>
-                      <option value="false">Failed</option>
-                    </Select>
-                  </HStack>
-                </CardHeader>
-                <CardBody>
-                  {loading ? (
-                    <Center py={10}>
-                      <Spinner color="cyan.400" />
-                    </Center>
-                  ) : registrationAttempts.length === 0 ? (
-                    <Center py={10}>
-                      <Text color="gray.500">No registration attempts found</Text>
-                    </Center>
-                  ) : (
-                    <Box overflowX="auto" overflowY="auto" maxH="600px">
-                      <Table variant="simple" size="sm">
-                        <Thead>
-                          <Tr>
-                            <Th>Status</Th>
-                            <Th>Username</Th>
-                            <Th>Email</Th>
-                            <Th>IP Address</Th>
-                            <Th>Message</Th>
-                            <Th>Time</Th>
-                          </Tr>
-                        </Thead>
-                        <Tbody>
-                          {registrationAttempts.map((attempt) => (
-                            <Tr key={attempt.id}>
-                              <Td>
-                                <Badge colorScheme={attempt.success ? "green" : "red"}>
-                                  {attempt.success ? "Success" : "Failed"}
-                                </Badge>
-                              </Td>
-                              <Td fontWeight={attempt.success ? "bold" : "normal"}>
-                                {attempt.username}
-                              </Td>
-                              <Td fontSize="sm">{attempt.email}</Td>
-                              <Td fontFamily="monospace" fontSize="xs">
-                                {attempt.ip_address}
-                              </Td>
-                              <Td fontSize="xs" color="gray.400">
-                                {attempt.message || "-"}
-                              </Td>
-                              <Td>{formatTimeAgo(attempt.created_at)}</Td>
-                            </Tr>
-                          ))}
-                        </Tbody>
-                      </Table>
-                    </Box>
-                  )}
-                </CardBody>
-              </Card>
-            </TabPanel>
-
-            {/* Top Contributors Tab */}
-            <TabPanel>
-              <Card bg="rgba(0, 229, 255, 0.05)" borderColor="cyan.400" borderWidth="1px">
-                <CardHeader>
-                  <Heading size="md">
-                    Top Contributors (Last 7 Days)
-                  </Heading>
-                </CardHeader>
-                <CardBody>
-                  {loading || !stats ? (
-                    <Center py={10}>
-                      <Spinner color="cyan.400" />
-                    </Center>
-                  ) : stats.topContributors.length === 0 ? (
-                    <Center py={10}>
-                      <Text color="gray.500">No activity in the last 7 days</Text>
-                    </Center>
-                  ) : (
-                    <Box overflowX="auto" overflowY="auto" maxH="600px">
-                      <Table variant="simple" size="sm">
-                        <Thead>
-                          <Tr>
-                            <Th>Rank</Th>
-                            <Th>Username</Th>
-                            <Th>Activities</Th>
-                          </Tr>
-                        </Thead>
-                        <Tbody>
-                          {stats.topContributors.map((contributor, index) => (
-                            <Tr key={contributor.user_id}>
-                              <Td>
-                                <Badge
-                                  colorScheme={
-                                    index === 0 ? "yellow" : index === 1 ? "gray" : index === 2 ? "orange" : "cyan"
-                                  }
-                                  fontSize="lg"
-                                >
-                                  #{index + 1}
-                                </Badge>
-                              </Td>
-                              <Td fontWeight="bold">{contributor.username}</Td>
-                              <Td>
-                                <Badge colorScheme="cyan" fontSize="md">
-                                  {contributor.activity_count}
-                                </Badge>
-                              </Td>
-                            </Tr>
-                          ))}
-                        </Tbody>
-                      </Table>
-                    </Box>
-                  )}
-                </CardBody>
-              </Card>
-            </TabPanel>
-          </TabPanels>
-        </Tabs>
-      </VStack>
-    </Container>
+            <TabPanels>
+              <TabPanel px={0} pt={6}>
+                <UserOpsPanel
+                  onlineUsers={onlineUsers}
+                  activities={activities}
+                  stats={stats}
+                  loginAttempts={loginAttempts}
+                  registrationAttempts={registrationAttempts}
+                  loginEvents={loginEvents}
+                  loading={loading}
+                  activityFilter={activityFilter}
+                  setActivityFilter={setActivityFilter}
+                  loginFilter={loginFilter}
+                  setLoginFilter={setLoginFilter}
+                  registrationFilter={registrationFilter}
+                  setRegistrationFilter={setRegistrationFilter}
+                  loginEventFilter={loginEventFilter}
+                  setLoginEventFilter={setLoginEventFilter}
+                />
+              </TabPanel>
+              <TabPanel px={0} pt={6}>
+                <EvidenceOpsPanel />
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
+        </VStack>
+      </Container>
+    </Box>
   );
 }

@@ -74,9 +74,17 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
           'evidence_query_generation_system',
           { system: fallbackSystem, user: '', parameters: {} }
         );
+
+        // Choose user prompt based on search mode
+        const userPromptName = searchMode?.enableBalancedSearch
+          ? 'evidence_query_generation_user_balanced'
+          : 'evidence_query_generation_user';
+
+        logger.log(`🎯 [EV][queries][${claim.id}] Loading prompt: ${userPromptName}`);
+
         const userPrompt = await this.deps.promptManager.getPrompt(
-          'evidence_query_generation_user',
-          { system: '', user: fallbackUser, parameters: { n: 6 } }
+          userPromptName,
+          { system: '', user: fallbackUser, parameters: { n: n } }
         );
 
         system = systemPrompt.system;
@@ -84,6 +92,14 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
           .replace(/\{\{claimText\}\}/g, claim.text)
           .replace(/\{\{context\}\}/g, JSON.stringify(ctx ?? {}))
           .replace(/\{\{n\}\}/g, n);
+
+        // For balanced mode, also replace query distribution variables
+        if (searchMode?.enableBalancedSearch) {
+          user = user
+            .replace(/\{\{supportQueries\}\}/g, searchMode.supportQueries || 3)
+            .replace(/\{\{refuteQueries\}\}/g, searchMode.refuteQueries || 3)
+            .replace(/\{\{nuanceQueries\}\}/g, searchMode.nuanceQueries || 3);
+        }
       } catch (err) {
         logger.warn(`⚠️ [EvidenceEngine] Error loading DB prompts, using fallback:`, err.message);
         // Use fallback - replace template variables
