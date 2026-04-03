@@ -1,5 +1,28 @@
-export const getNodesForEntity = (entityType) => {
+export const getNodesForEntity = (entityType, viewerId = null) => {
   if (entityType === "task") {
+    // Build visibility filter for references
+    // If viewerId is provided, exclude sources hidden by this user
+    // We interpolate viewerId directly since it's an integer (safe from SQL injection)
+    const visibilityFilter = viewerId
+      ? `AND NOT EXISTS (
+          SELECT 1 FROM user_reference_visibility urv
+          WHERE urv.user_id = ${parseInt(viewerId, 10)}
+            AND urv.task_content_id = tr.content_id
+            AND urv.reference_content_id = lr.content_id
+            AND urv.is_hidden = TRUE
+        )`
+      : '';
+
+    const visibilityFilterForAuthors = viewerId
+      ? `AND NOT EXISTS (
+          SELECT 1 FROM user_reference_visibility urv
+          WHERE urv.user_id = ${parseInt(viewerId, 10)}
+            AND urv.task_content_id = tr.content_id
+            AND urv.reference_content_id = tr.reference_content_id
+            AND urv.is_hidden = TRUE
+        )`
+      : '';
+
     return `
         SELECT
           'task' AS type,
@@ -52,6 +75,7 @@ export const getNodesForEntity = (entityType) => {
         JOIN content_authors ca ON a.author_id = ca.author_id
         JOIN content_relations tr ON ca.content_id = tr.reference_content_id
         WHERE tr.content_id = ?
+        ${visibilityFilterForAuthors}
 
         UNION
 
@@ -97,6 +121,7 @@ export const getNodesForEntity = (entityType) => {
         FROM content lr
         JOIN content_relations tr ON lr.content_id = tr.reference_content_id
         WHERE tr.content_id = ?
+        ${visibilityFilter}
         ;
       `;
   }
@@ -258,8 +283,30 @@ export const getNodesForEntity = (entityType) => {
   return null;
 };
 
-export const getLinksForEntity = (entityType) => {
+export const getLinksForEntity = (entityType, viewerId = null) => {
   if (entityType === "task") {
+    // Build visibility filter for reference-related links
+    // We interpolate viewerId directly since it's an integer (safe from SQL injection)
+    const visibilityFilter = viewerId
+      ? `AND NOT EXISTS (
+          SELECT 1 FROM user_reference_visibility urv
+          WHERE urv.user_id = ${parseInt(viewerId, 10)}
+            AND urv.task_content_id = tr.content_id
+            AND urv.reference_content_id = tr.reference_content_id
+            AND urv.is_hidden = TRUE
+        )`
+      : '';
+
+    const visibilityFilterForRefAuthored = viewerId
+      ? `AND NOT EXISTS (
+          SELECT 1 FROM user_reference_visibility urv
+          WHERE urv.user_id = ${parseInt(viewerId, 10)}
+            AND urv.task_content_id = tr.content_id
+            AND urv.reference_content_id = ca.content_id
+            AND urv.is_hidden = TRUE
+        )`
+      : '';
+
     return `
       SELECT
         'authored' AS type,
@@ -288,6 +335,7 @@ export const getLinksForEntity = (entityType) => {
         CONCAT("conte-", tr.content_id, "_conte-", tr.reference_content_id) AS id
       FROM content_relations tr
       WHERE tr.content_id = ?
+      ${visibilityFilter}
 
       UNION
 
@@ -299,6 +347,7 @@ export const getLinksForEntity = (entityType) => {
       FROM content_authors ca
       JOIN content_relations tr ON ca.content_id = tr.reference_content_id
       WHERE tr.content_id = ?
+      ${visibilityFilterForRefAuthored}
     `;
   }
 

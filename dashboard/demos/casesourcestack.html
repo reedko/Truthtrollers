@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Claim Path Highlight</title>
+    <style>
+      :root {
+        --bg: #08111f;
+        --panel: rgba(14, 24, 44, 0.88);
+        --panel-2: rgba(18, 32, 57, 0.92);
+        --text: #e8f1ff;
+        --muted: #9ab0d0;
+        --cyan: #55d6ff;
+        --blue: #6f8cff;
+        --violet: #9f7cff;
+        --green: #69f0ae;
+        --amber: #ffd166;
+        --line: rgba(120, 180, 255, 0.28);
+        --glow:
+          0 0 0 1px rgba(120, 180, 255, 0.25), 0 0 24px rgba(90, 170, 255, 0.18);
+        --radius: 18px;
+        --cut: 16px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          sans-serif;
+        background:
+          radial-gradient(
+            circle at 20% 20%,
+            rgba(90, 140, 255, 0.18),
+            transparent 32%
+          ),
+          radial-gradient(
+            circle at 80% 18%,
+            rgba(85, 214, 255, 0.12),
+            transparent 28%
+          ),
+          radial-gradient(
+            circle at 50% 100%,
+            rgba(159, 124, 255, 0.14),
+            transparent 35%
+          ),
+          linear-gradient(180deg, #07101d 0%, #091522 42%, #050b14 100%);
+        color: var(--text);
+        min-height: 100vh;
+        padding: 28px;
+      }
+
+      .frame {
+        max-width: 1480px;
+        margin: 0 auto;
+        border: 1px solid rgba(120, 180, 255, 0.12);
+        background: linear-gradient(
+          180deg,
+          rgba(10, 16, 28, 0.75),
+          rgba(7, 12, 22, 0.9)
+        );
+        border-radius: 28px;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.04),
+          0 20px 80px rgba(0, 0, 0, 0.45);
+        padding: 24px;
+        overflow: hidden;
+        position: relative;
+      }
+
+      .frame::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(
+            90deg,
+            transparent,
+            rgba(110, 180, 255, 0.04),
+            transparent
+          ),
+          repeating-linear-gradient(
+            90deg,
+            transparent 0 159px,
+            rgba(120, 180, 255, 0.04) 159px 160px
+          );
+        pointer-events: none;
+        mask-image: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.9),
+          transparent 92%
+        );
+      }
+
+      .titlebar {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 22px;
+      }
+
+      .titlebar h1 {
+        margin: 0;
+        font-size: clamp(28px, 4vw, 46px);
+        line-height: 1;
+        letter-spacing: -0.03em;
+        font-weight: 800;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 14px;
+        max-width: 700px;
+      }
+
+      .legend {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .pill {
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        color: #dce8ff;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        backdrop-filter: blur(8px);
+      }
+
+      .pill strong {
+        color: white;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1.15fr 1fr 1fr 0.95fr 0.9fr;
+        gap: 18px;
+        align-items: start;
+        position: relative;
+      }
+
+      .column {
+        position: relative;
+        padding-top: 10px;
+      }
+
+      .column-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 14px;
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 999px;
+        color: #d7e8ff;
+        font-size: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .stack {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .card {
+        position: relative;
+        background: linear-gradient(180deg, var(--panel), var(--panel-2));
+        border: 1px solid rgba(120, 180, 255, 0.16);
+        border-radius: var(--radius);
+        box-shadow: var(--glow);
+        padding: 16px 16px 15px;
+        clip-path: polygon(
+          var(--cut) 0,
+          calc(100% - var(--cut)) 0,
+          100% var(--cut),
+          100% calc(100% - var(--cut)),
+          calc(100% - var(--cut)) 100%,
+          var(--cut) 100%,
+          0 calc(100% - var(--cut)),
+          0 var(--cut)
+        );
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease,
+          border-color 0.2s ease,
+          opacity 0.2s ease;
+      }
+
+      .card:hover {
+        transform: translateY(-2px);
+        border-color: rgba(255, 214, 102, 0.45);
+        box-shadow:
+          0 0 0 1px rgba(255, 214, 102, 0.3),
+          0 0 28px rgba(255, 214, 102, 0.16),
+          0 16px 40px rgba(0, 0, 0, 0.35);
+      }
+
+      .card.active {
+        border-color: rgba(255, 214, 102, 0.68);
+        box-shadow:
+          0 0 0 1px rgba(255, 214, 102, 0.42),
+          0 0 36px rgba(255, 214, 102, 0.22),
+          0 18px 50px rgba(0, 0, 0, 0.42);
+      }
+
+      .card.dim {
+        opacity: 0.35;
+        filter: saturate(0.7);
+      }
+
+      .eyebrow {
+        color: var(--cyan);
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 8px;
+      }
+
+      .heading {
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1.2;
+        margin-bottom: 8px;
+      }
+
+      .body {
+        font-size: 13px;
+        line-height: 1.45;
+        color: var(--muted);
+      }
+
+      .tagrow {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+      }
+
+      .tag {
+        font-size: 11px;
+        padding: 6px 9px;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        color: #d5e2ff;
+      }
+
+      .claim-card {
+        min-height: 124px;
+      }
+      .source-claim-card {
+        min-height: 130px;
+      }
+      .source-card {
+        min-height: 150px;
+      }
+      .eval-card {
+        min-height: 240px;
+      }
+
+      .source-card .heading {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: start;
+      }
+
+      .score {
+        font-size: 11px;
+        color: #001018;
+        background: linear-gradient(180deg, #7df7c0, #4ee0a0);
+        border-radius: 999px;
+        padding: 5px 8px;
+        white-space: nowrap;
+        font-weight: 800;
+      }
+
+      .connector-layer {
+        position: absolute;
+        inset: 82px 0 0 0;
+        pointer-events: none;
+        z-index: 0;
+      }
+
+      svg {
+        width: 100%;
+        height: 660px;
+        overflow: visible;
+      }
+
+      .wire {
+        fill: none;
+        stroke: rgba(110, 170, 255, 0.18);
+        stroke-width: 3;
+      }
+
+      .wire.hot {
+        stroke: rgba(255, 209, 102, 0.9);
+        stroke-width: 4;
+        filter: drop-shadow(0 0 6px rgba(255, 209, 102, 0.7))
+          drop-shadow(0 0 18px rgba(255, 209, 102, 0.35));
+      }
+
+      .wire.multi {
+        stroke: rgba(105, 240, 174, 0.75);
+        filter: drop-shadow(0 0 5px rgba(105, 240, 174, 0.55));
+      }
+
+      .note {
+        margin-top: 18px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.5;
+        max-width: 980px;
+      }
+
+      .spark {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background: radial-gradient(
+          circle,
+          white 0%,
+          var(--amber) 35%,
+          transparent 70%
+        );
+        border-radius: 999px;
+        box-shadow: 0 0 16px rgba(255, 214, 102, 0.8);
+        animation: pulse 2.4s infinite ease-in-out;
+      }
+
+      .s1 {
+        top: 170px;
+        left: 24.8%;
+        animation-delay: 0.1s;
+      }
+      .s2 {
+        top: 300px;
+        left: 43.7%;
+        animation-delay: 0.5s;
+      }
+      .s3 {
+        top: 214px;
+        left: 61.3%;
+        animation-delay: 1s;
+      }
+      .s4 {
+        top: 280px;
+        left: 80.2%;
+        animation-delay: 1.4s;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(0.8);
+          opacity: 0.5;
+        }
+        50% {
+          transform: scale(1.8);
+          opacity: 1;
+        }
+      }
+
+      @media (max-width: 1200px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .connector-layer,
+        .spark {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="frame">
+      <div class="titlebar">
+        <div>
+          <h1>Claim Path Highlight</h1>
+          <div class="subtitle">
+            Hover or click a case claim to illuminate the reasoning route from
+            the case, through matching source claims, into the underlying
+            source, and finally into the evaluation state.
+          </div>
+        </div>
+
+        <div class="legend">
+          <div class="pill"><strong>Gold</strong> active path</div>
+          <div class="pill"><strong>Green</strong> multi-claim source</div>
+          <div class="pill"><strong>Dimmed</strong> unrelated nodes</div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="connector-layer">
+          <svg viewBox="0 0 1400 660" preserveAspectRatio="none">
+            <!-- Base wires -->
+            <path class="wire" d="M 220 95 C 270 95, 260 95, 310 95" />
+            <path class="wire" d="M 480 95 C 540 95, 560 80, 610 80" />
+            <path class="wire" d="M 480 95 C 545 95, 555 210, 610 210" />
+            <path class="wire" d="M 780 80 C 855 80, 860 130, 930 130" />
+            <path class="wire" d="M 780 210 C 855 210, 860 200, 930 180" />
+            <path class="wire" d="M 1090 160 C 1140 160, 1150 160, 1200 160" />
+
+            <path class="wire" d="M 220 255 C 270 255, 260 255, 310 255" />
+            <path class="wire" d="M 480 255 C 540 255, 560 250, 610 250" />
+            <path class="wire" d="M 780 250 C 855 250, 860 270, 930 290" />
+            <path class="wire" d="M 1090 290 C 1140 290, 1150 235, 1200 200" />
+
+            <path class="wire" d="M 780 370 C 860 370, 870 360, 930 360" />
+            <path class="wire" d="M 1090 360 C 1145 360, 1160 260, 1200 225" />
+
+            <!-- Highlighted example path -->
+            <path class="wire hot" d="M 220 95 C 270 95, 260 95, 310 95" />
+            <path class="wire hot" d="M 480 95 C 540 95, 560 80, 610 80" />
+            <path
+              class="wire hot multi"
+              d="M 480 95 C 545 95, 555 210, 610 210"
+            />
+            <path class="wire hot" d="M 780 80 C 855 80, 860 130, 930 130" />
+            <path
+              class="wire hot multi"
+              d="M 780 210 C 855 210, 860 200, 930 180"
+            />
+            <path
+              class="wire hot"
+              d="M 1090 160 C 1140 160, 1150 160, 1200 160"
+            />
+          </svg>
+        </div>
+
+        <div class="spark s1"></div>
+        <div class="spark s2"></div>
+        <div class="spark s3"></div>
+        <div class="spark s4"></div>
+
+        <!-- CASE -->
+        <section class="column">
+          <div class="column-label">Case</div>
+          <div class="stack">
+            <div class="card active">
+              <div class="eyebrow">Case record</div>
+              <div class="heading">
+                Did the policy reduce violent crime in the first year?
+              </div>
+              <div class="body">
+                This is the umbrella question. It contains multiple evaluable
+                claims that can be traced back to individual source claims and
+                documents.
+              </div>
+              <div class="tagrow">
+                <div class="tag">3 case claims</div>
+                <div class="tag">12 linked source claims</div>
+                <div class="tag">7 sources</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- CASE CLAIMS -->
+        <section class="column">
+          <div class="column-label">Case Claims</div>
+          <div class="stack">
+            <div class="card claim-card active">
+              <div class="eyebrow">Claim A</div>
+              <div class="heading">
+                “Violent crime fell 18% in the first year after rollout.”
+              </div>
+              <div class="body">
+                This is the selected case claim. Hovering it should light every
+                supporting or refuting source-claim path.
+              </div>
+              <div class="tagrow">
+                <div class="tag">selected</div>
+                <div class="tag">4 matched source claims</div>
+              </div>
+            </div>
+
+            <div class="card claim-card dim">
+              <div class="eyebrow">Claim B</div>
+              <div class="heading">
+                “The effect was strongest in high-density districts.”
+              </div>
+              <div class="body">
+                Another claim in the same case. Not currently active.
+              </div>
+            </div>
+
+            <div class="card claim-card dim">
+              <div class="eyebrow">Claim C</div>
+              <div class="heading">
+                “The reduction persisted across the next two quarters.”
+              </div>
+              <div class="body">
+                Inactive, but could share some of the same sources.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SOURCE CLAIMS -->
+        <section class="column">
+          <div class="column-label">Source Claims</div>
+          <div class="stack">
+            <div class="card source-claim-card active">
+              <div class="eyebrow">Source Claim 1</div>
+              <div class="heading">
+                “Police reports show a 17.6% drop in violent incidents
+                citywide.”
+              </div>
+              <div class="body">
+                Maps directly to Claim A. This source claim traces into a city
+                safety report.
+              </div>
+              <div class="tagrow">
+                <div class="tag">supports Claim A</div>
+                <div class="tag">high relevance</div>
+              </div>
+            </div>
+
+            <div class="card source-claim-card active">
+              <div class="eyebrow">Source Claim 2</div>
+              <div class="heading">
+                “The decline was largest in three dense urban districts.”
+              </div>
+              <div class="body">
+                This one is interesting because it belongs to the same source,
+                but maps to both Claim A and Claim B.
+              </div>
+              <div class="tagrow">
+                <div class="tag">supports A + B</div>
+                <div class="tag">multi-link</div>
+              </div>
+            </div>
+
+            <div class="card source-claim-card dim">
+              <div class="eyebrow">Source Claim 3</div>
+              <div class="heading">
+                “Quarterly reductions stabilized after month nine.”
+              </div>
+              <div class="body">
+                Relevant to Claim C, not the highlighted path.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- SOURCES -->
+        <section class="column">
+          <div class="column-label">Sources</div>
+          <div class="stack">
+            <div class="card source-card active">
+              <div class="eyebrow">Primary source</div>
+              <div class="heading">
+                <span>City Safety Report 2025</span>
+                <span class="score">Credibility 8.9</span>
+              </div>
+              <div class="body">
+                One source can contribute several source claims. That is the key
+                visual idea here: the source acts like a hub, not just a single
+                bead on a string.
+              </div>
+              <div class="tagrow">
+                <div class="tag">contains 2 active claims</div>
+                <div class="tag">official dataset</div>
+              </div>
+            </div>
+
+            <div class="card source-card dim">
+              <div class="eyebrow">Secondary source</div>
+              <div class="heading">
+                <span>Independent Review Article</span>
+                <span class="score">Credibility 7.1</span>
+              </div>
+              <div class="body">Linked to a different claim path.</div>
+            </div>
+
+            <div class="card source-card dim">
+              <div class="eyebrow">Expert source</div>
+              <div class="heading">
+                <span>Criminology Interview Transcript</span>
+                <span class="score">Credibility 6.8</span>
+              </div>
+              <div class="body">
+                Adds nuance, but not on the selected route.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- EVALUATION -->
+        <section class="column">
+          <div class="column-label">Evaluation</div>
+          <div class="stack">
+            <div class="card eval-card active">
+              <div class="eyebrow">Output</div>
+              <div class="heading">
+                Claim A currently evaluates as:
+                <span style="color: var(--green)">Supported with nuance</span>
+              </div>
+              <div class="body">
+                The highlight explains <em>why</em> the evaluation exists.
+                Instead of showing only a score, the interface reveals the path
+                of reasoning: <br /><br />
+                <strong style="color: #fff">Case</strong> →
+                <strong style="color: #fff">selected case claim</strong> →
+                <strong style="color: #fff">matching source claims</strong> →
+                <strong style="color: #fff">underlying source</strong> →
+                <strong style="color: #fff">evaluation state</strong>
+                <br /><br />
+                That makes the evidence flow legible at a glance, especially for
+                first-time users.
+              </div>
+              <div class="tagrow">
+                <div class="tag">explainable</div>
+                <div class="tag">traceable</div>
+                <div class="tag">new-user friendly</div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="note">
+        For the real product interaction, I’d make the default state fairly
+        calm, then on hover or click: unrelated nodes dim, the matching
+        case-claim path glows gold, and any source that feeds multiple case
+        claims gets a secondary green accent so users immediately understand
+        that one source can participate in several reasoning branches.
+      </div>
+    </div>
+  </body>
+</html>

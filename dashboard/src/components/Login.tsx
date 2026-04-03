@@ -45,6 +45,7 @@ import { useTaskStore } from "../store/useTaskStore";
 import ColorModeSwitch from "./ColorModeSwitch";
 import TopContributors from "./TopContributors";
 import HotTopics from "./HotTopics";
+import WhitelistRequestModal from "./modals/WhitelistRequestModal";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
@@ -56,6 +57,7 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [isWhitelistModalOpen, setIsWhitelistModalOpen] = useState(false);
 
   const setAuth = useAuthStore((s) => s.setAuth);
   const navigate = useNavigate();
@@ -395,10 +397,25 @@ const Login: React.FC = () => {
               >
                 Register
               </Button>
+              <Button
+                type="button"
+                variant="link"
+                onClick={() => setIsWhitelistModalOpen(true)}
+                color="cyan.400"
+                fontWeight="600"
+              >
+                Request Early Access
+              </Button>
             </Stack>
           </form>
         </Box>
       </Box>
+
+      {/* Whitelist Request Modal */}
+      <WhitelistRequestModal
+        isOpen={isWhitelistModalOpen}
+        onClose={() => setIsWhitelistModalOpen(false)}
+      />
     </>
   );
 };

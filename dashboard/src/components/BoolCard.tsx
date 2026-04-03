@@ -5,6 +5,7 @@ import TruthGauge from "./ModernArcGauge";
 import MiniVoteArcGauge from "./MiniVoteArcGauge";
 import { tealGaugeTheme } from "./themes/tealGaugeTheme";
 import { fetchContentScores } from "../services/useDashboardAPI";
+import { useVerimeterMode } from "../contexts/VerimeterModeContext";
 
 interface BoolCardProps {
   verimeterScore?: number | null;
@@ -41,6 +42,7 @@ const BoolCard: React.FC<BoolCardProps> = ({
   size = "md",
   dense = false,
 }) => {
+  const { mode, aiWeight } = useVerimeterMode();
   const [scores, setScores] = useState<Scores | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -57,7 +59,7 @@ const BoolCard: React.FC<BoolCardProps> = ({
     ) {
       setLoading(true);
       setFetchError(null);
-      fetchContentScores(Number(contentId), null)
+      fetchContentScores(Number(contentId), null, mode, aiWeight)
         .then((data) => {
           if (!ignore) setScores(data);
         })
@@ -72,7 +74,7 @@ const BoolCard: React.FC<BoolCardProps> = ({
       ignore = true;
     };
     // eslint-disable-next-line
-  }, [verimeterScore, trollmeterScore, pro, con, contentId]);
+  }, [verimeterScore, trollmeterScore, pro, con, contentId, mode, aiWeight]);
 
   // Use props if provided, else fetched scores
   const vScore =

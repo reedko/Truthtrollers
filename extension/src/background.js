@@ -12,6 +12,43 @@ const BASE_URL =
 // Initialize and persist device fingerprint
 let cachedFingerprint = null;
 
+// Cache extension settings
+let cachedExtensionSettings = null;
+let settingsLastFetched = 0;
+const SETTINGS_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+async function getExtensionSettings() {
+  const now = Date.now();
+
+  // Return cached if still fresh
+  if (cachedExtensionSettings && (now - settingsLastFetched) < SETTINGS_CACHE_DURATION) {
+    return cachedExtensionSettings;
+  }
+
+  try {
+    const response = await fetch(`${BASE_URL}/api/extension-settings`, {
+      method: "GET",
+      credentials: "include",
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      cachedExtensionSettings = data.settings;
+      settingsLastFetched = now;
+      console.log("✅ Extension settings loaded:", cachedExtensionSettings);
+      return cachedExtensionSettings;
+    }
+  } catch (err) {
+    console.error("Failed to fetch extension settings:", err);
+  }
+
+  // Return defaults if fetch fails
+  return {
+    verimeter_mode: 'user',
+    verimeter_ai_weight: '0.5'
+  };
+}
+
 async function getDeviceFingerprint() {
   if (cachedFingerprint) return cachedFingerprint;
 
@@ -964,7 +1001,26 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     if (message.action === "fetchClaimScores") {
       try {
         const { contentId, userId } = message;
-        const url = `${BASE_URL}/api/content/${contentId}/scores${userId ? `?viewerId=${userId}` : ""}`;
+
+        // Get extension settings to determine mode
+        const settings = await getExtensionSettings();
+        const mode = settings.verimeter_mode || 'user';
+        const aiWeight = settings.verimeter_ai_weight || '0.5';
+
+        // Build URL based on mode
+        let url;
+        if (mode === 'ai') {
+          url = `${BASE_URL}/api/content/${contentId}/scores/ai`;
+        } else if (mode === 'user') {
+          url = `${BASE_URL}/api/content/${contentId}/scores/user${userId ? `?viewerId=${userId}` : ""}`;
+        } else { // combined
+          const params = new URLSearchParams();
+          if (userId) params.append('viewerId', userId);
+          params.append('aiWeight', aiWeight);
+          url = `${BASE_URL}/api/content/${contentId}/scores/combined?${params.toString()}`;
+        }
+
+        console.log(`📊 Fetching scores in ${mode} mode from:`, url);
 
         const response = await fetch(url, {
           method: "GET",
@@ -979,6 +1035,8 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
         return {
           success: true,
           verimeterScore: Number(data.verimeter_score) || 0,
+          mode: data.mode,
+          ratingCounts: data.rating_counts,
         };
       } catch (err) {
         console.error("[Background] fetchClaimScores error:", err);
@@ -1337,26 +1395,146 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
         isCompleted: isCompleted,
       });
 
-      // Fetch verimeter score for this content
+      // Fetch verimeter score for this content using extension settings
       try {
-        const scoreResponse = await fetch(
-          `${BASE_URL}/api/content/${task.content_id}/scores`,
-          {
-            method: "GET",
-            credentials: "include",
-          },
-        );
+        const settings = await getExtensionSettings();
+        const mode = settings.verimeter_mode || 'user';
+        const aiWeight = settings.verimeter_ai_weight || '0.5';
+
+        let scoreUrl;
+        if (mode === 'ai') {
+          scoreUrl = `${BASE_URL}/api/content/${task.content_id}/scores/ai`;
+        } else if (mode === 'user') {
+          scoreUrl = `${BASE_URL}/api/content/${task.content_id}/scores/user`;
+        } else {
+          scoreUrl = `${BASE_URL}/api/content/${task.content_id}/scores/combined?aiWeight=${aiWeight}`;
+        }
+
+        console.log(`📊 [checkContent] Fetching score in ${mode} mode from:`, scoreUrl);
+
+        const scoreResponse = await fetch(scoreUrl, {
+          method: "GET",
+          credentials: "include",
+        });
+
         if (scoreResponse.ok) {
           const scoreData = await scoreResponse.json();
           task.verimeter_score = Number(scoreData.verimeter_score) || 0;
           console.log(
-            `✅ [checkContent] Fetched verimeter_score: ${task.verimeter_score}`,
+            `✅ [checkContent] Fetched verimeter_score (${mode} mode): ${task.verimeter_score}`,
           );
         }
       } catch (scoreErr) {
         console.warn(
           `⚠️ [checkContent] Failed to fetch verimeter score:`,
           scoreErr,
+        );
+      }
+
+      // Fetch claim pairs for completed content - get top 5 case claims
+      try {
+        // First fetch claim scores for all claims in this content
+        const claimScoresResponse = await fetch(
+          `${BASE_URL}/api/content/${task.content_id}/claim-scores`,
+          {
+            method: "GET",
+            credentials: "include",
+          },
+        );
+        const claimScores = claimScoresResponse.ok ? await claimScoresResponse.json() : {};
+        console.log(`✅ [checkContent] Fetched claim scores:`, claimScores);
+
+        const topClaimsResponse = await fetch(
+          `${BASE_URL}/api/content/${task.content_id}/top-claims?limit=5`,
+          {
+            method: "GET",
+            credentials: "include",
+          },
+        );
+        if (topClaimsResponse.ok) {
+          const topClaims = await topClaimsResponse.json();
+          console.log(`✅ [checkContent] Fetched ${topClaims.length} top case claims`);
+
+          // For each top claim, fetch its linked claims
+          const claimPairs = [];
+          for (const caseClaim of topClaims.slice(0, 5)) {
+            try {
+              const linkedResponse = await fetch(
+                `${BASE_URL}/api/linked-claims-for-claim/${caseClaim.claim_id}`,
+                {
+                  method: "GET",
+                  credentials: "include",
+                },
+              );
+              if (linkedResponse.ok) {
+                const linkedClaims = await linkedResponse.json();
+                console.log(`📋 [checkContent] Linked claims for case claim ${caseClaim.claim_id}:`, linkedClaims);
+
+                // Get the verimeter score for the case claim from the scores map
+                const caseClaimScore = claimScores[caseClaim.claim_id] ?? 0;
+                console.log(`📊 [checkContent] Case claim ${caseClaim.claim_id} score: ${caseClaimScore}`);
+
+                // Select the best source claim based on case claim score
+                let bestSourceClaim = null;
+                if (linkedClaims.length > 0) {
+                  if (caseClaimScore < -0.1) {
+                    // Refuted: find the source claim with the most negative (refuting) support_level
+                    bestSourceClaim = linkedClaims.reduce((best, current) => {
+                      const bestLevel = best?.support_level ?? 0;
+                      const currentLevel = current?.support_level ?? 0;
+                      return currentLevel < bestLevel ? current : best;
+                    }, linkedClaims[0]);
+                  } else if (caseClaimScore > 0.1) {
+                    // Supported: find the source claim with the most positive (supporting) support_level
+                    bestSourceClaim = linkedClaims.reduce((best, current) => {
+                      const bestLevel = best?.support_level ?? 0;
+                      const currentLevel = current?.support_level ?? 0;
+                      return currentLevel > bestLevel ? current : best;
+                    }, linkedClaims[0]);
+                  } else {
+                    // Neutral/uncertain: just take the first one
+                    bestSourceClaim = linkedClaims[0];
+                  }
+                }
+
+                if (bestSourceClaim) {
+                  console.log(`📊 [checkContent] Best source claim for ${caseClaim.claim_id}:`, bestSourceClaim);
+
+                  claimPairs.push({
+                    caseClaim: {
+                      claim_id: caseClaim.claim_id,
+                      claim_text: caseClaim.claim_text,
+                      publisher: caseClaim.publisher || caseClaim.media_source,
+                      url: caseClaim.url
+                    },
+                    sourceClaim: {
+                      claim_id: bestSourceClaim.sourceClaimId,
+                      claim_text: bestSourceClaim.sourceClaim?.claim_text || "No source claim text",
+                      publisher: bestSourceClaim.source_publisher || "Unknown",
+                      url: bestSourceClaim.source_url || "",
+                      relationship: bestSourceClaim.relation || bestSourceClaim.relationship
+                    },
+                    verimeter_score: caseClaimScore,
+                    support_level: bestSourceClaim.support_level || 0,
+                    rationale: bestSourceClaim.notes || bestSourceClaim.rationale || ""
+                  });
+                }
+              }
+            } catch (linkErr) {
+              console.warn(`⚠️ Failed to fetch links for claim ${caseClaim.claim_id}:`, linkErr);
+            }
+          }
+
+          task.claim_pairs = {
+            overall_verimeter: task.verimeter_score,
+            claim_pairs: claimPairs
+          };
+          console.log(`✅ [checkContent] Assembled ${claimPairs.length} claim pairs`);
+        }
+      } catch (claimPairsErr) {
+        console.warn(
+          `⚠️ [checkContent] Failed to fetch claim pairs:`,
+          claimPairsErr,
         );
       }
 

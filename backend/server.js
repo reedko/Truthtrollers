@@ -59,6 +59,7 @@ import analyzeContentRoute from "./src/routes/analyzeContent.js";
 // ─────────────────────────────────────────────
 import createAuthRouter from "./src/routes/auth/index.js";
 import createUsersRouter from "./src/routes/users/index.js";
+import createWhitelistRouter from "./src/routes/whitelist.routes.js";
 import createContentRouter from "./src/routes/content/index.js";
 import createAuthorsRouter from "./src/routes/authors/index.js";
 import createPublishersRouter from "./src/routes/publishers/index.js";
@@ -80,6 +81,7 @@ import createSearchAnalysisRouter from "./src/routes/search-analysis.routes.js";
 import createCredibilityRouter from "./src/routes/credibility/index.js";
 import createAnalyticsRouter from "./src/routes/analytics.routes.js";
 import createEvidenceConfigRoutes from "./src/routes/evidence-config.routes.js";
+import createExtensionSettingsRoutes from "./src/routes/extension-settings.routes.js";
 import { initSocketServer } from "./src/realtime/socketServer.js";
 
 // Logger utility
@@ -262,6 +264,7 @@ registerDiscussionRoutes(app, query, pool);
 app.use("/api/analyze-content", analyzeContentRoute);
 app.use("/", createAnalyticsRouter({ query, pool }));  // Analytics routes: /api/track-visit, /api/analytics/*
 app.use("/", createEvidenceConfigRoutes({ query, pool }));  // Evidence config routes: /api/evidence-config
+app.use("/", createExtensionSettingsRoutes({ query, pool }));  // Extension settings routes: /api/extension-settings
 
 // LLM Prompts configuration routes
 import createLLMPromptsRouter from './src/routes/llm-prompts.routes.js';
@@ -278,6 +281,7 @@ let redisClient = null;
 // Mount new modular routes (routes already include /api in their paths)
 app.use("/", createAuthRouter({ query, pool })); // Auth routes: /api/register, /api/login, etc.
 app.use("/", createUsersRouter({ query, pool })); // User routes: /api/all-users, /api/change-email, etc.
+app.use("/", createWhitelistRouter({ query, pool })); // Whitelist routes: /api/whitelist-request, /api/whitelist-check, etc.
 app.use("/", createContentRouter({ query, pool, redisClient })); // Content routes: /api/content, /api/tasks, /api/lookup-by-hash, etc.
 app.use("/", createAuthorsRouter({ query, pool })); // Authors routes: /api/authors, /api/content/:id/authors, etc.
 app.use("/", createPublishersRouter({ query, pool })); // Publishers routes: /api/publishers, /api/content/:id/publishers, etc.

@@ -1,5 +1,6 @@
 import React from "react";
 import { Box, VStack, Text, useColorModeValue } from "@chakra-ui/react";
+import { VERIMETER_LABELS } from "../utils/verimeterUtils";
 
 interface VerimeterMeterProps {
   /**
@@ -27,7 +28,7 @@ const getVerdictInfo = (
   if (score === null) {
     return {
       color: "gray.400",
-      word: "UNKNOWN",
+      word: VERIMETER_LABELS.unknown,
       interpretation: "No evidence assessment available yet",
     };
   }
@@ -39,19 +40,19 @@ const getVerdictInfo = (
   if (percentage >= 10) {
     return {
       color: "green.400",
-      word: "TRUE",
+      word: VERIMETER_LABELS.positive,
       interpretation: "Evidence supports this claim",
     };
   } else if (percentage <= -10) {
     return {
       color: "red.400",
-      word: "FALSE",
+      word: VERIMETER_LABELS.negative,
       interpretation: "Evidence refutes this claim",
     };
   } else {
     return {
       color: "blue.400",
-      word: "NUANCED",
+      word: VERIMETER_LABELS.neutral,
       interpretation: "Evidence is mixed or inconclusive",
     };
   }
@@ -71,22 +72,30 @@ const VerimeterMeter: React.FC<VerimeterMeterProps> = ({
   // +1 (score) -> 100% (right edge)
   const barPosition = score !== null ? ((score + 1) / 2) * 100 : 50;
 
-  console.log('[VerimeterMeter] score:', score, 'displayScore:', displayScore, 'barPosition:', barPosition);
+  console.log(
+    "[VerimeterMeter] score:",
+    score,
+    "displayScore:",
+    displayScore,
+    "barPosition:",
+    barPosition,
+  );
 
   const verdictInfo = getVerdictInfo(score);
 
   return (
     <VStack spacing={1} w="100%" align="center">
       {/* Bar with Labels and Badge */}
-      <Box w={width} position="relative" display="flex" alignItems="center" gap={2}>
-        {/* FALSE label on left */}
-        <Text
-          fontSize="2xs"
-          fontWeight="bold"
-          color="red.400"
-          flexShrink={0}
-        >
-          FALSE
+      <Box
+        w={width}
+        position="relative"
+        display="flex"
+        alignItems="center"
+        gap={2}
+      >
+        {/* REFUTED label on left */}
+        <Text fontSize="2xs" fontWeight="bold" color="red.400" flexShrink={0}>
+          {VERIMETER_LABELS.negative}
         </Text>
 
         {/* Gradient Bar Container */}
@@ -126,14 +135,9 @@ const VerimeterMeter: React.FC<VerimeterMeterProps> = ({
           </Box>
         </Box>
 
-        {/* TRUE label on right */}
-        <Text
-          fontSize="2xs"
-          fontWeight="bold"
-          color="green.400"
-          flexShrink={0}
-        >
-          TRUE
+        {/* SUPPORTED label on right */}
+        <Text fontSize="2xs" fontWeight="bold" color="green.400" flexShrink={0}>
+          {VERIMETER_LABELS.positive}
         </Text>
       </Box>
 

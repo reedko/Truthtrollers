@@ -6,6 +6,7 @@ import {
 import { tealGaugeTheme } from "./themes/tealGaugeTheme";
 import { keyframes } from "@emotion/react";
 import React, { useEffect, useState } from "react";
+import { VERIMETER_LABELS } from "../utils/verimeterUtils";
 
 const pulse = keyframes`
   0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 8px; }
@@ -94,7 +95,7 @@ const TruthGauge: React.FC<TruthGaugeProps> = ({
             left="-20px"
             bottom="-30px"
           >
-            FALSE
+            {VERIMETER_LABELS.negative}
           </Text>
           <Text
             fontSize="sm"
@@ -104,7 +105,7 @@ const TruthGauge: React.FC<TruthGaugeProps> = ({
             right="-20px"
             bottom="-30px"
           >
-            TRUE
+            {VERIMETER_LABELS.positive}
           </Text>
 
           {/* Ticks with active highlight */}

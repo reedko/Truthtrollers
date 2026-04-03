@@ -18,6 +18,8 @@ import UnifiedHeader from "../components/UnifiedHeader";
 import StickyTitleBar from "../components/StickyTitleBar";
 import { useTaskStore, ViewScope } from "../store/useTaskStore";
 import { ViewerScopeBadge } from "../components/ViewerScopeBadge";
+import { VerimeterModeToggle } from "../components/VerimeterModeToggle";
+import { useVerimeterMode } from "../contexts/VerimeterModeContext";
 import {
   updateScoresForContent,
   fetchContentScores,
@@ -27,6 +29,7 @@ import {
 const WorkspacePage = () => {
   const { contentId: routeContentId } = useParams<{ contentId?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { mode, aiWeight } = useVerimeterMode();
   const [verimeterScore, setVerimeterScore] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [linkFilter, setLinkFilter] = useState<'all' | 'user' | 'ai'>('all');
@@ -133,14 +136,14 @@ const WorkspacePage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only on mount
 
-  // Fetch verimeter scores when taskId or viewerId changes
+  // Fetch verimeter scores when taskId, viewerId, or mode changes
   useEffect(() => {
     if (taskId) {
-      fetchContentScores(taskId, viewerId).then((scores) => {
+      fetchContentScores(taskId, viewerId, mode, aiWeight).then((scores) => {
         setVerimeterScore(scores?.verimeterScore ?? null);
       });
     }
-  }, [taskId, viewerId]);
+  }, [taskId, viewerId, mode, aiWeight]);
 
   // Check for user-created links and default filter to 'user' if they exist
   useEffect(() => {
@@ -193,7 +196,7 @@ const WorkspacePage = () => {
   const handleVerimeterRefresh = async (contentId: number) => {
     console.log("⚙️ Calling updateScoresForContent for", contentId, viewerId);
     await updateScoresForContent(contentId, viewerId);
-    const scores = await fetchContentScores(contentId, viewerId);
+    const scores = await fetchContentScores(contentId, viewerId, mode, aiWeight);
     console.log("✅ New fetched score:", scores);
     setVerimeterScore(scores?.verimeterScore ?? null);
     setRefreshKey((prev) => prev + 1);
@@ -274,6 +277,9 @@ const WorkspacePage = () => {
               size="sm"
             />
           </HStack>
+
+          {/* Verimeter Mode Toggle */}
+          <VerimeterModeToggle compact />
 
           {/* Viewer Scope Badge */}
           <ViewerScopeBadge />

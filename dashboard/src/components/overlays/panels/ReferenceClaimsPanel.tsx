@@ -16,7 +16,7 @@ export default function ReferenceClaimsPanel({
   const claims: Claim[] = (reference as any)?.claims ?? [];
 
   return (
-    <VStack align="stretch" spacing={3}>
+    <VStack align="stretch" spacing={3} minH="300px" maxH="60vh">
       {claims.length === 0 ? (
         <Box opacity={0.7}>No claims extracted for this source yet.</Box>
       ) : (
@@ -27,8 +27,9 @@ export default function ReferenceClaimsPanel({
             borderColor="gray.600"
             borderRadius="lg"
             p={3}
+            flexShrink={0}
           >
-            <Text fontSize="sm" noOfLines={8}>
+            <Text fontSize="sm">
               {c.claim_text}
             </Text>
             <Badge

@@ -73,6 +73,9 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
   // NEW: Computed verimeter score from linked reference claims
   const [computedScore, setComputedScore] = useState<number | null>(null);
 
+  // Debug panel expand/collapse state
+  const [debugExpanded, setDebugExpanded] = useState(false);
+
   // ── On open: load existing links immediately, don't re-scan ──────────────
   useEffect(() => {
     if (isOpen && taskClaim) {
@@ -177,8 +180,10 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
   };
 
   // ── Scan for NEW links only (skips already-assessed claims) ───────────────
-  const runRelevanceScan = async () => {
+  const runRelevanceScan = async (mode?: 'quick' | 'deep') => {
     if (!taskClaim) return;
+
+    const effectiveMode = mode || scanMode;
 
     setIsScanning(true);
     setScanProgress({ current: 0, total: 0 });
@@ -196,7 +201,7 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       // AND include references with existing high-relevance assessments
       const linkedReferenceIds = new Set<number>();
 
-      if (scanMode === 'quick') {
+      if (effectiveMode === 'quick') {
         try {
           // Get references with dotted lines for this TASK CLAIM
           // Uses /api/task-claim/reference-links/:taskClaimId endpoint
@@ -447,14 +452,33 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
           Case Claim Details
           {taskClaim && (
             <VStack align="stretch" mt={3} spacing={2}>
-              {/* 🔍 DEBUG INFO */}
-              <Box p={2} bg={colorMode === "dark" ? "purple.900" : "purple.100"} borderRadius="md" fontSize="xs" fontFamily="monospace">
-                <Text color={colorMode === "dark" ? "purple.200" : "purple.800"}>🔍 DEBUG:</Text>
-                <Text color={colorMode === "dark" ? "purple.300" : "purple.700"}>Task Content ID: {contentId ?? 'null'}</Text>
-                <Text color={colorMode === "dark" ? "purple.300" : "purple.700"}>Task Claim ID: {taskClaim.claim_id}</Text>
-                <Text color={colorMode === "dark" ? "purple.300" : "purple.700"}>Viewer ID: {viewerId ?? 'null'}</Text>
-                <Text color={colorMode === "dark" ? "purple.300" : "purple.700"}>Sources Count: {references.length}</Text>
-              </Box>
+              {/* 🔍 DEBUG INFO - Collapsible */}
+              <HStack
+                p={2}
+                bg={colorMode === "dark" ? "purple.900" : "purple.100"}
+                borderRadius="md"
+                fontSize="xs"
+                fontFamily="monospace"
+                justify="space-between"
+                cursor="pointer"
+                onClick={() => setDebugExpanded(!debugExpanded)}
+                _hover={{ opacity: 0.8 }}
+              >
+                <Text color={colorMode === "dark" ? "purple.200" : "purple.800"}>
+                  🔍 DEBUG {debugExpanded ? '▼' : '▶'}
+                </Text>
+                <Text fontSize="10px" color={colorMode === "dark" ? "purple.300" : "purple.600"}>
+                  {debugExpanded ? 'Click to collapse' : 'Click to expand'}
+                </Text>
+              </HStack>
+              {debugExpanded && (
+                <Box p={2} bg={colorMode === "dark" ? "purple.900" : "purple.100"} borderRadius="md" fontSize="xs" fontFamily="monospace">
+                  <Text color={colorMode === "dark" ? "purple.300" : "purple.700"}>Task Content ID: {contentId ?? 'null'}</Text>
+                  <Text color={colorMode === "dark" ? "purple.300" : "purple.700"}>Task Claim ID: {taskClaim.claim_id}</Text>
+                  <Text color={colorMode === "dark" ? "purple.300" : "purple.700"}>Viewer ID: {viewerId ?? 'null'}</Text>
+                  <Text color={colorMode === "dark" ? "purple.300" : "purple.700"}>Sources Count: {references.length}</Text>
+                </Box>
+              )}
 
               <Box
                 p={3}
@@ -567,11 +591,6 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                     borderColor={colorMode === "dark" ? `${stanceColor}.600` : `${stanceColor}.400`}
                     borderLeftWidth="4px"
                   >
-                    {/* 🔍 DEBUG: Show IDs for each claim */}
-                    <Box mb={2} p={1} bg={colorMode === "dark" ? "purple.900" : "purple.100"} borderRadius="sm" fontSize="10px" fontFamily="monospace">
-                      <Text color={colorMode === "dark" ? "purple.300" : "purple.700"}>Source Content: {referenceId ?? 'null'} | Source Claim: {claim.claim_id}</Text>
-                    </Box>
-
                     <HStack justify="space-between" mb={2} wrap="wrap" gap={1}>
                       <HStack spacing={2} wrap="wrap">
                         <Badge colorScheme="blue" fontSize="xs">#{index + 1}</Badge>
@@ -660,56 +679,41 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
         </ModalBody>
 
         <ModalFooter borderTopWidth="1px" borderColor={colorMode === "dark" ? "gray.700" : "gray.300"}>
-          <VStack w="100%" spacing={3}>
-            {/* Scan Mode Toggle */}
-            <HStack w="100%" justify="center" spacing={2}>
-              <Badge colorScheme="gray" fontSize="xs">Scan Mode:</Badge>
-              <Button
-                size="xs"
-                colorScheme={scanMode === 'quick' ? 'green' : 'gray'}
-                variant={scanMode === 'quick' ? 'solid' : 'outline'}
-                onClick={() => setScanMode('quick')}
-                isDisabled={isBusy}
-              >
-                ⚡ Quick Scan
-              </Button>
-              <Button
-                size="xs"
-                colorScheme={scanMode === 'deep' ? 'purple' : 'gray'}
-                variant={scanMode === 'deep' ? 'solid' : 'outline'}
-                onClick={() => setScanMode('deep')}
-                isDisabled={isBusy}
-              >
-                🔍 Deep Scan
-              </Button>
-            </HStack>
-
-            {/* Scan Mode Description */}
-            <Text fontSize="xs" color="gray.400" textAlign="center">
-              {scanMode === 'quick'
-                ? "Quick: Scan claims in references already linked to this task (faster)"
-                : "Deep: Scan all claims in all references (slower, more thorough)"}
-            </Text>
-
-            {/* Action Buttons */}
-            <HStack spacing={3} w="100%" justify="space-between">
-              <Button
-                colorScheme="teal"
-                variant="outline"
-                onClick={runRelevanceScan}
-                isLoading={isScanning}
-                loadingText="Scanning…"
-                isDisabled={isBusy}
-                size="sm"
-                leftIcon={<span>{scanMode === 'quick' ? '⚡' : '🔍'}</span>}
-              >
-                {topClaims.length > 0 ? "Scan for More Links" : `${scanMode === 'quick' ? 'Quick' : 'Deep'} Scan`}
-              </Button>
-              <Button colorScheme="gray" onClick={onClose} size="sm">
-                Close
-              </Button>
-            </HStack>
-          </VStack>
+          <HStack spacing={3} w="100%" justify="space-between">
+            <Button
+              colorScheme="green"
+              variant="solid"
+              onClick={() => {
+                setScanMode('quick');
+                runRelevanceScan('quick');
+              }}
+              isLoading={isScanning}
+              loadingText="Scanning…"
+              isDisabled={isBusy}
+              size="sm"
+              leftIcon={<span>⚡</span>}
+            >
+              Quick Scan
+            </Button>
+            <Button
+              colorScheme="purple"
+              variant="solid"
+              onClick={() => {
+                setScanMode('deep');
+                runRelevanceScan('deep');
+              }}
+              isLoading={isScanning}
+              loadingText="Scanning…"
+              isDisabled={isBusy}
+              size="sm"
+              leftIcon={<span>🔍</span>}
+            >
+              Deep Scan
+            </Button>
+            <Button colorScheme="gray" onClick={onClose} size="sm">
+              Close
+            </Button>
+          </HStack>
         </ModalFooter>
       </ModalContent>
     </Modal>

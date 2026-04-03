@@ -34,6 +34,7 @@ import {
   fetchClaimsForTask,
   fetchReferencesForTask,
 } from "../services/useDashboardAPI";
+import { useVerimeterMode } from "../contexts/VerimeterModeContext";
 import MicroHeaderRail from "./headers/MicroHeaderRail";
 
 type Variant = "full" | "compact" | "micro"; // ⬅️ reintroduce micro
@@ -129,6 +130,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   allowToggle = false,
 }) => {
   const { colorMode } = useColorMode();
+  const { mode, aiWeight } = useVerimeterMode();
   const selectedTask = useTaskStore((s) => s.selectedTask);
   const fetchTasksByPivot = useTaskStore((s) => s.fetchTasksByPivot);
   const viewerId = useTaskStore((s) => s.viewingUserId);
@@ -231,7 +233,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
         return;
       }
       try {
-        const result = await fetchContentScores(pivotTask.content_id, null);
+        const result = await fetchContentScores(pivotTask.content_id, null, mode, aiWeight);
         setLiveVerimeter(
           result && result.verimeterScore !== undefined
             ? result.verimeterScore
@@ -244,7 +246,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pivotTask?.content_id, viewerId, refreshKey]);
+  }, [pivotTask?.content_id, viewerId, refreshKey, mode, aiWeight]);
 
   // Fetch claim statistics for ProgressCard
   useEffect(() => {

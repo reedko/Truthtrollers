@@ -18,6 +18,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import { useNavigate } from "react-router-dom";
 import EvidenceOpsPanel from "../components/admin/EvidenceOpsPanel";
 import UserOpsPanel from "../components/admin/UserOpsPanel";
+import ExtensionSettingsPanel from "../components/admin/ExtensionSettingsPanel";
 
 interface OnlineUser {
   user_id: number;
@@ -316,6 +317,20 @@ export default function AdminPanelPage() {
               >
                 Evidence Operations
               </Tab>
+              <Tab
+                _selected={{
+                  bg: "linear-gradient(135deg, rgba(0, 162, 255, 0.3), rgba(139, 92, 246, 0.2))",
+                  color: "cyan.300",
+                  boxShadow: "0 0 20px rgba(0, 162, 255, 0.3)",
+                }}
+                borderRadius="md"
+                fontWeight="bold"
+                fontSize="lg"
+                color="gray.400"
+                transition="all 0.3s"
+              >
+                Extension Settings
+              </Tab>
             </TabList>
 
             <TabPanels>
@@ -340,6 +355,9 @@ export default function AdminPanelPage() {
               </TabPanel>
               <TabPanel px={0} pt={6}>
                 <EvidenceOpsPanel />
+              </TabPanel>
+              <TabPanel px={0} pt={6}>
+                <ExtensionSettingsPanel />
               </TabPanel>
             </TabPanels>
           </Tabs>

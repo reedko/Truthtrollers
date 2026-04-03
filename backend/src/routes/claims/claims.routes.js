@@ -432,31 +432,33 @@ export default function createClaimsRoutes({ query, pool }) {
     const viewerId = req.query.viewerId ? req.query.viewerId : null;
 
     const sql = `
-
       SELECT
-  cl.claim_link_id,
-  cl.target_claim_id,
-  cl.source_claim_id,
-
-  cl.relationship,
-  cl.support_level,
-  cl.notes,
-  c.veracity_score AS verimeter_score,
-
-  c.claim_id AS source_claim_id,
-  c.claim_text AS source_claim_text,
-  c.veracity_score AS source_veracity,
-  c.confidence_level AS source_confidence,
-  c.last_verified AS source_last_verified,
-
-  cc.content_id AS reference_content_id
-
-    FROM claim_links cl
-    JOIN content_claims cc ON cl.source_claim_id = cc.claim_id
-    JOIN claims c ON cc.claim_id = c.claim_id
-    WHERE cl.target_claim_id = ?
-      AND cl.disabled = 0
-      ${viewerId ? "AND cl.user_id = ?" : ""}
+        cl.claim_link_id,
+        cl.target_claim_id,
+        cl.source_claim_id,
+        cl.relationship,
+        cl.support_level,
+        cl.notes,
+        c.veracity_score AS verimeter_score,
+        c.claim_id AS source_claim_id,
+        c.claim_text AS source_claim_text,
+        c.veracity_score AS source_veracity,
+        c.confidence_level AS source_confidence,
+        c.last_verified AS source_last_verified,
+        cc.content_id AS reference_content_id,
+        content.media_source AS source_publisher,
+        content.url AS source_url,
+        target_cc.content_id AS target_content_id
+      FROM claim_links cl
+      JOIN content_claims cc ON cl.source_claim_id = cc.claim_id
+      JOIN content_claims target_cc ON cl.target_claim_id = target_cc.claim_id
+      JOIN claims c ON cc.claim_id = c.claim_id
+      JOIN content ON cc.content_id = content.content_id
+      WHERE cl.target_claim_id = ?
+        AND cl.disabled = 0
+        AND cc.content_id != target_cc.content_id
+        ${viewerId ? "AND cl.user_id = ?" : ""}
+      ORDER BY ABS(cl.support_level) DESC
   `;
 
     const params = viewerId ? [claimId, viewerId] : [claimId];
@@ -478,6 +480,8 @@ export default function createClaimsRoutes({ query, pool }) {
         confidence: row.confidence,
         notes: row.notes,
         verimeter_score: row.verimeter_score ?? null,
+        source_publisher: row.source_publisher,
+        source_url: row.source_url,
         sourceClaim: {
           claim_id: row.source_claim_id,
           claim_text: row.source_claim_text,
@@ -516,6 +520,41 @@ export default function createClaimsRoutes({ query, pool }) {
     } catch (err) {
       console.error("Error computing Verimeter score:", err);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // GET /api/content/:contentId/top-claims?limit=5
+  // Get top case claims by number of linked source claims
+  router.get("/api/content/:contentId/top-claims", async (req, res) => {
+    const contentId = parseInt(req.params.contentId);
+    const limit = parseInt(req.query.limit) || 10;
+
+    if (isNaN(contentId)) {
+      return res.status(400).json({ error: "Invalid content ID" });
+    }
+
+    try {
+      const topClaims = await query(`
+        SELECT
+          c.claim_id,
+          c.claim_text,
+          task_content.media_source AS publisher,
+          task_content.url,
+          COUNT(DISTINCT cl.source_claim_id) AS link_count
+        FROM claims c
+        JOIN content_claims cc ON c.claim_id = cc.claim_id
+        JOIN content task_content ON cc.content_id = task_content.content_id
+        LEFT JOIN claim_links cl ON c.claim_id = cl.target_claim_id AND cl.disabled = 0
+        WHERE cc.content_id = ?
+        GROUP BY c.claim_id, c.claim_text, task_content.media_source, task_content.url
+        ORDER BY link_count DESC
+        LIMIT ?
+      `, [contentId, limit]);
+
+      res.json(topClaims);
+    } catch (err) {
+      console.error("❌ Top Claims Error:", err);
+      res.status(500).json({ error: "Failed to fetch top claims" });
     }
   });
 

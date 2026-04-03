@@ -2,6 +2,7 @@
 import { Box, Text, VStack, HStack } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 import "./UserConsensusBar.css";
+import { VERIMETER_LABELS } from "../utils/verimeterLabels";
 
 interface UserConsensusBarProps {
   trueCount: number;
@@ -110,7 +111,7 @@ const UserConsensusBar: React.FC<UserConsensusBarProps> = ({
                 flexDir="column"
                 alignItems="center"
               >
-                {renderVerticalLabel("FALSE")}
+                {renderVerticalLabel(VERIMETER_LABELS.negative)}
               </Box>
             </Box>
 
@@ -165,7 +166,7 @@ const UserConsensusBar: React.FC<UserConsensusBarProps> = ({
                 flexDir="column"
                 alignItems="center"
               >
-                {renderVerticalLabel("TRUE")}
+                {renderVerticalLabel(VERIMETER_LABELS.positive)}
               </Box>
             </Box>
 

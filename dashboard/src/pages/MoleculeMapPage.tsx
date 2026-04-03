@@ -18,6 +18,8 @@ import MoleculeViewTabs from "../components/MoleculeViewTabs";
 import DisplayModeSwitcher from "../components/DisplayModeSwitcher";
 import { useTaskStore, ViewScope } from "../store/useTaskStore";
 import { ViewerScopeBadge } from "../components/ViewerScopeBadge";
+import { VerimeterModeToggle } from "../components/VerimeterModeToggle";
+import { useVerimeterMode } from "../contexts/VerimeterModeContext";
 import { fetchNewGraphDataFromLegacyRoute } from "../services/api";
 import { GraphNode, Link } from "../../../shared/entities/types";
 import UnifiedHeader from "../components/UnifiedHeader";
@@ -41,6 +43,7 @@ import {
 
 const MoleculeMapPage = () => {
   const { colorMode } = useColorMode();
+  const { mode, aiWeight } = useVerimeterMode();
   const navigate = useNavigate();
   const toast = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -75,7 +78,7 @@ const MoleculeMapPage = () => {
 
   const handleVerimeterRefresh = async (contentId: number) => {
     await updateScoresForContent(contentId, viewerId);
-    const scores = await fetchContentScores(contentId, viewerId);
+    const scores = await fetchContentScores(contentId, viewerId, mode, aiWeight);
     setVerimeterScore(scores?.verimeterScore ?? null);
   };
 
@@ -845,6 +848,9 @@ const MoleculeMapPage = () => {
             onSetDefault={handleSetDefault}
           />
         </Box>
+
+        {/* Verimeter Mode Toggle */}
+        <VerimeterModeToggle compact />
 
         {/* Viewer Scope Badge */}
         <ViewerScopeBadge />

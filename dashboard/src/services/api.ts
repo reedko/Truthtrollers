@@ -4,7 +4,7 @@ import { GraphNode, Link } from "../../../shared/entities/types.ts";
 import { useTaskStore } from "../store/useTaskStore.ts";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+  import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
 
 export const fetchNewGraphDataFromLegacyRoute = async (
   selectedNode: GraphNode
@@ -69,7 +69,7 @@ export const fetchNewGraphDataFromLegacyRoute = async (
 };
 
 export const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5001",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "https://localhost:5001",
   timeout: 600000, // 10 minutes for large video uploads
   maxContentLength: 500 * 1024 * 1024, // 500MB
   maxBodyLength: 500 * 1024 * 1024, // 500MB

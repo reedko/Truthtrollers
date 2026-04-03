@@ -40,6 +40,7 @@ import ClaimDuelPage from "./pages/ClaimDuelPage";
 import TrueFalseGamePage from "./pages/TrueFalseGamePage";
 import { CaseFocusPage } from "./pages/CaseFocusPage";
 import SourceQualityPage from "./pages/SourceQualityPage";
+import KnowGraphPage from "./pages/KnowGraphPage";
 
 const router = createBrowserRouter([
   {
@@ -199,6 +200,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <MoleculeMapPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "knowgraph",
+        element: (
+          <ProtectedRoute>
+            <KnowGraphPage />
           </ProtectedRoute>
         ),
       },

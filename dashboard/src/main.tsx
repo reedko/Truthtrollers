@@ -9,6 +9,7 @@ import "./styles/scroll-fix.css";
 import { RouterProvider } from "react-router-dom";
 import AppRouter from "./routes";
 import theme from "./components/themes/VisionTheme";
+import { VerimeterModeProvider } from "./contexts/VerimeterModeContext";
 console.log("🌟 main.tsx loaded, bootstrapping app…");
 const queryClient = new QueryClient();
 
@@ -24,9 +25,11 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <ColorModeScript initialColorMode="dark" />
     <ChakraProvider theme={theme}>
       <QueryClientProvider client={queryClient}>
-        <AppRouter />
+        <VerimeterModeProvider>
+          <AppRouter />
 
-        <ReactQueryDevtools />
+          <ReactQueryDevtools />
+        </VerimeterModeProvider>
       </QueryClientProvider>
     </ChakraProvider>
   </React.StrictMode>

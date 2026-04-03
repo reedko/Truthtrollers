@@ -67,69 +67,87 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
       // Check BOTH source and target in claim_links (links can be stored either way)
       const links = await query(
         `SELECT
-          reference_claim_task_links_id,
-          reference_claim_id,
-          task_claim_id,
-          stance,
-          score,
-          confidence,
-          support_level,
-          rationale,
-          quote,
-          created_by_ai,
-          verified_by_user_id,
-          created_at,
-          'reference_claim_task_links' AS source_table
-         FROM reference_claim_task_links
-         WHERE task_claim_id = ?
+          rctl.reference_claim_task_links_id,
+          rctl.reference_claim_id,
+          rctl.task_claim_id,
+          rctl.stance,
+          rctl.score,
+          rctl.confidence,
+          rctl.support_level,
+          rctl.rationale,
+          rctl.quote,
+          rctl.created_by_ai,
+          rctl.verified_by_user_id,
+          rctl.created_at,
+          'reference_claim_task_links' AS source_table,
+          c.claim_text AS reference_claim_text,
+          content.media_source AS source_name,
+          content.url AS source_url
+         FROM reference_claim_task_links rctl
+         LEFT JOIN claims c ON rctl.reference_claim_id = c.claim_id
+         LEFT JOIN content_claims cc ON c.claim_id = cc.claim_id
+         LEFT JOIN content ON cc.content_id = content.content_id
+         WHERE rctl.task_claim_id = ?
 
          UNION ALL
 
          SELECT
-          claim_link_id AS reference_claim_task_links_id,
-          source_claim_id AS reference_claim_id,
-          target_claim_id AS task_claim_id,
+          cl.claim_link_id AS reference_claim_task_links_id,
+          cl.source_claim_id AS reference_claim_id,
+          cl.target_claim_id AS task_claim_id,
           CASE
-            WHEN support_level > 0.5 THEN 'support'
-            WHEN support_level < -0.5 THEN 'refute'
-            WHEN support_level BETWEEN -0.5 AND 0.5 THEN 'nuance'
+            WHEN cl.support_level > 0.5 THEN 'support'
+            WHEN cl.support_level < -0.5 THEN 'refute'
+            WHEN cl.support_level BETWEEN -0.5 AND 0.5 THEN 'nuance'
             ELSE 'insufficient'
           END AS stance,
-          ROUND(ABS(support_level) * 100, 2) AS score,
-          COALESCE(confidence, 0.7) AS confidence,
-          support_level,
-          notes AS rationale,
+          ROUND(ABS(cl.support_level) * 100, 2) AS score,
+          COALESCE(cl.confidence, 0.7) AS confidence,
+          cl.support_level,
+          cl.notes AS rationale,
           NULL AS quote,
-          created_by_ai,
-          user_id AS verified_by_user_id,
-          created_at,
-          'claim_links:target' AS source_table
-         FROM claim_links
-         WHERE target_claim_id = ? AND disabled = 0
+          cl.created_by_ai,
+          cl.user_id AS verified_by_user_id,
+          cl.created_at,
+          'claim_links:target' AS source_table,
+          c.claim_text AS reference_claim_text,
+          content.media_source AS source_name,
+          content.url AS source_url
+         FROM claim_links cl
+         LEFT JOIN claims c ON cl.source_claim_id = c.claim_id
+         LEFT JOIN content_claims cc ON c.claim_id = cc.claim_id
+         LEFT JOIN content ON cc.content_id = content.content_id
+         WHERE cl.target_claim_id = ? AND cl.disabled = 0
 
          UNION ALL
 
          SELECT
-          claim_link_id AS reference_claim_task_links_id,
-          target_claim_id AS reference_claim_id,
-          source_claim_id AS task_claim_id,
+          cl.claim_link_id AS reference_claim_task_links_id,
+          cl.target_claim_id AS reference_claim_id,
+          cl.source_claim_id AS task_claim_id,
           CASE
-            WHEN support_level > 0.5 THEN 'refute'
-            WHEN support_level < -0.5 THEN 'support'
-            WHEN support_level BETWEEN -0.5 AND 0.5 THEN 'nuance'
+            WHEN cl.support_level > 0.5 THEN 'refute'
+            WHEN cl.support_level < -0.5 THEN 'support'
+            WHEN cl.support_level BETWEEN -0.5 AND 0.5 THEN 'nuance'
             ELSE 'insufficient'
           END AS stance,
-          ROUND(ABS(support_level) * 100, 2) AS score,
-          COALESCE(confidence, 0.7) AS confidence,
-          -support_level AS support_level,
-          notes AS rationale,
+          ROUND(ABS(cl.support_level) * 100, 2) AS score,
+          COALESCE(cl.confidence, 0.7) AS confidence,
+          -cl.support_level AS support_level,
+          cl.notes AS rationale,
           NULL AS quote,
-          created_by_ai,
-          user_id AS verified_by_user_id,
-          created_at,
-          'claim_links:source' AS source_table
-         FROM claim_links
-         WHERE source_claim_id = ? AND disabled = 0`,
+          cl.created_by_ai,
+          cl.user_id AS verified_by_user_id,
+          cl.created_at,
+          'claim_links:source' AS source_table,
+          c.claim_text AS reference_claim_text,
+          content.media_source AS source_name,
+          content.url AS source_url
+         FROM claim_links cl
+         LEFT JOIN claims c ON cl.target_claim_id = c.claim_id
+         LEFT JOIN content_claims cc ON c.claim_id = cc.claim_id
+         LEFT JOIN content ON cc.content_id = content.content_id
+         WHERE cl.source_claim_id = ? AND cl.disabled = 0`,
         [taskClaimId, taskClaimId, taskClaimId]
       );
 

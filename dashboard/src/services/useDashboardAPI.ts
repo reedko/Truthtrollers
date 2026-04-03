@@ -17,11 +17,33 @@ import {
 const API_BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
 
 //contentscores
+export type VerimeterMode = 'ai' | 'user' | 'combined';
+
 export const fetchContentScores = async (
   contentId: number,
-  userId: number | null
+  userId: number | null,
+  mode: VerimeterMode = 'user',
+  aiWeight: number = 0.5
 ) => {
-  const res = await fetch(`${API_BASE_URL}/api/content/${contentId}/scores`);
+  let url = `${API_BASE_URL}/api/content/${contentId}/scores`;
+
+  // Use mode-specific endpoints
+  if (mode === 'ai') {
+    url = `${API_BASE_URL}/api/content/${contentId}/scores/ai`;
+  } else if (mode === 'user') {
+    url = `${API_BASE_URL}/api/content/${contentId}/scores/user`;
+    if (userId) {
+      url += `?viewerId=${userId}`;
+    }
+  } else if (mode === 'combined') {
+    url = `${API_BASE_URL}/api/content/${contentId}/scores/combined`;
+    const params = new URLSearchParams();
+    if (userId) params.append('viewerId', userId.toString());
+    params.append('aiWeight', aiWeight.toString());
+    url += `?${params.toString()}`;
+  }
+
+  const res = await fetch(url);
   if (!res.ok) throw new Error("Failed to fetch content scores");
   const data = await res.json();
   return {
@@ -30,6 +52,8 @@ export const fetchContentScores = async (
     pro: Number(data.pro_score) || 0,
     con: Number(data.con_score) || 0,
     contentId: Number(contentId),
+    mode: data.mode || mode,
+    ratingCounts: data.rating_counts,
   };
 };
 

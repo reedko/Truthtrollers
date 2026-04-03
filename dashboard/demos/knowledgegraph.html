@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TruthTrollers Knowledge Graph Mockup</title>
+    <style>
+      :root {
+        --bg0: #040812;
+        --bg1: #081120;
+        --bg2: #0a1627;
+        --panel: rgba(10, 18, 32, 0.88);
+        --line: rgba(122, 162, 255, 0.16);
+        --text: #e7f0ff;
+        --muted: #8ca1c6;
+        --case: #6ea8ff;
+        --claim: #8f7cff;
+        --sourceClaim: #58d6ff;
+        --source: #63f0b0;
+        --publisher: #ffbf69;
+        --author: #ff8fb7;
+        --support: #62f0a8;
+        --refute: #ff7a7a;
+        --nuance: #66a3ff;
+        --eval: #f4d35e;
+        --halo:
+          0 0 0 1px rgba(255, 255, 255, 0.08),
+          0 0 18px rgba(120, 160, 255, 0.18), 0 18px 50px rgba(0, 0, 0, 0.45);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        font-family:
+          Inter,
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        background:
+          radial-gradient(
+            circle at 18% 18%,
+            rgba(111, 140, 255, 0.22),
+            transparent 24%
+          ),
+          radial-gradient(
+            circle at 80% 22%,
+            rgba(88, 214, 255, 0.14),
+            transparent 22%
+          ),
+          radial-gradient(
+            circle at 50% 100%,
+            rgba(143, 124, 255, 0.18),
+            transparent 28%
+          ),
+          linear-gradient(180deg, var(--bg0), var(--bg1) 55%, #02050a 100%);
+        overflow: hidden;
+      }
+
+      .shell {
+        display: grid;
+        grid-template-columns: 320px 1fr 320px;
+        gap: 18px;
+        height: 100vh;
+        padding: 18px;
+      }
+
+      .panel {
+        position: relative;
+        background: linear-gradient(
+          180deg,
+          rgba(12, 20, 34, 0.9),
+          rgba(7, 12, 22, 0.96)
+        );
+        border: 1px solid rgba(123, 163, 255, 0.12);
+        border-radius: 24px;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.04),
+          0 20px 60px rgba(0, 0, 0, 0.45);
+        padding: 18px;
+        backdrop-filter: blur(8px);
+      }
+
+      .panel::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 24px;
+        pointer-events: none;
+        background: linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.03),
+          transparent 35%
+        );
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #9db3d9;
+        margin-bottom: 12px;
+      }
+
+      .title {
+        font-size: 30px;
+        line-height: 1;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        margin-bottom: 10px;
+      }
+
+      .lede {
+        color: var(--muted);
+        font-size: 14px;
+        line-height: 1.5;
+        margin-bottom: 18px;
+      }
+
+      .chip-row,
+      .legend {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .chip {
+        border-radius: 999px;
+        padding: 8px 11px;
+        font-size: 11px;
+        color: #dbe7ff;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .section {
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .mini-card {
+        margin-top: 12px;
+        padding: 14px;
+        border-radius: 18px;
+        background: linear-gradient(
+          180deg,
+          rgba(19, 30, 50, 0.88),
+          rgba(12, 20, 34, 0.95)
+        );
+        border: 1px solid rgba(120, 170, 255, 0.12);
+        box-shadow: var(--halo);
+      }
+
+      .mini-card h3 {
+        font-size: 15px;
+        margin-bottom: 8px;
+      }
+
+      .mini-card p {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .graph-panel {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .graph-title {
+        position: absolute;
+        top: 18px;
+        left: 18px;
+        z-index: 3;
+        background: rgba(8, 14, 24, 0.74);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 16px;
+        padding: 12px 14px;
+        backdrop-filter: blur(8px);
+        box-shadow: var(--halo);
+      }
+
+      .graph-title strong {
+        display: block;
+        font-size: 16px;
+        margin-bottom: 4px;
+      }
+
+      .graph-title span {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .edge {
+        fill: none;
+        stroke-width: 2.5;
+        opacity: 0.72;
+      }
+
+      .edge.support {
+        stroke: var(--support);
+        filter: drop-shadow(0 0 5px rgba(98, 240, 168, 0.36));
+      }
+
+      .edge.refute {
+        stroke: var(--refute);
+        filter: drop-shadow(0 0 5px rgba(255, 122, 122, 0.28));
+      }
+
+      .edge.nuance {
+        stroke: var(--nuance);
+        filter: drop-shadow(0 0 5px rgba(102, 163, 255, 0.3));
+      }
+
+      .edge.meta {
+        stroke: rgba(172, 189, 220, 0.28);
+        stroke-dasharray: 6 7;
+        opacity: 0.55;
+      }
+
+      .node {
+        cursor: default;
+      }
+
+      .node circle,
+      .node rect,
+      .node polygon {
+        stroke: rgba(255, 255, 255, 0.1);
+        stroke-width: 1.2;
+        box-shadow: var(--halo);
+      }
+
+      .node.case circle {
+        fill: var(--case);
+        filter: drop-shadow(0 0 14px rgba(110, 168, 255, 0.35));
+      }
+      .node.claim rect {
+        fill: var(--claim);
+        filter: drop-shadow(0 0 14px rgba(143, 124, 255, 0.35));
+      }
+      .node.source-claim rect {
+        fill: var(--sourceClaim);
+        filter: drop-shadow(0 0 14px rgba(88, 214, 255, 0.3));
+      }
+      .node.source polygon {
+        fill: var(--source);
+        filter: drop-shadow(0 0 14px rgba(99, 240, 176, 0.34));
+      }
+      .node.author circle {
+        fill: var(--author);
+        filter: drop-shadow(0 0 14px rgba(255, 143, 183, 0.26));
+      }
+      .node.publisher circle {
+        fill: var(--publisher);
+        filter: drop-shadow(0 0 14px rgba(255, 191, 105, 0.28));
+      }
+      .node.eval rect {
+        fill: var(--eval);
+        filter: drop-shadow(0 0 14px rgba(244, 211, 94, 0.25));
+      }
+
+      .label {
+        font-size: 12px;
+        fill: #eff5ff;
+        font-weight: 700;
+        pointer-events: none;
+      }
+
+      .sublabel {
+        font-size: 10px;
+        fill: rgba(239, 245, 255, 0.76);
+        pointer-events: none;
+      }
+
+      .metric {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        font-size: 13px;
+        color: #dbe8ff;
+      }
+
+      .metric:last-child {
+        border-bottom: 0;
+      }
+
+      .metric span:last-child {
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .legend .item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #dce7ff;
+        width: calc(50% - 4px);
+      }
+
+      .dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 999px;
+        flex: 0 0 11px;
+        box-shadow: 0 0 10px rgba(255, 255, 255, 0.18);
+      }
+
+      .line-sample {
+        width: 22px;
+        height: 0;
+        border-top: 3px solid white;
+        border-radius: 999px;
+        flex: 0 0 22px;
+      }
+
+      .footer-note {
+        position: absolute;
+        right: 18px;
+        bottom: 18px;
+        z-index: 3;
+        max-width: 360px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(9, 15, 26, 0.76);
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+        backdrop-filter: blur(8px);
+      }
+
+      @media (max-width: 1300px) {
+        .shell {
+          grid-template-columns: 1fr;
+          height: auto;
+        }
+        .graph-panel {
+          min-height: 760px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="panel">
+        <div class="eyebrow">TruthTrollers • semantic network</div>
+        <div class="title">What your knowledge graph could look like</div>
+        <p class="lede">
+          Not just claims and references floating around like confetti. A real
+          graph with typed nodes, typed edges, and enough ontology to make graph
+          people squint and say, “yeah, that’s a graph.”
+        </p>
+
+        <div class="chip-row">
+          <div class="chip">Nodes: Case, Claim, SourceClaim, Source</div>
+          <div class="chip">Metadata: Author, Publisher</div>
+          <div class="chip">Edges: supports, refutes, nuances</div>
+          <div class="chip">Evaluation as a graph outcome</div>
+        </div>
+
+        <div class="section">
+          <div class="eyebrow">Why this reads as a knowledge graph</div>
+          <div class="mini-card">
+            <h3>Typed things</h3>
+            <p>
+              Different shapes and colors signal that a case is not a claim, a
+              claim is not a source claim, and a source is not just another box.
+            </p>
+          </div>
+          <div class="mini-card">
+            <h3>Typed relationships</h3>
+            <p>
+              Support, refute, nuance, authorship, and publication are visually
+              distinct. The edges carry semantics, not just adjacency.
+            </p>
+          </div>
+          <div class="mini-card">
+            <h3>Hub structure</h3>
+            <p>
+              One source can emit many source claims. One case can contain many
+              claims. Evaluation becomes a graph-derived state, not a detached
+              score widget.
+            </p>
+          </div>
+        </div>
+      </aside>
+
+      <main class="panel graph-panel">
+        <div class="graph-title">
+          <strong>Case-centric investigation graph</strong>
+          <span
+            >Case claims fan into source claims, which roll up into sources and
+            metadata nodes.</span
+          >
+        </div>
+
+        <svg
+          viewBox="0 0 920 760"
+          aria-label="TruthTrollers knowledge graph mockup"
+        >
+          <!-- edges: metadata -->
+          <path class="edge meta" d="M 690 162 C 735 145, 760 135, 802 118" />
+          <path class="edge meta" d="M 690 190 C 742 215, 766 232, 808 265" />
+          <path class="edge meta" d="M 694 548 C 744 534, 770 520, 810 495" />
+          <path class="edge meta" d="M 694 578 C 744 602, 770 618, 810 648" />
+
+          <!-- case to claims -->
+          <path class="edge nuance" d="M 196 380 C 245 300, 276 258, 336 202" />
+          <path class="edge nuance" d="M 208 380 C 265 375, 290 374, 344 370" />
+          <path class="edge nuance" d="M 196 394 C 248 454, 279 490, 338 540" />
+
+          <!-- claim to source claims -->
+          <path
+            class="edge support"
+            d="M 476 196 C 532 176, 563 173, 622 176"
+          />
+          <path class="edge nuance" d="M 476 210 C 527 240, 558 256, 620 278" />
+          <path class="edge refute" d="M 474 374 C 531 356, 562 349, 622 348" />
+          <path
+            class="edge support"
+            d="M 476 372 C 525 298, 555 260, 620 213"
+          />
+          <path
+            class="edge support"
+            d="M 476 542 C 534 522, 564 518, 622 522"
+          />
+          <path class="edge nuance" d="M 474 528 C 528 446, 557 405, 621 384" />
+
+          <!-- source claim to sources -->
+          <path
+            class="edge support"
+            d="M 744 176 C 802 176, 820 176, 860 176"
+          />
+          <path class="edge nuance" d="M 744 278 C 794 246, 817 221, 860 188" />
+          <path class="edge refute" d="M 744 348 C 805 348, 818 348, 860 348" />
+          <path class="edge nuance" d="M 744 384 C 794 432, 818 462, 860 508" />
+          <path
+            class="edge support"
+            d="M 744 522 C 805 522, 818 522, 860 522"
+          />
+
+          <!-- source to eval -->
+          <path class="edge support" d="M 860 176 C 835 120, 790 88, 720 76" />
+          <path class="edge refute" d="M 860 348 C 820 314, 780 290, 720 284" />
+          <path
+            class="edge support"
+            d="M 860 522 C 828 592, 778 635, 716 664"
+          />
+
+          <!-- evaluation merges -->
+          <path class="edge meta" d="M 706 78 C 644 120, 614 148, 570 202" />
+          <path class="edge meta" d="M 706 286 C 638 318, 604 336, 570 370" />
+          <path class="edge meta" d="M 702 664 C 638 618, 604 592, 570 540" />
+
+          <!-- case node -->
+          <g class="node case">
+            <circle cx="148" cy="386" r="58"></circle>
+            <text class="label" x="148" y="381" text-anchor="middle">CASE</text>
+            <text class="sublabel" x="148" y="399" text-anchor="middle">
+              investigation root
+            </text>
+          </g>
+
+          <!-- claim nodes -->
+          <g class="node claim">
+            <rect x="344" y="168" width="132" height="52" rx="14"></rect>
+            <text class="label" x="410" y="190" text-anchor="middle">
+              Case Claim A
+            </text>
+            <text class="sublabel" x="410" y="206" text-anchor="middle">
+              crime fell 18%
+            </text>
+          </g>
+
+          <g class="node claim">
+            <rect x="344" y="344" width="132" height="52" rx="14"></rect>
+            <text class="label" x="410" y="366" text-anchor="middle">
+              Case Claim B
+            </text>
+            <text class="sublabel" x="410" y="382" text-anchor="middle">
+              effect strongest downtown
+            </text>
+          </g>
+
+          <g class="node claim">
+            <rect x="344" y="514" width="132" height="52" rx="14"></rect>
+            <text class="label" x="410" y="536" text-anchor="middle">
+              Case Claim C
+            </text>
+            <text class="sublabel" x="410" y="552" text-anchor="middle">
+              effect persisted
+            </text>
+          </g>
+
+          <!-- evaluation nodes near claims to imply per-claim assessment -->
+          <g class="node eval">
+            <rect x="632" y="44" width="88" height="44" rx="12"></rect>
+            <text class="label" x="676" y="64" text-anchor="middle">
+              Supported
+            </text>
+            <text class="sublabel" x="676" y="78" text-anchor="middle">
+              0.81
+            </text>
+          </g>
+
+          <g class="node eval">
+            <rect x="632" y="262" width="88" height="44" rx="12"></rect>
+            <text class="label" x="676" y="282" text-anchor="middle">
+              Mixed
+            </text>
+            <text class="sublabel" x="676" y="296" text-anchor="middle">
+              0.44
+            </text>
+          </g>
+
+          <g class="node eval">
+            <rect x="632" y="640" width="88" height="44" rx="12"></rect>
+            <text class="label" x="676" y="660" text-anchor="middle">
+              Supported
+            </text>
+            <text class="sublabel" x="676" y="674" text-anchor="middle">
+              0.68
+            </text>
+          </g>
+
+          <!-- source claim nodes -->
+          <g class="node source-claim">
+            <rect x="622" y="152" width="122" height="48" rx="13"></rect>
+            <text class="label" x="683" y="173" text-anchor="middle">
+              SC-101
+            </text>
+            <text class="sublabel" x="683" y="188" text-anchor="middle">
+              police report excerpt
+            </text>
+          </g>
+
+          <g class="node source-claim">
+            <rect x="622" y="254" width="122" height="48" rx="13"></rect>
+            <text class="label" x="683" y="275" text-anchor="middle">
+              SC-102
+            </text>
+            <text class="sublabel" x="683" y="290" text-anchor="middle">
+              district trend line
+            </text>
+          </g>
+
+          <g class="node source-claim">
+            <rect x="622" y="324" width="122" height="48" rx="13"></rect>
+            <text class="label" x="683" y="345" text-anchor="middle">
+              SC-201
+            </text>
+            <text class="sublabel" x="683" y="360" text-anchor="middle">
+              critical op-ed quote
+            </text>
+          </g>
+
+          <g class="node source-claim">
+            <rect x="622" y="360" width="122" height="48" rx="13"></rect>
+            <text class="label" x="683" y="381" text-anchor="middle">
+              SC-202
+            </text>
+            <text class="sublabel" x="683" y="396" text-anchor="middle">
+              method caveat
+            </text>
+          </g>
+
+          <g class="node source-claim">
+            <rect x="622" y="498" width="122" height="48" rx="13"></rect>
+            <text class="label" x="683" y="519" text-anchor="middle">
+              SC-301
+            </text>
+            <text class="sublabel" x="683" y="534" text-anchor="middle">
+              quarterly report line
+            </text>
+          </g>
+
+          <!-- source nodes as diamonds -->
+          <g class="node source">
+            <polygon points="860,138 898,176 860,214 822,176"></polygon>
+            <text class="label" x="860" y="172" text-anchor="middle">
+              Source A
+            </text>
+            <text class="sublabel" x="860" y="188" text-anchor="middle">
+              city report
+            </text>
+          </g>
+
+          <g class="node source">
+            <polygon points="860,310 898,348 860,386 822,348"></polygon>
+            <text class="label" x="860" y="344" text-anchor="middle">
+              Source B
+            </text>
+            <text class="sublabel" x="860" y="360" text-anchor="middle">
+              commentary
+            </text>
+          </g>
+
+          <g class="node source">
+            <polygon points="860,484 898,522 860,560 822,522"></polygon>
+            <text class="label" x="860" y="518" text-anchor="middle">
+              Source C
+            </text>
+            <text class="sublabel" x="860" y="534" text-anchor="middle">
+              follow-up study
+            </text>
+          </g>
+
+          <!-- metadata nodes -->
+          <g class="node author">
+            <circle cx="832" cy="112" r="24"></circle>
+            <text class="label" x="832" y="116" text-anchor="middle">
+              Author
+            </text>
+          </g>
+
+          <g class="node publisher">
+            <circle cx="838" cy="274" r="24"></circle>
+            <text class="label" x="838" y="278" text-anchor="middle">Pub</text>
+          </g>
+
+          <g class="node author">
+            <circle cx="840" cy="492" r="24"></circle>
+            <text class="label" x="840" y="496" text-anchor="middle">
+              Author
+            </text>
+          </g>
+
+          <g class="node publisher">
+            <circle cx="840" cy="650" r="24"></circle>
+            <text class="label" x="840" y="654" text-anchor="middle">Pub</text>
+          </g>
+        </svg>
+
+        <div class="footer-note">
+          A graph engineer would expect typed entities, typed relationships, and
+          hubs with many inbound and outbound edges. This version says
+          “knowledge graph” instead of “dashboard with some lines taped on.”
+        </div>
+      </main>
+
+      <aside class="panel">
+        <div class="eyebrow">Ontology sketch</div>
+        <div class="legend">
+          <div class="item">
+            <span class="dot" style="background: var(--case)"></span> Case
+          </div>
+          <div class="item">
+            <span class="dot" style="background: var(--claim)"></span> Case
+            Claim
+          </div>
+          <div class="item">
+            <span class="dot" style="background: var(--sourceClaim)"></span>
+            Source Claim
+          </div>
+          <div class="item">
+            <span class="dot" style="background: var(--source)"></span> Source
+          </div>
+          <div class="item">
+            <span class="dot" style="background: var(--author)"></span> Author
+          </div>
+          <div class="item">
+            <span class="dot" style="background: var(--publisher)"></span>
+            Publisher
+          </div>
+          <div class="item">
+            <span
+              class="line-sample"
+              style="border-top-color: var(--support)"
+            ></span>
+            supports
+          </div>
+          <div class="item">
+            <span
+              class="line-sample"
+              style="border-top-color: var(--refute)"
+            ></span>
+            refutes
+          </div>
+          <div class="item">
+            <span
+              class="line-sample"
+              style="border-top-color: var(--nuance)"
+            ></span>
+            nuances
+          </div>
+          <div class="item">
+            <span
+              class="line-sample"
+              style="
+                border-top-color: rgba(180, 190, 220, 0.55);
+                border-top-style: dashed;
+              "
+            ></span>
+            metadata relation
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="eyebrow">What the graph is saying</div>
+          <div class="metric">
+            <span>Case claims in view</span><span>3</span>
+          </div>
+          <div class="metric">
+            <span>Source claims in view</span><span>5</span>
+          </div>
+          <div class="metric"><span>Sources in view</span><span>3</span></div>
+          <div class="metric">
+            <span>Shared-source fan-out</span><span>Source A → 2 claims</span>
+          </div>
+          <div class="metric">
+            <span>Refuting branch</span><span>Source B → Claim B</span>
+          </div>
+          <div class="metric">
+            <span>Evaluation nodes</span><span>per-claim</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="mini-card">
+            <h3>How I would model it</h3>
+            <p>
+              <strong>Nodes:</strong> Case, Claim, SourceClaim, Source, Author,
+              Publisher, Topic, User, Evaluation.<br /><br />
+              <strong>Edges:</strong> CASE_HAS_CLAIM, SOURCE_CONTAINS_CLAIM,
+              SOURCE_CLAIM_SUPPORTS_CLAIM, SOURCE_CLAIM_REFUTES_CLAIM,
+              SOURCE_CLAIM_NUANCES_CLAIM, AUTHORED_BY, PUBLISHED_BY,
+              EVALUATED_AS.
+            </p>
+          </div>
+          <div class="mini-card">
+            <h3>Why this fits your product</h3>
+            <p>
+              Your platform already has graph-native ingredients. The real leap
+              is treating source claims as first-class nodes, because that is
+              where the evidence semantics live.
+            </p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </body>
+</html>

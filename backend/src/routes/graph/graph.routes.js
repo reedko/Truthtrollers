@@ -17,6 +17,7 @@ export default function createGraphRoutes({ query, pool }) {
   // Molecule map route - fetches nodes and links for entity visualization
   router.get("/api/get-graph-data", async (req, res) => {
     const { entity, entityType } = req.query;
+    const viewerId = req.query.viewerId ? parseInt(req.query.viewerId) : null;
 
     if (!entity || !entityType) {
       return res
@@ -24,16 +25,16 @@ export default function createGraphRoutes({ query, pool }) {
         .json({ error: "Missing entity or entityType parameter" });
     }
 
-    const nodeSql = getNodesForEntity(entityType);
-    const linkSql = getLinksForEntity(entityType);
+    const nodeSql = getNodesForEntity(entityType, viewerId);
+    const linkSql = getLinksForEntity(entityType, viewerId);
 
     if (!nodeSql || !linkSql) {
       return res.status(400).json({ error: "Invalid entityType parameter" });
     }
 
     try {
-      // Task entityType needs 6 params for nodes (task, task authors, reference authors, publisher, references x2)
-      // Task entityType needs 4 params for links (task author, task publisher, task references, reference authors)
+      // Task entityType needs 6 params for nodes, 4 params for links
+      // viewerId is now embedded directly in the SQL string (not a parameter)
       const nodeParams = entityType === 'task'
         ? [entity, entity, entity, entity, entity, entity]
         : [entity, entity, entity, entity];
@@ -67,8 +68,8 @@ export default function createGraphRoutes({ query, pool }) {
         .json({ error: "Missing entity or entityType parameter" });
     }
 
-    const nodeSql = getNodesForEntity(entityType);
-    const linkSql = getLinksForEntity(entityType);
+    const nodeSql = getNodesForEntity(entityType, viewerId);
+    const linkSql = getLinksForEntity(entityType, viewerId);
 
     if (!nodeSql || !linkSql) {
       return res.status(400).json({ error: "Invalid entityType parameter" });
@@ -79,6 +80,7 @@ export default function createGraphRoutes({ query, pool }) {
       // 1. Base nodes/links
       // Task entityType needs 6 params for nodes (task, task authors, reference authors, publisher, references x2)
       // Task entityType needs 4 params for links (task author, task publisher, task references, reference authors)
+      // viewerId is now embedded directly in the SQL string (not a parameter)
       const nodeParams = entityType === 'task'
         ? [entity, entity, entity, entity, entity, entity]
         : [entity, entity, entity, entity];

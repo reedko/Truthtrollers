@@ -20,6 +20,7 @@ import useTaskStore from "../store/useTaskStore";
 import resizeImage from "../services/image-url";
 import { useTaskScraper } from "../hooks/useTaskScraper";
 import TruthGauge from "./ModernArcGauge";
+import ClaimPairsDetail from "./ClaimPairsDetail";
 import browser from "webextension-polyfill";
 import { Task } from "../entities/Task";
 import {
@@ -290,57 +291,62 @@ const TaskCard: React.FC = () => {
         </Box>
 
         {!thumbLoading && imageUrl && task?.progress === "Completed" ? (
-          <HStack
-            spacing={1}
-            align="flex-start"
-            width="100%"
-            justify="space-between"
-            mt={2}
-            px={1}
-          >
-            <Box flexShrink={0}>
-              <TruthGauge
-                score={task?.verimeter_score ?? 0}
-                label="VERIMETER"
-                size={{ w: 170, h: 90 }}
-                normalize={false}
-              />
-            </Box>
-            <Box
-              position="relative"
-              background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-              backdropFilter="blur(20px)"
-              border="1px solid rgba(0, 162, 255, 0.5)"
-              borderRadius="12px"
-              boxShadow="0 10px 40px rgba(0, 0, 0, 0.7), 0 0 50px rgba(0, 162, 255, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
-              overflow="hidden"
-              flexShrink={0}
-              width="70px"
-              height="180px"
-              display="flex"
-              alignItems="center"
-              justifyContent="center"
+          <VStack width="100%" spacing={0}>
+            <HStack
+              spacing={1}
+              align="flex-start"
+              width="100%"
+              justify="space-between"
+              mt={2}
+              px={1}
             >
-              <Box
-                position="absolute"
-                left={0}
-                top={0}
-                width="15px"
-                height="100%"
-                background="linear-gradient(90deg, rgba(0, 162, 255, 0.6) 0%, transparent 100%)"
-                pointerEvents="none"
-              />
+              <Box flexShrink={0}>
+                <TruthGauge
+                  score={task?.verimeter_score ?? 0}
+                  label="VERIMETER"
+                  size={{ w: 170, h: 90 }}
+                  normalize={false}
+                />
+              </Box>
               <Box
                 position="relative"
-                zIndex={1}
-                transform="scale(0.85)"
-                ml={-35}
-                mr={-35}
+                background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+                backdropFilter="blur(20px)"
+                border="1px solid rgba(0, 162, 255, 0.5)"
+                borderRadius="12px"
+                boxShadow="0 10px 40px rgba(0, 0, 0, 0.7), 0 0 50px rgba(0, 162, 255, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
+                overflow="hidden"
+                flexShrink={0}
+                width="70px"
+                height="180px"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
               >
-                <UserConsensusBar trueCount={21} falseCount={71} total={121} />
+                <Box
+                  position="absolute"
+                  left={0}
+                  top={0}
+                  width="15px"
+                  height="100%"
+                  background="linear-gradient(90deg, rgba(0, 162, 255, 0.6) 0%, transparent 100%)"
+                  pointerEvents="none"
+                />
+                <Box
+                  position="relative"
+                  zIndex={1}
+                  transform="scale(0.85)"
+                  ml={-35}
+                  mr={-35}
+                >
+                  <UserConsensusBar trueCount={21} falseCount={71} total={121} />
+                </Box>
               </Box>
-            </Box>
-          </HStack>
+            </HStack>
+
+            {/* Expandable claim pairs detail */}
+            {task?.content_id && <ClaimPairsDetail claimPairsData={(task as any).claim_pairs || null} />}
+          </VStack>
         ) : (
           !thumbLoading &&
           imageUrl && (

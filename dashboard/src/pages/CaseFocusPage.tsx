@@ -39,7 +39,10 @@ import { useNavigate } from "react-router-dom";
 import { useTaskStore } from "../store/useTaskStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { fetchReferenceClaimTaskLinks } from "../services/referenceClaimRelevance";
-import { fetchClaimScoresForTask, getClaimLinkScore } from "../services/useDashboardAPI";
+import {
+  fetchClaimScoresForTask,
+  getClaimLinkScore,
+} from "../services/useDashboardAPI";
 import VerimeterMeter from "../components/VerimeterMeter";
 import ClaimLinkOverlay from "../components/overlays/ClaimLinkOverlay";
 
@@ -100,7 +103,9 @@ export const CaseFocusPage: React.FC = () => {
   const [availableCaseClaims, setAvailableCaseClaims] = useState<any[]>([]);
   const [currentCaseClaimIndex, setCurrentCaseClaimIndex] = useState(0);
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
-  const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
+  const [slideDirection, setSlideDirection] = useState<"left" | "right" | null>(
+    null,
+  );
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [modalSupportLevel, setModalSupportLevel] = useState(0);
   const [styleMode, setStyleMode] = useState<"mr1" | "mr2">("mr1"); // MR1 = 3D glass, MR2 = dark sunken
@@ -108,7 +113,9 @@ export const CaseFocusPage: React.FC = () => {
   const [hiddenSources, setHiddenSources] = useState<number[]>(() => {
     // Load hidden sources from localStorage on mount
     if (user?.user_id) {
-      const stored = localStorage.getItem(`hidden_sources_user_${user.user_id}`);
+      const stored = localStorage.getItem(
+        `hidden_sources_user_${user.user_id}`,
+      );
       return stored ? JSON.parse(stored) : [];
     }
     return [];
@@ -117,22 +124,32 @@ export const CaseFocusPage: React.FC = () => {
   // Touch/drag state for swipe navigation
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
-  const dragRef = useRef<HTMLDivElement>(null);
 
   // Linked claims modal state
   const {
     isOpen: isLinkedClaimsModalOpen,
     onOpen: onOpenLinkedClaimsModal,
-    onClose: onCloseLinkedClaimsModal
+    onClose: onCloseLinkedClaimsModal,
   } = useDisclosure();
   const [linkedClaims, setLinkedClaims] = useState<any[]>([]);
-  const [linkedClaimsFilter, setLinkedClaimsFilter] = useState<Set<"support" | "refute" | "nuance">>(new Set(["support", "refute", "nuance"]));
+  const [linkedClaimsFilter, setLinkedClaimsFilter] = useState<
+    Set<"support" | "refute" | "nuance">
+  >(new Set(["support", "refute", "nuance"]));
 
   // Memoize linked claims categorization to avoid re-filtering on every render
   const linkedClaimsCategorized = useMemo(() => {
-    const support = linkedClaims.filter(lc => lc.relation === "support" || lc.relationship === "supports");
-    const refute = linkedClaims.filter(lc => lc.relation === "refute" || lc.relationship === "refutes");
-    const nuance = linkedClaims.filter(lc => lc.relation === "nuance" || lc.relation === "context" || lc.relationship === "related");
+    const support = linkedClaims.filter(
+      (lc) => lc.relation === "support" || lc.relationship === "supports",
+    );
+    const refute = linkedClaims.filter(
+      (lc) => lc.relation === "refute" || lc.relationship === "refutes",
+    );
+    const nuance = linkedClaims.filter(
+      (lc) =>
+        lc.relation === "nuance" ||
+        lc.relation === "context" ||
+        lc.relationship === "related",
+    );
 
     return { support, refute, nuance };
   }, [linkedClaims]);
@@ -140,9 +157,12 @@ export const CaseFocusPage: React.FC = () => {
   // Memoize filtered claims based on selected filters
   const filteredLinkedClaims = useMemo(() => {
     const result: any[] = [];
-    if (linkedClaimsFilter.has("support")) result.push(...linkedClaimsCategorized.support);
-    if (linkedClaimsFilter.has("refute")) result.push(...linkedClaimsCategorized.refute);
-    if (linkedClaimsFilter.has("nuance")) result.push(...linkedClaimsCategorized.nuance);
+    if (linkedClaimsFilter.has("support"))
+      result.push(...linkedClaimsCategorized.support);
+    if (linkedClaimsFilter.has("refute"))
+      result.push(...linkedClaimsCategorized.refute);
+    if (linkedClaimsFilter.has("nuance"))
+      result.push(...linkedClaimsCategorized.nuance);
     return result;
   }, [linkedClaimsFilter, linkedClaimsCategorized]);
 
@@ -163,7 +183,8 @@ export const CaseFocusPage: React.FC = () => {
       : {
           border: "1px solid",
           borderColor: "rgba(126, 207, 255, 0.22)",
-          clipPath: "polygon(42px 0, calc(100% - 42px) 0, 100% 42px, 100% calc(100% - 42px), calc(100% - 42px) 100%, 42px 100%, 0 calc(100% - 42px), 0 42px)",
+          clipPath:
+            "polygon(42px 0, calc(100% - 42px) 0, 100% 42px, 100% calc(100% - 42px), calc(100% - 42px) 100%, 42px 100%, 0 calc(100% - 42px), 0 42px)",
           boxShadow:
             "0 30px 60px rgba(0, 0, 0, 0.52), 0 10px 0 rgba(3, 6, 8, 1), 0 20px 0 rgba(2, 4, 5, 1), inset 0 2px 0 rgba(255, 255, 255, 0.14), inset 0 -10px 18px rgba(0, 0, 0, 0.75)",
         };
@@ -353,7 +374,8 @@ export const CaseFocusPage: React.FC = () => {
           pointerEvents="none"
           zIndex={10}
           style={{
-            backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 6px, rgba(0, 0, 0, 0.06) 6px, rgba(0, 0, 0, 0.06) 7px)",
+            backgroundImage:
+              "repeating-linear-gradient(0deg, transparent, transparent 6px, rgba(0, 0, 0, 0.06) 6px, rgba(0, 0, 0, 0.06) 7px)",
           }}
         />
 
@@ -370,7 +392,8 @@ export const CaseFocusPage: React.FC = () => {
           pointerEvents="none"
           zIndex={10}
           style={{
-            backgroundImage: "repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(0, 0, 0, 0.08) 20px, rgba(0, 0, 0, 0.08) 21px)",
+            backgroundImage:
+              "repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(0, 0, 0, 0.08) 20px, rgba(0, 0, 0, 0.08) 21px)",
           }}
         />
 
@@ -387,7 +410,8 @@ export const CaseFocusPage: React.FC = () => {
           pointerEvents="none"
           zIndex={10}
           style={{
-            backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 6px, rgba(0, 0, 0, 0.06) 6px, rgba(0, 0, 0, 0.06) 7px)",
+            backgroundImage:
+              "repeating-linear-gradient(0deg, transparent, transparent 6px, rgba(0, 0, 0, 0.06) 6px, rgba(0, 0, 0, 0.06) 7px)",
           }}
         />
 
@@ -404,12 +428,100 @@ export const CaseFocusPage: React.FC = () => {
           pointerEvents="none"
           zIndex={10}
           style={{
-            backgroundImage: "repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(0, 0, 0, 0.08) 20px, rgba(0, 0, 0, 0.08) 21px)",
+            backgroundImage:
+              "repeating-linear-gradient(90deg, transparent, transparent 20px, rgba(0, 0, 0, 0.08) 20px, rgba(0, 0, 0, 0.08) 21px)",
           }}
         />
       </>
     );
   };
+  const leftRailViewportRef = useRef<HTMLDivElement | null>(null);
+  const leftRailFlexRef = useRef<HTMLDivElement | null>(null);
+  const [leftCardMeasurements, setLeftCardMeasurements] = useState({
+    viewportWidth: 0,
+    cardWidth: 0,
+    cardGap: 0,
+  });
+
+  const rightRailViewportRef = useRef<HTMLDivElement | null>(null);
+  const rightRailFlexRef = useRef<HTMLDivElement | null>(null);
+  const [rightCardMeasurements, setRightCardMeasurements] = useState({
+    viewportWidth: 0,
+    cardWidth: 0,
+    cardGap: 0,
+  });
+
+  // Left rail measurements
+  useEffect(() => {
+    const viewportEl = leftRailViewportRef.current;
+    const flexEl = leftRailFlexRef.current;
+    if (!viewportEl || !flexEl) return;
+
+    const update = () => {
+      const firstCard = flexEl.children[0] as HTMLElement;
+      if (!firstCard) return;
+
+      const cardWidth = firstCard.offsetWidth;
+      const cardStyle = window.getComputedStyle(firstCard);
+      const cardGap = parseFloat(cardStyle.marginRight) || 0;
+      const viewportWidth = viewportEl.clientWidth;
+
+      setLeftCardMeasurements({ viewportWidth, cardWidth, cardGap });
+    };
+
+    const observer = new ResizeObserver(() => update());
+
+    // Use requestAnimationFrame to ensure DOM is fully rendered
+    requestAnimationFrame(() => {
+      update();
+      observer.observe(viewportEl);
+      observer.observe(flexEl);
+    });
+
+    return () => observer.disconnect();
+  }, [availableCaseClaims]);
+
+  // Right rail measurements
+  useEffect(() => {
+    const viewportEl = rightRailViewportRef.current;
+    const flexEl = rightRailFlexRef.current;
+    if (!viewportEl || !flexEl) return;
+
+    const update = () => {
+      const firstCard = flexEl.children[0] as HTMLElement;
+      if (!firstCard) return;
+
+      const cardWidth = firstCard.offsetWidth;
+      const cardStyle = window.getComputedStyle(firstCard);
+      const cardGap = parseFloat(cardStyle.marginRight) || 0;
+      const viewportWidth = viewportEl.clientWidth;
+
+      setRightCardMeasurements({ viewportWidth, cardWidth, cardGap });
+    };
+
+    const observer = new ResizeObserver(() => update());
+
+    // Use requestAnimationFrame to ensure DOM is fully rendered
+    requestAnimationFrame(() => {
+      update();
+      observer.observe(viewportEl);
+      observer.observe(flexEl);
+    });
+
+    return () => observer.disconnect();
+  }, [candidates]);
+
+  const leftRailTranslate =
+    leftCardMeasurements.viewportWidth / 2 -
+    leftCardMeasurements.cardWidth / 2 -
+    currentCaseClaimIndex *
+      (leftCardMeasurements.cardWidth + leftCardMeasurements.cardGap);
+
+  const rightRailTranslate =
+    rightCardMeasurements.viewportWidth / 2 -
+    rightCardMeasurements.cardWidth / 2 -
+    currentCandidateIndex *
+      (rightCardMeasurements.cardWidth + rightCardMeasurements.cardGap);
 
   // Load available case claims when case changes
   useEffect(() => {
@@ -424,8 +536,13 @@ export const CaseFocusPage: React.FC = () => {
       if (!selectedTask?.content_id || !user?.user_id) return;
 
       try {
-        console.log(`🎮 Loading game score for case ${selectedTask.content_id}, user ${user.user_id}`);
-        const totalScore = await getClaimLinkScore(selectedTask.content_id, user.user_id);
+        console.log(
+          `🎮 Loading game score for case ${selectedTask.content_id}, user ${user.user_id}`,
+        );
+        const totalScore = await getClaimLinkScore(
+          selectedTask.content_id,
+          user.user_id,
+        );
         console.log(`🎮 Loaded game score: ${totalScore}`);
         setUserScore(totalScore);
       } catch (error) {
@@ -517,16 +634,25 @@ export const CaseFocusPage: React.FC = () => {
       const claimData = availableCaseClaims.find((c) => c.claim_id === claimId);
 
       // Fetch the user's normalized running score for this claim
-      console.log('🎯 Fetching user normalized score for claim:', claimId, 'user:', user?.user_id);
-      const claimScores = await fetchClaimScoresForTask(selectedTask.content_id, user?.user_id || null);
+      console.log(
+        "🎯 Fetching user normalized score for claim:",
+        claimId,
+        "user:",
+        user?.user_id,
+      );
+      const claimScores = await fetchClaimScoresForTask(
+        selectedTask.content_id,
+        user?.user_id || null,
+      );
       const normalizedScore = claimScores[claimId] ?? null;
-      console.log('📊 User normalized score for claim:', normalizedScore);
+      console.log("📊 User normalized score for claim:", normalizedScore);
 
       const focus: FocusClaim = {
         claim_id: claimId,
         claim_text: claimData?.label || "Loading...",
         claim_type: "case",
-        verimeter_score: normalizedScore !== null ? Math.round(normalizedScore) : 50, // Use normalized score or default
+        verimeter_score:
+          normalizedScore !== null ? Math.round(normalizedScore) : 50, // Use normalized score or default
         support_count: supportCount,
         refute_count: refuteCount,
         context_count: contextCount,
@@ -614,7 +740,9 @@ export const CaseFocusPage: React.FC = () => {
 
       // FILTER TO ONLY RELEVANT CLAIMS: Show only AI-suggested OR already linked
       const filteredCandidates = allCandidates.filter(
-        (c) => c.relevance_score > 0 && !hiddenSources.includes(c.reference_content_id),
+        (c) =>
+          c.relevance_score > 0 &&
+          !hiddenSources.includes(c.reference_content_id),
       );
 
       console.log(
@@ -739,7 +867,10 @@ export const CaseFocusPage: React.FC = () => {
     // Reload game score after creating link
     if (selectedTask?.content_id && user?.user_id) {
       try {
-        const totalScore = await getClaimLinkScore(selectedTask.content_id, user.user_id);
+        const totalScore = await getClaimLinkScore(
+          selectedTask.content_id,
+          user.user_id,
+        );
         setUserScore(totalScore);
         console.log(`🎮 Updated game score: ${totalScore}`);
       } catch (error) {
@@ -765,17 +896,20 @@ export const CaseFocusPage: React.FC = () => {
     // Save to localStorage
     localStorage.setItem(
       `hidden_sources_user_${user.user_id}`,
-      JSON.stringify(newHiddenSources)
+      JSON.stringify(newHiddenSources),
     );
 
     // Remove from candidates list
     const updatedCandidates = candidates.filter(
-      (c) => c.reference_content_id !== contentId
+      (c) => c.reference_content_id !== contentId,
     );
     setCandidates(updatedCandidates);
 
     // Adjust current index if needed
-    if (currentCandidateIndex >= updatedCandidates.length && updatedCandidates.length > 0) {
+    if (
+      currentCandidateIndex >= updatedCandidates.length &&
+      updatedCandidates.length > 0
+    ) {
       setCurrentCandidateIndex(updatedCandidates.length - 1);
     }
 
@@ -828,7 +962,7 @@ export const CaseFocusPage: React.FC = () => {
   const handleSelectClaim = (claimId: number, isNavigating = false) => {
     loadFocusClaim(claimId, isNavigating);
     // Update current index when claim is selected
-    const index = availableCaseClaims.findIndex(c => c.claim_id === claimId);
+    const index = availableCaseClaims.findIndex((c) => c.claim_id === claimId);
     if (index !== -1) {
       setCurrentCaseClaimIndex(index);
     }
@@ -836,9 +970,12 @@ export const CaseFocusPage: React.FC = () => {
 
   // Navigation functions for case claims with smooth transitions
   const goToNextCaseClaim = async () => {
-    if (currentCaseClaimIndex < availableCaseClaims.length - 1 && !isTransitioning) {
+    if (
+      currentCaseClaimIndex < availableCaseClaims.length - 1 &&
+      !isTransitioning
+    ) {
       setIsTransitioning(true);
-      setSlideDirection('left'); // Next slides from right to left
+      setSlideDirection("left"); // Next slides from right to left
 
       // Small delay for slide-out animation
       setTimeout(() => {
@@ -858,7 +995,7 @@ export const CaseFocusPage: React.FC = () => {
   const goToPreviousCaseClaim = async () => {
     if (currentCaseClaimIndex > 0 && !isTransitioning) {
       setIsTransitioning(true);
-      setSlideDirection('right'); // Previous slides from left to right
+      setSlideDirection("right"); // Previous slides from left to right
 
       // Small delay for slide-out animation
       setTimeout(() => {
@@ -1009,13 +1146,27 @@ export const CaseFocusPage: React.FC = () => {
   // Helper function to render claim button with actual text
   const renderClaimButton = (link: any, idx: number) => {
     const stanceColors = {
-      supports: { border: "rgba(97, 239, 184, 0.4)", badge: "#61efb8", badgeBg: "rgba(97, 239, 184, 0.2)" },
-      refutes: { border: "rgba(255, 108, 136, 0.4)", badge: "#ff6c88", badgeBg: "rgba(255, 108, 136, 0.2)" },
-      context: { border: "rgba(120, 168, 255, 0.4)", badge: "#78a8ff", badgeBg: "rgba(120, 168, 255, 0.2)" },
+      supports: {
+        border: "rgba(97, 239, 184, 0.4)",
+        badge: "#61efb8",
+        badgeBg: "rgba(97, 239, 184, 0.2)",
+      },
+      refutes: {
+        border: "rgba(255, 108, 136, 0.4)",
+        badge: "#ff6c88",
+        badgeBg: "rgba(255, 108, 136, 0.2)",
+      },
+      context: {
+        border: "rgba(120, 168, 255, 0.4)",
+        badge: "#78a8ff",
+        badgeBg: "rgba(120, 168, 255, 0.2)",
+      },
     };
 
     const stance = link.relationship_type || link.stance || "supports";
-    const colors = stanceColors[stance as keyof typeof stanceColors] || stanceColors.supports;
+    const colors =
+      stanceColors[stance as keyof typeof stanceColors] ||
+      stanceColors.supports;
 
     return (
       <Button
@@ -1057,7 +1208,13 @@ export const CaseFocusPage: React.FC = () => {
         {/* MR2: Squared beveled edges */}
         {getSquaredBeveledEdges()}
 
-        <VStack align="flex-start" spacing={2} w="100%" position="relative" zIndex={1}>
+        <VStack
+          align="flex-start"
+          spacing={2}
+          w="100%"
+          position="relative"
+          zIndex={1}
+        >
           <Badge
             fontSize="10px"
             px={3}
@@ -1071,8 +1228,15 @@ export const CaseFocusPage: React.FC = () => {
           >
             {stance}
           </Badge>
-          <Text fontSize="14px" color="#d4e9ff" lineHeight="1.4" fontWeight="500">
-            {link.claim_text || link.evidence_text || "Claim text not available"}
+          <Text
+            fontSize="14px"
+            color="#d4e9ff"
+            lineHeight="1.4"
+            fontWeight="500"
+          >
+            {link.claim_text ||
+              link.evidence_text ||
+              "Claim text not available"}
           </Text>
         </VStack>
       </Button>
@@ -1116,7 +1280,6 @@ export const CaseFocusPage: React.FC = () => {
 
       {/* Main Content */}
       <VStack spacing={2} p={6} pt={2} position="relative" zIndex={1}>
-
         {/* Claim Selector - Vertical Grid */}
         {!focusClaim && availableCaseClaims.length > 0 && (
           <Box w="full" mb={4}>
@@ -1271,573 +1434,162 @@ export const CaseFocusPage: React.FC = () => {
         {focusClaim && (
           <Box position="relative" w="full">
             <Grid
-              templateColumns="480px 780px 360px"
+              templateColumns={{
+                base: "minmax(0, 1fr)",
+                lg: "minmax(0, 1fr) minmax(0, 1fr)",
+                xl: "minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)",
+              }}
               gap={8}
               w="full"
+              maxW={{ base: "100%", xl: "none" }}
               alignItems="start"
               mt="8px"
             >
-            {/* Left: Case Claim Focus */}
-            <Box
-              borderRadius={styleMode === "mr1" ? "28px" : "0"}
-              {...getPanelBorder()}
-              {...getPanelBackground()}
-              backdropFilter={styleMode === "mr1" ? "blur(18px)" : "none"}
-              p={6}
-              pt={4}
-              minH="820px"
-              position="relative"
-              overflow="hidden"
-              _before={
-                styleMode === "mr2"
-                  ? {
-                      content: '""',
-                      position: "absolute",
-                      inset: "8px",
-                      background: "linear-gradient(180deg, #1c262f, #0b1015)",
-                      clipPath: "polygon(38px 0, calc(100% - 38px) 0, 100% 38px, 100% calc(100% - 38px), calc(100% - 38px) 100%, 38px 100%, 0 calc(100% - 38px), 0 38px)",
-                      boxShadow: "inset 0 2px 0 rgba(255, 255, 255, 0.06), inset 0 -12px 20px rgba(0, 0, 0, 0.72), inset 0 14px 20px rgba(255, 255, 255, 0.02)",
-                      zIndex: 0,
-                    }
-                  : undefined
-              }
-              _after={
-                styleMode === "mr2"
-                  ? {
-                      content: '""',
-                      position: "absolute",
-                      inset: "18px",
-                      background: "linear-gradient(180deg, #121920, #090d11)",
-                      clipPath: "polygon(30px 0, calc(100% - 30px) 0, 100% 30px, 100% calc(100% - 30px), calc(100% - 30px) 100%, 30px 100%, 0 calc(100% - 30px), 0 30px)",
-                      boxShadow: "inset 0 2px 0 rgba(255, 255, 255, 0.03), inset 0 -8px 14px rgba(0, 0, 0, 0.82), inset 0 0 0 2px rgba(255, 255, 255, 0.015)",
-                      zIndex: 0,
-                    }
-                  : undefined
-              }
-            >
-              {/* MR1: Blue weave pattern */}
-              {styleMode === "mr1" && (
-                <>
-                  {/* Radiant glow from lower right corner */}
-                  <Box
-                    position="absolute"
-                    inset="0"
-                    bgGradient="radial-gradient(circle at bottom right, rgba(113, 219, 255, 0.28) 0%, rgba(50, 120, 180, 0.15) 35%, transparent 70%)"
-                    pointerEvents="none"
-                    zIndex={0}
-                  />
-                  {/* Tight scanline pattern like unified header cards */}
-                  <Box
-                    position="absolute"
-                    inset="0"
-                    bgImage="repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 162, 255, 0.03) 2px, rgba(0, 162, 255, 0.03) 4px)"
-                    pointerEvents="none"
-                    zIndex={0}
-                  />
-                  <Box
-                    position="absolute"
-                    left="-10px"
-                    top="18px"
-                    bottom="18px"
-                    w="22px"
-                    borderRadius="18px"
-                    bgGradient="linear(180deg, rgba(113, 219, 255, 0.23), rgba(167, 150, 255, 0.18) 46%, rgba(97, 239, 184, 0.18))"
-                    boxShadow="0 0 18px rgba(113, 219, 255, 0.12)"
-                    pointerEvents="none"
-                    zIndex={1}
-                  />
-                </>
-              )}
-
-              {/* MR2: Squared-off 3D beveled edges */}
-              {getSquaredBeveledEdges()}
-
-              <VStack align="stretch" spacing={4} position="relative" zIndex={1}>
-                {focusClaim && (
-                  /* Claim Selected - Show Details */
-                  <>
-                    {/* Case Claim Title Button */}
-                    <HStack justify="space-between" align="center" h="28px" mt="0" ml={styleMode === "mr1" ? "16px" : "0"}>
-                      <Button
-                        fontSize="11px"
-                        fontWeight="600"
-                        textTransform="uppercase"
-                        letterSpacing="0.09em"
-                        borderRadius="8px"
-                        border="1px solid"
-                        borderColor="rgba(126, 207, 255, 0.22)"
-                        bg="rgba(255, 255, 255, 0.035)"
-                        color="#89a9bf"
-                        _hover={{
-                          borderColor: "rgba(148, 221, 255, 0.46)",
-                          color: "#e4f4ff",
-                        }}
-                        onClick={onOpen}
-                        size="sm"
-                        justifyContent="flex-start"
-                        h="28px"
-                        px={3}
-                      >
-                        Case Claim (change)
-                      </Button>
-                      <HStack spacing={2}>
-                        <Button
-                          size="xs"
-                          onClick={handleResetEvaluation}
-                          bg="rgba(255, 108, 136, 0.08)"
-                          border="1px solid"
-                          borderColor="rgba(255, 108, 136, 0.3)"
-                          color="#ff6c88"
-                          _hover={{
-                            bg: "rgba(255, 108, 136, 0.15)",
-                            borderColor: "rgba(255, 108, 136, 0.5)",
-                          }}
-                          fontSize="10px"
-                          px={2}
-                          h="24px"
-                        >
-                          Reset
-                        </Button>
-                        <Badge
-                          px={3}
-                          py={1}
-                          borderRadius="999px"
-                          border="1px solid"
-                          borderColor="rgba(167, 139, 250, 0.3)"
-                          bg="rgba(167, 139, 250, 0.08)"
-                          boxShadow="0 0 20px rgba(167, 139, 250, 0.15)"
-                          fontSize="11px"
-                          fontWeight="700"
-                          color="#a78bfa"
-                          h="24px"
-                          display="flex"
-                          alignItems="center"
-                        >
-                          Score: {userScore.toFixed(1)}
-                        </Badge>
-                      </HStack>
-                    </HStack>
-
-                    {/* Case Claim Navigation - Matching Source Claims Style */}
-                    {availableCaseClaims.length > 1 && (
-                      <HStack
-                        spacing={3}
-                        px={4}
-                        py={3}
-                        borderRadius="999px"
-                        border="1px solid"
-                        borderColor={
-                          styleMode === "mr1"
-                            ? "rgba(113, 219, 255, 0.22)"
-                            : "rgba(113, 219, 255, 0.3)"
-                        }
-                        bg={
-                          styleMode === "mr1"
-                            ? "rgba(255, 255, 255, 0.035)"
-                            : "linear-gradient(180deg, rgba(113, 219, 255, 0.12), rgba(113, 219, 255, 0.06))"
-                        }
-                        boxShadow={
-                          styleMode === "mr1"
-                            ? "0 6px 20px rgba(0, 0, 0, 0.3)"
-                            : "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)"
-                        }
-                      >
-                        {/* Left Navigation Button */}
-                        <Button
-                          bg="linear-gradient(135deg, rgba(113, 219, 255, 0.3) 0%, rgba(70, 170, 220, 0.5) 100%)"
-                          backdropFilter="blur(12px)"
-                          border="2px solid rgba(113, 219, 255, 0.5)"
-                          borderRadius="10px"
-                          w="40px"
-                          h="28px"
-                          minW="40px"
-                          p={0}
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                          boxShadow={`
-                            0 6px 16px rgba(0, 0, 0, 0.6),
-                            inset 0 2px 4px rgba(255, 255, 255, 0.2),
-                            inset 0 -2px 4px rgba(0, 0, 0, 0.2)
-                          `}
-                          transition="all 0.2s ease"
-                          _hover={{
-                            bg: "linear-gradient(135deg, rgba(113, 219, 255, 0.4) 0%, rgba(70, 170, 220, 0.6) 100%)",
-                            transform: "scale(1.05)",
-                            boxShadow: `
-                              0 8px 20px rgba(0, 0, 0, 0.7),
-                              inset 0 2px 6px rgba(255, 255, 255, 0.25),
-                              inset 0 -2px 6px rgba(0, 0, 0, 0.25)
-                            `,
-                          }}
-                          _active={{
-                            transform: "scale(0.97)",
-                            boxShadow: `
-                              0 4px 12px rgba(0, 0, 0, 0.5),
-                              inset 0 1px 3px rgba(255, 255, 255, 0.15),
-                              inset 0 -1px 3px rgba(0, 0, 0, 0.15)
-                            `,
-                          }}
-                          _disabled={{
-                            opacity: 0.3,
-                            cursor: "not-allowed",
-                          }}
-                          onClick={goToPreviousCaseClaim}
-                          isDisabled={currentCaseClaimIndex === 0}
-                        >
-                          <ChevronLeftIcon boxSize={5} />
-                        </Button>
-
-                        {/* Progress Bar with Centered Text */}
-                        <Box
-                          flex="1"
-                          h="28px"
-                          borderRadius="14px"
-                          bg="rgba(255, 255, 255, 0.05)"
-                          border="2px solid"
-                          borderColor="rgba(255, 255, 255, 0.08)"
-                          overflow="hidden"
-                          boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.6)"
-                          position="relative"
-                        >
-                          {/* Progress Fill */}
-                          <Box
-                            h="full"
-                            w={`${availableCaseClaims.length > 0 ? ((currentCaseClaimIndex + 1) / availableCaseClaims.length) * 100 : 0}%`}
-                            bgGradient="linear(90deg, #71dbff, #78a8ff)"
-                            boxShadow="0 0 18px rgba(113, 219, 255, 0.2)"
-                            transition="width 0.3s ease"
-                          />
-                          {/* Centered Progress Text */}
-                          <Text
-                            position="absolute"
-                            top="50%"
-                            left="50%"
-                            transform="translate(-50%, -50%)"
-                            fontSize="13px"
-                            fontWeight="600"
-                            color="#fff"
-                            textShadow="0 1px 3px rgba(0, 0, 0, 0.8)"
-                            pointerEvents="none"
-                          >
-                            {currentCaseClaimIndex + 1} of {availableCaseClaims.length}
-                          </Text>
-                        </Box>
-
-                        {/* Right Navigation Button */}
-                        <Button
-                          bg="linear-gradient(135deg, rgba(113, 219, 255, 0.3) 0%, rgba(70, 170, 220, 0.5) 100%)"
-                          backdropFilter="blur(12px)"
-                          border="2px solid rgba(113, 219, 255, 0.5)"
-                          borderRadius="10px"
-                          w="40px"
-                          h="28px"
-                          minW="40px"
-                          p={0}
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
-                          boxShadow={`
-                            0 6px 16px rgba(0, 0, 0, 0.6),
-                            inset 0 2px 4px rgba(255, 255, 255, 0.2),
-                            inset 0 -2px 4px rgba(0, 0, 0, 0.2)
-                          `}
-                          transition="all 0.2s ease"
-                          _hover={{
-                            bg: "linear-gradient(135deg, rgba(113, 219, 255, 0.4) 0%, rgba(70, 170, 220, 0.6) 100%)",
-                            transform: "scale(1.05)",
-                            boxShadow: `
-                              0 8px 20px rgba(0, 0, 0, 0.7),
-                              inset 0 2px 6px rgba(255, 255, 255, 0.25),
-                              inset 0 -2px 6px rgba(0, 0, 0, 0.25)
-                            `,
-                          }}
-                          _active={{
-                            transform: "scale(0.97)",
-                            boxShadow: `
-                              0 4px 12px rgba(0, 0, 0, 0.5),
-                              inset 0 1px 3px rgba(255, 255, 255, 0.15),
-                              inset 0 -1px 3px rgba(0, 0, 0, 0.15)
-                            `,
-                          }}
-                          _disabled={{
-                            opacity: 0.3,
-                            cursor: "not-allowed",
-                          }}
-                          onClick={goToNextCaseClaim}
-                          isDisabled={currentCaseClaimIndex === availableCaseClaims.length - 1}
-                        >
-                          <ChevronRightIcon boxSize={5} />
-                        </Button>
-                      </HStack>
-                    )}
-
-                    {/* Case Card with Arrow */}
-                    <Box
-                      bg="transparent"
-                      backdropFilter="blur(10px)"
-                      borderRadius="24px"
-                      border="2px solid"
-                      borderColor="rgba(113, 219, 255, 0.4)"
-                      boxShadow="0 16px 48px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(113, 219, 255, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
-                      p={6}
-                      pl={8}
-                      w="100%"
-                      maxW="450px"
-                      minH="600px"
-                      position="relative"
-                      overflow="visible"
-                      opacity={slideDirection ? 0 : 1}
-                      transform={
-                        slideDirection === 'left'
-                          ? "translateX(-100px) translateZ(0)"
-                          : slideDirection === 'right'
-                          ? "translateX(100px) translateZ(0)"
-                          : "translateZ(0)"
+              {/* Left: Case Claim Focus */}
+              <Box
+                minW={0}
+                w="full"
+                borderRadius={styleMode === "mr1" ? "28px" : "0"}
+                {...getPanelBorder()}
+                {...getPanelBackground()}
+                backdropFilter={styleMode === "mr1" ? "blur(18px)" : "none"}
+                p={6}
+                pt={4}
+                minH="820px"
+                position="relative"
+                overflow="hidden"
+                _before={
+                  styleMode === "mr2"
+                    ? {
+                        content: '""',
+                        position: "absolute",
+                        inset: "8px",
+                        background: "linear-gradient(180deg, #1c262f, #0b1015)",
+                        clipPath:
+                          "polygon(38px 0, calc(100% - 38px) 0, 100% 38px, 100% calc(100% - 38px), calc(100% - 38px) 100%, 38px 100%, 0 calc(100% - 38px), 0 38px)",
+                        boxShadow:
+                          "inset 0 2px 0 rgba(255, 255, 255, 0.06), inset 0 -12px 20px rgba(0, 0, 0, 0.72), inset 0 14px 20px rgba(255, 255, 255, 0.02)",
+                        zIndex: 0,
                       }
-                      transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
-                      _hover={{
-                        transform: slideDirection ? undefined : "translateY(-4px) translateZ(0)",
-                        boxShadow: slideDirection ? undefined :
-                          "0 20px 60px rgba(0, 0, 0, 0.7), 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 50px rgba(113, 219, 255, 0.4), inset 0 3px 0 rgba(255, 255, 255, 0.2)",
-                      }}
-                    >
-                      {/* Curved left edge - matching source claims */}
-                      {styleMode === "mr1" && (
-                        <Box
-                          position="absolute"
-                          left={0}
-                          top={0}
-                          width="28px"
-                          height="100%"
-                          background="linear-gradient(90deg, rgba(113, 219, 255, 0.5) 0%, transparent 100%)"
-                          borderLeftRadius="24px"
-                          pointerEvents="none"
-                          zIndex={0}
-                        />
-                      )}
+                    : undefined
+                }
+                _after={
+                  styleMode === "mr2"
+                    ? {
+                        content: '""',
+                        position: "absolute",
+                        inset: "18px",
+                        background: "linear-gradient(180deg, #121920, #090d11)",
+                        clipPath:
+                          "polygon(30px 0, calc(100% - 30px) 0, 100% 30px, 100% calc(100% - 30px), calc(100% - 30px) 100%, 30px 100%, 0 calc(100% - 30px), 0 30px)",
+                        boxShadow:
+                          "inset 0 2px 0 rgba(255, 255, 255, 0.03), inset 0 -8px 14px rgba(0, 0, 0, 0.82), inset 0 0 0 2px rgba(255, 255, 255, 0.015)",
+                        zIndex: 0,
+                      }
+                    : undefined
+                }
+              >
+                {/* MR1: Blue weave pattern */}
+                {styleMode === "mr1" && (
+                  <>
+                    {/* Radiant glow from lower right corner */}
+                    <Box
+                      position="absolute"
+                      inset="0"
+                      bgGradient="radial-gradient(circle at bottom right, rgba(113, 219, 255, 0.28) 0%, rgba(50, 120, 180, 0.15) 35%, transparent 70%)"
+                      pointerEvents="none"
+                      zIndex={0}
+                    />
+                    {/* Tight scanline pattern like unified header cards */}
+                    <Box
+                      position="absolute"
+                      inset="0"
+                      bgImage="repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 162, 255, 0.03) 2px, rgba(0, 162, 255, 0.03) 4px)"
+                      pointerEvents="none"
+                      zIndex={0}
+                    />
+                    <Box
+                      position="absolute"
+                      left="-10px"
+                      top="18px"
+                      bottom="18px"
+                      w="22px"
+                      borderRadius="18px"
+                      bgGradient="linear(180deg, rgba(113, 219, 255, 0.23), rgba(167, 150, 255, 0.18) 46%, rgba(97, 239, 184, 0.18))"
+                      boxShadow="0 0 18px rgba(113, 219, 255, 0.12)"
+                      pointerEvents="none"
+                      zIndex={1}
+                    />
+                  </>
+                )}
 
-                      {/* MR2: Squared-off 3D beveled edges */}
-                      {getSquaredBeveledEdges()}
+                {/* MR2: Squared-off 3D beveled edges */}
+                {getSquaredBeveledEdges()}
 
-                      {/* Arrow Indicator */}
-                      <Box
-                        position="absolute"
-                        right="16px"
-                        top="50%"
-                        transform="translateY(-50%)"
-                        w="0"
-                        h="0"
-                        borderTop="12px solid transparent"
-                        borderBottom="12px solid transparent"
-                        borderLeft="16px solid rgba(113, 219, 255, 0.35)"
-                        filter="drop-shadow(0 0 8px rgba(113, 219, 255, 0.18))"
-                        opacity="0.9"
-                      />
-
-                      {/* Case Title Box */}
-                      <Tooltip
-                        label={
-                          availableCaseClaims.find(
-                            (c) => c.claim_id === focusClaim?.claim_id,
-                          )?.label || "Case claim"
-                        }
-                        placement="top"
-                        hasArrow
+                <VStack
+                  align="stretch"
+                  spacing={3}
+                  position="relative"
+                  zIndex={1}
+                >
+                  {focusClaim && (
+                    /* Claim Selected - Show Details */
+                    <>
+                      {/* Case Claim Title */}
+                      <HStack
+                        justify="space-between"
+                        align="center"
+                        h="24px"
+                        mt={0}
                       >
-                        <Box
-                          mb={4}
-                          p={4}
-                          borderRadius="16px"
-                          {...(styleMode === "mr1"
-                            ? {
-                                border: "2px solid",
-                                borderColor: "rgba(113, 219, 255, 0.4)",
-                                bg: "rgba(113, 219, 255, 0.08)",
-                                boxShadow:
-                                  "0 8px 24px rgba(0, 0, 0, 0.4), 0 0 30px rgba(113, 219, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
-                                _hover: {
-                                  transform: "translateY(-2px) translateZ(0)",
-                                  boxShadow:
-                                    "0 12px 32px rgba(0, 0, 0, 0.5), 0 0 40px rgba(113, 219, 255, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.2)",
-                                },
-                              }
-                            : {
-                                border: "1px solid",
-                                borderColor: "rgba(113, 219, 255, 0.3)",
-                                bg: "linear-gradient(180deg, rgba(113, 219, 255, 0.15), rgba(113, 219, 255, 0.08))",
-                                boxShadow: "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)",
-                                _hover: {
-                                  bg: "linear-gradient(180deg, rgba(113, 219, 255, 0.18), rgba(113, 219, 255, 0.10))",
-                                },
-                              })}
-                          cursor="help"
-                          position="relative"
-                          overflow="visible"
-                          transform="translateZ(0)"
-                          transition="all 0.3s ease"
-                        >
-                          {getCurvedEdge("cyan")}
-                          <Text
-                            fontSize="13px"
-                            fontWeight="700"
-                            textTransform="uppercase"
-                            letterSpacing="0.1em"
-                            color="#71dbff"
-                            whiteSpace="nowrap"
-                            overflow="hidden"
-                            textOverflow="ellipsis"
-                            position="relative"
-                            zIndex={1}
-                          >
-                            {availableCaseClaims.find(
-                              (c) => c.claim_id === focusClaim?.claim_id,
-                            )?.label || "Case claim"}
-                          </Text>
-                        </Box>
-                      </Tooltip>
-
-                      {/* Claim Text Box */}
-                      <Box
-                        mb={6}
-                        p={5}
-                        borderRadius="18px"
-                        {...(styleMode === "mr1"
-                          ? {
-                              border: "2px solid",
-                              borderColor: "rgba(113, 219, 255, 0.35)",
-                              bg: "rgba(113, 219, 255, 0.05)",
-                              boxShadow:
-                                "0 8px 24px rgba(0, 0, 0, 0.4), 0 0 25px rgba(113, 219, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
-                            }
-                          : {
-                              border: "1px solid",
-                              borderColor: "rgba(113, 219, 255, 0.3)",
-                              bg: "linear-gradient(180deg, rgba(113, 219, 255, 0.15), rgba(113, 219, 255, 0.08))",
-                              boxShadow: "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)",
-                            })}
-                        position="relative"
-                        overflow="visible"
-                        transform="translateZ(0)"
-                      >
-                        {getCurvedEdge("cyan")}
                         <Text
-                          fontSize="24px"
-                          lineHeight="1.3"
-                          fontWeight="690"
-                          color="#e4f4ff"
-                          position="relative"
-                          zIndex={1}
+                          fontSize="11px"
+                          textTransform="uppercase"
+                          letterSpacing="0.09em"
+                          fontWeight="600"
+                          color="#89a9bf"
                         >
-                          {focusClaim.claim_text}
+                          CASE CLAIM
                         </Text>
-                      </Box>
-
-                      {/* Stats Grid - 3 columns */}
-                      <Grid templateColumns="repeat(3, 1fr)" gap={3}>
-                        <Box
-                          borderRadius="18px"
-                          {...getBoxStyle("red")}
-                          p={4}
-                          minH="78px"
-                          position="relative"
-                          overflow="visible"
-                          transform="translateZ(0)"
-                          transition="all 0.3s ease"
+                      </HStack>
+                      {/*<HStack
+                        justify="space-between"
+                        align="center"
+                        h="28px"
+                        mt="0"
+                      >
+                        <Button
+                          fontSize="11px"
+                          fontWeight="600"
+                          textTransform="uppercase"
+                          letterSpacing="0.09em"
+                          borderRadius="8px"
+                          border="1px solid"
+                          borderColor="rgba(126, 207, 255, 0.22)"
+                          bg="rgba(255, 255, 255, 0.035)"
+                          color="#89a9bf"
+                          _hover={{
+                            borderColor: "rgba(148, 221, 255, 0.46)",
+                            color: "#e4f4ff",
+                          }}
+                          onClick={onOpen}
+                          size="sm"
+                          justifyContent="flex-start"
+                          h="28px"
+                          px={3}
                         >
-                          {getCurvedEdge("red")}
-                          <Text
-                            fontSize="11px"
-                            textTransform="uppercase"
-                            letterSpacing="0.09em"
-                            color="#ff6c88"
-                            position="relative"
-                            zIndex={1}
-                          >
-                            REFUTES
-                          </Text>
-                          <Text
-                            fontSize="22px"
-                            fontWeight="820"
-                            color="#ff6c88"
-                            position="relative"
-                            zIndex={1}
-                          >
-                            {focusClaim.refute_count || 0}
-                          </Text>
-                        </Box>
+                          Case Claim (change)
+                        </Button>
+                        <HStack spacing={1}>
+                        </HStack>
+                      </HStack>*/}
 
-                        <Box
-                          borderRadius="18px"
-                          {...getBoxStyle("blue")}
-                          p={4}
-                          minH="78px"
-                          position="relative"
-                          overflow="visible"
-                          transform="translateZ(0)"
-                          transition="all 0.3s ease"
-                        >
-                          {getCurvedEdge("blue")}
-                          <Text
-                            fontSize="11px"
-                            textTransform="uppercase"
-                            letterSpacing="0.09em"
-                            color="#78a8ff"
-                            position="relative"
-                            zIndex={1}
-                          >
-                            NUANCE
-                          </Text>
-                          <Text
-                            fontSize="22px"
-                            fontWeight="820"
-                            color="#78a8ff"
-                            position="relative"
-                            zIndex={1}
-                          >
-                            {focusClaim.context_count || 0}
-                          </Text>
-                        </Box>
-
-                        <Box
-                          borderRadius="18px"
-                          {...getBoxStyle("green")}
-                          p={4}
-                          minH="78px"
-                          position="relative"
-                          overflow="visible"
-                          transform="translateZ(0)"
-                          transition="all 0.3s ease"
-                        >
-                          {getCurvedEdge("green")}
-                          <Text
-                            fontSize="11px"
-                            textTransform="uppercase"
-                            letterSpacing="0.09em"
-                            color="#61efb8"
-                            position="relative"
-                            zIndex={1}
-                          >
-                            SUPPORTS
-                          </Text>
-                          <Text
-                            fontSize="22px"
-                            fontWeight="820"
-                            color="#61efb8"
-                            position="relative"
-                            zIndex={1}
-                          >
-                            {focusClaim.support_count || 0}
-                          </Text>
-                        </Box>
-                      </Grid>
-
-                      {/* Verimeter Bar */}
-                      {focusClaim.verimeter_score !== undefined && (
-                        <Box
-                          mt={4}
-                          py={3}
+                      {/* Case Claim Navigation - Matching Source Claims Style */}
+                      {availableCaseClaims.length > 1 && (
+                        <HStack
+                          spacing={3}
                           px={4}
+                          py={3}
                           borderRadius="999px"
                           border="1px solid"
                           borderColor={
@@ -1856,478 +1608,985 @@ export const CaseFocusPage: React.FC = () => {
                               : "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)"
                           }
                         >
-                          <VerimeterMeter
-                            score={focusClaim.verimeter_score / 100}
-                            width="100%"
-                            showInterpretation={false}
-                          />
-                        </Box>
+                          {/* Left Navigation Button */}
+                          <Button
+                            bg="linear-gradient(135deg, rgba(113, 219, 255, 0.3) 0%, rgba(70, 170, 220, 0.5) 100%)"
+                            backdropFilter="blur(12px)"
+                            border="2px solid rgba(113, 219, 255, 0.5)"
+                            borderRadius="10px"
+                            w="40px"
+                            h="28px"
+                            minW="40px"
+                            p={0}
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            boxShadow={`
+                            0 6px 16px rgba(0, 0, 0, 0.6),
+                            inset 0 2px 4px rgba(255, 255, 255, 0.2),
+                            inset 0 -2px 4px rgba(0, 0, 0, 0.2)
+                          `}
+                            transition="all 0.2s ease"
+                            _hover={{
+                              bg: "linear-gradient(135deg, rgba(113, 219, 255, 0.4) 0%, rgba(70, 170, 220, 0.6) 100%)",
+                              transform: "scale(1.05)",
+                              boxShadow: `
+                              0 8px 20px rgba(0, 0, 0, 0.7),
+                              inset 0 2px 6px rgba(255, 255, 255, 0.25),
+                              inset 0 -2px 6px rgba(0, 0, 0, 0.25)
+                            `,
+                            }}
+                            _active={{
+                              transform: "scale(0.97)",
+                              boxShadow: `
+                              0 4px 12px rgba(0, 0, 0, 0.5),
+                              inset 0 1px 3px rgba(255, 255, 255, 0.15),
+                              inset 0 -1px 3px rgba(0, 0, 0, 0.15)
+                            `,
+                            }}
+                            _disabled={{
+                              opacity: 0.3,
+                              cursor: "not-allowed",
+                            }}
+                            onClick={goToPreviousCaseClaim}
+                            isDisabled={currentCaseClaimIndex === 0}
+                          >
+                            <ChevronLeftIcon boxSize={5} />
+                          </Button>
+
+                          {/* Progress Bar with Centered Text */}
+                          <Box
+                            flex="1"
+                            h="28px"
+                            borderRadius="14px"
+                            bg="rgba(255, 255, 255, 0.05)"
+                            border="2px solid"
+                            borderColor="rgba(255, 255, 255, 0.08)"
+                            overflow="hidden"
+                            boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.6)"
+                            position="relative"
+                          >
+                            {/* Progress Fill */}
+                            <Box
+                              h="full"
+                              w={`${availableCaseClaims.length > 0 ? ((currentCaseClaimIndex + 1) / availableCaseClaims.length) * 100 : 0}%`}
+                              bgGradient="linear(90deg, #71dbff, #78a8ff)"
+                              boxShadow="0 0 18px rgba(113, 219, 255, 0.2)"
+                              transition="width 0.3s ease"
+                            />
+                            {/* Centered Progress Text */}
+                            <Text
+                              position="absolute"
+                              top="50%"
+                              left="50%"
+                              transform="translate(-50%, -50%)"
+                              fontSize="13px"
+                              fontWeight="600"
+                              color="#fff"
+                              textShadow="0 1px 3px rgba(0, 0, 0, 0.8)"
+                              pointerEvents="none"
+                            >
+                              {currentCaseClaimIndex + 1} of{" "}
+                              {availableCaseClaims.length}
+                            </Text>
+                          </Box>
+
+                          {/* Right Navigation Button */}
+                          <Button
+                            bg="linear-gradient(135deg, rgba(113, 219, 255, 0.3) 0%, rgba(70, 170, 220, 0.5) 100%)"
+                            backdropFilter="blur(12px)"
+                            border="2px solid rgba(113, 219, 255, 0.5)"
+                            borderRadius="10px"
+                            w="40px"
+                            h="28px"
+                            minW="40px"
+                            p={0}
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            boxShadow={`
+                            0 6px 16px rgba(0, 0, 0, 0.6),
+                            inset 0 2px 4px rgba(255, 255, 255, 0.2),
+                            inset 0 -2px 4px rgba(0, 0, 0, 0.2)
+                          `}
+                            transition="all 0.2s ease"
+                            _hover={{
+                              bg: "linear-gradient(135deg, rgba(113, 219, 255, 0.4) 0%, rgba(70, 170, 220, 0.6) 100%)",
+                              transform: "scale(1.05)",
+                              boxShadow: `
+                              0 8px 20px rgba(0, 0, 0, 0.7),
+                              inset 0 2px 6px rgba(255, 255, 255, 0.25),
+                              inset 0 -2px 6px rgba(0, 0, 0, 0.25)
+                            `,
+                            }}
+                            _active={{
+                              transform: "scale(0.97)",
+                              boxShadow: `
+                              0 4px 12px rgba(0, 0, 0, 0.5),
+                              inset 0 1px 3px rgba(255, 255, 255, 0.15),
+                              inset 0 -1px 3px rgba(0, 0, 0, 0.15)
+                            `,
+                            }}
+                            _disabled={{
+                              opacity: 0.3,
+                              cursor: "not-allowed",
+                            }}
+                            onClick={goToNextCaseClaim}
+                            isDisabled={
+                              currentCaseClaimIndex ===
+                              availableCaseClaims.length - 1
+                            }
+                          >
+                            <ChevronRightIcon boxSize={5} />
+                          </Button>
+                        </HStack>
                       )}
 
-                      {/* Bottom Action Buttons */}
-                      <HStack mt={6} spacing={3} w="100%">
-                        <Button
-                          flex="1"
-                          size="md"
-                          onClick={handleOpenLinkedClaimsModal}
-                          bg={
-                            styleMode === "mr1"
-                              ? "rgba(167, 139, 250, 0.12)"
-                              : "linear-gradient(180deg, rgba(167, 139, 250, 0.18), rgba(167, 139, 250, 0.08))"
-                          }
-                          border="1px solid"
-                          borderColor="rgba(167, 139, 250, 0.3)"
-                          color="#a78bfa"
-                          boxShadow={
-                            styleMode === "mr1"
-                              ? "0 6px 20px rgba(0, 0, 0, 0.3)"
-                              : "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)"
-                          }
-                          _hover={{
-                            bg:
-                              styleMode === "mr1"
-                                ? "rgba(167, 139, 250, 0.18)"
-                                : "linear-gradient(180deg, rgba(167, 139, 250, 0.22), rgba(167, 139, 250, 0.12))",
-                            borderColor: "rgba(167, 139, 250, 0.5)",
-                          }}
+                      {/* Scrolling Case Claims */}
+                      <Box
+                        ref={leftRailViewportRef}
+                        flex="1"
+                        overflowX="hidden"
+                        overflowY="hidden"
+                        position="relative"
+                      >
+                        <Flex
+                          ref={leftRailFlexRef}
+                          align="stretch"
+                          pb={2}
+                          position="relative"
+                          transition="transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+                          transform={`translateX(${leftRailTranslate}px)`}
                         >
-                          View Linked Claims
-                        </Button>
-                      </HStack>
-                    </Box>
-                  </>
-                )}
-              </VStack>
-            </Box>
+                          {availableCaseClaims.map((claim, idx) => (
+                            <Box
+                              key={claim.claim_id}
+                              bg="transparent"
+                              backdropFilter="blur(10px)"
+                              borderRadius="24px"
+                              border="2px solid"
+                              borderColor="rgba(113, 219, 255, 0.4)"
+                              boxShadow="0 16px 48px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(113, 219, 255, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
+                              p={{ base: 2, lg: 4, xl: 6 }}
+                              pl={{ base: 3, lg: 5, xl: 8 }}
+                              pb={{ base: 20, xl: 24 }}
+                              w={{ base: "90%", lg: "85%", xl: "90%" }}
+                              maxW={{ base: "360px", lg: "420px", xl: "440px" }}
+                              minH={{ base: "400px", xl: "600px" }}
+                              position="relative"
+                              flexShrink={0}
+                              mr={{ base: 2, lg: 4, xl: 5 }}
+                              opacity={idx === currentCaseClaimIndex ? 1 : 0.5}
+                              transition="all 0.4s ease"
+                              pointerEvents={
+                                idx === currentCaseClaimIndex ? "auto" : "none"
+                              }
+                              transform="translateZ(0)"
+                              _hover={
+                                idx === currentCaseClaimIndex
+                                  ? {
+                                      transform:
+                                        "translateY(-4px) translateZ(0)",
+                                      boxShadow:
+                                        "0 20px 60px rgba(0, 0, 0, 0.7), 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 50px rgba(113, 219, 255, 0.4), inset 0 3px 0 rgba(255, 255, 255, 0.2)",
+                                    }
+                                  : {}
+                              }
+                            >
+                              {/* Curved left edge - matching source claims */}
+                              {styleMode === "mr1" && (
+                                <Box
+                                  position="absolute"
+                                  left={0}
+                                  top={0}
+                                  width="28px"
+                                  height="100%"
+                                  background="linear-gradient(90deg, rgba(113, 219, 255, 0.5) 0%, transparent 100%)"
+                                  borderLeftRadius="24px"
+                                  pointerEvents="none"
+                                  zIndex={0}
+                                />
+                              )}
 
-            {/* Center: Source Claim (Scrolling Evidence) */}
-            <Box
-              borderRadius={styleMode === "mr1" ? "28px" : "0"}
-              {...getPanelBorder()}
-              {...getPanelBackground()}
-              backdropFilter={styleMode === "mr1" ? "blur(18px)" : "none"}
-              p={6}
-              pt={4}
-              minH="820px"
-              position="relative"
-              overflow="hidden"
-              _before={
-                styleMode === "mr2"
-                  ? {
-                      content: '""',
-                      position: "absolute",
-                      inset: "8px",
-                      background: "linear-gradient(180deg, #1c262f, #0b1015)",
-                      clipPath: "polygon(38px 0, calc(100% - 38px) 0, 100% 38px, 100% calc(100% - 38px), calc(100% - 38px) 100%, 38px 100%, 0 calc(100% - 38px), 0 38px)",
-                      boxShadow: "inset 0 2px 0 rgba(255, 255, 255, 0.06), inset 0 -12px 20px rgba(0, 0, 0, 0.72), inset 0 14px 20px rgba(255, 255, 255, 0.02)",
-                      zIndex: 0,
-                    }
-                  : undefined
-              }
-              _after={
-                styleMode === "mr2"
-                  ? {
-                      content: '""',
-                      position: "absolute",
-                      inset: "18px",
-                      background: "linear-gradient(180deg, #121920, #090d11)",
-                      clipPath: "polygon(30px 0, calc(100% - 30px) 0, 100% 30px, 100% calc(100% - 30px), calc(100% - 30px) 100%, 30px 100%, 0 calc(100% - 30px), 0 30px)",
-                      boxShadow: "inset 0 2px 0 rgba(255, 255, 255, 0.03), inset 0 -8px 14px rgba(0, 0, 0, 0.82), inset 0 0 0 2px rgba(255, 255, 255, 0.015)",
-                      zIndex: 0,
-                    }
-                  : undefined
-              }
-            >
-              {/* Previous Candidate Button - Chunky 3D Knuckle */}
-              <Button
-                position="absolute"
-                left="0"
-                top="50%"
-                transform="translateY(-50%) translateX(-65%)"
-                bg="linear-gradient(135deg, rgba(113, 219, 255, 0.4) 0%, rgba(70, 170, 220, 0.6) 100%)"
-                backdropFilter="blur(15px)"
-                border="3px solid rgba(113, 219, 255, 0.6)"
-                borderRadius="16px"
-                w="65px"
-                h="100px"
-                minW="65px"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                boxShadow={`
+                              {/* MR2: Squared-off 3D beveled edges */}
+                              {getSquaredBeveledEdges()}
+
+                              {/* Case Title Box */}
+                              <Tooltip
+                                label={
+                                  availableCaseClaims.find(
+                                    (c) => c.claim_id === focusClaim?.claim_id,
+                                  )?.label || "Case claim"
+                                }
+                                placement="top"
+                                hasArrow
+                              >
+                                <Box
+                                  p={3}
+                                  mb={3}
+                                  borderRadius="18px"
+                                  {...(styleMode === "mr1"
+                                    ? {
+                                        border: "2px solid",
+                                        borderColor: "rgba(113, 219, 255, 0.4)",
+                                        bg: "rgba(113, 219, 255, 0.15)",
+                                        boxShadow:
+                                          "0 6px 20px rgba(0, 0, 0, 0.4), 0 3px 10px rgba(0, 0, 0, 0.3), 0 0 20px rgba(113, 219, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+                                        _hover: {
+                                          transform:
+                                            "translateY(-2px) translateZ(0)",
+                                          boxShadow:
+                                            "0 8px 28px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 30px rgba(113, 219, 255, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.2)",
+                                        },
+                                      }
+                                    : {
+                                        border: "1px solid",
+                                        borderColor: "rgba(113, 219, 255, 0.3)",
+                                        bg: "linear-gradient(180deg, rgba(113, 219, 255, 0.18), rgba(113, 219, 255, 0.08))",
+                                        boxShadow:
+                                          "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)",
+                                      })}
+                                  cursor="help"
+                                  position="relative"
+                                  overflow="visible"
+                                  transform="translateZ(0)"
+                                  transition="all 0.3s ease"
+                                >
+                                  {styleMode === "mr1" && (
+                                    <Box
+                                      position="absolute"
+                                      left={0}
+                                      top={0}
+                                      width="20px"
+                                      height="100%"
+                                      background="linear-gradient(90deg, rgba(113, 219, 255, 0.4) 0%, transparent 100%)"
+                                      borderLeftRadius="18px"
+                                      pointerEvents="none"
+                                      zIndex={0}
+                                    />
+                                  )}
+                                  <Text
+                                    fontSize="13px"
+                                    fontWeight="700"
+                                    textTransform="uppercase"
+                                    letterSpacing="0.1em"
+                                    color="#71dbff"
+                                    whiteSpace="nowrap"
+                                    overflow="hidden"
+                                    textOverflow="ellipsis"
+                                    position="relative"
+                                    zIndex={1}
+                                  >
+                                    {availableCaseClaims.find(
+                                      (c) =>
+                                        c.claim_id === focusClaim?.claim_id,
+                                    )?.label || "Case claim"}
+                                  </Text>
+                                </Box>
+                              </Tooltip>
+
+                              {/* Claim Text Box */}
+                              <Box
+                                mb={6}
+                                p={5}
+                                borderRadius="18px"
+                                {...(styleMode === "mr1"
+                                  ? {
+                                      border: "2px solid",
+                                      borderColor: "rgba(113, 219, 255, 0.35)",
+                                      bg: "rgba(113, 219, 255, 0.05)",
+                                      boxShadow:
+                                        "0 8px 24px rgba(0, 0, 0, 0.4), 0 0 25px rgba(113, 219, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+                                    }
+                                  : {
+                                      border: "1px solid",
+                                      borderColor: "rgba(113, 219, 255, 0.3)",
+                                      bg: "linear-gradient(180deg, rgba(113, 219, 255, 0.15), rgba(113, 219, 255, 0.08))",
+                                      boxShadow:
+                                        "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)",
+                                    })}
+                                position="relative"
+                                overflow="visible"
+                                transform="translateZ(0)"
+                              >
+                                {getCurvedEdge("cyan")}
+                                <Text
+                                  fontSize={{ base: "14px", xl: "24px" }}
+                                  lineHeight="1.3"
+                                  fontWeight="690"
+                                  color="#e4f4ff"
+                                  position="relative"
+                                  zIndex={1}
+                                >
+                                  {focusClaim.claim_text}
+                                </Text>
+                              </Box>
+
+                              {/* Stats Grid - 3 columns */}
+                              <Grid
+                                templateColumns="repeat(3, 1fr)"
+                                gap={{ base: 1, xl: 3 }}
+                              >
+                                <Box
+                                  borderRadius="18px"
+                                  {...getBoxStyle("red")}
+                                  p={{ base: 2, xl: 3 }}
+                                  minH={{ base: "50px", xl: "72px" }}
+                                  position="relative"
+                                  overflow="visible"
+                                  transform="translateZ(0)"
+                                  transition="all 0.3s ease"
+                                >
+                                  {getCurvedEdge("red")}
+                                  <Text
+                                    fontSize="10px"
+                                    textTransform="uppercase"
+                                    letterSpacing="0.08em"
+                                    color="rgba(228, 244, 255, 0.8)"
+                                    mb={1}
+                                    position="relative"
+                                    zIndex={1}
+                                  >
+                                    REFUTES
+                                  </Text>
+                                  <Text
+                                    fontSize="18px"
+                                    fontWeight="800"
+                                    color="#ff6c88"
+                                    position="relative"
+                                    zIndex={1}
+                                  >
+                                    {focusClaim.refute_count || 0}
+                                  </Text>
+                                </Box>
+
+                                <Box
+                                  borderRadius="18px"
+                                  {...getBoxStyle("blue")}
+                                  p={{ base: 2, xl: 3 }}
+                                  minH={{ base: "50px", xl: "72px" }}
+                                  position="relative"
+                                  overflow="visible"
+                                  transform="translateZ(0)"
+                                  transition="all 0.3s ease"
+                                >
+                                  {getCurvedEdge("blue")}
+                                  <Text
+                                    fontSize="10px"
+                                    textTransform="uppercase"
+                                    letterSpacing="0.08em"
+                                    color="rgba(228, 244, 255, 0.8)"
+                                    mb={1}
+                                    position="relative"
+                                    zIndex={1}
+                                  >
+                                    NUANCE
+                                  </Text>
+                                  <Text
+                                    fontSize="18px"
+                                    fontWeight="800"
+                                    color="#78a8ff"
+                                    position="relative"
+                                    zIndex={1}
+                                  >
+                                    {focusClaim.context_count || 0}
+                                  </Text>
+                                </Box>
+
+                                <Box
+                                  borderRadius="18px"
+                                  {...getBoxStyle("green")}
+                                  p={{ base: 2, xl: 3 }}
+                                  minH={{ base: "50px", xl: "72px" }}
+                                  position="relative"
+                                  overflow="visible"
+                                  transform="translateZ(0)"
+                                  transition="all 0.3s ease"
+                                >
+                                  {getCurvedEdge("green")}
+                                  <Text
+                                    fontSize="10px"
+                                    textTransform="uppercase"
+                                    letterSpacing="0.08em"
+                                    color="rgba(228, 244, 255, 0.8)"
+                                    mb={1}
+                                    position="relative"
+                                    zIndex={1}
+                                  >
+                                    SUPPORTS
+                                  </Text>
+                                  <Text
+                                    fontSize="18px"
+                                    fontWeight="800"
+                                    color="#61efb8"
+                                    position="relative"
+                                    zIndex={1}
+                                  >
+                                    {focusClaim.support_count || 0}
+                                  </Text>
+                                </Box>
+                              </Grid>
+
+                              {/* Verimeter Bar */}
+                              {focusClaim.verimeter_score !== undefined && (
+                                <Box
+                                  mt={4}
+                                  py={3}
+                                  px={4}
+                                  borderRadius="999px"
+                                  border="1px solid"
+                                  borderColor={
+                                    styleMode === "mr1"
+                                      ? "rgba(113, 219, 255, 0.22)"
+                                      : "rgba(113, 219, 255, 0.3)"
+                                  }
+                                  bg={
+                                    styleMode === "mr1"
+                                      ? "rgba(255, 255, 255, 0.035)"
+                                      : "linear-gradient(180deg, rgba(113, 219, 255, 0.12), rgba(113, 219, 255, 0.06))"
+                                  }
+                                  boxShadow={
+                                    styleMode === "mr1"
+                                      ? "0 6px 20px rgba(0, 0, 0, 0.3)"
+                                      : "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)"
+                                  }
+                                >
+                                  <VerimeterMeter
+                                    score={focusClaim.verimeter_score / 100}
+                                    width="100%"
+                                    showInterpretation={false}
+                                  />
+                                </Box>
+                              )}
+
+                              {/* Claim Source Info */}
+                              <Box
+                                mt={4}
+                                p={4}
+                                borderRadius="16px"
+                                border="1px solid"
+                                borderColor="rgba(113, 219, 255, 0.25)"
+                                bg={
+                                  styleMode === "mr1"
+                                    ? "rgba(113, 219, 255, 0.05)"
+                                    : "linear-gradient(180deg, rgba(113, 219, 255, 0.08), rgba(113, 219, 255, 0.04))"
+                                }
+                              >
+                                <Text
+                                  fontSize="10px"
+                                  textTransform="uppercase"
+                                  letterSpacing="0.08em"
+                                  color="rgba(228, 244, 255, 0.6)"
+                                  mb={2}
+                                >
+                                  Claim Details
+                                </Text>
+                                <Text
+                                  fontSize="12px"
+                                  color="#d4e9ff"
+                                  lineHeight="1.5"
+                                  mb={2}
+                                >
+                                  {(focusClaim.refute_count || 0) +
+                                    (focusClaim.support_count || 0) +
+                                    (focusClaim.context_count || 0)}{" "}
+                                  total linked claims
+                                </Text>
+                                <Text
+                                  fontSize="12px"
+                                  color="#d4e9ff"
+                                  lineHeight="1.5"
+                                >
+                                  Verimeter:{" "}
+                                  {focusClaim.verimeter_score !== undefined
+                                    ? (
+                                        focusClaim.verimeter_score / 100
+                                      ).toFixed(2)
+                                    : "N/A"}
+                                </Text>
+                              </Box>
+
+                              {/* Bottom Action Buttons */}
+                              <HStack mt={6} spacing={3} w="100%">
+                                <Button
+                                  flex="1"
+                                  size="md"
+                                  onClick={handleOpenLinkedClaimsModal}
+                                  bg={
+                                    styleMode === "mr1"
+                                      ? "rgba(167, 139, 250, 0.12)"
+                                      : "linear-gradient(180deg, rgba(167, 139, 250, 0.18), rgba(167, 139, 250, 0.08))"
+                                  }
+                                  border="1px solid"
+                                  borderColor="rgba(167, 139, 250, 0.3)"
+                                  color="#a78bfa"
+                                  boxShadow={
+                                    styleMode === "mr1"
+                                      ? "0 6px 20px rgba(0, 0, 0, 0.3)"
+                                      : "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)"
+                                  }
+                                  _hover={{
+                                    bg:
+                                      styleMode === "mr1"
+                                        ? "rgba(167, 139, 250, 0.18)"
+                                        : "linear-gradient(180deg, rgba(167, 139, 250, 0.22), rgba(167, 139, 250, 0.12))",
+                                    borderColor: "rgba(167, 139, 250, 0.5)",
+                                  }}
+                                >
+                                  View Linked Claims
+                                </Button>
+                              </HStack>
+                            </Box>
+                          ))}
+                        </Flex>
+                      </Box>
+                    </>
+                  )}
+                </VStack>
+              </Box>
+
+              {/* Center: Source Claim (Scrolling Evidence) */}
+              <Box
+                minW={0}
+                w="full"
+                borderRadius={styleMode === "mr1" ? "28px" : "0"}
+                {...getPanelBorder()}
+                {...getPanelBackground()}
+                backdropFilter={styleMode === "mr1" ? "blur(18px)" : "none"}
+                p={6}
+                pt={4}
+                minH="820px"
+                position="relative"
+                overflow="hidden"
+                _before={
+                  styleMode === "mr2"
+                    ? {
+                        content: '""',
+                        position: "absolute",
+                        inset: "8px",
+                        background: "linear-gradient(180deg, #1c262f, #0b1015)",
+                        clipPath:
+                          "polygon(38px 0, calc(100% - 38px) 0, 100% 38px, 100% calc(100% - 38px), calc(100% - 38px) 100%, 38px 100%, 0 calc(100% - 38px), 0 38px)",
+                        boxShadow:
+                          "inset 0 2px 0 rgba(255, 255, 255, 0.06), inset 0 -12px 20px rgba(0, 0, 0, 0.72), inset 0 14px 20px rgba(255, 255, 255, 0.02)",
+                        zIndex: 0,
+                      }
+                    : undefined
+                }
+                _after={
+                  styleMode === "mr2"
+                    ? {
+                        content: '""',
+                        position: "absolute",
+                        inset: "18px",
+                        background: "linear-gradient(180deg, #121920, #090d11)",
+                        clipPath:
+                          "polygon(30px 0, calc(100% - 30px) 0, 100% 30px, 100% calc(100% - 30px), calc(100% - 30px) 100%, 30px 100%, 0 calc(100% - 30px), 0 30px)",
+                        boxShadow:
+                          "inset 0 2px 0 rgba(255, 255, 255, 0.03), inset 0 -8px 14px rgba(0, 0, 0, 0.82), inset 0 0 0 2px rgba(255, 255, 255, 0.015)",
+                        zIndex: 0,
+                      }
+                    : undefined
+                }
+              >
+                {/* Previous Candidate Button - Chunky 3D Knuckle */}
+                <Button
+                  position="absolute"
+                  left="0"
+                  top="50%"
+                  transform="translateY(-50%) translateX(-65%)"
+                  bg="linear-gradient(135deg, rgba(113, 219, 255, 0.4) 0%, rgba(70, 170, 220, 0.6) 100%)"
+                  backdropFilter="blur(15px)"
+                  border="3px solid rgba(113, 219, 255, 0.6)"
+                  borderRadius="16px"
+                  w="65px"
+                  h="100px"
+                  minW="65px"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  boxShadow={`
                   0 12px 32px rgba(0, 0, 0, 0.7),
                   inset 0 4px 8px rgba(255, 255, 255, 0.25),
                   inset 0 -4px 8px rgba(0, 0, 0, 0.3),
                   -4px 0 16px rgba(113, 219, 255, 0.4)
                 `}
-                transition="all 0.2s ease"
-                zIndex={10}
-                _hover={{
-                  bg: "linear-gradient(135deg, rgba(113, 219, 255, 0.5) 0%, rgba(70, 170, 220, 0.7) 100%)",
-                  transform: "translateY(-50%) translateX(-68%) scale(1.05)",
-                  boxShadow: `
+                  transition="all 0.2s ease"
+                  zIndex={10}
+                  _hover={{
+                    bg: "linear-gradient(135deg, rgba(113, 219, 255, 0.5) 0%, rgba(70, 170, 220, 0.7) 100%)",
+                    transform: "translateY(-50%) translateX(-68%) scale(1.05)",
+                    boxShadow: `
                     0 16px 40px rgba(0, 0, 0, 0.8),
                     inset 0 4px 12px rgba(255, 255, 255, 0.3),
                     inset 0 -4px 12px rgba(0, 0, 0, 0.4),
                     -6px 0 20px rgba(113, 219, 255, 0.6)
                   `,
-                }}
-                _active={{
-                  transform: "translateY(-50%) translateX(-66%) scale(0.98)",
-                  boxShadow: `
+                  }}
+                  _active={{
+                    transform: "translateY(-50%) translateX(-66%) scale(0.98)",
+                    boxShadow: `
                     0 8px 24px rgba(0, 0, 0, 0.6),
                     inset 0 2px 6px rgba(255, 255, 255, 0.2),
                     inset 0 -2px 6px rgba(0, 0, 0, 0.3)
                   `,
-                }}
-                _disabled={{
-                  opacity: 0.2,
-                  cursor: "not-allowed",
-                  transform: "translateY(-50%) translateX(-65%)",
-                }}
-                onClick={handlePreviousCandidate}
-                isDisabled={currentCandidateIndex === 0}
-              >
-                <ChevronLeftIcon boxSize={10} />
-              </Button>
+                  }}
+                  _disabled={{
+                    opacity: 0.2,
+                    cursor: "not-allowed",
+                    transform: "translateY(-50%) translateX(-65%)",
+                  }}
+                  onClick={handlePreviousCandidate}
+                  isDisabled={currentCandidateIndex === 0}
+                >
+                  <ChevronLeftIcon boxSize={10} />
+                </Button>
 
-              {/* Next Candidate Button - Chunky 3D Knuckle */}
-              <Button
-                position="absolute"
-                right="0"
-                top="50%"
-                transform="translateY(-50%) translateX(65%)"
-                bg="linear-gradient(135deg, rgba(113, 219, 255, 0.4) 0%, rgba(70, 170, 220, 0.6) 100%)"
-                backdropFilter="blur(15px)"
-                border="3px solid rgba(113, 219, 255, 0.6)"
-                borderRadius="16px"
-                w="65px"
-                h="100px"
-                minW="65px"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                boxShadow={`
+                {/* Next Candidate Button - Chunky 3D Knuckle */}
+                <Button
+                  position="absolute"
+                  right="0"
+                  top="50%"
+                  transform="translateY(-50%) translateX(65%)"
+                  bg="linear-gradient(135deg, rgba(113, 219, 255, 0.4) 0%, rgba(70, 170, 220, 0.6) 100%)"
+                  backdropFilter="blur(15px)"
+                  border="3px solid rgba(113, 219, 255, 0.6)"
+                  borderRadius="16px"
+                  w="65px"
+                  h="100px"
+                  minW="65px"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  boxShadow={`
                   0 12px 32px rgba(0, 0, 0, 0.7),
                   inset 0 4px 8px rgba(255, 255, 255, 0.25),
                   inset 0 -4px 8px rgba(0, 0, 0, 0.3),
                   4px 0 16px rgba(113, 219, 255, 0.4)
                 `}
-                transition="all 0.2s ease"
-                zIndex={10}
-                _hover={{
-                  bg: "linear-gradient(135deg, rgba(113, 219, 255, 0.5) 0%, rgba(70, 170, 220, 0.7) 100%)",
-                  transform: "translateY(-50%) translateX(68%) scale(1.05)",
-                  boxShadow: `
+                  transition="all 0.2s ease"
+                  zIndex={10}
+                  _hover={{
+                    bg: "linear-gradient(135deg, rgba(113, 219, 255, 0.5) 0%, rgba(70, 170, 220, 0.7) 100%)",
+                    transform: "translateY(-50%) translateX(68%) scale(1.05)",
+                    boxShadow: `
                     0 16px 40px rgba(0, 0, 0, 0.8),
                     inset 0 4px 12px rgba(255, 255, 255, 0.3),
                     inset 0 -4px 12px rgba(0, 0, 0, 0.4),
                     6px 0 20px rgba(113, 219, 255, 0.6)
                   `,
-                }}
-                _active={{
-                  transform: "translateY(-50%) translateX(66%) scale(0.98)",
-                  boxShadow: `
+                  }}
+                  _active={{
+                    transform: "translateY(-50%) translateX(66%) scale(0.98)",
+                    boxShadow: `
                     0 8px 24px rgba(0, 0, 0, 0.6),
                     inset 0 2px 6px rgba(255, 255, 255, 0.2),
                     inset 0 -2px 6px rgba(0, 0, 0, 0.3)
                   `,
-                }}
-                _disabled={{
-                  opacity: 0.2,
-                  cursor: "not-allowed",
-                  transform: "translateY(-50%) translateX(65%)",
-                }}
-                onClick={handleNextCandidate}
-                isDisabled={currentCandidateIndex === candidates.length - 1}
-              >
-                <ChevronRightIcon boxSize={10} />
-              </Button>
-
-              {/* MR1: Blue weave pattern */}
-              {styleMode === "mr1" && (
-                <>
-                  {/* Radiant glow from lower right corner */}
-                  <Box
-                    position="absolute"
-                    inset="0"
-                    bgGradient="radial-gradient(circle at bottom right, rgba(113, 219, 255, 0.28) 0%, rgba(50, 120, 180, 0.15) 35%, transparent 70%)"
-                    pointerEvents="none"
-                    zIndex={0}
-                  />
-                  {/* Tight scanline pattern like unified header cards */}
-                  <Box
-                    position="absolute"
-                    inset="0"
-                    bgImage="repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 162, 255, 0.03) 2px, rgba(0, 162, 255, 0.03) 4px)"
-                    pointerEvents="none"
-                    zIndex={0}
-                  />
-                  <Box
-                    position="absolute"
-                    left="-10px"
-                    top="18px"
-                    bottom="18px"
-                    w="22px"
-                    borderRadius="18px"
-                    bgGradient="linear(180deg, rgba(113, 219, 255, 0.23), rgba(167, 150, 255, 0.18) 46%, rgba(97, 239, 184, 0.18))"
-                    boxShadow="0 0 18px rgba(113, 219, 255, 0.12)"
-                    pointerEvents="none"
-                    zIndex={1}
-                  />
-                </>
-              )}
-
-              {/* MR2: Squared-off 3D beveled edges */}
-              {getSquaredBeveledEdges()}
-
-              <VStack align="stretch" spacing={3} position="relative" h="full" zIndex={1}>
-                <HStack justify="space-between" align="center" h="24px" mt={0}>
-                  <Text
-                    fontSize="11px"
-                    textTransform="uppercase"
-                    letterSpacing="0.09em"
-                    fontWeight="600"
-                    color="#89a9bf"
-                  >
-                    SOURCE CLAIM
-                  </Text>
-                </HStack>
-
-                {/* Progress Bar */}
-                <HStack
-                  spacing={3}
-                  px={4}
-                  py={3}
-                  borderRadius="999px"
-                  border="1px solid"
-                  borderColor={
-                    styleMode === "mr1"
-                      ? "rgba(113, 219, 255, 0.22)"
-                      : "rgba(113, 219, 255, 0.3)"
-                  }
-                  bg={
-                    styleMode === "mr1"
-                      ? "rgba(255, 255, 255, 0.035)"
-                      : "linear-gradient(180deg, rgba(113, 219, 255, 0.12), rgba(113, 219, 255, 0.06))"
-                  }
-                  boxShadow={
-                    styleMode === "mr1"
-                      ? "0 6px 20px rgba(0, 0, 0, 0.3)"
-                      : "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)"
-                  }
+                  }}
+                  _disabled={{
+                    opacity: 0.2,
+                    cursor: "not-allowed",
+                    transform: "translateY(-50%) translateX(65%)",
+                  }}
+                  onClick={handleNextCandidate}
+                  isDisabled={currentCandidateIndex === candidates.length - 1}
                 >
-                  {/* Left Navigation Button */}
-                  <Button
-                    bg="linear-gradient(135deg, rgba(113, 219, 255, 0.3) 0%, rgba(70, 170, 220, 0.5) 100%)"
-                    backdropFilter="blur(12px)"
-                    border="2px solid rgba(113, 219, 255, 0.5)"
-                    borderRadius="10px"
-                    w="40px"
-                    h="28px"
-                    minW="40px"
-                    p={0}
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    boxShadow={`
-                      0 6px 16px rgba(0, 0, 0, 0.6),
-                      inset 0 2px 4px rgba(255, 255, 255, 0.2),
-                      inset 0 -2px 4px rgba(0, 0, 0, 0.2)
-                    `}
-                    transition="all 0.2s ease"
-                    _hover={{
-                      bg: "linear-gradient(135deg, rgba(113, 219, 255, 0.4) 0%, rgba(70, 170, 220, 0.6) 100%)",
-                      transform: "scale(1.05)",
-                      boxShadow: `
-                        0 8px 20px rgba(0, 0, 0, 0.7),
-                        inset 0 2px 6px rgba(255, 255, 255, 0.25),
-                        inset 0 -2px 6px rgba(0, 0, 0, 0.25)
-                      `,
-                    }}
-                    _active={{
-                      transform: "scale(0.97)",
-                      boxShadow: `
-                        0 4px 12px rgba(0, 0, 0, 0.5),
-                        inset 0 1px 3px rgba(255, 255, 255, 0.15),
-                        inset 0 -1px 3px rgba(0, 0, 0, 0.15)
-                      `,
-                    }}
-                    _disabled={{
-                      opacity: 0.3,
-                      cursor: "not-allowed",
-                    }}
-                    onClick={handlePreviousCandidate}
-                    isDisabled={currentCandidateIndex === 0}
-                  >
-                    <ChevronLeftIcon boxSize={5} />
-                  </Button>
+                  <ChevronRightIcon boxSize={10} />
+                </Button>
 
-                  {/* Progress Bar with Centered Text */}
-                  <Box
-                    flex="1"
-                    h="28px"
-                    borderRadius="14px"
-                    bg="rgba(255, 255, 255, 0.05)"
-                    border="2px solid"
-                    borderColor="rgba(255, 255, 255, 0.08)"
-                    overflow="hidden"
-                    boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.6)"
-                    position="relative"
-                  >
-                    {/* Progress Fill */}
+                {/* MR1: Blue weave pattern */}
+                {styleMode === "mr1" && (
+                  <>
+                    {/* Radiant glow from lower right corner */}
                     <Box
-                      h="full"
-                      w={`${candidates.length > 0 ? ((currentCandidateIndex + 1) / candidates.length) * 100 : 0}%`}
-                      bgGradient="linear(90deg, #71dbff, #78a8ff)"
-                      boxShadow="0 0 18px rgba(113, 219, 255, 0.2)"
-                      transition="width 0.3s ease"
-                    />
-                    {/* Centered Progress Text */}
-                    <Text
                       position="absolute"
-                      top="50%"
-                      left="50%"
-                      transform="translate(-50%, -50%)"
-                      fontSize="13px"
-                      fontWeight="600"
-                      color="#fff"
-                      textShadow="0 1px 3px rgba(0, 0, 0, 0.8)"
+                      inset="0"
+                      bgGradient="radial-gradient(circle at bottom right, rgba(113, 219, 255, 0.28) 0%, rgba(50, 120, 180, 0.15) 35%, transparent 70%)"
                       pointerEvents="none"
-                    >
-                      {currentCandidateIndex + 1} of {candidates.length}
-                    </Text>
-                  </Box>
+                      zIndex={0}
+                    />
+                    {/* Tight scanline pattern like unified header cards */}
+                    <Box
+                      position="absolute"
+                      inset="0"
+                      bgImage="repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 162, 255, 0.03) 2px, rgba(0, 162, 255, 0.03) 4px)"
+                      pointerEvents="none"
+                      zIndex={0}
+                    />
+                    <Box
+                      position="absolute"
+                      left="-10px"
+                      top="18px"
+                      bottom="18px"
+                      w="22px"
+                      borderRadius="18px"
+                      bgGradient="linear(180deg, rgba(113, 219, 255, 0.23), rgba(167, 150, 255, 0.18) 46%, rgba(97, 239, 184, 0.18))"
+                      boxShadow="0 0 18px rgba(113, 219, 255, 0.12)"
+                      pointerEvents="none"
+                      zIndex={1}
+                    />
+                  </>
+                )}
 
-                  {/* Right Navigation Button */}
-                  <Button
-                    bg="linear-gradient(135deg, rgba(113, 219, 255, 0.3) 0%, rgba(70, 170, 220, 0.5) 100%)"
-                    backdropFilter="blur(12px)"
-                    border="2px solid rgba(113, 219, 255, 0.5)"
-                    borderRadius="10px"
-                    w="40px"
-                    h="28px"
-                    minW="40px"
-                    p={0}
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    boxShadow={`
+                {/* MR2: Squared-off 3D beveled edges */}
+                {getSquaredBeveledEdges()}
+
+                <VStack
+                  align="stretch"
+                  spacing={3}
+                  position="relative"
+                  h="full"
+                  zIndex={1}
+                >
+                  <HStack
+                    justify="space-between"
+                    align="center"
+                    h="24px"
+                    mt={0}
+                  >
+                    <Text
+                      fontSize="11px"
+                      textTransform="uppercase"
+                      letterSpacing="0.09em"
+                      fontWeight="600"
+                      color="#89a9bf"
+                    >
+                      SOURCE CLAIM
+                    </Text>
+                  </HStack>
+
+                  {/* Progress Bar */}
+                  <HStack
+                    spacing={3}
+                    px={4}
+                    py={3}
+                    borderRadius="999px"
+                    border="1px solid"
+                    borderColor={
+                      styleMode === "mr1"
+                        ? "rgba(113, 219, 255, 0.22)"
+                        : "rgba(113, 219, 255, 0.3)"
+                    }
+                    bg={
+                      styleMode === "mr1"
+                        ? "rgba(255, 255, 255, 0.035)"
+                        : "linear-gradient(180deg, rgba(113, 219, 255, 0.12), rgba(113, 219, 255, 0.06))"
+                    }
+                    boxShadow={
+                      styleMode === "mr1"
+                        ? "0 6px 20px rgba(0, 0, 0, 0.3)"
+                        : "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)"
+                    }
+                  >
+                    {/* Left Navigation Button */}
+                    <Button
+                      bg="linear-gradient(135deg, rgba(113, 219, 255, 0.3) 0%, rgba(70, 170, 220, 0.5) 100%)"
+                      backdropFilter="blur(12px)"
+                      border="2px solid rgba(113, 219, 255, 0.5)"
+                      borderRadius="10px"
+                      w="40px"
+                      h="28px"
+                      minW="40px"
+                      p={0}
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      boxShadow={`
                       0 6px 16px rgba(0, 0, 0, 0.6),
                       inset 0 2px 4px rgba(255, 255, 255, 0.2),
                       inset 0 -2px 4px rgba(0, 0, 0, 0.2)
                     `}
-                    transition="all 0.2s ease"
-                    _hover={{
-                      bg: "linear-gradient(135deg, rgba(113, 219, 255, 0.4) 0%, rgba(70, 170, 220, 0.6) 100%)",
-                      transform: "scale(1.05)",
-                      boxShadow: `
+                      transition="all 0.2s ease"
+                      _hover={{
+                        bg: "linear-gradient(135deg, rgba(113, 219, 255, 0.4) 0%, rgba(70, 170, 220, 0.6) 100%)",
+                        transform: "scale(1.05)",
+                        boxShadow: `
                         0 8px 20px rgba(0, 0, 0, 0.7),
                         inset 0 2px 6px rgba(255, 255, 255, 0.25),
                         inset 0 -2px 6px rgba(0, 0, 0, 0.25)
                       `,
-                    }}
-                    _active={{
-                      transform: "scale(0.97)",
-                      boxShadow: `
+                      }}
+                      _active={{
+                        transform: "scale(0.97)",
+                        boxShadow: `
                         0 4px 12px rgba(0, 0, 0, 0.5),
                         inset 0 1px 3px rgba(255, 255, 255, 0.15),
                         inset 0 -1px 3px rgba(0, 0, 0, 0.15)
                       `,
-                    }}
-                    _disabled={{
-                      opacity: 0.3,
-                      cursor: "not-allowed",
-                    }}
-                    onClick={handleNextCandidate}
-                    isDisabled={currentCandidateIndex === candidates.length - 1}
-                  >
-                    <ChevronRightIcon boxSize={5} />
-                  </Button>
-                </HStack>
+                      }}
+                      _disabled={{
+                        opacity: 0.3,
+                        cursor: "not-allowed",
+                      }}
+                      onClick={handlePreviousCandidate}
+                      isDisabled={currentCandidateIndex === 0}
+                    >
+                      <ChevronLeftIcon boxSize={5} />
+                    </Button>
 
-                {/* Scrolling Source Claims */}
-                <Box
-                  ref={dragRef}
-                  flex="1"
-                  overflowX="hidden"
-                  overflowY="hidden"
-                  position="relative"
-                  cursor={isDragging ? "grabbing" : "grab"}
-                  onTouchStart={onTouchStart}
-                  onTouchMove={onTouchMove}
-                  onTouchEnd={onTouchEnd}
-                  onMouseDown={onMouseDown}
-                  onMouseMove={onMouseMove}
-                  onMouseUp={onMouseUp}
-                  onMouseLeave={onMouseLeave}
-                  userSelect="none"
-                >
-                  <Flex
-                    align="stretch"
-                    pb={2}
-                    position="relative"
-                    transition="transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
-                    transform={`translateX(calc(${720 / 2}px - ${440 / 2}px - ${currentCandidateIndex * (440 + 20)}px))`}
-                  >
-                    {candidates.map((candidate, idx) => (
+                    {/* Progress Bar with Centered Text */}
+                    <Box
+                      flex="1"
+                      h="28px"
+                      borderRadius="14px"
+                      bg="rgba(255, 255, 255, 0.05)"
+                      border="2px solid"
+                      borderColor="rgba(255, 255, 255, 0.08)"
+                      overflow="hidden"
+                      boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.6)"
+                      position="relative"
+                    >
+                      {/* Progress Fill */}
                       <Box
-                        key={idx}
-                        bg="transparent"
-                        backdropFilter="blur(10px)"
-                        borderRadius="24px"
-                        border="2px solid"
-                        borderColor="rgba(97, 239, 184, 0.4)"
-                        boxShadow="0 16px 48px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(97, 239, 184, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
-                        p={6}
-                        pl={8}
-                        w="440px"
-                        minW="440px"
-                        minH="600px"
-                        position="relative"
-                        flexShrink={0}
-                        mr={5}
-                        opacity={idx === currentCandidateIndex ? 1 : 0.5}
-                        transition="all 0.4s ease"
-                        pointerEvents={
-                          idx === currentCandidateIndex ? "auto" : "none"
-                        }
-                        transform="translateZ(0)"
-                        _hover={
-                          idx === currentCandidateIndex
-                            ? {
-                                transform: "translateY(-4px) translateZ(0)",
-                                boxShadow:
-                                  "0 20px 60px rgba(0, 0, 0, 0.7), 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 50px rgba(97, 239, 184, 0.4), inset 0 3px 0 rgba(255, 255, 255, 0.2)",
-                              }
-                            : {}
-                        }
+                        h="full"
+                        w={`${candidates.length > 0 ? ((currentCandidateIndex + 1) / candidates.length) * 100 : 0}%`}
+                        bgGradient="linear(90deg, #71dbff, #78a8ff)"
+                        boxShadow="0 0 18px rgba(113, 219, 255, 0.2)"
+                        transition="width 0.3s ease"
+                      />
+                      {/* Centered Progress Text */}
+                      <Text
+                        position="absolute"
+                        top="50%"
+                        left="50%"
+                        transform="translate(-50%, -50%)"
+                        fontSize="13px"
+                        fontWeight="600"
+                        color="#fff"
+                        textShadow="0 1px 3px rgba(0, 0, 0, 0.8)"
+                        pointerEvents="none"
                       >
-                        {/* MR1: Curved left edge */}
-                        {styleMode === "mr1" && (
-                          <Box
-                            position="absolute"
-                            left={0}
-                            top={0}
-                            width="28px"
-                            height="100%"
-                            background="linear-gradient(90deg, rgba(97, 239, 184, 0.5) 0%, transparent 100%)"
-                            borderLeftRadius="24px"
-                            pointerEvents="none"
-                            zIndex={0}
-                          />
-                        )}
+                        {currentCandidateIndex + 1} of {candidates.length}
+                      </Text>
+                    </Box>
 
-                        {/* MR2: Squared-off 3D beveled edges */}
-                        {getSquaredBeveledEdges()}
+                    {/* Right Navigation Button */}
+                    <Button
+                      bg="linear-gradient(135deg, rgba(113, 219, 255, 0.3) 0%, rgba(70, 170, 220, 0.5) 100%)"
+                      backdropFilter="blur(12px)"
+                      border="2px solid rgba(113, 219, 255, 0.5)"
+                      borderRadius="10px"
+                      w="40px"
+                      h="28px"
+                      minW="40px"
+                      p={0}
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      boxShadow={`
+                      0 6px 16px rgba(0, 0, 0, 0.6),
+                      inset 0 2px 4px rgba(255, 255, 255, 0.2),
+                      inset 0 -2px 4px rgba(0, 0, 0, 0.2)
+                    `}
+                      transition="all 0.2s ease"
+                      _hover={{
+                        bg: "linear-gradient(135deg, rgba(113, 219, 255, 0.4) 0%, rgba(70, 170, 220, 0.6) 100%)",
+                        transform: "scale(1.05)",
+                        boxShadow: `
+                        0 8px 20px rgba(0, 0, 0, 0.7),
+                        inset 0 2px 6px rgba(255, 255, 255, 0.25),
+                        inset 0 -2px 6px rgba(0, 0, 0, 0.25)
+                      `,
+                      }}
+                      _active={{
+                        transform: "scale(0.97)",
+                        boxShadow: `
+                        0 4px 12px rgba(0, 0, 0, 0.5),
+                        inset 0 1px 3px rgba(255, 255, 255, 0.15),
+                        inset 0 -1px 3px rgba(0, 0, 0, 0.15)
+                      `,
+                      }}
+                      _disabled={{
+                        opacity: 0.3,
+                        cursor: "not-allowed",
+                      }}
+                      onClick={handleNextCandidate}
+                      isDisabled={
+                        currentCandidateIndex === candidates.length - 1
+                      }
+                    >
+                      <ChevronRightIcon boxSize={5} />
+                    </Button>
+                  </HStack>
 
-                        <VStack align="stretch" spacing={3}>
-                          <Flex
-                            justify="space-between"
-                            align="center"
-                            mb={3}
-                            gap={2}
-                          >
+                  {/* Scrolling Source Claims */}
+                  <Box
+                    ref={rightRailViewportRef}
+                    flex="1"
+                    overflowX="hidden"
+                    overflowY="hidden"
+                    position="relative"
+                    cursor={isDragging ? "grabbing" : "grab"}
+                    onTouchStart={onTouchStart}
+                    onTouchMove={onTouchMove}
+                    onTouchEnd={onTouchEnd}
+                    onMouseDown={onMouseDown}
+                    onMouseMove={onMouseMove}
+                    onMouseUp={onMouseUp}
+                    onMouseLeave={onMouseLeave}
+                    userSelect="none"
+                  >
+                    <Flex
+                      ref={rightRailFlexRef}
+                      align="stretch"
+                      pb={2}
+                      position="relative"
+                      transition="transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+                      transform={`translateX(${rightRailTranslate}px)`}
+                    >
+                      {candidates.map((candidate, idx) => (
+                        <Box
+                          key={idx}
+                          bg="transparent"
+                          backdropFilter="blur(10px)"
+                          borderRadius="24px"
+                          border="2px solid"
+                          borderColor="rgba(97, 239, 184, 0.4)"
+                          boxShadow="0 16px 48px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(97, 239, 184, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
+                          p={{ base: 2, lg: 4, xl: 6 }}
+                          pl={{ base: 3, lg: 5, xl: 8 }}
+                          w={{ base: "90%", lg: "85%", xl: "90%" }}
+                          maxW={{ base: "360px", lg: "420px", xl: "440px" }}
+                          minH={{ base: "400px", xl: "600px" }}
+                          position="relative"
+                          flexShrink={0}
+                          mr={{ base: 2, lg: 4, xl: 5 }}
+                          opacity={idx === currentCandidateIndex ? 1 : 0.5}
+                          transition="all 0.4s ease"
+                          pointerEvents={
+                            idx === currentCandidateIndex ? "auto" : "none"
+                          }
+                          transform="translateZ(0)"
+                          _hover={
+                            idx === currentCandidateIndex
+                              ? {
+                                  transform: "translateY(-4px) translateZ(0)",
+                                  boxShadow:
+                                    "0 20px 60px rgba(0, 0, 0, 0.7), 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 50px rgba(97, 239, 184, 0.4), inset 0 3px 0 rgba(255, 255, 255, 0.2)",
+                                }
+                              : {}
+                          }
+                        >
+                          {/* MR1: Curved left edge */}
+                          {styleMode === "mr1" && (
+                            <Box
+                              position="absolute"
+                              left={0}
+                              top={0}
+                              width="28px"
+                              height="100%"
+                              background="linear-gradient(90deg, rgba(97, 239, 184, 0.5) 0%, transparent 100%)"
+                              borderLeftRadius="24px"
+                              pointerEvents="none"
+                              zIndex={0}
+                            />
+                          )}
+
+                          {/* MR2: Squared-off 3D beveled edges */}
+                          {getSquaredBeveledEdges()}
+
+                          <VStack align="stretch" spacing={3}>
                             <Tooltip
                               label={candidate.source_name || "Source claim"}
                               placement="top"
@@ -2335,26 +2594,30 @@ export const CaseFocusPage: React.FC = () => {
                             >
                               <Box
                                 p={3}
+                                mb={3}
                                 borderRadius="18px"
                                 {...(styleMode === "mr1"
                                   ? {
                                       border: "2px solid",
                                       borderColor: "rgba(113, 219, 255, 0.4)",
                                       bg: "rgba(113, 219, 255, 0.15)",
-                                      boxShadow: "0 6px 20px rgba(0, 0, 0, 0.4), 0 3px 10px rgba(0, 0, 0, 0.3), 0 0 20px rgba(113, 219, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+                                      boxShadow:
+                                        "0 6px 20px rgba(0, 0, 0, 0.4), 0 3px 10px rgba(0, 0, 0, 0.3), 0 0 20px rgba(113, 219, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
                                       _hover: {
-                                        transform: "translateY(-2px) translateZ(0)",
-                                        boxShadow: "0 8px 28px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 30px rgba(113, 219, 255, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.2)",
+                                        transform:
+                                          "translateY(-2px) translateZ(0)",
+                                        boxShadow:
+                                          "0 8px 28px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 30px rgba(113, 219, 255, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.2)",
                                       },
                                     }
                                   : {
                                       border: "1px solid",
                                       borderColor: "rgba(113, 219, 255, 0.3)",
                                       bg: "linear-gradient(180deg, rgba(113, 219, 255, 0.18), rgba(113, 219, 255, 0.08))",
-                                      boxShadow: "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)",
+                                      boxShadow:
+                                        "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)",
                                     })}
                                 cursor="help"
-                                maxW="calc(100% - 90px)"
                                 position="relative"
                                 overflow="visible"
                                 transform="translateZ(0)"
@@ -2391,632 +2654,560 @@ export const CaseFocusPage: React.FC = () => {
                                 </Text>
                               </Box>
                             </Tooltip>
-                            <Badge
-                              px={3}
-                              py={1}
-                              borderRadius="999px"
-                              fontSize="11px"
-                              color="#71dbff"
+
+                            {/* Source Claim Text Box */}
+                            <Box
+                              mb={3}
+                              p={5}
+                              borderRadius="18px"
                               {...(styleMode === "mr1"
                                 ? {
-                                    bg: "rgba(113, 219, 255, 0.12)",
                                     border: "2px solid",
-                                    borderColor: "rgba(113, 219, 255, 0.3)",
-                                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3), 0 0 15px rgba(113, 219, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+                                    borderColor: "rgba(113, 219, 255, 0.35)",
+                                    bg: "rgba(113, 219, 255, 0.05)",
+                                    boxShadow:
+                                      "0 8px 24px rgba(0, 0, 0, 0.4), 0 0 25px rgba(113, 219, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
                                     _hover: {
-                                      transform: "translateY(-1px) translateZ(0)",
-                                      boxShadow: "0 6px 16px rgba(0, 0, 0, 0.4), 0 0 20px rgba(113, 219, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+                                      transform:
+                                        "translateY(-2px) translateZ(0)",
+                                      boxShadow:
+                                        "0 10px 32px rgba(0, 0, 0, 0.5), 0 0 35px rgba(113, 219, 255, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)",
                                     },
                                   }
                                 : {
-                                    bg: "linear-gradient(180deg, rgba(113, 219, 255, 0.18), rgba(113, 219, 255, 0.08))",
                                     border: "1px solid",
                                     borderColor: "rgba(113, 219, 255, 0.3)",
-                                    boxShadow: "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)",
+                                    bg: "linear-gradient(180deg, rgba(113, 219, 255, 0.15), rgba(113, 219, 255, 0.08))",
+                                    boxShadow:
+                                      "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)",
                                   })}
                               position="relative"
                               overflow="visible"
                               transform="translateZ(0)"
                               transition="all 0.3s ease"
                             >
-                              {/* Curved left edge - only in MR1 mode */}
-                              {styleMode === "mr1" && (
-                                <Box
-                                  position="absolute"
-                                  left={0}
-                                  top={0}
-                                  width="12px"
-                                  height="100%"
-                                  background="linear-gradient(90deg, rgba(113, 219, 255, 0.3) 0%, transparent 100%)"
-                                  borderLeftRadius="999px"
-                                  pointerEvents="none"
-                                  zIndex={0}
-                                />
-                              )}
-                              <Text as="span" position="relative" zIndex={1}>
-                                {currentCandidateIndex === 0
-                                  ? "Best fit"
-                                  : currentCandidateIndex === 1
-                                    ? "Alternative"
-                                    : "Next"}
+                              {getCurvedEdge("cyan")}
+                              <Text
+                                fontSize={{ base: "14px", xl: "24px" }}
+                                lineHeight="1.3"
+                                fontWeight="690"
+                                color="#e4f4ff"
+                                position="relative"
+                                zIndex={1}
+                              >
+                                {candidate.claim_text}
                               </Text>
-                            </Badge>
-                          </Flex>
+                            </Box>
 
-                          {/* Source Claim Text Box */}
-                          <Box
-                            mb={3}
-                            p={5}
-                            borderRadius="18px"
-                            {...(styleMode === "mr1"
-                              ? {
-                                  border: "2px solid",
-                                  borderColor: "rgba(113, 219, 255, 0.35)",
-                                  bg: "rgba(113, 219, 255, 0.05)",
-                                  boxShadow:
-                                    "0 8px 24px rgba(0, 0, 0, 0.4), 0 0 25px rgba(113, 219, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
-                                  _hover: {
-                                    transform: "translateY(-2px) translateZ(0)",
-                                    boxShadow:
-                                      "0 10px 32px rgba(0, 0, 0, 0.5), 0 0 35px rgba(113, 219, 255, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)",
-                                  },
-                                }
-                              : {
-                                  border: "1px solid",
-                                  borderColor: "rgba(113, 219, 255, 0.3)",
-                                  bg: "linear-gradient(180deg, rgba(113, 219, 255, 0.15), rgba(113, 219, 255, 0.08))",
-                                  boxShadow: "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)",
-                                })}
-                            position="relative"
-                            overflow="visible"
-                            transform="translateZ(0)"
-                            transition="all 0.3s ease"
-                          >
-                            {getCurvedEdge("cyan")}
-                            <Text
-                              fontSize="24px"
-                              lineHeight="1.3"
-                              fontWeight="690"
-                              color="#e4f4ff"
-                              position="relative"
-                              zIndex={1}
+                            {/* Micro badges */}
+                            <Grid
+                              templateColumns="repeat(3, 1fr)"
+                              gap={{ base: 1, xl: 3 }}
                             >
-                              {candidate.claim_text}
-                            </Text>
-                          </Box>
+                              <Box
+                                borderRadius="18px"
+                                {...getBoxStyle("red")}
+                                p={{ base: 2, xl: 3 }}
+                                minH={{ base: "50px", xl: "72px" }}
+                                position="relative"
+                                overflow="visible"
+                                transform="translateZ(0)"
+                                transition="all 0.3s ease"
+                              >
+                                {getCurvedEdge("red")}
+                                <Text
+                                  fontSize="10px"
+                                  textTransform="uppercase"
+                                  letterSpacing="0.08em"
+                                  color="rgba(228, 244, 255, 0.8)"
+                                  mb={1}
+                                  position="relative"
+                                  zIndex={1}
+                                >
+                                  RELEVANCE
+                                </Text>
+                                <Text
+                                  fontSize="18px"
+                                  fontWeight="800"
+                                  color="#ff6c88"
+                                  position="relative"
+                                  zIndex={1}
+                                >
+                                  {Math.round(candidate.relevance_score || 0)}%
+                                </Text>
+                              </Box>
 
-                          {/* Micro badges */}
-                          <Grid templateColumns="repeat(3, 1fr)" gap={3}>
+                              <Box
+                                borderRadius="18px"
+                                {...getBoxStyle("blue")}
+                                p={3}
+                                minH="72px"
+                                position="relative"
+                                overflow="visible"
+                                transform="translateZ(0)"
+                                transition="all 0.3s ease"
+                              >
+                                {getCurvedEdge("blue")}
+                                <Text
+                                  fontSize="10px"
+                                  textTransform="uppercase"
+                                  letterSpacing="0.08em"
+                                  color="rgba(228, 244, 255, 0.8)"
+                                  mb={1}
+                                  position="relative"
+                                  zIndex={1}
+                                >
+                                  CONFIDENCE
+                                </Text>
+                                <Text
+                                  fontSize="18px"
+                                  fontWeight="800"
+                                  color="#78a8ff"
+                                  position="relative"
+                                  zIndex={1}
+                                >
+                                  {Math.round(
+                                    (candidate.ai_confidence || 0) * 100,
+                                  )}
+                                </Text>
+                              </Box>
+
+                              <Box
+                                borderRadius="18px"
+                                {...getBoxStyle("green")}
+                                p={3}
+                                minH="72px"
+                                position="relative"
+                                overflow="visible"
+                                transform="translateZ(0)"
+                                transition="all 0.3s ease"
+                              >
+                                {getCurvedEdge("green")}
+                                <Text
+                                  fontSize="10px"
+                                  textTransform="uppercase"
+                                  letterSpacing="0.08em"
+                                  color="rgba(228, 244, 255, 0.8)"
+                                  mb={1}
+                                  position="relative"
+                                  zIndex={1}
+                                >
+                                  SUPPORT
+                                </Text>
+                                <Text
+                                  fontSize="18px"
+                                  fontWeight="800"
+                                  color="#61efb8"
+                                  position="relative"
+                                  zIndex={1}
+                                >
+                                  {candidate.ai_support_level
+                                    ? (candidate.ai_support_level > 0
+                                        ? "+"
+                                        : "") +
+                                      candidate.ai_support_level.toFixed(2)
+                                    : "N/A"}
+                                </Text>
+                              </Box>
+                            </Grid>
+
+                            {/* AI Rationale */}
                             <Box
+                              p={4}
                               borderRadius="18px"
-                              {...getBoxStyle("red")}
-                              p={3}
-                              minH="72px"
+                              {...getBoxStyle("gray")}
                               position="relative"
                               overflow="visible"
                               transform="translateZ(0)"
                               transition="all 0.3s ease"
                             >
-                              {getCurvedEdge("red")}
+                              {getCurvedEdge("gray")}
                               <Text
-                                fontSize="10px"
+                                fontSize="11px"
                                 textTransform="uppercase"
-                                letterSpacing="0.08em"
-                                color="rgba(228, 244, 255, 0.8)"
-                                mb={1}
+                                letterSpacing="0.09em"
+                                color="#89a9bf"
+                                mb={2}
                                 position="relative"
                                 zIndex={1}
                               >
-                                RELEVANCE
+                                AI RATIONALE
                               </Text>
                               <Text
-                                fontSize="18px"
-                                fontWeight="800"
+                                fontSize="14px"
+                                lineHeight="1.45"
+                                color="#d4e9ff"
+                                position="relative"
+                                zIndex={1}
+                              >
+                                {candidate.ai_rationale ||
+                                  "No AI analysis available for this claim."}
+                              </Text>
+                            </Box>
+
+                            {/* Refute/Nuance/Support Badges */}
+                            <Grid
+                              templateColumns="repeat(3, 1fr)"
+                              gap={2}
+                              mt={3}
+                            >
+                              <Button
+                                borderRadius="16px"
+                                {...getButtonStyle("red")}
                                 color="#ff6c88"
-                                position="relative"
-                                zIndex={1}
-                              >
-                                {Math.round(candidate.relevance_score || 0)}%
-                              </Text>
-                            </Box>
-
-                            <Box
-                              borderRadius="18px"
-                              {...getBoxStyle("blue")}
-                              p={3}
-                              minH="72px"
-                              position="relative"
-                              overflow="visible"
-                              transform="translateZ(0)"
-                              transition="all 0.3s ease"
-                            >
-                              {getCurvedEdge("blue")}
-                              <Text
-                                fontSize="10px"
+                                fontSize="11px"
+                                fontWeight="600"
                                 textTransform="uppercase"
-                                letterSpacing="0.08em"
-                                color="rgba(228, 244, 255, 0.8)"
-                                mb={1}
+                                h="40px"
                                 position="relative"
-                                zIndex={1}
+                                overflow="visible"
+                                transform="translateZ(0)"
+                                transition="all 0.3s ease"
+                                onClick={() =>
+                                  handleRelationshipClick("refutes")
+                                }
                               >
-                                CONFIDENCE
-                              </Text>
-                              <Text
-                                fontSize="18px"
-                                fontWeight="800"
+                                {getCurvedEdge("red")}
+                                <Text as="span" position="relative" zIndex={1}>
+                                  Refute
+                                </Text>
+                              </Button>
+                              <Button
+                                borderRadius="16px"
+                                {...getButtonStyle("blue")}
                                 color="#78a8ff"
-                                position="relative"
-                                zIndex={1}
-                              >
-                                {Math.round(
-                                  (candidate.ai_confidence || 0) * 100,
-                                )}
-                              </Text>
-                            </Box>
-
-                            <Box
-                              borderRadius="18px"
-                              {...getBoxStyle("green")}
-                              p={3}
-                              minH="72px"
-                              position="relative"
-                              overflow="visible"
-                              transform="translateZ(0)"
-                              transition="all 0.3s ease"
-                            >
-                              {getCurvedEdge("green")}
-                              <Text
-                                fontSize="10px"
+                                fontSize="11px"
+                                fontWeight="600"
                                 textTransform="uppercase"
-                                letterSpacing="0.08em"
-                                color="rgba(228, 244, 255, 0.8)"
-                                mb={1}
+                                h="40px"
                                 position="relative"
-                                zIndex={1}
+                                overflow="visible"
+                                transform="translateZ(0)"
+                                transition="all 0.3s ease"
+                                onClick={() =>
+                                  handleRelationshipClick("context")
+                                }
                               >
-                                SUPPORT
-                              </Text>
-                              <Text
-                                fontSize="18px"
-                                fontWeight="800"
+                                {getCurvedEdge("blue")}
+                                <Text as="span" position="relative" zIndex={1}>
+                                  Nuance
+                                </Text>
+                              </Button>
+                              <Button
+                                borderRadius="16px"
+                                {...getButtonStyle("green")}
                                 color="#61efb8"
+                                fontSize="11px"
+                                fontWeight="600"
+                                textTransform="uppercase"
+                                h="40px"
                                 position="relative"
-                                zIndex={1}
+                                overflow="visible"
+                                transform="translateZ(0)"
+                                transition="all 0.3s ease"
+                                onClick={() =>
+                                  handleRelationshipClick("supports")
+                                }
                               >
-                                {candidate.ai_support_level
-                                  ? (candidate.ai_support_level > 0
-                                      ? "+"
-                                      : "") +
-                                    candidate.ai_support_level.toFixed(2)
-                                  : "N/A"}
-                              </Text>
-                            </Box>
-                          </Grid>
+                                {getCurvedEdge("green")}
+                                <Text as="span" position="relative" zIndex={1}>
+                                  Support
+                                </Text>
+                              </Button>
+                            </Grid>
 
-                          {/* AI Rationale */}
-                          <Box
-                            p={4}
-                            borderRadius="18px"
-                            {...getBoxStyle("gray")}
-                            position="relative"
-                            overflow="visible"
-                            transform="translateZ(0)"
-                            transition="all 0.3s ease"
-                          >
-                            {getCurvedEdge("gray")}
-                            <Text
-                              fontSize="11px"
-                              textTransform="uppercase"
-                              letterSpacing="0.09em"
-                              color="#89a9bf"
-                              mb={2}
-                              position="relative"
-                              zIndex={1}
-                            >
-                              AI RATIONALE
-                            </Text>
-                            <Text
-                              fontSize="14px"
-                              lineHeight="1.45"
-                              color="#d4e9ff"
-                              position="relative"
-                              zIndex={1}
-                            >
-                              {candidate.ai_rationale ||
-                                "No AI analysis available for this claim."}
-                            </Text>
-                          </Box>
-
-                          {/* Refute/Nuance/Support Badges */}
-                          <Grid templateColumns="repeat(3, 1fr)" gap={2} mt={3}>
+                            {/* Hide Source Button */}
                             <Button
-                              borderRadius="16px"
-                              {...getButtonStyle("red")}
-                              color="#ff6c88"
-                              fontSize="11px"
+                              borderRadius="12px"
+                              bg="rgba(255, 100, 100, 0.1)"
+                              border="1px solid rgba(255, 100, 100, 0.3)"
+                              color="#ff8888"
+                              fontSize="10px"
                               fontWeight="600"
                               textTransform="uppercase"
-                              h="40px"
-                              position="relative"
-                              overflow="visible"
-                              transform="translateZ(0)"
-                              transition="all 0.3s ease"
-                              onClick={() => handleRelationshipClick("refutes")}
+                              h="32px"
+                              mt={2}
+                              w="full"
+                              _hover={{
+                                bg: "rgba(255, 100, 100, 0.2)",
+                                borderColor: "rgba(255, 100, 100, 0.5)",
+                              }}
+                              onClick={handleHideSource}
                             >
-                              {getCurvedEdge("red")}
-                              <Text as="span" position="relative" zIndex={1}>
-                                Refute
-                              </Text>
+                              Hide Source
                             </Button>
-                            <Button
-                              borderRadius="16px"
-                              {...getButtonStyle("blue")}
-                              color="#78a8ff"
-                              fontSize="11px"
-                              fontWeight="600"
-                              textTransform="uppercase"
-                              h="40px"
-                              position="relative"
-                              overflow="visible"
-                              transform="translateZ(0)"
-                              transition="all 0.3s ease"
-                              onClick={() => handleRelationshipClick("context")}
-                            >
-                              {getCurvedEdge("blue")}
-                              <Text as="span" position="relative" zIndex={1}>
-                                Nuance
-                              </Text>
-                            </Button>
-                            <Button
-                              borderRadius="16px"
-                              {...getButtonStyle("green")}
-                              color="#61efb8"
-                              fontSize="11px"
-                              fontWeight="600"
-                              textTransform="uppercase"
-                              h="40px"
-                              position="relative"
-                              overflow="visible"
-                              transform="translateZ(0)"
-                              transition="all 0.3s ease"
-                              onClick={() =>
-                                handleRelationshipClick("supports")
-                              }
-                            >
-                              {getCurvedEdge("green")}
-                              <Text as="span" position="relative" zIndex={1}>
-                                Support
-                              </Text>
-                            </Button>
-                          </Grid>
+                          </VStack>
+                        </Box>
+                      ))}
 
-                          {/* Hide Source Button */}
-                          <Button
-                            borderRadius="12px"
-                            bg="rgba(255, 100, 100, 0.1)"
-                            border="1px solid rgba(255, 100, 100, 0.3)"
-                            color="#ff8888"
-                            fontSize="10px"
-                            fontWeight="600"
-                            textTransform="uppercase"
-                            h="32px"
-                            mt={2}
-                            w="full"
-                            _hover={{
-                              bg: "rgba(255, 100, 100, 0.2)",
-                              borderColor: "rgba(255, 100, 100, 0.5)",
-                            }}
-                            onClick={handleHideSource}
-                          >
-                            Hide Source
-                          </Button>
-                        </VStack>
-                      </Box>
-                    ))}
+                      {candidates.length === 0 && (
+                        <Flex
+                          align="center"
+                          justify="center"
+                          minH="240px"
+                          w="full"
+                        >
+                          <Text color="#89a9bf">
+                            No source claims available
+                          </Text>
+                        </Flex>
+                      )}
+                    </Flex>
+                  </Box>
+                </VStack>
+              </Box>
 
-                    {candidates.length === 0 && (
-                      <Flex
-                        align="center"
-                        justify="center"
-                        minH="240px"
-                        w="full"
+              {/* Right: Impact & Meta */}
+              <VStack spacing={4}>
+                {/* Source Claim Card */}
+                <Box
+                  bg="linear-gradient(180deg, rgba(15, 28, 46, 0.25), rgba(8, 16, 27, 0.20))"
+                  borderRadius="28px"
+                  border="1px solid"
+                  borderColor="rgba(126, 207, 255, 0.22)"
+                  boxShadow="0 22px 70px rgba(0, 0, 0, 0.4)"
+                  backdropFilter={styleMode === "mr1" ? "blur(18px)" : "none"}
+                  p={6}
+                  position="relative"
+                  overflow="hidden"
+                  opacity={slideDirection ? 0 : 1}
+                  transform={
+                    slideDirection === "left"
+                      ? "translateX(100px)"
+                      : slideDirection === "right"
+                        ? "translateX(-100px)"
+                        : "translateX(0)"
+                  }
+                  transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+                >
+                  {/* MR1: Decorative gradient and curved edge */}
+                  {styleMode === "mr1" && (
+                    <>
+                      <Box
+                        position="absolute"
+                        inset="0"
+                        bgGradient="linear(135deg, rgba(255, 255, 255, 0.07), transparent 26%)"
+                        pointerEvents="none"
+                      />
+                      <Box
+                        position="absolute"
+                        left="-10px"
+                        top="18px"
+                        bottom="18px"
+                        w="22px"
+                        borderRadius="18px"
+                        bgGradient="linear(180deg, rgba(113, 219, 255, 0.23), rgba(167, 150, 255, 0.18) 46%, rgba(97, 239, 184, 0.18))"
+                        boxShadow="0 0 18px rgba(113, 219, 255, 0.12)"
+                        pointerEvents="none"
+                      />
+                    </>
+                  )}
+
+                  {/* MR2: Squared-off 3D beveled edges */}
+                  {getSquaredBeveledEdges()}
+
+                  <VStack align="stretch" spacing={4} position="relative">
+                    {/* Badges Grid */}
+                    <Grid templateColumns="repeat(3, 1fr)" gap={3}>
+                      <Box
+                        bgGradient="linear(180deg, rgba(113, 219, 255, 0.08), rgba(255, 255, 255, 0.02))"
+                        borderRadius="18px"
+                        border="1px solid"
+                        borderColor="rgba(113, 219, 255, 0.22)"
+                        p={4}
+                        minH="78px"
                       >
-                        <Text color="#89a9bf">No source claims available</Text>
-                      </Flex>
-                    )}
-                  </Flex>
+                        <Text
+                          fontSize="11px"
+                          textTransform="uppercase"
+                          letterSpacing="0.09em"
+                          color="rgba(228, 244, 255, 0.8)"
+                        >
+                          RELEVANCE
+                        </Text>
+                        <Text fontSize="22px" fontWeight="820" color="#71dbff">
+                          {candidates[currentCandidateIndex]?.relevance_score
+                            ? Math.round(
+                                candidates[currentCandidateIndex]
+                                  .relevance_score,
+                              )
+                            : 0}
+                          %
+                        </Text>
+                      </Box>
+
+                      <Box
+                        bgGradient="linear(180deg, rgba(120, 168, 255, 0.08), rgba(255, 255, 255, 0.02))"
+                        borderRadius="18px"
+                        border="1px solid"
+                        borderColor="rgba(120, 168, 255, 0.22)"
+                        p={4}
+                        minH="78px"
+                      >
+                        <Text
+                          fontSize="11px"
+                          textTransform="uppercase"
+                          letterSpacing="0.09em"
+                          color="#78a8ff"
+                        >
+                          CONFIDENCE
+                        </Text>
+                        <Text fontSize="22px" fontWeight="820" color="#78a8ff">
+                          {candidates[currentCandidateIndex]?.ai_confidence
+                            ? Math.round(
+                                candidates[currentCandidateIndex]
+                                  .ai_confidence * 100,
+                              )
+                            : 0}
+                        </Text>
+                      </Box>
+
+                      <Box
+                        bgGradient="linear(180deg, rgba(97, 239, 184, 0.08), rgba(255, 255, 255, 0.02))"
+                        borderRadius="18px"
+                        border="1px solid"
+                        borderColor="rgba(97, 239, 184, 0.2)"
+                        p={4}
+                        minH="78px"
+                      >
+                        <Text
+                          fontSize="11px"
+                          textTransform="uppercase"
+                          letterSpacing="0.09em"
+                          color="#61efb8"
+                        >
+                          SUPPORT
+                        </Text>
+                        <Text fontSize="22px" fontWeight="820" color="#61efb8">
+                          {candidates[currentCandidateIndex]
+                            ?.ai_support_level !== undefined
+                            ? Math.round(
+                                candidates[currentCandidateIndex]
+                                  .ai_support_level * 100,
+                              )
+                            : 0}
+                        </Text>
+                      </Box>
+                    </Grid>
+                  </VStack>
                 </Box>
 
-                {/* Navigation Buttons */}
-                <HStack spacing={3} pt={4}>
-                  <Button
-                    flex="1"
-                    borderRadius="14px"
-                    border="1px solid"
-                    borderColor="rgba(113, 219, 255, 0.24)"
-                    bg="rgba(255, 255, 255, 0.035)"
-                    color="#71dbff"
+                {/* AI Rationale */}
+                <Box
+                  bg="linear-gradient(180deg, rgba(15, 28, 46, 0.25), rgba(8, 16, 27, 0.20))"
+                  borderRadius="28px"
+                  border="1px solid"
+                  borderColor="rgba(126, 207, 255, 0.22)"
+                  boxShadow="0 22px 70px rgba(0, 0, 0, 0.4)"
+                  backdropFilter={styleMode === "mr1" ? "blur(18px)" : "none"}
+                  p={6}
+                  position="relative"
+                  overflow="hidden"
+                >
+                  {/* MR1: Decorative gradient and curved edge */}
+                  {styleMode === "mr1" && (
+                    <>
+                      <Box
+                        position="absolute"
+                        inset="0"
+                        bgGradient="linear(135deg, rgba(255, 255, 255, 0.07), transparent 26%)"
+                        pointerEvents="none"
+                      />
+                      <Box
+                        position="absolute"
+                        left="-10px"
+                        top="18px"
+                        bottom="18px"
+                        w="22px"
+                        borderRadius="18px"
+                        bgGradient="linear(180deg, rgba(113, 219, 255, 0.23), rgba(167, 150, 255, 0.18) 46%, rgba(97, 239, 184, 0.18))"
+                        boxShadow="0 0 18px rgba(113, 219, 255, 0.12)"
+                        pointerEvents="none"
+                      />
+                    </>
+                  )}
+
+                  {/* MR2: Squared-off 3D beveled edges */}
+                  {getSquaredBeveledEdges()}
+
+                  <VStack align="stretch" spacing={4} position="relative">
+                    <Text
+                      fontSize="11px"
+                      textTransform="uppercase"
+                      letterSpacing="0.09em"
+                      color="#89a9bf"
+                    >
+                      AI RATIONALEx
+                    </Text>
+
+                    <Text fontSize="14px" lineHeight="1.45" color="#d4e9ff">
+                      {candidates[currentCandidateIndex]?.ai_rationale ||
+                        "Select a claim to see AI analysis of its relevance to the case claim."}
+                    </Text>
+                  </VStack>
+                </Box>
+
+                {/* Style Toggle - Right under AI RATIONALEx box */}
+                <HStack spacing={2} justify="flex-end" mt={2}>
+                  <Text
                     fontSize="11px"
-                    fontWeight="600"
+                    color="#89a9bf"
                     textTransform="uppercase"
-                    _hover={{
-                      borderColor: "rgba(148, 221, 255, 0.46)",
-                      bg: "rgba(113, 219, 255, 0.08)",
-                    }}
-                    onClick={() => {
-                      if (currentCandidateIndex > 0) {
-                        setCurrentCandidateIndex(currentCandidateIndex - 1);
-                      }
-                    }}
-                    isDisabled={currentCandidateIndex === 0}
+                    letterSpacing="0.1em"
                   >
-                    Prev
+                    Style:
+                  </Text>
+                  <Button
+                    size="sm"
+                    bg={
+                      styleMode === "mr1"
+                        ? "rgba(113, 219, 255, 0.2)"
+                        : "rgba(255, 255, 255, 0.05)"
+                    }
+                    border="1px solid"
+                    borderColor={
+                      styleMode === "mr1"
+                        ? "rgba(113, 219, 255, 0.4)"
+                        : "rgba(255, 255, 255, 0.1)"
+                    }
+                    color={styleMode === "mr1" ? "#71dbff" : "#89a9bf"}
+                    fontSize="10px"
+                    px={3}
+                    onClick={() => setStyleMode("mr1")}
+                    _hover={{
+                      bg: "rgba(113, 219, 255, 0.25)",
+                      borderColor: "rgba(113, 219, 255, 0.5)",
+                    }}
+                  >
+                    MR1
                   </Button>
                   <Button
-                    flex="1"
-                    borderRadius="14px"
+                    size="sm"
+                    bg={
+                      styleMode === "mr2"
+                        ? "rgba(113, 219, 255, 0.2)"
+                        : "rgba(255, 255, 255, 0.05)"
+                    }
                     border="1px solid"
-                    borderColor="rgba(120, 168, 255, 0.24)"
-                    bg="rgba(255, 255, 255, 0.035)"
-                    color="#78a8ff"
-                    fontSize="11px"
-                    fontWeight="600"
-                    textTransform="uppercase"
+                    borderColor={
+                      styleMode === "mr2"
+                        ? "rgba(113, 219, 255, 0.4)"
+                        : "rgba(255, 255, 255, 0.1)"
+                    }
+                    color={styleMode === "mr2" ? "#71dbff" : "#89a9bf"}
+                    fontSize="10px"
+                    px={3}
+                    onClick={() => setStyleMode("mr2")}
                     _hover={{
-                      borderColor: "rgba(120, 168, 255, 0.46)",
-                      bg: "rgba(120, 168, 255, 0.08)",
+                      bg: "rgba(113, 219, 255, 0.25)",
+                      borderColor: "rgba(113, 219, 255, 0.5)",
                     }}
-                    onClick={handleNextCandidate}
                   >
-                    Skip
-                  </Button>
-                  <Button
-                    flex="1"
-                    borderRadius="14px"
-                    border="1px solid"
-                    borderColor="rgba(113, 219, 255, 0.24)"
-                    bg="rgba(255, 255, 255, 0.035)"
-                    color="#71dbff"
-                    fontSize="11px"
-                    fontWeight="600"
-                    textTransform="uppercase"
-                    _hover={{
-                      borderColor: "rgba(148, 221, 255, 0.46)",
-                      bg: "rgba(113, 219, 255, 0.08)",
-                    }}
-                    onClick={handleNextCandidate}
-                    isDisabled={currentCandidateIndex >= candidates.length - 1}
-                  >
-                    Next
+                    MR2
                   </Button>
                 </HStack>
               </VStack>
-            </Box>
-
-            {/* Right: Impact & Meta */}
-            <VStack spacing={4}>
-              {/* Source Claim Card */}
-              <Box
-                bg="linear-gradient(180deg, rgba(15, 28, 46, 0.25), rgba(8, 16, 27, 0.20))"
-                borderRadius="28px"
-                border="1px solid"
-                borderColor="rgba(126, 207, 255, 0.22)"
-                boxShadow="0 22px 70px rgba(0, 0, 0, 0.4)"
-                backdropFilter={styleMode === "mr1" ? "blur(18px)" : "none"}
-                p={6}
-                position="relative"
-                overflow="hidden"
-                opacity={slideDirection ? 0 : 1}
-                transform={
-                  slideDirection === 'left'
-                    ? "translateX(100px)"
-                    : slideDirection === 'right'
-                    ? "translateX(-100px)"
-                    : "translateX(0)"
-                }
-                transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
-              >
-                {/* MR1: Decorative gradient and curved edge */}
-                {styleMode === "mr1" && (
-                  <>
-                    <Box
-                      position="absolute"
-                      inset="0"
-                      bgGradient="linear(135deg, rgba(255, 255, 255, 0.07), transparent 26%)"
-                      pointerEvents="none"
-                    />
-                    <Box
-                      position="absolute"
-                      left="-10px"
-                      top="18px"
-                      bottom="18px"
-                      w="22px"
-                      borderRadius="18px"
-                      bgGradient="linear(180deg, rgba(113, 219, 255, 0.23), rgba(167, 150, 255, 0.18) 46%, rgba(97, 239, 184, 0.18))"
-                      boxShadow="0 0 18px rgba(113, 219, 255, 0.12)"
-                      pointerEvents="none"
-                    />
-                  </>
-                )}
-
-                {/* MR2: Squared-off 3D beveled edges */}
-                {getSquaredBeveledEdges()}
-
-                <VStack align="stretch" spacing={4} position="relative">
-                  {/* Badges Grid */}
-                  <Grid templateColumns="repeat(3, 1fr)" gap={3}>
-                    <Box
-                      bgGradient="linear(180deg, rgba(113, 219, 255, 0.08), rgba(255, 255, 255, 0.02))"
-                      borderRadius="18px"
-                      border="1px solid"
-                      borderColor="rgba(113, 219, 255, 0.22)"
-                      p={4}
-                      minH="78px"
-                    >
-                      <Text
-                        fontSize="11px"
-                        textTransform="uppercase"
-                        letterSpacing="0.09em"
-                        color="rgba(228, 244, 255, 0.8)"
-                      >
-                        RELEVANCE
-                      </Text>
-                      <Text fontSize="22px" fontWeight="820" color="#71dbff">
-                        {candidates[currentCandidateIndex]?.relevance_score
-                          ? Math.round(
-                              candidates[currentCandidateIndex].relevance_score,
-                            )
-                          : 0}
-                        %
-                      </Text>
-                    </Box>
-
-                    <Box
-                      bgGradient="linear(180deg, rgba(120, 168, 255, 0.08), rgba(255, 255, 255, 0.02))"
-                      borderRadius="18px"
-                      border="1px solid"
-                      borderColor="rgba(120, 168, 255, 0.22)"
-                      p={4}
-                      minH="78px"
-                    >
-                      <Text
-                        fontSize="11px"
-                        textTransform="uppercase"
-                        letterSpacing="0.09em"
-                        color="#78a8ff"
-                      >
-                        CONFIDENCE
-                      </Text>
-                      <Text fontSize="22px" fontWeight="820" color="#78a8ff">
-                        {candidates[currentCandidateIndex]?.ai_confidence
-                          ? Math.round(
-                              candidates[currentCandidateIndex].ai_confidence *
-                                100,
-                            )
-                          : 0}
-                      </Text>
-                    </Box>
-
-                    <Box
-                      bgGradient="linear(180deg, rgba(97, 239, 184, 0.08), rgba(255, 255, 255, 0.02))"
-                      borderRadius="18px"
-                      border="1px solid"
-                      borderColor="rgba(97, 239, 184, 0.2)"
-                      p={4}
-                      minH="78px"
-                    >
-                      <Text
-                        fontSize="11px"
-                        textTransform="uppercase"
-                        letterSpacing="0.09em"
-                        color="#61efb8"
-                      >
-                        SUPPORT
-                      </Text>
-                      <Text fontSize="22px" fontWeight="820" color="#61efb8">
-                        {candidates[currentCandidateIndex]?.ai_support_level !==
-                        undefined
-                          ? Math.round(
-                              candidates[currentCandidateIndex]
-                                .ai_support_level * 100,
-                            )
-                          : 0}
-                      </Text>
-                    </Box>
-                  </Grid>
-                </VStack>
-              </Box>
-
-              {/* AI Rationale */}
-              <Box
-                bg="linear-gradient(180deg, rgba(15, 28, 46, 0.25), rgba(8, 16, 27, 0.20))"
-                borderRadius="28px"
-                border="1px solid"
-                borderColor="rgba(126, 207, 255, 0.22)"
-                boxShadow="0 22px 70px rgba(0, 0, 0, 0.4)"
-                backdropFilter={styleMode === "mr1" ? "blur(18px)" : "none"}
-                p={6}
-                position="relative"
-                overflow="hidden"
-              >
-                {/* MR1: Decorative gradient and curved edge */}
-                {styleMode === "mr1" && (
-                  <>
-                    <Box
-                      position="absolute"
-                      inset="0"
-                      bgGradient="linear(135deg, rgba(255, 255, 255, 0.07), transparent 26%)"
-                      pointerEvents="none"
-                    />
-                    <Box
-                      position="absolute"
-                      left="-10px"
-                      top="18px"
-                      bottom="18px"
-                      w="22px"
-                      borderRadius="18px"
-                      bgGradient="linear(180deg, rgba(113, 219, 255, 0.23), rgba(167, 150, 255, 0.18) 46%, rgba(97, 239, 184, 0.18))"
-                      boxShadow="0 0 18px rgba(113, 219, 255, 0.12)"
-                      pointerEvents="none"
-                    />
-                  </>
-                )}
-
-                {/* MR2: Squared-off 3D beveled edges */}
-                {getSquaredBeveledEdges()}
-
-                <VStack align="stretch" spacing={4} position="relative">
-                  <Text
-                    fontSize="11px"
-                    textTransform="uppercase"
-                    letterSpacing="0.09em"
-                    color="#89a9bf"
-                  >
-                    AI RATIONALEx
-                  </Text>
-
-                  <Text fontSize="14px" lineHeight="1.45" color="#d4e9ff">
-                    {candidates[currentCandidateIndex]?.ai_rationale ||
-                      "Select a claim to see AI analysis of its relevance to the case claim."}
-                  </Text>
-                </VStack>
-              </Box>
-
-              {/* Style Toggle - Right under AI RATIONALEx box */}
-              <HStack spacing={2} justify="flex-end" mt={2}>
-                <Text fontSize="11px" color="#89a9bf" textTransform="uppercase" letterSpacing="0.1em">
-                  Style:
-                </Text>
-                <Button
-                  size="sm"
-                  bg={styleMode === "mr1" ? "rgba(113, 219, 255, 0.2)" : "rgba(255, 255, 255, 0.05)"}
-                  border="1px solid"
-                  borderColor={styleMode === "mr1" ? "rgba(113, 219, 255, 0.4)" : "rgba(255, 255, 255, 0.1)"}
-                  color={styleMode === "mr1" ? "#71dbff" : "#89a9bf"}
-                  fontSize="10px"
-                  px={3}
-                  onClick={() => setStyleMode("mr1")}
-                  _hover={{ bg: "rgba(113, 219, 255, 0.25)", borderColor: "rgba(113, 219, 255, 0.5)" }}
-                >
-                  MR1
-                </Button>
-                <Button
-                  size="sm"
-                  bg={styleMode === "mr2" ? "rgba(113, 219, 255, 0.2)" : "rgba(255, 255, 255, 0.05)"}
-                  border="1px solid"
-                  borderColor={styleMode === "mr2" ? "rgba(113, 219, 255, 0.4)" : "rgba(255, 255, 255, 0.1)"}
-                  color={styleMode === "mr2" ? "#71dbff" : "#89a9bf"}
-                  fontSize="10px"
-                  px={3}
-                  onClick={() => setStyleMode("mr2")}
-                  _hover={{ bg: "rgba(113, 219, 255, 0.25)", borderColor: "rgba(113, 219, 255, 0.5)" }}
-                >
-                  MR2
-                </Button>
-              </HStack>
-            </VStack>
-          </Grid>
+            </Grid>
           </Box>
         )}
       </VStack>
@@ -3131,7 +3322,9 @@ export const CaseFocusPage: React.FC = () => {
           onLinkCreated={handleLinkCreated}
           rationale={candidates[currentCandidateIndex].ai_rationale}
           aiSupportLevel={modalSupportLevel}
-          sourceClaimVeracity={candidates[currentCandidateIndex].source_reliability || 0}
+          sourceClaimVeracity={
+            candidates[currentCandidateIndex].source_reliability || 0
+          }
           onScoreAwarded={(points) => {
             console.log(`🎮 Score awarded: ${points}`);
             // Immediately update local score
@@ -3183,8 +3376,10 @@ export const CaseFocusPage: React.FC = () => {
                   position: "absolute",
                   inset: "8px",
                   background: "linear-gradient(180deg, #1c262f, #0b1015)",
-                  clipPath: "polygon(38px 0, calc(100% - 38px) 0, 100% 38px, 100% calc(100% - 38px), calc(100% - 38px) 100%, 38px 100%, 0 calc(100% - 38px), 0 38px)",
-                  boxShadow: "inset 0 2px 0 rgba(255, 255, 255, 0.06), inset 0 -12px 20px rgba(0, 0, 0, 0.72), inset 0 14px 20px rgba(255, 255, 255, 0.02)",
+                  clipPath:
+                    "polygon(38px 0, calc(100% - 38px) 0, 100% 38px, 100% calc(100% - 38px), calc(100% - 38px) 100%, 38px 100%, 0 calc(100% - 38px), 0 38px)",
+                  boxShadow:
+                    "inset 0 2px 0 rgba(255, 255, 255, 0.06), inset 0 -12px 20px rgba(0, 0, 0, 0.72), inset 0 14px 20px rgba(255, 255, 255, 0.02)",
                   zIndex: 0,
                 }
               : undefined
@@ -3196,8 +3391,10 @@ export const CaseFocusPage: React.FC = () => {
                   position: "absolute",
                   inset: "18px",
                   background: "linear-gradient(180deg, #121920, #090d11)",
-                  clipPath: "polygon(30px 0, calc(100% - 30px) 0, 100% 30px, 100% calc(100% - 30px), calc(100% - 30px) 100%, 30px 100%, 0 calc(100% - 30px), 0 30px)",
-                  boxShadow: "inset 0 2px 0 rgba(255, 255, 255, 0.03), inset 0 -8px 14px rgba(0, 0, 0, 0.82), inset 0 0 0 2px rgba(255, 255, 255, 0.015)",
+                  clipPath:
+                    "polygon(30px 0, calc(100% - 30px) 0, 100% 30px, 100% calc(100% - 30px), calc(100% - 30px) 100%, 30px 100%, 0 calc(100% - 30px), 0 30px)",
+                  boxShadow:
+                    "inset 0 2px 0 rgba(255, 255, 255, 0.03), inset 0 -8px 14px rgba(0, 0, 0, 0.82), inset 0 0 0 2px rgba(255, 255, 255, 0.015)",
                   zIndex: 0,
                 }
               : undefined
@@ -3246,7 +3443,13 @@ export const CaseFocusPage: React.FC = () => {
             </Box>
           </ModalHeader>
 
-          <ModalBody py={4} overflowY="auto" maxH="calc(90vh - 200px)" position="relative" zIndex={1}>
+          <ModalBody
+            py={4}
+            overflowY="auto"
+            maxH="calc(90vh - 200px)"
+            position="relative"
+            zIndex={1}
+          >
             <VStack align="stretch" spacing={6}>
               {/* Filter Tabs (Multi-select) */}
               <HStack spacing={2} mb={4}>
@@ -3257,10 +3460,20 @@ export const CaseFocusPage: React.FC = () => {
                   h="auto"
                   borderRadius="999px"
                   fontWeight="600"
-                  bg={linkedClaimsFilter.has("support") ? "rgba(97, 239, 184, 0.2)" : "transparent"}
-                  color={linkedClaimsFilter.has("support") ? "#61efb8" : "#89a9bf"}
+                  bg={
+                    linkedClaimsFilter.has("support")
+                      ? "rgba(97, 239, 184, 0.2)"
+                      : "transparent"
+                  }
+                  color={
+                    linkedClaimsFilter.has("support") ? "#61efb8" : "#89a9bf"
+                  }
                   border="1px solid"
-                  borderColor={linkedClaimsFilter.has("support") ? "rgba(97, 239, 184, 0.4)" : "rgba(113, 219, 255, 0.2)"}
+                  borderColor={
+                    linkedClaimsFilter.has("support")
+                      ? "rgba(97, 239, 184, 0.4)"
+                      : "rgba(113, 219, 255, 0.2)"
+                  }
                   onClick={() => {
                     const newFilter = new Set(linkedClaimsFilter);
                     if (newFilter.has("support")) {
@@ -3271,7 +3484,9 @@ export const CaseFocusPage: React.FC = () => {
                     setLinkedClaimsFilter(newFilter);
                   }}
                   _hover={{
-                    bg: linkedClaimsFilter.has("support") ? "rgba(97, 239, 184, 0.3)" : "rgba(97, 239, 184, 0.1)",
+                    bg: linkedClaimsFilter.has("support")
+                      ? "rgba(97, 239, 184, 0.3)"
+                      : "rgba(97, 239, 184, 0.1)",
                   }}
                 >
                   Support ({linkedClaimsCategorized.support.length})
@@ -3283,10 +3498,20 @@ export const CaseFocusPage: React.FC = () => {
                   h="auto"
                   borderRadius="999px"
                   fontWeight="600"
-                  bg={linkedClaimsFilter.has("refute") ? "rgba(255, 108, 136, 0.2)" : "transparent"}
-                  color={linkedClaimsFilter.has("refute") ? "#ff6c88" : "#89a9bf"}
+                  bg={
+                    linkedClaimsFilter.has("refute")
+                      ? "rgba(255, 108, 136, 0.2)"
+                      : "transparent"
+                  }
+                  color={
+                    linkedClaimsFilter.has("refute") ? "#ff6c88" : "#89a9bf"
+                  }
                   border="1px solid"
-                  borderColor={linkedClaimsFilter.has("refute") ? "rgba(255, 108, 136, 0.4)" : "rgba(113, 219, 255, 0.2)"}
+                  borderColor={
+                    linkedClaimsFilter.has("refute")
+                      ? "rgba(255, 108, 136, 0.4)"
+                      : "rgba(113, 219, 255, 0.2)"
+                  }
                   onClick={() => {
                     const newFilter = new Set(linkedClaimsFilter);
                     if (newFilter.has("refute")) {
@@ -3297,7 +3522,9 @@ export const CaseFocusPage: React.FC = () => {
                     setLinkedClaimsFilter(newFilter);
                   }}
                   _hover={{
-                    bg: linkedClaimsFilter.has("refute") ? "rgba(255, 108, 136, 0.3)" : "rgba(255, 108, 136, 0.1)",
+                    bg: linkedClaimsFilter.has("refute")
+                      ? "rgba(255, 108, 136, 0.3)"
+                      : "rgba(255, 108, 136, 0.1)",
                   }}
                 >
                   Refute ({linkedClaimsCategorized.refute.length})
@@ -3309,10 +3536,20 @@ export const CaseFocusPage: React.FC = () => {
                   h="auto"
                   borderRadius="999px"
                   fontWeight="600"
-                  bg={linkedClaimsFilter.has("nuance") ? "rgba(120, 168, 255, 0.2)" : "transparent"}
-                  color={linkedClaimsFilter.has("nuance") ? "#78a8ff" : "#89a9bf"}
+                  bg={
+                    linkedClaimsFilter.has("nuance")
+                      ? "rgba(120, 168, 255, 0.2)"
+                      : "transparent"
+                  }
+                  color={
+                    linkedClaimsFilter.has("nuance") ? "#78a8ff" : "#89a9bf"
+                  }
                   border="1px solid"
-                  borderColor={linkedClaimsFilter.has("nuance") ? "rgba(120, 168, 255, 0.4)" : "rgba(113, 219, 255, 0.2)"}
+                  borderColor={
+                    linkedClaimsFilter.has("nuance")
+                      ? "rgba(120, 168, 255, 0.4)"
+                      : "rgba(113, 219, 255, 0.2)"
+                  }
                   onClick={() => {
                     const newFilter = new Set(linkedClaimsFilter);
                     if (newFilter.has("nuance")) {
@@ -3323,7 +3560,9 @@ export const CaseFocusPage: React.FC = () => {
                     setLinkedClaimsFilter(newFilter);
                   }}
                   _hover={{
-                    bg: linkedClaimsFilter.has("nuance") ? "rgba(120, 168, 255, 0.3)" : "rgba(120, 168, 255, 0.1)",
+                    bg: linkedClaimsFilter.has("nuance")
+                      ? "rgba(120, 168, 255, 0.3)"
+                      : "rgba(120, 168, 255, 0.1)",
                   }}
                 >
                   Nuance ({linkedClaimsCategorized.nuance.length})
@@ -3363,14 +3602,27 @@ export const CaseFocusPage: React.FC = () => {
                   {/* Human Claims as Buttons - FILTERED */}
                   <VStack align="stretch" spacing={3}>
                     {filteredLinkedClaims.length === 0 ? (
-                      <Text fontSize="13px" color="#89a9bf" fontStyle="italic" textAlign="center" py={8}>
+                      <Text
+                        fontSize="13px"
+                        color="#89a9bf"
+                        fontStyle="italic"
+                        textAlign="center"
+                        py={8}
+                      >
                         No claims match the selected filters
                       </Text>
                     ) : (
                       filteredLinkedClaims.map((linkedClaim, idx) => {
-                        const isSupport = linkedClaim.relation === "support" || linkedClaim.relationship === "supports";
-                        const isRefute = linkedClaim.relation === "refute" || linkedClaim.relationship === "refutes";
-                        const isNuance = linkedClaim.relation === "nuance" || linkedClaim.relation === "context" || linkedClaim.relationship === "related";
+                        const isSupport =
+                          linkedClaim.relation === "support" ||
+                          linkedClaim.relationship === "supports";
+                        const isRefute =
+                          linkedClaim.relation === "refute" ||
+                          linkedClaim.relationship === "refutes";
+                        const isNuance =
+                          linkedClaim.relation === "nuance" ||
+                          linkedClaim.relation === "context" ||
+                          linkedClaim.relationship === "related";
 
                         return (
                           <Button
@@ -3386,15 +3638,15 @@ export const CaseFocusPage: React.FC = () => {
                               isSupport
                                 ? "rgba(97, 239, 184, 0.4)"
                                 : isRefute
-                                ? "rgba(255, 108, 136, 0.4)"
-                                : "rgba(120, 168, 255, 0.4)"
+                                  ? "rgba(255, 108, 136, 0.4)"
+                                  : "rgba(120, 168, 255, 0.4)"
                             }
                             boxShadow={
                               isSupport
                                 ? "0 16px 48px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(97, 239, 184, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
                                 : isRefute
-                                ? "0 16px 48px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(255, 108, 136, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
-                                : "0 16px 48px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(120, 168, 255, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
+                                  ? "0 16px 48px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(255, 108, 136, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
+                                  : "0 16px 48px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(120, 168, 255, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
                             }
                             justifyContent="flex-start"
                             textAlign="left"
@@ -3406,8 +3658,8 @@ export const CaseFocusPage: React.FC = () => {
                               boxShadow: isSupport
                                 ? "0 20px 60px rgba(0, 0, 0, 0.7), 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 50px rgba(97, 239, 184, 0.4), inset 0 3px 0 rgba(255, 255, 255, 0.2)"
                                 : isRefute
-                                ? "0 20px 60px rgba(0, 0, 0, 0.7), 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 50px rgba(255, 108, 136, 0.4), inset 0 3px 0 rgba(255, 255, 255, 0.2)"
-                                : "0 20px 60px rgba(0, 0, 0, 0.7), 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 50px rgba(120, 168, 255, 0.4), inset 0 3px 0 rgba(255, 255, 255, 0.2)",
+                                  ? "0 20px 60px rgba(0, 0, 0, 0.7), 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 50px rgba(255, 108, 136, 0.4), inset 0 3px 0 rgba(255, 255, 255, 0.2)"
+                                  : "0 20px 60px rgba(0, 0, 0, 0.7), 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 50px rgba(120, 168, 255, 0.4), inset 0 3px 0 rgba(255, 255, 255, 0.2)",
                             }}
                           >
                             <VStack align="flex-start" spacing={2} w="100%">
@@ -3420,32 +3672,46 @@ export const CaseFocusPage: React.FC = () => {
                                   isSupport
                                     ? "rgba(97, 239, 184, 0.2)"
                                     : isRefute
-                                    ? "rgba(255, 108, 136, 0.2)"
-                                    : "rgba(120, 168, 255, 0.2)"
+                                      ? "rgba(255, 108, 136, 0.2)"
+                                      : "rgba(120, 168, 255, 0.2)"
                                 }
                                 color={
                                   isSupport
                                     ? "#61efb8"
                                     : isRefute
-                                    ? "#ff6c88"
-                                    : "#78a8ff"
+                                      ? "#ff6c88"
+                                      : "#78a8ff"
                                 }
                                 border="1px solid"
                                 borderColor={
                                   isSupport
                                     ? "rgba(97, 239, 184, 0.4)"
                                     : isRefute
-                                    ? "rgba(255, 108, 136, 0.4)"
-                                    : "rgba(120, 168, 255, 0.4)"
+                                      ? "rgba(255, 108, 136, 0.4)"
+                                      : "rgba(120, 168, 255, 0.4)"
                                 }
                               >
-                                {isSupport ? "SUPPORTS" : isRefute ? "REFUTES" : "NUANCE"}
+                                {isSupport
+                                  ? "SUPPORTS"
+                                  : isRefute
+                                    ? "REFUTES"
+                                    : "NUANCE"}
                               </Badge>
-                              <Text fontSize="14px" color="#d4e9ff" lineHeight="1.4">
-                                {linkedClaim.reference_claim_text || linkedClaim.claim_text || "No claim text available"}
+                              <Text
+                                fontSize="14px"
+                                color="#d4e9ff"
+                                lineHeight="1.4"
+                              >
+                                {linkedClaim.reference_claim_text ||
+                                  linkedClaim.claim_text ||
+                                  "No claim text available"}
                               </Text>
                               {linkedClaim.source_name && (
-                                <Text fontSize="11px" color="#89a9bf" fontStyle="italic">
+                                <Text
+                                  fontSize="11px"
+                                  color="#89a9bf"
+                                  fontStyle="italic"
+                                >
                                   from {linkedClaim.source_name}
                                 </Text>
                               )}
@@ -3507,7 +3773,8 @@ export const CaseFocusPage: React.FC = () => {
                             overflow="visible"
                             _hover={{
                               transform: "translateY(-2px) translateZ(0)",
-                              boxShadow: "0 20px 60px rgba(0, 0, 0, 0.7), 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 50px rgba(167, 139, 250, 0.4), inset 0 3px 0 rgba(255, 255, 255, 0.2)",
+                              boxShadow:
+                                "0 20px 60px rgba(0, 0, 0, 0.7), 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 50px rgba(167, 139, 250, 0.4), inset 0 3px 0 rgba(255, 255, 255, 0.2)",
                             }}
                           >
                             <VStack align="flex-start" spacing={2} w="100%">
@@ -3537,14 +3804,24 @@ export const CaseFocusPage: React.FC = () => {
                                   </Badge>
                                 )}
                               </HStack>
-                              <Text fontSize="14px" color="#d4e9ff" lineHeight="1.4">
+                              <Text
+                                fontSize="14px"
+                                color="#d4e9ff"
+                                lineHeight="1.4"
+                              >
                                 {candidate.claim_text}
                               </Text>
                             </VStack>
                           </Button>
                         ))
                       ) : (
-                        <Text fontSize="13px" color="#89a9bf" fontStyle="italic" textAlign="center" py={4}>
+                        <Text
+                          fontSize="13px"
+                          color="#89a9bf"
+                          fontStyle="italic"
+                          textAlign="center"
+                          py={4}
+                        >
                           No AI suggestions available
                         </Text>
                       )}
@@ -3568,7 +3845,8 @@ export const CaseFocusPage: React.FC = () => {
               boxShadow="0 6px 20px rgba(0, 0, 0, 0.4), 0 0 20px rgba(113, 219, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
               _hover={{
                 transform: "translateY(-2px)",
-                boxShadow: "0 8px 28px rgba(0, 0, 0, 0.5), 0 0 30px rgba(113, 219, 255, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.15)",
+                boxShadow:
+                  "0 8px 28px rgba(0, 0, 0, 0.5), 0 0 30px rgba(113, 219, 255, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.15)",
               }}
             >
               Close

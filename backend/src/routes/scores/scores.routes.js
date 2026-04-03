@@ -1,4 +1,10 @@
 import { Router } from "express";
+import {
+  calculateAIContentScore,
+  calculateUserContentScore,
+  calculateCombinedContentScore,
+  getAIUserRatingCounts
+} from "../../modules/aiRatings.js";
 
 export default function createScoresRoutes({ query, pool }) {
   const router = Router();
@@ -153,6 +159,81 @@ export default function createScoresRoutes({ query, pool }) {
       console.error(`❌ Failed to recompute scores for content ${contentId}:`, err.message);
       res.status(500).json({
         error: "Failed to recompute scores",
+        message: err.message
+      });
+    }
+  });
+
+  // GET /api/content/:contentId/scores/ai - Get AI-only scores
+  router.get("/api/content/:contentId/scores/ai", async (req, res) => {
+    const { contentId } = req.params;
+
+    try {
+      const scores = await calculateAIContentScore(query, parseInt(contentId));
+      const counts = await getAIUserRatingCounts(query, parseInt(contentId));
+
+      res.json({
+        ...scores,
+        mode: 'ai',
+        rating_counts: counts
+      });
+    } catch (err) {
+      console.error(`❌ Error fetching AI scores for content ${contentId}:`, err.message);
+      res.status(500).json({
+        error: "Internal server error",
+        message: err.message
+      });
+    }
+  });
+
+  // GET /api/content/:contentId/scores/user - Get user-only scores
+  router.get("/api/content/:contentId/scores/user", async (req, res) => {
+    const { contentId } = req.params;
+    const viewerId = req.query.viewerId ? parseInt(req.query.viewerId) : null;
+    const currentUserId = req.user?.user_id || viewerId;
+
+    try {
+      const scores = await calculateUserContentScore(query, parseInt(contentId), currentUserId);
+      const counts = await getAIUserRatingCounts(query, parseInt(contentId));
+
+      res.json({
+        ...scores,
+        mode: 'user',
+        userId: currentUserId,
+        rating_counts: counts
+      });
+    } catch (err) {
+      console.error(`❌ Error fetching user scores for content ${contentId}:`, err.message);
+      res.status(500).json({
+        error: "Internal server error",
+        message: err.message
+      });
+    }
+  });
+
+  // GET /api/content/:contentId/scores/combined - Get combined AI+User scores
+  router.get("/api/content/:contentId/scores/combined", async (req, res) => {
+    const { contentId } = req.params;
+    const viewerId = req.query.viewerId ? parseInt(req.query.viewerId) : null;
+    const currentUserId = req.user?.user_id || viewerId;
+    const aiWeight = req.query.aiWeight ? parseFloat(req.query.aiWeight) : 0.5;
+
+    try {
+      const scores = await calculateCombinedContentScore(query, parseInt(contentId), currentUserId, aiWeight);
+      const counts = await getAIUserRatingCounts(query, parseInt(contentId));
+
+      res.json({
+        ...scores,
+        mode: 'combined',
+        aiWeight,
+        userWeight: 1 - aiWeight,
+        userId: currentUserId,
+        rating_counts: counts
+      });
+    } catch (err) {
+      console.error(`❌ Error fetching combined scores for content ${contentId}:`, err.message);
+      res.status(500).json({
+        error: "Internal server error",
         message: err.message
       });
     }

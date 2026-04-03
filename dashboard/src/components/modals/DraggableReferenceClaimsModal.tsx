@@ -146,8 +146,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
 
   const connectedTaskClaims = getConnectedTaskClaims();
 
-  // Reset modal position on open
-  // Reset modal position on open (anchor under the clicked reference if we have anchorPoint)
+  // Reset modal position on open - center it on the screen for easier viewing
   React.useEffect(() => {
     if (!isOpen) return;
 
@@ -155,33 +154,11 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
     const padding = 16;
     const headerSafeTop = 80; // keep it below your workspace header
 
-    // 1) If we have an exact click anchor, place modal under it
+    // Center the modal horizontally and vertically
+    const x = Math.max(padding, (window.innerWidth - modalWidth) / 2);
+    const y = headerSafeTop;
 
-    // 2) Otherwise, anchor to the reference list column
-    const anchor = anchorSelector
-      ? (document.querySelector(anchorSelector) as HTMLElement | null)
-      : null;
-
-    if (anchor) {
-      const r = anchor.getBoundingClientRect();
-
-      // Align close to the left edge of the ref column (no weird 50px drift)
-      const x = Math.min(
-        window.innerWidth - modalWidth - padding,
-        Math.max(padding, r.left + 8),
-      );
-
-      const y = Math.max(headerSafeTop, r.top + 12);
-
-      setPosition({ x, y });
-      return;
-    }
-
-    // 3) Fallback: right-ish
-    setPosition({
-      x: Math.max(padding, window.innerWidth - modalWidth - padding),
-      y: 100,
-    });
+    setPosition({ x, y });
   }, [isOpen, anchorSelector]);
 
   // Start drag on header
