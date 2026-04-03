@@ -124,29 +124,75 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
           {/* Single Compact Row: Everything in one line */}
           <Flex
             as="nav"
-            py={12}
-            px={6}
+            py={1}
+            px={{ base: 2, lg: 3 }}
             color={navColor}
             align="center"
             justify="space-between"
-            gap={6}
+            gap={{ base: 1, lg: 2 }}
           >
             {/* Navigation Menu - Left Side */}
-            <HStack spacing={6} flex="1">
-              <Link as={RouterLink} to="/tutorials" fontSize="md">
+            <HStack spacing={{ base: 1, lg: 2 }} flex="1">
+              <Link
+                as={RouterLink}
+                to="/tutorials"
+                fontSize={{ base: "11px", xl: "15px" }}
+                border="1px solid"
+                borderColor={useColorModeValue("gray.300", "gray.600")}
+                borderRadius="full"
+                px={2}
+                py={1}
+              >
                 Tutorial Videos
               </Link>
-              <Link as={RouterLink} to="/dashboard" fontSize="md">
+              <Link
+                as={RouterLink}
+                to="/dashboard"
+                fontSize={{ base: "11px", xl: "15px" }}
+                border="1px solid"
+                borderColor={useColorModeValue("gray.300", "gray.600")}
+                borderRadius="full"
+                px={2}
+                py={1}
+              >
                 Dashboard
               </Link>
-              <Link as={RouterLink} to="/tasks" fontSize="md">
+              <Link
+                as={RouterLink}
+                to="/tasks"
+                fontSize={{ base: "11px", xl: "15px" }}
+                border="1px solid"
+                borderColor={useColorModeValue("gray.300", "gray.600")}
+                borderRadius="full"
+                px={2}
+                py={1}
+              >
                 Cases
               </Link>
-              <Link as={RouterLink} to="/extension" fontSize="md">
+              <Link
+                as={RouterLink}
+                to="/extension"
+                fontSize={{ base: "11px", xl: "15px" }}
+                border="1px solid"
+                borderColor={useColorModeValue("gray.300", "gray.600")}
+                borderRadius="full"
+                px={2}
+                py={1}
+              >
                 Extension
               </Link>
               <Menu>
-                <MenuButton as={Button} size="md" variant="ghost" fontSize="md">
+                <MenuButton
+                  as={Button}
+                  size="xs"
+                  variant="ghost"
+                  fontSize={{ base: "11px", xl: "15px" }}
+                  border="1px solid"
+                  borderColor={useColorModeValue("gray.300", "gray.600")}
+                  borderRadius="full"
+                  px={2}
+                  py={1}
+                >
                   Workbench
                 </MenuButton>
                 <MenuList zIndex={9999}>
@@ -193,7 +239,17 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 </MenuList>
               </Menu>
               <Menu>
-                <MenuButton as={Button} size="md" variant="ghost" fontSize="md">
+                <MenuButton
+                  as={Button}
+                  size="xs"
+                  variant="ghost"
+                  fontSize={{ base: "11px", xl: "15px" }}
+                  border="1px solid"
+                  borderColor={useColorModeValue("gray.300", "gray.600")}
+                  borderRadius="full"
+                  px={2}
+                  py={1}
+                >
                   Community
                 </MenuButton>
                 <MenuList zIndex={9999}>
@@ -216,7 +272,17 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 </MenuList>
               </Menu>
               <Menu>
-                <MenuButton as={Button} size="md" variant="ghost" fontSize="md">
+                <MenuButton
+                  as={Button}
+                  size="xs"
+                  variant="ghost"
+                  fontSize={{ base: "11px", xl: "15px" }}
+                  border="1px solid"
+                  borderColor={useColorModeValue("gray.300", "gray.600")}
+                  borderRadius="full"
+                  px={2}
+                  py={1}
+                >
                   Gaming
                 </MenuButton>
                 <MenuList zIndex={9999}>
@@ -232,7 +298,17 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 </MenuList>
               </Menu>
               <Menu>
-                <MenuButton as={Button} size="md" variant="ghost" fontSize="md">
+                <MenuButton
+                  as={Button}
+                  size="xs"
+                  variant="ghost"
+                  fontSize={{ base: "11px", xl: "15px" }}
+                  border="1px solid"
+                  borderColor={useColorModeValue("gray.300", "gray.600")}
+                  borderRadius="full"
+                  px={2}
+                  py={1}
+                >
                   GrabBag
                 </MenuButton>
                 <MenuList zIndex={9999}>
@@ -269,21 +345,33 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   </MenuItem>
                 </MenuList>
               </Menu>
-              <HStack spacing={2}>
+              <HStack
+                spacing={2}
+                border="1px solid"
+                borderColor={useColorModeValue("gray.300", "gray.600")}
+                borderRadius="full"
+                px={2}
+                py={1}
+              >
                 <AccountMenu />
-                <Text fontSize="md">Account</Text>
+                <Text fontSize={{ base: "11px", xl: "15px" }}>Account</Text>
               </HStack>
             </HStack>
 
             {/* Right Side: Search, View, and Controls */}
-            <HStack spacing={3}>
+            <HStack spacing={{ base: 1, lg: 2 }}>
               {/* Search Button */}
               <Button
-                size="md"
+                size="xs"
                 variant="ghost"
                 leftIcon={<SearchIcon />}
                 onClick={onOpen}
-                fontSize="md"
+                fontSize={{ base: "11px", xl: "15px" }}
+                border="1px solid"
+                borderColor={useColorModeValue("gray.300", "gray.600")}
+                borderRadius="full"
+                px={2}
+                py={1}
               >
                 Search
               </Button>
@@ -291,7 +379,17 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
               {/* View Menu */}
               {selectedTaskId && (
                 <Menu>
-                  <MenuButton as={Button} size="md" variant="ghost" fontSize="md">
+                  <MenuButton
+                    as={Button}
+                    size="xs"
+                    variant="ghost"
+                    fontSize={{ base: "11px", xl: "15px" }}
+                    border="1px solid"
+                    borderColor={useColorModeValue("gray.300", "gray.600")}
+                    borderRadius="full"
+                    px={2}
+                    py={1}
+                  >
                     View
                   </MenuButton>
                   <MenuList zIndex={9999}>

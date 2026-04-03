@@ -48,8 +48,7 @@ import { PlatformTour } from "../components/PlatformTour";
 import { TokenStatusIndicator } from "../components/TokenStatusIndicator";
 import { GlobalProgressIndicator } from "../components/GlobalProgressIndicator";
 
-const SIDEBAR_WIDTH = "200px";
-const HEADER_HEIGHT = "50px"; // Reduced from 160px to 50px
+// Responsive sidebar and header sizing - values used inline
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
@@ -81,29 +80,29 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
   };
 
   return (
-    <VStack align="start" spacing={4} w="full">
+    <VStack align="start" spacing={1} w="full">
       <RouterLink to="/tutorials" onClick={handleClick("/tutorials")}>
-        <HStack spacing={2} mb={2}>
-          <FiVideo />
-          <Text>Tutorial Videos</Text>
+        <HStack spacing={1} mb={0.5}>
+          <Box as={FiVideo} boxSize={{ base: "12px", xl: "12px" }} />
+          <Text fontSize={{ base: "11px", xl: "15px" }}>Tutorial Videos</Text>
         </HStack>
       </RouterLink>
       <RouterLink to="/dashboard" onClick={handleClick("/dashboard")}>
-        <HStack spacing={2} mb={2}>
-          <FiHome />
-          <Text>Dashboard</Text>
+        <HStack spacing={1} mb={0.5}>
+          <Box as={FiHome} boxSize={{ base: "12px", xl: "12px" }} />
+          <Text fontSize={{ base: "11px", xl: "15px" }}>Dashboard</Text>
         </HStack>
       </RouterLink>
       <RouterLink to="/tasks" onClick={handleClick("/tasks")}>
-        <HStack spacing={2} mb={2}>
-          <FiBarChart2 />
-          <Text>Cases</Text>
+        <HStack spacing={1} mb={0.5}>
+          <Box as={FiBarChart2} boxSize={{ base: "12px", xl: "12px" }} />
+          <Text fontSize={{ base: "11px", xl: "15px" }}>Cases</Text>
         </HStack>
       </RouterLink>
       <RouterLink to="/extension" onClick={handleClick("/extension")}>
-        <HStack spacing={2} mb={2}>
-          <FiDownload />
-          <Text>Extension</Text>
+        <HStack spacing={1} mb={0.5}>
+          <Box as={FiDownload} boxSize={{ base: "12px", xl: "12px" }} />
+          <Text fontSize={{ base: "11px", xl: "15px" }}>Extension</Text>
         </HStack>
       </RouterLink>
 
@@ -111,19 +110,25 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
       <Menu>
         <MenuButton
           as={Button}
-          size="sm"
+          size="xs"
           variant="ghost"
-          leftIcon={<FiTool />}
+          leftIcon={<Box as={FiTool} boxSize="12px" />}
           justifyContent="flex-start"
           w="full"
+          fontSize={{ base: "11px", xl: "15px" }}
+          h={{ base: "20px", xl: "28px" }}
+          minH={{ base: "20px", xl: "28px" }}
+          px={0}
+          textAlign="left"
         >
           Workbench
         </MenuButton>
-        <MenuList>
+        <MenuList fontSize={{ base: "11px", xl: "15px" }}>
           <MenuItem
             as={RouterLink}
             to="/textpad"
             onClick={handleClick("/textpad")}
+            icon={<span />}
           >
             TextPad
           </MenuItem>
@@ -131,6 +136,7 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
             as={RouterLink}
             to={selectedTaskId ? "/workspace" : "/tasks"}
             onClick={handleClick("/workspace")}
+            icon={<span />}
           >
             Workspace
           </MenuItem>
@@ -138,6 +144,7 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
             as={RouterLink}
             to={selectedTaskId ? "/molecule" : "/tasks"}
             onClick={handleClick("/molecule")}
+            icon={<span />}
           >
             Molecule
           </MenuItem>
@@ -145,6 +152,7 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
             as={RouterLink}
             to="/credibility"
             onClick={handleClick("/credibility")}
+            icon={<span />}
           >
             Credibility
           </MenuItem>
@@ -152,6 +160,7 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
             as={RouterLink}
             to="/casefocus"
             onClick={handleClick("/casefocus")}
+            icon={<span />}
           >
             CaseFocus
           </MenuItem>
@@ -162,22 +171,28 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
       <Menu>
         <MenuButton
           as={Button}
-          size="sm"
+          size="xs"
           variant="ghost"
-          leftIcon={<FiMessageSquare />}
+          leftIcon={<Box as={FiMessageSquare} boxSize="12px" />}
           justifyContent="flex-start"
           w="full"
+          fontSize={{ base: "11px", xl: "15px" }}
+          h={{ base: "20px", xl: "28px" }}
+          minH={{ base: "20px", xl: "28px" }}
+          px={0}
+          textAlign="left"
         >
           Community
         </MenuButton>
-        <MenuList>
-          <MenuItem as={RouterLink} to="/chat" onClick={handleClick("/chat")}>
+        <MenuList fontSize={{ base: "11px", xl: "15px" }}>
+          <MenuItem as={RouterLink} to="/chat" onClick={handleClick("/chat")} icon={<span />}>
             Chat
           </MenuItem>
           <MenuItem
             as={RouterLink}
             to={selectedTaskId ? `/discussion/${selectedTaskId}` : "/tasks"}
             onClick={handleClick("/discussion")}
+            icon={<span />}
           >
             Discussion Board
           </MenuItem>
@@ -188,26 +203,32 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
       <Menu>
         <MenuButton
           as={Button}
-          size="sm"
+          size="xs"
           variant="ghost"
-          leftIcon={<FiGrid />}
+          leftIcon={<Box as={FiGrid} boxSize="12px" />}
           justifyContent="flex-start"
           w="full"
+          fontSize={{ base: "11px", xl: "15px" }}
+          h={{ base: "20px", xl: "28px" }}
+          minH={{ base: "20px", xl: "28px" }}
+          px={0}
+          textAlign="left"
         >
           Gaming
         </MenuButton>
-        <MenuList>
-          <MenuItem as={RouterLink} to="/game" onClick={handleClick("/game")}>
+        <MenuList fontSize={{ base: "11px", xl: "15px" }}>
+          <MenuItem as={RouterLink} to="/game" onClick={handleClick("/game")} icon={<span />}>
             Game
           </MenuItem>
           <MenuItem
             as={RouterLink}
             to="/gamespace"
             onClick={handleClick("/gamespace")}
+            icon={<span />}
           >
             GameSpace
           </MenuItem>
-          <MenuItem as={RouterLink} to="/level" onClick={handleClick("/level")}>
+          <MenuItem as={RouterLink} to="/level" onClick={handleClick("/level")} icon={<span />}>
             Level
           </MenuItem>
         </MenuList>
@@ -217,15 +238,20 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
       <Menu>
         <MenuButton
           as={Button}
-          size="sm"
+          size="xs"
           variant="ghost"
-          leftIcon={<FiGrid />}
+          leftIcon={<Box as={FiGrid} boxSize="12px" />}
           justifyContent="flex-start"
           w="full"
+          fontSize={{ base: "11px", xl: "15px" }}
+          h={{ base: "20px", xl: "28px" }}
+          minH={{ base: "20px", xl: "28px" }}
+          px={0}
+          textAlign="left"
         >
           GrabBag
         </MenuButton>
-        <MenuList>
+        <MenuList fontSize={{ base: "11px", xl: "15px" }} sx={{ '& svg': { width: '12px', height: '12px' } }}>
           <MenuItem
             as={RouterLink}
             to="/quadrantgrid"
@@ -257,13 +283,13 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
         </MenuList>
       </Menu>
 
-      <VStack spacing={2} mb={2} align="stretch" w="full">
-        <HStack spacing={2} align="center">
-          <FiUser />
+      <VStack spacing={0.5} mb={0.5} align="stretch" w="full">
+        <HStack spacing={1} align="center">
+          <Box as={FiUser} boxSize={{ base: "12px", xl: "12px" }} />
           <AccountMenu />
-          <Text>Account</Text>
+          <Text fontSize={{ base: "11px", xl: "15px" }}>Account</Text>
         </HStack>
-        <Box pl={6}>
+        <Box pl={3}>
           <TokenStatusIndicator />
         </Box>
       </VStack>
@@ -298,9 +324,9 @@ const Sidebar: React.FC = () => {
       background={sidebarBg}
       backdropFilter="blur(8px)"
       color={sidebarColor}
-      spacing={6}
-      p={4}
-      w={SIDEBAR_WIDTH}
+      spacing={1}
+      p={2}
+      w={{ base: "0", md: "140px", lg: "140px", xl: "192px" }}
       h="100vh"
       position="fixed"
       top={0}
@@ -321,7 +347,7 @@ const Sidebar: React.FC = () => {
       <RouterLink to="/">
         <Image
           src={`${API_BASE_URL}/assets/ttlogo11.png`}
-          boxSize="120px"
+          boxSize={{ base: "60px", lg: "70px", xl: "112px" }}
           objectFit="contain"
           mx="auto"
         />
@@ -419,11 +445,11 @@ const VisionLayout: React.FC = () => {
         as="header"
         position="fixed"
         top={0}
-        left={{ base: 0, md: SIDEBAR_WIDTH }}
+        left={{ base: 0, md: "140px", lg: "140px", xl: "192px" }}
         right={0}
         zIndex={1000}
-        h={{ base: "60px", md: HEADER_HEIGHT }}
-        px={4}
+        h={{ base: "60px", md: "48px", lg: "48px", xl: "54px" }}
+        px={{ base: 2, md: 2, lg: 3 }}
         display="flex"
         alignItems="center"
         justifyContent="space-between"
@@ -454,10 +480,10 @@ const VisionLayout: React.FC = () => {
 
       <Box
         as="main"
-        ml={{ base: 0, md: SIDEBAR_WIDTH }}
-        pt={{ base: "60px", md: HEADER_HEIGHT }}
-        px={4}
-        pb={8}
+        ml={{ base: 0, md: "140px", lg: "140px", xl: "192px" }}
+        pt={{ base: "60px", md: "48px", lg: "48px", xl: "54px" }}
+        px={{ base: 2, md: 2, lg: 3 }}
+        pb={{ base: 4, lg: 6 }}
       >
         <Outlet />
       </Box>

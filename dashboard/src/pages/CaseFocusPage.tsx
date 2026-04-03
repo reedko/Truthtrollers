@@ -453,33 +453,47 @@ export const CaseFocusPage: React.FC = () => {
 
   // Left rail measurements
   useEffect(() => {
-    const viewportEl = leftRailViewportRef.current;
-    const flexEl = leftRailFlexRef.current;
-    if (!viewportEl || !flexEl) return;
+    // Wait for refs to be available
+    const checkAndMeasure = () => {
+      const viewportEl = leftRailViewportRef.current;
+      const flexEl = leftRailFlexRef.current;
 
-    const update = () => {
-      const firstCard = flexEl.children[0] as HTMLElement;
-      if (!firstCard) return;
+      if (!viewportEl || !flexEl) {
+        // Refs not ready yet, try again soon
+        setTimeout(checkAndMeasure, 10);
+        return;
+      }
 
-      const cardWidth = firstCard.offsetWidth;
-      const cardStyle = window.getComputedStyle(firstCard);
-      const cardGap = parseFloat(cardStyle.marginRight) || 0;
-      const viewportWidth = viewportEl.clientWidth;
+      const update = () => {
+        const firstCard = flexEl.children[0] as HTMLElement;
+        if (!firstCard) return;
 
-      setLeftCardMeasurements({ viewportWidth, cardWidth, cardGap });
-    };
+        const cardWidth = firstCard.offsetWidth;
+        const cardStyle = window.getComputedStyle(firstCard);
+        const cardGap = parseFloat(cardStyle.marginRight) || 0;
+        const viewportWidth = viewportEl.clientWidth;
 
-    const observer = new ResizeObserver(() => update());
+        if (cardWidth > 0 && viewportWidth > 0) {
+          setLeftCardMeasurements({ viewportWidth, cardWidth, cardGap });
+        }
+      };
 
-    // Use requestAnimationFrame to ensure DOM is fully rendered
-    requestAnimationFrame(() => {
+      const observer = new ResizeObserver(() => update());
+
+      // Initial measurement and setup observer
       update();
       observer.observe(viewportEl);
       observer.observe(flexEl);
-    });
 
-    return () => observer.disconnect();
-  }, [availableCaseClaims]);
+      // Cleanup
+      return () => {
+        observer.disconnect();
+      };
+    };
+
+    const cleanup = checkAndMeasure();
+    return cleanup;
+  }, [availableCaseClaims, focusClaim]);
 
   // Right rail measurements
   useEffect(() => {
@@ -501,14 +515,18 @@ export const CaseFocusPage: React.FC = () => {
 
     const observer = new ResizeObserver(() => update());
 
-    // Use requestAnimationFrame to ensure DOM is fully rendered
-    requestAnimationFrame(() => {
-      update();
-      observer.observe(viewportEl);
-      observer.observe(flexEl);
-    });
+    // Initial measurement and setup observer
+    update();
+    observer.observe(viewportEl);
+    observer.observe(flexEl);
 
-    return () => observer.disconnect();
+    // Also measure on window resize
+    window.addEventListener("resize", update);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
   }, [candidates]);
 
   const leftRailTranslate =
@@ -2724,7 +2742,7 @@ export const CaseFocusPage: React.FC = () => {
                                   position="relative"
                                   zIndex={1}
                                 >
-                                  RELEVANCE
+                                  REL
                                 </Text>
                                 <Text
                                   fontSize="18px"
@@ -2740,8 +2758,8 @@ export const CaseFocusPage: React.FC = () => {
                               <Box
                                 borderRadius="18px"
                                 {...getBoxStyle("blue")}
-                                p={3}
-                                minH="72px"
+                                p={{ base: 2, xl: 3 }}
+                                minH={{ base: "50px", xl: "72px" }}
                                 position="relative"
                                 overflow="visible"
                                 transform="translateZ(0)"
@@ -2757,7 +2775,7 @@ export const CaseFocusPage: React.FC = () => {
                                   position="relative"
                                   zIndex={1}
                                 >
-                                  CONFIDENCE
+                                  CONF
                                 </Text>
                                 <Text
                                   fontSize="18px"
@@ -2775,8 +2793,8 @@ export const CaseFocusPage: React.FC = () => {
                               <Box
                                 borderRadius="18px"
                                 {...getBoxStyle("green")}
-                                p={3}
-                                minH="72px"
+                                p={{ base: 2, xl: 3 }}
+                                minH={{ base: "50px", xl: "72px" }}
                                 position="relative"
                                 overflow="visible"
                                 transform="translateZ(0)"
