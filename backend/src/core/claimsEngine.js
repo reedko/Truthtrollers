@@ -14,9 +14,23 @@ export class ClaimExtractor {
    */
   async loadClaimExtractionPrompts(extractionMode, includeTopicsAndTestimonials, minClaims, maxClaims) {
     // Determine prompt name based on mode and options
-    const modePrefix = extractionMode === 'ranked' ? 'claim_extraction_ranked' : 'claim_extraction_comprehensive';
+    const modePrefixMap = {
+      'edge': 'claim_extraction_edge',
+      'ranked': 'claim_extraction_ranked',
+      'comprehensive': 'claim_extraction_comprehensive'
+    };
+
+    const modePrefix = modePrefixMap[extractionMode] || 'claim_extraction_edge'; // Default to edge
     const topicSuffix = includeTopicsAndTestimonials ? '_with_topics' : '_no_topics';
     const promptName = `${modePrefix}${topicSuffix}`;
+
+    // System prompt name based on mode
+    const systemPromptMap = {
+      'edge': 'claim_extraction_edge_system',
+      'ranked': 'claim_extraction_ranked_system',
+      'comprehensive': 'claim_extraction_ranked_system' // comprehensive uses ranked system prompt
+    };
+    const systemPromptName = systemPromptMap[extractionMode] || 'claim_extraction_edge_system';
 
     // All prompts are now stored in the database - no hardcoded fallbacks
 
@@ -27,9 +41,7 @@ export class ClaimExtractor {
 
     try {
       // Load system prompt
-      const systemPrompt = await this.promptManager.getPrompt(
-        'claim_extraction_ranked_system'
-      );
+      const systemPrompt = await this.promptManager.getPrompt(systemPromptName);
 
       // Load user prompt
       const userPrompt = await this.promptManager.getPrompt(promptName);
@@ -38,6 +50,8 @@ export class ClaimExtractor {
       let userText = userPrompt.user
         .replace(/\{\{minClaims\}\}/g, minClaims)
         .replace(/\{\{maxClaims\}\}/g, maxClaims);
+
+      console.log(`✅ [ClaimExtractor] Loaded ${extractionMode} mode prompts: ${promptName}`);
 
       return {
         system: systemPrompt.system,

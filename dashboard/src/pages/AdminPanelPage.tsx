@@ -229,14 +229,20 @@ export default function AdminPanelPage() {
   return (
     <Box
       minH="100vh"
-      bg="radial-gradient(circle at bottom right, rgba(0, 162, 255, 0.15) 0%, rgba(2, 0, 36, 0.95) 50%)"
+      bgGradient="linear(to-br,
+        rgba(139, 92, 246, 0.25) 0%,
+        rgba(0, 162, 255, 0.2) 20%,
+        rgba(2, 0, 36, 1) 50%,
+        rgba(0, 162, 255, 0.15) 70%,
+        rgba(139, 92, 246, 0.2) 100%
+      )"
       position="relative"
     >
       {/* Scanline overlay for entire page */}
       <Box
         position="fixed"
         inset="0"
-        bgImage="repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 162, 255, 0.02) 2px, rgba(0, 162, 255, 0.02) 4px)"
+        bgImage="repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 162, 255, 0.03) 2px, rgba(0, 162, 255, 0.03) 4px)"
         pointerEvents="none"
         zIndex={0}
       />

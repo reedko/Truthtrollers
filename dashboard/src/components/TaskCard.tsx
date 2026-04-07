@@ -15,6 +15,7 @@ import {
   useDisclosure,
   useToast,
   Tooltip,
+  Portal,
 } from "@chakra-ui/react";
 import { FiTrash2 } from "react-icons/fi";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -422,7 +423,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   // Keep height predictable but not forcing width
   const cardHeight = hideMeta
     ? compact
-      ? "200px"
+      ? "130px"
       : "230px"
     : compact
       ? "340px"
@@ -436,7 +437,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         ref={cardRef}
         className="mr-card mr-card-blue"
         overflow="hidden"
-        p={3}
+        p={compact && hideMeta ? 1 : 3}
         w="100%"
         maxW="unset"
         minW={0}
@@ -450,7 +451,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
         {/* Title bar */}
         <Center>
-          <Text className="mr-badge mr-badge-blue" fontSize="sm" mb={1}>
+          <Text
+            className="mr-badge mr-badge-blue"
+            fontSize={compact && hideMeta ? "7px" : "sm"}
+            mb={compact && hideMeta ? 0 : 1}
+            lineHeight={compact && hideMeta ? "1" : "normal"}
+          >
             {activeTask?.content_type === "reference" ? "Source Details" : "Case Details"}
           </Text>
         </Center>
@@ -483,15 +489,15 @@ const TaskCard: React.FC<TaskCardProps> = ({
         ) : (
           <Tooltip label={activeTask.content_name} placement="top" hasArrow>
             <Box
-              mt={2}
+              mt={compact && hideMeta ? 0 : 2}
               bg="whiteAlpha.700"
               borderRadius="md"
-              mb={2}
-              minH={compact ? "40px" : "48px"}
+              mb={compact && hideMeta ? 1 : 2}
+              minH={compact && hideMeta ? "20px" : compact ? "40px" : "48px"}
               display="flex"
               alignItems="center"
               justifyContent="center"
-              px={2}
+              px={compact && hideMeta ? 1 : 2}
               cursor={
                 activeTask.media_source === "TextPad" ? "pointer" : "default"
               }
@@ -509,9 +515,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
               <Text
                 fontWeight="semibold"
                 color="gray.800"
-                noOfLines={2}
-                fontSize={compact ? "sm" : "md"}
+                noOfLines={1}
+                fontSize={compact && hideMeta ? "9px" : compact ? "sm" : "md"}
                 textAlign="center"
+                overflow="hidden"
+                textOverflow="ellipsis"
+                whiteSpace="nowrap"
               >
                 {activeTask.media_source === "TextPad" ? (
                   activeTask.content_name
@@ -527,6 +536,39 @@ const TaskCard: React.FC<TaskCardProps> = ({
               </Text>
             </Box>
           </Tooltip>
+        )}
+
+        {/* Tiny thumbnail when compact + hideMeta */}
+        {compact && hideMeta && (
+          <Box
+            w="100%"
+            h="60px"
+            overflow="hidden"
+            borderRadius="sm"
+            mb={1}
+          >
+            {imageError ? (
+              <Box
+                w="100%"
+                h="100%"
+                bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <Text fontSize="2xl">📝</Text>
+              </Box>
+            ) : (
+              <Image
+                src={`${API_BASE_URL}/api/image/content/${activeTask.content_id}?t=${imageKey}`}
+                alt="Thumbnail"
+                w="100%"
+                h="100%"
+                objectFit="cover"
+                onError={() => setImageError(true)}
+              />
+            )}
+          </Box>
         )}
 
         {!hideMeta && (
@@ -716,9 +758,17 @@ const TaskCard: React.FC<TaskCardProps> = ({
           </Box>
         )}
 
-        <HStack spacing={2} w="100%">
+        <HStack spacing={compact && hideMeta ? 1 : 2} w="100%">
           <Box flex="1" minW={0}>
-            <Button className="mr-button" onClick={handleSelect} w="100%">
+            <Button
+              className="mr-button"
+              onClick={handleSelect}
+              w="100%"
+              size={compact && hideMeta ? "xs" : "md"}
+              fontSize={compact && hideMeta ? "8px" : "md"}
+              h={compact && hideMeta ? "20px" : "auto"}
+              px={compact && hideMeta ? 1 : undefined}
+            >
               Select
             </Button>
           </Box>
@@ -729,12 +779,21 @@ const TaskCard: React.FC<TaskCardProps> = ({
               closeOnBlur={true}
               closeOnSelect={true}
               placement="bottom"
-              strategy="fixed"
+              isLazy
             >
-              <MenuButton as={Button} className="mr-button" w="100%">
-                <Text ml={-2}>Actions</Text>
+              <MenuButton
+                as={Button}
+                className="mr-button"
+                w="100%"
+                size={compact && hideMeta ? "xs" : "md"}
+                fontSize={compact && hideMeta ? "8px" : "md"}
+                h={compact && hideMeta ? "20px" : "auto"}
+                px={compact && hideMeta ? 1 : undefined}
+              >
+                <Text ml={compact && hideMeta ? 0 : -2}>Actions</Text>
               </MenuButton>
-              <MenuList zIndex={1500} minW="200px">
+              <Portal>
+                <MenuList zIndex={9999} minW="200px" fontSize={compact && hideMeta ? "xs" : "md"}>
                 {isCompleted ? (
                   <MenuItem
                     onClick={handleMarkIncomplete}
@@ -808,6 +867,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                   Archive Task
                 </MenuItem>
               </MenuList>
+              </Portal>
             </Menu>
           </Box>
         </HStack>

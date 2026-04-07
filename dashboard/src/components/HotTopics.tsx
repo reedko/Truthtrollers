@@ -105,7 +105,8 @@ const HotTopics: React.FC = () => {
   }, []);
 
   const handleTopicClick = (contentId: number) => {
-    navigate(`/discussion/${contentId}`);
+    // Navigate to workspace for this content
+    navigate(`/workspace?content_id=${contentId}`);
   };
 
   if (loading) {
@@ -130,7 +131,7 @@ const HotTopics: React.FC = () => {
       backdropFilter="blur(10px)"
       border="1px solid rgba(0, 162, 255, 0.3)"
       borderRadius="8px"
-      p={3}
+      p={{ base: 2, xl: 3 }}
       overflow="hidden"
     >
       {/* Scanlines */}
@@ -150,11 +151,11 @@ const HotTopics: React.FC = () => {
         {/* Header */}
         <Text
           color="#00a2ff"
-          fontSize="0.65rem"
+          fontSize={{ base: "0.55rem", xl: "0.65rem" }}
           fontWeight="700"
           textTransform="uppercase"
-          letterSpacing="2px"
-          mb={3}
+          letterSpacing="1px"
+          mb={2}
           textAlign="center"
           textShadow="0 0 8px rgba(0, 162, 255, 0.6)"
         >
@@ -171,7 +172,7 @@ const HotTopics: React.FC = () => {
             return (
               <Box
                 key={topic.content_id}
-                p={2}
+                p={{ base: 1.5, xl: 2 }}
                 background={
                   index === 0
                     ? "rgba(0, 162, 255, 0.1)"
@@ -199,13 +200,13 @@ const HotTopics: React.FC = () => {
                     : {}
                 }
               >
-                <VStack spacing={2} align="stretch">
+                <VStack spacing={{ base: 1.5, xl: 2 }} align="stretch">
                   {/* Topic Title */}
-                  <HStack spacing={2}>
+                  <HStack spacing={{ base: 1, xl: 2 }} minW={0}>
                     {/* Rank Badge */}
                     <Box
-                      minW="18px"
-                      h="18px"
+                      minW={{ base: "16px", xl: "18px" }}
+                      h={{ base: "16px", xl: "18px" }}
                       display="flex"
                       alignItems="center"
                       justifyContent="center"
@@ -214,33 +215,36 @@ const HotTopics: React.FC = () => {
                           ? "linear-gradient(135deg, rgba(239, 68, 68, 0.3), rgba(239, 68, 68, 0.1))"
                           : "rgba(100, 116, 139, 0.2)"
                       }
-                      borderRadius="4px"
-                      fontSize="0.6rem"
+                      borderRadius="3px"
+                      fontSize={{ base: "0.5rem", xl: "0.6rem" }}
                       fontWeight="700"
                       color={index === 0 ? "#f87171" : "#94a3b8"}
+                      flexShrink={0}
                     >
                       {index + 1}
                     </Box>
 
                     <Text
-                      fontSize="0.7rem"
+                      fontSize={{ base: "0.6rem", xl: "0.7rem" }}
                       fontWeight="600"
                       color="#e2e8f0"
                       isTruncated
                       flex={1}
+                      minW={0}
                     >
                       {topic.task_title}
                     </Text>
 
                     {/* Discussion Count Badge */}
                     <Box
-                      px={2}
+                      px={{ base: 1, xl: 2 }}
                       py={0.5}
                       background="rgba(0, 162, 255, 0.2)"
-                      borderRadius="4px"
-                      fontSize="0.6rem"
+                      borderRadius="3px"
+                      fontSize={{ base: "0.5rem", xl: "0.6rem" }}
                       fontWeight="700"
                       color="#60a5fa"
+                      flexShrink={0}
                     >
                       {total}
                     </Box>
@@ -251,7 +255,7 @@ const HotTopics: React.FC = () => {
                     {/* Split Bar */}
                     <HStack
                       spacing={0}
-                      h="6px"
+                      h={{ base: "5px", xl: "6px" }}
                       borderRadius="3px"
                       overflow="hidden"
                     >
@@ -269,32 +273,34 @@ const HotTopics: React.FC = () => {
 
                     {/* Legend */}
                     <HStack
-                      spacing={3}
+                      spacing={{ base: 2, xl: 3 }}
                       justify="space-between"
-                      fontSize="0.55rem"
+                      fontSize={{ base: "0.5rem", xl: "0.55rem" }}
                     >
                       <HStack spacing={1}>
                         <Box
-                          w="4px"
-                          h="4px"
+                          w={{ base: "3px", xl: "4px" }}
+                          h={{ base: "3px", xl: "4px" }}
                           borderRadius="50%"
                           background="#4ade80"
                           boxShadow="0 0 4px rgba(34, 197, 94, 0.6)"
+                          flexShrink={0}
                         />
-                        <Text color="#4ade80" fontWeight="600">
+                        <Text color="#4ade80" fontWeight="600" isTruncated>
                           {topic.pro_count} Pro
                         </Text>
                       </HStack>
                       <HStack spacing={1}>
-                        <Text color="#f87171" fontWeight="600">
+                        <Text color="#f87171" fontWeight="600" isTruncated>
                           {topic.con_count} Con
                         </Text>
                         <Box
-                          w="4px"
-                          h="4px"
+                          w={{ base: "3px", xl: "4px" }}
+                          h={{ base: "3px", xl: "4px" }}
                           borderRadius="50%"
                           background="#f87171"
                           boxShadow="0 0 4px rgba(239, 68, 68, 0.6)"
+                          flexShrink={0}
                         />
                       </HStack>
                     </HStack>

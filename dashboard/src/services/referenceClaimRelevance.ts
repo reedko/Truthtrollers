@@ -25,6 +25,22 @@ export interface ReferenceClaimTaskLink {
   source_table?: string; // Added to distinguish real links from AI assessments
 }
 
+export interface ReferenceDocumentLink {
+  ref_claim_link_id: number;
+  claim_id: number; // task claim ID
+  reference_content_id: number;
+  stance: "support" | "refute" | "nuance" | "insufficient";
+  score: number;
+  confidence?: number;
+  support_level?: number;
+  rationale?: string;
+  evidence_text?: string; // snippet
+  evidence_offsets?: string;
+  created_by_ai: boolean;
+  verified_by_user_id?: number;
+  created_at: string;
+}
+
 export interface ClaimWithRelevance extends Claim {
   relevanceScore: number;
   stance?: "support" | "refute" | "nuance" | "insufficient";
@@ -49,6 +65,27 @@ export async function fetchReferenceClaimTaskLinks(
 
   if (!response.ok) {
     throw new Error("Failed to fetch reference claim task links");
+  }
+
+  return response.json();
+}
+
+/**
+ * Fetch document-level reference_claim_links (dotted lines) for a specific task claim
+ * These are AI assessments of entire reference documents, not individual claims
+ */
+export async function fetchReferenceDocumentLinks(
+  taskClaimId: number
+): Promise<ReferenceDocumentLink[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/task-claim/reference-links/${taskClaimId}`,
+    {
+      credentials: "include",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch reference document links");
   }
 
   return response.json();

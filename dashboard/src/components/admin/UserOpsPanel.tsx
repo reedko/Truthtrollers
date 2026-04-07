@@ -26,9 +26,21 @@ import {
   StatLabel,
   StatNumber,
   StatHelpText,
+  Button,
+  IconButton,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  useToast,
+  useDisclosure,
 } from "@chakra-ui/react";
-import { FiUsers, FiActivity, FiBarChart2, FiClock } from "react-icons/fi";
+import { FiUsers, FiActivity, FiBarChart2, FiClock, FiEdit2, FiTrash } from "react-icons/fi";
 import { api } from "../../services/api";
+import { useAuthStore } from "../../store/useAuthStore";
 
 interface OnlineUser {
   user_id: number;
@@ -137,6 +149,117 @@ export default function UserOpsPanel({
   loginEventFilter,
   setLoginEventFilter,
 }: UserOpsPanelProps) {
+  const toast = useToast();
+  const currentUser = useAuthStore((s) => s.user);
+  const [allUsers, setAllUsers] = useState<any[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [newRole, setNewRole] = useState<string>("");
+  const [availableRoles, setAvailableRoles] = useState<any[]>([]);
+  const [userStatusFilter, setUserStatusFilter] = useState<"active" | "disabled" | "all">("active");
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
+  // Load all users and roles for management
+  useEffect(() => {
+    loadAllUsers();
+    loadRoles();
+  }, []);
+
+  const loadAllUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      const response = await api.get("/api/admin/users");
+      setAllUsers(response.data.users || []);
+    } catch (error) {
+      console.error("Failed to load all users:", error);
+      toast({
+        title: "Error loading users",
+        status: "error",
+        duration: 3000,
+      });
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  const loadRoles = async () => {
+    try {
+      const response = await api.get("/api/admin/roles");
+      setAvailableRoles(response.data.roles || []);
+    } catch (error) {
+      console.error("Failed to load roles:", error);
+      // Fallback to default roles
+      setAvailableRoles([
+        { role_id: 1, name: "user", description: "Standard user" },
+        { role_id: 2, name: "admin", description: "Administrator" },
+        { role_id: 3, name: "super_admin", description: "Super Administrator" },
+      ]);
+    }
+  };
+
+  const handleUpdateRole = async () => {
+    if (!selectedUser || !newRole) return;
+
+    try {
+      await api.put(`/api/admin/users/${selectedUser.user_id}/role`, {
+        role: newRole,
+      });
+
+      toast({
+        title: "Role updated successfully",
+        description: `${selectedUser.username} is now a ${newRole}`,
+        status: "success",
+        duration: 3000,
+      });
+
+      // Reload users
+      await loadAllUsers();
+      onClose();
+    } catch (error: any) {
+      console.error("Failed to update user role:", error);
+      toast({
+        title: "Error updating role",
+        description: error.response?.data?.error || "Failed to update user role",
+        status: "error",
+        duration: 5000,
+      });
+    }
+  };
+
+  const toggleUserEnabled = async (user: any) => {
+    const newEnabledStatus = !user.enabled;
+
+    try {
+      await api.put(`/api/admin/users/${user.user_id}/toggle-enabled`, {
+        enabled: newEnabledStatus,
+      });
+
+      toast({
+        title: newEnabledStatus ? "User enabled" : "User disabled",
+        description: `${user.username} has been ${newEnabledStatus ? "enabled" : "disabled"}`,
+        status: newEnabledStatus ? "success" : "warning",
+        duration: 3000,
+      });
+
+      // Reload users
+      await loadAllUsers();
+    } catch (error: any) {
+      console.error("Failed to toggle user enabled status:", error);
+      toast({
+        title: "Error updating user status",
+        description: error.response?.data?.error || "Failed to update user status",
+        status: "error",
+        duration: 5000,
+      });
+    }
+  };
+
+  const openEditRoleModal = (user: any) => {
+    setSelectedUser(user);
+    setNewRole(user.role);
+    onOpen();
+  };
+
   const getActivityBadgeColor = (type: string) => {
     const colors: Record<string, string> = {
       evidence_run: "purple",
@@ -209,26 +332,22 @@ export default function UserOpsPanel({
             gap={4}
           >
             {[
-              { icon: FiUsers, label: "Total Users", value: stats.totalUsers, subtext: `${onlineUsers.length} online` },
-              { icon: FiBarChart2, label: "Total Content", value: stats.totalContent, subtext: `${stats.totalClaims} claims` },
-              { icon: FiActivity, label: "Activities (24h)", value: stats.activitiesLast24h, subtext: "Last 24 hours" },
-              { icon: FiActivity, label: "Activities (7d)", value: stats.activitiesLast7d, subtext: "Last 7 days" },
+              { icon: FiUsers, label: "Total Users", value: stats.totalUsers, subtext: `${onlineUsers.length} online`, color: "blue" },
+              { icon: FiBarChart2, label: "Total Content", value: stats.totalContent, subtext: `${stats.totalClaims} claims`, color: "purple" },
+              { icon: FiActivity, label: "Activities (24h)", value: stats.activitiesLast24h, subtext: "Last 24 hours", color: "green" },
+              { icon: FiActivity, label: "Activities (7d)", value: stats.activitiesLast7d, subtext: "Last 7 days", color: "yellow" },
             ].map((stat, idx) => (
               <Box
                 key={idx}
-                bg="rgba(0, 162, 255, 0.05)"
-                borderWidth="1px"
-                borderColor="rgba(0, 162, 255, 0.3)"
-                borderRadius="md"
+                className={`mr-card mr-card-${stat.color}`}
+                position="relative"
+                overflow="hidden"
                 p={4}
-                _hover={{
-                  borderColor: "cyan.400",
-                  boxShadow: "0 0 20px rgba(0, 162, 255, 0.3)",
-                  transform: "translateY(-2px)",
-                }}
                 transition="all 0.3s"
               >
-                <Stat>
+                <div className={`mr-glow-bar mr-glow-bar-${stat.color}`} />
+                <div className="mr-scanlines" />
+                <Stat position="relative" zIndex={1}>
                   <HStack mb={2}>
                     <Icon as={stat.icon} boxSize={5} color="cyan.400" />
                     <StatLabel color="gray.300" fontSize="sm">{stat.label}</StatLabel>
@@ -244,6 +363,9 @@ export default function UserOpsPanel({
         {/* Tabs */}
         <Tabs variant="soft-rounded" colorScheme="cyan">
           <TabList flexWrap="wrap" gap={2}>
+            <Tab _selected={{ bg: "rgba(0, 162, 255, 0.2)", color: "cyan.300" }} fontSize="sm">
+              All Users
+            </Tab>
             <Tab _selected={{ bg: "rgba(0, 162, 255, 0.2)", color: "cyan.300" }} fontSize="sm">
               Online Users
             </Tab>
@@ -265,6 +387,182 @@ export default function UserOpsPanel({
           </TabList>
 
           <TabPanels>
+            {/* All Users Tab */}
+            <TabPanel px={0}>
+              <VStack align="stretch" spacing={3}>
+                <HStack justify="space-between">
+                  <Text fontSize="lg" fontWeight="bold" color="cyan.300">
+                    All Users ({allUsers.filter(u =>
+                      userStatusFilter === "all" ? true :
+                      userStatusFilter === "active" ? (u.enabled !== 0 && u.enabled !== false) :
+                      (u.enabled === 0 || u.enabled === false)
+                    ).length})
+                  </Text>
+                  <Button
+                    size="sm"
+                    colorScheme="cyan"
+                    variant="outline"
+                    onClick={loadAllUsers}
+                    isLoading={loadingUsers}
+                  >
+                    Refresh
+                  </Button>
+                </HStack>
+
+                {/* User Status Filter */}
+                <HStack spacing={2}>
+                  <Text fontSize="sm" color="gray.400">Show:</Text>
+                  <Button
+                    size="xs"
+                    colorScheme={userStatusFilter === "active" ? "green" : "gray"}
+                    variant={userStatusFilter === "active" ? "solid" : "outline"}
+                    onClick={() => setUserStatusFilter("active")}
+                  >
+                    Active Users
+                  </Button>
+                  <Button
+                    size="xs"
+                    colorScheme={userStatusFilter === "disabled" ? "red" : "gray"}
+                    variant={userStatusFilter === "disabled" ? "solid" : "outline"}
+                    onClick={() => setUserStatusFilter("disabled")}
+                  >
+                    Disabled Users
+                  </Button>
+                  <Button
+                    size="xs"
+                    colorScheme={userStatusFilter === "all" ? "cyan" : "gray"}
+                    variant={userStatusFilter === "all" ? "solid" : "outline"}
+                    onClick={() => setUserStatusFilter("all")}
+                  >
+                    All Users
+                  </Button>
+                </HStack>
+
+                {loadingUsers ? (
+                  <Center py={10}>
+                    <Spinner color="cyan.300" size="xl" />
+                  </Center>
+                ) : (
+                  <Box
+                    className="mr-card mr-card-blue"
+                    position="relative"
+                    overflow="hidden"
+                    maxH="500px"
+                    overflowY="auto"
+                  >
+                    <div className="mr-glow-bar mr-glow-bar-blue" />
+                    <div className="mr-scanlines" />
+                    <Table variant="simple" size="sm">
+                      <Thead position="sticky" top={0} bg="rgba(15, 23, 42, 0.95)" zIndex={1}>
+                        <Tr>
+                          <Th color="gray.400" width="70px">Status</Th>
+                          <Th color="gray.400" width="140px">Username</Th>
+                          <Th color="gray.400" width="180px">Email</Th>
+                          <Th color="gray.400" width="90px">Role</Th>
+                          <Th color="gray.400" width="70px">Score</Th>
+                          <Th color="gray.400" width="90px">Joined</Th>
+                          <Th color="gray.400" width="100px">Last Login</Th>
+                          <Th color="gray.400" width="90px">Actions</Th>
+                        </Tr>
+                      </Thead>
+                      <Tbody>
+                        {allUsers
+                          .filter(user => {
+                            if (userStatusFilter === "all") return true;
+                            if (userStatusFilter === "active") return user.enabled !== 0 && user.enabled !== false;
+                            if (userStatusFilter === "disabled") return user.enabled === 0 || user.enabled === false;
+                            return true;
+                          })
+                          .map((user) => (
+                          <Tr
+                            key={user.user_id}
+                            _hover={{ bg: "rgba(0, 162, 255, 0.05)" }}
+                            opacity={user.enabled === false ? 0.5 : 1}
+                          >
+                            <Td>
+                              <Text
+                                color={user.is_online ? "green.400" : "red.500"}
+                                fontSize="2xl"
+                              >
+                                {user.is_online ? "●" : "●"}
+                              </Text>
+                            </Td>
+                            <Td color="gray.300" fontWeight="medium" fontSize="xs">
+                              {user.username}
+                              {user.isDemo && (
+                                <Badge ml={1} colorScheme="orange" fontSize="xs">
+                                  Demo
+                                </Badge>
+                              )}
+                              {user.enabled === false && (
+                                <Badge ml={1} colorScheme="red" fontSize="xs">
+                                  Disabled
+                                </Badge>
+                              )}
+                            </Td>
+                            <Td color="gray.400" fontSize="xs">
+                              {user.email}
+                            </Td>
+                            <Td>
+                              <Badge
+                                colorScheme={
+                                  user.role === "super_admin"
+                                    ? "purple"
+                                    : user.role === "admin"
+                                      ? "blue"
+                                      : "gray"
+                                }
+                                fontSize="xs"
+                              >
+                                {user.role === "super_admin" ? "S" : user.role === "admin" ? "A" : "U"}
+                              </Badge>
+                            </Td>
+                            <Td color="cyan.300" fontWeight="bold" fontSize="xs">
+                              {user.verimeter_score !== null && user.verimeter_score !== undefined
+                                ? Number(user.verimeter_score).toFixed(1)
+                                : "N/A"}
+                            </Td>
+                            <Td color="gray.400" fontSize="xs">
+                              {user.registered_at
+                                ? new Date(user.registered_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })
+                                : "N/A"}
+                            </Td>
+                            <Td color="gray.400" fontSize="xs">
+                              {user.last_accessed_at
+                                ? new Date(user.last_accessed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })
+                                : "Never"}
+                            </Td>
+                            <Td>
+                              <HStack spacing={1}>
+                                <IconButton
+                                  size="xs"
+                                  colorScheme="cyan"
+                                  variant="outline"
+                                  aria-label="Edit role"
+                                  icon={<Icon as={FiEdit2} />}
+                                  onClick={() => openEditRoleModal(user)}
+                                  isDisabled={user.user_id === currentUser?.user_id && currentUser?.role !== 'super_admin'}
+                                />
+                                <IconButton
+                                  size="xs"
+                                  colorScheme={user.enabled === false ? "green" : "red"}
+                                  variant="outline"
+                                  aria-label={user.enabled === false ? "Enable user" : "Disable user"}
+                                  icon={<Icon as={FiTrash} />}
+                                  onClick={() => toggleUserEnabled(user)}
+                                  isDisabled={user.user_id === currentUser?.user_id}
+                                />
+                              </HStack>
+                            </Td>
+                          </Tr>
+                        ))}
+                      </Tbody>
+                    </Table>
+                  </Box>
+                )}
+              </VStack>
+            </TabPanel>
+
             {/* Online Users Tab */}
             <TabPanel px={0}>
               <VStack align="stretch" spacing={3}>
@@ -286,7 +584,15 @@ export default function UserOpsPanel({
                     <Text color="gray.500">No users currently online</Text>
                   </Center>
                 ) : (
-                  <Box overflowX="auto" maxH="400px" overflowY="auto">
+                  <Box
+                    className="mr-card mr-card-blue"
+                    position="relative"
+                    overflow="hidden"
+                    maxH="400px"
+                    overflowY="auto"
+                  >
+                    <div className="mr-glow-bar mr-glow-bar-blue" />
+                    <div className="mr-scanlines" />
                     <Table variant="simple" size="sm">
                       <Thead position="sticky" top={0} bg="rgba(15, 23, 42, 0.95)" zIndex={1}>
                         <Tr>
@@ -353,7 +659,15 @@ export default function UserOpsPanel({
                     <Text color="gray.500">No recent activities</Text>
                   </Center>
                 ) : (
-                  <Box overflowX="auto" maxH="400px" overflowY="auto">
+                  <Box
+                    className="mr-card mr-card-purple"
+                    position="relative"
+                    overflow="hidden"
+                    maxH="400px"
+                    overflowY="auto"
+                  >
+                    <div className="mr-glow-bar mr-glow-bar-purple" />
+                    <div className="mr-scanlines" />
                     <Table variant="simple" size="sm">
                       <Thead position="sticky" top={0} bg="rgba(15, 23, 42, 0.95)" zIndex={1}>
                         <Tr>
@@ -416,7 +730,15 @@ export default function UserOpsPanel({
                     <Text color="gray.500">No login attempts recorded</Text>
                   </Center>
                 ) : (
-                  <Box overflowX="auto" maxH="400px" overflowY="auto">
+                  <Box
+                    className="mr-card mr-card-green"
+                    position="relative"
+                    overflow="hidden"
+                    maxH="400px"
+                    overflowY="auto"
+                  >
+                    <div className="mr-glow-bar mr-glow-bar-green" />
+                    <div className="mr-scanlines" />
                     <Table variant="simple" size="sm">
                       <Thead position="sticky" top={0} bg="rgba(15, 23, 42, 0.95)" zIndex={1}>
                         <Tr>
@@ -479,7 +801,15 @@ export default function UserOpsPanel({
                     <Text color="gray.500">No login events recorded</Text>
                   </Center>
                 ) : (
-                  <Box overflowX="auto" maxH="400px" overflowY="auto">
+                  <Box
+                    className="mr-card mr-card-blue"
+                    position="relative"
+                    overflow="hidden"
+                    maxH="400px"
+                    overflowY="auto"
+                  >
+                    <div className="mr-glow-bar mr-glow-bar-blue" />
+                    <div className="mr-scanlines" />
                     <Table variant="simple" size="sm">
                       <Thead position="sticky" top={0} bg="rgba(15, 23, 42, 0.95)" zIndex={1}>
                         <Tr>
@@ -547,7 +877,15 @@ export default function UserOpsPanel({
                     <Text color="gray.500">No registration attempts recorded</Text>
                   </Center>
                 ) : (
-                  <Box overflowX="auto" maxH="400px" overflowY="auto">
+                  <Box
+                    className="mr-card mr-card-yellow"
+                    position="relative"
+                    overflow="hidden"
+                    maxH="400px"
+                    overflowY="auto"
+                  >
+                    <div className="mr-glow-bar mr-glow-bar-yellow" />
+                    <div className="mr-scanlines" />
                     <Table variant="simple" size="sm">
                       <Thead position="sticky" top={0} bg="rgba(15, 23, 42, 0.95)" zIndex={1}>
                         <Tr>
@@ -596,7 +934,15 @@ export default function UserOpsPanel({
                     <Text color="gray.500">No contributor data available</Text>
                   </Center>
                 ) : (
-                  <Box overflowX="auto" maxH="400px" overflowY="auto">
+                  <Box
+                    className="mr-card mr-card-purple"
+                    position="relative"
+                    overflow="hidden"
+                    maxH="400px"
+                    overflowY="auto"
+                  >
+                    <div className="mr-glow-bar mr-glow-bar-purple" />
+                    <div className="mr-scanlines" />
                     <Table variant="simple" size="sm">
                       <Thead position="sticky" top={0} bg="rgba(15, 23, 42, 0.95)" zIndex={1}>
                         <Tr>
@@ -636,6 +982,106 @@ export default function UserOpsPanel({
           </TabPanels>
         </Tabs>
       </VStack>
+
+      {/* Edit Role Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} isCentered>
+        <ModalOverlay bg="blackAlpha.800" backdropFilter="blur(10px)" />
+        <ModalContent
+          className="mr-card mr-card-purple"
+          position="relative"
+        >
+          <div className="mr-glow-bar mr-glow-bar-purple" />
+          <div className="mr-scanlines" />
+          <ModalHeader color="purple.300">
+            Edit User Role
+          </ModalHeader>
+          <ModalCloseButton color="gray.400" />
+          <ModalBody>
+            <VStack spacing={4} align="stretch">
+              <Box>
+                <Text color="gray.400" fontSize="sm" mb={1}>
+                  User
+                </Text>
+                <Text color="white" fontWeight="bold">
+                  {selectedUser?.username} ({selectedUser?.email})
+                </Text>
+              </Box>
+              <Box>
+                <Text color="gray.400" fontSize="sm" mb={2}>
+                  Current Role
+                </Text>
+                <Badge
+                  colorScheme={
+                    selectedUser?.role === "super_admin"
+                      ? "purple"
+                      : selectedUser?.role === "admin"
+                        ? "blue"
+                        : "gray"
+                  }
+                  fontSize="md"
+                  px={3}
+                  py={1}
+                >
+                  {selectedUser?.role}
+                </Badge>
+              </Box>
+              <Box>
+                <Text color="gray.400" fontSize="sm" mb={2}>
+                  New Role
+                </Text>
+                <Select
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value)}
+                  bg="rgba(15, 23, 42, 0.8)"
+                  borderColor="rgba(0, 162, 255, 0.3)"
+                  color="white"
+                  _hover={{ borderColor: "cyan.300" }}
+                  _focus={{ borderColor: "cyan.300", boxShadow: "0 0 0 1px rgba(0, 162, 255, 0.5)" }}
+                >
+                  <option value="" style={{ background: "#0f172a" }}>
+                    Select a role...
+                  </option>
+                  {availableRoles.map((role) => (
+                    <option key={role.role_id} value={role.name} style={{ background: "#0f172a" }}>
+                      {role.name.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase())}
+                    </option>
+                  ))}
+                </Select>
+              </Box>
+              <Box
+                bg="rgba(139, 92, 246, 0.1)"
+                borderWidth="1px"
+                borderColor="purple.500"
+                borderRadius="md"
+                p={3}
+              >
+                <Text color="purple.300" fontSize="xs">
+                  <strong>Note:</strong> Changing a user to Super Admin will grant them full access
+                  to this admin panel and all administrative functions.
+                </Text>
+              </Box>
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <HStack spacing={3}>
+              <Button
+                variant="outline"
+                colorScheme="gray"
+                onClick={onClose}
+              >
+                Cancel
+              </Button>
+              <Button
+                colorScheme="cyan"
+                onClick={handleUpdateRole}
+                isDisabled={!newRole || newRole === selectedUser?.role}
+              >
+                Update Role
+              </Button>
+            </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 }

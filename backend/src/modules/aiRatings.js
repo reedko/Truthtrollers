@@ -17,14 +17,24 @@ import logger from "../utils/logger.js";
  */
 export async function calculateAIClaimScore(query, claimId) {
   try {
+    // Include AI ratings from both claim_links AND reference_claim_task_links
     const [result] = await query(
       `SELECT COALESCE(AVG(support_level), 0) as ai_score
-       FROM claim_links
-       WHERE target_claim_id = ?
-         AND disabled = 0
-         AND created_by_ai = 1
-         AND support_level != 0`,
-      [claimId]
+       FROM (
+         SELECT support_level
+         FROM claim_links
+         WHERE target_claim_id = ?
+           AND disabled = 0
+           AND created_by_ai = 1
+           AND support_level != 0
+         UNION ALL
+         SELECT support_level
+         FROM reference_claim_task_links
+         WHERE task_claim_id = ?
+           AND created_by_ai = 1
+           AND support_level != 0
+       ) as combined_ratings`,
+      [claimId, claimId]
     );
 
     let score = result?.ai_score || 0;
@@ -278,16 +288,25 @@ export async function getAIEvidenceForClaim(query, claimId) {
  */
 export async function getAIUserRatingCounts(query, contentId) {
   try {
+    // Count ratings from both claim_links AND reference_claim_task_links
     const [result] = await query(
       `SELECT
-        SUM(CASE WHEN cl.created_by_ai = 1 THEN 1 ELSE 0 END) as ai_count,
-        SUM(CASE WHEN cl.created_by_ai = 0 THEN 1 ELSE 0 END) as user_count,
+        SUM(CASE WHEN created_by_ai = 1 THEN 1 ELSE 0 END) as ai_count,
+        SUM(CASE WHEN created_by_ai = 0 THEN 1 ELSE 0 END) as user_count,
         COUNT(*) as total_count
-       FROM claim_links cl
-       INNER JOIN content_claims cc ON cl.target_claim_id = cc.claim_id
-       WHERE cc.content_id = ?
-         AND cl.disabled = 0`,
-      [contentId]
+       FROM (
+         SELECT cl.created_by_ai
+         FROM claim_links cl
+         INNER JOIN content_claims cc ON cl.target_claim_id = cc.claim_id
+         WHERE cc.content_id = ?
+           AND cl.disabled = 0
+         UNION ALL
+         SELECT rctl.created_by_ai
+         FROM reference_claim_task_links rctl
+         INNER JOIN content_claims cc ON rctl.task_claim_id = cc.claim_id
+         WHERE cc.content_id = ?
+       ) as combined_ratings`,
+      [contentId, contentId]
     );
 
     return {

@@ -22,10 +22,13 @@ import AdvancedPromptEditor from "./AdvancedPromptEditor";
 export default function EvidenceOpsPanel() {
   const [evidenceMode, setEvidenceMode] = useState<string>("fringe_on_support");
   const [evidenceModeLoading, setEvidenceModeLoading] = useState(false);
+  const [extractionMode, setExtractionMode] = useState<string>("edge");
+  const [extractionModeLoading, setExtractionModeLoading] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
     loadEvidenceConfig();
+    loadExtractionConfig();
   }, []);
 
   const loadEvidenceConfig = async () => {
@@ -35,6 +38,16 @@ export default function EvidenceOpsPanel() {
       setEvidenceMode(mode);
     } catch (error) {
       console.error("Failed to load evidence config:", error);
+    }
+  };
+
+  const loadExtractionConfig = async () => {
+    try {
+      const response = await api.get("/api/extraction-mode/default");
+      const mode = response.data.defaultMode || "edge";
+      setExtractionMode(mode);
+    } catch (error) {
+      console.error("Failed to load extraction config:", error);
     }
   };
 
@@ -63,6 +76,34 @@ export default function EvidenceOpsPanel() {
       });
     } finally {
       setEvidenceModeLoading(false);
+    }
+  };
+
+  const handleExtractionModeChange = async (newMode: string) => {
+    try {
+      setExtractionModeLoading(true);
+      const response = await api.put("/api/extraction-mode/default", { extractionMode: newMode });
+      const confirmedMode = response.data.defaultMode || newMode;
+      setExtractionMode(confirmedMode);
+
+      toast({
+        title: "Claim Extraction Mode Updated",
+        description: `Mode changed to: ${newMode}`,
+        status: "success",
+        duration: 3000,
+      });
+    } catch (error: any) {
+      console.error("Failed to update extraction mode:", error);
+      await loadExtractionConfig();
+
+      toast({
+        title: "Failed to update mode",
+        description: error.response?.data?.error || "Unknown error",
+        status: "error",
+        duration: 5000,
+      });
+    } finally {
+      setExtractionModeLoading(false);
     }
   };
 
@@ -245,6 +286,143 @@ export default function EvidenceOpsPanel() {
                     <Spinner color="cyan.400" />
                   </Box>
                 )}
+
+                <Divider borderColor="cyan.700" opacity={0.3} my={6} />
+
+                {/* Claim Extraction Mode Section */}
+                <Box>
+                  <Text fontSize="xl" fontWeight="bold" mb={4} color="cyan.300" textShadow="0 0 10px rgba(0, 162, 255, 0.5)">
+                    Claim Extraction Mode
+                  </Text>
+                  <Text fontSize="sm" color="gray.400" mb={4}>
+                    Controls how claims are extracted from content and evidence sources
+                  </Text>
+
+                  {/* Extraction Mode Selector */}
+                  <Box mb={6}>
+                    <Text fontWeight="bold" mb={3} color="cyan.300">
+                      Current Extraction Mode:
+                    </Text>
+                    <Select
+                      value={extractionMode}
+                      onChange={(e) => handleExtractionModeChange(e.target.value)}
+                      isDisabled={extractionModeLoading}
+                      bg="rgba(0, 0, 0, 0.4)"
+                      borderColor="cyan.500"
+                      size="lg"
+                      color="gray.100"
+                      _hover={{ borderColor: "cyan.400" }}
+                      _focus={{ borderColor: "cyan.400", boxShadow: "0 0 0 1px var(--chakra-colors-cyan-400)" }}
+                    >
+                      <option value="edge" style={{ background: "#1a202c" }}>
+                        Edge: Thematic Extraction (Default - Recommended)
+                      </option>
+                      <option value="ranked" style={{ background: "#1a202c" }}>
+                        Ranked: Material-First Extraction
+                      </option>
+                      <option value="comprehensive" style={{ background: "#1a202c" }}>
+                        Comprehensive: Cast Wide Net
+                      </option>
+                    </Select>
+                  </Box>
+
+                  {/* Extraction Mode Descriptions */}
+                  <Box
+                    p={5}
+                    bg="rgba(0, 162, 255, 0.05)"
+                    borderRadius="md"
+                    borderWidth="1px"
+                    borderColor="rgba(0, 162, 255, 0.3)"
+                  >
+                    <VStack align="start" spacing={5}>
+                      <Text fontWeight="bold" color="cyan.300" fontSize="lg">Extraction Mode Details:</Text>
+
+                      <Box
+                        pl={4}
+                        borderLeft="3px solid"
+                        borderColor="cyan.500"
+                        bg="rgba(0, 162, 255, 0.05)"
+                        p={3}
+                        borderRadius="md"
+                      >
+                        <Text fontWeight="semibold" color="cyan.300" mb={2}>Edge: Thematic Extraction (Default)</Text>
+                        <Text fontSize="sm" color="gray.300" mb={2}>
+                          <strong>Best for:</strong> Extracting claims central to articles and matching source claim language to case claims
+                        </Text>
+                        <VStack align="start" fontSize="xs" color="gray.400" spacing={1}>
+                          <Text>• <strong>For Case Claims:</strong> Identifies core thesis, extracts thematically central claims only</Text>
+                          <Text>• <strong>For Source Claims:</strong> Mirrors case claim language, ensures instant relationship clarity</Text>
+                          <Text>• <strong>Ranking:</strong> Thematic centrality → Controversy → Specificity</Text>
+                          <Text>• <strong>Quality:</strong> Highest - filters out tangential claims</Text>
+                          <Text>• <strong>Context-Aware:</strong> Source extraction receives case claim for better matching</Text>
+                          <Text>• <strong>Use case:</strong> When you want claims "halfway to the rationale" - instantly recognizable relationships</Text>
+                        </VStack>
+                      </Box>
+
+                      <Box
+                        pl={4}
+                        borderLeft="3px solid"
+                        borderColor="purple.500"
+                        bg="rgba(167, 139, 250, 0.05)"
+                        p={3}
+                        borderRadius="md"
+                      >
+                        <Text fontWeight="semibold" color="purple.300" mb={2}>Ranked: Material-First Extraction</Text>
+                        <Text fontSize="sm" color="gray.300" mb={2}>
+                          <strong>Best for:</strong> Traditional fact-checking prioritizing importance
+                        </Text>
+                        <VStack align="start" fontSize="xs" color="gray.400" spacing={1}>
+                          <Text>• <strong>Ranking:</strong> Materiality → Controversy → Specificity</Text>
+                          <Text>• <strong>Quality:</strong> High - focuses on central and controversial claims</Text>
+                          <Text>• <strong>Claims:</strong> 3-9 claims, atomic extraction</Text>
+                          <Text>• <strong>Use case:</strong> Standard fact-checking without thematic filtering</Text>
+                        </VStack>
+                      </Box>
+
+                      <Box
+                        pl={4}
+                        borderLeft="3px solid"
+                        borderColor="green.500"
+                        bg="rgba(74, 222, 128, 0.05)"
+                        p={3}
+                        borderRadius="md"
+                      >
+                        <Text fontWeight="semibold" color="green.300" mb={2}>Comprehensive: Cast Wide Net</Text>
+                        <Text fontSize="sm" color="gray.300" mb={2}>
+                          <strong>Best for:</strong> Research mode - extract everything verifiable
+                        </Text>
+                        <VStack align="start" fontSize="xs" color="gray.400" spacing={1}>
+                          <Text>• <strong>Claims:</strong> 5-12 claims, maximum extraction</Text>
+                          <Text>• <strong>Quality:</strong> Medium - includes more background claims</Text>
+                          <Text>• <strong>Filtering:</strong> Minimal - extracts all falsifiable claims</Text>
+                          <Text>• <strong>Use case:</strong> When you need comprehensive claim coverage</Text>
+                        </VStack>
+                      </Box>
+                    </VStack>
+                  </Box>
+
+                  {/* Extraction Mode Note */}
+                  <Box
+                    p={4}
+                    mt={4}
+                    bg="rgba(34, 197, 94, 0.1)"
+                    borderRadius="md"
+                    borderWidth="1px"
+                    borderColor="green.700"
+                  >
+                    <Text fontSize="sm" color="green.200">
+                      <strong>💡 Recommendation:</strong> Use <strong>Edge mode</strong> for the best claim quality.
+                      It extracts thematically central claims and ensures source claims match case claim terminology,
+                      making relationships instantly clear.
+                    </Text>
+                  </Box>
+
+                  {extractionModeLoading && (
+                    <Box textAlign="center" mt={4}>
+                      <Spinner color="cyan.400" />
+                    </Box>
+                  )}
+                </Box>
               </VStack>
             </TabPanel>
 

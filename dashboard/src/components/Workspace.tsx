@@ -50,6 +50,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import { useBreakpointValue } from "@chakra-ui/react";
 import MobileWorkspaceShell from "./MobileWorkspaceShell";
 import usePermissions from "../hooks/usePermissions";
+import { useVerimeterMode } from "../contexts/VerimeterModeContext";
 
 interface WorkspaceProps {
   contentId: number;
@@ -68,6 +69,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
 }) => {
   // Get user permissions for permission-based UI
   const { hasPermission } = usePermissions();
+  const { mode, aiWeight } = useVerimeterMode();
 
   const [claims, setClaims] = useState<Claim[]>([]);
   const [claimLinks, setClaimLinks] = useState<ClaimLink[]>([]);
@@ -466,7 +468,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
 
     // ✅ Update scores
     await updateScoresForContent(contentId, viewerId);
-    const scores = await fetchContentScores(contentId, viewerId);
+    const scores = await fetchContentScores(contentId, viewerId, mode, aiWeight);
     setVerimeterScore(contentId, scores?.verimeterScore ?? null);
     // 🔔 notify any listeners to refetch or re-read store
     window.dispatchEvent(

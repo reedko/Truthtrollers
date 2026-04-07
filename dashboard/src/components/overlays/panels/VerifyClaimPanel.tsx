@@ -24,6 +24,7 @@ import {
   updateScoresForContent,
   fetchContentScores,
 } from "../../../services/useDashboardAPI";
+import { useVerimeterMode } from "../../../contexts/VerimeterModeContext";
 
 type Props = {
   claim: Claim;
@@ -44,6 +45,7 @@ export default function VerifyClaimPanel({
 }: Props) {
   const close = useOverlayStore((s) => s.close);
   const toast = useToast();
+  const { mode, aiWeight } = useVerimeterMode();
   const viewerIdFromStore = useTaskStore((s) => s.viewingUserId);
   const setVerimeterScore = useTaskStore((s) => s.setVerimeterScore);
 
@@ -68,7 +70,7 @@ export default function VerifyClaimPanel({
 
       // Refresh scores and store
       await updateScoresForContent(contentId, viewerId ?? null);
-      const scores = await fetchContentScores(contentId, viewerId ?? null);
+      const scores = await fetchContentScores(contentId, viewerId ?? null, mode, aiWeight);
       setVerimeterScore(contentId, scores?.verimeterScore ?? null);
       window.dispatchEvent(
         new CustomEvent("verimeter:updated", { detail: { contentId } })

@@ -18,6 +18,7 @@ interface TruthGaugeProps {
   label?: string;
   size?: { w?: string | number; h?: string | number }; // ✅ new
   normalize?: boolean;
+  dense?: boolean;
 }
 
 const TruthGauge: React.FC<TruthGaugeProps> = ({
@@ -25,6 +26,7 @@ const TruthGauge: React.FC<TruthGaugeProps> = ({
   label = "Consensus",
   size,
   normalize = false,
+  dense = false,
 }) => {
   const normalizedToAll = ((score + 1) / 2) * 100;
   const [animatedValue, setAnimatedValue] = useState(0);
@@ -59,6 +61,7 @@ const TruthGauge: React.FC<TruthGaugeProps> = ({
         value={animatedValue}
         maxValue={100}
         circleRatio={0.5}
+        strokeWidth={dense ? 12 : 10}
         styles={buildStyles({
           rotation: 0.75,
           strokeLinecap: "butt",
@@ -88,22 +91,22 @@ const TruthGauge: React.FC<TruthGaugeProps> = ({
       <Box position="absolute" bottom="0" left="0" width="100%" px={2}>
         <Flex justify="space-between" align="center" position="relative">
           <Text
-            fontSize="sm"
+            fontSize={dense ? "6px" : "sm"}
             fontWeight="bold"
             color={tealGaugeTheme.colors.red}
             position="absolute"
-            left="-20px"
-            bottom="-30px"
+            left={dense ? "-15px" : "-30px"}
+            bottom={dense ? "-22px" : "-40px"}
           >
             {VERIMETER_LABELS.negative}
           </Text>
           <Text
-            fontSize="sm"
+            fontSize={dense ? "6px" : "sm"}
             fontWeight="bold"
             color={tealGaugeTheme.colors.green}
             position="absolute"
-            right="-20px"
-            bottom="-30px"
+            right={dense ? "-15px" : "-30px"}
+            bottom={dense ? "-22px" : "-40px"}
           >
             {VERIMETER_LABELS.positive}
           </Text>

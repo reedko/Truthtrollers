@@ -88,7 +88,7 @@ const TopContributors: React.FC = () => {
       backdropFilter="blur(10px)"
       border="1px solid rgba(0, 162, 255, 0.3)"
       borderRadius="8px"
-      p={3}
+      p={{ base: 2, xl: 3 }}
       overflow="hidden"
     >
       {/* Scanlines */}
@@ -108,11 +108,11 @@ const TopContributors: React.FC = () => {
         {/* Header */}
         <Text
           color="#00a2ff"
-          fontSize="0.65rem"
+          fontSize={{ base: "0.55rem", xl: "0.65rem" }}
           fontWeight="700"
           textTransform="uppercase"
-          letterSpacing="2px"
-          mb={3}
+          letterSpacing="1px"
+          mb={2}
           textAlign="center"
           textShadow="0 0 8px rgba(0, 162, 255, 0.6)"
         >
@@ -124,7 +124,7 @@ const TopContributors: React.FC = () => {
           {contributors.map((contributor, index) => (
               <Box
                 key={contributor.user}
-                p={2}
+                p={{ base: 1.5, xl: 2 }}
                 background={
                   index === 0
                     ? "rgba(0, 162, 255, 0.1)"
@@ -150,11 +150,11 @@ const TopContributors: React.FC = () => {
                     : {}
                 }
               >
-                <HStack spacing={2}>
+                <HStack spacing={{ base: 1, xl: 2 }}>
                   {/* Rank Badge */}
                   <Box
-                    minW="20px"
-                    h="20px"
+                    minW={{ base: "16px", xl: "20px" }}
+                    h={{ base: "16px", xl: "20px" }}
                     display="flex"
                     alignItems="center"
                     justifyContent="center"
@@ -165,8 +165,8 @@ const TopContributors: React.FC = () => {
                         ? "linear-gradient(135deg, rgba(192, 192, 192, 0.3), rgba(192, 192, 192, 0.1))"
                         : "linear-gradient(135deg, rgba(205, 127, 50, 0.3), rgba(205, 127, 50, 0.1))"
                     }
-                    borderRadius="4px"
-                    fontSize="0.6rem"
+                    borderRadius="3px"
+                    fontSize={{ base: "0.5rem", xl: "0.6rem" }}
                     fontWeight="700"
                     color={
                       index === 0
@@ -185,22 +185,27 @@ const TopContributors: React.FC = () => {
                     size="xs"
                     bg="rgba(0, 162, 255, 0.3)"
                     color="#00a2ff"
+                    w={{ base: "20px", xl: "24px" }}
+                    h={{ base: "20px", xl: "24px" }}
                   />
 
                   {/* User Info */}
-                  <VStack spacing={0} align="start" flex={1}>
+                  <VStack spacing={0} align="start" flex={1} minW={0}>
                     <Text
-                      fontSize="0.7rem"
+                      fontSize={{ base: "0.6rem", xl: "0.7rem" }}
                       fontWeight="600"
                       color="#e2e8f0"
                       isTruncated
+                      w="100%"
                     >
                       {contributor.user}
                     </Text>
                     <Text
-                      fontSize="0.6rem"
+                      fontSize={{ base: "0.5rem", xl: "0.6rem" }}
                       color="#64748b"
                       fontWeight="500"
+                      isTruncated
+                      w="100%"
                     >
                       {contributor.contributionCount} post{contributor.contributionCount !== 1 ? 's' : ''}
                     </Text>
@@ -208,8 +213,8 @@ const TopContributors: React.FC = () => {
 
                   {/* Activity Indicator */}
                   <Box
-                    width="6px"
-                    height="6px"
+                    width={{ base: "5px", xl: "6px" }}
+                    height={{ base: "5px", xl: "6px" }}
                     borderRadius="50%"
                     background={
                       index === 0
@@ -221,6 +226,7 @@ const TopContributors: React.FC = () => {
                         ? "0 0 8px rgba(34, 197, 94, 0.6)"
                         : "none"
                     }
+                    flexShrink={0}
                   />
                 </HStack>
               </Box>

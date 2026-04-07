@@ -81,28 +81,50 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
 
   return (
     <VStack align="start" spacing={1} w="full">
-      <RouterLink to="/tutorials" onClick={handleClick("/tutorials")}>
-        <HStack spacing={1} mb={0.5}>
-          <Box as={FiVideo} boxSize={{ base: "12px", xl: "12px" }} />
-          <Text fontSize={{ base: "11px", xl: "15px" }}>Tutorial Videos</Text>
-        </HStack>
-      </RouterLink>
+      {/* Tutorial Menu */}
+      <Menu>
+        <MenuButton
+          as={Button}
+          size="xs"
+          variant="ghost"
+          leftIcon={<Box as={FiVideo} boxSize="12px" />}
+          justifyContent="flex-start"
+          w="full"
+          fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
+          h={{ base: "20px", lg: "20px", xl: "28px" }}
+          minH={{ base: "20px", lg: "20px", xl: "28px" }}
+          px={0}
+          textAlign="left"
+        >
+          Tutorial
+        </MenuButton>
+        <MenuList fontSize={{ base: "11px", lg: "11px", xl: "15px" }}>
+          <MenuItem
+            as={RouterLink}
+            to="/tutorials"
+            onClick={handleClick("/tutorials")}
+            icon={<span />}
+          >
+            Video Gallery
+          </MenuItem>
+        </MenuList>
+      </Menu>
       <RouterLink to="/dashboard" onClick={handleClick("/dashboard")}>
         <HStack spacing={1} mb={0.5}>
-          <Box as={FiHome} boxSize={{ base: "12px", xl: "12px" }} />
-          <Text fontSize={{ base: "11px", xl: "15px" }}>Dashboard</Text>
+          <Box as={FiHome} boxSize={{ base: "12px", lg: "12px", xl: "12px" }} />
+          <Text fontSize={{ base: "11px", lg: "11px", xl: "15px" }}>Dashboard</Text>
         </HStack>
       </RouterLink>
       <RouterLink to="/tasks" onClick={handleClick("/tasks")}>
         <HStack spacing={1} mb={0.5}>
-          <Box as={FiBarChart2} boxSize={{ base: "12px", xl: "12px" }} />
-          <Text fontSize={{ base: "11px", xl: "15px" }}>Cases</Text>
+          <Box as={FiBarChart2} boxSize={{ base: "12px", lg: "12px", xl: "12px" }} />
+          <Text fontSize={{ base: "11px", lg: "11px", xl: "15px" }}>Cases</Text>
         </HStack>
       </RouterLink>
       <RouterLink to="/extension" onClick={handleClick("/extension")}>
         <HStack spacing={1} mb={0.5}>
-          <Box as={FiDownload} boxSize={{ base: "12px", xl: "12px" }} />
-          <Text fontSize={{ base: "11px", xl: "15px" }}>Extension</Text>
+          <Box as={FiDownload} boxSize={{ base: "12px", lg: "12px", xl: "12px" }} />
+          <Text fontSize={{ base: "11px", lg: "11px", xl: "15px" }}>Extension</Text>
         </HStack>
       </RouterLink>
 
@@ -115,15 +137,15 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
           leftIcon={<Box as={FiTool} boxSize="12px" />}
           justifyContent="flex-start"
           w="full"
-          fontSize={{ base: "11px", xl: "15px" }}
-          h={{ base: "20px", xl: "28px" }}
-          minH={{ base: "20px", xl: "28px" }}
+          fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
+          h={{ base: "20px", lg: "20px", xl: "28px" }}
+          minH={{ base: "20px", lg: "20px", xl: "28px" }}
           px={0}
           textAlign="left"
         >
           Workbench
         </MenuButton>
-        <MenuList fontSize={{ base: "11px", xl: "15px" }}>
+        <MenuList fontSize={{ base: "11px", lg: "11px", xl: "15px" }}>
           <MenuItem
             as={RouterLink}
             to="/textpad"
@@ -176,15 +198,15 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
           leftIcon={<Box as={FiMessageSquare} boxSize="12px" />}
           justifyContent="flex-start"
           w="full"
-          fontSize={{ base: "11px", xl: "15px" }}
-          h={{ base: "20px", xl: "28px" }}
-          minH={{ base: "20px", xl: "28px" }}
+          fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
+          h={{ base: "20px", lg: "20px", xl: "28px" }}
+          minH={{ base: "20px", lg: "20px", xl: "28px" }}
           px={0}
           textAlign="left"
         >
           Community
         </MenuButton>
-        <MenuList fontSize={{ base: "11px", xl: "15px" }}>
+        <MenuList fontSize={{ base: "11px", lg: "11px", xl: "15px" }}>
           <MenuItem as={RouterLink} to="/chat" onClick={handleClick("/chat")} icon={<span />}>
             Chat
           </MenuItem>
@@ -208,15 +230,15 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
           leftIcon={<Box as={FiGrid} boxSize="12px" />}
           justifyContent="flex-start"
           w="full"
-          fontSize={{ base: "11px", xl: "15px" }}
-          h={{ base: "20px", xl: "28px" }}
-          minH={{ base: "20px", xl: "28px" }}
+          fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
+          h={{ base: "20px", lg: "20px", xl: "28px" }}
+          minH={{ base: "20px", lg: "20px", xl: "28px" }}
           px={0}
           textAlign="left"
         >
           Gaming
         </MenuButton>
-        <MenuList fontSize={{ base: "11px", xl: "15px" }}>
+        <MenuList fontSize={{ base: "11px", lg: "11px", xl: "15px" }}>
           <MenuItem as={RouterLink} to="/game" onClick={handleClick("/game")} icon={<span />}>
             Game
           </MenuItem>
@@ -243,15 +265,15 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
           leftIcon={<Box as={FiGrid} boxSize="12px" />}
           justifyContent="flex-start"
           w="full"
-          fontSize={{ base: "11px", xl: "15px" }}
-          h={{ base: "20px", xl: "28px" }}
-          minH={{ base: "20px", xl: "28px" }}
+          fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
+          h={{ base: "20px", lg: "20px", xl: "28px" }}
+          minH={{ base: "20px", lg: "20px", xl: "28px" }}
           px={0}
           textAlign="left"
         >
           GrabBag
         </MenuButton>
-        <MenuList fontSize={{ base: "11px", xl: "15px" }} sx={{ '& svg': { width: '12px', height: '12px' } }}>
+        <MenuList fontSize={{ base: "11px", lg: "11px", xl: "15px" }} sx={{ '& svg': { width: '12px', height: '12px' } }}>
           <MenuItem
             as={RouterLink}
             to="/quadrantgrid"
@@ -285,9 +307,9 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
 
       <VStack spacing={0.5} mb={0.5} align="stretch" w="full">
         <HStack spacing={1} align="center">
-          <Box as={FiUser} boxSize={{ base: "12px", xl: "12px" }} />
+          <Box as={FiUser} boxSize={{ base: "12px", lg: "12px", xl: "12px" }} />
           <AccountMenu />
-          <Text fontSize={{ base: "11px", xl: "15px" }}>Account</Text>
+          <Text fontSize={{ base: "11px", lg: "11px", xl: "15px" }}>Account</Text>
         </HStack>
         <Box pl={3}>
           <TokenStatusIndicator />

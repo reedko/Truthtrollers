@@ -24,10 +24,12 @@ import {
 import { Claim, ReferenceWithClaims } from "../../../../shared/entities/types";
 import {
   fetchReferenceClaimTaskLinks,
+  fetchReferenceDocumentLinks,
   assessReferenceClaimRelevance,
   enrichClaimsWithRelevance,
   sortClaimsByRelevance,
   ClaimWithRelevance,
+  ReferenceDocumentLink,
 } from "../../services/referenceClaimRelevance";
 import { fetchClaimScoresForTask } from "../../services/useDashboardAPI";
 import VerimeterBar from "../VerimeterBar";
@@ -65,6 +67,7 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 });
   const [topClaims, setTopClaims] = useState<ClaimWithRelevance[]>([]);
+  const [documentLinks, setDocumentLinks] = useState<ReferenceDocumentLink[]>([]);
   const [claimReferenceMap, setClaimReferenceMap] = useState<Map<number, number>>(new Map());
   const [allReferenceClaims, setAllReferenceClaims] = useState<Claim[]>([]);
   const lastTaskClaimId = useRef<number | null>(null);
@@ -150,7 +153,12 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       }
 
       const existingLinks = await fetchReferenceClaimTaskLinks(taskClaim.claim_id);
-      console.log(`🔍 [RelevanceScan] Fetched ${existingLinks.length} links from backend:`, existingLinks);
+      console.log(`🔍 [RelevanceScan] Fetched ${existingLinks.length} claim-to-claim links from backend:`, existingLinks);
+
+      // Also fetch document-level links (reference_claim_links)
+      const docLinks = await fetchReferenceDocumentLinks(taskClaim.claim_id);
+      console.log(`🔍 [RelevanceScan] Fetched ${docLinks.length} document-level links from backend:`, docLinks);
+      setDocumentLinks(docLinks);
 
       const enriched = enrichClaimsWithRelevance(all, taskClaim.claim_id, existingLinks);
       const sorted = sortClaimsByRelevance(enriched);
@@ -557,7 +565,7 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
           )}
 
           {/* Empty state */}
-          {!isBusy && topClaims.length === 0 && (
+          {!isBusy && topClaims.length === 0 && documentLinks.length === 0 && (
             <Box textAlign="center" py={10}>
               <Text color="gray.400" fontSize="md" mb={2}>No scanned links yet</Text>
               <Text color="gray.500" fontSize="sm" mb={4}>
@@ -566,12 +574,103 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
             </Box>
           )}
 
+          {/* Document-level links (reference_claim_links) */}
+          {!isLoadingExisting && documentLinks.length > 0 && (
+            <VStack spacing={3} align="stretch" mb={4}>
+              <HStack justify="space-between" mb={1}>
+                <Text fontSize="xs" color="gray.500" fontStyle="italic" fontWeight="semibold">
+                  📄 {documentLinks.length} Document-Level Assessment{documentLinks.length !== 1 ? "s" : ""}
+                </Text>
+              </HStack>
+
+              {documentLinks.map((docLink) => {
+                const reference = references.find(r => r.reference_content_id === docLink.reference_content_id);
+                const stanceColor = getStanceColor(docLink.stance);
+
+                return (
+                  <Box
+                    key={docLink.ref_claim_link_id}
+                    p={4}
+                    bg={colorMode === "dark" ? "purple.900" : "rgba(237, 233, 254, 0.8)"}
+                    borderRadius="md"
+                    borderWidth="1px"
+                    borderColor={colorMode === "dark" ? `${stanceColor}.600` : `${stanceColor}.400`}
+                    borderLeftWidth="4px"
+                    borderStyle="dashed"
+                  >
+                    <HStack justify="space-between" mb={2} wrap="wrap" gap={1}>
+                      <HStack spacing={2} wrap="wrap">
+                        <Badge colorScheme="purple" fontSize="xs">DOCUMENT</Badge>
+                        <Badge colorScheme={stanceColor} fontSize="xs">
+                          {getStanceLabel(docLink.stance)}
+                        </Badge>
+                        {docLink.support_level !== undefined && docLink.support_level !== null && (
+                          <Tooltip label="Support level: -100 (refutes) to +100 (supports)">
+                            <Badge colorScheme="blue" fontSize="xs" cursor="help">
+                              Level: {Math.round(docLink.support_level)}
+                            </Badge>
+                          </Tooltip>
+                        )}
+                        {docLink.confidence !== undefined && (
+                          <Tooltip label={`AI confidence: ${Math.round(docLink.confidence * 100)}%`}>
+                            <Badge colorScheme="teal" fontSize="xs" cursor="help">
+                              Confidence: {Math.round(docLink.confidence * 100)}%
+                            </Badge>
+                          </Tooltip>
+                        )}
+                      </HStack>
+                    </HStack>
+
+                    {reference && (
+                      <VStack align="start" spacing={1} mb={2}>
+                        <Text fontSize="sm" fontWeight="semibold" color={colorMode === "dark" ? "blue.300" : "blue.700"}>
+                          Source: {reference.content_name}
+                        </Text>
+                        {reference.url && (
+                          <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"} isTruncated>
+                            URL: {reference.url}
+                          </Text>
+                        )}
+                        {reference.publisher_name && (
+                          <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"}>
+                            Publisher: {reference.publisher_name}
+                          </Text>
+                        )}
+                      </VStack>
+                    )}
+
+                    {docLink.rationale && (
+                      <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.700"} fontStyle="italic" mb={2}>
+                        <strong>Rationale:</strong> {docLink.rationale}
+                      </Text>
+                    )}
+
+                    {docLink.evidence_text && (
+                      <Box
+                        p={2}
+                        bg={colorMode === "dark" ? "gray.800" : "gray.50"}
+                        borderRadius="md"
+                        borderLeft="3px solid"
+                        borderColor={colorMode === "dark" ? "purple.500" : "purple.400"}
+                      >
+                        <Text fontSize="xs" color={colorMode === "dark" ? "gray.300" : "gray.700"} fontStyle="italic">
+                          <strong>Evidence Snippet:</strong><br />
+                          "{docLink.evidence_text}"
+                        </Text>
+                      </Box>
+                    )}
+                  </Box>
+                );
+              })}
+            </VStack>
+          )}
+
           {/* Results list */}
           {!isLoadingExisting && topClaims.length > 0 && (
             <VStack spacing={3} align="stretch">
               <HStack justify="space-between" mb={1}>
-                <Text fontSize="xs" color="gray.500" fontStyle="italic">
-                  {topClaims.length} link{topClaims.length !== 1 ? "s" : ""} found
+                <Text fontSize="xs" color="gray.500" fontStyle="italic" fontWeight="semibold">
+                  🔗 {topClaims.length} Claim-Level Link{topClaims.length !== 1 ? "s" : ""}
                 </Text>
                 {isScanning && <Spinner size="xs" color="teal.400" />}
               </HStack>

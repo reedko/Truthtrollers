@@ -92,7 +92,12 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({ claimPairsData }) =
           overflowY="auto"
         >
           {!claimPairsData && (
-            <Text color="gray.500" fontSize="sm" textAlign="center">
+            <Text
+              color="gray.500"
+              fontSize="sm"
+              textAlign="center"
+              fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+            >
               No claim pairs data available
             </Text>
           )}
@@ -266,6 +271,7 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({ claimPairsData }) =
                                 textTransform="uppercase"
                                 letterSpacing="0.05em"
                                 fontWeight="600"
+                                fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
                               >
                                 Case Claim
                               </Text>
@@ -295,6 +301,7 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({ claimPairsData }) =
                                 textTransform="uppercase"
                                 letterSpacing="0.05em"
                                 fontWeight="600"
+                                fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
                               >
                                 Source Claim
                               </Text>
@@ -319,6 +326,7 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({ claimPairsData }) =
                                 letterSpacing="0.05em"
                                 fontWeight="600"
                                 mb={1}
+                                fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
                               >
                                 Rationale
                               </Text>
@@ -327,6 +335,7 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({ claimPairsData }) =
                                 color="#b4c9e0"
                                 lineHeight="1.5"
                                 fontStyle="italic"
+                                fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
                               >
                                 {pair.rationale}
                               </Text>
@@ -343,6 +352,7 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({ claimPairsData }) =
                                 letterSpacing="0.05em"
                                 fontWeight="600"
                                 mb={1}
+                                fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
                               >
                                 Support Level: {Math.round(pair.support_level * 100)}%
                               </Text>
@@ -356,7 +366,12 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({ claimPairsData }) =
               })}
 
               {claimPairsData.claim_pairs.length === 0 && (
-                <Text color="gray.500" fontSize="sm" textAlign="center">
+                <Text
+                  color="gray.500"
+                  fontSize="sm"
+                  textAlign="center"
+                  fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+                >
                   No claim pairs available
                 </Text>
               )}

@@ -32,16 +32,21 @@ import {
   TabPanel,
   Progress,
   IconButton,
+  useBreakpointValue,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
 } from "@chakra-ui/react";
-import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
+import { ChevronLeftIcon, ChevronRightIcon, SettingsIcon } from "@chakra-ui/icons";
 import { keyframes } from "@emotion/react";
 import { useNavigate } from "react-router-dom";
 import { useTaskStore } from "../store/useTaskStore";
 import { useAuthStore } from "../store/useAuthStore";
-import { fetchReferenceClaimTaskLinks } from "../services/referenceClaimRelevance";
 import {
   fetchClaimScoresForTask,
   getClaimLinkScore,
+  fetchLinkedClaimsForTaskClaim,
 } from "../services/useDashboardAPI";
 import VerimeterMeter from "../components/VerimeterMeter";
 import ClaimLinkOverlay from "../components/overlays/ClaimLinkOverlay";
@@ -94,6 +99,7 @@ export const CaseFocusPage: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const isMobile = useBreakpointValue({ base: true, md: false });
 
   // State variables - matching ClaimDuel exactly
   const [focusClaim, setFocusClaim] = useState<FocusClaim | null>(null);
@@ -602,7 +608,22 @@ export const CaseFocusPage: React.FC = () => {
       console.log("✅ Case claims data:", data);
       console.log("📊 Found", data.caseClaims?.length || 0, "case claims");
 
-      setAvailableCaseClaims(data.caseClaims || []);
+      // Fetch verimeter scores for all case claims
+      const claimScores = await fetchClaimScoresForTask(
+        selectedTask.content_id,
+        user?.user_id || null,
+      );
+      console.log("📊 Claim scores:", claimScores);
+
+      // Enrich case claims with their verimeter scores
+      const enrichedClaims = (data.caseClaims || []).map((claim: any) => ({
+        ...claim,
+        verimeter_score: claimScores[claim.claim_id] !== undefined
+          ? Math.round(claimScores[claim.claim_id] * 100)
+          : 0,
+      }));
+
+      setAvailableCaseClaims(enrichedClaims);
 
       // Don't auto-load - let user select from the list
       // This prevents the expensive deep scan from running on page load
@@ -670,7 +691,7 @@ export const CaseFocusPage: React.FC = () => {
         claim_text: claimData?.label || "Loading...",
         claim_type: "case",
         verimeter_score:
-          normalizedScore !== null ? Math.round(normalizedScore) : 50, // Use normalized score or default
+          normalizedScore !== null ? Math.round(normalizedScore * 100) : 50, // Use normalized score or default
         support_count: supportCount,
         refute_count: refuteCount,
         context_count: contextCount,
@@ -683,6 +704,7 @@ export const CaseFocusPage: React.FC = () => {
       };
 
       setFocusClaim(focus);
+      setLinkedClaims(linkedClaims);
       await loadCandidates(claimId);
     } catch (error) {
       console.error("Error loading focus claim:", error);
@@ -717,9 +739,9 @@ export const CaseFocusPage: React.FC = () => {
       const references = await refsResponse.json();
       console.log("📚 Found", references.length, "references with claims");
 
-      // Get existing AI links for INDIVIDUAL CLAIMS
-      const existingLinks = await fetchReferenceClaimTaskLinks(focusClaimId);
-      console.log("🔗 Existing claim-to-claim links:", existingLinks.length);
+      // Get existing AI links (includes claim-to-claim and document-level)
+      const existingLinks = await fetchLinkedClaimsForTaskClaim(focusClaimId, user?.user_id);
+      console.log("🔗 Existing claim links:", existingLinks.length);
 
       // Flatten all reference claims into candidates
       const allCandidates: CandidateClaim[] = [];
@@ -746,7 +768,7 @@ export const CaseFocusPage: React.FC = () => {
             claim_type: "evidence",
             reference_content_id: ref.reference_content_id,
             source_claim_id: claim.claim_id,
-            ai_confidence: existingLink?.confidence,
+            ai_confidence: existingLink?.confidence ? Number(existingLink.confidence) : undefined,
             ai_stance: existingLink?.stance,
             ai_support_level: existingLink?.support_level,
             ai_rationale: existingLink?.rationale,
@@ -1033,7 +1055,11 @@ export const CaseFocusPage: React.FC = () => {
   const loadLinkedClaims = async () => {
     if (!focusClaim) return;
     try {
-      const links = await fetchReferenceClaimTaskLinks(focusClaim.claim_id);
+      // Use the unified endpoint that includes all three types:
+      // 1. Manual claim_links (user-created)
+      // 2. AI claim-to-claim (reference_claim_task_links)
+      // 3. AI document-level (reference_claim_links)
+      const links = await fetchLinkedClaimsForTaskClaim(focusClaim.claim_id, user?.user_id);
       setLinkedClaims(links || []);
     } catch (error) {
       console.error("Error loading linked claims:", error);
@@ -1448,23 +1474,75 @@ export const CaseFocusPage: React.FC = () => {
           </Box>
         )}
 
+        {/* MOBILE HEADER - Case claim at top on mobile */}
+        {focusClaim && isMobile && availableCaseClaims[currentCaseClaimIndex] && (
+          <Box
+            bg="rgba(138, 43, 226, 0.1)"
+            backdropFilter="blur(20px)"
+            borderBottom="2px solid rgba(138, 43, 226, 0.4)"
+            p={3}
+            mb={2}
+          >
+            <HStack justify="space-between" mb={2}>
+              <Text fontSize="9px" color="purple.300" fontWeight="bold">
+                CASE CLAIM
+              </Text>
+              <HStack spacing={2}>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  onClick={() => setCurrentCaseClaimIndex(Math.max(0, currentCaseClaimIndex - 1))}
+                  isDisabled={currentCaseClaimIndex === 0}
+                  color="purple.300"
+                >
+                  <ChevronLeftIcon />
+                </Button>
+                <Text fontSize="9px" color="purple.300">
+                  {currentCaseClaimIndex + 1}/{availableCaseClaims.length}
+                </Text>
+                <Button
+                  size="xs"
+                  variant="ghost"
+                  onClick={() => setCurrentCaseClaimIndex(Math.min(availableCaseClaims.length - 1, currentCaseClaimIndex + 1))}
+                  isDisabled={currentCaseClaimIndex === availableCaseClaims.length - 1}
+                  color="purple.300"
+                >
+                  <ChevronRightIcon />
+                </Button>
+              </HStack>
+            </HStack>
+            <Text fontSize="13px" lineHeight="1.3" fontWeight="690" color="gray.100" mb={2}>
+              {availableCaseClaims[currentCaseClaimIndex].label}
+            </Text>
+            <Box mt={2}>
+              <VerimeterMeter
+                score={(availableCaseClaims[currentCaseClaimIndex].verimeter_score || 0) / 100}
+                width="100%"
+                showInterpretation={false}
+              />
+            </Box>
+          </Box>
+        )}
+
         {/* Main Workspace - 3 columns */}
         {focusClaim && (
           <Box position="relative" w="full">
             <Grid
               templateColumns={{
                 base: "minmax(0, 1fr)",
+                md: "minmax(0, 1fr) minmax(0, 1fr)",
                 lg: "minmax(0, 1fr) minmax(0, 1fr)",
                 xl: "minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr)",
               }}
-              gap={8}
+              gap={{ base: 2, lg: 8 }}
               w="full"
               maxW={{ base: "100%", xl: "none" }}
               alignItems="start"
               mt="8px"
             >
-              {/* Left: Case Claim Focus */}
+              {/* Left: Case Claim Focus - Hidden on mobile */}
               <Box
+                display={{ base: "none", md: "block" }}
                 minW={0}
                 w="full"
                 borderRadius={styleMode === "mr1" ? "28px" : "0"}
@@ -1560,14 +1638,22 @@ export const CaseFocusPage: React.FC = () => {
                         h="24px"
                         mt={0}
                       >
-                        <Text
+                        <Button
+                          className="mr-button"
+                          size="xs"
                           fontSize="11px"
-                          textTransform="uppercase"
-                          letterSpacing="0.09em"
-                          fontWeight="600"
-                          color="#89a9bf"
+                          h="22px"
+                          onClick={() => setFocusClaim(null)}
                         >
                           CASE CLAIM
+                        </Button>
+                        <Text
+                          fontSize="13px"
+                          fontWeight="bold"
+                          color="#8b5cf6"
+                          textShadow="0 0 20px rgba(139, 92, 246, 0.8)"
+                        >
+                          {userScore.toFixed(1)}
                         </Text>
                       </HStack>
                       {/*<HStack
@@ -1675,8 +1761,8 @@ export const CaseFocusPage: React.FC = () => {
                           {/* Progress Bar with Centered Text */}
                           <Box
                             flex="1"
-                            h="28px"
-                            borderRadius="14px"
+                            h={{ base: "16px", lg: "28px" }}
+                            borderRadius={{ base: "8px", lg: "14px" }}
                             bg="rgba(255, 255, 255, 0.05)"
                             border="2px solid"
                             borderColor="rgba(255, 255, 255, 0.08)"
@@ -1698,7 +1784,7 @@ export const CaseFocusPage: React.FC = () => {
                               top="50%"
                               left="50%"
                               transform="translate(-50%, -50%)"
-                              fontSize="13px"
+                              fontSize={{ base: "8px", lg: "13px" }}
                               fontWeight="600"
                               color="#fff"
                               textShadow="0 1px 3px rgba(0, 0, 0, 0.8)"
@@ -1787,10 +1873,10 @@ export const CaseFocusPage: React.FC = () => {
                               boxShadow="0 16px 48px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(113, 219, 255, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
                               p={{ base: 2, lg: 4, xl: 6 }}
                               pl={{ base: 3, lg: 5, xl: 8 }}
-                              pb={{ base: 20, xl: 24 }}
+                              pb={{ base: 8, xl: 24 }}
                               w={{ base: "90%", lg: "85%", xl: "90%" }}
-                              maxW={{ base: "360px", lg: "420px", xl: "440px" }}
-                              minH={{ base: "400px", xl: "600px" }}
+                              maxW={{ base: "216px", lg: "420px", xl: "440px" }}
+                              minH={{ base: "200px", xl: "600px" }}
                               position="relative"
                               flexShrink={0}
                               mr={{ base: 2, lg: 4, xl: 5 }}
@@ -1929,7 +2015,7 @@ export const CaseFocusPage: React.FC = () => {
                               >
                                 {getCurvedEdge("cyan")}
                                 <Text
-                                  fontSize={{ base: "14px", xl: "24px" }}
+                                  fontSize={{ base: "13px", xl: "24px" }}
                                   lineHeight="1.3"
                                   fontWeight="690"
                                   color="#e4f4ff"
@@ -1948,8 +2034,8 @@ export const CaseFocusPage: React.FC = () => {
                                 <Box
                                   borderRadius="18px"
                                   {...getBoxStyle("red")}
-                                  p={{ base: 2, xl: 3 }}
-                                  minH={{ base: "50px", xl: "72px" }}
+                                  p={{ base: 1, xl: 3 }}
+                                  minH={{ base: "30px", xl: "72px" }}
                                   position="relative"
                                   overflow="visible"
                                   transform="translateZ(0)"
@@ -1957,7 +2043,7 @@ export const CaseFocusPage: React.FC = () => {
                                 >
                                   {getCurvedEdge("red")}
                                   <Text
-                                    fontSize="10px"
+                                    fontSize={{ base: "6px", lg: "10px" }}
                                     textTransform="uppercase"
                                     letterSpacing="0.08em"
                                     color="rgba(228, 244, 255, 0.8)"
@@ -1968,7 +2054,7 @@ export const CaseFocusPage: React.FC = () => {
                                     REFUTES
                                   </Text>
                                   <Text
-                                    fontSize="18px"
+                                    fontSize={{ base: "12px", lg: "18px" }}
                                     fontWeight="800"
                                     color="#ff6c88"
                                     position="relative"
@@ -1981,8 +2067,8 @@ export const CaseFocusPage: React.FC = () => {
                                 <Box
                                   borderRadius="18px"
                                   {...getBoxStyle("blue")}
-                                  p={{ base: 2, xl: 3 }}
-                                  minH={{ base: "50px", xl: "72px" }}
+                                  p={{ base: 1, xl: 3 }}
+                                  minH={{ base: "30px", xl: "72px" }}
                                   position="relative"
                                   overflow="visible"
                                   transform="translateZ(0)"
@@ -1990,7 +2076,7 @@ export const CaseFocusPage: React.FC = () => {
                                 >
                                   {getCurvedEdge("blue")}
                                   <Text
-                                    fontSize="10px"
+                                    fontSize={{ base: "6px", lg: "10px" }}
                                     textTransform="uppercase"
                                     letterSpacing="0.08em"
                                     color="rgba(228, 244, 255, 0.8)"
@@ -2001,7 +2087,7 @@ export const CaseFocusPage: React.FC = () => {
                                     NUANCE
                                   </Text>
                                   <Text
-                                    fontSize="18px"
+                                    fontSize={{ base: "12px", lg: "18px" }}
                                     fontWeight="800"
                                     color="#78a8ff"
                                     position="relative"
@@ -2014,8 +2100,8 @@ export const CaseFocusPage: React.FC = () => {
                                 <Box
                                   borderRadius="18px"
                                   {...getBoxStyle("green")}
-                                  p={{ base: 2, xl: 3 }}
-                                  minH={{ base: "50px", xl: "72px" }}
+                                  p={{ base: 1, xl: 3 }}
+                                  minH={{ base: "30px", xl: "72px" }}
                                   position="relative"
                                   overflow="visible"
                                   transform="translateZ(0)"
@@ -2023,7 +2109,7 @@ export const CaseFocusPage: React.FC = () => {
                                 >
                                   {getCurvedEdge("green")}
                                   <Text
-                                    fontSize="10px"
+                                    fontSize={{ base: "6px", lg: "10px" }}
                                     textTransform="uppercase"
                                     letterSpacing="0.08em"
                                     color="rgba(228, 244, 255, 0.8)"
@@ -2034,7 +2120,7 @@ export const CaseFocusPage: React.FC = () => {
                                     SUPPORTS
                                   </Text>
                                   <Text
-                                    fontSize="18px"
+                                    fontSize={{ base: "12px", lg: "18px" }}
                                     fontWeight="800"
                                     color="#61efb8"
                                     position="relative"
@@ -2163,17 +2249,17 @@ export const CaseFocusPage: React.FC = () => {
                 </VStack>
               </Box>
 
-              {/* Center: Source Claim (Scrolling Evidence) */}
+              {/* Center: Source Claim (Scrolling Evidence) - No panel wrapper on mobile */}
               <Box
                 minW={0}
                 w="full"
-                borderRadius={styleMode === "mr1" ? "28px" : "0"}
-                {...getPanelBorder()}
-                {...getPanelBackground()}
-                backdropFilter={styleMode === "mr1" ? "blur(18px)" : "none"}
-                p={6}
-                pt={4}
-                minH="820px"
+                borderRadius={{ base: "0", md: styleMode === "mr1" ? "28px" : "0" }}
+                {...(isMobile ? {} : getPanelBorder())}
+                {...(isMobile ? {} : getPanelBackground())}
+                backdropFilter={{ base: "none", md: styleMode === "mr1" ? "blur(18px)" : "none" }}
+                p={{ base: 0, md: 6 }}
+                pt={{ base: 0, md: 4 }}
+                minH={{ base: "auto", md: "820px" }}
                 position="relative"
                 overflow="hidden"
                 _before={
@@ -2363,15 +2449,15 @@ export const CaseFocusPage: React.FC = () => {
                     h="24px"
                     mt={0}
                   >
-                    <Text
+                    <Button
+                      className="mr-button"
+                      size="xs"
                       fontSize="11px"
-                      textTransform="uppercase"
-                      letterSpacing="0.09em"
-                      fontWeight="600"
-                      color="#89a9bf"
+                      h="22px"
+                      onClick={() => {}}
                     >
                       SOURCE CLAIM
-                    </Text>
+                    </Button>
                   </HStack>
 
                   {/* Progress Bar */}
@@ -2446,8 +2532,8 @@ export const CaseFocusPage: React.FC = () => {
                     {/* Progress Bar with Centered Text */}
                     <Box
                       flex="1"
-                      h="28px"
-                      borderRadius="14px"
+                      h={{ base: "16px", lg: "28px" }}
+                      borderRadius={{ base: "8px", lg: "14px" }}
                       bg="rgba(255, 255, 255, 0.05)"
                       border="2px solid"
                       borderColor="rgba(255, 255, 255, 0.08)"
@@ -2469,7 +2555,7 @@ export const CaseFocusPage: React.FC = () => {
                         top="50%"
                         left="50%"
                         transform="translate(-50%, -50%)"
-                        fontSize="13px"
+                        fontSize={{ base: "8px", lg: "13px" }}
                         fontWeight="600"
                         color="#fff"
                         textShadow="0 1px 3px rgba(0, 0, 0, 0.8)"
@@ -2562,11 +2648,11 @@ export const CaseFocusPage: React.FC = () => {
                           border="2px solid"
                           borderColor="rgba(97, 239, 184, 0.4)"
                           boxShadow="0 16px 48px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(97, 239, 184, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
-                          p={{ base: 2, lg: 4, xl: 6 }}
+                          p={{ base: 3, lg: 4, xl: 6 }}
                           pl={{ base: 3, lg: 5, xl: 8 }}
-                          w={{ base: "90%", lg: "85%", xl: "90%" }}
-                          maxW={{ base: "360px", lg: "420px", xl: "440px" }}
-                          minH={{ base: "400px", xl: "600px" }}
+                          w={{ base: "98%", lg: "85%", xl: "90%" }}
+                          maxW={{ base: "98%", lg: "420px", xl: "440px" }}
+                          minH={{ base: "350px", xl: "600px" }}
                           position="relative"
                           flexShrink={0}
                           mr={{ base: 2, lg: 4, xl: 5 }}
@@ -2605,73 +2691,116 @@ export const CaseFocusPage: React.FC = () => {
                           {getSquaredBeveledEdges()}
 
                           <VStack align="stretch" spacing={3}>
-                            <Tooltip
-                              label={candidate.source_name || "Source claim"}
-                              placement="top"
-                              hasArrow
+                            <Box
+                              p={3}
+                              mb={3}
+                              borderRadius="18px"
+                              {...(styleMode === "mr1"
+                                ? {
+                                    border: "2px solid",
+                                    borderColor: "rgba(113, 219, 255, 0.4)",
+                                    bg: "rgba(113, 219, 255, 0.15)",
+                                    boxShadow:
+                                      "0 6px 20px rgba(0, 0, 0, 0.4), 0 3px 10px rgba(0, 0, 0, 0.3), 0 0 20px rgba(113, 219, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+                                    _hover: {
+                                      transform:
+                                        "translateY(-2px) translateZ(0)",
+                                      boxShadow:
+                                        "0 8px 28px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 30px rgba(113, 219, 255, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.2)",
+                                    },
+                                  }
+                                : {
+                                    border: "1px solid",
+                                    borderColor: "rgba(113, 219, 255, 0.3)",
+                                    bg: "linear-gradient(180deg, rgba(113, 219, 255, 0.18), rgba(113, 219, 255, 0.08))",
+                                    boxShadow:
+                                      "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)",
+                                  })}
+                              position="relative"
+                              overflow="visible"
+                              transform="translateZ(0)"
+                              transition="all 0.3s ease"
                             >
-                              <Box
-                                p={3}
-                                mb={3}
-                                borderRadius="18px"
-                                {...(styleMode === "mr1"
-                                  ? {
-                                      border: "2px solid",
-                                      borderColor: "rgba(113, 219, 255, 0.4)",
-                                      bg: "rgba(113, 219, 255, 0.15)",
-                                      boxShadow:
-                                        "0 6px 20px rgba(0, 0, 0, 0.4), 0 3px 10px rgba(0, 0, 0, 0.3), 0 0 20px rgba(113, 219, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
-                                      _hover: {
-                                        transform:
-                                          "translateY(-2px) translateZ(0)",
-                                        boxShadow:
-                                          "0 8px 28px rgba(0, 0, 0, 0.5), 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 30px rgba(113, 219, 255, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.2)",
-                                      },
-                                    }
-                                  : {
-                                      border: "1px solid",
-                                      borderColor: "rgba(113, 219, 255, 0.3)",
-                                      bg: "linear-gradient(180deg, rgba(113, 219, 255, 0.18), rgba(113, 219, 255, 0.08))",
-                                      boxShadow:
-                                        "inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)",
-                                    })}
-                                cursor="help"
-                                position="relative"
-                                overflow="visible"
-                                transform="translateZ(0)"
-                                transition="all 0.3s ease"
-                              >
-                                {/* Curved left edge - only in MR1 mode */}
-                                {styleMode === "mr1" && (
-                                  <Box
-                                    position="absolute"
-                                    left={0}
-                                    top={0}
-                                    width="20px"
-                                    height="100%"
-                                    background="linear-gradient(90deg, rgba(113, 219, 255, 0.4) 0%, transparent 100%)"
-                                    borderLeftRadius="18px"
-                                    pointerEvents="none"
-                                    zIndex={0}
-                                  />
-                                )}
-                                <Text
-                                  fontSize="13px"
-                                  fontWeight="700"
-                                  textTransform="uppercase"
-                                  letterSpacing="0.1em"
-                                  color="#71dbff"
-                                  whiteSpace="nowrap"
-                                  overflow="hidden"
-                                  textOverflow="ellipsis"
-                                  position="relative"
-                                  zIndex={1}
+                              {/* Curved left edge - only in MR1 mode */}
+                              {styleMode === "mr1" && (
+                                <Box
+                                  position="absolute"
+                                  left={0}
+                                  top={0}
+                                  width="20px"
+                                  height="100%"
+                                  background="linear-gradient(90deg, rgba(113, 219, 255, 0.4) 0%, transparent 100%)"
+                                  borderLeftRadius="18px"
+                                  pointerEvents="none"
+                                  zIndex={0}
+                                />
+                              )}
+                              <Flex align="center" justify="space-between" position="relative" zIndex={1}>
+                                <Tooltip
+                                  label={candidate.source_name || "Source claim"}
+                                  placement="top"
+                                  hasArrow
                                 >
-                                  {candidate.source_name?.toUpperCase() ||
-                                    "SOURCE CLAIM"}
-                                </Text>
-                              </Box>
-                            </Tooltip>
+                                  <Text
+                                    fontSize="13px"
+                                    fontWeight="700"
+                                    textTransform="uppercase"
+                                    letterSpacing="0.1em"
+                                    color="#71dbff"
+                                    whiteSpace="nowrap"
+                                    overflow="hidden"
+                                    textOverflow="ellipsis"
+                                    flex="1"
+                                    cursor="help"
+                                  >
+                                    {candidate.source_name?.toUpperCase() ||
+                                      "SOURCE CLAIM"}
+                                  </Text>
+                                </Tooltip>
+                                <Menu placement="bottom-end">
+                                  <MenuButton
+                                    as={IconButton}
+                                    icon={<SettingsIcon />}
+                                    size="xs"
+                                    variant="ghost"
+                                    color="#71dbff"
+                                    _hover={{
+                                      bg: "rgba(113, 219, 255, 0.2)",
+                                    }}
+                                    _active={{
+                                      bg: "rgba(113, 219, 255, 0.3)",
+                                    }}
+                                    aria-label="Style settings"
+                                  />
+                                  <MenuList
+                                    bg="rgba(15, 28, 46, 0.95)"
+                                    backdropFilter="blur(20px)"
+                                    border="1px solid"
+                                    borderColor="rgba(113, 219, 255, 0.3)"
+                                    boxShadow="0 8px 32px rgba(0, 0, 0, 0.6)"
+                                  >
+                                    <MenuItem
+                                      bg="transparent"
+                                      color={styleMode === "mr1" ? "#71dbff" : "#89a9bf"}
+                                      fontWeight={styleMode === "mr1" ? "700" : "400"}
+                                      _hover={{ bg: "rgba(113, 219, 255, 0.15)" }}
+                                      onClick={() => setStyleMode("mr1")}
+                                    >
+                                      MR1 (3D Glass)
+                                    </MenuItem>
+                                    <MenuItem
+                                      bg="transparent"
+                                      color={styleMode === "mr2" ? "#71dbff" : "#89a9bf"}
+                                      fontWeight={styleMode === "mr2" ? "700" : "400"}
+                                      _hover={{ bg: "rgba(113, 219, 255, 0.15)" }}
+                                      onClick={() => setStyleMode("mr2")}
+                                    >
+                                      MR2 (Dark Sunken)
+                                    </MenuItem>
+                                  </MenuList>
+                                </Menu>
+                              </Flex>
+                            </Box>
 
                             {/* Source Claim Text Box */}
                             <Box
@@ -2706,7 +2835,7 @@ export const CaseFocusPage: React.FC = () => {
                             >
                               {getCurvedEdge("cyan")}
                               <Text
-                                fontSize={{ base: "14px", xl: "24px" }}
+                                fontSize={{ base: "13px", xl: "24px" }}
                                 lineHeight="1.3"
                                 fontWeight="690"
                                 color="#e4f4ff"
@@ -2726,7 +2855,7 @@ export const CaseFocusPage: React.FC = () => {
                                 borderRadius="18px"
                                 {...getBoxStyle("red")}
                                 p={{ base: 2, xl: 3 }}
-                                minH={{ base: "50px", xl: "72px" }}
+                                minH={{ base: "30px", xl: "72px" }}
                                 position="relative"
                                 overflow="visible"
                                 transform="translateZ(0)"
@@ -2759,7 +2888,7 @@ export const CaseFocusPage: React.FC = () => {
                                 borderRadius="18px"
                                 {...getBoxStyle("blue")}
                                 p={{ base: 2, xl: 3 }}
-                                minH={{ base: "50px", xl: "72px" }}
+                                minH={{ base: "30px", xl: "72px" }}
                                 position="relative"
                                 overflow="visible"
                                 transform="translateZ(0)"
@@ -2794,7 +2923,7 @@ export const CaseFocusPage: React.FC = () => {
                                 borderRadius="18px"
                                 {...getBoxStyle("green")}
                                 p={{ base: 2, xl: 3 }}
-                                minH={{ base: "50px", xl: "72px" }}
+                                minH={{ base: "30px", xl: "72px" }}
                                 position="relative"
                                 overflow="visible"
                                 transform="translateZ(0)"
@@ -2976,7 +3105,7 @@ export const CaseFocusPage: React.FC = () => {
               </Box>
 
               {/* Right: Impact & Meta */}
-              <VStack spacing={4}>
+              <VStack spacing={4} display={{ base: "none", xl: "flex" }}>
                 {/* Source Claim Card */}
                 <Box
                   bg="linear-gradient(180deg, rgba(15, 28, 46, 0.25), rgba(8, 16, 27, 0.20))"

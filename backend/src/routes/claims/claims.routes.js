@@ -431,6 +431,7 @@ export default function createClaimsRoutes({ query, pool }) {
     const claimId = req.params.claimId;
     const viewerId = req.query.viewerId ? req.query.viewerId : null;
 
+    // UNION: Include both manual claim_links AND AI-generated reference_claim_task_links
     const sql = `
       SELECT
         cl.claim_link_id,
@@ -448,7 +449,9 @@ export default function createClaimsRoutes({ query, pool }) {
         cc.content_id AS reference_content_id,
         content.media_source AS source_publisher,
         content.url AS source_url,
-        target_cc.content_id AS target_content_id
+        target_cc.content_id AS target_content_id,
+        'claim' AS link_type,
+        NULL AS quote
       FROM claim_links cl
       JOIN content_claims cc ON cl.source_claim_id = cc.claim_id
       JOIN content_claims target_cc ON cl.target_claim_id = target_cc.claim_id
@@ -458,30 +461,101 @@ export default function createClaimsRoutes({ query, pool }) {
         AND cl.disabled = 0
         AND cc.content_id != target_cc.content_id
         ${viewerId ? "AND cl.user_id = ?" : ""}
-      ORDER BY ABS(cl.support_level) DESC
+
+      UNION ALL
+
+      SELECT
+        CONCAT('ref_', rctl.reference_claim_id, '_', rctl.task_claim_id) AS claim_link_id,
+        rctl.task_claim_id AS target_claim_id,
+        rctl.reference_claim_id AS source_claim_id,
+        rctl.stance AS relationship,
+        rctl.support_level,
+        rctl.rationale AS notes,
+        NULL AS verimeter_score,
+        ref_claim.claim_id AS source_claim_id,
+        COALESCE(rctl.quote, ref_claim.claim_text) AS source_claim_text,
+        NULL AS source_veracity,
+        rctl.confidence AS source_confidence,
+        NULL AS source_last_verified,
+        ref_cc.content_id AS reference_content_id,
+        ref_content.media_source AS source_publisher,
+        ref_content.url AS source_url,
+        task_cc.content_id AS target_content_id,
+        'reference_claim' AS link_type,
+        rctl.quote
+      FROM reference_claim_task_links rctl
+      JOIN content_claims ref_cc ON rctl.reference_claim_id = ref_cc.claim_id
+      JOIN content_claims task_cc ON rctl.task_claim_id = task_cc.claim_id
+      JOIN claims ref_claim ON ref_cc.claim_id = ref_claim.claim_id
+      JOIN content ref_content ON ref_cc.content_id = ref_content.content_id
+      WHERE rctl.task_claim_id = ?
+        AND rctl.created_by_ai = 1
+
+      -- UNION ALL
+
+      -- SELECT
+      --   CONCAT('doc_', rcl.reference_claim_link_id) AS claim_link_id,
+      --   rcl.claim_id AS target_claim_id,
+      --   NULL AS source_claim_id,
+      --   rcl.stance AS relationship,
+      --   rcl.support_level AS support_level,
+      --   rcl.rationale AS notes,
+      --   rcl.verimeter_score AS verimeter_score,
+      --   rcl.evidence_text AS source_claim_text,
+      --   NULL AS source_veracity,
+      --   rcl.confidence AS source_confidence,
+      --   NULL AS source_last_verified,
+      --   rcl.reference_content_id,
+      --   ref_content.media_source AS source_publisher,
+      --   ref_content.url AS source_url,
+      --   task_cc.content_id AS target_content_id,
+      --   'reference_doc' AS link_type,
+      --   rcl.evidence_text AS quote
+      -- FROM reference_claim_links rcl
+      -- JOIN content_claims task_cc ON rcl.claim_id = task_cc.claim_id
+      -- JOIN content ref_content ON rcl.reference_content_id = ref_content.content_id
+      -- WHERE rcl.claim_id = ?
+      --   AND rcl.created_by_ai = 1
+
+      ORDER BY ABS(support_level) DESC
   `;
 
-    const params = viewerId ? [claimId, viewerId] : [claimId];
+    const params = viewerId ? [claimId, viewerId, claimId] : [claimId, claimId];
 
     try {
       const rows = await query(sql, params);
       console.log(rows, ":::ROWOS");
+
+      // Helper function to normalize relation based on support_level
+      // STANDARDIZED THRESHOLDS: -15 to +15 is nuanced, outside is support/refute
+      const normalizeRelation = (relationship, supportLevel) => {
+        // If we have a support_level, use it to determine the relation
+        if (supportLevel !== null && supportLevel !== undefined) {
+          if (supportLevel > 15) return "support";
+          if (supportLevel < -15) return "refute";
+          return "nuance";
+        }
+
+        // Otherwise fall back to the relationship field
+        if (relationship === "supports" || relationship === "support") return "support";
+        if (relationship === "refutes" || relationship === "refute") return "refute";
+        return "nuance";
+      };
+
       const formatted = rows.map((row) => ({
         claim_link_id: row.claim_link_id,
         claimId: row.target_claim_id,
         referenceId: row.reference_content_id,
         sourceClaimId: row.source_claim_id,
-        relation:
-          row.relationship === "supports"
-            ? "support"
-            : row.relationship === "refutes"
-              ? "refute"
-              : "support", // fallback
-        confidence: row.confidence,
+        relation: normalizeRelation(row.relationship, row.support_level),
+        support_level: row.support_level,
+        confidence: row.source_confidence,
         notes: row.notes,
         verimeter_score: row.verimeter_score ?? null,
         source_publisher: row.source_publisher,
         source_url: row.source_url,
+        link_type: row.link_type, // 'claim', 'reference_claim', or 'reference_doc'
+        quote: row.quote, // Quote snippet for reference links
         sourceClaim: {
           claim_id: row.source_claim_id,
           claim_text: row.source_claim_text,

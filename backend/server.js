@@ -50,6 +50,7 @@ import { promisify } from "util";
 // ─────────────────────────────────────────────
 import registerBeaconRoutes from "./src/routes/beaconRoutes.js";
 import registerDiscussionRoutes from "./src/routes/discussionRoutes.js";
+import registerExtractionModeRoutes from "./src/routes/extractionModeRoutes.js";
 import analyzeContentRoute from "./src/routes/analyzeContent.js";
 // NOTE: referenceClaimRoutes and fetchWithPuppeteer are in temp/, not src/routes/
 // These will be refactored later
@@ -261,6 +262,7 @@ app.use((req, res, next) => {
 // registerReferenceClaimRoutes(app, query); // TODO: Move from temp/ to src/routes/
 registerBeaconRoutes(app, query, pool);
 registerDiscussionRoutes(app, query, pool);
+registerExtractionModeRoutes(app, query);
 app.use("/api/analyze-content", analyzeContentRoute);
 app.use("/", createAnalyticsRouter({ query, pool }));  // Analytics routes: /api/track-visit, /api/analytics/*
 app.use("/", createEvidenceConfigRoutes({ query, pool }));  // Evidence config routes: /api/evidence-config

@@ -25,6 +25,7 @@ import { Claim } from "../../../../shared/entities/types";
 import { ClaimLink } from "../RelationshipMap";
 import { useTaskStore } from "../../store/useTaskStore";
 import { calculateLinkPoints } from "../../services/gameScoring";
+import { useVerimeterMode } from "../../contexts/VerimeterModeContext";
 
 interface ClaimLinkOverlayProps {
   isOpen: boolean;
@@ -58,6 +59,7 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
   aiSupportLevel,
 }) => {
   const toast = useToast();
+  const { mode, aiWeight } = useVerimeterMode();
   const setVerimeterScore = useTaskStore((s) => s.setVerimeterScore);
   const viewerId = useTaskStore((s) => s.viewingUserId) ?? 0; // use your store id
 
@@ -196,7 +198,7 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
       if (contentId) {
         try {
           await updateScoresForContent(contentId, viewerId);
-          const scores = await fetchContentScores(contentId, viewerId);
+          const scores = await fetchContentScores(contentId, viewerId, mode, aiWeight);
           setVerimeterScore(contentId, scores?.verimeterScore ?? null);
         } catch (scoreErr) {
           console.warn("Failed to update scores after link creation:", scoreErr);

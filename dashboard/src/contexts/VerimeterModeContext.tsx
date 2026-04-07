@@ -17,10 +17,10 @@ interface VerimeterModeProviderProps {
 }
 
 export const VerimeterModeProvider: React.FC<VerimeterModeProviderProps> = ({ children }) => {
-  // Load from localStorage or default to 'user'
+  // Load from localStorage or default to 'combined' (AI + User ratings)
   const [mode, setModeState] = useState<VerimeterMode>(() => {
     const saved = localStorage.getItem('verimeterMode');
-    return (saved as VerimeterMode) || 'user';
+    return (saved as VerimeterMode) || 'combined';
   });
 
   const [aiWeight, setAIWeightState] = useState<number>(() => {

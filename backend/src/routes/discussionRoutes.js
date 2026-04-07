@@ -57,35 +57,7 @@ const registerDiscussionRoutes = (app, query, pool) => {
     }
   });
 
-  app.get("/api/discussion/:contentId", async (req, res) => {
-    const { contentId } = req.params;
-    const { viewerId } = req.query;
-
-    try {
-      let sql, params;
-
-      if (viewerId && viewerId !== "null") {
-        // User-specific view: only show discussions this user participated in
-        sql = `
-          SELECT * FROM discussion_entries
-          WHERE content_id = ? AND user_id = ?
-          ORDER BY created_at DESC
-        `;
-        params = [contentId, viewerId];
-      } else {
-        // View All: show all discussions
-        sql = `SELECT * FROM discussion_entries WHERE content_id = ? ORDER BY created_at DESC`;
-        params = [contentId];
-      }
-
-      const entries = await query(sql, params);
-      res.json(entries);
-    } catch (err) {
-      console.error("❌ Error fetching entries:", err);
-      res.status(500).json({ error: "Failed to fetch discussion entries" });
-    }
-  });
-
+  // IMPORTANT: Specific routes must come BEFORE parameterized routes
   // Get top contributors (by all activity types, platform-wide)
   app.get("/api/discussion/top-contributors", async (req, res) => {
     try {
@@ -188,6 +160,36 @@ const registerDiscussionRoutes = (app, query, pool) => {
     } catch (err) {
       console.error("❌ Error fetching hot topics:", err);
       res.status(500).json({ error: "Failed to fetch hot topics" });
+    }
+  });
+
+  // Parameterized route - must come AFTER specific routes
+  app.get("/api/discussion/:contentId", async (req, res) => {
+    const { contentId } = req.params;
+    const { viewerId } = req.query;
+
+    try {
+      let sql, params;
+
+      if (viewerId && viewerId !== "null") {
+        // User-specific view: only show discussions this user participated in
+        sql = `
+          SELECT * FROM discussion_entries
+          WHERE content_id = ? AND user_id = ?
+          ORDER BY created_at DESC
+        `;
+        params = [contentId, viewerId];
+      } else {
+        // View All: show all discussions
+        sql = `SELECT * FROM discussion_entries WHERE content_id = ? ORDER BY created_at DESC`;
+        params = [contentId];
+      }
+
+      const entries = await query(sql, params);
+      res.json(entries);
+    } catch (err) {
+      console.error("❌ Error fetching entries:", err);
+      res.status(500).json({ error: "Failed to fetch discussion entries" });
     }
   });
 };

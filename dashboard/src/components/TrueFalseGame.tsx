@@ -91,7 +91,7 @@ const TrueFalseGame: React.FC = () => {
         const references = linkedRaw
           .filter((link) => link.sourceClaim && link.sourceClaim.claim_id)
           .map((link) => {
-            const sc = link.sourceClaim;
+            const sc = link.sourceClaim!;
             return {
               sourceClaim: {
                 claim_id: sc.claim_id,

@@ -191,8 +191,31 @@ export interface LinkedClaim {
   verimeter_score: number | null;
   claim_text: string;
 
-  // ✅ Add this:
-  sourceClaim: {
+  // Unified link type indicator
+  link_type?: 'claim' | 'reference_claim' | 'reference_doc';
+
+  // Normalized relation for consistent display
+  relation?: 'support' | 'refute' | 'nuance';
+
+  // AI assessment fields (from reference_claim_task_links)
+  score?: number;
+  stance?: string;
+  support_level?: number; // -1 to 1
+  rationale?: string;
+
+  // Document-level assessment fields (from reference_claim_links)
+  snippet?: string;
+  truncated_snippet?: string;
+
+  // Reference claim text (for AI claim-to-claim links)
+  reference_claim_text?: string;
+
+  // Source information
+  source_name?: string;
+  source_url?: string;
+
+  // Full source claim details
+  sourceClaim?: {
     claim_id: number;
     claim_text: string;
     veracity_score: number;

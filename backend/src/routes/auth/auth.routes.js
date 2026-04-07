@@ -105,7 +105,7 @@ router.post("/api/register", async (req, res) => {
   }
 
   const hashedPassword = bcrypt.hashSync(password, 10);
-  const sql = "INSERT INTO users (username, password, email) VALUES (?, ?, ?)";
+  const sql = "INSERT INTO users (username, password, email, registered_at) VALUES (?, ?, ?, NOW())";
   const params = [username, hashedPassword, email];
 
   pool.query(sql, params, async (err, result) => {
@@ -248,6 +248,23 @@ router.post("/api/login", async (req, res) => {
       console.error("Error checking beta access:", betaErr);
       return res.status(500).json({ error: "Failed to verify beta access" });
     }
+
+    // ✅ CHECK USER ENABLED STATUS - prevent disabled users from logging in
+    if (user.enabled === 0 || user.enabled === false) {
+      console.log(`❌ Login failed: User account disabled - ${user.username}`);
+      await logFailedLogin({
+        username,
+        ipAddress,
+        userAgent: req.headers["user-agent"],
+        reason: "account_disabled",
+        fingerprint,
+      });
+      return res.status(403).json({
+        error: "ACCOUNT_DISABLED",
+        message: "Your account has been disabled. Please contact support for assistance."
+      });
+    }
+
     const isValidPassword = bcrypt.compareSync(password, user.password);
 
     if (!isValidPassword) {
@@ -264,6 +281,9 @@ router.post("/api/login", async (req, res) => {
 
     // Password is valid - proceed with login
     try {
+      // Update last_accessed_at timestamp
+      await query("UPDATE users SET last_accessed_at = NOW() WHERE user_id = ?", [user.user_id]);
+
       // Get user's role(s) from user_roles table BEFORE creating JWT
       let userRole = 'user'; // default role
       try {

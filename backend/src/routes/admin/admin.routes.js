@@ -374,5 +374,251 @@ export default function createAdminRouter({ query }) {
     }
   });
 
+  // ──────────────────────────────────────────────────────────────────
+  // GET /api/admin/roles
+  // Get all available roles (super_admin only)
+  // ──────────────────────────────────────────────────────────────────
+  router.get("/api/admin/roles", authenticateToken, async (req, res) => {
+    const userRole = req.user?.role;
+
+    if (userRole !== "super_admin") {
+      return res.status(403).json({
+        error: "Access denied. Super admin only.",
+      });
+    }
+
+    try {
+      const roles = await query("SELECT * FROM roles ORDER BY role_id");
+      logger.log(`✅ Admin: Retrieved ${roles.length} roles`);
+      res.json({ success: true, roles });
+    } catch (err) {
+      logger.error("❌ Error fetching roles:", err);
+      res.status(500).json({ error: "Failed to fetch roles" });
+    }
+  });
+
+  // ──────────────────────────────────────────────────────────────────
+  // GET /api/admin/users
+  // Get all users with their details for user management (super_admin only)
+  // ──────────────────────────────────────────────────────────────────
+  router.get("/api/admin/users", authenticateToken, async (req, res) => {
+    const userRole = req.user?.role;
+
+    if (userRole !== "super_admin") {
+      return res.status(403).json({
+        error: "Access denied. Super admin only.",
+      });
+    }
+
+    try {
+      // Get all users (same as /api/all-users)
+      const users = await query("SELECT * FROM users");
+
+      // Get roles for all users
+      const usersWithRoles = await Promise.all(
+        users.map(async (user) => {
+          try {
+            const userRoles = await query(
+              `
+              SELECT r.name
+              FROM user_roles ur
+              JOIN roles r ON ur.role_id = r.role_id
+              WHERE ur.user_id = ?
+            `,
+              [user.user_id]
+            );
+
+            const roleNames = userRoles.map((row) => row.name);
+            const role = roleNames.includes("super_admin")
+              ? "super_admin"
+              : roleNames.includes("admin")
+                ? "admin"
+                : "user";
+
+            return {
+              ...user,
+              role,
+              is_online: isOnline(user.user_id),
+            };
+          } catch (roleErr) {
+            logger.error(`Error fetching role for user ${user.user_id}:`, roleErr);
+            return {
+              ...user,
+              role: "user",
+              is_online: isOnline(user.user_id),
+            };
+          }
+        })
+      );
+
+      logger.log(`✅ Admin: Retrieved ${users.length} users`);
+      res.json({
+        success: true,
+        users: usersWithRoles,
+        count: usersWithRoles.length,
+      });
+    } catch (err) {
+      logger.error("❌ Error fetching users:", err);
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // ──────────────────────────────────────────────────────────────────
+  // PUT /api/admin/users/:userId/role
+  // Update a user's role (super_admin only)
+  // Body: { role: 'user' | 'admin' | 'super_admin' }
+  // ──────────────────────────────────────────────────────────────────
+  // ──────────────────────────────────────────────────────────────────
+  // PUT /api/admin/users/:userId/role
+  // Update a user's role (super_admin only)
+  // Body: { role: 'user' | 'admin' | 'super_admin' }
+  // ──────────────────────────────────────────────────────────────────
+  router.put(
+    "/api/admin/users/:userId/role",
+    authenticateToken,
+    async (req, res) => {
+      const userRole = req.user?.role;
+
+      if (userRole !== "super_admin") {
+        return res.status(403).json({
+          error: "Access denied. Super admin only.",
+        });
+      }
+
+      const { userId } = req.params;
+      const { role } = req.body;
+
+      // Validate role
+      const validRoles = ["user", "admin", "super_admin"];
+      if (!validRoles.includes(role)) {
+        return res.status(400).json({
+          error: `Invalid role. Must be one of: ${validRoles.join(", ")}`,
+        });
+      }
+
+      try {
+        // Check if user exists
+        const users = await query("SELECT * FROM users WHERE user_id = ?", [
+          userId,
+        ]);
+
+        if (users.length === 0) {
+          return res.status(404).json({ error: "User not found" });
+        }
+
+        const user = users[0];
+
+        // Prevent super_admin from removing their own super_admin role
+        if (req.user.user_id === parseInt(userId) && role !== "super_admin") {
+          return res.status(403).json({
+            error: "Cannot remove your own super_admin role",
+          });
+        }
+
+        // Get role_id from roles table
+        const roles = await query("SELECT role_id FROM roles WHERE name = ?", [
+          role,
+        ]);
+
+        if (roles.length === 0) {
+          return res.status(400).json({ error: `Role '${role}' not found in database` });
+        }
+
+        const roleId = roles[0].role_id;
+
+        // Remove all existing roles for this user
+        await query("DELETE FROM user_roles WHERE user_id = ?", [userId]);
+
+        // Add the new role
+        await query("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", [
+          userId,
+          roleId,
+        ]);
+
+        logger.log(
+          `✅ Admin: User ${user.username} (ID: ${userId}) role updated to ${role} by ${req.user.username}`,
+        );
+
+        res.json({
+          success: true,
+          message: `User role updated to ${role}`,
+          user: {
+            user_id: userId,
+            username: user.username,
+            email: user.email,
+            role,
+          },
+        });
+      } catch (err) {
+        logger.error("❌ Error updating user role:", err);
+        res.status(500).json({ error: "Failed to update user role" });
+      }
+    },
+  );
+
+  // ──────────────────────────────────────────────────────────────────
+  // PUT /api/admin/users/:userId/toggle-enabled
+  // Toggle user enabled/disabled status (super_admin only)
+  // Body: { enabled: true | false }
+  // ──────────────────────────────────────────────────────────────────
+  router.put(
+    "/api/admin/users/:userId/toggle-enabled",
+    authenticateToken,
+    async (req, res) => {
+      const userRole = req.user?.role;
+
+      if (userRole !== "super_admin") {
+        return res.status(403).json({
+          error: "Access denied. Super admin only.",
+        });
+      }
+
+      const { userId } = req.params;
+      const { enabled } = req.body;
+
+      if (typeof enabled !== "boolean") {
+        return res.status(400).json({
+          error: "Invalid enabled value. Must be true or false.",
+        });
+      }
+
+      try {
+        // Check if user exists
+        const users = await query("SELECT * FROM users WHERE user_id = ?", [
+          userId,
+        ]);
+
+        if (users.length === 0) {
+          return res.status(404).json({ error: "User not found" });
+        }
+
+        const user = users[0];
+
+        // Update enabled status
+        await query("UPDATE users SET enabled = ? WHERE user_id = ?", [
+          enabled ? 1 : 0,
+          userId,
+        ]);
+
+        logger.log(
+          `✅ Admin: User ${user.username} ${enabled ? "enabled" : "disabled"}`,
+        );
+
+        res.json({
+          success: true,
+          message: `User ${enabled ? "enabled" : "disabled"} successfully`,
+          user: {
+            user_id: userId,
+            username: user.username,
+            enabled,
+          },
+        });
+      } catch (err) {
+        logger.error("❌ Error toggling user enabled status:", err);
+        res.status(500).json({ error: "Failed to update user status" });
+      }
+    },
+  );
+
   return router;
 }

@@ -30,6 +30,7 @@ import {
 import { Claim } from "../../../../shared/entities/types";
 import { ClaimLink } from "../RelationshipMap";
 import { useTaskStore } from "../../store/useTaskStore";
+import { useVerimeterMode } from "../../contexts/VerimeterModeContext";
 
 interface ClaimLinkModalProps {
   isOpen: boolean;
@@ -59,6 +60,7 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
   initialSupportLevel,
 }) => {
   const toast = useToast();
+  const { mode, aiWeight } = useVerimeterMode();
   const setVerimeterScore = useTaskStore((s) => s.setVerimeterScore);
   const viewerId = useTaskStore((s) => s.viewingUserId);
 
@@ -98,13 +100,14 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
   }, [isReadOnly, isOpen, targetClaim?.claim_id, viewerId, verimeterScore]);
 
   // Helper function to determine relationship and color based on support level
+  // STANDARDIZED THRESHOLDS: -15 to +15 is nuanced, outside is support/refute
   const getStanceInfo = (level: number) => {
-    if (level >= 10) {
+    if (level > 15) {
       return { relationship: 'supports', label: 'Supports', color: 'green' };
-    } else if (level <= -10) {
+    } else if (level < -15) {
       return { relationship: 'refutes', label: 'Refutes', color: 'red' };
     } else {
-      return { relationship: 'related', label: 'Nuanced', color: 'blue' };
+      return { relationship: 'related', label: 'Nuanced', color: 'yellow' };
     }
   };
 
@@ -137,7 +140,7 @@ const ClaimLinkModal: React.FC<ClaimLinkModalProps> = ({
       const contentId = targetClaim?.content_id ?? null;
       if (contentId) {
         await updateScoresForContent(contentId, viewerId);
-        const scores = await fetchContentScores(contentId, viewerId);
+        const scores = await fetchContentScores(contentId, viewerId, mode, aiWeight);
         setVerimeterScore(contentId, scores?.verimeterScore ?? null);
       }
 

@@ -234,9 +234,9 @@ const AuthCard: React.FC<AuthCardProps> = ({
       <Box
         ref={cardRef}
         className="mr-card mr-card-purple"
-        p={3}
+        p={compact ? 1 : 3}
         w="100%"
-        height="405px"
+        height={compact ? "130px" : "405px"}
         display="flex"
         flexDirection="column"
         justifyContent="space-between"
@@ -245,13 +245,18 @@ const AuthCard: React.FC<AuthCardProps> = ({
         <div className="mr-scanlines" />
         <Box>
           <Center>
-            <Text className="mr-badge mr-badge-purple" fontSize="sm" mb={1}>
+            <Text
+              className="mr-badge mr-badge-purple"
+              fontSize={compact ? "7px" : "sm"}
+              mb={compact ? 0 : 1}
+              lineHeight={compact ? "1" : "normal"}
+            >
               Author Details
             </Text>
           </Center>
           {authors.length > 1 ? (
             <Select
-              size="sm"
+              size={compact ? "xs" : "sm"}
               value={activeAuthor?.author_id}
               onChange={(e) => {
                 const found = authors.find(
@@ -259,11 +264,12 @@ const AuthCard: React.FC<AuthCardProps> = ({
                 );
                 if (found) setActiveAuthor(found);
               }}
-              mb={3}
+              mb={compact ? 1 : 3}
               textAlign="center"
               fontWeight="semibold"
               bg="whiteAlpha.800"
-              fontSize="md"
+              fontSize={compact ? "8px" : "md"}
+              h={compact ? "18px" : "auto"}
               color="gray.800"
               borderRadius="md"
             >
@@ -275,28 +281,31 @@ const AuthCard: React.FC<AuthCardProps> = ({
               ))}
             </Select>
           ) : (
-            <Box textAlign="center" mb={3}>
+            <Box textAlign="center" mb={compact ? 1 : 3}>
               <Text
                 fontWeight="semibold"
-                fontSize="md"
+                fontSize={compact ? "9px" : "md"}
                 bg="whiteAlpha.700"
                 color="gray.800"
                 borderRadius="md"
-                px={2}
-                py={1}
+                px={compact ? 1 : 2}
+                py={compact ? 0 : 1}
+                noOfLines={1}
+                overflow="hidden"
+                textOverflow="ellipsis"
               >
                 {activeAuthor?.author_first_name}{" "}
                 {activeAuthor?.author_last_name}
               </Text>
               {/* 👇 show title right under name */}
-              {activeAuthor?.author_title ? (
+              {!compact && activeAuthor?.author_title ? (
                 <Text fontSize="sm" color="gray.200" mt={1}>
                   {activeAuthor.author_title}
                 </Text>
               ) : null}
             </Box>
           )}
-          <Center>
+          <VStack spacing={0}>
             <Box
               as="button"
               onClick={() => fileInputRef.current?.click()}
@@ -304,11 +313,11 @@ const AuthCard: React.FC<AuthCardProps> = ({
               borderRadius="full"
               overflow="hidden"
               border="2px solid #805AD5"
-              boxSize="100px"
+              boxSize={compact ? "40px" : "100px"}
               display="flex"
               alignItems="center"
               justifyContent="center"
-              marginBottom={"10px"}
+              marginBottom={compact ? "2px" : "10px"}
             >
               {activeAuthor?.author_profile_pic ? (
                 <>
@@ -316,11 +325,11 @@ const AuthCard: React.FC<AuthCardProps> = ({
                     src={`${API_BASE_URL}/${activeAuthor.author_profile_pic}`}
                     alt="Author"
                     objectFit="cover"
-                    boxSize="100px"
+                    boxSize={compact ? "40px" : "100px"}
                   />
                 </>
               ) : (
-                <Text fontSize="xs" color="gray.300">
+                <Text fontSize={compact ? "7px" : "xs"} color="gray.300">
                   Upload
                 </Text>
               )}
@@ -339,59 +348,73 @@ const AuthCard: React.FC<AuthCardProps> = ({
                 />
               )}
             </Box>
-          </Center>
+          </VStack>
 
-          <HStack justify="center" spacing={4} mt={1}>
-            <Flex direction="column" align="center" className="mr-metric">
-              <Text className="mr-metric-label">Bias</Text>
-              <Flex align="center" gap={1}>
-                <Text>{getBiasEmoji(parseFloat(avgScore("bias_score")))}</Text>
-                <Text className="mr-metric-value">
-                  {avgScore("bias_score")}
-                </Text>
+          {!compact && (
+            <HStack justify="center" spacing={4} mt={1}>
+              <Flex direction="column" align="center" className="mr-metric">
+                <Text className="mr-metric-label">Bias</Text>
+                <Flex align="center" gap={1}>
+                  <Text>{getBiasEmoji(parseFloat(avgScore("bias_score")))}</Text>
+                  <Text className="mr-metric-value">
+                    {avgScore("bias_score")}
+                  </Text>
+                </Flex>
               </Flex>
-            </Flex>
-            <Flex direction="column" align="center" className="mr-metric">
-              <Text className="mr-metric-label">Veracity</Text>
-              <Flex align="center" gap={1}>
-                <Text>
-                  {getVeracityEmoji(parseFloat(avgScore("veracity_score")))}
-                </Text>
-                <Text className="mr-metric-value">
-                  {avgScore("veracity_score")}
-                </Text>
+              <Flex direction="column" align="center" className="mr-metric">
+                <Text className="mr-metric-label">Veracity</Text>
+                <Flex align="center" gap={1}>
+                  <Text>
+                    {getVeracityEmoji(parseFloat(avgScore("veracity_score")))}
+                  </Text>
+                  <Text className="mr-metric-value">
+                    {avgScore("veracity_score")}
+                  </Text>
+                </Flex>
               </Flex>
-            </Flex>
-          </HStack>
-          <Box />
-          <Box
-            mt={1}
-            textAlign="center"
-            onClick={activeAuthor?.description && activeAuthor.description.length > 100 ? onBioPopupOpen : undefined}
-            cursor={activeAuthor?.description && activeAuthor.description.length > 100 ? "pointer" : "default"}
-            _hover={activeAuthor?.description && activeAuthor.description.length > 100 ? { opacity: 0.8 } : undefined}
-          >
-            <Text
-              className="mr-text-secondary"
-              fontSize="sm"
-              noOfLines={2}
-              sx={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                display: "-webkit-box",
-                WebkitBoxOrient: "vertical",
-              }}
-            >
-              {activeAuthor?.description || "No bio available."}
-            </Text>
-          </Box>
+            </HStack>
+          )}
+          {!compact && (
+            <>
+              <Box />
+              <Box
+                mt={1}
+                textAlign="center"
+                onClick={activeAuthor?.description && activeAuthor.description.length > 100 ? onBioPopupOpen : undefined}
+                cursor={activeAuthor?.description && activeAuthor.description.length > 100 ? "pointer" : "default"}
+                _hover={activeAuthor?.description && activeAuthor.description.length > 100 ? { opacity: 0.8 } : undefined}
+              >
+                <Text
+                  className="mr-text-secondary"
+                  fontSize="sm"
+                  noOfLines={2}
+                  sx={{
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    display: "-webkit-box",
+                    WebkitBoxOrient: "vertical",
+                  }}
+                >
+                  {activeAuthor?.description || "No bio available."}
+                </Text>
+              </Box>
+            </>
+          )}
         </Box>
-        <Center>
-          <Menu>
-            <MenuButton as={Button} className="mr-button" mt={3}>
+        <Center mt={compact ? 0 : undefined}>
+          <Menu isLazy>
+            <MenuButton
+              as={Button}
+              className="mr-button"
+              mt={compact ? 0 : 3}
+              size={compact ? "xs" : "md"}
+              fontSize={compact ? "7px" : "md"}
+              h={compact ? "16px" : "auto"}
+              px={compact ? 1 : undefined}
+            >
               Actions
             </MenuButton>
-            <MenuList>
+            <MenuList zIndex={9999}>
               <MenuItem
                 onClick={() => {
                   setActiveAuthor(activeAuthor);

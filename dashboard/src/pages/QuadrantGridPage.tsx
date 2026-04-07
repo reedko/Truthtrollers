@@ -16,10 +16,12 @@ import {
   updateScoresForContent,
   fetchContentScores,
 } from "../services/useDashboardAPI";
+import { useVerimeterMode } from "../contexts/VerimeterModeContext";
 
 const QuadrantGridPage = () => {
   const navigate = useNavigate();
   const toast = useToast();
+  const { mode, aiWeight } = useVerimeterMode();
   const selectedTask = useTaskStore((s) => s.selectedTask);
   const selectedTaskId = useTaskStore((s) => s.selectedTaskId);
   const viewerId = useTaskStore((s) => s.viewingUserId);
@@ -37,7 +39,7 @@ const QuadrantGridPage = () => {
 
   const handleVerimeterRefresh = async (contentId: number) => {
     await updateScoresForContent(contentId, viewerId);
-    const scores = await fetchContentScores(contentId, null);
+    const scores = await fetchContentScores(contentId, viewerId, mode, aiWeight);
     setVerimeterScore(scores?.verimeterScore ?? null);
   };
 
@@ -84,7 +86,7 @@ const QuadrantGridPage = () => {
         setGraphData(data);
 
         // Fetch verimeterScore
-        const scores = await fetchContentScores(selectedTaskId, null);
+        const scores = await fetchContentScores(selectedTaskId, viewerId, mode, aiWeight);
         setVerimeterScore(scores?.verimeterScore ?? null);
       } catch (err) {
         console.error("Error fetching graph data:", err);

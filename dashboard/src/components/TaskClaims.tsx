@@ -279,7 +279,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
           pointerEvents="none"
         />
         <Text position="relative" zIndex={1}>
-          + Add Claim
+          + Add Claixm
         </Text>
       </Box>
 
@@ -577,6 +577,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
                   width="20px"
                   height="100%"
                   background="linear-gradient(90deg, rgba(167, 139, 250, 0.4) 0%, transparent 100%)"
+                  borderLeftRadius="12px"
                   pointerEvents="none"
                 />
               )}
@@ -636,12 +637,12 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
         onSave={(claim: Claim) => {
           if (claim.claim_id) {
             // Check if claim text changed
-            const original = claims.find(c => c.claim_id === claim.claim_id);
+            const original = claims.find((c) => c.claim_id === claim.claim_id);
             if (original && original.claim_text !== claim.claim_text) {
               // Text changed - show evidence prompt
               setPendingEdit({
                 claim,
-                originalText: original.claim_text
+                originalText: original.claim_text,
               });
               setShowEvidencePrompt(true);
               setIsClaimModalOpen(false);
@@ -711,7 +712,8 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
                 </Text>
               </Box>
               <Text color={useColorModeValue("gray.600", "gray.400")}>
-                Would you like to run the evidence engine to find sources for the updated claim? This may take 30-60 seconds.
+                Would you like to run the evidence engine to find sources for
+                the updated claim? This may take 30-60 seconds.
               </Text>
             </VStack>
           </ModalBody>
@@ -722,7 +724,10 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
               onClick={() => {
                 if (pendingEdit) {
                   // Pass runEvidence: true to parent handler
-                  onEditClaim({ ...pendingEdit.claim, runEvidence: true } as any);
+                  onEditClaim({
+                    ...pendingEdit.claim,
+                    runEvidence: true,
+                  } as any);
                 }
                 setShowEvidencePrompt(false);
                 setPendingEdit(null);
@@ -735,7 +740,10 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
               onClick={() => {
                 if (pendingEdit) {
                   // Pass runEvidence: false to parent handler
-                  onEditClaim({ ...pendingEdit.claim, runEvidence: false } as any);
+                  onEditClaim({
+                    ...pendingEdit.claim,
+                    runEvidence: false,
+                  } as any);
                 }
                 setShowEvidencePrompt(false);
                 setPendingEdit(null);

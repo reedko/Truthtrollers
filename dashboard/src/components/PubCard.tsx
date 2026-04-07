@@ -18,6 +18,7 @@ import {
   Flex,
   Tooltip,
   Select,
+  Portal,
 } from "@chakra-ui/react";
 import { Publisher, PublisherRating } from "../../../shared/entities/types";
 import { BiChevronDown } from "react-icons/bi";
@@ -287,9 +288,9 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
       <Box
         ref={cardRef}
         className="mr-card mr-card-yellow"
-        p={3}
+        p={compact ? 1 : 3}
         w="100%"
-        height="405px"
+        height={compact ? "130px" : "405px"}
         display="flex"
         flexDirection="column"
         justifyContent="space-between"
@@ -298,14 +299,19 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
         <div className="mr-scanlines" />
         <Box>
           <Center>
-            <Text className="mr-badge mr-badge-yellow" fontSize="sm" mb={1}>
+            <Text
+              className="mr-badge mr-badge-yellow"
+              fontSize={compact ? "7px" : "sm"}
+              mb={compact ? 0 : 1}
+              lineHeight={compact ? "1" : "normal"}
+            >
               Publisher Details
             </Text>
           </Center>
 
           {publisherList.length > 1 ? (
             <Select
-              size="sm"
+              size={compact ? "xs" : "sm"}
               value={activePublisher?.publisher_id}
               onChange={(e) => {
                 const selected = publisherList.find(
@@ -313,7 +319,9 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
                 );
                 if (selected) setActivePublisher(selected);
               }}
-              mb={3}
+              mb={compact ? 1 : 3}
+              fontSize={compact ? "8px" : "md"}
+              h={compact ? "18px" : "auto"}
               textAlign="center"
               bg="whiteAlpha.800"
               color="gray.800"
@@ -328,20 +336,23 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
           ) : (
             <Text
               fontWeight="semibold"
-              fontSize="md"
-              mb={3}
+              fontSize={compact ? "9px" : "md"}
+              mb={compact ? 1 : 3}
               textAlign="center"
               bg="whiteAlpha.700"
               color="gray.800"
               borderRadius="md"
-              px={2}
-              py={1}
+              px={compact ? 1 : 2}
+              py={compact ? 0 : 1}
+              noOfLines={1}
+              overflow="hidden"
+              textOverflow="ellipsis"
             >
               {displayName}
             </Text>
           )}
 
-          <Center>
+          <VStack spacing={0}>
             <Box
               as="button"
               onClick={() => hasPublisher && fileInputRef.current?.click()}
@@ -349,11 +360,11 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
               borderRadius="full"
               overflow="hidden"
               border="2px solid #ccc"
-              boxSize="100px"
+              boxSize={compact ? "40px" : "100px"}
               display="flex"
               alignItems="center"
               justifyContent="center"
-              marginBottom={"10px"}
+              marginBottom={compact ? "2px" : "10px"}
               opacity={hasPublisher ? 1 : 0.5}
             >
               {activePublisher?.publisher_icon ? (
@@ -362,15 +373,20 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
                     activePublisher.publisher_icon
                   }`}
                   alt={activePublisher.publisher_name}
-                  boxSize="100px"
+                  boxSize={compact ? "40px" : "100px"}
                   objectFit="cover"
                 />
               ) : (
-                <Text fontSize="xs" color="gray.300">
+                <Text fontSize={compact ? "7px" : "xs"} color="gray.300">
                   {hasPublisher ? "Upload" : "No Icon"}
                 </Text>
               )}
             </Box>
+            {compact && (
+              <Text fontSize="6px" color="var(--mr-text-secondary)" lineHeight="1" mb={1}>
+                Bias: {avgBias}
+              </Text>
+            )}
             <input
               type="file"
               accept="image/*"
@@ -382,96 +398,110 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
               }}
               style={{ display: "none" }}
             />
-          </Center>
+          </VStack>
 
-          <HStack justify="center" spacing={4} mt={2}>
-            <Flex direction="column" align="center" className="mr-metric">
-              <Text className="mr-metric-label">Bias</Text>
-              <Flex align="center" gap={1}>
-                <Text>{getBiasEmoji(parseFloat(avgBias))}</Text>
-                <Text className="mr-metric-value">{avgBias}</Text>
-              </Flex>
-            </Flex>
-            <Flex direction="column" align="center" className="mr-metric">
-              <Text className="mr-metric-label">Veracity</Text>
-              <Flex align="center" gap={1}>
-                <Text>{getVeracityEmoji(parseFloat(avgVeracity))}</Text>
-                <Text className="mr-metric-value">{avgVeracity}</Text>
-              </Flex>
-            </Flex>
-          </HStack>
+          {!compact && (
+            <>
+              <HStack justify="center" spacing={4} mt={2}>
+                <Flex direction="column" align="center" className="mr-metric">
+                  <Text className="mr-metric-label">Bias</Text>
+                  <Flex align="center" gap={1}>
+                    <Text>{getBiasEmoji(parseFloat(avgBias))}</Text>
+                    <Text className="mr-metric-value">{avgBias}</Text>
+                  </Flex>
+                </Flex>
+                <Flex direction="column" align="center" className="mr-metric">
+                  <Text className="mr-metric-label">Veracity</Text>
+                  <Flex align="center" gap={1}>
+                    <Text>{getVeracityEmoji(parseFloat(avgVeracity))}</Text>
+                    <Text className="mr-metric-value">{avgVeracity}</Text>
+                  </Flex>
+                </Flex>
+              </HStack>
 
-          {activePublisher?.description && (
-            <Text
-              className="mr-text-secondary"
-              fontSize="sm"
-              mt={3}
-              px={2}
-              textAlign="center"
-            >
-              {activePublisher.description}
-            </Text>
-          )}
+              {activePublisher?.description && (
+                <Text
+                  className="mr-text-secondary"
+                  fontSize="sm"
+                  mt={3}
+                  px={2}
+                  textAlign="center"
+                >
+                  {activePublisher.description}
+                </Text>
+              )}
 
-          {!hasPublisher && (
-            <Text
-              className="mr-text-secondary"
-              fontSize="sm"
-              mt={3}
-              px={2}
-              textAlign="center"
-              color="gray.500"
-            >
-              No publisher information available
-            </Text>
+              {!hasPublisher && (
+                <Text
+                  className="mr-text-secondary"
+                  fontSize="sm"
+                  mt={3}
+                  px={2}
+                  textAlign="center"
+                  color="gray.500"
+                >
+                  No publisher information available
+                </Text>
+              )}
+            </>
           )}
         </Box>
 
-        <HStack spacing={2} w="100%">
+        <HStack spacing={compact ? 1 : 2} w="100%">
           <Box flex="1" minW={0}>
             <Button
               onClick={onViewRatingsOpen}
               className="mr-button"
               w="100%"
               isDisabled={!hasPublisher}
+              size={compact ? "xs" : "md"}
+              fontSize={compact ? "8px" : "md"}
+              h={compact ? "20px" : "auto"}
+              px={compact ? 1 : undefined}
             >
               Ratings
             </Button>
           </Box>
           <Box flex="1" minW={0}>
-            <Menu>
+            <Menu isLazy>
               <MenuButton
                 as={Button}
                 className="mr-button"
                 w="100%"
-                pl="20px"
+                pl={compact ? 0 : "20px"}
                 isDisabled={!hasPublisher}
+                size={compact ? "xs" : "md"}
+                fontSize={compact ? "8px" : "md"}
+                h={compact ? "20px" : "auto"}
+                px={compact ? 1 : undefined}
               >
-                <Text ml={-2}>Actions</Text>
+                <Text ml={compact ? 0 : -2}>Actions</Text>
               </MenuButton>
-              <MenuList>
-                <MenuItem onClick={() => onRatingOpen()}>
-                  📊 Manage Ratings
-                </MenuItem>
-                <MenuItem onClick={() => onBioOpen()}>
-                  ✏️ Edit Description
-                </MenuItem>
-                <MenuItem onClick={() => onCredibilityOpen()}>
-                  🔍 Check Credibility
-                </MenuItem>
-                {contentId && (
-                  <>
-                    <MenuItem onClick={onAddPublisherOpen}>
-                      ➕ Add Publisher
-                    </MenuItem>
-                    {activePublisher && publisherList.length > 1 && (
-                      <MenuItem onClick={handleRemovePublisher} color="red.400">
-                        🗑️ Remove Publisher
+              <Portal>
+                <MenuList zIndex={9999} fontSize={compact ? "xs" : "md"}>
+                  <MenuItem onClick={() => onRatingOpen()}>
+                    📊 Manage Ratings
+                  </MenuItem>
+                  <MenuItem onClick={() => onBioOpen()}>
+                    ✏️ Edit Description
+                  </MenuItem>
+                  <MenuItem onClick={() => onCredibilityOpen()}>
+                    🔍 Check Credibility
+                  </MenuItem>
+                  {contentId && (
+                    <>
+                      <MenuItem onClick={onAddPublisherOpen}>
+                        ➕ Add Publisher
                       </MenuItem>
-                    )}
-                  </>
-                )}
-              </MenuList>
+                      {activePublisher && publisherList.length > 1 && (
+                        <MenuItem onClick={handleRemovePublisher} color="red.400">
+                          🗑️ Remove Publisher
+                        </MenuItem>
+                      )}
+                    </>
+                  )}
+                </MenuList>
+              </Portal>
             </Menu>
           </Box>
         </HStack>

@@ -333,6 +333,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                     width="20px"
                     height="100%"
                     background="linear-gradient(90deg, rgba(59, 130, 246, 0.4) 0%, transparent 100%)"
+                    borderLeftRadius="12px"
                     pointerEvents="none"
                   />
                 )}

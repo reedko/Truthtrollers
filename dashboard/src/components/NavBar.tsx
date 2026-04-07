@@ -39,6 +39,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
   const selectedTaskId = useTaskStore((s) => s.selectedTaskId);
   const setRedirect = useTaskStore((s) => s.setRedirect);
   const navColor = useColorModeValue("gray.700", "white");
+  const borderColor = useColorModeValue("gray.300", "gray.600");
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   const handleNavClick = (target: string) => {
@@ -133,24 +134,32 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
           >
             {/* Navigation Menu - Left Side */}
             <HStack spacing={{ base: 1, lg: 2 }} flex="1">
-              <Link
-                as={RouterLink}
-                to="/tutorials"
-                fontSize={{ base: "11px", xl: "15px" }}
-                border="1px solid"
-                borderColor={useColorModeValue("gray.300", "gray.600")}
-                borderRadius="full"
-                px={2}
-                py={1}
-              >
-                Tutorial Videos
-              </Link>
+              <Menu>
+                <MenuButton
+                  as={Button}
+                  size="xs"
+                  variant="ghost"
+                  fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
+                  border="1px solid"
+                  borderColor={borderColor}
+                  borderRadius="full"
+                  px={2}
+                  py={1}
+                >
+                  Tutorial
+                </MenuButton>
+                <MenuList zIndex={9999}>
+                  <MenuItem as={RouterLink} to="/tutorials" fontSize="md">
+                    Video Gallery
+                  </MenuItem>
+                </MenuList>
+              </Menu>
               <Link
                 as={RouterLink}
                 to="/dashboard"
-                fontSize={{ base: "11px", xl: "15px" }}
+                fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
                 border="1px solid"
-                borderColor={useColorModeValue("gray.300", "gray.600")}
+                borderColor={borderColor}
                 borderRadius="full"
                 px={2}
                 py={1}
@@ -160,9 +169,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
               <Link
                 as={RouterLink}
                 to="/tasks"
-                fontSize={{ base: "11px", xl: "15px" }}
+                fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
                 border="1px solid"
-                borderColor={useColorModeValue("gray.300", "gray.600")}
+                borderColor={borderColor}
                 borderRadius="full"
                 px={2}
                 py={1}
@@ -172,9 +181,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
               <Link
                 as={RouterLink}
                 to="/extension"
-                fontSize={{ base: "11px", xl: "15px" }}
+                fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
                 border="1px solid"
-                borderColor={useColorModeValue("gray.300", "gray.600")}
+                borderColor={borderColor}
                 borderRadius="full"
                 px={2}
                 py={1}
@@ -186,9 +195,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   as={Button}
                   size="xs"
                   variant="ghost"
-                  fontSize={{ base: "11px", xl: "15px" }}
+                  fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
                   border="1px solid"
-                  borderColor={useColorModeValue("gray.300", "gray.600")}
+                  borderColor={borderColor}
                   borderRadius="full"
                   px={2}
                   py={1}
@@ -243,9 +252,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   as={Button}
                   size="xs"
                   variant="ghost"
-                  fontSize={{ base: "11px", xl: "15px" }}
+                  fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
                   border="1px solid"
-                  borderColor={useColorModeValue("gray.300", "gray.600")}
+                  borderColor={borderColor}
                   borderRadius="full"
                   px={2}
                   py={1}
@@ -276,9 +285,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   as={Button}
                   size="xs"
                   variant="ghost"
-                  fontSize={{ base: "11px", xl: "15px" }}
+                  fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
                   border="1px solid"
-                  borderColor={useColorModeValue("gray.300", "gray.600")}
+                  borderColor={borderColor}
                   borderRadius="full"
                   px={2}
                   py={1}
@@ -302,9 +311,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   as={Button}
                   size="xs"
                   variant="ghost"
-                  fontSize={{ base: "11px", xl: "15px" }}
+                  fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
                   border="1px solid"
-                  borderColor={useColorModeValue("gray.300", "gray.600")}
+                  borderColor={borderColor}
                   borderRadius="full"
                   px={2}
                   py={1}
@@ -348,13 +357,13 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
               <HStack
                 spacing={2}
                 border="1px solid"
-                borderColor={useColorModeValue("gray.300", "gray.600")}
+                borderColor={borderColor}
                 borderRadius="full"
                 px={2}
                 py={1}
               >
                 <AccountMenu />
-                <Text fontSize={{ base: "11px", xl: "15px" }}>Account</Text>
+                <Text fontSize={{ base: "11px", lg: "11px", xl: "15px" }}>Account</Text>
               </HStack>
             </HStack>
 
@@ -366,9 +375,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 variant="ghost"
                 leftIcon={<SearchIcon />}
                 onClick={onOpen}
-                fontSize={{ base: "11px", xl: "15px" }}
+                fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
                 border="1px solid"
-                borderColor={useColorModeValue("gray.300", "gray.600")}
+                borderColor={borderColor}
                 borderRadius="full"
                 px={2}
                 py={1}
@@ -383,9 +392,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                     as={Button}
                     size="xs"
                     variant="ghost"
-                    fontSize={{ base: "11px", xl: "15px" }}
+                    fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
                     border="1px solid"
-                    borderColor={useColorModeValue("gray.300", "gray.600")}
+                    borderColor={borderColor}
                     borderRadius="full"
                     px={2}
                     py={1}

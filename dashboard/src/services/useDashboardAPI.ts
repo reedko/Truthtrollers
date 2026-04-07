@@ -22,7 +22,7 @@ export type VerimeterMode = 'ai' | 'user' | 'combined';
 export const fetchContentScores = async (
   contentId: number,
   userId: number | null,
-  mode: VerimeterMode = 'user',
+  mode: VerimeterMode = 'combined',
   aiWeight: number = 0.5
 ) => {
   let url = `${API_BASE_URL}/api/content/${contentId}/scores`;

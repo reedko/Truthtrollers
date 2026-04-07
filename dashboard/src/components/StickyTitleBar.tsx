@@ -3,6 +3,7 @@ import { Box, HStack, VStack, Image, Text, useColorModeValue } from "@chakra-ui/
 import { useTaskStore } from "../store/useTaskStore";
 import { fetchContentScores } from "../services/useDashboardAPI";
 import VerimeterMeter from "./VerimeterMeter";
+import { useVerimeterMode } from "../contexts/VerimeterModeContext";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
@@ -18,6 +19,7 @@ interface StickyTitleBarProps {
 const StickyTitleBar: React.FC<StickyTitleBarProps> = ({
   alwaysVisible = false,
 }) => {
+  const { mode, aiWeight } = useVerimeterMode();
   const selectedTask = useTaskStore((s) => s.selectedTask);
   const viewerId = useTaskStore((s) => s.viewingUserId);
   const [isVisible, setIsVisible] = useState(alwaysVisible);
@@ -51,11 +53,11 @@ const StickyTitleBar: React.FC<StickyTitleBarProps> = ({
   // Fetch verimeter score
   useEffect(() => {
     if (selectedTask?.content_id) {
-      fetchContentScores(selectedTask.content_id, viewerId).then((scores) => {
+      fetchContentScores(selectedTask.content_id, viewerId, mode, aiWeight).then((scores) => {
         setVerimeterScore(scores?.verimeterScore ?? null);
       });
     }
-  }, [selectedTask?.content_id, viewerId]);
+  }, [selectedTask?.content_id, viewerId, mode, aiWeight]);
 
   if (!selectedTask) return null;
 

@@ -160,10 +160,11 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
   // 🔧 Auto-pick variant by breakpoint unless explicitly provided
   const bpVariant = useBreakpointValue<Variant>({
-    base: "micro",
-    sm: "micro",
-    md: "micro", // iPad-ish
-    lg: "full",
+    base: "micro",   // phone → MicroHeaderRail
+    sm: "micro",     // phone landscape → MicroHeaderRail
+    md: "compact",   // 800x600 → compact cards
+    lg: "compact",   // 1024x768 → compact cards
+    xl: "full",      // full res → full cards
   });
 
   const [localVariant, setLocalVariant] = useState<Variant>(
@@ -184,8 +185,9 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   >({
     base: "flex-start", // start for horizontal scroll
     sm: "center",
-    md: "space-around",
-    lg: "space-between",
+    md: "center",       // center for 800x600
+    lg: "center",       // center for 1024
+    xl: "space-between", // spread for full res
   });
 
   // 🔧 Enable horizontal scrolling on mobile
@@ -328,29 +330,38 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   const cardWrapSx = {
     "--card-max": `${CARD_W}px`,
 
-    // Mobile: fixed cards + horizontal scroll
+    // Responsive flex behavior
     flex: {
-      base: "0 0 280px",
-      lg: "1 1 0", // Desktop: allow shrinking/growing
+      base: "0 0 280px",      // phone: fixed
+      sm: "0 0 280px",        // phone landscape: fixed
+      md: "0 0 140px",        // 800x600: fixed much smaller
+      lg: "0 0 160px",        // 1024: fixed compact
+      xl: "1 1 0",            // full res: flexible
     },
 
-    // Let the card width be responsive on desktop:
-    // - can shrink down to ~180px
-    // - prefers ~20vw
-    // - never exceeds CARD_W
+    // Responsive card widths
     width: {
-      base: "280px",
-      lg: "clamp(180px, 20vw, var(--card-max))",
+      base: "280px",                                  // phone
+      sm: "280px",                                    // phone landscape
+      md: "140px",                                    // 800x600
+      lg: "160px",                                    // 1024
+      xl: "clamp(180px, 20vw, var(--card-max))",     // full res
     },
 
     maxWidth: {
       base: "280px",
-      lg: "var(--card-max)",
+      sm: "280px",
+      md: "140px",
+      lg: "160px",
+      xl: "var(--card-max)",
     },
 
     minWidth: {
       base: "280px",
-      lg: "180px",
+      sm: "280px",
+      md: "140px",
+      lg: "160px",
+      xl: "180px",
     },
 
     "> *": {
@@ -488,8 +499,8 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
       ) : (
         <Box
           w="100%"
-          p={4}
-          borderRadius="xl"
+          p={{ base: 2, md: 2, lg: 2, xl: 4 }}
+          borderRadius={{ base: "lg", md: "md", lg: "md", xl: "xl" }}
           bg={
             colorMode === "dark"
               ? "radial-gradient(circle at top left, rgba(71, 85, 105, 0.15), rgba(30, 41, 59, 0.2))"
@@ -507,9 +518,9 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
             wrap={flexWrap}
             justify={justify} // ⬅️ spread on desktop, scrollable on phone
             align="stretch"
-            columnGap={isMicro ? 2 : isCompact ? 2 : 3}
-            rowGap={isMicro ? 2 : isCompact ? 2 : 3}
-            mb={isMicro ? 2 : isCompact ? 3 : 6}
+            columnGap={{ base: 2, md: 1, lg: 1, xl: 3 }}
+            rowGap={{ base: 2, md: 1, lg: 1, xl: 3 }}
+            mb={{ base: 2, md: 1, lg: 1, xl: 6 }}
             w="100%"
             px={0}
             mx={0}
@@ -550,20 +561,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                 ...cardWrapSx,
                 position: "relative",
                 flexShrink: 0,
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "8px",
-                  height: "100%",
-                  background:
-                    colorMode === "dark"
-                      ? "linear-gradient(90deg, rgba(100, 116, 139, 0.5) 0%, rgba(100, 116, 139, 0) 100%)"
-                      : "linear-gradient(90deg, rgba(71, 85, 105, 0.5) 0%, rgba(71, 85, 105, 0) 100%)",
-                  pointerEvents: "none",
-                  zIndex: 1,
-                },
                 "> *": {
                   ...cardWrapSx["> *"],
                   overflow: "hidden",
@@ -582,7 +579,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               {isLoading ? (
                 <Skeleton
                   borderRadius="lg"
-                  height={isFull ? "405px" : isCompact ? "220px" : "160px"} // micro shortest
+                  height={{ base: "160px", md: "130px", lg: "130px", xl: "405px" }}
                 />
               ) : (
                 <BoolCard
@@ -591,8 +588,8 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                   pro={isFull ? pro : undefined}
                   con={isFull ? con : undefined}
                   contentId={contentId ?? undefined}
-                  size={isFull ? "md" : "sm"} // micro/compact => sm
-                  dense={!isFull} // micro/compact => dense
+                  size={isFull ? "md" : "xs"} // full(xl) => md, compact(md/lg) => xs
+                  dense={!isFull} // compact => dense (shows only verimeter)
                 />
               )}
             </Box>
@@ -603,18 +600,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                 ...cardWrapSx,
                 position: "relative",
                 flexShrink: 0,
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "8px",
-                  height: "100%",
-                  background:
-                    "linear-gradient(90deg, rgba(0, 162, 255, 0.5) 0%, rgba(0, 162, 255, 0) 100%)",
-                  pointerEvents: "none",
-                  zIndex: 1,
-                },
                 "> *": {
                   ...cardWrapSx["> *"],
                   overflow: "hidden",
@@ -628,10 +613,10 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               }}
             >
               {isLoading ? (
-                <Box p={3} borderRadius="lg" bg="stat2Gradient">
-                  <Skeleton height={isFull ? "18px" : "14px"} mb={3} />
-                  {isFull && <Skeleton height="150px" mb={2} />}
-                  {isFull && <SkeletonText noOfLines={3} spacing="2" />}
+                <Box p={{ base: 3, md: 1, lg: 1, xl: 3 }} borderRadius="lg" bg="stat2Gradient">
+                  <Skeleton height={{ base: "14px", md: "8px", lg: "8px", xl: "18px" }} mb={{ base: 3, md: 1, lg: 1, xl: 3 }} />
+                  <Skeleton height={{ base: "0", md: "0", lg: "0", xl: "150px" }} mb={2} display={{ base: "none", md: "none", lg: "none", xl: "block" }} />
+                  <SkeletonText noOfLines={3} spacing="2" display={{ base: "none", md: "none", lg: "none", xl: "block" }} />
                 </Box>
               ) : (
                 <TaskCard
@@ -650,18 +635,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                 ...cardWrapSx,
                 position: "relative",
                 flexShrink: 0,
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "8px",
-                  height: "100%",
-                  background:
-                    "linear-gradient(90deg, rgba(6, 182, 212, 0.5) 0%, rgba(6, 182, 212, 0) 100%)",
-                  pointerEvents: "none",
-                  zIndex: 1,
-                },
                 "> *": {
                   ...cardWrapSx["> *"],
                   overflow: "hidden",
@@ -677,7 +650,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               {isLoading ? (
                 <Skeleton
                   borderRadius="lg"
-                  height={isFull ? "180px" : "120px"}
+                  height={{ base: "120px", md: "130px", lg: "130px", xl: "180px" }}
                 />
               ) : (
                 <PubCard publishers={publishers} compact={!isFull} contentId={contentId ?? undefined} />
@@ -690,18 +663,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                 ...cardWrapSx,
                 position: "relative",
                 flexShrink: 0,
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "8px",
-                  height: "100%",
-                  background:
-                    "linear-gradient(90deg, rgba(251, 146, 60, 0.5) 0%, rgba(251, 146, 60, 0) 100%)",
-                  pointerEvents: "none",
-                  zIndex: 1,
-                },
                 "> *": {
                   ...cardWrapSx["> *"],
                   overflow: "hidden",
@@ -717,7 +678,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               {isLoading ? (
                 <Skeleton
                   borderRadius="lg"
-                  height={isFull ? "180px" : "120px"}
+                  height={{ base: "120px", md: "130px", lg: "130px", xl: "180px" }}
                 />
               ) : (
                 <AuthCard
@@ -734,18 +695,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                 ...cardWrapSx,
                 position: "relative",
                 flexShrink: 0,
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "8px",
-                  height: "100%",
-                  background:
-                    "linear-gradient(90deg, rgba(74, 222, 128, 0.5) 0%, rgba(74, 222, 128, 0) 100%)",
-                  pointerEvents: "none",
-                  zIndex: 1,
-                },
                 "> *": {
                   ...cardWrapSx["> *"],
                   overflow: "hidden",
@@ -761,7 +710,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               {isLoading ? (
                 <Skeleton
                   borderRadius="lg"
-                  height={isFull ? "180px" : "160px"}
+                  height={{ base: "160px", md: "130px", lg: "130px", xl: "180px" }}
                 />
               ) : (
                 <ProgressCard
@@ -778,6 +727,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                   verifiedReferences={claimStats.refutingLinks}
                   totalClaimLinks={claimStats.totalClaimLinks}
                   nuancedLinks={claimStats.nuancedLinks}
+                  compact={!isFull}
                 />
               )}
             </Box>

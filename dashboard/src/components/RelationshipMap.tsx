@@ -215,20 +215,25 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
           // Check if this is an AI-suggested link (not human-verified)
           const isAISuggested = link.id?.toString().startsWith("ai-");
 
-          // Base colors: green for support, red for refute, blue for nuance
-          const baseColor =
-            link.relation === "refute" ? "red" :
-            link.relation === "support" ? "green" :
-            "blue"; // nuance
+          // Determine color based on relation field
+          // Normalize relation field for comparison
+          const relationLower = link.relation.toLowerCase();
+          const isSupport = relationLower === "support" || relationLower === "supports";
+          const isRefute = relationLower === "refute" || relationLower === "refutes";
+          const isNuance = !isSupport && !isRefute; // nuance/context/related
+
+          // Base colors: green for support, red for refute, yellow/blue for nuance
+          const baseColor = isRefute ? "red" : isSupport ? "green" : "blue";
 
           // For AI links: lighter/more transparent colors
           const strokeColor = isAISuggested
-            ? (link.relation === "refute" ? "rgba(255, 100, 100, 0.5)" :
-               link.relation === "support" ? "rgba(100, 255, 100, 0.5)" :
+            ? (isRefute ? "rgba(255, 100, 100, 0.5)" :
+               isSupport ? "rgba(100, 255, 100, 0.5)" :
                "rgba(100, 150, 255, 0.5)") // light blue for nuance
             : baseColor;
 
-          const linkId = link.id || i.toString();
+          // Create unique key using ALL identifying properties to ensure uniqueness
+          const linkId = `${link.claimId}-${link.referenceId}-${link.sourceClaimId || 'none'}-${link.relation}-${i}`;
 
           const handleMouseEnter = () => {
             setHoveredLinkId(linkId);
@@ -299,7 +304,6 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
 
               {/* Visible line */}
               <line
-                key={linkId}
                 x1={adjustedLeftX}
                 y1={y1}
                 x2={adjustedRightX}

@@ -711,7 +711,14 @@ export default function ConfigurationMatrix() {
           </Text>
         </Box>
 
-        <Box overflowX="auto">
+        <Box
+          className="mr-card mr-card-blue"
+          position="relative"
+          overflow="hidden"
+          overflowX="auto"
+        >
+          <div className="mr-glow-bar mr-glow-bar-blue" />
+          <div className="mr-scanlines" />
           <Table variant="simple" size="sm">
             <Thead>
               <Tr bg="rgba(0, 162, 255, 0.08)">

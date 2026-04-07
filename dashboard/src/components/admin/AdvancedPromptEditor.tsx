@@ -311,6 +311,32 @@ export default function AdvancedPromptEditor() {
     }
   };
 
+  const getExtractionMode = (promptName: string): string | null => {
+    const lowerName = promptName.toLowerCase();
+    if (lowerName.includes("_edge_") || lowerName.includes("_edge")) return "edge";
+    if (lowerName.includes("_ranked_") || lowerName.includes("_ranked")) return "ranked";
+    if (lowerName.includes("_comprehensive_") || lowerName.includes("_comprehensive")) return "comprehensive";
+    return null;
+  };
+
+  const getExtractionModeColor = (mode: string) => {
+    switch (mode) {
+      case "edge": return "teal";
+      case "ranked": return "orange";
+      case "comprehensive": return "blue";
+      default: return "gray";
+    }
+  };
+
+  const getExtractionModeLabel = (mode: string) => {
+    switch (mode) {
+      case "edge": return "EDGE";
+      case "ranked": return "RANKED";
+      case "comprehensive": return "COMPREHENSIVE";
+      default: return mode.toUpperCase();
+    }
+  };
+
   // Group prompts by name (to show all versions together)
   const groupedPrompts = prompts.reduce((acc, prompt) => {
     if (!acc[prompt.prompt_name]) {
@@ -330,13 +356,24 @@ export default function AdvancedPromptEditor() {
 
   // If editing prompt text, show the editor
   if (editingPrompt) {
+    const extractionMode = getExtractionMode(editingPrompt.prompt_name);
+    const modeColor = extractionMode ? getExtractionModeColor(extractionMode) : "gray";
+    const modeLabel = extractionMode ? getExtractionModeLabel(extractionMode) : null;
+
     return (
       <VStack spacing={6} align="stretch">
         <HStack justify="space-between">
           <VStack align="start" spacing={1}>
-            <Text fontSize="xl" fontWeight="bold" color="cyan.300">
-              Editing: {editingPrompt.prompt_name}
-            </Text>
+            <HStack>
+              <Text fontSize="xl" fontWeight="bold" color="cyan.300">
+                Editing: {editingPrompt.prompt_name}
+              </Text>
+              {modeLabel && (
+                <Badge colorScheme={modeColor} fontSize="sm" fontWeight="bold">
+                  {modeLabel}
+                </Badge>
+              )}
+            </HStack>
             <Text fontSize="sm" color="gray.400">
               Type: {editingPrompt.prompt_type} | Version: {editingPrompt.version}
             </Text>
@@ -582,6 +619,9 @@ export default function AdvancedPromptEditor() {
           const isEditingConfig = configEditMode === promptName;
           const category = getPromptCategory(activeVersion.prompt_type);
           const categoryColor = getCategoryColor(category);
+          const extractionMode = getExtractionMode(promptName);
+          const modeColor = extractionMode ? getExtractionModeColor(extractionMode) : "gray";
+          const modeLabel = extractionMode ? getExtractionModeLabel(extractionMode) : null;
 
           return (
             <Box
@@ -607,6 +647,11 @@ export default function AdvancedPromptEditor() {
                   <Badge colorScheme={categoryColor} fontSize="xs">
                     {category}
                   </Badge>
+                  {modeLabel && (
+                    <Badge colorScheme={modeColor} fontSize="xs" fontWeight="bold">
+                      {modeLabel}
+                    </Badge>
+                  )}
                   <Text fontWeight="bold" color="cyan.300">{promptName}</Text>
                   <Badge colorScheme="gray" fontSize="xs">
                     v{activeVersion.version}
@@ -622,6 +667,11 @@ export default function AdvancedPromptEditor() {
                 </HStack>
 
                 <HStack>
+                  {modeLabel && (
+                    <Text fontSize="xs" color={`${modeColor}.400`} fontWeight="semibold">
+                      Mode: {modeLabel} |
+                    </Text>
+                  )}
                   <Text fontSize="xs" color="gray.400">
                     Claims: {activeVersion.max_claims || "N/A"} |
                     Sources: {activeVersion.min_sources || "N/A"}-{activeVersion.max_sources || "N/A"}
@@ -763,51 +813,59 @@ export default function AdvancedPromptEditor() {
 
                       {/* Versions Tab */}
                       <TabPanel>
-                        <Table size="sm" variant="simple">
-                          <Thead>
-                            <Tr>
-                              <Th color="cyan.400" fontSize="xs">Version</Th>
-                              <Th color="cyan.400" fontSize="xs">Status</Th>
-                              <Th color="cyan.400" fontSize="xs">Actions</Th>
-                            </Tr>
-                          </Thead>
-                          <Tbody>
-                            {versions.map((version) => (
-                              <Tr key={version.version}>
-                                <Td color="gray.300" fontSize="xs">v{version.version}</Td>
-                                <Td>
-                                  {version.is_active ? (
-                                    <Badge colorScheme="green" fontSize="xs">Active</Badge>
-                                  ) : (
-                                    <Badge colorScheme="gray" fontSize="xs">Inactive</Badge>
-                                  )}
-                                </Td>
-                                <Td>
-                                  <HStack spacing={1}>
-                                    <IconButton
-                                      aria-label="Edit"
-                                      icon={<FiEdit />}
-                                      size="xs"
-                                      variant="ghost"
-                                      color="cyan.300"
-                                      onClick={() => loadFullPrompt(promptName, version.version)}
-                                    />
-                                    {!version.is_active && (
+                        <Box
+                          className="mr-card mr-card-purple"
+                          position="relative"
+                          overflow="hidden"
+                        >
+                          <div className="mr-glow-bar mr-glow-bar-purple" />
+                          <div className="mr-scanlines" />
+                          <Table size="sm" variant="simple">
+                            <Thead>
+                              <Tr>
+                                <Th color="cyan.400" fontSize="xs">Version</Th>
+                                <Th color="cyan.400" fontSize="xs">Status</Th>
+                                <Th color="cyan.400" fontSize="xs">Actions</Th>
+                              </Tr>
+                            </Thead>
+                            <Tbody>
+                              {versions.map((version, index) => (
+                                <Tr key={`${version.prompt_id}-${version.version}-${index}`}>
+                                  <Td color="gray.300" fontSize="xs">v{version.version}</Td>
+                                  <Td>
+                                    {version.is_active ? (
+                                      <Badge colorScheme="green" fontSize="xs">Active</Badge>
+                                    ) : (
+                                      <Badge colorScheme="gray" fontSize="xs">Inactive</Badge>
+                                    )}
+                                  </Td>
+                                  <Td>
+                                    <HStack spacing={1}>
                                       <IconButton
-                                        aria-label="Activate"
-                                        icon={<FiCheck />}
+                                        aria-label="Edit"
+                                        icon={<FiEdit />}
                                         size="xs"
                                         variant="ghost"
-                                        color="green.300"
-                                        onClick={() => handleActivateVersion(promptName, version.version)}
+                                        color="cyan.300"
+                                        onClick={() => loadFullPrompt(promptName, version.version)}
                                       />
-                                    )}
-                                  </HStack>
-                                </Td>
-                              </Tr>
-                            ))}
-                          </Tbody>
-                        </Table>
+                                      {!version.is_active && (
+                                        <IconButton
+                                          aria-label="Activate"
+                                          icon={<FiCheck />}
+                                          size="xs"
+                                          variant="ghost"
+                                          color="green.300"
+                                          onClick={() => handleActivateVersion(promptName, version.version)}
+                                        />
+                                      )}
+                                    </HStack>
+                                  </Td>
+                                </Tr>
+                              ))}
+                            </Tbody>
+                          </Table>
+                        </Box>
                       </TabPanel>
 
                       {/* Preview Tab */}
