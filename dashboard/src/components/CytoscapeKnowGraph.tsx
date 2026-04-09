@@ -1,14 +1,15 @@
 // CytoscapeKnowGraph.tsx - Knowledge graph visualization with hierarchical left-to-right layout
-import React, { useEffect, useRef, useState } from 'react';
-import cytoscape from 'cytoscape';
-import dagre from 'cytoscape-dagre';
-import { Box, useColorMode } from '@chakra-ui/react';
-import { GraphNode, Link } from '../../../shared/entities/types';
+import React, { useEffect, useRef, useState } from "react";
+import cytoscape from "cytoscape";
+import dagre from "cytoscape-dagre";
+import { Box, useColorMode } from "@chakra-ui/react";
+import { GraphNode, Link } from "../../../shared/entities/types";
 
 // Register dagre layout
 cytoscape.use(dagre);
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
 
 interface CytoscapeKnowGraphProps {
   nodes: GraphNode[];
@@ -28,36 +29,36 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
   const { colorMode } = useColorMode();
   const cyRef = useRef<HTMLDivElement>(null);
   const cyInstance = useRef<cytoscape.Core | null>(null);
+  const onNodeClickRef = useRef(onNodeClick);
   const [authorDropdown, setAuthorDropdown] = useState<{
     authors: GraphNode[];
     position: { x: number; y: number };
     parentLabel: string;
   } | null>(null);
 
+  // Update callback ref without triggering graph rebuild
   useEffect(() => {
-    console.log('🎨 CytoscapeKnowGraph render - nodes:', nodes.length, 'links:', links.length);
+    onNodeClickRef.current = onNodeClick;
+  }, [onNodeClick]);
+
+  useEffect(() => {
     if (!cyRef.current) {
-      console.warn('⚠️ cyRef.current is null');
       return;
     }
-    console.log('📦 Container dimensions:', {
-      width: cyRef.current.clientWidth,
-      height: cyRef.current.clientHeight,
-      offsetWidth: cyRef.current.offsetWidth,
-      offsetHeight: cyRef.current.offsetHeight
-    });
+    const viewportWidth = cyRef.current.clientWidth;
+    const viewportHeight = cyRef.current.clientHeight;
+
     if (nodes.length === 0) {
-      console.warn('⚠️ No nodes to render');
       return;
     }
 
-    // Column positions (x coordinates) - compact layout for knowledge graph
+    // Column positions - original spacing that worked
     const COLUMNS = {
-      CASE: 50,               // Column 1: Case
-      AUTH_PUB: 350,          // Column 2: Authors/Publishers
-      CASE_CLAIMS: 660,       // Column 3: Case claims
-      SOURCE_CLAIMS: 1310,    // Column 4: Source claims
-      SOURCES: 1900,          // Column 5: Sources
+      CASE: 50, // Column 1: Case
+      AUTH_PUB: 550, // Column 2: Authors/Publishers
+      CASE_CLAIMS: 1100, // Column 3: Case claims
+      SOURCE_CLAIMS: 2200, // Column 4: Source claims
+      SOURCES: 3200, // Column 5: Sources
     };
 
     const ROW_HEIGHT = 200; // Spacing between nodes vertically
@@ -66,87 +67,128 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
     // Filter to only show nodes connected by human-created claim_link edges
     // First, collect all claim IDs that are part of claim_links
     const claimIdsInLinks = new Set<string>();
-    links.forEach(link => {
+    links.forEach((link) => {
       // claim_links have source and target in the format 'claim-{id}'
-      if (link.source.startsWith('claim-') && link.target.startsWith('claim-')) {
+      if (
+        link.source.startsWith("claim-") &&
+        link.target.startsWith("claim-")
+      ) {
         claimIdsInLinks.add(link.source);
         claimIdsInLinks.add(link.target);
       }
     });
 
-    console.log('🔗 Claims with human links:', claimIdsInLinks.size);
 
     // Filter nodes by type and whether they're connected via claim_links
-    const caseNodes = nodes.filter(n => n.type === 'task');
-    const authNodes = nodes.filter(n => n.type === 'author');
-    const pubNodes = nodes.filter(n => n.type === 'publisher');
+    const caseNodes = nodes.filter((n) => n.type === "task");
+    const allAuthNodes = nodes.filter((n) => n.type === "author");
+    const allPubNodes = nodes.filter((n) => n.type === "publisher");
 
     // Only include claims that have human-created claim_link connections
-    const allCaseClaimNodes = nodes.filter(n => n.type === 'taskClaim');
-    const allSourceClaimNodes = nodes.filter(n => n.type === 'refClaim');
+    const allCaseClaimNodes = nodes.filter((n) => n.type === "taskClaim");
+    const allSourceClaimNodes = nodes.filter((n) => n.type === "refClaim");
 
-    const caseClaimNodes = allCaseClaimNodes.filter(n => claimIdsInLinks.has(n.id));
-    const sourceClaimNodes = allSourceClaimNodes.filter(n => claimIdsInLinks.has(n.id));
+    const caseClaimNodes = allCaseClaimNodes.filter((n) =>
+      claimIdsInLinks.has(n.id),
+    );
+    const sourceClaimNodes = allSourceClaimNodes.filter((n) =>
+      claimIdsInLinks.has(n.id),
+    );
 
     // Only include sources that have at least one source claim with a claim_link
-    const allSourceNodes = nodes.filter(n => n.type === 'reference');
+    const allSourceNodes = nodes.filter((n) => n.type === "reference");
     const linkedSourceContentIds = new Set(
-      sourceClaimNodes.map(sc => sc.content_id).filter(Boolean)
+      sourceClaimNodes.map((sc) => sc.content_id).filter(Boolean),
     );
-    const sourceNodes = allSourceNodes.filter(n => linkedSourceContentIds.has(n.content_id));
+    const sourceNodes = allSourceNodes.filter((n) =>
+      linkedSourceContentIds.has(n.content_id),
+    );
 
-    console.log('📊 Node breakdown (before filtering):', {
-      case: caseNodes.length,
-      authors: authNodes.length,
-      publishers: pubNodes.length,
-      caseClaims: allCaseClaimNodes.length,
-      sourceClaims: allSourceClaimNodes.length,
-      sources: allSourceNodes.length
-    });
+    // Build set of visible node IDs (case + visible sources)
+    const visibleNodeIds = new Set([
+      ...caseNodes.map((n) => n.id),
+      ...sourceNodes.map((n) => n.id),
+    ]);
 
-    console.log('📊 Node breakdown (after filtering by claim_links):', {
-      case: caseNodes.length,
-      authors: authNodes.length,
-      publishers: pubNodes.length,
-      caseClaims: caseClaimNodes.length,
-      sourceClaims: sourceClaimNodes.length,
-      sources: sourceNodes.length,
-      filtered: {
-        caseClaims: allCaseClaimNodes.length - caseClaimNodes.length,
-        sourceClaims: allSourceClaimNodes.length - sourceClaimNodes.length,
-        sources: allSourceNodes.length - sourceNodes.length
+    // Filter authors/publishers - only keep those that link to visible content
+    // Check links to see which authors/publishers connect to visible nodes
+    const linkedAuthorIds = new Set<string>();
+    const linkedPubIds = new Set<string>();
+
+    links.forEach((link) => {
+      const sourceNode = nodes.find((n) => n.id === link.source);
+      const targetNode = nodes.find((n) => n.id === link.target);
+
+      // Author links
+      if (sourceNode?.type === "author" && visibleNodeIds.has(link.target)) {
+        linkedAuthorIds.add(link.source);
+      }
+      if (targetNode?.type === "author" && visibleNodeIds.has(link.source)) {
+        linkedAuthorIds.add(link.target);
+      }
+
+      // Publisher links
+      if (sourceNode?.type === "publisher" && visibleNodeIds.has(link.target)) {
+        linkedPubIds.add(link.source);
+      }
+      if (targetNode?.type === "publisher" && visibleNodeIds.has(link.source)) {
+        linkedPubIds.add(link.target);
       }
     });
+
+    const authNodes = allAuthNodes.filter((n) => linkedAuthorIds.has(n.id));
+    const pubNodes = allPubNodes.filter((n) => linkedPubIds.has(n.id));
 
     // Group authors and publishers by their parent entity (case or source)
     const authorsByParent = new Map<string, GraphNode[]>();
     const publishersByParent = new Map<string, GraphNode[]>();
 
-    // Find parent for each author/publisher via links
-    links.forEach(link => {
-      const sourceNode = nodes.find(n => n.id === link.source);
-      const targetNode = nodes.find(n => n.id === link.target);
+    // Build set of author/publisher IDs that passed filtering
+    const filteredAuthorIds = new Set(authNodes.map(n => n.id));
+    const filteredPubIds = new Set(pubNodes.map(n => n.id));
 
-      // Author connections
-      if (sourceNode?.type === 'author' && (targetNode?.type === 'task' || targetNode?.type === 'reference')) {
+    // Find parent for each author/publisher via links
+    // ONLY process links where the author/publisher is in the filtered set
+    links.forEach((link) => {
+      const sourceNode = nodes.find((n) => n.id === link.source);
+      const targetNode = nodes.find((n) => n.id === link.target);
+
+      // Author connections - ONLY if author is in filtered list
+      if (
+        sourceNode?.type === "author" &&
+        filteredAuthorIds.has(sourceNode.id) &&
+        (targetNode?.type === "task" || targetNode?.type === "reference")
+      ) {
         if (!authorsByParent.has(targetNode.id)) {
           authorsByParent.set(targetNode.id, []);
         }
         authorsByParent.get(targetNode.id)!.push(sourceNode);
-      } else if ((sourceNode?.type === 'task' || sourceNode?.type === 'reference') && targetNode?.type === 'author') {
+      } else if (
+        (sourceNode?.type === "task" || sourceNode?.type === "reference") &&
+        targetNode?.type === "author" &&
+        filteredAuthorIds.has(targetNode.id)
+      ) {
         if (!authorsByParent.has(sourceNode.id)) {
           authorsByParent.set(sourceNode.id, []);
         }
         authorsByParent.get(sourceNode.id)!.push(targetNode);
       }
 
-      // Publisher connections
-      if (sourceNode?.type === 'publisher' && (targetNode?.type === 'task' || targetNode?.type === 'reference')) {
+      // Publisher connections - ONLY if publisher is in filtered list
+      if (
+        sourceNode?.type === "publisher" &&
+        filteredPubIds.has(sourceNode.id) &&
+        (targetNode?.type === "task" || targetNode?.type === "reference")
+      ) {
         if (!publishersByParent.has(targetNode.id)) {
           publishersByParent.set(targetNode.id, []);
         }
         publishersByParent.get(targetNode.id)!.push(sourceNode);
-      } else if ((sourceNode?.type === 'task' || sourceNode?.type === 'reference') && targetNode?.type === 'publisher') {
+      } else if (
+        (sourceNode?.type === "task" || sourceNode?.type === "reference") &&
+        targetNode?.type === "publisher" &&
+        filteredPubIds.has(targetNode.id)
+      ) {
         if (!publishersByParent.has(sourceNode.id)) {
           publishersByParent.set(sourceNode.id, []);
         }
@@ -157,13 +199,14 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
     // Create composite author nodes (one per parent)
     const compositeAuthorNodes: any[] = [];
     authorsByParent.forEach((authors, parentId) => {
-      const parent = nodes.find(n => n.id === parentId);
+      const parent = nodes.find((n) => n.id === parentId);
       compositeAuthorNodes.push({
         id: `authors-${parentId}`,
-        label: authors.length === 1 ? authors[0].label : `${authors.length} Authors`,
-        type: 'authorGroup',
+        label:
+          authors.length === 1 ? authors[0].label : `${authors.length} Authors`,
+        type: "authorGroup",
         parentId,
-        parentLabel: parent?.label || '',
+        parentLabel: parent?.label || "",
         authors,
       });
     });
@@ -171,31 +214,31 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
     // Create composite publisher nodes (one per parent)
     const compositePubNodes: any[] = [];
     publishersByParent.forEach((publishers, parentId) => {
-      const parent = nodes.find(n => n.id === parentId);
+      const parent = nodes.find((n) => n.id === parentId);
       compositePubNodes.push({
         id: `publishers-${parentId}`,
-        label: publishers.length === 1 ? publishers[0].label : `${publishers.length} Publishers`,
-        type: 'publisherGroup',
+        label:
+          publishers.length === 1
+            ? publishers[0].label
+            : `${publishers.length} Publishers`,
+        type: "publisherGroup",
         parentId,
-        parentLabel: parent?.label || '',
+        parentLabel: parent?.label || "",
         publishers,
       });
     });
 
-    const authPubCompositeNodes = [...compositeAuthorNodes, ...compositePubNodes];
-
-    console.log('📦 Created composite nodes:', {
-      authors: compositeAuthorNodes.length,
-      publishers: compositePubNodes.length,
-      total: authPubCompositeNodes.length
-    });
+    const authPubCompositeNodes = [
+      ...compositeAuthorNodes,
+      ...compositePubNodes,
+    ];
 
     const maxRows = Math.max(
       caseNodes.length,
       authPubCompositeNodes.length,
       caseClaimNodes.length,
       sourceClaimNodes.length,
-      sourceNodes.length
+      sourceNodes.length,
     );
 
     // Center the case node vertically
@@ -217,7 +260,7 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
           publisher_id: node.publisher_id,
           url: node.url,
         },
-        position: { x: COLUMNS.CASE, y: centerY + (i * ROW_HEIGHT) },
+        position: { x: COLUMNS.CASE, y: centerY + i * ROW_HEIGHT },
       });
     });
 
@@ -233,7 +276,7 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
           authors: node.authors,
           publishers: node.publishers,
         },
-        position: { x: COLUMNS.AUTH_PUB, y: START_Y + (i * ROW_HEIGHT) },
+        position: { x: COLUMNS.AUTH_PUB, y: START_Y + i * ROW_HEIGHT },
       });
     });
 
@@ -250,14 +293,14 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
           publisher_id: node.publisher_id,
           url: node.url,
         },
-        position: { x: COLUMNS.CASE_CLAIMS, y: START_Y + (i * ROW_HEIGHT) },
+        position: { x: COLUMNS.CASE_CLAIMS, y: START_Y + i * ROW_HEIGHT },
       });
     });
 
     // Source claim nodes - position them first to establish order
     const sourceClaimPositions = new Map<string, number>();
     sourceClaimNodes.forEach((node, i) => {
-      const yPos = START_Y + (i * ROW_HEIGHT);
+      const yPos = START_Y + i * ROW_HEIGHT;
       sourceClaimPositions.set(node.id, yPos);
       positionedNodes.push({
         data: {
@@ -277,7 +320,9 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
     // Build source claim → source mapping to align sources with their claims
     const sourceToSourceClaims = new Map<string, string[]>();
     sourceClaimNodes.forEach((sourceClaim) => {
-      const sourceNode = sourceNodes.find(s => s.content_id === sourceClaim.content_id);
+      const sourceNode = sourceNodes.find(
+        (s) => s.content_id === sourceClaim.content_id,
+      );
       if (sourceNode) {
         if (!sourceToSourceClaims.has(sourceNode.id)) {
           sourceToSourceClaims.set(sourceNode.id, []);
@@ -295,18 +340,20 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
       if (relatedSourceClaims.length > 0) {
         // Calculate average Y position of related source claims
         const claimYPositions = relatedSourceClaims
-          .map(claimId => sourceClaimPositions.get(claimId))
+          .map((claimId) => sourceClaimPositions.get(claimId))
           .filter(Boolean) as number[];
 
         if (claimYPositions.length > 0) {
-          yPos = claimYPositions.reduce((sum, y) => sum + y, 0) / claimYPositions.length;
+          yPos =
+            claimYPositions.reduce((sum, y) => sum + y, 0) /
+            claimYPositions.length;
         } else {
           // Fallback if no positions found
-          yPos = START_Y + (sourceNodes.indexOf(node) * ROW_HEIGHT);
+          yPos = START_Y + sourceNodes.indexOf(node) * ROW_HEIGHT;
         }
       } else {
         // No related claims, use default positioning
-        yPos = START_Y + (sourceNodes.indexOf(node) * ROW_HEIGHT);
+        yPos = START_Y + sourceNodes.indexOf(node) * ROW_HEIGHT;
       }
 
       positionedSourceIds.add(node.id);
@@ -327,7 +374,7 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
 
     // Build position lookup for nodes
     const nodePositions = new Map<string, number>();
-    positionedNodes.forEach(node => {
+    positionedNodes.forEach((node) => {
       nodePositions.set(node.data.id, node.position.x);
     });
 
@@ -337,27 +384,25 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
 
     authorsByParent.forEach((authors, parentId) => {
       const compositeId = `authors-${parentId}`;
-      authors.forEach(author => {
+      authors.forEach((author) => {
         authorToComposite.set(author.id, compositeId);
       });
     });
 
     publishersByParent.forEach((publishers, parentId) => {
       const compositeId = `publishers-${parentId}`;
-      publishers.forEach(pub => {
+      publishers.forEach((pub) => {
         publisherToComposite.set(pub.id, compositeId);
       });
     });
 
     // Build a set of all valid node IDs after filtering
-    const validNodeIds = new Set(positionedNodes.map(n => n.data.id));
-    console.log('✅ Valid node IDs after filtering:', validNodeIds.size);
+    const validNodeIds = new Set(positionedNodes.map((n) => n.data.id));
 
     // Prepare edges for cytoscape - redirect to composite nodes and filter out broken edges
     const cyEdges = links
-      .filter(link => {
+      .filter((link) => {
         if (link.source === link.target) {
-          console.warn('⚠️ Skipping self-referencing edge:', link.source, '→', link.target);
           return false;
         }
         return true;
@@ -390,21 +435,19 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
             id: `edge-${idx}`,
             source: finalSource,
             target: finalTarget,
-            relation: link.relation || 'meta',
-            type: link.type || '',
-            notes: link.notes || '',
-            isLeftToRight,  // Store direction info for styling
+            relation: link.relation || "meta",
+            type: link.type || "",
+            notes: link.notes || "",
+            isLeftToRight, // Store direction info for styling
           },
         };
       })
-      .filter(edge => {
+      .filter((edge) => {
         // Only include edges where both source and target nodes exist
         const sourceExists = validNodeIds.has(edge.data.source);
         const targetExists = validNodeIds.has(edge.data.target);
 
         if (!sourceExists || !targetExists) {
-          console.log('🚫 Filtering out edge with missing node:', edge.data.source, '→', edge.data.target,
-            `(source exists: ${sourceExists}, target exists: ${targetExists})`);
           return false;
         }
         return true;
@@ -419,14 +462,13 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
             id: `case-to-claim-${idx}`,
             source: caseNode.id,
             target: claimNode.id,
-            relation: 'contains',
-            type: 'contains',
-            notes: '',
-            isLeftToRight: true,  // Case is on left, claims on right
+            relation: "contains",
+            type: "contains",
+            notes: "",
+            isLeftToRight: true, // Case is on left, claims on right
           },
         });
       });
-      console.log('➕ Added', caseClaimNodes.length, 'edges from Case to Case Claims');
     }
 
     // Add edges from Source Claims to Sources
@@ -434,7 +476,9 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
     let sourceClaimToSourceEdgeCount = 0;
     sourceClaimNodes.forEach((sourceClaimNode) => {
       // Find the source node that matches this claim's content_id
-      const sourceNode = sourceNodes.find(n => n.content_id === sourceClaimNode.content_id);
+      const sourceNode = sourceNodes.find(
+        (n) => n.content_id === sourceClaimNode.content_id,
+      );
 
       if (sourceNode) {
         cyEdges.push({
@@ -442,20 +486,15 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
             id: `sourceclaim-to-source-${sourceClaimNode.id}-${sourceNode.id}`,
             source: sourceClaimNode.id,
             target: sourceNode.id,
-            relation: 'sourceClaim',
-            type: 'sourceClaim',
-            notes: '',
-            isLeftToRight: true,  // Source claims on left, sources on right
+            relation: "sourceClaim",
+            type: "sourceClaim",
+            notes: "",
+            isLeftToRight: true, // Source claims on left, sources on right
           },
         });
         sourceClaimToSourceEdgeCount++;
-      } else {
-        console.warn('⚠️ No source found for source claim:', sourceClaimNode.id, 'with content_id:', sourceClaimNode.content_id);
       }
     });
-    console.log('➕ Added', sourceClaimToSourceEdgeCount, 'edges from Source Claims to Sources');
-
-    console.log('🔗 Total edges after filtering:', cyEdges.length);
 
     // Initialize cytoscape
     const cy = cytoscape({
@@ -465,191 +504,197 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
         edges: cyEdges,
       },
       style: [
-        // Node styles - different shapes for different types
+        // Node styles - original sizes
         {
-          selector: 'node',
+          selector: "node",
           style: {
-            'label': 'data(label)',
-            'text-wrap': 'wrap',
-            'text-max-width': '100px',
-            'text-valign': 'center',
-            'text-halign': 'center',
-            'font-size': '11px',
-            'font-weight': 700,
-            'color': '#eff5ff',
-            'text-outline-color': '#1e293b',
-            'text-outline-width': 2,
+            label: "data(label)",
+            "text-wrap": "wrap",
+            "text-max-width": "250px",
+            "text-valign": "center",
+            "text-halign": "center",
+            "font-size": "14px",
+            "font-weight": 700,
+            color: "#eff5ff",
+            "text-outline-color": "#1e293b",
+            "text-outline-width": 2,
           } as any,
         },
-        // Case node - LARGE circle, alone in leftmost column
+        // Case node - LARGE circle
         {
           selector: 'node[type="task"]',
           style: {
-            'shape': 'ellipse',
-            'width': 280,
-            'height': 280,
-            'background-color': '#6ea8ff',
-            'background-opacity': 0.9,
-            'border-width': 3,
-            'border-color': 'rgba(255, 255, 255, 0.2)',
-            'font-size': '18px',
+            shape: "ellipse",
+            width: 320,
+            height: 280,
+            "background-color": "#6ea8ff",
+            "background-opacity": 0.9,
+            "border-width": 3,
+            "border-color": "rgba(255, 255, 255, 0.2)",
+            "font-size": "30px",
+            "text-max-width": "250px",
           } as any,
         },
         // Case claims - large readable rectangles
         {
           selector: 'node[type="taskClaim"]',
           style: {
-            'shape': 'round-rectangle',
-            'width': 300,
-            'height': 110,
-            'background-color': '#8f7cff',
-            'background-opacity': 0.9,
-            'border-width': 3,
-            'border-color': 'rgba(255, 255, 255, 0.2)',
-            'font-size': '15px',
+            shape: "round-rectangle",
+            width: 560,
+            height: 160,
+            "background-color": "#8f7cff",
+            "background-opacity": 0.9,
+            "border-width": 3,
+            "border-color": "rgba(255, 255, 255, 0.2)",
+            "font-size": "30px",
+            "text-max-width": "500px",
           } as any,
         },
         // Source claims - large readable rectangles
         {
           selector: 'node[type="refClaim"]',
           style: {
-            'shape': 'round-rectangle',
-            'width': 280,
-            'height': 100,
-            'background-color': '#58d6ff',
-            'background-opacity': 0.9,
-            'border-width': 3,
-            'border-color': 'rgba(255, 255, 255, 0.2)',
-            'font-size': '14px',
+            shape: "round-rectangle",
+            width: 560,
+            height: 160,
+            "background-color": "#58d6ff",
+            "background-opacity": 0.9,
+            "border-width": 3,
+            "border-color": "rgba(255, 255, 255, 0.2)",
+            "font-size": "30px",
+            "text-max-width": "500px",
           } as any,
         },
         // Sources - larger diamonds
         {
           selector: 'node[type="reference"]',
           style: {
-            'shape': 'diamond',
-            'width': 200,
-            'height': 200,
-            'background-color': '#63f0b0',
-            'background-opacity': 0.9,
-            'border-width': 3,
-            'border-color': 'rgba(255, 255, 255, 0.2)',
-            'font-size': '15px',
+            shape: "diamond",
+            width: 340,
+            height: 200,
+            "background-color": "#63f0b0",
+            "background-opacity": 0.9,
+            "border-width": 3,
+            "border-color": "rgba(255, 255, 255, 0.2)",
+            "font-size": "30px",
+            "text-max-width": "300px",
           } as any,
         },
         // Author groups - composite nodes
         {
           selector: 'node[type="authorGroup"]',
           style: {
-            'shape': 'ellipse',
-            'width': 100,
-            'height': 100,
-            'background-color': '#ff8fb7',
-            'background-opacity': 0.9,
-            'border-width': 3,
-            'border-color': 'rgba(255, 255, 255, 0.2)',
-            'font-size': '12px',
+            shape: "ellipse",
+            width: 130,
+            height: 100,
+            "background-color": "#ff8fb7",
+            "background-opacity": 0.9,
+            "border-width": 3,
+            "border-color": "rgba(255, 255, 255, 0.2)",
+            "font-size": "30px",
+            "text-max-width": "90px",
           } as any,
         },
         // Publisher groups - composite nodes
         {
           selector: 'node[type="publisherGroup"]',
           style: {
-            'shape': 'ellipse',
-            'width': 100,
-            'height': 100,
-            'background-color': '#ffbf69',
-            'background-opacity': 0.9,
-            'border-width': 3,
-            'border-color': 'rgba(255, 255, 255, 0.2)',
-            'font-size': '12px',
+            shape: "ellipse",
+            width: 120,
+            height: 100,
+            "background-color": "#ffbf69",
+            "background-opacity": 0.9,
+            "border-width": 3,
+            "border-color": "rgba(255, 255, 255, 0.2)",
+            "font-size": "16px",
+            "text-max-width": "90px",
           } as any,
         },
         // Default edge style
         {
-          selector: 'edge',
+          selector: "edge",
           style: {
-            'width': 9,
-            'curve-style': 'bezier',
-            'target-arrow-shape': 'triangle',
-            'target-arrow-color': 'data(color)',
-            'line-color': 'data(color)',
-            'opacity': 0.85,
+            width: 9,
+            "curve-style": "bezier",
+            "target-arrow-shape": "triangle",
+            "target-arrow-color": "data(color)",
+            "line-color": "data(color)",
+            opacity: 0.85,
           } as any,
         },
         // Left-to-right edges (source on left, target on right) - exit right, enter left
         {
-          selector: 'edge[?isLeftToRight]',
+          selector: "edge[?isLeftToRight]",
           style: {
-            'source-endpoint': '90deg',   // Right side of source
-            'target-endpoint': '270deg',  // Left side of target
+            "source-endpoint": "90deg", // Right side of source
+            "target-endpoint": "270deg", // Left side of target
           } as any,
         },
         // Right-to-left edges (source on right, target on left) - exit left, enter right
         {
-          selector: 'edge[!isLeftToRight]',
+          selector: "edge[!isLeftToRight]",
           style: {
-            'source-endpoint': '270deg',  // Left side of source
-            'target-endpoint': '90deg',   // Right side of target
+            "source-endpoint": "270deg", // Left side of source
+            "target-endpoint": "90deg", // Right side of target
           } as any,
         },
         // Case to Case Claim edges - thick blue
         {
           selector: 'edge[relation="contains"]',
           style: {
-            'line-color': '#6ea8ff',
-            'target-arrow-color': '#6ea8ff',
-            'width': 12,
-            'opacity': 0.9,
+            "line-color": "#6ea8ff",
+            "target-arrow-color": "#6ea8ff",
+            width: 12,
+            opacity: 0.9,
           } as any,
         },
         // Source Claim to Source edges - solid blue
         {
           selector: 'edge[relation="sourceClaim"]',
           style: {
-            'line-color': '#58d6ff',
-            'target-arrow-color': '#58d6ff',
-            'width': 9,
-            'opacity': 0.85,
+            "line-color": "#58d6ff",
+            "target-arrow-color": "#58d6ff",
+            width: 9,
+            opacity: 0.85,
           } as any,
         },
         // Support edges - vibrant green
         {
           selector: 'edge[relation="supports"]',
           style: {
-            'line-color': '#4ade80',
-            'target-arrow-color': '#4ade80',
+            "line-color": "#4ade80",
+            "target-arrow-color": "#4ade80",
           } as any,
         },
         // Refute edges - vibrant red
         {
           selector: 'edge[relation="refutes"]',
           style: {
-            'line-color': '#f87171',
-            'target-arrow-color': '#f87171',
+            "line-color": "#f87171",
+            "target-arrow-color": "#f87171",
           } as any,
         },
         // Related/nuance edges - vibrant blue
         {
           selector: 'edge[relation="related"]',
           style: {
-            'line-color': '#60a5fa',
-            'target-arrow-color': '#60a5fa',
+            "line-color": "#60a5fa",
+            "target-arrow-color": "#60a5fa",
           } as any,
         },
         // Metadata edges - solid
         {
           selector: 'edge[relation="meta"]',
           style: {
-            'line-color': 'rgba(172, 189, 220, 0.7)',
-            'target-arrow-color': 'rgba(172, 189, 220, 0.7)',
-            'opacity': 0.7,
-            'width': 6,
+            "line-color": "rgba(172, 189, 220, 0.7)",
+            "target-arrow-color": "rgba(172, 189, 220, 0.7)",
+            opacity: 0.7,
+            width: 6,
           } as any,
         },
       ],
       layout: {
-        name: 'preset', // Use preset positions
+        name: "preset", // Use preset positions
       } as any,
       zoomingEnabled: true,
       userZoomingEnabled: true,
@@ -658,25 +703,25 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
     // Store instance
     cyInstance.current = cy;
 
-    console.log('✅ Cytoscape instance created');
-    console.log('📊 Cytoscape nodes:', cy.nodes().length);
-    console.log('🔗 Cytoscape edges:', cy.edges().length);
-
     // COMPLETELY disable normal wheel zoom - only shift+wheel
     cy.userZoomingEnabled(false);
 
     // Enable node dragging
-    cy.nodes().forEach(node => {
+    cy.nodes().forEach((node) => {
       node.grabify();
     });
 
     // Click handler
-    cy.on('tap', 'node', (evt) => {
+    cy.on("tap", "node", (evt) => {
       const node = evt.target;
       const data = node.data();
 
       // Handle author/publisher group nodes - show dropdown if multiple
-      if (data.type === 'authorGroup' && data.authors && data.authors.length > 1) {
+      if (
+        data.type === "authorGroup" &&
+        data.authors &&
+        data.authors.length > 1
+      ) {
         const renderedPos = node.renderedPosition();
         setAuthorDropdown({
           authors: data.authors,
@@ -686,7 +731,11 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
         return;
       }
 
-      if (data.type === 'publisherGroup' && data.publishers && data.publishers.length > 1) {
+      if (
+        data.type === "publisherGroup" &&
+        data.publishers &&
+        data.publishers.length > 1
+      ) {
         const renderedPos = node.renderedPosition();
         setAuthorDropdown({
           authors: data.publishers,
@@ -696,20 +745,59 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
         return;
       }
 
-      if (onNodeClick) {
+      if (onNodeClickRef.current) {
         const graphNode = new GraphNode(
           data.id,
           data.label,
           data.type,
-          node.position('x'),
-          node.position('y'),
+          node.position("x"),
+          node.position("y"),
           data.url,
           data.content_id,
           data.claim_id,
           data.publisher_id,
-          data.author_id
+          data.author_id,
         );
-        onNodeClick(graphNode);
+        onNodeClickRef.current(graphNode);
+      }
+    });
+
+    // Add tooltip on hover
+    let tooltipDiv: HTMLDivElement | null = null;
+
+    cy.on("mouseover", "node", (evt) => {
+      const node = evt.target;
+      const label = node.data("label");
+
+      if (!tooltipDiv) {
+        tooltipDiv = document.createElement("div");
+        tooltipDiv.style.position = "absolute";
+        tooltipDiv.style.background = "rgba(0, 0, 0, 0.9)";
+        tooltipDiv.style.color = "#fff";
+        tooltipDiv.style.padding = "8px 12px";
+        tooltipDiv.style.borderRadius = "6px";
+        tooltipDiv.style.fontSize = "14px";
+        tooltipDiv.style.zIndex = "10000";
+        tooltipDiv.style.pointerEvents = "none";
+        tooltipDiv.style.maxWidth = "300px";
+        tooltipDiv.style.wordWrap = "break-word";
+        document.body.appendChild(tooltipDiv);
+      }
+
+      tooltipDiv.textContent = label;
+      tooltipDiv.style.display = "block";
+    });
+
+    cy.on("mousemove", "node", (evt) => {
+      if (tooltipDiv) {
+        tooltipDiv.style.left = evt.originalEvent.pageX + 10 + "px";
+        tooltipDiv.style.top = evt.originalEvent.pageY + 10 + "px";
+      }
+    });
+
+    cy.on("mouseout", "node", () => {
+      if (tooltipDiv) {
+        tooltipDiv.style.display = "none";
       }
     });
 
@@ -717,92 +805,96 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
     let lastScrollDirection = 0;
     const container = cyRef.current;
     if (container) {
-      container.addEventListener('wheel', (e) => {
-        if (e.shiftKey) {
-          e.preventDefault();
-          e.stopPropagation();
+      container.addEventListener(
+        "wheel",
+        (e) => {
+          if (e.shiftKey) {
+            e.preventDefault();
+            e.stopPropagation();
 
-          const currentZoom = cy.zoom();
+            const currentZoom = cy.zoom();
 
-          // Check if scroll direction changed (helps detect actual scroll intent)
-          // Use wheelDelta if available (for better cross-browser support)
-          const delta = e.deltaY || -(e as any).wheelDelta;
+            // Check if scroll direction changed (helps detect actual scroll intent)
+            // Use wheelDelta if available (for better cross-browser support)
+            const delta = e.deltaY || -(e as any).wheelDelta;
 
-          // Determine zoom direction - alternate between zoom in and out based on scroll
-          // This avoids the -0 issue
-          let newZoom;
-          if (Math.abs(delta) < 1) {
-            // Very small delta, toggle based on last direction
-            lastScrollDirection = lastScrollDirection === 1 ? -1 : 1;
-          } else {
-            lastScrollDirection = delta > 0 ? 1 : -1;
+            // Determine zoom direction - alternate between zoom in and out based on scroll
+            // This avoids the -0 issue
+            let newZoom;
+            if (Math.abs(delta) < 1) {
+              // Very small delta, toggle based on last direction
+              lastScrollDirection = lastScrollDirection === 1 ? -1 : 1;
+            } else {
+              lastScrollDirection = delta > 0 ? 1 : -1;
+            }
+
+            if (lastScrollDirection < 0) {
+              // ZOOM IN
+              newZoom = currentZoom * 1.15;
+            } else {
+              // ZOOM OUT
+              newZoom = currentZoom * 0.85;
+            }
+
+            // Get center of viewport
+            const pan = cy.pan();
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            const centerX = containerWidth / 2;
+            const centerY = containerHeight / 2;
+
+            // Calculate zoom around center point
+            const zoomPoint = {
+              x: (centerX - pan.x) / currentZoom,
+              y: (centerY - pan.y) / currentZoom,
+            };
+
+            cy.zoom({
+              level: newZoom,
+              position: zoomPoint,
+            });
           }
-
-          if (lastScrollDirection < 0) {
-            // ZOOM IN
-            newZoom = currentZoom * 1.15;
-            console.log('🔍 ZOOM IN - delta:', delta, 'direction:', lastScrollDirection, 'old zoom:', currentZoom.toFixed(2), 'new zoom:', newZoom.toFixed(2));
-          } else {
-            // ZOOM OUT
-            newZoom = currentZoom * 0.85;
-            console.log('🔍 ZOOM OUT - delta:', delta, 'direction:', lastScrollDirection, 'old zoom:', currentZoom.toFixed(2), 'new zoom:', newZoom.toFixed(2));
-          }
-
-          // Get center of viewport
-          const pan = cy.pan();
-          const containerWidth = container.clientWidth;
-          const containerHeight = container.clientHeight;
-          const centerX = containerWidth / 2;
-          const centerY = containerHeight / 2;
-
-          // Calculate zoom around center point
-          const zoomPoint = {
-            x: (centerX - pan.x) / currentZoom,
-            y: (centerY - pan.y) / currentZoom
-          };
-
-          cy.zoom({
-            level: newZoom,
-            position: zoomPoint
-          });
-        }
-        // If no shift key, do nothing - allows normal page scroll
-      }, { passive: false });
+          // If no shift key, do nothing - allows normal page scroll
+        },
+        { passive: false },
+      );
     }
 
-    // Set viewport - fit then apply zoom
-    console.log('🎯 Setting viewport');
+    // Set viewport - fit height, start at left edge
+    // STEP 2: Get graph bounding box
+    const boundingBox = cy.elements().boundingBox();
+    const graphWidth = boundingBox.w;
+    const graphHeight = boundingBox.h;
+    const graphLeftEdge = boundingBox.x1;
+    const graphCenterY = boundingBox.y1 + graphHeight / 2;
 
-    // Fit all nodes with padding
-    cy.fit(undefined, 50);
+    // STEP 3: Calculate zoom to fit BOTH height AND width - use smaller zoom to ensure graph fits
+    const paddingPercent = 0.9; // 90% of available space
+    const availableHeight = viewportHeight * paddingPercent;
+    const availableWidth = viewportWidth * paddingPercent;
 
-    // Apply zoom multiplier - smaller for knowledge graph to fit horizontally
-    const baseZoom = cy.zoom();
-    cy.zoom(baseZoom * 3.0);
+    const zoomForHeight = availableHeight / graphHeight;
+    const zoomForWidth = availableWidth / graphWidth;
 
-    // Re-center after zooming
-    cy.center();
+    // Use the SMALLER zoom value to ensure graph fits in both dimensions
+    const optimalZoom = Math.min(zoomForHeight, zoomForWidth);
 
-    console.log('✅ Viewport set - zoom:', cy.zoom());
-
-    // Log final viewport state
-    const finalZoom = cy.zoom();
-    const finalPan = cy.pan();
-    console.log('🔍 Final viewport - zoom:', finalZoom, 'pan:', finalPan);
-
-    // Log sample node positions
-    const sampleNodes = cy.nodes().slice(0, 3);
-    console.log('📊 Sample node positions:', sampleNodes.map(n => ({
-      id: n.id(),
-      type: n.data('type'),
-      pos: n.position()
-    })));
+    // STEP 4: Apply zoom and position at left edge
+    const leftPadding = 50; // Small left margin
+    cy.zoom(optimalZoom);
+    cy.pan({
+      x: leftPadding - graphLeftEdge * optimalZoom,
+      y: viewportHeight / 2 - graphCenterY * optimalZoom,
+    });
 
     // Cleanup
     return () => {
+      if (tooltipDiv && tooltipDiv.parentNode) {
+        tooltipDiv.parentNode.removeChild(tooltipDiv);
+      }
       cy.destroy();
     };
-  }, [nodes, links, onNodeClick]);
+  }, [nodes, links]);
 
   return (
     <Box position="relative" width="100%" height="100%">
@@ -811,7 +903,7 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
         width="100%"
         height="100%"
         minHeight="600px"
-        bg={colorMode === 'dark' ? 'transparent' : 'gray.50'}
+        bg={colorMode === "dark" ? "transparent" : "gray.50"}
         borderRadius="lg"
       />
 
@@ -846,7 +938,10 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
             overflowY="auto"
           >
             <Box fontSize="xs" color="#ff8fb7" fontWeight={700} mb={2}>
-              {authorDropdown.authors[0]?.type === 'publisher' ? 'Publishers' : 'Authors'} for {authorDropdown.parentLabel}
+              {authorDropdown.authors[0]?.type === "publisher"
+                ? "Publishers"
+                : "Authors"}{" "}
+              for {authorDropdown.parentLabel}
             </Box>
             {authorDropdown.authors.map((author, idx) => (
               <Box
@@ -856,7 +951,7 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
                 bg="rgba(255, 143, 183, 0.12)"
                 borderRadius="md"
                 border="1px solid rgba(255, 143, 183, 0.25)"
-                _hover={{ bg: 'rgba(255, 143, 183, 0.22)', cursor: 'pointer' }}
+                _hover={{ bg: "rgba(255, 143, 183, 0.22)", cursor: "pointer" }}
                 fontSize="xs"
                 color="gray.200"
               >

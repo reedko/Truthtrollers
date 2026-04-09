@@ -12,6 +12,7 @@
   "dependencies": {
     "@chakra-ui/icons": "^2.0.17",
     "@chakra-ui/react": "^2.10.7",
+    "@chakra-ui/system": "^2.6.2",
     "@chakra-ui/theme-tools": "^2.2.8",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
@@ -23,6 +24,7 @@
     "cytoscape": "^3.33.1",
     "cytoscape-dagre": "^2.5.0",
     "cytoscape-qtip": "^2.8.0",
+    "d3-force": "^3.0.0",
     "dagre": "^0.8.5",
     "framer-motion": "^11.18.2",
     "jQuery": "^1.7.4",
@@ -33,6 +35,7 @@
     "react-circular-progressbar": "^2.2.0",
     "react-dom": "^18.3.1",
     "react-draggable": "^4.5.0",
+    "react-force-graph-2d": "^1.29.1",
     "react-google-recaptcha": "^3.1.0",
     "react-icons": "^5.3.0",
     "react-joyride": "^2.9.3",

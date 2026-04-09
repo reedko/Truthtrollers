@@ -67,43 +67,58 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({ claimPairsData }) =
 
   return (
     <Box width="100%" mt={2}>
-      <Button
+      <button
         onClick={handleToggle}
-        size="sm"
-        width="100%"
-        variant="ghost"
-        color="cyan.300"
-        _hover={{ bg: "rgba(0, 162, 255, 0.1)" }}
-        fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+        className="mr-button"
+        style={{
+          width: "100%",
+          fontFamily: "Futura, 'Century Gothic', 'Avenir Next', sans-serif",
+        }}
       >
-        {isOpen ? "▼" : "▶"} {isOpen ? "Hide" : "Show"} Top Claims
-      </Button>
+        <span style={{ position: "relative", zIndex: 1 }}>
+          {isOpen ? "▼" : "▶"} {isOpen ? "Hide" : "Show"} Top Claims
+        </span>
+      </button>
 
       <Collapse in={isOpen} animateOpacity>
         <Box
           mt={2}
           p={2}
+          position="relative"
           background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
           backdropFilter="blur(20px)"
-          border="1px solid rgba(0, 162, 255, 0.3)"
-          borderRadius="8px"
-          boxShadow="0 4px 12px rgba(0, 0, 0, 0.5)"
+          border="1px solid rgba(0, 162, 255, 0.4)"
+          borderRadius="12px"
+          boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
           maxH="300px"
           overflowY="auto"
+          overflow="hidden"
         >
-          {!claimPairsData && (
-            <Text
-              color="gray.500"
-              fontSize="sm"
-              textAlign="center"
-              fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
-            >
-              No claim pairs data available
-            </Text>
-          )}
+          {/* Curved left edge glow */}
+          <Box
+            position="absolute"
+            left={0}
+            top={0}
+            width="30px"
+            height="100%"
+            background="linear-gradient(90deg, rgba(0, 162, 255, 0.6) 0%, transparent 100%)"
+            pointerEvents="none"
+            zIndex={0}
+          />
+          <Box position="relative" zIndex={1}>
+            {!claimPairsData && (
+              <Text
+                color="gray.500"
+                fontSize="sm"
+                textAlign="center"
+                fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+              >
+                No claim pairs data available
+              </Text>
+            )}
 
-          {claimPairsData && (
-            <VStack spacing={2} align="stretch">
+            {claimPairsData && (
+              <VStack spacing={2} align="stretch">
               {claimPairsData.claim_pairs.map((pair, idx) => {
                 const pairKey = `${pair.caseClaim.claim_id}-${pair.sourceClaim.claim_id}`;
                 const isExpanded = expandedPairId === pairKey;
@@ -113,26 +128,58 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({ claimPairsData }) =
                 return (
                   <Box
                     key={pairKey}
-                    bg="rgba(0, 0, 0, 0.3)"
-                    borderRadius="8px"
+                    position="relative"
+                    background="linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.85))"
+                    backdropFilter="blur(10px)"
+                    borderRadius="12px"
                     border="1px solid"
                     borderColor={
                       isSupport
-                        ? "rgba(97, 239, 184, 0.3)"
+                        ? "rgba(97, 239, 184, 0.4)"
                         : isRefute
-                        ? "rgba(255, 108, 136, 0.3)"
-                        : "rgba(120, 168, 255, 0.3)"
+                        ? "rgba(255, 108, 136, 0.4)"
+                        : "rgba(0, 162, 255, 0.4)"
+                    }
+                    boxShadow={
+                      isSupport
+                        ? "0 4px 16px rgba(0, 0, 0, 0.5), 0 0 30px rgba(97, 239, 184, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+                        : isRefute
+                        ? "0 4px 16px rgba(0, 0, 0, 0.5), 0 0 30px rgba(255, 108, 136, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+                        : "0 4px 16px rgba(0, 0, 0, 0.5), 0 0 30px rgba(0, 162, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
                     }
                     overflow="hidden"
-                    transition="all 0.2s"
+                    transition="all 0.3s ease"
                     _hover={{
                       borderColor: isSupport
-                        ? "rgba(97, 239, 184, 0.5)"
+                        ? "rgba(97, 239, 184, 0.6)"
                         : isRefute
-                        ? "rgba(255, 108, 136, 0.5)"
-                        : "rgba(120, 168, 255, 0.5)",
+                        ? "rgba(255, 108, 136, 0.6)"
+                        : "rgba(0, 162, 255, 0.6)",
+                      transform: "translateY(-2px)",
+                      boxShadow: isSupport
+                        ? "0 6px 20px rgba(0, 0, 0, 0.6), 0 0 40px rgba(97, 239, 184, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+                        : isRefute
+                        ? "0 6px 20px rgba(0, 0, 0, 0.6), 0 0 40px rgba(255, 108, 136, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
+                        : "0 6px 20px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
                     }}
                   >
+                    {/* Curved left edge glow */}
+                    <Box
+                      position="absolute"
+                      left={0}
+                      top={0}
+                      width="20px"
+                      height="100%"
+                      background={
+                        isSupport
+                          ? "linear-gradient(90deg, rgba(97, 239, 184, 0.4) 0%, transparent 100%)"
+                          : isRefute
+                          ? "linear-gradient(90deg, rgba(255, 108, 136, 0.4) 0%, transparent 100%)"
+                          : "linear-gradient(90deg, rgba(0, 162, 255, 0.4) 0%, transparent 100%)"
+                      }
+                      pointerEvents="none"
+                      zIndex={0}
+                    />
                     {/* Collapsed View - Clickable */}
                     <Box
                       w="100%"
@@ -141,6 +188,8 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({ claimPairsData }) =
                       onClick={() => setExpandedPairId(isExpanded ? null : pairKey)}
                       textAlign="left"
                       _hover={{ bg: "rgba(255, 255, 255, 0.02)" }}
+                      position="relative"
+                      zIndex={1}
                     >
                       <VStack spacing={1} align="stretch" pointerEvents="none">
                         {/* Verimeter bar */}
@@ -207,7 +256,12 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({ claimPairsData }) =
                           </HStack>
 
                           {/* Expand Icon */}
-                          <Text fontSize="xs" color="#89a9bf" flexShrink={0}>
+                          <Text
+                            fontSize="xs"
+                            color="#89a9bf"
+                            flexShrink={0}
+                            fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+                          >
                             {isExpanded ? "▼" : "▶"}
                           </Text>
                         </HStack>
@@ -220,6 +274,8 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({ claimPairsData }) =
                         p={3}
                         bg="rgba(0, 0, 0, 0.4)"
                         borderTop="1px solid rgba(255, 255, 255, 0.05)"
+                        position="relative"
+                        zIndex={1}
                       >
                         <VStack spacing={3} align="stretch">
                           {/* Stance Badge */}
@@ -377,6 +433,7 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({ claimPairsData }) =
               )}
             </VStack>
           )}
+          </Box>
         </Box>
       </Collapse>
     </Box>

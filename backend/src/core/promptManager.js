@@ -49,20 +49,27 @@ class PromptManager {
       }
 
       const row = results[0];
-      const parameters = typeof row.parameters === 'string'
-        ? JSON.parse(row.parameters)
-        : row.parameters || {};
 
-      // Include max_claims and source limits in parameters if they exist
-      if (row.max_claims !== null && row.max_claims !== undefined) {
-        parameters.max_claims = row.max_claims;
+      // Parse parameters safely - always create a new object to avoid immutability issues
+      let parsedParams = {};
+      try {
+        if (typeof row.parameters === 'string') {
+          parsedParams = JSON.parse(row.parameters);
+        } else if (typeof row.parameters === 'object' && row.parameters !== null) {
+          parsedParams = row.parameters;
+        }
+      } catch (err) {
+        logger.warn(`⚠️ [PromptManager] Failed to parse parameters for ${promptName}:`, err.message);
       }
-      if (row.min_sources !== null && row.min_sources !== undefined) {
-        parameters.min_sources = row.min_sources;
-      }
-      if (row.max_sources !== null && row.max_sources !== undefined) {
-        parameters.max_sources = row.max_sources;
-      }
+
+      // Create a new mutable object with all parameters
+      const parameters = {
+        ...parsedParams,
+        // Include max_claims and source limits from table columns if they exist
+        ...(row.max_claims !== null && row.max_claims !== undefined && { max_claims: row.max_claims }),
+        ...(row.min_sources !== null && row.min_sources !== undefined && { min_sources: row.min_sources }),
+        ...(row.max_sources !== null && row.max_sources !== undefined && { max_sources: row.max_sources }),
+      };
 
       let prompt;
       if (row.prompt_type === 'combined') {

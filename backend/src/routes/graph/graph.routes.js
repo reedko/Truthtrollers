@@ -33,13 +33,13 @@ export default function createGraphRoutes({ query, pool }) {
     }
 
     try {
-      // Task entityType needs 6 params for nodes, 4 params for links
+      // Task entityType needs 7 params for nodes, 5 params for links
       // viewerId is now embedded directly in the SQL string (not a parameter)
       const nodeParams = entityType === 'task'
-        ? [entity, entity, entity, entity, entity, entity]
+        ? [entity, entity, entity, entity, entity, entity, entity]
         : [entity, entity, entity, entity];
       const linkParams = entityType === 'task'
-        ? [entity, entity, entity, entity]
+        ? [entity, entity, entity, entity, entity]
         : [entity, entity, entity, entity];
       const nodes = await query(nodeSql, nodeParams);
       const links = await query(linkSql, linkParams);
@@ -78,14 +78,14 @@ export default function createGraphRoutes({ query, pool }) {
     console.log(entity);
     try {
       // 1. Base nodes/links
-      // Task entityType needs 6 params for nodes (task, task authors, reference authors, publisher, references x2)
-      // Task entityType needs 4 params for links (task author, task publisher, task references, reference authors)
+      // Task entityType needs 7 params for nodes (task, case authors, ref authors, case publishers, ref publishers, references x2)
+      // Task entityType needs 5 params for links (case authors, case publishers, references, ref authors, ref publishers)
       // viewerId is now embedded directly in the SQL string (not a parameter)
       const nodeParams = entityType === 'task'
-        ? [entity, entity, entity, entity, entity, entity]
+        ? [entity, entity, entity, entity, entity, entity, entity]
         : [entity, entity, entity, entity];
       const linkParams = entityType === 'task'
-        ? [entity, entity, entity, entity]
+        ? [entity, entity, entity, entity, entity]
         : [entity, entity, entity, entity];
       const nodes = await query(nodeSql, nodeParams);
       const links = await query(linkSql, linkParams);

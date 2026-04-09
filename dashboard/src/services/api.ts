@@ -9,14 +9,11 @@ const API_BASE_URL =
 export const fetchNewGraphDataFromLegacyRoute = async (
   selectedNode: GraphNode
 ): Promise<{ nodes: GraphNode[]; links: Link[] }> => {
-  console.log("📡 Fetching Graph Data for:", selectedNode);
-
   try {
     const viewerId = useTaskStore.getState().viewingUserId;
     const viewScope = useTaskStore.getState().viewScope;
 
     const contentId = selectedNode.id.replace(/^.*-/, ""); // fallback if not a task
-    console.log(contentId, selectedNode.type, selectedNode.id);
     const response = await fetch(
       `${API_BASE_URL}/api/full-graph/${contentId}?entity=${contentId}&entityType=${selectedNode.type}&viewerId=${viewerId}&viewScope=${viewScope}`,
       { headers: { Accept: "application/json" } }
@@ -29,8 +26,6 @@ export const fetchNewGraphDataFromLegacyRoute = async (
     }
 
     const data = await response.json();
-    console.log("[API] raw nodes:", data.nodes.length, data.nodes);
-    console.log("[API] raw links:", data.links.length, data.links);
 
     const nodes = data.nodes.map(
       (node: GraphNode) => {
@@ -59,7 +54,6 @@ export const fetchNewGraphDataFromLegacyRoute = async (
       }
     );
 
-    console.log(data.nodes, "nodes", data.links, "links");
     return { nodes, links: data.links };
   } catch (error) {
     console.error("🚨 Graph Fetch Error:", error);

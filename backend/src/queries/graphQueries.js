@@ -18,7 +18,17 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
           SELECT 1 FROM user_reference_visibility urv
           WHERE urv.user_id = ${parseInt(viewerId, 10)}
             AND urv.task_content_id = tr.content_id
-            AND urv.reference_content_id = tr.reference_content_id
+            AND urv.reference_content_id = ca.content_id
+            AND urv.is_hidden = TRUE
+        )`
+      : '';
+
+    const visibilityFilterForRefPublishersNodes = viewerId
+      ? `AND NOT EXISTS (
+          SELECT 1 FROM user_reference_visibility urv
+          WHERE urv.user_id = ${parseInt(viewerId, 10)}
+            AND urv.task_content_id = tr.content_id
+            AND urv.reference_content_id = tp.content_id
             AND urv.is_hidden = TRUE
         )`
       : '';
@@ -59,7 +69,7 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
 
         UNION
 
-        SELECT
+        SELECT DISTINCT
           'author' AS type,
           CONCAT("autho-",a.author_id) AS id,
           NULL AS content_id,
@@ -75,7 +85,13 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
         JOIN content_authors ca ON a.author_id = ca.author_id
         JOIN content_relations tr ON ca.content_id = tr.reference_content_id
         WHERE tr.content_id = ?
-        ${visibilityFilterForAuthors}
+        AND NOT EXISTS (
+          SELECT 1 FROM user_reference_visibility urv
+          WHERE urv.task_content_id = tr.content_id
+            AND urv.reference_content_id = ca.content_id
+            AND urv.is_hidden = TRUE
+            ${viewerId ? `AND urv.user_id = ${parseInt(viewerId, 10)}` : ''}
+        )
 
         UNION
 
@@ -95,6 +111,31 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
         JOIN content_publishers tp ON p.publisher_id = tp.publisher_id
         WHERE tp.content_id = ?
 
+        UNION
+
+        SELECT
+          'publisher' AS type,
+          CONCAT("publi-",p.publisher_id) AS id,
+          NULL AS content_id,
+          NULL AS author_id,
+          p.publisher_id AS publisher_id,
+          p.publisher_name AS label,
+          NULL AS url,
+          NULL AS claimCount,
+          (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating,
+          NULL AS added_by_user_id,
+          NULL AS is_system
+        FROM publishers p
+        JOIN content_publishers tp ON p.publisher_id = tp.publisher_id
+        JOIN content_relations tr ON tp.content_id = tr.reference_content_id
+        WHERE tr.content_id = ?
+        AND NOT EXISTS (
+          SELECT 1 FROM user_reference_visibility urv
+          WHERE urv.task_content_id = tr.content_id
+            AND urv.reference_content_id = tp.content_id
+            AND urv.is_hidden = TRUE
+            ${viewerId ? `AND urv.user_id = ${parseInt(viewerId, 10)}` : ''}
+        )
 
         UNION
 
@@ -307,6 +348,16 @@ export const getLinksForEntity = (entityType, viewerId = null) => {
         )`
       : '';
 
+    const visibilityFilterForRefPublishers = viewerId
+      ? `AND NOT EXISTS (
+          SELECT 1 FROM user_reference_visibility urv
+          WHERE urv.user_id = ${parseInt(viewerId, 10)}
+            AND urv.task_content_id = tr.content_id
+            AND urv.reference_content_id = tp.content_id
+            AND urv.is_hidden = TRUE
+        )`
+      : '';
+
     return `
       SELECT
         'authored' AS type,
@@ -347,7 +398,31 @@ export const getLinksForEntity = (entityType, viewerId = null) => {
       FROM content_authors ca
       JOIN content_relations tr ON ca.content_id = tr.reference_content_id
       WHERE tr.content_id = ?
-      ${visibilityFilterForRefAuthored}
+      AND NOT EXISTS (
+        SELECT 1 FROM user_reference_visibility urv
+        WHERE urv.task_content_id = tr.content_id
+          AND urv.reference_content_id = tr.reference_content_id
+          AND urv.is_hidden = TRUE
+          ${viewerId ? `AND urv.user_id = ${parseInt(viewerId, 10)}` : ''}
+      )
+
+      UNION
+
+      SELECT
+        'ref_published_by' AS type,
+        CONCAT("conte-", tp.content_id) AS source,
+        CONCAT("publi-", tp.publisher_id) AS target,
+        CONCAT("conte-", tp.content_id, "_publi-", tp.publisher_id) AS id
+      FROM content_publishers tp
+      JOIN content_relations tr ON tp.content_id = tr.reference_content_id
+      WHERE tr.content_id = ?
+      AND NOT EXISTS (
+        SELECT 1 FROM user_reference_visibility urv
+        WHERE urv.task_content_id = tr.content_id
+          AND urv.reference_content_id = tr.reference_content_id
+          AND urv.is_hidden = TRUE
+          ${viewerId ? `AND urv.user_id = ${parseInt(viewerId, 10)}` : ''}
+      )
     `;
   }
 
@@ -510,7 +585,9 @@ export const getLinkedClaimsAndLinksForTask = (taskId, viewerId, viewScope) => {
       cl.claim_link_id,
       cl.notes AS rationale,
       cl.confidence,
-      cl.created_at
+      cl.created_at,
+      cl.user_id,
+      cl.created_by_ai
     FROM claim_links cl
     WHERE cl.target_claim_id IN (
       SELECT claim_id FROM content_claims WHERE content_id = ?

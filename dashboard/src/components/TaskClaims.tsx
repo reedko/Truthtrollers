@@ -279,7 +279,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
           pointerEvents="none"
         />
         <Text position="relative" zIndex={1}>
-          + Add Claixm
+          + Add Claim
         </Text>
       </Box>
 

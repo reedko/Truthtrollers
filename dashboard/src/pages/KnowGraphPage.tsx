@@ -77,7 +77,6 @@ const KnowGraphPage = () => {
         return;
       }
 
-      console.log('📊 Loading graph for task:', selectedTask);
       setLoading(true);
       try {
         // Create a GraphNode from the selected task
@@ -90,11 +89,7 @@ const KnowGraphPage = () => {
           undefined,
           selectedTask.content_id
         );
-        console.log('📡 Fetching graph data for taskNode:', taskNode);
         const result = await fetchNewGraphDataFromLegacyRoute(taskNode);
-        console.log('✅ KnowGraph data loaded - nodes:', result.nodes.length, 'links:', result.links.length);
-        console.log('📊 Nodes:', result.nodes);
-        console.log('🔗 Links:', result.links);
         setGraphData(result);
       } catch (err) {
         console.error('🔥 Error loading graph data:', err);

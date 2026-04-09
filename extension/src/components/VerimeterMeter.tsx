@@ -86,6 +86,7 @@ const VerimeterMeter: React.FC<VerimeterMeterProps> = ({
           fontWeight="bold"
           color="red.400"
           flexShrink={0}
+          fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
         >
           {VERIMETER_LABELS.negative}
         </Text>
@@ -121,6 +122,7 @@ const VerimeterMeter: React.FC<VerimeterMeterProps> = ({
               fontWeight="bold"
               color={verdictInfo.color}
               whiteSpace="nowrap"
+              fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
             >
               {displayScore}
             </Text>
@@ -133,6 +135,7 @@ const VerimeterMeter: React.FC<VerimeterMeterProps> = ({
           fontWeight="bold"
           color="green.400"
           flexShrink={0}
+          fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
         >
           {VERIMETER_LABELS.positive}
         </Text>

@@ -146,12 +146,6 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       console.log(`🔍 [RelevanceScan] Loading links for task claim ${taskClaim.claim_id}`);
       console.log(`🔍 [RelevanceScan] Built ${all.length} reference claims from ${references.length} references`);
 
-      if (all.length === 0) {
-        setTopClaims([]);
-        setIsLoadingExisting(false);
-        return;
-      }
-
       const existingLinks = await fetchReferenceClaimTaskLinks(taskClaim.claim_id);
       console.log(`🔍 [RelevanceScan] Fetched ${existingLinks.length} claim-to-claim links from backend:`, existingLinks);
 
@@ -160,7 +154,37 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       console.log(`🔍 [RelevanceScan] Fetched ${docLinks.length} document-level links from backend:`, docLinks);
       setDocumentLinks(docLinks);
 
-      const enriched = enrichClaimsWithRelevance(all, taskClaim.claim_id, existingLinks);
+      // 🔧 FIX: Add linked claims that aren't in the references array
+      // This ensures manually linked claims show up even if their reference is filtered out
+      const allClaimsMap = new Map<number, Claim>();
+      all.forEach(c => allClaimsMap.set(c.claim_id, c));
+
+      for (const link of existingLinks) {
+        if (!allClaimsMap.has(link.reference_claim_id) && link.reference_claim_text) {
+          // This claim is linked but not in our references array - add it!
+          const missingClaim: Claim = {
+            claim_id: link.reference_claim_id,
+            claim_text: link.reference_claim_text,
+            claim_type: 'evidence',
+            veracity_score: 0,
+            confidence_level: link.confidence,
+            last_verified: new Date().toISOString(),
+          };
+          allClaimsMap.set(link.reference_claim_id, missingClaim);
+          console.log(`🔍 [RelevanceScan] Added missing linked claim ${link.reference_claim_id} from ${link.source_name}`);
+        }
+      }
+
+      const allClaims = Array.from(allClaimsMap.values());
+      console.log(`🔍 [RelevanceScan] Total claims after adding missing linked: ${allClaims.length}`);
+
+      if (allClaims.length === 0) {
+        setTopClaims([]);
+        setIsLoadingExisting(false);
+        return;
+      }
+
+      const enriched = enrichClaimsWithRelevance(allClaims, taskClaim.claim_id, existingLinks);
       const sorted = sortClaimsByRelevance(enriched);
 
       // 🎯 FILTER: Only show relevant claims

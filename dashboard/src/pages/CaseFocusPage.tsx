@@ -46,8 +46,9 @@ import { useAuthStore } from "../store/useAuthStore";
 import {
   fetchClaimScoresForTask,
   getClaimLinkScore,
-  fetchLinkedClaimsForTaskClaim,
 } from "../services/useDashboardAPI";
+import { fetchReferenceClaimTaskLinks } from '../services/referenceClaimRelevance';
+import RelevanceScanModal from "../components/modals/RelevanceScanModal";
 import VerimeterMeter from "../components/VerimeterMeter";
 import ClaimLinkOverlay from "../components/overlays/ClaimLinkOverlay";
 
@@ -91,6 +92,10 @@ interface CandidateClaim {
   ai_stance?: string;
   ai_support_level?: number;
   ai_rationale?: string;
+  existing_link?: {
+    relationship_type: string;
+    created_at: string;
+  };
 }
 
 export const CaseFocusPage: React.FC = () => {
@@ -131,47 +136,15 @@ export const CaseFocusPage: React.FC = () => {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
-  // Linked claims modal state
+  // RelevanceScanModal state - USE WORKSPACE MODAL
   const {
-    isOpen: isLinkedClaimsModalOpen,
-    onOpen: onOpenLinkedClaimsModal,
-    onClose: onCloseLinkedClaimsModal,
+    isOpen: isRelevanceScanModalOpen,
+    onOpen: onOpenRelevanceScanModal,
+    onClose: onCloseRelevanceScanModal,
   } = useDisclosure();
-  const [linkedClaims, setLinkedClaims] = useState<any[]>([]);
-  const [linkedClaimsFilter, setLinkedClaimsFilter] = useState<
-    Set<"support" | "refute" | "nuance">
-  >(new Set(["support", "refute", "nuance"]));
+  const [references, setReferences] = useState<any[]>([]);
 
   // Memoize linked claims categorization to avoid re-filtering on every render
-  const linkedClaimsCategorized = useMemo(() => {
-    const support = linkedClaims.filter(
-      (lc) => lc.relation === "support" || lc.relationship === "supports",
-    );
-    const refute = linkedClaims.filter(
-      (lc) => lc.relation === "refute" || lc.relationship === "refutes",
-    );
-    const nuance = linkedClaims.filter(
-      (lc) =>
-        lc.relation === "nuance" ||
-        lc.relation === "context" ||
-        lc.relationship === "related",
-    );
-
-    return { support, refute, nuance };
-  }, [linkedClaims]);
-
-  // Memoize filtered claims based on selected filters
-  const filteredLinkedClaims = useMemo(() => {
-    const result: any[] = [];
-    if (linkedClaimsFilter.has("support"))
-      result.push(...linkedClaimsCategorized.support);
-    if (linkedClaimsFilter.has("refute"))
-      result.push(...linkedClaimsCategorized.refute);
-    if (linkedClaimsFilter.has("nuance"))
-      result.push(...linkedClaimsCategorized.nuance);
-    return result;
-  }, [linkedClaimsFilter, linkedClaimsCategorized]);
-
   // Style helper functions
   const getPanelBackground = () =>
     styleMode === "mr1"
@@ -704,7 +677,6 @@ export const CaseFocusPage: React.FC = () => {
       };
 
       setFocusClaim(focus);
-      setLinkedClaims(linkedClaims);
       await loadCandidates(claimId);
     } catch (error) {
       console.error("Error loading focus claim:", error);
@@ -739,8 +711,11 @@ export const CaseFocusPage: React.FC = () => {
       const references = await refsResponse.json();
       console.log("📚 Found", references.length, "references with claims");
 
-      // Get existing AI links (includes claim-to-claim and document-level)
-      const existingLinks = await fetchLinkedClaimsForTaskClaim(focusClaimId, user?.user_id);
+      // Store references for RelevanceScanModal
+      setReferences(references);
+
+      // Get existing AI links - USE SAME ENDPOINT AS CLAIMDUEL
+      const existingLinks = await fetchReferenceClaimTaskLinks(focusClaimId);
       console.log("🔗 Existing claim links:", existingLinks.length);
 
       // Flatten all reference claims into candidates
@@ -754,7 +729,7 @@ export const CaseFocusPage: React.FC = () => {
             : [];
 
         for (const claim of refClaims) {
-          // Check if THIS SPECIFIC CLAIM is already linked
+          // Check if THIS SPECIFIC CLAIM is already linked - MATCH CLAIMDUEL LOGIC
           const existingLink = existingLinks.find(
             (link: any) => link.reference_claim_id === claim.claim_id,
           );
@@ -768,21 +743,25 @@ export const CaseFocusPage: React.FC = () => {
             claim_type: "evidence",
             reference_content_id: ref.reference_content_id,
             source_claim_id: claim.claim_id,
-            ai_confidence: existingLink?.confidence ? Number(existingLink.confidence) : undefined,
+            ai_confidence: existingLink?.confidence,
             ai_stance: existingLink?.stance,
             ai_support_level: existingLink?.support_level,
             ai_rationale: existingLink?.rationale,
+            existing_link: existingLink?.verified_by_user_id ? {
+              relationship_type: existingLink.stance,
+              created_at: existingLink.created_at
+            } : undefined
           });
         }
       }
 
       console.log("📊 Total candidates from deep scan:", allCandidates.length);
+      console.log("📊 AI-suggested (score > 0):", allCandidates.filter(c => c.relevance_score > 0).length);
+      console.log("📊 Has existing link:", allCandidates.filter(c => c.existing_link).length);
 
-      // FILTER TO ONLY RELEVANT CLAIMS: Show only AI-suggested OR already linked
-      const filteredCandidates = allCandidates.filter(
-        (c) =>
-          c.relevance_score > 0 &&
-          !hiddenSources.includes(c.reference_content_id),
+      // 🎯 FILTER TO ONLY RELEVANT CLAIMS: Match ClaimDuel - show AI-suggested OR already linked
+      const filteredCandidates = allCandidates.filter(c =>
+        c.relevance_score > 0 || c.existing_link
       );
 
       console.log(
@@ -1052,24 +1031,9 @@ export const CaseFocusPage: React.FC = () => {
     }
   };
 
-  const loadLinkedClaims = async () => {
-    if (!focusClaim) return;
-    try {
-      // Use the unified endpoint that includes all three types:
-      // 1. Manual claim_links (user-created)
-      // 2. AI claim-to-claim (reference_claim_task_links)
-      // 3. AI document-level (reference_claim_links)
-      const links = await fetchLinkedClaimsForTaskClaim(focusClaim.claim_id, user?.user_id);
-      setLinkedClaims(links || []);
-    } catch (error) {
-      console.error("Error loading linked claims:", error);
-      setLinkedClaims([]);
-    }
-  };
-
-  const handleOpenLinkedClaimsModal = async () => {
-    await loadLinkedClaims();
-    onOpenLinkedClaimsModal();
+  const handleOpenLinkedClaimsModal = () => {
+    // Open workspace's RelevanceScanModal instead of custom modal
+    onOpenRelevanceScanModal();
   };
 
   const handleNextClaim = () => {
@@ -3480,527 +3444,22 @@ export const CaseFocusPage: React.FC = () => {
         />
       )}
 
-      {/* Linked Claims Modal */}
-      <Modal
-        isOpen={isLinkedClaimsModalOpen}
-        onClose={onCloseLinkedClaimsModal}
-        size="6xl"
-        motionPreset="slideInBottom"
-      >
-        <ModalOverlay bg="rgba(0, 0, 0, 0.85)" backdropFilter="blur(12px)" />
-        <ModalContent
-          bg={
-            styleMode === "mr1"
-              ? "transparent"
-              : "linear-gradient(180deg, rgba(15, 28, 46, 0.68), rgba(8, 16, 27, 0.62))"
-          }
-          backdropFilter={styleMode === "mr1" ? "blur(10px)" : "none"}
-          borderRadius={styleMode === "mr1" ? "24px" : "0"}
-          border={styleMode === "mr1" ? "2px solid" : "1px solid"}
-          borderColor={
-            styleMode === "mr1"
-              ? "rgba(113, 219, 255, 0.4)"
-              : "rgba(126, 207, 255, 0.22)"
-          }
-          boxShadow={
-            styleMode === "mr1"
-              ? "0 16px 48px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(113, 219, 255, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
-              : "0 30px 60px rgba(0, 0, 0, 0.52), 0 10px 0 rgba(3, 6, 8, 1), 0 20px 0 rgba(2, 4, 5, 1), inset 0 2px 0 rgba(255, 255, 255, 0.14), inset 0 -10px 18px rgba(0, 0, 0, 0.75)"
-          }
-          clipPath={
-            styleMode === "mr2"
-              ? "polygon(42px 0, calc(100% - 42px) 0, 100% 42px, 100% calc(100% - 42px), calc(100% - 42px) 100%, 42px 100%, 0 calc(100% - 42px), 0 42px)"
-              : undefined
-          }
-          maxH="90vh"
-          p={8}
-          position="relative"
-          overflow="hidden"
-          _before={
-            styleMode === "mr2"
-              ? {
-                  content: '""',
-                  position: "absolute",
-                  inset: "8px",
-                  background: "linear-gradient(180deg, #1c262f, #0b1015)",
-                  clipPath:
-                    "polygon(38px 0, calc(100% - 38px) 0, 100% 38px, 100% calc(100% - 38px), calc(100% - 38px) 100%, 38px 100%, 0 calc(100% - 38px), 0 38px)",
-                  boxShadow:
-                    "inset 0 2px 0 rgba(255, 255, 255, 0.06), inset 0 -12px 20px rgba(0, 0, 0, 0.72), inset 0 14px 20px rgba(255, 255, 255, 0.02)",
-                  zIndex: 0,
-                }
-              : undefined
-          }
-          _after={
-            styleMode === "mr2"
-              ? {
-                  content: '""',
-                  position: "absolute",
-                  inset: "18px",
-                  background: "linear-gradient(180deg, #121920, #090d11)",
-                  clipPath:
-                    "polygon(30px 0, calc(100% - 30px) 0, 100% 30px, 100% calc(100% - 30px), calc(100% - 30px) 100%, 30px 100%, 0 calc(100% - 30px), 0 30px)",
-                  boxShadow:
-                    "inset 0 2px 0 rgba(255, 255, 255, 0.03), inset 0 -8px 14px rgba(0, 0, 0, 0.82), inset 0 0 0 2px rgba(255, 255, 255, 0.015)",
-                  zIndex: 0,
-                }
-              : undefined
-          }
-        >
-          {/* Curved left edge - MR1 only */}
-          {styleMode === "mr1" && (
-            <Box
-              position="absolute"
-              left={0}
-              top={0}
-              width="28px"
-              height="100%"
-              background="linear-gradient(90deg, rgba(113, 219, 255, 0.5) 0%, transparent 100%)"
-              borderLeftRadius="24px"
-              pointerEvents="none"
-              zIndex={0}
-            />
-          )}
-
-          <ModalHeader pb={6} position="relative" zIndex={1}>
-            <Text
-              fontSize="20px"
-              fontWeight="700"
-              color="#71dbff"
-              textTransform="uppercase"
-              letterSpacing="0.1em"
-              mb={2}
-            >
-              Linked Evidence Claims
-            </Text>
-            {/* Total count in inset oval */}
-            <Box
-              display="inline-block"
-              px={4}
-              py={2}
-              borderRadius="999px"
-              border="1px solid"
-              borderColor="rgba(113, 219, 255, 0.3)"
-              bg="linear-gradient(180deg, rgba(113, 219, 255, 0.12), rgba(113, 219, 255, 0.06))"
-              boxShadow="inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)"
-            >
-              <Text fontSize="13px" color="#89a9bf" fontWeight="600">
-                {focusClaim?.evidence_count || 0} total linked claims
-              </Text>
-            </Box>
-          </ModalHeader>
-
-          <ModalBody
-            py={4}
-            overflowY="auto"
-            maxH="calc(90vh - 200px)"
-            position="relative"
-            zIndex={1}
-          >
-            <VStack align="stretch" spacing={6}>
-              {/* Filter Tabs (Multi-select) */}
-              <HStack spacing={2} mb={4}>
-                <Button
-                  fontSize="12px"
-                  px={4}
-                  py={2}
-                  h="auto"
-                  borderRadius="999px"
-                  fontWeight="600"
-                  bg={
-                    linkedClaimsFilter.has("support")
-                      ? "rgba(97, 239, 184, 0.2)"
-                      : "transparent"
-                  }
-                  color={
-                    linkedClaimsFilter.has("support") ? "#61efb8" : "#89a9bf"
-                  }
-                  border="1px solid"
-                  borderColor={
-                    linkedClaimsFilter.has("support")
-                      ? "rgba(97, 239, 184, 0.4)"
-                      : "rgba(113, 219, 255, 0.2)"
-                  }
-                  onClick={() => {
-                    const newFilter = new Set(linkedClaimsFilter);
-                    if (newFilter.has("support")) {
-                      newFilter.delete("support");
-                    } else {
-                      newFilter.add("support");
-                    }
-                    setLinkedClaimsFilter(newFilter);
-                  }}
-                  _hover={{
-                    bg: linkedClaimsFilter.has("support")
-                      ? "rgba(97, 239, 184, 0.3)"
-                      : "rgba(97, 239, 184, 0.1)",
-                  }}
-                >
-                  Support ({linkedClaimsCategorized.support.length})
-                </Button>
-                <Button
-                  fontSize="12px"
-                  px={4}
-                  py={2}
-                  h="auto"
-                  borderRadius="999px"
-                  fontWeight="600"
-                  bg={
-                    linkedClaimsFilter.has("refute")
-                      ? "rgba(255, 108, 136, 0.2)"
-                      : "transparent"
-                  }
-                  color={
-                    linkedClaimsFilter.has("refute") ? "#ff6c88" : "#89a9bf"
-                  }
-                  border="1px solid"
-                  borderColor={
-                    linkedClaimsFilter.has("refute")
-                      ? "rgba(255, 108, 136, 0.4)"
-                      : "rgba(113, 219, 255, 0.2)"
-                  }
-                  onClick={() => {
-                    const newFilter = new Set(linkedClaimsFilter);
-                    if (newFilter.has("refute")) {
-                      newFilter.delete("refute");
-                    } else {
-                      newFilter.add("refute");
-                    }
-                    setLinkedClaimsFilter(newFilter);
-                  }}
-                  _hover={{
-                    bg: linkedClaimsFilter.has("refute")
-                      ? "rgba(255, 108, 136, 0.3)"
-                      : "rgba(255, 108, 136, 0.1)",
-                  }}
-                >
-                  Refute ({linkedClaimsCategorized.refute.length})
-                </Button>
-                <Button
-                  fontSize="12px"
-                  px={4}
-                  py={2}
-                  h="auto"
-                  borderRadius="999px"
-                  fontWeight="600"
-                  bg={
-                    linkedClaimsFilter.has("nuance")
-                      ? "rgba(120, 168, 255, 0.2)"
-                      : "transparent"
-                  }
-                  color={
-                    linkedClaimsFilter.has("nuance") ? "#78a8ff" : "#89a9bf"
-                  }
-                  border="1px solid"
-                  borderColor={
-                    linkedClaimsFilter.has("nuance")
-                      ? "rgba(120, 168, 255, 0.4)"
-                      : "rgba(113, 219, 255, 0.2)"
-                  }
-                  onClick={() => {
-                    const newFilter = new Set(linkedClaimsFilter);
-                    if (newFilter.has("nuance")) {
-                      newFilter.delete("nuance");
-                    } else {
-                      newFilter.add("nuance");
-                    }
-                    setLinkedClaimsFilter(newFilter);
-                  }}
-                  _hover={{
-                    bg: linkedClaimsFilter.has("nuance")
-                      ? "rgba(120, 168, 255, 0.3)"
-                      : "rgba(120, 168, 255, 0.1)",
-                  }}
-                >
-                  Nuance ({linkedClaimsCategorized.nuance.length})
-                </Button>
-              </HStack>
-
-              {/* Human-Linked Claims Section */}
-              {focusClaim && (
-                <>
-                  {/* Human-Linked Header with inset oval */}
-                  <Box
-                    px={5}
-                    py={3}
-                    borderRadius="999px"
-                    border="1px solid"
-                    borderColor="rgba(97, 239, 184, 0.3)"
-                    bg="linear-gradient(180deg, rgba(97, 239, 184, 0.15), rgba(97, 239, 184, 0.08))"
-                    boxShadow="inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)"
-                    mb={2}
-                  >
-                    <HStack spacing={3} justify="space-between">
-                      <Text
-                        fontSize="14px"
-                        fontWeight="700"
-                        color="#61efb8"
-                        textTransform="uppercase"
-                        letterSpacing="0.08em"
-                      >
-                        Human-Linked Claims
-                      </Text>
-                      <Text fontSize="13px" color="#89a9bf">
-                        {filteredLinkedClaims.length} verified
-                      </Text>
-                    </HStack>
-                  </Box>
-
-                  {/* Human Claims as Buttons - FILTERED */}
-                  <VStack align="stretch" spacing={3}>
-                    {filteredLinkedClaims.length === 0 ? (
-                      <Text
-                        fontSize="13px"
-                        color="#89a9bf"
-                        fontStyle="italic"
-                        textAlign="center"
-                        py={8}
-                      >
-                        No claims match the selected filters
-                      </Text>
-                    ) : (
-                      filteredLinkedClaims.map((linkedClaim, idx) => {
-                        const isSupport =
-                          linkedClaim.relation === "support" ||
-                          linkedClaim.relationship === "supports";
-                        const isRefute =
-                          linkedClaim.relation === "refute" ||
-                          linkedClaim.relationship === "refutes";
-                        const isNuance =
-                          linkedClaim.relation === "nuance" ||
-                          linkedClaim.relation === "context" ||
-                          linkedClaim.relationship === "related";
-
-                        return (
-                          <Button
-                            key={`linked-${linkedClaim.link_id || idx}`}
-                            h="auto"
-                            py={4}
-                            px={6}
-                            bg="transparent"
-                            backdropFilter="blur(10px)"
-                            borderRadius="24px"
-                            border="2px solid"
-                            borderColor={
-                              isSupport
-                                ? "rgba(97, 239, 184, 0.4)"
-                                : isRefute
-                                  ? "rgba(255, 108, 136, 0.4)"
-                                  : "rgba(120, 168, 255, 0.4)"
-                            }
-                            boxShadow={
-                              isSupport
-                                ? "0 16px 48px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(97, 239, 184, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
-                                : isRefute
-                                  ? "0 16px 48px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(255, 108, 136, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
-                                  : "0 16px 48px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(120, 168, 255, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
-                            }
-                            justifyContent="flex-start"
-                            textAlign="left"
-                            whiteSpace="normal"
-                            position="relative"
-                            overflow="visible"
-                            _hover={{
-                              transform: "translateY(-2px) translateZ(0)",
-                              boxShadow: isSupport
-                                ? "0 20px 60px rgba(0, 0, 0, 0.7), 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 50px rgba(97, 239, 184, 0.4), inset 0 3px 0 rgba(255, 255, 255, 0.2)"
-                                : isRefute
-                                  ? "0 20px 60px rgba(0, 0, 0, 0.7), 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 50px rgba(255, 108, 136, 0.4), inset 0 3px 0 rgba(255, 255, 255, 0.2)"
-                                  : "0 20px 60px rgba(0, 0, 0, 0.7), 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 50px rgba(120, 168, 255, 0.4), inset 0 3px 0 rgba(255, 255, 255, 0.2)",
-                            }}
-                          >
-                            <VStack align="flex-start" spacing={2} w="100%">
-                              <Badge
-                                fontSize="10px"
-                                px={3}
-                                py={1}
-                                borderRadius="999px"
-                                bg={
-                                  isSupport
-                                    ? "rgba(97, 239, 184, 0.2)"
-                                    : isRefute
-                                      ? "rgba(255, 108, 136, 0.2)"
-                                      : "rgba(120, 168, 255, 0.2)"
-                                }
-                                color={
-                                  isSupport
-                                    ? "#61efb8"
-                                    : isRefute
-                                      ? "#ff6c88"
-                                      : "#78a8ff"
-                                }
-                                border="1px solid"
-                                borderColor={
-                                  isSupport
-                                    ? "rgba(97, 239, 184, 0.4)"
-                                    : isRefute
-                                      ? "rgba(255, 108, 136, 0.4)"
-                                      : "rgba(120, 168, 255, 0.4)"
-                                }
-                              >
-                                {isSupport
-                                  ? "SUPPORTS"
-                                  : isRefute
-                                    ? "REFUTES"
-                                    : "NUANCE"}
-                              </Badge>
-                              <Text
-                                fontSize="14px"
-                                color="#d4e9ff"
-                                lineHeight="1.4"
-                              >
-                                {linkedClaim.reference_claim_text ||
-                                  linkedClaim.claim_text ||
-                                  "No claim text available"}
-                              </Text>
-                              {linkedClaim.source_name && (
-                                <Text
-                                  fontSize="11px"
-                                  color="#89a9bf"
-                                  fontStyle="italic"
-                                >
-                                  from {linkedClaim.source_name}
-                                </Text>
-                              )}
-                            </VStack>
-                          </Button>
-                        );
-                      })
-                    )}
-                  </VStack>
-
-                  {/* AI-Suggested Claims Section */}
-                  <Box mt={6}>
-                    {/* AI-Suggested Header with inset oval */}
-                    <Box
-                      px={5}
-                      py={3}
-                      borderRadius="999px"
-                      border="1px solid"
-                      borderColor="rgba(167, 139, 250, 0.3)"
-                      bg="linear-gradient(180deg, rgba(167, 139, 250, 0.15), rgba(167, 139, 250, 0.08))"
-                      boxShadow="inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 1px 2px rgba(0, 0, 0, 0.5), inset 0 -1px 2px rgba(255, 255, 255, 0.05)"
-                      mb={3}
-                    >
-                      <HStack spacing={3} justify="space-between">
-                        <Text
-                          fontSize="14px"
-                          fontWeight="700"
-                          color="#a78bfa"
-                          textTransform="uppercase"
-                          letterSpacing="0.08em"
-                        >
-                          AI-Suggested Claims
-                        </Text>
-                        <Text fontSize="13px" color="#89a9bf">
-                          {candidates.length} awaiting review
-                        </Text>
-                      </HStack>
-                    </Box>
-
-                    {/* AI Suggested Claims as Buttons */}
-                    <VStack align="stretch" spacing={3}>
-                      {candidates.length > 0 ? (
-                        candidates.map((candidate, idx) => (
-                          <Button
-                            key={`ai-${idx}`}
-                            h="auto"
-                            py={4}
-                            px={6}
-                            bg="transparent"
-                            backdropFilter="blur(10px)"
-                            borderRadius="24px"
-                            border="2px solid"
-                            borderColor="rgba(167, 139, 250, 0.4)"
-                            boxShadow="0 16px 48px rgba(0, 0, 0, 0.6), 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 40px rgba(167, 139, 250, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
-                            justifyContent="flex-start"
-                            textAlign="left"
-                            whiteSpace="normal"
-                            position="relative"
-                            overflow="visible"
-                            _hover={{
-                              transform: "translateY(-2px) translateZ(0)",
-                              boxShadow:
-                                "0 20px 60px rgba(0, 0, 0, 0.7), 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 50px rgba(167, 139, 250, 0.4), inset 0 3px 0 rgba(255, 255, 255, 0.2)",
-                            }}
-                          >
-                            <VStack align="flex-start" spacing={2} w="100%">
-                              <HStack spacing={2}>
-                                <Badge
-                                  fontSize="10px"
-                                  px={3}
-                                  py={1}
-                                  borderRadius="999px"
-                                  bg="rgba(167, 139, 250, 0.2)"
-                                  color="#a78bfa"
-                                  border="1px solid"
-                                  borderColor="rgba(167, 139, 250, 0.4)"
-                                >
-                                  {candidate.source_name}
-                                </Badge>
-                                {candidate.ai_confidence && (
-                                  <Badge
-                                    fontSize="10px"
-                                    px={3}
-                                    py={1}
-                                    borderRadius="999px"
-                                    bg="rgba(138, 169, 191, 0.15)"
-                                    color="#89a9bf"
-                                  >
-                                    {Math.round(candidate.ai_confidence * 100)}%
-                                  </Badge>
-                                )}
-                              </HStack>
-                              <Text
-                                fontSize="14px"
-                                color="#d4e9ff"
-                                lineHeight="1.4"
-                              >
-                                {candidate.claim_text}
-                              </Text>
-                            </VStack>
-                          </Button>
-                        ))
-                      ) : (
-                        <Text
-                          fontSize="13px"
-                          color="#89a9bf"
-                          fontStyle="italic"
-                          textAlign="center"
-                          py={4}
-                        >
-                          No AI suggestions available
-                        </Text>
-                      )}
-                    </VStack>
-                  </Box>
-                </>
-              )}
-            </VStack>
-          </ModalBody>
-
-          <ModalFooter pt={6} position="relative" zIndex={1}>
-            <Button
-              onClick={onCloseLinkedClaimsModal}
-              bg="transparent"
-              backdropFilter="blur(10px)"
-              borderRadius="18px"
-              border="2px solid"
-              borderColor="rgba(113, 219, 255, 0.4)"
-              color="#71dbff"
-              px={8}
-              boxShadow="0 6px 20px rgba(0, 0, 0, 0.4), 0 0 20px rgba(113, 219, 255, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-              _hover={{
-                transform: "translateY(-2px)",
-                boxShadow:
-                  "0 8px 28px rgba(0, 0, 0, 0.5), 0 0 30px rgba(113, 219, 255, 0.35), inset 0 2px 0 rgba(255, 255, 255, 0.15)",
-              }}
-            >
-              Close
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      {/* Case Claim Details Modal - USE WORKSPACE MODAL */}
+      <RelevanceScanModal
+        isOpen={isRelevanceScanModalOpen}
+        onClose={onCloseRelevanceScanModal}
+        taskClaim={focusClaim ? {
+          claim_id: focusClaim.claim_id,
+          claim_text: focusClaim.claim_text,
+          claim_type: focusClaim.claim_type,
+          veracity_score: 0,
+          confidence_level: 0,
+          last_verified: new Date().toISOString(),
+        } : null}
+        references={references}
+        contentId={selectedTask?.content_id}
+        viewerId={user?.user_id || null}
+      />
     </Box>
   );
 };

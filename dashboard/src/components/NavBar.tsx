@@ -87,11 +87,14 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
               <MenuItem as={RouterLink} to="/molecule">
                 Molecule
               </MenuItem>
+              <MenuItem as={RouterLink} to="/knowgraph">
+                KnowGraph
+              </MenuItem>
               <MenuItem as={RouterLink} to="/credibility">
                 Credibility
               </MenuItem>
               <MenuItem as={RouterLink} to="/casefocus">
-                CaseFocus
+                Case Focus
               </MenuItem>
             </MenuList>
           </Menu>
@@ -107,11 +110,11 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
               <MenuItem as={RouterLink} to="/claim-duel">
                 Claim Duel
               </MenuItem>
-              <MenuItem as={RouterLink} to="/truefalse">
+              <MenuItem as={RouterLink} to="/game/truefalse">
                 TrueFalse Game
               </MenuItem>
               <MenuItem as={RouterLink} to="/casefocus">
-                CaseFocus
+                Case Focus
               </MenuItem>
             </MenuList>
           </Menu>
@@ -231,6 +234,14 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   </MenuItem>
                   <MenuItem
                     as={RouterLink}
+                    to="/knowgraph"
+                    onClick={() => handleNavClick("/knowgraph")}
+                    fontSize="md"
+                  >
+                    KnowGraph
+                  </MenuItem>
+                  <MenuItem
+                    as={RouterLink}
                     to="/credibility"
                     onClick={() => handleNavClick("/credibility")}
                     fontSize="md"
@@ -243,7 +254,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                     onClick={() => handleNavClick("/casefocus")}
                     fontSize="md"
                   >
-                    CaseFocus
+                    Case Focus
                   </MenuItem>
                 </MenuList>
               </Menu>
@@ -304,6 +315,9 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   <MenuItem as={RouterLink} to="/level" fontSize="md">
                     Level
                   </MenuItem>
+                  <MenuItem as={RouterLink} to="/game/truefalse" fontSize="md">
+                    TrueFalse Game
+                  </MenuItem>
                 </MenuList>
               </Menu>
               <Menu>
@@ -339,7 +353,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   </MenuItem>
                   <MenuItem
                     as={RouterLink}
-                    to="/truefalse"
+                    to="/game/truefalse"
                     fontSize="md"
                   >
                     TrueFalse Game
@@ -350,7 +364,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                     onClick={() => handleNavClick("/casefocus")}
                     fontSize="md"
                   >
-                    CaseFocus
+                    Case Focus
                   </MenuItem>
                 </MenuList>
               </Menu>

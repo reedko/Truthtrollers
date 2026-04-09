@@ -41,6 +41,7 @@ import TrueFalseGamePage from "./pages/TrueFalseGamePage";
 import { CaseFocusPage } from "./pages/CaseFocusPage";
 import SourceQualityPage from "./pages/SourceQualityPage";
 import KnowGraphPage from "./pages/KnowGraphPage";
+import NewKnowGraphPage from "./pages/NewKnowGraphPage";
 
 const router = createBrowserRouter([
   {
@@ -208,6 +209,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <KnowGraphPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "newknowgraph",
+        element: (
+          <ProtectedRoute>
+            <NewKnowGraphPage />
           </ProtectedRoute>
         ),
       },

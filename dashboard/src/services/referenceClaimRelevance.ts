@@ -23,6 +23,13 @@ export interface ReferenceClaimTaskLink {
   verified_by_user_id?: number;
   created_at: string;
   source_table?: string; // Added to distinguish real links from AI assessments
+  // Backend JOINs these fields for display
+  reference_claim_text?: string;
+  source_name?: string;
+  source_url?: string;
+  relation?: string; // For compatibility with UI expecting relation instead of stance
+  relationship?: string; // For compatibility with manual links
+  claim_text?: string; // For compatibility
 }
 
 export interface ReferenceDocumentLink {

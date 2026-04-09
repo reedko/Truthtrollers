@@ -367,6 +367,8 @@ export interface Link extends d3.SimulationLinkDatum<GraphNode> {
   claim_text?: string;
   content_id?: number;
   notes?: string;
+  user_id?: number | null; // For claim_links filtering
+  created_by_ai?: boolean; // For AI vs human filtering
 }
 
 export interface Lit_references {

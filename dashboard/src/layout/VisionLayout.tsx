@@ -184,7 +184,7 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
             onClick={handleClick("/casefocus")}
             icon={<span />}
           >
-            CaseFocus
+            Case Focus
           </MenuItem>
         </MenuList>
       </Menu>
@@ -253,6 +253,9 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
           <MenuItem as={RouterLink} to="/level" onClick={handleClick("/level")} icon={<span />}>
             Level
           </MenuItem>
+          <MenuItem as={RouterLink} to="/game/truefalse" onClick={handleClick("/game/truefalse")} icon={<span />}>
+            TrueFalse Game
+          </MenuItem>
         </MenuList>
       </Menu>
 
@@ -290,8 +293,8 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
           </MenuItem>
           <MenuItem
             as={RouterLink}
-            to="/truefalse"
-            onClick={handleClick("/truefalse")}
+            to="/game/truefalse"
+            onClick={handleClick("/game/truefalse")}
           >
             TrueFalse Game
           </MenuItem>
@@ -300,7 +303,7 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
             to="/casefocus"
             onClick={handleClick("/casefocus")}
           >
-            CaseFocus
+            Case Focus
           </MenuItem>
         </MenuList>
       </Menu>

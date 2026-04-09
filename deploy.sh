@@ -8,6 +8,25 @@ BACKEND_PATH="/root/backend"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
+# ═══════════════════════════════════════════════════════════
+# 🔒 SAFETY CHECK: Prevent deploying from wrong directory
+# ═══════════════════════════════════════════════════════════
+EXPECTED_PATH="/Users/reedko/Desktop/Truthtrollers_root"
+if [[ "$PWD" != "$EXPECTED_PATH" ]]; then
+  echo "════════════════════════════════════════════════════════"
+  echo "❌ ERROR: Deploy script must run from correct directory"
+  echo "════════════════════════════════════════════════════════"
+  echo "📍 Current location: $PWD"
+  echo "✅ Expected location: $EXPECTED_PATH"
+  echo ""
+  echo "⚠️  You may be in the iCloud Drive redirect folder!"
+  echo "   Navigate to the correct location:"
+  echo "   cd /Users/reedko/Desktop/Truthtrollers_root"
+  echo "════════════════════════════════════════════════════════"
+  exit 1
+fi
+echo "✅ Directory check passed: $PWD"
+
 ENV_FILE="backend/.env"
 ENV_PROD="backend/.env.prod"
 ENV_DEV="backend/.env.dev"
@@ -104,8 +123,14 @@ cleanup() {
 }
 trap cleanup EXIT
 
+echo "📦 Installing extension dependencies..."
+(cd extension && npm install --legacy-peer-deps --no-audit --no-fund)
+
 echo "🧩 Build extension..."
 (cd extension && npm run build)
+
+echo "📦 Installing dashboard dependencies..."
+(cd dashboard && npm install --legacy-peer-deps --no-audit --no-fund)
 
 echo "🔧 Build dashboard..."
 (cd dashboard && npm run build)
