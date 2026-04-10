@@ -71,7 +71,7 @@ export const VerimeterModeToggle: React.FC<VerimeterModeToggleProps> = ({ compac
             {getModeLabel(mode)}
           </Button>
         </PopoverTrigger>
-        <PopoverContent>
+        <PopoverContent zIndex={2000}>
           <PopoverArrow />
           <PopoverCloseButton />
           <PopoverHeader fontWeight="semibold">Verimeter Mode</PopoverHeader>

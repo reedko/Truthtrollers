@@ -51,6 +51,7 @@ import { fetchReferenceClaimTaskLinks } from '../services/referenceClaimRelevanc
 import RelevanceScanModal from "../components/modals/RelevanceScanModal";
 import VerimeterMeter from "../components/VerimeterMeter";
 import ClaimLinkOverlay from "../components/overlays/ClaimLinkOverlay";
+import { Claim } from "../../../shared/entities/types";
 
 // Holographic scan line animation
 const scanLine = keyframes`
@@ -143,6 +144,20 @@ export const CaseFocusPage: React.FC = () => {
     onClose: onCloseRelevanceScanModal,
   } = useDisclosure();
   const [references, setReferences] = useState<any[]>([]);
+
+  // State for RelevanceScanModal -> ClaimLinkOverlay integration
+  const [sourceClaim, setSourceClaim] = useState<Pick<Claim, "claim_id" | "claim_text"> | null>(null);
+  const [targetClaim, setTargetClaim] = useState<Claim | null>(null);
+  const [linkRationale, setLinkRationale] = useState<string>("");
+  const [aiSuggestedSupportLevel, setAiSuggestedSupportLevel] = useState<number | null>(null);
+
+  // Debug: log when ClaimLinkOverlay state changes
+  useEffect(() => {
+    console.log("[CaseFocus] isLinkModalOpen changed to:", isLinkModalOpen);
+    if (isLinkModalOpen && sourceClaim && targetClaim) {
+      console.log("[CaseFocus] ClaimLinkOverlay should now be visible with source:", sourceClaim.claim_id, "target:", targetClaim.claim_id);
+    }
+  }, [isLinkModalOpen, sourceClaim, targetClaim]);
 
   // Memoize linked claims categorization to avoid re-filtering on every render
   // Style helper functions
@@ -900,6 +915,59 @@ export const CaseFocusPage: React.FC = () => {
     // Move to next candidate
     handleNextCandidate();
     setIsLinkModalOpen(false);
+  };
+
+  // Handler for Edit/Create Link button from RelevanceScanModal
+  const handleOpenLinkOverlayFromScan = (
+    scanSourceClaim: { claim_id: number; claim_text: string },
+    scanTargetClaim: Claim,
+    rationale: string,
+    supportLevel: number
+  ) => {
+    console.log("[CaseFocus] ========== handleOpenLinkOverlayFromScan START ==========");
+    console.log("[CaseFocus] Source claim:", {
+      id: scanSourceClaim.claim_id,
+      text: scanSourceClaim.claim_text.substring(0, 50) + "..."
+    });
+    console.log("[CaseFocus] Target claim:", {
+      id: scanTargetClaim.claim_id,
+      text: scanTargetClaim.claim_text.substring(0, 50) + "..."
+    });
+    console.log("[CaseFocus] Rationale:", rationale?.substring(0, 100));
+    console.log("[CaseFocus] Support level:", supportLevel);
+
+    console.log("[CaseFocus] Setting state...");
+    setSourceClaim(scanSourceClaim);
+    setTargetClaim(scanTargetClaim);
+    setLinkRationale(rationale);
+    setAiSuggestedSupportLevel(supportLevel);
+
+    console.log("[CaseFocus] State set. isLinkModalOpen before:", isLinkModalOpen);
+    console.log("[CaseFocus] Closing RelevanceScanModal...");
+    onCloseRelevanceScanModal();
+    console.log("[CaseFocus] Opening ClaimLinkOverlay...");
+    setIsLinkModalOpen(true);
+    console.log("[CaseFocus] isLinkModalOpen set to true");
+    console.log("[CaseFocus] ========== handleOpenLinkOverlayFromScan END ==========");
+  };
+
+  // Handler for View Source button from RelevanceScanModal
+  const handleSelectReferenceClaim = async (
+    claim: any,
+    referenceId: number
+  ) => {
+    console.log("[CaseFocus] handleSelectReferenceClaim called for reference:", referenceId);
+    // Close the relevance scan modal
+    onCloseRelevanceScanModal();
+
+    // TODO: Navigate to the reference or show it in some way
+    // For now, just show a toast indicating which reference was selected
+    toast({
+      title: "Reference Selected",
+      description: `Viewing claims from reference ID: ${referenceId}`,
+      status: "info",
+      duration: 3000,
+    });
   };
 
   const handleHideSource = () => {
@@ -3411,16 +3479,28 @@ export const CaseFocusPage: React.FC = () => {
         </DrawerContent>
       </Drawer>
 
-      {/* Claim Link Modal */}
-      {candidates[currentCandidateIndex] && focusClaim && (
-        <ClaimLinkOverlay
-          isOpen={isLinkModalOpen}
-          onClose={() => setIsLinkModalOpen(false)}
-          sourceClaim={{
+      {/* Claim Link Modal - supports both game mode and RelevanceScan mode */}
+      <ClaimLinkOverlay
+        isOpen={isLinkModalOpen}
+        onClose={() => {
+          console.log("[CaseFocus] Closing ClaimLinkOverlay");
+          setIsLinkModalOpen(false);
+          // Clear RelevanceScan state
+          setSourceClaim(null);
+          setTargetClaim(null);
+          setLinkRationale("");
+          setAiSuggestedSupportLevel(null);
+        }}
+        sourceClaim={
+          sourceClaim || // From RelevanceScanModal
+          (candidates[currentCandidateIndex] ? {
             claim_id: candidates[currentCandidateIndex].claim_id,
             claim_text: candidates[currentCandidateIndex].claim_text,
-          }}
-          targetClaim={{
+          } : null)
+        }
+        targetClaim={
+          targetClaim || // From RelevanceScanModal
+          (focusClaim ? {
             ...focusClaim,
             claim_id: focusClaim.claim_id,
             claim_text: focusClaim.claim_text,
@@ -3429,37 +3509,48 @@ export const CaseFocusPage: React.FC = () => {
             confidence_level: 0,
             last_verified: new Date().toISOString(),
             references: [],
-          }}
-          onLinkCreated={handleLinkCreated}
-          rationale={candidates[currentCandidateIndex].ai_rationale}
-          aiSupportLevel={modalSupportLevel}
-          sourceClaimVeracity={
-            candidates[currentCandidateIndex].source_reliability || 0
-          }
-          onScoreAwarded={(points) => {
-            console.log(`🎮 Score awarded: ${points}`);
-            // Immediately update local score
-            setUserScore((prevScore) => prevScore + points);
-          }}
-        />
-      )}
+          } : null)
+        }
+        onLinkCreated={handleLinkCreated}
+        rationale={
+          linkRationale || // From RelevanceScanModal
+          (candidates[currentCandidateIndex]?.ai_rationale || "")
+        }
+        aiSupportLevel={
+          aiSuggestedSupportLevel !== null ? aiSuggestedSupportLevel : // From RelevanceScanModal
+          modalSupportLevel
+        }
+        sourceClaimVeracity={
+          candidates[currentCandidateIndex]?.source_reliability || 0
+        }
+        onScoreAwarded={(points) => {
+          console.log(`🎮 Score awarded: ${points}`);
+          // Immediately update local score
+          setUserScore((prevScore) => prevScore + points);
+        }}
+      />
 
       {/* Case Claim Details Modal - USE WORKSPACE MODAL */}
-      <RelevanceScanModal
-        isOpen={isRelevanceScanModalOpen}
-        onClose={onCloseRelevanceScanModal}
-        taskClaim={focusClaim ? {
-          claim_id: focusClaim.claim_id,
-          claim_text: focusClaim.claim_text,
-          claim_type: focusClaim.claim_type,
-          veracity_score: 0,
-          confidence_level: 0,
-          last_verified: new Date().toISOString(),
-        } : null}
-        references={references}
-        contentId={selectedTask?.content_id}
-        viewerId={user?.user_id || null}
-      />
+      {isRelevanceScanModalOpen && focusClaim && (
+        <RelevanceScanModal
+          key={`scan-${focusClaim.claim_id}`}
+          isOpen={isRelevanceScanModalOpen}
+          onClose={onCloseRelevanceScanModal}
+          taskClaim={{
+            claim_id: focusClaim.claim_id,
+            claim_text: focusClaim.claim_text,
+            claim_type: focusClaim.claim_type,
+            veracity_score: 0,
+            confidence_level: 0,
+            last_verified: new Date().toISOString(),
+          }}
+          references={references}
+          contentId={selectedTask?.content_id}
+          viewerId={user?.user_id || null}
+          onSelectReferenceClaim={handleSelectReferenceClaim}
+          onOpenLinkOverlay={handleOpenLinkOverlayFromScan}
+        />
+      )}
     </Box>
   );
 };

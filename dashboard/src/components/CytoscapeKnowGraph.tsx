@@ -52,14 +52,25 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
       return;
     }
 
-    // Column positions - original spacing that worked
-    const COLUMNS = {
-      CASE: 50, // Column 1: Case
-      AUTH_PUB: 550, // Column 2: Authors/Publishers
-      CASE_CLAIMS: 1100, // Column 3: Case claims
-      SOURCE_CLAIMS: 2200, // Column 4: Source claims
-      SOURCES: 3200, // Column 5: Sources
-    };
+    // Column positions - spread out more at full res to use horizontal space
+    const isFullRes = viewportWidth >= 1280;
+    const COLUMNS = isFullRes
+      ? {
+          CASE: 50,
+          AUTH_PUB: 650,
+          CASE_CLAIMS: 1350,
+          SOURCE_CLAIMS: 2700,
+          SOURCE_AUTH_PUB: 3350,
+          SOURCES: 4000,
+        }
+      : {
+          CASE: 50,
+          AUTH_PUB: 550,
+          CASE_CLAIMS: 1100,
+          SOURCE_CLAIMS: 2200,
+          SOURCE_AUTH_PUB: 2700,
+          SOURCES: 3200,
+        };
 
     const ROW_HEIGHT = 200; // Spacing between nodes vertically
     const START_Y = 100;
@@ -77,7 +88,6 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
         claimIdsInLinks.add(link.target);
       }
     });
-
 
     // Filter nodes by type and whether they're connected via claim_links
     const caseNodes = nodes.filter((n) => n.type === "task");
@@ -144,8 +154,8 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
     const publishersByParent = new Map<string, GraphNode[]>();
 
     // Build set of author/publisher IDs that passed filtering
-    const filteredAuthorIds = new Set(authNodes.map(n => n.id));
-    const filteredPubIds = new Set(pubNodes.map(n => n.id));
+    const filteredAuthorIds = new Set(authNodes.map((n) => n.id));
+    const filteredPubIds = new Set(pubNodes.map((n) => n.id));
 
     // Find parent for each author/publisher via links
     // ONLY process links where the author/publisher is in the filtered set
@@ -264,8 +274,20 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
       });
     });
 
-    // Composite Auth/Pub nodes (grouped by parent)
-    authPubCompositeNodes.forEach((node, i) => {
+    // Composite Auth/Pub nodes (grouped by parent) - position based on parent type
+    // Initial positioning - will adjust source auth/pub in second pass below
+    let caseAuthPubIndex = 0;
+    let sourceAuthPubIndex = 0;
+    authPubCompositeNodes.forEach((node) => {
+      // Find parent node to determine its type
+      const parentNode = nodes.find((n) => n.id === node.parentId);
+      const isSourceParent = parentNode?.type === "reference";
+
+      // Position source authors/publishers between source claims and sources
+      // Position case authors/publishers in the original column
+      const xPos = isSourceParent ? COLUMNS.SOURCE_AUTH_PUB : COLUMNS.AUTH_PUB;
+      const yIndex = isSourceParent ? sourceAuthPubIndex++ : caseAuthPubIndex++;
+
       positionedNodes.push({
         data: {
           id: node.id,
@@ -276,7 +298,7 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
           authors: node.authors,
           publishers: node.publishers,
         },
-        position: { x: COLUMNS.AUTH_PUB, y: START_Y + i * ROW_HEIGHT },
+        position: { x: xPos, y: START_Y + yIndex * ROW_HEIGHT },
       });
     });
 
@@ -372,10 +394,34 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
       });
     });
 
-    // Build position lookup for nodes
+    // Build position lookup for nodes (both x and y)
     const nodePositions = new Map<string, number>();
+    const nodeYPositions = new Map<string, number>();
     positionedNodes.forEach((node) => {
       nodePositions.set(node.data.id, node.position.x);
+      nodeYPositions.set(node.data.id, node.position.y);
+    });
+
+    // Second pass: Reposition source authors/publishers near their parent sources
+    authPubCompositeNodes.forEach((compositeNode) => {
+      const parentNode = nodes.find((n) => n.id === compositeNode.parentId);
+      const isSourceParent = parentNode?.type === "reference";
+
+      if (isSourceParent) {
+        // Find this composite node in positionedNodes and update its Y position
+        const positionedNode = positionedNodes.find(
+          (n) => n.data.id === compositeNode.id,
+        );
+        if (positionedNode) {
+          const parentYPos = nodeYPositions.get(compositeNode.parentId);
+          if (parentYPos !== undefined) {
+            // Position slightly above the source to avoid edge overlap
+            positionedNode.position.y = parentYPos - 80;
+            // Update the map too
+            nodeYPositions.set(compositeNode.id, parentYPos - 80);
+          }
+        }
+      }
     });
 
     // Map individual author/publisher IDs to their composite node IDs
@@ -450,6 +496,18 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
         if (!sourceExists || !targetExists) {
           return false;
         }
+
+        // Filter out direct edges from case (task) to source (reference)
+        const sourceNode = nodes.find((n) => n.id === edge.data.source);
+        const targetNode = nodes.find((n) => n.id === edge.data.target);
+
+        if (
+          (sourceNode?.type === "task" && targetNode?.type === "reference") ||
+          (sourceNode?.type === "reference" && targetNode?.type === "task")
+        ) {
+          return false; // Don't show case-to-source edges
+        }
+
         return true;
       });
 
@@ -535,13 +593,14 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
             "text-max-width": "250px",
           } as any,
         },
-        // Case claims - large readable rectangles
+        // Case claims - large readable rectangles with very soft corners
         {
           selector: 'node[type="taskClaim"]',
           style: {
             shape: "round-rectangle",
             width: 560,
             height: 160,
+            "corner-radius": 40,
             "background-color": "#8f7cff",
             "background-opacity": 0.9,
             "border-width": 3,
@@ -550,13 +609,14 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
             "text-max-width": "500px",
           } as any,
         },
-        // Source claims - large readable rectangles
+        // Source claims - large readable rectangles with very soft corners
         {
           selector: 'node[type="refClaim"]',
           style: {
             shape: "round-rectangle",
             width: 560,
             height: 160,
+            "corner-radius": 40,
             "background-color": "#58d6ff",
             "background-opacity": 0.9,
             "border-width": 3,
@@ -610,12 +670,14 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
             "text-max-width": "90px",
           } as any,
         },
-        // Default edge style
+        // Default edge style - curved lines
         {
           selector: "edge",
           style: {
             width: 9,
-            "curve-style": "bezier",
+            "curve-style": "unbundled-bezier",
+            "control-point-distances": [40, -40],
+            "control-point-weights": [0.25, 0.75],
             "target-arrow-shape": "triangle",
             "target-arrow-color": "data(color)",
             "line-color": "data(color)",
@@ -682,11 +744,14 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
             "target-arrow-color": "#60a5fa",
           } as any,
         },
-        // Metadata edges - solid
+        // Metadata edges (author/publisher) - haystack for visible stacking of multiple edges
         {
           selector: 'edge[relation="meta"]',
           style: {
+            "curve-style": "haystack",
+            "haystack-radius": 0.3, // How much the edges spread out
             "line-color": "rgba(172, 189, 220, 0.7)",
+            "target-arrow-shape": "triangle",
             "target-arrow-color": "rgba(172, 189, 220, 0.7)",
             opacity: 0.7,
             width: 6,
@@ -762,45 +827,6 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
       }
     });
 
-    // Add tooltip on hover
-    let tooltipDiv: HTMLDivElement | null = null;
-
-    cy.on("mouseover", "node", (evt) => {
-      const node = evt.target;
-      const label = node.data("label");
-
-      if (!tooltipDiv) {
-        tooltipDiv = document.createElement("div");
-        tooltipDiv.style.position = "absolute";
-        tooltipDiv.style.background = "rgba(0, 0, 0, 0.9)";
-        tooltipDiv.style.color = "#fff";
-        tooltipDiv.style.padding = "8px 12px";
-        tooltipDiv.style.borderRadius = "6px";
-        tooltipDiv.style.fontSize = "14px";
-        tooltipDiv.style.zIndex = "10000";
-        tooltipDiv.style.pointerEvents = "none";
-        tooltipDiv.style.maxWidth = "300px";
-        tooltipDiv.style.wordWrap = "break-word";
-        document.body.appendChild(tooltipDiv);
-      }
-
-      tooltipDiv.textContent = label;
-      tooltipDiv.style.display = "block";
-    });
-
-    cy.on("mousemove", "node", (evt) => {
-      if (tooltipDiv) {
-        tooltipDiv.style.left = evt.originalEvent.pageX + 10 + "px";
-        tooltipDiv.style.top = evt.originalEvent.pageY + 10 + "px";
-      }
-    });
-
-    cy.on("mouseout", "node", () => {
-      if (tooltipDiv) {
-        tooltipDiv.style.display = "none";
-      }
-    });
-
     // Enable zoom ONLY with shift+wheel - use a toggle approach instead
     let lastScrollDirection = 0;
     const container = cyRef.current;
@@ -868,30 +894,87 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
     const graphLeftEdge = boundingBox.x1;
     const graphCenterY = boundingBox.y1 + graphHeight / 2;
 
-    // STEP 3: Calculate zoom to fit BOTH height AND width - use smaller zoom to ensure graph fits
-    const paddingPercent = 0.9; // 90% of available space
-    const availableHeight = viewportHeight * paddingPercent;
-    const availableWidth = viewportWidth * paddingPercent;
+    // STEP 3: Calculate zoom - fit both dimensions to ensure graph never extends beyond viewport
+    const paddingPercentHeight = viewportWidth < 1280 ? 0.95 : 0.92;
+    const paddingPercentWidth = viewportWidth < 1280 ? 0.95 : 0.95;
+    const availableHeight = viewportHeight * paddingPercentHeight;
+    const availableWidth = viewportWidth * paddingPercentWidth;
 
     const zoomForHeight = availableHeight / graphHeight;
     const zoomForWidth = availableWidth / graphWidth;
 
-    // Use the SMALLER zoom value to ensure graph fits in both dimensions
+    // Always use min to ensure graph fits in both dimensions
     const optimalZoom = Math.min(zoomForHeight, zoomForWidth);
 
     // STEP 4: Apply zoom and position at left edge
-    const leftPadding = 50; // Small left margin
+    // Smaller padding on smaller viewports
+    const leftPadding = viewportWidth < 1280 ? 30 : 50;
     cy.zoom(optimalZoom);
     cy.pan({
       x: leftPadding - graphLeftEdge * optimalZoom,
       y: viewportHeight / 2 - graphCenterY * optimalZoom,
     });
 
+    // Add resize observer to refit graph when container size changes
+    // Throttle to prevent excessive recalculations
+    let resizeTimeout: NodeJS.Timeout | null = null;
+    const resizeObserver = new ResizeObserver((entries) => {
+      // Clear pending timeout
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
+
+      // Debounce resize handling - only run 500ms after resize stops (increased for prod stability)
+      resizeTimeout = setTimeout(() => {
+        for (const entry of entries) {
+          const newWidth = entry.contentRect.width;
+          const newHeight = entry.contentRect.height;
+
+          // Guard against invalid measurements and skip if dimensions haven't actually changed
+          if (
+            newWidth > 0 &&
+            newHeight > 0 &&
+            (newWidth !== viewportWidth || newHeight !== viewportHeight)
+          ) {
+            // Recalculate fit based on new container size
+            const boundingBox = cy.elements().boundingBox();
+            const graphWidth = boundingBox.w;
+            const graphHeight = boundingBox.h;
+            const graphLeftEdge = boundingBox.x1;
+            const graphCenterY = boundingBox.y1 + graphHeight / 2;
+
+            // Fit both dimensions to ensure graph never extends beyond viewport
+            const paddingPercentHeight = newWidth < 1280 ? 0.95 : 0.92;
+            const paddingPercentWidth = newWidth < 1280 ? 0.95 : 0.95;
+            const availableHeight = newHeight * paddingPercentHeight;
+            const availableWidth = newWidth * paddingPercentWidth;
+
+            const zoomForHeight = availableHeight / graphHeight;
+            const zoomForWidth = availableWidth / graphWidth;
+            const optimalZoom = Math.min(zoomForHeight, zoomForWidth);
+
+            // Adaptive left padding
+            const leftPadding = newWidth < 1280 ? 30 : 50;
+            cy.zoom(optimalZoom);
+            cy.pan({
+              x: leftPadding - graphLeftEdge * optimalZoom,
+              y: newHeight / 2 - graphCenterY * optimalZoom,
+            });
+          }
+        }
+      }, 500);
+    });
+
+    if (cyRef.current) {
+      resizeObserver.observe(cyRef.current);
+    }
+
     // Cleanup
     return () => {
-      if (tooltipDiv && tooltipDiv.parentNode) {
-        tooltipDiv.parentNode.removeChild(tooltipDiv);
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
       }
+      resizeObserver.disconnect();
       cy.destroy();
     };
   }, [nodes, links]);
@@ -902,7 +985,6 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
         ref={cyRef}
         width="100%"
         height="100%"
-        minHeight="600px"
         bg={colorMode === "dark" ? "transparent" : "gray.50"}
         borderRadius="lg"
       />

@@ -31,7 +31,7 @@ import {
   ClaimWithRelevance,
   ReferenceDocumentLink,
 } from "../../services/referenceClaimRelevance";
-import { fetchClaimScoresForTask } from "../../services/useDashboardAPI";
+import { fetchClaimScoresForTask, fetchAIEvidenceLinks } from "../../services/useDashboardAPI";
 import VerimeterBar from "../VerimeterBar";
 
 interface RelevanceScanModalProps {
@@ -63,6 +63,13 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
 }) => {
   const { colorMode } = useColorMode();
   const toast = useToast();
+
+  // Debug logging
+  useEffect(() => {
+    if (isOpen && taskClaim) {
+      console.log('[RelevanceScanModal] OPENED - taskClaim:', taskClaim.claim_id, 'references:', references.length, 'contentId:', contentId);
+    }
+  }, [isOpen]);
   const [isLoadingExisting, setIsLoadingExisting] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 });
@@ -216,6 +223,7 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
     if (!taskClaim) return;
 
     const effectiveMode = mode || scanMode;
+    console.log(`🔍 [runRelevanceScan] Starting scan - mode param: ${mode}, scanMode state: ${scanMode}, effectiveMode: ${effectiveMode}`);
 
     setIsScanning(true);
     setScanProgress({ current: 0, total: 0 });
@@ -233,41 +241,39 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       // AND include references with existing high-relevance assessments
       const linkedReferenceIds = new Set<number>();
 
-      if (effectiveMode === 'quick') {
+      if (effectiveMode === 'quick' && contentId) {
         try {
-          // Get references with dotted lines for this TASK CLAIM
-          // Uses /api/task-claim/reference-links/:taskClaimId endpoint
-          const url = `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5001"}/api/task-claim/reference-links/${taskClaim.claim_id}`;
-          console.log(`⚡ [Quick Scan] Fetching dotted lines for task claim ${taskClaim.claim_id} from: ${url}`);
+          // Get references with dotted lines using same approach as workspace
+          // This fetches from reference_claim_links (document-level AI evidence links)
+          console.log(`⚡ [Quick Scan] Fetching AI evidence links for content ${contentId}`);
 
-          const response = await fetch(url, { credentials: "include" });
-          console.log(`⚡ [Quick Scan] Response status: ${response.status}`);
+          const aiEvidenceLinks = await fetchAIEvidenceLinks(contentId);
+          console.log(`⚡ [Quick Scan] Fetched ${aiEvidenceLinks.length} AI evidence links`);
 
-          if (response.ok) {
-            const dottedLineRefs = await response.json();
-            console.log(`⚡ [Quick Scan] API returned ${dottedLineRefs.length} dotted line records:`, dottedLineRefs);
+          // Filter to only links for THIS task claim
+          const linksForThisClaim = aiEvidenceLinks.filter(
+            (link) => link.task_claim_id === taskClaim.claim_id
+          );
+          console.log(`⚡ [Quick Scan] Found ${linksForThisClaim.length} dotted line links for task claim ${taskClaim.claim_id}`);
 
-            dottedLineRefs.forEach((link: any) => {
-              linkedReferenceIds.add(link.reference_content_id);
-            });
-            console.log(`⚡ [Quick Scan] Found ${linkedReferenceIds.size} unique references with dotted-line connections`);
-          } else {
-            console.error(`⚡ [Quick Scan] API error: ${response.status} ${response.statusText}`);
-          }
+          // Extract unique reference_content_ids
+          linksForThisClaim.forEach((link) => {
+            linkedReferenceIds.add(link.reference_content_id);
+          });
 
-          console.log(`⚡ [Quick Scan] Will scan all claims from ${linkedReferenceIds.size} references`);
+          console.log(`⚡ [Quick Scan] Will scan claims from ${linkedReferenceIds.size} references with dotted-line connections`);
         } catch (err) {
-          console.error("[Quick Scan] Error fetching reference links:", err);
+          console.error("[Quick Scan] Error fetching AI evidence links:", err);
         }
       }
 
       // If quick mode, rebuild with only linked references
-      if (scanMode === 'quick' && linkedReferenceIds.size > 0) {
+      if (effectiveMode === 'quick' && linkedReferenceIds.size > 0) {
         const built = buildReferenceClaims(linkedReferenceIds);
         claims = built.all;
         refMap = built.refMap;
         console.log(`⚡ [Quick Scan] Scanning ${claims.length} claims from ${linkedReferenceIds.size} references with dotted lines`);
-      } else if (scanMode === 'quick') {
+      } else if (effectiveMode === 'quick') {
         toast({
           title: "No dotted line sources found",
           description: "No sources with evidence engine links to this task claim. Try Deep Scan to search all sources.",
@@ -355,7 +361,7 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
 
       setTopClaims(top12);
 
-      const scanModeLabel = scanMode === 'quick' ? 'Quick' : 'Deep';
+      const scanModeLabel = effectiveMode === 'quick' ? 'Quick' : 'Deep';
 
       // Build toast description
       let toastDescription = '';
@@ -366,7 +372,7 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
         }
       } else if (skippedAsIrrelevant > 0) {
         toastDescription = `Assessed ${toAssess.length} claims but all ${skippedAsIrrelevant} were deemed irrelevant (insufficient evidence or low confidence)`;
-      } else if (scanMode === 'quick') {
+      } else if (effectiveMode === 'quick') {
         toastDescription = "All claims in linked references already assessed. Try Deep Scan for more.";
       } else {
         toastDescription = "All claims were already assessed";
@@ -388,31 +394,46 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
   };
 
   const handleOpenLinkOverlay = (claim: ClaimWithRelevance) => {
+    console.log("[RelevanceScanModal] handleOpenLinkOverlay called for claim:", claim.claim_id);
+
     if (!onOpenLinkOverlay) {
-      console.error("[RelevanceScanModal] onOpenLinkOverlay callback is not provided!");
+      console.error("[RelevanceScanModal] ERROR: onOpenLinkOverlay callback is not provided!");
+      toast({
+        title: "Configuration Error",
+        description: "Link overlay callback not configured",
+        status: "error",
+        duration: 3000,
+      });
       return;
     }
     if (!taskClaim) {
-      console.error("[RelevanceScanModal] No task claim available!");
+      console.error("[RelevanceScanModal] ERROR: No task claim available!");
       return;
     }
     const supportLevel = claim.support_level ??
       (claim.stance === "support" ? (claim.confidence ?? 0.7)
         : claim.stance === "refute" ? -(claim.confidence ?? 0.7)
         : 0);
-    console.log("[RelevanceScanModal] Opening link overlay with:", {
+    console.log("[RelevanceScanModal] Calling onOpenLinkOverlay with:", {
       sourceClaim_id: claim.claim_id,
+      sourceClaim_text: claim.claim_text.substring(0, 50),
       targetClaim_id: taskClaim.claim_id,
-      rationale: claim.rationale,
+      targetClaim_text: taskClaim.claim_text.substring(0, 50),
+      rationale: claim.rationale?.substring(0, 50),
       supportLevel
     });
-    onOpenLinkOverlay(
-      { claim_id: claim.claim_id, claim_text: claim.claim_text },
-      taskClaim,
-      claim.rationale || "",
-      supportLevel
-    );
-    onClose();
+
+    try {
+      onOpenLinkOverlay(
+        { claim_id: claim.claim_id, claim_text: claim.claim_text },
+        taskClaim,
+        claim.rationale || "",
+        supportLevel
+      );
+      console.log("[RelevanceScanModal] onOpenLinkOverlay callback completed successfully");
+    } catch (error) {
+      console.error("[RelevanceScanModal] ERROR calling onOpenLinkOverlay:", error);
+    }
   };
 
   const handleDeleteLink = async (referenceClaimId: number) => {
@@ -472,14 +493,51 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="xl" scrollBehavior="inside">
-      <ModalOverlay />
+      <ModalOverlay backdropFilter="blur(8px)" bg={colorMode === "dark" ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.3)"} />
       <ModalContent
-        bg={colorMode === "dark" ? "gray.800" : "linear-gradient(135deg, rgba(248, 250, 252, 0.98), rgba(241, 245, 249, 1))"}
+        bg={colorMode === "dark" ? "rgba(10, 15, 25, 0.85)" : "rgba(255, 255, 255, 0.5)"}
+        backdropFilter="blur(30px)"
         color={colorMode === "dark" ? "white" : "gray.800"}
         maxH="90vh"
-        border="1px solid"
-        borderColor={colorMode === "dark" ? "gray.700" : "rgba(71, 85, 105, 0.3)"}
+        border="2px solid"
+        borderColor={colorMode === "dark" ? "rgba(113, 219, 255, 0.4)" : "rgba(71, 85, 105, 0.15)"}
+        borderLeftRadius="24px"
+        boxShadow={colorMode === "dark"
+          ? "0 24px 64px rgba(0, 0, 0, 0.8), 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 60px rgba(113, 219, 255, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
+          : "0 24px 64px rgba(0, 0, 0, 0.06), 0 12px 32px rgba(0, 0, 0, 0.04), 0 0 60px rgba(71, 85, 105, 0.08), inset 0 2px 0 rgba(255, 255, 255, 0.95)"
+        }
+        position="relative"
+        overflow="hidden"
       >
+        {/* Curved left edge glow */}
+        <Box
+          position="absolute"
+          left={0}
+          top={0}
+          width="32px"
+          height="100%"
+          background={colorMode === "dark"
+            ? "linear-gradient(90deg, rgba(113, 219, 255, 0.4) 0%, transparent 100%)"
+            : "linear-gradient(90deg, rgba(71, 85, 105, 0.15) 0%, transparent 100%)"
+          }
+          borderLeftRadius="24px"
+          pointerEvents="none"
+          zIndex={0}
+        />
+        {/* Radial background glow */}
+        <Box
+          position="absolute"
+          top="-20%"
+          right="-10%"
+          width="60%"
+          height="60%"
+          bgGradient={colorMode === "dark"
+            ? "radial-gradient(circle, rgba(113, 219, 255, 0.15) 0%, transparent 70%)"
+            : "radial-gradient(circle, rgba(148, 163, 184, 0.08) 0%, transparent 70%)"
+          }
+          pointerEvents="none"
+          zIndex={0}
+        />
         <ModalHeader>
           Case Claim Details
           {taskClaim && (
@@ -513,12 +571,41 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
               )}
 
               <Box
-                p={3}
-                bg="gray.700"
-                borderRadius="md"
+                p={4}
+                bg={colorMode === "dark" ? "rgba(15, 25, 40, 0.7)" : "rgba(255, 255, 255, 0.8)"}
+                backdropFilter="blur(20px)"
+                borderLeftRadius="20px"
                 borderWidth="2px"
-                borderColor={computedScore !== null ? (computedScore > 0.5 ? "green.500" : computedScore < -0.5 ? "red.500" : "yellow.500") : "blue.500"}
+                borderColor={computedScore !== null
+                  ? (computedScore > 0.5
+                    ? (colorMode === "dark" ? "rgba(72, 187, 120, 0.6)" : "rgba(72, 187, 120, 0.4)")
+                    : computedScore < -0.5
+                    ? (colorMode === "dark" ? "rgba(245, 101, 101, 0.6)" : "rgba(245, 101, 101, 0.4)")
+                    : (colorMode === "dark" ? "rgba(237, 137, 54, 0.6)" : "rgba(237, 137, 54, 0.4)"))
+                  : (colorMode === "dark" ? "rgba(113, 219, 255, 0.6)" : "rgba(71, 85, 105, 0.3)")
+                }
+                boxShadow={colorMode === "dark"
+                  ? `0 12px 32px rgba(0, 0, 0, 0.6), 0 6px 16px rgba(0, 0, 0, 0.4), 0 0 40px ${computedScore !== null ? (computedScore > 0.5 ? "rgba(72, 187, 120, 0.3)" : computedScore < -0.5 ? "rgba(245, 101, 101, 0.3)" : "rgba(237, 137, 54, 0.3)") : "rgba(113, 219, 255, 0.3)"}, inset 0 2px 0 rgba(255, 255, 255, 0.1)`
+                  : `0 12px 32px rgba(0, 0, 0, 0.08), 0 6px 16px rgba(0, 0, 0, 0.05), 0 0 40px ${computedScore !== null ? (computedScore > 0.5 ? "rgba(72, 187, 120, 0.2)" : computedScore < -0.5 ? "rgba(245, 101, 101, 0.2)" : "rgba(237, 137, 54, 0.2)") : "rgba(71, 85, 105, 0.15)"}, inset 0 2px 0 rgba(255, 255, 255, 0.9)`
+                }
+                position="relative"
+                overflow="hidden"
               >
+                {/* Curved left edge glow */}
+                <Box
+                  position="absolute"
+                  left={0}
+                  top={0}
+                  width="28px"
+                  height="100%"
+                  background={colorMode === "dark"
+                    ? `linear-gradient(90deg, ${computedScore !== null ? (computedScore > 0.5 ? "rgba(72, 187, 120, 0.4)" : computedScore < -0.5 ? "rgba(245, 101, 101, 0.4)" : "rgba(237, 137, 54, 0.4)") : "rgba(113, 219, 255, 0.4)"} 0%, transparent 100%)`
+                    : `linear-gradient(90deg, ${computedScore !== null ? (computedScore > 0.5 ? "rgba(72, 187, 120, 0.25)" : computedScore < -0.5 ? "rgba(245, 101, 101, 0.25)" : "rgba(237, 137, 54, 0.25)") : "rgba(71, 85, 105, 0.2)"} 0%, transparent 100%)`
+                  }
+                  borderLeftRadius="20px"
+                  pointerEvents="none"
+                  zIndex={0}
+                />
                 <Text fontSize="sm" fontWeight="semibold" color="white" mb={2}>
                   "{taskClaim.claim_text}"
                 </Text>
@@ -615,13 +702,34 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                   <Box
                     key={docLink.ref_claim_link_id}
                     p={4}
-                    bg={colorMode === "dark" ? "purple.900" : "rgba(237, 233, 254, 0.8)"}
-                    borderRadius="md"
-                    borderWidth="1px"
-                    borderColor={colorMode === "dark" ? `${stanceColor}.600` : `${stanceColor}.400`}
-                    borderLeftWidth="4px"
+                    bg={colorMode === "dark" ? "rgba(88, 28, 135, 0.25)" : "rgba(237, 233, 254, 0.8)"}
+                    backdropFilter="blur(15px)"
+                    borderLeftRadius="18px"
+                    borderWidth="2px"
+                    borderColor={`${stanceColor}.500`}
                     borderStyle="dashed"
+                    boxShadow={colorMode === "dark"
+                      ? "0 8px 24px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 30px rgba(139, 92, 246, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+                      : "0 8px 24px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04), 0 0 30px rgba(139, 92, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.95)"
+                    }
+                    position="relative"
+                    overflow="hidden"
                   >
+                    {/* Curved left edge glow */}
+                    <Box
+                      position="absolute"
+                      left={0}
+                      top={0}
+                      width="24px"
+                      height="100%"
+                      background={colorMode === "dark"
+                        ? "linear-gradient(90deg, rgba(139, 92, 246, 0.5) 0%, transparent 100%)"
+                        : "linear-gradient(90deg, rgba(139, 92, 246, 0.25) 0%, transparent 100%)"
+                      }
+                      borderLeftRadius="18px"
+                      pointerEvents="none"
+                      zIndex={0}
+                    />
                     <HStack justify="space-between" mb={2} wrap="wrap" gap={1}>
                       <HStack spacing={2} wrap="wrap">
                         <Badge colorScheme="purple" fontSize="xs">DOCUMENT</Badge>
@@ -708,12 +816,40 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                   <Box
                     key={claim.claim_id}
                     p={4}
-                    bg={colorMode === "dark" ? "gray.700" : "rgba(248, 250, 252, 0.8)"}
-                    borderRadius="md"
-                    borderWidth="1px"
-                    borderColor={colorMode === "dark" ? `${stanceColor}.600` : `${stanceColor}.400`}
-                    borderLeftWidth="4px"
+                    bg={colorMode === "dark" ? "rgba(15, 25, 40, 0.6)" : "rgba(248, 250, 252, 0.4)"}
+                    backdropFilter="blur(20px)"
+                    borderLeftRadius="18px"
+                    borderWidth="2px"
+                    borderColor={`${stanceColor}.500`}
+                    boxShadow={colorMode === "dark"
+                      ? `0 8px 24px rgba(0, 0, 0, 0.5), 0 4px 12px rgba(0, 0, 0, 0.3), 0 0 30px rgba(113, 219, 255, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)`
+                      : `0 12px 36px rgba(0, 0, 0, 0.08), 0 6px 20px rgba(0, 0, 0, 0.05), 0 2px 8px rgba(0, 0, 0, 0.03), inset 0 2px 0 rgba(255, 255, 255, 0.9)`
+                    }
+                    position="relative"
+                    overflow="hidden"
+                    _hover={{
+                      transform: "translateY(-4px) translateZ(0)",
+                      boxShadow: colorMode === "dark"
+                        ? `0 12px 32px rgba(0, 0, 0, 0.6), 0 6px 16px rgba(0, 0, 0, 0.4), 0 0 40px rgba(113, 219, 255, 0.3), inset 0 2px 0 rgba(255, 255, 255, 0.15)`
+                        : `0 20px 48px rgba(0, 0, 0, 0.12), 0 10px 28px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04), inset 0 3px 0 rgba(255, 255, 255, 1)`,
+                    }}
+                    transition="all 0.2s ease"
                   >
+                    {/* Curved left edge glow */}
+                    <Box
+                      position="absolute"
+                      left={0}
+                      top={0}
+                      width="24px"
+                      height="100%"
+                      background={colorMode === "dark"
+                        ? `linear-gradient(90deg, ${stanceColor === "green" ? "rgba(72, 187, 120, 0.4)" : stanceColor === "red" ? "rgba(245, 101, 101, 0.4)" : stanceColor === "yellow" ? "rgba(237, 137, 54, 0.4)" : "rgba(113, 219, 255, 0.4)"} 0%, transparent 100%)`
+                        : `linear-gradient(90deg, ${stanceColor === "green" ? "rgba(72, 187, 120, 0.25)" : stanceColor === "red" ? "rgba(245, 101, 101, 0.25)" : stanceColor === "yellow" ? "rgba(237, 137, 54, 0.25)" : "rgba(71, 85, 105, 0.2)"} 0%, transparent 100%)`
+                      }
+                      borderLeftRadius="18px"
+                      pointerEvents="none"
+                      zIndex={0}
+                    />
                     <HStack justify="space-between" mb={2} wrap="wrap" gap={1}>
                       <HStack spacing={2} wrap="wrap">
                         <Badge colorScheme="blue" fontSize="xs">#{index + 1}</Badge>
@@ -759,25 +895,40 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                       </Text>
                     )}
 
-                    <HStack spacing={2} mt={2} wrap="wrap">
+                    <HStack spacing={2} mt={2} wrap="wrap" position="relative" zIndex={1}>
                       <Button
                         size="sm"
-                        colorScheme={claim.hasLink ? "yellow" : "green"}
+                        bg={claim.hasLink ? "rgba(237, 137, 54, 0.12)" : "rgba(72, 187, 120, 0.12)"}
+                        border="1px solid"
+                        borderColor={claim.hasLink ? "rgba(237, 137, 54, 0.3)" : "rgba(72, 187, 120, 0.3)"}
+                        color={claim.hasLink ? "#ed8936" : "#48bb78"}
+                        boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
                         leftIcon={<span>{claim.hasLink ? "✏️" : "🔗"}</span>}
                         onClick={() => handleOpenLinkOverlay(claim)}
+                        _hover={{
+                          bg: claim.hasLink ? "rgba(237, 137, 54, 0.18)" : "rgba(72, 187, 120, 0.18)",
+                          borderColor: claim.hasLink ? "rgba(237, 137, 54, 0.5)" : "rgba(72, 187, 120, 0.5)",
+                        }}
                       >
                         {claim.hasLink ? "Edit Link" : "Create Link"}
                       </Button>
                       {claim.hasLink && (
                         <Button
                           size="sm"
-                          colorScheme="red"
-                          variant="outline"
+                          bg="rgba(245, 101, 101, 0.12)"
+                          border="1px solid"
+                          borderColor="rgba(245, 101, 101, 0.3)"
+                          color="#f56565"
+                          boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
                           leftIcon={<span>🗑️</span>}
                           onClick={async () => {
                             if (confirm(`Delete link to "${claim.claim_text.substring(0, 50)}..."?`)) {
                               await handleDeleteLink(claim.claim_id);
                             }
+                          }}
+                          _hover={{
+                            bg: "rgba(245, 101, 101, 0.18)",
+                            borderColor: "rgba(245, 101, 101, 0.5)",
                           }}
                         >
                           Delete Link
@@ -786,9 +937,16 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                       {onSelectReferenceClaim && referenceId && (
                         <Button
                           size="sm"
-                          variant="outline"
-                          colorScheme="blue"
+                          bg="rgba(66, 153, 225, 0.12)"
+                          border="1px solid"
+                          borderColor="rgba(66, 153, 225, 0.3)"
+                          color="#4299e1"
+                          boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
                           onClick={() => onSelectReferenceClaim(claim, referenceId)}
+                          _hover={{
+                            bg: "rgba(66, 153, 225, 0.18)",
+                            borderColor: "rgba(66, 153, 225, 0.5)",
+                          }}
                         >
                           View Source
                         </Button>
@@ -801,11 +959,19 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
           )}
         </ModalBody>
 
-        <ModalFooter borderTopWidth="1px" borderColor={colorMode === "dark" ? "gray.700" : "gray.300"}>
+        <ModalFooter
+          borderTopWidth="2px"
+          borderColor={colorMode === "dark" ? "rgba(113, 219, 255, 0.3)" : "rgba(71, 85, 105, 0.15)"}
+          bg={colorMode === "dark" ? "rgba(10, 15, 25, 0.8)" : "rgba(255, 255, 255, 0.6)"}
+          backdropFilter="blur(20px)"
+        >
           <HStack spacing={3} w="100%" justify="space-between">
             <Button
-              colorScheme="green"
-              variant="solid"
+              bg="rgba(72, 187, 120, 0.12)"
+              border="1px solid"
+              borderColor="rgba(72, 187, 120, 0.3)"
+              color="#48bb78"
+              boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
               onClick={() => {
                 setScanMode('quick');
                 runRelevanceScan('quick');
@@ -815,12 +981,19 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
               isDisabled={isBusy}
               size="sm"
               leftIcon={<span>⚡</span>}
+              _hover={{
+                bg: "rgba(72, 187, 120, 0.18)",
+                borderColor: "rgba(72, 187, 120, 0.5)",
+              }}
             >
               Quick Scan
             </Button>
             <Button
-              colorScheme="purple"
-              variant="solid"
+              bg="rgba(167, 139, 250, 0.12)"
+              border="1px solid"
+              borderColor="rgba(167, 139, 250, 0.3)"
+              color="#a78bfa"
+              boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
               onClick={() => {
                 setScanMode('deep');
                 runRelevanceScan('deep');
@@ -830,10 +1003,26 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
               isDisabled={isBusy}
               size="sm"
               leftIcon={<span>🔍</span>}
+              _hover={{
+                bg: "rgba(167, 139, 250, 0.18)",
+                borderColor: "rgba(167, 139, 250, 0.5)",
+              }}
             >
               Deep Scan
             </Button>
-            <Button colorScheme="gray" onClick={onClose} size="sm">
+            <Button
+              bg="rgba(160, 174, 192, 0.12)"
+              border="1px solid"
+              borderColor="rgba(160, 174, 192, 0.3)"
+              color="#a0aec0"
+              boxShadow="0 6px 20px rgba(0, 0, 0, 0.3)"
+              onClick={onClose}
+              size="sm"
+              _hover={{
+                bg: "rgba(160, 174, 192, 0.18)",
+                borderColor: "rgba(160, 174, 192, 0.5)",
+              }}
+            >
               Close
             </Button>
           </HStack>

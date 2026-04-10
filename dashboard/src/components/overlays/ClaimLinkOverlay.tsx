@@ -228,18 +228,59 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
   const footer = !isReadOnly ? (
     <>
       <Button
-        className="mr-button"
+        bg="rgba(72, 187, 120, 0.3)"
+        color="white"
+        backdropFilter="blur(10px)"
+        border="1px solid"
+        borderColor="rgba(72, 187, 120, 0.5)"
         mr={3}
         onClick={handleSubmit}
         isLoading={isSubmitting}
         isDisabled={isSubmitting}
+        _hover={{
+          bg: "rgba(72, 187, 120, 0.4)",
+          transform: "translateY(-1px)",
+          boxShadow: "0 6px 16px rgba(0, 0, 0, 0.5), 0 0 20px rgba(72, 187, 120, 0.3)",
+        }}
+        boxShadow="0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
       >
         Create Link
       </Button>
-      <Button onClick={onClose} isDisabled={isSubmitting}>Cancel</Button>
+      <Button
+        bg="rgba(160, 174, 192, 0.2)"
+        color="white"
+        backdropFilter="blur(10px)"
+        border="1px solid"
+        borderColor="rgba(160, 174, 192, 0.4)"
+        onClick={onClose}
+        isDisabled={isSubmitting}
+        _hover={{
+          bg: "rgba(160, 174, 192, 0.3)",
+          transform: "translateY(-1px)",
+          boxShadow: "0 6px 16px rgba(0, 0, 0, 0.5)",
+        }}
+        boxShadow="0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+      >
+        Cancel
+      </Button>
     </>
   ) : (
-    <Button onClick={onClose}>Close</Button>
+    <Button
+      bg="rgba(160, 174, 192, 0.2)"
+      color="white"
+      backdropFilter="blur(10px)"
+      border="1px solid"
+      borderColor="rgba(160, 174, 192, 0.4)"
+      onClick={onClose}
+      _hover={{
+        bg: "rgba(160, 174, 192, 0.3)",
+        transform: "translateY(-1px)",
+        boxShadow: "0 6px 16px rgba(0, 0, 0, 0.5)",
+      }}
+      boxShadow="0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+    >
+      Close
+    </Button>
   );
 
   return (
@@ -250,32 +291,122 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
       footer={footer}
       size="lg"
     >
-      <Text className="mr-text-primary" fontWeight="bold" mb={2}>
+      <Text fontWeight="bold" mb={2} color="rgba(113, 219, 255, 0.9)">
         Source Claim:
       </Text>
-      <Text className="mr-text-secondary" mb={4}>{sourceClaim?.claim_text}</Text>
+      <Box
+        mb={4}
+        p={3}
+        bg="rgba(15, 25, 40, 0.6)"
+        backdropFilter="blur(15px)"
+        borderLeftRadius="16px"
+        border="1px solid"
+        borderColor="rgba(113, 219, 255, 0.3)"
+        boxShadow="0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+        position="relative"
+        overflow="hidden"
+      >
+        <Box
+          position="absolute"
+          left={0}
+          top={0}
+          width="20px"
+          height="100%"
+          background="linear-gradient(90deg, rgba(113, 219, 255, 0.3) 0%, transparent 100%)"
+          borderLeftRadius="16px"
+          pointerEvents="none"
+          zIndex={0}
+        />
+        <Text fontSize="sm" position="relative" zIndex={1} color="white">{sourceClaim?.claim_text}</Text>
+      </Box>
 
-      <Text className="mr-text-primary" fontWeight="bold" mb={2}>
+      <Text fontWeight="bold" mb={2} color="rgba(113, 219, 255, 0.9)">
         Target Claim:
       </Text>
-      <Text className="mr-text-secondary" mb={4}>{targetClaim?.claim_text}</Text>
+      <Box
+        mb={4}
+        p={3}
+        bg="rgba(15, 25, 40, 0.6)"
+        backdropFilter="blur(15px)"
+        borderLeftRadius="16px"
+        border="1px solid"
+        borderColor="rgba(113, 219, 255, 0.3)"
+        boxShadow="0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+        position="relative"
+        overflow="hidden"
+      >
+        <Box
+          position="absolute"
+          left={0}
+          top={0}
+          width="20px"
+          height="100%"
+          background="linear-gradient(90deg, rgba(113, 219, 255, 0.3) 0%, transparent 100%)"
+          borderLeftRadius="16px"
+          pointerEvents="none"
+          zIndex={0}
+        />
+        <Text fontSize="sm" position="relative" zIndex={1} color="white">{targetClaim?.claim_text}</Text>
+      </Box>
 
       <HStack mb={1} mt={4} align="center" spacing={2}>
-        <FormLabel className="mr-text-primary" mb={0}>Notes</FormLabel>
+        <FormLabel mb={0} color="rgba(113, 219, 255, 0.9)" fontWeight="bold">Notes</FormLabel>
         {aiPrefilled && notes && (
-          <Badge colorScheme="purple" fontSize="2xs">✨ AI suggested</Badge>
+          <Badge
+            bg="rgba(139, 92, 246, 0.3)"
+            color="white"
+            border="1px solid"
+            borderColor="rgba(139, 92, 246, 0.5)"
+            fontSize="2xs"
+          >
+            ✨ AI suggested
+          </Badge>
         )}
       </HStack>
       {isReadOnly ? (
-        <Text className="mr-text-secondary" fontStyle="italic" p={2} borderRadius="md">
-          {claimLink?.notes || "No notes provided."}
-        </Text>
+        <Box
+          p={3}
+          bg="rgba(15, 25, 40, 0.6)"
+          backdropFilter="blur(15px)"
+          borderLeftRadius="16px"
+          border="1px solid"
+          borderColor="rgba(113, 219, 255, 0.3)"
+          boxShadow="0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
+          position="relative"
+          overflow="hidden"
+        >
+          <Box
+            position="absolute"
+            left={0}
+            top={0}
+            width="20px"
+            height="100%"
+            background="linear-gradient(90deg, rgba(113, 219, 255, 0.3) 0%, transparent 100%)"
+            borderLeftRadius="16px"
+            pointerEvents="none"
+            zIndex={0}
+          />
+          <Text fontSize="sm" fontStyle="italic" position="relative" zIndex={1} color="rgba(255, 255, 255, 0.8)">
+            {claimLink?.notes || "No notes provided."}
+          </Text>
+        </Box>
       ) : (
         <Textarea
-          className="mr-input"
           placeholder="Optional notes about this link..."
           value={notes}
           onChange={(e) => { setNotes(e.target.value); setAiPrefilled(false); }}
+          bg="rgba(15, 25, 40, 0.6)"
+          backdropFilter="blur(15px)"
+          borderLeftRadius="16px"
+          border="1px solid"
+          borderColor="rgba(113, 219, 255, 0.3)"
+          color="white"
+          _placeholder={{ color: "rgba(255, 255, 255, 0.4)" }}
+          _focus={{
+            borderColor: "rgba(113, 219, 255, 0.6)",
+            boxShadow: "0 0 20px rgba(113, 219, 255, 0.3)",
+          }}
+          boxShadow="0 4px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
         />
       )}
 

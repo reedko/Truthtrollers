@@ -15,6 +15,10 @@ import {
   Center,
   useColorMode,
   Divider,
+  Menu,
+  MenuButton,
+  MenuList,
+  Button,
 } from '@chakra-ui/react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTaskStore, ViewScope } from '../store/useTaskStore';
@@ -199,6 +203,8 @@ const KnowGraphPage = () => {
             ? '0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
             : '0 4px 16px rgba(71, 85, 105, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.4)'
         }
+        position="relative"
+        zIndex={100}
       >
         <Box
           bg={colorMode === 'dark' ? 'whiteAlpha.100' : 'blackAlpha.50'}
@@ -212,14 +218,57 @@ const KnowGraphPage = () => {
           <Heading size="md">Knowledge Graph</Heading>
         </Box>
 
+        {/* Compact Metrics - Collapsible */}
+        <Menu>
+          <MenuButton
+            as={Button}
+            size="sm"
+            variant="ghost"
+            rightIcon={<Text fontSize="xs">▼</Text>}
+            bg={colorMode === 'dark' ? 'whiteAlpha.100' : 'blackAlpha.50'}
+            _hover={{ bg: colorMode === 'dark' ? 'whiteAlpha.200' : 'blackAlpha.100' }}
+          >
+            <HStack spacing={2}>
+              <Text fontSize="sm" fontWeight="medium">Metrics</Text>
+              <Badge colorScheme="blue" fontSize="xs">{metrics.caseClaims + metrics.sourceClaims}</Badge>
+            </HStack>
+          </MenuButton>
+          <MenuList fontSize="xs" minW="200px" zIndex={10000}>
+            <Box px={3} py={2}>
+              <VStack align="stretch" spacing={1.5}>
+                <HStack justify="space-between">
+                  <Text color="gray.400">Case Claims:</Text>
+                  <Text fontWeight="bold">{metrics.caseClaims}</Text>
+                </HStack>
+                <HStack justify="space-between">
+                  <Text color="gray.400">Source Claims:</Text>
+                  <Text fontWeight="bold">{metrics.sourceClaims}</Text>
+                </HStack>
+                <HStack justify="space-between">
+                  <Text color="gray.400">Sources:</Text>
+                  <Text fontWeight="bold">{metrics.sources}</Text>
+                </HStack>
+                <Divider />
+                <HStack justify="space-between">
+                  <Text color="green.400">Support:</Text>
+                  <Text fontWeight="bold" color="green.400">{metrics.supportLinks}</Text>
+                </HStack>
+                <HStack justify="space-between">
+                  <Text color="red.400">Refute:</Text>
+                  <Text fontWeight="bold" color="red.400">{metrics.refuteLinks}</Text>
+                </HStack>
+              </VStack>
+            </Box>
+          </MenuList>
+        </Menu>
+
         <VerimeterModeToggle compact />
         <ViewerScopeBadge />
       </Box>
 
       {/* Main layout - full width graph with floating panels */}
       <Box
-        height="calc(100vh - 300px)"
-        minH="900px"
+        height="calc(100vh - 280px)"
         position="relative"
       >
         {/* Center: Graph - Full Width */}
@@ -242,27 +291,6 @@ const KnowGraphPage = () => {
           h="100%"
         >
           <CardBody p={0} h="100%">
-            {/* Floating title */}
-            <Box
-              position="absolute"
-              top={4}
-              left={4}
-              zIndex={3}
-              bg="rgba(8, 14, 24, 0.74)"
-              border="1px solid rgba(255, 255, 255, 0.07)"
-              borderRadius="16px"
-              p={3}
-              backdropFilter="blur(8px)"
-              boxShadow="0 0 0 1px rgba(255, 255, 255, 0.08), 0 0 18px rgba(120, 160, 255, 0.18)"
-            >
-              <Heading size="sm" color="cyan.300">
-                Case-centric Investigation Graph
-              </Heading>
-              <Text fontSize="xs" color="gray.400" mt={1}>
-                Case claims fan into source claims, which roll up into sources
-              </Text>
-            </Box>
-
             {/* Empty state or graph */}
             {graphData.nodes.length === 0 ? (
               <Center h="full">
@@ -287,81 +315,44 @@ const KnowGraphPage = () => {
                 currentUserId={viewerId}
               />
             )}
-
-            {/* Footer note */}
-            <Box
-              position="absolute"
-              bottom={4}
-              right={4}
-              zIndex={3}
-              maxW="360px"
-              p={3}
-              borderRadius="16px"
-              bg="rgba(9, 15, 26, 0.76)"
-              border="1px solid rgba(255, 255, 255, 0.07)"
-              backdropFilter="blur(8px)"
-            >
-              <Text fontSize="xs" color="gray.400" lineHeight={1.45}>
-                A semantic network with typed entities, typed relationships, and enough ontology to
-                make graph people squint and say, "yeah, that's a graph."
-              </Text>
-            </Box>
           </CardBody>
         </Card>
 
-        {/* Floating Legend - Top Left */}
+        {/* Floating Legend - Responsive, shrinks at 1024 */}
         <Box
           position="absolute"
-          top={4}
-          left={4}
-          zIndex={10}
-          bg="rgba(8, 14, 24, 0.85)"
-          border="1px solid rgba(255, 255, 255, 0.1)"
-          borderRadius="16px"
-          p={3}
-          backdropFilter="blur(12px)"
-          boxShadow="0 4px 20px rgba(0, 0, 0, 0.3)"
-          maxW="240px"
+          top={{ base: 2, xl: 4 }}
+          left={{ base: 2, xl: 4 }}
+          zIndex={1000}
+          bg="rgba(8, 14, 24, 0.96)"
+          border="1px solid rgba(255, 255, 255, 0.15)"
+          borderRadius={{ base: "8px", xl: "12px" }}
+          p={{ base: 1.5, xl: 2.5 }}
+          backdropFilter="blur(16px)"
+          boxShadow="0 8px 32px rgba(0, 0, 0, 0.7)"
+          maxW={{ base: "140px", xl: "260px" }}
         >
-          <Text fontSize="xs" color="cyan.300" fontWeight={600} mb={2}>
-            Ontology Sketch
+          <Text
+            fontSize={{ base: "8px", xl: "10px" }}
+            color="cyan.300"
+            fontWeight={600}
+            mb={{ base: 0.5, xl: 1.5 }}
+            letterSpacing="wide"
+          >
+            ONTOLOGY
           </Text>
-          <VStack align="stretch" spacing={1}>
+          <Grid templateColumns="1fr 1fr" gap={{ base: 0.5, xl: 1.5 }} mb={{ base: 1, xl: 2 }}>
             <LegendItem color="#6ea8ff" label="Case" />
             <LegendItem color="#8f7cff" label="Case Claim" />
             <LegendItem color="#58d6ff" label="Source Claim" />
             <LegendItem color="#63f0b0" label="Source" />
             <LegendItem color="#ff8fb7" label="Author" />
             <LegendItem color="#ffbf69" label="Publisher" />
+          </Grid>
+          <VStack align="stretch" spacing={{ base: 0, xl: 0.5 }}>
             <EdgeLegendItem color="#62f0a8" label="supports" />
             <EdgeLegendItem color="#ff7a7a" label="refutes" />
             <EdgeLegendItem color="#66a3ff" label="related" />
-          </VStack>
-        </Box>
-
-        {/* Floating Metrics - Top Right */}
-        <Box
-          position="absolute"
-          top={4}
-          right={4}
-          zIndex={10}
-          bg="rgba(8, 14, 24, 0.85)"
-          border="1px solid rgba(255, 255, 255, 0.1)"
-          borderRadius="16px"
-          p={3}
-          backdropFilter="blur(12px)"
-          boxShadow="0 4px 20px rgba(0, 0, 0, 0.3)"
-          minW="180px"
-        >
-          <Text fontSize="xs" color="cyan.300" fontWeight={600} mb={2}>
-            Graph Metrics
-          </Text>
-          <VStack align="stretch" spacing={1}>
-            <MetricRow label="Case claims" value={metrics.caseClaims} />
-            <MetricRow label="Source claims" value={metrics.sourceClaims} />
-            <MetricRow label="Sources" value={metrics.sources} />
-            <MetricRow label="Support links" value={metrics.supportLinks} color="green.400" />
-            <MetricRow label="Refute links" value={metrics.refuteLinks} color="red.400" />
           </VStack>
         </Box>
       </Box>
@@ -582,9 +573,15 @@ const InfoCard = ({ title, description }: { title: string; description: string }
 );
 
 const LegendItem = ({ color, label }: { color: string; label: string }) => (
-  <HStack spacing={2}>
-    <Box w="11px" h="11px" borderRadius="full" bg={color} boxShadow={`0 0 10px ${color}44`} />
-    <Text fontSize="xs" color="gray.300">
+  <HStack spacing={{ base: 0.5, xl: 2 }}>
+    <Box
+      w={{ base: "6px", xl: "11px" }}
+      h={{ base: "6px", xl: "11px" }}
+      borderRadius="full"
+      bg={color}
+      boxShadow={`0 0 10px ${color}44`}
+    />
+    <Text fontSize={{ base: "9px", xl: "xs" }} color="gray.300">
       {label}
     </Text>
   </HStack>
@@ -599,14 +596,14 @@ const EdgeLegendItem = ({
   label: string;
   dashed?: boolean;
 }) => (
-  <HStack spacing={2} mt={1}>
+  <HStack spacing={{ base: 0.5, xl: 2 }} mt={{ base: 0.5, xl: 1 }}>
     <Box
-      w="22px"
+      w={{ base: "12px", xl: "22px" }}
       h="0"
-      borderTop={`3px ${dashed ? 'dashed' : 'solid'} ${color}`}
+      borderTop={{ base: `2px ${dashed ? 'dashed' : 'solid'} ${color}`, xl: `3px ${dashed ? 'dashed' : 'solid'} ${color}` }}
       borderRadius="full"
     />
-    <Text fontSize="xs" color="gray.300">
+    <Text fontSize={{ base: "9px", xl: "xs" }} color="gray.300">
       {label}
     </Text>
   </HStack>
