@@ -121,7 +121,6 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
         <Box
           as="button"
           background={defaultBg}
-          backdropFilter="blur(20px)"
           border={`1px solid ${borderColor}`}
           color={useColorModeValue("teal.600", "rgba(0, 162, 255, 1)")}
           height="50px"

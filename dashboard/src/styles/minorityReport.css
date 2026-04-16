@@ -410,6 +410,40 @@
   z-index: 9999 !important;
 }
 
+/* Disable hover effects on cards inside modals to prevent performance issues */
+.chakra-modal__content .mr-card {
+  transition: none !important;
+}
+
+.chakra-modal__content .mr-card:hover {
+  transform: none !important;
+  background: var(--mr-bg-card) !important;
+}
+
+.chakra-ui-dark .chakra-modal__content .mr-card:hover {
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.6),
+    0 0 40px var(--mr-blue-border),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+.chakra-ui-light .chakra-modal__content .mr-card:hover {
+  box-shadow:
+    0 2px 8px rgba(100, 116, 139, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Optimize modal scrolling performance */
+.chakra-modal__body {
+  will-change: scroll-position;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Reduce repaints on scroll */
+.chakra-modal__content * {
+  will-change: auto;
+}
+
 .chakra-ui-light .mr-modal {
   background: linear-gradient(135deg, rgb(255, 255, 255), rgb(241, 245, 249)) !important;
   border: 2px solid rgba(71, 85, 105, 0.3) !important;

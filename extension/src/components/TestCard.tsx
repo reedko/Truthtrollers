@@ -69,7 +69,6 @@ const TestCard: React.FC = () => {
           className="logo-box"
           position="relative"
           background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-          backdropFilter="blur(20px)"
           border="1px solid rgba(0, 162, 255, 0.4)"
           borderRadius="12px"
           boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
@@ -131,7 +130,6 @@ const TestCard: React.FC = () => {
             <Box
               position="relative"
               background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-              backdropFilter="blur(20px)"
               border="1px solid rgba(0, 162, 255, 0.5)"
               borderRadius="12px"
               boxShadow="0 10px 40px rgba(0, 0, 0, 0.7), 0 0 50px rgba(0, 162, 255, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
@@ -235,7 +233,6 @@ const TestCard: React.FC = () => {
             <Box
               position="relative"
               background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-              backdropFilter="blur(20px)"
               border="1px solid rgba(0, 162, 255, 0.4)"
               borderRadius="12px"
               boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"

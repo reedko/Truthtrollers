@@ -76,7 +76,6 @@ export default function ExtensionSettingsPanel() {
         {/* Extension Verimeter Settings */}
         <Card
           bg="rgba(15, 23, 42, 0.6)"
-          backdropFilter="blur(10px)"
           borderWidth="1px"
           borderColor="rgba(0, 162, 255, 0.3)"
           boxShadow="0 4px 20px rgba(0, 0, 0, 0.3)"
@@ -129,7 +128,6 @@ export default function ExtensionSettingsPanel() {
         {/* Information Card */}
         <Card
           bg="rgba(15, 23, 42, 0.6)"
-          backdropFilter="blur(10px)"
           borderWidth="1px"
           borderColor="rgba(139, 92, 246, 0.3)"
           boxShadow="0 4px 20px rgba(0, 0, 0, 0.3)"

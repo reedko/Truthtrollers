@@ -212,7 +212,6 @@ export default function LLMPromptsEditor() {
               <Box
                 key={prompt.prompt_id}
                 bg="linear-gradient(135deg, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.5))"
-                backdropFilter="blur(10px)"
                 borderWidth="1px"
                 borderColor={isExpanded ? "cyan.500" : "rgba(0, 162, 255, 0.3)"}
                 borderRadius="md"

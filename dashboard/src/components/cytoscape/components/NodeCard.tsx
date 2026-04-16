@@ -67,7 +67,6 @@ export const NodeCard: React.FC<NodeCardProps> = ({
               top: `${pos.y - 100}px`,
               width: "200px",
               background: "rgba(15, 23, 42, 0.98)",
-              backdropFilter: "blur(12px)",
               border: "2px solid rgba(139, 92, 246, 0.5)",
               borderRadius: "12px",
               padding: "12px",
@@ -120,7 +119,6 @@ export const NodeCard: React.FC<NodeCardProps> = ({
                 fontSize: "11px",
                 fontWeight: "700",
                 color: "#a5b4fc",
-                backdropFilter: "blur(8px)",
                 boxShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
               }}
             >
@@ -140,7 +138,6 @@ export const NodeCard: React.FC<NodeCardProps> = ({
                 fontSize: "11px",
                 fontWeight: "700",
                 color: "#fed7aa",
-                backdropFilter: "blur(8px)",
                 boxShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
               }}
             >
@@ -158,7 +155,6 @@ export const NodeCard: React.FC<NodeCardProps> = ({
                 fontSize: "11px",
                 fontWeight: "700",
                 color: "#6ee7b7",
-                backdropFilter: "blur(8px)",
                 boxShadow: "0 2px 8px rgba(0, 0, 0, 0.4)",
               }}
             >
@@ -202,7 +198,6 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           width: "120px",
           height: "140px",
           background: scheme.bg,
-          backdropFilter: "blur(4px)",
           border: `1px solid ${scheme.border}`,
           borderRadius: "10px",
           boxShadow: `${scheme.glow}, 0 4px 16px rgba(0, 0, 0, 0.2)`,
@@ -359,7 +354,6 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           width: "260px",
           height: "320px",
           background: scheme.bg,
-          backdropFilter: "blur(6px)",
           border: `1.5px solid ${scheme.border}`,
           borderRadius: "16px",
           boxShadow: `${scheme.glow}, 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)`,
@@ -511,7 +505,6 @@ export const NodeCard: React.FC<NodeCardProps> = ({
         width: "200px",
         height: "240px",
         background: scheme.bg,
-        backdropFilter: "blur(12px)",
         border: `1.5px solid ${scheme.border}`,
         borderRadius: "16px",
         boxShadow: `${scheme.glow}, 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)`,
@@ -559,7 +552,6 @@ export const NodeCard: React.FC<NodeCardProps> = ({
           width: "100%",
           height: "100px",
           background: scheme.titleBg,
-          backdropFilter: "blur(8px)",
           padding: "12px",
           display: "flex",
           flexDirection: "column",

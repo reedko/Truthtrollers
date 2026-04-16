@@ -42,6 +42,8 @@ module.exports = {
         { from: "src/assets", to: "assets" }, // Copy all assets
         { from: "src/viewer.html", to: "viewer.html" },
         { from: "src/viewer.js", to: "viewer.js" },
+        { from: "src/styles/minorityReport.css", to: "styles/minorityReport.css" }, // Copy CSS for shadow DOM
+        { from: "src/components/Popup.css", to: "popup.css" }, // Copy Popup CSS for shadow DOM
       ],
     }),
   ],
@@ -59,7 +61,17 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: ["style-loader", "css-loader"], // Ensure CSS is bundled
+        oneOf: [
+          // Import as raw string when using ?raw suffix
+          {
+            resourceQuery: /raw/,
+            type: 'asset/source',
+          },
+          // Default CSS handling with style-loader
+          {
+            use: ["style-loader", "css-loader"],
+          },
+        ],
       },
       {
         test: /\.(jpe?g|png|gif|svg)$/i,

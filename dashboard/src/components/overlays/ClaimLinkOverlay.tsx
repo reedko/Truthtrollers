@@ -1,5 +1,5 @@
 // src/components/overlays/ClaimLinkOverlay.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Box,
   Badge,
@@ -119,15 +119,20 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
   };
 
   // keep your live score fetch behavior for read-only viewing
+  // Use ref to prevent fetching multiple times
+  const hasFetchedScore = useRef(false);
+
   useEffect(() => {
     const shouldFetch =
       isReadOnly &&
       isOpen &&
       targetClaim?.claim_id &&
       viewerId &&
-      verimeterScore === null;
+      verimeterScore === null &&
+      !hasFetchedScore.current;
 
     if (shouldFetch) {
+      hasFetchedScore.current = true;
       fetchLiveVerimeterScore(targetClaim.claim_id, viewerId)
         .then((result) => {
           if (
@@ -140,6 +145,11 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
         .catch((err) => {
           console.error("Error fetching verimeter score in overlay:", err);
         });
+    }
+
+    // Reset flag when modal closes
+    if (!isOpen) {
+      hasFetchedScore.current = false;
     }
   }, [isReadOnly, isOpen, targetClaim?.claim_id, viewerId, verimeterScore]);
 
@@ -230,7 +240,6 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
       <Button
         bg="rgba(72, 187, 120, 0.3)"
         color="white"
-        backdropFilter="blur(10px)"
         border="1px solid"
         borderColor="rgba(72, 187, 120, 0.5)"
         mr={3}
@@ -249,7 +258,6 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
       <Button
         bg="rgba(160, 174, 192, 0.2)"
         color="white"
-        backdropFilter="blur(10px)"
         border="1px solid"
         borderColor="rgba(160, 174, 192, 0.4)"
         onClick={onClose}
@@ -268,7 +276,6 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
     <Button
       bg="rgba(160, 174, 192, 0.2)"
       color="white"
-      backdropFilter="blur(10px)"
       border="1px solid"
       borderColor="rgba(160, 174, 192, 0.4)"
       onClick={onClose}
@@ -298,7 +305,6 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
         mb={4}
         p={3}
         bg="rgba(15, 25, 40, 0.6)"
-        backdropFilter="blur(15px)"
         borderLeftRadius="16px"
         border="1px solid"
         borderColor="rgba(113, 219, 255, 0.3)"
@@ -327,7 +333,6 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
         mb={4}
         p={3}
         bg="rgba(15, 25, 40, 0.6)"
-        backdropFilter="blur(15px)"
         borderLeftRadius="16px"
         border="1px solid"
         borderColor="rgba(113, 219, 255, 0.3)"
@@ -367,7 +372,6 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
         <Box
           p={3}
           bg="rgba(15, 25, 40, 0.6)"
-          backdropFilter="blur(15px)"
           borderLeftRadius="16px"
           border="1px solid"
           borderColor="rgba(113, 219, 255, 0.3)"
@@ -396,7 +400,6 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
           value={notes}
           onChange={(e) => { setNotes(e.target.value); setAiPrefilled(false); }}
           bg="rgba(15, 25, 40, 0.6)"
-          backdropFilter="blur(15px)"
           borderLeftRadius="16px"
           border="1px solid"
           borderColor="rgba(113, 219, 255, 0.3)"

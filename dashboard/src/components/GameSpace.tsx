@@ -191,7 +191,6 @@ const PlayingCard: React.FC<PlayingCardProps> = ({
         background: isBeingDragged
           ? "transparent"
           : "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))",
-        backdropFilter: isBeingDragged ? "none" : "blur(20px)",
         border: isBeingDragged ? "none" : `1px solid ${colors.border}`,
         borderRadius: "12px",
         boxShadow: isBeingDragged
@@ -593,7 +592,6 @@ const ReferenceCard: React.FC<ReferenceCardProps> = ({
         height: isFocused ? "480px" : "60px",
         background:
           "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))",
-        backdropFilter: "blur(20px)",
         border: `1px solid ${colors.border}`,
         borderRadius: "12px",
         boxShadow: isSelected
@@ -2022,7 +2020,6 @@ const GameSpace: React.FC<GameSpaceProps> = ({
         <Box
           mb={6}
           background="rgba(0, 0, 0, 0.6)"
-          backdropFilter="blur(20px)"
           border="1px solid rgba(34, 197, 94, 0.4)"
           borderRadius="8px"
           px="48px"
@@ -2263,7 +2260,6 @@ const GameSpace: React.FC<GameSpaceProps> = ({
         <Box
           mt={6}
           background="rgba(15, 23, 42, 0.6)"
-          backdropFilter="blur(20px)"
           border="1px solid rgba(0, 162, 255, 0.3)"
           borderRadius="8px"
           px="20px"
@@ -2345,7 +2341,6 @@ const GameSpace: React.FC<GameSpaceProps> = ({
         transform="translateX(-50%)"
         zIndex={100}
         background="rgba(0, 0, 0, 0.8)"
-        backdropFilter="blur(20px)"
         px={isMobile ? "16px" : "32px"}
         py="12px"
         borderRadius="8px"
@@ -2463,7 +2458,6 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                 fontWeight="500"
                 letterSpacing="1px"
                 textTransform="uppercase"
-                backdropFilter="blur(10px)"
                 transition="all 0.3s ease"
                 _hover={{
                   bg: "rgba(139, 92, 246, 0.2)",
@@ -2506,7 +2500,6 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                 fontWeight="500"
                 letterSpacing="1px"
                 textTransform="uppercase"
-                backdropFilter="blur(10px)"
                 transition="all 0.3s ease"
                 _hover={{
                   bg: "rgba(34, 197, 94, 0.2)",
@@ -2547,7 +2540,6 @@ const GameSpace: React.FC<GameSpaceProps> = ({
             mb={isMobile ? 1 : 6}
             mt={isMobile ? "-60px" : 0}
             background="rgba(0, 0, 0, 0.6)"
-            backdropFilter="blur(20px)"
             border="1px solid rgba(139, 92, 246, 0.4)"
             borderRadius="8px"
             px="24px"
@@ -2711,7 +2703,6 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                     alignItems="center"
                     p="20px"
                     background="rgba(0, 0, 0, 0.9)"
-                    backdropFilter="blur(20px)"
                     borderRadius="16px"
                     border="2px solid rgba(0, 162, 255, 0.5)"
                     boxShadow="0 8px 40px rgba(0, 0, 0, 0.8), 0 0 60px rgba(0, 162, 255, 0.3)"
@@ -2813,7 +2804,6 @@ const GameSpace: React.FC<GameSpaceProps> = ({
             mb={isMobile ? 2 : 6}
             mt={isMobile ? "-60px" : 0}
             background="rgba(0, 0, 0, 0.6)"
-            backdropFilter="blur(20px)"
             border="1px solid rgba(34, 197, 94, 0.4)"
             borderRadius="8px"
             px="24px"
@@ -3157,7 +3147,6 @@ const GameSpace: React.FC<GameSpaceProps> = ({
         bottom="20px"
         left="20px"
         background="rgba(15, 23, 42, 0.6)"
-        backdropFilter="blur(20px)"
         border="1px solid rgba(0, 162, 255, 0.3)"
         borderRadius="8px"
         px="20px"
@@ -3382,7 +3371,6 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                 ? "rgba(239, 68, 68, 0.4)"
                 : "rgba(239, 68, 68, 0.2)"
             }
-            backdropFilter="blur(20px)"
             border={
               isOverSkipZone
                 ? "4px solid rgba(239, 68, 68, 0.9)"
@@ -3426,7 +3414,6 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                 ? "rgba(34, 197, 94, 0.4)"
                 : "rgba(34, 197, 94, 0.2)"
             }
-            backdropFilter="blur(20px)"
             border={
               isOverTaskClaim
                 ? "4px solid rgba(34, 197, 94, 0.9)"

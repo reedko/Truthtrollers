@@ -12,10 +12,15 @@ import {
   useColorMode,
   Switch,
   HStack,
+  Button,
+  Icon,
+  useDisclosure,
 } from "@chakra-ui/react";
+import { FiAward } from "react-icons/fi";
 import Workspace from "../components/Workspace";
 import UnifiedHeader from "../components/UnifiedHeader";
 import StickyTitleBar from "../components/StickyTitleBar";
+import SubmitRatingModal from "../components/SubmitRatingModal";
 import { useTaskStore, ViewScope } from "../store/useTaskStore";
 import { ViewerScopeBadge } from "../components/ViewerScopeBadge";
 import { VerimeterModeToggle } from "../components/VerimeterModeToggle";
@@ -32,11 +37,16 @@ const WorkspacePage = () => {
   const { mode, aiWeight } = useVerimeterMode();
   const [verimeterScore, setVerimeterScore] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [linkFilter, setLinkFilter] = useState<'all' | 'user' | 'ai'>('all');
+  const [linkFilter, setLinkFilter] = useState<"all" | "user" | "ai">("all");
   const [hasCheckedUserLinks, setHasCheckedUserLinks] = useState(false);
   const [bubbleStyle, setBubbleStyle] = useState<boolean>(false);
   const navigate = useNavigate();
   const { colorMode } = useColorMode();
+  const {
+    isOpen: isSubmitRatingOpen,
+    onOpen: onOpenSubmitRating,
+    onClose: onCloseSubmitRating,
+  } = useDisclosure();
   const taskId = useTaskStore((s) => s.selectedTaskId);
   const task = useTaskStore((s) => s.selectedTask);
   const setSelectedTask = useTaskStore((s) => s.setSelectedTask);
@@ -69,18 +79,22 @@ const WorkspacePage = () => {
     }
 
     // 2. Set viewer and scope from URL params
-    const viewerParam = searchParams.get('viewer');
-    const scopeParam = searchParams.get('scope') as ViewScope | null;
+    const viewerParam = searchParams.get("viewer");
+    const scopeParam = searchParams.get("scope") as ViewScope | null;
 
     if (viewerParam) {
-      const viewerNum = viewerParam === 'null' ? null : parseInt(viewerParam, 10);
+      const viewerNum =
+        viewerParam === "null" ? null : parseInt(viewerParam, 10);
       if (!isNaN(viewerNum as number) || viewerNum === null) {
         console.log("🔗 Setting viewerId from URL param:", viewerNum);
         setViewingUserId(viewerNum);
       }
     }
 
-    if (scopeParam && (scopeParam === 'user' || scopeParam === 'all' || scopeParam === 'admin')) {
+    if (
+      scopeParam &&
+      (scopeParam === "user" || scopeParam === "all" || scopeParam === "admin")
+    ) {
       console.log("🔗 Setting scope from URL param:", scopeParam);
       setViewScope(scopeParam);
     }
@@ -105,11 +119,11 @@ const WorkspacePage = () => {
       const newParams = new URLSearchParams();
 
       if (viewerId !== null && viewerId !== undefined) {
-        newParams.set('viewer', viewerId.toString());
+        newParams.set("viewer", viewerId.toString());
       }
 
-      if (viewScope && viewScope !== 'user') {
-        newParams.set('scope', viewScope);
+      if (viewScope && viewScope !== "user") {
+        newParams.set("scope", viewScope);
       }
 
       // Update URL without navigation (replace history)
@@ -151,7 +165,7 @@ const WorkspacePage = () => {
       fetchAIEvidenceLinks(taskId).then((links) => {
         const hasUserLinks = links.some((link) => !link.created_by_ai);
         if (hasUserLinks) {
-          setLinkFilter('user');
+          setLinkFilter("user");
         }
         setHasCheckedUserLinks(true);
       });
@@ -196,7 +210,12 @@ const WorkspacePage = () => {
   const handleVerimeterRefresh = async (contentId: number) => {
     console.log("⚙️ Calling updateScoresForContent for", contentId, viewerId);
     await updateScoresForContent(contentId, viewerId);
-    const scores = await fetchContentScores(contentId, viewerId, mode, aiWeight);
+    const scores = await fetchContentScores(
+      contentId,
+      viewerId,
+      mode,
+      aiWeight,
+    );
     console.log("✅ New fetched score:", scores);
     setVerimeterScore(scores?.verimeterScore ?? null);
     setRefreshKey((prev) => prev + 1);
@@ -206,8 +225,8 @@ const WorkspacePage = () => {
       {/* Sticky Title Bar - Always visible initially */}
       <StickyTitleBar alwaysVisible={true} />
 
-      <Box maxW="1400px" w="100%" mx="auto">
-        <Card mb={6} mt={2}>
+      <Box w="100%">
+        <Card mb={6} mt={2} maxW="1400px" mx="auto">
           <CardBody>
             <UnifiedHeader refreshKey={refreshKey} />
           </CardBody>
@@ -215,49 +234,97 @@ const WorkspacePage = () => {
 
         {/* Control Bar */}
         <Box
-          mb={4}
+          className="mr-card mr-card-purple"
+          bg="transparent"
+          mb={2}
           display="flex"
-          gap={6}
+          gap={16}
           alignItems="center"
           justifyContent="space-between"
           p={4}
-          borderRadius="12px"
-          bg={colorMode === "dark"
-            ? "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-            : "linear-gradient(135deg, rgba(100, 116, 139, 0.25) 0%, rgba(148, 163, 184, 0.3) 50%, rgba(71, 85, 105, 0.25) 100%)"}
-          backdropFilter="blur(20px)"
-          border="1px solid"
-          borderColor={colorMode === "dark" ? "rgba(0, 162, 255, 0.4)" : "rgba(71, 85, 105, 0.4)"}
-          boxShadow={colorMode === "dark"
-            ? "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-            : "0 4px 16px rgba(71, 85, 105, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.4)"}
           position="relative"
-          zIndex={100}
+          zIndex={1}
+          borderLeftRadius="24px"
+          overflow="visible"
+          sx={{
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              left: 0,
+              top: 0,
+              width: "20px",
+              height: "100%",
+              background:
+                "linear-gradient(90deg, rgba(113, 219, 255, 0.3) 0%, transparent 100%)",
+              borderLeftRadius: "24px",
+              pointerEvents: "none",
+              zIndex: -1,
+            },
+          }}
         >
           {/* Workspace Label Box */}
+          <Box>
+            <Heading size="md" className="mr-text-primary">
+              Workspace
+            </Heading>
+          </Box>
+          {/* Link Filter */}
           <Box
-            bg={colorMode === "dark" ? "whiteAlpha.100" : "blackAlpha.50"}
+            display="flex"
+            alignItems="center"
+            gap={2}
+            bg={
+              colorMode === "dark"
+                ? "rgba(15, 23, 42, 0.6)"
+                : "rgba(255, 255, 255, 0.6)"
+            }
             px={3}
             py={2}
-            borderRadius="md"
-            backdropFilter="blur(8px)"
+            borderRadius="full"
             border="1px solid"
-            borderColor={colorMode === "dark" ? "whiteAlpha.200" : "blackAlpha.200"}
+            borderColor={
+              colorMode === "dark"
+                ? "rgba(113, 219, 255, 0.2)"
+                : "rgba(71, 85, 105, 0.2)"
+            }
+            boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.15)"
+            position="relative"
+            zIndex={500}
           >
-            <Heading size="md">Workspace</Heading>
-          </Box>
-
-          {/* Link Filter */}
-          <Box display="flex" alignItems="center" gap={2}>
-            <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"} textTransform="uppercase" letterSpacing="1px" whiteSpace="nowrap">
+            <Text
+              className="mr-text-muted"
+              fontSize="xs"
+              textTransform="uppercase"
+              letterSpacing="1px"
+              whiteSpace="nowrap"
+            >
               Link Filter
             </Text>
             <Select
               size="sm"
               width="150px"
               value={linkFilter}
-              onChange={(e) => setLinkFilter(e.target.value as 'all' | 'user' | 'ai')}
-              bg={colorMode === "dark" ? "gray.700" : "white"}
+              onChange={(e) =>
+                setLinkFilter(e.target.value as "all" | "user" | "ai")
+              }
+              bg={colorMode === "dark" ? "rgba(15, 23, 42, 0.9)" : "white"}
+              border="1px solid"
+              borderColor={
+                colorMode === "dark"
+                  ? "var(--mr-blue-border)"
+                  : "rgba(71, 85, 105, 0.3)"
+              }
+              color={
+                colorMode === "dark" ? "var(--mr-text-primary)" : "gray.800"
+              }
+              borderRadius="full"
+              boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.4)"
+              _hover={{
+                borderColor:
+                  colorMode === "dark"
+                    ? "var(--mr-blue)"
+                    : "rgba(71, 85, 105, 0.5)",
+              }}
             >
               <option value="all">All Links</option>
               <option value="user">User Links</option>
@@ -266,8 +333,31 @@ const WorkspacePage = () => {
           </Box>
 
           {/* 3D Bubble Toggle */}
-          <HStack spacing={2}>
-            <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"} textTransform="uppercase" letterSpacing="1px" whiteSpace="nowrap">
+          <HStack
+            spacing={2}
+            bg={
+              colorMode === "dark"
+                ? "rgba(15, 23, 42, 0.6)"
+                : "rgba(255, 255, 255, 0.6)"
+            }
+            px={3}
+            py={2}
+            borderRadius="full"
+            border="1px solid"
+            borderColor={
+              colorMode === "dark"
+                ? "rgba(113, 219, 255, 0.2)"
+                : "rgba(71, 85, 105, 0.2)"
+            }
+            boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.15)"
+          >
+            <Text
+              className="mr-text-muted"
+              fontSize="xs"
+              textTransform="uppercase"
+              letterSpacing="1px"
+              whiteSpace="nowrap"
+            >
               3D Bubble
             </Text>
             <Switch
@@ -278,15 +368,51 @@ const WorkspacePage = () => {
             />
           </HStack>
 
+          {/* Submit Rating Button */}
+          <Button
+            className="mr-button"
+            size="sm"
+            leftIcon={<Icon as={FiAward} />}
+            onClick={onOpenSubmitRating}
+            isDisabled={!taskId}
+            position="relative"
+            zIndex={500}
+          >
+            Submit Rating
+          </Button>
+
           {/* Verimeter Mode Toggle */}
-          <VerimeterModeToggle compact />
+          <Box position="relative" zIndex={500}>
+            <VerimeterModeToggle compact />
+          </Box>
 
           {/* Viewer Scope Badge */}
-          <ViewerScopeBadge />
+          <Box position="relative" zIndex={500}>
+            <ViewerScopeBadge />
+          </Box>
         </Box>
 
-        <Workspace contentId={taskId} viewerId={viewerId} linkFilter={linkFilter} bubbleStyle={bubbleStyle} />
+        <Workspace
+          contentId={taskId}
+          viewerId={viewerId}
+          linkFilter={linkFilter}
+          bubbleStyle={bubbleStyle}
+        />
       </Box>
+
+      {/* Submit Rating Modal */}
+      {taskId && (
+        <SubmitRatingModal
+          isOpen={isSubmitRatingOpen}
+          onClose={onCloseSubmitRating}
+          contentId={taskId}
+          contentUrl={task?.url}
+          contentTitle={task?.content_name}
+          onSuccess={() => {
+            setRefreshKey((prev) => prev + 1);
+          }}
+        />
+      )}
     </Box>
   );
 };

@@ -571,7 +571,6 @@ const NewKnowGraphPage = () => {
             ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))'
             : 'linear-gradient(135deg, rgba(100, 116, 139, 0.25) 0%, rgba(148, 163, 184, 0.3) 50%, rgba(71, 85, 105, 0.25) 100%)'
         }
-        backdropFilter="blur(20px)"
         border="1px solid"
         borderColor={colorMode === 'dark' ? 'rgba(0, 162, 255, 0.4)' : 'rgba(71, 85, 105, 0.4)'}
         boxShadow={
@@ -586,7 +585,6 @@ const NewKnowGraphPage = () => {
             px={3}
             py={2}
             borderRadius="md"
-            backdropFilter="blur(8px)"
             border="1px solid"
             borderColor={colorMode === 'dark' ? 'whiteAlpha.200' : 'blackAlpha.200'}
           >

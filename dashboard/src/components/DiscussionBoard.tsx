@@ -184,7 +184,6 @@ const DiscussionBoard: React.FC<DiscussionBoardProps> = ({ contentId }) => {
         <Box
           mb={8}
           background="rgba(0, 0, 0, 0.6)"
-          backdropFilter="blur(20px)"
           border="2px solid rgba(0, 162, 255, 0.4)"
           borderRadius="16px"
           p={4}
@@ -395,7 +394,6 @@ const DiscussionBoard: React.FC<DiscussionBoardProps> = ({ contentId }) => {
           <Box
             border="2px solid rgba(251, 191, 36, 0.4)"
             background="rgba(251, 191, 36, 0.1)"
-            backdropFilter="blur(20px)"
             p={4}
             mb={6}
             borderRadius="12px"

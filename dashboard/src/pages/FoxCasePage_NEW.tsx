@@ -321,7 +321,6 @@ export const FoxCasePage: React.FC = () => {
               bg="rgba(15, 28, 46, 0.18)"
               borderRadius="28px"
               border="1px solid rgba(126, 207, 255, 0.18)"
-              backdropFilter="blur(24px)"
               p={8}
               position="relative"
             >
@@ -434,7 +433,6 @@ export const FoxCasePage: React.FC = () => {
               bg="rgba(15, 28, 46, 0.18)"
               borderRadius="28px"
               border="1px solid rgba(126, 207, 255, 0.18)"
-              backdropFilter="blur(24px)"
               p={8}
               position="relative"
             >
@@ -567,7 +565,6 @@ export const FoxCasePage: React.FC = () => {
               bg="rgba(15, 28, 46, 0.18)"
               borderRadius="28px"
               border="1px solid rgba(126, 207, 255, 0.18)"
-              backdropFilter="blur(24px)"
               p={8}
               position="relative"
             >

@@ -1508,7 +1508,6 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 top: `${hoveredNodePopup.y - 30}px`,
                 background:
                   "linear-gradient(135deg, rgba(0, 0, 0, 0.92), rgba(15, 23, 42, 0.88))",
-                backdropFilter: "blur(16px)",
                 border: "1px solid rgba(0, 162, 255, 0.5)",
                 borderRadius: "8px",
                 padding: "10px 16px",
@@ -1541,7 +1540,6 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               transform="translateX(-50%)"
               zIndex={1000}
               background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-              backdropFilter="blur(20px)"
               border="1px solid rgba(0, 162, 255, 0.4)"
               borderRadius="12px"
               px="24px"
@@ -1668,7 +1666,6 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
               right="16px"
               top="16px"
               background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-              backdropFilter="blur(20px)"
               color="#e2e8f0"
               borderRadius="12px"
               p="20px"
@@ -1718,7 +1715,6 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 mb={2}
                 width="100%"
                 bg="rgba(0, 162, 255, 0.1)"
-                backdropFilter="blur(10px)"
                 border="1px solid rgba(0, 162, 255, 0.3)"
                 color="#00a2ff"
                 _hover={{
@@ -1749,7 +1745,6 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 mb={2}
                 width="100%"
                 bg="rgba(34, 197, 94, 0.1)"
-                backdropFilter="blur(10px)"
                 border="1px solid rgba(34, 197, 94, 0.3)"
                 color="#4ade80"
                 _hover={{
@@ -1771,7 +1766,6 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 onClick={centerTask}
                 width="100%"
                 bg="rgba(0, 162, 255, 0.1)"
-                backdropFilter="blur(10px)"
                 border="1px solid rgba(0, 162, 255, 0.3)"
                 color="#00a2ff"
                 _hover={{
@@ -1803,7 +1797,6 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                   ? "rgba(0, 162, 255, 0.1)"
                   : "rgba(248, 250, 252, 0.9)"
               }
-              backdropFilter="blur(10px)"
               border="1px solid"
               borderColor={
                 colorMode === "dark"
@@ -1841,7 +1834,6 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                   ? "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
                   : "linear-gradient(135deg, rgba(100, 116, 139, 0.25) 0%, rgba(148, 163, 184, 0.3) 50%, rgba(71, 85, 105, 0.25) 100%)"
               }
-              backdropFilter="blur(20px)"
               color={colorMode === "dark" ? "#e2e8f0" : "#1e293b"}
               borderRadius="12px"
               p="20px"
@@ -2109,7 +2101,6 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                   ? "rgba(0, 162, 255, 0.1)"
                   : "rgba(248, 250, 252, 0.9)"
               }
-              backdropFilter="blur(10px)"
               border="1px solid"
               borderColor={
                 colorMode === "dark"

@@ -70,7 +70,6 @@ const AboutPage: React.FC = () => {
             ? "rgba(15, 23, 42, 0.95)"
             : "rgba(255, 255, 255, 0.95)"
         }
-        backdropFilter="blur(12px)"
         borderBottom="1px solid"
         borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"}
         boxShadow="0 2px 8px rgba(0, 0, 0, 0.1)"

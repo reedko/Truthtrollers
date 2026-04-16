@@ -179,7 +179,6 @@ const Login: React.FC = () => {
       <VStack
         as="nav"
         background={sidebarBg}
-        backdropFilter="blur(8px)"
         color={sidebarColor}
         spacing={6}
         p={4}
@@ -301,7 +300,6 @@ const Login: React.FC = () => {
         justifyContent="space-between"
         borderBottom="1px solid"
         borderColor={headerBorderColor}
-        backdropFilter="blur(12px)"
         background={headerBg}
       >
         <HStack spacing={8} flex={1} justify="flex-end">

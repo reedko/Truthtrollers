@@ -1668,12 +1668,23 @@ async function showTaskCard(tabId, isDetected, forceVisible) {
 
         const shadow = host.attachShadow({ mode: "open" });
 
+        // Fetch and inject minorityReport.css from the source
+        const mrCssUrl = browser.runtime.getURL('styles/minorityReport.css');
+        fetch(mrCssUrl)
+          .then(response => response.text())
+          .then(cssText => {
+            const mrStyle = document.createElement('style');
+            mrStyle.textContent = cssText;
+            shadow.appendChild(mrStyle);
+          })
+          .catch(err => console.error('Failed to load minorityReport.css:', err));
+
         const baseStyle = document.createElement("style");
         baseStyle.textContent = `
     :host { all: initial; }
     *, *::before, *::after { box-sizing: border-box; }
 
-    /* Minority Report Button Styles */
+    /* Minority Report Button Styles (kept for backwards compatibility) */
     .mr-button {
       position: relative;
       padding: 10px 24px;

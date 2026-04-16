@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 import { ChakraProvider, Box, Heading, Text, VStack, HStack } from "@chakra-ui/react";
-import TestCard from "./components/TestCard";
 import TaskCard from "./components/TaskCard";
 import theme from "./components/themes/VisionTheme";
 import useTaskStore from "./store/useTaskStore";
@@ -11,14 +10,16 @@ import "./styles/minorityReport.css";
 const Demo: React.FC = () => {
   const { setTask, setCurrentUrl } = useTaskStore();
   const [detectedColors, setDetectedColors] = useState<Record<string, string>>({});
+  const [showCompleted, setShowCompleted] = useState(true);
 
+  // Update task whenever showCompleted changes
   useEffect(() => {
-    // Mock a task without completion status (no verimeter)
-    setTask({
-      content_id: 123,
+    // Mock a completed task with verimeter and claim_pairs data
+    const mockTask: any = {
+      content_id: 14894,
       content_name: "Test Article: Climate Change Evidence Analysis",
-      thumbnail: "",
-      progress: "Awaiting Evaluation", // Not completed - no verimeter
+      thumbnail: "/assets/images/content/content_id_14894.png",
+      progress: showCompleted ? "Completed" : "Awaiting Evaluation",
       media_source: "Test Source",
       url: "https://example.com/test-article",
       assigned: "assigned",
@@ -26,7 +27,73 @@ const Demo: React.FC = () => {
       details: "Test details",
       topic: "Climate",
       subtopic: "Evidence",
-    });
+      verimeter_score: 0.75,
+    };
+
+    // Add claim_pairs data if completed
+    if (showCompleted) {
+      mockTask.claim_pairs = {
+        overall_verimeter: 0.75,
+        claim_pairs: [
+          {
+            caseClaim: {
+              claim_id: 1,
+              claim_text: "Global temperatures have risen by 1.1°C since pre-industrial times",
+              publisher: "nasa.gov",
+              url: "https://nasa.gov/climate",
+            },
+            sourceClaim: {
+              claim_id: 2,
+              claim_text: "Multiple studies confirm warming trend across all continents",
+              publisher: "ipcc.ch",
+              url: "https://ipcc.ch/report",
+              relationship: "supports",
+            },
+            verimeter_score: 0.85,
+            support_level: 0.9,
+            rationale: "Multiple independent temperature records show consistent warming patterns across different measurement systems.",
+          },
+          {
+            caseClaim: {
+              claim_id: 3,
+              claim_text: "Arctic sea ice is declining at unprecedented rates",
+              publisher: "noaa.gov",
+              url: "https://noaa.gov/arctic",
+            },
+            sourceClaim: {
+              claim_id: 4,
+              claim_text: "Satellite observations show 13% decline per decade since 1979",
+              publisher: "nsidc.org",
+              url: "https://nsidc.org/data",
+              relationship: "supports",
+            },
+            verimeter_score: 0.78,
+            support_level: 0.85,
+            rationale: "Satellite data provides direct measurement of ice extent showing consistent decline.",
+          },
+          {
+            caseClaim: {
+              claim_id: 5,
+              claim_text: "CO2 levels are at highest point in 800,000 years",
+              publisher: "climate.gov",
+              url: "https://climate.gov/co2",
+            },
+            sourceClaim: {
+              claim_id: 6,
+              claim_text: "Ice core data shows current levels exceed natural variation",
+              publisher: "nature.com",
+              url: "https://nature.com/articles/climate",
+              relationship: "supports",
+            },
+            verimeter_score: 0.92,
+            support_level: 0.95,
+            rationale: "Ice core samples provide historical CO2 records showing unprecedented modern levels.",
+          },
+        ],
+      };
+    }
+
+    setTask(mockTask);
     setCurrentUrl("https://example.com/test-article");
 
     // Override TaskCard positioning for demo - STATIC (not fixed)
@@ -66,9 +133,11 @@ const Demo: React.FC = () => {
     setDetectedColors(colors);
 
     return () => {
-      document.head.removeChild(style);
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
     };
-  }, [setTask, setCurrentUrl]);
+  }, [setTask, setCurrentUrl, showCompleted]); // Re-run when showCompleted changes
 
   return (
     <ChakraProvider theme={theme}>
@@ -104,7 +173,7 @@ const Demo: React.FC = () => {
               color="white"
               textShadow="3px 3px 6px rgba(0,0,0,0.7)"
             >
-              🌈 TaskCard Transparency Test
+              🌈 TaskCard Sandbox - Test Your Changes
             </Heading>
 
             <Text
@@ -113,28 +182,53 @@ const Demo: React.FC = () => {
               textShadow="2px 2px 4px rgba(0,0,0,0.7)"
               fontWeight="bold"
             >
-              Edit src/components/TaskCard.tsx line ~189 and save - changes update automatically!
+              Test TaskCard & ClaimPairsDetail with mock data - No extension deployment needed!
             </Text>
+
+            <Box bg="rgba(0,0,0,0.7)" p={4} borderRadius="lg" mt={2}>
+              <HStack spacing={4}>
+                <button
+                  onClick={() => setShowCompleted(!showCompleted)}
+                  style={{
+                    padding: "10px 20px",
+                    background: showCompleted ? "#22c55e" : "#ef4444",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {showCompleted ? "✓ Completed Task" : "⏳ Awaiting Task"}
+                </button>
+                <Text color="white" fontSize="sm">
+                  Click to toggle between completed (with ClaimPairs) and awaiting states
+                </Text>
+              </HStack>
+            </Box>
 
             <Box bg="rgba(255,255,255,0.9)" p={6} borderRadius="lg" boxShadow="2xl" width="100%">
               <Heading size="md" mb={3} color="gray.800">
-                📝 How to Test Transparency
+                📝 How to Use This Sandbox
               </Heading>
               <VStack align="start" spacing={2} fontSize="sm" color="gray.700">
                 <Text>
-                  <strong>1.</strong> Open <code style={{background: '#e2e8f0', padding: '2px 6px', borderRadius: '4px'}}>src/components/TaskCard.tsx</code>
+                  <strong>1.</strong> Edit components live - changes auto-refresh:
+                </Text>
+                <Text pl={4}>
+                  • <code style={{background: '#e2e8f0', padding: '2px 6px', borderRadius: '4px'}}>src/components/TaskCard.tsx</code> - Main card
+                </Text>
+                <Text pl={4}>
+                  • <code style={{background: '#e2e8f0', padding: '2px 6px', borderRadius: '4px'}}>src/components/ClaimPairsDetail.tsx</code> - Expandable claims
                 </Text>
                 <Text>
-                  <strong>2.</strong> Find line ~189 (the main Box with bgGradient/style)
+                  <strong>2.</strong> Toggle between states using the button above
                 </Text>
                 <Text>
-                  <strong>3.</strong> Try changing the background value
-                </Text>
-                <Text>
-                  <strong>4.</strong> Save - page auto-refreshes!
+                  <strong>3.</strong> Test with mock data - no backend or extension deployment needed
                 </Text>
                 <Text mt={2} fontStyle="italic" color="blue.600">
-                  Try: style={`{{ background: 'rgba(15, 23, 42, 0.3)' }}`}
+                  Look at the cards in the top-right corner ➡️
                 </Text>
               </VStack>
             </Box>
@@ -245,22 +339,15 @@ const Demo: React.FC = () => {
           </VStack>
         </Box>
 
-        {/* Cards Side by Side */}
-        <Box position="fixed" top={4} right={4} zIndex={1000}>
-          <HStack spacing={4} align="start">
-            <VStack spacing={2}>
-              <Text color="white" fontWeight="bold" bg="rgba(0,0,0,0.7)" px={3} py={1} borderRadius="md">
-                TestCard
-              </Text>
-              <TestCard />
-            </VStack>
-            <VStack spacing={2}>
-              <Text color="white" fontWeight="bold" bg="rgba(0,0,0,0.7)" px={3} py={1} borderRadius="md">
-                TaskCard
-              </Text>
-              <TaskCard />
-            </VStack>
-          </HStack>
+        {/* TaskCard Only - Centered */}
+        <Box
+          position="fixed"
+          top="50%"
+          left="50%"
+          transform="translate(-50%, -50%)"
+          zIndex={1000}
+        >
+          <TaskCard />
         </Box>
       </Box>
     </ChakraProvider>

@@ -227,7 +227,6 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
           mb={2}
           p={3}
           background="linear-gradient(135deg, rgba(128, 90, 213, 0.3), rgba(128, 90, 213, 0.2))"
-          backdropFilter="blur(20px)"
           border="2px solid rgba(128, 90, 213, 0.6)"
           borderRadius="12px"
           boxShadow="0 4px 16px rgba(128, 90, 213, 0.4)"
@@ -248,7 +247,6 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
       <Box
         as="button"
         background={defaultBg}
-        backdropFilter="blur(20px)"
         border={`1px solid ${borderColor}`}
         color={addClaimButtonColor}
         height="50px"

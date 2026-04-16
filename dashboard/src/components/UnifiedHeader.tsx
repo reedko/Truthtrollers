@@ -320,7 +320,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
         position: "sticky",
         top: 0,
         zIndex: 40,
-        backdropFilter: "saturate(180%) blur(6px)",
       } as const)
     : {};
 
@@ -392,7 +391,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                   ? "rgba(0, 0, 0, 0.4)"
                   : "rgba(255, 255, 255, 0.7)"
               }
-              backdropFilter="blur(12px)"
               borderRadius="0 12px 12px 0"
               p={2}
               border="1px solid"
@@ -433,7 +431,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                   ? "rgba(0, 0, 0, 0.4)"
                   : "rgba(255, 255, 255, 0.7)"
               }
-              backdropFilter="blur(12px)"
               borderRadius="12px 0 0 12px"
               p={2}
               border="1px solid"
@@ -564,7 +561,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                 "> *": {
                   ...cardWrapSx["> *"],
                   overflow: "hidden",
-                  backdropFilter: "blur(10px)",
                   transition: "all 0.2s ease",
                 },
                 "&:hover > *": {
@@ -603,7 +599,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                 "> *": {
                   ...cardWrapSx["> *"],
                   overflow: "hidden",
-                  backdropFilter: "blur(10px)",
                   transition: "all 0.2s ease",
                 },
                 "&:hover > *": {
@@ -638,7 +633,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                 "> *": {
                   ...cardWrapSx["> *"],
                   overflow: "hidden",
-                  backdropFilter: "blur(10px)",
                   transition: "all 0.2s ease",
                 },
                 "&:hover > *": {
@@ -666,7 +660,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                 "> *": {
                   ...cardWrapSx["> *"],
                   overflow: "hidden",
-                  backdropFilter: "blur(10px)",
                   transition: "all 0.2s ease",
                 },
                 "&:hover > *": {
@@ -698,7 +691,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                 "> *": {
                   ...cardWrapSx["> *"],
                   overflow: "hidden",
-                  backdropFilter: "blur(10px)",
                   transition: "all 0.2s ease",
                 },
                 "&:hover > *": {

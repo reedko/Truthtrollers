@@ -382,7 +382,6 @@ const QuadrantGrid: React.FC<QuadrantGridProps> = ({
       <Box
         id={`node-${node.id}`}
         bg={scheme.bg}
-        backdropFilter="blur(20px)"
         border={isVerified ? `2px solid ${scheme.border}` : `2px dashed ${scheme.border}80`}
         borderRadius="8px"
         p={isTask ? 4 : 2}
@@ -563,7 +562,6 @@ const QuadrantGrid: React.FC<QuadrantGridProps> = ({
           <Box
             className="zone author-zone"
             bg="rgba(245, 158, 11, 0.03)"
-            backdropFilter="blur(15px)"
             border="1.5px solid rgba(245, 158, 11, 0.25)"
             borderRadius="8px"
             p={3}
@@ -596,7 +594,6 @@ const QuadrantGrid: React.FC<QuadrantGridProps> = ({
           <Box
             className="zone publisher-zone"
             bg="rgba(34, 197, 94, 0.03)"
-            backdropFilter="blur(15px)"
             border="1.5px solid rgba(34, 197, 94, 0.25)"
             borderRadius="8px"
             p={3}
@@ -629,7 +626,6 @@ const QuadrantGrid: React.FC<QuadrantGridProps> = ({
           <Box
             className="zone task-zone"
             bg="rgba(99, 102, 241, 0.08)"
-            backdropFilter="blur(15px)"
             border="1.5px solid rgba(99, 102, 241, 0.35)"
             borderRadius="8px"
             p={3}
@@ -675,7 +671,6 @@ const QuadrantGrid: React.FC<QuadrantGridProps> = ({
           <Box
             className="zone refutes-zone"
             bg="rgba(239, 68, 68, 0.05)"
-            backdropFilter="blur(15px)"
             border="1.5px solid rgba(239, 68, 68, 0.25)"
             borderRadius="8px"
             p={3}
@@ -746,7 +741,6 @@ const QuadrantGrid: React.FC<QuadrantGridProps> = ({
           <Box
             className="zone supports-zone"
             bg="rgba(34, 197, 94, 0.05)"
-            backdropFilter="blur(15px)"
             border="1.5px solid rgba(34, 197, 94, 0.25)"
             borderRadius="8px"
             p={3}
@@ -862,7 +856,6 @@ const QuadrantGrid: React.FC<QuadrantGridProps> = ({
           bottom="20px"
           right="20px"
           bg="rgba(15, 23, 42, 0.9)"
-          backdropFilter="blur(25px)"
           border="1.5px solid rgba(0, 162, 255, 0.3)"
           borderRadius="8px"
           p={3}

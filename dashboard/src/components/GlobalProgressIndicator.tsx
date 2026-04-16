@@ -30,7 +30,6 @@ export const GlobalProgressIndicator: React.FC<GlobalProgressIndicatorProps> = (
       right="20px"
       zIndex={10000}
       bg="rgba(26, 32, 44, 0.9)"
-      backdropFilter="blur(20px)"
       borderRadius="xl"
       border="1px solid"
       borderColor="cyan.400"

@@ -289,7 +289,6 @@ export default function AdminPanelPage() {
           <Tabs variant="unstyled" colorScheme="cyan">
             <TabList
               bg="rgba(15, 23, 42, 0.6)"
-              backdropFilter="blur(10px)"
               borderRadius="md"
               p={1}
               borderWidth="1px"

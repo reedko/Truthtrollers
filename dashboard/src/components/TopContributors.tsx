@@ -85,7 +85,6 @@ const TopContributors: React.FC = () => {
       position="relative"
       w="full"
       background="rgba(0, 0, 0, 0.4)"
-      backdropFilter="blur(10px)"
       border="1px solid rgba(0, 162, 255, 0.3)"
       borderRadius="8px"
       p={{ base: 2, xl: 3 }}

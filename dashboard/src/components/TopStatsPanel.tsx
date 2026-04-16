@@ -86,7 +86,6 @@ const TopStatsPanel: React.FC<TopStatsPanelProps> = ({
             px={8}
             py={6}
             bgGradient="linear(to-r, rgba(0,0,0,0.6), rgba(0,0,0,0.2))"
-            backdropFilter="blur(2px)"
           >
             <Box maxW="50%">
               <Heading size="lg" mb={3} color="teal.200">

@@ -1280,5 +1280,148 @@ WHERE cc_task.content_id = ?
     }
   });
 
+  // GET /api/claim-links/my-links?userId=123
+  // Get all claim links created by a specific user
+  router.get("/api/claim-links/my-links", async (req, res) => {
+    try {
+      const userId = parseInt(req.query.userId, 10);
+
+      if (!userId) {
+        return res.status(400).json({ error: "userId query parameter required" });
+      }
+
+      const sql = `
+        SELECT
+          cl.*,
+          source_claim.claim_text as source_claim_text,
+          target_claim.claim_text as target_claim_text,
+          (
+            SELECT c.url
+            FROM content_claims cc
+            JOIN content c ON cc.content_id = c.content_id
+            WHERE cc.claim_id = cl.source_claim_id
+            LIMIT 1
+          ) as source_url,
+          (
+            SELECT CONCAT(
+              IFNULL(a.author_first_name, ''),
+              ' ',
+              IFNULL(a.author_last_name, '')
+            )
+            FROM content_claims cc
+            JOIN content_authors ca ON cc.content_id = ca.content_id
+            JOIN authors a ON ca.author_id = a.author_id
+            WHERE cc.claim_id = cl.source_claim_id
+            LIMIT 1
+          ) as author_name,
+          (
+            SELECT p.publisher_name
+            FROM content_claims cc
+            JOIN content_publishers cp ON cc.content_id = cp.content_id
+            JOIN publishers p ON cp.publisher_id = p.publisher_id
+            WHERE cc.claim_id = cl.source_claim_id
+            LIMIT 1
+          ) as publisher_name
+        FROM claim_links cl
+        JOIN claims source_claim ON cl.source_claim_id = source_claim.claim_id
+        JOIN claims target_claim ON cl.target_claim_id = target_claim.claim_id
+        WHERE cl.user_id = ?
+        ORDER BY cl.created_at DESC
+      `;
+
+      const links = await query(sql, [userId]);
+
+      // Debug: Check for duplicates
+      const uniqueIds = new Set(links.map(l => l.claim_link_id));
+      console.log(`📊 /api/claim-links/my-links - User ${userId}:`);
+      console.log(`   Total rows returned: ${links.length}`);
+      console.log(`   Unique claim_link_ids: ${uniqueIds.size}`);
+      if (links.length !== uniqueIds.size) {
+        console.log(`   ⚠️ DUPLICATES DETECTED!`);
+      }
+
+      res.json({
+        success: true,
+        data: {
+          claim_links: links
+        }
+      });
+    } catch (err) {
+      console.error("❌ Error fetching user's claim links:", err);
+      res.status(500).json({ error: "Database error" });
+    }
+  });
+
+  // GET /api/claim-links/content/:contentId/all-users?userId=123
+  // Get all claim links for a specific content from other users (excludes current user)
+  router.get("/api/claim-links/content/:contentId/all-users", async (req, res) => {
+    try {
+      const contentId = parseInt(req.params.contentId, 10);
+      const currentUserId = parseInt(req.query.userId, 10) || 0;
+
+      if (!contentId) {
+        return res.status(400).json({ error: "Content ID required" });
+      }
+
+      const sql = `
+        SELECT
+          cl.*,
+          u.username,
+          source_claim.claim_text as source_claim_text,
+          target_claim.claim_text as target_claim_text,
+          (
+            SELECT c.url
+            FROM content_claims cc
+            JOIN content c ON cc.content_id = c.content_id
+            WHERE cc.claim_id = cl.source_claim_id
+            LIMIT 1
+          ) as source_url,
+          (
+            SELECT CONCAT(
+              IFNULL(a.author_first_name, ''),
+              ' ',
+              IFNULL(a.author_last_name, '')
+            )
+            FROM content_claims cc
+            JOIN content_authors ca ON cc.content_id = ca.content_id
+            JOIN authors a ON ca.author_id = a.author_id
+            WHERE cc.claim_id = cl.source_claim_id
+            LIMIT 1
+          ) as author_name,
+          (
+            SELECT p.publisher_name
+            FROM content_claims cc
+            JOIN content_publishers cp ON cc.content_id = cp.content_id
+            JOIN publishers p ON cp.publisher_id = p.publisher_id
+            WHERE cc.claim_id = cl.source_claim_id
+            LIMIT 1
+          ) as publisher_name
+        FROM claim_links cl
+        JOIN users u ON cl.user_id = u.user_id
+        JOIN claims source_claim ON cl.source_claim_id = source_claim.claim_id
+        JOIN claims target_claim ON cl.target_claim_id = target_claim.claim_id
+        WHERE EXISTS (
+          SELECT 1 FROM content_claims target_cc
+          WHERE target_cc.claim_id = cl.target_claim_id
+            AND target_cc.content_id = ?
+        )
+        AND cl.user_id != ?
+        ORDER BY cl.created_at DESC
+      `;
+
+      const links = await query(sql, [contentId, currentUserId || 0]);
+
+      res.json({
+        success: true,
+        data: {
+          claim_links: links
+        }
+      });
+    } catch (err) {
+      console.error("❌ Error fetching content claim links:", err);
+      res.status(500).json({ error: "Database error" });
+    }
+  });
+
   return router;
 }

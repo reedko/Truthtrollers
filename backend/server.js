@@ -83,6 +83,9 @@ import createCredibilityRouter from "./src/routes/credibility/index.js";
 import createAnalyticsRouter from "./src/routes/analytics.routes.js";
 import createEvidenceConfigRoutes from "./src/routes/evidence-config.routes.js";
 import createExtensionSettingsRoutes from "./src/routes/extension-settings.routes.js";
+import createAuditRouter from "./src/routes/audit/audit.routes.js";
+import createEvaluationRouter from "./src/routes/evaluation/evaluation.routes.js";
+import createContentRatingRouter from "./src/routes/evaluation/content-rating.routes.js";
 import { initSocketServer } from "./src/realtime/socketServer.js";
 
 // Logger utility
@@ -303,6 +306,9 @@ app.use("/", createSearchAnalysisRouter({ query, pool })); // Search analysis ro
 app.use("/", createTutorialsRouter({ query })); // Tutorial videos routes: /api/tutorials
 app.use("/", createAdminRouter({ query }));     // Admin routes: /api/admin/*, super_admin only
 app.use("/", createCredibilityRouter({ query, pool })); // Credibility checks: /api/credibility/*
+app.use("/", createAuditRouter({ query, pool })); // Audit routes: /api/audit/* (blockchain timestamping)
+app.use("/", createEvaluationRouter({ query, pool })); // Evaluation routes: /api/evaluation/* (rating approval & voting)
+app.use("/", createContentRatingRouter({ query, pool })); // Content rating routes: /api/content-rating/* (evidence chain evaluation)
 // ─────────────────────────────────────────────
 // Health + Simple Proxy (top-level, legacy behavior)
 // ─────────────────────────────────────────────

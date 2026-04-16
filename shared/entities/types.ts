@@ -166,6 +166,40 @@ export interface FailedReference {
   linked_claims_count: number;
 }
 
+export interface ClaimLinker {
+  claim_link_id: number;
+  user_id: number;
+  username?: string;
+  source_claim_id: number;
+  target_claim_id: number;
+  relationship: string;
+  support_level: number | null;
+  notes: string;
+  source_claim_text: string;
+  target_claim_text: string;
+  source_url: string;
+  author_name: string;
+  publisher_name: string;
+  created_at: string;
+  is_mine?: boolean;
+}
+export interface ContentLink {
+  content_id: number;
+  content_name: string;
+  thumbnail: string;
+  media_source?: string; // From extension
+  url: string;
+  content_type?: string; // "task" or "reference"
+  assigned: "assigned" | "unassigned";
+  progress: TaskProgress;
+  users: User[]; // Ensuring this is always an array
+  details: string;
+  topic: string;
+  subtopic: string;
+  authors?: Author[]; // Making this consistently an array
+  publishers?: Publisher[]; // Making this consistently an array
+}
+
 export interface ClaimLinks {
   id: number;
   claim_link_id?: number; // for future use
@@ -192,10 +226,10 @@ export interface LinkedClaim {
   claim_text: string;
 
   // Unified link type indicator
-  link_type?: 'claim' | 'reference_claim' | 'reference_doc';
+  link_type?: "claim" | "reference_claim" | "reference_doc";
 
   // Normalized relation for consistent display
-  relation?: 'support' | 'refute' | 'nuance';
+  relation?: "support" | "refute" | "nuance";
 
   // AI assessment fields (from reference_claim_task_links)
   score?: number;

@@ -1132,7 +1132,6 @@ export const CaseFocusPage: React.FC = () => {
         py={4}
         px={6}
         bg={colors.badgeBg}
-        backdropFilter="blur(10px)"
         borderRadius="24px"
         border="2px solid"
         borderColor={colors.border}
@@ -1259,7 +1258,6 @@ export const CaseFocusPage: React.FC = () => {
                     key={claim.claim_id}
                     w="full"
                     bg="linear-gradient(180deg, rgba(15, 28, 46, 0.85), rgba(8, 16, 27, 0.75))"
-                    backdropFilter="blur(20px)"
                     borderRadius="20px"
                     border="2px solid"
                     borderColor="rgba(113, 219, 255, 0.35)"
@@ -1408,7 +1406,6 @@ export const CaseFocusPage: React.FC = () => {
                 borderRadius={styleMode === "mr1" ? "28px" : "0"}
                 {...getPanelBorder()}
                 {...getPanelBackground()}
-                backdropFilter={styleMode === "mr1" ? "blur(18px)" : "none"}
                 p={{ base: 2, xl: 6 }}
                 pt={{ base: 1, xl: 4 }}
                 minH={{ base: "600px", xl: "820px" }}
@@ -1588,7 +1585,6 @@ export const CaseFocusPage: React.FC = () => {
                         >
                           <Button
                             bg="linear-gradient(135deg, rgba(113, 219, 255, 0.3) 0%, rgba(70, 170, 220, 0.5) 100%)"
-                            backdropFilter="blur(12px)"
                             border="2px solid rgba(113, 219, 255, 0.5)"
                             borderRadius="10px"
                             w="40px"
@@ -1667,7 +1663,6 @@ export const CaseFocusPage: React.FC = () => {
 
                           <Button
                             bg="linear-gradient(135deg, rgba(113, 219, 255, 0.3) 0%, rgba(70, 170, 220, 0.5) 100%)"
-                            backdropFilter="blur(12px)"
                             border="2px solid rgba(113, 219, 255, 0.5)"
                             borderRadius="10px"
                             w="40px"
@@ -1719,7 +1714,6 @@ export const CaseFocusPage: React.FC = () => {
                       {/* Case Card with Arrow */}
                       <Box
                         bg="transparent"
-                        backdropFilter="blur(10px)"
                         borderRadius="24px"
                         border="2px solid"
                         borderColor="rgba(113, 219, 255, 0.4)"
@@ -2074,7 +2068,6 @@ export const CaseFocusPage: React.FC = () => {
                 borderRadius={styleMode === "mr1" ? "28px" : "0"}
                 {...getPanelBorder()}
                 {...getPanelBackground()}
-                backdropFilter={styleMode === "mr1" ? "blur(18px)" : "none"}
                 p={{ base: 2, xl: 6 }}
                 pt={{ base: 1, xl: 4 }}
                 minH={{ base: "600px", xl: "820px" }}
@@ -2118,7 +2111,6 @@ export const CaseFocusPage: React.FC = () => {
                   top="50%"
                   transform="translateY(-50%) translateX(-65%)"
                   bg="linear-gradient(135deg, rgba(113, 219, 255, 0.4) 0%, rgba(70, 170, 220, 0.6) 100%)"
-                  backdropFilter="blur(15px)"
                   border="3px solid rgba(113, 219, 255, 0.6)"
                   borderRadius="16px"
                   w="65px"
@@ -2171,7 +2163,6 @@ export const CaseFocusPage: React.FC = () => {
                   top="50%"
                   transform="translateY(-50%) translateX(65%)"
                   bg="linear-gradient(135deg, rgba(113, 219, 255, 0.4) 0%, rgba(70, 170, 220, 0.6) 100%)"
-                  backdropFilter="blur(15px)"
                   border="3px solid rgba(113, 219, 255, 0.6)"
                   borderRadius="16px"
                   w="65px"
@@ -2341,7 +2332,6 @@ export const CaseFocusPage: React.FC = () => {
                     {/* Left Navigation Button */}
                     <Button
                       bg="linear-gradient(135deg, rgba(113, 219, 255, 0.3) 0%, rgba(70, 170, 220, 0.5) 100%)"
-                      backdropFilter="blur(12px)"
                       border="2px solid rgba(113, 219, 255, 0.5)"
                       borderRadius="10px"
                       w="40px"
@@ -2423,7 +2413,6 @@ export const CaseFocusPage: React.FC = () => {
                     {/* Right Navigation Button */}
                     <Button
                       bg="linear-gradient(135deg, rgba(113, 219, 255, 0.3) 0%, rgba(70, 170, 220, 0.5) 100%)"
-                      backdropFilter="blur(12px)"
                       border="2px solid rgba(113, 219, 255, 0.5)"
                       borderRadius="10px"
                       w="40px"
@@ -2498,7 +2487,6 @@ export const CaseFocusPage: React.FC = () => {
                         <Box
                           key={idx}
                           bg="transparent"
-                          backdropFilter="blur(10px)"
                           borderRadius="24px"
                           border="2px solid"
                           borderColor="rgba(97, 239, 184, 0.4)"
@@ -3068,7 +3056,6 @@ export const CaseFocusPage: React.FC = () => {
                   border="1px solid"
                   borderColor="rgba(126, 207, 255, 0.22)"
                   boxShadow="0 22px 70px rgba(0, 0, 0, 0.4)"
-                  backdropFilter={styleMode === "mr1" ? "blur(18px)" : "none"}
                   p={6}
                   position="relative"
                   overflow="hidden"
@@ -3201,7 +3188,6 @@ export const CaseFocusPage: React.FC = () => {
                   border="1px solid"
                   borderColor="rgba(126, 207, 255, 0.22)"
                   boxShadow="0 22px 70px rgba(0, 0, 0, 0.4)"
-                  backdropFilter={styleMode === "mr1" ? "blur(18px)" : "none"}
                   p={6}
                   position="relative"
                   overflow="hidden"
@@ -3319,7 +3305,6 @@ export const CaseFocusPage: React.FC = () => {
         <DrawerOverlay />
         <DrawerContent
           bg="linear-gradient(180deg, rgba(15, 28, 46, 0.95), rgba(8, 16, 27, 0.95))"
-          backdropFilter="blur(30px)"
         >
           <DrawerCloseButton color="#e4f4ff" />
           <DrawerHeader
@@ -3442,14 +3427,12 @@ export const CaseFocusPage: React.FC = () => {
         size="6xl"
         motionPreset="slideInBottom"
       >
-        <ModalOverlay bg="rgba(0, 0, 0, 0.85)" backdropFilter="blur(12px)" />
         <ModalContent
           bg={
             styleMode === "mr1"
               ? "transparent"
               : "linear-gradient(180deg, rgba(15, 28, 46, 0.68), rgba(8, 16, 27, 0.62))"
           }
-          backdropFilter={styleMode === "mr1" ? "blur(10px)" : "none"}
           borderRadius={styleMode === "mr1" ? "24px" : "0"}
           border={styleMode === "mr1" ? "2px solid" : "1px solid"}
           borderColor={
@@ -3733,7 +3716,6 @@ export const CaseFocusPage: React.FC = () => {
                             py={4}
                             px={6}
                             bg="transparent"
-                            backdropFilter="blur(10px)"
                             borderRadius="24px"
                             border="2px solid"
                             borderColor={
@@ -3863,7 +3845,6 @@ export const CaseFocusPage: React.FC = () => {
                             py={4}
                             px={6}
                             bg="transparent"
-                            backdropFilter="blur(10px)"
                             borderRadius="24px"
                             border="2px solid"
                             borderColor="rgba(167, 139, 250, 0.4)"
@@ -3938,7 +3919,6 @@ export const CaseFocusPage: React.FC = () => {
             <Button
               onClick={onCloseLinkedClaimsModal}
               bg="transparent"
-              backdropFilter="blur(10px)"
               borderRadius="18px"
               border="2px solid"
               borderColor="rgba(113, 219, 255, 0.4)"

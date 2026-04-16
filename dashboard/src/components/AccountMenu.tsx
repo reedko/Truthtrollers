@@ -46,7 +46,17 @@ export const AccountMenu: React.FC = () => {
   return (
     <>
       <Menu>
-        <MenuButton cursor="pointer" border="none" background="transparent">
+        <MenuButton
+          cursor="pointer"
+          border="none"
+          background="transparent"
+          _hover={{
+            "& .chakra-avatar": {
+              boxShadow: "0 0 20px rgba(113, 219, 255, 0.6)",
+              borderColor: "rgba(113, 219, 255, 0.8)",
+            },
+          }}
+        >
           <Avatar
             size="sm"
             name={displayName}
@@ -55,6 +65,7 @@ export const AccountMenu: React.FC = () => {
             color="white"
             borderColor={isDemo ? "yellow.300" : "transparent"}
             borderWidth={isDemo ? 2 : 0}
+            transition="all 0.2s"
             sx={{
               "& .chakra-avatar__initials": {
                 display: "flex",

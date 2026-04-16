@@ -239,6 +239,8 @@ const TaskCard: React.FC = () => {
         height="100%"
         background="linear-gradient(90deg, rgba(0, 217, 255, 0.6) 0%, rgba(0, 217, 255, 0.4) 25%, rgba(0, 217, 255, 0.25) 50%, rgba(0, 217, 255, 0.1) 75%, transparent 100%)"
         pointerEvents="none"
+        borderTopLeftRadius="12px"
+        borderBottomLeftRadius="12px"
       />
       <VStack
         spacing={2}
@@ -252,7 +254,6 @@ const TaskCard: React.FC = () => {
           className="logo-box"
           position="relative"
           background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-          backdropFilter="blur(20px)"
           border="1px solid rgba(0, 162, 255, 0.4)"
           borderRadius="12px"
           boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
@@ -311,7 +312,6 @@ const TaskCard: React.FC = () => {
               <Box
                 position="relative"
                 background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-                backdropFilter="blur(20px)"
                 border="1px solid rgba(0, 162, 255, 0.5)"
                 borderRadius="12px"
                 boxShadow="0 10px 40px rgba(0, 0, 0, 0.7), 0 0 50px rgba(0, 162, 255, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
@@ -339,13 +339,21 @@ const TaskCard: React.FC = () => {
                   ml={-35}
                   mr={-35}
                 >
-                  <UserConsensusBar trueCount={21} falseCount={71} total={121} />
+                  <UserConsensusBar
+                    trueCount={21}
+                    falseCount={71}
+                    total={121}
+                  />
                 </Box>
               </Box>
             </HStack>
 
             {/* Expandable claim pairs detail */}
-            {task?.content_id && <ClaimPairsDetail claimPairsData={(task as any).claim_pairs || null} />}
+            {task?.content_id && (
+              <ClaimPairsDetail
+                claimPairsData={(task as any).claim_pairs || null}
+              />
+            )}
           </VStack>
         ) : (
           !thumbLoading &&
@@ -444,7 +452,6 @@ const TaskCard: React.FC = () => {
             <Box
               position="relative"
               background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-              backdropFilter="blur(20px)"
               border="1px solid rgba(0, 162, 255, 0.4)"
               borderRadius="12px"
               boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"

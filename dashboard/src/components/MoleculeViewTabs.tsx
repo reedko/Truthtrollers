@@ -3,13 +3,8 @@ import React, { useState } from "react";
 import {
   Box,
   Button,
-  IconButton,
   Input,
   useToast,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -19,8 +14,8 @@ import {
   ModalCloseButton,
   useDisclosure,
   useColorMode,
+  Select,
 } from "@chakra-ui/react";
-import { AddIcon, EditIcon, DeleteIcon, SettingsIcon } from "@chakra-ui/icons";
 import type { MoleculeView } from "../services/moleculeViewsAPI";
 
 interface MoleculeViewTabsProps {
@@ -151,98 +146,41 @@ const MoleculeViewTabs: React.FC<MoleculeViewTabsProps> = ({
 
   return (
     <Box>
-      {/* Consolidated View Selector Menu */}
-      <Menu>
-        <MenuButton
-          as={Button}
-          size="sm"
-          variant="outline"
-          colorScheme="blue"
-          rightIcon={<span>▼</span>}
-        >
-          {activeView?.name || "Select View"}
-          {activeView?.is_default && " ⭐"}
-        </MenuButton>
-        <MenuList
-          bg={colorMode === "dark" ? "gray.800" : "white"}
-          borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"}
-          zIndex={2500}
-        >
-          {views.map((view) => (
-            <MenuItem
-              key={view.id}
-              as="div"
-              onClick={() => onViewChange(view.id)}
-              bg={view.id === activeViewId ? (colorMode === "dark" ? "rgba(0, 162, 255, 0.2)" : "rgba(71, 85, 105, 0.1)") : undefined}
-              fontWeight={view.id === activeViewId ? "bold" : "normal"}
-              display="flex"
-              justifyContent="space-between"
-              cursor="pointer"
-            >
-              <span>
-                {view.name}
-                {view.is_default && " ⭐"}
-              </span>
-              {/* Settings submenu for each view */}
-              <Menu>
-                <MenuButton
-                  as={Box}
-                  cursor="pointer"
-                  display="inline-flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  w="24px"
-                  h="24px"
-                  borderRadius="md"
-                  _hover={{ bg: colorMode === "dark" ? "whiteAlpha.200" : "gray.100" }}
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevent view selection when clicking gear
-                  }}
-                >
-                  <SettingsIcon boxSize={3} />
-                </MenuButton>
-                <MenuList
-                  bg={colorMode === "dark" ? "gray.800" : "white"}
-                  borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"}
-                  zIndex={2600}
-                >
-                  <MenuItem icon={<EditIcon />} onClick={() => openEditModal(view)}>
-                    Rename View
-                  </MenuItem>
-                  <MenuItem
-                    icon={<span>⭐</span>}
-                    onClick={() => onSetDefault(view.id)}
-                    isDisabled={view.is_default}
-                  >
-                    Set as Default
-                  </MenuItem>
-                  <MenuItem
-                    icon={<DeleteIcon />}
-                    onClick={() => handleDeleteView(view.id)}
-                    color="red.500"
-                    isDisabled={views.length <= 1}
-                  >
-                    Delete View
-                  </MenuItem>
-                </MenuList>
-              </Menu>
-            </MenuItem>
-          ))}
-
-          {/* Add New View Option */}
-          <MenuItem
-            icon={<AddIcon />}
-            onClick={onCreateOpen}
-            borderTop="1px solid"
-            borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"}
-            mt={1}
-            pt={2}
-            fontWeight="semibold"
-          >
-            + New View
-          </MenuItem>
-        </MenuList>
-      </Menu>
+      <Select
+        size="xs"
+        width={{ base: "80px", md: "95px", lg: "115px" }}
+        fontSize={{ base: "9px", md: "10px", lg: "11px" }}
+        height={{ base: "20px", md: "24px" }}
+        value={activeViewId?.toString() || ''}
+        onChange={(e) => {
+          const val = e.target.value;
+          if (val === 'create') {
+            onCreateOpen();
+          } else if (val === 'manage') {
+            // Open edit for active view
+            if (activeView) openEditModal(activeView);
+          } else {
+            onViewChange(parseInt(val, 10));
+          }
+        }}
+        bg={colorMode === "dark" ? "rgba(15, 23, 42, 0.9)" : "white"}
+        border="1px solid"
+        borderColor={colorMode === "dark" ? "var(--mr-blue-border)" : "rgba(71, 85, 105, 0.3)"}
+        color={colorMode === "dark" ? "var(--mr-text-primary)" : "gray.800"}
+        borderRadius="full"
+        boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.4)"
+        _hover={{
+          borderColor: colorMode === "dark" ? "var(--mr-blue)" : "rgba(71, 85, 105, 0.5)",
+        }}
+      >
+        {views.map((view) => (
+          <option key={view.id} value={view.id.toString()}>
+            {view.name}{view.is_default ? ' ⭐' : ''}
+          </option>
+        ))}
+        <option value="create">➕ New</option>
+        <option value="manage">⚙️ Edit</option>
+      </Select>
 
       {/* Create View Modal */}
       <Modal isOpen={isCreateOpen} onClose={onCreateClose}>
@@ -255,7 +193,7 @@ const MoleculeViewTabs: React.FC<MoleculeViewTabsProps> = ({
               placeholder="View name (e.g., 'Climate Focus', 'Top Sources')"
               value={newViewName}
               onChange={(e) => setNewViewName(e.target.value)}
-              onKeyPress={(e) => {
+              onKeyDown={(e) => {
                 if (e.key === "Enter") handleCreateView();
               }}
               autoFocus
@@ -283,7 +221,7 @@ const MoleculeViewTabs: React.FC<MoleculeViewTabsProps> = ({
               placeholder="View name"
               value={editingName}
               onChange={(e) => setEditingName(e.target.value)}
-              onKeyPress={(e) => {
+              onKeyDown={(e) => {
                 if (e.key === "Enter") handleRenameView();
               }}
               autoFocus

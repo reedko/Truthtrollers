@@ -9,6 +9,15 @@ dotenv.config({ path: path.resolve(__dirname, "../backend/.env") });
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    // Define process.env for compatibility with webpack-style extension code
+    // This only affects Vite dev server - webpack builds still use their own process.env
+    'process.env': {
+      REACT_APP_BASE_URL: JSON.stringify(process.env.REACT_APP_BASE_URL || 'https://localhost:5001'),
+      REACT_APP_EXTENSION_BASE_URL: JSON.stringify(process.env.REACT_APP_EXTENSION_BASE_URL || 'https://localhost:5001'),
+      REACT_APP_EXTENSION_URL: JSON.stringify(process.env.REACT_APP_EXTENSION_URL || 'https://localhost:5173'),
+    }
+  },
   build: {
     rollupOptions: {
       input: {

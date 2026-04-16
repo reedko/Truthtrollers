@@ -43,10 +43,13 @@ export default function ResponsiveOverlay({
   if (isMobile) {
     return (
       <Drawer isOpen={isOpen} onClose={onClose} placement="bottom" size="full">
-        <DrawerOverlay backdropFilter="blur(8px)" bg="rgba(0, 0, 0, 0.6)" />
+        <DrawerOverlay
+          bg="blackAlpha.600"
+          sx={{ zIndex: 3100 }}
+        />
         <DrawerContent
+          sx={{ zIndex: 3200 }}
           bg="rgba(10, 15, 25, 0.85)"
-          backdropFilter="blur(30px)"
           color="white"
           border="2px solid"
           borderColor="rgba(113, 219, 255, 0.4)"
@@ -81,7 +84,7 @@ export default function ResponsiveOverlay({
           <DrawerCloseButton color="white" zIndex={2} />
           {title && <DrawerHeader position="relative" zIndex={1} fontWeight="bold">{title}</DrawerHeader>}
           <DrawerBody position="relative" zIndex={1}>{children}</DrawerBody>
-          {footer && <DrawerFooter position="relative" zIndex={1} borderTopWidth="2px" borderColor="rgba(113, 219, 255, 0.3)" bg="rgba(10, 15, 25, 0.8)" backdropFilter="blur(20px)">{footer}</DrawerFooter>}
+          {footer && <DrawerFooter position="relative" zIndex={1}>{footer}</DrawerFooter>}
         </DrawerContent>
       </Drawer>
     );
@@ -96,10 +99,9 @@ export default function ResponsiveOverlay({
       scrollBehavior="inside"
       closeOnOverlayClick={true}
     >
-      <ModalOverlay backdropFilter="blur(8px)" bg="rgba(0, 0, 0, 0.6)" />
+      <ModalOverlay bg="blackAlpha.600" />
       <ModalContent
         bg="rgba(10, 15, 25, 0.85)"
-        backdropFilter="blur(30px)"
         color="white"
         border="2px solid"
         borderColor="rgba(113, 219, 255, 0.4)"
@@ -134,7 +136,7 @@ export default function ResponsiveOverlay({
         <ModalCloseButton color="white" zIndex={2} />
         {title && <ModalHeader position="relative" zIndex={1} fontWeight="bold">{title}</ModalHeader>}
         <ModalBody position="relative" zIndex={1}>{children}</ModalBody>
-        {footer && <ModalFooter position="relative" zIndex={1} borderTopWidth="2px" borderColor="rgba(113, 219, 255, 0.3)" bg="rgba(10, 15, 25, 0.8)" backdropFilter="blur(20px)">{footer}</ModalFooter>}
+        {footer && <ModalFooter position="relative" zIndex={1}>{footer}</ModalFooter>}
       </ModalContent>
     </Modal>
   );

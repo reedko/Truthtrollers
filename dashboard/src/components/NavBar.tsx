@@ -47,7 +47,18 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
       setRedirect(target);
     }
   };
-
+  const pillNavStyles = {
+    fontSize: { base: "11px", lg: "11px", xl: "15px" },
+    fontWeight: "normal",
+    lineHeight: "1.5",
+    border: "1px solid",
+    borderColor: borderColor,
+    borderRadius: "full",
+    px: 2,
+    py: 1,
+    minH: "unset",
+    height: "auto",
+  };
   return (
     <Box w="100%" position="relative" zIndex={1000}>
       {/* Compact mode: Only search and switches */}
@@ -74,7 +85,12 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
           </Box>
 
           <Menu>
-            <MenuButton as={Button} size="sm">
+            <MenuButton
+              as={Button}
+              variant="ghost"
+              {...pillNavStyles}
+              size="sm"
+            >
               Workbench
             </MenuButton>
             <MenuList zIndex={9999}>
@@ -142,6 +158,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   as={Button}
                   size="xs"
                   variant="ghost"
+                  {...pillNavStyles}
                   fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
                   border="1px solid"
                   borderColor={borderColor}
@@ -157,6 +174,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   </MenuItem>
                 </MenuList>
               </Menu>
+
               <Link
                 as={RouterLink}
                 to="/dashboard"
@@ -166,6 +184,10 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 borderRadius="full"
                 px={2}
                 py={1}
+                _hover={{
+                  boxShadow: "0 0 20px rgba(113, 219, 255, 0.6)",
+                  borderColor: "rgba(113, 219, 255, 0.8)",
+                }}
               >
                 Dashboard
               </Link>
@@ -178,6 +200,10 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 borderRadius="full"
                 px={2}
                 py={1}
+                _hover={{
+                  boxShadow: "0 0 20px rgba(113, 219, 255, 0.6)",
+                  borderColor: "rgba(113, 219, 255, 0.8)",
+                }}
               >
                 Cases
               </Link>
@@ -190,6 +216,10 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 borderRadius="full"
                 px={2}
                 py={1}
+                _hover={{
+                  boxShadow: "0 0 20px rgba(113, 219, 255, 0.6)",
+                  borderColor: "rgba(113, 219, 255, 0.8)",
+                }}
               >
                 Extension
               </Link>
@@ -198,6 +228,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   as={Button}
                   size="xs"
                   variant="ghost"
+                  {...pillNavStyles}
                   fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
                   border="1px solid"
                   borderColor={borderColor}
@@ -263,6 +294,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   as={Button}
                   size="xs"
                   variant="ghost"
+                  {...pillNavStyles}
                   fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
                   border="1px solid"
                   borderColor={borderColor}
@@ -283,11 +315,23 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   </MenuItem>
                   <MenuItem
                     as={RouterLink}
-                    to={selectedTaskId ? `/discussion/${selectedTaskId}` : "/tasks"}
+                    to={
+                      selectedTaskId
+                        ? `/discussion/${selectedTaskId}`
+                        : "/tasks"
+                    }
                     onClick={() => handleNavClick("/discussion")}
                     fontSize="md"
                   >
                     Discussion Board
+                  </MenuItem>
+                  <MenuItem
+                    as={RouterLink}
+                    to="/evaluate-ratings"
+                    onClick={() => handleNavClick("/evaluate-ratings")}
+                    fontSize="md"
+                  >
+                    Evaluate Ratings
                   </MenuItem>
                 </MenuList>
               </Menu>
@@ -296,6 +340,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   as={Button}
                   size="xs"
                   variant="ghost"
+                  {...pillNavStyles}
                   fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
                   border="1px solid"
                   borderColor={borderColor}
@@ -325,6 +370,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   as={Button}
                   size="xs"
                   variant="ghost"
+                  {...pillNavStyles}
                   fontSize={{ base: "11px", lg: "11px", xl: "15px" }}
                   border="1px solid"
                   borderColor={borderColor}
@@ -351,11 +397,7 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   >
                     Claim Duel
                   </MenuItem>
-                  <MenuItem
-                    as={RouterLink}
-                    to="/game/truefalse"
-                    fontSize="md"
-                  >
+                  <MenuItem as={RouterLink} to="/game/truefalse" fontSize="md">
                     TrueFalse Game
                   </MenuItem>
                   <MenuItem
@@ -375,9 +417,15 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                 borderRadius="full"
                 px={2}
                 py={1}
+                _hover={{
+                  boxShadow: "0 0 20px rgba(113, 219, 255, 0.6)",
+                  borderColor: "rgba(113, 219, 255, 0.8)",
+                }}
               >
                 <AccountMenu />
-                <Text fontSize={{ base: "11px", lg: "11px", xl: "15px" }}>Account</Text>
+                <Text fontSize={{ base: "11px", lg: "11px", xl: "15px" }}>
+                  Account
+                </Text>
               </HStack>
             </HStack>
 

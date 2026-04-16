@@ -49,7 +49,6 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, items, onClose }
         left: `${x}px`,
         top: `${y}px`,
         background: "linear-gradient(135deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95))",
-        backdropFilter: "blur(16px)",
         border: "1px solid rgba(0, 162, 255, 0.4)",
         borderRadius: "8px",
         boxShadow:

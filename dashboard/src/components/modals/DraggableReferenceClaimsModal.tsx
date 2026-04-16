@@ -76,10 +76,10 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
   const snippetColor = useColorModeValue("gray.700", "gray.300");
   const normalBg = useColorModeValue("white", "black");
 
-  // Position state for the floating box
+  // Position state for the floating box - positioned on the right, centered vertically
   const [position, setPosition] = useState(() => ({
-    x: Math.max(100, window.innerWidth * 0.55 - 250),
-    y: 100,
+    x: Math.max(window.innerWidth - 550, window.innerWidth * 0.7), // Position on right side
+    y: Math.max(50, (window.innerHeight - 600) / 2), // Center vertically
   }));
   const [dragging, setDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
@@ -146,17 +146,18 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
 
   const connectedTaskClaims = getConnectedTaskClaims();
 
-  // Reset modal position on open - center it on the screen for easier viewing
+  // Reset modal position on open - position on right, centered vertically
   React.useEffect(() => {
     if (!isOpen) return;
 
     const modalWidth = 500; // matches desktop width
     const padding = 16;
-    const headerSafeTop = 80; // keep it below your workspace header
+    const modalHeight = 600; // approximate height
 
-    // Center the modal horizontally and vertically
-    const x = Math.max(padding, (window.innerWidth - modalWidth) / 2);
-    const y = headerSafeTop;
+    // Position on the right side of the screen
+    const x = Math.max(padding, window.innerWidth - modalWidth - padding);
+    // Center vertically
+    const y = Math.max(padding, (window.innerHeight - modalHeight) / 2);
 
     setPosition({ x, y });
   }, [isOpen, anchorSelector]);

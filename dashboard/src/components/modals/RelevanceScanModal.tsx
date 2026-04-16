@@ -493,10 +493,8 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="xl" scrollBehavior="inside">
-      <ModalOverlay backdropFilter="blur(8px)" bg={colorMode === "dark" ? "rgba(0, 0, 0, 0.6)" : "rgba(255, 255, 255, 0.3)"} />
       <ModalContent
         bg={colorMode === "dark" ? "rgba(10, 15, 25, 0.85)" : "rgba(255, 255, 255, 0.5)"}
-        backdropFilter="blur(30px)"
         color={colorMode === "dark" ? "white" : "gray.800"}
         maxH="90vh"
         border="2px solid"
@@ -573,7 +571,6 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
               <Box
                 p={4}
                 bg={colorMode === "dark" ? "rgba(15, 25, 40, 0.7)" : "rgba(255, 255, 255, 0.8)"}
-                backdropFilter="blur(20px)"
                 borderLeftRadius="20px"
                 borderWidth="2px"
                 borderColor={computedScore !== null
@@ -703,7 +700,6 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                     key={docLink.ref_claim_link_id}
                     p={4}
                     bg={colorMode === "dark" ? "rgba(88, 28, 135, 0.25)" : "rgba(237, 233, 254, 0.8)"}
-                    backdropFilter="blur(15px)"
                     borderLeftRadius="18px"
                     borderWidth="2px"
                     borderColor={`${stanceColor}.500`}
@@ -817,7 +813,6 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                     key={claim.claim_id}
                     p={4}
                     bg={colorMode === "dark" ? "rgba(15, 25, 40, 0.6)" : "rgba(248, 250, 252, 0.4)"}
-                    backdropFilter="blur(20px)"
                     borderLeftRadius="18px"
                     borderWidth="2px"
                     borderColor={`${stanceColor}.500`}
@@ -963,7 +958,6 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
           borderTopWidth="2px"
           borderColor={colorMode === "dark" ? "rgba(113, 219, 255, 0.3)" : "rgba(71, 85, 105, 0.15)"}
           bg={colorMode === "dark" ? "rgba(10, 15, 25, 0.8)" : "rgba(255, 255, 255, 0.6)"}
-          backdropFilter="blur(20px)"
         >
           <HStack spacing={3} w="100%" justify="space-between">
             <Button

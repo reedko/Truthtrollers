@@ -38,16 +38,22 @@ import {
   MenuList,
   MenuItem,
 } from "@chakra-ui/react";
-import { ChevronLeftIcon, ChevronRightIcon, SettingsIcon } from "@chakra-ui/icons";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  SettingsIcon,
+} from "@chakra-ui/icons";
+import { FiAward } from "react-icons/fi";
 import { keyframes } from "@emotion/react";
 import { useNavigate } from "react-router-dom";
 import { useTaskStore } from "../store/useTaskStore";
 import { useAuthStore } from "../store/useAuthStore";
+import SubmitRatingModal from "../components/SubmitRatingModal";
 import {
   fetchClaimScoresForTask,
   getClaimLinkScore,
 } from "../services/useDashboardAPI";
-import { fetchReferenceClaimTaskLinks } from '../services/referenceClaimRelevance';
+import { fetchReferenceClaimTaskLinks } from "../services/referenceClaimRelevance";
 import RelevanceScanModal from "../components/modals/RelevanceScanModal";
 import VerimeterMeter from "../components/VerimeterMeter";
 import ClaimLinkOverlay from "../components/overlays/ClaimLinkOverlay";
@@ -105,6 +111,11 @@ export const CaseFocusPage: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const {
+    isOpen: isSubmitRatingOpen,
+    onOpen: onOpenSubmitRating,
+    onClose: onCloseSubmitRating,
+  } = useDisclosure();
   const isMobile = useBreakpointValue({ base: true, md: false });
 
   // State variables - matching ClaimDuel exactly
@@ -146,16 +157,26 @@ export const CaseFocusPage: React.FC = () => {
   const [references, setReferences] = useState<any[]>([]);
 
   // State for RelevanceScanModal -> ClaimLinkOverlay integration
-  const [sourceClaim, setSourceClaim] = useState<Pick<Claim, "claim_id" | "claim_text"> | null>(null);
+  const [sourceClaim, setSourceClaim] = useState<Pick<
+    Claim,
+    "claim_id" | "claim_text"
+  > | null>(null);
   const [targetClaim, setTargetClaim] = useState<Claim | null>(null);
   const [linkRationale, setLinkRationale] = useState<string>("");
-  const [aiSuggestedSupportLevel, setAiSuggestedSupportLevel] = useState<number | null>(null);
+  const [aiSuggestedSupportLevel, setAiSuggestedSupportLevel] = useState<
+    number | null
+  >(null);
 
   // Debug: log when ClaimLinkOverlay state changes
   useEffect(() => {
     console.log("[CaseFocus] isLinkModalOpen changed to:", isLinkModalOpen);
     if (isLinkModalOpen && sourceClaim && targetClaim) {
-      console.log("[CaseFocus] ClaimLinkOverlay should now be visible with source:", sourceClaim.claim_id, "target:", targetClaim.claim_id);
+      console.log(
+        "[CaseFocus] ClaimLinkOverlay should now be visible with source:",
+        sourceClaim.claim_id,
+        "target:",
+        targetClaim.claim_id,
+      );
     }
   }, [isLinkModalOpen, sourceClaim, targetClaim]);
 
@@ -606,9 +627,10 @@ export const CaseFocusPage: React.FC = () => {
       // Enrich case claims with their verimeter scores
       const enrichedClaims = (data.caseClaims || []).map((claim: any) => ({
         ...claim,
-        verimeter_score: claimScores[claim.claim_id] !== undefined
-          ? Math.round(claimScores[claim.claim_id] * 100)
-          : 0,
+        verimeter_score:
+          claimScores[claim.claim_id] !== undefined
+            ? Math.round(claimScores[claim.claim_id] * 100)
+            : 0,
       }));
 
       setAvailableCaseClaims(enrichedClaims);
@@ -762,21 +784,29 @@ export const CaseFocusPage: React.FC = () => {
             ai_stance: existingLink?.stance,
             ai_support_level: existingLink?.support_level,
             ai_rationale: existingLink?.rationale,
-            existing_link: existingLink?.verified_by_user_id ? {
-              relationship_type: existingLink.stance,
-              created_at: existingLink.created_at
-            } : undefined
+            existing_link: existingLink?.verified_by_user_id
+              ? {
+                  relationship_type: existingLink.stance,
+                  created_at: existingLink.created_at,
+                }
+              : undefined,
           });
         }
       }
 
       console.log("📊 Total candidates from deep scan:", allCandidates.length);
-      console.log("📊 AI-suggested (score > 0):", allCandidates.filter(c => c.relevance_score > 0).length);
-      console.log("📊 Has existing link:", allCandidates.filter(c => c.existing_link).length);
+      console.log(
+        "📊 AI-suggested (score > 0):",
+        allCandidates.filter((c) => c.relevance_score > 0).length,
+      );
+      console.log(
+        "📊 Has existing link:",
+        allCandidates.filter((c) => c.existing_link).length,
+      );
 
       // 🎯 FILTER TO ONLY RELEVANT CLAIMS: Match ClaimDuel - show AI-suggested OR already linked
-      const filteredCandidates = allCandidates.filter(c =>
-        c.relevance_score > 0 || c.existing_link
+      const filteredCandidates = allCandidates.filter(
+        (c) => c.relevance_score > 0 || c.existing_link,
       );
 
       console.log(
@@ -922,16 +952,18 @@ export const CaseFocusPage: React.FC = () => {
     scanSourceClaim: { claim_id: number; claim_text: string },
     scanTargetClaim: Claim,
     rationale: string,
-    supportLevel: number
+    supportLevel: number,
   ) => {
-    console.log("[CaseFocus] ========== handleOpenLinkOverlayFromScan START ==========");
+    console.log(
+      "[CaseFocus] ========== handleOpenLinkOverlayFromScan START ==========",
+    );
     console.log("[CaseFocus] Source claim:", {
       id: scanSourceClaim.claim_id,
-      text: scanSourceClaim.claim_text.substring(0, 50) + "..."
+      text: scanSourceClaim.claim_text.substring(0, 50) + "...",
     });
     console.log("[CaseFocus] Target claim:", {
       id: scanTargetClaim.claim_id,
-      text: scanTargetClaim.claim_text.substring(0, 50) + "..."
+      text: scanTargetClaim.claim_text.substring(0, 50) + "...",
     });
     console.log("[CaseFocus] Rationale:", rationale?.substring(0, 100));
     console.log("[CaseFocus] Support level:", supportLevel);
@@ -942,21 +974,29 @@ export const CaseFocusPage: React.FC = () => {
     setLinkRationale(rationale);
     setAiSuggestedSupportLevel(supportLevel);
 
-    console.log("[CaseFocus] State set. isLinkModalOpen before:", isLinkModalOpen);
+    console.log(
+      "[CaseFocus] State set. isLinkModalOpen before:",
+      isLinkModalOpen,
+    );
     console.log("[CaseFocus] Closing RelevanceScanModal...");
     onCloseRelevanceScanModal();
     console.log("[CaseFocus] Opening ClaimLinkOverlay...");
     setIsLinkModalOpen(true);
     console.log("[CaseFocus] isLinkModalOpen set to true");
-    console.log("[CaseFocus] ========== handleOpenLinkOverlayFromScan END ==========");
+    console.log(
+      "[CaseFocus] ========== handleOpenLinkOverlayFromScan END ==========",
+    );
   };
 
   // Handler for View Source button from RelevanceScanModal
   const handleSelectReferenceClaim = async (
     claim: any,
-    referenceId: number
+    referenceId: number,
   ) => {
-    console.log("[CaseFocus] handleSelectReferenceClaim called for reference:", referenceId);
+    console.log(
+      "[CaseFocus] handleSelectReferenceClaim called for reference:",
+      referenceId,
+    );
     // Close the relevance scan modal
     onCloseRelevanceScanModal();
 
@@ -1251,7 +1291,6 @@ export const CaseFocusPage: React.FC = () => {
         py={4}
         px={6}
         bg={colors.badgeBg}
-        backdropFilter="blur(10px)"
         borderRadius="24px"
         border="2px solid"
         borderColor={colors.border}
@@ -1360,17 +1399,38 @@ export const CaseFocusPage: React.FC = () => {
         {!focusClaim && availableCaseClaims.length > 0 && (
           <Box w="full" mb={4}>
             <VStack spacing={6} align="stretch">
-              <Text
-                fontSize="14px"
-                fontWeight="700"
-                textTransform="uppercase"
-                letterSpacing="0.12em"
-                color="#71dbff"
-                textShadow="0 0 20px rgba(113, 219, 255, 0.5)"
-                textAlign="center"
-              >
-                Select Case Claim to Analyze
-              </Text>
+              <Flex justify="space-between" align="center" px={4}>
+                <Text
+                  fontSize="14px"
+                  fontWeight="700"
+                  textTransform="uppercase"
+                  letterSpacing="0.12em"
+                  color="#71dbff"
+                  textShadow="0 0 20px rgba(113, 219, 255, 0.5)"
+                  flex="1"
+                  textAlign="center"
+                >
+                  Select Case Claim to Analyze
+                </Text>
+                <Button
+                  size="sm"
+                  colorScheme="green"
+                  leftIcon={<FiAward />}
+                  onClick={onOpenSubmitRating}
+                  isDisabled={!selectedTask?.content_id}
+                  bg="rgba(97, 239, 184, 0.15)"
+                  borderColor="rgba(97, 239, 184, 0.4)"
+                  border="1px solid"
+                  color="#61efb8"
+                  _hover={{
+                    bg: "rgba(97, 239, 184, 0.25)",
+                    borderColor: "rgba(97, 239, 184, 0.6)",
+                    transform: "translateY(-2px)",
+                  }}
+                >
+                  Submit Rating
+                </Button>
+              </Flex>
 
               <VStack spacing={4} py={4} px={2}>
                 {availableCaseClaims.map((claim, idx) => (
@@ -1378,7 +1438,6 @@ export const CaseFocusPage: React.FC = () => {
                     key={claim.claim_id}
                     w="full"
                     bg="linear-gradient(180deg, rgba(15, 28, 46, 0.85), rgba(8, 16, 27, 0.75))"
-                    backdropFilter="blur(20px)"
                     borderRadius="20px"
                     border="2px solid"
                     borderColor="rgba(113, 219, 255, 0.35)"
@@ -1507,54 +1566,77 @@ export const CaseFocusPage: React.FC = () => {
         )}
 
         {/* MOBILE HEADER - Case claim at top on mobile */}
-        {focusClaim && isMobile && availableCaseClaims[currentCaseClaimIndex] && (
-          <Box
-            bg="rgba(138, 43, 226, 0.1)"
-            backdropFilter="blur(20px)"
-            borderBottom="2px solid rgba(138, 43, 226, 0.4)"
-            p={3}
-            mb={2}
-          >
-            <HStack justify="space-between" mb={2}>
-              <Text fontSize="9px" color="purple.300" fontWeight="bold">
-                CASE CLAIM
-              </Text>
-              <HStack spacing={2}>
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  onClick={() => setCurrentCaseClaimIndex(Math.max(0, currentCaseClaimIndex - 1))}
-                  isDisabled={currentCaseClaimIndex === 0}
-                  color="purple.300"
-                >
-                  <ChevronLeftIcon />
-                </Button>
-                <Text fontSize="9px" color="purple.300">
-                  {currentCaseClaimIndex + 1}/{availableCaseClaims.length}
+        {focusClaim &&
+          isMobile &&
+          availableCaseClaims[currentCaseClaimIndex] && (
+            <Box
+              bg="rgba(138, 43, 226, 0.1)"
+              borderBottom="2px solid rgba(138, 43, 226, 0.4)"
+              p={3}
+              mb={2}
+            >
+              <HStack justify="space-between" mb={2}>
+                <Text fontSize="9px" color="purple.300" fontWeight="bold">
+                  CASE CLAIM
                 </Text>
-                <Button
-                  size="xs"
-                  variant="ghost"
-                  onClick={() => setCurrentCaseClaimIndex(Math.min(availableCaseClaims.length - 1, currentCaseClaimIndex + 1))}
-                  isDisabled={currentCaseClaimIndex === availableCaseClaims.length - 1}
-                  color="purple.300"
-                >
-                  <ChevronRightIcon />
-                </Button>
+                <HStack spacing={2}>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    onClick={() =>
+                      setCurrentCaseClaimIndex(
+                        Math.max(0, currentCaseClaimIndex - 1),
+                      )
+                    }
+                    isDisabled={currentCaseClaimIndex === 0}
+                    color="purple.300"
+                  >
+                    <ChevronLeftIcon />
+                  </Button>
+                  <Text fontSize="9px" color="purple.300">
+                    {currentCaseClaimIndex + 1}/{availableCaseClaims.length}
+                  </Text>
+                  <Button
+                    size="xs"
+                    variant="ghost"
+                    onClick={() =>
+                      setCurrentCaseClaimIndex(
+                        Math.min(
+                          availableCaseClaims.length - 1,
+                          currentCaseClaimIndex + 1,
+                        ),
+                      )
+                    }
+                    isDisabled={
+                      currentCaseClaimIndex === availableCaseClaims.length - 1
+                    }
+                    color="purple.300"
+                  >
+                    <ChevronRightIcon />
+                  </Button>
+                </HStack>
               </HStack>
-            </HStack>
-            <Text fontSize="13px" lineHeight="1.3" fontWeight="690" color="gray.100" mb={2}>
-              {availableCaseClaims[currentCaseClaimIndex].label}
-            </Text>
-            <Box mt={2}>
-              <VerimeterMeter
-                score={(availableCaseClaims[currentCaseClaimIndex].verimeter_score || 0) / 100}
-                width="100%"
-                showInterpretation={false}
-              />
+              <Text
+                fontSize="13px"
+                lineHeight="1.3"
+                fontWeight="690"
+                color="gray.100"
+                mb={2}
+              >
+                {availableCaseClaims[currentCaseClaimIndex].label}
+              </Text>
+              <Box mt={2}>
+                <VerimeterMeter
+                  score={
+                    (availableCaseClaims[currentCaseClaimIndex]
+                      .verimeter_score || 0) / 100
+                  }
+                  width="100%"
+                  showInterpretation={false}
+                />
+              </Box>
             </Box>
-          </Box>
-        )}
+          )}
 
         {/* Main Workspace - 3 columns */}
         {focusClaim && (
@@ -1580,7 +1662,6 @@ export const CaseFocusPage: React.FC = () => {
                 borderRadius={styleMode === "mr1" ? "28px" : "0"}
                 {...getPanelBorder()}
                 {...getPanelBackground()}
-                backdropFilter={styleMode === "mr1" ? "blur(18px)" : "none"}
                 p={6}
                 pt={4}
                 minH="820px"
@@ -1747,7 +1828,6 @@ export const CaseFocusPage: React.FC = () => {
                           {/* Left Navigation Button */}
                           <Button
                             bg="linear-gradient(135deg, rgba(113, 219, 255, 0.3) 0%, rgba(70, 170, 220, 0.5) 100%)"
-                            backdropFilter="blur(12px)"
                             border="2px solid rgba(113, 219, 255, 0.5)"
                             borderRadius="10px"
                             w="40px"
@@ -1830,7 +1910,6 @@ export const CaseFocusPage: React.FC = () => {
                           {/* Right Navigation Button */}
                           <Button
                             bg="linear-gradient(135deg, rgba(113, 219, 255, 0.3) 0%, rgba(70, 170, 220, 0.5) 100%)"
-                            backdropFilter="blur(12px)"
                             border="2px solid rgba(113, 219, 255, 0.5)"
                             borderRadius="10px"
                             w="40px"
@@ -1898,7 +1977,6 @@ export const CaseFocusPage: React.FC = () => {
                             <Box
                               key={claim.claim_id}
                               bg="transparent"
-                              backdropFilter="blur(10px)"
                               borderRadius="24px"
                               border="2px solid"
                               borderColor="rgba(113, 219, 255, 0.4)"
@@ -2285,10 +2363,12 @@ export const CaseFocusPage: React.FC = () => {
               <Box
                 minW={0}
                 w="full"
-                borderRadius={{ base: "0", md: styleMode === "mr1" ? "28px" : "0" }}
+                borderRadius={{
+                  base: "0",
+                  md: styleMode === "mr1" ? "28px" : "0",
+                }}
                 {...(isMobile ? {} : getPanelBorder())}
                 {...(isMobile ? {} : getPanelBackground())}
-                backdropFilter={{ base: "none", md: styleMode === "mr1" ? "blur(18px)" : "none" }}
                 p={{ base: 0, md: 6 }}
                 pt={{ base: 0, md: 4 }}
                 minH={{ base: "auto", md: "820px" }}
@@ -2332,7 +2412,6 @@ export const CaseFocusPage: React.FC = () => {
                   top="50%"
                   transform="translateY(-50%) translateX(-65%)"
                   bg="linear-gradient(135deg, rgba(113, 219, 255, 0.4) 0%, rgba(70, 170, 220, 0.6) 100%)"
-                  backdropFilter="blur(15px)"
                   border="3px solid rgba(113, 219, 255, 0.6)"
                   borderRadius="16px"
                   w="65px"
@@ -2385,7 +2464,6 @@ export const CaseFocusPage: React.FC = () => {
                   top="50%"
                   transform="translateY(-50%) translateX(65%)"
                   bg="linear-gradient(135deg, rgba(113, 219, 255, 0.4) 0%, rgba(70, 170, 220, 0.6) 100%)"
-                  backdropFilter="blur(15px)"
                   border="3px solid rgba(113, 219, 255, 0.6)"
                   borderRadius="16px"
                   w="65px"
@@ -2518,7 +2596,6 @@ export const CaseFocusPage: React.FC = () => {
                     {/* Left Navigation Button */}
                     <Button
                       bg="linear-gradient(135deg, rgba(113, 219, 255, 0.3) 0%, rgba(70, 170, 220, 0.5) 100%)"
-                      backdropFilter="blur(12px)"
                       border="2px solid rgba(113, 219, 255, 0.5)"
                       borderRadius="10px"
                       w="40px"
@@ -2600,7 +2677,6 @@ export const CaseFocusPage: React.FC = () => {
                     {/* Right Navigation Button */}
                     <Button
                       bg="linear-gradient(135deg, rgba(113, 219, 255, 0.3) 0%, rgba(70, 170, 220, 0.5) 100%)"
-                      backdropFilter="blur(12px)"
                       border="2px solid rgba(113, 219, 255, 0.5)"
                       borderRadius="10px"
                       w="40px"
@@ -2675,7 +2751,6 @@ export const CaseFocusPage: React.FC = () => {
                         <Box
                           key={idx}
                           bg="transparent"
-                          backdropFilter="blur(10px)"
                           borderRadius="24px"
                           border="2px solid"
                           borderColor="rgba(97, 239, 184, 0.4)"
@@ -2767,9 +2842,16 @@ export const CaseFocusPage: React.FC = () => {
                                   zIndex={0}
                                 />
                               )}
-                              <Flex align="center" justify="space-between" position="relative" zIndex={1}>
+                              <Flex
+                                align="center"
+                                justify="space-between"
+                                position="relative"
+                                zIndex={1}
+                              >
                                 <Tooltip
-                                  label={candidate.source_name || "Source claim"}
+                                  label={
+                                    candidate.source_name || "Source claim"
+                                  }
                                   placement="top"
                                   hasArrow
                                 >
@@ -2806,25 +2888,40 @@ export const CaseFocusPage: React.FC = () => {
                                   />
                                   <MenuList
                                     bg="rgba(15, 28, 46, 0.95)"
-                                    backdropFilter="blur(20px)"
                                     border="1px solid"
                                     borderColor="rgba(113, 219, 255, 0.3)"
                                     boxShadow="0 8px 32px rgba(0, 0, 0, 0.6)"
                                   >
                                     <MenuItem
                                       bg="transparent"
-                                      color={styleMode === "mr1" ? "#71dbff" : "#89a9bf"}
-                                      fontWeight={styleMode === "mr1" ? "700" : "400"}
-                                      _hover={{ bg: "rgba(113, 219, 255, 0.15)" }}
+                                      color={
+                                        styleMode === "mr1"
+                                          ? "#71dbff"
+                                          : "#89a9bf"
+                                      }
+                                      fontWeight={
+                                        styleMode === "mr1" ? "700" : "400"
+                                      }
+                                      _hover={{
+                                        bg: "rgba(113, 219, 255, 0.15)",
+                                      }}
                                       onClick={() => setStyleMode("mr1")}
                                     >
                                       MR1 (3D Glass)
                                     </MenuItem>
                                     <MenuItem
                                       bg="transparent"
-                                      color={styleMode === "mr2" ? "#71dbff" : "#89a9bf"}
-                                      fontWeight={styleMode === "mr2" ? "700" : "400"}
-                                      _hover={{ bg: "rgba(113, 219, 255, 0.15)" }}
+                                      color={
+                                        styleMode === "mr2"
+                                          ? "#71dbff"
+                                          : "#89a9bf"
+                                      }
+                                      fontWeight={
+                                        styleMode === "mr2" ? "700" : "400"
+                                      }
+                                      _hover={{
+                                        bg: "rgba(113, 219, 255, 0.15)",
+                                      }}
                                       onClick={() => setStyleMode("mr2")}
                                     >
                                       MR2 (Dark Sunken)
@@ -3145,7 +3242,6 @@ export const CaseFocusPage: React.FC = () => {
                   border="1px solid"
                   borderColor="rgba(126, 207, 255, 0.22)"
                   boxShadow="0 22px 70px rgba(0, 0, 0, 0.4)"
-                  backdropFilter={styleMode === "mr1" ? "blur(18px)" : "none"}
                   p={6}
                   position="relative"
                   overflow="hidden"
@@ -3278,7 +3374,6 @@ export const CaseFocusPage: React.FC = () => {
                   border="1px solid"
                   borderColor="rgba(126, 207, 255, 0.22)"
                   boxShadow="0 22px 70px rgba(0, 0, 0, 0.4)"
-                  backdropFilter={styleMode === "mr1" ? "blur(18px)" : "none"}
                   p={6}
                   position="relative"
                   overflow="hidden"
@@ -3394,10 +3489,7 @@ export const CaseFocusPage: React.FC = () => {
       {/* Case Claim Selection Drawer */}
       <Drawer isOpen={isOpen} placement="right" onClose={onClose} size="md">
         <DrawerOverlay />
-        <DrawerContent
-          bg="linear-gradient(180deg, rgba(15, 28, 46, 0.95), rgba(8, 16, 27, 0.95))"
-          backdropFilter="blur(30px)"
-        >
+        <DrawerContent bg="linear-gradient(180deg, rgba(15, 28, 46, 0.95), rgba(8, 16, 27, 0.95))">
           <DrawerCloseButton color="#e4f4ff" />
           <DrawerHeader
             borderBottomWidth="1px"
@@ -3493,32 +3585,38 @@ export const CaseFocusPage: React.FC = () => {
         }}
         sourceClaim={
           sourceClaim || // From RelevanceScanModal
-          (candidates[currentCandidateIndex] ? {
-            claim_id: candidates[currentCandidateIndex].claim_id,
-            claim_text: candidates[currentCandidateIndex].claim_text,
-          } : null)
+          (candidates[currentCandidateIndex]
+            ? {
+                claim_id: candidates[currentCandidateIndex].claim_id,
+                claim_text: candidates[currentCandidateIndex].claim_text,
+              }
+            : null)
         }
         targetClaim={
           targetClaim || // From RelevanceScanModal
-          (focusClaim ? {
-            ...focusClaim,
-            claim_id: focusClaim.claim_id,
-            claim_text: focusClaim.claim_text,
-            content_id: selectedTask?.content_id,
-            veracity_score: focusClaim.verimeter_score || 0,
-            confidence_level: 0,
-            last_verified: new Date().toISOString(),
-            references: [],
-          } : null)
+          (focusClaim
+            ? {
+                ...focusClaim,
+                claim_id: focusClaim.claim_id,
+                claim_text: focusClaim.claim_text,
+                content_id: selectedTask?.content_id,
+                veracity_score: focusClaim.verimeter_score || 0,
+                confidence_level: 0,
+                last_verified: new Date().toISOString(),
+                references: [],
+              }
+            : null)
         }
         onLinkCreated={handleLinkCreated}
         rationale={
           linkRationale || // From RelevanceScanModal
-          (candidates[currentCandidateIndex]?.ai_rationale || "")
+          candidates[currentCandidateIndex]?.ai_rationale ||
+          ""
         }
         aiSupportLevel={
-          aiSuggestedSupportLevel !== null ? aiSuggestedSupportLevel : // From RelevanceScanModal
-          modalSupportLevel
+          aiSuggestedSupportLevel !== null
+            ? aiSuggestedSupportLevel // From RelevanceScanModal
+            : modalSupportLevel
         }
         sourceClaimVeracity={
           candidates[currentCandidateIndex]?.source_reliability || 0
@@ -3549,6 +3647,17 @@ export const CaseFocusPage: React.FC = () => {
           viewerId={user?.user_id || null}
           onSelectReferenceClaim={handleSelectReferenceClaim}
           onOpenLinkOverlay={handleOpenLinkOverlayFromScan}
+        />
+      )}
+
+      {/* Submit Rating Modal */}
+      {selectedTask?.content_id && (
+        <SubmitRatingModal
+          isOpen={isSubmitRatingOpen}
+          onClose={onCloseSubmitRating}
+          contentId={selectedTask.content_id}
+          contentUrl={selectedTask.url}
+          contentTitle={selectedTask.content_name}
         />
       )}
     </Box>

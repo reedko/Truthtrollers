@@ -83,7 +83,6 @@ export const UserSelectorModal: React.FC<UserSelectorModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="md" scrollBehavior="inside">
-      <ModalOverlay backdropFilter="blur(4px)" />
       <ModalContent
         bg={colorMode === "dark" ? "gray.800" : "white"}
         borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"}

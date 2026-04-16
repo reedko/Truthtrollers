@@ -61,7 +61,6 @@ const DiscussionComposer: React.FC<DiscussionComposerProps> = ({
   return (
     <Box
       background="rgba(0, 0, 0, 0.6)"
-      backdropFilter="blur(20px)"
       border="2px solid rgba(0, 162, 255, 0.4)"
       borderRadius="16px"
       p={6}

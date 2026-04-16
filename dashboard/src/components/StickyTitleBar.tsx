@@ -69,7 +69,6 @@ const StickyTitleBar: React.FC<StickyTitleBarProps> = ({
       right={0}
       zIndex={999}
       bg="transparent"
-      backdropFilter="blur(10px)"
       borderBottom="1px solid"
       borderColor={useColorModeValue("gray.200", "whiteAlpha.200")}
       transition="all 0.3s ease"

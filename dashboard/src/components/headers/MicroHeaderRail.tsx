@@ -197,7 +197,6 @@ export default function MicroHeaderRail({
       >
         <DrawerOverlay
           bg="blackAlpha.700"
-          backdropFilter="blur(4px)"
           onClick={closeTile}
         />
         <DrawerContent>
@@ -338,7 +337,6 @@ function Tile({
       position="relative"
       overflow="hidden"
       bg="rgba(0, 0, 0, 0.6)"
-      backdropFilter="blur(20px)"
       border="1px solid"
       borderColor={colors.border}
       borderRadius="8px"

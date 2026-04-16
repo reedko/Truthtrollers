@@ -16,7 +16,6 @@ export const NodePopup: React.FC<NodePopupProps> = ({ popup }) => {
         top: `${popup.y - 30}px`,
         background:
           "linear-gradient(135deg, rgba(0, 0, 0, 0.92), rgba(15, 23, 42, 0.88))",
-        backdropFilter: "blur(16px)",
         border: "1px solid rgba(0, 162, 255, 0.5)",
         borderRadius: "8px",
         padding: "10px 16px",

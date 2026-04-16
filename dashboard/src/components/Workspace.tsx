@@ -37,7 +37,7 @@ import {
   fetchClaimById,
   fetchClaimsAndLinkedReferencesForTask,
   deleteClaim,
-  fetchClaimsForTask
+  fetchClaimsForTask,
 } from "../services/useDashboardAPI";
 import {
   updateScoresForContent,
@@ -232,16 +232,20 @@ const Workspace: React.FC<WorkspaceProps> = ({
       });
   }, [contentId, refreshReferences, viewerId, scope]);
 
+  // Use ref to track resize timeout - prevents memory leaks
+  const resizeTimeoutRef = useRef<number | null>(null);
+
   useEffect(() => {
     // 🔧 PERF: Debounce resize handler and use RAF for DOM measurements
     const handleResize = () => {
       requestAnimationFrame(updateXPositionsAndHeight);
     };
 
-    let resizeTimeout: number;
     const debouncedResize = () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = window.setTimeout(handleResize, 150);
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
+      resizeTimeoutRef.current = window.setTimeout(handleResize, 150);
     };
 
     // Initial calculation
@@ -249,7 +253,9 @@ const Workspace: React.FC<WorkspaceProps> = ({
 
     window.addEventListener("resize", debouncedResize);
     return () => {
-      clearTimeout(resizeTimeout);
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
       window.removeEventListener("resize", debouncedResize);
     };
   }, [claims, references]);
@@ -424,7 +430,10 @@ const Workspace: React.FC<WorkspaceProps> = ({
       // Show error toast
       toast({
         title: "Error removing source",
-        description: error.response?.data?.error || error.message || "Failed to remove source. Please make sure you're logged in.",
+        description:
+          error.response?.data?.error ||
+          error.message ||
+          "Failed to remove source. Please make sure you're logged in.",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -468,7 +477,12 @@ const Workspace: React.FC<WorkspaceProps> = ({
 
     // ✅ Update scores
     await updateScoresForContent(contentId, viewerId);
-    const scores = await fetchContentScores(contentId, viewerId, mode, aiWeight);
+    const scores = await fetchContentScores(
+      contentId,
+      viewerId,
+      mode,
+      aiWeight,
+    );
     setVerimeterScore(contentId, scores?.verimeterScore ?? null);
     // 🔔 notify any listeners to refetch or re-read store
     window.dispatchEvent(
@@ -500,16 +514,17 @@ const Workspace: React.FC<WorkspaceProps> = ({
       bgRepeat="no-repeat"
       borderColor={borderColor}
       minHeight={`${computedHeight}px`} // dynamic min height computed above
-      onMouseMove={(e) => setMousePosition({ x: e.clientX, y: e.clientY })}
+      onMouseMove={draggingClaim ? (e) => setMousePosition({ x: e.clientX, y: e.clientY }) : undefined}
       position="relative"
       overflow="visible"
+      zIndex={100}
     >
       <Grid
         templateColumns="2fr 2fr 2fr" // mobile → stacked, desktop → middle flexes more
         gap={4}
         height="100%"
         position="relative"
-        zIndex={1}
+        zIndex={100}
       >
         <Box
           ref={leftRef}
@@ -529,7 +544,9 @@ const Workspace: React.FC<WorkspaceProps> = ({
               });
               setClaims([...claims, { ...newClaim, claim_id: saved.claimId }]);
             }}
-            onEditClaim={async (updatedClaim: Claim & { runEvidence?: boolean }) => {
+            onEditClaim={async (
+              updatedClaim: Claim & { runEvidence?: boolean },
+            ) => {
               const runEvidence = updatedClaim.runEvidence ?? false;
 
               if (runEvidence) {
@@ -538,7 +555,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
                   const result = await updateClaimWithEvidence(
                     updatedClaim,
                     true,
-                    viewerId || undefined
+                    viewerId || undefined,
                   );
 
                   // Update claim in state
@@ -549,18 +566,24 @@ const Workspace: React.FC<WorkspaceProps> = ({
                   );
 
                   // Show success feedback
-                  console.log('Evidence run complete:', result.summary);
+                  console.log("Evidence run complete:", result.summary);
                   if (result.evidence) {
-                    console.log(`Found ${result.evidence.referencesFound} new references`);
+                    console.log(
+                      `Found ${result.evidence.referencesFound} new references`,
+                    );
                   }
 
                   // Reload claims and references to show new evidence
-                  const updatedClaims = await fetchClaimsWithEvidence(contentId, viewerId, scope);
+                  const updatedClaims = await fetchClaimsWithEvidence(
+                    contentId,
+                    viewerId,
+                    scope,
+                  );
                   setClaims(updatedClaims);
                   setRefreshLinks(!refreshLinks);
                   setRefreshReferences(!refreshReferences);
                 } catch (error) {
-                  console.error('Failed to update claim with evidence:', error);
+                  console.error("Failed to update claim with evidence:", error);
                   // Fall back to regular update
                   await updateClaim(updatedClaim);
                   setClaims(
@@ -706,7 +729,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
             setIsClaimModalOpen(true);
           }}
           onDeleteClaim={async (claimId: number) => {
-            if (window.confirm('Are you sure you want to hide this claim?')) {
+            if (window.confirm("Are you sure you want to hide this claim?")) {
               if (!user?.user_id) {
                 toast({
                   title: "Cannot hide claim",
@@ -730,13 +753,23 @@ const Workspace: React.FC<WorkspaceProps> = ({
 
               // Refresh claims
               if (selectedTask?.content_id) {
-                const updatedClaims = await fetchClaimsForTask(selectedTask.content_id, user.user_id);
+                const updatedClaims = await fetchClaimsForTask(
+                  selectedTask.content_id,
+                  user.user_id,
+                );
                 setClaims(updatedClaims);
               }
               // Refresh reference modal
               if (selectedReference) {
-                const updatedRef = await fetchReferencesWithClaimsForTask(selectedTask?.content_id || 0, user.user_id);
-                const refreshedRef = updatedRef.find(r => r.reference_content_id === selectedReference.reference_content_id);
+                const updatedRef = await fetchReferencesWithClaimsForTask(
+                  selectedTask?.content_id || 0,
+                  user.user_id,
+                );
+                const refreshedRef = updatedRef.find(
+                  (r) =>
+                    r.reference_content_id ===
+                    selectedReference.reference_content_id,
+                );
                 if (refreshedRef) {
                   setSelectedReference(refreshedRef);
                 }

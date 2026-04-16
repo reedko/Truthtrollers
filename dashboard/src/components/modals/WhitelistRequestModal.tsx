@@ -123,7 +123,6 @@ const WhitelistRequestModal: React.FC<WhitelistRequestModalProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={handleClose} size="md" isCentered>
-      <ModalOverlay bg="blackAlpha.700" backdropFilter="blur(10px)" />
       <ModalContent
         bg="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
         border="1px solid rgba(0, 162, 255, 0.3)"

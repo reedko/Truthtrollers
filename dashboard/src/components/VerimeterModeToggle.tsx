@@ -20,6 +20,8 @@ import {
   HStack,
   Badge,
   Tooltip,
+  Select,
+  useColorMode,
 } from '@chakra-ui/react';
 import { useVerimeterMode, VerimeterMode } from '../contexts/VerimeterModeContext';
 
@@ -29,15 +31,16 @@ interface VerimeterModeToggleProps {
 
 export const VerimeterModeToggle: React.FC<VerimeterModeToggleProps> = ({ compact = false }) => {
   const { mode, setMode, aiWeight, setAIWeight } = useVerimeterMode();
+  const { colorMode } = useColorMode();
 
   const getModeLabel = (m: VerimeterMode) => {
     switch (m) {
       case 'ai':
-        return 'AI';
+        return '🤖';
       case 'user':
-        return 'User';
+        return '👤';
       case 'combined':
-        return 'AI+User';
+        return '🔀';
     }
   };
 
@@ -65,77 +68,50 @@ export const VerimeterModeToggle: React.FC<VerimeterModeToggleProps> = ({ compac
 
   if (compact) {
     return (
-      <Popover>
-        <PopoverTrigger>
-          <Button size="sm" colorScheme={getModeColor(mode)} variant="outline">
-            {getModeLabel(mode)}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent zIndex={2000}>
-          <PopoverArrow />
-          <PopoverCloseButton />
-          <PopoverHeader fontWeight="semibold">Verimeter Mode</PopoverHeader>
-          <PopoverBody>
-            <VStack spacing={3} align="stretch">
-              <ButtonGroup size="sm" isAttached variant="outline" w="full">
-                <Button
-                  flex={1}
-                  colorScheme={mode === 'ai' ? 'purple' : 'gray'}
-                  onClick={() => setMode('ai')}
-                  isActive={mode === 'ai'}
-                >
-                  AI
-                </Button>
-                <Button
-                  flex={1}
-                  colorScheme={mode === 'user' ? 'blue' : 'gray'}
-                  onClick={() => setMode('user')}
-                  isActive={mode === 'user'}
-                >
-                  User
-                </Button>
-                <Button
-                  flex={1}
-                  colorScheme={mode === 'combined' ? 'teal' : 'gray'}
-                  onClick={() => setMode('combined')}
-                  isActive={mode === 'combined'}
-                >
-                  Combined
-                </Button>
-              </ButtonGroup>
-
-              <Text fontSize="xs" color="gray.600">
-                {getModeDescription(mode)}
-              </Text>
-
-              {mode === 'combined' && (
-                <Box>
-                  <Text fontSize="xs" fontWeight="medium" mb={2}>
-                    AI Weight: {Math.round(aiWeight * 100)}%
-                  </Text>
-                  <Slider
-                    value={aiWeight}
-                    onChange={setAIWeight}
-                    min={0}
-                    max={1}
-                    step={0.1}
-                    colorScheme="teal"
-                  >
-                    <SliderTrack>
-                      <SliderFilledTrack />
-                    </SliderTrack>
-                    <SliderThumb />
-                  </Slider>
-                  <HStack justify="space-between" mt={1}>
-                    <Text fontSize="xs" color="gray.500">0% AI</Text>
-                    <Text fontSize="xs" color="gray.500">100% AI</Text>
-                  </HStack>
-                </Box>
-              )}
-            </VStack>
-          </PopoverBody>
-        </PopoverContent>
-      </Popover>
+      <Box
+        display="flex"
+        alignItems="center"
+        gap={{ base: 0.5, md: 1 }}
+        bg={colorMode === "dark" ? "rgba(15, 23, 42, 0.6)" : "rgba(255, 255, 255, 0.6)"}
+        px={{ base: 1.5, md: 2 }}
+        py={{ base: 0.5, md: 1 }}
+        borderRadius="full"
+        border="1px solid"
+        borderColor={colorMode === "dark" ? "rgba(113, 219, 255, 0.2)" : "rgba(71, 85, 105, 0.2)"}
+        boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.15)"
+      >
+        <Text
+          className="mr-text-muted"
+          fontSize={{ base: "8px", md: "9px", lg: "10px" }}
+          textTransform="uppercase"
+          letterSpacing="0.3px"
+          whiteSpace="nowrap"
+          display={{ base: "none", lg: "block" }}
+        >
+          Verimeter
+        </Text>
+        <Select
+          size="xs"
+          width={{ base: "75px", md: "90px", lg: "110px" }}
+          fontSize={{ base: "9px", md: "10px", lg: "11px" }}
+          height={{ base: "20px", md: "24px" }}
+          value={mode}
+          onChange={(e) => setMode(e.target.value as VerimeterMode)}
+          bg={colorMode === "dark" ? "rgba(15, 23, 42, 0.9)" : "white"}
+          border="1px solid"
+          borderColor={colorMode === "dark" ? "var(--mr-blue-border)" : "rgba(71, 85, 105, 0.3)"}
+          color={colorMode === "dark" ? "var(--mr-text-primary)" : "gray.800"}
+          borderRadius="full"
+          boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.4)"
+          _hover={{
+            borderColor: colorMode === "dark" ? "var(--mr-blue)" : "rgba(71, 85, 105, 0.5)",
+          }}
+        >
+          <option value="ai">{getModeLabel('ai')}</option>
+          <option value="user">{getModeLabel('user')}</option>
+          <option value="combined">{getModeLabel('combined')}</option>
+        </Select>
+      </Box>
     );
   }
 

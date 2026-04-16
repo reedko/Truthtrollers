@@ -21,7 +21,6 @@ const DiscussionCard: React.FC<Props> = ({ entry }) => {
             ? "linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05))"
             : "linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.05))"
         }
-        backdropFilter="blur(20px)"
         border={`2px solid ${isPro ? "rgba(34, 197, 94, 0.3)" : "rgba(239, 68, 68, 0.3)"}`}
         borderRadius="12px"
         boxShadow={`0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px ${isPro ? "rgba(34, 197, 94, 0.2)" : "rgba(239, 68, 68, 0.2)"}`}

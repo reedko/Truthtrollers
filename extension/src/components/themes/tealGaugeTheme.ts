@@ -1,6 +1,5 @@
 // src/theme/tealGaugeTheme.ts
 import { CustomSegmentLabelPosition } from "react-d3-speedometer";
-//const API_BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
 const API_BASE_URL = process.env.REACT_APP_BASE_URL || "https://localhost:5001";
 
 export const tealGaugeTheme = {

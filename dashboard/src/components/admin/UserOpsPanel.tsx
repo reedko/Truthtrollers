@@ -288,7 +288,6 @@ export default function UserOpsPanel({
   return (
     <Box
       bg="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-      backdropFilter="blur(20px)"
       borderWidth="1px"
       borderColor="rgba(0, 162, 255, 0.4)"
       borderRadius="12px"
@@ -985,7 +984,6 @@ export default function UserOpsPanel({
 
       {/* Edit Role Modal */}
       <Modal isOpen={isOpen} onClose={onClose} isCentered>
-        <ModalOverlay bg="blackAlpha.800" backdropFilter="blur(10px)" />
         <ModalContent
           className="mr-card mr-card-purple"
           position="relative"

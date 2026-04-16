@@ -78,7 +78,12 @@ const MoleculeMapPage = () => {
 
   const handleVerimeterRefresh = async (contentId: number) => {
     await updateScoresForContent(contentId, viewerId);
-    const scores = await fetchContentScores(contentId, viewerId, mode, aiWeight);
+    const scores = await fetchContentScores(
+      contentId,
+      viewerId,
+      mode,
+      aiWeight,
+    );
     setVerimeterScore(scores?.verimeterScore ?? null);
   };
 
@@ -718,68 +723,84 @@ const MoleculeMapPage = () => {
 
       {/* Control Bar */}
       <Box
-        mb={4}
+        className="mr-card"
+        mb={2}
         display="flex"
-        gap={4}
+        gap={{ base: 1, md: 1.5, lg: 2 }}
         alignItems="center"
-        justifyContent="space-between"
-        p={4}
-        borderRadius="12px"
-        bg={
-          colorMode === "dark"
-            ? "linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-            : "linear-gradient(135deg, rgba(100, 116, 139, 0.25) 0%, rgba(148, 163, 184, 0.3) 50%, rgba(71, 85, 105, 0.25) 100%)"
-        }
-        backdropFilter="blur(20px)"
-        border="1px solid"
-        borderColor={
-          colorMode === "dark"
-            ? "rgba(0, 162, 255, 0.4)"
-            : "rgba(71, 85, 105, 0.4)"
-        }
-        boxShadow={
-          colorMode === "dark"
-            ? "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-            : "0 4px 16px rgba(71, 85, 105, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.4)"
-        }
+        justifyContent="flex-start"
+        p={{ base: 1.5, md: 2, lg: 3 }}
         position="relative"
-        zIndex={100}
-        flexWrap="wrap"
+        zIndex={0}
+        flexWrap="nowrap"
+        borderLeftRadius="24px"
+        overflow="visible"
+        sx={{
+          "&::before": {
+            content: '""',
+            position: "absolute",
+            left: 0,
+            top: 0,
+            width: "20px",
+            height: "100%",
+            background:
+              "linear-gradient(90deg, rgba(113, 219, 255, 0.3) 0%, transparent 100%)",
+            borderLeftRadius: "24px",
+            pointerEvents: "none",
+            zIndex: 10,
+          },
+        }}
       >
         {/* Molecule Label Box */}
-        <Box
-          bg={colorMode === "dark" ? "whiteAlpha.100" : "blackAlpha.50"}
-          px={3}
-          py={2}
-          borderRadius="md"
-          backdropFilter="blur(8px)"
-          border="1px solid"
-          borderColor={
-            colorMode === "dark" ? "whiteAlpha.200" : "blackAlpha.200"
-          }
-        >
-          <Heading size="md">Molecule</Heading>
+        <Heading size={{ base: "xs", md: "sm" }} className="mr-text-primary" whiteSpace="nowrap" minW="auto">
+          Molecule
+        </Heading>
+
+        <Box position="relative" zIndex={500}>
+          <DisplayModeSwitcher
+            currentMode={currentDisplayMode}
+            onChange={handleDisplayModeChange}
+          />
         </Box>
 
-        <DisplayModeSwitcher
-          currentMode={currentDisplayMode}
-          onChange={handleDisplayModeChange}
-        />
-
         {/* View Filter Dropdown */}
-        <Box display="flex" alignItems="center" gap={2}>
+        <Box
+          display="flex"
+          alignItems="center"
+          gap={{ base: 0.5, md: 1 }}
+          bg={
+            colorMode === "dark"
+              ? "rgba(15, 23, 42, 0.6)"
+              : "rgba(255, 255, 255, 0.6)"
+          }
+          px={{ base: 1.5, md: 2 }}
+          py={{ base: 0.5, md: 1 }}
+          borderRadius="full"
+          border="1px solid"
+          borderColor={
+            colorMode === "dark"
+              ? "rgba(113, 219, 255, 0.2)"
+              : "rgba(71, 85, 105, 0.2)"
+          }
+          boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.15)"
+          position="relative"
+          zIndex={500}
+        >
           <Text
-            fontSize="xs"
-            color={colorMode === "dark" ? "gray.400" : "gray.600"}
+            className="mr-text-muted"
+            fontSize={{ base: "8px", md: "9px", lg: "10px" }}
             textTransform="uppercase"
-            letterSpacing="1px"
+            letterSpacing="0.3px"
             whiteSpace="nowrap"
+            display={{ base: "none", lg: "block" }}
           >
-            View Filter
+            Filter
           </Text>
           <Select
-            size="sm"
-            width="180px"
+            size="xs"
+            width={{ base: "85px", md: "100px", lg: "120px" }}
+            fontSize={{ base: "9px", md: "10px", lg: "11px" }}
+            height={{ base: "20px", md: "24px" }}
             value={
               showPinnedOnly ? "pinned" : dimUnpinned ? "prominent" : "equal"
             }
@@ -796,45 +817,122 @@ const MoleculeMapPage = () => {
                 setDimUnpinned(false);
               }
             }}
-            bg={colorMode === "dark" ? "gray.700" : "white"}
+            zIndex={100}
+            bg={colorMode === "dark" ? "rgba(15, 23, 42, 0.9)" : "white"}
+            border="1px solid"
+            borderColor={
+              colorMode === "dark"
+                ? "var(--mr-blue-border)"
+                : "rgba(71, 85, 105, 0.3)"
+            }
+            color={colorMode === "dark" ? "var(--mr-text-primary)" : "gray.800"}
+            borderRadius="full"
+            boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.4)"
+            _hover={{
+              borderColor:
+                colorMode === "dark"
+                  ? "var(--mr-blue)"
+                  : "rgba(71, 85, 105, 0.5)",
+            }}
           >
-            <option value="equal">👁️ All (Equal)</option>
-            <option value="prominent">👁️ All (Prominent)</option>
-            <option value="pinned">📌 Pinned Only</option>
+            <option value="equal">👁️ Equal</option>
+            <option value="prominent">👁️ Dim</option>
+            <option value="pinned">📌 Pin</option>
           </Select>
         </Box>
 
         {/* Authors Dropdown */}
-        <Box display="flex" alignItems="center" gap={2}>
+        <Box
+          display="flex"
+          alignItems="center"
+          gap={{ base: 0.5, md: 1 }}
+          bg={
+            colorMode === "dark"
+              ? "rgba(15, 23, 42, 0.6)"
+              : "rgba(255, 255, 255, 0.6)"
+          }
+          px={{ base: 1.5, md: 2 }}
+          py={{ base: 0.5, md: 1 }}
+          borderRadius="full"
+          border="1px solid"
+          borderColor={
+            colorMode === "dark"
+              ? "rgba(113, 219, 255, 0.2)"
+              : "rgba(71, 85, 105, 0.2)"
+          }
+          boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.15)"
+          position="relative"
+          zIndex={500}
+        >
           <Text
-            fontSize="xs"
-            color={colorMode === "dark" ? "gray.400" : "gray.600"}
+            className="mr-text-muted"
+            fontSize={{ base: "8px", md: "9px", lg: "10px" }}
             textTransform="uppercase"
-            letterSpacing="1px"
+            letterSpacing="0.3px"
             whiteSpace="nowrap"
+            display={{ base: "none", lg: "block" }}
           >
             Authors
           </Text>
           <Select
-            size="sm"
-            width="180px"
+            size="xs"
+            width={{ base: "85px", md: "100px", lg: "120px" }}
+            fontSize={{ base: "9px", md: "10px", lg: "11px" }}
+            height={{ base: "20px", md: "24px" }}
             value={showReferenceAuthors ? "all" : "task"}
             onChange={(e) => setShowReferenceAuthors(e.target.value === "all")}
-            bg={colorMode === "dark" ? "gray.700" : "white"}
+            bg={colorMode === "dark" ? "rgba(15, 23, 42, 0.9)" : "white"}
+            border="1px solid"
+            borderColor={
+              colorMode === "dark"
+                ? "var(--mr-blue-border)"
+                : "rgba(71, 85, 105, 0.3)"
+            }
+            color={colorMode === "dark" ? "var(--mr-text-primary)" : "gray.800"}
+            borderRadius="full"
+            boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.4)"
+            _hover={{
+              borderColor:
+                colorMode === "dark"
+                  ? "var(--mr-blue)"
+                  : "rgba(71, 85, 105, 0.5)",
+            }}
           >
-            <option value="task">👤 Task Author Only</option>
-            <option value="all">👥 All Authors</option>
+            <option value="task">👤 Task</option>
+            <option value="all">👥 All</option>
           </Select>
         </Box>
 
         {/* Views Dropdown */}
-        <Box display="flex" alignItems="center" gap={2}>
+        <Box
+          display="flex"
+          alignItems="center"
+          gap={{ base: 0.5, md: 1 }}
+          bg={
+            colorMode === "dark"
+              ? "rgba(15, 23, 42, 0.6)"
+              : "rgba(255, 255, 255, 0.6)"
+          }
+          px={{ base: 1.5, md: 2 }}
+          py={{ base: 0.5, md: 1 }}
+          borderRadius="full"
+          border="1px solid"
+          borderColor={
+            colorMode === "dark"
+              ? "rgba(113, 219, 255, 0.2)"
+              : "rgba(71, 85, 105, 0.2)"
+          }
+          boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.15)"
+          position="relative"
+          zIndex={500}
+        >
           <Text
-            fontSize="xs"
-            color={colorMode === "dark" ? "gray.400" : "gray.600"}
+            className="mr-text-muted"
+            fontSize={{ base: "8px", md: "9px", lg: "10px" }}
             textTransform="uppercase"
-            letterSpacing="1px"
+            letterSpacing="0.3px"
             whiteSpace="nowrap"
+            display={{ base: "none", lg: "block" }}
           >
             Views
           </Text>
@@ -850,10 +948,14 @@ const MoleculeMapPage = () => {
         </Box>
 
         {/* Verimeter Mode Toggle */}
-        <VerimeterModeToggle compact />
+        <Box position="relative" zIndex={500}>
+          <VerimeterModeToggle compact />
+        </Box>
 
         {/* Viewer Scope Badge */}
-        <ViewerScopeBadge />
+        <Box position="relative" zIndex={500}>
+          <ViewerScopeBadge />
+        </Box>
       </Box>
 
       {filteredGraphData.nodes.length > 0 ? (

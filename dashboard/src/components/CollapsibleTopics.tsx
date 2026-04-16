@@ -80,7 +80,6 @@ const CollapsibleTopics: React.FC = () => {
       position="relative"
       w="full"
       background="rgba(0, 0, 0, 0.4)"
-      backdropFilter="blur(10px)"
       border="1px solid rgba(139, 92, 246, 0.3)"
       borderRadius="8px"
       overflow="hidden"

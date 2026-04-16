@@ -42,6 +42,8 @@ import { CaseFocusPage } from "./pages/CaseFocusPage";
 import SourceQualityPage from "./pages/SourceQualityPage";
 import KnowGraphPage from "./pages/KnowGraphPage";
 import NewKnowGraphPage from "./pages/NewKnowGraphPage";
+import VerifyRecordPage from "./pages/VerifyRecordPage";
+import RatingEvaluationPage from "./pages/RatingEvaluationPage";
 
 const router = createBrowserRouter([
   {
@@ -68,6 +70,10 @@ const router = createBrowserRouter([
   {
     path: "/about",
     element: <AboutPage />,
+  },
+  {
+    path: "/verify",
+    element: <VerifyRecordPage />,
   },
   {
     path: "/",
@@ -100,7 +106,7 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "evaluate-ratings",
+        path: "rating-history",
         element: (
           <ProtectedRoute>
             <RatingEvaluation />
@@ -329,6 +335,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <SourceQualityPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "evaluate-ratings",
+        element: (
+          <ProtectedRoute>
+            <RatingEvaluationPage />
           </ProtectedRoute>
         ),
       },

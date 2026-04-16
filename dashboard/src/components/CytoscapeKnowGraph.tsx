@@ -1012,7 +1012,6 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
             border="1px solid rgba(255, 143, 183, 0.4)"
             borderRadius="12px"
             p={3}
-            backdropFilter="blur(12px)"
             boxShadow="0 8px 32px rgba(0, 0, 0, 0.7)"
             zIndex={101}
             minW="220px"

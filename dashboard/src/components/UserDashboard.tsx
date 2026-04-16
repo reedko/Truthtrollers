@@ -228,7 +228,6 @@ const UserDashboard: React.FC = () => {
                     px={6}
                     py={4}
                     bgGradient="linear(to-r, rgba(0,0,0,0.6), rgba(0,0,0,0.2))"
-                    backdropFilter="blur(2px)"
                   >
                     <Box maxW="55%">
                       <Heading size="md" mb={2} color="teal.200">

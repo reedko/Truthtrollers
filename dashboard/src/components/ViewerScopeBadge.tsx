@@ -1,21 +1,14 @@
 // src/components/ViewerScopeBadge.tsx
 import React, { useEffect } from "react";
 import {
-  HStack,
   Text,
-  Badge,
-  Menu,
-  MenuButton,
-  MenuList,
-  MenuItem,
-  Button,
+  Select,
   Icon,
-  Flex,
   Box,
   useColorMode,
   useDisclosure,
+  Button,
 } from "@chakra-ui/react";
-import { ChevronDownIcon } from "@chakra-ui/icons";
 import { FiUsers, FiUser, FiShield } from "react-icons/fi";
 import { useTaskStore, ViewScope } from "../store/useTaskStore";
 import { useAuthStore } from "../store/useAuthStore";
@@ -102,73 +95,73 @@ export const ViewerScopeBadge: React.FC<ViewerScopeBadgeProps> = ({
     }
   };
 
+  const getDisplayValue = () => {
+    if (viewScope === 'user') return `user:${viewedUserName}`;
+    if (viewScope === 'all') return 'all';
+    if (viewScope === 'admin') return 'admin';
+    return 'user';
+  };
+
   return (
     <>
-      <Flex
-        align="center"
-        gap={1.5}
-        bg={colorMode === "dark" ? "whiteAlpha.100" : "blackAlpha.50"}
-        px={2.5}
-        py={2}
-        borderRadius="md"
-        backdropFilter="blur(8px)"
+      <Box
+        display="flex"
+        alignItems="center"
+        gap={{ base: 0.5, md: 1 }}
+        bg={colorMode === "dark" ? "rgba(15, 23, 42, 0.6)" : "rgba(255, 255, 255, 0.6)"}
+        px={{ base: 1.5, md: 2 }}
+        py={{ base: 0.5, md: 1 }}
+        borderRadius="full"
         border="1px solid"
-        borderColor={colorMode === "dark" ? "whiteAlpha.200" : "blackAlpha.200"}
+        borderColor={colorMode === "dark" ? "rgba(113, 219, 255, 0.2)" : "rgba(71, 85, 105, 0.2)"}
+        boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.15)"
         position="relative"
-        zIndex={1000}
+        zIndex={500}
       >
-        <Icon as={getScopeIcon()} boxSize={3.5} color={colorMode === "dark" ? `${getScopeColor()}.400` : `${getScopeColor()}.600`} />
-        <Text fontSize="xs" fontWeight="medium" color={colorMode === "dark" ? "whiteAlpha.900" : "gray.700"}>
-          {viewScope === 'user' ? 'Viewing as:' : 'Viewing:'}
+        <Text
+          className="mr-text-muted"
+          fontSize={{ base: "8px", md: "9px", lg: "10px" }}
+          textTransform="uppercase"
+          letterSpacing="0.3px"
+          whiteSpace="nowrap"
+          display={{ base: "none", lg: "block" }}
+        >
+          Viewing
         </Text>
-        <Menu>
-          <MenuButton
-            as={Button}
-            rightIcon={<ChevronDownIcon />}
-            size="sm"
-            variant="ghost"
-            colorScheme={getScopeColor()}
-            _hover={{ bg: colorMode === "dark" ? `${getScopeColor()}.700` : `${getScopeColor()}.100` }}
-            fontSize="xs"
-            px={2}
-          >
-            {getScopeLabel()}
-          </MenuButton>
-          <MenuList bg={colorMode === "dark" ? "gray.800" : "white"} borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"} zIndex={99999}>
-            <MenuItem
-              icon={<Icon as={FiUser} />}
-              onClick={() => handleScopeChange('user')}
-              bg={viewScope === 'user' ? (colorMode === "dark" ? 'green.700' : 'green.100') : undefined}
-            >
-              User View
-            </MenuItem>
-            <MenuItem
-              icon={<Icon as={FiUsers} />}
-              onClick={() => handleScopeChange('all')}
-              bg={viewScope === 'all' ? (colorMode === "dark" ? 'blue.700' : 'blue.100') : undefined}
-            >
-              All Users
-            </MenuItem>
-            <MenuItem
-              icon={<Icon as={FiShield} />}
-              onClick={() => handleScopeChange('admin')}
-              bg={viewScope === 'admin' ? (colorMode === "dark" ? 'cyan.700' : 'cyan.100') : undefined}
-              isDisabled={!user || user.role !== 'admin'}
-            >
-              Admin View
-            </MenuItem>
-            <MenuItem
-              icon={<Icon as={FiUser} />}
-              onClick={handleSwitchViewer}
-              borderTop="1px solid"
-              borderColor={colorMode === "dark" ? "whiteAlpha.200" : "gray.200"}
-              mt={2}
-            >
-              Switch User...
-            </MenuItem>
-          </MenuList>
-        </Menu>
-      </Flex>
+        <Select
+          size="xs"
+          width={{ base: "85px", md: "100px", lg: "120px" }}
+          fontSize={{ base: "9px", md: "10px", lg: "11px" }}
+          height={{ base: "20px", md: "24px" }}
+          value={getDisplayValue()}
+          onChange={(e) => {
+            const val = e.target.value;
+            if (val === 'all') {
+              handleScopeChange('all');
+            } else if (val === 'admin') {
+              handleScopeChange('admin');
+            } else if (val === 'switch') {
+              handleSwitchViewer();
+            } else {
+              handleScopeChange('user');
+            }
+          }}
+          bg={colorMode === "dark" ? "rgba(15, 23, 42, 0.9)" : "white"}
+          border="1px solid"
+          borderColor={colorMode === "dark" ? "var(--mr-blue-border)" : "rgba(71, 85, 105, 0.3)"}
+          color={colorMode === "dark" ? "var(--mr-text-primary)" : "gray.800"}
+          borderRadius="full"
+          boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.4)"
+          _hover={{
+            borderColor: colorMode === "dark" ? "var(--mr-blue)" : "rgba(71, 85, 105, 0.5)",
+          }}
+        >
+          <option value={`user:${viewedUserName}`}>👤 {viewedUserName}</option>
+          <option value="all">👥 All</option>
+          {user?.role === 'admin' && <option value="admin">🛡️ Admin</option>}
+          <option value="switch">🔄 Switch</option>
+        </Select>
+      </Box>
 
       <UserSelectorModal isOpen={isOpen} onClose={onClose} />
     </>

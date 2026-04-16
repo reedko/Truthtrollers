@@ -47,7 +47,6 @@ const TruthGapMeter: React.FC<TruthGapMeterProps> = ({
       p="20px"
       mb="20px"
       background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-      backdropFilter="blur(20px)"
       border="2px solid rgba(0, 162, 255, 0.3)"
       borderRadius="12px"
       boxShadow="0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.2)"
