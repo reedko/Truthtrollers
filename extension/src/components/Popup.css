@@ -1,10 +1,11 @@
-.popup-box-text {
+/* All styles scoped to #tt-popup-root to prevent bleeding into host page */
+#tt-popup-root .popup-box-text {
   font-family: Arial, Helvetica, sans-serif;
   width: 200px;
   font-size: large;
 }
 
-#no-popup-root {
+#tt-popup-root #no-popup-root {
   position: fixed; /* Fixed position relative to the viewport */
   top: 100px;
   right: 20px;
@@ -29,25 +30,36 @@
     opacity: 1;
   }
 }
-.task-card-hidden {
+#tt-popup-root .task-card-hidden {
   display: none;
 }
 
-.task-card-visible {
+#tt-popup-root .task-card-visible {
   display: block;
 }
 
-.popup-box {
-  position: fixed;
-  top: 10px;
-  right: 20px;
-  z-index: 10000; /* Ensure it's above all page content */
-  animation: fadeIn 0.8s ease-in-out;
+/* Strong isolation for popup - prevent page CSS interference */
+#tt-popup-root .popup-box {
+  position: fixed !important;
+  top: 10px !important;
+  right: 20px !important;
+  z-index: 2147483647 !important; /* Max z-index to ensure it's above all page content */
+  animation: fadeIn 0.8s ease-in-out !important;
+  font-size: 16px !important;
+  display: block !important;
   box-sizing: border-box !important;
-  font-size: 16px !important; /* Reset base font size */
+  font-family: Futura, 'Century Gothic', 'Avenir Next', -apple-system, BlinkMacSystemFont, sans-serif !important;
 }
 
-.popup-buttons {
+/* Reset common problematic properties that pages might override */
+#tt-popup-root .popup-box *,
+#tt-popup-root .popup-box *::before,
+#tt-popup-root .popup-box *::after {
+  box-sizing: border-box !important;
+  font-family: inherit !important;
+}
+
+#tt-popup-root .popup-buttons {
   margin: auto;
   width: 100%;
   display: flex;
@@ -55,17 +67,17 @@
   align-items: center;
 }
 
-.popup-image {
+#tt-popup-root .popup-image {
   object-fit: cover; /* Scale the image while maintaining aspect ratio */
   margin: auto; /* Add some space below the image */
 }
 
-.showPopup {
+#tt-popup-root .showPopup {
   opacity: 1; /* Show popup */
   pointer-events: auto; /* Enable clicks when visible */
 }
 
-.popup-button {
+#tt-popup-root .popup-button {
   position: relative;
   background-color: #122b07;
   border-radius: 5px;
@@ -78,7 +90,7 @@
   width: 100%;
 }
 
-.popup-button-text {
+#tt-popup-root .popup-button-text {
   color: white;
   font-family: Arial, Helvetica, sans-serif;
   font-size: medium;
@@ -89,12 +101,12 @@
   transform: translate(-50%, -50%);
 }
 
-.image-container {
+#tt-popup-root .image-container {
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.popup-button:hover {
+#tt-popup-root .popup-button:hover {
   background-color: #0056b3;
 }

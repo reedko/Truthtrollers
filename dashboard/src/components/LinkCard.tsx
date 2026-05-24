@@ -40,6 +40,8 @@ interface LinkCardProps {
   /** hide middle meta block (image/authors/publishers/progress) */
   hideMeta?: boolean;
   onSelect?: (ContentLink: ContentLink) => void;
+  /** Role this content plays in the current context. Defaults to "case". */
+  role?: "case" | "source";
 }
 
 const LinkCard: React.FC<LinkCardProps> = ({
@@ -48,6 +50,7 @@ const LinkCard: React.FC<LinkCardProps> = ({
   compact = false,
   hideMeta = false,
   onSelect,
+  role = "case",
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -243,9 +246,7 @@ const LinkCard: React.FC<LinkCardProps> = ({
               mb={compact && hideMeta ? 0 : 1}
               lineHeight={compact && hideMeta ? "1" : "normal"}
             >
-              {activeContentLink?.content_type === "reference"
-                ? "Source Details"
-                : "Case Details"}
+              {role === "source" ? "Source Details" : "Case Details"}
             </Text>
           </Center>
 

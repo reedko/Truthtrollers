@@ -8,13 +8,6 @@ import { openAiLLM } from "./openAiLLM.js";
 import { persistClaims } from "../storage/persistClaims.js";
 import logger from "../utils/logger.js";
 
-// ========================================
-// CLAIM EXTRACTION MODE TOGGLE
-// ========================================
-// 'ranked': Extract 3-12 high-quality claims only (single LLM pass, efficient)
-// 'comprehensive': Extract all claims, then filter separately (for user ranking UI)
-const EXTRACTION_MODE = 'ranked'; // Use ranked mode for faster processing (1 LLM call vs 2)
-
 /**
  * processTaskClaims({
  *    query,
@@ -22,15 +15,17 @@ const EXTRACTION_MODE = 'ranked'; // Use ranked mode for faster processing (1 LL
  *    text,
  *    claimType = 'task',
  *    taskClaimsContext = null,
- *    clearOldLinks = false
+ *    clearOldLinks = false,
+ *    extractionMode = null
  * })
  *
  * @param clearOldLinks - If true, clear existing content_claims links before persisting (for re-scraping)
+ * @param extractionMode - Override extraction mode ('edge', 'ranked', 'comprehensive'). If null, loads from database.
  *
  * Returns:
  *    [{ id: claimId, text }]
  */
-export async function processTaskClaims({ query, taskContentId, text, claimType = 'task', taskClaimsContext = null, clearOldLinks = false }) {
+export async function processTaskClaims({ query, taskContentId, text, claimType = 'task', taskClaimsContext = null, clearOldLinks = false, extractionMode = null }) {
   logger.log("🟩 [processTaskClaims] Extracting + storing claims…");
   if (taskClaimsContext && taskClaimsContext.length > 0) {
     logger.log(`📋 [processTaskClaims] Context-aware mode: ${taskClaimsContext.length} task claims provided:`);
@@ -52,19 +47,60 @@ export async function processTaskClaims({ query, taskContentId, text, claimType 
 
   logger.log(`📝 [processTaskClaims] Text length: ${text.length} chars, first 300 chars: "${text.substring(0, 300).replace(/\s+/g, ' ')}..."`);
 
+  // -----------------------------------------------------
+  // 0. Load extraction mode from database (if not provided)
+  // Priority:
+  // 1. extractionMode parameter (from evidence rerun modal)
+  // 2. content.extraction_mode (if explicitly set by user via rerun modal)
+  // 3. Global default from evidence_search_config
+  // 4. Fallback to 'ranked'
+  // -----------------------------------------------------
+  let mode = extractionMode;
+
+  if (!mode) {
+    try {
+      // Check if content has explicit override (from evidence rerun modal)
+      const contentModeResult = await query(
+        `SELECT extraction_mode FROM content WHERE content_id = ?`,
+        [taskContentId]
+      );
+
+      const contentMode = contentModeResult?.[0]?.extraction_mode;
+
+      if (contentMode) {
+        // Explicitly set by user (e.g., via evidence rerun modal)
+        mode = contentMode;
+        logger.log(`📋 [processTaskClaims] Using content-specific extraction mode (from rerun): ${mode}`);
+      } else {
+        // Use global default (normal scrape behavior)
+        const defaultModeResult = await query(
+          `SELECT config_value FROM evidence_search_config WHERE config_key = 'extraction_mode'`
+        );
+
+        mode = defaultModeResult?.[0]?.config_value || 'ranked';
+        logger.log(`📋 [processTaskClaims] Using global extraction mode: ${mode}`);
+      }
+    } catch (err) {
+      logger.warn(`⚠️ [processTaskClaims] Failed to load extraction mode from database:`, err.message);
+      mode = 'ranked';
+      logger.log(`📋 [processTaskClaims] Using fallback extraction mode: ${mode}`);
+    }
+  } else {
+    logger.log(`📋 [processTaskClaims] Using provided extraction mode (from parameter): ${mode}`);
+  }
 
   // -----------------------------------------------------
   // 1. Claim extraction (LLM)
   // -----------------------------------------------------
   const extractor = new ClaimExtractor(openAiLLM, query);
 
-  logger.log(`🟩 [processTaskClaims] Using extraction mode: ${EXTRACTION_MODE}`);
+  logger.log(`🟩 [processTaskClaims] Using extraction mode: ${mode}`);
 
   const extraction = await extractor.analyzeContent({
     chunks: [{ text, tokenLength: Math.round(text.length / 4) }],
     existingTestimonials: [],
     maxConcurrency: 1,
-    extractionMode: EXTRACTION_MODE,
+    extractionMode: mode,
     taskClaimsContext,
   });
 
@@ -84,7 +120,7 @@ export async function processTaskClaims({ query, taskContentId, text, claimType 
   // 1.5. Filter and rank claims (ONLY in comprehensive mode)
   // In ranked mode, filtering already happened during extraction
   // -----------------------------------------------------
-  if (EXTRACTION_MODE === 'comprehensive') {
+  if (mode === 'comprehensive') {
     logger.log(`🟦 [ClaimFiltering] Scoring and filtering claims...`);
     claims = await extractor.filterAndRankClaims(
       claims,
@@ -99,7 +135,7 @@ export async function processTaskClaims({ query, taskContentId, text, claimType 
       return [];
     }
   } else {
-    logger.log(`🟦 [ClaimFiltering] Skipping separate filter (ranked mode already filtered)`);
+    logger.log(`🟦 [ClaimFiltering] Skipping separate filter (${mode} mode already filtered)`);
   }
 
   // -----------------------------------------------------

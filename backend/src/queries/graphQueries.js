@@ -180,26 +180,18 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
 
         UNION
 
-        SELECT 'task' AS type, CONCAT("conte-",t.content_id) AS id,
+        SELECT
+               IF(EXISTS(SELECT 1 FROM content_relations WHERE content_id = t.content_id)
+                  OR NOT EXISTS(SELECT 1 FROM content_relations WHERE reference_content_id = t.content_id),
+                  'task', 'reference') AS type,
+               CONCAT("conte-",t.content_id) AS id,
                t.content_id AS content_id, NULL AS author_id, NULL AS publisher_id,
                t.content_name AS label, t.url,
                (SELECT COUNT(*) FROM content_claims WHERE content_id = t.content_id) AS claimCount,
                (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating
         FROM content t
         JOIN content_authors ca ON t.content_id = ca.content_id
-        WHERE t.content_type='task' AND ca.author_id = ?
-
-
-        UNION
-
-        SELECT 'reference' AS type, CONCAT("conte-",lr.content_id) AS id,
-               lr.content_id AS content_id, NULL AS author_id, NULL AS publisher_id,
-               lr.content_name AS label, lr.url AS url,
-               (SELECT COUNT(*) FROM content_claims WHERE content_id = lr.content_id) AS claimCount,
-               (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = lr.content_id) AS rating
-        FROM content lr
-        JOIN content_authors ca ON lr.content_id = ca.content_id
-        WHERE lr.content_type='reference' AND ca.author_id = ?
+        WHERE ca.author_id = ?
 
 
         UNION
@@ -231,14 +223,18 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
 
         UNION
 
-        SELECT 'task' AS type, CONCAT("conte-",t.content_id) AS id,
+        SELECT
+               IF(EXISTS(SELECT 1 FROM content_relations WHERE content_id = t.content_id)
+                  OR NOT EXISTS(SELECT 1 FROM content_relations WHERE reference_content_id = t.content_id),
+                  'task', 'reference') AS type,
+               CONCAT("conte-",t.content_id) AS id,
                t.content_id AS content_id, NULL AS author_id, NULL AS publisher_id,
                t.content_name AS label, t.url,
                (SELECT COUNT(*) FROM content_claims WHERE content_id = t.content_id) AS claimCount,
                (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating
         FROM content t
         JOIN content_publishers tp ON t.content_id = tp.content_id
-        WHERE t.content_type = 'task' AND tp.publisher_id = ?
+        WHERE tp.publisher_id = ?
 
 
         UNION
@@ -253,18 +249,6 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
         JOIN content_authors ca ON a.author_id = ca.author_id
         JOIN content_publishers tp ON ca.content_id = tp.content_id
         WHERE tp.publisher_id = ?
-
-
-        UNION
-
-        SELECT 'reference' AS type, CONCAT("conte-",lr.content_id) AS id,
-               lr.content_id AS content_id, NULL AS author_id, NULL AS publisher_id,
-               lr.content_name AS label, lr.url AS url,
-               (SELECT COUNT(*) FROM content_claims WHERE content_id = lr.content_id) AS claimCount,
-               (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = lr.content_id) AS rating
-        FROM content lr
-        JOIN content_publishers tp ON lr.content_id = tp.content_id
-        WHERE lr.content_type = 'reference' AND tp.publisher_id = ?
         ;
       `;
   }
@@ -512,7 +496,8 @@ export const getLinksForEntity = (entityType, viewerId = null) => {
         CONCAT("conte-", c.content_id, "_autho-", ca.author_id) AS id
       FROM content_authors ca
       JOIN content c ON ca.content_id = c.content_id
-      WHERE c.content_type = 'reference' AND ca.content_id = ?
+      WHERE ca.content_id = ?
+        AND EXISTS (SELECT 1 FROM content_relations WHERE reference_content_id = c.content_id)
 
       UNION
 

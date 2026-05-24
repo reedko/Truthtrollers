@@ -82,7 +82,7 @@ router.get("/api/user-tasks/:user_id", async (req, res) => {
 
     FROM content t
     JOIN content_users cu ON t.content_id = cu.content_id
-    WHERE t.content_type = 'task' AND cu.user_id = ?
+    WHERE cu.user_id = ?
     GROUP BY t.content_id
     ORDER BY t.content_id DESC
   ` : `
@@ -128,7 +128,7 @@ router.get("/api/user-tasks/:user_id", async (req, res) => {
 
     FROM content t
     JOIN content_users cu ON t.content_id = cu.content_id
-    WHERE t.content_type = 'task' AND cu.user_id = ? AND (t.is_active IS NULL OR t.is_active = 1)
+    WHERE cu.user_id = ? AND (t.is_active IS NULL OR t.is_active = 1)
     GROUP BY t.content_id
     ORDER BY t.content_id DESC
   `;
@@ -200,8 +200,7 @@ router.get("/api/search-tasks", async (req, res) => {
         WHERE cp.content_id = t.content_id
       ) AS publishers
     FROM content t
-    WHERE t.content_type IN ('task', 'reference')
-      AND (
+    WHERE (
         t.content_name LIKE ?
         OR IFNULL(t.url, '') LIKE ?
         OR IFNULL(t.details, '') LIKE ?
@@ -214,7 +213,7 @@ router.get("/api/search-tasks", async (req, res) => {
     GROUP BY t.content_id
     ORDER BY
       t.content_name LIKE ? DESC,
-      t.content_type = 'task' DESC,
+      EXISTS(SELECT 1 FROM content_relations WHERE content_id = t.content_id) DESC,
       t.content_id DESC
   ` : `
     SELECT
@@ -256,8 +255,7 @@ router.get("/api/search-tasks", async (req, res) => {
         WHERE cp.content_id = t.content_id
       ) AS publishers
     FROM content t
-    WHERE t.content_type IN ('task', 'reference')
-      AND (t.is_active IS NULL OR t.is_active = 1)
+    WHERE (t.is_active IS NULL OR t.is_active = 1)
       AND (
         t.content_name LIKE ?
         OR IFNULL(t.url, '') LIKE ?
@@ -271,7 +269,7 @@ router.get("/api/search-tasks", async (req, res) => {
     GROUP BY t.content_id
     ORDER BY
       t.content_name LIKE ? DESC,
-      t.content_type = 'task' DESC,
+      EXISTS(SELECT 1 FROM content_relations WHERE content_id = t.content_id) DESC,
       t.content_id DESC
   `;
 
@@ -333,7 +331,9 @@ router.get("/api/all-tasks", async (req, res) => {
         WHERE cp.content_id = t.content_id
       ) AS publishers
     FROM content t
-    WHERE t.content_type = 'task'
+    WHERE EXISTS (
+      SELECT 1 FROM content_relations cr WHERE cr.content_id = t.content_id
+    )
     GROUP BY t.content_id
     ORDER BY t.content_id DESC
   ` : `
@@ -376,7 +376,10 @@ router.get("/api/all-tasks", async (req, res) => {
         WHERE cp.content_id = t.content_id
       ) AS publishers
     FROM content t
-    WHERE t.content_type = 'task' AND (t.is_active IS NULL OR t.is_active = 1)
+    WHERE (t.is_active IS NULL OR t.is_active = 1)
+      AND EXISTS (
+        SELECT 1 FROM content_relations cr WHERE cr.content_id = t.content_id
+      )
     GROUP BY t.content_id
     ORDER BY t.content_id DESC
   `;

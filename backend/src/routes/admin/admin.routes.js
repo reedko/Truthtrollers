@@ -9,12 +9,16 @@ import logger from "../../utils/logger.js";
 import { authenticateToken } from "../../middleware/auth.js";
 import { isOnline } from "../../realtime/socketServer.js";
 import createMigrateCanonicalHashRouter from "./migrate-canonical-hash.routes.js";
+import createXCredentialsRouter from "./x-credentials.routes.js";
 
-export default function createAdminRouter({ query }) {
+export default function createAdminRouter({ query, pool }) {
   const router = express.Router();
 
   // Mount migration routes
   router.use("/", createMigrateCanonicalHashRouter({ query }));
+
+  // Mount X credentials routes
+  router.use("/api/admin/x-credentials", createXCredentialsRouter({ query, pool }));
 
   // ──────────────────────────────────────────────────────────────────
   // GET /api/admin/online-users

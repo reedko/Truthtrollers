@@ -24,7 +24,15 @@ export default function createTopicsRoutes({ query, pool }) {
     (SELECT DISTINCT(topic_id)
   FROM content_topics ct join content c
   on ct.content_id=c.content_id
-  WHERE topic_order=1 and content_type='task')ORDER by topic_name`;
+  WHERE topic_order=1
+    AND NOT EXISTS (
+      SELECT 1 FROM content_relations cr_ref
+      WHERE cr_ref.reference_content_id = c.content_id
+        AND NOT EXISTS (
+          SELECT 1 FROM content_relations cr_case
+          WHERE cr_case.content_id = c.content_id
+        )
+    ))ORDER by topic_name`;
 
     pool.query(sql, async (err, results) => {
       if (err) {

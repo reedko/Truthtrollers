@@ -133,7 +133,8 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
   // 📚 Select from global list
   const handleOpenSelectModal = () => {
     console.log("Opening select modal with taskId:", taskId);
-    if (typeof taskId === "number") setSelectedTask(taskId);
+    // Don't call setSelectedTask - it causes workspace to re-render with null task
+    // The taskId is already available as a prop and will be used by SelectReferenceModal
     setIsSelectOpen(true);
   };
 

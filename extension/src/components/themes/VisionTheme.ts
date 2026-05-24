@@ -6,20 +6,17 @@ const theme = extendTheme({
   config: {
     initialColorMode: "dark",
     useSystemColorMode: false,
+    disableTransitionOnChange: false,
   },
+  cssVarPrefix: 'tt',
   fonts: {
-    heading: "'DM Sans', sans-serif",
-    body: "'DM Sans', sans-serif",
+    heading: "Futura, 'Century Gothic', 'Avenir Next', -apple-system, BlinkMacSystemFont, sans-serif",
+    body: "Futura, 'Century Gothic', 'Avenir Next', -apple-system, BlinkMacSystemFont, sans-serif",
   },
   styles: {
     global: {
-      html: {
-        height: "100%",
-      },
-
-      "#root": {
-        height: "100%",
-      },
+      // Removed html and #root styles to prevent bleeding into host page
+      // All styles now scoped to #tt-popup-root via cssVarsRoot prop
     },
   },
   textures: {

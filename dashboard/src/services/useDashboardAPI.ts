@@ -683,6 +683,37 @@ export const deleteClaim = async (claimId: number, userId?: number) => {
   return hideClaim(claimId, userId);
 };
 
+/**
+ * Permanently delete claims for everyone (super_admin only)
+ */
+export const hardDeleteClaims = async (claimIds: number[]) => {
+  try {
+    await api.delete(`${API_BASE_URL}/api/claims/permanent`, {
+      data: { claimIds },
+    });
+  } catch (error) {
+    console.error("❌ Error permanently deleting claims:", error);
+    throw error;
+  }
+};
+
+/**
+ * Permanently remove references from a task for everyone (super_admin only)
+ */
+export const hardDeleteReferences = async (
+  taskId: number,
+  referenceIds: number[],
+) => {
+  try {
+    await api.delete(`${API_BASE_URL}/api/references/permanent`, {
+      data: { taskId, referenceIds },
+    });
+  } catch (error) {
+    console.error("❌ Error permanently deleting references:", error);
+    throw error;
+  }
+};
+
 /** --------------------- 📚 REFERENCES FUNCTIONS --------------------- **/
 /**
  * Fetch all references from the database.

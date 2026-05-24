@@ -100,6 +100,9 @@ export const AccountMenu: React.FC = () => {
           <MenuItem onClick={() => navigate("/account")}>
             Account Settings
           </MenuItem>
+          <MenuItem onClick={() => navigate("/admin/social")}>
+            Social Admin
+          </MenuItem>
           {!isDemo && (
             <>
               <MenuItem onClick={() => navigate("/permissions")}>

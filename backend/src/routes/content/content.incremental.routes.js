@@ -354,5 +354,196 @@ export default function createContentIncrementalRoutes({ query }) {
     }
   });
 
+  /**
+   * POST /api/content/:id/claims/:claimId/evidence/rerun
+   * Re-run evidence search for a single claim
+   *
+   * Body:
+   * {
+   *   mode: "standard" | "deep" | "incremental"
+   * }
+   */
+  router.post("/api/content/:id/claims/:claimId/evidence/rerun", async (req, res) => {
+    const contentId = parseInt(req.params.id);
+    const claimId = parseInt(req.params.claimId);
+    const { mode = "standard" } = req.body;
+
+    logger.log(`\n${'='.repeat(80)}`);
+    logger.log(`🔬 [Evidence Re-run] content_id=${contentId}, claim_id=${claimId}, mode=${mode}`);
+    logger.log(`${'='.repeat(80)}\n`);
+
+    if (!contentId || isNaN(contentId)) {
+      return res.status(400).json({ error: "Invalid content ID" });
+    }
+
+    if (!claimId || isNaN(claimId)) {
+      return res.status(400).json({ error: "Invalid claim ID" });
+    }
+
+    try {
+      // Get content text for evidence engine
+      const contentRow = await query(
+        `SELECT details FROM content WHERE content_id = ?`,
+        [contentId]
+      );
+
+      if (!contentRow || contentRow.length === 0) {
+        return res.status(404).json({ error: "Content not found" });
+      }
+
+      const readableText = contentRow[0]?.details || "";
+
+      // For incremental mode, just run evidence for this claim
+      // For standard/deep, we can optionally clear existing evidence first
+      if (mode !== "incremental") {
+        // Clear existing evidence for this claim
+        logger.log(`🗑️  [Evidence Re-run] Clearing existing evidence for claim ${claimId}...`);
+        await query(
+          `DELETE FROM reference_claim_task_links WHERE task_claim_id = ?`,
+          [claimId]
+        );
+      }
+
+      // Run evidence engine for just this claim
+      logger.log(`🔍 [Evidence Re-run] Running evidence engine for claim ${claimId}...`);
+      const { aiReferences, claimConfidenceMap } = await runEvidenceEngine({
+        taskContentId: contentId,
+        claimIds: [claimId],
+        readableText,
+      });
+
+      logger.log(`✅ [Evidence Re-run] Found ${aiReferences.length} references`);
+
+      // Persist AI results
+      await persistAIResults(query, {
+        contentId: contentId,
+        evidenceRefs: aiReferences,
+        claimIds: [claimId],
+        claimConfidenceMap,
+      });
+
+      // Process references (extract claims and match)
+      const validReferences = aiReferences.filter((ref) => {
+        if (!ref.referenceContentId) return false;
+        if (ref.referenceContentId === contentId) return false;
+        if (ref.cleanText && ref.cleanText.length < 500) return false;
+        return true;
+      });
+
+      logger.log(`🔄 [Evidence Re-run] Processing ${validReferences.length} references...`);
+
+      // Get task claim for context
+      const taskClaimRow = await query(
+        `SELECT c.claim_text
+         FROM claims c
+         WHERE c.claim_id = ?`,
+        [claimId]
+      );
+
+      const taskClaims = taskClaimRow.map(row => ({
+        id: claimId,
+        text: row.claim_text
+      }));
+
+      // Process references in batches
+      const BATCH_SIZE = 3;
+      let processedSuccessfully = 0;
+
+      const processReference = async (ref) => {
+        try {
+          if (ref.quote) {
+            await persistClaims(
+              query,
+              ref.referenceContentId,
+              [ref.quote],
+              "snippet",
+              "snippet"
+            );
+          }
+
+          if (ref.cleanText) {
+            const extractedClaims = await processTaskClaims({
+              query,
+              taskContentId: ref.referenceContentId,
+              text: ref.cleanText,
+              claimType: "reference",
+              taskClaimsContext: taskClaims.map((c) => c.text),
+            });
+
+            if (extractedClaims.length > 0) {
+              const claimMatches = await matchClaimsToTaskClaims({
+                referenceClaims: extractedClaims,
+                taskClaims: taskClaims,
+                llm: openAiLLM
+              });
+
+              if (claimMatches.length > 0) {
+                const values = claimMatches.map(match => {
+                  let mappedStance = match.stance;
+                  if (match.stance === 'supports') mappedStance = 'support';
+                  else if (match.stance === 'refutes') mappedStance = 'refute';
+                  else if (match.stance === 'related') mappedStance = 'nuance';
+
+                  return [
+                    match.referenceClaimId,
+                    match.taskClaimId,
+                    mappedStance,
+                    Math.round((match.veracityScore || 0.5) * 100), // score
+                    match.confidence || 0.5,
+                    match.supportLevel || 0,
+                    match.explanation || match.rationale || '',
+                    null, // quote
+                    1 // created_by_ai
+                  ];
+                });
+
+                const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
+                const flatValues = values.flat();
+
+                await query(
+                  `INSERT INTO reference_claim_task_links
+                   (reference_claim_id, task_claim_id, stance, score, confidence, support_level, rationale, quote, created_by_ai)
+                   VALUES ${placeholders}
+                   ON DUPLICATE KEY UPDATE
+                     stance = VALUES(stance),
+                     score = VALUES(score),
+                     confidence = VALUES(confidence),
+                     support_level = VALUES(support_level),
+                     rationale = VALUES(rationale)`,
+                  flatValues
+                );
+              }
+            }
+          }
+
+          processedSuccessfully++;
+        } catch (error) {
+          logger.error(`❌ [Evidence Re-run] Error processing reference ${ref.referenceContentId}:`, error.message);
+        }
+      };
+
+      for (let i = 0; i < validReferences.length; i += BATCH_SIZE) {
+        const batch = validReferences.slice(i, i + BATCH_SIZE);
+        await Promise.all(batch.map(processReference));
+      }
+
+      logger.log(`✅ [Evidence Re-run] Complete! Processed ${processedSuccessfully}/${validReferences.length} references`);
+
+      return res.json({
+        success: true,
+        evidence_count: aiReferences.length,
+        references_processed: processedSuccessfully,
+        mode: mode
+      });
+
+    } catch (err) {
+      logger.error("❌ Error in evidence re-run:", err);
+      return res.status(500).json({
+        success: false,
+        error: err.message || "Internal server error"
+      });
+    }
+  });
+
   return router;
 }

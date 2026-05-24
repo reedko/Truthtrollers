@@ -14,7 +14,7 @@ export async function getTaskById(taskId) {
       created_at,
       updated_at
     FROM content
-    WHERE content_id = ? AND content_type = 'task'
+    WHERE content_id = ?
     LIMIT 1
   `;
 
@@ -38,7 +38,6 @@ export async function getTasksForUser(userId) {
     FROM content c
     JOIN user_assignments ua ON ua.task_content_id = c.content_id
     WHERE ua.user_id = ?
-      AND c.content_type = 'task'
     ORDER BY c.created_at DESC
   `;
 
@@ -65,7 +64,6 @@ export async function getUnifiedTasksByPivot(pivotType, pivotId) {
           updated_at
         FROM content
         WHERE content_id = ?
-          AND content_type IN ('task', 'reference')
       `;
       params = [pivotId];
       break;
@@ -83,7 +81,6 @@ export async function getUnifiedTasksByPivot(pivotType, pivotId) {
         FROM content c
         JOIN content_authors ca ON ca.content_id = c.content_id
         WHERE ca.author_id = ?
-          AND c.content_type IN ('task', 'reference')
         ORDER BY c.created_at DESC
       `;
       params = [pivotId];
@@ -102,7 +99,6 @@ export async function getUnifiedTasksByPivot(pivotType, pivotId) {
         FROM content c
         JOIN content_publishers cp ON cp.content_id = c.content_id
         WHERE cp.publisher_id = ?
-          AND c.content_type IN ('task', 'reference')
         ORDER BY c.created_at DESC
       `;
       params = [pivotId];
@@ -121,7 +117,6 @@ export async function getUnifiedTasksByPivot(pivotType, pivotId) {
         FROM content c
         JOIN content_relations cr ON cr.content_id = c.content_id
         WHERE cr.reference_content_id = ?
-          AND c.content_type IN ('task', 'reference')
         ORDER BY c.created_at DESC
       `;
       params = [pivotId];

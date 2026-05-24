@@ -44,6 +44,10 @@ import KnowGraphPage from "./pages/KnowGraphPage";
 import NewKnowGraphPage from "./pages/NewKnowGraphPage";
 import VerifyRecordPage from "./pages/VerifyRecordPage";
 import RatingEvaluationPage from "./pages/RatingEvaluationPage";
+import SocialMediaPage from "./pages/SocialMediaPage";
+import SocialAdminPanel from "./pages/SocialAdminPanel";
+import TTLiveFeedPage from "./pages/TTLiveFeedPage";
+import TTLiveThreadPage from "./pages/TTLiveThreadPage";
 
 const router = createBrowserRouter([
   {
@@ -223,6 +227,38 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <NewKnowGraphPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "social-media",
+        element: (
+          <ProtectedRoute>
+            <SocialMediaPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "admin/social",
+        element: (
+          <ProtectedRoute>
+            <SocialAdminPanel />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "ttlive",
+        element: (
+          <ProtectedRoute>
+            <TTLiveFeedPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "ttlive/thread/:threadId",
+        element: (
+          <ProtectedRoute>
+            <TTLiveThreadPage />
           </ProtectedRoute>
         ),
       },

@@ -40,6 +40,8 @@ interface TaskCardProps {
   /** hide middle meta block (image/authors/publishers/progress) */
   hideMeta?: boolean;
   onSelect?: (task: Task) => void;
+  /** Role this content plays in the current context. Defaults to "case". */
+  role?: "case" | "source";
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({
@@ -48,6 +50,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   compact = false,
   hideMeta = false,
   onSelect,
+  role = "case",
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -457,7 +460,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
             mb={compact && hideMeta ? 0 : 1}
             lineHeight={compact && hideMeta ? "1" : "normal"}
           >
-            {activeTask?.content_type === "reference" ? "Source Details" : "Case Details"}
+            {role === "source" ? "Source Details" : "Case Details"}
           </Text>
         </Center>
 

@@ -1,5 +1,5 @@
 // src/pages/TaskPage.tsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Grid,
   GridItem,
@@ -13,12 +13,12 @@ import {
   FormControl,
   FormLabel,
   Select,
+  Spinner,
 } from "@chakra-ui/react";
 import TaskGrid from "../components/TaskGrid";
 import { useShallow } from "zustand/react/shallow";
 import { useTaskStore } from "../store/useTaskStore";
 import { useAuthStore } from "../store/useAuthStore";
-import { useLocation } from "react-router-dom";
 import axios from "axios";
 import { Task } from "../../../shared/entities/types";
 
@@ -32,46 +32,24 @@ export const TaskPage: React.FC = () => {
   const fetchTasksForUser = useTaskStore((state) => state.fetchTasksForUser);
   const selectedTopic = useTaskStore((state) => state.selectedTopic);
   const user = useAuthStore((s) => s.user);
-  const location = useLocation();
-  const redirectTo = location.state?.redirectTo || "/dashboard";
-  const fetchInitiated = useRef(false);
   const [showArchived, setShowArchived] = useState(false);
   const [filterMode, setFilterMode] = useState<"all" | "assigned">("all");
   const [allTasks, setAllTasks] = useState<Task[]>([]);
-
-  // Fetch all tasks (not filtered by user)
-  const fetchAllTasks = async (includeArchived: boolean) => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/api/all-tasks`, {
-        params: { showInactive: includeArchived },
-      });
-      setAllTasks(response.data);
-    } catch (error) {
-      console.error("Error fetching all tasks:", error);
-    }
-  };
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!fetchInitiated.current && user?.user_id) {
-      fetchInitiated.current = true;
-      if (filterMode === "all") {
-        fetchAllTasks(showArchived);
-      } else {
-        fetchTasksForUser(user.user_id, showArchived);
-      }
+    if (!user?.user_id) return;
+    setLoading(true);
+    if (filterMode === "all") {
+      axios
+        .get(`${API_BASE_URL}/api/all-tasks`, { params: { showInactive: showArchived } })
+        .then((r) => setAllTasks(r.data))
+        .catch((e) => console.error("Error fetching all tasks:", e))
+        .finally(() => setLoading(false));
+    } else {
+      fetchTasksForUser(user.user_id, showArchived).finally(() => setLoading(false));
     }
-  }, [user?.user_id, fetchTasksForUser]);
-
-  // Refetch when filters change
-  useEffect(() => {
-    if (user?.user_id) {
-      if (filterMode === "all") {
-        fetchAllTasks(showArchived);
-      } else {
-        fetchTasksForUser(user.user_id, showArchived);
-      }
-    }
-  }, [showArchived, filterMode, user?.user_id, fetchTasksForUser]);
+  }, [showArchived, filterMode, user?.user_id]);
 
   const baseTasks = filterMode === "all" ? allTasks : assignedTasks;
   const tasksToDisplay = selectedTopic
@@ -129,7 +107,9 @@ export const TaskPage: React.FC = () => {
           </HStack>
         </HStack>
 
-        {tasksToDisplay.length === 0 ? (
+        {loading ? (
+          <Spinner size="xl" color="teal.300" mt={8} />
+        ) : tasksToDisplay.length === 0 ? (
           <Text>
             No {filterMode === "assigned" ? "assigned " : ""}tasks found
             {selectedTopic ? ` for topic "${selectedTopic}"` : ""}.

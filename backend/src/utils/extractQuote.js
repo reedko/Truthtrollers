@@ -140,6 +140,19 @@ For each quote, provide:
 - summary: brief explanation
 - location: {page: null, section: "..."}
 
+STANCE CLASSIFICATION RULES:
+• support: Source provides evidence FOR the claim, confirms it, or corroborates it
+• refute: Source contradicts the claim, questions it, debunks it, fact-checks it as false, or provides evidence AGAINST it
+• nuance: Source adds context, caveats, limitations, or partial agreement/disagreement
+• insufficient: Source mentions the claim but takes no clear position
+
+CRITICAL:
+- If the source expresses skepticism, doubt, or criticism → "refute"
+- If the source is a fact-check that rates the claim false/misleading → "refute"
+- If the source says "this is wrong", "contrary to claims", or "no evidence for" → "refute"
+- If the source describes an incident at a DIFFERENT school/location than the claim → "refute" or "insufficient"
+- Don't confuse "mentions the claim" with "supports the claim"
+
 SCORE SOURCE QUALITY (0-10 scale):
 
 TRANSPARENCY:

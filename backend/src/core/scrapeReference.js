@@ -110,12 +110,11 @@ export async function scrapeReference(query, { url, raw_text, raw_html, title, a
       content_name: finalTitle,
       url,
       media_source: publisher?.name || "Unknown",
-      topic: "AI Evidence", // References inherit task topic in UI
+      topic: "AI Evidence",
       subtopics: [],
-      content_type: "reference",
-      taskContentId, // Link to parent task
+      taskContentId, // passing this is what creates the content_relations link
       thumbnail,
-      details: text.slice(0, 500), // Preview
+      details: text.slice(0, 500),
     });
 
     logger.log(

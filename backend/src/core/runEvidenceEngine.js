@@ -114,6 +114,35 @@ export async function runEvidenceEngine({
   // Initialize promptManager for database-driven prompts
   const promptManager = new PromptManager(query);
 
+  // ═══════════════════════════════════════════════════════════════════
+  // LOAD EVIDENCE SEARCH MODE FROM DATABASE
+  // (Load BEFORE creating engine so we can pass config to constructor)
+  // ═══════════════════════════════════════════════════════════════════
+  let searchMode = 'fringe_on_support'; // Default
+  let modeConfig = {};
+
+  try {
+    const configRows = await query(
+      `SELECT config_value FROM evidence_search_config WHERE config_key = 'search_mode'`
+    );
+    if (configRows && configRows.length > 0) {
+      searchMode = configRows[0].config_value;
+    }
+
+    const modeConfigRows = await query(
+      `SELECT config_value FROM evidence_search_config WHERE config_key = 'mode_config'`
+    );
+    if (modeConfigRows && modeConfigRows.length > 0) {
+      const allConfigs = JSON.parse(modeConfigRows[0].config_value);
+      modeConfig = allConfigs[searchMode] || {};
+    }
+
+    logger.log(`🔧 [Evidence] Search mode: ${searchMode}`);
+    logger.log(`🔧 [Evidence] Mode config:`, modeConfig);
+  } catch (err) {
+    logger.warn(`⚠️ [Evidence] Failed to load search config, using defaults:`, err.message);
+  }
+
   const engine = new EvidenceEngine(
     {
       llm: openAiLLM,
@@ -594,48 +623,10 @@ export async function runEvidenceEngine({
       },
     },
     {
-      limits: {
-        queriesPerClaim: 4, // ← Increased from 3 to 4 for more diverse queries
-        candidates: 6, // ← Reduced from 12 to 6 for faster processing with fewer failed fetches
-        evidencePerDoc: 2, // ← Increased from 1 to 2 to get more evidence per doc
-      },
-      maxParallelClaims: Infinity, // Process all claims in parallel (was 3)
-      maxCharsPerDoc: 8000,
-      preferDomains: [],
-      avoidDomains: [],
-      enableRedTeam: false,
-      maxEvidenceCandidates: 2,
-      maxParallelSearches: 4,
+      // Constructor config is now empty - all settings come from database via runOptions
+      maxParallelClaims: Infinity, // Process all claims in parallel
     }
   );
-
-  // ═══════════════════════════════════════════════════════════════════
-  // LOAD EVIDENCE SEARCH MODE FROM DATABASE
-  // ═══════════════════════════════════════════════════════════════════
-  let searchMode = 'fringe_on_support'; // Default
-  let modeConfig = {};
-
-  try {
-    const configRows = await query(
-      `SELECT config_value FROM evidence_search_config WHERE config_key = 'search_mode'`
-    );
-    if (configRows && configRows.length > 0) {
-      searchMode = configRows[0].config_value;
-    }
-
-    const modeConfigRows = await query(
-      `SELECT config_value FROM evidence_search_config WHERE config_key = 'mode_config'`
-    );
-    if (modeConfigRows && modeConfigRows.length > 0) {
-      const allConfigs = JSON.parse(modeConfigRows[0].config_value);
-      modeConfig = allConfigs[searchMode] || {};
-    }
-
-    logger.log(`🔧 [Evidence] Search mode: ${searchMode}`);
-    logger.log(`🔧 [Evidence] Mode config:`, modeConfig);
-  } catch (err) {
-    logger.warn(`⚠️ [Evidence] Failed to load search config, using defaults:`, err.message);
-  }
 
   // engine.run(claims, contexts, opt)
   // contexts can be null/undefined if not needed

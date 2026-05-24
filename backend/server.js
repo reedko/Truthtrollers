@@ -5,7 +5,7 @@ dotenv.config();
 // ═══════════════════════════════════════════════
 // GLOBAL ERROR HANDLERS - Catch all uncaught errors
 // ═══════════════════════════════════════════════
-process.on('uncaughtException', (error) => {
+process.on("uncaughtException", (error) => {
   const errMsg = `
 🔥🔥🔥 UNCAUGHT EXCEPTION 🔥🔥🔥
 Time: ${new Date().toISOString()}
@@ -18,13 +18,13 @@ Stack: ${error.stack}
   // Don't exit - let PM2 handle restart if needed
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on("unhandledRejection", (reason, promise) => {
   const errMsg = `
 ⚠️⚠️⚠️ UNHANDLED PROMISE REJECTION ⚠️⚠️⚠️
 Time: ${new Date().toISOString()}
 Reason: ${reason}
 Promise: ${promise}
-Stack: ${reason?.stack || 'No stack trace'}
+Stack: ${reason?.stack || "No stack trace"}
 ⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️⚠️
 `;
   process.stderr.write(errMsg);
@@ -86,6 +86,8 @@ import createExtensionSettingsRoutes from "./src/routes/extension-settings.route
 import createAuditRouter from "./src/routes/audit/audit.routes.js";
 import createEvaluationRouter from "./src/routes/evaluation/evaluation.routes.js";
 import createContentRatingRouter from "./src/routes/evaluation/content-rating.routes.js";
+import createDiscussionSystemRouter from "./src/routes/discussion/index.js";
+import createTTLiveSystemRouter from "./src/routes/ttlive/index.js";
 import { initSocketServer } from "./src/realtime/socketServer.js";
 
 // Logger utility
@@ -107,6 +109,7 @@ const pool = mysql.createPool({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
   multipleStatements: true,
+  charset: "utf8mb4",
   // Auto-reconnect configuration
   acquireTimeout: 10000,
   waitForConnections: true,
@@ -120,7 +123,7 @@ const query = async (...args) => {
   try {
     return await poolQuery(...args);
   } catch (error) {
-    console.error('❌ [Database] Query failed:', error.message);
+    console.error("❌ [Database] Query failed:", error.message);
     throw error;
   }
 };
@@ -179,11 +182,11 @@ app.use((req, res, next) => {
       res.setHeader("Access-Control-Allow-Credentials", "true");
       res.setHeader(
         "Access-Control-Allow-Methods",
-        "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+        "GET,POST,PUT,PATCH,DELETE,OPTIONS",
       );
       res.setHeader(
         "Access-Control-Allow-Headers",
-        req.headers["access-control-request-headers"] || "*"
+        req.headers["access-control-request-headers"] || "*",
       );
       res.setHeader("Access-Control-Allow-Private-Network", "true");
       return res.sendStatus(204);
@@ -206,14 +209,14 @@ app.use(
       cb(new Error("Not allowed by CORS"));
     },
     credentials: true,
-  })
+  }),
 );
 
 // 🔍 REQUEST LOGGER - Log EVERY request that reaches Express (except image requests)
 app.use((req, res, next) => {
   // Skip logging for image API requests to reduce console spam
-  if (!req.path.startsWith('/api/image/')) {
-    const logMsg = `[${new Date().toISOString()}] ${req.method} ${req.path} | Origin: ${req.headers.origin || 'none'} | IP: ${req.headers['x-forwarded-for'] || req.socket.remoteAddress}\n`;
+  if (!req.path.startsWith("/api/image/")) {
+    const logMsg = `[${new Date().toISOString()}] ${req.method} ${req.path} | Origin: ${req.headers.origin || "none"} | IP: ${req.headers["x-forwarded-for"] || req.socket.remoteAddress}\n`;
     process.stderr.write(logMsg);
   }
   next();
@@ -242,17 +245,19 @@ app.use("/api/assets", express.static(path.join(__dirname, "assets"))); // Produ
 //       Added: 2026-03-04
 app.use((req, res, next) => {
   // Skip if already has /api prefix, or is a static/special route
-  if (req.path.startsWith('/api/') ||
-      req.path.startsWith('/assets') ||
-      req.path === '/health' ||
-      req.path === '/proxy' ||
-      req.path === '/' ||
-      req.path.startsWith('/socket.io')) {
+  if (
+    req.path.startsWith("/api/") ||
+    req.path.startsWith("/assets") ||
+    req.path === "/health" ||
+    req.path === "/proxy" ||
+    req.path === "/" ||
+    req.path.startsWith("/socket.io")
+  ) {
     return next();
   }
 
   // Add /api prefix for nginx-stripped requests
-  req.url = '/api' + req.url;
+  req.url = "/api" + req.url;
   next();
 });
 
@@ -267,12 +272,12 @@ registerBeaconRoutes(app, query, pool);
 registerDiscussionRoutes(app, query, pool);
 registerExtractionModeRoutes(app, query);
 app.use("/api/analyze-content", analyzeContentRoute);
-app.use("/", createAnalyticsRouter({ query, pool }));  // Analytics routes: /api/track-visit, /api/analytics/*
-app.use("/", createEvidenceConfigRoutes({ query, pool }));  // Evidence config routes: /api/evidence-config
-app.use("/", createExtensionSettingsRoutes({ query, pool }));  // Extension settings routes: /api/extension-settings
+app.use("/", createAnalyticsRouter({ query, pool })); // Analytics routes: /api/track-visit, /api/analytics/*
+app.use("/", createEvidenceConfigRoutes({ query, pool })); // Evidence config routes: /api/evidence-config
+app.use("/", createExtensionSettingsRoutes({ query, pool })); // Extension settings routes: /api/extension-settings
 
 // LLM Prompts configuration routes
-import createLLMPromptsRouter from './src/routes/llm-prompts.routes.js';
+import createLLMPromptsRouter from "./src/routes/llm-prompts.routes.js";
 app.use("/api/llm-prompts", createLLMPromptsRouter({ query, pool }));
 
 // ─────────────────────────────────────────────
@@ -301,14 +306,16 @@ app.use("/", createEvidenceRouter({ query, pool }));
 app.use("/", createPromptRoutes({ query })); // Prompt management routes: /api/prompts
 app.use("/", createMoleculeViewsRoutes({ query, pool })); // Molecule views routes: /api/molecule-views
 app.use("/", createFacebookRoutes({ query })); // Facebook scraping routes: /api/scrape-facebook-post
-app.use("/", createChatRouter({ pool }));      // Chat routes: /api/chat/*, /api/users/search
+app.use("/", createChatRouter({ pool })); // Chat routes: /api/chat/*, /api/users/search
 app.use("/", createSearchAnalysisRouter({ query, pool })); // Search analysis routes: /api/search-analysis
 app.use("/", createTutorialsRouter({ query })); // Tutorial videos routes: /api/tutorials
-app.use("/", createAdminRouter({ query }));     // Admin routes: /api/admin/*, super_admin only
+app.use("/", createAdminRouter({ query, pool })); // Admin routes: /api/admin/*, super_admin only
 app.use("/", createCredibilityRouter({ query, pool })); // Credibility checks: /api/credibility/*
 app.use("/", createAuditRouter({ query, pool })); // Audit routes: /api/audit/* (blockchain timestamping)
 app.use("/", createEvaluationRouter({ query, pool })); // Evaluation routes: /api/evaluation/* (rating approval & voting)
 app.use("/", createContentRatingRouter({ query, pool })); // Content rating routes: /api/content-rating/* (evidence chain evaluation)
+app.use("/", createDiscussionSystemRouter({ query, pool })); // Discussion units & X/Twitter posting: /api/discussion/*, /api/x-auth/*
+app.use("/", createTTLiveSystemRouter({ query, pool })); // TruthTrollers Live Feed: /api/ttlive/*
 // ─────────────────────────────────────────────
 // Health + Simple Proxy (top-level, legacy behavior)
 // ─────────────────────────────────────────────
@@ -398,11 +405,12 @@ if (
   };
 
   const httpsServer = https.createServer(httpsOptions, app);
+  initSocketServer(httpsServer, pool); // Attach Socket.io to HTTPS server too
   httpsServer.listen(httpsPort, () => {
     console.log(`🔐 HTTPS server on https://localhost:${httpsPort}`);
   });
 } else if (DEV_USE_HTTPS) {
   console.warn(
-    "⚠️ DEV_USE_HTTPS=true but SSL files missing. Serving HTTP only."
+    "⚠️ DEV_USE_HTTPS=true but SSL files missing. Serving HTTP only.",
   );
 }

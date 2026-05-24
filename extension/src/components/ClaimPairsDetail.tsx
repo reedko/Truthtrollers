@@ -10,7 +10,6 @@ import {
   Image,
   Badge,
 } from "@chakra-ui/react";
-import VerimeterMeter from "./VerimeterMeter";
 
 interface ClaimPair {
   caseClaim: {
@@ -150,7 +149,22 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({
           position="relative"
           maxH="300px"
           overflowY="auto"
-          overflow="hidden"
+          css={{
+            '&::-webkit-scrollbar': {
+              width: '6px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'rgba(0, 162, 255, 0.1)',
+              borderRadius: '3px',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: 'rgba(0, 162, 255, 0.4)',
+              borderRadius: '3px',
+            },
+            '&::-webkit-scrollbar-thumb:hover': {
+              background: 'rgba(0, 162, 255, 0.6)',
+            },
+          }}
         >
           <Box position="relative" zIndex={1}>
             {!claimPairsData && (
@@ -178,36 +192,15 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({
                       position="relative"
                       background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
                       backdropFilter="blur(20px)"
-                      borderRadius="12px"
-                      border="1px solid"
-                      borderColor={
-                        isSupport
-                          ? "rgba(97, 239, 184, 0.4)"
-                          : isRefute
-                            ? "rgba(255, 108, 136, 0.4)"
-                            : "rgba(0, 162, 255, 0.4)"
-                      }
-                      boxShadow={
-                        isSupport
-                          ? "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(97, 239, 184, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-                          : isRefute
-                            ? "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(255, 108, 136, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-                            : "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
-                      }
+                      borderRadius="8px"
+                      border="1px solid rgba(0, 162, 255, 0.4)"
+                      boxShadow="0 4px 16px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 162, 255, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)"
                       overflow="hidden"
-                      transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+                      transition="all 0.3s ease"
                       _hover={{
-                        borderColor: isSupport
-                          ? "rgba(97, 239, 184, 0.6)"
-                          : isRefute
-                            ? "rgba(255, 108, 136, 0.6)"
-                            : "rgba(0, 162, 255, 0.6)",
-                        transform: "translateY(-2px)",
-                        boxShadow: isSupport
-                          ? "0 6px 20px rgba(0, 0, 0, 0.6), 0 0 40px rgba(97, 239, 184, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
-                          : isRefute
-                            ? "0 6px 20px rgba(0, 0, 0, 0.6), 0 0 40px rgba(255, 108, 136, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)"
-                            : "0 6px 20px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+                        borderColor: "rgba(0, 162, 255, 0.6)",
+                        transform: "translateY(-1px)",
+                        boxShadow: "0 6px 20px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
                       }}
                     >
                       {/* Left edge glow bar */}
@@ -215,19 +208,13 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({
                         position="absolute"
                         left={0}
                         top={0}
-                        width="20px"
+                        width="15px"
                         height="100%"
-                        background={
-                          isSupport
-                            ? "linear-gradient(90deg, rgba(97, 239, 184, 0.4) 0%, rgba(97, 239, 184, 0) 100%)"
-                            : isRefute
-                              ? "linear-gradient(90deg, rgba(255, 108, 136, 0.4) 0%, rgba(255, 108, 136, 0) 100%)"
-                              : "linear-gradient(90deg, rgba(0, 162, 255, 0.4) 0%, rgba(0, 162, 255, 0) 100%)"
-                        }
+                        background="linear-gradient(90deg, rgba(0, 162, 255, 0.4) 0%, rgba(0, 162, 255, 0) 100%)"
                         pointerEvents="none"
                         zIndex={1}
-                        borderTopLeftRadius="12px"
-                        borderBottomLeftRadius="12px"
+                        borderTopLeftRadius="8px"
+                        borderBottomLeftRadius="8px"
                       />
                       {/* Collapsed View - Clickable */}
                       <Box
@@ -247,84 +234,135 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({
                           align="stretch"
                           pointerEvents="none"
                         >
-                          {/* Verimeter bar */}
-                          <Box>
-                            <VerimeterMeter
-                              score={pair.verimeter_score}
-                              width="100%"
-                              showInterpretation={false}
-                            />
-                          </Box>
-
-                          {/* Claims Row */}
-                          <HStack
-                            spacing={2}
-                            fontSize="10px"
-                            align="center"
+                          {/* Case Claim (Top) - Blue with glow */}
+                          <Text
+                            color="#00a2ff"
+                            fontWeight="500"
+                            fontSize="sm"
+                            noOfLines={2}
+                            overflow="hidden"
+                            textOverflow="ellipsis"
+                            fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+                            lineHeight="1.3"
+                            textShadow="0 0 8px rgba(0, 162, 255, 0.6)"
                           >
-                            {/* Case Claim - No Tooltip, just text */}
-                            <HStack flex={1} spacing={1} minW={0}>
-                              <Image
-                                src={getPublisherIconUrl(
-                                  pair.caseClaim.publisher,
-                                )}
-                                alt={pair.caseClaim.publisher}
-                                boxSize="10px"
-                                borderRadius="2px"
-                                flexShrink={0}
-                              />
-                              <Text
-                                color="#b4c9e0"
-                                fontWeight="500"
-                                noOfLines={1}
-                                overflow="hidden"
-                                textOverflow="ellipsis"
-                                whiteSpace="nowrap"
-                                fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
-                              >
-                                {pair.caseClaim.claim_text}
-                              </Text>
-                            </HStack>
-                            {/* Divider */}
-                            <Box
-                              width="1px"
-                              height="12px"
-                              bg="rgba(0, 162, 255, 0.3)"
+                            {pair.caseClaim.claim_text}
+                          </Text>
+
+                          {/* Verimeter Bar with Label */}
+                          <HStack spacing={1} align="center" py={0.5} mt={1}>
+                            <Text
+                              fontSize="xs"
+                              color="#60a5fa"
                               flexShrink={0}
-                            />
-                            {/* Source Claim - No Tooltip, just text */}
-                            <HStack flex={1} spacing={1} minW={0}>
-                              <Image
-                                src={getPublisherIconUrl(
-                                  pair.sourceClaim.publisher,
-                                )}
-                                alt={pair.sourceClaim.publisher}
-                                boxSize="10px"
-                                borderRadius="2px"
-                                flexShrink={0}
-                              />
+                              fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+                            >
+                              ↓
+                            </Text>
+
+                            {/* Bar container */}
+                            <Box flex={1} position="relative">
+                              {/* Label above bar - centered */}
                               <Text
-                                color="#b4c9e0"
-                                fontWeight="500"
-                                noOfLines={1}
-                                overflow="hidden"
-                                textOverflow="ellipsis"
-                                whiteSpace="nowrap"
+                                position="absolute"
+                                left="50%"
+                                top="-15px"
+                                transform="translateX(-50%)"
+                                fontSize="2xs"
+                                fontWeight="700"
+                                color={
+                                  isSupport
+                                    ? "#4ade80"
+                                    : isRefute
+                                      ? "#f87171"
+                                      : "#60a5fa"
+                                }
                                 fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+                                textTransform="uppercase"
+                                letterSpacing="1px"
+                                whiteSpace="nowrap"
                               >
-                                {pair.sourceClaim.claim_text}
+                                {isSupport
+                                  ? "Supported By"
+                                  : isRefute
+                                    ? "Refuted By"
+                                    : "Nuanced By"}
                               </Text>
-                            </HStack>
+
+                              {/* Thin gradient bar */}
+                              <Box
+                                h="6px"
+                                w="100%"
+                                borderRadius="3px"
+                                background="linear-gradient(to right, #f87171 0%, #60a5fa 50%, #4ade80 100%)"
+                                boxShadow="inset 0 1px 2px rgba(0, 0, 0, 0.3)"
+                                position="relative"
+                                mt={1}
+                              />
+
+                              {/* Score badge on bar */}
+                              <Box
+                                position="absolute"
+                                left={`${((pair.verimeter_score + 1) / 2) * 100}%`}
+                                top="50%"
+                                transform="translate(-50%, -50%)"
+                                bg="rgba(15, 23, 42, 0.95)"
+                                px={1.5}
+                                py={0.5}
+                                borderRadius="3px"
+                                border="1px solid"
+                                borderColor={
+                                  isSupport
+                                    ? "#4ade80"
+                                    : isRefute
+                                      ? "#f87171"
+                                      : "#60a5fa"
+                                }
+                                boxShadow="0 2px 4px rgba(0, 0, 0, 0.4)"
+                              >
+                                <Text
+                                  fontSize="2xs"
+                                  fontWeight="700"
+                                  color={
+                                    isSupport
+                                      ? "#4ade80"
+                                      : isRefute
+                                        ? "#f87171"
+                                        : "#60a5fa"
+                                  }
+                                  fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+                                  lineHeight="1"
+                                >
+                                  {Math.round(pair.verimeter_score * 100)}
+                                </Text>
+                              </Box>
+                            </Box>
+
                             {/* Expand Icon */}
                             <Text
                               fontSize="xs"
-                              color="#89a9bf"
+                              color="#60a5fa"
                               flexShrink={0}
                               fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
                             >
                               {isExpanded ? "▼" : "▶"}
                             </Text>
                           </HStack>
+
+                          {/* Source Claim (Bottom) - Green tint with glow */}
+                          <Text
+                            color="#86efac"
+                            fontWeight="400"
+                            fontSize="xs"
+                            noOfLines={2}
+                            overflow="hidden"
+                            textOverflow="ellipsis"
+                            fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+                            lineHeight="1.3"
+                            textShadow="0 0 6px rgba(134, 239, 172, 0.4)"
+                          >
+                            {pair.sourceClaim.claim_text}
+                          </Text>
                         </VStack>
                       </Box>
 
@@ -332,75 +370,118 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({
                       {isExpanded && (
                         <Box
                           p={3}
-                          bg="rgba(0, 0, 0, 0.4)"
-                          borderTop="1px solid rgba(255, 255, 255, 0.05)"
+                          bg="rgba(15, 23, 42, 0.6)"
+                          borderTop="1px solid rgba(0, 162, 255, 0.2)"
                           position="relative"
                           zIndex={1}
                         >
                           <VStack spacing={3} align="stretch">
-                            {/* Stance Badge */}
+                            {/* Stance Badge - Just the label, no verimeter */}
                             <HStack justify="center">
                               <Badge
-                                fontSize="9px"
+                                fontSize="xs"
                                 px={3}
                                 py={1}
                                 borderRadius="999px"
                                 bg={
                                   isSupport
-                                    ? "rgba(97, 239, 184, 0.2)"
+                                    ? "rgba(74, 222, 128, 0.15)"
                                     : isRefute
-                                      ? "rgba(255, 108, 136, 0.2)"
-                                      : "rgba(120, 168, 255, 0.2)"
+                                      ? "rgba(248, 113, 113, 0.15)"
+                                      : "rgba(96, 165, 250, 0.15)"
                                 }
                                 color={
                                   isSupport
-                                    ? "#61efb8"
+                                    ? "#4ade80"
                                     : isRefute
-                                      ? "#ff6c88"
-                                      : "#78a8ff"
+                                      ? "#f87171"
+                                      : "#60a5fa"
                                 }
                                 border="1px solid"
                                 borderColor={
                                   isSupport
-                                    ? "rgba(97, 239, 184, 0.4)"
+                                    ? "rgba(74, 222, 128, 0.4)"
                                     : isRefute
-                                      ? "rgba(255, 108, 136, 0.4)"
-                                      : "rgba(120, 168, 255, 0.4)"
+                                      ? "rgba(248, 113, 113, 0.4)"
+                                      : "rgba(96, 165, 250, 0.4)"
                                 }
+                                fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+                                fontWeight="600"
                               >
                                 {isSupport
                                   ? "SUPPORTED"
                                   : isRefute
                                     ? "REFUTED"
-                                    : "NEUTRAL"}
+                                    : "NUANCED"}
                               </Badge>
                             </HStack>
 
+                            {/* Verimeter Bar */}
+                            <Box position="relative" w="100%">
+                              {/* Thin gradient bar */}
+                              <Box
+                                h="12px"
+                                w="100%"
+                                borderRadius="6px"
+                                background="linear-gradient(to right, #f87171 0%, #60a5fa 50%, #4ade80 100%)"
+                                boxShadow="inset 0 1px 3px rgba(0, 0, 0, 0.4)"
+                                position="relative"
+                              />
+
+                              {/* Score badge on bar */}
+                              <Box
+                                position="absolute"
+                                left={`${((pair.verimeter_score + 1) / 2) * 100}%`}
+                                top="50%"
+                                transform="translate(-50%, -50%)"
+                                bg="rgba(15, 23, 42, 0.95)"
+                                px={2}
+                                py={1}
+                                borderRadius="4px"
+                                border="1px solid"
+                                borderColor={
+                                  isSupport
+                                    ? "#4ade80"
+                                    : isRefute
+                                      ? "#f87171"
+                                      : "#60a5fa"
+                                }
+                                boxShadow="0 2px 6px rgba(0, 0, 0, 0.5)"
+                              >
+                                <Text
+                                  fontSize="xs"
+                                  fontWeight="700"
+                                  color={
+                                    isSupport
+                                      ? "#4ade80"
+                                      : isRefute
+                                        ? "#f87171"
+                                        : "#60a5fa"
+                                  }
+                                  fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+                                  lineHeight="1"
+                                >
+                                  {Math.round(pair.verimeter_score * 100)}
+                                </Text>
+                              </Box>
+                            </Box>
+
                             {/* Case Claim */}
                             <Box>
-                              <HStack spacing={2} mb={1}>
-                                <Image
-                                  src={getPublisherIconUrl(
-                                    pair.caseClaim.publisher,
-                                  )}
-                                  alt={pair.caseClaim.publisher}
-                                  boxSize="12px"
-                                  borderRadius="2px"
-                                />
-                                <Text
-                                  fontSize="9px"
-                                  color="#89a9bf"
-                                  textTransform="uppercase"
-                                  letterSpacing="0.05em"
-                                  fontWeight="600"
-                                  fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
-                                >
-                                  Case Claim
-                                </Text>
-                              </HStack>
                               <Text
-                                fontSize="11px"
-                                color="#d4e9ff"
+                                fontSize="xs"
+                                color="#60a5fa"
+                                textTransform="uppercase"
+                                letterSpacing="0.05em"
+                                fontWeight="600"
+                                mb={1}
+                                fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+                              >
+                                Case Claim — {pair.caseClaim.publisher}
+                              </Text>
+                              <Text
+                                fontSize="sm"
+                                color="#e0f2fe"
                                 lineHeight="1.5"
                                 fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
                               >
@@ -410,29 +491,20 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({
 
                             {/* Source Claim */}
                             <Box>
-                              <HStack spacing={2} mb={1}>
-                                <Image
-                                  src={getPublisherIconUrl(
-                                    pair.sourceClaim.publisher,
-                                  )}
-                                  alt={pair.sourceClaim.publisher}
-                                  boxSize="12px"
-                                  borderRadius="2px"
-                                />
-                                <Text
-                                  fontSize="9px"
-                                  color="#89a9bf"
-                                  textTransform="uppercase"
-                                  letterSpacing="0.05em"
-                                  fontWeight="600"
-                                  fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
-                                >
-                                  Source Claim
-                                </Text>
-                              </HStack>
                               <Text
-                                fontSize="11px"
-                                color="#d4e9ff"
+                                fontSize="xs"
+                                color="#60a5fa"
+                                textTransform="uppercase"
+                                letterSpacing="0.05em"
+                                fontWeight="600"
+                                mb={1}
+                                fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+                              >
+                                Source Claim — {pair.sourceClaim.publisher}
+                              </Text>
+                              <Text
+                                fontSize="sm"
+                                color="#e0f2fe"
                                 lineHeight="1.5"
                                 fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
                               >
@@ -444,8 +516,8 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({
                             {pair.rationale && (
                               <Box>
                                 <Text
-                                  fontSize="9px"
-                                  color="#89a9bf"
+                                  fontSize="xs"
+                                  color="#60a5fa"
                                   textTransform="uppercase"
                                   letterSpacing="0.05em"
                                   fontWeight="600"
@@ -455,8 +527,8 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({
                                   Rationale
                                 </Text>
                                 <Text
-                                  fontSize="10px"
-                                  color="#b4c9e0"
+                                  fontSize="sm"
+                                  color="#bae6fd"
                                   lineHeight="1.5"
                                   fontStyle="italic"
                                   fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
@@ -470,8 +542,8 @@ const ClaimPairsDetail: React.FC<ClaimPairsDetailProps> = ({
                             {pair.support_level !== undefined && (
                               <Box>
                                 <Text
-                                  fontSize="9px"
-                                  color="#89a9bf"
+                                  fontSize="xs"
+                                  color="#60a5fa"
                                   textTransform="uppercase"
                                   letterSpacing="0.05em"
                                   fontWeight="600"

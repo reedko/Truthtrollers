@@ -112,6 +112,12 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
               <MenuItem as={RouterLink} to="/casefocus">
                 Case Focus
               </MenuItem>
+              <MenuItem as={RouterLink} to="/social-media">
+                🐦 Social Media
+              </MenuItem>
+              <MenuItem as={RouterLink} to="/ttlive">
+                💬 TT Live
+              </MenuItem>
             </MenuList>
           </Menu>
 
@@ -287,6 +293,22 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                   >
                     Case Focus
                   </MenuItem>
+                  <MenuItem
+                    as={RouterLink}
+                    to="/social-media"
+                    onClick={() => handleNavClick("/social-media")}
+                    fontSize="md"
+                  >
+                    🐦 Social Media
+                  </MenuItem>
+                  <MenuItem
+                    as={RouterLink}
+                    to="/ttlive"
+                    onClick={() => handleNavClick("/ttlive")}
+                    fontSize="md"
+                  >
+                    💬 TT Live
+                  </MenuItem>
                 </MenuList>
               </Menu>
               <Menu>
@@ -407,6 +429,22 @@ const NavBar: React.FC<NavBarProps> = ({ compact }) => {
                     fontSize="md"
                   >
                     Case Focus
+                  </MenuItem>
+                  <MenuItem
+                    as={RouterLink}
+                    to="/social-media"
+                    onClick={() => handleNavClick("/social-media")}
+                    fontSize="md"
+                  >
+                    🐦 Social Media
+                  </MenuItem>
+                  <MenuItem
+                    as={RouterLink}
+                    to="/ttlive"
+                    onClick={() => handleNavClick("/ttlive")}
+                    fontSize="md"
+                  >
+                    💬 TT Live
                   </MenuItem>
                 </MenuList>
               </Menu>

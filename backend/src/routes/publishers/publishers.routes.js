@@ -261,5 +261,92 @@ export default function createPublishersRoutes({ query, pool }) {
     }
   });
 
+  /**
+   * GET /api/publishers/:publisherId/enrichment
+   * Returns system-generated ratings (AllSides, Ad Fontes) and profiles (Wikipedia)
+   * for a publisher.  Shape:
+   *   { publisher: {...}, ratings: [...], profiles: [...] }
+   */
+  router.get("/api/publishers/:publisherId/enrichment", async (req, res) => {
+    const { publisherId } = req.params;
+
+    try {
+      const [[publisher], ratings, profiles] = await Promise.all([
+        query(
+          `SELECT publisher_id, publisher_name, domain, publisher_icon, description
+           FROM publishers WHERE publisher_id = ? LIMIT 1`,
+          [publisherId]
+        ),
+        query(
+          `SELECT publisher_rating_id, source, rating_label, rating_type,
+                  bias_score, veracity_score, score, url, last_checked,
+                  notes, confidence, extraction_method, evidence_quote
+           FROM publisher_ratings
+           WHERE publisher_id = ? AND user_id IS NULL
+           ORDER BY last_checked DESC`,
+          [publisherId]
+        ),
+        query(
+          `SELECT publisher_profile_id, source, profile_url, description,
+                  ownership_notes, funding_notes, credibility_notes, political_notes,
+                  source_type, country, evidence_quote, confidence,
+                  extraction_method, last_checked
+           FROM publisher_profiles
+           WHERE publisher_id = ?
+           ORDER BY last_checked DESC`,
+          [publisherId]
+        ),
+      ]);
+
+      if (!publisher) {
+        return res.status(404).json({ error: "Publisher not found" });
+      }
+
+      res.json({ publisher, ratings, profiles });
+    } catch (err) {
+      console.error("Error fetching publisher enrichment:", err);
+      res.status(500).json({ error: "Failed to fetch publisher enrichment" });
+    }
+  });
+
+  /**
+   * POST /api/publishers/:publisherId/enrich
+   * Trigger on-demand enrichment for a single publisher (admin/debug use).
+   * Body: { force?: boolean }
+   */
+  router.post("/api/publishers/:publisherId/enrich", async (req, res) => {
+    const { publisherId } = req.params;
+    const { force = false } = req.body;
+
+    try {
+      const [publisher] = await query(
+        `SELECT publisher_id, publisher_name, domain FROM publishers WHERE publisher_id = ? LIMIT 1`,
+        [publisherId]
+      );
+
+      if (!publisher) {
+        return res.status(404).json({ error: "Publisher not found" });
+      }
+
+      const { enrichPublisherIfNeeded } = await import(
+        "../../services/publisherEnrichmentService.js"
+      );
+
+      const result = await enrichPublisherIfNeeded({
+        query,
+        publisherId: publisher.publisher_id,
+        publisherName: publisher.publisher_name,
+        domain: publisher.domain || null,
+        force,
+        context: "case_content",
+      });
+
+      res.json({ success: true, result });
+    } catch (err) {
+      console.error("Error triggering publisher enrichment:", err);
+      res.status(500).json({ error: "Enrichment failed" });
+    }
+  });
+
   return router;
 }

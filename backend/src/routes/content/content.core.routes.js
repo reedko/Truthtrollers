@@ -74,7 +74,14 @@ export default function ({ query, pool }) {
   ) AS publishers
 
 FROM content t
-WHERE t.content_type = 'task'
+WHERE NOT EXISTS (
+  SELECT 1 FROM content_relations cr_ref
+  WHERE cr_ref.reference_content_id = t.content_id
+    AND NOT EXISTS (
+      SELECT 1 FROM content_relations cr_case
+      WHERE cr_case.content_id = t.content_id
+    )
+)
 GROUP BY t.content_id
     LIMIT ? OFFSET ?;
   `;
@@ -140,7 +147,7 @@ GROUP BY t.content_id
   ) AS publishers
 
 FROM content t
-WHERE t.content_type = 'task' AND t.content_id = ?
+WHERE t.content_id = ?
     GROUP BY t.content_id
   `;
 

@@ -213,6 +213,9 @@ chmod -R 755 $BACKEND_PATH/assets/
 chmod -R 755 $BACKEND_PATH/temp/
 chmod -R 755 $BACKEND_PATH/temp-out/
 
+echo "📦 Installing backend dependencies..."
+cd $BACKEND_PATH && npm install --omit=dev --no-audit --no-fund
+
 pm2 flush
 pm2 restart truthtrollers --update-env
 

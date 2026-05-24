@@ -325,6 +325,34 @@ export default function createReferencesRoutes({ query, pool }) {
     }
   });
 
+  // Hard-delete references from a task for everyone (super_admin only)
+  router.delete("/api/references/permanent", authenticateToken, async (req, res) => {
+    if (req.user?.role !== "super_admin") {
+      return res.status(403).json({ error: "Super admin required" });
+    }
+
+    const { taskId, referenceIds } = req.body;
+    if (!taskId || !Array.isArray(referenceIds) || referenceIds.length === 0) {
+      return res.status(400).json({ error: "taskId and referenceIds array required" });
+    }
+
+    try {
+      const ph = referenceIds.map(() => "?").join(",");
+      await query(
+        `DELETE FROM user_reference_visibility WHERE task_content_id = ? AND reference_content_id IN (${ph})`,
+        [taskId, ...referenceIds],
+      );
+      await query(
+        `DELETE FROM content_relations WHERE content_id = ? AND reference_content_id IN (${ph})`,
+        [taskId, ...referenceIds],
+      );
+      res.json({ message: `${referenceIds.length} reference(s) permanently removed` });
+    } catch (err) {
+      console.error("Error permanently deleting references:", err);
+      res.status(500).json({ error: "Error deleting references" });
+    }
+  });
+
   router.get("/api/check-reference", async (req, res) => {
     const { url } = req.body;
 

@@ -16,11 +16,13 @@ import {
   ModalBody,
   ModalFooter,
   Button,
+  Checkbox,
 } from "@chakra-ui/react";
 import { SearchIcon } from "@chakra-ui/icons";
 import { Claim, ReferenceWithClaims } from "../../../shared/entities/types";
 import ClaimModal from "./modals/ClaimModal";
 import RelevanceScanModal from "./modals/RelevanceScanModal";
+import EvidenceRerunModal from "./modals/EvidenceRerunModal";
 import { ClaimLink } from "./RelationshipMap";
 
 interface TaskClaimsProps {
@@ -64,6 +66,8 @@ interface TaskClaimsProps {
   contentId?: number;
   viewerId?: number | null;
   bubbleStyle?: boolean;
+  isSuperAdmin?: boolean;
+  onHardDeleteClaims?: (claimIds: number[]) => Promise<void>;
 }
 
 const TaskClaims: React.FC<TaskClaimsProps> = ({
@@ -96,6 +100,8 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   selectedReferenceId,
   isReferenceModalOpen = false,
   bubbleStyle = false,
+  isSuperAdmin = false,
+  onHardDeleteClaims,
 }) => {
   const claimRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
@@ -103,12 +109,28 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   const onDropRef = useRef(onDropReferenceClaim);
   onDropRef.current = onDropReferenceClaim;
 
+  // Super-admin batch selection state
+  const [selectedClaimIds, setSelectedClaimIds] = useState<Set<number>>(new Set());
+
+  const toggleClaimSelection = (claimId: number) => {
+    setSelectedClaimIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(claimId)) next.delete(claimId);
+      else next.add(claimId);
+      return next;
+    });
+  };
+
   // Evidence confirmation dialog state
   const [showEvidencePrompt, setShowEvidencePrompt] = useState(false);
   const [pendingEdit, setPendingEdit] = useState<{
     claim: Claim;
     originalText: string;
   } | null>(null);
+
+  // Evidence re-run modal state
+  const [isEvidenceRerunModalOpen, setIsEvidenceRerunModalOpen] = useState(false);
+  const [selectedClaimForEvidence, setSelectedClaimForEvidence] = useState<Claim | null>(null);
 
   // Color mode values
   const defaultBg = useColorModeValue(
@@ -219,7 +241,27 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
       width="100%"
       bg={bubbleStyle ? "transparent" : undefined}
     >
-      <Heading size="sm">Claims</Heading>
+      <HStack width="100%" justify="space-between">
+        <Heading size="sm">Claims</Heading>
+        {isSuperAdmin && selectedClaimIds.size > 0 && (
+          <Button
+            size="xs"
+            colorScheme="red"
+            onClick={async () => {
+              if (
+                !window.confirm(
+                  `Permanently delete ${selectedClaimIds.size} claim(s) for EVERYONE? This cannot be undone.`,
+                )
+              )
+                return;
+              await onHardDeleteClaims?.([...selectedClaimIds]);
+              setSelectedClaimIds(new Set());
+            }}
+          >
+            🗑 Delete {selectedClaimIds.size} for Everyone
+          </Button>
+        )}
+      </HStack>
 
       {/* Link Mode Banner */}
       {linkSelection?.active && linkSelection.source && (
@@ -579,6 +621,21 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
                   pointerEvents="none"
                 />
               )}
+              {isSuperAdmin && (
+                <Box
+                  position="relative"
+                  zIndex={2}
+                  mr={2}
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <Checkbox
+                    isChecked={selectedClaimIds.has(claim.claim_id)}
+                    onChange={() => toggleClaimSelection(claim.claim_id)}
+                    colorScheme="red"
+                  />
+                </Box>
+              )}
               <Tooltip
                 label={claim.claim_text}
                 hasArrow
@@ -609,6 +666,19 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
                     onVerifyClaim(claim);
                   }}
                 />
+                <Tooltip label="Re-run Evidence Search" placement="top">
+                  <IconButton
+                    size="sm"
+                    colorScheme="cyan"
+                    aria-label="Re-run Evidence"
+                    icon={<span>🔬</span>}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedClaimForEvidence(claim);
+                      setIsEvidenceRerunModalOpen(true);
+                    }}
+                  />
+                </Tooltip>
                 <IconButton
                   size="sm"
                   colorScheme="red"
@@ -752,6 +822,19 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Evidence Re-run Modal */}
+      {selectedClaimForEvidence && (
+        <EvidenceRerunModal
+          isOpen={isEvidenceRerunModalOpen}
+          onClose={() => {
+            setIsEvidenceRerunModalOpen(false);
+            setSelectedClaimForEvidence(null);
+          }}
+          claim={selectedClaimForEvidence}
+          contentId={contentId || taskId}
+        />
+      )}
     </VStack>
   );
 };

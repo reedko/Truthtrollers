@@ -1,6 +1,8 @@
 // /backend/src/routes/claims/claims.routes.js
 import { Router } from "express";
 import { logUserActivity } from "../../utils/logUserActivity.js";
+import { authenticateToken } from "../../middleware/auth.js";
+import { calculateAIContentScore, calculateAIClaimScore } from "../../modules/aiRatings.js";
 
 const okVerdict = new Set(["true", "false", "uncertain"]);
 
@@ -597,6 +599,92 @@ export default function createClaimsRoutes({ query, pool }) {
     }
   });
 
+  // GET /api/content/:contentId/preview-links
+  // Returns up to 5 claim pairs for non-completed content preview.
+  // Tries reference_claim_task_links first; falls back to reference_claim_links.
+  router.get("/api/content/:contentId/preview-links", async (req, res) => {
+    const contentId = parseInt(req.params.contentId);
+    if (isNaN(contentId)) return res.status(400).json({ error: "Invalid content ID" });
+
+    try {
+      // 1. Fetch up to 5 claim-to-claim links (reference_claim_task_links)
+      const rctlRows = await query(`
+        SELECT
+          rctl.reference_claim_id,
+          rctl.task_claim_id,
+          rctl.stance,
+          rctl.support_level,
+          rctl.rationale,
+          COALESCE(rctl.quote, ref_claim.claim_text) AS source_claim_text,
+          (SELECT c2.media_source FROM content_claims cc2 JOIN content c2 ON cc2.content_id = c2.content_id WHERE cc2.claim_id = rctl.reference_claim_id LIMIT 1) AS source_publisher,
+          (SELECT c2.url FROM content_claims cc2 JOIN content c2 ON cc2.content_id = c2.content_id WHERE cc2.claim_id = rctl.reference_claim_id LIMIT 1) AS source_url,
+          task_claim.claim_text AS task_claim_text,
+          task_content.media_source AS task_publisher,
+          task_content.url AS task_url
+        FROM reference_claim_task_links rctl
+        JOIN claims ref_claim ON rctl.reference_claim_id = ref_claim.claim_id
+        JOIN claims task_claim ON rctl.task_claim_id = task_claim.claim_id
+        JOIN content_claims task_cc ON task_claim.claim_id = task_cc.claim_id AND task_cc.content_id = ?
+        JOIN content task_content ON task_cc.content_id = task_content.content_id
+        GROUP BY rctl.reference_claim_id, rctl.task_claim_id
+        ORDER BY ABS(COALESCE(rctl.support_level, 0)) DESC
+        LIMIT 5
+      `, [contentId]);
+
+      let rawPairs = rctlRows.map((r) => ({
+        caseClaim: { claim_id: r.task_claim_id, claim_text: r.task_claim_text, publisher: r.task_publisher, url: r.task_url },
+        sourceClaim: { claim_id: r.reference_claim_id, claim_text: r.source_claim_text, publisher: r.source_publisher || "Reference", url: r.source_url || "", relationship: r.stance },
+        rationale: r.rationale || "",
+      }));
+
+      // 2. Pad with reference_claim_links if fewer than 5
+      if (rawPairs.length < 5) {
+        const needed = 5 - rawPairs.length;
+        const rclRows = await query(`
+          SELECT
+            rcl.claim_id AS task_claim_id,
+            rcl.stance,
+            rcl.rationale,
+            COALESCE(rcl.evidence_text, '(Document snippet)') AS source_claim_text,
+            ref_content.media_source AS source_publisher,
+            ref_content.url AS source_url,
+            task_claim.claim_text AS task_claim_text,
+            task_content.media_source AS task_publisher,
+            task_content.url AS task_url
+          FROM reference_claim_links rcl
+          JOIN claims task_claim ON rcl.claim_id = task_claim.claim_id
+          JOIN content_claims task_cc ON task_claim.claim_id = task_cc.claim_id AND task_cc.content_id = ?
+          JOIN content task_content ON task_cc.content_id = task_content.content_id
+          JOIN content ref_content ON rcl.reference_content_id = ref_content.content_id
+          ORDER BY ABS(COALESCE(rcl.support_level, 0)) DESC
+          LIMIT ?
+        `, [contentId, needed]);
+
+        rawPairs = rawPairs.concat(rclRows.map((r) => ({
+          caseClaim: { claim_id: r.task_claim_id, claim_text: r.task_claim_text, publisher: r.task_publisher, url: r.task_url },
+          sourceClaim: { claim_id: null, claim_text: r.source_claim_text, publisher: r.source_publisher || "Reference", url: r.source_url || "", relationship: r.stance },
+          rationale: r.rationale || "",
+        })));
+      }
+
+      // Score each case claim using the same calculateAIClaimScore used by the workspace
+      const pairs = await Promise.all(rawPairs.map(async (p) => {
+        const score = p.caseClaim.claim_id
+          ? await calculateAIClaimScore(query, p.caseClaim.claim_id)
+          : 0;
+        return { ...p, verimeter_score: score, support_level: score };
+      }));
+
+      const aiScores = await calculateAIContentScore(query, contentId);
+      const overall = aiScores.verimeter_score || 0;
+
+      res.json({ overall_verimeter: overall, claim_pairs: pairs, is_ai_preview: true });
+    } catch (err) {
+      console.error("❌ preview-links error:", err);
+      res.status(500).json({ error: "Failed to fetch preview links" });
+    }
+  });
+
   // GET /api/content/:contentId/top-claims?limit=5
   // Get top case claims by number of linked source claims
   router.get("/api/content/:contentId/top-claims", async (req, res) => {
@@ -1034,16 +1122,17 @@ WHERE cc_task.content_id = ?
           c.veracity_score,
           c.confidence_level,
           c.last_verified,
-          cc.relationship_type,
-          cc.content_id,
-          ${scope === "admin" ? "cc.user_id AS created_by_user_id," : ""}
-          cc.created_at
+          GROUP_CONCAT(DISTINCT cc.relationship_type ORDER BY cc.relationship_type SEPARATOR ', ') AS relationship_type,
+          MAX(cc.content_id) AS content_id,
+          ${scope === "admin" ? "GROUP_CONCAT(DISTINCT cc.user_id) AS created_by_user_id," : ""}
+          MAX(cc.created_at) AS created_at
         FROM claims c
         JOIN content_claims cc ON c.claim_id = cc.claim_id
         LEFT JOIN user_claim_visibility ucv ON c.claim_id = ucv.claim_id AND ucv.user_id = ?
         WHERE cc.content_id = ?
           AND (ucv.is_hidden IS NULL OR ucv.is_hidden = FALSE)
           ${userFilter}
+        GROUP BY c.claim_id
         ORDER BY
           CASE c.claim_type
             WHEN 'task' THEN 1
@@ -1277,6 +1366,33 @@ WHERE cc_task.content_id = ?
     } catch (err) {
       console.error("Error unhiding claim:", err);
       res.status(500).json({ error: "Error unhiding claim" });
+    }
+  });
+
+  // Hard-delete claims for everyone (super_admin only)
+  router.delete("/api/claims/permanent", authenticateToken, async (req, res) => {
+    if (req.user?.role !== "super_admin") {
+      return res.status(403).json({ error: "Super admin required" });
+    }
+
+    const { claimIds } = req.body;
+    if (!Array.isArray(claimIds) || claimIds.length === 0) {
+      return res.status(400).json({ error: "claimIds array required" });
+    }
+
+    try {
+      const ph = claimIds.map(() => "?").join(",");
+      // Delete child rows in FK dependency order before removing the claim rows
+      await query(`DELETE FROM reference_claim_task_links WHERE reference_claim_id IN (${ph}) OR task_claim_id IN (${ph})`, [...claimIds, ...claimIds]);
+      await query(`DELETE FROM user_claim_ratings WHERE reference_claim_id IN (${ph}) OR task_claim_id IN (${ph})`, [...claimIds, ...claimIds]);
+      await query(`DELETE FROM claim_links WHERE source_claim_id IN (${ph}) OR target_claim_id IN (${ph})`, [...claimIds, ...claimIds]);
+      await query(`DELETE FROM user_claim_visibility WHERE claim_id IN (${ph})`, claimIds);
+      await query(`DELETE FROM content_claims WHERE claim_id IN (${ph})`, claimIds);
+      await query(`DELETE FROM claims WHERE claim_id IN (${ph})`, claimIds);
+      res.json({ message: `${claimIds.length} claim(s) permanently deleted` });
+    } catch (err) {
+      console.error("Error permanently deleting claims:", err);
+      res.status(500).json({ error: "Error deleting claims" });
     }
   });
 

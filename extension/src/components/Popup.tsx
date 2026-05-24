@@ -1,103 +1,82 @@
 import "./Popup.css";
 import "../styles/minorityReport.css";
-
-import React from "react";
-import ReactDOM from "react-dom/client";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, ColorModeContext } from "@chakra-ui/react";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
-import browser from "webextension-polyfill";
-
+import React from "react";
 import TaskCard from "./TaskCard";
+import ReactDOM from "react-dom/client";
 import VisionTheme from "../components/themes/VisionTheme";
 
-async function loadAndInjectCSS(shadow: ShadowRoot) {
-  // Check if already injected
-  if (shadow.querySelector('style[data-popup-css]')) {
-    return;
-  }
+// Create an Emotion cache that injects styles into our popup container
+// This prevents styles from being added to the page's <head>
+const createEmotionCache = (container: HTMLElement) => {
+  return createCache({
+    key: 'tt-popup',
+    container: container,
+    prepend: true,
+  });
+};
 
-  try {
-    // Fetch both CSS files
-    const [popupCssResponse, mrCssResponse] = await Promise.all([
-      fetch(browser.runtime.getURL('popup.css')),
-      fetch(browser.runtime.getURL('styles/minorityReport.css'))
-    ]);
+// Dummy color mode context that prevents Chakra from touching the document
+const noopColorModeContext = {
+  colorMode: 'dark' as const,
+  toggleColorMode: () => {},
+  setColorMode: () => {},
+  forced: false,
+};
 
-    const popupCss = await popupCssResponse.text();
-    const mrCss = await mrCssResponse.text();
-
-    // Inject into shadow DOM
-    const styleEl = document.createElement('style');
-    styleEl.setAttribute('data-popup-css', 'true');
-    styleEl.textContent = `${popupCss}\n${mrCss}`;
-    shadow.insertBefore(styleEl, shadow.firstChild);
-
-    console.log('✅ CSS injected into shadow DOM');
-  } catch (error) {
-    console.error('❌ Failed to load CSS:', error);
-  }
-}
-
-function findShadowBits(): {
-  mount: HTMLElement;
-  emotionHost: HTMLElement;
-  shadowRoot: ShadowRoot;
-} | null {
-  const host = document.getElementById("tt-popup-host") as HTMLElement | null;
-  if (!host) return null;
-
-  const shadow = host.shadowRoot;
-  if (!shadow) return null;
-
-  const emotionHost = shadow.getElementById("tt-emotion") as HTMLElement | null;
-  const mount = shadow.getElementById("popup-root") as HTMLElement | null;
-
-  if (!emotionHost || !mount) return null;
-
-  // Load CSS asynchronously
-  loadAndInjectCSS(shadow);
-
-  return { mount, emotionHost, shadowRoot: shadow };
-}
-
-const PopupApp: React.FC<{ emotionHost: HTMLElement; shadowRoot: ShadowRoot }> = ({ emotionHost, shadowRoot }) => {
-  const cache = React.useMemo(
-    () =>
-      createCache({
-        key: "tt",
-        container: emotionHost, // ✅ Emotion/Chakra styles go into shadow
-      }),
-    [emotionHost],
-  );
+const Popup: React.FC<{ emotionCache: ReturnType<typeof createCache> }> = ({ emotionCache }) => {
+  // Prevent Chakra from modifying document on mount
+  React.useEffect(() => {
+    // Remove any attributes Chakra added to <html>
+    document.documentElement.removeAttribute('data-theme');
+    document.documentElement.removeAttribute('style');
+    // Remove any classes Chakra added to <body>
+    document.body.classList.remove('chakra-ui-dark', 'chakra-ui-light');
+  }, []);
 
   return (
-    <CacheProvider value={cache}>
-      <ChakraProvider
-        theme={VisionTheme}
-        portalConfig={{
-          containerRef: {
-            current: shadowRoot as unknown as HTMLElement
-          }
-        }}
-      >
-        <TaskCard />
-      </ChakraProvider>
+    <CacheProvider value={emotionCache}>
+      <ColorModeContext.Provider value={noopColorModeContext}>
+        <ChakraProvider theme={VisionTheme} cssVarsRoot="#tt-popup-root" colorModeManager={undefined as any}>
+          <div data-theme="dark" className="chakra-ui-dark">
+            <TaskCard />
+          </div>
+        </ChakraProvider>
+      </ColorModeContext.Provider>
     </CacheProvider>
   );
 };
 
-const bits = findShadowBits();
+// No shadow DOM - just create popup in regular DOM
+function initPopup() {
+  let popupRoot = document.getElementById("tt-popup-root");
 
-if (!bits) {
-  console.error(
-    "Shadow mount not found (tt-popup-host -> shadowRoot -> #popup-root).",
-  );
-} else {
-  console.log("✅ Found shadow mount, rendering Popup...");
-  ReactDOM.createRoot(bits.mount).render(
-    <PopupApp emotionHost={bits.emotionHost} shadowRoot={bits.shadowRoot} />,
-  );
+  if (!popupRoot) {
+    popupRoot = document.createElement("div");
+    popupRoot.id = "tt-popup-root";
+    popupRoot.style.position = "fixed";
+    popupRoot.style.top = "10px";
+    popupRoot.style.right = "20px";
+    popupRoot.style.zIndex = "2147483647";
+    popupRoot.style.width = "320px";
+    document.body.appendChild(popupRoot);
+  }
+
+  // Create emotion cache that will inject styles INTO the popup container
+  // instead of into the page's <head> - this prevents CSS bleeding
+  const emotionCache = createEmotionCache(popupRoot);
+
+  const root = ReactDOM.createRoot(popupRoot);
+  root.render(<Popup emotionCache={emotionCache} />);
 }
 
-export default PopupApp;
+// Try immediately, or wait for DOM
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initPopup);
+} else {
+  initPopup();
+}
+
+export default Popup;

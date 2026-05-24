@@ -93,36 +93,37 @@ export async function createContentInternal(query, payload) {
   } catch (err) {
     logger.error(
       "❌ createContentInternal: error calling InsertContentAndTopics",
-      err
+      err,
     );
     throw err;
   }
 
-  // 2) Fetch the new content_id (same pattern as /api/addContent)
+  // 2) Fetch content_id — SP handles dedup so this always returns a row
   let contentId = null;
+  let isExisting = false;
   try {
     const fetchContentIdQuery =
-      "SELECT content_id FROM content WHERE url = ? LIMIT 1";
+      "SELECT content_id, thumbnail FROM content WHERE url = ? LIMIT 1";
     const results = await query(fetchContentIdQuery, [url]);
-
     if (!results || results.length === 0) {
       throw new Error(
-        "createContentInternal: Content ID not found after insert"
+        "createContentInternal: Content ID not found after insert",
       );
     }
 
     contentId = results[0].content_id;
-    logger.log("🧩 createContentInternal: contentId =", contentId);
+    isExisting = !!results[0].thumbnail; // already has a thumbnail → was a pre-existing row
+    logger.log("🧩 createContentInternal: contentId =", contentId, isExisting ? "(existing)" : "(new)");
   } catch (err) {
     logger.error("❌ createContentInternal: error fetching content_id", err);
     throw err;
   }
 
-  // 3) If we don't have a thumbnail URL, just return contentId
-  if (!thumbnail) {
-    logger.warn(
-      "⚠️ createContentInternal: No thumbnail URL provided; skipping image fetch."
-    );
+  // 3) If no thumbnail URL provided, or content already existed with one, skip image fetch
+  if (!thumbnail || isExisting) {
+    if (isExisting) {
+      logger.log("⏭ createContentInternal: content already exists, skipping thumbnail re-download.");
+    }
     return contentId;
   }
 
@@ -157,7 +158,7 @@ export async function createContentInternal(query, payload) {
   } catch (axiosError) {
     logger.warn(
       "⚠️ createContentInternal: Axios failed, trying Puppeteer...",
-      axiosError.message
+      axiosError.message,
     );
     try {
       const puppeteerBuffer = await fetchImageWithPuppeteer(thumbnail);
@@ -166,7 +167,7 @@ export async function createContentInternal(query, payload) {
     } catch (puppeteerError) {
       logger.error(
         "❌ createContentInternal: Puppeteer also failed:",
-        puppeteerError.message || puppeteerError
+        puppeteerError.message || puppeteerError,
       );
       // At this point, we keep the content row but skip the thumbnail
       return contentId;
@@ -193,7 +194,7 @@ export async function createContentInternal(query, payload) {
   } catch (err) {
     logger.error(
       "❌ createContentInternal: Error processing image or updating DB:",
-      err
+      err,
     );
     // Still return contentId – content exists, just no thumbnail
   }

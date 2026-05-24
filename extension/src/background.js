@@ -1431,111 +1431,113 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
         );
       }
 
-      // Fetch claim pairs for completed content - get top 5 case claims
-      try {
-        // First fetch claim scores for all claims in this content
-        const claimScoresResponse = await fetch(
-          `${BASE_URL}/api/content/${task.content_id}/claim-scores`,
-          {
-            method: "GET",
-            credentials: "include",
-          },
-        );
-        const claimScores = claimScoresResponse.ok ? await claimScoresResponse.json() : {};
-        console.log(`✅ [checkContent] Fetched claim scores:`, claimScores);
+      if (isCompleted) {
+        // Fetch full claim pairs for completed content - get top 5 case claims
+        try {
+          // First fetch claim scores for all claims in this content
+          const claimScoresResponse = await fetch(
+            `${BASE_URL}/api/content/${task.content_id}/claim-scores`,
+            {
+              method: "GET",
+              credentials: "include",
+            },
+          );
+          const claimScores = claimScoresResponse.ok ? await claimScoresResponse.json() : {};
+          console.log(`✅ [checkContent] Fetched claim scores:`, claimScores);
 
-        const topClaimsResponse = await fetch(
-          `${BASE_URL}/api/content/${task.content_id}/top-claims?limit=5`,
-          {
-            method: "GET",
-            credentials: "include",
-          },
-        );
-        if (topClaimsResponse.ok) {
-          const topClaims = await topClaimsResponse.json();
-          console.log(`✅ [checkContent] Fetched ${topClaims.length} top case claims`);
+          const topClaimsResponse = await fetch(
+            `${BASE_URL}/api/content/${task.content_id}/top-claims?limit=5`,
+            {
+              method: "GET",
+              credentials: "include",
+            },
+          );
+          if (topClaimsResponse.ok) {
+            const topClaims = await topClaimsResponse.json();
+            console.log(`✅ [checkContent] Fetched ${topClaims.length} top case claims`);
 
-          // For each top claim, fetch its linked claims
-          const claimPairs = [];
-          for (const caseClaim of topClaims.slice(0, 5)) {
-            try {
-              const linkedResponse = await fetch(
-                `${BASE_URL}/api/linked-claims-for-claim/${caseClaim.claim_id}`,
-                {
-                  method: "GET",
-                  credentials: "include",
-                },
-              );
-              if (linkedResponse.ok) {
-                const linkedClaims = await linkedResponse.json();
-                console.log(`📋 [checkContent] Linked claims for case claim ${caseClaim.claim_id}:`, linkedClaims);
+            const claimPairs = [];
+            for (const caseClaim of topClaims.slice(0, 5)) {
+              try {
+                const linkedResponse = await fetch(
+                  `${BASE_URL}/api/linked-claims-for-claim/${caseClaim.claim_id}`,
+                  {
+                    method: "GET",
+                    credentials: "include",
+                  },
+                );
+                if (linkedResponse.ok) {
+                  const linkedClaims = await linkedResponse.json();
+                  const caseClaimScore = claimScores[caseClaim.claim_id] ?? 0;
 
-                // Get the verimeter score for the case claim from the scores map
-                const caseClaimScore = claimScores[caseClaim.claim_id] ?? 0;
-                console.log(`📊 [checkContent] Case claim ${caseClaim.claim_id} score: ${caseClaimScore}`);
+                  let bestSourceClaim = null;
+                  if (linkedClaims.length > 0) {
+                    if (caseClaimScore < -0.1) {
+                      bestSourceClaim = linkedClaims.reduce((best, current) => {
+                        return (current?.support_level ?? 0) < (best?.support_level ?? 0) ? current : best;
+                      }, linkedClaims[0]);
+                    } else if (caseClaimScore > 0.1) {
+                      bestSourceClaim = linkedClaims.reduce((best, current) => {
+                        return (current?.support_level ?? 0) > (best?.support_level ?? 0) ? current : best;
+                      }, linkedClaims[0]);
+                    } else {
+                      bestSourceClaim = linkedClaims[0];
+                    }
+                  }
 
-                // Select the best source claim based on case claim score
-                let bestSourceClaim = null;
-                if (linkedClaims.length > 0) {
-                  if (caseClaimScore < -0.1) {
-                    // Refuted: find the source claim with the most negative (refuting) support_level
-                    bestSourceClaim = linkedClaims.reduce((best, current) => {
-                      const bestLevel = best?.support_level ?? 0;
-                      const currentLevel = current?.support_level ?? 0;
-                      return currentLevel < bestLevel ? current : best;
-                    }, linkedClaims[0]);
-                  } else if (caseClaimScore > 0.1) {
-                    // Supported: find the source claim with the most positive (supporting) support_level
-                    bestSourceClaim = linkedClaims.reduce((best, current) => {
-                      const bestLevel = best?.support_level ?? 0;
-                      const currentLevel = current?.support_level ?? 0;
-                      return currentLevel > bestLevel ? current : best;
-                    }, linkedClaims[0]);
-                  } else {
-                    // Neutral/uncertain: just take the first one
-                    bestSourceClaim = linkedClaims[0];
+                  if (bestSourceClaim) {
+                    claimPairs.push({
+                      caseClaim: {
+                        claim_id: caseClaim.claim_id,
+                        claim_text: caseClaim.claim_text,
+                        publisher: caseClaim.publisher || caseClaim.media_source,
+                        url: caseClaim.url
+                      },
+                      sourceClaim: {
+                        claim_id: bestSourceClaim.sourceClaimId,
+                        claim_text: bestSourceClaim.sourceClaim?.claim_text || "No source claim text",
+                        publisher: bestSourceClaim.source_publisher || "Unknown",
+                        url: bestSourceClaim.source_url || "",
+                        relationship: bestSourceClaim.relation || bestSourceClaim.relationship
+                      },
+                      verimeter_score: caseClaimScore,
+                      support_level: bestSourceClaim.support_level || 0,
+                      rationale: bestSourceClaim.notes || bestSourceClaim.rationale || ""
+                    });
                   }
                 }
-
-                if (bestSourceClaim) {
-                  console.log(`📊 [checkContent] Best source claim for ${caseClaim.claim_id}:`, bestSourceClaim);
-
-                  claimPairs.push({
-                    caseClaim: {
-                      claim_id: caseClaim.claim_id,
-                      claim_text: caseClaim.claim_text,
-                      publisher: caseClaim.publisher || caseClaim.media_source,
-                      url: caseClaim.url
-                    },
-                    sourceClaim: {
-                      claim_id: bestSourceClaim.sourceClaimId,
-                      claim_text: bestSourceClaim.sourceClaim?.claim_text || "No source claim text",
-                      publisher: bestSourceClaim.source_publisher || "Unknown",
-                      url: bestSourceClaim.source_url || "",
-                      relationship: bestSourceClaim.relation || bestSourceClaim.relationship
-                    },
-                    verimeter_score: caseClaimScore,
-                    support_level: bestSourceClaim.support_level || 0,
-                    rationale: bestSourceClaim.notes || bestSourceClaim.rationale || ""
-                  });
-                }
+              } catch (linkErr) {
+                console.warn(`⚠️ Failed to fetch links for claim ${caseClaim.claim_id}:`, linkErr);
               }
-            } catch (linkErr) {
-              console.warn(`⚠️ Failed to fetch links for claim ${caseClaim.claim_id}:`, linkErr);
+            }
+
+            task.claim_pairs = {
+              overall_verimeter: task.verimeter_score,
+              claim_pairs: claimPairs
+            };
+            console.log(`✅ [checkContent] Assembled ${claimPairs.length} claim pairs`);
+          }
+        } catch (claimPairsErr) {
+          console.warn(`⚠️ [checkContent] Failed to fetch claim pairs:`, claimPairsErr);
+        }
+      } else if (isDetected) {
+        // Fetch preview links for non-completed content (reference_claim_task_links + fallback reference_claim_links)
+        try {
+          const previewResponse = await fetch(
+            `${BASE_URL}/api/content/${task.content_id}/preview-links`,
+            { method: "GET", credentials: "include" },
+          );
+          if (previewResponse.ok) {
+            const previewData = await previewResponse.json();
+            if (previewData.claim_pairs && previewData.claim_pairs.length > 0) {
+              task.claim_pairs = previewData;
+              // verimeter_score already set above via /scores/ai — don't overwrite
+              console.log(`✅ [checkContent] Fetched ${previewData.claim_pairs.length} preview links`);
             }
           }
-
-          task.claim_pairs = {
-            overall_verimeter: task.verimeter_score,
-            claim_pairs: claimPairs
-          };
-          console.log(`✅ [checkContent] Assembled ${claimPairs.length} claim pairs`);
+        } catch (previewErr) {
+          console.warn(`⚠️ [checkContent] Failed to fetch preview links:`, previewErr);
         }
-      } catch (claimPairsErr) {
-        console.warn(
-          `⚠️ [checkContent] Failed to fetch claim pairs:`,
-          claimPairsErr,
-        );
       }
 
       store.setTask(task);
@@ -1576,7 +1578,7 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
 
     // ✅ Show popup automatically if content is completed
     // ✅ Force show popup if the user clicked the extension icon
-    if (isCompleted || forceVisible) {
+    if (isDetected || forceVisible) {
       showTaskCard(tabId, isDetected, forceVisible);
     }
   } catch (error) {
@@ -1629,154 +1631,39 @@ async function showTaskCardx(tabId, isDetected, forceVisible) {
   }
 }
 async function showTaskCard(tabId, isDetected, forceVisible) {
-  const code = `
-    (function() {
-      let popupRoot = document.getElementById("popup-root");
-      if (popupRoot) popupRoot.remove();
-
-      popupRoot = document.createElement("div");
-      popupRoot.id = "popup-root";
-      document.body.appendChild(popupRoot);
-
-      popupRoot.className = ${JSON.stringify(
-        isDetected || forceVisible ? "task-card-visible" : "task-card-hidden",
-      )};
-    })();
-  `;
-
   try {
-    await browser.scripting.executeScript({
+    // Check if popup already exists AND has been fully rendered with React content
+    const [{ result: popupFullyRendered }] = await browser.scripting.executeScript({
       target: { tabId },
-      world: "MAIN", // 🔥 THIS IS THE FIX
-      func: (isDetected, forceVisible) => {
-        const oldHost = document.getElementById("tt-popup-host");
-        if (oldHost) oldHost.remove();
-
-        const host = document.createElement("div");
-        host.id = "tt-popup-host";
-        host.style.position = "fixed";
-        host.style.top = "10px";
-        host.style.right = "20px";
-        host.style.zIndex = "2147483647";
-        host.style.pointerEvents = "auto";
-        host.style.width = "320px";
-
-        host.className =
-          isDetected || forceVisible ? "task-card-visible" : "task-card-hidden";
-
-        document.body.appendChild(host);
-
-        const shadow = host.attachShadow({ mode: "open" });
-
-        // Fetch and inject minorityReport.css from the source
-        const mrCssUrl = browser.runtime.getURL('styles/minorityReport.css');
-        fetch(mrCssUrl)
-          .then(response => response.text())
-          .then(cssText => {
-            const mrStyle = document.createElement('style');
-            mrStyle.textContent = cssText;
-            shadow.appendChild(mrStyle);
-          })
-          .catch(err => console.error('Failed to load minorityReport.css:', err));
-
-        const baseStyle = document.createElement("style");
-        baseStyle.textContent = `
-    :host { all: initial; }
-    *, *::before, *::after { box-sizing: border-box; }
-
-    /* Minority Report Button Styles (kept for backwards compatibility) */
-    .mr-button {
-      position: relative;
-      padding: 10px 24px;
-      background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.85));
-      border: 1px solid rgba(0, 162, 255, 0.4);
-      border-radius: 6px;
-      color: #00a2ff;
-      font-weight: 600;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(10px);
-      font-size: 0.75rem;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 30px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-      overflow: hidden;
-    }
-
-    .mr-button::before {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 8px;
-      height: 100%;
-      background: linear-gradient(90deg, rgba(0, 162, 255, 0.4) 0%, transparent 100%);
-      pointer-events: none;
-    }
-
-    .mr-button:hover {
-      background: linear-gradient(135deg, rgba(0, 162, 255, 0.2), rgba(0, 162, 255, 0.15));
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-      transform: translateY(-2px);
-      border-color: #00a2ff;
-    }
-
-    .mr-button:active {
-      transform: translateY(0);
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5), 0 0 25px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-    }
-
-    /* UserConsensusBar Pulsing Animation */
-    .pulsing-glow.true {
-      animation: pulse-green 1.6s infinite ease-in-out;
-    }
-
-    .pulsing-glow.false {
-      animation: pulse-red 1.6s infinite ease-in-out;
-    }
-
-    @keyframes pulse-green {
-      0% {
-        box-shadow: 0 0 8px rgba(0, 255, 0, 0.4);
-        transform: translateX(-0%) scale(0.97);
+      func: () => {
+        const popupRoot = document.getElementById("tt-popup-root");
+        // Check if popup-root exists AND has children (React has rendered)
+        return popupRoot && popupRoot.children.length > 0;
       }
-      50% {
-        box-shadow: 0 0 26px rgba(0, 255, 0, 0.8);
-        transform: translateX(-0%) scale(1.03);
-      }
-      100% {
-        box-shadow: 0 0 8px rgba(0, 255, 0, 0.4);
-        transform: translateX(-0%) scale(0.97);
-      }
-    }
-
-    @keyframes pulse-red {
-      0% {
-        box-shadow: 0 0 8px rgba(255, 0, 0, 0.4);
-        transform: translateX(-0%) scale(0.97);
-      }
-      50% {
-        box-shadow: 0 0 26px rgba(255, 0, 0, 0.8);
-        transform: translateX(-0%) scale(1.03);
-      }
-      100% {
-        box-shadow: 0 0 8px rgba(255, 0, 0, 0.4);
-        transform: translateX(-0%) scale(0.97);
-      }
-    }
-  `;
-        shadow.appendChild(baseStyle);
-
-        const emotionHost = document.createElement("div");
-        emotionHost.id = "tt-emotion";
-        shadow.appendChild(emotionHost);
-
-        const mount = document.createElement("div");
-        mount.id = "popup-root";
-        shadow.appendChild(mount);
-      },
-      args: [isDetected, forceVisible],
     });
+
+    if (popupFullyRendered) {
+      // Popup fully rendered, just toggle visibility
+      console.log("✅ Popup fully rendered, toggling visibility");
+      await browser.scripting.executeScript({
+        target: { tabId },
+        func: (isDetected, forceVisible) => {
+          const popupRoot = document.getElementById("tt-popup-root");
+          if (popupRoot) {
+            if (isDetected || forceVisible) {
+              popupRoot.style.display = "";
+            } else {
+              popupRoot.style.display = "none";
+            }
+          }
+        },
+        args: [isDetected, forceVisible],
+      });
+      return;
+    }
+
+    // Popup doesn't exist, inject popup.js which will create it
+    console.log("✅ Creating new popup");
 
     await browser.scripting.executeScript({
       target: { tabId },

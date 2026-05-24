@@ -18,6 +18,7 @@ import {
   IconButton,
   Badge,
   useColorModeValue,
+  Checkbox,
 } from "@chakra-ui/react";
 import {
   LitReference,
@@ -41,6 +42,8 @@ interface ReferenceListProps {
   onUpdateReferences?: () => void; // ✅ new
   bubbleStyle?: boolean;
   claimLinks?: ClaimLink[];
+  isSuperAdmin?: boolean;
+  onHardDeleteReferences?: (referenceIds: number[]) => Promise<void>;
 }
 
 const ReferenceList: React.FC<ReferenceListProps> = ({
@@ -53,8 +56,21 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
   onUpdateReferences,
   bubbleStyle = false,
   claimLinks = [],
+  isSuperAdmin = false,
+  onHardDeleteReferences,
 }) => {
   const { hasPermission } = usePermissions();
+  const [selectedRefIds, setSelectedRefIds] = useState<Set<number>>(new Set());
+
+  const toggleRefSelection = (refId: number) => {
+    setSelectedRefIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(refId)) next.delete(refId);
+      else next.add(refId);
+      return next;
+    });
+  };
+
   const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingReference, setEditingReference] =
@@ -115,7 +131,27 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
         width="100%"
         bg={bubbleStyle ? "transparent" : undefined}
       >
-        <Heading size="sm">Sources</Heading>
+        <HStack width="100%" justify="space-between">
+          <Heading size="sm">Sources</Heading>
+          {isSuperAdmin && selectedRefIds.size > 0 && (
+            <Button
+              size="xs"
+              colorScheme="red"
+              onClick={async () => {
+                if (
+                  !window.confirm(
+                    `Permanently remove ${selectedRefIds.size} source(s) from this case for EVERYONE? This cannot be undone.`,
+                  )
+                )
+                  return;
+                await onHardDeleteReferences?.([...selectedRefIds]);
+                setSelectedRefIds(new Set());
+              }}
+            >
+              🗑 Delete {selectedRefIds.size} for Everyone
+            </Button>
+          )}
+        </HStack>
 
         {/* 🔥 Button to Open ReferenceModal */}
         <Box
@@ -334,6 +370,20 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                     background="linear-gradient(90deg, rgba(59, 130, 246, 0.4) 0%, transparent 100%)"
                     borderLeftRadius="12px"
                     pointerEvents="none"
+                  />
+                )}
+                {isSuperAdmin && (
+                  <Checkbox
+                    isChecked={selectedRefIds.has(ref.reference_content_id)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      toggleRefSelection(ref.reference_content_id);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    mr={2}
+                    zIndex={2}
+                    position="relative"
+                    colorScheme="red"
                   />
                 )}
                 <VStack

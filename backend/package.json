@@ -31,6 +31,7 @@
     "mysql": "^2.18.1",
     "mysql2": "^3.12.0",
     "nodemailer": "^7.0.3",
+    "openai": "^6.34.0",
     "opentimestamp": "^0.1.8",
     "path": "^0.12.7",
     "pdf-lib": "^1.17.1",
@@ -42,6 +43,7 @@
     "sharp": "^0.33.5",
     "socket.io": "^4.8.3",
     "tiktoken": "^1.0.21",
+    "uuid": "^13.0.0",
     "web-push": "^3.6.7"
   },
   "description": "",

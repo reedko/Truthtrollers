@@ -38,6 +38,8 @@ import {
   fetchClaimsAndLinkedReferencesForTask,
   deleteClaim,
   fetchClaimsForTask,
+  hardDeleteClaims,
+  hardDeleteReferences,
 } from "../services/useDashboardAPI";
 import {
   updateScoresForContent,
@@ -68,7 +70,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
   bubbleStyle = false,
 }) => {
   // Get user permissions for permission-based UI
-  const { hasPermission } = usePermissions();
+  const { hasPermission, hasRole } = usePermissions();
+  const isSuperAdmin = hasRole("super_admin");
   const { mode, aiWeight } = useVerimeterMode();
 
   const [claims, setClaims] = useState<Claim[]>([]);
@@ -602,9 +605,23 @@ const Workspace: React.FC<WorkspaceProps> = ({
                 );
               }
             }}
-            onDeleteClaim={(claimId) =>
-              setClaims(claims.filter((claim) => claim.claim_id !== claimId))
-            }
+            onDeleteClaim={async (claimId) => {
+              if (!user?.user_id) return;
+              try {
+                await deleteClaim(claimId, user.user_id);
+                setClaims((prev) =>
+                  prev.filter((claim) => claim.claim_id !== claimId),
+                );
+              } catch {
+                toast({
+                  title: "Error hiding claim",
+                  description: "Failed to hide the claim",
+                  status: "error",
+                  duration: 3000,
+                  isClosable: true,
+                });
+              }
+            }}
             onVerifyClaim={(claim) => {
               setVerifyingClaim(claim);
               setIsVerificationModalOpen(true);
@@ -631,6 +648,20 @@ const Workspace: React.FC<WorkspaceProps> = ({
             contentId={contentId}
             viewerId={viewerId}
             bubbleStyle={bubbleStyle}
+            isSuperAdmin={isSuperAdmin}
+            onHardDeleteClaims={async (claimIds) => {
+              await hardDeleteClaims(claimIds);
+              setClaims((prev) =>
+                prev.filter((c) => !claimIds.includes(c.claim_id)),
+              );
+              toast({
+                title: "Claims permanently deleted",
+                description: `${claimIds.length} claim(s) removed for all users`,
+                status: "warning",
+                duration: 4000,
+                isClosable: true,
+              });
+            }}
           />
         </Box>
         <Box
@@ -712,6 +743,18 @@ const Workspace: React.FC<WorkspaceProps> = ({
             onUpdateReferences={() => setRefreshReferences((prev) => !prev)}
             bubbleStyle={bubbleStyle}
             claimLinks={claimLinks}
+            isSuperAdmin={isSuperAdmin}
+            onHardDeleteReferences={async (referenceIds) => {
+              await hardDeleteReferences(contentId, referenceIds);
+              setRefreshReferences((prev) => !prev);
+              toast({
+                title: "Sources permanently deleted",
+                description: `${referenceIds.length} source(s) removed for all users`,
+                status: "warning",
+                duration: 4000,
+                isClosable: true,
+              });
+            }}
           />
         </Box>
       </Grid>

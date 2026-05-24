@@ -37,7 +37,7 @@ export default function createGraphRoutes({ query, pool }) {
       // viewerId is now embedded directly in the SQL string (not a parameter)
       const nodeParams = entityType === 'task'
         ? [entity, entity, entity, entity, entity, entity, entity]
-        : [entity, entity, entity, entity];
+        : [entity, entity, entity]; // author/publisher: 3 params after collapsing task+reference UNION
       const linkParams = entityType === 'task'
         ? [entity, entity, entity, entity, entity]
         : [entity, entity, entity, entity];
@@ -83,7 +83,7 @@ export default function createGraphRoutes({ query, pool }) {
       // viewerId is now embedded directly in the SQL string (not a parameter)
       const nodeParams = entityType === 'task'
         ? [entity, entity, entity, entity, entity, entity, entity]
-        : [entity, entity, entity, entity];
+        : [entity, entity, entity]; // author/publisher: 3 params after collapsing task+reference UNION
       const linkParams = entityType === 'task'
         ? [entity, entity, entity, entity, entity]
         : [entity, entity, entity, entity];

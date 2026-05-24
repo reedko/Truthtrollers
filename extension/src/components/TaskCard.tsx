@@ -147,6 +147,32 @@ const TaskCard: React.FC = () => {
       });
   }, [setTask]);
 
+  // ✅ Listen for storage changes to reload task when scraping completes
+  useEffect(() => {
+    const handleStorageChange = (
+      changes: { [key: string]: browser.Storage.StorageChange },
+      areaName: string
+    ) => {
+      if (areaName === "local" && changes.task) {
+        const newTask = changes.task.newValue as Task | undefined;
+        console.log("📦 [TaskCard] Storage changed, reloading task:", newTask);
+        if (newTask) {
+          setTask(newTask);
+          setVisible(true);
+        } else {
+          // Task was cleared - hide popup
+          setVisible(false);
+        }
+      }
+    };
+
+    browser.storage.onChanged.addListener(handleStorageChange);
+
+    return () => {
+      browser.storage.onChanged.removeListener(handleStorageChange);
+    };
+  }, [setTask]);
+
   // Load static UI assets (logo, meter) from bundled extension assets - INSTANT!
   useEffect(() => {
     try {
@@ -291,7 +317,8 @@ const TaskCard: React.FC = () => {
           </HStack>
         </Box>
 
-        {!thumbLoading && imageUrl && task?.progress === "Completed" ? (
+        {task?.progress === "Completed" && (task as any).claim_pairs ? (
+          /* --- Completed: full verimeter + consensus bar + claim pairs --- */
           <VStack width="100%" spacing={0}>
             <HStack
               spacing={1}
@@ -347,8 +374,71 @@ const TaskCard: React.FC = () => {
                 </Box>
               </Box>
             </HStack>
-
-            {/* Expandable claim pairs detail */}
+            {task?.content_id && (
+              <ClaimPairsDetail
+                claimPairsData={(task as any).claim_pairs || null}
+              />
+            )}
+          </VStack>
+        ) : task?.content_id && (task as any).claim_pairs ? (
+          /* --- In-progress: same layout as completed, AI warning replaces consensus bar --- */
+          <VStack width="100%" spacing={0}>
+            <HStack
+              spacing={1}
+              align="flex-start"
+              width="100%"
+              justify="space-between"
+              mt={2}
+              px={1}
+            >
+              <Box flexShrink={0}>
+                <TruthGauge
+                  score={task?.verimeter_score ?? 0}
+                  label="VERIMETER"
+                  size={{ w: 170, h: 90 }}
+                  normalize={false}
+                />
+              </Box>
+              <Box
+                position="relative"
+                background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+                border="1px solid rgba(255, 200, 0, 0.35)"
+                borderRadius="12px"
+                boxShadow="0 10px 40px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 200, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
+                overflow="hidden"
+                flexShrink={0}
+                width="70px"
+                height="90px"
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                p={2}
+              >
+                <Box
+                  position="absolute"
+                  left={0}
+                  top={0}
+                  width="15px"
+                  height="100%"
+                  background="linear-gradient(90deg, rgba(255, 200, 0, 0.4) 0%, transparent 100%)"
+                  pointerEvents="none"
+                />
+                <Text
+                  position="relative"
+                  zIndex={1}
+                  fontSize="2xs"
+                  color="#fbbf24"
+                  textAlign="center"
+                  fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+                  lineHeight="1.3"
+                  fontWeight="600"
+                  letterSpacing="0.5px"
+                  textTransform="uppercase"
+                >
+                  AI Rating — Not Final
+                </Text>
+              </Box>
+            </HStack>
             {task?.content_id && (
               <ClaimPairsDetail
                 claimPairsData={(task as any).claim_pairs || null}
@@ -381,7 +471,7 @@ const TaskCard: React.FC = () => {
               </Text>
             </Center>
           </Box>
-        ) : imageUrl ? (
+        ) : imageUrl || task?.content_id ? (
           <Box width="280px">
             <Box width="100%" mb={2}>
               <Tooltip label={task?.content_name || "No title"} fontSize="sm">
@@ -414,10 +504,9 @@ const TaskCard: React.FC = () => {
                   className="mr-button"
                   onClick={() => {
                     setVisible(false);
-                    const popupRoot = document.getElementById("tt-popup-host");
+                    const popupRoot = document.getElementById("tt-popup-root");
                     if (popupRoot) {
-                      popupRoot.classList.add("task-card-hidden");
-                      popupRoot.classList.remove("task-card-visible");
+                      popupRoot.style.display = "none";
                     }
                   }}
                 >
@@ -505,10 +594,9 @@ const TaskCard: React.FC = () => {
                   className="mr-button"
                   onClick={() => {
                     setVisible(false);
-                    const host = document.getElementById("tt-popup-host");
-                    if (host) {
-                      host.classList.add("task-card-hidden");
-                      host.classList.remove("task-card-visible");
+                    const popupRoot = document.getElementById("tt-popup-root");
+                    if (popupRoot) {
+                      popupRoot.style.display = "none";
                     }
                   }}
                 >

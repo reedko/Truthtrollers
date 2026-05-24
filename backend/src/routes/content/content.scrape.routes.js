@@ -500,6 +500,27 @@ export default function createContentScrapeRoutes({ query }) {
         }
 
         ({ taskContentId, text, domRefs, inlineRefs } = scrapeResult);
+
+        // Fire publisher enrichment asynchronously — never blocks the scrape.
+        // Looks up publisher from DB by name/domain after persistTaskContent ran.
+        {
+          const enrichDomain = (() => {
+            try { return new URL(url).hostname.replace(/^www\./, ""); } catch { return null; }
+          })();
+          import("../../services/publisherEnrichmentService.js")
+            .then(({ enrichPublisherIfNeeded }) =>
+              enrichPublisherIfNeeded({
+                query,
+                publisherName: scrapeResult.publisher?.name || null,
+                sourceUrl: url,
+                domain: enrichDomain,
+                context: "case_content",
+              })
+            )
+            .catch((err) =>
+              logger.warn("[scrape-task] Publisher enrichment failed (non-fatal):", err.message)
+            );
+        }
       }
 
       // -----------------------------------------------------------------
