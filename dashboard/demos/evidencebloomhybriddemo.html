@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hybrid Evidence Bloom Demo</title>
+    <style>
+      :root {
+        --bg: #071018;
+        --panel: #0d1a24;
+        --grid: rgba(120, 180, 220, 0.08);
+        --case: #7dd3fc;
+        --case-claim: #34d399;
+        --source-claim: #f59e0b;
+        --source: #c084fc;
+        --edge: rgba(180, 220, 255, 0.4);
+        --edge-soft: rgba(180, 220, 255, 0.18);
+        --text: #d9ecff;
+        --muted: #8fb2c9;
+        --glow: 0 0 18px rgba(120, 220, 255, 0.18);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family:
+          Inter,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          sans-serif;
+        background:
+          linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+          linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.02) 1px,
+            transparent 1px
+          ),
+          radial-gradient(
+            circle at 20% 20%,
+            rgba(0, 180, 255, 0.12),
+            transparent 30%
+          ),
+          radial-gradient(
+            circle at 80% 30%,
+            rgba(100, 80, 255, 0.1),
+            transparent 28%
+          ),
+          var(--bg);
+        background-size:
+          24px 24px,
+          24px 24px,
+          auto,
+          auto,
+          auto;
+        color: var(--text);
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr;
+      }
+
+      header {
+        padding: 18px 22px 10px;
+        border-bottom: 1px solid rgba(160, 220, 255, 0.12);
+        background: rgba(7, 16, 24, 0.82);
+        backdrop-filter: blur(8px);
+      }
+
+      h1 {
+        margin: 0 0 6px;
+        font-size: 22px;
+        letter-spacing: 0.02em;
+      }
+
+      .sub {
+        color: var(--muted);
+        font-size: 14px;
+        max-width: 1000px;
+        line-height: 1.45;
+      }
+
+      .legend {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        box-shadow: var(--glow);
+      }
+
+      .canvas-wrap {
+        position: relative;
+        padding: 18px;
+      }
+
+      .panel {
+        width: 100%;
+        height: calc(100vh - 140px);
+        min-height: 700px;
+        border: 1px solid rgba(160, 220, 255, 0.14);
+        border-radius: 22px;
+        background: linear-gradient(
+          180deg,
+          rgba(13, 26, 36, 0.96),
+          rgba(9, 18, 28, 0.96)
+        );
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.03),
+          0 16px 40px rgba(0, 0, 0, 0.24);
+        position: relative;
+        overflow: hidden;
+      }
+
+      svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
+      .lane {
+        fill: rgba(90, 170, 220, 0.05);
+        stroke: rgba(120, 200, 255, 0.12);
+        stroke-dasharray: 6 8;
+      }
+
+      .edge {
+        fill: none;
+        stroke-linecap: round;
+        transition: opacity 300ms ease;
+      }
+
+      .edge.support {
+        stroke: rgba(52, 211, 153, 0.7);
+        stroke-width: 2.5;
+      }
+      .edge.refute {
+        stroke: rgba(248, 113, 113, 0.7);
+        stroke-width: 2.5;
+      }
+      .edge.neutral {
+        stroke: rgba(148, 163, 184, 0.55);
+        stroke-width: 2;
+      }
+      .edge.spine {
+        stroke: var(--edge-soft);
+        stroke-width: 2;
+      }
+
+      .node {
+        filter: drop-shadow(0 0 18px rgba(120, 220, 255, 0.12));
+        cursor: default;
+      }
+
+      .node rect {
+        stroke: rgba(200, 235, 255, 0.22);
+        stroke-width: 1;
+        rx: 16;
+        ry: 16;
+      }
+
+      .node.case rect {
+        fill: rgba(34, 111, 155, 0.38);
+      }
+      .node.case-claim rect {
+        fill: rgba(14, 120, 89, 0.34);
+      }
+      .node.source-claim rect {
+        fill: rgba(146, 93, 9, 0.34);
+      }
+      .node.source rect {
+        fill: rgba(95, 50, 151, 0.34);
+      }
+
+      .node.active rect {
+        stroke: rgba(255, 255, 255, 0.6);
+        stroke-width: 1.4;
+        filter: drop-shadow(0 0 28px rgba(255, 255, 255, 0.12));
+      }
+
+      .title {
+        fill: var(--text);
+        font-size: 13px;
+        font-weight: 650;
+      }
+
+      .meta {
+        fill: var(--muted);
+        font-size: 11px;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+      }
+
+      .caption {
+        position: absolute;
+        right: 18px;
+        bottom: 18px;
+        width: 340px;
+        padding: 14px 16px;
+        border-radius: 18px;
+        background: rgba(6, 14, 22, 0.82);
+        border: 1px solid rgba(160, 220, 255, 0.12);
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.45;
+      }
+
+      .caption strong {
+        color: var(--text);
+      }
+
+      .ghost {
+        opacity: 0.18;
+      }
+
+      .focus {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Hybrid Evidence Bloom: radial entry, lane-based chain</h1>
+      <div class="sub">
+        The case sits like a hub. Case claims blossom out in a semicircle, but
+        each claim is given its own reserved lane, where linked source claims
+        and their source cards align in a readable chain. This keeps the graph
+        from collapsing into spaghetti while still feeling alive.
+      </div>
+      <div class="legend">
+        <span><i class="dot" style="background: var(--case)"></i> Case</span>
+        <span
+          ><i class="dot" style="background: var(--case-claim)"></i> Case
+          claim</span
+        >
+        <span
+          ><i class="dot" style="background: var(--source-claim)"></i> Source
+          claim</span
+        >
+        <span
+          ><i class="dot" style="background: var(--source)"></i> Source</span
+        >
+        <span
+          ><i class="dot" style="background: rgba(52, 211, 153, 0.85)"></i>
+          Support edge</span
+        >
+        <span
+          ><i class="dot" style="background: rgba(248, 113, 113, 0.85)"></i>
+          Refute edge</span
+        >
+      </div>
+    </header>
+
+    <div class="canvas-wrap">
+      <div class="panel">
+        <svg viewBox="0 0 1400 820" aria-label="Hybrid evidence bloom diagram">
+          <!-- reserved claim lanes -->
+          <path
+            class="lane"
+            d="M530 170 C700 145, 860 155, 1200 120 L1200 230 C900 250, 720 250, 530 240 Z"
+          />
+          <path
+            class="lane"
+            d="M520 320 C705 305, 885 318, 1215 305 L1215 420 C920 430, 730 435, 520 405 Z"
+          />
+          <path
+            class="lane"
+            d="M500 500 C690 505, 885 525, 1200 550 L1200 680 C930 650, 720 635, 500 585 Z"
+          />
+
+          <!-- spine edges from case to case claims -->
+          <path class="edge spine" d="M255 410 C320 320, 400 250, 495 205" />
+          <path class="edge spine" d="M270 410 C345 395, 405 385, 485 370" />
+          <path class="edge spine" d="M255 430 C335 505, 405 545, 475 555" />
+
+          <!-- support/refute edges within lanes -->
+          <path class="edge support" d="M665 205 C760 205, 790 185, 845 175" />
+          <path class="edge neutral" d="M665 225 C780 230, 820 228, 875 225" />
+          <path
+            class="edge support"
+            d="M1030 175 C1090 170, 1115 165, 1175 160"
+          />
+          <path
+            class="edge neutral"
+            d="M1060 225 C1110 225, 1140 227, 1180 232"
+          />
+
+          <path class="edge refute" d="M650 370 C740 360, 790 350, 850 342" />
+          <path class="edge support" d="M650 390 C760 395, 815 395, 885 398" />
+          <path
+            class="edge refute"
+            d="M1035 342 C1095 338, 1125 335, 1185 332"
+          />
+          <path
+            class="edge support"
+            d="M1065 398 C1115 404, 1140 406, 1190 412"
+          />
+
+          <path class="edge support" d="M640 555 C740 565, 795 580, 850 595" />
+          <path class="edge neutral" d="M640 575 C760 600, 815 615, 885 635" />
+          <path
+            class="edge support"
+            d="M1030 595 C1095 606, 1125 610, 1188 618"
+          />
+          <path
+            class="edge neutral"
+            d="M1062 635 C1110 650, 1140 660, 1188 668"
+          />
+
+          <!-- case -->
+          <g class="node case active" transform="translate(90 360)">
+            <rect width="210" height="105" rx="18"></rect>
+            <text class="meta" x="16" y="24">Case</text>
+            <text class="title" x="16" y="48">Article: Vaccine Mandate</text>
+            <text class="title" x="16" y="67">Debate in Schools</text>
+            <text class="meta" x="16" y="88">Hub node / entry point</text>
+          </g>
+
+          <!-- case claims in blossom arc -->
+          <g class="node case-claim" transform="translate(495 165)">
+            <rect width="170" height="72"></rect>
+            <text class="meta" x="14" y="22">Case claim A</text>
+            <text class="title" x="14" y="44">Mandates reduce outbreaks</text>
+            <text class="meta" x="14" y="61">reserved upper lane</text>
+          </g>
+
+          <g class="node case-claim active" transform="translate(485 335)">
+            <rect width="165" height="72"></rect>
+            <text class="meta" x="14" y="22">Case claim B</text>
+            <text class="title" x="14" y="44">Mandates violate autonomy</text>
+            <text class="meta" x="14" y="61">focused middle lane</text>
+          </g>
+
+          <g class="node case-claim" transform="translate(475 520)">
+            <rect width="165" height="72"></rect>
+            <text class="meta" x="14" y="22">Case claim C</text>
+            <text class="title" x="14" y="44">
+              Side effects are undercounted
+            </text>
+            <text class="meta" x="14" y="61">reserved lower lane</text>
+          </g>
+
+          <!-- source claims lane 1 -->
+          <g class="node source-claim ghost" transform="translate(845 140)">
+            <rect width="185" height="64"></rect>
+            <text class="meta" x="14" y="22">Source claim</text>
+            <text class="title" x="14" y="43">District data shows fewer</text>
+            <text class="title" x="14" y="58">school clusters</text>
+          </g>
+
+          <g class="node source-claim ghost" transform="translate(875 192)">
+            <rect width="185" height="64"></rect>
+            <text class="meta" x="14" y="22">Source claim</text>
+            <text class="title" x="14" y="43">Effect size varies by age</text>
+          </g>
+
+          <g class="node source ghost" transform="translate(1175 126)">
+            <rect width="150" height="56"></rect>
+            <text class="meta" x="14" y="22">Source</text>
+            <text class="title" x="14" y="43">CDC report</text>
+          </g>
+
+          <g class="node source ghost" transform="translate(1180 205)">
+            <rect width="150" height="56"></rect>
+            <text class="meta" x="14" y="22">Source</text>
+            <text class="title" x="14" y="43">Meta-analysis</text>
+          </g>
+
+          <!-- source claims lane 2 focus -->
+          <g class="node source-claim active" transform="translate(850 310)">
+            <rect width="185" height="64"></rect>
+            <text class="meta" x="14" y="22">Source claim</text>
+            <text class="title" x="14" y="43">Court held blanket policy</text>
+            <text class="title" x="14" y="58">failed narrow tailoring</text>
+          </g>
+
+          <g class="node source-claim active" transform="translate(885 366)">
+            <rect width="180" height="64"></rect>
+            <text class="meta" x="14" y="22">Source claim</text>
+            <text class="title" x="14" y="43">Medical exemptions were</text>
+            <text class="title" x="14" y="58">unevenly applied</text>
+          </g>
+
+          <g class="node source active" transform="translate(1185 302)">
+            <rect width="150" height="56"></rect>
+            <text class="meta" x="14" y="22">Source</text>
+            <text class="title" x="14" y="43">Appeals court</text>
+          </g>
+
+          <g class="node source active" transform="translate(1190 384)">
+            <rect width="150" height="56"></rect>
+            <text class="meta" x="14" y="22">Source</text>
+            <text class="title" x="14" y="43">Hospital memo</text>
+          </g>
+
+          <!-- source claims lane 3 -->
+          <g class="node source-claim ghost" transform="translate(850 562)">
+            <rect width="180" height="64"></rect>
+            <text class="meta" x="14" y="22">Source claim</text>
+            <text class="title" x="14" y="43">Passive reporting misses</text>
+            <text class="title" x="14" y="58">many short-term reactions</text>
+          </g>
+
+          <g class="node source-claim ghost" transform="translate(885 610)">
+            <rect width="178" height="64"></rect>
+            <text class="meta" x="14" y="22">Source claim</text>
+            <text class="title" x="14" y="43">Severity estimates remain</text>
+            <text class="title" x="14" y="58">contested in reviews</text>
+          </g>
+
+          <g class="node source ghost" transform="translate(1188 590)">
+            <rect width="148" height="56"></rect>
+            <text class="meta" x="14" y="22">Source</text>
+            <text class="title" x="14" y="43">Journal paper</text>
+          </g>
+
+          <g class="node source ghost" transform="translate(1188 640)">
+            <rect width="148" height="56"></rect>
+            <text class="meta" x="14" y="22">Source</text>
+            <text class="title" x="14" y="43">Review panel</text>
+          </g>
+        </svg>
+
+        <div class="caption">
+          <strong>What this is showing:</strong><br /><br />
+          The <strong>entry still feels radial</strong> because the case claims
+          bloom out in a semicircle. But each case claim gets a
+          <strong>reserved evidence lane</strong>, and the linked source claims
+          plus sources line up mostly left-to-right inside that lane. That keeps
+          chain meaning intact while avoiding the node traffic jam that
+          free-floating force layouts love to create.
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

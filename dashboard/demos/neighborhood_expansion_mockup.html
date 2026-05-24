@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Neighborhood Expansion Mockup</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --panel:#121a2f;
+      --panel2:#17213b;
+      --border:#2a3658;
+      --text:#e8eefc;
+      --muted:#94a3c7;
+      --case:#5b8def;
+      --claim:#8b5cf6;
+      --sourceclaim:#06b6d4;
+      --source:#22c55e;
+      --user:#f59e0b;
+      --eval:#ef4444;
+      --publisher:#ec4899;
+      --author:#a3e635;
+      --edge:#5e7099;
+      --glow:0 10px 30px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,sans-serif;
+      background:radial-gradient(circle at top,#182445 0%,#0b1020 55%);
+      color:var(--text);
+    }
+    .app{
+      display:grid;
+      grid-template-columns:320px 1fr;
+      gap:16px;
+      min-height:100vh;
+      padding:16px;
+    }
+    .panel{
+      background:rgba(18,26,47,.9);
+      border:1px solid var(--border);
+      border-radius:18px;
+      box-shadow:var(--glow);
+      overflow:hidden;
+    }
+    .panel h1,.panel h2{margin:0}
+    .head{
+      padding:18px;
+      border-bottom:1px solid var(--border);
+      background:linear-gradient(180deg,rgba(255,255,255,.03),transparent);
+    }
+    .head p{
+      color:var(--muted);
+      margin:10px 0 0;
+      line-height:1.45;
+      font-size:14px;
+    }
+    .body{padding:18px}
+    .chiprow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+    .chip{
+      background:var(--panel2);
+      border:1px solid var(--border);
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:12px;
+      color:var(--muted);
+    }
+    .explain{
+      display:grid;
+      gap:12px;
+      font-size:14px;
+      line-height:1.5;
+    }
+    .card{
+      background:var(--panel2);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+    }
+    .card strong{display:block;margin-bottom:6px}
+    .small{font-size:12px;color:var(--muted)}
+    .graphwrap{
+      position:relative;
+      min-height:900px;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(91,141,239,.08), transparent 30%),
+        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px),
+        linear-gradient(180deg, rgba(255,255,255,.03) 1px, transparent 1px);
+      background-size:auto,32px 32px,32px 32px;
+    }
+    .toolbar{
+      position:absolute;left:16px;right:16px;top:16px;z-index:5;
+      display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    }
+    .toolbar .card{background:rgba(18,26,47,.88)}
+    svg{width:100%;height:900px;display:block}
+    .edge{
+      stroke:var(--edge);
+      stroke-width:2.5;
+      fill:none;
+      opacity:.9;
+      transition:.25s ease;
+    }
+    .edge.hidden{opacity:.10;stroke-dasharray:5 5}
+    .edge.relation{stroke-width:3}
+    .node{cursor:pointer;transition:.25s ease}
+    .node.hidden{opacity:.18;filter:saturate(.55)}
+    .node.active circle,.node.active rect,.node.active polygon{
+      stroke:#fff;stroke-width:3.5;filter:drop-shadow(0 0 10px rgba(255,255,255,.25));
+    }
+    .node text{pointer-events:none}
+    .nlabel{fill:white;font-size:12px;font-weight:800;text-anchor:middle}
+    .nsub{fill:rgba(255,255,255,.85);font-size:10px;text-anchor:middle}
+    .case circle{fill:var(--case)}
+    .claim rect{fill:var(--claim)}
+    .sourceclaim rect{fill:var(--sourceclaim)}
+    .source polygon{fill:var(--source)}
+    .user circle{fill:var(--user)}
+    .eval rect{fill:var(--eval)}
+    .publisher polygon{fill:var(--publisher)}
+    .author polygon{fill:var(--author)}
+    .legend{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px;
+      margin-top:12px;
+      font-size:12px;
+      color:var(--muted);
+    }
+    .dot{width:10px;height:10px;border-radius:999px;display:inline-block;margin-right:8px;vertical-align:middle}
+    .footer{
+      position:absolute;left:16px;bottom:16px;z-index:5;
+      max-width:420px;
+    }
+    .footer .card{background:rgba(18,26,47,.92)}
+    @media (max-width:1100px){
+      .app{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="panel">
+      <div class="head">
+        <h1>What “expand neighborhoods” means</h1>
+        <p>
+          A node’s <b>neighborhood</b> is the set of nodes directly connected to it.
+          Clicking a node reveals its immediate relationships first, then maybe a second hop.
+          Think of it like pulling one thread in a spiderweb and watching only the nearby strands light up.
+        </p>
+        <div class="chiprow">
+          <div class="chip">Click Case → show Case Claims</div>
+          <div class="chip">Click Case Claim → show linked Source Claims</div>
+          <div class="chip">Click Source Claim → show Source + Evaluations</div>
+          <div class="chip">Click Author → show all Sources by that Author</div>
+        </div>
+      </div>
+      <div class="body explain">
+        <div class="card">
+          <strong>Case node clicked</strong>
+          Show the case’s claims. Hide or dim unrelated authors, publishers, users, and evaluations.
+        </div>
+        <div class="card">
+          <strong>Case Claim clicked</strong>
+          Expand outward to only the source claims connected to that one claim, plus their sources.
+          This gives the “evidence chain” view without graph soup.
+        </div>
+        <div class="card">
+          <strong>Source clicked</strong>
+          Expand to author, publisher, and source claims contained in that source.
+          Great for credibility and provenance mode.
+        </div>
+        <div class="card">
+          <strong>User or Evaluation clicked</strong>
+          Expand to the links/evaluations made by that user, which claims they touched, and what sources they favored.
+        </div>
+        <div class="card">
+          <strong>Why do it this way?</strong>
+          Because dumping the whole universe at once turns the graph into spaghetti during a windstorm.
+          Neighborhood expansion keeps the view readable and gives the user a controlled sense of discovery.
+        </div>
+        <div class="legend">
+          <div><span class="dot" style="background:var(--case)"></span>Case</div>
+          <div><span class="dot" style="background:var(--claim)"></span>Case Claim</div>
+          <div><span class="dot" style="background:var(--sourceclaim)"></span>Source Claim</div>
+          <div><span class="dot" style="background:var(--source)"></span>Source</div>
+          <div><span class="dot" style="background:var(--author)"></span>Author</div>
+          <div><span class="dot" style="background:var(--publisher)"></span>Publisher</div>
+          <div><span class="dot" style="background:var(--user)"></span>User</div>
+          <div><span class="dot" style="background:var(--eval)"></span>Evaluation</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="panel graphwrap">
+      <div class="toolbar">
+        <div class="card">
+          <strong id="selectedTitle">Selected: Case</strong>
+          <div class="small" id="selectedDesc">Showing the Case neighborhood: its claims and nearby evidence chain.</div>
+        </div>
+        <div class="card small">
+          Click a node to switch neighborhoods.
+          This mockup uses <b>dim</b> instead of full collapse so you can still see the hidden world ghosting underneath.
+        </div>
+      </div>
+
+      <svg viewBox="0 0 1100 900" aria-label="Neighborhood expansion graph mockup">
+        <!-- edges -->
+        <g id="edges">
+          <!-- case to claims -->
+          <path class="edge caseNeighborhood" data-tags="case claim1" d="M180 450 C280 320, 355 250, 470 190"/>
+          <path class="edge caseNeighborhood" data-tags="case claim2" d="M190 450 C290 450, 360 450, 470 450"/>
+          <path class="edge caseNeighborhood" data-tags="case claim3" d="M180 460 C280 590, 355 655, 470 710"/>
+
+          <!-- claim 1 -->
+          <path class="edge relation claim1Neighborhood" data-tags="claim1 sc1" d="M620 188 C700 160, 740 155, 820 170"/>
+          <path class="edge relation claim1Neighborhood" data-tags="claim1 sc2" d="M620 202 C700 220, 740 245, 820 285"/>
+
+          <!-- claim 2 -->
+          <path class="edge relation claim2Neighborhood" data-tags="claim2 sc2" d="M620 438 C700 360, 740 320, 820 285"/>
+          <path class="edge relation claim2Neighborhood" data-tags="claim2 sc3" d="M620 450 C700 425, 740 408, 820 400"/>
+
+          <!-- claim 3 -->
+          <path class="edge relation claim3Neighborhood" data-tags="claim3 sc4" d="M620 708 C700 690, 740 660, 820 640"/>
+          <path class="edge relation claim3Neighborhood" data-tags="claim3 sc5" d="M620 690 C700 620, 740 560, 820 530"/>
+
+          <!-- source claim to source -->
+          <path class="edge sourceNeighborhood sc1Neighborhood" data-tags="sc1 sourceA" d="M930 170 C980 150, 1010 135, 1040 120"/>
+          <path class="edge sourceNeighborhood sc2Neighborhood" data-tags="sc2 sourceB" d="M930 285 C980 285, 1010 285, 1040 285"/>
+          <path class="edge sourceNeighborhood sc3Neighborhood" data-tags="sc3 sourceC" d="M930 400 C980 420, 1010 435, 1040 450"/>
+          <path class="edge sourceNeighborhood sc4Neighborhood" data-tags="sc4 sourceD" d="M930 640 C980 615, 1010 598, 1040 580"/>
+          <path class="edge sourceNeighborhood sc5Neighborhood" data-tags="sc5 sourceD" d="M930 530 C980 545, 1010 560, 1040 580"/>
+
+          <!-- source to author/publisher -->
+          <path class="edge authorNeighborhood sourceANeighborhood" data-tags="sourceA author1" d="M1040 120 C1020 80, 990 55, 945 45"/>
+          <path class="edge publisherNeighborhood sourceANeighborhood" data-tags="sourceA pub1" d="M1040 120 C1075 95, 1090 75, 1092 48"/>
+
+          <path class="edge authorNeighborhood sourceBNeighborhood" data-tags="sourceB author2" d="M1040 285 C1015 255, 985 235, 945 220"/>
+          <path class="edge publisherNeighborhood sourceBNeighborhood" data-tags="sourceB pub2" d="M1040 285 C1075 255, 1090 235, 1092 208"/>
+
+          <path class="edge authorNeighborhood sourceCNeighborhood" data-tags="sourceC author3" d="M1040 450 C1015 425, 985 405, 945 390"/>
+          <path class="edge publisherNeighborhood sourceCNeighborhood" data-tags="sourceC pub3" d="M1040 450 C1075 425, 1090 405, 1092 378"/>
+
+          <path class="edge authorNeighborhood sourceDNeighborhood" data-tags="sourceD author2" d="M1040 580 C1010 620, 980 650, 945 670"/>
+          <path class="edge publisherNeighborhood sourceDNeighborhood" data-tags="sourceD pub2" d="M1040 580 C1072 610, 1088 635, 1092 665"/>
+
+          <!-- user/evaluation -->
+          <path class="edge userNeighborhood eval1Neighborhood" data-tags="user1 eval1" d="M350 95 C420 95, 470 110, 520 135"/>
+          <path class="edge userNeighborhood eval2Neighborhood" data-tags="user1 eval2" d="M350 95 C415 145, 470 210, 520 290"/>
+          <path class="edge userNeighborhood eval3Neighborhood" data-tags="user1 eval3" d="M350 95 C410 205, 465 325, 520 420"/>
+
+          <path class="edge evalNeighborhood claim1Neighborhood" data-tags="eval1 claim1" d="M580 135 C590 145, 600 160, 610 180"/>
+          <path class="edge evalNeighborhood sc1Neighborhood" data-tags="eval1 sc1" d="M580 135 C670 120, 740 130, 820 170"/>
+
+          <path class="edge evalNeighborhood claim2Neighborhood" data-tags="eval2 claim2" d="M580 290 C595 325, 605 375, 612 430"/>
+          <path class="edge evalNeighborhood sc3Neighborhood" data-tags="eval2 sc3" d="M580 290 C670 305, 740 340, 820 400"/>
+
+          <path class="edge evalNeighborhood claim3Neighborhood" data-tags="eval3 claim3" d="M580 420 C595 505, 605 610, 612 690"/>
+          <path class="edge evalNeighborhood sc4Neighborhood" data-tags="eval3 sc4" d="M580 420 C670 485, 740 560, 820 640"/>
+        </g>
+
+        <!-- nodes -->
+        <g id="nodes">
+          <g class="node case active" data-key="case" data-group="caseNeighborhood">
+            <circle cx="120" cy="450" r="60"></circle>
+            <text class="nlabel" x="120" y="445">Case</text>
+            <text class="nsub" x="120" y="462">Housing Policy</text>
+          </g>
+
+          <g class="node claim" data-key="claim1" data-group="claim1Neighborhood">
+            <rect x="470" y="160" width="150" height="58" rx="16"></rect>
+            <text class="nlabel" x="545" y="183">Case Claim 1</text>
+            <text class="nsub" x="545" y="200">rent burden fell</text>
+          </g>
+          <g class="node claim" data-key="claim2" data-group="claim2Neighborhood">
+            <rect x="470" y="421" width="150" height="58" rx="16"></rect>
+            <text class="nlabel" x="545" y="444">Case Claim 2</text>
+            <text class="nsub" x="545" y="461">evictions decreased</text>
+          </g>
+          <g class="node claim" data-key="claim3" data-group="claim3Neighborhood">
+            <rect x="470" y="682" width="150" height="58" rx="16"></rect>
+            <text class="nlabel" x="545" y="705">Case Claim 3</text>
+            <text class="nsub" x="545" y="722">effect persisted</text>
+          </g>
+
+          <g class="node sourceclaim" data-key="sc1" data-group="sc1Neighborhood">
+            <rect x="820" y="142" width="110" height="56" rx="16"></rect>
+            <text class="nlabel" x="875" y="164">SC-101</text>
+            <text class="nsub" x="875" y="181">budget table</text>
+          </g>
+          <g class="node sourceclaim" data-key="sc2" data-group="sc2Neighborhood">
+            <rect x="820" y="257" width="110" height="56" rx="16"></rect>
+            <text class="nlabel" x="875" y="279">SC-102</text>
+            <text class="nsub" x="875" y="296">method caveat</text>
+          </g>
+          <g class="node sourceclaim" data-key="sc3" data-group="sc3Neighborhood">
+            <rect x="820" y="372" width="110" height="56" rx="16"></rect>
+            <text class="nlabel" x="875" y="394">SC-201</text>
+            <text class="nsub" x="875" y="411">counterexample</text>
+          </g>
+          <g class="node sourceclaim" data-key="sc5" data-group="sc5Neighborhood">
+            <rect x="820" y="502" width="110" height="56" rx="16"></rect>
+            <text class="nlabel" x="875" y="524">SC-302</text>
+            <text class="nsub" x="875" y="541">late trend</text>
+          </g>
+          <g class="node sourceclaim" data-key="sc4" data-group="sc4Neighborhood">
+            <rect x="820" y="612" width="110" height="56" rx="16"></rect>
+            <text class="nlabel" x="875" y="634">SC-301</text>
+            <text class="nsub" x="875" y="651">follow-up report</text>
+          </g>
+
+          <g class="node source" data-key="sourceA" data-group="sourceANeighborhood">
+            <polygon points="1040,82 1078,120 1040,158 1002,120"></polygon>
+            <text class="nlabel" x="1040" y="116">Source A</text>
+            <text class="nsub" x="1040" y="133">city report</text>
+          </g>
+          <g class="node source" data-key="sourceB" data-group="sourceBNeighborhood">
+            <polygon points="1040,247 1078,285 1040,323 1002,285"></polygon>
+            <text class="nlabel" x="1040" y="281">Source B</text>
+            <text class="nsub" x="1040" y="298">audit memo</text>
+          </g>
+          <g class="node source" data-key="sourceC" data-group="sourceCNeighborhood">
+            <polygon points="1040,412 1078,450 1040,488 1002,450"></polygon>
+            <text class="nlabel" x="1040" y="446">Source C</text>
+            <text class="nsub" x="1040" y="463">op-ed</text>
+          </g>
+          <g class="node source" data-key="sourceD" data-group="sourceDNeighborhood">
+            <polygon points="1040,542 1078,580 1040,618 1002,580"></polygon>
+            <text class="nlabel" x="1040" y="576">Source D</text>
+            <text class="nsub" x="1040" y="593">study</text>
+          </g>
+
+          <g class="node author" data-key="author1" data-group="authorNeighborhood">
+            <polygon points="945,18 975,45 945,72 915,45"></polygon>
+            <text class="nlabel" x="945" y="42">Author 1</text>
+          </g>
+          <g class="node author" data-key="author2" data-group="authorNeighborhood">
+            <polygon points="945,193 975,220 945,247 915,220"></polygon>
+            <text class="nlabel" x="945" y="217">Author 2</text>
+          </g>
+          <g class="node author" data-key="author3" data-group="authorNeighborhood">
+            <polygon points="945,363 975,390 945,417 915,390"></polygon>
+            <text class="nlabel" x="945" y="387">Author 3</text>
+          </g>
+
+          <g class="node publisher" data-key="pub1" data-group="publisherNeighborhood">
+            <polygon points="1092,20 1122,48 1092,76 1062,48"></polygon>
+            <text class="nlabel" x="1092" y="45">Pub 1</text>
+          </g>
+          <g class="node publisher" data-key="pub2" data-group="publisherNeighborhood">
+            <polygon points="1092,180 1122,208 1092,236 1062,208"></polygon>
+            <text class="nlabel" x="1092" y="205">Pub 2</text>
+          </g>
+          <g class="node publisher" data-key="pub3" data-group="publisherNeighborhood">
+            <polygon points="1092,350 1122,378 1092,406 1062,378"></polygon>
+            <text class="nlabel" x="1092" y="375">Pub 3</text>
+          </g>
+
+          <g class="node user" data-key="user1" data-group="userNeighborhood">
+            <circle cx="300" cy="95" r="38"></circle>
+            <text class="nlabel" x="300" y="92">User</text>
+            <text class="nsub" x="300" y="108">Reed</text>
+          </g>
+
+          <g class="node eval" data-key="eval1" data-group="eval1Neighborhood">
+            <rect x="520" y="108" width="62" height="38" rx="12"></rect>
+            <text class="nlabel" x="551" y="132">Eval 1</text>
+          </g>
+          <g class="node eval" data-key="eval2" data-group="eval2Neighborhood">
+            <rect x="520" y="262" width="62" height="38" rx="12"></rect>
+            <text class="nlabel" x="551" y="286">Eval 2</text>
+          </g>
+          <g class="node eval" data-key="eval3" data-group="eval3Neighborhood">
+            <rect x="520" y="402" width="62" height="38" rx="12"></rect>
+            <text class="nlabel" x="551" y="426">Eval 3</text>
+          </g>
+        </g>
+      </svg>
+
+      <div class="footer">
+        <div class="card small" id="footerText">
+          Right now the <b>Case</b> neighborhood is active. In a real graph UI, this click could animate new nodes outward, pin the selected node in place, and load additional data from the backend only when needed.
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const nodeInfo = {
+      case: {
+        title: "Selected: Case",
+        desc: "Show the case's immediate neighborhood: its claims, then nearby evidence.",
+        foot: "Case click = open the first ring. You usually want claim nodes to blossom outward from the case, not dump all metadata at once."
+      },
+      claim1: {
+        title: "Selected: Case Claim 1",
+        desc: "Show only the source claims and sources relevant to this specific claim.",
+        foot: "Case Claim click = evidence lane mode. This is the sweet spot for your app because it reveals the claim → source claim → source chain clearly."
+      },
+      claim2: {
+        title: "Selected: Case Claim 2",
+        desc: "Expand the refuting/supporting source claims tied to this one claim.",
+        foot: "This is what users want most often: not the whole map, but the local truth battlefield around one claim."
+      },
+      claim3: {
+        title: "Selected: Case Claim 3",
+        desc: "Show the persistence/effect branch and its linked evidence.",
+        foot: "Same logic, different branch. A single click changes the story without turning the whole graph into soup."
+      },
+      sc1: {
+        title: "Selected: Source Claim SC-101",
+        desc: "Show its case-claim connection, source, and related evaluation.",
+        foot: "Source Claim click = provenance mode. You can see what this statement supports, where it lives, and who evaluated it."
+      },
+      sc2: {
+        title: "Selected: Source Claim SC-102",
+        desc: "Show its connected case claims and parent source.",
+        foot: "A single source claim may nuance one case claim and support another. That is graph gold."
+      },
+      sc3: {
+        title: "Selected: Source Claim SC-201",
+        desc: "Focus on the counterexample branch and its source.",
+        foot: "Great for surfacing refutation chains."
+      },
+      sc4: {
+        title: "Selected: Source Claim SC-301",
+        desc: "Show follow-up evidence, parent source, and evaluations.",
+        foot: "Perfect when a user wants to audit why a later source changed the picture."
+      },
+      sc5: {
+        title: "Selected: Source Claim SC-302",
+        desc: "Show the late-trend branch and its parent study.",
+        foot: "Another local neighborhood slice."
+      },
+      sourceA: {
+        title: "Selected: Source A",
+        desc: "Show the source's claims plus author and publisher.",
+        foot: "Source click = credibility mode. This is where publisher and author nodes start paying rent."
+      },
+      sourceB: {
+        title: "Selected: Source B",
+        desc: "Show all claims inside this source and its provenance nodes.",
+        foot: "This lets the user pivot from evidence to outlet."
+      },
+      sourceC: {
+        title: "Selected: Source C",
+        desc: "Show the op-ed branch, author, and publisher.",
+        foot: "Useful for distinguishing data-heavy sources from commentary sources."
+      },
+      sourceD: {
+        title: "Selected: Source D",
+        desc: "Show study claims, author, and publisher.",
+        foot: "Sources become hubs instead of dead ends."
+      },
+      author1: {
+        title: "Selected: Author 1",
+        desc: "Show all sources and claims connected to this author.",
+        foot: "Author click = authorship neighborhood. In your platform, this could reveal all sources written by them across many cases."
+      },
+      author2: {
+        title: "Selected: Author 2",
+        desc: "Show the author's sources, which claims they touch, and related publishers.",
+        foot: "This gets juicy for patterns, bias, or expertise analysis."
+      },
+      author3: {
+        title: "Selected: Author 3",
+        desc: "Show the source branch for this author.",
+        foot: "Same pattern, different pivot."
+      },
+      pub1: {
+        title: "Selected: Publisher 1",
+        desc: "Show all sources published by this publisher and their downstream claims.",
+        foot: "Publisher click = outlet neighborhood. Excellent for outlet-level pattern analysis."
+      },
+      pub2: {
+        title: "Selected: Publisher 2",
+        desc: "Show all sources from this publisher and their graph footprint.",
+        foot: "Now you can see whether one publisher keeps appearing in certain claim clusters."
+      },
+      pub3: {
+        title: "Selected: Publisher 3",
+        desc: "Show the publisher branch and connected sources.",
+        foot: "Great for provenance and trust overlays."
+      },
+      user1: {
+        title: "Selected: User",
+        desc: "Show this user's evaluations and the claims they worked on.",
+        foot: "User click = contribution neighborhood. This is how you make personal lenses and reputation feel native to the graph."
+      },
+      eval1: {
+        title: "Selected: Evaluation 1",
+        desc: "Show which claim and source claim this evaluation links.",
+        foot: "Evaluation click = adjudication neighborhood. This is the actual decision trail."
+      },
+      eval2: {
+        title: "Selected: Evaluation 2",
+        desc: "Show the linked claim, source claim, and evaluating user.",
+        foot: "These nodes make the graph about actions, not just content."
+      },
+      eval3: {
+        title: "Selected: Evaluation 3",
+        desc: "Show the user's judgment path for the persistence claim.",
+        foot: "Now the graph stores both evidence and who did what with it."
+      }
+    };
+
+    const mapping = {
+      case: ["case","claim1","claim2","claim3"],
+      claim1: ["claim1","case","sc1","sc2","sourceA","sourceB","eval1","user1"],
+      claim2: ["claim2","case","sc2","sc3","sourceB","sourceC","eval2","user1"],
+      claim3: ["claim3","case","sc4","sc5","sourceD","eval3","user1"],
+      sc1: ["sc1","claim1","sourceA","eval1","user1","author1","pub1"],
+      sc2: ["sc2","claim1","claim2","sourceB","author2","pub2"],
+      sc3: ["sc3","claim2","sourceC","eval2","user1","author3","pub3"],
+      sc4: ["sc4","claim3","sourceD","eval3","user1","author2","pub2"],
+      sc5: ["sc5","claim3","sourceD","author2","pub2"],
+      sourceA: ["sourceA","sc1","author1","pub1","claim1"],
+      sourceB: ["sourceB","sc2","author2","pub2","claim1","claim2"],
+      sourceC: ["sourceC","sc3","author3","pub3","claim2"],
+      sourceD: ["sourceD","sc4","sc5","author2","pub2","claim3"],
+      author1: ["author1","sourceA","sc1","claim1","pub1"],
+      author2: ["author2","sourceB","sourceD","sc2","sc4","sc5","claim2","claim3","pub2"],
+      author3: ["author3","sourceC","sc3","claim2","pub3"],
+      pub1: ["pub1","sourceA","sc1","claim1","author1"],
+      pub2: ["pub2","sourceB","sourceD","sc2","sc4","sc5","claim2","claim3","author2"],
+      pub3: ["pub3","sourceC","sc3","claim2","author3"],
+      user1: ["user1","eval1","eval2","eval3","claim1","claim2","claim3","sc1","sc3","sc4"],
+      eval1: ["eval1","user1","claim1","sc1","sourceA"],
+      eval2: ["eval2","user1","claim2","sc3","sourceC"],
+      eval3: ["eval3","user1","claim3","sc4","sourceD"]
+    };
+
+    function applyNeighborhood(key){
+      const visible = new Set(mapping[key] || [key]);
+      document.querySelectorAll('.node').forEach(node => {
+        node.classList.toggle('hidden', !visible.has(node.dataset.key));
+        node.classList.toggle('active', node.dataset.key === key);
+      });
+
+      document.querySelectorAll('.edge').forEach(edge => {
+        const tags = (edge.dataset.tags || "").split(" ");
+        const show = tags.every(t => visible.has(t));
+        edge.classList.toggle('hidden', !show);
+      });
+
+      document.getElementById('selectedTitle').innerHTML = nodeInfo[key].title;
+      document.getElementById('selectedDesc').innerHTML = nodeInfo[key].desc;
+      document.getElementById('footerText').innerHTML = nodeInfo[key].foot;
+    }
+
+    document.querySelectorAll('.node').forEach(node => {
+      node.addEventListener('click', () => applyNeighborhood(node.dataset.key));
+    });
+
+    applyNeighborhood('case');
+  </script>
+</body>
+</html>
