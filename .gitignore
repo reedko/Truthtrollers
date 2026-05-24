@@ -37,6 +37,9 @@ backend/.env.prod
 
 extension/public/background.js
 
+# sandbox build output - never commit (may contain leaked env vars)
+extension/sandbox-dist/bundle.js
+
 # build/deploy bundles
 backend_bundle.tar.gz
 extension.tar.gz
