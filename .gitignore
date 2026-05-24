@@ -46,3 +46,4 @@ extension.tar.gz
 node_modules/
 backend/node_modules/
 AIS_1_5.mp4
+.DS_Store
