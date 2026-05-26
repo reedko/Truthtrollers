@@ -2,12 +2,15 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export type VerimeterMode = 'ai' | 'user' | 'combined';
+export type PopupStyle = 'card' | 'bar';
 
 interface VerimeterModeContextType {
   mode: VerimeterMode;
   setMode: (mode: VerimeterMode) => void;
   aiWeight: number;
   setAIWeight: (weight: number) => void;
+  popupStyle: PopupStyle;
+  setPopupStyle: (style: PopupStyle) => void;
 }
 
 const VerimeterModeContext = createContext<VerimeterModeContextType | undefined>(undefined);
@@ -28,7 +31,12 @@ export const VerimeterModeProvider: React.FC<VerimeterModeProviderProps> = ({ ch
     return saved ? parseFloat(saved) : 0.5;
   });
 
-  // Persist to localStorage when mode changes
+  const [popupStyle, setPopupStyleState] = useState<PopupStyle>(() => {
+    const saved = localStorage.getItem('popupStyle');
+    return (saved as PopupStyle) || 'card';
+  });
+
+  // Persist to localStorage when values change
   useEffect(() => {
     localStorage.setItem('verimeterMode', mode);
   }, [mode]);
@@ -36,6 +44,10 @@ export const VerimeterModeProvider: React.FC<VerimeterModeProviderProps> = ({ ch
   useEffect(() => {
     localStorage.setItem('verimeterAIWeight', aiWeight.toString());
   }, [aiWeight]);
+
+  useEffect(() => {
+    localStorage.setItem('popupStyle', popupStyle);
+  }, [popupStyle]);
 
   const setMode = (newMode: VerimeterMode) => {
     setModeState(newMode);
@@ -45,8 +57,12 @@ export const VerimeterModeProvider: React.FC<VerimeterModeProviderProps> = ({ ch
     setAIWeightState(Math.max(0, Math.min(1, weight)));
   };
 
+  const setPopupStyle = (style: PopupStyle) => {
+    setPopupStyleState(style);
+  };
+
   return (
-    <VerimeterModeContext.Provider value={{ mode, setMode, aiWeight, setAIWeight }}>
+    <VerimeterModeContext.Provider value={{ mode, setMode, aiWeight, setAIWeight, popupStyle, setPopupStyle }}>
       {children}
     </VerimeterModeContext.Provider>
   );

@@ -28,7 +28,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
         <VerimeterModeProvider>
           <AppRouter />
 
-          <ReactQueryDevtools />
+          {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
         </VerimeterModeProvider>
       </QueryClientProvider>
     </ChakraProvider>

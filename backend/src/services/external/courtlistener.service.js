@@ -56,34 +56,39 @@ class CourtListenerService {
       // Format ALL results (not just first occurrence of each case name)
       const allCases = allResults.map(r => this.formatCase(r));
 
-      // FILTER: Remove cases where person is just a warden/official
+      // FILTER: Remove cases where person is just a warden/official, or name not in case title
       const relevantCases = allCases.filter(c => this.isRelevantCase(c, fullName));
-      logger.log(`📊 [CourtListener] Filtered to ${relevantCases.length} relevant cases (removed ${allCases.length - relevantCases.length} where person is official/warden)`);
+      const filteredOutCases = allCases.filter(c => !this.isRelevantCase(c, fullName));
+      logger.log(`📊 [CourtListener] Filtered to ${relevantCases.length} relevant cases (set aside ${filteredOutCases.length} where name not in title or person is official)`);
 
-      // Process up to 10 unique cases (not just 2)
+      // Process up to 10 unique cases
       const uniqueCaseNames = [...new Set(relevantCases.map(c => c.case_name))];
       logger.log(`📊 [CourtListener] Found ${uniqueCaseNames.length} unique case names in ${relevantCases.length} total results`);
 
       const caseNamesToProcess = uniqueCaseNames.slice(0, 10);
       logger.log(`📋 [CourtListener] Processing first 10 case names`);
 
-      // Filter to only include results for these case names
       const casesToProcess = relevantCases.filter(c => caseNamesToProcess.includes(c.case_name));
       logger.log(`   📋 This includes ${casesToProcess.length} total dockets across these cases`);
 
-      // Now enhance these cases - will consolidate by case name and skip empty ones
       const enhancedCases = await this.enhanceCases(casesToProcess);
 
-      logger.log(`✅ [CourtListener] Final return: ${enhancedCases.length} enhanced cases`);
+      // Deduplicate filtered-out cases by case name (basic info only, no docket fetch)
+      const filteredCasesSummary = [...new Set(filteredOutCases.map(c => c.case_name))]
+        .slice(0, 20)
+        .map(name => filteredOutCases.find(c => c.case_name === name));
+
+      logger.log(`✅ [CourtListener] Final return: ${enhancedCases.length} enhanced cases, ${filteredCasesSummary.length} set-aside cases`);
 
       return {
         source: 'courtlistener',
         entity_type: 'person',
         entity_name: fullName,
-        has_cases: enhancedCases.length > 0, // Use actual filtered count, not raw API total
-        case_count: enhancedCases.length, // Use actual filtered count
-        total_api_results: totalCases, // Keep original for reference
+        has_cases: enhancedCases.length > 0,
+        case_count: enhancedCases.length,
+        total_api_results: totalCases,
         cases: enhancedCases,
+        filtered_cases: filteredCasesSummary,
         risk_level: this.assessPersonRisk(totalCases, enhancedCases),
         risk_reasons: this.buildRiskReasons(totalCases, enhancedCases, 'person'),
         checked_at: new Date().toISOString()
@@ -149,10 +154,11 @@ class CourtListenerService {
         source: 'courtlistener',
         entity_type: 'organization',
         entity_name: orgName,
-        has_cases: enhancedCases.length > 0, // Use actual filtered count, not raw API total
-        case_count: enhancedCases.length, // Use actual filtered count
-        total_api_results: totalCases, // Keep original for reference
+        has_cases: enhancedCases.length > 0,
+        case_count: enhancedCases.length,
+        total_api_results: totalCases,
         cases: enhancedCases,
+        filtered_cases: [],
         risk_level: this.assessOrganizationRisk(totalCases, enhancedCases),
         risk_reasons: this.buildRiskReasons(totalCases, enhancedCases, 'organization'),
         checked_at: new Date().toISOString()

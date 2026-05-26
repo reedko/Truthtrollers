@@ -3,10 +3,12 @@ import "../styles/minorityReport.css";
 import { ChakraProvider, ColorModeContext } from "@chakra-ui/react";
 import { CacheProvider } from "@emotion/react";
 import createCache from "@emotion/cache";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import TaskCard from "./TaskCard";
+import TaskBar from "./TaskBar";
 import ReactDOM from "react-dom/client";
 import VisionTheme from "../components/themes/VisionTheme";
+import browser from "webextension-polyfill";
 
 // Create an Emotion cache that injects styles into our popup container
 // This prevents styles from being added to the page's <head>
@@ -27,13 +29,28 @@ const noopColorModeContext = {
 };
 
 const Popup: React.FC<{ emotionCache: ReturnType<typeof createCache> }> = ({ emotionCache }) => {
-  // Prevent Chakra from modifying document on mount
-  React.useEffect(() => {
+  const [popupStyle, setPopupStyle] = useState<'card' | 'bar'>('card');
+
+  useEffect(() => {
     // Remove any attributes Chakra added to <html>
     document.documentElement.removeAttribute('data-theme');
     document.documentElement.removeAttribute('style');
-    // Remove any classes Chakra added to <body>
     document.body.classList.remove('chakra-ui-dark', 'chakra-ui-light');
+
+    // Read popup_style from storage (written by background when settings are fetched)
+    browser.storage.local.get('popup_style').then((result: { popup_style?: string }) => {
+      if (result.popup_style === 'bar') setPopupStyle('bar');
+    });
+
+    // Live-update if admin changes the setting while the page is open
+    const onChange = (changes: { [key: string]: browser.Storage.StorageChange }, area: string) => {
+      if (area === 'local' && changes.popup_style) {
+        const val = changes.popup_style.newValue;
+        if (val === 'card' || val === 'bar') setPopupStyle(val);
+      }
+    };
+    browser.storage.onChanged.addListener(onChange);
+    return () => browser.storage.onChanged.removeListener(onChange);
   }, []);
 
   return (
@@ -41,7 +58,7 @@ const Popup: React.FC<{ emotionCache: ReturnType<typeof createCache> }> = ({ emo
       <ColorModeContext.Provider value={noopColorModeContext}>
         <ChakraProvider theme={VisionTheme} cssVarsRoot="#tt-popup-root" colorModeManager={undefined as any}>
           <div data-theme="dark" className="chakra-ui-dark">
-            <TaskCard />
+            {popupStyle === 'bar' ? <TaskBar /> : <TaskCard />}
           </div>
         </ChakraProvider>
       </ColorModeContext.Provider>
@@ -57,12 +74,28 @@ function initPopup() {
     popupRoot = document.createElement("div");
     popupRoot.id = "tt-popup-root";
     popupRoot.style.position = "fixed";
-    popupRoot.style.top = "10px";
-    popupRoot.style.right = "20px";
     popupRoot.style.zIndex = "2147483647";
-    popupRoot.style.width = "320px";
     document.body.appendChild(popupRoot);
   }
+
+  // Style the root based on current popup_style.
+  // TaskCard needs a fixed-size anchored container; TaskBar positions itself via CSS.
+  browser.storage.local.get('popup_style').then((result: { popup_style?: string }) => {
+    if (!popupRoot) return;
+    if (result.popup_style === 'bar') {
+      // Bar handles its own position — root is transparent/zero-size
+      popupRoot.style.top = '0';
+      popupRoot.style.left = '0';
+      popupRoot.style.width = '0';
+      popupRoot.style.height = '0';
+      popupRoot.style.right = 'auto';
+    } else {
+      popupRoot.style.top = '10px';
+      popupRoot.style.right = '20px';
+      popupRoot.style.width = '320px';
+      popupRoot.style.height = 'auto';
+    }
+  });
 
   // Create emotion cache that will inject styles INTO the popup container
   // instead of into the page's <head> - this prevents CSS bleeding

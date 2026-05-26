@@ -1,6 +1,5 @@
 // src/components/RelationshipMap.tsx
 import React, {
-  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -8,7 +7,6 @@ import React, {
 } from "react";
 import { Box } from "@chakra-ui/react";
 import { Claim, ReferenceWithClaims } from "../../../shared/entities/types";
-import { fetchClaimsAndLinkedReferencesForTask } from "../services/useDashboardAPI";
 
 export interface ClaimLink {
   id?: string;
@@ -53,78 +51,35 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
 }) => {
   const [rightCenters, setRightCenters] = useState<Record<number, number>>({});
   const containerRef = useRef<HTMLDivElement>(null);
-  const [containerX, setContainerX] = useState(0);
   const adjustedLeftX = leftX - 12;
   const adjustedRightX = rightX + 15;
 
-  const [hasMeasuredContainer, setHasMeasuredContainer] = useState(false);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [hoveredLinkId, setHoveredLinkId] = useState<string | null>(null);
 
-  /*   useEffect(() => {
-    const timeout = setTimeout(() => {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (containerRef.current) {
-            const rect = containerRef.current.getBoundingClientRect();
-            setContainerX(rect.x);
-            setHasMeasuredContainer(true); // ✅ mark as measured
-          }
-        });
-      });
-    }, 250);
-      return () => clearTimeout(timeout);
-  }, []);
-   // ← no delay, just wait for browser to do one frame
- */
   useLayoutEffect(() => {
-    const observer = new ResizeObserver(() => {
-      if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
-        setContainerX(rect.x);
-      }
-    });
-
-    if (containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-
     return () => {
-      observer.disconnect();
-      // Clear hover timeout on unmount
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     };
   }, []);
+
   useLayoutEffect(() => {
     const measure = () => {
       if (!containerRef.current) return;
       const containerTop = containerRef.current.getBoundingClientRect().top;
-
-      // query all right boxes by our data attribute
       const nodes = document.querySelectorAll<HTMLElement>("[data-ref-id]");
       const map: Record<number, number> = {};
       nodes.forEach((el) => {
         const id = Number(el.dataset.refId);
         const r = el.getBoundingClientRect();
-        // center relative to our SVG container
         map[id] = r.top - containerTop + r.height / 2;
       });
       setRightCenters(map);
     };
 
     measure();
-    // re-measure when layout changes
-    const ro = new ResizeObserver(measure);
-    ro.observe(document.body);
     window.addEventListener("resize", measure);
-    window.addEventListener("scroll", measure, true);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", measure, true);
-    };
+    return () => window.removeEventListener("resize", measure);
   }, [rightItems, height]);
 
   const links = claimLinks;

@@ -29,7 +29,7 @@ export const useAuthStore = create<AuthState>()(
       logout: () => {
         set({ user: null, token: null });
       },
-    })),
+    }), { enabled: import.meta.env.DEV, name: "auth-store" }),
     {
       name: "auth-storage",
       onRehydrateStorage: () => (state, error) => {

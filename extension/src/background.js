@@ -36,6 +36,10 @@ async function getExtensionSettings() {
       cachedExtensionSettings = data.settings;
       settingsLastFetched = now;
       console.log("✅ Extension settings loaded:", cachedExtensionSettings);
+      // Mirror popup_style to storage so content scripts can read it synchronously
+      browser.storage.local.set({
+        popup_style: cachedExtensionSettings.popup_style || 'card',
+      });
       return cachedExtensionSettings;
     }
   } catch (err) {
@@ -45,7 +49,8 @@ async function getExtensionSettings() {
   // Return defaults if fetch fails
   return {
     verimeter_mode: 'user',
-    verimeter_ai_weight: '0.5'
+    verimeter_ai_weight: '0.5',
+    popup_style: 'card',
   };
 }
 

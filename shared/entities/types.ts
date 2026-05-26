@@ -70,6 +70,7 @@ export interface Publisher {
 export interface PublisherRating {
   publisher_rating_id: number;
   publisher_id: number;
+  user_id?: number | null;        // null = system enrichment row
   source: string;
   url: string;
   bias_score: number;
@@ -77,6 +78,12 @@ export interface PublisherRating {
   topic_id: number;
   notes?: string;
   topic_name?: string;
+  // Enrichment fields (populated by pipeline; absent on user-entered rows)
+  rating_label?: string;
+  rating_type?: string;
+  confidence?: string;
+  extraction_method?: string;
+  evidence_quote?: string;
 }
 
 //topics

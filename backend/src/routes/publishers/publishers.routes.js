@@ -110,20 +110,23 @@ export default function createPublishersRoutes({ query, pool }) {
   router.get("/api/publishers/:publisherId/ratings", async (req, res) => {
     const { publisherId } = req.params;
     const viewerId = req.query.viewerId ? parseInt(req.query.viewerId) : null;
-    const currentUserId = req.user?.user_id || viewerId;
+    const currentUserId = req.user?.user_id || viewerId || null;
+    const userIdForRatings = viewerId !== null ? viewerId : currentUserId;
 
+    // LEFT JOIN so enrichment rows (topic_id IS NULL) are included.
+    // Always return system enrichment rows (user_id IS NULL) plus the
+    // requesting user's own rows.
     const sql = `
       SELECT pr.*, t.topic_name
       FROM publisher_ratings pr
-      JOIN topics t ON pr.topic_id = t.topic_id
+      LEFT JOIN topics t ON pr.topic_id = t.topic_id
       WHERE pr.publisher_id = ?
-        AND (? IS NULL OR pr.user_id = ?)
+        AND (pr.user_id IS NULL OR pr.user_id = ?)
+      ORDER BY pr.user_id IS NULL DESC, pr.last_checked DESC
     `;
 
     try {
-      const userIdForRatings = viewerId !== null ? viewerId : currentUserId;
-      const rows = await query(sql, [publisherId, userIdForRatings, userIdForRatings]);
-
+      const rows = await query(sql, [publisherId, userIdForRatings]);
       res.send(rows);
     } catch (err) {
       console.error("❌ Error fetching publisher ratings:", err);

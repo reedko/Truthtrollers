@@ -411,7 +411,7 @@ export const useTaskStore = create<TaskStoreState>()(
         );
         set({ content: deduped, currentPage: currentPage + 1 });
       },
-    })),
+    }), { enabled: import.meta.env.DEV, name: "task-store" }),
     {
       name: "task-store",
       partialize: (state) => {

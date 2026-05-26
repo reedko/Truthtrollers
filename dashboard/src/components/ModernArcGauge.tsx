@@ -9,9 +9,9 @@ import React, { useEffect, useState } from "react";
 import { VERIMETER_LABELS } from "../utils/verimeterUtils";
 
 const pulse = keyframes`
-  0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 8px; }
-  50% { transform: translateX(-50%) scale(1.3); box-shadow: 0 0 15px; }
-  100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 8px; }
+  0% { transform: translateX(-50%) scale(1); }
+  50% { transform: translateX(-50%) scale(1.3); }
+  100% { transform: translateX(-50%) scale(1); }
 `;
 interface TruthGaugeProps {
   score: number; // -1 to 1

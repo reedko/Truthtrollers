@@ -73,12 +73,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
   );
   const user = useAuthStore((s) => s.user);
 
-  // Debug: Log user role
-  useEffect(() => {
-    console.log("[TaskCard] Current user:", user);
-    console.log("[TaskCard] User role:", user?.role);
-  }, [user]);
-
   const {
     isOpen: isAssignOpen,
     onOpen: onAssignOpen,
@@ -103,9 +97,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   const handleUpload = async (file: File, contentId: number) => {
     try {
-      console.log("📤 Uploading image for content:", contentId);
       const result = await uploadImage(contentId, file, "content");
-      console.log("✅ Upload result:", result);
 
       if (result) {
         toast({
@@ -117,19 +109,15 @@ const TaskCard: React.FC<TaskCardProps> = ({
         });
 
         // Force re-fetch to get updated thumbnail
-        console.log("🔄 Fetching updated task...");
         const updatedTask = await fetchTask(contentId);
-        console.log("📦 Updated task:", updatedTask);
 
         if (updatedTask) {
           setActiveTask(updatedTask);
           setImageKey(Date.now()); // Force image reload by updating cache buster
           setImageError(false); // Reset error state to try loading the new image
         } else {
-          console.error("❌ Failed to fetch updated task");
         }
       } else {
-        console.error("❌ Upload failed - no result returned");
         toast({
           title: "Upload Failed",
           description: "Could not upload image. Please try again.",
@@ -139,7 +127,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
         });
       }
     } catch (error) {
-      console.error("❌ Upload error:", error);
       toast({
         title: "Upload Error",
         description:

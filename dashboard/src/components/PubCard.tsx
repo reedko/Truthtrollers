@@ -148,9 +148,9 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
   };
 
   const avgScore = (ratings: PublisherRating[], key: keyof PublisherRating) => {
-    const values = ratings.map((r) => r[key] as number);
-    const avg = values.reduce((acc, val) => acc + val, 0) / values.length;
-    return avg.toFixed(1);
+    const values = ratings.map((r) => r[key] as number).filter(v => v != null && !isNaN(v));
+    if (!values.length) return "-";
+    return (values.reduce((acc, val) => acc + val, 0) / values.length).toFixed(1);
   };
 
   const getBiasEmoji = (score: number) =>
@@ -158,16 +158,23 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
   const getVeracityEmoji = (score: number) =>
     score > 5 ? "🟢" : score < 0 ? "🔴" : "⚪";
 
-  // Show placeholder if no publisher
   const currentRatings = activePublisher
     ? allRatings[activePublisher.publisher_id] || []
     : [];
-  const avgBias = currentRatings.length
-    ? avgScore(currentRatings, "bias_score")
-    : "-";
-  const avgVeracity = currentRatings.length
-    ? avgScore(currentRatings, "veracity_score")
-    : "-";
+
+  // Enrichment rows come back with user_id === null
+  const enrichmentRatings = currentRatings.filter(r => r.user_id == null);
+  const userRatings = currentRatings.filter(r => r.user_id != null);
+
+  const allSidesRating = enrichmentRatings.find(r => r.source === "AllSides");
+  const adFontesRating = enrichmentRatings.find(r => r.source === "Ad Fontes");
+
+  // Compact single-line bias display: prefer AllSides label, fall back to avg user score
+  const biasDisplay = allSidesRating?.rating_label
+    ?? (userRatings.length ? avgScore(userRatings, "bias_score") : "-");
+
+  const avgBias = userRatings.length ? avgScore(userRatings, "bias_score") : "-";
+  const avgVeracity = userRatings.length ? avgScore(userRatings, "veracity_score") : "-";
   const handleSaveBio = async (newBio: string) => {
     if (!activePublisher) return;
 
@@ -384,7 +391,9 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
             </Box>
             {compact && (
               <Text fontSize="6px" color="var(--mr-text-secondary)" lineHeight="1" mb={1}>
-                Bias: {avgBias}
+                {allSidesRating?.rating_label
+                  ? `AllSides: ${allSidesRating.rating_label}`
+                  : `Bias: ${avgBias}`}
               </Text>
             )}
             <input
@@ -402,22 +411,57 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
 
           {!compact && (
             <>
-              <HStack justify="center" spacing={4} mt={2}>
-                <Flex direction="column" align="center" className="mr-metric">
-                  <Text className="mr-metric-label">Bias</Text>
-                  <Flex align="center" gap={1}>
-                    <Text>{getBiasEmoji(parseFloat(avgBias))}</Text>
-                    <Text className="mr-metric-value">{avgBias}</Text>
+              {/* Sourced enrichment ratings */}
+              {enrichmentRatings.length > 0 && (
+                <VStack spacing={1} mt={2} px={1}>
+                  {allSidesRating && (
+                    <Tooltip label={allSidesRating.evidence_quote || "AllSides bias rating"} hasArrow>
+                      <HStack spacing={1} w="100%" justify="center">
+                        <Badge fontSize="9px" colorScheme="purple" variant="outline">AllSides</Badge>
+                        <Badge fontSize="9px" colorScheme="blue">{allSidesRating.rating_label}</Badge>
+                        {allSidesRating.confidence && (
+                          <Badge fontSize="8px" variant="outline" colorScheme="gray">{allSidesRating.confidence}</Badge>
+                        )}
+                      </HStack>
+                    </Tooltip>
+                  )}
+                  {adFontesRating && (
+                    <Tooltip label={adFontesRating.evidence_quote || "Ad Fontes rating"} hasArrow>
+                      <HStack spacing={1} w="100%" justify="center">
+                        <Badge fontSize="9px" colorScheme="orange" variant="outline">Ad Fontes</Badge>
+                        {adFontesRating.rating_label && (
+                          <Badge fontSize="9px" colorScheme="orange">{adFontesRating.rating_label}</Badge>
+                        )}
+                        {adFontesRating.veracity_score != null && (
+                          <Text fontSize="9px" color="var(--mr-text-secondary)">
+                            {adFontesRating.veracity_score.toFixed(0)}/64
+                          </Text>
+                        )}
+                      </HStack>
+                    </Tooltip>
+                  )}
+                </VStack>
+              )}
+
+              {/* User-averaged scores (shown only when user ratings exist) */}
+              {userRatings.length > 0 && (
+                <HStack justify="center" spacing={4} mt={2}>
+                  <Flex direction="column" align="center" className="mr-metric">
+                    <Text className="mr-metric-label">Bias</Text>
+                    <Flex align="center" gap={1}>
+                      <Text>{getBiasEmoji(parseFloat(avgBias))}</Text>
+                      <Text className="mr-metric-value">{avgBias}</Text>
+                    </Flex>
                   </Flex>
-                </Flex>
-                <Flex direction="column" align="center" className="mr-metric">
-                  <Text className="mr-metric-label">Veracity</Text>
-                  <Flex align="center" gap={1}>
-                    <Text>{getVeracityEmoji(parseFloat(avgVeracity))}</Text>
-                    <Text className="mr-metric-value">{avgVeracity}</Text>
+                  <Flex direction="column" align="center" className="mr-metric">
+                    <Text className="mr-metric-label">Veracity</Text>
+                    <Flex align="center" gap={1}>
+                      <Text>{getVeracityEmoji(parseFloat(avgVeracity))}</Text>
+                      <Text className="mr-metric-value">{avgVeracity}</Text>
+                    </Flex>
                   </Flex>
-                </Flex>
-              </HStack>
+                </HStack>
+              )}
 
               {activePublisher?.description && (
                 <Text

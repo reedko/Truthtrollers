@@ -12,6 +12,7 @@ import {
   Text,
   Input,
   Button,
+  Icon,
   IconButton,
   Progress,
   Badge,

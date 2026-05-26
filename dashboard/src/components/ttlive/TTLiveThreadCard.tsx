@@ -77,7 +77,7 @@ const TTLiveThreadCard: React.FC<TTLiveThreadCardProps> = ({ thread }) => {
             )}
           </HStack>
           <Text fontSize="sm" color="gray.500">
-            {new Date(thread.last_activity_at).toLocaleDateString()}
+            {thread.last_activity_at ? new Date(thread.last_activity_at).toLocaleDateString() : ''}
           </Text>
         </HStack>
 

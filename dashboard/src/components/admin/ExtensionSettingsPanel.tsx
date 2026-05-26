@@ -12,13 +12,14 @@ import {
   useToast,
   Button,
   HStack,
+  ButtonGroup,
 } from "@chakra-ui/react";
 import { VerimeterModeToggle } from "../VerimeterModeToggle";
 import { useVerimeterMode } from "../../contexts/VerimeterModeContext";
 import { api } from "../../services/api";
 
 export default function ExtensionSettingsPanel() {
-  const { mode, aiWeight, setMode, setAIWeight } = useVerimeterMode();
+  const { mode, aiWeight, setMode, setAIWeight, popupStyle, setPopupStyle } = useVerimeterMode();
   const toast = useToast();
 
   // Load extension settings from backend on mount
@@ -37,6 +38,9 @@ export default function ExtensionSettingsPanel() {
       if (settings.verimeter_ai_weight) {
         setAIWeight(parseFloat(settings.verimeter_ai_weight));
       }
+      if (settings.popup_style) {
+        setPopupStyle(settings.popup_style as 'card' | 'bar');
+      }
     } catch (error) {
       console.error("Failed to load extension settings:", error);
     }
@@ -48,6 +52,7 @@ export default function ExtensionSettingsPanel() {
         settings: {
           verimeter_mode: mode,
           verimeter_ai_weight: aiWeight.toString(),
+          popup_style: popupStyle,
         },
       });
 
@@ -120,6 +125,61 @@ export default function ExtensionSettingsPanel() {
               <Text fontSize="xs" color="gray.500">
                 These settings will be used by the browser extension for all users.
                 Changes take effect immediately after saving.
+              </Text>
+            </VStack>
+          </CardBody>
+        </Card>
+
+        {/* Popup Style */}
+        <Card
+          bg="rgba(15, 23, 42, 0.6)"
+          borderWidth="1px"
+          borderColor="rgba(0, 162, 255, 0.3)"
+          boxShadow="0 4px 20px rgba(0, 0, 0, 0.3)"
+        >
+          <CardHeader>
+            <Heading
+              size="md"
+              color="cyan.300"
+              textShadow="0 0 10px rgba(0, 162, 255, 0.5)"
+            >
+              Extension Popup Style
+            </Heading>
+            <Text fontSize="sm" color="gray.400" mt={2}>
+              Choose how the extension popup appears on page. Card is the
+              vertical sidebar; Bar is the compact horizontal strip at the top.
+            </Text>
+          </CardHeader>
+          <Divider borderColor="rgba(0, 162, 255, 0.2)" />
+          <CardBody>
+            <VStack spacing={4} align="stretch">
+              <ButtonGroup isAttached variant="outline" size="md">
+                <Button
+                  onClick={() => setPopupStyle('card')}
+                  colorScheme={popupStyle === 'card' ? 'cyan' : 'gray'}
+                  variant={popupStyle === 'card' ? 'solid' : 'outline'}
+                  flex={1}
+                  leftIcon={<Text>▭</Text>}
+                >
+                  Card (Vertical)
+                </Button>
+                <Button
+                  onClick={() => setPopupStyle('bar')}
+                  colorScheme={popupStyle === 'bar' ? 'cyan' : 'gray'}
+                  variant={popupStyle === 'bar' ? 'solid' : 'outline'}
+                  flex={1}
+                  leftIcon={<Text>▬</Text>}
+                >
+                  Bar (Horizontal)
+                </Button>
+              </ButtonGroup>
+
+              <Text fontSize="xs" color="gray.500">
+                Current:{" "}
+                <Text as="span" color="cyan.300" fontWeight="semibold">
+                  {popupStyle === 'card' ? 'Vertical Card' : 'Horizontal Bar'}
+                </Text>
+                . Save Extension Settings below to apply globally.
               </Text>
             </VStack>
           </CardBody>

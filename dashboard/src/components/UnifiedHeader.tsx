@@ -1,5 +1,5 @@
 // src/components/UnifiedHeader.tsx
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Flex,
@@ -64,6 +64,48 @@ interface UnifiedHeaderProps {
 }
 
 const CARD_W = 250; // single source of truth
+
+const cardWrapSx = {
+  "--card-max": `${CARD_W}px`,
+
+  flex: {
+    base: "0 0 280px",
+    sm: "0 0 280px",
+    md: "0 0 140px",
+    lg: "0 0 160px",
+    xl: "1 1 0",
+  },
+
+  width: {
+    base: "280px",
+    sm: "280px",
+    md: "140px",
+    lg: "160px",
+    xl: "clamp(180px, 20vw, var(--card-max))",
+  },
+
+  maxWidth: {
+    base: "280px",
+    sm: "280px",
+    md: "140px",
+    lg: "160px",
+    xl: "var(--card-max)",
+  },
+
+  minWidth: {
+    base: "280px",
+    sm: "280px",
+    md: "140px",
+    lg: "160px",
+    xl: "180px",
+  },
+
+  "> *": {
+    width: "100% !important",
+    maxWidth: "100% !important",
+    margin: "0 !important",
+  },
+} as const;
 
 // Helper function to get verdict info based on verimeter score
 const getVerdictInfo = (
@@ -134,14 +176,8 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
   const selectedTask = useTaskStore((s) => s.selectedTask);
   const fetchTasksByPivot = useTaskStore((s) => s.fetchTasksByPivot);
   const viewerId = useTaskStore((s) => s.viewingUserId);
-  const verimeterScoreMap = useTaskStore((s) => s.verimeterScores || {});
+  const verimeterScoreMap = useTaskStore((s) => s.verimeterScores);
   const user = useAuthStore((s) => s.user);
-
-  // Debug: Log user role
-  useEffect(() => {
-    console.log("[UnifiedHeader] Current user:", user);
-    console.log("[UnifiedHeader] User role:", user?.role);
-  }, [user]);
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [pivotTask, setPivotTask] = useState<Task | null>(null);
@@ -160,20 +196,42 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
   // 🔧 Auto-pick variant by breakpoint unless explicitly provided
   const bpVariant = useBreakpointValue<Variant>({
-    base: "micro",   // phone → MicroHeaderRail
-    sm: "micro",     // phone landscape → MicroHeaderRail
-    md: "compact",   // 800x600 → compact cards
-    lg: "compact",   // 1024x768 → compact cards
-    xl: "full",      // full res → full cards
+    base: "micro",
+    sm: "micro",
+    md: "compact",
+    lg: "compact",
+    xl: "full",
   });
 
-  const [localVariant, setLocalVariant] = useState<Variant>(
-    variant ?? bpVariant ?? "full",
-  );
+  // Read window.innerWidth synchronously so the very first paint is correct.
+  // Chakra's bpVariant starts as "micro" (base) and corrects later — bypassing it
+  // for initial state prevents the flash of wrong-size cards.
+  const [localVariant, setLocalVariant] = useState<Variant>(() => {
+    if (variant) return variant;
+    if (typeof window === "undefined") return "full";
+    const w = window.innerWidth;
+    return w >= 1280 ? "full" : w >= 768 ? "compact" : "micro";
+  });
+  // Ref prevents the first useEffect run from overwriting the correct initial state
+  // with Chakra's still-stale "micro" value.
+  const hasMountedVariant = useRef(false);
   useEffect(() => {
+    if (!hasMountedVariant.current) {
+      hasMountedVariant.current = true;
+      return;
+    }
     if (variant) setLocalVariant(variant);
-    else if (bpVariant) setLocalVariant(bpVariant);
-  }, [variant, bpVariant]);
+  }, [variant]);
+  // Handle genuine window resize without going through Chakra's deferred evaluation
+  useEffect(() => {
+    if (variant) return;
+    const update = () => {
+      const w = window.innerWidth;
+      setLocalVariant(w >= 1280 ? "full" : w >= 768 ? "compact" : "micro");
+    };
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [variant]);
 
   const isMicro = localVariant === "micro";
   const isCompact = localVariant === "compact";
@@ -303,7 +361,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
 
   const contentId = pivotTask?.content_id ?? null;
   const storeScore =
-    contentId != null ? (verimeterScoreMap[contentId] ?? null) : null;
+    contentId != null ? (verimeterScoreMap?.[contentId] ?? null) : null;
   const finalScore = verimeterScore ?? storeScore ?? liveVerimeter;
 
   const authors = useMemo(
@@ -324,51 +382,6 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     : {};
 
   const isLoading = !pivotTask;
-
-  // Card wrapper—forces identical widths, kills stagger
-  const cardWrapSx = {
-    "--card-max": `${CARD_W}px`,
-
-    // Responsive flex behavior
-    flex: {
-      base: "0 0 280px",      // phone: fixed
-      sm: "0 0 280px",        // phone landscape: fixed
-      md: "0 0 140px",        // 800x600: fixed much smaller
-      lg: "0 0 160px",        // 1024: fixed compact
-      xl: "1 1 0",            // full res: flexible
-    },
-
-    // Responsive card widths
-    width: {
-      base: "280px",                                  // phone
-      sm: "280px",                                    // phone landscape
-      md: "140px",                                    // 800x600
-      lg: "160px",                                    // 1024
-      xl: "clamp(180px, 20vw, var(--card-max))",     // full res
-    },
-
-    maxWidth: {
-      base: "280px",
-      sm: "280px",
-      md: "140px",
-      lg: "160px",
-      xl: "var(--card-max)",
-    },
-
-    minWidth: {
-      base: "280px",
-      sm: "280px",
-      md: "140px",
-      lg: "160px",
-      xl: "180px",
-    },
-
-    "> *": {
-      width: "100% !important",
-      maxWidth: "100% !important",
-      margin: "0 !important",
-    },
-  } as const;
 
   return (
     <Box position="relative" w="100%" px={0}>

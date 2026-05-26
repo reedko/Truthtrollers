@@ -34,8 +34,9 @@ interface CredibilityInfoModalProps {
   isOpen: boolean;
   onClose: () => void;
   entityType: "author" | "publisher";
-  entityId: number;
+  entityId?: number;
   entityName: string;
+  customName?: string;
 }
 
 interface CredibilityResult {
@@ -75,6 +76,13 @@ interface CredibilityResult {
       entity_name?: string;
       has_cases: boolean;
       case_count: number;
+      filtered_cases?: Array<{
+        case_name: string;
+        court?: string;
+        date_filed?: string;
+        docket_number?: string;
+        url?: string;
+      }>;
       cases?: Array<{
         case_name: string;
         court: string;
@@ -145,6 +153,7 @@ const CredibilityInfoModal: React.FC<CredibilityInfoModalProps> = ({
   entityType,
   entityId,
   entityName,
+  customName,
 }) => {
   const { colorMode } = useColorMode();
   const token = useAuthStore((s) => s.token);
@@ -158,17 +167,25 @@ const CredibilityInfoModal: React.FC<CredibilityInfoModalProps> = ({
   const [selectedCaseUrl, setSelectedCaseUrl] = useState<string | null>(null);
   const [selectedCaseName, setSelectedCaseName] = useState<string>("");
   const [isCaseDetailOpen, setIsCaseDetailOpen] = useState(false);
-  const [casesDisplayLimit, setCasesDisplayLimit] = useState(10); // Start with 10, load more in batches
+  const [casesDisplayLimit, setCasesDisplayLimit] = useState(10);
   const [caseFilter, setCaseFilter] = useState<string>("");
+  const [showFilteredCases, setShowFilteredCases] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      hasAutoChecked.current = false; // Reset on open
-      loadHistory();
+      hasAutoChecked.current = false;
+      if (customName && !entityId) {
+        // Custom name mode: no history in DB, go straight to check
+        runCheck();
+      } else {
+        loadHistory();
+      }
     }
-  }, [isOpen, entityId]);
+  }, [isOpen, entityId, customName]);
 
   const loadHistory = async () => {
+    if (!entityId) return;
+
     setIsLoading(true);
     setError(null);
 
@@ -293,18 +310,29 @@ const CredibilityInfoModal: React.FC<CredibilityInfoModalProps> = ({
     setError(null);
 
     try {
-      const response = await fetch(
-        `${API_BASE_URL}/api/credibility/${entityType}/${entityId}/check`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ force }), // Pass force parameter
-        }
-      );
+      let url: string;
+      let body: Record<string, unknown>;
+
+      if (customName && !entityId) {
+        const endpoint = entityType === "author"
+          ? "check-custom-author"
+          : "check-custom-publisher";
+        url = `${API_BASE_URL}/api/credibility/${endpoint}`;
+        body = { name: customName };
+      } else {
+        url = `${API_BASE_URL}/api/credibility/${entityType}/${entityId}/check`;
+        body = { force };
+      }
+
+      const response = await fetch(url, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -814,6 +842,54 @@ const CredibilityInfoModal: React.FC<CredibilityInfoModalProps> = ({
                             </>
                           ) : (
                             <Text fontSize="sm" color="green.500">✓ No court cases found</Text>
+                          )}
+
+                          {/* Filtered / set-aside cases toggle */}
+                          {result.services.courtlistener.filtered_cases && result.services.courtlistener.filtered_cases.length > 0 && (
+                            <Box mt={3}>
+                              <Button
+                                size="xs"
+                                variant="ghost"
+                                colorScheme="gray"
+                                onClick={() => setShowFilteredCases(v => !v)}
+                              >
+                                {showFilteredCases ? '▲ Hide' : '▼ Show'} {result.services.courtlistener.filtered_cases.length} additional result(s) where name appears in case documents but not in case title
+                              </Button>
+                              {showFilteredCases && (
+                                <VStack align="stretch" spacing={2} pl={4} mt={2}>
+                                  {result.services.courtlistener.filtered_cases.map((c: any, i: number) => (
+                                    <Box
+                                      key={i}
+                                      fontSize="xs"
+                                      borderLeft="3px solid"
+                                      borderColor="gray.300"
+                                      pl={3}
+                                      py={1}
+                                      cursor={c.url ? 'pointer' : 'default'}
+                                      onClick={() => {
+                                        if (c.url) {
+                                          setSelectedCaseUrl(c.url);
+                                          setSelectedCaseName(c.case_name);
+                                          setIsCaseDetailOpen(true);
+                                        }
+                                      }}
+                                      _hover={c.url ? { borderColor: 'purple.400' } : {}}
+                                    >
+                                      <Text fontWeight="semibold">{c.case_name}</Text>
+                                      <Text color="gray.500">
+                                        {c.court && !c.court.includes('http') ? c.court : 'Federal Court'} • {c.date_filed || 'Date unknown'}
+                                      </Text>
+                                      {c.docket_number && (
+                                        <Text color="gray.400">Docket: {c.docket_number}</Text>
+                                      )}
+                                      {c.url && (
+                                        <Text color="purple.400" fontSize="xs">Click for details →</Text>
+                                      )}
+                                    </Box>
+                                  ))}
+                                </VStack>
+                              )}
+                            </Box>
                           )}
                         </VStack>
                       )}

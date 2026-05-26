@@ -51,8 +51,9 @@ const PubRatingModal: React.FC<PubRatingModalProps> = ({
       const [ratings, topics] = await Promise.all([
         fetchPublisherRatings(publisherId),
         fetchRatingTopics(),
-      ]); // No destructure
-      setLocalRatings(ratings);
+      ]);
+      // Only show user-entered rows — enrichment rows (user_id == null) are read-only
+      setLocalRatings(ratings.filter((r: PublisherRating) => r.user_id != null));
 
       // Set all topics for the dropdown
       const topicMap = Object.fromEntries(

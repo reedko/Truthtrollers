@@ -190,9 +190,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
             notes: row.notes || "",
           };
         });
-        console.log(
-          `✅ Loaded ${formattedLinks.length} claim links for content ${contentId}`,
-        );
         setClaimLinks(formattedLinks);
       })
       .catch((error) => {
@@ -213,10 +210,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
   useEffect(() => {
     // Fetch AI evidence links (reference_claim_links with support_level/stance)
     fetchAIEvidenceLinks(contentId)
-      .then((links) => {
-        console.log("✅ AI evidence links fetched:", links);
-        setAIEvidenceLinks(links);
-      })
+      .then(setAIEvidenceLinks)
       .catch((error) => {
         console.error("Error fetching AI evidence links:", error);
         setAIEvidenceLinks([]); // Set empty array on error
@@ -225,10 +219,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
 
   useEffect(() => {
     fetchReferencesWithClaimsForTask(contentId, viewerId, scope)
-      .then((data) => {
-        console.log("✅ references fetched:", data);
-        setReferences(data);
-      })
+      .then(setReferences)
       .catch((error) => {
         console.error("Error fetching references:", error);
         setReferences([]); // Set empty array on error
@@ -285,12 +276,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
     supportLevel: number,
   ) => {
     // The scan's "source" claim is a reference claim; the target is the task claim being scanned
-    console.log("[Workspace] handleOpenLinkOverlayFromScan called with:", {
-      sourceClaim: scanSourceClaim.claim_id,
-      targetClaim: scanTargetClaim.claim_id,
-      rationale,
-      supportLevel,
-    });
     setSourceClaim(scanSourceClaim);
     setTargetClaim(scanTargetClaim);
     setLinkRationale(rationale);
