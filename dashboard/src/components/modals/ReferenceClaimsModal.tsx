@@ -17,6 +17,8 @@ import {
 } from "@chakra-ui/react";
 import { Search2Icon, EditIcon, DeleteIcon } from "@chakra-ui/icons";
 import { Claim, ReferenceWithClaims } from "../../../../shared/entities/types";
+import SourceCrest from "../SourceCrest";
+import { normalizeSourceProfile } from "../../utils/normalizeSourceProfile";
 import { Global, css } from "@emotion/react";
 import { motion } from "framer-motion";
 import { ModalContent as ChakraModalContent } from "@chakra-ui/react";
@@ -131,6 +133,33 @@ const ReferenceClaimsModal: React.FC<Props> = ({
           <Text noOfLines={2}>
             {reference?.content_name || "Source Claims"}
           </Text>
+          {/* Pub / Author byline */}
+          <HStack spacing={2} mt="4px" flexWrap="wrap" align="center">
+            {reference && (
+              <SourceCrest
+                {...normalizeSourceProfile({
+                  publisher_name: reference.publisher_name,
+                  is_primary_source: reference.is_primary_source,
+                  media_source: reference.media_source,
+                  veracity_score: reference.publisher_veracity ?? undefined,
+                  admiralty_code: reference.admiralty_code ?? undefined,
+                })}
+                size="xs"
+              />
+            )}
+            <Text fontSize="xs" color="rgba(0,162,255,0.7)">
+              <Text as="span" opacity={0.6}>Pub: </Text>
+              <Text as="span" color={reference?.publisher_name ? "rgba(0,162,255,0.9)" : "rgba(255,255,255,0.3)"}>
+                {reference?.publisher_name ?? "—"}
+              </Text>
+            </Text>
+            <Text fontSize="xs" color="rgba(0,162,255,0.7)">
+              <Text as="span" opacity={0.6}>Auth: </Text>
+              <Text as="span" color={reference?.author_name?.trim() ? "rgba(0,162,255,0.9)" : "rgba(255,255,255,0.3)"}>
+                {reference?.author_name?.trim() ?? "—"}
+              </Text>
+            </Text>
+          </HStack>
         </ModalHeader>
 
         {/* BIGGER, NOTCH-SAFE CLOSE BUTTON */}

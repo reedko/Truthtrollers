@@ -47,11 +47,31 @@ Creates deterministic, order-independent JSON snapshots that produce consistent 
 **Snapshot Structure:**
 ```javascript
 {
-  audit_version: "1.0",
+  audit_version: "1.1",
   timestamp: "ISO-8601 timestamp",
   claim_link: { /* claim_link data */ },
-  source_claim: { /* source claim data */ },
-  target_claim: { /* target claim data */ }
+  source_claim: {
+    /* source claim data */
+    content_sources: [
+      {
+        content_id,
+        content_name,
+        url,
+        media_source,
+        content_type,
+        relationship_type,
+        claim_role,
+        claim_depth,
+        claim_order,
+        publishers,
+        authors
+      }
+    ]
+  },
+  target_claim: {
+    /* target claim data */
+    content_sources: [ /* same shape as source_claim.content_sources */ ]
+  }
 }
 ```
 
@@ -285,6 +305,7 @@ Normal JSON serialization is not deterministic - the same object can produce dif
 - Any change to the snapshot data produces a completely different SHA-256 hash
 - The hash is anchored to Bitcoin blockchain
 - Changing historical data is immediately detectable
+- This is evidence of later modification, not a mechanism that prevents bad input or manipulation attempts
 
 **Trust Model:**
 - Users don't need to trust Truthtrollers
@@ -295,6 +316,8 @@ Normal JSON serialization is not deterministic - the same object can produce dif
 **What is NOT Protected:**
 - This does not encrypt data
 - This does not prevent initial data entry errors
+- This does not independently prove that a claim is true
+- This does not by itself prevent manipulation, brigading, or coordinated bad-faith submissions
 - This only proves "data X existed at time T"
 
 ## Deployment Checklist
@@ -334,7 +357,7 @@ Normal JSON serialization is not deterministic - the same object can produce dif
 - 🔒 **Tamper-Evident** - Any change to data is immediately detectable
 - ⛓️ **Bitcoin-Anchored** - Proofs secured by Bitcoin blockchain's hash power
 - 🔍 **Independently Verifiable** - Anyone can verify proofs without trusting us
-- 📜 **Immutable Audit Trail** - Permanent record of evidence chain state
+- 📜 **Anchored Audit Record** - Finalized snapshots can be compared against their anchored hash
 
 ## Files Created/Modified
 

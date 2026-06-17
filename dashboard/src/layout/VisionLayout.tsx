@@ -53,6 +53,32 @@ import { GlobalProgressIndicator } from "../components/GlobalProgressIndicator";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
 
+// Module-level constant — avoids recreating + re-hashing sx gradient strings on every SidebarContent render
+const pillNavStyles = {
+  fontSize: { base: "11px", lg: "11px", xl: "15px" },
+  fontWeight: "normal",
+  lineHeight: "1.2",
+  border: "1px solid",
+  borderColor: "rgba(0, 162, 255, 0.35)",
+  borderRadius: "full",
+  px: 2,
+  py: 1,
+  minH: "unset",
+  height: "auto",
+  color: "rgba(113, 219, 255, 0.88)",
+  boxShadow: "0 4px 14px rgba(0,0,0,0.4), 0 0 16px rgba(0,162,255,0.13), inset 0 1px 0 rgba(255,255,255,0.07), inset 0 -1px 0 rgba(0,0,0,0.22)",
+  transition: "all 0.2s ease",
+  sx: {
+    background: "linear-gradient(90deg, rgba(0,162,255,0.2) 0%, rgba(0,8,22,0.55) 30%, rgba(0,3,12,0.45) 100%)",
+    "&:hover": {
+      background: "linear-gradient(90deg, rgba(0,162,255,0.36) 0%, rgba(0,16,44,0.62) 30%, rgba(0,8,26,0.52) 100%)",
+      boxShadow: "0 6px 22px rgba(0,0,0,0.55), 0 0 32px rgba(0,162,255,0.45), inset 0 1px 0 rgba(255,255,255,0.15)",
+      borderColor: "rgba(0, 162, 255, 0.75)",
+      transform: "translateY(-1px)",
+    },
+  },
+};
+
 const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
   onNavigate,
 }) => {
@@ -78,20 +104,6 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
     onNavigate?.(); // close drawer (mobile)
     if (!selectedTaskId) setRedirect(path);
   };
-  const borderColor = useColorModeValue("gray.300", "gray.600");
-  const pillNavStyles = {
-    fontSize: { base: "11px", lg: "11px", xl: "15px" },
-    fontWeight: "normal",
-    lineHeight: "1.2",
-    border: "1px solid",
-    borderColor: borderColor,
-    borderRadius: "full",
-    px: 2,
-    py: 1,
-    minH: "unset",
-    height: "auto",
-  };
-
   return (
     <VStack align="start" spacing={1} w="full">
       {/* Tutorial Menu */}
@@ -136,8 +148,8 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
           w="full"
           {...pillNavStyles}
           _hover={{
-            boxShadow: "0 0 20px rgba(113, 219, 255, 0.6)",
-            borderColor: "rgba(113, 219, 255, 0.8)",
+            boxShadow: "0 6px 22px rgba(0,0,0,0.55), 0 0 32px rgba(0,162,255,0.45)",
+            borderColor: "rgba(0, 162, 255, 0.75)",
           }}
         >
           <Box as={FiHome} boxSize={{ base: "12px", lg: "12px", xl: "12px" }} />
@@ -159,8 +171,8 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
           w="full"
           {...pillNavStyles}
           _hover={{
-            boxShadow: "0 0 20px rgba(113, 219, 255, 0.6)",
-            borderColor: "rgba(113, 219, 255, 0.8)",
+            boxShadow: "0 6px 22px rgba(0,0,0,0.55), 0 0 32px rgba(0,162,255,0.45)",
+            borderColor: "rgba(0, 162, 255, 0.75)",
           }}
         >
           <Box
@@ -183,8 +195,8 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
           w="full"
           {...pillNavStyles}
           _hover={{
-            boxShadow: "0 0 20px rgba(113, 219, 255, 0.6)",
-            borderColor: "rgba(113, 219, 255, 0.8)",
+            boxShadow: "0 6px 22px rgba(0,0,0,0.55), 0 0 32px rgba(0,162,255,0.45)",
+            borderColor: "rgba(0, 162, 255, 0.75)",
           }}
         >
           <Box
@@ -293,6 +305,14 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
             icon={<span />}
           >
             Discussion Board
+          </MenuItem>
+          <MenuItem
+            as={RouterLink}
+            to="/review-articles"
+            onClick={handleClick("/review-articles")}
+            icon={<span />}
+          >
+            Review Articles
           </MenuItem>
           <MenuItem
             as={RouterLink}
@@ -418,8 +438,8 @@ const SidebarContent: React.FC<{ onNavigate?: () => void }> = ({
           align="center"
           {...pillNavStyles}
           _hover={{
-            boxShadow: "0 0 20px rgba(113, 219, 255, 0.6)",
-            borderColor: "rgba(113, 219, 255, 0.8)",
+            boxShadow: "0 6px 22px rgba(0,0,0,0.55), 0 0 32px rgba(0,162,255,0.45)",
+            borderColor: "rgba(0, 162, 255, 0.75)",
           }}
         >
           <Box as={FiUser} boxSize={{ base: "12px", lg: "12px", xl: "12px" }} />

@@ -64,13 +64,14 @@ export interface Publisher {
   publisher_owner?: string;
   publisher_icon?: string;
   description: string;
+  admiralty_code?: string | null;
 }
 
 //Publisher Rating interface
 export interface PublisherRating {
   publisher_rating_id: number;
   publisher_id: number;
-  user_id?: number | null;        // null = system enrichment row
+  user_id?: number | null; // null = system enrichment row
   source: string;
   url: string;
   bias_score: number;
@@ -113,14 +114,17 @@ export interface ReferenceWithClaims {
   author_name?: string;
   topic?: string;
   subtopic?: string;
-  claims: {
-    claim_id: number;
-    claim_text: string;
-  }[];
+  claims: Claim[];
 
   is_primary_source?: boolean;
   is_system?: boolean; // TRUE = evidence engine ref (cannot be deleted by regular users)
   added_by_user_id?: number | null; // NULL = system ref, otherwise user who added it
+  publisher_id?: number;
+  publisher_veracity?: number | null; // avg veracity from publisher_ratings (0-100)
+  rating_label?: string | null;
+  rating_type?: string | null;
+  admiralty_code?: string | null; // from admiralty_evaluations join
+  author_id?: number;
 }
 export type UnifiedReference = ReferenceWithClaims;
 // Claims
@@ -131,6 +135,12 @@ export interface Claim {
   veracity_score: number;
   confidence_level: number;
   last_verified: string; // Timestamp as ISO string
+  claim_role?: "thesis" | "pillar" | "evidence" | "background" | string;
+  parent_claim_id?: number | null;
+  claim_depth?: number | null;
+  centrality_score?: number | null;
+  verifiability_score?: number | null;
+  claim_order?: number | null;
   references?: ClaimReference[]; // References that support/refute the claim
   relationship_type?: string; // Type of relationship to the content (if relevant)
   content_id?: number;
@@ -352,6 +362,10 @@ export class GraphNode implements d3.SimulationNodeDatum {
   is_system?: boolean;
   // Visual state for molecule view
   dimmed?: boolean;
+  // Publisher source type (journalism, academic, government, etc.) — from publisher_profiles
+  source_type?: string;
+  // Admiralty code from admiralty_evaluations (reference nodes only)
+  admiralty_code?: string | null;
 
   /*
 
@@ -490,11 +504,15 @@ export interface VerimeterData {
 // ================================================
 // For generating structured social media posts from analyzed content
 
-export type DiscussionUnitType = 'claim' | 'support' | 'counter' | 'summary';
-export type DiscussionGenerationStatus = 'pending' | 'processing' | 'completed' | 'failed';
-export type PostStatus = 'pending' | 'posted' | 'failed' | 'deleted';
-export type SocialPlatform = 'twitter_x' | 'facebook' | 'linkedin' | 'mastodon';
-export type PostingTone = 'neutral' | 'assertive' | 'question';
+export type DiscussionUnitType = "claim" | "support" | "counter" | "summary";
+export type DiscussionGenerationStatus =
+  | "pending"
+  | "processing"
+  | "completed"
+  | "failed";
+export type PostStatus = "pending" | "posted" | "failed" | "deleted";
+export type SocialPlatform = "twitter_x" | "facebook" | "linkedin" | "mastodon";
+export type PostingTone = "neutral" | "assertive" | "question";
 
 export interface DiscussionUnitSource {
   title: string;
@@ -628,14 +646,38 @@ export interface PostingResponse {
 // TruthTrollers Live Feed System Types
 // =====================================================
 
-export type TTLiveThreadType = 'imported_x' | 'native_tt' | 'hybrid';
-export type TTLiveSourcePlatform = 'x' | 'twitter' | 'instagram' | 'facebook' | 'reddit' | 'native';
-export type TTLiveStance = 'support' | 'refute' | 'nuance' | 'question' | 'neutral';
-export type TTLiveTone = 'neutral' | 'assertive' | 'questioning' | 'educational';
-export type TTLiveEvidenceType = 'reference' | 'claim' | 'content' | 'external_url';
-export type TTLiveNotificationLevel = 'all' | 'mentions' | 'replies' | 'none';
-export type TTLiveExportStatus = 'pending' | 'success' | 'failed' | 'revoked';
-export type TTLiveVeracityAssessment = 'true' | 'false' | 'mixed' | 'unverified' | 'pending';
+export type TTLiveThreadType = "imported_x" | "native_tt" | "hybrid";
+export type TTLiveSourcePlatform =
+  | "x"
+  | "twitter"
+  | "instagram"
+  | "facebook"
+  | "reddit"
+  | "native";
+export type TTLiveStance =
+  | "support"
+  | "refute"
+  | "nuance"
+  | "question"
+  | "neutral";
+export type TTLiveTone =
+  | "neutral"
+  | "assertive"
+  | "questioning"
+  | "educational";
+export type TTLiveEvidenceType =
+  | "reference"
+  | "claim"
+  | "content"
+  | "external_url";
+export type TTLiveNotificationLevel = "all" | "mentions" | "replies" | "none";
+export type TTLiveExportStatus = "pending" | "success" | "failed" | "revoked";
+export type TTLiveVeracityAssessment =
+  | "true"
+  | "false"
+  | "mixed"
+  | "unverified"
+  | "pending";
 
 // Main thread container
 export interface TTLiveThread {
@@ -728,7 +770,7 @@ export interface TTLiveImportedPost {
   thread_id: string;
 
   // Source tracking
-  source_platform: 'x' | 'twitter' | 'instagram' | 'facebook' | 'reddit';
+  source_platform: "x" | "twitter" | "instagram" | "facebook" | "reddit";
   source_post_id: string;
   source_url: string;
 
@@ -771,7 +813,7 @@ export interface TTLivePost {
 
   // Author info (TT user)
   author_user_id: number;
-  author_role: 'contributor' | 'expert' | 'moderator' | 'admin';
+  author_role: "contributor" | "expert" | "moderator" | "admin";
 
   // Post content
   post_text: string;
@@ -872,7 +914,7 @@ export interface TTLiveExportLog {
 
   // Export details
   exported_by: number;
-  export_platform: 'x' | 'twitter' | 'instagram' | 'facebook' | 'reddit';
+  export_platform: "x" | "twitter" | "instagram" | "facebook" | "reddit";
   export_status: TTLiveExportStatus;
 
   // Platform response
@@ -894,7 +936,7 @@ export interface TTLiveExportLog {
 
 // Combined timeline post (union of imported + TT posts)
 export interface TTLiveTimelinePost {
-  post_source: 'imported' | 'ttpost';
+  post_source: "imported" | "ttpost";
   post_id: string;
   thread_id: string;
 
@@ -965,7 +1007,7 @@ export interface CreateTTPostRequest {
 
 export interface ExportPostRequest {
   post_id: string;
-  export_platform: 'x' | 'twitter' | 'instagram' | 'facebook' | 'reddit';
+  export_platform: "x" | "twitter" | "instagram" | "facebook" | "reddit";
 }
 
 export interface ThreadTimelineResponse {
@@ -986,21 +1028,25 @@ export interface UserThreadsResponse {
 // Staged Argument System Types
 // =====================================================
 
-export type ArgumentStance = 'support' | 'refute' | 'nuance' | 'question';
-export type ArgumentStatus = 'draft' | 'needs_revision' | 'approved' | 'signed_off';
+export type ArgumentStance = "support" | "refute" | "nuance" | "question";
+export type ArgumentStatus =
+  | "draft"
+  | "needs_revision"
+  | "approved"
+  | "signed_off";
 export type FallacyType =
-  | 'ad_hominem'
-  | 'strawman'
-  | 'false_dichotomy'
-  | 'appeal_to_emotion'
-  | 'appeal_to_authority'
-  | 'hasty_generalization'
-  | 'slippery_slope'
-  | 'circular_reasoning'
-  | 'red_herring'
-  | 'unsupported_claim'
-  | 'other';
-export type SignoffType = 'approve' | 'endorse' | 'challenge';
+  | "ad_hominem"
+  | "strawman"
+  | "false_dichotomy"
+  | "appeal_to_emotion"
+  | "appeal_to_authority"
+  | "hasty_generalization"
+  | "slippery_slope"
+  | "circular_reasoning"
+  | "red_herring"
+  | "unsupported_claim"
+  | "other";
+export type SignoffType = "approve" | "endorse" | "challenge";
 
 // Core staged argument entity
 export interface StagedArgument {
@@ -1192,7 +1238,7 @@ export interface ArgumentSignoffRequest {
 }
 
 export interface ArgumentExportRequest {
-  export_platform: 'x' | 'twitter' | 'instagram' | 'facebook' | 'reddit';
+  export_platform: "x" | "twitter" | "instagram" | "facebook" | "reddit";
 }
 
 export interface ArgumentValidationResult {
@@ -1230,7 +1276,7 @@ export interface Conversation {
   conversation_id: string;
   thread_id: string;
   conversation_title?: string;
-  conversation_status: 'active' | 'archived' | 'locked';
+  conversation_status: "active" | "archived" | "locked";
   total_participants: number;
   active_participants: number;
   total_arguments: number;
@@ -1250,7 +1296,7 @@ export interface ConversationParticipant {
   participant_id: string;
   conversation_id: string;
   user_id: number;
-  role: 'participant' | 'moderator' | 'observer';
+  role: "participant" | "moderator" | "observer";
   join_reason?: string;
   arguments_contributed: number;
   last_active_at: string;

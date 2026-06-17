@@ -11,6 +11,7 @@ import logger from "./logger.js";
 import axios from "axios";
 import https from "https";
 import { DEFAULT_HEADERS } from "./helpers.js";
+import { choosePdfPublisher } from "./pdfPublisherExtractor.js";
 
 /**
  * chooseTitle - Extract title from PDF metadata or first lines
@@ -116,8 +117,9 @@ export async function fetchExternalPageContent(url) {
 
       const title = chooseTitle(infoTitle, lines, url);
       const authors = choosePdfAuthors(infoAuthor, lines);
+      const publisher = choosePdfPublisher(parsed.info, lines);
 
-      logger.log(`✅ [fetchExternalPageContent] PDF parsed: ${title}`);
+      logger.log(`✅ [fetchExternalPageContent] PDF parsed: ${title}${publisher ? ` | publisher: ${publisher}` : ""}`);
 
       // Wrap text in HTML body for cheerio
       const htmlBody = `<body>${fullText}</body>`;
@@ -128,7 +130,8 @@ export async function fetchExternalPageContent(url) {
         pdfMeta: {
           title,
           authors,
-          thumbnailUrl: null, // Can add thumbnail generation later
+          publisher, // null if not found
+          thumbnailUrl: null,
         },
       };
     } else {

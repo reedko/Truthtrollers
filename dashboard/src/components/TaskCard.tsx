@@ -16,6 +16,14 @@ import {
   useToast,
   Tooltip,
   Portal,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+  Checkbox,
+  VStack,
 } from "@chakra-ui/react";
 import { FiTrash2 } from "react-icons/fi";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -28,9 +36,33 @@ import { Task } from "../../../shared/entities/types";
 import { extractMeta } from "../utils/normalize";
 import { uploadImage, fetchTask } from "../services/useDashboardAPI";
 import { api } from "../services/api";
+import SourceCrest from "./SourceCrest";
+import SourceDetailModal from "./modals/SourceDetailModal";
+import { normalizeSourceProfile } from "../utils/normalizeSourceProfile";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
+
+const titlePanelSx = {
+  position: "relative",
+  overflow: "hidden",
+  bg: "linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.82))",
+  border: "1px solid rgba(0, 162, 255, 0.5)",
+  color: "rgba(191, 235, 255, 0.96)",
+  boxShadow:
+    "0 8px 24px rgba(0,0,0,0.45), 0 0 24px rgba(0, 162, 255, 0.24), inset 0 1px 0 rgba(255,255,255,0.12)",
+  _before: {
+    content: '""',
+    position: "absolute",
+    left: 0,
+    top: 0,
+    width: "20px",
+    height: "100%",
+    background: "linear-gradient(90deg, rgba(0, 162, 255, 0.42) 0%, rgba(0, 162, 255, 0) 100%)",
+    borderLeftRadius: "md",
+    pointerEvents: "none",
+  },
+} as const;
 
 interface TaskCardProps {
   task: Task | Task[] | null;
@@ -58,6 +90,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
   const [activeTask, setActiveTask] = useState<Task | null>(
     Array.isArray(task) ? task[0] : task,
   );
+  const [sourceDetailOpen, setSourceDetailOpen] = useState(false);
   const [imageKey, setImageKey] = useState(Date.now()); // Force image reload
   const [imageError, setImageError] = useState(false); // Track if image failed to load
   const [isCompleted, setIsCompleted] = useState(false); // Track completion status
@@ -81,7 +114,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
   const {
     isOpen: isReferenceModalOpen,
-    onOpen: onReferenceModalOpen,
     onClose: onReferenceModalClose,
   } = useDisclosure();
 
@@ -228,36 +260,23 @@ const TaskCard: React.FC<TaskCardProps> = ({
     }
   };
 
-  const handleDeleteTask = async () => {
+  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
+  const [deleteIncludeRefs, setDeleteIncludeRefs] = useState(false);
+  const deleteConfirmRef = useRef<HTMLButtonElement>(null);
+
+  const handleDeleteTask = () => {
     if (!user?.user_id) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to delete tasks",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
+      toast({ title: "Error", description: "You must be logged in to delete tasks", status: "error", duration: 3000 });
       return;
     }
+    onDeleteOpen();
+  };
 
-    const confirmDelete = window.confirm(
-      `⚠️ WARNING: This will permanently delete "${activeTask.content_name}" and ALL related data:\n\n` +
-        `• All claims\n` +
-        `• All claim links\n` +
-        `• All references\n` +
-        `• All ratings\n` +
-        `• All scores\n\n` +
-        `This action CANNOT be undone!\n\n` +
-        `Are you absolutely sure?`,
-    );
-
-    if (!confirmDelete) {
-      return;
-    }
-
+  const confirmDeleteTask = async () => {
+    onDeleteClose();
     try {
-      const response = await api.delete(
-        `/api/delete-content/${activeTask.content_id}`,
+      await api.delete(
+        `/api/delete-content/${activeTask.content_id}?includeReferences=${deleteIncludeRefs}`,
       );
 
       toast({
@@ -419,9 +438,12 @@ const TaskCard: React.FC<TaskCardProps> = ({
       ? "340px"
       : "405px";
 
+  const firstPub = publishers[0];
+
   return (
-    // Root wrapper MUST be full-width to avoid stagger;
-    // no margins here—let parent control spacing via gap
+    <>
+    {/* Root wrapper MUST be full-width to avoid stagger;
+        no margins here—let parent control spacing via gap */}
     <Box w="100%" maxW="unset" minW={0}>
       <Box
         ref={cardRef}
@@ -480,10 +502,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
           <Tooltip label={activeTask.content_name} placement="top" hasArrow>
             <Box
               mt={compact && hideMeta ? 0 : 2}
-              bg="whiteAlpha.700"
               borderRadius="md"
               mb={compact && hideMeta ? 1 : 2}
-              minH={compact && hideMeta ? "20px" : compact ? "40px" : "48px"}
+              minH={compact && hideMeta ? "20px" : compact ? "40px" : "52px"}
+              h={compact && hideMeta ? "20px" : compact ? "40px" : "52px"}
               display="flex"
               alignItems="center"
               justifyContent="center"
@@ -498,15 +520,15 @@ const TaskCard: React.FC<TaskCardProps> = ({
               }}
               _hover={
                 activeTask.media_source === "TextPad"
-                  ? { bg: "whiteAlpha.800" }
+                  ? { boxShadow: "0 0 22px rgba(0, 162, 255, 0.32)" }
                   : {}
               }
+              sx={titlePanelSx}
             >
               <Text
                 fontWeight="semibold"
-                color="gray.800"
                 noOfLines={1}
-                fontSize={compact && hideMeta ? "9px" : compact ? "sm" : "md"}
+                fontSize={compact && hideMeta ? "9px" : compact ? "sm" : "lg"}
                 textAlign="center"
                 overflow="hidden"
                 textOverflow="ellipsis"
@@ -579,6 +601,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
               borderRadius="md"
               mb={2}
               border="2px solid transparent"
+              position="relative"
               _hover={{ border: "2px solid #3182ce" }}
               transition="border 0.2s"
             >
@@ -632,6 +655,29 @@ const TaskCard: React.FC<TaskCardProps> = ({
                   onError={() => setImageError(true)}
                 />
               )}
+              <Progress
+                value={
+                  activeTask.progress === "Completed"
+                    ? 100
+                    : activeTask.progress === "Partially Complete"
+                      ? 50
+                      : 25
+                }
+                colorScheme={
+                  activeTask.progress === "Completed"
+                    ? "green"
+                    : activeTask.progress === "Partially Complete"
+                      ? "yellow"
+                      : "red"
+                }
+                position="absolute"
+                left={0}
+                right={0}
+                bottom={0}
+                height="6px"
+                borderRadius="0"
+                bg="blackAlpha.500"
+              />
             </Box>
 
             <input
@@ -691,7 +737,14 @@ const TaskCard: React.FC<TaskCardProps> = ({
 
             {publishers.length > 0 && (
               <HStack spacing={1} fontSize={compact ? "xs" : "sm"}>
-                <Text fontWeight="bold">Pub:</Text>
+                <SourceCrest
+                  publisherName={publishers[0].publisher_name}
+                  sourceType={normalizeSourceProfile({ publisher_name: publishers[0].publisher_name }).sourceType}
+                  reliability={normalizeSourceProfile({ publisher_name: publishers[0].publisher_name }).reliability}
+                  admiraltyCode={publishers[0].admiralty_code ?? undefined}
+                  size="sm"
+                  onClick={e => { e?.stopPropagation(); setSourceDetailOpen(true); }}
+                />
                 {publishers.length === 1 ? (
                   <Text noOfLines={1}>{publishers[0].publisher_name}</Text>
                 ) : (
@@ -727,24 +780,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
                 )}
               </HStack>
             )}
-
-            <Progress
-              value={
-                activeTask.progress === "Completed"
-                  ? 100
-                  : activeTask.progress === "Partially Complete"
-                    ? 50
-                    : 25
-              }
-              colorScheme={
-                activeTask.progress === "Completed"
-                  ? "green"
-                  : activeTask.progress === "Partially Complete"
-                    ? "yellow"
-                    : "red"
-              }
-              mt={2}
-            />
           </Box>
         )}
 
@@ -880,6 +915,62 @@ const TaskCard: React.FC<TaskCardProps> = ({
         )}
       </Box>
     </Box>
+    {firstPub && sourceDetailOpen && (
+      <SourceDetailModal
+        isOpen={sourceDetailOpen}
+        onClose={() => setSourceDetailOpen(false)}
+        publisherId={firstPub.publisher_id}
+        publisherName={firstPub.publisher_name}
+        contentId={activeTask?.content_id}
+        sourceUrl={activeTask?.url ?? undefined}
+        sourceType={normalizeSourceProfile({ publisher_name: firstPub.publisher_name }).sourceType}
+        reliability={normalizeSourceProfile({ publisher_name: firstPub.publisher_name }).reliability}
+      />
+    )}
+
+    <AlertDialog
+      isOpen={isDeleteOpen}
+      leastDestructiveRef={deleteConfirmRef}
+      onClose={onDeleteClose}
+    >
+      <AlertDialogOverlay>
+        <AlertDialogContent bg="gray.900" borderColor="red.600" borderWidth="1px">
+          <AlertDialogHeader color="red.400" fontWeight="bold">
+            ⚠️ Delete Task Permanently
+          </AlertDialogHeader>
+          <AlertDialogBody>
+            <VStack align="start" spacing={3}>
+              <Text color="gray.200">
+                Delete <Text as="span" color="cyan.300" fontWeight="bold">"{activeTask?.content_name}"</Text> and all its claims, ratings, and scores?
+              </Text>
+              <Checkbox
+                isChecked={deleteIncludeRefs}
+                onChange={(e) => setDeleteIncludeRefs(e.target.checked)}
+                colorScheme="red"
+              >
+                <Text color="orange.300" fontSize="sm">
+                  Also delete all linked source/reference articles and their claims
+                </Text>
+              </Checkbox>
+              <Text fontSize="xs" color="gray.500">
+                {deleteIncludeRefs
+                  ? "⚠️ This will delete the task AND every source article scraped for it."
+                  : "Reference articles will remain but lose their link to this task."}
+              </Text>
+            </VStack>
+          </AlertDialogBody>
+          <AlertDialogFooter gap={2}>
+            <Button ref={deleteConfirmRef} onClick={onDeleteClose} size="sm" variant="ghost">
+              Cancel
+            </Button>
+            <Button colorScheme="red" onClick={confirmDeleteTask} size="sm">
+              {deleteIncludeRefs ? "Delete Task + All References" : "Delete Task Only"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialogOverlay>
+    </AlertDialog>
+    </>
   );
 };
 

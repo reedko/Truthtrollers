@@ -6,6 +6,69 @@
 
 import logger from "../utils/logger.js";
 
+const STANCE_CONTRACT = `STANCE CONTRACT:
+- Judge stance only relative to the TASK CLAIM.
+- "support" means the reference makes the task claim more likely true.
+- "refute" means the reference contradicts or weakens the task claim.
+- If the task claim says A > B and the reference says B > A, stance must be "refute".
+- Never use "support" merely because the reference source appears credible or the reference claim is true.`;
+
+function normalizeStance(rawStance) {
+  const stance = String(rawStance || "").trim().toLowerCase();
+  if (["support", "supports", "supported", "for"].includes(stance)) return "support";
+  if (["refute", "refutes", "refuted", "against", "contradict", "contradicts"].includes(stance)) return "refute";
+  if (["nuance", "nuances", "related", "partial", "mixed"].includes(stance)) return "nuance";
+  if (["insufficient", "irrelevant", "unclear", "unknown", "neutral"].includes(stance)) return "insufficient";
+  return "insufficient";
+}
+
+function relationshipFromStance(stance) {
+  if (stance === "support") return "supports";
+  if (stance === "refute") return "refutes";
+  if (stance === "nuance") return "related";
+  return "insufficient";
+}
+
+function normalizeSupportLevel(rawSupportLevel, stance, confidence) {
+  const parsed = Number(rawSupportLevel);
+  const fallbackMagnitude = Math.max(0.15, Math.min(0.98, Number(confidence) || 0.5)) * 0.8;
+  const magnitude = Math.max(0, Math.min(1.2, Number.isFinite(parsed) && parsed !== 0 ? Math.abs(parsed) : fallbackMagnitude));
+
+  if (stance === "support") return magnitude;
+  if (stance === "refute") return -magnitude;
+  if (stance === "nuance") return Math.min(0.6, magnitude);
+  return 0;
+}
+
+function comparativeRiskOverride(taskClaimText, referenceClaimText, rationale) {
+  const task = String(taskClaimText || "").toLowerCase();
+  const ref = `${referenceClaimText || ""} ${rationale || ""}`.toLowerCase();
+
+  const taskMentionsVaccineRiskGreater =
+    /\b(vaccine|vaccination|shot|jab|covid shot|covid vaccine)s?\b/.test(task) &&
+    /\b(virus|infection|covid[- ]?19 infection|disease)\b/.test(task) &&
+    /\b(outweigh|greater than|higher than|more than|exceed|worse than)\b/.test(task) &&
+    /\b(risk|risks|myocarditis|pericarditis|harm|harms|adverse)\b/.test(task);
+
+  const referenceSaysInfectionRiskGreater =
+    /\b(virus|infection|covid[- ]?19 infection|disease)\b/.test(ref) &&
+    /\b(vaccine|vaccination|shot|jab|covid shot|covid vaccine)s?\b/.test(ref) &&
+    (
+      /\b(infection|virus|disease|covid[- ]?19 infection)\b.{0,80}\b(higher|greater|more|increased)\b.{0,80}\b(risk|myocarditis|pericarditis|harm)/.test(ref) ||
+      /\b(risk|myocarditis|pericarditis|harm)\b.{0,80}\b(higher|greater|more|increased)\b.{0,80}\b(after|from|following)\b.{0,40}\b(infection|virus|disease)\b/.test(ref) ||
+      /\b(vaccine|vaccination|shot|jab)\b.{0,80}\b(lower|smaller|less|reduced|quite small)\b.{0,80}\b(compared to|than|versus|vs\.?)\b.{0,80}\b(infection|virus|disease)\b/.test(ref)
+    );
+
+  if (taskMentionsVaccineRiskGreater && referenceSaysInfectionRiskGreater) {
+    return {
+      stance: "refute",
+      reason: "comparative-risk inversion: task says vaccine risk exceeds infection risk, while reference says infection risk exceeds vaccine risk",
+    };
+  }
+
+  return null;
+}
+
 /**
  * Match reference claims to task claims using LLM
  *
@@ -32,9 +95,16 @@ export async function matchClaimsToTaskClaims({ referenceClaims, taskClaims, llm
   // Fallback prompts (used if DB load fails)
   const fallbackSystem = `You are a fact-checking assistant that analyzes how reference claims relate to task claims.
 
+CRITICAL STANCE RULE:
+The stance is ALWAYS relative to the TASK CLAIM being checked, not whether the reference claim is true in isolation.
+
 For each reference claim, determine:
 1. Which task claim(s) it addresses (if any)
 2. The stance: support, refute, nuance, or insufficient
+   - support: the reference makes the task claim more likely true
+   - refute: the reference contradicts or weakens the task claim
+   - nuance: the reference partially qualifies the task claim without clearly supporting or refuting it
+   - insufficient: the reference does not meaningfully bear on the task claim
 3. Veracity score (0-1): How truthful/reliable is this reference claim?
    - 0.9-1.0: Highly verified, strong evidence
    - 0.7-0.89: Well-supported, credible sources
@@ -46,6 +116,11 @@ For each reference claim, determine:
    - Positive: supports the task claim
    - Negative: refutes the task claim
    - Magnitude: strength of support/refutation
+
+Example:
+Task claim: "The risks of myocarditis from Covid shots outweigh the risk from the virus."
+Reference claim: "COVID-19 infection poses a higher myocarditis risk than vaccination."
+Correct stance: refute. The reference says the opposite of the task claim.
 
 Return ONLY matches where the reference claim meaningfully addresses a task claim.`;
 
@@ -61,6 +136,8 @@ ${referenceClaimsList}
 
 For each reference claim that addresses a task claim, return a match object.
 ONLY include matches where there's a clear relationship.
+Before choosing "support", ask: would this evidence make the task claim more true? If it says the opposite comparison, use "refute".
+The rationale must explicitly explain how the reference supports, refutes, or nuances the task claim.
 
 Return valid JSON array:
 [
@@ -101,6 +178,9 @@ If no reference claims address any task claims, return empty array [].`;
       logger.warn('[matchClaims] Error loading DB prompts, using fallback:', err.message);
     }
   }
+
+  system = `${system}\n\n${STANCE_CONTRACT}`;
+  user = `${user}\n\nBefore returning JSON, verify each stance follows the stance contract and that supportLevel is positive for support, negative for refute, and zero for insufficient.`;
 
   const schemaHint = `[
   {
@@ -167,20 +247,13 @@ If no reference claims address any task claims, return empty array [].`;
         const referenceClaim = referenceClaims[refIdx];
         const taskClaim = taskClaims[taskIdx];
 
-        // Normalize stance to database values
-        let relationship = 'supports'; // default
-        if (match.stance === 'refute' || match.stance === 'refutes') {
-          relationship = 'refutes';
-        } else if (match.stance === 'support' || match.stance === 'supports') {
-          relationship = 'supports';
-        } else if (match.stance === 'nuance') {
-          relationship = 'supports'; // Nuance treated as weak support
-        }
-
         // Clamp values to valid ranges
         const veracityScore = Math.max(0, Math.min(1, match.veracityScore || 0.5));
         const confidence = Math.max(0.15, Math.min(0.98, match.confidence || 0.5));
-        const supportLevel = Math.max(-1.2, Math.min(1.2, match.supportLevel || 0));
+        const override = comparativeRiskOverride(taskClaim.text, referenceClaim.text, match.rationale);
+        const normalizedStance = override?.stance || normalizeStance(match.stance);
+        const relationship = relationshipFromStance(normalizedStance);
+        const supportLevel = normalizeSupportLevel(match.supportLevel, normalizedStance, confidence);
 
         return {
           referenceClaimId: referenceClaim.id,
@@ -189,7 +262,9 @@ If no reference claims address any task claims, return empty array [].`;
           veracityScore,
           confidence,
           supportLevel,
-          rationale: match.rationale || `${relationship} claim via automated matching`,
+          rationale: override
+            ? `${match.rationale || ""} [Stance corrected: ${override.reason}.]`.trim()
+            : match.rationale || `${relationship} claim via automated matching`,
         };
       });
 

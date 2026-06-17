@@ -8,6 +8,10 @@
  */
 
 import logger from "../utils/logger.js";
+import {
+  calculateUserClaimScore as calculateWeightedUserClaimScore,
+  calculateUserContentScore as calculateWeightedUserContentScore,
+} from "../services/verimeterScoringService.js";
 
 /**
  * Calculate AI-only verimeter score for a specific claim
@@ -17,24 +21,46 @@ import logger from "../utils/logger.js";
  */
 export async function calculateAIClaimScore(query, claimId) {
   try {
-    // Include AI ratings from both claim_links AND reference_claim_task_links
+    // Include AI ratings from claim_links, reference_claim_task_links, AND
+    // reference_claim_links (document-level dotted-line AI evidence links)
+    // Use stance-based normalized scores (+1 support, -1 refute, +0.5 nuance)
+    // rather than raw support_level values which are dampened by confidence*quality
     const [result] = await query(
-      `SELECT COALESCE(AVG(support_level), 0) as ai_score
+      `SELECT COALESCE(AVG(normalized_score), 0) as ai_score
        FROM (
-         SELECT support_level
+         SELECT CASE
+           WHEN support_level > 0.3 THEN 1.0
+           WHEN support_level < -0.3 THEN -1.0
+           ELSE 0.5
+         END as normalized_score
          FROM claim_links
          WHERE target_claim_id = ?
            AND disabled = 0
            AND created_by_ai = 1
            AND support_level != 0
          UNION ALL
-         SELECT support_level
+         SELECT CASE
+           WHEN support_level > 0.3 THEN 1.0
+           WHEN support_level < -0.3 THEN -1.0
+           ELSE 0.5
+         END as normalized_score
          FROM reference_claim_task_links
          WHERE task_claim_id = ?
            AND created_by_ai = 1
            AND support_level != 0
+         UNION ALL
+         SELECT CASE stance
+           WHEN 'support' THEN 1.0
+           WHEN 'refute' THEN -1.0
+           WHEN 'nuance' THEN 0.5
+           ELSE 0.0
+         END as normalized_score
+         FROM reference_claim_links
+         WHERE claim_id = ?
+           AND created_by_ai = 1
+           AND stance IN ('support', 'refute', 'nuance')
        ) as combined_ratings`,
-      [claimId, claimId]
+      [claimId, claimId, claimId]
     );
 
     let score = result?.ai_score || 0;
@@ -58,31 +84,8 @@ export async function calculateAIClaimScore(query, claimId) {
  * @returns {Promise<number>} - User verimeter score (-1 to 1)
  */
 export async function calculateUserClaimScore(query, claimId, userId = null) {
-  try {
-    const sql = `
-      SELECT COALESCE(AVG(support_level), 0) as user_score
-      FROM claim_links
-      WHERE target_claim_id = ?
-        AND disabled = 0
-        AND created_by_ai = 0
-        AND support_level != 0
-        ${userId ? 'AND user_id = ?' : ''}
-    `;
-
-    const params = userId ? [claimId, userId] : [claimId];
-    const [result] = await query(sql, params);
-
-    let score = result?.user_score || 0;
-
-    // Clamp to valid range
-    if (score > 1.0) score = 1.0;
-    if (score < -1.0) score = -1.0;
-
-    return score;
-  } catch (error) {
-    logger.error(`Error calculating user score for claim ${claimId}:`, error);
-    return 0;
-  }
+  const score = await calculateWeightedUserClaimScore(query, claimId, userId);
+  return score.verimeter_score || 0;
 }
 
 /**
@@ -121,40 +124,40 @@ export async function calculateCombinedClaimScore(query, claimId, userId = null,
  */
 export async function calculateAIContentScore(query, contentId) {
   try {
-    // Get all claims for this content
-    const claims = await query(
-      `SELECT claim_id FROM content_claims WHERE content_id = ?`,
+    // Single batch query — globally average all document-level AI stance assessments
+    // for claims belonging to this content. Each reference-claim link is weighted
+    // equally regardless of how many claims a given reference appears against.
+    // This prevents the two-level averaging distortion that occurs when averaging
+    // per-claim scores first (a claim with 7 refute links at -1.0 would only count
+    // once in the outer average, same weight as a claim with 1 nuance link at +0.5).
+    const [result] = await query(
+      `SELECT
+         COALESCE(AVG(CASE rcl.stance
+           WHEN 'support' THEN 1.0
+           WHEN 'refute'  THEN -1.0
+           WHEN 'nuance'  THEN 0.5
+           ELSE 0.0
+         END), 0) AS avg_score,
+         SUM(CASE WHEN rcl.stance = 'support' THEN 1.0 ELSE 0 END) /
+           NULLIF(COUNT(*), 0) AS pro_ratio,
+         SUM(CASE WHEN rcl.stance = 'refute' THEN 1.0 ELSE 0 END) /
+           NULLIF(COUNT(*), 0) AS con_ratio
+       FROM reference_claim_links rcl
+       INNER JOIN content_claims cc ON rcl.claim_id = cc.claim_id
+       WHERE cc.content_id = ?
+         AND rcl.created_by_ai = 1
+         AND rcl.stance IN ('support', 'refute', 'nuance')`,
       [contentId]
     );
 
-    if (!claims || claims.length === 0) {
+    if (!result || result.avg_score === null) {
       return { verimeter_score: 0, pro_score: 0, con_score: 0 };
     }
 
-    // Calculate AI score for each claim
-    let totalScore = 0;
-    let proScore = 0;
-    let conScore = 0;
-
-    for (const claim of claims) {
-      const claimScore = await calculateAIClaimScore(query, claim.claim_id);
-      totalScore += claimScore;
-
-      if (claimScore > 0) {
-        proScore += claimScore;
-      } else if (claimScore < 0) {
-        conScore += Math.abs(claimScore);
-      }
-    }
-
-    const avgScore = totalScore / claims.length;
-    const avgPro = proScore / claims.length;
-    const avgCon = conScore / claims.length;
-
     return {
-      verimeter_score: Math.max(-1, Math.min(1, avgScore)),
-      pro_score: Math.max(0, Math.min(1, avgPro)),
-      con_score: Math.max(0, Math.min(1, avgCon))
+      verimeter_score: Math.max(-1, Math.min(1, result.avg_score)),
+      pro_score: Math.max(0, Math.min(1, result.pro_ratio || 0)),
+      con_score: Math.max(0, Math.min(1, result.con_ratio || 0)),
     };
   } catch (error) {
     logger.error(`Error calculating AI content score for ${contentId}:`, error);
@@ -170,46 +173,7 @@ export async function calculateAIContentScore(query, contentId) {
  * @returns {Promise<Object>} - Scores object with verimeter_score, pro_score, con_score
  */
 export async function calculateUserContentScore(query, contentId, userId = null) {
-  try {
-    // Get all claims for this content
-    const claims = await query(
-      `SELECT claim_id FROM content_claims WHERE content_id = ?`,
-      [contentId]
-    );
-
-    if (!claims || claims.length === 0) {
-      return { verimeter_score: 0, pro_score: 0, con_score: 0 };
-    }
-
-    // Calculate user score for each claim
-    let totalScore = 0;
-    let proScore = 0;
-    let conScore = 0;
-
-    for (const claim of claims) {
-      const claimScore = await calculateUserClaimScore(query, claim.claim_id, userId);
-      totalScore += claimScore;
-
-      if (claimScore > 0) {
-        proScore += claimScore;
-      } else if (claimScore < 0) {
-        conScore += Math.abs(claimScore);
-      }
-    }
-
-    const avgScore = totalScore / claims.length;
-    const avgPro = proScore / claims.length;
-    const avgCon = conScore / claims.length;
-
-    return {
-      verimeter_score: Math.max(-1, Math.min(1, avgScore)),
-      pro_score: Math.max(0, Math.min(1, avgPro)),
-      con_score: Math.max(0, Math.min(1, avgCon))
-    };
-  } catch (error) {
-    logger.error(`Error calculating user content score for ${contentId}:`, error);
-    return { verimeter_score: 0, pro_score: 0, con_score: 0 };
-  }
+  return calculateWeightedUserContentScore(query, contentId, userId);
 }
 
 /**

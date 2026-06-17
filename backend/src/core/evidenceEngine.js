@@ -228,6 +228,7 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
     logger.time(label);
 
     // Convert list of queries → list of async tasks
+    // Tag each result with the intent of the query that produced it
     const tasks = limitQueries.map((q) => async () => {
       const sub = [];
 
@@ -258,7 +259,9 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
         ].filter(Boolean)
       );
 
-      return sub;
+      // Tag every result with this query's intent so we can bucket later
+      const intent = q.intent || 'background';
+      return sub.map(r => ({ ...r, searchIntent: intent }));
     });
 
     //
@@ -285,9 +288,8 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
 
     logger.timeEnd(label);
 
-    //
-    // Deduplicate + rank like your original implementation
-    //
+    // Deduplicate by URL — when same URL appears from multiple queries,
+    // keep the highest-scoring copy and preserve its searchIntent
     const best = new Map();
     for (const c of chunks) {
       if (!c) continue;
@@ -298,9 +300,31 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
       }
     }
 
-    let finalCandidates = Array.from(best.values())
-      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
-      .slice(0, topK);
+    // Group deduplicated candidates by intent, take top N per bucket
+    // This guarantees stance diversity instead of whatever the global top-12 happen to be
+    const topKPerIntent = opt.topKPerIntent ?? 4;
+    const INTENT_LIMITS = {
+      support:    topKPerIntent,
+      refute:     topKPerIntent,
+      nuance:     Math.ceil(topKPerIntent / 2),
+      background: 2,
+      factbox:    2,
+    };
+
+    const byIntent = {};
+    for (const c of best.values()) {
+      const intent = c.searchIntent || 'background';
+      if (!byIntent[intent]) byIntent[intent] = [];
+      byIntent[intent].push(c);
+    }
+
+    let finalCandidates = [];
+    for (const [intent, bucket] of Object.entries(byIntent)) {
+      const limit = INTENT_LIMITS[intent] ?? topKPerIntent;
+      const sorted = bucket.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+      finalCandidates.push(...sorted.slice(0, limit));
+      logger.log(`🎯 [EV][intent-bucket][${claim.id}] ${intent}: ${Math.min(sorted.length, limit)}/${sorted.length} selected`);
+    }
 
     // Filter out excluded URL (e.g., task URL to prevent self-referencing)
     if (opt.excludeUrl) {
@@ -314,7 +338,7 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
     }
 
     logger.log(
-      `🟩 [DEBUG] Candidates for ${claim.id}: ${finalCandidates.length} results, scores: ${finalCandidates.map(c => c.score?.toFixed(2) || 'null').join(', ')}`
+      `🟩 [DEBUG] Candidates for ${claim.id}: ${finalCandidates.length} total (intent-bucketed), scores: ${finalCandidates.map(c => `${c.searchIntent}:${c.score?.toFixed(2) || 'null'}`).join(', ')}`
     );
 
     return finalCandidates;
@@ -441,10 +465,11 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
         quote: String(it.quote).trim(),
         summary: (it.summary || "").trim(),
         stance: it.stance || "insufficient",
+        searchIntent: cand.searchIntent || 'background',
         quality: quality(cand),
         location: it.location || undefined,
-        raw_text: html, // ← Save original HTML to avoid re-fetching and allow metadata extraction
-        qualityScores, // ← Add quality scores from combined LLM call
+        raw_text: html,
+        qualityScores,
       });
     }
 

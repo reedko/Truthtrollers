@@ -15,6 +15,31 @@ interface FacebookPostData {
   reactionsCount: number;
   commentsCount: number;
   sharesCount: number;
+  sharedLinkUrl: string | null;   // external article/page URL shared in the post
+  sharedLinkDomain: string | null; // e.g. "emfacts.com" — the actual publisher domain
+}
+
+/**
+ * Extract the distribution channel (group/page slug) from a Facebook URL.
+ * Returns the human-readable name or null for generic Facebook URLs.
+ */
+function extractFacebookChannel(url: string): string | null {
+  try {
+    const { pathname } = new URL(url);
+    const groupMatch = pathname.match(/^\/groups\/([^/]+)/i);
+    if (groupMatch) {
+      const slug = groupMatch[1];
+      return /^\d+$/.test(slug) ? `Facebook Group ${slug}` : slug.replace(/[_-]/g, " ");
+    }
+    const pageMatch = pathname.match(/^\/([^/]+)\/posts\//i);
+    const reserved = new Set(["pages", "permalink", "photo", "photos", "video", "videos",
+      "events", "profile", "groups", "watch", "marketplace", "gaming",
+      "stories", "notifications", "friends", "messages"]);
+    if (pageMatch && !reserved.has(pageMatch[1].toLowerCase())) {
+      return pageMatch[1].replace(/[._-]/g, " ");
+    }
+  } catch {}
+  return null;
 }
 
 /**
@@ -761,6 +786,73 @@ export function extractFacebookPostFromDOM(
     }
   }
 
+  // Extract shared link URL from Facebook's link preview card.
+  // Facebook wraps external links through l.facebook.com/l.php?u=<encoded-url>
+  let sharedLinkUrl: string | null = null;
+  let sharedLinkDomain: string | null = null;
+
+  const SKIP_HOSTS = /^(facebook|fbcdn|instagram|messenger|whatsapp|adobe|google|apple|amazon|akamai|cloudfront|googleapis|gstatic|youtube|twitter|tiktok|snapchat|pinterest|linkedin)\./i;
+
+  const isExternalHost = (href: string): boolean => {
+    try {
+      const h = new URL(href).hostname.replace(/^www\./, '');
+      return !h.includes('facebook.com') && !h.includes('fbcdn.net') && !SKIP_HOSTS.test(h);
+    } catch { return false; }
+  };
+
+  // Primary: data-lynx-uri — Facebook adds this to external links in post text
+  if (!sharedLinkUrl) {
+    const lynxEls = Array.from(
+      container.querySelectorAll('[data-lynx-uri]')
+    ) as HTMLElement[];
+    for (const el of lynxEls) {
+      const uri = el.getAttribute('data-lynx-uri') || '';
+      if (uri.startsWith('http') && isExternalHost(uri)) {
+        sharedLinkUrl = uri;
+        sharedLinkDomain = new URL(uri).hostname.replace(/^www\./, '');
+        console.log(`✅ [Facebook] Shared link URL from data-lynx-uri: ${uri}`);
+        break;
+      }
+    }
+  }
+
+  // Fallback 2: direct external <a href> links (non-Facebook, non-CDN)
+  // Only look within role="article" or data-ad-* containers to avoid sidebar/nav links
+  if (!sharedLinkUrl) {
+    const postScopes = Array.from(container.querySelectorAll('[role="article"], [data-ad-rendering-role="story_message"]'));
+    const scanScope = postScopes.length > 0 ? postScopes : [container];
+    for (const scope of scanScope) {
+      const directLinks = Array.from(scope.querySelectorAll('a[href^="http"]')) as HTMLAnchorElement[];
+      for (const link of directLinks) {
+        if (isExternalHost(link.href)) {
+          sharedLinkUrl = link.href;
+          try { sharedLinkDomain = new URL(link.href).hostname.replace(/^www\./, ''); } catch {}
+          console.log(`✅ [Facebook] Shared link URL from direct link in post scope: ${link.href}`);
+          break;
+        }
+      }
+      if (sharedLinkUrl) break;
+    }
+  }
+
+  // Fallback 3: extract domain from link preview card text content (newline-based).
+  // Only runs if element scan also failed.
+  if (!sharedLinkDomain && postText) {
+    const DOMAIN_LINE_RE = /^([a-z0-9][a-z0-9-]{0,61}[a-z0-9]?\.[a-z]{2,}(?:\.[a-z]{2,})?)$/i;
+    const lines = postText.split(/\r?\n/);
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (DOMAIN_LINE_RE.test(trimmed) &&
+          !trimmed.includes('facebook') &&
+          !trimmed.includes('fbcdn') &&
+          !trimmed.includes('instagram')) {
+        sharedLinkDomain = trimmed.toLowerCase();
+        console.log(`✅ [Facebook] Shared link domain from post text: ${sharedLinkDomain}`);
+        break;
+      }
+    }
+  }
+
   console.log("🔵 [Facebook] Extraction complete:", {
     hasText: !!postText,
     postTextLength: postText?.length || 0,
@@ -771,6 +863,8 @@ export function extractFacebookPostFromDOM(
     reactions: reactionsCount,
     comments: commentsCount,
     shares: sharesCount,
+    sharedLinkUrl: sharedLinkUrl || 'NONE',
+    sharedLinkDomain: sharedLinkDomain || 'NONE',
   });
 
   return {
@@ -782,6 +876,8 @@ export function extractFacebookPostFromDOM(
     reactionsCount,
     commentsCount,
     sharesCount,
+    sharedLinkUrl,
+    sharedLinkDomain,
   };
 }
 
@@ -955,8 +1051,14 @@ export async function scrapeFacebookPost(
         url: postData.url,
         raw_html: rawHtml,
         force: true, // Allow re-scraping existing URLs
-        // Facebook-specific preprocessing data
-        media_source: "Facebook",
+        // Distribution-layer provenance fields
+        platform: "facebook",
+        distribution_channel: extractFacebookChannel(postData.url),
+        linked_url: postData.sharedLinkUrl || undefined,
+        linked_publisher: postData.sharedLinkDomain || undefined,
+        // Use the real publisher domain from the shared article when found;
+        // fall back to "Facebook" — the backend will also try parseFacebookMeta
+        media_source: postData.sharedLinkDomain || "Facebook",
         authors: authorData ? [authorData] : undefined,
         // Send the extracted post text to help backend use correct title/text
         content_name: postData.postText?.substring(0, 100) || "Facebook Post",

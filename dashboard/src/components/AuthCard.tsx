@@ -19,14 +19,8 @@ import {
   useToast,
   VStack,
   HStack,
-  Badge,
-  Flex,
   Select,
-  Alert,
-  AlertIcon,
-  AlertDescription,
 } from "@chakra-ui/react";
-import { BiChevronDown } from "react-icons/bi";
 import { Author, AuthorRating } from "../../../shared/entities/types";
 import { useRef, useState, useEffect } from "react";
 import AuthBioModal from "./modals/AuthBioModal";
@@ -50,6 +44,42 @@ interface AuthCardProps {
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+const authorTitleSx = {
+  position: "relative",
+  overflow: "hidden",
+  bg: "linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.82))",
+  border: "1px solid rgba(139, 92, 246, 0.58)",
+  color: "rgba(221, 214, 254, 0.97)",
+  boxShadow:
+    "0 8px 24px rgba(0,0,0,0.45), 0 0 24px rgba(139, 92, 246, 0.24), inset 0 1px 0 rgba(255,255,255,0.12)",
+  _before: {
+    content: '""',
+    position: "absolute",
+    left: 0,
+    top: 0,
+    width: "20px",
+    height: "100%",
+    background: "linear-gradient(90deg, rgba(139, 92, 246, 0.42) 0%, rgba(139, 92, 246, 0) 100%)",
+    borderLeftRadius: "md",
+    pointerEvents: "none",
+  },
+} as const;
+
+const ratingPillSx = {
+  border: "1px solid rgba(139, 92, 246, 0.5)",
+  bg: "linear-gradient(135deg, rgba(15, 23, 42, 0.82), rgba(49, 46, 129, 0.35))",
+  color: "rgba(237, 233, 254, 0.96)",
+  borderRadius: "10px",
+  px: 2,
+  py: 1,
+  minW: 0,
+  flex: 1,
+  justifyContent: "space-between",
+  boxShadow:
+    "inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.35), 0 0 10px rgba(139,92,246,0.28)",
+} as const;
+
 const AuthCard: React.FC<AuthCardProps> = ({
   authors,
   compact = false,
@@ -243,7 +273,7 @@ const AuthCard: React.FC<AuthCardProps> = ({
       >
         <div className="mr-glow-bar mr-glow-bar-purple" />
         <div className="mr-scanlines" />
-        <Box>
+        <Box flex="1" minH={0} overflow="hidden">
           <Center>
             <Text
               className="mr-badge mr-badge-purple"
@@ -281,28 +311,29 @@ const AuthCard: React.FC<AuthCardProps> = ({
               ))}
             </Select>
           ) : (
-            <Box textAlign="center" mb={compact ? 1 : 3}>
+            <Box textAlign="center" mt={compact ? 0 : 2} mb={compact ? 1 : 2}>
               <Text
                 fontWeight="semibold"
-                fontSize={compact ? "9px" : "md"}
-                bg="whiteAlpha.700"
-                color="gray.800"
+                fontSize={compact ? "9px" : "lg"}
                 borderRadius="md"
                 px={compact ? 1 : 2}
                 py={compact ? 0 : 1}
+                minH={compact ? "18px" : "52px"}
+                h={compact ? "18px" : "52px"}
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
                 noOfLines={1}
                 overflow="hidden"
                 textOverflow="ellipsis"
+                sx={authorTitleSx}
               >
                 {activeAuthor?.author_first_name}{" "}
                 {activeAuthor?.author_last_name}
+                {!compact && activeAuthor?.author_title
+                  ? `, ${activeAuthor.author_title}`
+                  : ""}
               </Text>
-              {/* 👇 show title right under name */}
-              {!compact && activeAuthor?.author_title ? (
-                <Text fontSize="sm" color="gray.200" mt={1}>
-                  {activeAuthor.author_title}
-                </Text>
-              ) : null}
             </Box>
           )}
           <VStack spacing={0}>
@@ -317,7 +348,8 @@ const AuthCard: React.FC<AuthCardProps> = ({
               display="flex"
               alignItems="center"
               justifyContent="center"
-              marginBottom={compact ? "2px" : "10px"}
+              mt={compact ? 0 : "25px"}
+              marginBottom={compact ? "2px" : "8px"}
             >
               {activeAuthor?.author_profile_pic ? (
                 <>
@@ -351,27 +383,43 @@ const AuthCard: React.FC<AuthCardProps> = ({
           </VStack>
 
           {!compact && (
-            <HStack justify="center" spacing={4} mt={1}>
-              <Flex direction="column" align="center" className="mr-metric">
-                <Text className="mr-metric-label">Bias</Text>
-                <Flex align="center" gap={1}>
-                  <Text>{getBiasEmoji(parseFloat(avgScore("bias_score")))}</Text>
-                  <Text className="mr-metric-value">
+            <HStack align="stretch" spacing={2} mt={1} px={1}>
+              <HStack spacing={1.5} sx={ratingPillSx}>
+                <Text
+                  fontSize="10px"
+                  fontWeight="700"
+                  letterSpacing="0.08em"
+                  textTransform="uppercase"
+                  color="purple.200"
+                >
+                  Bias
+                </Text>
+                <HStack spacing={1}>
+                  <Text fontSize="xs">{getBiasEmoji(parseFloat(avgScore("bias_score")))}</Text>
+                  <Text fontSize="sm" fontWeight="bold" lineHeight="1">
                     {avgScore("bias_score")}
                   </Text>
-                </Flex>
-              </Flex>
-              <Flex direction="column" align="center" className="mr-metric">
-                <Text className="mr-metric-label">Veracity</Text>
-                <Flex align="center" gap={1}>
-                  <Text>
+                </HStack>
+              </HStack>
+              <HStack spacing={1.5} sx={ratingPillSx}>
+                <Text
+                  fontSize="10px"
+                  fontWeight="700"
+                  letterSpacing="0.08em"
+                  textTransform="uppercase"
+                  color="purple.200"
+                >
+                  Veracity
+                </Text>
+                <HStack spacing={1}>
+                  <Text fontSize="xs">
                     {getVeracityEmoji(parseFloat(avgScore("veracity_score")))}
                   </Text>
-                  <Text className="mr-metric-value">
+                  <Text fontSize="sm" fontWeight="bold" lineHeight="1">
                     {avgScore("veracity_score")}
                   </Text>
-                </Flex>
-              </Flex>
+                </HStack>
+              </HStack>
             </HStack>
           )}
           {!compact && (
@@ -387,7 +435,7 @@ const AuthCard: React.FC<AuthCardProps> = ({
                 <Text
                   className="mr-text-secondary"
                   fontSize="sm"
-                  noOfLines={2}
+                  noOfLines={1}
                   sx={{
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -401,15 +449,16 @@ const AuthCard: React.FC<AuthCardProps> = ({
             </>
           )}
         </Box>
-        <Center mt={compact ? 0 : undefined}>
+        <Center w="100%">
+          <Box w={compact ? "100%" : "50%"} minW={0}>
           <Menu isLazy>
             <MenuButton
               as={Button}
               className="mr-button"
-              mt={compact ? 0 : 3}
+              w="100%"
               size={compact ? "xs" : "md"}
-              fontSize={compact ? "7px" : "md"}
-              h={compact ? "16px" : "auto"}
+              fontSize={compact ? "8px" : "md"}
+              h={compact ? "20px" : "auto"}
               px={compact ? 1 : undefined}
             >
               Actions
@@ -446,6 +495,7 @@ const AuthCard: React.FC<AuthCardProps> = ({
               )}
             </MenuList>
           </Menu>
+          </Box>
         </Center>
 
         {activeAuthor && isBioOpen && (

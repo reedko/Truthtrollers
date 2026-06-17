@@ -43,8 +43,13 @@ const TTLiveThreadPage   = lazy(() => import("./pages/TTLiveThreadPage"));
 const EmailTesterPage    = lazy(() => import("./pages/EmailTesterPage"));
 const TutorialGalleryPage = lazy(() => import("./pages/TutorialGalleryPage"));
 const AdminPanelPage     = lazy(() => import("./pages/AdminPanelPage"));
+const PublisherSeedsPage = lazy(() => import("./pages/PublisherSeedsPage"));
 const SourceQualityPage  = lazy(() => import("./pages/SourceQualityPage"));
 const RatingEvaluationPage = lazy(() => import("./pages/RatingEvaluationPage"));
+const EvidenceMapPage    = lazy(() => import("./pages/EvidenceMapPage"));
+const ReviewArticlesHubPage = lazy(() => import("./pages/ReviewArticlesHubPage"));
+const ReviewArticleComposerPage = lazy(() => import("./pages/ReviewArticleComposerPage"));
+const PublicReviewArticlePage = lazy(() => import("./pages/PublicReviewArticlePage"));
 const LogoutPage         = lazy(() => import("./pages/LogoutPage"));
 
 const PageLoader = () => (
@@ -101,8 +106,14 @@ const router = createBrowserRouter([
       { path: "emailtest",        element: <ProtectedRoute><EmailTesterPage /></ProtectedRoute> },
       { path: "tutorials",        element: <ProtectedRoute><TutorialGalleryPage /></ProtectedRoute> },
       { path: "admin",            element: <ProtectedRoute><AdminPanelPage /></ProtectedRoute> },
+      { path: "admin/publishers", element: <ProtectedRoute><PublisherSeedsPage /></ProtectedRoute> },
       { path: "source-quality/:contentId", element: <ProtectedRoute><SourceQualityPage /></ProtectedRoute> },
       { path: "evaluate-ratings", element: <ProtectedRoute><RatingEvaluationPage /></ProtectedRoute> },
+      { path: "evidence-map",              element: <ProtectedRoute><EvidenceMapPage /></ProtectedRoute> },
+      { path: "evidence-map/:contentId",   element: <ProtectedRoute><EvidenceMapPage /></ProtectedRoute> },
+      { path: "review-articles",           element: <ProtectedRoute><ReviewArticlesHubPage /></ProtectedRoute> },
+      { path: "review-articles/:articleId/composer", element: <ProtectedRoute><ReviewArticleComposerPage /></ProtectedRoute> },
+      { path: "public/reviews/:slug",      element: <PublicReviewArticlePage /> },
       { path: "logout",           element: <LogoutPage /> },
     ],
   },

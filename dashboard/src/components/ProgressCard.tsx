@@ -11,6 +11,8 @@ interface ProgressCardProps {
   totalClaimLinks?: number;
   nuancedLinks?: number;
   compact?: boolean;
+  /** Label shown in the badge — e.g. "User Links", "AI Links", "Combined" */
+  sourceLabel?: string;
 }
 
 const renderVerticalLabel = (text: string) => (
@@ -121,7 +123,14 @@ const ProgressCard: React.FC<ProgressCardProps> = ({
   totalClaimLinks = 0,
   nuancedLinks = 0,
   compact = false,
+  sourceLabel,
 }) => {
+  const badgeClass = sourceLabel?.startsWith("AI")
+    ? "mr-badge mr-badge-cyan"
+    : sourceLabel?.startsWith("Combined")
+      ? "mr-badge mr-badge-blue"
+      : "mr-badge mr-badge-purple";
+
   return (
     <Box
       className="mr-card mr-card-purple"
@@ -137,13 +146,26 @@ const ProgressCard: React.FC<ProgressCardProps> = ({
       <div className="mr-scanlines" />
 
       <Center mb={compact ? 0 : 2}>
-        <Text
-          className="mr-badge mr-badge-purple"
-          fontSize={compact ? "7px" : "sm"}
-          lineHeight={compact ? "1" : "normal"}
-        >
-          Case Statistics
-        </Text>
+        <VStack spacing={0}>
+          <Text
+            className="mr-badge mr-badge-purple"
+            fontSize={compact ? "7px" : "sm"}
+            lineHeight={compact ? "1" : "normal"}
+          >
+            Case Statistics
+          </Text>
+          {sourceLabel && (
+            <Text
+              className={badgeClass}
+              fontSize={compact ? "6px" : "xs"}
+              lineHeight="1"
+              mt={compact ? 0 : 1}
+              opacity={0.85}
+            >
+              {sourceLabel}
+            </Text>
+          )}
+        </VStack>
       </Center>
 
       <VStack spacing={compact ? 1 : 3} flex={1} justify="space-around">

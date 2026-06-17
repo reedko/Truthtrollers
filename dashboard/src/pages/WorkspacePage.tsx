@@ -25,21 +25,26 @@ import { useTaskStore, ViewScope } from "../store/useTaskStore";
 import { ViewerScopeBadge } from "../components/ViewerScopeBadge";
 import { VerimeterModeToggle } from "../components/VerimeterModeToggle";
 import { useVerimeterMode } from "../contexts/VerimeterModeContext";
+import GeneratePublicReviewButton from "../components/reviewArticles/GeneratePublicReviewButton";
 import {
   updateScoresForContent,
   fetchContentScores,
   fetchAIEvidenceLinks,
+  fetchTask,
 } from "../services/useDashboardAPI";
 
 const WorkspacePage = () => {
   const { contentId: routeContentId } = useParams<{ contentId?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { mode, aiWeight } = useVerimeterMode();
+  const { mode, setMode, aiWeight } = useVerimeterMode();
   const [verimeterScore, setVerimeterScore] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [linkFilter, setLinkFilter] = useState<"all" | "user" | "ai">("all");
+  const [linkFilter, setLinkFilterState] = useState<"all" | "user" | "ai">(() => {
+    const saved = localStorage.getItem("workspaceLinkFilter");
+    return saved === "user" || saved === "ai" || saved === "all" ? saved : "all";
+  });
   const [hasCheckedUserLinks, setHasCheckedUserLinks] = useState(false);
-  const [bubbleStyle, setBubbleStyle] = useState<boolean>(false);
+  const [bubbleStyle, setBubbleStyleState] = useState<boolean>(() => localStorage.getItem("workspaceBubbleStyle") === "true");
   const navigate = useNavigate();
   const { colorMode } = useColorMode();
   const {
@@ -56,6 +61,26 @@ const WorkspacePage = () => {
   const viewScope = useTaskStore((s) => s.viewScope);
   const setViewingUserId = useTaskStore((s) => s.setViewingUserId);
   const setViewScope = useTaskStore((s) => s.setViewScope);
+
+  const setPersistentLinkFilter = (next: "all" | "user" | "ai") => {
+    setLinkFilterState(next);
+    localStorage.setItem("workspaceLinkFilter", next);
+    if (next === "user") setMode("user");
+    if (next === "ai") setMode("ai");
+    if (next === "all") setMode("combined");
+  };
+
+  const setPersistentBubbleStyle = (next: boolean) => {
+    setBubbleStyleState(next);
+    localStorage.setItem("workspaceBubbleStyle", String(next));
+  };
+
+  useEffect(() => {
+    if (linkFilter === "user" && mode !== "user") setMode("user");
+    if (linkFilter === "ai" && mode !== "ai") setMode("ai");
+    if (linkFilter === "all" && mode !== "combined") setMode("combined");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Refs to prevent circular updates between URL params and store
   const isInitialMount = useRef(true);
@@ -164,8 +189,9 @@ const WorkspacePage = () => {
     if (taskId && !hasCheckedUserLinks) {
       fetchAIEvidenceLinks(taskId).then((links) => {
         const hasUserLinks = links.some((link) => !link.created_by_ai);
-        if (hasUserLinks) {
-          setLinkFilter("user");
+        const savedFilter = localStorage.getItem("workspaceLinkFilter");
+        if (hasUserLinks && !savedFilter) {
+          setPersistentLinkFilter("user");
         }
         setHasCheckedUserLinks(true);
       });
@@ -184,6 +210,24 @@ const WorkspacePage = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskId, task]);
+
+  // Direct route loads can have a selectedTaskId before the task object is hydrated.
+  useEffect(() => {
+    let active = true;
+    if (!taskId || task) return;
+
+    fetchTask(taskId)
+      .then((loadedTask) => {
+        if (active && loadedTask) setSelectedTask(loadedTask);
+      })
+      .catch((error) => {
+        console.error("Failed to hydrate workspace task:", error);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [taskId, task, setSelectedTask]);
 
   // Redirect if no taskId (separate effect to avoid re-running unnecessarily)
   useEffect(() => {
@@ -220,6 +264,7 @@ const WorkspacePage = () => {
     setVerimeterScore(scores?.verimeterScore ?? null);
     setRefreshKey((prev) => prev + 1);
   };
+
   return (
     <Box p={4} w="100%">
       {/* Sticky Title Bar - Always visible initially */}
@@ -305,7 +350,7 @@ const WorkspacePage = () => {
               width="150px"
               value={linkFilter}
               onChange={(e) =>
-                setLinkFilter(e.target.value as "all" | "user" | "ai")
+                setPersistentLinkFilter(e.target.value as "all" | "user" | "ai")
               }
               bg={colorMode === "dark" ? "rgba(15, 23, 42, 0.9)" : "white"}
               border="1px solid"
@@ -362,7 +407,7 @@ const WorkspacePage = () => {
             </Text>
             <Switch
               isChecked={bubbleStyle}
-              onChange={(e) => setBubbleStyle(e.target.checked)}
+              onChange={(e) => setPersistentBubbleStyle(e.target.checked)}
               colorScheme="purple"
               size="sm"
             />
@@ -380,6 +425,8 @@ const WorkspacePage = () => {
           >
             Submit Rating
           </Button>
+
+          <GeneratePublicReviewButton contentId={taskId} />
 
           {/* Verimeter Mode Toggle */}
           <Box position="relative" zIndex={500}>

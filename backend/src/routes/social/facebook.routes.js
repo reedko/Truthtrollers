@@ -6,6 +6,7 @@
 import { Router } from "express";
 import logger from "../../utils/logger.js";
 import { scrapeFacebookPost, cleanFacebookPostText } from "../../scrapers/facebookScraper.js";
+import { parseFacebookMeta } from "../../utils/parseSocialPublisher.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -26,14 +27,16 @@ export default function createFacebookRoutes({ query }) {
         createContent = false,
         taskContentId,
         screenshot = false,
-        raw_text,  // From extension
-        title,     // From extension
-        authors,   // From extension
-        images,    // From extension
-        timestamp, // From extension
-        reactionsCount, // From extension
-        commentsCount,  // From extension
-        sharesCount     // From extension
+        raw_text,    // From extension
+        title,       // From extension
+        authors,     // From extension
+        images,      // From extension
+        timestamp,   // From extension
+        reactionsCount,  // From extension
+        commentsCount,   // From extension
+        sharesCount,     // From extension
+        linked_url,      // External article URL shared in the post
+        media_source,    // Publisher domain resolved by extension (e.g. "emfacts.com")
       } = req.body;
 
       if (!url) {
@@ -109,11 +112,36 @@ export default function createFacebookRoutes({ query }) {
       if (createContent && result.postText) {
         const { createContentInternal } = await import("../../storage/createContentInternal.js");
 
+        // Derive distribution-layer metadata from the Facebook post URL
+        const fbMeta = parseFacebookMeta(url);
+
+        // Try to extract linked article domain from post text if extension didn't find it
+        let resolvedLinkedPublisher = null;
+        if (!media_source && result.postText) {
+          const DOMAIN_LINE_RE = /^([a-z0-9][a-z0-9-]{0,61}[a-z0-9]?\.[a-z]{2,}(?:\.[a-z]{2,})?)$/i;
+          for (const line of result.postText.split(/\r?\n/)) {
+            const t = line.trim();
+            if (DOMAIN_LINE_RE.test(t) && !/facebook|fbcdn|instagram/i.test(t)) {
+              resolvedLinkedPublisher = t.toLowerCase();
+              logger.log(`🔗 [/api/scrape-facebook-post] Extracted linked publisher from post text: ${resolvedLinkedPublisher}`);
+              break;
+            }
+          }
+        }
+
+        // Prefer the real publisher domain from the shared article (sent by extension or
+        // extracted from post text), then fall back to "Facebook" — never use the group slug.
+        const resolvedSource = media_source || resolvedLinkedPublisher || fbMeta.publisherLabel;
+
         contentId = await createContentInternal(query, {
           content_name: result.postText.substring(0, 100) || "Facebook Post",
           url: url,
-          media_source: "Facebook",
+          media_source: resolvedSource,
           topic: "social_media",
+          platform: "facebook",
+          distribution_channel: fbMeta.channel,
+          linked_url: linked_url || null,
+          linked_publisher: linked_url ? resolvedSource : (resolvedLinkedPublisher || null),
           subtopics: ["facebook"],
           content_type: "task",
           thumbnail: result.images?.[0] || null,

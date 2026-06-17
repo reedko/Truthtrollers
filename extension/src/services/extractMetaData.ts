@@ -361,6 +361,7 @@ type FetchPdfTextResponse = {
   text?: string;
   title?: string;
   author?: string;
+  publisher?: string;
   thumbnailUrl?: string;
 };
 
@@ -379,6 +380,7 @@ export const fetchExternalPageContent = async (
   pdfMeta?: {
     title?: string;
     author?: string;
+    publisher?: string;
     thumbnailUrl?: string;
   };
 }> => {
@@ -419,6 +421,7 @@ export const fetchExternalPageContent = async (
           pdfMeta: {
             title: response.title,
             author: response.author,
+            publisher: response.publisher,
             thumbnailUrl: response.thumbnailUrl,
           },
         };
@@ -497,6 +500,7 @@ async function fetchPdfViaServer(url: string) {
       pdfMeta: {
         title: json.title,
         author: json.author,
+        publisher: json.publisher,
         thumbnailUrl: thumbJson?.imageUrl || undefined,
       },
     };

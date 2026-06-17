@@ -8,6 +8,78 @@
 import crypto from 'crypto';
 import { pool } from '../db/pool.js';
 
+async function getClaimContentMetadata(connection, claimIds) {
+  const normalizedClaimIds = [...new Set(claimIds.filter(Boolean).map(Number))]
+    .filter((id) => Number.isInteger(id) && id > 0);
+
+  if (normalizedClaimIds.length === 0) {
+    return {};
+  }
+
+  const placeholders = normalizedClaimIds.map(() => '?').join(',');
+  const [rows] = await connection.query(`
+    SELECT
+      cc.claim_id,
+      cc.content_id,
+      cc.relationship_type,
+      cc.claim_role,
+      cc.claim_depth,
+      cc.claim_order,
+      c.content_name,
+      c.url,
+      c.media_source,
+      c.content_type,
+      GROUP_CONCAT(DISTINCT p.publisher_name ORDER BY p.publisher_name SEPARATOR '; ') AS publishers,
+      GROUP_CONCAT(
+        DISTINCT NULLIF(TRIM(CONCAT(IFNULL(a.author_first_name, ''), ' ', IFNULL(a.author_last_name, ''))), '')
+        ORDER BY a.author_first_name, a.author_last_name
+        SEPARATOR '; '
+      ) AS authors
+    FROM content_claims cc
+    LEFT JOIN content c
+      ON cc.content_id = c.content_id
+    LEFT JOIN content_publishers cp
+      ON cc.content_id = cp.content_id
+    LEFT JOIN publishers p
+      ON cp.publisher_id = p.publisher_id
+    LEFT JOIN content_authors ca
+      ON cc.content_id = ca.content_id
+    LEFT JOIN authors a
+      ON ca.author_id = a.author_id
+    WHERE cc.claim_id IN (${placeholders})
+    GROUP BY
+      cc.claim_id,
+      cc.content_id,
+      cc.relationship_type,
+      cc.claim_role,
+      cc.claim_depth,
+      cc.claim_order,
+      c.content_name,
+      c.url,
+      c.media_source,
+      c.content_type
+    ORDER BY cc.claim_id, cc.content_id
+  `, normalizedClaimIds);
+
+  return rows.reduce((acc, row) => {
+    if (!acc[row.claim_id]) acc[row.claim_id] = [];
+    acc[row.claim_id].push({
+      content_id: row.content_id,
+      content_name: row.content_name,
+      url: row.url,
+      media_source: row.media_source,
+      content_type: row.content_type,
+      relationship_type: row.relationship_type,
+      claim_role: row.claim_role,
+      claim_depth: row.claim_depth,
+      claim_order: row.claim_order,
+      publishers: row.publishers ? row.publishers.split('; ') : [],
+      authors: row.authors ? row.authors.split('; ') : []
+    });
+    return acc;
+  }, {});
+}
+
 /**
  * Creates a canonical JSON snapshot of a claim_link and its related data
  *
@@ -59,11 +131,15 @@ export async function createClaimLinkSnapshot(claimLinkId) {
     }
 
     const claimLink = claimLinks[0];
+    const contentMetadata = await getClaimContentMetadata(connection, [
+      claimLink.source_claim_id,
+      claimLink.target_claim_id
+    ]);
 
     // Create canonical snapshot with sorted keys
     // This ensures the same data always produces the same JSON string
     const snapshot = {
-      audit_version: '1.0',
+      audit_version: '1.1',
       timestamp: new Date().toISOString(),
 
       claim_link: {
@@ -86,14 +162,16 @@ export async function createClaimLinkSnapshot(claimLinkId) {
         claim_id: claimLink.source_claim_id,
         claim_text: claimLink.source_claim_text,
         veracity_score: claimLink.source_veracity_score ? parseFloat(claimLink.source_veracity_score) : null,
-        confidence_level: claimLink.source_confidence_level
+        confidence_level: claimLink.source_confidence_level,
+        content_sources: contentMetadata[claimLink.source_claim_id] || []
       },
 
       target_claim: {
         claim_id: claimLink.target_claim_id,
         claim_text: claimLink.target_claim_text,
         veracity_score: claimLink.target_veracity_score ? parseFloat(claimLink.target_veracity_score) : null,
-        confidence_level: claimLink.target_confidence_level
+        confidence_level: claimLink.target_confidence_level,
+        content_sources: contentMetadata[claimLink.target_claim_id] || []
       }
     };
 

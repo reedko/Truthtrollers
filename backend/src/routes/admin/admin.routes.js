@@ -8,17 +8,121 @@ import express from "express";
 import logger from "../../utils/logger.js";
 import { authenticateToken } from "../../middleware/auth.js";
 import { isOnline } from "../../realtime/socketServer.js";
+import { openAiLLM } from "../../core/openAiLLM.js";
 import createMigrateCanonicalHashRouter from "./migrate-canonical-hash.routes.js";
 import createXCredentialsRouter from "./x-credentials.routes.js";
+import createSeedDataRoutes from "./seedData.routes.js";
+import {
+  calculateUserContentScore,
+  getDefaultVerimeterPolicy,
+  getVerimeterPolicy,
+  saveVerimeterPolicy,
+} from "../../services/verimeterScoringService.js";
+
+const derivedClaimRoleSql = (alias) => `
+  COALESCE(
+    ${alias}.claim_role,
+    CASE
+      WHEN ${alias}.claim_depth = 0 THEN 'thesis'
+      WHEN ${alias}.claim_depth = 1 THEN 'pillar'
+      WHEN ${alias}.claim_depth >= 2 THEN 'evidence'
+      WHEN ${alias}.relationship_type IN ('task', 'content') THEN 'thesis'
+      WHEN ${alias}.relationship_type IN ('reference', 'snippet') THEN 'evidence'
+      ELSE 'background'
+    END
+  )
+`;
+
+const derivedClaimDepthSql = (alias) => `
+  COALESCE(
+    ${alias}.claim_depth,
+    CASE
+      WHEN ${alias}.claim_role = 'thesis' THEN 0
+      WHEN ${alias}.claim_role = 'pillar' THEN 1
+      WHEN ${alias}.claim_role = 'evidence' THEN 2
+      WHEN ${alias}.relationship_type IN ('task', 'content') THEN 0
+      WHEN ${alias}.relationship_type IN ('reference', 'snippet') THEN 2
+      ELSE 3
+    END
+  )
+`;
+
+const claimRolePrioritySql = (alias) => `
+  CASE ${derivedClaimRoleSql(alias)}
+    WHEN 'thesis' THEN 0
+    WHEN 'pillar' THEN 1
+    WHEN 'evidence' THEN 2
+    ELSE 3
+  END
+`;
 
 export default function createAdminRouter({ query, pool }) {
   const router = express.Router();
+
+  const requireSuperAdmin = (req, res) => {
+    if (req.user?.role === "super_admin") return true;
+    res.status(403).json({ error: "Access denied. Super admin only." });
+    return false;
+  };
 
   // Mount migration routes
   router.use("/", createMigrateCanonicalHashRouter({ query }));
 
   // Mount X credentials routes
   router.use("/api/admin/x-credentials", createXCredentialsRouter({ query, pool }));
+
+  // Mount publisher seed data CRUD routes
+  router.use("/", createSeedDataRoutes());
+
+  router.get("/api/admin/verimeter-policy", authenticateToken, async (req, res) => {
+    if (!requireSuperAdmin(req, res)) return;
+    try {
+      const policy = await getVerimeterPolicy(query);
+      res.json({
+        success: true,
+        policy,
+        defaults: getDefaultVerimeterPolicy(),
+        explanation: {
+          active:
+            "The user-link Verimeter averages user-created claim links. Each link starts with its support/refute strength, then its influence is adjusted by enabled credibility factors. Missing data is neutral.",
+          formula:
+            "sum(support_level * source_crest_factor * reviewer_reputation_factor * publisher_rating_factor * author_rating_factor) / sum(factors)",
+          disabled:
+            "Disabled factors and missing ratings contribute 1.0, so they do not change the score.",
+        },
+      });
+    } catch (err) {
+      logger.error("❌ Error fetching Verimeter policy:", err);
+      res.status(500).json({ error: "Failed to fetch Verimeter policy" });
+    }
+  });
+
+  router.put("/api/admin/verimeter-policy", authenticateToken, async (req, res) => {
+    if (!requireSuperAdmin(req, res)) return;
+    try {
+      const policy = await saveVerimeterPolicy(query, req.body?.policy, req.user?.user_id ?? null);
+      res.json({ success: true, policy });
+    } catch (err) {
+      logger.error("❌ Error saving Verimeter policy:", err);
+      res.status(500).json({ error: "Failed to save Verimeter policy" });
+    }
+  });
+
+  router.get("/api/admin/verimeter-policy/preview", authenticateToken, async (req, res) => {
+    if (!requireSuperAdmin(req, res)) return;
+    const contentId = Number(req.query.contentId);
+    const userId = req.query.userId ? Number(req.query.userId) : null;
+    if (!Number.isInteger(contentId) || contentId <= 0) {
+      return res.status(400).json({ error: "contentId is required" });
+    }
+    try {
+      const score = await calculateUserContentScore(query, contentId, userId, { includeExplanation: true });
+      res.json({ success: true, score });
+    } catch (err) {
+      logger.error("❌ Error previewing Verimeter policy:", err);
+      res.status(500).json({ error: "Failed to preview Verimeter calculation" });
+    }
+  });
 
   // ──────────────────────────────────────────────────────────────────
   // GET /api/admin/online-users
@@ -464,6 +568,285 @@ export default function createAdminRouter({ query, pool }) {
     } catch (err) {
       logger.error("❌ Error fetching users:", err);
       res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
+
+  // ──────────────────────────────────────────────────────────────────
+  // Claim hierarchy repair / suggestion tools
+  // ──────────────────────────────────────────────────────────────────
+  router.get("/api/admin/content/:contentId/claims-hierarchy", authenticateToken, async (req, res) => {
+    if (req.user?.role !== "super_admin") {
+      return res.status(403).json({ error: "Access denied. Super admin only." });
+    }
+
+    const contentId = Number(req.params.contentId);
+    if (!Number.isInteger(contentId)) {
+      return res.status(400).json({ error: "Invalid contentId" });
+    }
+
+    try {
+      const [contentRows] = await Promise.all([
+        query("SELECT content_id, content_name, url, media_source, details FROM content WHERE content_id = ?", [contentId]),
+      ]);
+
+      const claims = await query(
+        `
+        SELECT
+          c.claim_id,
+          c.claim_text,
+          c.claim_type,
+          c.veracity_score,
+          c.confidence_level,
+          c.last_verified,
+          ${derivedClaimRoleSql("cc")} AS claim_role,
+          cc.parent_claim_id,
+          ${derivedClaimDepthSql("cc")} AS claim_depth,
+          cc.centrality_score,
+          cc.verifiability_score,
+          cc.claim_order,
+          COALESCE(GROUP_CONCAT(DISTINCT cc.relationship_type ORDER BY cc.relationship_type SEPARATOR ', '), '') AS relationship_type
+        FROM claims c
+        JOIN content_claims cc ON c.claim_id = cc.claim_id
+        WHERE cc.content_id = ?
+        GROUP BY c.claim_id, c.claim_text, c.claim_type, c.veracity_score, c.confidence_level, c.last_verified,
+                 cc.claim_role, cc.claim_depth, cc.relationship_type,
+                 cc.parent_claim_id, cc.centrality_score, cc.verifiability_score, cc.claim_order
+        ORDER BY
+          ${claimRolePrioritySql("cc")},
+          COALESCE(cc.claim_order, 999999) ASC,
+          c.claim_id
+        `,
+        [contentId],
+      );
+
+      return res.json({
+        success: true,
+        content: contentRows?.[0] || null,
+        claims,
+      });
+    } catch (err) {
+      logger.error("❌ Error loading hierarchy content:", err);
+      return res.status(500).json({ error: "Failed to load hierarchy data" });
+    }
+  });
+
+  router.put("/api/admin/content/:contentId/claims-hierarchy/batch", authenticateToken, async (req, res) => {
+    if (req.user?.role !== "super_admin") {
+      return res.status(403).json({ error: "Access denied. Super admin only." });
+    }
+
+    const contentId = Number(req.params.contentId);
+    if (!Number.isInteger(contentId)) {
+      return res.status(400).json({ error: "Invalid contentId" });
+    }
+
+    const updates = Array.isArray(req.body?.updates) ? req.body.updates : [];
+    if (updates.length === 0) {
+      return res.status(400).json({ error: "No hierarchy updates provided" });
+    }
+
+    const validRoles = new Set(["thesis", "pillar", "evidence", "background", null]);
+    const normalizedUpdates = [];
+    for (const update of updates) {
+      const claimId = Number(update?.claim_id);
+      if (!Number.isInteger(claimId)) {
+        return res.status(400).json({ error: "Invalid claim_id in hierarchy updates" });
+      }
+
+      const claimRole = update.claim_role ?? null;
+      if (!validRoles.has(claimRole)) {
+        return res.status(400).json({ error: `Invalid claim_role for claim ${claimId}` });
+      }
+
+      const parentClaimId =
+        update.parent_claim_id == null || update.parent_claim_id === ""
+          ? null
+          : Number(update.parent_claim_id);
+      if (parentClaimId != null && !Number.isInteger(parentClaimId)) {
+        return res.status(400).json({ error: `Invalid parent_claim_id for claim ${claimId}` });
+      }
+
+      normalizedUpdates.push({
+        claimId,
+        claimRole,
+        parentClaimId,
+        claimDepth: update.claim_depth == null || update.claim_depth === "" ? null : Number(update.claim_depth),
+        centralityScore: update.centrality_score == null || update.centrality_score === "" ? null : Number(update.centrality_score),
+        verifiabilityScore: update.verifiability_score == null || update.verifiability_score === "" ? null : Number(update.verifiability_score),
+        claimOrder: update.claim_order == null || update.claim_order === "" ? null : Number(update.claim_order),
+      });
+    }
+
+    try {
+      let affectedRows = 0;
+      for (const update of normalizedUpdates) {
+        const result = await query(
+          `
+          UPDATE content_claims
+          SET claim_role = ?,
+              parent_claim_id = ?,
+              claim_depth = ?,
+              centrality_score = ?,
+              verifiability_score = ?,
+              claim_order = ?
+          WHERE content_id = ? AND claim_id = ?
+          `,
+          [
+            update.claimRole,
+            update.parentClaimId,
+            update.claimDepth,
+            update.centralityScore,
+            update.verifiabilityScore,
+            update.claimOrder,
+            contentId,
+            update.claimId,
+          ],
+        );
+        affectedRows += result?.affectedRows ?? 0;
+      }
+
+      return res.json({ success: true, updated: normalizedUpdates.length, affectedRows });
+    } catch (err) {
+      logger.error("❌ Error batch updating claim hierarchy:", err);
+      return res.status(500).json({ error: "Failed to batch update claim hierarchy" });
+    }
+  });
+
+  router.put("/api/admin/content/:contentId/claims/:claimId/hierarchy", authenticateToken, async (req, res) => {
+    if (req.user?.role !== "super_admin") {
+      return res.status(403).json({ error: "Access denied. Super admin only." });
+    }
+
+    const contentId = Number(req.params.contentId);
+    const claimId = Number(req.params.claimId);
+    if (!Number.isInteger(contentId) || !Number.isInteger(claimId)) {
+      return res.status(400).json({ error: "Invalid contentId or claimId" });
+    }
+
+    const {
+      claim_role = null,
+      parent_claim_id = null,
+      claim_depth = null,
+      centrality_score = null,
+      verifiability_score = null,
+      claim_order = null,
+    } = req.body || {};
+
+    try {
+      const result = await query(
+        `
+        UPDATE content_claims
+        SET claim_role = ?,
+            parent_claim_id = ?,
+            claim_depth = ?,
+            centrality_score = ?,
+            verifiability_score = ?,
+            claim_order = ?
+        WHERE content_id = ? AND claim_id = ?
+        `,
+        [
+          claim_role,
+          parent_claim_id,
+          claim_depth,
+          centrality_score,
+          verifiability_score,
+          claim_order,
+          contentId,
+          claimId,
+        ],
+      );
+
+      return res.json({ success: true, affectedRows: result?.affectedRows ?? 0 });
+    } catch (err) {
+      logger.error("❌ Error updating claim hierarchy:", err);
+      return res.status(500).json({ error: "Failed to update claim hierarchy" });
+    }
+  });
+
+  router.post("/api/admin/content/:contentId/claims-hierarchy/suggest", authenticateToken, async (req, res) => {
+    if (req.user?.role !== "super_admin") {
+      return res.status(403).json({ error: "Access denied. Super admin only." });
+    }
+
+    const contentId = Number(req.params.contentId);
+    if (!Number.isInteger(contentId)) {
+      return res.status(400).json({ error: "Invalid contentId" });
+    }
+
+    try {
+      const contentRows = await query(
+        "SELECT content_id, content_name, url, media_source, details FROM content WHERE content_id = ?",
+        [contentId],
+      );
+      const content = contentRows?.[0] || null;
+      const claims = await query(
+        `
+        SELECT
+          c.claim_id,
+          c.claim_text,
+          c.claim_type,
+          c.veracity_score,
+          c.confidence_level,
+          c.last_verified
+        FROM claims c
+        JOIN content_claims cc ON c.claim_id = cc.claim_id
+        WHERE cc.content_id = ?
+        ORDER BY c.claim_id ASC
+        `,
+        [contentId],
+      );
+
+      if (!claims.length) {
+        return res.json({ success: true, suggestions: [], content });
+      }
+
+      const system = [
+        "You are helping a super-admin repair claim hierarchy for a fact-checking platform.",
+        "Return strict JSON only.",
+        "Classify each claim as thesis, pillar, evidence, or background.",
+        "Choose a single thesis if the content has one central assertion.",
+        "Pillars should directly support the thesis.",
+        "Evidence should support a specific pillar.",
+        "Background is for context or side details that are not central.",
+        "Use claim_id integers from the provided list only.",
+      ].join("\n");
+
+      const user = JSON.stringify({
+        content,
+        claims,
+        outputShape: {
+          suggestions: [
+            {
+              claim_id: 123,
+              claim_role: "thesis|pillar|evidence|background",
+              parent_claim_id: 123,
+              claim_depth: 0,
+              centrality_score: 0,
+              verifiability_score: 0,
+              claim_order: 0,
+              reason: "short explanation",
+            },
+          ],
+        },
+      }, null, 2);
+
+      const suggestion = await openAiLLM.generate({
+        system,
+        user,
+        schemaHint: "{" +
+          "\"suggestions\":[{" +
+          "\"claim_id\":number,\"claim_role\":\"thesis|pillar|evidence|background\",\"parent_claim_id\":number|null," +
+          "\"claim_depth\":number,\"centrality_score\":number,\"verifiability_score\":number,\"claim_order\":number,\"reason\":string" +
+          "}]}",
+        temperature: 0.2,
+        maxRetries: 2,
+        timeout: 45000,
+      });
+
+      return res.json({ success: true, content, suggestions: suggestion?.suggestions || [] });
+    } catch (err) {
+      logger.error("❌ Error suggesting claim hierarchy:", err);
+      return res.status(500).json({ error: "Failed to generate hierarchy suggestions" });
     }
   });
 

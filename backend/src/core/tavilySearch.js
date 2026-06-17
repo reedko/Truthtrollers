@@ -29,14 +29,15 @@ function createTavilyAdapter(apiKey) {
     return [];
   };
 
-  const web = async ({ query, topK = 10, prefer = [], avoid = [] }) => {
+  const web = async ({ query, topK = 10, prefer = [], avoid = [], includeRawContent = false }) => {
     if (!query || !query.trim()) return [];
 
     const body = {
       api_key: apiKey,
       query,
       max_results: topK,
-      search_depth: "basic",
+      search_depth: includeRawContent ? "advanced" : "basic",
+      include_raw_content: includeRawContent,
     };
 
     if (Array.isArray(prefer) && prefer.length) {
@@ -78,6 +79,7 @@ function createTavilyAdapter(apiKey) {
           url: r.url,
           title: r.title,
           snippet: r.content || r.snippet || "",
+          rawContent: r.raw_content || null,
           domain,
           publishedAt: r.published_date || null,
           score: typeof r.score === "number" ? r.score : 1 / (idx + 1), // crude fallback

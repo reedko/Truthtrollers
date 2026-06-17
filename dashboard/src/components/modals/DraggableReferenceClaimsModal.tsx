@@ -8,10 +8,11 @@ import {
   VStack,
   Divider,
   HStack,
-  useColorModeValue,
 } from "@chakra-ui/react";
-import { CloseIcon, Search2Icon, EditIcon, DeleteIcon } from "@chakra-ui/icons";
+import { CloseIcon, Search2Icon } from "@chakra-ui/icons";
 import { Claim, ReferenceWithClaims } from "../../../../shared/entities/types";
+import SourceCrest from "../SourceCrest";
+import { normalizeSourceProfile } from "../../utils/normalizeSourceProfile";
 
 interface Props {
   anchorSelector?: string;
@@ -51,37 +52,9 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
   taskClaims = [],
   onClaimClick,
 }) => {
-  // ✅ ALL HOOKS MUST BE AT THE TOP - BEFORE ANY CONDITIONAL LOGIC
-  // Color mode values - define all at once to avoid circular references
-  const bgColor = useColorModeValue("white", "gray.900");
-  const textColor = useColorModeValue("gray.800", "white");
-  const borderColor = useColorModeValue("2px solid #ddd", "2px solid #333");
-  const headerBg = useColorModeValue("gray.100", "gray.800");
-  const headingColor = useColorModeValue("teal.600", "teal.200");
-  const linkColor = useColorModeValue("blue.600", "blue.300");
-  const connectedBg = useColorModeValue("blue.50", "blue.900");
-  const connectedBorder = useColorModeValue("2px solid #90CDF4", "2px solid #2C5282");
-  const connectedTextColor = useColorModeValue("blue.700", "blue.200");
-  const badgeBg = useColorModeValue("blue.100", "blue.800");
-  const metaColor = useColorModeValue("gray.600", "gray.400");
-  const claimTextColor = useColorModeValue("gray.900", "white");
-  const supportBg = useColorModeValue("gray.100", "gray.800");
-  const supportTextLight = useColorModeValue("gray.700", "gray.300");
-  const supportTextDark = useColorModeValue("blue.600", "blue.300");
-  const highlightBgLight = useColorModeValue("gray.200", "gray.700");
-  const highlightBgDark = useColorModeValue("blue.100", "blue.200");
-  const highlightTextColor = useColorModeValue("gray.900", "black");
-  const hoverBg = useColorModeValue("gray.50", "gray.700");
-  const snippetBg = useColorModeValue("gray.100", "gray.800");
-  const snippetColor = useColorModeValue("gray.700", "gray.300");
-  const normalBg = useColorModeValue("white", "black");
-
-  // Position state for the floating box - positioned on the right, centered vertically
-  const [position, setPosition] = useState(() => ({
-    x: Math.max(window.innerWidth - 550, window.innerWidth * 0.7), // Position on right side
-    y: Math.max(50, (window.innerHeight - 600) / 2), // Center vertically
-  }));
+  const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
+  const [debugOpen, setDebugOpen] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
 
   // Tooltip for dragging claims
@@ -146,21 +119,14 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
 
   const connectedTaskClaims = getConnectedTaskClaims();
 
-  // Reset modal position on open - position on right, centered vertically
-  React.useEffect(() => {
+  // useLayoutEffect runs before paint — no visible jump on open
+  React.useLayoutEffect(() => {
     if (!isOpen) return;
-
-    const modalWidth = 500; // matches desktop width
-    const padding = 16;
-    const modalHeight = 600; // approximate height
-
-    // Position on the right side of the screen
-    const x = Math.max(padding, window.innerWidth - modalWidth - padding);
-    // Center vertically
-    const y = Math.max(padding, (window.innerHeight - modalHeight) / 2);
-
-    setPosition({ x, y });
-  }, [isOpen, anchorSelector]);
+    setPosition({
+      x: Math.max(16, window.innerWidth - 516),
+      y: Math.max(16, (window.innerHeight - 600) / 2),
+    });
+  }, [isOpen]);
 
   // Start drag on header
   const onMouseDown = (e: React.MouseEvent) => {
@@ -372,31 +338,59 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
         zIndex={2500}
         w={["90vw", "500px"]}
         maxW="95vw"
-        bg={bgColor}
-        color={textColor}
-        borderRadius="xl"
-        boxShadow="2xl"
-        border={borderColor}
         p={0}
         cursor={dragging ? "grabbing" : "default"}
         userSelect="none"
+        overflow="hidden"
+        style={{
+          background: "rgba(10, 15, 25, 0.85)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          border: "2px solid rgba(113, 219, 255, 0.4)",
+          borderRadius: "16px",
+          boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 12px 32px rgba(0,0,0,0.6), 0 0 60px rgba(113,219,255,0.3), inset 0 2px 0 rgba(255,255,255,0.15)",
+        }}
       >
+        {/* Left edge glow overlay */}
         <Box
-          className="mr-modal-header"
+          position="absolute"
+          left={0}
+          top={0}
+          width="32px"
+          height="100%"
+          background="linear-gradient(90deg, rgba(0, 162, 255, 0.35) 0%, transparent 100%)"
+          borderLeftRadius="16px"
+          pointerEvents="none"
+          zIndex={0}
+        />
+        {/* Radial background glow */}
+        <Box
+          position="absolute"
+          top="-20%"
+          right="-10%"
+          width="60%"
+          height="60%"
+          background="radial-gradient(circle, rgba(0, 162, 255, 0.12) 0%, transparent 70%)"
+          pointerEvents="none"
+          zIndex={0}
+        />
+        <Box
           onMouseDown={onMouseDown}
           cursor="grab"
-          bg={headerBg}
-          px={4}
-          py={2}
-          borderTopRadius="xl"
           display="flex"
           alignItems="center"
           justifyContent="space-between"
+          position="relative"
+          zIndex={1}
+          px={5}
+          py={4}
+          borderBottom="1px solid rgba(113, 219, 255, 0.2)"
         >
           <Heading
-            size="sm"
+            size="md"
             mb={0}
-            color={headingColor}
+            fontWeight="semibold"
+            color="white"
           >
             Reference Details
           </Heading>
@@ -404,89 +398,149 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
             aria-label="Close"
             icon={<CloseIcon />}
             size="sm"
+            variant="ghost"
+            color="rgba(113, 219, 255, 0.7)"
+            _hover={{ bg: "rgba(113, 219, 255, 0.12)", color: "rgba(113, 219, 255, 1)" }}
             onClick={onClose}
           />
         </Box>
 
-        <Box ref={scrollContainerRef} p={4} maxH="70vh" overflowY="auto">
-          <VStack align="start" spacing={4}>
-            <Box>
-              <Text fontWeight="bold">Title:</Text>
-              <Text>{reference?.content_name}</Text>
-            </Box>
-            <Box>
-              <Text fontWeight="bold">Source URL:</Text>
-              <Text
-                color={linkColor}
-                wordBreak="break-all"
-              >
-                <a
-                  href={reference?.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {reference?.url}
-                </a>
-              </Text>
-            </Box>
-            <Box>
-              <Text fontWeight="bold">Topic:</Text>
-              <Text>{reference?.topic || "N/A"}</Text>
-            </Box>
-            <Divider />
+        <Box ref={scrollContainerRef} p={3} maxH="70vh" overflowY="auto" position="relative" zIndex={1}>
+          <VStack align="start" spacing={3}>
 
+            {/* ── DEBUG DRAWER ── */}
+            <Box w="100%">
+              <HStack
+                cursor="pointer"
+                onClick={() => setDebugOpen(!debugOpen)}
+                py="3px"
+                px={2}
+                bg="rgba(88, 28, 135, 0.18)"
+                borderRadius="6px"
+                border="1px solid rgba(139, 92, 246, 0.25)"
+                justify="space-between"
+                _hover={{ bg: "rgba(88, 28, 135, 0.32)" }}
+                transition="background 0.15s"
+              >
+                <Text fontSize="9px" fontFamily="monospace" color="rgba(167,139,250,0.75)" letterSpacing="1px" textTransform="uppercase">
+                  debug {debugOpen ? "▼" : "▶"}
+                </Text>
+                <Text fontSize="9px" fontFamily="monospace" color="rgba(167,139,250,0.4)">
+                  src #{reference?.reference_content_id ?? "—"}
+                </Text>
+              </HStack>
+              {debugOpen && (
+                <Box mt={1} p={2} bg="rgba(88, 28, 135, 0.18)" borderRadius="6px" border="1px solid rgba(139, 92, 246, 0.25)" fontSize="9px" fontFamily="monospace">
+                  <Text color="rgba(167,139,250,0.8)">reference_content_id: {reference?.reference_content_id ?? "—"}</Text>
+                  <Text color="rgba(167,139,250,0.8)">content_id: {(reference as any)?.content_id ?? "—"}</Text>
+                  <Text color="rgba(167,139,250,0.8)">publisher: {reference?.publisher_name ?? "—"}</Text>
+                  <Text color="rgba(167,139,250,0.8)">media_source: {reference?.media_source ?? "—"}</Text>
+                  <Text color="rgba(167,139,250,0.8)">is_primary: {String(reference?.is_primary_source ?? "—")}</Text>
+                  <Text color="rgba(167,139,250,0.8)">claims_count: {Array.isArray(reference?.claims) ? reference.claims.length : "—"}</Text>
+                </Box>
+              )}
+            </Box>
+
+            {/* ── SOURCE INFO 3D FLOAT BOX ── */}
+            <Box
+              w="100%"
+              bg="rgba(8, 16, 36, 0.75)"
+              p={3}
+              borderLeftRadius="16px"
+              border="1px solid rgba(0, 162, 255, 0.28)"
+              boxShadow="0 18px 44px rgba(0,0,0,0.65), 0 8px 18px rgba(0,0,0,0.45), 0 0 28px rgba(0,162,255,0.16), inset 0 1px 0 rgba(255,255,255,0.1), inset 0 -1px 0 rgba(0,0,0,0.35)"
+              position="relative"
+              overflow="hidden"
+              transition="box-shadow 0.2s ease, transform 0.2s ease"
+              _hover={{ transform: "translateY(-2px)", boxShadow: "0 24px 56px rgba(0,0,0,0.72), 0 10px 22px rgba(0,0,0,0.5), 0 0 36px rgba(0,162,255,0.22), inset 0 1px 0 rgba(255,255,255,0.14)" }}
+            >
+              <Box position="absolute" left={0} top={0} width="20px" height="100%" background="linear-gradient(90deg, rgba(0,162,255,0.32) 0%, transparent 100%)" borderLeftRadius="16px" pointerEvents="none" zIndex={0} />
+              <VStack align="start" spacing={2} position="relative" zIndex={1}>
+                <Box w="100%">
+                  <Text fontSize="9px" fontFamily="monospace" color="rgba(0,162,255,0.4)" letterSpacing="1px" textTransform="uppercase" mb="1px">title</Text>
+                  <Text color="var(--mr-text-primary)" fontSize="sm" fontWeight="semibold">{reference?.content_name}</Text>
+                </Box>
+                <HStack spacing={2} flexWrap="wrap" align="center">
+                  {reference && (
+                    <SourceCrest
+                      {...normalizeSourceProfile({
+                        publisher_name: reference.publisher_name,
+                        is_primary_source: reference.is_primary_source,
+                        media_source: reference.media_source,
+                        veracity_score: reference.publisher_veracity ?? undefined,
+                        admiralty_code: reference.admiralty_code ?? undefined,
+                      })}
+                      size="xs"
+                    />
+                  )}
+                  <Text fontSize="xs" color="rgba(0,162,255,0.7)">
+                    <Text as="span" opacity={0.6}>Pub: </Text>
+                    <Text as="span" color={reference?.publisher_name ? "rgba(0,162,255,0.9)" : "rgba(255,255,255,0.3)"}>
+                      {reference?.publisher_name ?? "—"}
+                    </Text>
+                  </Text>
+                  <Text fontSize="xs" color="rgba(0,162,255,0.7)">
+                    <Text as="span" opacity={0.6}>Auth: </Text>
+                    <Text as="span" color={reference?.author_name?.trim() ? "rgba(0,162,255,0.9)" : "rgba(255,255,255,0.3)"}>
+                      {reference?.author_name?.trim() ?? "—"}
+                    </Text>
+                  </Text>
+                </HStack>
+                <Box w="100%">
+                  <Text fontSize="9px" fontFamily="monospace" color="rgba(0,162,255,0.4)" letterSpacing="1px" textTransform="uppercase" mb="1px">url</Text>
+                  <Text color="var(--mr-blue)" wordBreak="break-all" fontSize="xs">
+                    <a href={reference?.url} target="_blank" rel="noopener noreferrer">{reference?.url}</a>
+                  </Text>
+                </Box>
+                <Box w="100%">
+                  <Text fontSize="9px" fontFamily="monospace" color="rgba(0,162,255,0.4)" letterSpacing="1px" textTransform="uppercase" mb="1px">topic</Text>
+                  <Text color="var(--mr-text-primary)" fontSize="sm">{reference?.topic || "N/A"}</Text>
+                </Box>
+              </VStack>
+            </Box>
+
+            {/* ── CONNECTED CASE CLAIMS ── */}
             {connectedTaskClaims.length > 0 && (
               <Box
                 w="100%"
-                bg={useColorModeValue("blue.50", "blue.900")}
+                bg="rgba(0, 30, 70, 0.55)"
                 p={3}
-                borderRadius="md"
-                border={useColorModeValue(
-                  "2px solid #3182ce",
-                  "2px solid #00aaff",
-                )}
+                borderLeftRadius="16px"
+                border="2px solid rgba(0, 162, 255, 0.3)"
+                boxShadow="0 16px 40px rgba(0,0,0,0.6), 0 6px 16px rgba(0,0,0,0.4), 0 0 24px rgba(0,162,255,0.14), inset 0 1px 0 rgba(255,255,255,0.08)"
+                position="relative"
+                overflow="hidden"
               >
-                <Text
-                  fontWeight="bold"
-                  mb={2}
-                  color={useColorModeValue("blue.700", "blue.200")}
-                >
-                  📌 Connected Case Claims:
+                <Box position="absolute" left={0} top={0} width="20px" height="100%" background="linear-gradient(90deg, rgba(0,162,255,0.3) 0%, transparent 100%)" borderLeftRadius="16px" pointerEvents="none" zIndex={0} />
+                <Text fontSize="9px" fontFamily="monospace" color="rgba(0,162,255,0.5)" letterSpacing="1px" textTransform="uppercase" mb={2} position="relative" zIndex={1}>
+                  Connected Case Claims
                 </Text>
-                <VStack align="start" spacing={2}>
+                <VStack align="start" spacing={2} position="relative" zIndex={1}>
                   {connectedTaskClaims.map((taskClaim) => {
                     const link = claimLinks.find(
                       (l) =>
                         l.claimId === taskClaim.claim_id &&
                         l.referenceId === reference?.reference_content_id,
                     );
+                    const rColor =
+                      link?.relation === "support" ? "rgba(74,222,128,0.65)"
+                      : link?.relation === "refute" ? "rgba(239,68,68,0.65)"
+                      : "rgba(0,162,255,0.4)";
 
                     return (
                       <Box
                         key={taskClaim.claim_id}
                         w="100%"
-                        bg={useColorModeValue("blue.100", "blue.800")}
+                        bg="rgba(0, 0, 28, 0.6)"
                         p={2}
-                        borderRadius="md"
-                        border={
-                          link?.relation === "support"
-                            ? "2px solid green"
-                            : link?.relation === "refute"
-                              ? "2px solid red"
-                              : "2px solid blue"
-                        }
+                        borderLeftRadius="10px"
+                        border={`2px solid ${rColor}`}
+                        boxShadow={`0 10px 24px rgba(0,0,0,0.5), 0 4px 10px rgba(0,0,0,0.35), 0 0 14px ${rColor.replace("0.65", "0.15")}, inset 0 1px 0 rgba(255,255,255,0.07)`}
+                        transition="box-shadow 0.2s, transform 0.2s"
+                        _hover={{ transform: "translateY(-1px)", boxShadow: `0 14px 32px rgba(0,0,0,0.6), 0 0 20px ${rColor.replace("0.65", "0.22")}` }}
                       >
-                        <Text
-                          fontSize="xs"
-                          color={metaColor}
-                          mb={1}
-                        >
-                          Task Claim #{taskClaim.claim_id}
-                        </Text>
-                        <Text
-                          fontSize="sm"
-                          color={claimTextColor}
-                        >
+                        <Text fontSize="9px" fontFamily="monospace" color="rgba(0,162,255,0.4)" letterSpacing="1px" mb="2px">#{taskClaim.claim_id}</Text>
+                        <Text fontSize="sm" color="var(--mr-text-primary)">
                           {taskClaim.claim_text}
                         </Text>
                       </Box>
@@ -496,11 +550,12 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
               </Box>
             )}
 
-            <Divider />
+            <Divider borderColor="rgba(0,162,255,0.15)" />
 
+            {/* ── ASSOCIATED CLAIMS ── */}
             <Box w="100%">
-              <Text fontWeight="bold" mb={2}>
-                Associated Claims:
+              <Text fontSize="9px" fontFamily="monospace" color="rgba(0,162,255,0.4)" letterSpacing="1px" textTransform="uppercase" mb={2}>
+                Associated Claims
               </Text>
               {reference?.claims && (
                 <VStack align="start" spacing={2}>
@@ -512,49 +567,40 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                     const connections = getClaimConnections(claim.claim_id);
                     const hasConnection = connections.length > 0;
 
+                    const accentColor =
+                      hasConnection
+                        ? connections[0].relation === "support"
+                          ? "rgba(74,222,128,0.7)"
+                          : connections[0].relation === "refute"
+                            ? "rgba(239,68,68,0.7)"
+                            : "rgba(0,162,255,0.7)"
+                        : isSnippet
+                          ? "rgba(160,174,192,0.38)"
+                          : "rgba(0,162,255,0.32)";
+
+                    const glowColor = hasConnection
+                      ? connections[0].relation === "support" ? "rgba(74,222,128,0.12)" : connections[0].relation === "refute" ? "rgba(239,68,68,0.12)" : "rgba(0,162,255,0.12)"
+                      : "rgba(0,162,255,0.08)";
+
                     return (
-                      <HStack key={claim.claim_id} align="start">
+                      <HStack key={claim.claim_id} align="start" w="100%">
                         <Box
                           ref={(el) => {
                             claimRefs.current[claim.claim_id] = el;
                           }}
                           data-claim-ref-id={claim.claim_id}
                           flex="1"
-                          bg={
-                            isSnippet
-                              ? snippetBg
-                              : normalBg
-                          }
-                          color={
-                            isSnippet
-                              ? snippetColor
-                              : linkColor
-                          }
-                          px={2}
-                          py={1}
-                          borderRadius="md"
-                          border={
-                            hasConnection
-                              ? connections[0].relation === "support"
-                                ? "2px solid green"
-                                : connections[0].relation === "refute"
-                                  ? "2px solid red"
-                                  : "2px solid blue"
-                              : isSnippet
-                                ? "1px solid #718096"
-                                : "1px solid blue"
-                          }
-                          borderLeft={
-                            isSnippet && !hasConnection
-                              ? "4px solid #A0AEC0"
-                              : undefined
-                          }
+                          bg="rgba(15, 24, 48, 0.65)"
+                          borderLeftRadius="12px"
+                          border={`2px solid ${accentColor}`}
+                          boxShadow={`0 12px 30px rgba(0,0,0,0.55), 0 4px 12px rgba(0,0,0,0.38), 0 0 18px ${glowColor}, inset 0 1px 0 rgba(255,255,255,0.08)`}
+                          transition="box-shadow 0.2s ease, transform 0.2s ease"
                           _hover={{
-                            bg: isSnippet
-                              ? highlightBgLight
-                              : highlightBgDark,
-                            color: highlightTextColor,
+                            transform: "translateY(-2px)",
+                            boxShadow: `0 18px 40px rgba(0,0,0,0.65), 0 6px 16px rgba(0,0,0,0.45), 0 0 26px ${glowColor.replace("0.08","0.2").replace("0.12","0.24")}, inset 0 1px 0 rgba(255,255,255,0.12)`,
                           }}
+                          position="relative"
+                          overflow="hidden"
                           onMouseDown={() => setDraggingClaim(claim)}
                           onMouseUp={() => setDraggingClaim(null)}
                           onClick={() => {
@@ -564,38 +610,50 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                           }}
                           cursor={hasConnection ? "pointer" : "grab"}
                         >
-                          {hasConnection && (
-                            <Text
-                              fontSize="xs"
-                              color={metaColor}
-                              mb={1}
-                            >
-                              {connections[0].relation === "support"
-                                ? "🟢 Supports"
-                                : connections[0].relation === "refute"
-                                  ? "🔴 Refutes"
-                                  : "🔵 Nuances"}{" "}
-                              task claim
-                            </Text>
-                          )}
-                          {isSnippet ? (
-                            <Text
-                              fontStyle="italic"
-                              fontSize="sm"
-                              opacity={0.9}
-                            >
-                              " {claim.claim_text} "
-                            </Text>
-                          ) : (
-                            claim.claim_text
-                          )}
+                          {/* Left edge curl */}
+                          <Box
+                            position="absolute"
+                            left={0}
+                            top={0}
+                            width="16px"
+                            height="100%"
+                            background={`linear-gradient(90deg, ${accentColor} 0%, transparent 100%)`}
+                            borderLeftRadius="12px"
+                            pointerEvents="none"
+                            zIndex={0}
+                            opacity={0.45}
+                          />
+                          <Box position="relative" zIndex={1} px={2} pt="5px" pb={2}>
+                            {/* claim id chip */}
+                            <Text fontSize="9px" fontFamily="monospace" color="rgba(0,162,255,0.45)" letterSpacing="1px" mb="3px">#{claim.claim_id}</Text>
+                            {hasConnection && (
+                              <Text fontSize="10px" color={accentColor} mb="3px" letterSpacing="0.5px">
+                                {connections[0].relation === "support"
+                                  ? "🟢 Supports"
+                                  : connections[0].relation === "refute"
+                                    ? "🔴 Refutes"
+                                    : "🔵 Nuances"}{" "}
+                                task claim
+                              </Text>
+                            )}
+                            {isSnippet ? (
+                              <Text fontStyle="italic" fontSize="sm" color="var(--mr-text-secondary)" opacity={0.9}>
+                                " {claim.claim_text} "
+                              </Text>
+                            ) : (
+                              <Text fontSize="sm" color="var(--mr-text-primary)">{claim.claim_text}</Text>
+                            )}
+                          </Box>
                         </Box>
 
-                        <HStack spacing={2}>
+                        <VStack spacing={1} align="center" pt={1}>
                           <IconButton
-                            size="sm"
+                            size="xs"
                             aria-label="Edit"
-                            icon={<span>✏️</span>}
+                            icon={<span style={{ fontSize: "11px" }}>✏️</span>}
+                            variant="ghost"
+                            color="var(--mr-blue)"
+                            _hover={{ bg: "rgba(0, 162, 255, 0.15)" }}
                             onClick={(e) => {
                               e.stopPropagation();
                               if (onEditClaim) onEditClaim(claim);
@@ -603,10 +661,12 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                           />
                           {onVerifyClaim && (
                             <IconButton
-                              size="sm"
-                              colorScheme="purple"
+                              size="xs"
                               aria-label="Verify"
-                              icon={<Search2Icon />}
+                              icon={<Search2Icon boxSize="10px" />}
+                              variant="ghost"
+                              color="var(--mr-purple)"
+                              _hover={{ bg: "rgba(139, 92, 246, 0.15)" }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onVerifyClaim(claim);
@@ -614,16 +674,18 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                             />
                           )}
                           <IconButton
-                            size="sm"
-                            colorScheme="red"
+                            size="xs"
                             aria-label="Delete"
-                            icon={<span>🗑️</span>}
+                            icon={<span style={{ fontSize: "11px" }}>🗑️</span>}
+                            variant="ghost"
+                            color="var(--mr-red)"
+                            _hover={{ bg: "rgba(239, 68, 68, 0.15)" }}
                             onClick={(e) => {
                               e.stopPropagation();
                               if (onDeleteClaim) onDeleteClaim(claim.claim_id);
                             }}
                           />
-                        </HStack>
+                        </VStack>
                       </HStack>
                     );
                   })}
@@ -634,13 +696,14 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
         </Box>
 
         <Box
-          p={4}
-          borderBottomRadius="xl"
-          borderTop="1px solid #333"
+          p={3}
+          borderTop="1px solid rgba(0, 162, 255, 0.2)"
           display="flex"
           justifyContent="flex-end"
+          position="relative"
+          zIndex={1}
         >
-          <Button onClick={onClose}>Close</Button>
+          <Button className="mr-button" onClick={onClose} size="sm">Close</Button>
         </Box>
       </Box>
 

@@ -19,6 +19,8 @@ import { useNavigate } from "react-router-dom";
 import EvidenceOpsPanel from "../components/admin/EvidenceOpsPanel";
 import UserOpsPanel from "../components/admin/UserOpsPanel";
 import ExtensionSettingsPanel from "../components/admin/ExtensionSettingsPanel";
+import ClaimHierarchyEditor from "../components/admin/ClaimHierarchyEditor";
+import VerimeterAlgorithmPanel from "../components/admin/VerimeterAlgorithmPanel";
 
 interface OnlineUser {
   user_id: number;
@@ -285,6 +287,40 @@ export default function AdminPanelPage() {
             </VStack>
           </HStack>
 
+          {/* Quick-nav to sub-admin pages */}
+          <HStack gap={3} flexWrap="wrap" mb={2}>
+            <Box
+              as="button"
+              onClick={() => navigate("/admin/publishers")}
+              bg="rgba(15, 23, 42, 0.6)"
+              borderWidth="1px"
+              borderColor="rgba(0, 162, 255, 0.3)"
+              borderRadius="md"
+              px={4} py={3}
+              textAlign="left"
+              _hover={{ borderColor: "cyan.400", boxShadow: "0 0 12px rgba(0,162,255,0.25)" }}
+              transition="all 0.2s"
+            >
+              <Heading size="xs" color="cyan.300" mb={0.5}>Publisher Seed Data</Heading>
+              <Box fontSize="xs" color="gray.400">AllSides · MBFC · Ad Fontes · OpenSources</Box>
+            </Box>
+            <Box
+              as="button"
+              onClick={() => navigate("/admin/social")}
+              bg="rgba(15, 23, 42, 0.6)"
+              borderWidth="1px"
+              borderColor="rgba(139, 92, 246, 0.3)"
+              borderRadius="md"
+              px={4} py={3}
+              textAlign="left"
+              _hover={{ borderColor: "purple.400", boxShadow: "0 0 12px rgba(139,92,246,0.25)" }}
+              transition="all 0.2s"
+            >
+              <Heading size="xs" color="purple.300" mb={0.5}>Social / X Admin</Heading>
+              <Box fontSize="xs" color="gray.400">Twitter / X credentials &amp; posts</Box>
+            </Box>
+          </HStack>
+
           {/* Main Tabs - User Ops vs Evidence Ops */}
           <Tabs variant="unstyled" colorScheme="cyan">
             <TabList
@@ -336,6 +372,34 @@ export default function AdminPanelPage() {
               >
                 Extension Settings
               </Tab>
+              <Tab
+                _selected={{
+                  bg: "linear-gradient(135deg, rgba(0, 162, 255, 0.3), rgba(139, 92, 246, 0.2))",
+                  color: "cyan.300",
+                  boxShadow: "0 0 20px rgba(0, 162, 255, 0.3)",
+                }}
+                borderRadius="md"
+                fontWeight="bold"
+                fontSize="lg"
+                color="gray.400"
+                transition="all 0.3s"
+              >
+                Claim Hierarchy
+              </Tab>
+              <Tab
+                _selected={{
+                  bg: "linear-gradient(135deg, rgba(0, 162, 255, 0.3), rgba(139, 92, 246, 0.2))",
+                  color: "cyan.300",
+                  boxShadow: "0 0 20px rgba(0, 162, 255, 0.3)",
+                }}
+                borderRadius="md"
+                fontWeight="bold"
+                fontSize="lg"
+                color="gray.400"
+                transition="all 0.3s"
+              >
+                Verimeter Algorithm
+              </Tab>
             </TabList>
 
             <TabPanels>
@@ -363,6 +427,12 @@ export default function AdminPanelPage() {
               </TabPanel>
               <TabPanel px={0} pt={6}>
                 <ExtensionSettingsPanel />
+              </TabPanel>
+              <TabPanel px={0} pt={6}>
+                <ClaimHierarchyEditor />
+              </TabPanel>
+              <TabPanel px={0} pt={6}>
+                <VerimeterAlgorithmPanel />
               </TabPanel>
             </TabPanels>
           </Tabs>

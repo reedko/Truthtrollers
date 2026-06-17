@@ -124,8 +124,8 @@ export default function ConfigurationMatrix() {
   };
 
   const getPromptNameForMode = (evidenceModeName: string, extractionMode: string) => {
-    // Currently all modes use ranked extraction with no topics
-    return "claim_extraction_ranked_no_topics";
+    // Preferred prompt family is the reasoning-stack extractor
+    return "claim_extraction_stack_no_topics";
   };
 
   if (loading) {
@@ -313,25 +313,31 @@ export default function ConfigurationMatrix() {
             <Box>
               <Text fontSize="xs" color="gray.400" mb={1}>Prompt Used</Text>
               <Text fontSize="xs" fontFamily="monospace" color="purple.300" fontWeight="bold">
-                claim_extraction_ranked_no_topics
+                claim_extraction_stack_no_topics
               </Text>
             </Box>
             <Box>
               <Text fontSize="xs" color="gray.400" mb={1}>Max Claims</Text>
               <Text color="purple.300" fontWeight="bold">
-                {prompts.find(p => p.prompt_name === 'claim_extraction_ranked_no_topics')?.max_claims ?? 12}
+                {prompts.find(p => p.prompt_name === 'claim_extraction_stack_no_topics')?.max_claims
+                  ?? prompts.find(p => p.prompt_name === 'claim_extraction_ranked_no_topics')?.max_claims
+                  ?? 12}
               </Text>
             </Box>
             <Box>
               <Text fontSize="xs" color="gray.400" mb={1}>Min Sources</Text>
               <Text color="purple.300" fontWeight="bold">
-                {prompts.find(p => p.prompt_name === 'claim_extraction_ranked_no_topics')?.min_sources ?? 2}
+                {prompts.find(p => p.prompt_name === 'claim_extraction_stack_no_topics')?.min_sources
+                  ?? prompts.find(p => p.prompt_name === 'claim_extraction_ranked_no_topics')?.min_sources
+                  ?? 2}
               </Text>
             </Box>
             <Box>
               <Text fontSize="xs" color="gray.400" mb={1}>Max Sources</Text>
               <Text color="purple.300" fontWeight="bold">
-                {prompts.find(p => p.prompt_name === 'claim_extraction_ranked_no_topics')?.max_sources ?? 4}
+                {prompts.find(p => p.prompt_name === 'claim_extraction_stack_no_topics')?.max_sources
+                  ?? prompts.find(p => p.prompt_name === 'claim_extraction_ranked_no_topics')?.max_sources
+                  ?? 4}
               </Text>
             </Box>
           </Grid>

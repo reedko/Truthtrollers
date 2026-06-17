@@ -33,7 +33,7 @@ const GlowGauge: React.FC<GlowGaugeProps> = ({
   const [animatedValue, setAnimatedValue] = useState(0);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setAnimatedValue(normalized), 100);
+    const timeout = setTimeout(() => setAnimatedValue(normalized), 150);
     return () => clearTimeout(timeout);
   }, [normalized]);
 

@@ -29,7 +29,7 @@ const BareGauge: React.FC<BareGaugeProps> = ({
   const tickSpacing = 100 / (tickCount - 1);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setAnimatedValue(percent), 100);
+    const timeout = setTimeout(() => setAnimatedValue(percent), 150);
     return () => clearTimeout(timeout);
   }, [percent]);
 

@@ -50,14 +50,17 @@ import { useTaskStore } from "../store/useTaskStore";
 import { useAuthStore } from "../store/useAuthStore";
 import SubmitRatingModal from "../components/SubmitRatingModal";
 import {
-  fetchClaimScoresForTask,
   getClaimLinkScore,
 } from "../services/useDashboardAPI";
 import { fetchReferenceClaimTaskLinks } from "../services/referenceClaimRelevance";
+import { useClaimLinkSession } from "../hooks/useClaimLinkSession";
 import RelevanceScanModal from "../components/modals/RelevanceScanModal";
 import VerimeterMeter from "../components/VerimeterMeter";
 import ClaimLinkOverlay from "../components/overlays/ClaimLinkOverlay";
 import { Claim } from "../../../shared/entities/types";
+import SourceCrest from "../components/SourceCrest";
+import { normalizeSourceProfile } from "../utils/normalizeSourceProfile";
+import SourceDetailModal from "../components/modals/SourceDetailModal";
 
 // Holographic scan line animation
 const scanLine = keyframes`
@@ -132,6 +135,7 @@ export const CaseFocusPage: React.FC = () => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [modalSupportLevel, setModalSupportLevel] = useState(0);
   const [styleMode, setStyleMode] = useState<"mr1" | "mr2">("mr1"); // MR1 = 3D glass, MR2 = dark sunken
+  const [sourceDetailCandidate, setSourceDetailCandidate] = useState<{ name: string } | null>(null);
   const [userScore, setUserScore] = useState(0); // Game score (points earned from links)
   const [hiddenSources, setHiddenSources] = useState<number[]>(() => {
     // Load hidden sources from localStorage on mount
@@ -148,13 +152,23 @@ export const CaseFocusPage: React.FC = () => {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
+  // ── Shared data layer (same endpoints + scope as Workspace) ────────────────
+  const {
+    references,
+    claimScores: hookClaimScores,
+    refreshScores: refreshHookScores,
+  } = useClaimLinkSession({
+    contentId: selectedTask?.content_id ?? 0,
+    viewerId: user?.user_id ?? null,
+    scope: "all",
+  });
+
   // RelevanceScanModal state - USE WORKSPACE MODAL
   const {
     isOpen: isRelevanceScanModalOpen,
     onOpen: onOpenRelevanceScanModal,
     onClose: onCloseRelevanceScanModal,
   } = useDisclosure();
-  const [references, setReferences] = useState<any[]>([]);
 
   // State for RelevanceScanModal -> ClaimLinkOverlay integration
   const [sourceClaim, setSourceClaim] = useState<Pick<
@@ -468,46 +482,44 @@ export const CaseFocusPage: React.FC = () => {
 
   // Left rail measurements
   useEffect(() => {
-    // Wait for refs to be available
-    const checkAndMeasure = () => {
+    let canceled = false;
+    let retryId: ReturnType<typeof setTimeout> | null = null;
+    let observer: ResizeObserver | null = null;
+
+    const measure = () => {
       const viewportEl = leftRailViewportRef.current;
       const flexEl = leftRailFlexRef.current;
 
       if (!viewportEl || !flexEl) {
-        // Refs not ready yet, try again soon
-        setTimeout(checkAndMeasure, 10);
+        if (!canceled) retryId = setTimeout(measure, 150);
         return;
       }
 
       const update = () => {
+        if (canceled) return;
         const firstCard = flexEl.children[0] as HTMLElement;
         if (!firstCard) return;
-
         const cardWidth = firstCard.offsetWidth;
         const cardStyle = window.getComputedStyle(firstCard);
         const cardGap = parseFloat(cardStyle.marginRight) || 0;
         const viewportWidth = viewportEl.clientWidth;
-
         if (cardWidth > 0 && viewportWidth > 0) {
           setLeftCardMeasurements({ viewportWidth, cardWidth, cardGap });
         }
       };
 
-      const observer = new ResizeObserver(() => update());
-
-      // Initial measurement and setup observer
+      observer = new ResizeObserver(update);
       update();
       observer.observe(viewportEl);
       observer.observe(flexEl);
-
-      // Cleanup
-      return () => {
-        observer.disconnect();
-      };
     };
 
-    const cleanup = checkAndMeasure();
-    return cleanup;
+    measure();
+    return () => {
+      canceled = true;
+      if (retryId !== null) clearTimeout(retryId);
+      observer?.disconnect();
+    };
   }, [availableCaseClaims, focusClaim]);
 
   // Right rail measurements
@@ -617,19 +629,15 @@ export const CaseFocusPage: React.FC = () => {
       console.log("✅ Case claims data:", data);
       console.log("📊 Found", data.caseClaims?.length || 0, "case claims");
 
-      // Fetch verimeter scores for all case claims
-      const claimScores = await fetchClaimScoresForTask(
-        selectedTask.content_id,
-        user?.user_id || null,
-      );
-      console.log("📊 Claim scores:", claimScores);
+      // Use shared hook scores (same endpoint + scope as Workspace)
+      console.log("📊 Claim scores from hook:", hookClaimScores);
 
       // Enrich case claims with their verimeter scores
       const enrichedClaims = (data.caseClaims || []).map((claim: any) => ({
         ...claim,
         verimeter_score:
-          claimScores[claim.claim_id] !== undefined
-            ? Math.round(claimScores[claim.claim_id] * 100)
+          hookClaimScores[claim.claim_id] !== undefined
+            ? Math.round(hookClaimScores[claim.claim_id] * 100)
             : 0,
       }));
 
@@ -682,18 +690,8 @@ export const CaseFocusPage: React.FC = () => {
       // Find the claim in available claims to get text
       const claimData = availableCaseClaims.find((c) => c.claim_id === claimId);
 
-      // Fetch the user's normalized running score for this claim
-      console.log(
-        "🎯 Fetching user normalized score for claim:",
-        claimId,
-        "user:",
-        user?.user_id,
-      );
-      const claimScores = await fetchClaimScoresForTask(
-        selectedTask.content_id,
-        user?.user_id || null,
-      );
-      const normalizedScore = claimScores[claimId] ?? null;
+      // Use shared hook scores (already loaded, same endpoint + scope as Workspace)
+      const normalizedScore = hookClaimScores[claimId] ?? null;
       console.log("📊 User normalized score for claim:", normalizedScore);
 
       const focus: FocusClaim = {
@@ -714,7 +712,8 @@ export const CaseFocusPage: React.FC = () => {
       };
 
       setFocusClaim(focus);
-      await loadCandidates(claimId);
+      // Pass shared references so loadCandidates never fetches them independently
+      await loadCandidates(claimId, references);
     } catch (error) {
       console.error("Error loading focus claim:", error);
       toast({
@@ -730,35 +729,27 @@ export const CaseFocusPage: React.FC = () => {
     }
   };
 
-  const loadCandidates = async (focusClaimId: number) => {
+  // loadCandidates receives the shared references so it never fetches them
+  // independently — Workspace and CaseFocus both read the same hook data.
+  const loadCandidates = async (
+    focusClaimId: number,
+    sharedRefs: typeof references,
+  ) => {
     if (!selectedTask?.content_id || !user?.user_id) return;
 
     console.log("🎯 Loading candidates for claim:", focusClaimId);
 
     try {
-      // DEEP SCAN: Get ALL reference claims from ALL sources for this case (same as ClaimDuel)
-      const refsResponse = await fetch(
-        `${API_BASE_URL}/api/content/${selectedTask.content_id}/references-with-claims?viewerId=${user.user_id}`,
-      );
+      console.log("📚 Using", sharedRefs.length, "pre-loaded references");
 
-      if (!refsResponse.ok) {
-        throw new Error("Failed to load references");
-      }
-
-      const references = await refsResponse.json();
-      console.log("📚 Found", references.length, "references with claims");
-
-      // Store references for RelevanceScanModal
-      setReferences(references);
-
-      // Get existing AI links - USE SAME ENDPOINT AS CLAIMDUEL
+      // Per-claim AI links (claim-level, different from doc-level aiLinks in hook)
       const existingLinks = await fetchReferenceClaimTaskLinks(focusClaimId);
       console.log("🔗 Existing claim links:", existingLinks.length);
 
       // Flatten all reference claims into candidates
       const allCandidates: CandidateClaim[] = [];
 
-      for (const ref of references) {
+      for (const ref of sharedRefs) {
         const refClaims = Array.isArray(ref.claims)
           ? ref.claims
           : typeof ref.claims === "string"
@@ -923,7 +914,10 @@ export const CaseFocusPage: React.FC = () => {
   };
 
   const handleLinkCreated = async () => {
-    // Reload focus claim to update verimeter score
+    // Refresh shared hook scores so verimeter reflects the new link
+    refreshHookScores();
+
+    // Reload focus claim to update verimeter score display
     if (focusClaim?.claim_id) {
       await loadFocusClaim(focusClaim.claim_id);
     }
@@ -2848,13 +2842,25 @@ export const CaseFocusPage: React.FC = () => {
                                 position="relative"
                                 zIndex={1}
                               >
-                                <Tooltip
-                                  label={
-                                    candidate.source_name || "Source claim"
-                                  }
-                                  placement="top"
-                                  hasArrow
-                                >
+                                <Flex align="center" gap="6px" flex="1" minW={0}>
+                                  <SourceCrest
+                                    {...normalizeSourceProfile({
+                                      source_name: candidate.source_name,
+                                      source_reliability: candidate.source_reliability,
+                                    })}
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e?.stopPropagation();
+                                      if (candidate.source_name) setSourceDetailCandidate({ name: candidate.source_name });
+                                    }}
+                                  />
+                                  <Tooltip
+                                    label={
+                                      candidate.source_name || "Source claim"
+                                    }
+                                    placement="top"
+                                    hasArrow
+                                  >
                                   <Text
                                     fontSize="13px"
                                     fontWeight="700"
@@ -2870,7 +2876,8 @@ export const CaseFocusPage: React.FC = () => {
                                     {candidate.source_name?.toUpperCase() ||
                                       "SOURCE CLAIM"}
                                   </Text>
-                                </Tooltip>
+                                  </Tooltip>
+                                </Flex>
                                 <Menu placement="bottom-end">
                                   <MenuButton
                                     as={IconButton}
@@ -3660,6 +3667,19 @@ export const CaseFocusPage: React.FC = () => {
           contentTitle={selectedTask.content_name}
         />
       )}
+
+      {sourceDetailCandidate && (() => {
+        const profile = normalizeSourceProfile({ source_name: sourceDetailCandidate.name });
+        return (
+          <SourceDetailModal
+            isOpen={!!sourceDetailCandidate}
+            onClose={() => setSourceDetailCandidate(null)}
+            publisherName={sourceDetailCandidate.name}
+            sourceType={profile.sourceType}
+            reliability={profile.reliability}
+          />
+        );
+      })()}
     </Box>
   );
 };

@@ -1,0 +1,22 @@
+CREATE TABLE IF NOT EXISTS review_articles (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  content_id BIGINT UNSIGNED NOT NULL,
+  author_user_id BIGINT UNSIGNED NOT NULL,
+  title VARCHAR(512) NOT NULL,
+  slug VARCHAR(255) NULL,
+  status ENUM('draft', 'published') NOT NULL DEFAULT 'draft',
+  verdict VARCHAR(128) NULL,
+  confidence VARCHAR(128) NULL,
+  summary TEXT NULL,
+  body_markdown MEDIUMTEXT NULL,
+  modules_json JSON NOT NULL,
+  canonical_review_url VARCHAR(2048) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  published_at TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_review_articles_slug (slug),
+  KEY idx_review_articles_content_id (content_id),
+  KEY idx_review_articles_author_user_id (author_user_id),
+  KEY idx_review_articles_status (status)
+);

@@ -5,6 +5,11 @@
 // ─────────────────────────────────────────────
 
 import logger from "./logger.js";
+import * as cheerio from "cheerio";
+
+const PROFILE_PATH_RE = /^\/(authors?|contributors?|team|staff|bio|profile|about\/[^/]+)\//i;
+const MAX_PROFILE_PAGES = 3;
+const PROFILE_FETCH_TIMEOUT_MS = 5000;
 
 /**
  * extractAuthors($)
@@ -141,6 +146,27 @@ export async function extractAuthors($) {
           description: null,
           image,
         });
+      }
+    });
+  });
+
+  // ✅ Drupal / generic CMS bylines (e.g. CIDRAP field--name-field-bio-name)
+  // These use relative profile paths like /chris-dall-ma rather than /author/...
+  const cmsAuthorSelectors = [
+    '.author-and-date a',
+    '[class*="bio-name"] a',
+    '[class*="field--name-field-author"] a',
+    '[class*="field--name-field-bio"] a',
+    '.field--type-name a',
+    '.byline-author a',
+  ];
+
+  cmsAuthorSelectors.forEach(selector => {
+    $(selector).each((_, el) => {
+      const name = $(el).text().trim();
+      if (name && name.length > 2 && !authors.find(a => a.name === name)) {
+        logger.log(`👤 Found author from CMS byline (${selector}): ${name}`);
+        authors.push({ name, description: null, image: null });
       }
     });
   });
@@ -327,4 +353,94 @@ export async function extractAuthors($) {
   }
 
   return uniqueAuthors;
+}
+
+/**
+ * Fetch a single author profile page and extract the person's name.
+ * Tries: JSON-LD Person, og:title (first segment), h1.
+ */
+export async function extractAuthorFromProfilePage(profileUrl) {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), PROFILE_FETCH_TIMEOUT_MS);
+    const res = await fetch(profileUrl, {
+      signal: ctrl.signal,
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; TruthTrollers/1.0)' },
+    });
+    clearTimeout(timer);
+    if (!res.ok) return null;
+
+    const html = await res.text();
+    const $ = cheerio.load(html);
+    let name = null;
+
+    // 1. JSON-LD Person or @graph entry
+    $('script[type="application/ld+json"]').each((_, s) => {
+      if (name) return;
+      try {
+        const data = JSON.parse($(s).text());
+        const person = data['@type'] === 'Person' ? data
+          : Array.isArray(data['@graph']) ? data['@graph'].find(n => n['@type'] === 'Person') : null;
+        if (person?.name) name = String(person.name).trim();
+      } catch {}
+    });
+
+    // 2. og:title — "First Last | Site Name" → take first segment
+    if (!name) {
+      const ogTitle = $('meta[property="og:title"]').attr('content') || '';
+      if (ogTitle && !/(not found|404|error|access denied)/i.test(ogTitle)) {
+        const seg = ogTitle.split(/[|\-–]/)[0].trim();
+        if (seg.length > 2 && seg.length < 80) name = seg;
+      }
+    }
+
+    // 3. h1 fallback
+    if (!name) {
+      const h1 = $('h1').first().text().trim();
+      if (h1.length > 2 && h1.length < 100) name = h1;
+    }
+
+    if (name) {
+      logger.log(`👤 [extractAuthorFromProfilePage] "${name}" from ${profileUrl}`);
+      return { name, description: null, image: null };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Scan article HTML for author profile links, fetch each, return author objects.
+ * Only fires when no authors were found by the primary extractors — avoids extra fetches.
+ */
+export async function followProfileLinks($, baseUrl) {
+  if (!$ || !baseUrl) return [];
+  let curHost;
+  try { curHost = new URL(baseUrl).hostname.replace(/^www\./, ''); } catch { return []; }
+
+  const seen = new Set();
+  const profileUrls = [];
+
+  $('a[href]').each((_, a) => {
+    if (profileUrls.length >= MAX_PROFILE_PAGES) return;
+    const href = $(a).attr('href');
+    if (!href) return;
+    try {
+      const full = new URL(href, baseUrl);
+      const host = full.hostname.replace(/^www\./, '');
+      // Accept same-domain profile links (e.g. childrenshealthdefense.org/authors/foo)
+      // and ignore clearly off-topic external domains
+      if (host !== curHost && !/\.(gov|edu)$/.test(host)) return;
+      if (!PROFILE_PATH_RE.test(full.pathname)) return;
+      const canonical = full.origin + full.pathname;
+      if (!seen.has(canonical)) { seen.add(canonical); profileUrls.push(full.href); }
+    } catch {}
+  });
+
+  if (!profileUrls.length) return [];
+  logger.log(`🔗 [followProfileLinks] Following ${profileUrls.length} profile link(s): ${profileUrls.join(' | ')}`);
+
+  const results = await Promise.all(profileUrls.map(u => extractAuthorFromProfilePage(u)));
+  return results.filter(Boolean);
 }

@@ -33,6 +33,7 @@ import {
   fetchLinkedClaimsForTask,
   fetchClaimsForTask,
   fetchReferencesForTask,
+  fetchAIEvidenceLinks,
 } from "../services/useDashboardAPI";
 import { useVerimeterMode } from "../contexts/VerimeterModeContext";
 import MicroHeaderRail from "./headers/MicroHeaderRail";
@@ -190,6 +191,12 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     refutingLinks: 0,
     nuancedLinks: 0,
   });
+  const [aiLinkStats, setAILinkStats] = useState({
+    totalClaimLinks: 0,
+    supportingLinks: 0,
+    refutingLinks: 0,
+    nuancedLinks: 0,
+  });
 
   // Use global header visibility state
   const isHeaderVisible = useUIStore((s) => s.isHeaderVisible);
@@ -293,7 +300,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
         return;
       }
       try {
-        const result = await fetchContentScores(pivotTask.content_id, null, mode, aiWeight);
+        const result = await fetchContentScores(pivotTask.content_id, viewerId ?? null, mode, aiWeight);
         setLiveVerimeter(
           result && result.verimeterScore !== undefined
             ? result.verimeterScore
@@ -359,10 +366,63 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     return () => clearTimeout(timeoutId);
   }, [pivotTask?.content_id, viewerId, refreshKey]);
 
+  // Fetch AI evidence link stats when in ai/combined mode
+  useEffect(() => {
+    if (!pivotTask?.content_id || mode === 'user') {
+      setAILinkStats({ totalClaimLinks: 0, supportingLinks: 0, refutingLinks: 0, nuancedLinks: 0 });
+      return;
+    }
+    const timeoutId = setTimeout(async () => {
+      try {
+        const links = await fetchAIEvidenceLinks(pivotTask.content_id);
+        const supporting = links.filter(l => l.stance === 'support').length;
+        const refuting   = links.filter(l => l.stance === 'refute').length;
+        const nuanced    = links.filter(l => l.stance === 'nuance').length;
+        setAILinkStats({
+          totalClaimLinks: links.length,
+          supportingLinks: supporting,
+          refutingLinks: refuting,
+          nuancedLinks: nuanced,
+        });
+      } catch {
+        setAILinkStats({ totalClaimLinks: 0, supportingLinks: 0, refutingLinks: 0, nuancedLinks: 0 });
+      }
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [pivotTask?.content_id, mode, refreshKey]);
+
+  // Choose which stats + label to show based on verimeter mode
+  const displayStats = (() => {
+    if (mode === 'ai') {
+      return {
+        stats: {
+          totalClaims: claimStats.totalClaims,
+          totalReferences: claimStats.totalReferences,
+          ...aiLinkStats,
+        },
+        label: "AI Suggested",
+      };
+    }
+    if (mode === 'combined') {
+      return {
+        stats: {
+          totalClaims: claimStats.totalClaims,
+          totalReferences: claimStats.totalReferences,
+          totalClaimLinks: claimStats.totalClaimLinks + aiLinkStats.totalClaimLinks,
+          supportingLinks: claimStats.supportingLinks + aiLinkStats.supportingLinks,
+          refutingLinks: claimStats.refutingLinks + aiLinkStats.refutingLinks,
+          nuancedLinks: claimStats.nuancedLinks + aiLinkStats.nuancedLinks,
+        },
+        label: "Combined Links",
+      };
+    }
+    return { stats: claimStats, label: "User Links" };
+  })();
+
   const contentId = pivotTask?.content_id ?? null;
   const storeScore =
     contentId != null ? (verimeterScoreMap?.[contentId] ?? null) : null;
-  const finalScore = verimeterScore ?? storeScore ?? liveVerimeter;
+  const finalScore = verimeterScore ?? liveVerimeter ?? storeScore;
 
   const authors = useMemo(
     () => ensureArray<Author>(pivotTask?.authors),
@@ -720,19 +780,20 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
               ) : (
                 <ProgressCard
                   ProgressScore={
-                    claimStats.totalClaimLinks /
+                    displayStats.stats.totalClaimLinks /
                     Math.max(
                       claimStats.totalClaims * claimStats.totalReferences,
                       1,
                     )
                   }
                   totalClaims={claimStats.totalClaims}
-                  verifiedClaims={claimStats.supportingLinks}
+                  verifiedClaims={displayStats.stats.supportingLinks}
                   totalReferences={claimStats.totalReferences}
-                  verifiedReferences={claimStats.refutingLinks}
-                  totalClaimLinks={claimStats.totalClaimLinks}
-                  nuancedLinks={claimStats.nuancedLinks}
+                  verifiedReferences={displayStats.stats.refutingLinks}
+                  totalClaimLinks={displayStats.stats.totalClaimLinks}
+                  nuancedLinks={displayStats.stats.nuancedLinks}
                   compact={!isFull}
+                  sourceLabel={displayStats.label}
                 />
               )}
             </Box>

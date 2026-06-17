@@ -93,8 +93,10 @@ export async function processTaskClaims({ query, taskContentId, text, claimType 
   // 1. Claim extraction (LLM)
   // -----------------------------------------------------
   const extractor = new ClaimExtractor(openAiLLM, query);
+  const contentRole = claimType === 'reference' ? 'source' : 'case';
 
   logger.log(`🟩 [processTaskClaims] Using extraction mode: ${mode}`);
+  logger.log(`🟩 [processTaskClaims] Using content role: ${contentRole}`);
 
   const extraction = await extractor.analyzeContent({
     chunks: [{ text, tokenLength: Math.round(text.length / 4) }],
@@ -102,9 +104,10 @@ export async function processTaskClaims({ query, taskContentId, text, claimType 
     maxConcurrency: 1,
     extractionMode: mode,
     taskClaimsContext,
+    contentRole,
   });
 
-  let claims = extraction.claims || [];
+  let claims = extraction.claimsDetailed || extraction.claims || [];
   logger.log(`🟩 Extracted ${claims.length} claims`);
 
   if (claims.length === 0) {
@@ -122,11 +125,24 @@ export async function processTaskClaims({ query, taskContentId, text, claimType 
   // -----------------------------------------------------
   if (mode === 'comprehensive') {
     logger.log(`🟦 [ClaimFiltering] Scoring and filtering claims...`);
-    claims = await extractor.filterAndRankClaims(
-      claims,
+    const claimTexts = claims.map((claim) => (typeof claim === "string" ? claim : claim?.text || ""));
+    const filteredTexts = await extractor.filterAndRankClaims(
+      claimTexts,
       10,     // maxClaims: keep top 10 (increased from 5 for more coverage)
       0.4     // threshold: claims must score ≥ 0.4 average (lowered from 0.6 to be more permissive)
     );
+
+    const claimLookup = new Map();
+    for (const claim of claims) {
+      const key = String(claim?.text || claim || "").trim().toLowerCase();
+      if (key && !claimLookup.has(key)) {
+        claimLookup.set(key, claim);
+      }
+    }
+
+    claims = filteredTexts
+      .map((text) => claimLookup.get(String(text).trim().toLowerCase()))
+      .filter(Boolean);
 
     logger.log(`🟦 [ClaimFiltering] Filtered to ${claims.length} high-value claims`);
 
@@ -143,7 +159,12 @@ export async function processTaskClaims({ query, taskContentId, text, claimType 
   // persistClaims(query, contentId, claimsArray, relationshipType, claimType, clearOldLinks)
   // returns array of new claimIds
   // -----------------------------------------------------
-  const claimIds = await persistClaims(query, taskContentId, claims, claimType, claimType, clearOldLinks);
+  const claimsForPersistence = claims.map((claim) => {
+    if (typeof claim === "string") return { text: claim };
+    return claim;
+  });
+
+  const claimIds = await persistClaims(query, taskContentId, claimsForPersistence, claimType, claimType, clearOldLinks);
 
   if (!Array.isArray(claimIds)) {
     throw new Error("persistClaims returned invalid claimIds");
@@ -154,7 +175,7 @@ export async function processTaskClaims({ query, taskContentId, text, claimType 
   // -----------------------------------------------------
   const result = claimIds.map((id, i) => ({
     id,
-    text: claims[i],
+    text: typeof claims[i] === "string" ? claims[i] : claims[i]?.text,
   }));
 
   logger.log(

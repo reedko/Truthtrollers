@@ -10,7 +10,6 @@ import {
   useToast,
 } from "@chakra-ui/react";
 import {
-  fetchClaimsWithEvidence,
   fetchReferencesWithClaimsForTask,
   fetchAIEvidenceLinks,
   updateReference,
@@ -21,6 +20,7 @@ import {
   updateClaimWithEvidence,
   addClaimLink,
 } from "../services/useDashboardAPI";
+import { useClaimLinkSession } from "../hooks/useClaimLinkSession";
 import TaskClaims from "./TaskClaims";
 import ReferenceList from "./ReferenceList";
 import {
@@ -37,7 +37,6 @@ import {
   fetchClaimById,
   fetchClaimsAndLinkedReferencesForTask,
   deleteClaim,
-  fetchClaimsForTask,
   hardDeleteClaims,
   hardDeleteReferences,
 } from "../services/useDashboardAPI";
@@ -53,6 +52,7 @@ import { useBreakpointValue } from "@chakra-ui/react";
 import MobileWorkspaceShell from "./MobileWorkspaceShell";
 import usePermissions from "../hooks/usePermissions";
 import { useVerimeterMode } from "../contexts/VerimeterModeContext";
+import { normalizeSourceProfile, SourceProfile } from "../utils/normalizeSourceProfile";
 
 interface WorkspaceProps {
   contentId: number;
@@ -74,18 +74,28 @@ const Workspace: React.FC<WorkspaceProps> = ({
   const isSuperAdmin = hasRole("super_admin");
   const { mode, aiWeight } = useVerimeterMode();
 
-  const [claims, setClaims] = useState<Claim[]>([]);
+  // ── Shared data layer: claims, references, claimScores ─────────────────────
+  // Both Workspace and CaseFocus read from the same service functions through
+  // this hook so they can never return different data for the same task.
+  const {
+    caseClaims: claims,
+    references,
+    refreshReferences: sessionRefreshReferences,
+    refreshClaims,
+    refreshScores,
+  } = useClaimLinkSession({ contentId, viewerId });
+
+  // ── Workspace-specific: RelationshipMap data ─────────────────────────────
   const [claimLinks, setClaimLinks] = useState<ClaimLink[]>([]);
   const [aiEvidenceLinks, setAIEvidenceLinks] = useState<
     import("../../../shared/entities/types").AIEvidenceLink[]
   >([]);
   const [refreshLinks, setRefreshLinks] = useState(false);
-  const [references, setReferences] = useState<ReferenceWithClaims[]>([]);
-  const [refreshReferences, setRefreshReferences] = useState(false);
   const [sourceClaim, setSourceClaim] = useState<Pick<
     Claim,
     "claim_id" | "claim_text"
   > | null>(null);
+  const [sourceClaimPublisher, setSourceClaimPublisher] = useState<SourceProfile | null>(null);
   const [targetClaim, setTargetClaim] = useState<Claim | null>(null);
   const [draggingClaim, setDraggingClaim] = useState<Pick<
     Claim,
@@ -100,6 +110,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
   const [isClaimLinkModalOpen, setIsClaimLinkModalOpen] = useState(false);
   const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
   const [isClaimViewModalOpen, setIsClaimViewModalOpen] = useState(false);
+  const [reopenScanAfterLink, setReopenScanAfterLink] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
   const [editingClaim, setEditingClaim] = useState<Claim | null>(null);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
@@ -197,34 +208,17 @@ const Workspace: React.FC<WorkspaceProps> = ({
       });
   }, [contentId, refreshLinks, viewerId, scope]);
 
+  // Note: claims and references are now provided by useClaimLinkSession above.
+  // Only the RelationshipMap-specific AI links are fetched here.
   useEffect(() => {
-    // Use new API that includes claim_type for snippet detection
-    fetchClaimsWithEvidence(contentId, viewerId, scope)
-      .then(setClaims)
-      .catch((error) => {
-        console.error("Error fetching claims with evidence:", error);
-        setClaims([]); // Set empty array on error to prevent undefined state
-      });
-  }, [contentId, viewerId, scope]);
-
-  useEffect(() => {
-    // Fetch AI evidence links (reference_claim_links with support_level/stance)
+    // Fetch document-level AI evidence links for RelationshipMap visualisation
     fetchAIEvidenceLinks(contentId)
       .then(setAIEvidenceLinks)
       .catch((error) => {
         console.error("Error fetching AI evidence links:", error);
-        setAIEvidenceLinks([]); // Set empty array on error
+        setAIEvidenceLinks([]);
       });
   }, [contentId, refreshLinks]);
-
-  useEffect(() => {
-    fetchReferencesWithClaimsForTask(contentId, viewerId, scope)
-      .then(setReferences)
-      .catch((error) => {
-        console.error("Error fetching references:", error);
-        setReferences([]); // Set empty array on error
-      });
-  }, [contentId, refreshReferences, viewerId, scope]);
 
   // Use ref to track resize timeout - prevents memory leaks
   const resizeTimeoutRef = useRef<number | null>(null);
@@ -269,6 +263,19 @@ const Workspace: React.FC<WorkspaceProps> = ({
     setIsRelevanceScanModalOpen(true);
   };
 
+  const findPublisherForClaim = (claimId: number): SourceProfile | null => {
+    const ref = references.find(
+      (r) => Array.isArray(r.claims) && r.claims.some((c: any) => c.claim_id === claimId),
+    );
+    if (!ref) return null;
+    return normalizeSourceProfile({
+      publisher_name: ref.publisher_name,
+      is_primary_source: ref.is_primary_source,
+      media_source: ref.media_source,
+      admiralty_code: ref.admiralty_code ?? undefined,
+    });
+  };
+
   const handleOpenLinkOverlayFromScan = (
     scanSourceClaim: { claim_id: number; claim_text: string },
     scanTargetClaim: Claim,
@@ -277,12 +284,15 @@ const Workspace: React.FC<WorkspaceProps> = ({
   ) => {
     // The scan's "source" claim is a reference claim; the target is the task claim being scanned
     setSourceClaim(scanSourceClaim);
+    setSourceClaimPublisher(findPublisherForClaim(scanSourceClaim.claim_id));
     setTargetClaim(scanTargetClaim);
     setLinkRationale(rationale);
     setAiSuggestedSupportLevel(supportLevel);
     setSelectedClaimLink(null);
     setReadOnly(false);
     setIsRelevanceScanModalOpen(false);
+    setIsClaimViewModalOpen(false); // close TaskClaims-internal scan modal
+    setReopenScanAfterLink(true);
     setIsClaimLinkModalOpen(true);
   };
 
@@ -358,6 +368,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
             claim_id: source.claim_id,
             claim_text: source.claim_text,
           });
+          setSourceClaimPublisher(findPublisherForClaim(source.claim_id));
           setTargetClaim(target);
           setIsClaimLinkModalOpen(true);
           setSelectedClaimLink(link);
@@ -411,7 +422,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
       });
 
       // Refresh the references list
-      setRefreshReferences((prev) => !prev);
+      sessionRefreshReferences();
     } catch (error: any) {
       console.error("❌ Error hiding reference:", error);
 
@@ -434,7 +445,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
     title: string,
   ): Promise<void> => {
     await updateReference(referenceId, title);
-    setRefreshReferences((prev) => !prev);
+    sessionRefreshReferences();
   };
 
   const handleDropReferenceClaim = (
@@ -442,6 +453,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
     targetClaim: Claim,
   ) => {
     setSourceClaim(sourceClaim);
+    setSourceClaimPublisher(findPublisherForClaim(sourceClaim.claim_id));
     setTargetClaim(targetClaim);
     setSelectedClaimLink(null);
     setReadOnly(false);
@@ -463,7 +475,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
     const viewerId = taskStore.viewingUserId;
     const scope = taskStore.viewScope;
 
-    // ✅ Update scores
+    // ✅ Update scores in DB then fetch the new Verimeter value
     await updateScoresForContent(contentId, viewerId);
     const scores = await fetchContentScores(
       contentId,
@@ -472,12 +484,15 @@ const Workspace: React.FC<WorkspaceProps> = ({
       aiWeight,
     );
     setVerimeterScore(contentId, scores?.verimeterScore ?? null);
-    // 🔔 notify any listeners to refetch or re-read store
+
+    // 🔔 Notify other listeners
     window.dispatchEvent(
       new CustomEvent("verimeter:updated", { detail: { contentId } }),
     );
-    // ✅ Refresh links so new lines appear in RelationshipMap
+
+    // ✅ Refresh RelationshipMap links + shared claimScores
     setRefreshLinks((prev) => !prev);
+    refreshScores();
   };
   if (isMobile) {
     return (
@@ -521,16 +536,18 @@ const Workspace: React.FC<WorkspaceProps> = ({
           w="100%"
           className="workspace-claims"
           bg={bubbleStyle ? "transparent" : undefined}
+          position="relative"
+          zIndex={2}
         >
           <TaskClaims
             claims={claims}
             onAddClaim={async (newClaim: Claim) => {
-              const saved = await addClaim({
+              await addClaim({
                 ...newClaim,
                 content_id: contentId,
                 relationship_type: "task",
               });
-              setClaims([...claims, { ...newClaim, claim_id: saved.claimId }]);
+              refreshClaims();
             }}
             onEditClaim={async (
               updatedClaim: Claim & { runEvidence?: boolean },
@@ -546,14 +563,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
                     viewerId || undefined,
                   );
 
-                  // Update claim in state
-                  setClaims(
-                    claims.map((c) =>
-                      c.claim_id === updatedClaim.claim_id ? updatedClaim : c,
-                    ),
-                  );
-
-                  // Show success feedback
                   console.log("Evidence run complete:", result.summary);
                   if (result.evidence) {
                     console.log(
@@ -561,42 +570,27 @@ const Workspace: React.FC<WorkspaceProps> = ({
                     );
                   }
 
-                  // Reload claims and references to show new evidence
-                  const updatedClaims = await fetchClaimsWithEvidence(
-                    contentId,
-                    viewerId,
-                    scope,
-                  );
-                  setClaims(updatedClaims);
-                  setRefreshLinks(!refreshLinks);
-                  setRefreshReferences(!refreshReferences);
+                  // Refresh everything — new claims, references and links from evidence run
+                  refreshClaims();
+                  sessionRefreshReferences();
+                  setRefreshLinks((prev) => !prev);
                 } catch (error) {
                   console.error("Failed to update claim with evidence:", error);
                   // Fall back to regular update
                   await updateClaim(updatedClaim);
-                  setClaims(
-                    claims.map((c) =>
-                      c.claim_id === updatedClaim.claim_id ? updatedClaim : c,
-                    ),
-                  );
+                  refreshClaims();
                 }
               } else {
                 // Just update claim without running evidence
-                const saved = await updateClaim(updatedClaim);
-                setClaims(
-                  claims.map((c) =>
-                    c.claim_id === updatedClaim.claim_id ? updatedClaim : c,
-                  ),
-                );
+                await updateClaim(updatedClaim);
+                refreshClaims();
               }
             }}
             onDeleteClaim={async (claimId) => {
               if (!user?.user_id) return;
               try {
                 await deleteClaim(claimId, user.user_id);
-                setClaims((prev) =>
-                  prev.filter((claim) => claim.claim_id !== claimId),
-                );
+                refreshClaims();
               } catch {
                 toast({
                   title: "Error hiding claim",
@@ -636,9 +630,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
             isSuperAdmin={isSuperAdmin}
             onHardDeleteClaims={async (claimIds) => {
               await hardDeleteClaims(claimIds);
-              setClaims((prev) =>
-                prev.filter((c) => !claimIds.includes(c.claim_id)),
-              );
+              refreshClaims();
               toast({
                 title: "Claims permanently deleted",
                 description: `${claimIds.length} claim(s) removed for all users`,
@@ -654,6 +646,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
           minW="100px"
           w="100%"
           bg={bubbleStyle ? "transparent" : undefined}
+          position="relative"
+          zIndex={1}
         >
           {/* Middle column reserved */}
           <RelationshipMap
@@ -712,6 +706,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
           w="100%"
           className="workspace-references"
           bg={bubbleStyle ? "transparent" : undefined}
+          position="relative"
+          zIndex={2}
         >
           <ReferenceList
             references={references}
@@ -725,13 +721,13 @@ const Workspace: React.FC<WorkspaceProps> = ({
               setIsReferenceClaimsModalOpen(true);
             }}
             selectedReference={selectedReference}
-            onUpdateReferences={() => setRefreshReferences((prev) => !prev)}
+            onUpdateReferences={() => sessionRefreshReferences()}
             bubbleStyle={bubbleStyle}
             claimLinks={claimLinks}
             isSuperAdmin={isSuperAdmin}
             onHardDeleteReferences={async (referenceIds) => {
               await hardDeleteReferences(contentId, referenceIds);
-              setRefreshReferences((prev) => !prev);
+              sessionRefreshReferences();
               toast({
                 title: "Sources permanently deleted",
                 description: `${referenceIds.length} source(s) removed for all users`,
@@ -779,16 +775,12 @@ const Workspace: React.FC<WorkspaceProps> = ({
                 isClosable: true,
               });
 
-              // Refresh claims
-              if (selectedTask?.content_id) {
-                const updatedClaims = await fetchClaimsForTask(
-                  selectedTask.content_id,
-                  user.user_id,
-                );
-                setClaims(updatedClaims);
-              }
-              // Refresh reference modal
+              // Refresh claims via the shared hook
+              refreshClaims();
+              // Refresh the hook's reference list, then sync selectedReference
+              sessionRefreshReferences();
               if (selectedReference) {
+                // Point-in-time fetch to immediately update the open modal
                 const updatedRef = await fetchReferencesWithClaimsForTask(
                   selectedTask?.content_id || 0,
                   user.user_id,
@@ -823,6 +815,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
                   claim_id: source.claim_id,
                   claim_text: source.claim_text,
                 });
+                setSourceClaimPublisher(findPublisherForClaim(source.claim_id));
                 setTargetClaim(target);
                 setIsClaimLinkModalOpen(true);
                 setSelectedClaimLink(link);
@@ -840,6 +833,12 @@ const Workspace: React.FC<WorkspaceProps> = ({
           setReadOnly(false);
           setLinkRationale("");
           setAiSuggestedSupportLevel(null);
+          setSourceClaimPublisher(null);
+          if (reopenScanAfterLink && targetClaim) {
+            setSelectedClaim(targetClaim);
+            setIsClaimViewModalOpen(true);
+          }
+          setReopenScanAfterLink(false);
         }}
         sourceClaim={sourceClaim}
         targetClaim={targetClaim}
@@ -848,6 +847,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
         onLinkCreated={handleLinkCreated}
         rationale={linkRationale}
         aiSupportLevel={aiSuggestedSupportLevel}
+        sourcePublisher={sourceClaimPublisher ?? undefined}
       />
       {verifyingClaim && (
         <ClaimEvaluationModal

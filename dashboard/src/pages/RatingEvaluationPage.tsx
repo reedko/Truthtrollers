@@ -69,6 +69,7 @@ import {
   FiExternalLink,
 } from "react-icons/fi";
 import { api } from "../services/api";
+import { useSearchParams } from "react-router-dom";
 
 const API_BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
 
@@ -133,10 +134,19 @@ interface UserReputation {
   content_ratings_rejected: number;
   approval_rate: number;
   avg_content_score: number;
+  weighted_avg_content_score?: number;
+  reputation_confidence?: number;
+  evaluator_activity_score?: number;
+  evaluations_given?: number;
 }
 
 const RatingEvaluationPage: React.FC = () => {
   const toast = useToast();
+  const [searchParams] = useSearchParams();
+  // When navigating from EvaluationTaskPanel, ?userId pre-filters the list
+  const preselectedUserId = searchParams.get("userId")
+    ? Number(searchParams.get("userId"))
+    : null;
   const {
     isOpen: isEvalModalOpen,
     onOpen: onOpenEvalModal,
@@ -411,9 +421,37 @@ const RatingEvaluationPage: React.FC = () => {
                 borderRadius="16px"
               >
                 <Box position="relative" zIndex={1}>
-                  <Heading size="md" mb={4} className="mr-heading">
-                    Pending Evidence Chains
-                  </Heading>
+                  <HStack justify="space-between" align="center" mb={4}>
+                    <Heading size="md" className="mr-heading">
+                      Pending Evidence Chains
+                    </Heading>
+                    {preselectedUserId && (
+                      <HStack spacing={2}>
+                        <Badge
+                          colorScheme="purple"
+                          fontSize="xs"
+                          px={2}
+                          py={1}
+                        >
+                          Filtered: user #{preselectedUserId}
+                        </Badge>
+                        <Button
+                          size="xs"
+                          variant="ghost"
+                          color="var(--mr-purple)"
+                          onClick={() =>
+                            window.history.replaceState(
+                              {},
+                              "",
+                              "/evaluate-ratings",
+                            )
+                          }
+                        >
+                          ✕ Clear filter
+                        </Button>
+                      </HStack>
+                    )}
+                  </HStack>
 
                   {loading ? (
                     <Flex justify="center" p={12}>
@@ -424,7 +462,11 @@ const RatingEvaluationPage: React.FC = () => {
                       templateColumns={{ base: "1fr", lg: "repeat(2, 1fr)" }}
                       gap={6}
                     >
-                      {contentRatings.map((rating) => (
+                      {contentRatings
+                        .filter((r) =>
+                          preselectedUserId ? r.user_id === preselectedUserId : true,
+                        )
+                        .map((rating) => (
                         <Card
                           key={rating.content_rating_id}
                           className="mr-card mr-card-blue"
@@ -1094,18 +1136,61 @@ const RatingEvaluationPage: React.FC = () => {
 
                 <Box>
                   <Text fontWeight="bold" mb={2}>
-                    Average Score
+                    Weighted Approved Score
                   </Text>
                   <Progress
                     value={
-                      ((userReputation.avg_content_score + 99) / 198) * 100
+                      (((userReputation.weighted_avg_content_score ??
+                        userReputation.avg_content_score) +
+                        99) /
+                        198) *
+                      100
                     }
                     colorScheme="blue"
                     size="lg"
                   />
                   <Text textAlign="center" fontSize="sm" mt={1}>
-                    {userReputation.avg_content_score?.toFixed(1) || 0} / 99
+                    {(
+                      userReputation.weighted_avg_content_score ??
+                      userReputation.avg_content_score ??
+                      0
+                    ).toFixed(1)}{" "}
+                    / 99
                   </Text>
+                  <Text textAlign="center" fontSize="xs" color="gray.400" mt={1}>
+                    Raw average:{" "}
+                    {(userReputation.avg_content_score ?? 0).toFixed(1)} / 99
+                  </Text>
+                </Box>
+
+                <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                  <Stat>
+                    <StatLabel color="gray.400">Confidence</StatLabel>
+                    <StatNumber className="mr-text-primary">
+                      {(userReputation.reputation_confidence ?? 0).toFixed(0)}%
+                    </StatNumber>
+                    <StatHelpText>Approved-volume weight</StatHelpText>
+                  </Stat>
+                  <Stat>
+                    <StatLabel color="gray.400">Reviewer Activity</StatLabel>
+                    <StatNumber className="mr-text-primary">
+                      {(userReputation.evaluator_activity_score ?? 0).toFixed(0)}%
+                    </StatNumber>
+                    <StatHelpText>
+                      {userReputation.evaluations_given ?? 0} evaluations given
+                    </StatHelpText>
+                  </Stat>
+                </Grid>
+
+                <Box>
+                  <Text fontWeight="bold" mb={2}>
+                    Reputation Confidence
+                  </Text>
+                  <Progress
+                    value={userReputation.reputation_confidence ?? 0}
+                    colorScheme="purple"
+                    size="lg"
+                  />
                 </Box>
               </VStack>
             )}

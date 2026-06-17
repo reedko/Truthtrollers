@@ -5,7 +5,7 @@
  * verimeter scores across the application.
  *
  * CRITICAL SCORE FORMAT RULES:
- * - Database (claim_scores table) stores scores in range: -1.0 to +1.0
+ * - Backend Verimeter endpoints compute scores from verimeterScoringService in range: -1.0 to +1.0
  * - API endpoints return scores in range: -1.0 to +1.0
  * - VerimeterMeter/VerimeterBar components expect: -1.0 to +1.0
  * - Display as percentage: Math.round(score * 100) to get -100% to +100%

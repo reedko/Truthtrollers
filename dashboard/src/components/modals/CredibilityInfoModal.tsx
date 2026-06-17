@@ -450,16 +450,29 @@ const CredibilityInfoModal: React.FC<CredibilityInfoModalProps> = ({
               </Box>
 
               {!result ? (
-                <Alert status="info">
-                  <AlertIcon />
-                  <Box>
-                    <AlertDescription>
-                      No credibility checks found for this {entityType}.
-                      <br />
-                      Click the refresh button above to run a check.
-                    </AlertDescription>
+                isChecking ? (
+                  <Box textAlign="center" py={6}>
+                    <Spinner size="lg" color="teal.400" />
+                    <Text mt={3} fontSize="sm" color="gray.400">
+                      Running checks — court records can take several minutes…
+                    </Text>
+                    <Button mt={4} size="sm" colorScheme="teal" variant="outline"
+                      onClick={loadHistory} isLoading={isLoading}>
+                      Load results from DB
+                    </Button>
                   </Box>
-                </Alert>
+                ) : (
+                  <Alert status="info">
+                    <AlertIcon />
+                    <Box>
+                      <AlertDescription>
+                        No credibility checks found for this {entityType}.
+                        <br />
+                        Click the refresh button above to run a check.
+                      </AlertDescription>
+                    </Box>
+                  </Alert>
+                )
               ) : (
                 <>
                   {/* Overall Risk */}

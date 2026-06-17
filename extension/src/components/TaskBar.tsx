@@ -154,6 +154,43 @@ const TaskBar: React.FC = () => {
     return () => browser.storage.onChanged.removeListener(handleChange);
   }, [setTask]);
 
+  useEffect(() => {
+    if (!task?.content_id) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = (await browser.runtime.sendMessage({
+          action: "fetchClaimScores",
+          contentId: task.content_id,
+        })) as {
+          success?: boolean;
+          verimeterScore?: number;
+          mode?: string;
+          ratingCounts?: unknown;
+        };
+
+        if (!response?.success || cancelled) return;
+
+        const nextTask = {
+          ...(useTaskStore.getState().task || task),
+          verimeter_score: Number(response.verimeterScore) || 0,
+          verimeter_score_mode: response.mode,
+          rating_counts: response.ratingCounts,
+        };
+        setTask(nextTask as Task);
+        await browser.storage.local.set({ task: nextTask });
+      } catch (err) {
+        console.warn("[TaskBar] Failed to refresh verimeter score:", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [task?.content_id, setTask]);
+
+
   // Push page content down so the bar doesn't cover top nav
   useEffect(() => {
     if (!visible) return;

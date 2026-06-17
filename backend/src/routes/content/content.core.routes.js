@@ -65,7 +65,11 @@ export default function ({ query, pool }) {
                'publisher_id', p.publisher_id,
                'publisher_name', p.publisher_name,
                'publisher_icon', p.publisher_icon,
-               'description', p.description
+               'description', p.description,
+               'admiralty_code', COALESCE(
+                 (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'content' AND ae.target_id = cp.content_id AND ae.publisher_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1),
+                 (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'publisher' AND ae.target_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1)
+               )
              )
            )
     FROM content_publishers cp
@@ -138,7 +142,11 @@ GROUP BY t.content_id
                'publisher_id', p.publisher_id,
                'publisher_name', p.publisher_name,
                'publisher_icon', p.publisher_icon,
-               'description', p.description
+               'description', p.description,
+               'admiralty_code', COALESCE(
+                 (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'content' AND ae.target_id = cp.content_id AND ae.publisher_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1),
+                 (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'publisher' AND ae.target_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1)
+               )
              )
            )
     FROM content_publishers cp

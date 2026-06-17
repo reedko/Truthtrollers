@@ -1,0 +1,299 @@
+[
+  {
+    "name": "AP",
+    "domain": "apnews.com",
+    "bias": "Least Biased",
+    "factual_reporting": "Very High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/associated-press/"
+  },
+  {
+    "name": "Reuters",
+    "domain": "reuters.com",
+    "bias": "Least Biased",
+    "factual_reporting": "Very High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/reuters/"
+  },
+  {
+    "name": "BBC",
+    "domain": "bbc.com",
+    "bias": "Left-Center",
+    "factual_reporting": "High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/bbc/"
+  },
+  {
+    "name": "NPR",
+    "domain": "npr.org",
+    "bias": "Left-Center",
+    "factual_reporting": "High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/npr/"
+  },
+  {
+    "name": "CNN",
+    "domain": "cnn.com",
+    "bias": "Left",
+    "factual_reporting": "Mixed",
+    "credibility": "Medium Credibility",
+    "url": "https://mediabiasfactcheck.com/cnn/"
+  },
+  {
+    "name": "New York Times",
+    "domain": "nytimes.com",
+    "bias": "Left-Center",
+    "factual_reporting": "High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/new-york-times/"
+  },
+  {
+    "name": "Washington Post",
+    "domain": "washingtonpost.com",
+    "bias": "Left-Center",
+    "factual_reporting": "High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/washington-post/"
+  },
+  {
+    "name": "MSNBC",
+    "domain": "msnbc.com",
+    "bias": "Left",
+    "factual_reporting": "Mixed",
+    "credibility": "Medium Credibility",
+    "url": "https://mediabiasfactcheck.com/msnbc/"
+  },
+  {
+    "name": "The Guardian",
+    "domain": "theguardian.com",
+    "bias": "Left-Center",
+    "factual_reporting": "High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/the-guardian/"
+  },
+  {
+    "name": "Vox",
+    "domain": "vox.com",
+    "bias": "Left",
+    "factual_reporting": "High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/vox/"
+  },
+  {
+    "name": "HuffPost",
+    "domain": "huffpost.com",
+    "bias": "Left",
+    "factual_reporting": "Mostly Factual",
+    "credibility": "Medium Credibility",
+    "url": "https://mediabiasfactcheck.com/huffington-post/"
+  },
+  {
+    "name": "Politico",
+    "domain": "politico.com",
+    "bias": "Left-Center",
+    "factual_reporting": "High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/politico/"
+  },
+  {
+    "name": "Bloomberg",
+    "domain": "bloomberg.com",
+    "bias": "Left-Center",
+    "factual_reporting": "High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/bloomberg/"
+  },
+  {
+    "name": "The Economist",
+    "domain": "economist.com",
+    "bias": "Left-Center",
+    "factual_reporting": "High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/the-economist/"
+  },
+  {
+    "name": "ABC News",
+    "domain": "abcnews.go.com",
+    "bias": "Left-Center",
+    "factual_reporting": "High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/abc-news/"
+  },
+  {
+    "name": "CBS News",
+    "domain": "cbsnews.com",
+    "bias": "Left-Center",
+    "factual_reporting": "High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/cbs-news/"
+  },
+  {
+    "name": "NBC News",
+    "domain": "nbcnews.com",
+    "bias": "Left-Center",
+    "factual_reporting": "High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/nbc-news/"
+  },
+  {
+    "name": "Wall Street Journal",
+    "domain": "wsj.com",
+    "bias": "Right-Center",
+    "factual_reporting": "High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/wall-street-journal/"
+  },
+  {
+    "name": "National Review",
+    "domain": "nationalreview.com",
+    "bias": "Right",
+    "factual_reporting": "Mostly Factual",
+    "credibility": "Medium Credibility",
+    "url": "https://mediabiasfactcheck.com/national-review/"
+  },
+  {
+    "name": "Washington Examiner",
+    "domain": "washingtonexaminer.com",
+    "bias": "Right",
+    "factual_reporting": "Mostly Factual",
+    "credibility": "Medium Credibility",
+    "url": "https://mediabiasfactcheck.com/washington-examiner/"
+  },
+  {
+    "name": "Fox News",
+    "domain": "foxnews.com",
+    "bias": "Right",
+    "factual_reporting": "Mixed",
+    "credibility": "Medium Credibility",
+    "url": "https://mediabiasfactcheck.com/fox-news/"
+  },
+  {
+    "name": "New York Post",
+    "domain": "nypost.com",
+    "bias": "Right",
+    "factual_reporting": "Mixed",
+    "credibility": "Medium Credibility",
+    "url": "https://mediabiasfactcheck.com/new-york-post/"
+  },
+  {
+    "name": "Breitbart",
+    "domain": "breitbart.com",
+    "bias": "Right",
+    "factual_reporting": "Low",
+    "credibility": "Low Credibility",
+    "url": "https://mediabiasfactcheck.com/breitbart/"
+  },
+  {
+    "name": "The Daily Wire",
+    "domain": "dailywire.com",
+    "bias": "Right",
+    "factual_reporting": "Mostly Factual",
+    "credibility": "Medium Credibility",
+    "url": "https://mediabiasfactcheck.com/daily-wire/"
+  },
+  {
+    "name": "Newsmax",
+    "domain": "newsmax.com",
+    "bias": "Right",
+    "factual_reporting": "Mixed",
+    "credibility": "Low Credibility",
+    "url": "https://mediabiasfactcheck.com/newsmax/"
+  },
+  {
+    "name": "Daily Caller",
+    "domain": "dailycaller.com",
+    "bias": "Right",
+    "factual_reporting": "Mixed",
+    "credibility": "Low Credibility",
+    "url": "https://mediabiasfactcheck.com/the-daily-caller/"
+  },
+  {
+    "name": "Epoch Times",
+    "domain": "theepochtimes.com",
+    "bias": "Right",
+    "factual_reporting": "Low",
+    "credibility": "Low Credibility",
+    "url": "https://mediabiasfactcheck.com/the-epoch-times/"
+  },
+  {
+    "name": "Infowars",
+    "domain": "infowars.com",
+    "bias": "Conspiracy-Pseudoscience",
+    "factual_reporting": "Very Low",
+    "credibility": "Low Credibility",
+    "url": "https://mediabiasfactcheck.com/infowars/"
+  },
+  {
+    "name": "Natural News",
+    "domain": "naturalnews.com",
+    "bias": "Conspiracy-Pseudoscience",
+    "factual_reporting": "Very Low",
+    "credibility": "Low Credibility",
+    "url": "https://mediabiasfactcheck.com/natural-news/"
+  },
+  {
+    "name": "OAN",
+    "domain": "oann.com",
+    "bias": "Right",
+    "factual_reporting": "Low",
+    "credibility": "Low Credibility",
+    "url": "https://mediabiasfactcheck.com/one-america-news-network/"
+  },
+  {
+    "name": "The Onion",
+    "domain": "theonion.com",
+    "bias": "Satire",
+    "factual_reporting": "Very Low",
+    "credibility": "Low Credibility",
+    "notes": "Satire publication — not a factual news source by design",
+    "url": "https://mediabiasfactcheck.com/the-onion/"
+  },
+  {
+    "name": "Scientific American",
+    "domain": "scientificamerican.com",
+    "bias": "Pro-Science",
+    "factual_reporting": "Very High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/scientific-american/"
+  },
+  {
+    "name": "Nature",
+    "domain": "nature.com",
+    "bias": "Pro-Science",
+    "factual_reporting": "Very High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/nature/"
+  },
+  {
+    "name": "Science News",
+    "domain": "sciencenews.org",
+    "bias": "Pro-Science",
+    "factual_reporting": "Very High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/science-news/"
+  },
+  {
+    "name": "Snopes",
+    "domain": "snopes.com",
+    "bias": "Left-Center",
+    "factual_reporting": "High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/snopes/"
+  },
+  {
+    "name": "PolitiFact",
+    "domain": "politifact.com",
+    "bias": "Left-Center",
+    "factual_reporting": "High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/politifact/"
+  },
+  {
+    "name": "FactCheck.org",
+    "domain": "factcheck.org",
+    "bias": "Least Biased",
+    "factual_reporting": "High",
+    "credibility": "High Credibility",
+    "url": "https://mediabiasfactcheck.com/factcheck-org/"
+  }
+]

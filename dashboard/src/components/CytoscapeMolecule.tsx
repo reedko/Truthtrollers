@@ -14,6 +14,10 @@ import {
 } from "@chakra-ui/react";
 import { createPortal } from "react-dom";
 import { GraphNode } from "../../../shared/entities/types";
+import SourceCrest from "./SourceCrest";
+import SourceDetailModal from "./modals/SourceDetailModal";
+import GraphNodeDetailModal from "./graph/GraphNodeDetailModal";
+import { normalizeSourceProfile } from "../utils/normalizeSourceProfile";
 
 // Import refactored modules
 import {
@@ -47,6 +51,7 @@ type NodeData = {
   publisher_id?: number;
   url?: string;
   rating?: string | number;
+  source_type?: string;
   veracity_score?: number;
   confidence_level?: number;
   claimCount?: number;
@@ -125,7 +130,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     label: string;
     taskClaimLabel?: string;
     relation: string;
-    notes?: string;
+    rationale?: string;
   }>(null);
   const [selectedEdge, setSelectedEdge] = useState<null | {
     sourceLabel: string;
@@ -179,6 +184,7 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     items: ContextMenuItem[];
   } | null>(null);
   const [caseExpanded, setCaseExpanded] = useState<boolean>(false);
+  const [sourceDetailOpen, setSourceDetailOpen] = useState(false);
   const snapshotNodesRef = useRef<typeof nodes | null>(null);
   const snapshotLinksRef = useRef<typeof links | null>(null);
 
@@ -993,7 +999,11 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           label: refClaimNode?.data("label") || "Unknown claim",
           taskClaimLabel: taskClaimNode?.data("label"),
           relation: relation,
-          notes: node.data("rationale") || node.data("notes"),
+          rationale:
+            node.data("rationale") ||
+            node.data("notes") ||
+            connectedEdge?.data("rationale") ||
+            connectedEdge?.data("notes"),
         });
         return;
       }
@@ -1568,6 +1578,18 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 zIndex={2}
               >
                 <Box display="flex" alignItems="center" gap={3}>
+                  {(selectedNodeData.type === "reference" || selectedNodeData.type === "publisher") && (
+                    <SourceCrest
+                      {...normalizeSourceProfile({
+                        publisher_name: selectedNodeData.label,
+                        veracity_score: selectedNodeData.rating != null ? Math.abs(selectedNodeData.rating) * 100 : undefined,
+                        admiralty_code: selectedNodeData.admiralty_code ?? undefined,
+                        source_reliability: selectedNodeData.rating != null ? Math.abs(selectedNodeData.rating) : undefined,
+                      })}
+                      size="xs"
+                      onClick={(e) => { e?.stopPropagation(); setSourceDetailOpen(true); }}
+                    />
+                  )}
                   <Text
                     fontSize="xs"
                     textTransform="uppercase"
@@ -2128,126 +2150,84 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
         </Box>
       </Box>
 
-      {selectedClaim &&
-        createPortal(
-          <div
-            role="dialog"
-            aria-modal="true"
-            style={{
-              position: "fixed",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              background: "#222",
-              color: "#fff",
-              padding: "1rem",
-              borderRadius: 12,
-              boxShadow: "0 0 20px rgba(0,0,0,0.6)",
-              zIndex: 1000,
+      {selectedClaim && (
+        <GraphNodeDetailModal
+          isOpen={!!selectedClaim}
+          kicker="Claim Link"
+          title="Source Claim to Case Claim"
+          relation={selectedClaim.relation}
+          sourceClaim={selectedClaim.label}
+          caseClaim={selectedClaim.taskClaimLabel}
+          rationale={selectedClaim.rationale}
+          onClose={() => setSelectedClaim(null)}
+        />
+      )}
 
-              // ✅ Mobile-safe sizing
-              width: "min(92vw, 520px)",
-              maxHeight: "min(78vh, 560px)",
-              overflowY: "auto",
-
-              // ✅ Text wrapping & safe areas
-              wordBreak: "break-word",
-              overflowWrap: "anywhere",
-              WebkitOverflowScrolling: "touch",
-              paddingBottom: "max(1rem, env(safe-area-inset-bottom, 0px))",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "1.1rem",
-                lineHeight: 1.2,
-                marginBottom: "12px",
-                color: "#00a2ff",
-              }}
-            >
-              Source Claim{" "}
-              {selectedClaim.relation === "supports"
-                ? "✅ SUPPORTS"
-                : selectedClaim.relation === "refutes"
-                  ? "❌ REFUTES"
-                  : "RELATES TO"}{" "}
-              Task Claim
-            </h3>
-
-            <div style={{ marginBottom: "16px" }}>
-              <strong style={{ color: "#10b981", fontSize: "0.85rem" }}>
-                REF CLAIM:
-              </strong>
-              <p
-                style={{
-                  marginTop: 6,
-                  fontSize: "0.95rem",
-                  lineHeight: 1.35,
-                  color: "#f1f5f9",
-                }}
-              >
-                {selectedClaim.label}
-              </p>
-            </div>
-
-            {selectedClaim.taskClaimLabel && (
-              <div style={{ marginBottom: "16px" }}>
-                <strong style={{ color: "#6366f1", fontSize: "0.85rem" }}>
-                  TASK CLAIM:
-                </strong>
-                <p
-                  style={{
-                    marginTop: 6,
-                    fontSize: "0.95rem",
-                    lineHeight: 1.35,
-                    color: "#f1f5f9",
-                  }}
-                >
-                  {selectedClaim.taskClaimLabel}
-                </p>
-              </div>
-            )}
-
-            {selectedClaim.notes && (
-              <div style={{ marginBottom: "16px" }}>
-                <strong style={{ color: "#fbbf24", fontSize: "0.85rem" }}>
-                  NOTES:
-                </strong>
-                <p
-                  style={{
-                    marginTop: 6,
-                    fontSize: "0.9rem",
-                    lineHeight: 1.3,
-                    color: "#d1d5db",
-                    fontStyle: "italic",
-                  }}
-                >
-                  {selectedClaim.notes}
-                </p>
-              </div>
-            )}
-
-            <button
-              onClick={() => setSelectedClaim(null)}
-              style={{
-                marginTop: 16,
-                background:
-                  "linear-gradient(135deg, rgba(0, 162, 255, 0.3), rgba(0, 162, 255, 0.2))",
-                border: "1px solid rgba(0, 162, 255, 0.6)",
-                color: "#00a2ff",
-                padding: "0.6em 1em",
-                borderRadius: 8,
-                width: "100%",
-                fontSize: "0.95rem",
-                fontWeight: "600",
-                cursor: "pointer",
-              }}
-            >
-              CLOSE
-            </button>
-          </div>,
-          document.body,
-        )}
+      {selectedNodeData && !selectedClaim && (
+        <GraphNodeDetailModal
+          isOpen={!!selectedNodeData && !selectedClaim}
+          kicker={
+            selectedNodeData.type === "task"
+              ? "Case"
+              : selectedNodeData.type === "reference"
+                ? "Source"
+                : selectedNodeData.type === "author"
+                  ? "Author"
+                  : selectedNodeData.type === "publisher"
+                    ? "Publisher"
+                    : selectedNodeData.type === "refClaim"
+                      ? "Source Claim"
+                      : selectedNodeData.type === "taskClaim"
+                        ? "Case Claim"
+                        : "Node Detail"
+          }
+          title={selectedNodeData.label}
+          subtitle={
+            selectedNodeData.type === "reference" && selectedNodeData.url
+              ? "Source link available"
+              : selectedNodeData.type
+          }
+          detail={
+            selectedNodeData.type === "reference"
+              ? selectedNodeData.url
+              : (selectedNodeData as any).rationale || (selectedNodeData as any).notes || undefined
+          }
+          url={selectedNodeData.url}
+          reference={
+            selectedNodeData.type === "reference" || selectedNodeData.type === "publisher"
+              ? ({
+                  reference_content_id: selectedNodeData.content_id ?? 0,
+                  content_name: selectedNodeData.label,
+                  url: selectedNodeData.url,
+                  publisher_id: selectedNodeData.publisher_id,
+                  publisher_name: selectedNodeData.label,
+                  admiralty_code: selectedNodeData.admiralty_code ?? undefined,
+                  publisher_veracity:
+                    selectedNodeData.rating != null
+                      ? Math.abs(Number(selectedNodeData.rating)) * 100
+                      : undefined,
+                  claims: [],
+                } as any)
+              : null
+          }
+          statusItems={
+            selectedNodeData.rating != null && selectedNodeData.rating !== 0
+              ? [
+                  {
+                    label: "Rating",
+                    value:
+                      typeof selectedNodeData.rating === "number"
+                        ? selectedNodeData.rating.toFixed(1)
+                        : selectedNodeData.rating,
+                    tone: Number(selectedNodeData.rating) >= 0 ? "green" : "red",
+                  },
+                ]
+              : []
+          }
+          onSourceCrestClick={() => setSourceDetailOpen(true)}
+          onClose={() => setSelectedNodeData(null)}
+        />
+      )}
       {hoveredEdgeTooltip &&
         createPortal(
           <div
@@ -2348,6 +2328,16 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           y={contextMenu.y}
           items={contextMenu.items}
           onClose={() => setContextMenu(null)}
+        />
+      )}
+
+      {sourceDetailOpen && selectedNodeData && (
+        <SourceDetailModal
+          isOpen={sourceDetailOpen}
+          onClose={() => setSourceDetailOpen(false)}
+          publisherId={selectedNodeData.publisher_id}
+          publisherName={selectedNodeData.label}
+          admiraltyCode={selectedNodeData.admiralty_code ?? undefined}
         />
       )}
     </>

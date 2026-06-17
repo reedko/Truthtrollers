@@ -1,12 +1,18 @@
+import { calculateUserContentScore } from "../services/verimeterScoringService.js";
+
 const registerBeaconRoutes = (app, query, pool) => {
   // 🧭 Verimeter core score
   app.get("/api/verimeter/:taskContentId", async (req, res) => {
     const { taskContentId } = req.params;
+    const viewerId = req.query.viewerId ? Number(req.query.viewerId) : null;
     try {
-      const [[result]] = await query(`CALL compute_verimeter_score(?)`, [
-        taskContentId,
-      ]);
-      res.json(result);
+      const scores = await calculateUserContentScore(query, Number(taskContentId), viewerId);
+      res.json({
+        ...scores,
+        score: scores.verimeter_score,
+        verimeter_score: scores.verimeter_score,
+        source: "verimeterScoringService",
+      });
     } catch (err) {
       console.error("❌ Verimeter Score Error:", err);
       res.status(500).json({ error: "Failed to compute Verimeter score" });

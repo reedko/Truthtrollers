@@ -186,7 +186,7 @@ const QuadrantGrid: React.FC<QuadrantGridProps> = ({
     // Initial update and on window resize
     updatePositions();
     window.addEventListener("resize", updatePositions);
-    const timeout = setTimeout(updatePositions, 100);
+    const timeout = setTimeout(updatePositions, 150);
 
     return () => {
       window.removeEventListener("resize", updatePositions);

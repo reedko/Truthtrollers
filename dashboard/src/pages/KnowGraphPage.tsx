@@ -19,7 +19,10 @@ import {
   MenuButton,
   MenuList,
   Button,
+  Icon,
+  useToast,
 } from '@chakra-ui/react';
+import { FiCamera } from 'react-icons/fi';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTaskStore, ViewScope } from '../store/useTaskStore';
 import { ViewerScopeBadge } from '../components/ViewerScopeBadge';
@@ -27,11 +30,13 @@ import { VerimeterModeToggle } from '../components/VerimeterModeToggle';
 import UnifiedHeader from '../components/UnifiedHeader';
 import StickyTitleBar from '../components/StickyTitleBar';
 import CytoscapeKnowGraph from '../components/CytoscapeKnowGraph';
-import { fetchNewGraphDataFromLegacyRoute } from '../services/api';
+import { api, fetchNewGraphDataFromLegacyRoute } from '../services/api';
+import { captureElementAsPng } from '../utils/domSnapshot';
 import { GraphNode, Link } from '../../../shared/entities/types';
 
 const KnowGraphPage = () => {
   const { colorMode } = useColorMode();
+  const toast = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -49,6 +54,7 @@ const KnowGraphPage = () => {
   });
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const [loading, setLoading] = useState(true);
+  const [savingSnapshot, setSavingSnapshot] = useState(false);
 
   // Read URL params on mount
   useEffect(() => {
@@ -113,6 +119,67 @@ const KnowGraphPage = () => {
 
   const handleNodeClick = (node: GraphNode) => {
     setSelectedNode(node);
+  };
+
+  const blobToDataUrl = (blob: Blob): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result));
+      reader.onerror = () => reject(reader.error || new Error('Could not read snapshot image.'));
+      reader.readAsDataURL(blob);
+    });
+
+  const captureKnowledgeGraphDataUrl = async () => {
+    await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    const cy = window.__veristrataKnowGraphCy;
+    if (cy && !cy.destroyed()) {
+      return cy.png({
+        full: false,
+        scale: 2,
+        bg: colorMode === 'dark' ? '#061020' : '#f8fafc',
+        output: 'base64uri',
+      } as any) as string;
+    }
+
+    const target = document.querySelector<HTMLElement>('.veristrata-knowgraph-snapshot-target');
+    if (!target) throw new Error('Knowledge graph snapshot target was not found.');
+    const blob = await captureElementAsPng(target, {
+      backgroundColor: colorMode === 'dark' ? '#061020' : '#f8fafc',
+      pixelRatio: 2,
+      maxWidth: 1800,
+    });
+    return blobToDataUrl(blob);
+  };
+
+  const handleSaveSnapshot = async () => {
+    if (!selectedTaskId) return;
+    try {
+      setSavingSnapshot(true);
+      const dataUrl = await captureKnowledgeGraphDataUrl();
+      const response = await api.post('/api/review-articles/workspace-snapshot', {
+        content_id: selectedTaskId,
+        data_url: dataUrl,
+        module_id: 'knowledge_graph_image',
+      });
+      toast({
+        title: 'Knowledge graph snapshot saved',
+        description: response.data?.body_updated
+          ? 'The Knowledge Graph Image module was updated.'
+          : 'The image asset was saved and attached to the review article.',
+        status: 'success',
+        duration: 4000,
+      });
+    } catch (error: any) {
+      console.error('Attach knowledge graph snapshot failed:', error);
+      toast({
+        title: 'Could not attach snapshot',
+        description: error.response?.data?.error || error.message || 'The knowledge graph image was not attached.',
+        status: 'error',
+        duration: 5500,
+      });
+    } finally {
+      setSavingSnapshot(false);
+    }
   };
 
   // Calculate metrics
@@ -185,7 +252,7 @@ const KnowGraphPage = () => {
       <Box
         mb={4}
         display="flex"
-        gap={4}
+        gap={3}
         alignItems="center"
         justifyContent="space-between"
         p={4}
@@ -204,6 +271,8 @@ const KnowGraphPage = () => {
         }
         position="relative"
         zIndex={100}
+        overflowX="auto"
+        overflowY="visible"
       >
         <Box
           bg={colorMode === 'dark' ? 'whiteAlpha.100' : 'blackAlpha.50'}
@@ -262,10 +331,27 @@ const KnowGraphPage = () => {
 
         <VerimeterModeToggle compact />
         <ViewerScopeBadge />
+
+        <Button
+          className="mr-button"
+          size="sm"
+          flexShrink={0}
+          minW="142px"
+          px={4}
+          leftIcon={<Icon as={FiCamera} />}
+          onClick={handleSaveSnapshot}
+          isLoading={savingSnapshot}
+          loadingText="Saving"
+          isDisabled={!selectedTaskId || graphData.nodes.length === 0}
+          whiteSpace="nowrap"
+        >
+          Save Snapshot
+        </Button>
       </Box>
 
       {/* Main layout - full width graph with floating panels */}
       <Box
+        className="veristrata-knowgraph-snapshot-target"
         height="calc(100vh - 280px)"
         position="relative"
       >
@@ -273,7 +359,7 @@ const KnowGraphPage = () => {
         <Card
           bg={
             colorMode === 'dark'
-              ? 'linear-gradient(180deg, rgba(12, 20, 34, 0.9), rgba(7, 12, 22, 0.96))'
+              ? `radial-gradient(circle at 20% 20%, rgba(111,140,255,0.2), transparent 36%), radial-gradient(circle at 76% 78%, rgba(74,222,128,0.14), transparent 30%), linear-gradient(180deg, rgba(10,18,34,0.93), rgba(6,12,22,0.97))`
               : 'white'
           }
           border="1px solid"
@@ -318,16 +404,32 @@ const KnowGraphPage = () => {
 
         {/* Floating Legend - Responsive, shrinks at 1024 */}
         <Box
+          className="mr-card mr-card-blue"
           position="absolute"
           top={{ base: 2, xl: 4 }}
           left={{ base: 2, xl: 4 }}
           zIndex={1000}
-          bg="rgba(8, 14, 24, 0.96)"
-          border="1px solid rgba(255, 255, 255, 0.15)"
-          borderRadius={{ base: "8px", xl: "12px" }}
+          border="1px solid rgba(113,219,255,0.22)"
+          borderRadius="24px"
           p={{ base: 1.5, xl: 2.5 }}
-          boxShadow="0 8px 32px rgba(0, 0, 0, 0.7)"
+          boxShadow="0 18px 54px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.03)"
           maxW={{ base: "140px", xl: "260px" }}
+          overflow="visible"
+          style={{ background: "linear-gradient(135deg, rgba(8, 22, 58, 0.92), rgba(14, 32, 72, 0.86))", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
+          sx={{
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              left: 0,
+              top: 0,
+              width: "20px",
+              height: "100%",
+              background: "linear-gradient(90deg, rgba(113, 219, 255, 0.3) 0%, transparent 100%)",
+              borderRadius: "24px 0 0 24px",
+              pointerEvents: "none",
+              zIndex: 1,
+            },
+          }}
         >
           <Text
             fontSize={{ base: "8px", xl: "10px" }}
@@ -444,29 +546,22 @@ const LeftPanel = ({ metrics, colorMode }: any) => (
 // Right Panel Component
 const RightPanel = ({ metrics, selectedNode, colorMode }: any) => (
   <Card
-    bg={
-      colorMode === 'dark'
-        ? 'linear-gradient(180deg, rgba(12, 20, 34, 0.9), rgba(7, 12, 22, 0.96))'
-        : 'white'
-    }
-    border="1px solid"
-    borderColor={colorMode === 'dark' ? 'rgba(123, 163, 255, 0.12)' : 'gray.200'}
+    className="mr-card mr-card-blue"
+    bg="rgba(3,10,24,0.78)"
+    border="1px solid rgba(113,219,255,0.22)"
     borderRadius="24px"
-    boxShadow={
-      colorMode === 'dark'
-        ? 'inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 20px 60px rgba(0, 0, 0, 0.45)'
-        : 'md'
-    }
+    boxShadow="0 18px 54px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.03)"
     overflow="auto"
   >
     <CardBody p={4}>
       <VStack align="stretch" spacing={4}>
         <Box>
           <Text
-            fontSize="xs"
-            letterSpacing="wider"
+            fontSize="11px"
+            fontWeight="900"
+            letterSpacing="0.12em"
             textTransform="uppercase"
-            color="cyan.300"
+            color="#71dbff"
             mb={3}
           >
             Ontology Sketch
@@ -520,22 +615,23 @@ const RightPanel = ({ metrics, selectedNode, colorMode }: any) => (
 
         {selectedNode && (
           <>
-            <Divider borderColor="whiteAlpha.200" />
+            <Divider borderColor="rgba(255,255,255,0.08)" />
             <Box>
               <Text
-                fontSize="xs"
-                letterSpacing="wider"
+                fontSize="11px"
+                fontWeight="900"
+                letterSpacing="0.12em"
                 textTransform="uppercase"
-                color="cyan.300"
+                color="#71dbff"
                 mb={2}
               >
                 Selected Node
               </Text>
               <Box
                 p={3}
-                bg="rgba(19, 30, 50, 0.6)"
-                borderRadius="lg"
-                border="1px solid rgba(120, 170, 255, 0.12)"
+                bg="rgba(10, 18, 30, 0.82)"
+                borderRadius="14px"
+                border="1px solid rgba(113,219,255,0.18)"
               >
                 <Text fontSize="sm" fontWeight="bold" color="cyan.200" mb={1}>
                   {selectedNode.type}
@@ -556,9 +652,9 @@ const RightPanel = ({ metrics, selectedNode, colorMode }: any) => (
 const InfoCard = ({ title, description }: { title: string; description: string }) => (
   <Box
     p={3}
-    bg="rgba(19, 30, 50, 0.88)"
-    borderRadius="lg"
-    border="1px solid rgba(120, 170, 255, 0.12)"
+    bg="rgba(10, 18, 30, 0.82)"
+    borderRadius="14px"
+    border="1px solid rgba(113,219,255,0.18)"
   >
     <Heading size="xs" color="cyan.200" mb={1}>
       {title}

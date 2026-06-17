@@ -779,6 +779,7 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
           text: textData.text,
           title: textData.title,
           authors: Array.isArray(textData.authors) ? textData.authors : [],
+          publisher: textData.publisher || null,
           thumbnailUrl: thumbData.imageUrl || null,
         };
       } catch (err) {
@@ -1036,11 +1037,28 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
           return { success: false, error: `HTTP ${response.status}` };
         }
 
-        const data = await response.json();
+        let data = await response.json();
+        let resolvedMode = data.mode || mode;
+
+        if (
+          (mode === 'user' || mode === 'combined') &&
+          Number(data.rating_counts?.user_count || 0) === 0 &&
+          Number(data.rating_counts?.ai_count || 0) > 0
+        ) {
+          const aiResponse = await fetch(`${BASE_URL}/api/content/${contentId}/scores/ai`, {
+            method: "GET",
+            credentials: "include",
+          });
+          if (aiResponse.ok) {
+            data = await aiResponse.json();
+            resolvedMode = 'ai';
+          }
+        }
+
         return {
           success: true,
           verimeterScore: Number(data.verimeter_score) || 0,
-          mode: data.mode,
+          mode: resolvedMode,
           ratingCounts: data.rating_counts,
         };
       } catch (err) {
@@ -1423,10 +1441,30 @@ async function checkContentAndUpdatePopup(tabId, url, forceVisible) {
         });
 
         if (scoreResponse.ok) {
-          const scoreData = await scoreResponse.json();
+          let scoreData = await scoreResponse.json();
+          let resolvedMode = scoreData.mode || mode;
+          if (
+            (mode === 'user' || mode === 'combined') &&
+            Number(scoreData.rating_counts?.user_count || 0) === 0 &&
+            Number(scoreData.rating_counts?.ai_count || 0) > 0
+          ) {
+            const aiScoreResponse = await fetch(
+              `${BASE_URL}/api/content/${task.content_id}/scores/ai`,
+              {
+                method: "GET",
+                credentials: "include",
+              },
+            );
+            if (aiScoreResponse.ok) {
+              scoreData = await aiScoreResponse.json();
+              resolvedMode = 'ai';
+            }
+          }
           task.verimeter_score = Number(scoreData.verimeter_score) || 0;
+          task.verimeter_score_mode = resolvedMode;
+          task.rating_counts = scoreData.rating_counts;
           console.log(
-            `✅ [checkContent] Fetched verimeter_score (${mode} mode): ${task.verimeter_score}`,
+            `✅ [checkContent] Fetched verimeter_score (${resolvedMode} mode): ${task.verimeter_score}`,
           );
         }
       } catch (scoreErr) {
@@ -2021,6 +2059,36 @@ browser.runtime.onMessageExternal.addListener((message, sender) => {
       }
     })();
   }
+
+  // Check if a tab with the URL is already open; focus it if so, open new tab if not.
+  // Called by the dashboard via externally_connectable to avoid duplicate tabs.
+  if (message.action === "checkAndOpenTab") {
+    const { url } = message;
+    if (!url) return Promise.resolve({ error: "no url" });
+    return (async () => {
+      try {
+        const allTabs = await browser.tabs.query({});
+        const normalizeUrl = (u) => {
+          try { const obj = new URL(u); return obj.origin + obj.pathname; } catch { return u; }
+        };
+        const norm = normalizeUrl(url);
+        const existing = allTabs.find(t => t.url && (normalizeUrl(t.url) === norm || t.url === url));
+        if (existing) {
+          await browser.tabs.update(existing.id, { active: true });
+          try { await browser.windows.update(existing.windowId, { focused: true }); } catch {}
+          console.log(`[EXT] checkAndOpenTab: reused tab ${existing.id} for ${url}`);
+          return { reused: true, tabId: existing.id };
+        } else {
+          const newTab = await browser.tabs.create({ url, active: true });
+          console.log(`[EXT] checkAndOpenTab: opened new tab ${newTab.id} for ${url}`);
+          return { opened: true, tabId: newTab.id };
+        }
+      } catch (e) {
+        console.error("[EXT] checkAndOpenTab error:", e);
+        return { error: e.message };
+      }
+    })();
+  }
 });
 
 // ============================================================
@@ -2137,7 +2205,9 @@ async function handleScrapeJob(job) {
     let pdfText = null;
     let pdfTitle = null;
     let pdfAuthors = null;
+    let pdfPublisher = null;
     let actualUrl = url;
+    let scrapeBody = null;
 
     // For viewer.html tabs, extract the actual PDF URL from query params
     if (isPdfViewer) {
@@ -2201,8 +2271,9 @@ async function handleScrapeJob(job) {
           pdfText = pdfData.text;
           pdfTitle = pdfData.title || null;
           pdfAuthors = pdfData.authors || null;
+          pdfPublisher = pdfData.publisher || null;
           console.log(
-            `[EXT] ✅ Extracted ${pdfText.length} chars from PDF (title: ${pdfTitle})`,
+            `[EXT] ✅ Extracted ${pdfText.length} chars from PDF (title: ${pdfTitle}, publisher: ${pdfPublisher})`,
           );
         } else {
           throw new Error("PDF parsing returned no text");
@@ -2229,6 +2300,68 @@ async function handleScrapeJob(job) {
           `[EXT] Extracted ${raw_html.length} chars HTML from tab ${targetTab.id}`,
         );
       }
+      scrapeBody = {
+        url: actualUrl,
+        raw_html: raw_html,
+        raw_text: pdfText,
+        title: pdfTitle,
+        authors: pdfAuthors,
+        media_source: pdfPublisher || undefined,
+        taskContentId: task_content_id,
+      };
+    } else if (actualUrl && /facebook\.com/i.test(actualUrl)) {
+      // For Facebook: extract ONLY the post article element to avoid ad/sidebar noise.
+      // Also extract any linked external URL directly from the post DOM while we have it.
+      const fbData = await safeExecuteScript(
+        targetTab.id,
+        () => {
+          const isExternal = (href) => {
+            try {
+              const h = new URL(href).hostname.replace(/^www\./, '');
+              return !h.endsWith('facebook.com') && !h.includes('fbcdn.net') &&
+                !/^(instagram|messenger|whatsapp|google|apple|amazon|youtube|twitter|tiktok|adobe|akamai)\./.test(h);
+            } catch { return false; }
+          };
+
+          // First role="article" on a post page is the post itself.
+          const articles = Array.from(document.querySelectorAll('[role="article"]'));
+          const postEl = articles[0] || document.body;
+
+          let linkedUrl = null;
+
+          // 1. data-lynx-uri — Facebook sets this on external links in post text
+          const lynxEl = postEl.querySelector('[data-lynx-uri]');
+          if (lynxEl) {
+            const uri = lynxEl.getAttribute('data-lynx-uri') || '';
+            if (uri.startsWith('http') && isExternal(uri)) linkedUrl = uri;
+          }
+
+          // 2. Direct external <a href> within the post
+          if (!linkedUrl) {
+            for (const a of postEl.querySelectorAll('a[href^="http"]')) {
+              if (isExternal(a.href)) { linkedUrl = a.href; break; }
+            }
+          }
+
+          return { html: postEl.outerHTML, linkedUrl };
+        },
+        'Facebook post HTML extraction'
+      );
+
+      raw_html = fbData?.html || null;
+      const fb_linked_url = fbData?.linkedUrl || null;
+      const fb_linked_publisher = fb_linked_url
+        ? (() => { try { return new URL(fb_linked_url).hostname.replace(/^www\./, ''); } catch { return null; } })()
+        : null;
+
+      console.log(`[EXT] Facebook post: extracted ${raw_html?.length || 0} chars, linked_url=${fb_linked_url || 'none'}`);
+      scrapeBody = {
+        url: actualUrl,
+        raw_html: raw_html,
+        taskContentId: task_content_id,
+        linked_url: fb_linked_url || undefined,
+        linked_publisher: fb_linked_publisher || undefined,
+      };
     } else {
       // Extract HTML from regular webpage
       raw_html = await safeExecuteScript(
@@ -2240,24 +2373,26 @@ async function handleScrapeJob(job) {
       console.log(
         `[EXT] Extracted ${raw_html.length} chars from tab ${targetTab.id}`,
       );
+      scrapeBody = {
+        url: actualUrl,
+        raw_html: raw_html,
+        raw_text: pdfText,
+        title: pdfTitle,
+        authors: pdfAuthors,
+        media_source: pdfPublisher || undefined,
+        taskContentId: task_content_id,
+      };
     }
 
-    // Step 4: Send to scrape-reference endpoint (not scrape-task - we don't want evidence engine)
-    console.log(`[EXT] 📤 Sending scrape data to backend: url=${actualUrl}, html_length=${raw_html?.length || 0}, pdf_text_length=${pdfText?.length || 0}`);
+    // Step 4: Send to scrape-reference endpoint
+    console.log(`[EXT] 📤 Sending scrape data to backend: url=${actualUrl}, html_length=${raw_html?.length || 0}`);
 
     const scrapeRes = await fetch(`${BASE_URL}/api/scrape-reference`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({
-        url: actualUrl,
-        raw_html: raw_html,
-        raw_text: pdfText, // Send PDF text if available
-        title: pdfTitle, // Send PDF title from metadata
-        authors: pdfAuthors, // Send PDF authors from metadata
-        taskContentId: task_content_id,
-      }),
-      signal: AbortSignal.timeout(120000) // 2 minute timeout for scrape API
+      body: JSON.stringify(scrapeBody),
+      signal: AbortSignal.timeout(120000)
     });
 
     if (!scrapeRes.ok) {
@@ -2286,7 +2421,7 @@ async function handleScrapeJob(job) {
         content_id: referenceContentId,
         instance_id: INSTANCE_ID,
       }),
-      signal: AbortSignal.timeout(10000) // 10 second timeout
+      signal: AbortSignal.timeout(10000)
     });
 
     if (!completeRes.ok) {

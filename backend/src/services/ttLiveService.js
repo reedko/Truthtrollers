@@ -5,6 +5,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import { calculateUserContentScore } from './verimeterScoringService.js';
 
 /**
  * Create a new TT Live thread
@@ -100,12 +101,8 @@ export async function getThread({ query }, threadId) {
   if (thread.content_id) {
     console.log(`🔍 Fetching claim pairs for content_id ${thread.content_id}`);
 
-    // Get user score from content_scores
-    const [userScoreData] = await query(`
-      SELECT verimeter_score FROM content_scores WHERE content_id = ?
-    `, [thread.content_id]);
-
-    const userScore = userScoreData?.verimeter_score || null;
+    const userScores = await calculateUserContentScore(query, thread.content_id, null);
+    const userScore = userScores.rating_count > 0 ? userScores.verimeter_score : null;
 
     // Calculate AI score from all AI-suggested links (same logic as /api/content/:id/scores/ai)
     const aiLinks = await query(`
@@ -132,6 +129,7 @@ export async function getThread({ query }, threadId) {
     thread.verimeter_score = (userScore !== null && userScore !== 0) ? userScore : aiScore;
     thread.ai_verimeter_score = aiScore;
     thread.user_verimeter_score = userScore;
+    thread.verimeter_source = userScore !== null ? 'verimeterScoringService' : 'aiRatings';
     thread.is_ai_rating = (userScore === null || userScore === 0) && aiScore !== null;
 
     console.log(`📊 Verimeter scores - User: ${userScore}, AI: ${aiScore}, Using: ${thread.verimeter_score}, Is AI: ${thread.is_ai_rating}`);

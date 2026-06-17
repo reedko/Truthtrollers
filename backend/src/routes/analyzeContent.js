@@ -2,7 +2,6 @@
 // Route to extract topics and claims from text (with chunking support)
 import { Router } from "express";
 import logger from "../utils/logger.js";
-import { encoding_for_model } from "tiktoken";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -10,6 +9,14 @@ dotenv.config();
 const router = Router();
 const MAX_TOKENS = 12000;
 const apiKey = process.env.REACT_APP_OPENAI_API_KEY;
+let tiktokenModulePromise = null;
+
+async function getTiktokenModule() {
+  if (!tiktokenModulePromise) {
+    tiktokenModulePromise = import("tiktoken");
+  }
+  return tiktokenModulePromise;
+}
 
 /**
  * Parse or repair JSON response from OpenAI
@@ -139,6 +146,7 @@ ${chunk}
  * Analyze content in chunks (split by paragraphs)
  */
 async function analyzeInChunks(content, testimonials) {
+  const { encoding_for_model } = await getTiktokenModule();
   const tokenizer = encoding_for_model("gpt-4");
   const paragraphs = content.split(/\n\s*\n/);
   let currentChunk = "";

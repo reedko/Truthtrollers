@@ -48,7 +48,9 @@ export const fetchNewGraphDataFromLegacyRoute = async (
           veracity_score: node.veracity_score,
           confidence_level: node.confidence_level,
           added_by_user_id: node.added_by_user_id,
-          is_system: node.is_system
+          is_system: node.is_system,
+          admiralty_code: (node as any).admiralty_code ?? null,
+          source_type: (node as any).source_type ?? null,
         });
         return graphNode;
       }

@@ -37,8 +37,14 @@ export default function ({ query, pool }) {
 
       console.log(`[DELETE CONTENT] User ${userId} is super_admin, proceeding with deletion...`);
 
-      // Call stored procedure to delete content and all related records
-      await query('CALL delete_content_cascade(?)', [contentId]);
+      const includeReferences = req.query.includeReferences === 'true';
+
+      if (includeReferences) {
+        console.log(`[DELETE CONTENT] Full delete: removing task ${contentId} AND all linked references`);
+        await query('CALL delete_task_and_references(?)', [contentId]);
+      } else {
+        await query('CALL delete_content_cascade(?)', [contentId]);
+      }
 
       console.log(`[DELETE CONTENT] Successfully deleted content ${contentId}`);
 

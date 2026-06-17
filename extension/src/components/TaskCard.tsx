@@ -173,6 +173,42 @@ const TaskCard: React.FC = () => {
     };
   }, [setTask]);
 
+  useEffect(() => {
+    if (!task?.content_id) return;
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const response = (await browser.runtime.sendMessage({
+          action: "fetchClaimScores",
+          contentId: task.content_id,
+        })) as {
+          success?: boolean;
+          verimeterScore?: number;
+          mode?: string;
+          ratingCounts?: unknown;
+        };
+
+        if (!response?.success || cancelled) return;
+
+        const nextTask = {
+          ...(useTaskStore.getState().task || task),
+          verimeter_score: Number(response.verimeterScore) || 0,
+          verimeter_score_mode: response.mode,
+          rating_counts: response.ratingCounts,
+        };
+        setTask(nextTask as Task);
+        await browser.storage.local.set({ task: nextTask });
+      } catch (err) {
+        console.warn("[TaskCard] Failed to refresh verimeter score:", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [task?.content_id, setTask]);
+
   // Load static UI assets (logo, meter) from bundled extension assets - INSTANT!
   useEffect(() => {
     try {
@@ -239,6 +275,9 @@ const TaskCard: React.FC = () => {
   const imageUrl = thumbBlob || "";
   const meter = meterBlob || "";
   const logo = logoBlob || "";
+  const verimeterScore = Number(task?.verimeter_score ?? 0);
+  const scoreMode = String((task as any)?.verimeter_score_mode || "").toLowerCase();
+  const isAiEstimate = scoreMode === "ai" || task?.progress !== "Completed";
 
   return (
     <Box
@@ -317,8 +356,8 @@ const TaskCard: React.FC = () => {
           </HStack>
         </Box>
 
-        {task?.progress === "Completed" && (task as any).claim_pairs ? (
-          /* --- Completed: full verimeter + consensus bar + claim pairs --- */
+        {task?.content_id ? (
+          /* --- Detected content: always show verimeter, claim pairs when available --- */
           <VStack width="100%" spacing={0}>
             <HStack
               spacing={1}
@@ -330,116 +369,93 @@ const TaskCard: React.FC = () => {
             >
               <Box flexShrink={0}>
                 <TruthGauge
-                  score={task?.verimeter_score ?? 0}
+                  score={verimeterScore}
                   label="VERIMETER"
                   size={{ w: 170, h: 90 }}
                   normalize={false}
                 />
               </Box>
-              <Box
-                position="relative"
-                background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-                border="1px solid rgba(0, 162, 255, 0.5)"
-                borderRadius="12px"
-                boxShadow="0 10px 40px rgba(0, 0, 0, 0.7), 0 0 50px rgba(0, 162, 255, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
-                overflow="hidden"
-                flexShrink={0}
-                width="70px"
-                height="180px"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
-                <Box
-                  position="absolute"
-                  left={0}
-                  top={0}
-                  width="15px"
-                  height="100%"
-                  background="linear-gradient(90deg, rgba(0, 162, 255, 0.6) 0%, transparent 100%)"
-                  pointerEvents="none"
-                />
+              {isAiEstimate ? (
                 <Box
                   position="relative"
-                  zIndex={1}
-                  transform="scale(0.85)"
-                  ml={-35}
-                  mr={-35}
+                  background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+                  border="1px solid rgba(255, 200, 0, 0.35)"
+                  borderRadius="12px"
+                  boxShadow="0 10px 40px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 200, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
+                  overflow="hidden"
+                  flexShrink={0}
+                  width="70px"
+                  height="90px"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  p={2}
                 >
-                  <UserConsensusBar
-                    trueCount={21}
-                    falseCount={71}
-                    total={121}
+                  <Box
+                    position="absolute"
+                    left={0}
+                    top={0}
+                    width="15px"
+                    height="100%"
+                    background="linear-gradient(90deg, rgba(255, 200, 0, 0.4) 0%, transparent 100%)"
+                    pointerEvents="none"
                   />
+                  <Text
+                    position="relative"
+                    zIndex={1}
+                    fontSize="2xs"
+                    color="#fbbf24"
+                    textAlign="center"
+                    fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
+                    lineHeight="1.3"
+                    fontWeight="600"
+                    letterSpacing="0.5px"
+                    textTransform="uppercase"
+                  >
+                    AI Rating — Not Final
+                  </Text>
                 </Box>
-              </Box>
-            </HStack>
-            {task?.content_id && (
-              <ClaimPairsDetail
-                claimPairsData={(task as any).claim_pairs || null}
-              />
-            )}
-          </VStack>
-        ) : task?.content_id && (task as any).claim_pairs ? (
-          /* --- In-progress: same layout as completed, AI warning replaces consensus bar --- */
-          <VStack width="100%" spacing={0}>
-            <HStack
-              spacing={1}
-              align="flex-start"
-              width="100%"
-              justify="space-between"
-              mt={2}
-              px={1}
-            >
-              <Box flexShrink={0}>
-                <TruthGauge
-                  score={task?.verimeter_score ?? 0}
-                  label="VERIMETER"
-                  size={{ w: 170, h: 90 }}
-                  normalize={false}
-                />
-              </Box>
-              <Box
-                position="relative"
-                background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
-                border="1px solid rgba(255, 200, 0, 0.35)"
-                borderRadius="12px"
-                boxShadow="0 10px 40px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 200, 0, 0.2), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
-                overflow="hidden"
-                flexShrink={0}
-                width="70px"
-                height="90px"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                p={2}
-              >
+              ) : (
                 <Box
-                  position="absolute"
-                  left={0}
-                  top={0}
-                  width="15px"
-                  height="100%"
-                  background="linear-gradient(90deg, rgba(255, 200, 0, 0.4) 0%, transparent 100%)"
-                  pointerEvents="none"
-                />
-                <Text
                   position="relative"
-                  zIndex={1}
-                  fontSize="2xs"
-                  color="#fbbf24"
-                  textAlign="center"
-                  fontFamily="Futura, 'Century Gothic', 'Avenir Next', sans-serif"
-                  lineHeight="1.3"
-                  fontWeight="600"
-                  letterSpacing="0.5px"
-                  textTransform="uppercase"
+                  background="linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))"
+                  border="1px solid rgba(0, 162, 255, 0.5)"
+                  borderRadius="12px"
+                  boxShadow="0 10px 40px rgba(0, 0, 0, 0.7), 0 0 50px rgba(0, 162, 255, 0.5), inset 0 2px 0 rgba(255, 255, 255, 0.15)"
+                  overflow="hidden"
+                  flexShrink={0}
+                  width="70px"
+                  height="180px"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
                 >
-                  AI Rating — Not Final
-                </Text>
-              </Box>
+                  <Box
+                    position="absolute"
+                    left={0}
+                    top={0}
+                    width="15px"
+                    height="100%"
+                    background="linear-gradient(90deg, rgba(0, 162, 255, 0.6) 0%, transparent 100%)"
+                    pointerEvents="none"
+                  />
+                  <Box
+                    position="relative"
+                    zIndex={1}
+                    transform="scale(0.85)"
+                    ml={-35}
+                    mr={-35}
+                  >
+                    <UserConsensusBar
+                      trueCount={21}
+                      falseCount={71}
+                      total={121}
+                    />
+                  </Box>
+                </Box>
+              )}
             </HStack>
-            {task?.content_id && (
+            {(task as any).claim_pairs && (
               <ClaimPairsDetail
                 claimPairsData={(task as any).claim_pairs || null}
               />

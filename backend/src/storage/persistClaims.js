@@ -40,10 +40,36 @@ export async function persistClaims(
 
   const claimIds = [];
 
-  for (const claimText of claims) {
-    if (!claimText || !claimText.trim()) continue;
+  for (let claimOrder = 0; claimOrder < claims.length; claimOrder++) {
+    const claimEntry = claims[claimOrder];
+    const claimText = typeof claimEntry === "string" ? claimEntry : claimEntry?.text;
+    if (!claimText || !String(claimText).trim()) continue;
 
-    const normalizedClaimText = claimText.trim();
+    const normalizedClaimText = String(claimText).trim();
+    const claimRole = typeof claimEntry === "object" && claimEntry !== null
+      ? (claimEntry.role || null)
+      : null;
+    const parentClaimId = typeof claimEntry === "object" && claimEntry !== null
+      ? (claimEntry.parentClaimId ?? claimEntry.parent_claim_id ?? null)
+      : null;
+    const claimDepth = typeof claimEntry === "object" && claimEntry !== null
+      ? (claimEntry.claimDepth ?? claimEntry.claim_depth ?? null)
+      : null;
+    const centralityScore = typeof claimEntry === "object" && claimEntry !== null
+      ? (claimEntry.centrality ?? claimEntry.centralityScore ?? claimEntry.centrality_score ?? null)
+      : null;
+    const verifiabilityScore = typeof claimEntry === "object" && claimEntry !== null
+      ? (claimEntry.verifiability ?? claimEntry.verifiabilityScore ?? claimEntry.verifiability_score ?? null)
+      : null;
+    const inferredClaimDepth = claimDepth !== null && claimDepth !== undefined
+      ? claimDepth
+      : claimRole === 'thesis'
+        ? 0
+        : claimRole === 'pillar'
+          ? 1
+          : claimRole
+            ? 2
+            : null;
 
     // 1) Check if claim already exists (reuse existing claims)
     const existingClaim = await query(
@@ -83,7 +109,7 @@ export async function persistClaims(
 
     // 2) Link claim to content (check if link already exists to avoid duplicates)
     const existingLink = await query(
-      `SELECT 1 FROM content_claims WHERE content_id = ? AND claim_id = ? AND relationship_type = ? LIMIT 1`,
+      `SELECT 1 AS exists_link FROM content_claims WHERE content_id = ? AND claim_id = ? AND relationship_type = ? LIMIT 1`,
       [contentId, claimId, relationshipType]
     );
 
@@ -91,14 +117,47 @@ export async function persistClaims(
       await query(
         `
           INSERT INTO content_claims
-            (content_id, claim_id, relationship_type)
-          VALUES (?, ?, ?)
+            (content_id, claim_id, relationship_type, claim_role, parent_claim_id, claim_depth, centrality_score, verifiability_score, claim_order)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
-        [contentId, claimId, relationshipType]
+        [
+          contentId,
+          claimId,
+          relationshipType,
+          claimRole,
+          parentClaimId,
+          inferredClaimDepth,
+          centralityScore,
+          verifiabilityScore,
+          claimOrder,
+        ]
       );
       console.log(`🔗 [persistClaims] Linked claim_id ${claimId} to content_id ${contentId} (${relationshipType})`);
     } else {
-      console.log(`⏭️  [persistClaims] Link already exists: claim_id ${claimId} → content_id ${contentId}`);
+      await query(
+        `
+          UPDATE content_claims
+          SET claim_role = COALESCE(?, claim_role),
+              parent_claim_id = COALESCE(?, parent_claim_id),
+              claim_depth = COALESCE(?, claim_depth),
+              centrality_score = COALESCE(?, centrality_score),
+              verifiability_score = COALESCE(?, verifiability_score),
+              claim_order = COALESCE(?, claim_order)
+          WHERE content_id = ? AND claim_id = ? AND relationship_type = ?
+        `,
+        [
+          claimRole,
+          parentClaimId,
+          inferredClaimDepth,
+          centralityScore,
+          verifiabilityScore,
+          claimOrder,
+          contentId,
+          claimId,
+          relationshipType,
+        ]
+      );
+      console.log(`⏭️  [persistClaims] Link already exists: claim_id ${claimId} → content_id ${contentId} (metadata updated if present)`);
     }
   }
 

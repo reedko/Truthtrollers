@@ -1,8 +1,29 @@
 import cytoscape, { EdgeSingular } from "cytoscape";
 import { DisplayMode } from "../types";
+import { getSourceCrestDataUri } from "../../../utils/sourceCrestUri";
+import type { Reliability } from "../../../utils/normalizeSourceProfile";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "https://localhost:5001";
+
+// green → teal → blue → amber → red → gray  (matches SourceCrest A-E-Ø palette)
+const RELIABILITY_BORDER: Record<string, string> = {
+  high:      "#22C55E",
+  medium:    "#14B8A6",
+  mixed:     "#00A2FF",
+  low:       "#F6AD55",
+  flagged:   "#FC4444",
+  unchecked: "#718096",
+};
+
+function ratingToReliability(rating: number | null | undefined): Reliability {
+  if (rating == null) return "unchecked";
+  if (rating >= 70)   return "high";
+  if (rating >= 50)   return "medium";
+  if (rating >= 35)   return "mixed";
+  if (rating >= 20)   return "low";
+  return "flagged";
+}
 
 export function getCytoscapeStyles(displayMode: DisplayMode): any[] {
   const nodeStyle = getNodeStyle(displayMode);
@@ -56,43 +77,41 @@ function getNodeStyle(displayMode: DisplayMode) {
           }
           return 1; // Default z-index
         },
-        // Use background image - use new API endpoint that auto-detects extension
+        // Use crest for publisher nodes; photo endpoint for everything else
         "background-image": (ele: any) => {
           const data = ele.data();
           const type = data.type;
           const nodeId = ele.id();
 
-          // Use new API endpoint for auto extension detection
-          let fullUrl;
-          if (type === "author") {
-            const authorId = data.author_id || nodeId.replace("autho-", "");
-            fullUrl = `${API_BASE_URL}/api/image/authors/${authorId}`;
-          } else if (type === "task" || type === "reference") {
-            const contentId = data.content_id || nodeId.replace("conte-", "");
-            fullUrl = `${API_BASE_URL}/api/image/content/${contentId}`;
-          } else if (type === "publisher") {
-            const publisherId =
-              data.publisher_id || nodeId.replace("publi-", "");
-            fullUrl = `${API_BASE_URL}/api/image/publishers/${publisherId}`;
-          } else {
-            return null; // No image for claims
+          if (type === "publisher") {
+            return getSourceCrestDataUri(data.admiralty_code ?? undefined, 80);
           }
 
-          return fullUrl;
+          if (type === "author") {
+            const authorId = data.author_id || nodeId.replace("autho-", "");
+            return `${API_BASE_URL}/api/image/authors/${authorId}`;
+          }
+          if (type === "task" || type === "reference") {
+            const contentId = data.content_id || nodeId.replace("conte-", "");
+            return `${API_BASE_URL}/api/image/content/${contentId}`;
+          }
+          return null;
         },
-        "background-fit": "cover",
+        "background-fit": (ele: any) => ele.data("type") === "publisher" ? "contain" : "cover",
         "background-clip": "node",
         "background-color": (ele: any) => {
           const type = ele.data("type");
-          // Fallback colors if no image
           if (type === "task") return "#6366f1";
           if (type === "reference") return "#10b981";
           if (type === "unifiedClaim") return "#f97316";
-          if (type === "refClaim") return "#ec4899"; // Pink for reference claims
-          if (type === "taskClaim") return "#f59e0b"; // Amber for task claims
-          if (type === "caseClaim") return "#8b5cf6"; // Purple for case claims
+          if (type === "refClaim") return "#ec4899";
+          if (type === "taskClaim") return "#f59e0b";
+          if (type === "caseClaim") return "#8b5cf6";
           if (type === "author") return "#a78bfa";
-          if (type === "publisher") return "#60a5fa";
+          if (type === "publisher") {
+            const reliability = ratingToReliability(ele.data("rating"));
+            return RELIABILITY_BORDER[reliability] ?? "#718096";
+          }
           return "#6366f1";
         },
         "background-opacity": (ele: any) => {
@@ -114,11 +133,14 @@ function getNodeStyle(displayMode: DisplayMode) {
           if (type === "task") return "#6366f1";
           if (type === "reference") return "#10b981";
           if (type === "unifiedClaim") return "#f97316";
-          if (type === "refClaim") return "#ec4899"; // Pink for reference claims
-          if (type === "taskClaim") return "#f59e0b"; // Amber for task claims
-          if (type === "caseClaim") return "#8b5cf6"; // Purple for case claims
+          if (type === "refClaim") return "#ec4899";
+          if (type === "taskClaim") return "#f59e0b";
+          if (type === "caseClaim") return "#8b5cf6";
           if (type === "author") return "#a78bfa";
-          if (type === "publisher") return "#60a5fa";
+          if (type === "publisher") {
+            const reliability = ratingToReliability(ele.data("rating"));
+            return RELIABILITY_BORDER[reliability] ?? "#718096";
+          }
           return "#6366f1";
         },
         "border-opacity": (ele: any) => {

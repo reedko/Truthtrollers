@@ -1,5 +1,5 @@
 // src/components/TaskClaims.tsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   VStack,
   Heading,
@@ -17,8 +17,13 @@ import {
   ModalFooter,
   Button,
   Checkbox,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Portal,
 } from "@chakra-ui/react";
-import { SearchIcon } from "@chakra-ui/icons";
+import { ChevronDownIcon, DeleteIcon, EditIcon, SearchIcon } from "@chakra-ui/icons";
 import { Claim, ReferenceWithClaims } from "../../../shared/entities/types";
 import ClaimModal from "./modals/ClaimModal";
 import RelevanceScanModal from "./modals/RelevanceScanModal";
@@ -69,6 +74,70 @@ interface TaskClaimsProps {
   isSuperAdmin?: boolean;
   onHardDeleteClaims?: (claimIds: number[]) => Promise<void>;
 }
+
+const CLAIM_BUBBLE_KEYFRAMES = {
+  "@keyframes pulse-green": {
+    "0%, 100%": {
+      boxShadow: "0 0 30px rgba(56, 161, 105, 0.8), 0 0 60px rgba(56, 161, 105, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
+      transform: "translateY(0px) scale(1)",
+    },
+    "50%": {
+      boxShadow: "0 0 60px rgba(56, 161, 105, 1), 0 0 120px rgba(56, 161, 105, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
+      transform: "translateY(-3px) scale(1.03)",
+    },
+  },
+  "@keyframes pulse-red": {
+    "0%, 100%": {
+      boxShadow: "0 0 30px rgba(229, 62, 62, 0.8), 0 0 60px rgba(229, 62, 62, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
+      transform: "translateY(0px) scale(1)",
+    },
+    "50%": {
+      boxShadow: "0 0 60px rgba(229, 62, 62, 1), 0 0 120px rgba(229, 62, 62, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
+      transform: "translateY(-3px) scale(1.03)",
+    },
+  },
+  "@keyframes pulse-blue": {
+    "0%, 100%": {
+      boxShadow: "0 0 30px rgba(214, 158, 46, 0.8), 0 0 60px rgba(214, 158, 46, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
+      transform: "translateY(0px) scale(1)",
+    },
+    "50%": {
+      boxShadow: "0 0 60px rgba(214, 158, 46, 1), 0 0 120px rgba(214, 158, 46, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
+      transform: "translateY(-3px) scale(1.03)",
+    },
+  },
+} as const;
+
+const claimBadgeSx = (color: string) => ({
+  position: "relative",
+  overflow: "hidden",
+  background: `${color}26`,
+  borderColor: `${color}99`,
+  color,
+  textShadow: `0 0 8px ${color}88`,
+  boxShadow: `inset 0 1px 0 rgba(255,255,255,0.18), inset 0 -1px 0 rgba(0,0,0,0.42), 0 0 8px ${color}33`,
+  _before: {
+    content: '""',
+    position: "absolute",
+    left: 0,
+    top: 0,
+    width: "100%",
+    height: "45%",
+    background: "linear-gradient(180deg, rgba(255,255,255,0.22), rgba(255,255,255,0))",
+    pointerEvents: "none",
+  },
+  _after: {
+    content: '""',
+    position: "absolute",
+    right: "-1px",
+    top: "-1px",
+    width: "8px",
+    height: "8px",
+    background: `linear-gradient(135deg, rgba(255,255,255,0.36), ${color}66 48%, rgba(0,0,0,0.5) 52%)`,
+    clipPath: "polygon(100% 0, 100% 100%, 0 0)",
+    pointerEvents: "none",
+  },
+});
 
 const TaskClaims: React.FC<TaskClaimsProps> = ({
   claims,
@@ -151,15 +220,15 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   // 🛠️ FIX: Move boxShadow useColorModeValue calls to top level (Rules of Hooks)
   const boxShadowHovered = useColorModeValue(
     "0 4px 12px rgba(71, 85, 105, 0.25)",
-    "0 12px 48px rgba(0, 0, 0, 0.8), 0 0 60px rgba(100, 116, 139, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+    "0 12px 48px rgba(0, 0, 0, 0.8), 0 0 60px rgba(59, 130, 246, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
   );
   const boxShadowDefault = useColorModeValue(
-    "0 2px 8px rgba(71, 85, 105, 0.15)",
-    "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(100, 116, 139, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
+    "0 2px 8px rgba(94, 234, 212, 0.2)",
+    "0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1)",
   );
   const boxShadowHover = useColorModeValue(
-    "0 4px 12px rgba(71, 85, 105, 0.25)",
-    "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(100, 116, 139, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
+    "0 4px 12px rgba(94, 234, 212, 0.3)",
+    "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
   );
   const addClaimButtonColor = useColorModeValue(
     "teal.600",
@@ -173,6 +242,306 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
     "0 4px 12px rgba(94, 234, 212, 0.3)",
     "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 162, 255, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
   );
+
+  const rolePriority = (claim: Claim) => {
+    const role = String(claim.claim_role || claim.claim_type || "").toLowerCase();
+    if (role === "thesis" || role === "task") return 0;
+    if (role === "pillar") return 1;
+    if (role === "evidence" || role === "reference" || role === "snippet") return 2;
+    return 3;
+  };
+
+  const claimTree = useMemo(() => {
+    const byId = new Map<number, Claim>();
+    const children = new Map<number, Claim[]>();
+    const roots: Claim[] = [];
+
+    const pushChild = (parentId: number, child: Claim) => {
+      const list = children.get(parentId) || [];
+      list.push(child);
+      children.set(parentId, list);
+    };
+
+    claims.forEach((claim) => {
+      byId.set(claim.claim_id, claim);
+    });
+
+    const sortClaims = (a: Claim, b: Claim) =>
+      rolePriority(a) - rolePriority(b) ||
+      (a.claim_order ?? 999999) - (b.claim_order ?? 999999) ||
+      (b.centrality_score ?? 0) - (a.centrality_score ?? 0) ||
+      a.claim_id - b.claim_id;
+
+    claims.forEach((claim) => {
+      const parentId = claim.parent_claim_id ?? null;
+      if (parentId != null && byId.has(parentId)) {
+        pushChild(parentId, claim);
+      } else {
+        roots.push(claim);
+      }
+    });
+
+    roots.sort(sortClaims);
+    children.forEach((list) => list.sort(sortClaims));
+
+    return { roots, children };
+  }, [claims]);
+
+  const getRoleLabel = (claim: Claim) => {
+    const role = String(claim.claim_role || claim.claim_type || "background").toLowerCase();
+    if (role === "task") return "THESIS";
+    if (role === "thesis") return "THESIS";
+    if (role === "pillar") return "PILLAR";
+    if (role === "evidence" || role === "reference" || role === "snippet") return "EVIDENCE";
+    return "BACKGROUND";
+  };
+
+  const getRoleAccent = (claim: Claim) => {
+    const role = String(claim.claim_role || claim.claim_type || "background").toLowerCase();
+    if (role === "thesis" || role === "task") return "#63B3ED";
+    if (role === "pillar") return "#9F7AEA";
+    if (role === "evidence" || role === "reference" || role === "snippet") return "#38A169";
+    return "#A0AEC0";
+  };
+
+  const getRoleDescription = (claim: Claim) => {
+    const role = getRoleLabel(claim);
+    if (role === "THESIS") return "Main claim or top-level assertion for this case.";
+    if (role === "PILLAR") return "Supporting claim that organizes evidence under the thesis.";
+    if (role === "EVIDENCE") return "Evidence-level claim tied to a source or supporting detail.";
+    return "Context or side detail that is not central to the argument.";
+  };
+
+  const renderClaimNode = (claim: Claim, depth = 0): React.ReactNode => {
+    const childClaims = claimTree.children.get(claim.claim_id) || [];
+
+    const existingLink =
+      linkSelection?.active && linkSelection.source
+        ? claimLinks.find(
+            (link) =>
+              link.claimId === claim.claim_id &&
+              link.sourceClaimId === linkSelection.source?.claim_id,
+          )
+        : null;
+
+    const isConnectedToSelectedReference =
+      isReferenceModalOpen &&
+      selectedReferenceId &&
+      claimLinks.some(
+        (link) =>
+          link.claimId === claim.claim_id &&
+          link.referenceId === selectedReferenceId,
+      );
+
+    const linkTone = (() => {
+      if (isConnectedToSelectedReference || existingLink) {
+        const relation =
+          claimLinks.find(
+            (l) =>
+              l.claimId === claim.claim_id &&
+              (selectedReferenceId ? l.referenceId === selectedReferenceId : true),
+          )?.relation || existingLink?.relation;
+        if (relation === "support") return "green";
+        if (relation === "refute") return "red";
+        return "yellow";
+      }
+      return "neutral";
+    })();
+
+    const roleAccent = getRoleAccent(claim);
+    const bg = bubbleStyle
+      ? "transparent"
+      : hoveredClaimId === claim.claim_id
+        ? hoveredBg
+        : linkTone === "green"
+          ? "linear-gradient(135deg, rgba(56, 161, 105, 0.24), rgba(56, 161, 105, 0.12))"
+          : linkTone === "red"
+            ? "linear-gradient(135deg, rgba(229, 62, 62, 0.24), rgba(229, 62, 62, 0.12))"
+            : linkTone === "yellow"
+              ? "linear-gradient(135deg, rgba(214, 158, 46, 0.24), rgba(214, 158, 46, 0.12))"
+              : defaultBg;
+
+    const border = linkTone === "green"
+      ? "3px solid #38A169"
+      : linkTone === "red"
+        ? "3px solid #E53E3E"
+        : linkTone === "yellow"
+          ? "3px solid #D69E2E"
+          : `1px solid ${borderColor}`;
+
+    return (
+      <Box key={claim.claim_id} width="100%">
+        <Box
+          ref={(el) => (claimRefs.current[claim.claim_id] = el)}
+          data-claim-id={claim.claim_id}
+          background={bg}
+          color={hoveredClaimId === claim.claim_id ? hoveredColor : defaultColor}
+          px={bubbleStyle ? 4 : 3}
+          py={bubbleStyle ? 3 : 2}
+          minH={bubbleStyle ? undefined : "54px"}
+          borderRadius={bubbleStyle ? "30px" : "12px"}
+          border={border}
+          boxShadow={
+            hoveredClaimId === claim.claim_id ? boxShadowHovered : boxShadowDefault
+          }
+          _hover={
+            linkSelection?.active
+              ? { bg: linkTone === "neutral" ? "rgba(128, 90, 213, 0.24)" : undefined, cursor: "pointer" }
+              : {
+                  boxShadow: boxShadowHover,
+                  transform: bubbleStyle ? "scale(1.03)" : "translateY(-2px)",
+                }
+          }
+          width="100%"
+          display="flex"
+          alignItems="center"
+          justifyContent="space-between"
+          cursor="pointer"
+          position="relative"
+          zIndex={2}
+          overflow="visible"
+          transition="all 0.35s ease"
+          onClick={() => {
+            if (linkSelection?.active) {
+              onPickTargetForLink?.(claim);
+              return;
+            }
+            setSelectedClaim(claim);
+            setIsClaimViewModalOpen(true);
+          }}
+        >
+          {!bubbleStyle && (
+            <Box
+              position="absolute"
+              left={0}
+              top={0}
+              width="20px"
+              height="100%"
+              background={`linear-gradient(90deg, ${roleAccent}55 0%, transparent 100%)`}
+              borderLeftRadius="12px"
+              pointerEvents="none"
+            />
+          )}
+          {isSuperAdmin && (
+            <Box
+              position="relative"
+              zIndex={2}
+              mr={2}
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <Checkbox
+                isChecked={selectedClaimIds.has(claim.claim_id)}
+                onChange={() => toggleClaimSelection(claim.claim_id)}
+                colorScheme="red"
+              />
+            </Box>
+          )}
+          <VStack align="start" spacing={0.5} flex="1" minW={0} position="relative" zIndex={1}>
+            <HStack spacing={1.5} flexWrap="nowrap" maxW="100%" overflow="hidden">
+              <Tooltip label={getRoleDescription(claim)} hasArrow openDelay={900}>
+                <Box
+                  px={1.5}
+                  py={0}
+                  borderRadius="md"
+                  border="1px solid"
+                  borderColor={roleAccent}
+                  color={roleAccent}
+                  fontSize="9px"
+                  lineHeight="16px"
+                  textTransform="uppercase"
+                  flexShrink={0}
+                  sx={claimBadgeSx(roleAccent)}
+                >
+                  {getRoleLabel(claim)}
+                </Box>
+              </Tooltip>
+              {claim.claim_depth != null && (
+                <Tooltip label="Hierarchy level: L0 thesis, L1 pillar, L2 evidence, L3 background." hasArrow openDelay={900}>
+                  <Box px={1.5} py={0} borderRadius="md" border="1px solid" fontSize="9px" lineHeight="16px" flexShrink={0} sx={claimBadgeSx("#94A3B8")}>
+                    L{claim.claim_depth}
+                  </Box>
+                </Tooltip>
+              )}
+              {claim.centrality_score != null && (
+                <Tooltip label="Centrality score: higher means this claim is more central to the case argument." hasArrow openDelay={900}>
+                  <Box px={1.5} py={0} borderRadius="md" border="1px solid" fontSize="9px" lineHeight="16px" flexShrink={0} sx={claimBadgeSx("#00A2FF")}>
+                    C{Math.round(Number(claim.centrality_score))}
+                  </Box>
+                </Tooltip>
+              )}
+              {claim.verifiability_score != null && (
+                <Tooltip label="Verifiability score: higher means this claim should be easier or more valuable to verify with evidence." hasArrow openDelay={900}>
+                  <Box px={1.5} py={0} borderRadius="md" border="1px solid" fontSize="9px" lineHeight="16px" flexShrink={0} sx={claimBadgeSx("#22C55E")}>
+                    V{Math.round(Number(claim.verifiability_score))}
+                  </Box>
+                </Tooltip>
+              )}
+            </HStack>
+            <Tooltip label={claim.claim_text} hasArrow isDisabled={!!draggingClaim}>
+              <Text flex="1" noOfLines={1} fontSize="0.9rem" lineHeight="1.3" position="relative" zIndex={1}>
+                {claim.claim_text}
+              </Text>
+            </Tooltip>
+          </VStack>
+          <Box position="relative" zIndex={3} alignSelf="center" ml={2} onClick={(e) => e.stopPropagation()}>
+            <Menu placement="bottom-end">
+              <MenuButton
+                as={IconButton}
+                size="sm"
+                variant="ghost"
+                aria-label="Claim actions"
+                icon={<ChevronDownIcon />}
+                minW="30px"
+                h="30px"
+              />
+              <Portal>
+                <MenuList minW="190px" fontSize="sm" zIndex={20000}>
+                  <MenuItem
+                    icon={<EditIcon />}
+                    onClick={() => {
+                      setEditingClaim(claim);
+                      setIsClaimModalOpen(true);
+                    }}
+                  >
+                    Edit
+                  </MenuItem>
+                  <MenuItem
+                    icon={<SearchIcon />}
+                    onClick={() => onVerifyClaim(claim)}
+                  >
+                    Evaluate claim
+                  </MenuItem>
+                  <MenuItem
+                    icon={<span>🔬</span>}
+                    onClick={() => {
+                      setSelectedClaimForEvidence(claim);
+                      setIsEvidenceRerunModalOpen(true);
+                    }}
+                  >
+                    Re-run evidence
+                  </MenuItem>
+                  <MenuItem
+                    icon={<DeleteIcon />}
+                    color="red.300"
+                    onClick={() => onDeleteClaim(claim.claim_id)}
+                  >
+                    Delete for user
+                  </MenuItem>
+                </MenuList>
+              </Portal>
+            </Menu>
+          </Box>
+        </Box>
+
+        {childClaims.length > 0 && (
+          <VStack align="stretch" spacing={2} mt={2} pl={2} w="100%" borderLeft="1px solid rgba(148, 163, 184, 0.25)">
+            {childClaims.map((child) => renderClaimNode(child, depth + 1))}
+          </VStack>
+        )}
+      </Box>
+    );
+  };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -326,373 +695,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
       {claims.length === 0 ? (
         <Text>No claims found.</Text>
       ) : (
-        claims.map((claim) => {
-          // Find existing link between this task claim and the selected reference claim
-          const existingLink =
-            linkSelection?.active && linkSelection.source
-              ? claimLinks.find(
-                  (link) =>
-                    link.claimId === claim.claim_id &&
-                    link.sourceClaimId === linkSelection.source?.claim_id,
-                )
-              : null;
-
-          // Check if this task claim is connected to the open reference modal
-          const isConnectedToSelectedReference =
-            isReferenceModalOpen &&
-            selectedReferenceId &&
-            claimLinks.some(
-              (link) =>
-                link.claimId === claim.claim_id &&
-                link.referenceId === selectedReferenceId,
-            );
-
-          // Determine border and background colors based on relationship
-          const getLinkColors = () => {
-            // Priority 1: Show connection to open reference modal
-            if (isConnectedToSelectedReference) {
-              const link = claimLinks.find(
-                (l) =>
-                  l.claimId === claim.claim_id &&
-                  l.referenceId === selectedReferenceId,
-              );
-
-              if (link) {
-                switch (link.relation) {
-                  case "support":
-                    return {
-                      border: bubbleStyle
-                        ? "6px solid #38A169"
-                        : "3px solid #38A169",
-                      background: bubbleStyle
-                        ? "transparent"
-                        : "linear-gradient(135deg, rgba(56, 161, 105, 0.3), rgba(56, 161, 105, 0.2))",
-                      hoverBg: "rgba(56, 161, 105, 0.4)",
-                      boxShadow: bubbleStyle
-                        ? "0 0 30px rgba(56, 161, 105, 0.8), 0 0 60px rgba(56, 161, 105, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.2)"
-                        : "0 0 20px rgba(56, 161, 105, 0.6), 0 0 40px rgba(56, 161, 105, 0.3)",
-                      animation: bubbleStyle
-                        ? "pulse-green 1.5s ease-in-out infinite"
-                        : undefined,
-                    };
-                  case "refute":
-                    return {
-                      border: bubbleStyle
-                        ? "6px solid #E53E3E"
-                        : "3px solid #E53E3E",
-                      background: bubbleStyle
-                        ? "transparent"
-                        : "linear-gradient(135deg, rgba(229, 62, 62, 0.3), rgba(229, 62, 62, 0.2))",
-                      hoverBg: "rgba(229, 62, 62, 0.4)",
-                      boxShadow: bubbleStyle
-                        ? "0 0 30px rgba(229, 62, 62, 0.8), 0 0 60px rgba(229, 62, 62, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.2)"
-                        : "0 0 20px rgba(229, 62, 62, 0.6), 0 0 40px rgba(229, 62, 62, 0.3)",
-                      animation: bubbleStyle
-                        ? "pulse-red 1.5s ease-in-out infinite"
-                        : undefined,
-                    };
-                  case "nuance":
-                    return {
-                      border: bubbleStyle
-                        ? "6px solid #D69E2E"
-                        : "3px solid #D69E2E",
-                      background: bubbleStyle
-                        ? "transparent"
-                        : "linear-gradient(135deg, rgba(214, 158, 46, 0.3), rgba(214, 158, 46, 0.2))",
-                      hoverBg: "rgba(214, 158, 46, 0.4)",
-                      boxShadow: bubbleStyle
-                        ? "0 0 30px rgba(214, 158, 46, 0.8), 0 0 60px rgba(214, 158, 46, 0.5), inset 0 2px 4px rgba(255, 255, 255, 0.2)"
-                        : "0 0 20px rgba(214, 158, 46, 0.6), 0 0 40px rgba(214, 158, 46, 0.3)",
-                      animation: bubbleStyle
-                        ? "pulse-blue 1.5s ease-in-out infinite"
-                        : undefined,
-                    };
-                }
-              }
-            }
-
-            // Priority 2: Link selection mode
-            if (!linkSelection?.active) {
-              return {
-                border: `1px solid ${borderColor}`,
-                background: defaultBg,
-                hoverBg: undefined,
-              };
-            }
-
-            if (existingLink) {
-              switch (existingLink.relation) {
-                case "support":
-                  return {
-                    border: bubbleStyle
-                      ? "6px solid #38A169"
-                      : "3px solid #38A169",
-                    background: bubbleStyle
-                      ? "transparent"
-                      : "linear-gradient(135deg, rgba(56, 161, 105, 0.25), rgba(56, 161, 105, 0.15))",
-                    hoverBg: "rgba(56, 161, 105, 0.35)",
-                    animation: bubbleStyle
-                      ? "pulse-green 1.5s ease-in-out infinite"
-                      : undefined,
-                  };
-                case "refute":
-                  return {
-                    border: bubbleStyle
-                      ? "6px solid #E53E3E"
-                      : "3px solid #E53E3E",
-                    background: bubbleStyle
-                      ? "transparent"
-                      : "linear-gradient(135deg, rgba(229, 62, 62, 0.25), rgba(229, 62, 62, 0.15))",
-                    hoverBg: "rgba(229, 62, 62, 0.35)",
-                    animation: bubbleStyle
-                      ? "pulse-red 1.5s ease-in-out infinite"
-                      : undefined,
-                  };
-                case "nuance":
-                  return {
-                    border: bubbleStyle
-                      ? "6px solid #D69E2E"
-                      : "3px solid #D69E2E",
-                    background: bubbleStyle
-                      ? "transparent"
-                      : "linear-gradient(135deg, rgba(214, 158, 46, 0.25), rgba(214, 158, 46, 0.15))",
-                    hoverBg: "rgba(214, 158, 46, 0.35)",
-                    animation: bubbleStyle
-                      ? "pulse-blue 1.5s ease-in-out infinite"
-                      : undefined,
-                  };
-                default:
-                  return {
-                    border: "2px dashed #805AD5",
-                    background: bubbleStyle
-                      ? "transparent"
-                      : "linear-gradient(135deg, rgba(128, 90, 213, 0.2), rgba(128, 90, 213, 0.1))",
-                    hoverBg: "rgba(128, 90, 213, 0.3)",
-                  };
-              }
-            }
-
-            // Link mode active but no existing link - neutral highlight
-            return {
-              border: "2px dashed #805AD5",
-              background: bubbleStyle
-                ? "transparent"
-                : "linear-gradient(135deg, rgba(128, 90, 213, 0.2), rgba(128, 90, 213, 0.1))",
-              hoverBg: "rgba(128, 90, 213, 0.3)",
-            };
-          };
-
-          const colors = getLinkColors();
-
-          return (
-            <Box
-              key={claim.claim_id}
-              ref={(el) => (claimRefs.current[claim.claim_id] = el)}
-              data-claim-id={claim.claim_id}
-              background={
-                bubbleStyle
-                  ? "transparent"
-                  : hoveredClaimId === claim.claim_id
-                    ? hoveredBg
-                    : colors.background
-              }
-              color={
-                hoveredClaimId === claim.claim_id ? hoveredColor : defaultColor
-              }
-              px={bubbleStyle ? 4 : 3}
-              py={bubbleStyle ? 3 : 2}
-              borderRadius={bubbleStyle ? "30px" : "12px"}
-              border={colors.border}
-              boxShadow={
-                colors.boxShadow
-                  ? colors.boxShadow
-                  : hoveredClaimId === claim.claim_id
-                    ? boxShadowHovered
-                    : boxShadowDefault
-              }
-              _hover={
-                linkSelection?.active
-                  ? { bg: colors.hoverBg, cursor: "pointer" }
-                  : {
-                      boxShadow: boxShadowHover,
-                      transform: bubbleStyle
-                        ? "scale(1.15) rotate(2deg)"
-                        : "translateY(-2px)",
-                    }
-              }
-              width="100%"
-              display="flex"
-              alignItems="center"
-              justifyContent="space-between"
-              cursor="pointer"
-              position="relative"
-              overflow="visible"
-              transition="all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)"
-              fontFamily={
-                bubbleStyle
-                  ? "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive"
-                  : "inherit"
-              }
-              fontWeight={bubbleStyle ? "bold" : "normal"}
-              fontSize={bubbleStyle ? "md" : "sm"}
-              sx={{
-                animation: colors.animation,
-                ...(bubbleStyle && {
-                  "&::before": {
-                    content: '""',
-                    position: "absolute",
-                    top: "5%",
-                    left: "10%",
-                    width: "50%",
-                    height: "40%",
-                    background:
-                      "radial-gradient(ellipse at top left, rgba(255, 255, 255, 0.7), transparent 50%)",
-                    borderRadius: "50%",
-                    pointerEvents: "none",
-                  },
-                  "&::after": {
-                    content: '""',
-                    position: "absolute",
-                    bottom: "8%",
-                    right: "12%",
-                    width: "30%",
-                    height: "25%",
-                    background:
-                      "radial-gradient(ellipse at bottom right, rgba(255, 255, 255, 0.4), transparent 60%)",
-                    borderRadius: "50%",
-                    pointerEvents: "none",
-                  },
-                }),
-                "@keyframes pulse-green": {
-                  "0%, 100%": {
-                    boxShadow:
-                      "0 0 30px rgba(56, 161, 105, 0.8), 0 0 60px rgba(56, 161, 105, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
-                    transform: "translateY(0px) scale(1)",
-                  },
-                  "50%": {
-                    boxShadow:
-                      "0 0 60px rgba(56, 161, 105, 1), 0 0 120px rgba(56, 161, 105, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
-                    transform: "translateY(-3px) scale(1.03)",
-                  },
-                },
-                "@keyframes pulse-red": {
-                  "0%, 100%": {
-                    boxShadow:
-                      "0 0 30px rgba(229, 62, 62, 0.8), 0 0 60px rgba(229, 62, 62, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
-                    transform: "translateY(0px) scale(1)",
-                  },
-                  "50%": {
-                    boxShadow:
-                      "0 0 60px rgba(229, 62, 62, 1), 0 0 120px rgba(229, 62, 62, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
-                    transform: "translateY(-3px) scale(1.03)",
-                  },
-                },
-                "@keyframes pulse-blue": {
-                  "0%, 100%": {
-                    boxShadow:
-                      "0 0 30px rgba(214, 158, 46, 0.8), 0 0 60px rgba(214, 158, 46, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
-                    transform: "translateY(0px) scale(1)",
-                  },
-                  "50%": {
-                    boxShadow:
-                      "0 0 60px rgba(214, 158, 46, 1), 0 0 120px rgba(214, 158, 46, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
-                    transform: "translateY(-3px) scale(1.03)",
-                  },
-                },
-              }}
-              onClick={() => {
-                if (linkSelection?.active) {
-                  onPickTargetForLink?.(claim);
-                  return;
-                }
-                setSelectedClaim(claim);
-                setIsClaimViewModalOpen(true);
-              }}
-            >
-              {!bubbleStyle && (
-                <Box
-                  position="absolute"
-                  left={0}
-                  top={0}
-                  width="20px"
-                  height="100%"
-                  background="linear-gradient(90deg, rgba(167, 139, 250, 0.4) 0%, transparent 100%)"
-                  borderLeftRadius="12px"
-                  pointerEvents="none"
-                />
-              )}
-              {isSuperAdmin && (
-                <Box
-                  position="relative"
-                  zIndex={2}
-                  mr={2}
-                  onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
-                >
-                  <Checkbox
-                    isChecked={selectedClaimIds.has(claim.claim_id)}
-                    onChange={() => toggleClaimSelection(claim.claim_id)}
-                    colorScheme="red"
-                  />
-                </Box>
-              )}
-              <Tooltip
-                label={claim.claim_text}
-                hasArrow
-                isDisabled={!!draggingClaim}
-              >
-                <Text flex="1" noOfLines={1} position="relative" zIndex={1}>
-                  {claim.claim_text}
-                </Text>
-              </Tooltip>
-              <HStack spacing={2} position="relative" zIndex={1}>
-                <IconButton
-                  size="sm"
-                  aria-label="Edit"
-                  icon={<span>✏️</span>}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingClaim(claim);
-                    setIsClaimModalOpen(true);
-                  }}
-                />
-                <IconButton
-                  size="sm"
-                  colorScheme="purple"
-                  aria-label="Verify"
-                  icon={<SearchIcon />}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onVerifyClaim(claim);
-                  }}
-                />
-                <Tooltip label="Re-run Evidence Search" placement="top">
-                  <IconButton
-                    size="sm"
-                    colorScheme="cyan"
-                    aria-label="Re-run Evidence"
-                    icon={<span>🔬</span>}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedClaimForEvidence(claim);
-                      setIsEvidenceRerunModalOpen(true);
-                    }}
-                  />
-                </Tooltip>
-                <IconButton
-                  size="sm"
-                  colorScheme="red"
-                  aria-label="Delete"
-                  icon={<span>🗑️</span>}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDeleteClaim(claim.claim_id);
-                  }}
-                />
-              </HStack>
-            </Box>
-          );
-        })
+        claimTree.roots.map((claim) => renderClaimNode(claim))
       )}
 
       <ClaimModal

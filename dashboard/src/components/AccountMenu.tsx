@@ -6,6 +6,8 @@ import {
   MenuButton,
   MenuList,
   MenuItem,
+  MenuDivider,
+  MenuGroup,
   Flex,
   Text,
   Badge,
@@ -18,7 +20,7 @@ import { UserSelectorModal } from "./UserSelectorModal";
 
 export const AccountMenu: React.FC = () => {
   const navigate = useNavigate();
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen: isModalOpen, onOpen: onOpenModal, onClose: onCloseModal } = useDisclosure();
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const API_BASE_URL =
@@ -28,7 +30,6 @@ export const AccountMenu: React.FC = () => {
   const handleLogout = () => {
     logout();
     clearTask(null);
-    // Clear browser storage for good measure
     localStorage.removeItem("jwt");
     sessionStorage.removeItem("jwt");
     localStorage.removeItem("user");
@@ -93,33 +94,55 @@ export const AccountMenu: React.FC = () => {
               {isDemo ? "Read‑only preview" : user?.email}
             </Text>
           </Flex>
-          <MenuItem onClick={onOpen}>
+          <MenuItem onClick={onOpenModal}>
             Switch Viewer
           </MenuItem>
 
-          <MenuItem onClick={() => navigate("/account")}>
-            Account Settings
-          </MenuItem>
-          <MenuItem onClick={() => navigate("/admin/social")}>
-            Social Admin
-          </MenuItem>
+          <MenuItem onClick={() => navigate("/account")}>Account Settings</MenuItem>
+          <MenuItem onClick={() => navigate("/admin/social")}>Social Admin</MenuItem>
           {!isDemo && (
-            <>
-              <MenuItem onClick={() => navigate("/permissions")}>
-                Permissions
-              </MenuItem>
-            </>
+            <MenuItem onClick={() => navigate("/permissions")}>Permissions</MenuItem>
           )}
           {user?.role === "super_admin" && (
             <MenuItem onClick={() => navigate("/admin")} color="purple.400" fontWeight="bold">
               Admin Panel
             </MenuItem>
           )}
+
+          {user?.role === "super_admin" && (
+            <>
+              <MenuDivider />
+              <MenuGroup title="🛠 All Tools">
+                <MenuItem onClick={() => navigate("/workspace")} fontSize="sm">Workspace</MenuItem>
+                <MenuItem onClick={() => navigate("/casefocus")} fontSize="sm">Case Focus</MenuItem>
+                <MenuItem onClick={() => navigate("/molecule")} fontSize="sm">Molecule</MenuItem>
+                <MenuItem onClick={() => navigate("/knowgraph")} fontSize="sm">KnowGraph</MenuItem>
+                <MenuItem onClick={() => navigate("/credibility")} fontSize="sm">Credibility</MenuItem>
+                <MenuItem onClick={() => navigate("/textpad")} fontSize="sm">TextPad</MenuItem>
+                <MenuItem onClick={() => navigate("/tutorials")} fontSize="sm">🎓 Tutorials</MenuItem>
+                <MenuItem onClick={() => navigate("/social-media")} fontSize="sm">🐦 Social Media</MenuItem>
+                <MenuItem onClick={() => navigate("/ttlive")} fontSize="sm">💬 TT Live</MenuItem>
+                <MenuItem onClick={() => navigate("/game")} fontSize="sm">🎮 Game</MenuItem>
+                <MenuItem onClick={() => navigate("/gamespace")} fontSize="sm">🕹 GameSpace</MenuItem>
+                <MenuItem onClick={() => navigate("/level")} fontSize="sm">📈 Level</MenuItem>
+                <MenuItem onClick={() => navigate("/game/truefalse")} fontSize="sm">🎯 TrueFalse Game</MenuItem>
+                <MenuItem onClick={() => navigate("/quadrantgrid")} fontSize="sm">📊 QuadrantGrid</MenuItem>
+                <MenuItem onClick={() => navigate("/claim-duel")} fontSize="sm">⚔️ Claim Duel</MenuItem>
+                <MenuItem onClick={() => navigate("/foxcase")} fontSize="sm">🦊 FoxCase</MenuItem>
+                <MenuItem onClick={() => navigate("/chat")} fontSize="sm">Chat</MenuItem>
+                <MenuItem onClick={() => navigate("/evaluate-ratings")} fontSize="sm">Evaluate Ratings</MenuItem>
+                <MenuItem onClick={() => navigate("/admin/social")} fontSize="sm">Social Admin</MenuItem>
+                <MenuItem onClick={() => navigate("/permissions")} fontSize="sm">Permissions</MenuItem>
+              </MenuGroup>
+            </>
+          )}
+
+          <MenuDivider />
           <MenuItem onClick={handleLogout}>Log out</MenuItem>
         </MenuList>
       </Menu>
 
-      <UserSelectorModal isOpen={isOpen} onClose={onClose} />
+      <UserSelectorModal isOpen={isModalOpen} onClose={onCloseModal} />
     </>
   );
 };

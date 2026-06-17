@@ -33,6 +33,9 @@ import {
 } from "../../services/referenceClaimRelevance";
 import { fetchClaimScoresForTask, fetchAIEvidenceLinks } from "../../services/useDashboardAPI";
 import VerimeterBar from "../VerimeterBar";
+import SourceCrest from "../SourceCrest";
+import { normalizeSourceProfile } from "../../utils/normalizeSourceProfile";
+import SourceDetailModal from "./SourceDetailModal";
 
 interface RelevanceScanModalProps {
   isOpen: boolean;
@@ -85,16 +88,14 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
 
   // Debug panel expand/collapse state
   const [debugExpanded, setDebugExpanded] = useState(false);
+  const [sourceDetailRef, setSourceDetailRef] = useState<import("../../../../shared/entities/types").ReferenceWithClaims | null>(null);
 
   // ── On open: load existing links immediately, don't re-scan ──────────────
   useEffect(() => {
     if (isOpen && taskClaim) {
-      // Only reload if the task claim changed
-      if (taskClaim.claim_id !== lastTaskClaimId.current) {
-        lastTaskClaimId.current = taskClaim.claim_id;
-        loadExistingLinks();
-        loadComputedScore();
-      }
+      lastTaskClaimId.current = taskClaim.claim_id;
+      loadExistingLinks();
+      loadComputedScore();
     }
   }, [isOpen, taskClaim?.claim_id]); // eslint-disable-line
 
@@ -166,6 +167,9 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       const allClaimsMap = new Map<number, Claim>();
       all.forEach(c => allClaimsMap.set(c.claim_id, c));
 
+      // Build a mutable copy of refMap so we can add recovered claims
+      const recoveredRefMap = new Map(refMap);
+
       for (const link of existingLinks) {
         if (!allClaimsMap.has(link.reference_claim_id) && link.reference_claim_text) {
           // This claim is linked but not in our references array - add it!
@@ -180,7 +184,13 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
           allClaimsMap.set(link.reference_claim_id, missingClaim);
           console.log(`🔍 [RelevanceScan] Added missing linked claim ${link.reference_claim_id} from ${link.source_name}`);
         }
+        // Ensure reference mapping exists for SourceCrest lookup, even if claim was already in map
+        if (link.reference_content_id && !recoveredRefMap.has(link.reference_claim_id)) {
+          recoveredRefMap.set(link.reference_claim_id, link.reference_content_id);
+        }
       }
+
+      setClaimReferenceMap(recoveredRefMap);
 
       const allClaims = Array.from(allClaimsMap.values());
       console.log(`🔍 [RelevanceScan] Total claims after adding missing linked: ${allClaims.length}`);
@@ -195,11 +205,11 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       const sorted = sortClaimsByRelevance(enriched);
 
       // 🎯 FILTER: Only show relevant claims
-      // - Manual links (hasLink = true) are always shown
+      // - Manual links (hasLink = true) are always shown — check FIRST
       // - AI assessments must be meaningful (not "insufficient" with low scores)
       const assessed = sorted.filter((c) => {
+        if (c.hasLink) return true; // Always show manual links (before stance check)
         if (!c.stance) return false; // No assessment at all
-        if (c.hasLink) return true; // Always show manual links
 
         // For AI assessments, filter out irrelevant ones
         const isIrrelevant = c.stance === 'insufficient' &&
@@ -346,8 +356,8 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
 
       // 🎯 FILTER: Show only relevant claims
       const relevant = sorted.filter((c) => {
+        if (c.hasLink) return true; // Always show manual links (before stance check)
         if (!c.stance) return false;
-        if (c.hasLink) return true; // Always show manual links
 
         // Filter out irrelevant AI assessments
         const isIrrelevant = c.stance === 'insufficient' &&
@@ -492,6 +502,7 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
   const isBusy = isLoadingExisting || isScanning;
 
   return (
+    <>
     <Modal isOpen={isOpen} onClose={onClose} size="xl" scrollBehavior="inside">
       <ModalContent
         bg={colorMode === "dark" ? "rgba(10, 15, 25, 0.85)" : "rgba(255, 255, 255, 0.5)"}
@@ -751,19 +762,38 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
 
                     {reference && (
                       <VStack align="start" spacing={1} mb={2}>
-                        <Text fontSize="sm" fontWeight="semibold" color={colorMode === "dark" ? "blue.300" : "blue.700"}>
-                          Source: {reference.content_name}
-                        </Text>
+                        <HStack spacing={2} align="center">
+                          <SourceCrest
+                            {...normalizeSourceProfile({
+                              publisher_name: reference.publisher_name,
+                              is_primary_source: reference.is_primary_source,
+                              media_source: reference.media_source,
+                              veracity_score: reference.publisher_veracity ?? undefined,
+                              admiralty_code: reference.admiralty_code ?? undefined,
+                            })}
+                            size="sm"
+                            onClick={(e) => { e?.stopPropagation(); setSourceDetailRef(reference); }}
+                          />
+                          <Text fontSize="sm" fontWeight="semibold" color={colorMode === "dark" ? "blue.300" : "blue.700"}>
+                            {reference.content_name}
+                          </Text>
+                        </HStack>
                         {reference.url && (
-                          <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"} isTruncated>
-                            URL: {reference.url}
+                          <Text fontSize="2xs" color="var(--mr-text-muted)" isTruncated>
+                            {reference.url}
                           </Text>
                         )}
-                        {reference.publisher_name && (
-                          <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"}>
-                            Publisher: {reference.publisher_name}
+                        <HStack spacing={1}>
+                          <Text fontSize="2xs" color="var(--mr-text-muted)" opacity={0.5}>Pub:</Text>
+                          <Text fontSize="2xs" color={reference.publisher_name ? "var(--mr-text-muted)" : "rgba(255,255,255,0.2)"} noOfLines={1}>
+                            {reference.publisher_name || "—"}
                           </Text>
-                        )}
+                          <Text fontSize="2xs" color="var(--mr-text-muted)" opacity={0.4}>·</Text>
+                          <Text fontSize="2xs" color="var(--mr-text-muted)" opacity={0.5}>Auth:</Text>
+                          <Text fontSize="2xs" color={reference.author_name ? "var(--mr-text-muted)" : "rgba(255,255,255,0.2)"} noOfLines={1}>
+                            {reference.author_name?.trim() || "—"}
+                          </Text>
+                        </HStack>
                       </VStack>
                     )}
 
@@ -868,19 +898,33 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
 
                     {reference && (
                       <VStack align="start" spacing={1} mb={2}>
-                        <Text fontSize="xs" fontWeight="semibold" color={colorMode === "dark" ? "blue.300" : "blue.600"}>
-                          Source: {reference.content_name}
-                        </Text>
-                        {reference.publisher_name && (
-                          <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"}>
-                            Publisher: {reference.publisher_name}
+                        <HStack spacing={2} align="center">
+                          <SourceCrest
+                            {...normalizeSourceProfile({
+                              publisher_name: reference.publisher_name,
+                              is_primary_source: reference.is_primary_source,
+                              media_source: reference.media_source,
+                              veracity_score: reference.publisher_veracity ?? undefined,
+                              admiralty_code: reference.admiralty_code ?? undefined,
+                            })}
+                            size="sm"
+                            onClick={(e) => { e?.stopPropagation(); setSourceDetailRef(reference); }}
+                          />
+                          <Text fontSize="xs" fontWeight="semibold" color={colorMode === "dark" ? "blue.300" : "blue.600"}>
+                            {reference.content_name}
                           </Text>
-                        )}
-                        {reference.author_name && (
-                          <Text fontSize="xs" color={colorMode === "dark" ? "gray.400" : "gray.600"}>
-                            Author: {reference.author_name}
+                        </HStack>
+                        <HStack spacing={1}>
+                          <Text fontSize="2xs" color="var(--mr-text-muted)" opacity={0.5}>Pub:</Text>
+                          <Text fontSize="2xs" color={reference.publisher_name ? "var(--mr-text-muted)" : "rgba(255,255,255,0.2)"} noOfLines={1}>
+                            {reference.publisher_name || "—"}
                           </Text>
-                        )}
+                          <Text fontSize="2xs" color="var(--mr-text-muted)" opacity={0.4}>·</Text>
+                          <Text fontSize="2xs" color="var(--mr-text-muted)" opacity={0.5}>Auth:</Text>
+                          <Text fontSize="2xs" color={reference.author_name ? "var(--mr-text-muted)" : "rgba(255,255,255,0.2)"} noOfLines={1}>
+                            {reference.author_name?.trim() || "—"}
+                          </Text>
+                        </HStack>
                       </VStack>
                     )}
 
@@ -1023,6 +1067,29 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
         </ModalFooter>
       </ModalContent>
     </Modal>
+
+    {sourceDetailRef && (() => {
+      const profile = normalizeSourceProfile({
+        publisher_name: sourceDetailRef.publisher_name,
+        is_primary_source: sourceDetailRef.is_primary_source,
+        media_source: sourceDetailRef.media_source,
+        veracity_score: sourceDetailRef.publisher_veracity ?? undefined,
+      });
+      return (
+        <SourceDetailModal
+          isOpen={!!sourceDetailRef}
+          onClose={() => setSourceDetailRef(null)}
+          publisherId={sourceDetailRef.publisher_id}
+          contentId={sourceDetailRef.reference_content_id}
+          sourceUrl={sourceDetailRef.url ?? undefined}
+          publisherName={sourceDetailRef.publisher_name ?? ""}
+          sourceType={profile.sourceType}
+          reliability={profile.reliability}
+          admiraltyCode={sourceDetailRef.admiralty_code ?? undefined}
+        />
+      );
+    })()}
+    </>
   );
 };
 

@@ -1,5 +1,5 @@
 -- Migration: Create claim_link_audit table for blockchain timestamping
--- Purpose: Track immutable snapshots of finalized evidence chains with OpenTimestamp proofs
+-- Purpose: Track tamper-evident snapshots of finalized evidence chains with OpenTimestamp proofs
 
 CREATE TABLE IF NOT EXISTS claim_link_audit (
   audit_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -54,4 +54,4 @@ CREATE TABLE IF NOT EXISTS claim_link_audit (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Add comment for documentation
-ALTER TABLE claim_link_audit COMMENT = 'Immutable audit trail for finalized evidence chain links with Bitcoin-backed OpenTimestamp proofs';
+ALTER TABLE claim_link_audit COMMENT = 'Tamper-evident audit trail for finalized evidence chain links with Bitcoin-backed OpenTimestamp proofs';

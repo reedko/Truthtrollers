@@ -45,7 +45,9 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
           (SELECT COUNT(*) FROM content_claims WHERE content_id = t.content_id) AS claimCount,
           (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating,
           NULL AS added_by_user_id,
-          NULL AS is_system
+          NULL AS is_system,
+          NULL AS source_type,
+          NULL AS admiralty_code
         FROM content t
         WHERE t.content_id = ?
 
@@ -62,7 +64,9 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
           NULL AS claimCount,
           (SELECT AVG(veracity_score) FROM author_ratings WHERE author_id = a.author_id) AS rating,
           NULL AS added_by_user_id,
-          NULL AS is_system
+          NULL AS is_system,
+          NULL AS source_type,
+          NULL AS admiralty_code
         FROM authors a
         JOIN content_authors ca ON a.author_id = ca.author_id
         WHERE ca.content_id = ?
@@ -80,7 +84,9 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
           NULL AS claimCount,
           (SELECT AVG(veracity_score) FROM author_ratings WHERE author_id = a.author_id) AS rating,
           NULL AS added_by_user_id,
-          NULL AS is_system
+          NULL AS is_system,
+          NULL AS source_type,
+          NULL AS admiralty_code
         FROM authors a
         JOIN content_authors ca ON a.author_id = ca.author_id
         JOIN content_relations tr ON ca.content_id = tr.reference_content_id
@@ -106,7 +112,9 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
           NULL AS claimCount,
           (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating,
           NULL AS added_by_user_id,
-          NULL AS is_system
+          NULL AS is_system,
+          (SELECT pp.source_type FROM publisher_profiles pp WHERE pp.publisher_id = p.publisher_id LIMIT 1) AS source_type,
+          (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'publisher' AND ae.target_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1) AS admiralty_code
         FROM publishers p
         JOIN content_publishers tp ON p.publisher_id = tp.publisher_id
         WHERE tp.content_id = ?
@@ -124,7 +132,9 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
           NULL AS claimCount,
           (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating,
           NULL AS added_by_user_id,
-          NULL AS is_system
+          NULL AS is_system,
+          (SELECT pp.source_type FROM publisher_profiles pp WHERE pp.publisher_id = p.publisher_id LIMIT 1) AS source_type,
+          (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'publisher' AND ae.target_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1) AS admiralty_code
         FROM publishers p
         JOIN content_publishers tp ON p.publisher_id = tp.publisher_id
         JOIN content_relations tr ON tp.content_id = tr.reference_content_id
@@ -158,7 +168,13 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
           WHERE rcl.reference_content_id = lr.content_id AND cc.content_id = ?
           ) AS rating,
           tr.added_by_user_id,
-          tr.is_system
+          tr.is_system,
+          NULL AS source_type,
+          (SELECT ae.admiralty_code FROM admiralty_evaluations ae
+           WHERE ae.target_type = 'content' AND ae.target_id = lr.content_id
+             AND ae.evaluation_status NOT IN ('insufficient_data')
+           ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1
+          ) AS admiralty_code
         FROM content lr
         JOIN content_relations tr ON lr.content_id = tr.reference_content_id
         WHERE tr.content_id = ?
@@ -174,7 +190,9 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
                CONCAT(a.author_first_name, ' ', a.author_last_name) AS label,
                NULL AS url,
                NULL AS claimCount,
-               (SELECT AVG(veracity_score) FROM author_ratings WHERE author_id = a.author_id) AS rating
+               (SELECT AVG(veracity_score) FROM author_ratings WHERE author_id = a.author_id) AS rating,
+               NULL AS source_type,
+               NULL AS admiralty_code
         FROM authors a
         WHERE a.author_id = ?
 
@@ -188,7 +206,9 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
                t.content_id AS content_id, NULL AS author_id, NULL AS publisher_id,
                t.content_name AS label, t.url,
                (SELECT COUNT(*) FROM content_claims WHERE content_id = t.content_id) AS claimCount,
-               (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating
+               (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating,
+               NULL AS source_type,
+               (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'content' AND ae.target_id = t.content_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1) AS admiralty_code
         FROM content t
         JOIN content_authors ca ON t.content_id = ca.content_id
         WHERE ca.author_id = ?
@@ -201,7 +221,9 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
                p.publisher_name AS label,
                NULL AS url,
                NULL AS claimCount,
-               (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating
+               (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating,
+               (SELECT pp.source_type FROM publisher_profiles pp WHERE pp.publisher_id = p.publisher_id LIMIT 1) AS source_type,
+               (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'publisher' AND ae.target_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1) AS admiralty_code
         FROM publishers p
         JOIN content_publishers tp ON p.publisher_id = tp.publisher_id
         JOIN content_authors ca ON tp.content_id = ca.content_id
@@ -217,7 +239,9 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
                p.publisher_name AS label,
                NULL AS url,
                NULL AS claimCount,
-               (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating
+               (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating,
+               (SELECT pp.source_type FROM publisher_profiles pp WHERE pp.publisher_id = p.publisher_id LIMIT 1) AS source_type,
+               (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'publisher' AND ae.target_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1) AS admiralty_code
         FROM publishers p
         WHERE p.publisher_id = ?
 
@@ -231,7 +255,9 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
                t.content_id AS content_id, NULL AS author_id, NULL AS publisher_id,
                t.content_name AS label, t.url,
                (SELECT COUNT(*) FROM content_claims WHERE content_id = t.content_id) AS claimCount,
-               (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating
+               (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating,
+               NULL AS source_type,
+               (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'content' AND ae.target_id = t.content_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1) AS admiralty_code
         FROM content t
         JOIN content_publishers tp ON t.content_id = tp.content_id
         WHERE tp.publisher_id = ?
@@ -244,7 +270,9 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
                CONCAT(a.author_first_name, ' ', a.author_last_name) AS label,
                NULL AS url,
                NULL AS claimCount,
-               (SELECT AVG(veracity_score) FROM author_ratings WHERE author_id = a.author_id) AS rating
+               (SELECT AVG(veracity_score) FROM author_ratings WHERE author_id = a.author_id) AS rating,
+               NULL AS source_type,
+               NULL AS admiralty_code
         FROM authors a
         JOIN content_authors ca ON a.author_id = ca.author_id
         JOIN content_publishers tp ON ca.content_id = tp.content_id
@@ -259,7 +287,9 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
                lr.content_id AS content_id, NULL AS author_id, NULL AS publisher_id,
                lr.content_name AS label, lr.url AS url,
                (SELECT COUNT(*) FROM content_claims WHERE content_id = lr.content_id) AS claimCount,
-               (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = lr.content_id) AS rating
+               (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = lr.content_id) AS rating,
+               NULL AS source_type,
+               (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'content' AND ae.target_id = lr.content_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1) AS admiralty_code
         FROM content lr
         WHERE lr.content_id = ?
 
@@ -269,7 +299,9 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
                t.content_id AS content_id, NULL AS author_id, NULL AS publisher_id,
                t.content_name AS label, t.url,
                (SELECT COUNT(*) FROM content_claims WHERE content_id = t.content_id) AS claimCount,
-               (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating
+               (SELECT AVG(veracity_score) FROM claims c JOIN content_claims cc ON c.claim_id = cc.claim_id WHERE cc.content_id = t.content_id) AS rating,
+               NULL AS source_type,
+               NULL AS admiralty_code
         FROM content t
         JOIN content_relations tr ON t.content_id = tr.content_id
         WHERE tr.reference_content_id = ?
@@ -282,7 +314,9 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
                CONCAT(a.author_first_name, ' ', a.author_last_name) AS label,
                NULL AS url,
                NULL AS claimCount,
-               (SELECT AVG(veracity_score) FROM author_ratings WHERE author_id = a.author_id) AS rating
+               (SELECT AVG(veracity_score) FROM author_ratings WHERE author_id = a.author_id) AS rating,
+               NULL AS source_type,
+               NULL AS admiralty_code
         FROM authors a
         JOIN content_authors ca ON a.author_id = ca.author_id
         JOIN content_relations tr ON ca.content_id = tr.reference_content_id
@@ -296,7 +330,9 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
                p.publisher_name AS label,
                NULL AS url,
                NULL AS claimCount,
-               (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating
+               (SELECT AVG(veracity_score) FROM publisher_ratings WHERE publisher_id = p.publisher_id) AS rating,
+               (SELECT pp.source_type FROM publisher_profiles pp WHERE pp.publisher_id = p.publisher_id LIMIT 1) AS source_type,
+               (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'publisher' AND ae.target_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1) AS admiralty_code
         FROM publishers p
         JOIN content_publishers tp ON p.publisher_id = tp.publisher_id
         JOIN content_relations tr ON tp.content_id = tr.reference_content_id
@@ -307,7 +343,6 @@ export const getNodesForEntity = (entityType, viewerId = null) => {
 
   return null;
 };
-
 export const getLinksForEntity = (entityType, viewerId = null) => {
   if (entityType === "task") {
     // Build visibility filter for reference-related links

@@ -61,11 +61,19 @@ export async function createContentInternal(query, payload) {
     content_type = "task",
     taskContentId = null,
     is_retracted = false,
+    // Distribution-layer provenance fields (optional — never break existing callers)
+    platform = null,
+    distribution_channel = null,
+    linked_url = null,
+    linked_publisher = null,
   } = payload || {};
 
   if (!content_name || !url) {
     throw new Error("createContentInternal: content_name and url are required");
   }
+
+  // Clamp to DB column limit (stored procedure param is VARCHAR(512))
+  const safeName = content_name.length > 500 ? content_name.substring(0, 497) + "…" : content_name;
 
   // 1) Insert via stored procedure InsertContentAndTopics
   const callQuery = `
@@ -73,7 +81,7 @@ export async function createContentInternal(query, payload) {
   `;
 
   const params = [
-    content_name, // Task name
+    safeName, // Task name
     url, // URL
     media_source, // Media source
     topic, // Main topic
@@ -119,7 +127,27 @@ export async function createContentInternal(query, payload) {
     throw err;
   }
 
-  // 3) If no thumbnail URL provided, or content already existed with one, skip image fetch
+  // 3a) Persist distribution-layer provenance fields when provided.
+  //     Done as a separate UPDATE so the stored procedure signature never changes.
+  if (platform || distribution_channel || linked_url || linked_publisher) {
+    try {
+      await query(
+        `UPDATE content
+            SET platform             = COALESCE(?, platform),
+                distribution_channel = COALESCE(?, distribution_channel),
+                linked_url           = COALESCE(?, linked_url),
+                linked_publisher     = COALESCE(?, linked_publisher)
+          WHERE content_id = ?`,
+        [platform, distribution_channel, linked_url, linked_publisher, contentId]
+      );
+      logger.log("🧩 createContentInternal: provenance fields updated for content_id =", contentId);
+    } catch (err) {
+      // Non-fatal — columns may not exist yet if migration hasn't run
+      logger.warn("⚠️ createContentInternal: could not write provenance fields (migration pending?):", err.message);
+    }
+  }
+
+  // 3b) If no thumbnail URL provided, or content already existed with one, skip image fetch
   if (!thumbnail || isExisting) {
     if (isExisting) {
       logger.log("⏭ createContentInternal: content already exists, skipping thumbnail re-download.");

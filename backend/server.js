@@ -1,6 +1,7 @@
 // /backend/server.js
 import dotenv from "dotenv";
 dotenv.config();
+console.error(`[BOOT] server.js module body reached at ${new Date().toISOString()}`);
 
 // ═══════════════════════════════════════════════
 // GLOBAL ERROR HANDLERS - Catch all uncaught errors
@@ -84,6 +85,9 @@ import createAnalyticsRouter from "./src/routes/analytics.routes.js";
 import createEvidenceConfigRoutes from "./src/routes/evidence-config.routes.js";
 import createExtensionSettingsRoutes from "./src/routes/extension-settings.routes.js";
 import createAuditRouter from "./src/routes/audit/audit.routes.js";
+import createReviewArticlesRouter from "./src/routes/review-articles.routes.js";
+import { backfillMissingScores } from "./src/services/publisherEnrichmentService.js";
+import createSourceProviderDebugRoutes from "./src/routes/debug/sourceProviders.routes.js";
 import createEvaluationRouter from "./src/routes/evaluation/evaluation.routes.js";
 import createContentRatingRouter from "./src/routes/evaluation/content-rating.routes.js";
 import createDiscussionSystemRouter from "./src/routes/discussion/index.js";
@@ -309,6 +313,7 @@ app.use("/", createFacebookRoutes({ query })); // Facebook scraping routes: /api
 app.use("/", createChatRouter({ pool })); // Chat routes: /api/chat/*, /api/users/search
 app.use("/", createSearchAnalysisRouter({ query, pool })); // Search analysis routes: /api/search-analysis
 app.use("/", createTutorialsRouter({ query })); // Tutorial videos routes: /api/tutorials
+app.use("/", createReviewArticlesRouter({ query, pool })); // Review article composer routes: /api/review-articles/*
 app.use("/", createAdminRouter({ query, pool })); // Admin routes: /api/admin/*, super_admin only
 app.use("/", createCredibilityRouter({ query, pool })); // Credibility checks: /api/credibility/*
 app.use("/", createAuditRouter({ query, pool })); // Audit routes: /api/audit/* (blockchain timestamping)
@@ -316,6 +321,11 @@ app.use("/", createEvaluationRouter({ query, pool })); // Evaluation routes: /ap
 app.use("/", createContentRatingRouter({ query, pool })); // Content rating routes: /api/content-rating/* (evidence chain evaluation)
 app.use("/", createDiscussionSystemRouter({ query, pool })); // Discussion units & X/Twitter posting: /api/discussion/*, /api/x-auth/*
 app.use("/", createTTLiveSystemRouter({ query, pool })); // TruthTrollers Live Feed: /api/ttlive/*
+
+// Source provider diagnostics — dev/admin only
+if (process.env.NODE_ENV !== "production" || process.env.ENABLE_DEBUG_ROUTES === "true") {
+  app.use("/api/debug/source-providers", createSourceProviderDebugRoutes());
+}
 // ─────────────────────────────────────────────
 // Health + Simple Proxy (top-level, legacy behavior)
 // ─────────────────────────────────────────────
@@ -353,7 +363,10 @@ app.get("/api/health", (req, res) => {
 // ─────────────────────────────────────────────
 // Initialize Logger (clear log file on startup)
 // ─────────────────────────────────────────────
-clearLogFile();
+const DISABLE_STARTUP_LOG_ROTATION = true; // temporary boot diagnostic
+if (!DISABLE_STARTUP_LOG_ROTATION) {
+  clearLogFile();
+}
 
 // ─────────────────────────────────────────────
 // Database Health Check (fail fast if DB is down)
@@ -382,8 +395,48 @@ redisClient = getRedisClient();
 // ─────────────────────────────────────────────
 const httpServer = http.createServer(app);
 initSocketServer(httpServer, pool); // Attach Socket.io for real-time chat
-httpServer.listen(httpPort, () => {
+httpServer.listen(httpPort, async () => {
   console.log(`🌐 HTTP server on http://localhost:${httpPort}`);
+  // Derive veracity scores for any publisher that has a Wikipedia profile
+  // but was stored before the positive-scoring logic existed.
+  backfillMissingScores(poolQuery);
+  // Create admiralty_evaluations table if it doesn't exist yet.
+  try {
+    const { readFileSync } = await import("fs");
+    const { join, dirname: pDirname } = await import("path");
+    const admSql = readFileSync(join(__dirname, "migrations/create-admiralty-evaluations.sql"), "utf8");
+    await poolQuery(admSql);
+    console.log("🛡  admiralty_evaluations table ready.");
+  } catch (err) {
+    console.warn("⚠️  Could not create admiralty_evaluations:", err.message);
+  }
+
+  // Add content provenance columns (platform, distribution_channel, linked_url, linked_publisher).
+  // Each ALTER TABLE is run individually so a duplicate-column error on an already-migrated
+  // DB is silently ignored without blocking the rest.
+  try {
+    const { readFileSync: rfs } = await import("fs");
+    const { join: pjoin } = await import("path");
+    const provSql = rfs(pjoin(__dirname, "migrations/add-content-provenance.sql"), "utf8");
+    const statements = provSql
+      .split(";")
+      .map(s => s.replace(/--[^\n]*/g, "").trim())
+      .filter(s => s.toUpperCase().startsWith("ALTER"));
+    let added = 0;
+    for (const stmt of statements) {
+      try {
+        await poolQuery(stmt);
+        added++;
+      } catch (colErr) {
+        // 1060 = Duplicate column name — column already exists, safe to ignore
+        if (colErr.errno !== 1060) console.warn("⚠️  content provenance column:", colErr.message);
+      }
+    }
+    if (added > 0) console.log(`📋 Content provenance columns added (${added} new).`);
+    else console.log("📋 Content provenance columns already present.");
+  } catch (err) {
+    console.warn("⚠️  Could not run content provenance migration:", err.message);
+  }
 });
 
 // ─────────────────────────────────────────────

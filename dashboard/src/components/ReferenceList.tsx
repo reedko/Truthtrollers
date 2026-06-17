@@ -28,6 +28,9 @@ import {
 import ReferenceModal from "./modals/ReferenceModal";
 import ReferenceClaimsModal from "./modals/ReferenceClaimsModal";
 import ScrapeReferenceModal from "./ScrapeReferenceModal";
+import SourceCrest from "./SourceCrest";
+import { normalizeSourceProfile } from "../utils/normalizeSourceProfile";
+import SourceDetailModal from "./modals/SourceDetailModal";
 import { fetchFailedReferences } from "../services/useDashboardAPI";
 import usePermissions from "../hooks/usePermissions";
 import { ClaimLink } from "./RelationshipMap";
@@ -45,6 +48,45 @@ interface ReferenceListProps {
   isSuperAdmin?: boolean;
   onHardDeleteReferences?: (referenceIds: number[]) => Promise<void>;
 }
+
+const BUBBLE_KEYFRAMES = {
+  "@keyframes pulse-green": {
+    "0%, 100%": {
+      boxShadow:
+        "0 0 30px rgba(56, 161, 105, 0.8), 0 0 60px rgba(56, 161, 105, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
+      transform: "translateY(0px) scale(1)",
+    },
+    "50%": {
+      boxShadow:
+        "0 0 60px rgba(56, 161, 105, 1), 0 0 120px rgba(56, 161, 105, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
+      transform: "translateY(-3px) scale(1.03)",
+    },
+  },
+  "@keyframes pulse-red": {
+    "0%, 100%": {
+      boxShadow:
+        "0 0 30px rgba(229, 62, 62, 0.8), 0 0 60px rgba(229, 62, 62, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
+      transform: "translateY(0px) scale(1)",
+    },
+    "50%": {
+      boxShadow:
+        "0 0 60px rgba(229, 62, 62, 1), 0 0 120px rgba(229, 62, 62, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
+      transform: "translateY(-3px) scale(1.03)",
+    },
+  },
+  "@keyframes pulse-blue": {
+    "0%, 100%": {
+      boxShadow:
+        "0 0 30px rgba(214, 158, 46, 0.8), 0 0 60px rgba(214, 158, 46, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
+      transform: "translateY(0px) scale(1)",
+    },
+    "50%": {
+      boxShadow:
+        "0 0 60px rgba(214, 158, 46, 1), 0 0 120px rgba(214, 158, 46, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
+      transform: "translateY(-3px) scale(1.03)",
+    },
+  },
+} as const;
 
 const ReferenceList: React.FC<ReferenceListProps> = ({
   references,
@@ -81,6 +123,10 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
   );
   const [isScrapeModalOpen, setIsScrapeModalOpen] = useState(false);
   const [retryUrl, setRetryUrl] = useState("");
+  const [sourceDetailRef, setSourceDetailRef] = useState<ReferenceWithClaims | null>(null);
+  const [glowPublisherId, setGlowPublisherId] = useState<number | null>(null);
+  // Tracks publishers linked via SourceDetailModal so the byline updates without a full re-fetch
+  const [pubOverrides, setPubOverrides] = useState<Map<number, { publisher_id: number; publisher_name: string }>>(new Map());
 
   // Color mode values
   const defaultBg = useColorModeValue(
@@ -115,7 +161,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
         );
       });
     }
-  }, [taskId, references]);
+  }, [taskId]); // `references` intentionally omitted — it changes identity on every parent render
 
   // Check if a reference is failed
   const isFailedReference = (refId: number) => failedReferenceIds.has(refId);
@@ -269,7 +315,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                 background={bubbleStyle ? "transparent" : bubbleBackground}
                 color={defaultColor}
                 px={bubbleStyle ? 4 : 3}
-                py={bubbleStyle ? 3 : 2}
+                py={bubbleStyle ? 3 : 1}
                 borderRadius={bubbleStyle ? "30px" : "12px"}
                 boxShadow={bubbleBoxShadow}
                 width="100%"
@@ -322,42 +368,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                       pointerEvents: "none",
                     },
                   }),
-                  "@keyframes pulse-green": {
-                    "0%, 100%": {
-                      boxShadow:
-                        "0 0 30px rgba(56, 161, 105, 0.8), 0 0 60px rgba(56, 161, 105, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
-                      transform: "translateY(0px) scale(1)",
-                    },
-                    "50%": {
-                      boxShadow:
-                        "0 0 60px rgba(56, 161, 105, 1), 0 0 120px rgba(56, 161, 105, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
-                      transform: "translateY(-3px) scale(1.03)",
-                    },
-                  },
-                  "@keyframes pulse-red": {
-                    "0%, 100%": {
-                      boxShadow:
-                        "0 0 30px rgba(229, 62, 62, 0.8), 0 0 60px rgba(229, 62, 62, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
-                      transform: "translateY(0px) scale(1)",
-                    },
-                    "50%": {
-                      boxShadow:
-                        "0 0 60px rgba(229, 62, 62, 1), 0 0 120px rgba(229, 62, 62, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
-                      transform: "translateY(-3px) scale(1.03)",
-                    },
-                  },
-                  "@keyframes pulse-blue": {
-                    "0%, 100%": {
-                      boxShadow:
-                        "0 0 30px rgba(214, 158, 46, 0.8), 0 0 60px rgba(214, 158, 46, 0.5), 0 8px 20px rgba(0, 0, 0, 0.4)",
-                      transform: "translateY(0px) scale(1)",
-                    },
-                    "50%": {
-                      boxShadow:
-                        "0 0 60px rgba(214, 158, 46, 1), 0 0 120px rgba(214, 158, 46, 0.8), inset 0 4px 8px rgba(255, 255, 255, 0.4), 0 12px 30px rgba(0, 0, 0, 0.5)",
-                      transform: "translateY(-3px) scale(1.03)",
-                    },
-                  },
+                  ...BUBBLE_KEYFRAMES,
                 }}
               >
                 {!bubbleStyle && (
@@ -386,19 +397,33 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                     colorScheme="red"
                   />
                 )}
+                {/* Crest column — fixed width, vertically centered */}
+                <Box flexShrink={0} alignSelf="center" position="relative" zIndex={1} mr={1}>
+                  <SourceCrest
+                    {...normalizeSourceProfile({
+                      publisher_name: ref.publisher_name,
+                      is_primary_source: ref.is_primary_source,
+                      media_source: ref.media_source,
+                      veracity_score: ref.publisher_veracity ?? undefined,
+                      rating_label: ref.rating_label ?? undefined,
+                      rating_type: ref.rating_type ?? undefined,
+                      admiralty_code: ref.admiralty_code ?? undefined,
+                    })}
+                    size="xs"
+                    active={!!ref.publisher_id && ref.publisher_id === glowPublisherId}
+                    onClick={(e) => { e?.stopPropagation(); setSourceDetailRef(ref); }}
+                  />
+                </Box>
+                {/* Title + byline column */}
                 <VStack
                   align="start"
                   flex="1"
                   spacing={0}
+                  minW={0}
                   position="relative"
                   zIndex={1}
                 >
-                  <HStack
-                    spacing={2}
-                    width="100%"
-                    position="relative"
-                    zIndex={1}
-                  >
+                  <HStack spacing={2} width="100%">
                     <Tooltip label={ref.content_name} hasArrow>
                       <Text
                         flex="1"
@@ -420,9 +445,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                         colorScheme="orange"
                         onClick={(e) => {
                           e.stopPropagation();
-                          // Open URL in new tab so user can visit the page
                           window.open(ref.url, "_blank");
-                          // Pre-fill the scrape modal with this URL
                           setRetryUrl(ref.url || "");
                           setIsScrapeModalOpen(true);
                         }}
@@ -431,6 +454,18 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                       </Button>
                     )}
                   </HStack>
+                  {/* Byline */}
+                  <Text fontSize="2xs" color="rgba(0,162,255,0.55)" noOfLines={1} lineHeight="1.1" mt="0">
+                    <Text as="span" opacity={0.6}>Pub: </Text>
+                    <Text as="span" color={(pubOverrides.get(ref.reference_content_id)?.publisher_name ?? ref.publisher_name) ? "rgba(0,162,255,0.8)" : "rgba(255,255,255,0.25)"}>
+                      {pubOverrides.get(ref.reference_content_id)?.publisher_name ?? ref.publisher_name ?? "—"}
+                    </Text>
+                    <Text as="span" opacity={0.4}> · </Text>
+                    <Text as="span" opacity={0.6}>Auth: </Text>
+                    <Text as="span" color={ref.author_name ? "rgba(0,162,255,0.8)" : "rgba(255,255,255,0.25)"}>
+                      {ref.author_name?.trim() ?? "—"}
+                    </Text>
+                  </Text>
                 </VStack>
                 <HStack spacing={2} position="relative" zIndex={1}>
                   <Button
@@ -518,6 +553,39 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
         onUpdateReferences={onUpdateReferences}
         initialUrl={retryUrl}
       />
+
+      {sourceDetailRef && (() => {
+        const profile = normalizeSourceProfile({
+          publisher_name: sourceDetailRef.publisher_name,
+          is_primary_source: sourceDetailRef.is_primary_source,
+          media_source: sourceDetailRef.media_source,
+          veracity_score: sourceDetailRef.publisher_veracity ?? undefined,
+        });
+        return (
+          <SourceDetailModal
+            isOpen={!!sourceDetailRef}
+            onClose={() => {
+              const pid = sourceDetailRef.publisher_id ?? null;
+              setSourceDetailRef(null);
+              onUpdateReferences?.();
+              if (pid) {
+                setGlowPublisherId(pid);
+                setTimeout(() => setGlowPublisherId(null), 3000);
+              }
+            }}
+            publisherId={pubOverrides.get(sourceDetailRef.reference_content_id)?.publisher_id ?? sourceDetailRef.publisher_id}
+            contentId={sourceDetailRef.reference_content_id}
+            sourceUrl={sourceDetailRef.url ?? undefined}
+            publisherName={pubOverrides.get(sourceDetailRef.reference_content_id)?.publisher_name ?? sourceDetailRef.publisher_name ?? ""}
+            sourceType={profile.sourceType}
+            reliability={profile.reliability}
+            admiraltyCode={sourceDetailRef.admiralty_code ?? undefined}
+            onPublisherLinked={(newId, newName) => {
+              setPubOverrides(prev => new Map(prev).set(sourceDetailRef.reference_content_id, { publisher_id: newId, publisher_name: newName }));
+            }}
+          />
+        );
+      })()}
     </>
   );
 };

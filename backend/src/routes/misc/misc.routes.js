@@ -15,6 +15,7 @@ import * as cheerio from "cheerio";
 import { DEFAULT_HEADERS } from "../../utils/helpers.js";
 import { fetchImageWithPuppeteer } from "../../utils/fetchImageWithPuppeteer.js";
 import puppeteer from "puppeteer";
+import { choosePdfPublisher } from "../../utils/pdfPublisherExtractor.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -601,10 +602,12 @@ export default function createMiscRoutes({ query, pool }) {
 
         const title = chooseTitle(infoTitle, lines, "PDF");
         const authors = choosePdfAuthors(infoAuthor, lines);
+        const publisher = choosePdfPublisher(parsed.info, lines);
 
         console.log("📄 Parsed PDF from blob:", {
           title,
           authors,
+          publisher,
           textLength: fullText.length,
         });
 
@@ -613,6 +616,7 @@ export default function createMiscRoutes({ query, pool }) {
           text: fullText,
           title: title || "",
           authors: authors,
+          publisher: publisher || "",
           rawAuthor: infoAuthor,
         });
       } catch (err) {
@@ -701,10 +705,12 @@ export default function createMiscRoutes({ query, pool }) {
 
       const title = chooseTitle(infoTitle, lines, url);
       const authors = choosePdfAuthors(infoAuthor, lines);
+      const publisher = choosePdfPublisher(parsed.info, lines);
 
       console.log("📄 Final inferred PDF metadata:", {
         title,
         authors,
+        publisher,
         textLength: fullText.length,
       });
 
@@ -712,8 +718,9 @@ export default function createMiscRoutes({ query, pool }) {
         success: true,
         text: fullText,
         title: title || "",
-        authors: authors, // 👈 array of strings
-        rawAuthor: infoAuthor, // 👈 optional, for debugging
+        authors: authors,
+        publisher: publisher || "",
+        rawAuthor: infoAuthor,
       });
     } catch (err) {
       console.error("❌ PDF parse failed:", err);

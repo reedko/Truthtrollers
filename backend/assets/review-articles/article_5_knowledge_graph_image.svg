@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="340" viewBox="0 0 800 340" role="img" aria-label="Knowledge Graph Image">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#07111f"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="100%" height="100%" rx="18" fill="url(#bg)"/>
+  <rect x="10" y="10" width="780" height="320" rx="16" fill="rgba(255,255,255,0.04)" stroke="#38bdf8" stroke-opacity="0.32"/>
+  <text x="28" y="42" fill="#38bdf8" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">Knowledge Graph Image</text>
+  
+    <circle cx="400" cy="165" r="58" fill="#082f49" stroke="#38bdf8" stroke-width="2" filter="url(#glow)"/>
+    <text x="355" y="158" fill="#e0f2fe" font-family="Inter, Arial" font-size="13" font-weight="700">Reviewed</text>
+    <text x="350" y="178" fill="#e0f2fe" font-family="Inter, Arial" font-size="13" font-weight="700">Content</text>
+    <rect x="45" y="95" width="220" height="58" rx="12" fill="#291334" stroke="#c084fc" stroke-opacity="0.55"/>
+    <text x="62" y="128" fill="#f3e8ff" font-family="Inter, Arial" font-size="13">Publisher: Children's Health D...</text>
+    <rect x="45" y="190" width="220" height="58" rx="12" fill="#3a2608" stroke="#fbbf24" stroke-opacity="0.55"/>
+    <text x="62" y="223" fill="#fef3c7" font-family="Inter, Arial" font-size="13">Author: Joseph Mercola</text>
+    <rect x="535" y="95" width="220" height="58" rx="12" fill="#0b2038" stroke="#38bdf8" stroke-opacity="0.55"/>
+    <text x="552" y="128" fill="#e0f2fe" font-family="Inter, Arial" font-size="13">Claims linked: 6</text>
+    <rect x="535" y="190" width="220" height="58" rx="12" fill="#0d261c" stroke="#22c55e" stroke-opacity="0.55"/>
+    <text x="552" y="223" fill="#dcfce7" font-family="Inter, Arial" font-size="13">Sources used: 5</text>
+    <line x1="265" y1="124" x2="342" y2="154" stroke="#c084fc" stroke-width="2"/>
+    <line x1="265" y1="219" x2="342" y2="178" stroke="#fbbf24" stroke-width="2"/>
+    <line x1="458" y1="154" x2="535" y2="124" stroke="#38bdf8" stroke-width="2"/>
+    <line x1="458" y1="178" x2="535" y2="219" stroke="#22c55e" stroke-width="2"/>
+    <text x="40" y="310" fill="#94a3b8" font-family="Inter, Arial" font-size="13">Content: 10 Studies Link 5G to Cancer, Dementia, Anxiety and Depression • Children's Health Defense</text>
+</svg>

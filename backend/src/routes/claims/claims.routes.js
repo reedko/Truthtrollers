@@ -3,12 +3,53 @@ import { Router } from "express";
 import { logUserActivity } from "../../utils/logUserActivity.js";
 import { authenticateToken } from "../../middleware/auth.js";
 import { calculateAIContentScore, calculateAIClaimScore } from "../../modules/aiRatings.js";
+import {
+  calculateUserClaimScore,
+  calculateUserClaimScoresForContent,
+} from "../../services/verimeterScoringService.js";
 
 const okVerdict = new Set(["true", "false", "uncertain"]);
 
 function badReq(res, msg) {
   return res.status(400).json({ error: msg });
 }
+
+const derivedClaimRoleSql = (alias) => `
+  COALESCE(
+    ${alias}.claim_role,
+    CASE
+      WHEN ${alias}.claim_depth = 0 THEN 'thesis'
+      WHEN ${alias}.claim_depth = 1 THEN 'pillar'
+      WHEN ${alias}.claim_depth >= 2 THEN 'evidence'
+      WHEN ${alias}.relationship_type IN ('task', 'content') THEN 'thesis'
+      WHEN ${alias}.relationship_type IN ('reference', 'snippet') THEN 'evidence'
+      ELSE 'background'
+    END
+  )
+`;
+
+const derivedClaimDepthSql = (alias) => `
+  COALESCE(
+    ${alias}.claim_depth,
+    CASE
+      WHEN ${alias}.claim_role = 'thesis' THEN 0
+      WHEN ${alias}.claim_role = 'pillar' THEN 1
+      WHEN ${alias}.claim_role = 'evidence' THEN 2
+      WHEN ${alias}.relationship_type IN ('task', 'content') THEN 0
+      WHEN ${alias}.relationship_type IN ('reference', 'snippet') THEN 2
+      ELSE 3
+    END
+  )
+`;
+
+const claimRolePrioritySql = (alias) => `
+  CASE ${derivedClaimRoleSql(alias)}
+    WHEN 'thesis' THEN 0
+    WHEN 'pillar' THEN 1
+    WHEN 'evidence' THEN 2
+    ELSE 3
+  END
+`;
 
 export default function createClaimsRoutes({ query, pool }) {
   const router = Router();
@@ -162,10 +203,20 @@ export default function createClaimsRoutes({ query, pool }) {
       claim_text,
       veracity_score,
       confidence_level,
-      last_verified
-
+      last_verified,
+      claim_type,
+      ${derivedClaimRoleSql("cc")} AS claim_role,
+      cc.parent_claim_id,
+      ${derivedClaimDepthSql("cc")} AS claim_depth,
+      cc.centrality_score,
+      cc.verifiability_score,
+      cc.claim_order,
+      MAX(cc.content_id) AS content_id,
+      COALESCE(GROUP_CONCAT(DISTINCT cc.relationship_type ORDER BY cc.relationship_type SEPARATOR ', '), '') AS relationship_type
     FROM claims
-    WHERE claim_id=?
+    LEFT JOIN content_claims cc ON claims.claim_id = cc.claim_id
+    WHERE claims.claim_id=?
+    GROUP BY claims.claim_id
     `;
 
       const params = [claimId];
@@ -210,6 +261,13 @@ export default function createClaimsRoutes({ query, pool }) {
       c.veracity_score,
       c.confidence_level,
       c.last_verified,
+      c.claim_type,
+      ${derivedClaimRoleSql("cc")} AS claim_role,
+      cc.parent_claim_id,
+      ${derivedClaimDepthSql("cc")} AS claim_depth,
+      cc.centrality_score,
+      cc.verifiability_score,
+      cc.claim_order,
       COALESCE(GROUP_CONCAT(DISTINCT cc.relationship_type ORDER BY cc.relationship_type SEPARATOR ', '), '') AS relationship_type,
       ${scope === "admin" ? "cc.user_id AS created_by_user_id," : ""}
       COALESCE(
@@ -218,6 +276,12 @@ export default function createClaimsRoutes({ query, pool }) {
             'reference_content_id', cr.reference_content_id,
             'content_name', ref.content_name,
             'url', ref.url,
+            'claim_role', ${derivedClaimRoleSql("cc")},
+            'parent_claim_id', cc.parent_claim_id,
+            'claim_depth', ${derivedClaimDepthSql("cc")},
+            'centrality_score', cc.centrality_score,
+            'verifiability_score', cc.verifiability_score,
+            'claim_order', cc.claim_order,
             'support_level', IFNULL(cr.support_level, 0)
           )
         ),
@@ -231,7 +295,13 @@ export default function createClaimsRoutes({ query, pool }) {
     WHERE cc.content_id = ?
       AND (ucv.is_hidden IS NULL OR ucv.is_hidden = FALSE)
       ${userFilter}
-    GROUP BY c.claim_id;
+    GROUP BY c.claim_id, c.claim_text, c.veracity_score, c.confidence_level, c.last_verified, c.claim_type,
+             cc.claim_role, cc.claim_depth, cc.relationship_type,
+             cc.parent_claim_id, cc.centrality_score, cc.verifiability_score, cc.claim_order, cc.user_id
+    ORDER BY
+      ${claimRolePrioritySql("cc")},
+      COALESCE(cc.claim_order, 999999) ASC,
+      c.claim_id
   `;
 
     pool.query(sql, params, async (err, results) => {
@@ -253,6 +323,12 @@ export default function createClaimsRoutes({ query, pool }) {
       last_verified = new Date(),
       content_id,
       relationship_type = "task",
+      claim_role = null,
+      parent_claim_id = null,
+      claim_depth = null,
+      centrality_score = null,
+      verifiability_score = null,
+      claim_order = null,
     } = req.body;
     const formattedDate = new Date(last_verified)
       .toISOString()
@@ -274,8 +350,20 @@ export default function createClaimsRoutes({ query, pool }) {
       const claimId = insertResult.insertId;
 
       await query(
-        "INSERT INTO content_claims (content_id, claim_id, relationship_type) VALUES (?, ?, ?)",
-        [content_id, claimId, relationship_type],
+        `INSERT INTO content_claims
+          (content_id, claim_id, relationship_type, claim_role, parent_claim_id, claim_depth, centrality_score, verifiability_score, claim_order)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          content_id,
+          claimId,
+          relationship_type,
+          claim_role,
+          parent_claim_id,
+          claim_depth,
+          centrality_score,
+          verifiability_score,
+          claim_order,
+        ],
       );
 
       res.json({ success: true, claimId });
@@ -584,15 +672,9 @@ export default function createClaimsRoutes({ query, pool }) {
       return res.status(400).json({ error: "Invalid claim ID" });
     }
 
-    const sql = viewerId
-      ? "CALL compute_and_store_verimeter_score_for_claim(?, ?);"
-      : "CALL compute_and_store_verimeter_score_for_claim(?, NULL);";
-
-    const params = viewerId ? [claimId, viewerId] : [claimId];
-
     try {
-      const rows = await query(sql, params); // rows[0] is the SELECT at the end of SP
-      res.json(rows[0]); // Return just the final SELECT output
+      const score = await calculateUserClaimScore(query, claimId, viewerId);
+      res.json([{ verimeter_score: score.verimeter_score, ...score }]);
     } catch (err) {
       console.error("Error computing Verimeter score:", err);
       res.status(500).json({ error: "Internal server error" });
@@ -620,19 +702,39 @@ export default function createClaimsRoutes({ query, pool }) {
           (SELECT c2.url FROM content_claims cc2 JOIN content c2 ON cc2.content_id = c2.content_id WHERE cc2.claim_id = rctl.reference_claim_id LIMIT 1) AS source_url,
           task_claim.claim_text AS task_claim_text,
           task_content.media_source AS task_publisher,
-          task_content.url AS task_url
+          task_content.url AS task_url,
+          ${derivedClaimRoleSql("task_cc")} AS task_claim_role,
+          task_cc.parent_claim_id AS task_parent_claim_id,
+          ${derivedClaimDepthSql("task_cc")} AS task_claim_depth,
+          task_cc.centrality_score AS task_centrality_score,
+          task_cc.verifiability_score AS task_verifiability_score,
+          task_cc.claim_order AS task_claim_order
         FROM reference_claim_task_links rctl
         JOIN claims ref_claim ON rctl.reference_claim_id = ref_claim.claim_id
         JOIN claims task_claim ON rctl.task_claim_id = task_claim.claim_id
         JOIN content_claims task_cc ON task_claim.claim_id = task_cc.claim_id AND task_cc.content_id = ?
         JOIN content task_content ON task_cc.content_id = task_content.content_id
-        GROUP BY rctl.reference_claim_id, rctl.task_claim_id
-        ORDER BY ABS(COALESCE(rctl.support_level, 0)) DESC
+        ORDER BY
+          ${claimRolePrioritySql("task_cc")},
+          COALESCE(task_cc.centrality_score, 0) DESC,
+          ABS(COALESCE(rctl.support_level, 0)) DESC,
+          COALESCE(task_cc.claim_order, 999999) ASC
         LIMIT 5
       `, [contentId]);
 
       let rawPairs = rctlRows.map((r) => ({
-        caseClaim: { claim_id: r.task_claim_id, claim_text: r.task_claim_text, publisher: r.task_publisher, url: r.task_url },
+        caseClaim: {
+          claim_id: r.task_claim_id,
+          claim_text: r.task_claim_text,
+          publisher: r.task_publisher,
+          url: r.task_url,
+          claim_role: r.task_claim_role,
+          parent_claim_id: r.task_parent_claim_id,
+          claim_depth: r.task_claim_depth,
+          centrality_score: r.task_centrality_score,
+          verifiability_score: r.task_verifiability_score,
+          claim_order: r.task_claim_order,
+        },
         sourceClaim: { claim_id: r.reference_claim_id, claim_text: r.source_claim_text, publisher: r.source_publisher || "Reference", url: r.source_url || "", relationship: r.stance },
         rationale: r.rationale || "",
       }));
@@ -650,18 +752,39 @@ export default function createClaimsRoutes({ query, pool }) {
             ref_content.url AS source_url,
             task_claim.claim_text AS task_claim_text,
             task_content.media_source AS task_publisher,
-            task_content.url AS task_url
+            task_content.url AS task_url,
+            ${derivedClaimRoleSql("task_cc")} AS task_claim_role,
+            task_cc.parent_claim_id AS task_parent_claim_id,
+            ${derivedClaimDepthSql("task_cc")} AS task_claim_depth,
+            task_cc.centrality_score AS task_centrality_score,
+            task_cc.verifiability_score AS task_verifiability_score,
+            task_cc.claim_order AS task_claim_order
           FROM reference_claim_links rcl
           JOIN claims task_claim ON rcl.claim_id = task_claim.claim_id
           JOIN content_claims task_cc ON task_claim.claim_id = task_cc.claim_id AND task_cc.content_id = ?
           JOIN content task_content ON task_cc.content_id = task_content.content_id
           JOIN content ref_content ON rcl.reference_content_id = ref_content.content_id
-          ORDER BY ABS(COALESCE(rcl.support_level, 0)) DESC
+          ORDER BY
+            ${claimRolePrioritySql("task_cc")},
+            COALESCE(task_cc.centrality_score, 0) DESC,
+            ABS(COALESCE(rcl.support_level, 0)) DESC,
+            COALESCE(task_cc.claim_order, 999999) ASC
           LIMIT ?
         `, [contentId, needed]);
 
         rawPairs = rawPairs.concat(rclRows.map((r) => ({
-          caseClaim: { claim_id: r.task_claim_id, claim_text: r.task_claim_text, publisher: r.task_publisher, url: r.task_url },
+          caseClaim: {
+            claim_id: r.task_claim_id,
+            claim_text: r.task_claim_text,
+            publisher: r.task_publisher,
+            url: r.task_url,
+            claim_role: r.task_claim_role,
+            parent_claim_id: r.task_parent_claim_id,
+            claim_depth: r.task_claim_depth,
+            centrality_score: r.task_centrality_score,
+            verifiability_score: r.task_verifiability_score,
+            claim_order: r.task_claim_order,
+          },
           sourceClaim: { claim_id: null, claim_text: r.source_claim_text, publisher: r.source_publisher || "Reference", url: r.source_url || "", relationship: r.stance },
           rationale: r.rationale || "",
         })));
@@ -700,16 +823,30 @@ export default function createClaimsRoutes({ query, pool }) {
         SELECT
           c.claim_id,
           c.claim_text,
+          c.claim_type,
           task_content.media_source AS publisher,
           task_content.url,
-          COUNT(DISTINCT cl.source_claim_id) AS link_count
+          COUNT(DISTINCT cl.source_claim_id) AS link_count,
+          ${derivedClaimRoleSql("cc")} AS claim_role,
+          cc.parent_claim_id,
+          ${derivedClaimDepthSql("cc")} AS claim_depth,
+          cc.centrality_score,
+          cc.verifiability_score,
+          cc.claim_order
         FROM claims c
         JOIN content_claims cc ON c.claim_id = cc.claim_id
         JOIN content task_content ON cc.content_id = task_content.content_id
         LEFT JOIN claim_links cl ON c.claim_id = cl.target_claim_id AND cl.disabled = 0
         WHERE cc.content_id = ?
-        GROUP BY c.claim_id, c.claim_text, task_content.media_source, task_content.url
-        ORDER BY link_count DESC
+        GROUP BY c.claim_id, c.claim_text, c.claim_type, task_content.media_source, task_content.url,
+                 cc.claim_role, cc.claim_depth, cc.relationship_type,
+                 cc.parent_claim_id, cc.centrality_score, cc.verifiability_score, cc.claim_order
+        ORDER BY
+          ${claimRolePrioritySql("cc")},
+          COALESCE(cc.centrality_score, 0) DESC,
+          link_count DESC,
+          COALESCE(cc.claim_order, 999999) ASC,
+          c.claim_id
         LIMIT ?
       `, [contentId, limit]);
 
@@ -936,33 +1073,11 @@ WHERE cc_task.content_id = ?
     console.log(`📊 [claim-scores] Fetching scores for contentId=${contentId}, userId=${userId}`);
 
     try {
-      // Use simple SP that just averages support_level without publisher weighting
-      console.log(`📊 [claim-scores] Calling SP: compute_simple_verimeter_for_content`);
-      await query("CALL compute_simple_verimeter_for_content(?, ?)", [
-        contentId,
-        userId,
-      ]);
-      console.log(`✅ [claim-scores] SP completed`);
-
-      // Query claim_scores - note: unique key is on (claim_id, user_id), NOT content_id
-      // So we join with content_claims to filter by content_id
-      const results = await query(
-        `
-      SELECT cs.claim_id, cs.verimeter_score
-      FROM claim_scores cs
-      JOIN content_claims cc ON cs.claim_id = cc.claim_id
-      WHERE cc.content_id = ?
-        AND (cs.user_id IS NULL OR cs.user_id = ?)
-    `,
-        [contentId, userId],
+      const scoreMap = await calculateUserClaimScoresForContent(
+        query,
+        Number(contentId),
+        userId ? Number(userId) : null,
       );
-
-      console.log(`📊 [claim-scores] Found ${results.length} claim scores:`, results);
-
-      const scoreMap = {};
-      for (const row of results) {
-        scoreMap[row.claim_id] = Number(row.verimeter_score);
-      }
 
       console.log(`📊 [claim-scores] Returning scoreMap:`, scoreMap);
       res.json(scoreMap);
@@ -1122,6 +1237,12 @@ WHERE cc_task.content_id = ?
           c.veracity_score,
           c.confidence_level,
           c.last_verified,
+          ${derivedClaimRoleSql("cc")} AS claim_role,
+          cc.parent_claim_id,
+          ${derivedClaimDepthSql("cc")} AS claim_depth,
+          cc.centrality_score,
+          cc.verifiability_score,
+          cc.claim_order,
           GROUP_CONCAT(DISTINCT cc.relationship_type ORDER BY cc.relationship_type SEPARATOR ', ') AS relationship_type,
           MAX(cc.content_id) AS content_id,
           ${scope === "admin" ? "GROUP_CONCAT(DISTINCT cc.user_id) AS created_by_user_id," : ""}
@@ -1132,14 +1253,12 @@ WHERE cc_task.content_id = ?
         WHERE cc.content_id = ?
           AND (ucv.is_hidden IS NULL OR ucv.is_hidden = FALSE)
           ${userFilter}
-        GROUP BY c.claim_id
+        GROUP BY c.claim_id, c.claim_text, c.claim_type, c.veracity_score, c.confidence_level, c.last_verified,
+                 cc.claim_role, cc.claim_depth, cc.relationship_type,
+                 cc.parent_claim_id, cc.centrality_score, cc.verifiability_score, cc.claim_order, cc.user_id
         ORDER BY
-          CASE c.claim_type
-            WHEN 'task' THEN 1
-            WHEN 'reference' THEN 2
-            WHEN 'snippet' THEN 3
-            ELSE 4
-          END,
+          ${claimRolePrioritySql("cc")},
+          COALESCE(cc.claim_order, 999999) ASC,
           c.claim_id
       `;
 

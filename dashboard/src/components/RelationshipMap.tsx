@@ -49,6 +49,7 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
   claimLinks,
   isModalOpen = false,
 }) => {
+  const [leftCenters, setLeftCenters] = useState<Record<number, number>>({});
   const [rightCenters, setRightCenters] = useState<Record<number, number>>({});
   const containerRef = useRef<HTMLDivElement>(null);
   const adjustedLeftX = leftX - 12;
@@ -67,20 +68,31 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
     const measure = () => {
       if (!containerRef.current) return;
       const containerTop = containerRef.current.getBoundingClientRect().top;
-      const nodes = document.querySelectorAll<HTMLElement>("[data-ref-id]");
-      const map: Record<number, number> = {};
-      nodes.forEach((el) => {
+      const claimNodes = document.querySelectorAll<HTMLElement>("[data-claim-id]");
+      const refNodes = document.querySelectorAll<HTMLElement>("[data-ref-id]");
+      const nextLeftCenters: Record<number, number> = {};
+      const nextRightCenters: Record<number, number> = {};
+
+      claimNodes.forEach((el) => {
+        const id = Number(el.dataset.claimId);
+        const r = el.getBoundingClientRect();
+        nextLeftCenters[id] = r.top - containerTop + r.height / 2;
+      });
+
+      refNodes.forEach((el) => {
         const id = Number(el.dataset.refId);
         const r = el.getBoundingClientRect();
-        map[id] = r.top - containerTop + r.height / 2;
+        nextRightCenters[id] = r.top - containerTop + r.height / 2;
       });
-      setRightCenters(map);
+
+      setLeftCenters(nextLeftCenters);
+      setRightCenters(nextRightCenters);
     };
 
     measure();
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
-  }, [rightItems, height]);
+  }, [leftItems, rightItems, height]);
 
   const links = claimLinks;
 
@@ -88,10 +100,6 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
     index * rowHeight + rowHeight / 2 + topOffset;
 
   const getRightY = (index: number) =>
-    index * rowHeight + rowHeight / 2 + topOffset;
-
-  // Helper: compute the y coordinate (center of the row) based on index.
-  const getYFromIndex = (index: number) =>
     index * rowHeight + rowHeight / 2 + topOffset;
 
   // Build lookup maps: claim ID → index in leftItems; reference ID → index in rightItems.
@@ -161,8 +169,7 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
           if (leftIndex === undefined || rightIndex === undefined) {
             return null;
           }
-          const y1 = getLeftY(leftIndex);
-          // remove the hardcoded -6 tweak; use DOM-measured center first, fallback to formula
+          const y1 = leftCenters[Number(link.claimId)] ?? getLeftY(leftIndex);
 
           const y2 =
             rightCenters[Number(link.referenceId)] ?? getRightY(rightIndex);

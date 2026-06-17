@@ -26,6 +26,9 @@ import {
   InfoIcon,
 } from "@chakra-ui/icons";
 import { Claim, ReferenceWithClaims } from "../../../shared/entities/types";
+import SourceCrest from "./SourceCrest";
+import SourceDetailModal from "./modals/SourceDetailModal";
+import { normalizeSourceProfile } from "../utils/normalizeSourceProfile";
 import ClaimLinkOverlay from "./overlays/ClaimLinkOverlay";
 import ReassessClaimModal from "./modals/ReassessClaimModal";
 import {
@@ -33,7 +36,6 @@ import {
   sortByRelevance,
   ReferenceWithRelevance,
 } from "../services/relevanceScoring";
-import { fetchLinksForClaim } from "../services/evidenceEngineClient";
 import {
   enrichClaimsWithRelevance,
   ClaimWithRelevance,
@@ -82,6 +84,36 @@ interface PlayingCardProps {
   onReassess?: () => void; // Callback to open reassess modal
   isBeingDragged?: boolean; // Whether this card is currently being dragged
 }
+
+const STATUS_PULSE_KF = {
+  "@keyframes statusPulse": {
+    "0%, 100%": { opacity: 1, transform: "scale(1)" },
+    "50%": { opacity: 0.6, transform: "scale(1.2)" },
+  },
+} as const;
+
+let evidenceEngineClientPromise: Promise<typeof import("../services/evidenceEngineClient")> | null = null;
+
+async function loadEvidenceEngineClient() {
+  if (!evidenceEngineClientPromise) {
+    evidenceEngineClientPromise = import("../services/evidenceEngineClient");
+  }
+  return evidenceEngineClientPromise;
+}
+
+const GRID_MOVE_KF = {
+  "@keyframes gridMove": {
+    "0%": { backgroundPosition: "0 0" },
+    "100%": { backgroundPosition: "50px 50px" },
+  },
+} as const;
+
+const SLIDE_IN_LEFT_KF = {
+  "@keyframes slideInFromLeft": {
+    "0%": { transform: "translateX(-150%)", opacity: 0.7 },
+    "100%": { transform: "translateX(-50%)", opacity: 1 },
+  },
+} as const;
 
 const PlayingCard: React.FC<PlayingCardProps> = ({
   claim,
@@ -404,12 +436,7 @@ const PlayingCard: React.FC<PlayingCardProps> = ({
             animation={
               isSelected ? "statusPulse 2s ease-in-out infinite" : "none"
             }
-            sx={{
-              "@keyframes statusPulse": {
-                "0%, 100%": { opacity: 1, transform: "scale(1)" },
-                "50%": { opacity: 0.6, transform: "scale(1.2)" },
-              },
-            }}
+            sx={STATUS_PULSE_KF}
           />
         </Box>
       </Box>
@@ -531,6 +558,7 @@ const ReferenceCard: React.FC<ReferenceCardProps> = ({
   index = 0,
   totalCards = 1,
 }) => {
+  const [sourceDetailOpen, setSourceDetailOpen] = useState(false);
   const colors = {
     border: "rgba(34, 197, 94, 0.4)",
     glow: "rgba(34, 197, 94, 0.8)",
@@ -736,12 +764,7 @@ const ReferenceCard: React.FC<ReferenceCardProps> = ({
             animation={
               isSelected ? "statusPulse 2s ease-in-out infinite" : "none"
             }
-            sx={{
-              "@keyframes statusPulse": {
-                "0%, 100%": { opacity: 1, transform: "scale(1)" },
-                "50%": { opacity: 0.6, transform: "scale(1.2)" },
-              },
-            }}
+            sx={STATUS_PULSE_KF}
           />
         </Box>
       </Box>
@@ -780,6 +803,19 @@ const ReferenceCard: React.FC<ReferenceCardProps> = ({
               color="#94a3b8"
               lineHeight="1.6"
             >
+              <Box display="flex" justifyContent="center" mb="8px">
+                <SourceCrest
+                  {...normalizeSourceProfile({
+                    publisher_name: reference.publisher_name ?? reference.media_source,
+                    is_primary_source: reference.is_primary_source,
+                    media_source: reference.media_source,
+                    veracity_score: reference.publisher_veracity ?? undefined,
+                    admiralty_code: reference.admiralty_code ?? undefined,
+                  })}
+                  size="sm"
+                  onClick={(e) => { e?.stopPropagation(); setSourceDetailOpen(true); }}
+                />
+              </Box>
               {reference.media_source && (
                 <Box mb="8px">
                   <Text
@@ -853,6 +889,16 @@ const ReferenceCard: React.FC<ReferenceCardProps> = ({
             ))}
           </Box>
         </>
+      )}
+      {sourceDetailOpen && (
+        <SourceDetailModal
+          isOpen={sourceDetailOpen}
+          onClose={() => setSourceDetailOpen(false)}
+          publisherId={reference.publisher_id}
+          publisherName={reference.publisher_name || reference.media_source || "Unknown"}
+          sourceUrl={reference.url}
+          admiraltyCode={reference.admiralty_code ?? undefined}
+        />
       )}
     </Box>
   );
@@ -964,6 +1010,8 @@ const GameSpace: React.FC<GameSpaceProps> = ({
           `[GameSpace] Loading evidence for claim: "${selectedClaim.claim_text}"`,
         );
 
+        const { fetchLinksForClaim } = await loadEvidenceEngineClient();
+
         // Fetch existing links first
         let existingLinks = await fetchLinksForClaim(
           contentId,
@@ -980,8 +1028,7 @@ const GameSpace: React.FC<GameSpaceProps> = ({
             `[GameSpace] Running evidence engine to find more references (need 3, have ${existingLinks.length})`,
           );
 
-          const { runEvidenceForSingleClaim } =
-            await import("../services/evidenceEngineClient");
+          const { runEvidenceForSingleClaim } = await loadEvidenceEngineClient();
           const result = await runEvidenceForSingleClaim(
             contentId,
             selectedClaim.claim_id,
@@ -1991,10 +2038,7 @@ const GameSpace: React.FC<GameSpaceProps> = ({
             perspective: "1000px",
             transform: "rotateX(60deg)",
           },
-          "@keyframes gridMove": {
-            "0%": { backgroundPosition: "0 0" },
-            "100%": { backgroundPosition: "50px 50px" },
-          },
+          ...GRID_MOVE_KF,
         }}
       >
         {/* Close Button */}
@@ -2623,16 +2667,7 @@ const GameSpace: React.FC<GameSpaceProps> = ({
                           zIndex: 200,
                           ...(taskCardJustAppeared && isDropZone && {
                             animation: "slideInFromLeft 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                            "@keyframes slideInFromLeft": {
-                              "0%": {
-                                transform: "translateX(-150%)",
-                                opacity: 0.7,
-                              },
-                              "100%": {
-                                transform: "translateX(-50%)",
-                                opacity: 1,
-                              },
-                            },
+                            ...SLIDE_IN_LEFT_KF,
                           }),
                         }
                       : {

@@ -14,14 +14,10 @@ import {
   HStack,
   useDisclosure,
   useToast,
-  Badge,
-  Flex,
-  Tooltip,
   Select,
   Portal,
 } from "@chakra-ui/react";
 import { Publisher, PublisherRating } from "../../../shared/entities/types";
-import { BiChevronDown } from "react-icons/bi";
 import {
   uploadImage,
   fetchPublisherRatings,
@@ -37,12 +33,36 @@ import ViewRatingsModal from "./modals/ViewRatingsModal";
 import CredibilityInfoModal from "./modals/CredibilityInfoModal";
 import ResponsiveOverlay from "./overlays/ResponsiveOverlay";
 import { useEffect, useRef, useState } from "react";
+import SourceCrest from "./SourceCrest";
+import { normalizeSourceProfile } from "../utils/normalizeSourceProfile";
+import SourceDetailModal from "./modals/SourceDetailModal";
 
 interface PubCardProps {
   publishers: Publisher[];
   compact?: boolean;
   contentId?: number;
 }
+
+const publisherTitleSx = {
+  position: "relative",
+  overflow: "hidden",
+  bg: "linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.82))",
+  border: "1px solid rgba(234, 179, 8, 0.55)",
+  color: "rgba(254, 240, 138, 0.96)",
+  boxShadow:
+    "0 8px 24px rgba(0,0,0,0.45), 0 0 24px rgba(234, 179, 8, 0.2), inset 0 1px 0 rgba(255,255,255,0.12)",
+  _before: {
+    content: '""',
+    position: "absolute",
+    left: 0,
+    top: 0,
+    width: "20px",
+    height: "100%",
+    background: "linear-gradient(90deg, rgba(234, 179, 8, 0.42) 0%, rgba(234, 179, 8, 0) 100%)",
+    borderLeftRadius: "md",
+    pointerEvents: "none",
+  },
+} as const;
 
 const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentId }) => {
   const [activePublisher, setActivePublisher] = useState<Publisher | null>(
@@ -83,6 +103,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
     onClose: onAddPublisherClose,
   } = useDisclosure();
   const [newPublisherName, setNewPublisherName] = useState("");
+  const [sourceDetailOpen, setSourceDetailOpen] = useState(false);
 
   useEffect(() => {
     if (publishers.length > 0) {
@@ -291,6 +312,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
   const hasPublisher = !!activePublisher;
 
   return (
+    <>
     <Center>
       <Box
         ref={cardRef}
@@ -304,7 +326,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
       >
         <div className="mr-glow-bar mr-glow-bar-yellow" />
         <div className="mr-scanlines" />
-        <Box>
+        <Box flex="1" minH={0} overflow="hidden">
           <Center>
             <Text
               className="mr-badge mr-badge-yellow"
@@ -341,22 +363,28 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
               ))}
             </Select>
           ) : (
-            <Text
-              fontWeight="semibold"
-              fontSize={compact ? "9px" : "md"}
-              mb={compact ? 1 : 3}
-              textAlign="center"
-              bg="whiteAlpha.700"
-              color="gray.800"
-              borderRadius="md"
-              px={compact ? 1 : 2}
-              py={compact ? 0 : 1}
-              noOfLines={1}
-              overflow="hidden"
-              textOverflow="ellipsis"
-            >
-              {displayName}
-            </Text>
+            <HStack justify="center" spacing={1} mt={compact ? 0 : 2} mb={compact ? 1 : 2} flexWrap="wrap">
+              <Text
+                fontWeight="semibold"
+                fontSize={compact ? "9px" : "lg"}
+                textAlign="center"
+                borderRadius="md"
+                px={compact ? 1 : 2}
+                py={compact ? 0 : 1}
+                minH={compact ? "18px" : "52px"}
+                h={compact ? "18px" : "52px"}
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                noOfLines={1}
+                overflow="hidden"
+                textOverflow="ellipsis"
+                w="100%"
+                sx={publisherTitleSx}
+              >
+                {displayName}
+              </Text>
+            </HStack>
           )}
 
           <VStack spacing={0}>
@@ -371,7 +399,8 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
               display="flex"
               alignItems="center"
               justifyContent="center"
-              marginBottom={compact ? "2px" : "10px"}
+              mt={compact ? 0 : "25px"}
+              marginBottom={compact ? "2px" : "8px"}
               opacity={hasPublisher ? 1 : 0.5}
             >
               {activePublisher?.publisher_icon ? (
@@ -389,6 +418,22 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
                 </Text>
               )}
             </Box>
+            <HStack justify="center" spacing={2} minH={compact ? "18px" : "30px"} mb={compact ? 0 : 1}>
+              <SourceCrest
+                {...normalizeSourceProfile({
+                  publisher_name: activePublisher?.publisher_name,
+                  veracity_score: typeof avgVeracity === "number" ? avgVeracity : undefined,
+                  rating_label: enrichmentRatings[0]?.rating_label,
+                  rating_type: enrichmentRatings[0]?.rating_type,
+                  admiralty_code: activePublisher?.admiralty_code ?? undefined,
+                })}
+                size={compact ? "xs" : "sm"}
+                onClick={(e) => { e?.stopPropagation(); setSourceDetailOpen(true); }}
+              />
+              <Text fontSize={compact ? "7px" : "xs"} color="var(--mr-text-secondary)" noOfLines={1}>
+                {biasDisplay !== "-" ? `Bias ${biasDisplay}` : "Source profile"}
+              </Text>
+            </HStack>
             {compact && (
               <Text fontSize="6px" color="var(--mr-text-secondary)" lineHeight="1" mb={1}>
                 {allSidesRating?.rating_label
@@ -409,85 +454,17 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
             />
           </VStack>
 
-          {!compact && (
-            <>
-              {/* Sourced enrichment ratings */}
-              {enrichmentRatings.length > 0 && (
-                <VStack spacing={1} mt={2} px={1}>
-                  {allSidesRating && (
-                    <Tooltip label={allSidesRating.evidence_quote || "AllSides bias rating"} hasArrow>
-                      <HStack spacing={1} w="100%" justify="center">
-                        <Badge fontSize="9px" colorScheme="purple" variant="outline">AllSides</Badge>
-                        <Badge fontSize="9px" colorScheme="blue">{allSidesRating.rating_label}</Badge>
-                        {allSidesRating.confidence && (
-                          <Badge fontSize="8px" variant="outline" colorScheme="gray">{allSidesRating.confidence}</Badge>
-                        )}
-                      </HStack>
-                    </Tooltip>
-                  )}
-                  {adFontesRating && (
-                    <Tooltip label={adFontesRating.evidence_quote || "Ad Fontes rating"} hasArrow>
-                      <HStack spacing={1} w="100%" justify="center">
-                        <Badge fontSize="9px" colorScheme="orange" variant="outline">Ad Fontes</Badge>
-                        {adFontesRating.rating_label && (
-                          <Badge fontSize="9px" colorScheme="orange">{adFontesRating.rating_label}</Badge>
-                        )}
-                        {adFontesRating.veracity_score != null && (
-                          <Text fontSize="9px" color="var(--mr-text-secondary)">
-                            {adFontesRating.veracity_score.toFixed(0)}/64
-                          </Text>
-                        )}
-                      </HStack>
-                    </Tooltip>
-                  )}
-                </VStack>
-              )}
-
-              {/* User-averaged scores (shown only when user ratings exist) */}
-              {userRatings.length > 0 && (
-                <HStack justify="center" spacing={4} mt={2}>
-                  <Flex direction="column" align="center" className="mr-metric">
-                    <Text className="mr-metric-label">Bias</Text>
-                    <Flex align="center" gap={1}>
-                      <Text>{getBiasEmoji(parseFloat(avgBias))}</Text>
-                      <Text className="mr-metric-value">{avgBias}</Text>
-                    </Flex>
-                  </Flex>
-                  <Flex direction="column" align="center" className="mr-metric">
-                    <Text className="mr-metric-label">Veracity</Text>
-                    <Flex align="center" gap={1}>
-                      <Text>{getVeracityEmoji(parseFloat(avgVeracity))}</Text>
-                      <Text className="mr-metric-value">{avgVeracity}</Text>
-                    </Flex>
-                  </Flex>
-                </HStack>
-              )}
-
-              {activePublisher?.description && (
-                <Text
-                  className="mr-text-secondary"
-                  fontSize="sm"
-                  mt={3}
-                  px={2}
-                  textAlign="center"
-                >
-                  {activePublisher.description}
-                </Text>
-              )}
-
-              {!hasPublisher && (
-                <Text
-                  className="mr-text-secondary"
-                  fontSize="sm"
-                  mt={3}
-                  px={2}
-                  textAlign="center"
-                  color="gray.500"
-                >
-                  No publisher information available
-                </Text>
-              )}
-            </>
+          {!compact && !hasPublisher && (
+            <Text
+              className="mr-text-secondary"
+              fontSize="sm"
+              mt={2}
+              px={2}
+              textAlign="center"
+              color="gray.500"
+            >
+              No publisher information available
+            </Text>
           )}
         </Box>
 
@@ -554,6 +531,7 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
           isOpen={isViewRatingsOpen}
           onClose={onViewRatingsClose}
           ratings={currentRatings}
+          publisherName={activePublisher?.publisher_name}
         />
 
         {activePublisher && isRatingOpen && (
@@ -620,6 +598,26 @@ const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentI
         )}
       </Box>
     </Center>
+
+    {activePublisher && (() => {
+      const profile = normalizeSourceProfile({
+        publisher_name: activePublisher.publisher_name,
+        veracity_score: typeof avgVeracity === "number" ? avgVeracity : undefined,
+        rating_label: enrichmentRatings[0]?.rating_label,
+        rating_type: enrichmentRatings[0]?.rating_type,
+      });
+      return (
+        <SourceDetailModal
+          isOpen={sourceDetailOpen}
+          onClose={() => setSourceDetailOpen(false)}
+          publisherId={activePublisher.publisher_id}
+          publisherName={activePublisher.publisher_name}
+          sourceType={profile.sourceType}
+          reliability={profile.reliability}
+        />
+      );
+    })()}
+    </>
   );
 };
 

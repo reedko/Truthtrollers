@@ -6,6 +6,51 @@
 
 import { openAiLLM } from "./openAiLLM.js";
 
+const STANCE_CONTRACT = `STANCE CONTRACT:
+- Judge stance only relative to the TASK CLAIM.
+- "support" means the reference makes the task claim more likely true.
+- "refute" means the reference contradicts or weakens the task claim.
+- If the task claim says A > B and the reference says B > A, stance must be "refute".
+- Never use "support" merely because the reference source appears credible or the reference claim is true.`;
+
+function normalizeStance(rawStance) {
+  const stance = String(rawStance || "").trim().toLowerCase();
+  if (["support", "supports", "supported", "for"].includes(stance)) return "support";
+  if (["refute", "refutes", "refuted", "against", "contradict", "contradicts"].includes(stance)) return "refute";
+  if (["nuance", "nuances", "related", "partial", "mixed"].includes(stance)) return "nuance";
+  if (["insufficient", "irrelevant", "unclear", "unknown", "neutral"].includes(stance)) return "insufficient";
+  return "insufficient";
+}
+
+function comparativeRiskOverride(taskClaimText, referenceClaimText, rationale) {
+  const task = String(taskClaimText || "").toLowerCase();
+  const ref = `${referenceClaimText || ""} ${rationale || ""}`.toLowerCase();
+
+  const taskMentionsVaccineRiskGreater =
+    /\b(vaccine|vaccination|shot|jab|covid shot|covid vaccine)s?\b/.test(task) &&
+    /\b(virus|infection|covid[- ]?19 infection|disease)\b/.test(task) &&
+    /\b(outweigh|greater than|higher than|more than|exceed|worse than)\b/.test(task) &&
+    /\b(risk|risks|myocarditis|pericarditis|harm|harms|adverse)\b/.test(task);
+
+  const referenceSaysInfectionRiskGreater =
+    /\b(virus|infection|covid[- ]?19 infection|disease)\b/.test(ref) &&
+    /\b(vaccine|vaccination|shot|jab|covid shot|covid vaccine)s?\b/.test(ref) &&
+    (
+      /\b(infection|virus|disease|covid[- ]?19 infection)\b.{0,80}\b(higher|greater|more|increased)\b.{0,80}\b(risk|myocarditis|pericarditis|harm)/.test(ref) ||
+      /\b(risk|myocarditis|pericarditis|harm)\b.{0,80}\b(higher|greater|more|increased)\b.{0,80}\b(after|from|following)\b.{0,40}\b(infection|virus|disease)\b/.test(ref) ||
+      /\b(vaccine|vaccination|shot|jab)\b.{0,80}\b(lower|smaller|less|reduced|quite small)\b.{0,80}\b(compared to|than|versus|vs\.?)\b.{0,80}\b(infection|virus|disease)\b/.test(ref)
+    );
+
+  if (taskMentionsVaccineRiskGreater && referenceSaysInfectionRiskGreater) {
+    return {
+      stance: "refute",
+      reason: "comparative-risk inversion: task says vaccine risk exceeds infection risk, while reference says infection risk exceeds vaccine risk",
+    };
+  }
+
+  return null;
+}
+
 /**
  * Assess whether a reference claim supports/refutes/nuances a task claim
  * @param {Object} params
@@ -25,15 +70,25 @@ export async function assessClaimRelevance({
 }) {
   const defaultSystem = `You are assessing whether a reference claim is relevant to a task claim.
 
+CRITICAL STANCE RULE:
+The stance is ALWAYS relative to the TASK CLAIM being evaluated, not whether the reference claim is true in isolation.
+
 Guidelines:
-- "support": Reference claim provides evidence FOR the task claim
-- "refute": Reference claim provides evidence AGAINST the task claim
-- "nuance": Reference claim adds context or partial support/refutation
+- "support": Reference claim provides evidence FOR the task claim or makes it more likely true
+- "refute": Reference claim provides evidence AGAINST the task claim or makes it less likely true
+- "nuance": Reference claim adds context or partial support/refutation without clearly proving or disproving it
 - "insufficient": Reference claim is not relevant or doesn't provide meaningful evidence
+
+Comparison rule:
+If the task claim says A is greater than B and the reference says B is greater than A, the correct stance is "refute".
+Example:
+Task claim: "The risks of myocarditis from Covid shots outweigh the risk from the virus."
+Reference claim: "COVID-19 infection poses a higher myocarditis risk than vaccination."
+Correct stance: "refute" because the reference says the opposite of the task claim.
 
 - confidence: 0-1 (how certain you are of the stance)
 - quality: 0-1.2 (how strong/useful the reference claim is as evidence)
-- rationale: 1-2 sentences explaining WHY this stance applies`;
+- rationale: 1-2 sentences explicitly explaining why the reference supports, refutes, or nuances the task claim`;
 
   const defaultUser = `TASK CLAIM:
 "${taskClaimText}"
@@ -41,7 +96,8 @@ Guidelines:
 REFERENCE CLAIM:
 "${referenceClaimText}"
 
-Analyze whether the reference claim supports, refutes, nuances, or is insufficient for evaluating the task claim.`;
+Analyze whether the reference claim supports, refutes, nuances, or is insufficient for evaluating the task claim.
+Do not label a reference "support" merely because the reference itself is credible or true.`;
 
   let system = systemPrompt || defaultSystem;
   let user = defaultUser;
@@ -79,6 +135,9 @@ Analyze whether the reference claim supports, refutes, nuances, or is insufficie
     }
   }
 
+  system = `${system}\n\n${STANCE_CONTRACT}`;
+  user = `${user}\n\nBefore returning JSON, verify the stance follows the stance contract.`;
+
   const schemaHint = `{
   "stance": "support|refute|nuance|insufficient",
   "confidence": 0.85,
@@ -102,6 +161,12 @@ Analyze whether the reference claim supports, refutes, nuances, or is insufficie
       throw new Error("Invalid assessment format from AI");
     }
 
+    const override = comparativeRiskOverride(taskClaimText, referenceClaimText, assessment.rationale);
+    assessment.stance = override?.stance || normalizeStance(assessment.stance);
+    if (override) {
+      assessment.rationale = `${assessment.rationale || ""} [Stance corrected: ${override.reason}.]`.trim();
+    }
+
     // Calculate support_level using stance multiplier
     const stanceMultiplier = {
       support: 1.0,
@@ -110,8 +175,13 @@ Analyze whether the reference claim supports, refutes, nuances, or is insufficie
       insufficient: 0.0,
     };
 
+    const confidence = Math.max(0, Math.min(1, Number(assessment.confidence) || 0));
+    const quality = Math.max(0, Math.min(1.2, Number(assessment.quality) || 0));
+    assessment.confidence = confidence;
+    assessment.quality = quality;
+
     const multiplier = stanceMultiplier[assessment.stance] || 0;
-    assessment.support_level = multiplier * assessment.confidence * assessment.quality;
+    assessment.support_level = multiplier * confidence * quality;
 
     console.log(
       `[AI Assessment] stance=${assessment.stance}, confidence=${assessment.confidence}, quality=${assessment.quality}`

@@ -43,6 +43,8 @@ export default function createContentRatingRouter({ query, pool }) {
     };
   };
 
+  const isSuperAdminRole = (role) => role?.name === "super_admin";
+
   /**
    * POST /api/content-rating/submit
    * User submits their evidence chain for approval
@@ -434,13 +436,16 @@ export default function createContentRatingRouter({ query, pool }) {
           [contentRatingId],
         );
 
+        const canEvaluate =
+          isSuperAdminRole(evaluatorRole) || evaluatorId !== contentRating.user_id;
+
         res.json({
           success: true,
           data: {
             content_rating: contentRating,
             claim_links: claimLinks,
             evaluations: evaluations,
-            can_evaluate: evaluatorId !== contentRating.user_id,
+            can_evaluate: canEvaluate,
           },
         });
       } catch (error) {
@@ -487,16 +492,20 @@ export default function createContentRatingRouter({ query, pool }) {
 
         const contentRating = contentRatings[0];
 
-        // Can't evaluate your own work
-        if (contentRating.user_id === evaluatorId) {
+        // Check role hierarchy
+        const evaluatorRole = await getRoleLevel(evaluatorId);
+        const subjectRole = await getRoleLevel(contentRating.user_id);
+
+        // Super admins can evaluate any pending chain, including chains they
+        // created while operating the platform.
+        if (
+          contentRating.user_id === evaluatorId &&
+          !isSuperAdminRole(evaluatorRole)
+        ) {
           return res
             .status(400)
             .json({ error: "Cannot evaluate your own content rating" });
         }
-
-        // Check role hierarchy
-        const evaluatorRole = await getRoleLevel(evaluatorId);
-        const subjectRole = await getRoleLevel(contentRating.user_id);
 
         if (subjectRole.level > evaluatorRole.level) {
           return res.status(403).json({

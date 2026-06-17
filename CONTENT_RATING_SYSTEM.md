@@ -20,14 +20,16 @@ This implements a 3-level reputation system for evaluating user-assembled eviden
 - User earns points based on average score if approved
 
 ### Level 3: User Reputation (Track Record)
-- Aggregates ALL of a user's content ratings
+- Aggregates a user's submitted content ratings and evaluation activity
 - Calculates:
   - Approval rate: % of ratings approved
-  - Average score: avg across all evaluations received
-  - **Veracity rating (0-100)**: 60% approval rate + 40% avg score
+  - Average score: avg across approved content ratings
+  - Weighted average score: evaluator scores on approved ratings weighted by evaluator reputation snapshotted at evaluation time
+  - Reputation confidence: log-scaled confidence from approved rating volume
+  - Reviewer activity: log-scaled contribution from number of evaluations given
+  - **Veracity rating (0-100)**: approval rate, weighted approved score, approved-volume confidence, and reviewer activity
   - Total points earned
-- "User A has 8/10 approved with avg 75 → veracity 83.1"
-- "User C has 0/5 approved, used own email → veracity -56"
+- This is an operational trust score, not a mature or adversarially validated model.
 
 ## Database Tables
 
@@ -37,11 +39,11 @@ This implements a 3-level reputation system for evaluating user-assembled eviden
 
 ### `content_rating_evaluations`
 - One record per evaluator per content_rating
-- Tracks: score, vote (approve/reject), notes, points
+- Tracks: score, vote (approve/reject), notes, points, evaluator reputation snapshot, evaluator weight
 
 ### `user_reputation`
 - One record per user
-- Aggregates: all ratings, approval rate, veracity score, points
+- Aggregates: submitted/approved/rejected/pending ratings, approval rate, raw and weighted scores, confidence, reviewer activity, veracity score, points
 
 ## Installation
 
@@ -49,6 +51,7 @@ This implements a 3-level reputation system for evaluating user-assembled eviden
 ```bash
 cd /Users/reedko/Desktop/Truthtrollers_root/backend
 mysql -u root -pTrollers2020 truthtrollers < migrations/add_content_rating_system.sql
+mysql -u root -pTrollers2020 truthtrollers < migrations/add_weighted_reputation_model.sql
 ```
 
 ### 2. Restart Backend
@@ -123,10 +126,14 @@ Top users by veracity rating.
 4. **User A's reputation updates:**
    - content_ratings_approved += 1
    - avg_content_score recalculated
+   - weighted_avg_content_score recalculated using evaluator reputation snapshotted at evaluation time
+   - reputation_confidence updated from approved-rating volume
    - veracity_rating updated
-   - If User A now has 8/10 approved, avg score 70:
-     - Approval rate: 80%
-     - Veracity: (80 * 0.6) + (normalized_70 * 0.4) = 83.1
+   - The current weighted model uses:
+     - 45% approval rate from submitted work
+     - 35% evaluator-reputation-weighted score on approved work, damped by approved-volume confidence
+     - 10% approved-rating volume confidence
+     - 10% evaluation participation
 
 ## Auto-Approval Logic (Triggers)
 
@@ -134,8 +141,10 @@ Top users by veracity rating.
 -- After each evaluation:
 - votes_approve >= 2 → approval_status = 'approved'
 - votes_reject >= 2 → approval_status = 'rejected'
-- Update user_reputation aggregate stats
+- Recalculate user_reputation aggregate stats
 ```
+
+The weighted model is installed by `migrations/add_weighted_reputation_model.sql`. It adds `weighted_avg_content_score`, `reputation_confidence`, and `evaluator_activity_score` to `user_reputation`; adds evaluator reputation snapshot fields to `content_rating_evaluations`; then refreshes all existing user reputation rows.
 
 ## Views for Easy Querying
 

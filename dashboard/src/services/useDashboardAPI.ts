@@ -1257,3 +1257,35 @@ export const fetchFailedReferences = async (
     return [];
   }
 };
+
+// ── Evaluation ───────────────────────────────────────────────────────────────
+
+export interface PendingEvalUser {
+  user_id: number;
+  username: string;
+  email: string;
+  role_name: string;
+  role_level: number;
+  pending_count: number;
+  total_count: number;
+  avg_honesty_score: number | null;
+}
+
+export interface UsersWithPendingRatingsResult {
+  users: PendingEvalUser[];
+  evaluator_role: { name: string; level: number };
+}
+
+/**
+ * Fetch users who have pending claim ratings that the current user can evaluate.
+ * Backend enforces role-hierarchy: you only see users at or below your own level.
+ */
+export const fetchUsersWithPendingRatings =
+  async (): Promise<UsersWithPendingRatingsResult> => {
+    const res = await api.get(
+      `${API_BASE_URL}/api/evaluation/users-with-ratings`,
+    );
+    // Backend wraps in { success, data }
+    return res.data?.data ?? { users: [], evaluator_role: { name: "user", level: 10 } };
+  };
+

@@ -82,7 +82,8 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
           'reference_claim_task_links' AS source_table,
           c.claim_text AS reference_claim_text,
           content.media_source AS source_name,
-          content.url AS source_url
+          content.url AS source_url,
+          content.content_id AS reference_content_id
          FROM reference_claim_task_links rctl
          LEFT JOIN claims c ON rctl.reference_claim_id = c.claim_id
          LEFT JOIN content_claims cc ON c.claim_id = cc.claim_id
@@ -112,7 +113,8 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
           'claim_links:target' AS source_table,
           c.claim_text AS reference_claim_text,
           content.media_source AS source_name,
-          content.url AS source_url
+          content.url AS source_url,
+          content.content_id AS reference_content_id
          FROM claim_links cl
          LEFT JOIN claims c ON cl.source_claim_id = c.claim_id
          LEFT JOIN content_claims cc ON c.claim_id = cc.claim_id
@@ -142,7 +144,8 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
           'claim_links:source' AS source_table,
           c.claim_text AS reference_claim_text,
           content.media_source AS source_name,
-          content.url AS source_url
+          content.url AS source_url,
+          content.content_id AS reference_content_id
          FROM claim_links cl
          LEFT JOIN claims c ON cl.target_claim_id = c.claim_id
          LEFT JOIN content_claims cc ON c.claim_id = cc.claim_id

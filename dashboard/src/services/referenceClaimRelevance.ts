@@ -27,6 +27,7 @@ export interface ReferenceClaimTaskLink {
   reference_claim_text?: string;
   source_name?: string;
   source_url?: string;
+  reference_content_id?: number;
   relation?: string; // For compatibility with UI expecting relation instead of stance
   relationship?: string; // For compatibility with manual links
   claim_text?: string; // For compatibility
@@ -194,16 +195,20 @@ export function enrichClaimsWithRelevance(
   claimLinks: ReferenceClaimTaskLink[]
 ): ClaimWithRelevance[] {
   return referenceClaims.map((claim) => {
-    const link = claimLinks.find(
+    const matching = claimLinks.filter(
       (l) =>
         l.task_claim_id === taskClaimId &&
         l.reference_claim_id === claim.claim_id
     );
 
-    const relevanceScore = calculateClaimRelevanceScore(link ?? null);
+    // Prefer manual claim_links entries over AI reference_claim_task_links entries.
+    // The UNION query returns AI entries first, so .find() would pick AI over manual
+    // if both exist for the same pair — leading to hasLink=false even after the user
+    // created a manual link.
+    const manualLink = matching.find(l => l.source_table?.includes('claim_links'));
+    const link = manualLink ?? matching[0];
 
-    // Only treat as "hasLink" if it's an actual manual link from claim_links
-    // AI assessments from reference_claim_task_links are just suggestions
+    const relevanceScore = calculateClaimRelevanceScore(link ?? null);
     const isActualLink = link?.source_table?.includes('claim_links') ?? false;
 
     return {

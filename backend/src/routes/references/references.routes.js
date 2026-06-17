@@ -75,6 +75,9 @@ export default function createReferencesRoutes({ query, pool }) {
           params = viewerId ? [task_content_id, viewerId] : [task_content_id];
         }
 
+        // Claims are aggregated in a correlated subquery to prevent fan-out duplication
+        // when a reference has multiple publishers or authors (each extra join row would
+        // otherwise repeat every claim in JSON_ARRAYAGG).
         const SQL = `
         SELECT  c.content_id AS reference_content_id,
           c.content_name,
@@ -88,16 +91,56 @@ export default function createReferencesRoutes({ query, pool }) {
           cr.added_by_user_id,
           cr.is_system,
           ${scope === 'admin' ? 'cr.globally_removed, urv.is_hidden AS user_hidden,' : ''}
-               COALESCE(JSON_ARRAYAGG(
-                 IF((ucv.is_hidden IS NULL OR ucv.is_hidden = FALSE) AND cl.claim_id IS NOT NULL,
-                    JSON_OBJECT('claim_id', cl.claim_id, 'claim_text', cl.claim_text, 'claim_type', cl.claim_type),
-                    NULL)
-               ), '[]') AS claims
+          MIN(pub.publisher_id)   AS publisher_id,
+          COALESCE(MIN(pub.publisher_name), NULLIF(c.media_source, 'web'), NULLIF(c.media_source, ''), MIN(c.url)) AS publisher_name,
+          AVG(CASE WHEN pr.user_id IS NULL THEN pr.veracity_score ELSE NULL END) AS publisher_veracity,
+          SUBSTRING_INDEX(GROUP_CONCAT(CASE WHEN pr.user_id IS NULL THEN pr.rating_label ELSE NULL END ORDER BY pr.last_checked DESC SEPARATOR '||'), '||', 1) AS rating_label,
+          SUBSTRING_INDEX(GROUP_CONCAT(CASE WHEN pr.user_id IS NULL THEN pr.rating_type ELSE NULL END ORDER BY pr.last_checked DESC SEPARATOR '||'), '||', 1) AS rating_type,
+          MIN(a.author_id)        AS author_id,
+          MIN(CONCAT(a.author_first_name, ' ', COALESCE(a.author_last_name, ''))) AS author_name,
+          COALESCE(
+            (SELECT ae.admiralty_code FROM admiralty_evaluations ae
+             WHERE ae.target_type = 'content' AND ae.target_id = c.content_id
+               AND ae.evaluation_status NOT IN ('insufficient_data')
+             ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1),
+            (SELECT ae.admiralty_code FROM admiralty_evaluations ae
+             INNER JOIN content_publishers cp2 ON ae.target_id = cp2.publisher_id
+             WHERE ae.target_type = 'publisher' AND cp2.content_id = c.content_id
+               AND ae.evaluation_status NOT IN ('insufficient_data')
+             ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1)
+          ) AS admiralty_code,
+          (
+            SELECT COALESCE(JSON_ARRAYAGG(
+              IF((ucv2.is_hidden IS NULL OR ucv2.is_hidden = FALSE) AND cl2.claim_id IS NOT NULL,
+                 JSON_OBJECT(
+                   'claim_id', cl2.claim_id,
+                   'claim_text', cl2.claim_text,
+                   'claim_type', cl2.claim_type,
+                   'veracity_score', cl2.veracity_score,
+                   'confidence_level', cl2.confidence_level,
+                   'last_verified', cl2.last_verified,
+                   'claim_role', cc2.claim_role,
+                   'parent_claim_id', cc2.parent_claim_id,
+                   'claim_depth', cc2.claim_depth,
+                   'centrality_score', cc2.centrality_score,
+                   'verifiability_score', cc2.verifiability_score,
+                   'claim_order', cc2.claim_order,
+                   'relationship_type', cc2.relationship_type
+                 ),
+                 NULL)
+            ), '[]')
+            FROM content_claims cc2
+              LEFT JOIN claims cl2 ON cc2.claim_id = cl2.claim_id
+              LEFT JOIN user_claim_visibility ucv2 ON cl2.claim_id = ucv2.claim_id AND ucv2.user_id = ?
+              WHERE cc2.content_id = c.content_id
+          ) AS claims
          FROM content c
         INNER JOIN content_relations cr ON c.content_id = cr.reference_content_id
-        LEFT JOIN content_claims cc ON c.content_id = cc.content_id
-        LEFT JOIN claims cl ON cc.claim_id = cl.claim_id
-        LEFT JOIN user_claim_visibility ucv ON cl.claim_id = ucv.claim_id AND ucv.user_id = ?
+        LEFT JOIN content_publishers cp_pub ON c.content_id = cp_pub.content_id
+        LEFT JOIN publishers pub ON cp_pub.publisher_id = pub.publisher_id
+        LEFT JOIN publisher_ratings pr ON pub.publisher_id = pr.publisher_id
+        LEFT JOIN content_authors ca ON c.content_id = ca.content_id
+        LEFT JOIN authors a ON ca.author_id = a.author_id
         ${scope !== 'all' ? `
         LEFT JOIN user_reference_visibility urv
           ON urv.task_content_id = cr.content_id
@@ -105,7 +148,10 @@ export default function createReferencesRoutes({ query, pool }) {
           AND urv.user_id = ?
         ` : ''}
         ${whereClause}
-        GROUP BY c.content_id
+        GROUP BY c.content_id, c.content_name, c.url, c.thumbnail, c.progress,
+                 c.details, c.media_source, c.topic, c.subtopic,
+                 cr.added_by_user_id, cr.is_system
+                 ${scope === 'admin' ? ', cr.globally_removed, urv.is_hidden' : ''}
         `;
 
         // Add currentUserId to params for user_claim_visibility and user_reference_visibility joins

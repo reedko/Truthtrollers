@@ -2,7 +2,7 @@
  * OpenTimestamps Service
  *
  * Provides Bitcoin-backed cryptographic timestamping for evidence chain records.
- * Uses OpenTimestamps protocol to create verifiable, immutable proofs of existence.
+ * Uses OpenTimestamps protocol to create verifiable, tamper-evident proofs of existence.
  */
 
 import OpenTimestamps from 'opentimestamp';

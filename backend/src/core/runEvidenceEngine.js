@@ -23,6 +23,8 @@ import { EvidenceEngine } from "./evidenceEngine.js";
 import { SourceQualityScorer } from "./sourceQualityScorer.js";
 import { query } from "../db/pool.js";
 import PromptManager from "./promptManager.js";
+import { resolveSourceIdentity } from "../../services/sourceIdentityResolver.js";
+import { resolveSourceLineage } from "../../services/sourceLineageResolver.js";
 import { createContentInternal } from "../storage/createContentInternal.js";
 import { persistAuthors } from "../storage/persistAuthors.js";
 import { persistPublishers } from "../storage/persistPublishers.js";
@@ -512,9 +514,21 @@ export async function runEvidenceEngine({
             // 6. PERSIST AUTHORS & PUBLISHERS
             // ─────────────────────────────────────────────
             await persistAuthors(query, referenceContentId, authors);
-            if (publisher) {
-              await persistPublishers(query, referenceContentId, publisher);
+            if (publisher?.name && publisher.name !== "Unknown Publisher") {
+              // extractPublisher returns { name } but persistPublishers expects { publisher_name }
+              await persistPublishers(query, referenceContentId, { publisher_name: publisher.name });
             }
+
+            // Resolve + cache source identity — fire-and-forget, never blocks evidence engine
+            resolveSourceIdentity(cand.url, {
+              query,
+              hintName: publisher?.name || null,
+              title: title || null,
+              author: authors?.[0]?.name || null,
+            }).catch(() => {});
+
+            // Detect source lineage (excerpt/repost/pointer/archive) — fire-and-forget
+            resolveSourceLineage(cand.url, { query }).catch(() => {});
 
             // ─────────────────────────────────────────────
             // 6.5. QUALITY SCORES WILL BE SAVED FROM EVIDENCE ITEMS
@@ -798,14 +812,28 @@ export async function runEvidenceEngine({
             try {
               // Analyze snippet with LLM
               const snippetAnalysis = await openAiLLM.generate({
-                system: "You analyze search snippets to determine if they support, refute, or add nuance to a claim.",
-                user: `Claim: ${claim.text}\n\nSource: ${refData.title}\nSnippet: ${refData.snippet}\n\nDoes this snippet support, refute, or add nuance to the claim?`,
+                system: `You analyze search snippets to determine if they support, refute, or add nuance to a task claim.
+The stance is ALWAYS relative to the task claim, not whether the source itself is credible or true.
+Use "refute" when the snippet says the opposite of the task claim's comparison, causal statement, or factual assertion.`,
+                user: `TASK CLAIM:
+${claim.text}
+
+SOURCE:
+${refData.title}
+
+SNIPPET:
+${refData.snippet}
+
+Does this snippet support, refute, nuance, or provide insufficient evidence for the TASK CLAIM?`,
                 schemaHint: '{"stance":"support|refute|nuance|insufficient","summary":"brief explanation"}',
                 temperature: 0.1,
               });
 
               if (snippetAnalysis?.stance) {
-                snippetStance = snippetAnalysis.stance;
+                const normalizedSnippetStance = String(snippetAnalysis.stance).trim().toLowerCase();
+                snippetStance = ["support", "refute", "nuance", "insufficient"].includes(normalizedSnippetStance)
+                  ? normalizedSnippetStance
+                  : "insufficient";
                 snippetRationale = snippetAnalysis.summary || "Analysis based on search snippet";
               }
             } catch (err) {

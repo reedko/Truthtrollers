@@ -72,7 +72,11 @@ router.get("/api/user-tasks/:user_id", async (req, res) => {
                'publisher_id', p.publisher_id,
                'publisher_name', p.publisher_name,
                'publisher_icon', p.publisher_icon,
-               'description', p.description
+               'description', p.description,
+               'admiralty_code', COALESCE(
+                 (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'content' AND ae.target_id = cp.content_id AND ae.publisher_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1),
+                 (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'publisher' AND ae.target_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1)
+               )
              )
            )
     FROM content_publishers cp
@@ -118,7 +122,11 @@ router.get("/api/user-tasks/:user_id", async (req, res) => {
                'publisher_id', p.publisher_id,
                'publisher_name', p.publisher_name,
                'publisher_icon', p.publisher_icon,
-               'description', p.description
+               'description', p.description,
+               'admiralty_code', COALESCE(
+                 (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'content' AND ae.target_id = cp.content_id AND ae.publisher_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1),
+                 (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'publisher' AND ae.target_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1)
+               )
              )
            )
     FROM content_publishers cp
@@ -192,7 +200,11 @@ router.get("/api/search-tasks", async (req, res) => {
             'publisher_id', p.publisher_id,
             'publisher_name', p.publisher_name,
             'publisher_icon', p.publisher_icon,
-            'description', p.description
+            'description', p.description,
+            'admiralty_code', COALESCE(
+              (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'content' AND ae.target_id = cp.content_id AND ae.publisher_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1),
+              (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'publisher' AND ae.target_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1)
+            )
           )
         )
         FROM content_publishers cp
@@ -247,7 +259,11 @@ router.get("/api/search-tasks", async (req, res) => {
             'publisher_id', p.publisher_id,
             'publisher_name', p.publisher_name,
             'publisher_icon', p.publisher_icon,
-            'description', p.description
+            'description', p.description,
+            'admiralty_code', COALESCE(
+              (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'content' AND ae.target_id = cp.content_id AND ae.publisher_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1),
+              (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'publisher' AND ae.target_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1)
+            )
           )
         )
         FROM content_publishers cp
@@ -323,7 +339,11 @@ router.get("/api/all-tasks", async (req, res) => {
             'publisher_id', p.publisher_id,
             'publisher_name', p.publisher_name,
             'publisher_icon', p.publisher_icon,
-            'description', p.description
+            'description', p.description,
+            'admiralty_code', COALESCE(
+              (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'content' AND ae.target_id = cp.content_id AND ae.publisher_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1),
+              (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'publisher' AND ae.target_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1)
+            )
           )
         )
         FROM content_publishers cp
@@ -368,7 +388,11 @@ router.get("/api/all-tasks", async (req, res) => {
             'publisher_id', p.publisher_id,
             'publisher_name', p.publisher_name,
             'publisher_icon', p.publisher_icon,
-            'description', p.description
+            'description', p.description,
+            'admiralty_code', COALESCE(
+              (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'content' AND ae.target_id = cp.content_id AND ae.publisher_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1),
+              (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'publisher' AND ae.target_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1)
+            )
           )
         )
         FROM content_publishers cp
@@ -464,7 +488,11 @@ router.get("/api/unified-tasks/:pivotType/:pivotId", (req, res) => {
                    'publisher_id', p.publisher_id,
                    'publisher_name', p.publisher_name,
                    'publisher_icon', p.publisher_icon,
-                   'description', p.description
+                   'description', p.description,
+                   'admiralty_code', COALESCE(
+                     (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'content' AND ae.target_id = cp.content_id AND ae.publisher_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1),
+                     (SELECT ae.admiralty_code FROM admiralty_evaluations ae WHERE ae.target_type = 'publisher' AND ae.target_id = p.publisher_id AND ae.evaluation_status NOT IN ('insufficient_data') ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1)
+                   )
                  )
                )
         FROM content_publishers cp

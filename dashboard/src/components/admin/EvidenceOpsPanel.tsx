@@ -427,7 +427,7 @@ export default function EvidenceOpsPanel() {
 
             {/* Advanced Prompt Editor Tab */}
             <TabPanel px={0}>
-              <AdvancedPromptEditor />
+              <AdvancedPromptEditor evidenceMode={evidenceMode} extractionMode={extractionMode} />
             </TabPanel>
 
             {/* Configuration Matrix Tab */}

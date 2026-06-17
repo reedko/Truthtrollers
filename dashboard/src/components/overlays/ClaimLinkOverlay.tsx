@@ -14,7 +14,7 @@ import {
   Textarea,
   useToast,
 } from "@chakra-ui/react";
-import ResponsiveOverlay from "./ResponsiveOverlay"; // <-- use the shell we discussed
+import ResponsiveOverlay from "./ResponsiveOverlay";
 import {
   addClaimLink,
   fetchContentScores,
@@ -26,6 +26,16 @@ import { ClaimLink } from "../RelationshipMap";
 import { useTaskStore } from "../../store/useTaskStore";
 import { calculateLinkPoints } from "../../services/gameScoring";
 import { useVerimeterMode } from "../../contexts/VerimeterModeContext";
+import SourceCrest from "../SourceCrest";
+import SourceDetailModal from "../modals/SourceDetailModal";
+import { SourceType, Reliability, SOURCE_TYPE_LABEL, RELIABILITY_LABEL } from "../../utils/normalizeSourceProfile";
+
+interface SourcePublisherInfo {
+  publisherName?: string;
+  sourceType?: SourceType;
+  reliability?: Reliability;
+  admiraltyCode?: string;
+}
 
 interface ClaimLinkOverlayProps {
   isOpen: boolean;
@@ -36,13 +46,11 @@ interface ClaimLinkOverlayProps {
   claimLink?: ClaimLink | null;
   onLinkCreated?: () => void;
   verimeter_score?: number;
-  // 🎮 Game scoring
   onScoreAwarded?: (points: number) => void;
-  sourceClaimVeracity?: number; // AI truth rating of source claim
-  // AI rationale from reference_claim_task_links
+  sourceClaimVeracity?: number;
   rationale?: string;
-  // AI suggested support level (-1 to 1)
   aiSupportLevel?: number | null;
+  sourcePublisher?: SourcePublisherInfo;
 }
 
 const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
@@ -57,6 +65,7 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
   sourceClaimVeracity,
   rationale,
   aiSupportLevel,
+  sourcePublisher,
 }) => {
   const toast = useToast();
   const { mode, aiWeight } = useVerimeterMode();
@@ -76,6 +85,7 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
   // Track whether the current values were AI-suggested (for badge display)
   const [aiPrefilled, setAiPrefilled] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sourceDetailOpen, setSourceDetailOpen] = useState(false);
 
   // When modal opens, sync notes + support level with AI suggestions
   useEffect(() => {
@@ -291,6 +301,7 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
   );
 
   return (
+    <>
     <ResponsiveOverlay
       isOpen={isOpen}
       onClose={onClose}
@@ -324,6 +335,34 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
           zIndex={0}
         />
         <Text fontSize="sm" position="relative" zIndex={1} color="white">{sourceClaim?.claim_text}</Text>
+        {sourcePublisher?.publisherName && (
+          <Box
+            mt={2}
+            pt={2}
+            borderTop="1px solid rgba(113,219,255,0.15)"
+            position="relative"
+            zIndex={1}
+          >
+            <Box display="inline-flex" alignItems="center" gap="6px" flexWrap="wrap">
+              <SourceCrest
+                publisherName={sourcePublisher.publisherName}
+                sourceType={sourcePublisher.sourceType}
+                reliability={sourcePublisher.reliability}
+                admiraltyCode={sourcePublisher.admiraltyCode}
+                size="sm"
+                onClick={(e) => { e?.stopPropagation(); setSourceDetailOpen(true); }}
+              />
+              <Text fontSize="xs" color="rgba(255,255,255,0.75)" fontWeight="600">
+                {sourcePublisher.publisherName}
+              </Text>
+            </Box>
+            <Text fontSize="2xs" color="rgba(255,255,255,0.45)" mt="2px">
+              {SOURCE_TYPE_LABEL[sourcePublisher.sourceType ?? "unknown"]}
+              {" · "}
+              {RELIABILITY_LABEL[sourcePublisher.reliability ?? "unchecked"]}
+            </Text>
+          </Box>
+        )}
       </Box>
 
       <Text fontWeight="bold" mb={2} color="rgba(113, 219, 255, 0.9)">
@@ -481,6 +520,16 @@ const ClaimLinkOverlay: React.FC<ClaimLinkOverlayProps> = ({
         </>
       )}
     </ResponsiveOverlay>
+
+    {sourceDetailOpen && sourcePublisher?.publisherName && (
+      <SourceDetailModal
+        isOpen={sourceDetailOpen}
+        onClose={() => setSourceDetailOpen(false)}
+        publisherName={sourcePublisher.publisherName}
+        admiraltyCode={sourcePublisher.admiraltyCode}
+      />
+    )}
+    </>
   );
 };
 

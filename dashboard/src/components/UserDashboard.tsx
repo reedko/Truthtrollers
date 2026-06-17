@@ -21,7 +21,6 @@ import {
   Grid,
   GridItem,
   Image,
-  Select,
 } from "@chakra-ui/react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useNavigate } from "react-router-dom";
@@ -29,6 +28,11 @@ import { useTaskStore } from "../store/useTaskStore";
 import VisionTheme from "./themes/VisionTheme";
 import ClaimProgressChart from "./ClaimProgressChart";
 import { fetchBulkClaimsAndReferences } from "../services/useDashboardAPI";
+import { EvaluationTaskPanel } from "./EvaluationTaskPanel";
+import SourceCrest from "./SourceCrest";
+import { normalizeSourceProfile } from "../utils/normalizeSourceProfile";
+import SourceDetailModal from "./modals/SourceDetailModal";
+import type { Publisher } from "../../../shared/entities/types";
 
 interface Task {
   content_id: number;
@@ -58,6 +62,7 @@ const UserDashboard: React.FC = () => {
   const claimReferences = useTaskStore((s) => s.claimReferences);
   const setSelectedTask = useTaskStore((s) => s.setSelectedTask);
   const viewerId = useTaskStore((s) => s.viewingUserId);
+  const publishersByTask = useTaskStore((s) => s.publishers);
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [stats, setStats] = useState<UserStats>({
@@ -67,8 +72,8 @@ const UserDashboard: React.FC = () => {
     honestyScore: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [evaluationMode, setEvaluationMode] = useState<Record<number, string>>({});
   const [claimsLoaded, setClaimsLoaded] = useState(false);
+  const [sourceDetailPublisher, setSourceDetailPublisher] = useState<Publisher | null>(null);
 
   useEffect(() => {
     if (user?.user_id) {
@@ -193,6 +198,7 @@ const UserDashboard: React.FC = () => {
   }
 
   return (
+    <>
     <Box className="mr-container" p={6} minH="100vh">
       <div className="mr-content">
         <Box w="100%" maxW="1400px" mx="auto">
@@ -311,24 +317,26 @@ const UserDashboard: React.FC = () => {
             </GridItem>
           </Grid>
 
-          {/* Main Task Section */}
-          <Grid
-            templateColumns={{
-              base: "1fr",
-              lg: "2fr 1fr",
-            }}
-            gap={6}
-          >
-            {/* Assigned Cases - 2/3 width */}
-            <GridItem>
-              <Box className="mr-card mr-card-blue assigned-tasks-section" position="relative" p={6}>
-                <div className="mr-glow-bar mr-glow-bar-blue" />
-                <div className="mr-scanlines" />
-                <Box position="relative" zIndex={1}>
-                  <Heading size="md" className="mr-heading" mb={4}>
-                    My Assigned Cases
-                  </Heading>
-                  <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={6} maxH="700px" overflowY="auto" px={2}>
+          {/* ── Workflow Task Lanes ──────────────────────────────────────── */}
+          <VStack spacing={6} align="stretch">
+
+          {/* Lane 1 — Build Evidence Links */}
+          <Box className="mr-card mr-card-blue assigned-tasks-section" position="relative" p={6}>
+            <div className="mr-glow-bar mr-glow-bar-blue" />
+            <div className="mr-scanlines" />
+            <Box position="relative" zIndex={1}>
+              <HStack justify="space-between" mb={1}>
+                <Heading size="md" className="mr-heading">
+                  Build Evidence Links
+                </Heading>
+                <Badge bg="var(--mr-blue-border)" color="var(--mr-blue)" fontSize="xs" px={2}>
+                  {assignedTasks.length} cases
+                </Badge>
+              </HStack>
+              <Text className="mr-text-muted" fontSize="xs" mb={4}>
+                Select a case and open it in Workspace or CaseFocus to add supporting &amp; refuting evidence.
+              </Text>
+              <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={6} maxH="700px" overflowY="auto" px={2}>
                     {assignedTasks.length === 0 ? (
                       <Box gridColumn="span 2" textAlign="center" py={8}>
                         <Text className="mr-text-secondary" fontSize="lg" mb={3}>
@@ -348,7 +356,6 @@ const UserDashboard: React.FC = () => {
                     ) : (
                       assignedTasks.map((task) => {
                         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5001";
-                        const mode = evaluationMode[task.content_id] || "workspace";
 
                         return (
                           <Box
@@ -440,43 +447,38 @@ const UserDashboard: React.FC = () => {
                                 {task.content_name}
                               </Text>
 
-                              {/* Source Badge */}
-                              {task.media_source && (
-                                <Badge
-                                  fontSize="2xs"
-                                  bg="var(--mr-purple-border)"
-                                  color="var(--mr-purple)"
-                                  textAlign="center"
-                                  mb={2}
-                                >
-                                  {task.media_source}
-                                </Badge>
-                              )}
+                              {/* Source Badge + Crest */}
+                              {(() => {
+                                const pub = publishersByTask[task.content_id]?.[0];
+                                const profile = normalizeSourceProfile({
+                                  publisher_name: pub?.publisher_name ?? task.media_source ?? undefined,
+                                  media_source: task.media_source ?? undefined,
+                                });
+                                return (
+                                  <HStack justify="center" spacing={2} mb={2} flexWrap="wrap">
+                                    <SourceCrest
+                                      publisherName={pub?.publisher_name ?? task.media_source ?? ""}
+                                      sourceType={profile.sourceType}
+                                      reliability={profile.reliability}
+                                      admiraltyCode={pub?.admiralty_code ?? undefined}
+                                      size="sm"
+                                      onClick={(e) => { e?.stopPropagation(); if (pub) setSourceDetailPublisher(pub); }}
+                                    />
+                                    {task.media_source && (
+                                      <Badge
+                                        fontSize="2xs"
+                                        bg="var(--mr-purple-border)"
+                                        color="var(--mr-purple)"
+                                        textAlign="center"
+                                      >
+                                        {task.media_source}
+                                      </Badge>
+                                    )}
+                                  </HStack>
+                                );
+                              })()}
 
-                              {/* Evaluation Mode Dropdown */}
-                              <Select
-                                size="xs"
-                                value={mode}
-                                onChange={(e) => {
-                                  e.stopPropagation();
-                                  setEvaluationMode({
-                                    ...evaluationMode,
-                                    [task.content_id]: e.target.value,
-                                  });
-                                }}
-                                bg="var(--mr-bg-tertiary)"
-                                borderColor="var(--mr-blue-border)"
-                                color="var(--mr-text-primary)"
-                                _hover={{ borderColor: "var(--mr-blue)" }}
-                                mb={2}
-                                fontSize="2xs"
-                              >
-                                <option value="workspace">Workspace</option>
-                                <option value="gamespace">GameSpace</option>
-                                <option value="molecule">Molecule</option>
-                              </Select>
-
-                              {/* Action Buttons */}
+                              {/* Destination Buttons */}
                               <VStack spacing={1} w="100%">
                                 <Button
                                   className="mr-button"
@@ -485,10 +487,15 @@ const UserDashboard: React.FC = () => {
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedTask(task);
+                                    navigate("/workspace");
                                   }}
+                                  bg="var(--mr-blue)"
+                                  color="black"
+                                  _hover={{ bg: "var(--mr-blue-border)", transform: "scale(1.05)" }}
                                   fontSize="2xs"
+                                  fontWeight="bold"
                                 >
-                                  Select
+                                  Workspace →
                                 </Button>
                                 <Button
                                   className="mr-button"
@@ -496,24 +503,16 @@ const UserDashboard: React.FC = () => {
                                   w="100%"
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    const destination = mode === "workspace"
-                                      ? `/workspace`
-                                      : mode === "gamespace"
-                                      ? `/gamespace`
-                                      : `/molecule`;
                                     setSelectedTask(task);
-                                    navigate(destination);
+                                    navigate("/casefocus");
                                   }}
-                                  bg="var(--mr-blue)"
-                                  color="black"
-                                  _hover={{
-                                    bg: "var(--mr-blue-border)",
-                                    transform: "scale(1.05)",
-                                  }}
+                                  bg="var(--mr-purple-border)"
+                                  color="var(--mr-purple)"
+                                  _hover={{ bg: "var(--mr-purple)", color: "black", transform: "scale(1.05)" }}
                                   fontSize="2xs"
                                   fontWeight="bold"
                                 >
-                                  Evaluate →
+                                  CaseFocus →
                                 </Button>
                               </VStack>
                             </VStack>
@@ -522,112 +521,54 @@ const UserDashboard: React.FC = () => {
                       })
                     )}
                   </SimpleGrid>
-                </Box>
-              </Box>
-            </GridItem>
+            </Box>
+          </Box>
 
-            {/* Other Tasks Sidebar - 1/3 width */}
-            <GridItem className="other-tasks-section">
-              <VStack spacing={4} align="stretch">
-                {/* Other Tasks */}
-                <Box className="mr-card mr-card-green" p={4} position="relative">
-                  <div className="mr-glow-bar mr-glow-bar-green" />
-                  <div className="mr-scanlines" />
-                  <Box position="relative" zIndex={1}>
-                    <Heading size="sm" className="mr-heading" mb={3}>
-                      Other Tasks
-                    </Heading>
-                    <VStack spacing={2} align="stretch">
-                      <Box
-                        className="mr-card mr-card-green"
-                        p={3}
-                        cursor="pointer"
-                        _hover={{ transform: "translateY(-2px)" }}
-                        transition="all 0.3s"
-                        onClick={() => navigate("/tasks")}
-                      >
-                        <Text className="mr-text-primary" fontSize="sm" fontWeight="bold">
-                          Browse All Tasks
-                        </Text>
-                        <Text className="mr-text-muted" fontSize="xs">
-                          View available content
-                        </Text>
-                      </Box>
-                    </VStack>
-                  </Box>
-                </Box>
+          {/* Lane 2 — Evaluate User Ratings (peer review) */}
+          <EvaluationTaskPanel />
 
-                {/* Evaluate Users */}
-                <Box className="mr-card mr-card-purple" p={4} position="relative">
-                  <div className="mr-glow-bar mr-glow-bar-purple" />
-                  <div className="mr-scanlines" />
-                  <Box position="relative" zIndex={1}>
-                    <Heading size="sm" className="mr-heading" mb={3}>
-                      Evaluate Users
-                    </Heading>
-                    <Box
-                      className="mr-card mr-card-purple"
-                      p={3}
-                      cursor="pointer"
-                      _hover={{ transform: "translateY(-2px)" }}
-                      transition="all 0.3s"
-                      onClick={() => navigate("/evaluate-ratings")}
-                    >
-                      <Text className="mr-text-primary" fontSize="sm" fontWeight="bold">
-                        User Ratings
-                      </Text>
-                      <Text className="mr-text-muted" fontSize="xs">
-                        {stats.ratingsGiven} ratings given
-                      </Text>
-                    </Box>
-                  </Box>
-                </Box>
+          {/* Lane 3 — Check Source Credibility */}
+          <Box className="mr-card mr-card-yellow" position="relative" p={6}>
+            <div className="mr-glow-bar mr-glow-bar-yellow" />
+            <div className="mr-scanlines" />
+            <Box position="relative" zIndex={1}>
+              <HStack justify="space-between" mb={1}>
+                <Heading size="md" className="mr-heading">
+                  Check Source Credibility
+                </Heading>
+              </HStack>
+              <Text className="mr-text-muted" fontSize="xs" mb={4}>
+                Rate authors and publishers, check bias and veracity. Use Molecule to visualise the source graph.
+              </Text>
+              <HStack spacing={4} flexWrap="wrap">
+                <Button
+                  className="mr-button"
+                  size="sm"
+                  bg="var(--mr-yellow-border, rgba(255,200,0,0.15))"
+                  color="var(--mr-yellow, #f5c518)"
+                  _hover={{ bg: "var(--mr-yellow, #f5c518)", color: "black" }}
+                  onClick={() => navigate("/credibility")}
+                >
+                  Rate Authors &amp; Publishers →
+                </Button>
+                <Button
+                  className="mr-button"
+                  size="sm"
+                  bg="var(--mr-green-border, rgba(0,255,160,0.15))"
+                  color="var(--mr-green)"
+                  _hover={{ bg: "var(--mr-green)", color: "black" }}
+                  onClick={() => navigate("/molecule")}
+                >
+                  Open Molecule View →
+                </Button>
+              </HStack>
+            </Box>
+          </Box>
 
-                {/* Authors & Publishers */}
-                <Box className="mr-card mr-card-yellow" p={4} position="relative">
-                  <div className="mr-glow-bar mr-glow-bar-yellow" />
-                  <div className="mr-scanlines" />
-                  <Box position="relative" zIndex={1}>
-                    <Heading size="sm" className="mr-heading" mb={3}>
-                      Authors & Publishers
-                    </Heading>
-                    <VStack spacing={2} align="stretch">
-                      <Box
-                        className="mr-card mr-card-yellow"
-                        p={3}
-                        cursor="pointer"
-                        _hover={{ transform: "translateY(-2px)" }}
-                        transition="all 0.3s"
-                      >
-                        <Text className="mr-text-primary" fontSize="sm" fontWeight="bold">
-                          Rate Authors
-                        </Text>
-                        <Text className="mr-text-muted" fontSize="xs">
-                          Assess credibility
-                        </Text>
-                      </Box>
-                      <Box
-                        className="mr-card mr-card-yellow"
-                        p={3}
-                        cursor="pointer"
-                        _hover={{ transform: "translateY(-2px)" }}
-                        transition="all 0.3s"
-                      >
-                        <Text className="mr-text-primary" fontSize="sm" fontWeight="bold">
-                          Rate Publishers
-                        </Text>
-                        <Text className="mr-text-muted" fontSize="xs">
-                          Evaluate sources
-                        </Text>
-                      </Box>
-                    </VStack>
-                  </Box>
-                </Box>
-              </VStack>
-            </GridItem>
-          </Grid>
+          </VStack>
+          {/* ── End Workflow Task Lanes ───────────────────────────────────── */}
 
-          {/* Legacy Task Tabs (keeping for reference) - can be removed */}
+          {/* Legacy Task Tabs — hidden, kept until safe to delete */}
           <Box className="mr-card mr-card-blue" position="relative" p={6} display="none">
             <div className="mr-glow-bar mr-glow-bar-blue" />
             <div className="mr-scanlines" />
@@ -887,7 +828,23 @@ const UserDashboard: React.FC = () => {
 
         </Box>
       </div>
+
     </Box>
+
+      {sourceDetailPublisher && (() => {
+        const profile = normalizeSourceProfile({ publisher_name: sourceDetailPublisher.publisher_name });
+        return (
+          <SourceDetailModal
+            isOpen={!!sourceDetailPublisher}
+            onClose={() => setSourceDetailPublisher(null)}
+            publisherId={sourceDetailPublisher.publisher_id}
+            publisherName={sourceDetailPublisher.publisher_name}
+            sourceType={profile.sourceType}
+            reliability={profile.reliability}
+          />
+        );
+      })()}
+    </>
   );
 };
 

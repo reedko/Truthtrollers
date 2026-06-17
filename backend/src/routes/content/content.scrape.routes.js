@@ -16,12 +16,16 @@ import { scrapeReference } from "../../core/scrapeReference.js"; // Used by /api
 import { persistReferences } from "../../storage/persistReferences.js";
 import { persistAIResults } from "../../storage/persistAIResults.js";
 import { persistClaims } from "../../storage/persistClaims.js";
+import { persistAuthors } from "../../storage/persistAuthors.js";
+import { persistPublishers } from "../../storage/persistPublishers.js";
 
 // Claims + Evidence engines
 import { processTaskClaims } from "../../core/processTaskClaims.js";
 import { runEvidenceEngine } from "../../core/runEvidenceEngine.js";
 import { matchClaimsToTaskClaims } from "../../core/matchClaims.js";
 import { openAiLLM } from "../../core/openAiLLM.js";
+import { resolveSourceIdentity } from "../../../services/sourceIdentityResolver.js";
+import { resolveSourceLineage } from "../../../services/sourceLineageResolver.js";
 
 export default function createContentScrapeRoutes({ query }) {
   const router = Router();
@@ -341,12 +345,17 @@ export default function createContentScrapeRoutes({ query }) {
   // ============================================================
   router.post("/api/scrape-task", async (req, res) => {
     try {
-      const { url, raw_html, raw_text, force, media_source, authors: providedAuthors } = req.body;
+      const {
+        url, raw_html, raw_text, force, media_source,
+        authors: providedAuthors,
+        platform, distribution_channel, linked_url, linked_publisher,
+      } = req.body;
 
       logger.log(`\n${'='.repeat(80)}`);
       logger.log(`🔵 [/api/scrape-task] RECEIVED REQUEST`);
       logger.log(`🔵 URL: ${url}`);
       logger.log(`🔵 Media source: ${media_source || 'not provided'}`);
+      logger.log(`🔵 Platform: ${platform || 'not provided'}`);
       logger.log(`🔵 Force: ${force}`);
       logger.log(`🔵 Has raw_html: ${!!raw_html} (${raw_html?.length || 0} chars)`);
       logger.log(`🔵 Has raw_text: ${!!raw_text}`);
@@ -439,16 +448,41 @@ export default function createContentScrapeRoutes({ query }) {
           "../../storage/persistPublishers.js"
         );
 
+        // For Facebook posts: if linked_publisher wasn't extracted by the extension
+        // (tracker links use JS, not href), try to find the linked article domain
+        // from the raw post text. Facebook renders the link preview domain as a
+        // standalone line (e.g. "emfacts.com\n<article title>").
+        let resolvedLinkedPublisher = linked_publisher || null;
+        if (platform === "facebook" && !resolvedLinkedPublisher && raw_text) {
+          const DOMAIN_LINE_RE = /^([a-z0-9][a-z0-9-]{0,61}[a-z0-9]?\.[a-z]{2,}(?:\.[a-z]{2,})?)$/i;
+          for (const line of raw_text.split(/\r?\n/)) {
+            const t = line.trim();
+            if (DOMAIN_LINE_RE.test(t) && !/facebook|fbcdn|instagram/i.test(t)) {
+              resolvedLinkedPublisher = t.toLowerCase();
+              logger.log(`🔗 [TESTING MODE] Extracted linked publisher from post text: ${resolvedLinkedPublisher}`);
+              break;
+            }
+          }
+        }
+
+        // For Facebook posts: prefer the linked article domain over the platform name
+        const resolvedMediaSource = resolvedLinkedPublisher ||
+          (platform === "facebook" ? "Facebook" : media_source || "Test");
+
         // Create task content row
         taskContentId = await createContentInternal(query, {
           content_name: content_name || "Test Task",
           url,
-          media_source: media_source || "Test",
+          media_source: resolvedMediaSource,
           topic: topic || "general",
           subtopics: subtopics || [],
           content_type: "task",
           thumbnail: thumbnail || null,
           details: raw_text.slice(0, 500),
+          platform,
+          distribution_channel,
+          linked_url,
+          linked_publisher: resolvedLinkedPublisher,
         });
 
         // Persist authors
@@ -500,6 +534,17 @@ export default function createContentScrapeRoutes({ query }) {
         }
 
         ({ taskContentId, text, domRefs, inlineRefs } = scrapeResult);
+
+        // Resolve source identity and cache — fire-and-forget, never blocks
+        resolveSourceIdentity(url, {
+          query,
+          hintName: scrapeResult.publisher?.name || null,
+          title:    scrapeResult.title || null,
+          author:   scrapeResult.authors?.[0]?.name || null,
+        }).catch(() => {});
+
+        // Detect source lineage (excerpt/repost/pointer/archive) — fire-and-forget
+        resolveSourceLineage(url, { query }).catch(() => {});
 
         // Fire publisher enrichment asynchronously — never blocks the scrape.
         // Looks up publisher from DB by name/domain after persistTaskContent ran.
@@ -827,6 +872,7 @@ export default function createContentScrapeRoutes({ query }) {
         summary,
         quote,
         location,
+        force,
       } = req.body;
 
       if (!url) {
@@ -895,7 +941,65 @@ export default function createContentScrapeRoutes({ query }) {
           logger.log(`   🎯 Task content_id: ${taskContentId}`);
           // Don't return - continue to claim extraction below
         } else {
-          // Not a retry scrape - just return the duplicate
+          // Not a retry scrape — return the duplicate, but trigger deferred enrichment
+          // if this content has never received an admiralty evaluation.
+          // This handles the case where a prior scrape stored a short publisher name
+          // (e.g. "CIDRAP" from title suffix) and enrichment never ran or produced no code.
+          ;(async () => {
+            try {
+              const [existingAdm] = await query(
+                `SELECT admiralty_code FROM admiralty_evaluations WHERE target_type = 'content' AND target_id = ? LIMIT 1`,
+                [existingContentId]
+              );
+              if (existingAdm?.admiralty_code) return; // already evaluated, skip
+
+              const pubRows = await query(
+                `SELECT p.publisher_id, p.publisher_name
+                   FROM content_publishers cp
+                   JOIN publishers p ON cp.publisher_id = p.publisher_id
+                  WHERE cp.content_id = ?
+                  LIMIT 1`,
+                [existingContentId]
+              );
+              const pubName = pubRows[0]?.publisher_name;
+              if (!pubName || /^(unknown( publisher)?|recaptcha|bot protected)$/i.test(pubName)) return;
+
+              const { evaluateAdmiraltyCode, storeEvaluation } = await import("../../services/admiraltyEvaluator.js");
+              const { enrichPublisherIfNeeded } = await import("../../services/publisherEnrichmentService.js");
+
+              const admPublisherId = pubRows[0].publisher_id;
+              const enrichResult = await enrichPublisherIfNeeded({
+                query,
+                publisherId: admPublisherId,
+                publisherName: pubName,
+                domain: null,
+                sourceUrl: url,
+                force: true,
+                context: "case_content",
+              });
+              logger.log(`📚 [/api/scrape-reference] Deferred enrichment for duplicate content_id=${existingContentId}: ${enrichResult?.status ?? 'done'}`);
+
+              const [profileRows, ratingRows] = await Promise.all([
+                query(`SELECT source_type FROM publisher_profiles WHERE publisher_id = ? ORDER BY last_checked DESC LIMIT 1`, [admPublisherId]),
+                query(`SELECT source, rating_label, rating_type, bias_score, veracity_score, score, confidence FROM publisher_ratings WHERE publisher_id = ? AND user_id IS NULL ORDER BY last_checked DESC`, [admPublisherId]),
+              ]);
+              const { lookupPublisherAllProviders } = await import("../../services/sourceProviders/sourceProviderRegistry.js");
+              const providerResults = await lookupPublisherAllProviders({ sourceUrl: url, publisherName: pubName });
+
+              const evaluation = await evaluateAdmiraltyCode({
+                sourceUrl: url,
+                publisherName: pubName,
+                sourceIdentity: { sourceType: profileRows[0]?.source_type || undefined, resolutionLevel: 3 },
+                existingSourceRatings: ratingRows,
+                providerResults,
+              });
+              await storeEvaluation(query, { targetType: "content", targetId: existingContentId, sourceUrl: url, publisherId: admPublisherId, evaluation });
+              logger.log(`🛡  [/api/scrape-reference] Deferred admiralty ${evaluation.admiraltyCode} stored for duplicate content_id=${existingContentId}`);
+            } catch (err) {
+              logger.warn(`⚠️  [/api/scrape-reference] Deferred admiralty failed for ${url}: ${err.message}`);
+            }
+          })();
+
           return res.json({
             success: true,
             contentId: existingContentId,
@@ -930,16 +1034,50 @@ export default function createContentScrapeRoutes({ query }) {
 
       const { referenceContentId, text } = scrapeResult;
 
+      // Persist publisher + authors extracted during scrape (these are missing from
+      // scrapeReference itself — it only writes media_source to the content row)
+      const refPublisherName = scrapeResult.publisher?.name;
+      if (refPublisherName && refPublisherName !== "Unknown Publisher") {
+        try {
+          // On retry scrape, replace stale publisher links so MIN() doesn't return an old domain-guess
+          if (isRetryScrape) {
+            await query(`DELETE FROM content_publishers WHERE content_id = ?`, [referenceContentId]);
+            logger.log(`  🧹 Cleared old publisher links for retry scrape on ref ${referenceContentId}`);
+          }
+          await persistPublishers(query, referenceContentId, { publisher_name: refPublisherName });
+          logger.log(`  ✅ Persisted publisher "${refPublisherName}" for ref ${referenceContentId}`);
+        } catch (e) {
+          logger.warn(`  ⚠️  Could not persist publisher for ref ${referenceContentId}:`, e.message);
+        }
+      }
+      if (Array.isArray(scrapeResult.authors) && scrapeResult.authors.length > 0) {
+        try {
+          await persistAuthors(query, referenceContentId, scrapeResult.authors);
+          logger.log(`  ✅ Persisted ${scrapeResult.authors.length} author(s) for ref ${referenceContentId}`);
+        } catch (e) {
+          logger.warn(`  ⚠️  Could not persist authors for ref ${referenceContentId}:`, e.message);
+        }
+      }
+
       // -----------------------------------------------------------------
       // 2. Extract & persist REFERENCE claims
-      //    If claimIds provided, use those for context.
-      //    Otherwise, if taskContentId provided, use ALL task claims for context.
-      //    This ensures context-aware extraction for manual dashboard scrapes.
+      //    Skip if this is a retry scrape and claims already exist (prevent duplicates).
+      //    Pass force=true to re-extract even when claims exist.
       // -----------------------------------------------------------------
       logger.log(`  ⏱️  [2/5] Fetching task claims for context...`);
+
+      // On retry scrape, check whether claims already exist before running LLM extraction
+      let existingClaimCount = 0;
+      if (isRetryScrape && !force) {
+        const existingClaimsCheck = await query(
+          `SELECT COUNT(*) AS cnt FROM content_claims WHERE content_id = ? AND relationship_type = 'reference'`,
+          [referenceContentId]
+        );
+        existingClaimCount = existingClaimsCheck[0]?.cnt ?? 0;
+      }
+
       let taskClaimsContext = null;
       if (claimIds && Array.isArray(claimIds) && claimIds.length > 0) {
-        // Specific claims provided (e.g., from claim detail page)
         const claimRows = await query(
           `SELECT claim_text FROM claims WHERE claim_id IN (?)`,
           [claimIds]
@@ -947,7 +1085,6 @@ export default function createContentScrapeRoutes({ query }) {
         taskClaimsContext = claimRows.map(row => row.claim_text);
         logger.log(`  ✅ [2/5] Using ${taskClaimsContext.length} specific claims for context (${Date.now() - startTime}ms)`);
       } else if (taskContentId) {
-        // No specific claims, but we have a task — use ALL task claims as context
         const taskClaimRows = await query(
           `SELECT c.claim_text
            FROM content_claims cc
@@ -964,15 +1101,27 @@ export default function createContentScrapeRoutes({ query }) {
         }
       }
 
-      logger.log(`  ⏱️  [3/5] Extracting reference claims via OpenAI (this may take 30-60s)...`);
-      const refClaims = await processTaskClaims({
-        query,
-        taskContentId: referenceContentId,
-        text,
-        claimType: "reference",
-        taskClaimsContext,
-      });
-      logger.log(`  ✅ [3/5] Extracted ${refClaims.length} reference claims (${Date.now() - startTime}ms)`);
+      let refClaims = [];
+      if (isRetryScrape && !force && existingClaimCount > 0) {
+        logger.log(`  ⏭️  [3/5] Skipping claim extraction — ${existingClaimCount} claims already exist for ref ${referenceContentId} (pass force=true to re-extract)`);
+        // Return existing claim IDs
+        const existingRows = await query(
+          `SELECT claim_id FROM content_claims WHERE content_id = ? AND relationship_type = 'reference'`,
+          [referenceContentId]
+        );
+        refClaims = existingRows.map(r => ({ id: r.claim_id }));
+      } else {
+        logger.log(`  ⏱️  [3/5] Extracting reference claims via OpenAI (this may take 30-60s)...`);
+        refClaims = await processTaskClaims({
+          query,
+          taskContentId: referenceContentId,
+          text,
+          claimType: "reference",
+          taskClaimsContext,
+          clearOldLinks: isRetryScrape && !!force,
+        });
+        logger.log(`  ✅ [3/5] Extracted ${refClaims.length} reference claims (${Date.now() - startTime}ms)`);
+      }
 
       const refClaimIds = refClaims.map((c) => c.id);
 

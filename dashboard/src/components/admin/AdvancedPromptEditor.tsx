@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   VStack,
@@ -55,7 +55,248 @@ interface LLMPrompt {
   parameters?: any;
 }
 
-export default function AdvancedPromptEditor() {
+// Human-readable titles and descriptions for each prompt name
+const PROMPT_LABELS: Record<string, { title: string; desc: string }> = {
+  "claim_extraction_stack_system": {
+    title: "Claim Extraction — Reasoning Stack · System",
+    desc: "Preferred system prompt for case/source reasoning-stack extraction",
+  },
+  "claim_extraction_stack_with_topics": {
+    title: "Claim Extraction — Reasoning Stack · With Topics",
+    desc: "Preferred user prompt for reasoning-stack extraction when topics/testimonials are included",
+  },
+  "claim_extraction_stack_no_topics": {
+    title: "Claim Extraction — Reasoning Stack · No Topics",
+    desc: "Preferred user prompt for reasoning-stack extraction on later chunks",
+  },
+  "evidence_query_generation_system": {
+    title: "Evidence Search — System Instructions",
+    desc: "Instructs the AI how to generate targeted web search queries for each claim",
+  },
+  "evidence_query_generation_user": {
+    title: "Evidence Search — Standard Queries",
+    desc: "Generates queries to find supporting and refuting sources (standard / fringe modes)",
+  },
+  "evidence_query_generation_user_balanced": {
+    title: "Evidence Search — Balanced Queries",
+    desc: "Generates queries seeking equal support and counter-evidence (balanced mode)",
+  },
+  "claim_extraction_edge_system": {
+    title: "Claim Extraction — Edge · System Instructions",
+    desc: "System prompt for Edge mode: extract only the sharpest, most impactful claims",
+  },
+  "claim_extraction_edge_no_topics": {
+    title: "Claim Extraction — Edge · Main Batches",
+    desc: "Edge mode: extract 3–5 key claims per chunk, no topic taxonomy",
+  },
+  "claim_extraction_edge_with_topics": {
+    title: "Claim Extraction — Edge · First Batch (+ topics)",
+    desc: "Edge mode first pass: claims + topic classification + testimonials",
+  },
+  "claim_extraction_ranked_system": {
+    title: "Claim Extraction — Ranked / Comprehensive · System Instructions",
+    desc: "System prompt shared by Ranked and Comprehensive modes",
+  },
+  "claim_extraction_ranked_no_topics": {
+    title: "Claim Extraction — Ranked · Main Batches",
+    desc: "Ranked mode: extract and rank claims by importance, no topic taxonomy",
+  },
+  "claim_extraction_ranked_with_topics": {
+    title: "Claim Extraction — Ranked · First Batch (+ topics)",
+    desc: "Ranked mode first pass: ranked claims + topic classification + testimonials",
+  },
+  "claim_extraction_comprehensive_no_topics": {
+    title: "Claim Extraction — Comprehensive · Main Batches",
+    desc: "Comprehensive mode: extract every verifiable claim for user-side ranking",
+  },
+  "claim_extraction_comprehensive_with_topics": {
+    title: "Claim Extraction — Comprehensive · First Batch (+ topics)",
+    desc: "Comprehensive mode first pass: all claims + topic classification + testimonials",
+  },
+  "claim_matching_system": {
+    title: "Claim Matching — System Instructions",
+    desc: "Instructs the AI how to align source claims against case claims",
+  },
+  "claim_matching_user": {
+    title: "Claim Matching — Score & Relate",
+    desc: "Match each source claim to a case claim; label as supports / refutes / related",
+  },
+  "claim_relevance_assessment_system": {
+    title: "Relevance Assessment — System Instructions",
+    desc: "Instructs the AI how to score claim relevance",
+  },
+  "claim_relevance_assessment_user": {
+    title: "Relevance Assessment — Score",
+    desc: "Rate how relevant each matched claim is to the case (0–100)",
+  },
+  "claim_triage_system": {
+    title: "Claim Triage — System Instructions",
+    desc: "Instructs the AI how to classify claims for keep / reject / review",
+  },
+  "claim_triage_user": {
+    title: "Claim Triage — Classify",
+    desc: "Decide each claim: keep as a strong finding, reject (weak/redundant), or flag for review",
+  },
+  "source_quality_evaluation_system": {
+    title: "Source Quality — System Instructions",
+    desc: "Instructs the AI how to evaluate source credibility",
+  },
+  "source_quality_evaluation_user": {
+    title: "Source Quality — Rate Credibility",
+    desc: "Rate the source on bias, factual accuracy, transparency, and subject expertise",
+  },
+  "claim_properties_evaluation_system": {
+    title: "Claim Properties — System Instructions",
+    desc: "Instructs the AI how to classify claim characteristics",
+  },
+  "claim_properties_evaluation_user": {
+    title: "Claim Properties — Classify",
+    desc: "Tag claim properties: verifiability, specificity, type, sentiment, political lean",
+  },
+};
+
+// Pipeline stages in execution order
+interface PipelinePromptRef { name: string; note?: string }
+interface PipelineStage {
+  step: number; name: string; desc: string; color: string;
+  prompts: PipelinePromptRef[];
+}
+const PIPELINE_STAGES: PipelineStage[] = [
+  {
+    step: 1, color: "cyan",
+    name: "CASE Article — Extract Claims",
+    desc: "Extracts the case/article reasoning stack. Runs in text chunks; first chunk can also capture topic taxonomy + testimonials. EDIT THESE PROMPTS to change how case claims are extracted.",
+    prompts: [
+      { name: "claim_extraction_stack_system", note: "preferred" },
+      { name: "claim_extraction_stack_with_topics", note: "preferred · first batch" },
+      { name: "claim_extraction_stack_no_topics", note: "preferred · later batches" },
+      { name: "claim_extraction_edge_system", note: "edge mode" },
+      { name: "claim_extraction_ranked_system", note: "ranked / comprehensive mode" },
+      { name: "claim_extraction_edge_with_topics", note: "edge · 1st batch" },
+      { name: "claim_extraction_edge_no_topics", note: "edge · later batches" },
+      { name: "claim_extraction_ranked_with_topics", note: "ranked · 1st batch" },
+      { name: "claim_extraction_ranked_no_topics", note: "ranked · later batches" },
+      { name: "claim_extraction_comprehensive_with_topics", note: "comprehensive · 1st batch" },
+      { name: "claim_extraction_comprehensive_no_topics", note: "comprehensive · later batches" },
+    ],
+  },
+  {
+    step: 2, color: "purple",
+    name: "Generate Evidence Search Queries",
+    desc: "For each case claim, generates web search queries to find supporting or refuting sources. Style depends on evidence mode.",
+    prompts: [
+      { name: "evidence_query_generation_system" },
+      { name: "evidence_query_generation_user", note: "standard / fringe modes" },
+      { name: "evidence_query_generation_user_balanced", note: "balanced mode" },
+    ],
+  },
+  {
+    step: 3, color: "teal",
+    name: "SOURCE Articles — Extract Claims (reuses Step 1 prompts)",
+    desc: "For each found source/reference article, extracts its claims using the source-aware reasoning-stack prompts first, with legacy Step 1 prompts kept as fallback.",
+    prompts: [
+      { name: "claim_extraction_stack_system", note: "preferred" },
+      { name: "claim_extraction_stack_with_topics", note: "preferred · first batch" },
+      { name: "claim_extraction_stack_no_topics", note: "preferred · later batches" },
+      { name: "claim_extraction_edge_system", note: "edge mode" },
+      { name: "claim_extraction_ranked_system", note: "ranked / comprehensive mode" },
+      { name: "claim_extraction_edge_with_topics", note: "edge · 1st batch" },
+      { name: "claim_extraction_edge_no_topics", note: "edge · later batches" },
+      { name: "claim_extraction_ranked_with_topics", note: "ranked · 1st batch" },
+      { name: "claim_extraction_ranked_no_topics", note: "ranked · later batches" },
+      { name: "claim_extraction_comprehensive_with_topics", note: "comprehensive · 1st batch" },
+      { name: "claim_extraction_comprehensive_no_topics", note: "comprehensive · later batches" },
+    ],
+  },
+  {
+    step: 4, color: "blue",
+    name: "Claim Matching",
+    desc: "Match each source claim against every case claim and score the relationship.",
+    prompts: [
+      { name: "claim_matching_system" },
+      { name: "claim_matching_user" },
+    ],
+  },
+  {
+    step: 5, color: "green",
+    name: "Relevance Assessment",
+    desc: "Score how strongly each matched claim supports or challenges the case claim (0–100).",
+    prompts: [
+      { name: "claim_relevance_assessment_system" },
+      { name: "claim_relevance_assessment_user" },
+    ],
+  },
+  {
+    step: 6, color: "yellow",
+    name: "Claim Triage",
+    desc: "Classify each claim: keep as a strong finding, reject as weak/redundant, or flag for human review.",
+    prompts: [
+      { name: "claim_triage_system" },
+      { name: "claim_triage_user" },
+    ],
+  },
+  {
+    step: 7, color: "orange",
+    name: "Source Quality Scoring",
+    desc: "Rate each source's credibility: bias, factual accuracy, transparency, and expertise.",
+    prompts: [
+      { name: "source_quality_evaluation_system" },
+      { name: "source_quality_evaluation_user" },
+    ],
+  },
+  {
+    step: 8, color: "pink",
+    name: "Claim Properties Evaluation",
+    desc: "Tag each claim's characteristics: verifiability, specificity, type, sentiment, political lean.",
+    prompts: [
+      { name: "claim_properties_evaluation_system" },
+      { name: "claim_properties_evaluation_user" },
+    ],
+  },
+];
+
+// All prompt names referenced anywhere in the pipeline (for "IN PIPELINE" badge)
+const PIPELINE_PROMPT_NAMES = new Set(
+  PIPELINE_STAGES.flatMap((s) => s.prompts.map((p) => p.name))
+);
+
+// Given the active evidence + extraction mode, return which prompts are actually called RIGHT NOW
+function computeActivePrompts(evidenceMode: string, extractionMode: string): Set<string> {
+  const active = new Set<string>();
+  active.add("claim_extraction_stack_system");
+  active.add("claim_extraction_stack_with_topics");
+  active.add("claim_extraction_stack_no_topics");
+  const sysKey = extractionMode === "comprehensive"
+    ? "claim_extraction_ranked_system"
+    : `claim_extraction_${extractionMode}_system`;
+  active.add(sysKey);
+  active.add(`claim_extraction_${extractionMode}_no_topics`);
+  active.add(`claim_extraction_${extractionMode}_with_topics`);
+  active.add("evidence_query_generation_system");
+  active.add(
+    evidenceMode.includes("balanced")
+      ? "evidence_query_generation_user_balanced"
+      : "evidence_query_generation_user"
+  );
+  [
+    "claim_matching_system", "claim_matching_user",
+    "claim_relevance_assessment_system", "claim_relevance_assessment_user",
+    "claim_triage_system", "claim_triage_user",
+    "source_quality_evaluation_system", "source_quality_evaluation_user",
+    "claim_properties_evaluation_system", "claim_properties_evaluation_user",
+  ].forEach((n) => active.add(n));
+  return active;
+}
+
+interface AdvancedPromptEditorProps {
+  evidenceMode?: string;
+  extractionMode?: string;
+}
+
+export default function AdvancedPromptEditor({
+  evidenceMode = "fringe_on_support",
+  extractionMode = "edge",
+}: AdvancedPromptEditorProps) {
   const [prompts, setPrompts] = useState<LLMPrompt[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -65,6 +306,7 @@ export default function AdvancedPromptEditor() {
   const [configEditMode, setConfigEditMode] = useState<string | null>(null);
   const [configValues, setConfigValues] = useState<Partial<LLMPrompt>>({});
   const [creatingNew, setCreatingNew] = useState(false);
+  const [pipelineExpanded, setPipelineExpanded] = useState(true);
   const [newPromptData, setNewPromptData] = useState({
     promptName: "",
     promptType: "claim_extraction",
@@ -75,9 +317,18 @@ export default function AdvancedPromptEditor() {
   });
   const toast = useToast();
 
+  const activePromptNames = computeActivePrompts(evidenceMode, extractionMode);
+  const editorRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     loadPrompts();
   }, []);
+
+  useEffect(() => {
+    if (expandedPrompt && editorRef.current) {
+      editorRef.current.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }, [expandedPrompt]);
 
   const loadPrompts = async () => {
     try {
@@ -566,6 +817,176 @@ export default function AdvancedPromptEditor() {
     );
   }
 
+  // Inline prompt editor — rendered directly under the clicked pipeline row
+  const renderPromptEditor = (selName: string) => {
+    const versions = groupedPrompts[selName];
+    if (!versions) return (
+      <Box ref={editorRef} p={4} bg="rgba(0,0,0,0.3)" borderRadius="md" color="gray.400" fontSize="sm" mt={1}>
+        Prompt <Text as="span" color="cyan.300">"{selName}"</Text> is not yet in the database.
+      </Box>
+    );
+    const activeVersion = versions.find((v) => v.is_active) || versions[0];
+    const isEditingConfig = configEditMode === selName;
+    const label = PROMPT_LABELS[selName];
+    const isActive = activePromptNames.has(selName);
+
+    return (
+      <Box
+        ref={editorRef}
+        mt={1}
+        bg="rgba(0, 15, 40, 0.95)"
+        borderWidth="2px"
+        borderColor={isActive ? "green.600" : "rgba(0, 162, 255, 0.4)"}
+        borderRadius="md"
+        overflow="hidden"
+      >
+        <HStack
+          p={3}
+          bg={isActive ? "rgba(0,255,150,0.07)" : "rgba(0,162,255,0.07)"}
+          justify="space-between"
+        >
+          <VStack align="start" spacing={0}>
+            <HStack>
+              {isActive && <Badge colorScheme="green" variant="solid" fontSize="xs">🟢 RUNNING NOW</Badge>}
+              <Badge colorScheme="gray" fontSize="xs">v{activeVersion.version}</Badge>
+              {versions.length > 1 && <Badge colorScheme="purple" fontSize="xs">{versions.length} versions</Badge>}
+            </HStack>
+            <Text fontWeight="bold" color="cyan.300" fontSize="sm">{selName}</Text>
+            {label && <Text fontSize="xs" color="gray.400" fontStyle="italic">{label.desc}</Text>}
+          </VStack>
+          <Button size="xs" variant="ghost" leftIcon={<FiX />}
+            onClick={() => setExpandedPrompt(null)}>
+            Close
+          </Button>
+        </HStack>
+
+        <Box p={4}>
+          <Tabs size="sm" variant="soft-rounded" colorScheme="cyan">
+            <TabList>
+              <Tab fontSize="xs">Configuration</Tab>
+              <Tab fontSize="xs">Versions ({versions.length})</Tab>
+              <Tab fontSize="xs">Preview & Edit</Tab>
+            </TabList>
+            <TabPanels>
+              <TabPanel>
+                <VStack spacing={4} align="stretch">
+                  {!isEditingConfig ? (
+                    <>
+                      <Grid templateColumns="repeat(3, 1fr)" gap={4}>
+                        <Box>
+                          <Text fontSize="xs" color="gray.400" mb={1}>Max Claims</Text>
+                          <Text color="cyan.300" fontWeight="bold">{activeVersion.max_claims || "N/A"}</Text>
+                        </Box>
+                        <Box>
+                          <Text fontSize="xs" color="gray.400" mb={1}>Min Sources</Text>
+                          <Text color="cyan.300" fontWeight="bold">{activeVersion.min_sources || "N/A"}</Text>
+                        </Box>
+                        <Box>
+                          <Text fontSize="xs" color="gray.400" mb={1}>Max Sources</Text>
+                          <Text color="cyan.300" fontWeight="bold">{activeVersion.max_sources || "N/A"}</Text>
+                        </Box>
+                      </Grid>
+                      <Button size="sm" leftIcon={<FiEdit />} colorScheme="cyan"
+                        onClick={() => {
+                          setConfigEditMode(selName);
+                          setConfigValues({
+                            max_claims: activeVersion.max_claims,
+                            min_sources: activeVersion.min_sources,
+                            max_sources: activeVersion.max_sources,
+                          });
+                        }}>
+                        Edit Configuration
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Grid templateColumns="repeat(3, 1fr)" gap={4}>
+                        <FormControl>
+                          <FormLabel fontSize="xs" color="gray.400">Max Claims</FormLabel>
+                          <Input type="number" value={configValues.max_claims || ""}
+                            onChange={(e) => setConfigValues({ ...configValues, max_claims: parseInt(e.target.value) })}
+                            size="sm" bg="rgba(0,0,0,0.4)" borderColor="cyan.500" />
+                        </FormControl>
+                        <FormControl>
+                          <FormLabel fontSize="xs" color="gray.400">Min Sources</FormLabel>
+                          <Input type="number" value={configValues.min_sources || ""}
+                            onChange={(e) => setConfigValues({ ...configValues, min_sources: parseInt(e.target.value) })}
+                            size="sm" bg="rgba(0,0,0,0.4)" borderColor="cyan.500" />
+                        </FormControl>
+                        <FormControl>
+                          <FormLabel fontSize="xs" color="gray.400">Max Sources</FormLabel>
+                          <Input type="number" value={configValues.max_sources || ""}
+                            onChange={(e) => setConfigValues({ ...configValues, max_sources: parseInt(e.target.value) })}
+                            size="sm" bg="rgba(0,0,0,0.4)" borderColor="cyan.500" />
+                        </FormControl>
+                      </Grid>
+                      <HStack>
+                        <Button size="sm" leftIcon={<FiX />} variant="ghost"
+                          onClick={() => { setConfigEditMode(null); setConfigValues({}); }}>
+                          Cancel
+                        </Button>
+                        <Button size="sm" leftIcon={<FiSave />} colorScheme="green"
+                          onClick={() => handleUpdateConfig(selName)} isLoading={saving === selName}>
+                          Save
+                        </Button>
+                      </HStack>
+                    </>
+                  )}
+                </VStack>
+              </TabPanel>
+
+              <TabPanel>
+                <Table size="sm" variant="simple">
+                  <Thead>
+                    <Tr>
+                      <Th color="cyan.400" fontSize="xs">Version</Th>
+                      <Th color="cyan.400" fontSize="xs">Status</Th>
+                      <Th color="cyan.400" fontSize="xs">Actions</Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {versions.map((version, idx) => (
+                      <Tr key={`${version.prompt_id}-${version.version}-${idx}`}>
+                        <Td color="gray.300" fontSize="xs">v{version.version}</Td>
+                        <Td>
+                          {version.is_active
+                            ? <Badge colorScheme="green" fontSize="xs">Active</Badge>
+                            : <Badge colorScheme="gray" fontSize="xs">Inactive</Badge>}
+                        </Td>
+                        <Td>
+                          <HStack spacing={1}>
+                            <IconButton aria-label="Edit" icon={<FiEdit />} size="xs" variant="ghost"
+                              color="cyan.300" onClick={() => loadFullPrompt(selName, version.version)} />
+                            {!version.is_active && (
+                              <IconButton aria-label="Activate" icon={<FiCheck />} size="xs" variant="ghost"
+                                color="green.300" onClick={() => handleActivateVersion(selName, version.version)} />
+                            )}
+                          </HStack>
+                        </Td>
+                      </Tr>
+                    ))}
+                  </Tbody>
+                </Table>
+              </TabPanel>
+
+              <TabPanel>
+                <Box p={3} bg="rgba(0,0,0,0.4)" borderRadius="md" maxH="300px" overflowY="auto">
+                  <Text fontSize="xs" fontFamily="monospace" color="gray.300" whiteSpace="pre-wrap">
+                    {activeVersion.prompt_preview || "No preview available"}
+                  </Text>
+                </Box>
+                <Button size="sm" mt={2} leftIcon={<FiEdit />} colorScheme="cyan"
+                  onClick={() => loadFullPrompt(selName, activeVersion.version)}>
+                  Edit Full Prompt Text
+                </Button>
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
+        </Box>
+      </Box>
+    );
+  };
+
   // Main view: list of prompts
   return (
     <VStack spacing={6} align="stretch">
@@ -611,305 +1032,164 @@ export default function AdvancedPromptEditor() {
 
       <Divider borderColor="cyan.700" opacity={0.3} />
 
-      {/* Prompts List */}
-      <VStack spacing={4} align="stretch">
-        {Object.entries(groupedPrompts).map(([promptName, versions]) => {
-          const activeVersion = versions.find(v => v.is_active) || versions[0];
-          const isExpanded = expandedPrompt === promptName;
-          const isEditingConfig = configEditMode === promptName;
-          const category = getPromptCategory(activeVersion.prompt_type);
-          const categoryColor = getCategoryColor(category);
-          const extractionMode = getExtractionMode(promptName);
-          const modeColor = extractionMode ? getExtractionModeColor(extractionMode) : "gray";
-          const modeLabel = extractionMode ? getExtractionModeLabel(extractionMode) : null;
+      {/* Legend */}
+      <HStack spacing={3} px={1} flexWrap="wrap">
+        <Badge colorScheme="green" variant="solid" fontSize="xs">🟢 RUNNING NOW</Badge>
+        <Text fontSize="xs" color="gray.400">= called with current mode settings</Text>
+        <Badge colorScheme="yellow" variant="outline" fontSize="xs">⚡ IN PIPELINE</Badge>
+        <Text fontSize="xs" color="gray.400">= in code, inactive for current mode</Text>
+        <Badge colorScheme="green" fontSize="xs">ACTIVE</Badge>
+        <Text fontSize="xs" color="gray.400">= DB version loaded (vs older saved versions)</Text>
+      </HStack>
 
-          return (
-            <Box
-              key={promptName}
-              bg="rgba(0, 162, 255, 0.05)"
-              borderWidth="1px"
-              borderColor="rgba(0, 162, 255, 0.3)"
-              borderRadius="md"
-              overflow="hidden"
-              transition="all 0.2s"
-              _hover={{ borderColor: "rgba(0, 162, 255, 0.5)" }}
-            >
-              {/* Header */}
-              <HStack
-                p={4}
-                justify="space-between"
-                cursor="pointer"
-                onClick={() => setExpandedPrompt(isExpanded ? null : promptName)}
-                bg={isExpanded ? "rgba(0, 162, 255, 0.08)" : "transparent"}
-                transition="all 0.2s"
-              >
-                <HStack flex={1}>
-                  <Badge colorScheme={categoryColor} fontSize="xs">
-                    {category}
-                  </Badge>
-                  {modeLabel && (
-                    <Badge colorScheme={modeColor} fontSize="xs" fontWeight="bold">
-                      {modeLabel}
+      {/* Pipeline Flow Overview */}
+      <Box
+        bg="rgba(0, 30, 60, 0.5)"
+        borderWidth="1px"
+        borderColor="rgba(0, 162, 255, 0.25)"
+        borderRadius="md"
+        overflow="hidden"
+      >
+        <HStack
+          p={3}
+          cursor="pointer"
+          justify="space-between"
+          onClick={() => setPipelineExpanded(!pipelineExpanded)}
+          bg="rgba(0, 162, 255, 0.07)"
+          _hover={{ bg: "rgba(0, 162, 255, 0.12)" }}
+        >
+          <VStack align="start" spacing={0}>
+            <Text fontWeight="bold" color="cyan.300" fontSize="sm">
+              🔄 Scrape Pipeline — live view
+            </Text>
+            <Text fontSize="xs" color="gray.400">
+              Extraction mode:{" "}
+              <Text as="span" color="teal.300" fontWeight="bold">{extractionMode}</Text>
+              {"  ·  "}Evidence mode:{" "}
+              <Text as="span" color="purple.300" fontWeight="bold">{evidenceMode.replace(/_/g, " ")}</Text>
+            </Text>
+          </VStack>
+          <IconButton
+            aria-label="toggle pipeline"
+            icon={pipelineExpanded ? <FiChevronUp /> : <FiChevronDown />}
+            size="xs" variant="ghost" color="cyan.300"
+          />
+        </HStack>
+        <Collapse in={pipelineExpanded} animateOpacity>
+          <VStack spacing={2} align="stretch" p={3}>
+            {PIPELINE_STAGES.map((stage) => {
+              // Dedupe (step 3 reuses step 1 prompts by name+note)
+              const seen = new Set<string>();
+              const allStagePrompts = stage.prompts.filter((p) => {
+                const key = p.name + (p.note ?? "");
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+              });
+              // Only show prompts that are actually called with current mode settings
+              const activeStagePrompts = allStagePrompts.filter((p) => activePromptNames.has(p.name));
+              const sysPrompts = activeStagePrompts.filter((p) => p.name.endsWith("_system"));
+              const userPrompts = activeStagePrompts.filter((p) => !p.name.endsWith("_system"));
+              const anyActive = activeStagePrompts.length > 0;
+
+              const renderPromptRow = (pRef: PipelinePromptRef) => {
+                const label = PROMPT_LABELS[pRef.name];
+                const isSelected = expandedPrompt === pRef.name;
+                return (
+                  <React.Fragment key={pRef.name + (pRef.note ?? "")}>
+                    <HStack
+                      p={2}
+                      borderRadius="sm"
+                      bg={isSelected ? "rgba(0,162,255,0.18)" : "rgba(0,255,150,0.05)"}
+                      cursor="pointer"
+                      onClick={() => setExpandedPrompt(isSelected ? null : pRef.name)}
+                      _hover={{ bg: "rgba(0,162,255,0.15)" }}
+                      borderLeft="2px solid"
+                      borderLeftColor={isSelected ? "cyan.400" : "green.500"}
+                    >
+                      <Badge colorScheme="green" variant="solid" fontSize="9px" px={1}>🟢</Badge>
+                      <Text fontSize="xs" color="gray.200" flex={1} noOfLines={2}>
+                        {label?.title ?? pRef.name}
+                      </Text>
+                      {pRef.note && (
+                        <Text fontSize="9px" color="gray.500" fontStyle="italic" whiteSpace="nowrap">
+                          {pRef.note}
+                        </Text>
+                      )}
+                      <Badge fontSize="9px" colorScheme="cyan" variant="outline" minW="28px" textAlign="center">
+                        edit
+                      </Badge>
+                    </HStack>
+                    {isSelected && renderPromptEditor(pRef.name)}
+                  </React.Fragment>
+                );
+              };
+
+              // Step 3 just re-uses Step 1 prompts — show a reference instead of duplicating
+              const isStep3 = stage.step === 3;
+
+              return (
+                <Box
+                  key={stage.step}
+                  p={3}
+                  bg="rgba(0,0,0,0.3)"
+                  borderRadius="md"
+                  borderLeft="4px solid"
+                  borderLeftColor={anyActive ? `${stage.color}.500` : "gray.600"}
+                  opacity={anyActive ? 1 : 0.45}
+                >
+                  <HStack mb={2} align="start">
+                    <Badge colorScheme={anyActive ? stage.color : "gray"} minW="24px" textAlign="center">
+                      {stage.step}
                     </Badge>
-                  )}
-                  <Text fontWeight="bold" color="cyan.300">{promptName}</Text>
-                  <Badge colorScheme="gray" fontSize="xs">
-                    v{activeVersion.version}
-                  </Badge>
-                  {activeVersion.is_active && (
-                    <Badge colorScheme="green" fontSize="xs">ACTIVE</Badge>
-                  )}
-                  {versions.length > 1 && (
-                    <Badge colorScheme="purple" fontSize="xs">
-                      {versions.length} versions
-                    </Badge>
-                  )}
-                </HStack>
+                    <VStack align="start" spacing={0} flex={1}>
+                      <Text fontSize="sm" fontWeight="bold" color={anyActive ? `${stage.color}.300` : "gray.400"}>
+                        {stage.name}
+                      </Text>
+                      <Text fontSize="xs" color="gray.500">{stage.desc}</Text>
+                    </VStack>
+                  </HStack>
 
-                <HStack>
-                  {modeLabel && (
-                    <Text fontSize="xs" color={`${modeColor}.400`} fontWeight="semibold">
-                      Mode: {modeLabel} |
-                    </Text>
-                  )}
-                  <Text fontSize="xs" color="gray.400">
-                    Claims: {activeVersion.max_claims || "N/A"} |
-                    Sources: {activeVersion.min_sources || "N/A"}-{activeVersion.max_sources || "N/A"}
-                  </Text>
-                  <IconButton
-                    aria-label="Expand"
-                    icon={isExpanded ? <FiChevronUp /> : <FiChevronDown />}
-                    size="sm"
-                    variant="ghost"
-                    color="cyan.300"
-                  />
-                </HStack>
-              </HStack>
-
-              {/* Expanded Content */}
-              <Collapse in={isExpanded} animateOpacity>
-                <Box p={4} borderTop="1px solid" borderColor="rgba(0, 162, 255, 0.2)">
-                  <Tabs size="sm" variant="soft-rounded" colorScheme="cyan">
-                    <TabList>
-                      <Tab fontSize="xs">Configuration</Tab>
-                      <Tab fontSize="xs">Versions ({versions.length})</Tab>
-                      <Tab fontSize="xs">Preview</Tab>
-                    </TabList>
-
-                    <TabPanels>
-                      {/* Configuration Tab */}
-                      <TabPanel>
-                        <VStack spacing={4} align="stretch">
-                          {!isEditingConfig ? (
-                            <>
-                              <Grid templateColumns="repeat(3, 1fr)" gap={4}>
-                                <Box>
-                                  <Text fontSize="xs" color="gray.400" mb={1}>Max Claims</Text>
-                                  <Text color="cyan.300" fontWeight="bold">
-                                    {activeVersion.max_claims || "N/A"}
-                                  </Text>
-                                </Box>
-                                <Box>
-                                  <Text fontSize="xs" color="gray.400" mb={1}>Min Sources</Text>
-                                  <Text color="cyan.300" fontWeight="bold">
-                                    {activeVersion.min_sources || "N/A"}
-                                  </Text>
-                                </Box>
-                                <Box>
-                                  <Text fontSize="xs" color="gray.400" mb={1}>Max Sources</Text>
-                                  <Text color="cyan.300" fontWeight="bold">
-                                    {activeVersion.max_sources || "N/A"}
-                                  </Text>
-                                </Box>
-                              </Grid>
-                              <Button
-                                size="sm"
-                                leftIcon={<FiEdit />}
-                                colorScheme="cyan"
-                                onClick={() => {
-                                  setConfigEditMode(promptName);
-                                  setConfigValues({
-                                    max_claims: activeVersion.max_claims,
-                                    min_sources: activeVersion.min_sources,
-                                    max_sources: activeVersion.max_sources,
-                                  });
-                                }}
-                              >
-                                Edit Configuration
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              <Grid templateColumns="repeat(3, 1fr)" gap={4}>
-                                <FormControl>
-                                  <FormLabel fontSize="xs" color="gray.400">Max Claims</FormLabel>
-                                  <Input
-                                    type="number"
-                                    value={configValues.max_claims || ""}
-                                    onChange={(e) => setConfigValues({
-                                      ...configValues,
-                                      max_claims: parseInt(e.target.value)
-                                    })}
-                                    size="sm"
-                                    bg="rgba(0, 0, 0, 0.4)"
-                                    borderColor="cyan.500"
-                                  />
-                                </FormControl>
-                                <FormControl>
-                                  <FormLabel fontSize="xs" color="gray.400">Min Sources</FormLabel>
-                                  <Input
-                                    type="number"
-                                    value={configValues.min_sources || ""}
-                                    onChange={(e) => setConfigValues({
-                                      ...configValues,
-                                      min_sources: parseInt(e.target.value)
-                                    })}
-                                    size="sm"
-                                    bg="rgba(0, 0, 0, 0.4)"
-                                    borderColor="cyan.500"
-                                  />
-                                </FormControl>
-                                <FormControl>
-                                  <FormLabel fontSize="xs" color="gray.400">Max Sources</FormLabel>
-                                  <Input
-                                    type="number"
-                                    value={configValues.max_sources || ""}
-                                    onChange={(e) => setConfigValues({
-                                      ...configValues,
-                                      max_sources: parseInt(e.target.value)
-                                    })}
-                                    size="sm"
-                                    bg="rgba(0, 0, 0, 0.4)"
-                                    borderColor="cyan.500"
-                                  />
-                                </FormControl>
-                              </Grid>
-                              <HStack>
-                                <Button
-                                  size="sm"
-                                  leftIcon={<FiX />}
-                                  variant="ghost"
-                                  onClick={() => {
-                                    setConfigEditMode(null);
-                                    setConfigValues({});
-                                  }}
-                                >
-                                  Cancel
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  leftIcon={<FiSave />}
-                                  colorScheme="green"
-                                  onClick={() => handleUpdateConfig(promptName)}
-                                  isLoading={saving === promptName}
-                                >
-                                  Save
-                                </Button>
-                              </HStack>
-                            </>
-                          )}
-                        </VStack>
-                      </TabPanel>
-
-                      {/* Versions Tab */}
-                      <TabPanel>
-                        <Box
-                          className="mr-card mr-card-purple"
-                          position="relative"
-                          overflow="hidden"
-                        >
-                          <div className="mr-glow-bar mr-glow-bar-purple" />
-                          <div className="mr-scanlines" />
-                          <Table size="sm" variant="simple">
-                            <Thead>
-                              <Tr>
-                                <Th color="cyan.400" fontSize="xs">Version</Th>
-                                <Th color="cyan.400" fontSize="xs">Status</Th>
-                                <Th color="cyan.400" fontSize="xs">Actions</Th>
-                              </Tr>
-                            </Thead>
-                            <Tbody>
-                              {versions.map((version, index) => (
-                                <Tr key={`${version.prompt_id}-${version.version}-${index}`}>
-                                  <Td color="gray.300" fontSize="xs">v{version.version}</Td>
-                                  <Td>
-                                    {version.is_active ? (
-                                      <Badge colorScheme="green" fontSize="xs">Active</Badge>
-                                    ) : (
-                                      <Badge colorScheme="gray" fontSize="xs">Inactive</Badge>
-                                    )}
-                                  </Td>
-                                  <Td>
-                                    <HStack spacing={1}>
-                                      <IconButton
-                                        aria-label="Edit"
-                                        icon={<FiEdit />}
-                                        size="xs"
-                                        variant="ghost"
-                                        color="cyan.300"
-                                        onClick={() => loadFullPrompt(promptName, version.version)}
-                                      />
-                                      {!version.is_active && (
-                                        <IconButton
-                                          aria-label="Activate"
-                                          icon={<FiCheck />}
-                                          size="xs"
-                                          variant="ghost"
-                                          color="green.300"
-                                          onClick={() => handleActivateVersion(promptName, version.version)}
-                                        />
-                                      )}
-                                    </HStack>
-                                  </Td>
-                                </Tr>
-                              ))}
-                            </Tbody>
-                          </Table>
-                        </Box>
-                      </TabPanel>
-
-                      {/* Preview Tab */}
-                      <TabPanel>
-                        <Box
-                          p={3}
-                          bg="rgba(0, 0, 0, 0.4)"
-                          borderRadius="md"
-                          maxH="300px"
-                          overflowY="auto"
-                        >
-                          <Text
-                            fontSize="xs"
-                            fontFamily="monospace"
-                            color="gray.300"
-                            whiteSpace="pre-wrap"
-                          >
-                            {activeVersion.prompt_preview || "No preview available"}
+                  {isStep3 ? (
+                    <Box pl={2}>
+                      <Text fontSize="xs" color="teal.400" fontStyle="italic">
+                        ↑ Same 3 prompts as Step 1 — edit them there to affect both case and source extraction.
+                      </Text>
+                    </Box>
+                  ) : anyActive && (
+                    <VStack spacing={2} align="stretch" pl={2}>
+                      {sysPrompts.length > 0 && (
+                        <Box>
+                          <Text fontSize="9px" color="gray.500" fontWeight="bold" letterSpacing="1px" mb={1}>
+                            SYSTEM PROMPT (role instructions)
                           </Text>
+                          {sysPrompts.map(renderPromptRow)}
                         </Box>
-                        <Button
-                          size="sm"
-                          mt={2}
-                          leftIcon={<FiEdit />}
-                          colorScheme="cyan"
-                          onClick={() => loadFullPrompt(promptName, activeVersion.version)}
-                        >
-                          Edit Full Prompt
-                        </Button>
-                      </TabPanel>
-                    </TabPanels>
-                  </Tabs>
+                      )}
+                      {userPrompts.length > 0 && (
+                        <Box>
+                          <HStack mb={1} spacing={2}>
+                            <Text fontSize="9px" color="gray.500" fontWeight="bold" letterSpacing="1px">
+                              USER PROMPT (the actual task)
+                            </Text>
+                            {userPrompts.length > 1 && (
+                              <Text fontSize="9px" color="yellow.600" fontStyle="italic">
+                                {userPrompts.length} variants — 1st batch captures topic taxonomy, later batches skip it
+                              </Text>
+                            )}
+                          </HStack>
+                          {userPrompts.map(renderPromptRow)}
+                        </Box>
+                      )}
+                    </VStack>
+                  )}
                 </Box>
-              </Collapse>
-            </Box>
-          );
-        })}
-      </VStack>
+              );
+            })}
+          </VStack>
+        </Collapse>
+      </Box>
 
-      {Object.keys(groupedPrompts).length === 0 && (
-        <Box textAlign="center" py={10}>
-          <Text color="gray.500">No prompts found</Text>
-        </Box>
-      )}
     </VStack>
   );
 }
