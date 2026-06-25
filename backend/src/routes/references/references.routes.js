@@ -101,14 +101,46 @@ export default function createReferencesRoutes({ query, pool }) {
           COALESCE(
             (SELECT ae.admiralty_code FROM admiralty_evaluations ae
              WHERE ae.target_type = 'content' AND ae.target_id = c.content_id
+               AND (
+                 ae.publisher_id IS NULL
+                 OR ae.publisher_id IN (
+                   SELECT cp3.publisher_id FROM content_publishers cp3 WHERE cp3.content_id = c.content_id
+                 )
+               )
                AND ae.evaluation_status NOT IN ('insufficient_data')
+               AND ae.admiralty_code REGEXP '^[A-E]'
              ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1),
             (SELECT ae.admiralty_code FROM admiralty_evaluations ae
              INNER JOIN content_publishers cp2 ON ae.target_id = cp2.publisher_id
              WHERE ae.target_type = 'publisher' AND cp2.content_id = c.content_id
                AND ae.evaluation_status NOT IN ('insufficient_data')
+               AND ae.admiralty_code REGEXP '^[A-E]'
              ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested') LIMIT 1)
           ) AS admiralty_code,
+          CASE
+            WHEN EXISTS (
+              SELECT 1 FROM admiralty_evaluations ae
+               WHERE ae.target_type = 'content' AND ae.target_id = c.content_id
+                 AND (
+                   ae.publisher_id IS NULL
+                   OR ae.publisher_id IN (
+                     SELECT cp3.publisher_id FROM content_publishers cp3 WHERE cp3.content_id = c.content_id
+                   )
+                 )
+                 AND ae.evaluation_status NOT IN ('insufficient_data')
+                 AND ae.admiralty_code REGEXP '^[A-E]'
+               LIMIT 1
+            ) THEN 'content'
+            WHEN EXISTS (
+              SELECT 1 FROM admiralty_evaluations ae
+              INNER JOIN content_publishers cp2 ON ae.target_id = cp2.publisher_id
+               WHERE ae.target_type = 'publisher' AND cp2.content_id = c.content_id
+                 AND ae.evaluation_status NOT IN ('insufficient_data')
+                 AND ae.admiralty_code REGEXP '^[A-E]'
+               LIMIT 1
+            ) THEN 'publisher_cached'
+            ELSE NULL
+          END AS admiralty_source,
           (
             SELECT COALESCE(JSON_ARRAYAGG(
               IF((ucv2.is_hidden IS NULL OR ucv2.is_hidden = FALSE) AND cl2.claim_id IS NOT NULL,

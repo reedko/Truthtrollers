@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   VStack,
   Heading,
@@ -47,6 +47,7 @@ interface ReferenceListProps {
   claimLinks?: ClaimLink[];
   isSuperAdmin?: boolean;
   onHardDeleteReferences?: (referenceIds: number[]) => Promise<void>;
+  focusedReferenceId?: number | null;
 }
 
 const BUBBLE_KEYFRAMES = {
@@ -100,6 +101,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
   claimLinks = [],
   isSuperAdmin = false,
   onHardDeleteReferences,
+  focusedReferenceId = null,
 }) => {
   const { hasPermission } = usePermissions();
   const [selectedRefIds, setSelectedRefIds] = useState<Set<number>>(new Set());
@@ -125,8 +127,9 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
   const [retryUrl, setRetryUrl] = useState("");
   const [sourceDetailRef, setSourceDetailRef] = useState<ReferenceWithClaims | null>(null);
   const [glowPublisherId, setGlowPublisherId] = useState<number | null>(null);
-  // Tracks publishers linked via SourceDetailModal so the byline updates without a full re-fetch
-  const [pubOverrides, setPubOverrides] = useState<Map<number, { publisher_id: number; publisher_name: string }>>(new Map());
+  const [focusedGlowId, setFocusedGlowId] = useState<number | null>(null);
+  const refCardRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const focusedGlowTimerRef = useRef<number | null>(null);
 
   // Color mode values
   const defaultBg = useColorModeValue(
@@ -148,6 +151,48 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
     "0 4px 12px rgba(94, 234, 212, 0.3)",
     "0 8px 24px rgba(0, 0, 0, 0.8), 0 0 40px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)",
   );
+  const useBubbleEffects = bubbleStyle && references.length <= 40;
+  const isLargeReferenceList = references.length > 40;
+  const effectiveRefBoxShadow = isLargeReferenceList
+    ? "0 1px 4px rgba(0, 0, 0, 0.18)"
+    : refBoxShadow;
+  const effectiveRefHoverShadow = isLargeReferenceList
+    ? "0 2px 8px rgba(0, 0, 0, 0.22)"
+    : refHoverShadow;
+
+  const focusReferenceCard = useCallback((referenceId: number) => {
+    const focus = () => {
+      const node = refCardRefs.current.get(referenceId);
+      if (node) node.scrollIntoView({ behavior: "smooth", block: "center" });
+      setFocusedGlowId(referenceId);
+
+      if (focusedGlowTimerRef.current) {
+        window.clearTimeout(focusedGlowTimerRef.current);
+      }
+      focusedGlowTimerRef.current = window.setTimeout(() => {
+        setFocusedGlowId((current) =>
+          current === referenceId ? null : current,
+        );
+        focusedGlowTimerRef.current = null;
+      }, 4500);
+    };
+
+    window.requestAnimationFrame(focus);
+    window.setTimeout(focus, 150);
+  }, []);
+
+  useEffect(() => {
+    if (!focusedReferenceId) return;
+    focusReferenceCard(focusedReferenceId);
+  }, [focusedReferenceId, focusReferenceCard]);
+
+  useEffect(() => {
+    return () => {
+      if (focusedGlowTimerRef.current) {
+        window.clearTimeout(focusedGlowTimerRef.current);
+      }
+    };
+  }, []);
 
   // Fetch failed references when component mounts or taskId changes
   useEffect(() => {
@@ -277,11 +322,13 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
 
             // Determine styling based on bubbleStyle and dominant relation
             let bubbleBorder = `1px solid ${borderColor}`;
-            let bubbleBoxShadow = refBoxShadow;
+            let bubbleBoxShadow = effectiveRefBoxShadow;
             let bubbleAnimation: string | undefined;
             let bubbleBackground = defaultBg;
+            const referenceId = Number(ref.reference_content_id);
+            const isFocused = focusedGlowId === referenceId;
 
-            if (bubbleStyle && dominantRelation) {
+            if (useBubbleEffects && dominantRelation) {
               switch (dominantRelation) {
                 case "support":
                   bubbleBorder = "2px solid #38A169";
@@ -310,14 +357,22 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
             return (
               <Box
                 key={ref.reference_content_id}
+                ref={(node) => {
+                  if (node) refCardRefs.current.set(referenceId, node);
+                  else refCardRefs.current.delete(referenceId);
+                }}
                 data-ref-id={ref.reference_content_id} // 👈 for measuring
-                border={bubbleBorder}
+                border={isFocused ? "3px solid #FBBF24" : bubbleBorder}
                 background={bubbleStyle ? "transparent" : bubbleBackground}
                 color={defaultColor}
                 px={bubbleStyle ? 4 : 3}
                 py={bubbleStyle ? 3 : 1}
                 borderRadius={bubbleStyle ? "30px" : "12px"}
-                boxShadow={bubbleBoxShadow}
+                boxShadow={
+                  isFocused
+                    ? "0 0 0 3px rgba(251, 191, 36, 0.35), 0 6px 18px rgba(0, 0, 0, 0.28)"
+                    : bubbleBoxShadow
+                }
                 width="100%"
                 display="flex"
                 alignItems="center"
@@ -326,7 +381,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                 mb={0} // 👈 no extra margin here
                 position="relative"
                 overflow="visible"
-                transition="all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55)"
+                transition="border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease"
                 fontFamily={
                   bubbleStyle
                     ? "'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', cursive"
@@ -335,14 +390,14 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                 fontWeight={bubbleStyle ? "bold" : "normal"}
                 fontSize={bubbleStyle ? "md" : "sm"}
                 _hover={{
-                  boxShadow: refHoverShadow,
+                  boxShadow: effectiveRefHoverShadow,
                   transform: bubbleStyle
                     ? "scale(1.15) rotate(-2deg)"
                     : "translateY(-2px)",
                 }}
                 sx={{
-                  animation: bubbleAnimation,
-                  ...(bubbleStyle && {
+                  animation: isFocused ? undefined : bubbleAnimation,
+                  ...(useBubbleEffects && {
                     "&::before": {
                       content: '""',
                       position: "absolute",
@@ -368,7 +423,12 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                       pointerEvents: "none",
                     },
                   }),
-                  ...BUBBLE_KEYFRAMES,
+                  ...(useBubbleEffects ? BUBBLE_KEYFRAMES : {}),
+                }}
+                onClick={(event) => onReferenceClick(ref, event)}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  if (ref.url) window.open(ref.url, "_blank");
                 }}
               >
                 {!bubbleStyle && (
@@ -410,6 +470,7 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                       admiralty_code: ref.admiralty_code ?? undefined,
                     })}
                     size="xs"
+                    cacheStatus={ref.admiralty_source === "publisher_cached" ? "cached" : "fresh"}
                     active={!!ref.publisher_id && ref.publisher_id === glowPublisherId}
                     onClick={(e) => { e?.stopPropagation(); setSourceDetailRef(ref); }}
                   />
@@ -428,13 +489,6 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                       <Text
                         flex="1"
                         noOfLines={1}
-                        onClick={(e) => {
-                          onReferenceClick(ref, e);
-                        }}
-                        onContextMenu={(e) => {
-                          e.preventDefault();
-                          if (ref.url) window.open(ref.url, "_blank");
-                        }}
                       >
                         {ref.content_name}
                       </Text>
@@ -457,8 +511,8 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                   {/* Byline */}
                   <Text fontSize="2xs" color="rgba(0,162,255,0.55)" noOfLines={1} lineHeight="1.1" mt="0">
                     <Text as="span" opacity={0.6}>Pub: </Text>
-                    <Text as="span" color={(pubOverrides.get(ref.reference_content_id)?.publisher_name ?? ref.publisher_name) ? "rgba(0,162,255,0.8)" : "rgba(255,255,255,0.25)"}>
-                      {pubOverrides.get(ref.reference_content_id)?.publisher_name ?? ref.publisher_name ?? "—"}
+                    <Text as="span" color={ref.publisher_name ? "rgba(0,162,255,0.8)" : "rgba(255,255,255,0.25)"}>
+                      {ref.publisher_name ?? "—"}
                     </Text>
                     <Text as="span" opacity={0.4}> · </Text>
                     <Text as="span" opacity={0.6}>Auth: </Text>
@@ -560,28 +614,33 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
           is_primary_source: sourceDetailRef.is_primary_source,
           media_source: sourceDetailRef.media_source,
           veracity_score: sourceDetailRef.publisher_veracity ?? undefined,
+          admiralty_code: sourceDetailRef.admiralty_code ?? undefined,
         });
         return (
           <SourceDetailModal
             isOpen={!!sourceDetailRef}
             onClose={() => {
+              const refId = sourceDetailRef.reference_content_id;
               const pid = sourceDetailRef.publisher_id ?? null;
               setSourceDetailRef(null);
               onUpdateReferences?.();
+              focusReferenceCard(refId);
               if (pid) {
                 setGlowPublisherId(pid);
                 setTimeout(() => setGlowPublisherId(null), 3000);
               }
             }}
-            publisherId={pubOverrides.get(sourceDetailRef.reference_content_id)?.publisher_id ?? sourceDetailRef.publisher_id}
+            publisherId={sourceDetailRef.publisher_id ?? undefined}
             contentId={sourceDetailRef.reference_content_id}
             sourceUrl={sourceDetailRef.url ?? undefined}
-            publisherName={pubOverrides.get(sourceDetailRef.reference_content_id)?.publisher_name ?? sourceDetailRef.publisher_name ?? ""}
+            publisherName={sourceDetailRef.publisher_name ?? ""}
             sourceType={profile.sourceType}
             reliability={profile.reliability}
             admiraltyCode={sourceDetailRef.admiralty_code ?? undefined}
-            onPublisherLinked={(newId, newName) => {
-              setPubOverrides(prev => new Map(prev).set(sourceDetailRef.reference_content_id, { publisher_id: newId, publisher_name: newName }));
+            onPublisherLinked={(newId) => {
+              onUpdateReferences?.();
+              setGlowPublisherId(newId);
+              setTimeout(() => setGlowPublisherId(null), 3000);
             }}
           />
         );

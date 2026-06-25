@@ -60,11 +60,12 @@ const SOURCE_TYPE_BASE = {
 function normalizeSourceType(raw) {
   if (!raw) return null;
   const t = raw.toLowerCase();
+  if (SOURCE_TYPE_BASE[t]) return t;
   if (/parliament|congress|senate|legislative|government|governmental|federal|national agency|ministry|department of|public authority|regulatory body|intergovernmental|supranational|european union|united nations|eu institution/.test(t)) return "government";
   if (/university|universit|college|academic|research institute|scientific institute|research service|research department|peer.review|scholarly|science institute/.test(t)) return "academic";
   if (/journal\b|scientific journal|academic journal|peer.reviewed journal/.test(t)) return "academic";
   if (/fact.?check|fact.?finder|news|press|newspaper|media outlet|broadcast|television|radio|magazine|journalism/.test(t)) return "journalism";
-  if (/encyclopedia|dictionary|reference work|library|archive/.test(t)) return "reference";
+  if (/encyclopedia|dictionary|reference|library|archive/.test(t)) return "reference";
   if (/think.?tank|policy institute|policy research|policy organization/.test(t)) return "advocacy";
   if (/advocacy|activist|campaign|pressure group|interest group|lobby/.test(t)) return "advocacy";
   if (/corporation|company|business|commercial|industry|trade association|private sector/.test(t)) return "corporate";
@@ -104,9 +105,32 @@ function deriveSourceLetter(signals = {}) {
     if (resolutionLevel <= 2 && !wikidataFound && !wikipediaFound) return "Ø";
   }
 
-  // ── Start from source-type base ──────────────────────────────────────────
+  const hasReliabilityEvidence =
+    veracityScore != null ||
+    mbfcReliability != null ||
+    adfontesReliability != null ||
+    opensourcesFlagged ||
+    opensourcesFlaggedTypes.length > 0;
+
+  // Source identity/profile data can identify a publisher, but it is not a
+  // reliability rating. Do not turn "journalism" or a Wikipedia/profile match
+  // into C/B without an actual rating, flag, or other reliability signal.
   const canonicalType = normalizeSourceType(sourceType) ?? sourceType;
-  let letter = SOURCE_TYPE_BASE[canonicalType] ?? "C";
+  if (!hasReliabilityEvidence) {
+    const resolvedInstitutionalSource =
+      ["primary", "government", "academic", "reference"].includes(canonicalType) &&
+      ((resolutionLevel ?? 0) >= 3 || wikidataFound || wikipediaFound);
+    return resolvedInstitutionalSource ? (SOURCE_TYPE_BASE[canonicalType] ?? "Ø") : "Ø";
+  }
+
+  // ── Start from source-type base ──────────────────────────────────────────
+  let letter = SOURCE_TYPE_BASE[canonicalType || "unknown"] ?? "Ø";
+  if (letter === "Ø" && hasReliabilityEvidence) {
+    // A real reliability/factuality score should not be trapped at Ø merely
+    // because source_type is missing. Start neutral/mixed, then let the score
+    // and caps move it up or down.
+    letter = "C";
+  }
 
   // ── Known-problematic signals → E ───────────────────────────────────────
   const dangerTypes = ["fake","conspiracy","propaganda","disinformation","junk science"];
@@ -473,6 +497,8 @@ export async function storeEvaluation(query, {
           created_by)
        VALUES (?,?,?,?, ?,?,?, ?,?, ?,?, ?,?, ?,?, 'system')
        ON DUPLICATE KEY UPDATE
+         source_url                     = VALUES(source_url),
+         publisher_id                   = VALUES(publisher_id),
          source_reliability_letter      = IF(evaluation_status NOT IN ('human_confirmed','community_reviewed'), VALUES(source_reliability_letter), source_reliability_letter),
          claim_credibility_number       = IF(evaluation_status NOT IN ('human_confirmed','community_reviewed'), VALUES(claim_credibility_number), claim_credibility_number),
          admiralty_code                 = IF(evaluation_status NOT IN ('human_confirmed','community_reviewed'), VALUES(admiralty_code), admiralty_code),

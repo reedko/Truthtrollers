@@ -18,7 +18,7 @@ import { api } from "../../services/api";
 import { Claim } from "../../../../shared/entities/types";
 import { useTaskStore } from "../../store/useTaskStore";
 
-type ClaimRole = "thesis" | "pillar" | "evidence" | "background";
+type ClaimRole = "thesis" | "pillar" | "pillar_support" | "evidence" | "background" | "fallibility_critical";
 
 interface HierarchyContent {
   content_id: number;
@@ -59,12 +59,14 @@ const toClaimPatch = (patch: {
   claim_order: patch.claim_order ?? null,
 });
 
-const roleOrder: ClaimRole[] = ["thesis", "pillar", "evidence", "background"];
+const roleOrder: ClaimRole[] = ["thesis", "pillar", "pillar_support", "evidence", "fallibility_critical", "background"];
 
 const roleAccent = (role?: string) => {
   const value = String(role || "").toLowerCase();
   if (value === "thesis" || value === "task") return "#63B3ED";
   if (value === "pillar") return "#9F7AEA";
+  if (value === "pillar_support") return "#D69E2E";
+  if (value === "fallibility_critical") return "#E53E3E";
   if (value === "evidence" || value === "reference" || value === "snippet") return "#38A169";
   return "#A0AEC0";
 };
@@ -73,6 +75,8 @@ const roleLabel = (claim: Claim) => {
   const value = String(claim.claim_role || claim.claim_type || "background").toLowerCase();
   if (value === "task" || value === "thesis") return "THESIS";
   if (value === "pillar") return "PILLAR";
+  if (value === "pillar_support") return "PILLAR SUPPORT";
+  if (value === "fallibility_critical") return "CRITICAL";
   if (value === "evidence" || value === "reference" || value === "snippet") return "EVIDENCE";
   return "BACKGROUND";
 };
@@ -531,7 +535,9 @@ export default function ClaimHierarchyEditor() {
                   >
                     <option value="thesis">Thesis</option>
                     <option value="pillar">Pillar</option>
+                    <option value="pillar_support">Pillar Support</option>
                     <option value="evidence">Evidence</option>
+                    <option value="fallibility_critical">Critical</option>
                     <option value="background">Background</option>
                   </Select>
                 </FormControl>

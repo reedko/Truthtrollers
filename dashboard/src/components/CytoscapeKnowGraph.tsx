@@ -2,12 +2,12 @@
 import React, { useEffect, useRef, useState } from "react";
 import cytoscape from "cytoscape";
 import dagre from "cytoscape-dagre";
-import { Box, useColorMode } from "@chakra-ui/react";
-import { GraphNode, Link } from "../../../shared/entities/types";
+import { Avatar, Box, Button, HStack, Text, VStack, useColorMode } from "@chakra-ui/react";
+import { GraphNode, Link, ReferenceWithClaims } from "../../../shared/entities/types";
 import { getSourceCrestDataUri } from "../utils/sourceCrestUri";
 import type { Reliability } from "../utils/normalizeSourceProfile";
 import SourceDetailModal from "./modals/SourceDetailModal";
-import { ClaimModal } from "./cytoscape/ui/ClaimModal";
+import GraphNodeDetailModal from "./graph/GraphNodeDetailModal";
 import type { SelectedClaim } from "./cytoscape/types";
 
 declare global {
@@ -162,16 +162,65 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
   const [selectedClaim, setSelectedClaim] = useState<SelectedClaim | null>(
     null,
   );
+  const [selectedSource, setSelectedSource] = useState<{
+    title: string;
+    url?: string | null;
+    reference?: ReferenceWithClaims | null;
+    sourceClaims?: any[];
+  } | null>(null);
+  const [selectedAuthor, setSelectedAuthor] = useState<{
+    authorId?: number;
+    label: string;
+    title?: string | null;
+    description?: string | null;
+    profilePic?: string | null;
+    parentLabel?: string;
+  } | null>(null);
   const [publisherModal, setPublisherModal] = useState<{
     publisherId?: number;
     publisherName: string;
     admiraltyCode?: string;
+    contentId?: number;
+    sourceUrl?: string;
   } | null>(null);
 
   // Update callback ref without triggering graph rebuild
   useEffect(() => {
     onNodeClickRef.current = onNodeClick;
   }, [onNodeClick]);
+
+  const openAuthorCard = (author: GraphNode, parentLabel?: string) => {
+    const authorId = author.author_id;
+    const baseAuthor = {
+      authorId,
+      label: author.label || "Author",
+      title: (author as any).author_title ?? null,
+      description: (author as any).description ?? null,
+      profilePic: (author as any).author_profile_pic ?? null,
+      parentLabel,
+    };
+    setSelectedAuthor(baseAuthor);
+
+    if (!authorId) return;
+    fetch(`${API_BASE_URL}/api/content/${authorId}/author`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((rows) => {
+        const row = Array.isArray(rows) ? rows[0] : rows;
+        if (!row) return;
+        const name = [row.author_first_name, row.author_last_name].filter(Boolean).join(" ").trim();
+        setSelectedAuthor((current) => {
+          if (!current || current.authorId !== authorId) return current;
+          return {
+            ...current,
+            label: name || current.label,
+            title: row.author_title ?? current.title ?? null,
+            description: row.description ?? current.description ?? null,
+            profilePic: row.author_profile_pic ?? current.profilePic ?? null,
+          };
+        });
+      })
+      .catch(() => {});
+  };
 
   useEffect(() => {
     if (!cyRef.current) {
@@ -230,9 +279,7 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
     const allCaseClaimNodes = nodes.filter((n) => n.type === "taskClaim");
     const allSourceClaimNodes = nodes.filter((n) => n.type === "refClaim");
 
-    const caseClaimNodes = allCaseClaimNodes.filter((n) =>
-      claimIdsInLinks.has(n.id),
-    );
+    const caseClaimNodes = allCaseClaimNodes;
     const sourceClaimNodes = allSourceClaimNodes.filter((n) =>
       claimIdsInLinks.has(n.id),
     );
@@ -323,7 +370,8 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
         admiralty_code:
           firstPub?.admiralty_code ?? (parent as any)?.admiralty_code ?? null,
         rating: firstPub?.rating ?? null,
-        url: firstPub?.url ?? null,
+        url: firstPub?.url ?? (parent as any)?.url ?? null,
+        content_id: firstPub?.content_id ?? (parent as any)?.content_id ?? null,
         badgeLabel: "Pub",
       });
     });
@@ -488,6 +536,8 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
           author_id: node.author_id,
           publisher_id: node.publisher_id,
           url: node.url,
+          reference: (node as any).reference ?? null,
+          sourceClaims: (node as any).sourceClaims ?? [],
           badgeLabel: `S${sourceIdx + 1}`,
         },
         position: { x: COLUMNS.SOURCES, y: yPos },
@@ -515,11 +565,14 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
         if (positionedNode) {
           const parentYPos = nodeYPositions.get(compositeNode.parentId);
           if (parentYPos !== undefined) {
-            // Authors above source, publishers below — offset must exceed half ROW_HEIGHT to prevent overlap
             const isPublisher = compositeNode.type === "publisherGroup";
-            const yOffset = isPublisher ? 165 : -165;
+            const parentXPos = nodePositions.get(compositeNode.parentId) ?? positionedNode.position.x;
+            const xOffset = isPublisher ? -250 : -520;
+            const yOffset = isPublisher ? 125 : -125;
+            positionedNode.position.x = parentXPos + xOffset;
             positionedNode.position.y = parentYPos + yOffset;
-            nodeYPositions.set(compositeNode.id, parentYPos + yOffset);
+            nodePositions.set(compositeNode.id, positionedNode.position.x);
+            nodeYPositions.set(compositeNode.id, positionedNode.position.y);
           }
         }
       }
@@ -1048,6 +1101,10 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
 
       // Author group → dropdown
       if (data.type === "authorGroup" && data.authors?.length > 0) {
+        if (data.authors.length === 1) {
+          openAuthorCard(data.authors[0], data.parentLabel);
+          return;
+        }
         const renderedPos = node.renderedPosition();
         setAuthorDropdown({
           authors: data.authors,
@@ -1075,12 +1132,24 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
             publisherId: pub?.publisher_id ?? data.publisher_id ?? undefined,
             publisherName: pub?.label ?? data.label ?? "",
             admiraltyCode: data.admiralty_code ?? undefined,
+            contentId: pub?.content_id ?? data.content_id ?? undefined,
+            sourceUrl: pub?.url ?? data.url ?? undefined,
           });
         }
         return;
       }
 
-      // Claim nodes → ClaimModal
+      if (data.type === "reference") {
+        setSelectedSource({
+          title: data.label ?? "Source",
+          url: data.url ?? null,
+          reference: data.reference ?? null,
+          sourceClaims: data.sourceClaims ?? [],
+        });
+        return;
+      }
+
+      // Claim nodes → source/case/rationale detail panel
       if (data.type === "refClaim" || data.type === "taskClaim") {
         const claimEdges = node.connectedEdges().filter((e: any) => {
           const rel = e.data("relation");
@@ -1091,14 +1160,13 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
           const edge = claimEdges[0];
           const srcNode = cy.getElementById(edge.data("source"));
           const tgtNode = cy.getElementById(edge.data("target"));
-          const isRef = data.type === "refClaim";
-          const refNode = isRef ? node : srcNode;
-          const taskNode = isRef ? tgtNode : node;
+          const refNode = srcNode.data("type") === "refClaim" ? srcNode : tgtNode.data("type") === "refClaim" ? tgtNode : null;
+          const taskNode = srcNode.data("type") === "taskClaim" ? srcNode : tgtNode.data("type") === "taskClaim" ? tgtNode : null;
 
           setSelectedClaim({
             id: data.id,
-            label: refNode.data("label") ?? "",
-            taskClaimLabel: taskNode.data("label") ?? "",
+            label: refNode?.data("label") ?? (data.type === "refClaim" ? data.label : ""),
+            taskClaimLabel: taskNode?.data("label") ?? (data.type === "taskClaim" ? data.label : ""),
             relation: edge.data("relation") ?? "related",
             notes: edge.data("notes") ?? "",
           });
@@ -1106,7 +1174,8 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
           // No connected edge — show just this claim
           setSelectedClaim({
             id: data.id,
-            label: data.label ?? "",
+            label: data.type === "refClaim" ? data.label ?? "" : "",
+            taskClaimLabel: data.type === "taskClaim" ? data.label ?? "" : "",
             relation: "related",
             notes: "",
           });
@@ -1134,60 +1203,45 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
     // Enable zoom ONLY with shift+wheel - use a toggle approach instead
     let lastScrollDirection = 0;
     const container = cyRef.current;
+    const handleWheel = (e: WheelEvent) => {
+      if (e.shiftKey) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const currentZoom = cy.zoom();
+        const wheelDelta = (e as WheelEvent & { wheelDelta?: number }).wheelDelta;
+        const delta = e.deltaY || (wheelDelta != null ? -wheelDelta : 0);
+        let newZoom;
+        if (Math.abs(delta) < 1) {
+          lastScrollDirection = lastScrollDirection === 1 ? -1 : 1;
+        } else {
+          lastScrollDirection = delta > 0 ? 1 : -1;
+        }
+
+        if (lastScrollDirection < 0) {
+          newZoom = currentZoom * 1.15;
+        } else {
+          newZoom = currentZoom * 0.85;
+        }
+
+        const pan = cy.pan();
+        const containerWidth = container?.clientWidth || 0;
+        const containerHeight = container?.clientHeight || 0;
+        const centerX = containerWidth / 2;
+        const centerY = containerHeight / 2;
+        const zoomPoint = {
+          x: (centerX - pan.x) / currentZoom,
+          y: (centerY - pan.y) / currentZoom,
+        };
+
+        cy.zoom({
+          level: newZoom,
+          position: zoomPoint,
+        });
+      }
+    };
     if (container) {
-      container.addEventListener(
-        "wheel",
-        (e) => {
-          if (e.shiftKey) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const currentZoom = cy.zoom();
-
-            // Check if scroll direction changed (helps detect actual scroll intent)
-            // Use wheelDelta if available (for better cross-browser support)
-            const delta = e.deltaY || -(e as any).wheelDelta;
-
-            // Determine zoom direction - alternate between zoom in and out based on scroll
-            // This avoids the -0 issue
-            let newZoom;
-            if (Math.abs(delta) < 1) {
-              // Very small delta, toggle based on last direction
-              lastScrollDirection = lastScrollDirection === 1 ? -1 : 1;
-            } else {
-              lastScrollDirection = delta > 0 ? 1 : -1;
-            }
-
-            if (lastScrollDirection < 0) {
-              // ZOOM IN
-              newZoom = currentZoom * 1.15;
-            } else {
-              // ZOOM OUT
-              newZoom = currentZoom * 0.85;
-            }
-
-            // Get center of viewport
-            const pan = cy.pan();
-            const containerWidth = container.clientWidth;
-            const containerHeight = container.clientHeight;
-            const centerX = containerWidth / 2;
-            const centerY = containerHeight / 2;
-
-            // Calculate zoom around center point
-            const zoomPoint = {
-              x: (centerX - pan.x) / currentZoom,
-              y: (centerY - pan.y) / currentZoom,
-            };
-
-            cy.zoom({
-              level: newZoom,
-              position: zoomPoint,
-            });
-          }
-          // If no shift key, do nothing - allows normal page scroll
-        },
-        { passive: false },
-      );
+      container.addEventListener("wheel", handleWheel, { passive: false });
     }
 
     // Set viewport - fit height, start at left edge
@@ -1220,7 +1274,27 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
     });
 
     // Edge label HTML overlays — recompute screen positions on any viewport change
-    const computeOverlays = () => {
+    let overlayRaf: number | null = null;
+    const overlaysEqual = (a: EdgeLabelOverlay[], b: EdgeLabelOverlay[]) => {
+      if (a.length !== b.length) return false;
+      return a.every((item, index) => {
+        const other = b[index];
+        return (
+          other &&
+          item.id === other.id &&
+          item.label === other.label &&
+          item.relation === other.relation &&
+          item.sourceId === other.sourceId &&
+          item.targetId === other.targetId &&
+          item.notes === other.notes &&
+          item.claimLabel === other.claimLabel &&
+          item.taskClaimLabel === other.taskClaimLabel &&
+          Math.abs(item.x - other.x) < 0.5 &&
+          Math.abs(item.y - other.y) < 0.5
+        );
+      });
+    };
+    const computeOverlaysNow = () => {
       const overlays: EdgeLabelOverlay[] = [];
       const zoom = cy.zoom();
       const pan = cy.pan();
@@ -1237,9 +1311,8 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
         const tgtNodeId = edge.data("target");
         const srcNode = cy.getElementById(srcNodeId);
         const tgtNode = cy.getElementById(tgtNodeId);
-        const isRefSource = srcNode.data("type") === "refClaim";
-        const refNode = isRefSource ? srcNode : tgtNode;
-        const taskNode = isRefSource ? tgtNode : srcNode;
+        const refNode = srcNode.data("type") === "refClaim" ? srcNode : tgtNode.data("type") === "refClaim" ? tgtNode : null;
+        const taskNode = srcNode.data("type") === "taskClaim" ? srcNode : tgtNode.data("type") === "taskClaim" ? tgtNode : null;
         overlays.push({
           id: edge.id(),
           label,
@@ -1249,13 +1322,20 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
           sourceId: srcNodeId,
           targetId: tgtNodeId,
           notes: edge.data("notes") ?? "",
-          claimLabel: refNode.data("label") ?? "",
-          taskClaimLabel: taskNode.data("label") ?? "",
+          claimLabel: refNode?.data("label") ?? "",
+          taskClaimLabel: taskNode?.data("label") ?? "",
         });
       });
-      setEdgeLabelOverlays(overlays);
+      setEdgeLabelOverlays((current) => (overlaysEqual(current, overlays) ? current : overlays));
     };
-    computeOverlays();
+    const computeOverlays = () => {
+      if (overlayRaf !== null) return;
+      overlayRaf = window.requestAnimationFrame(() => {
+        overlayRaf = null;
+        computeOverlaysNow();
+      });
+    };
+    computeOverlaysNow();
     cy.on("viewport", computeOverlays);
     cy.on("free", computeOverlays);
 
@@ -1318,6 +1398,12 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
       if (resizeTimeout) {
         clearTimeout(resizeTimeout);
       }
+      if (overlayRaf !== null) {
+        window.cancelAnimationFrame(overlayRaf);
+      }
+      if (container) {
+        container.removeEventListener("wheel", handleWheel);
+      }
       resizeObserver.disconnect();
       cy.off("viewport", computeOverlays);
       cy.off("free", computeOverlays);
@@ -1340,7 +1426,7 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
       />
 
       {/* Edge weight label overlays — prominent HTML chips over claim-to-claim edges */}
-      {edgeLabelOverlays.map((overlay) => {
+      {!selectedClaim && !selectedSource && !selectedAuthor && !authorDropdown && edgeLabelOverlays.map((overlay) => {
         const color =
           overlay.relation === "supports"
             ? "#4ade80"
@@ -1445,7 +1531,12 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
                       publisherId: pub.publisher_id ?? undefined,
                       publisherName: item.label ?? "",
                       admiraltyCode: pub.admiralty_code ?? undefined,
+                      contentId: pub.content_id ?? undefined,
+                      sourceUrl: pub.url ?? undefined,
                     });
+                    setAuthorDropdown(null);
+                  } else {
+                    openAuthorCard(item, authorDropdown.parentLabel);
                     setAuthorDropdown(null);
                   }
                 }}
@@ -1459,9 +1550,52 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
 
       {/* Claim detail modal */}
       {selectedClaim && (
-        <ClaimModal
-          claim={selectedClaim}
+        <GraphNodeDetailModal
+          isOpen={!!selectedClaim}
+          kicker={selectedClaim.label ? "Claim Link" : "Case Claim"}
+          title={selectedClaim.label ? "Source Claim to Case Claim" : "Case Claim"}
+          relation={selectedClaim.relation}
+          sourceClaim={selectedClaim.label || undefined}
+          caseClaim={selectedClaim.taskClaimLabel || undefined}
+          rationale={selectedClaim.notes}
+          placement="right"
           onClose={() => setSelectedClaim(null)}
+        />
+      )}
+
+      {/* Source detail modal */}
+      {selectedSource && (
+        <GraphNodeDetailModal
+          isOpen
+          kicker="Source"
+          title={selectedSource.title}
+          subtitle={selectedSource.reference?.publisher_name || selectedSource.reference?.author_name || undefined}
+          detail={selectedSource.reference?.details ?? null}
+          url={selectedSource.url ?? selectedSource.reference?.url ?? null}
+          reference={selectedSource.reference ?? null}
+          sourceClaims={selectedSource.sourceClaims ?? []}
+          statusItems={[
+            selectedSource.reference?.publisher_name
+              ? { label: "Publisher", value: selectedSource.reference.publisher_name, tone: "cyan" }
+              : null,
+            selectedSource.reference?.author_name
+              ? { label: "Author", value: selectedSource.reference.author_name, tone: "purple" }
+              : null,
+            selectedSource.reference?.admiralty_code
+              ? { label: "SourceCrest", value: selectedSource.reference.admiralty_code, tone: "green" }
+              : null,
+          ].filter(Boolean) as any}
+          placement="right"
+          onClose={() => setSelectedSource(null)}
+          onSourceCrestClick={(reference) => {
+            setPublisherModal({
+              publisherId: reference.publisher_id ?? undefined,
+              publisherName: reference.publisher_name ?? "",
+              admiraltyCode: reference.admiralty_code ?? undefined,
+              contentId: reference.reference_content_id,
+              sourceUrl: reference.url ?? undefined,
+            });
+          }}
         />
       )}
 
@@ -1471,6 +1605,8 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
           isOpen
           onClose={() => setPublisherModal(null)}
           publisherId={publisherModal.publisherId}
+          contentId={publisherModal.contentId}
+          sourceUrl={publisherModal.sourceUrl}
           publisherName={publisherModal.publisherName}
           admiraltyCode={publisherModal.admiraltyCode}
         />

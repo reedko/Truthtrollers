@@ -95,6 +95,8 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
   }, [leftItems, rightItems, height]);
 
   const links = claimLinks;
+  const lightweightMode =
+    links.length > 80 || leftItems.length > 60 || rightItems.length > 60;
 
   const getLeftY = (index: number) =>
     index * rowHeight + rowHeight / 2 + topOffset;
@@ -198,6 +200,7 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
           const linkId = `${link.claimId}-${link.referenceId}-${link.sourceClaimId || 'none'}-${link.relation}-${i}`;
 
           const handleMouseEnter = () => {
+            if (lightweightMode) return;
             setHoveredLinkId(linkId);
             // Clear any existing timeout
             if (hoverTimeoutRef.current) {
@@ -210,6 +213,7 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
           };
 
           const handleMouseLeave = () => {
+            if (lightweightMode) return;
             setHoveredLinkId(null);
             // Clear timeout if user stops hovering
             if (hoverTimeoutRef.current) {
@@ -221,40 +225,56 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
           // Apply fade effect when modal is open
           const opacity = isModalOpen ? 0.15 : 1;
           const activeOpacity = hoveredLinkId === linkId ? 1 : opacity;
+          const visibleOpacity = lightweightMode
+            ? isModalOpen
+              ? 0.1
+              : isAISuggested
+                ? 0.72
+                : 0.55
+            : activeOpacity;
 
           return (
             <g
               key={linkId}
-              onClick={() => onLineClick?.(link)}
+              onClick={lightweightMode ? undefined : () => onLineClick?.(link)}
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
-              style={{ cursor: "pointer", pointerEvents: "auto" }}
+              style={{
+                cursor: lightweightMode ? "default" : "pointer",
+                pointerEvents: lightweightMode ? "none" : "auto",
+              }}
             >
               {/* Invisible thicker line for easier hover detection */}
-              <line
-                x1={adjustedLeftX}
-                y1={y1}
-                x2={adjustedRightX}
-                y2={y2}
-                stroke="transparent"
-                strokeWidth={20}
-                style={{ cursor: "pointer", pointerEvents: "auto" }}
-              />
+              {!lightweightMode && (
+                <line
+                  x1={adjustedLeftX}
+                  y1={y1}
+                  x2={adjustedRightX}
+                  y2={y2}
+                  stroke="transparent"
+                  strokeWidth={20}
+                  style={{ cursor: "pointer", pointerEvents: "auto" }}
+                />
+              )}
 
-              <circle
-                cx={adjustedLeftX}
-                cy={y1}
-                r="8"
-                fill="blue"
-                opacity={activeOpacity}
-              />
-              <circle
-                cx={adjustedRightX}
-                cy={y2}
-                r="8"
-                fill="red"
-                opacity={activeOpacity}
-              />
+              {!lightweightMode && (
+                <>
+                  <circle
+                    cx={adjustedLeftX}
+                    cy={y1}
+                    r="8"
+                    fill="blue"
+                    opacity={activeOpacity}
+                  />
+                  <circle
+                    cx={adjustedRightX}
+                    cy={y2}
+                    r="8"
+                    fill="red"
+                    opacity={activeOpacity}
+                  />
+                </>
+              )}
 
               <title>
                 {`${isAISuggested ? "🤖 AI " : "✓ "}${
@@ -271,11 +291,14 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
                 x2={adjustedRightX}
                 y2={y2}
                 stroke={strokeColor}
-                strokeWidth={hoveredLinkId === linkId ? 6 : 4}
+                strokeWidth={lightweightMode ? (isAISuggested ? 3 : 2.5) : hoveredLinkId === linkId ? 6 : 4}
                 strokeDasharray={isAISuggested ? "8,4" : undefined}
-                markerStart="url(#arrowhead)"
-                opacity={activeOpacity}
-                style={{ cursor: "pointer", pointerEvents: "auto" }}
+                markerStart={lightweightMode ? undefined : "url(#arrowhead)"}
+                opacity={visibleOpacity}
+                style={{
+                  cursor: lightweightMode ? "default" : "pointer",
+                  pointerEvents: lightweightMode ? "none" : "auto",
+                }}
               />
             </g>
           );

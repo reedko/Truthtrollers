@@ -13,8 +13,9 @@ import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const envPath = path.resolve(__dirname, "../.env");
 
-dotenv.config({ path: path.resolve(__dirname, "../.env.dev") });
+dotenv.config({ path: envPath });
 
 const dbConfig = {
   host: process.env.DB_HOST || "localhost",
@@ -193,6 +194,7 @@ RULES
 - If nothing fits a section, return an empty array.`;
 
 async function seedReasoningStackPrompts() {
+  console.log(`Using env file: ${envPath}`);
   const connection = await mysql.createConnection(dbConfig);
 
   try {

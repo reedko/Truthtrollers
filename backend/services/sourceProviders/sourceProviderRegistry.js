@@ -18,6 +18,16 @@ import { mbfcProvider }           from "./providers/mbfcProvider.js";
 import { openSourcesProvider }    from "./providers/openSourcesProvider.js";
 import { diffbotProvider }        from "./providers/diffbotProvider.js";
 import { waybackProvider }        from "./providers/waybackProvider.js";
+import { rdapProvider }           from "./providers/rdapProvider.js";
+import { crossrefProvider }       from "./providers/crossrefProvider.js";
+import { openAlexProvider }       from "./providers/openAlexProvider.js";
+import { gdeltProvider }          from "./providers/gdeltProvider.js";
+import {
+  newsGuardProvider,
+  openCorporatesProvider,
+  irsTeosProvider,
+  secEdgarProvider,
+} from "./providers/optionalIdentityProviders.js";
 
 // ── Provider list (ordered by priority) ──────────────────────────────────────
 
@@ -29,8 +39,16 @@ const ALL_PROVIDERS = [
   adfontesProvider,
   mbfcProvider,
   openSourcesProvider,
+  newsGuardProvider,
+  crossrefProvider,
+  openAlexProvider,
   diffbotProvider,
   waybackProvider,
+  rdapProvider,
+  openCorporatesProvider,
+  irsTeosProvider,
+  secEdgarProvider,
+  gdeltProvider,
 ];
 
 // ── In-memory cache ───────────────────────────────────────────────────────────
@@ -104,19 +122,20 @@ export async function checkAllProviders() {
  * Run publisher lookup across all (or a subset of) providers.
  * Returns array of individual provider results.
  */
-export async function lookupPublisherAllProviders({ domain, publisherName, sourceUrl } = {}, { providers } = {}) {
+export async function lookupPublisherAllProviders(args = {}, { providers } = {}) {
+  const { domain, publisherName, sourceUrl } = args;
   const list = providers
     ? ALL_PROVIDERS.filter(p => providers.includes(p.providerName))
     : ALL_PROVIDERS;
 
-  const args = { domain, publisherName, sourceUrl };
+  const providerArgs = { ...args, domain, publisherName, sourceUrl };
   const results = await Promise.all(
     list.map(async (p) => {
       if (typeof p.lookupPublisher !== "function") return notImplemented(p.providerName, "publisher");
-      const key = cacheKey(p.providerName, args);
+      const key = cacheKey(p.providerName, providerArgs);
       const cached = getCached(_publisherCache, key);
       if (cached) return { ...cached, cached: true };
-      const result = await dispatchSafe(p, "lookupPublisher", args);
+      const result = await dispatchSafe(p, "lookupPublisher", providerArgs);
       setCache(_publisherCache, key, result);
       return result;
     })

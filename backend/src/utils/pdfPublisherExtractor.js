@@ -40,5 +40,13 @@ export function choosePdfPublisher(info, lines = []) {
     if (m) return m[1].trim();
   }
 
+  const head = lines.slice(0, 30).join("\n");
+  if (/\bInternational Agency for Research on Cancer\b|\bIARC\b/.test(head)) {
+    return "International Agency for Research on Cancer";
+  }
+  if (/\bWorld Health Organization\b|\bWHO\b/.test(head)) {
+    return "World Health Organization";
+  }
+
   return null;
 }

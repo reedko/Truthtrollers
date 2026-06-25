@@ -30,6 +30,21 @@ function normalizeDomain(url) {
 
 function getVal(binding, field) { return binding?.[field]?.value ?? null; }
 
+function escapeSparqlString(value = "") {
+  return String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+}
+
+function officialWebsiteUris(domain) {
+  const dom = String(domain || "").replace(/^www\./, "");
+  if (!dom) return [];
+  return [
+    `https://${dom}`,
+    `http://${dom}`,
+    `https://www.${dom}`,
+    `http://www.${dom}`,
+  ];
+}
+
 export const wikidataProvider = {
   providerName: "wikidata",
   description: "Wikidata SPARQL — domain-to-entity publisher lookup",
@@ -51,28 +66,81 @@ export const wikidataProvider = {
 
     try {
       // Try domain-based lookup first
+      const websiteValues = officialWebsiteUris(dom).map((uri) => `<${uri}>`).join(" ");
       const sparql = `
-        SELECT ?item ?itemLabel ?instanceLabel ?country ?countryLabel WHERE {
-          ?item wdt:P856 <https://${dom}> .
+        SELECT ?item ?itemLabel ?itemAltLabel ?instanceLabel ?country ?countryLabel
+               ?website ?parentLabel ?ownedByLabel ?operatorLabel ?founderLabel
+               ?industryLabel ?inception ?dissolved WHERE {
+          VALUES ?website { ${websiteValues} }
+          ?item wdt:P856 ?website .
           OPTIONAL { ?item wdt:P31 ?instance . }
           OPTIONAL { ?item wdt:P17 ?country . }
+          OPTIONAL { ?item wdt:P749 ?parent . }
+          OPTIONAL { ?item wdt:P127 ?ownedBy . }
+          OPTIONAL { ?item wdt:P137 ?operator . }
+          OPTIONAL { ?item wdt:P112 ?founder . }
+          OPTIONAL { ?item wdt:P452 ?industry . }
+          OPTIONAL { ?item wdt:P571 ?inception . }
+          OPTIONAL { ?item wdt:P576 ?dissolved . }
           SERVICE wikibase:label { bd:serviceParam wikibase:language "en" . }
         } LIMIT 3
       `;
       const data = await sparqlQuery(sparql);
-      const bindings = data?.results?.bindings ?? [];
+      let bindings = data?.results?.bindings ?? [];
 
       if (!bindings.length) {
-        // No domain match — try with www.
-        return { providerName: "wikidata", ok: true, matchFound: false, status: "no_match", latencyMs: Date.now() - t0 };
+        const name = escapeSparqlString(publisherName || "");
+        if (!name) return { providerName: "wikidata", ok: true, matchFound: false, status: "no_match", latencyMs: Date.now() - t0 };
+        const nameSparql = `
+          SELECT ?item ?itemLabel ?itemAltLabel ?instanceLabel ?country ?countryLabel
+                 ?website ?parentLabel ?ownedByLabel ?operatorLabel ?founderLabel
+                 ?industryLabel ?inception ?dissolved WHERE {
+            ?item rdfs:label|skos:altLabel ?label .
+            FILTER(LANG(?label) = "en")
+            FILTER(LCASE(STR(?label)) = LCASE("${name}"))
+            OPTIONAL { ?item wdt:P856 ?website . }
+            OPTIONAL { ?item wdt:P31 ?instance . }
+            OPTIONAL { ?item wdt:P17 ?country . }
+            OPTIONAL { ?item wdt:P749 ?parent . }
+            OPTIONAL { ?item wdt:P127 ?ownedBy . }
+            OPTIONAL { ?item wdt:P137 ?operator . }
+            OPTIONAL { ?item wdt:P112 ?founder . }
+            OPTIONAL { ?item wdt:P452 ?industry . }
+            OPTIONAL { ?item wdt:P571 ?inception . }
+            OPTIONAL { ?item wdt:P576 ?dissolved . }
+            SERVICE wikibase:label { bd:serviceParam wikibase:language "en" . }
+          } LIMIT 3
+        `;
+        const nameData = await sparqlQuery(nameSparql);
+        bindings = nameData?.results?.bindings ?? [];
+        if (!bindings.length) {
+          return { providerName: "wikidata", ok: true, matchFound: false, status: "no_match", latencyMs: Date.now() - t0 };
+        }
       }
 
       const b = bindings[0];
+      const relationships = [
+        ["parent_org", getVal(b, "parentLabel")],
+        ["owned_by", getVal(b, "ownedByLabel")],
+        ["operated_by", getVal(b, "operatorLabel")],
+        ["founder", getVal(b, "founderLabel")],
+      ].filter(([, name]) => name).map(([type, name]) => ({ type, name }));
       const normalized = {
         publisherName: getVal(b, "itemLabel"),
         domain: dom,
         sourceType: classifyFromInstance(getVal(b, "instanceLabel") ?? ""),
         country: getVal(b, "countryLabel"),
+        aliases: getVal(b, "itemAltLabel")?.split(", ") ?? [],
+        instanceOf: getVal(b, "instanceLabel"),
+        officialWebsite: getVal(b, "website"),
+        parentOrganization: getVal(b, "parentLabel"),
+        ownedBy: getVal(b, "ownedByLabel"),
+        operator: getVal(b, "operatorLabel"),
+        founder: getVal(b, "founderLabel"),
+        industry: getVal(b, "industryLabel"),
+        inception: getVal(b, "inception"),
+        dissolved: getVal(b, "dissolved"),
+        relationships,
         externalId: getVal(b, "item")?.replace("http://www.wikidata.org/entity/", "wikidata:"),
         externalUrl: getVal(b, "item")?.replace("http://www.wikidata.org/entity/", "https://www.wikidata.org/wiki/"),
         description: null,

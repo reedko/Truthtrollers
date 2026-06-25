@@ -56,6 +56,8 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
   const [dragging, setDragging] = useState(false);
   const [debugOpen, setDebugOpen] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
+  const modalDragRafRef = useRef<number | null>(null);
+  const pendingPositionRef = useRef(position);
 
   // Tooltip for dragging claims
   const tipRef = useRef<HTMLDivElement | null>(null);
@@ -141,9 +143,14 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
   // Move
   const onMouseMove = (e: MouseEvent) => {
     if (!dragging) return;
-    setPosition({
+    pendingPositionRef.current = {
       x: e.clientX - dragOffset.current.x,
       y: e.clientY - dragOffset.current.y,
+    };
+    if (modalDragRafRef.current != null) return;
+    modalDragRafRef.current = window.requestAnimationFrame(() => {
+      modalDragRafRef.current = null;
+      setPosition(pendingPositionRef.current);
     });
   };
 
@@ -151,6 +158,11 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
   const onMouseUp = () => {
     setDragging(false);
     document.body.style.userSelect = "";
+    if (modalDragRafRef.current != null) {
+      window.cancelAnimationFrame(modalDragRafRef.current);
+      modalDragRafRef.current = null;
+    }
+    setPosition(pendingPositionRef.current);
   };
 
   React.useEffect(() => {
@@ -162,6 +174,10 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
       window.removeEventListener("mouseup", onMouseUp);
     }
     return () => {
+      if (modalDragRafRef.current != null) {
+        window.cancelAnimationFrame(modalDragRafRef.current);
+        modalDragRafRef.current = null;
+      }
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
@@ -175,6 +191,10 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
   // - window resize
   React.useEffect(() => {
     if (!isOpen || !reference) {
+      setLineData([]);
+      return;
+    }
+    if (dragging) {
       setLineData([]);
       return;
     }
@@ -266,7 +286,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
       window.removeEventListener("scroll", throttled as any);
       window.removeEventListener("resize", throttled as any);
     };
-  }, [isOpen, reference, claimLinks, position]); // position makes lines update while dragging modal
+  }, [isOpen, reference, claimLinks, dragging]);
 
   if (!isOpen) return null;
 
@@ -311,7 +331,6 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                     strokeWidth={12}
                     strokeDasharray={line.isAI ? "8,4" : undefined}
                     opacity={0.3}
-                    filter="blur(4px)"
                   />
                   <line
                     x1={line.x1}
@@ -343,9 +362,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
         userSelect="none"
         overflow="hidden"
         style={{
-          background: "rgba(10, 15, 25, 0.85)",
-          backdropFilter: "blur(20px)",
-          WebkitBackdropFilter: "blur(20px)",
+          background: "rgba(10, 15, 25, 0.94)",
           border: "2px solid rgba(113, 219, 255, 0.4)",
           borderRadius: "16px",
           boxShadow: "0 24px 64px rgba(0,0,0,0.8), 0 12px 32px rgba(0,0,0,0.6), 0 0 60px rgba(113,219,255,0.3), inset 0 2px 0 rgba(255,255,255,0.15)",

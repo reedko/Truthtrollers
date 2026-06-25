@@ -1876,6 +1876,57 @@ function getCleanUrlFromUpdate(changeInfo, tab) {
   return raw ? raw.split("?")[0] : "";
 }
 
+function extractViewerSourceUrl(tabUrl) {
+  try {
+    const viewerPrefix = browser.runtime.getURL("viewer.html");
+    if (!tabUrl || !tabUrl.startsWith(viewerPrefix)) return null;
+    return new URL(tabUrl).searchParams.get("src");
+  } catch {
+    return null;
+  }
+}
+
+function normalizeScrapeMatchUrl(rawUrl) {
+  try {
+    const url = new URL(rawUrl);
+    url.hash = "";
+    if (url.pathname.length > 1) {
+      url.pathname = url.pathname.replace(/\/+$/, "");
+    }
+    return url.toString();
+  } catch {
+    return String(rawUrl || "").replace(/#.*$/, "").replace(/\/+$/, "");
+  }
+}
+
+function sameDocumentForScrape(leftUrl, rightUrl) {
+  try {
+    const left = new URL(leftUrl);
+    const right = new URL(rightUrl);
+    const leftPath = left.pathname.replace(/\/+$/, "") || "/";
+    const rightPath = right.pathname.replace(/\/+$/, "") || "/";
+    return left.origin === right.origin && leftPath === rightPath;
+  } catch {
+    return false;
+  }
+}
+
+function urlsMatchForScrape(tabUrl, targetUrl) {
+  if (!tabUrl || !targetUrl) return false;
+  const tabSourceUrl = extractViewerSourceUrl(tabUrl) || tabUrl;
+  const normalizedTab = normalizeScrapeMatchUrl(tabSourceUrl);
+  const normalizedTarget = normalizeScrapeMatchUrl(targetUrl);
+  return (
+    normalizedTab === normalizedTarget ||
+    normalizedTab.startsWith(normalizedTarget) ||
+    sameDocumentForScrape(tabSourceUrl, targetUrl)
+  );
+}
+
+function findTabForScrapeTarget(tabs, targetUrl) {
+  return tabs.find((tab) => urlsMatchForScrape(tab.url, targetUrl));
+}
+
 // --- ONE onUpdated listener ---
 browser.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
   const cleanUrl = getCleanUrlFromUpdate(changeInfo, tab);
@@ -2102,6 +2153,78 @@ let lastPollAt = 0;
 
 // ---------- helpers ----------
 
+function extractCompactPageForScrape() {
+  const MAX_TEXT_CHARS = 120000;
+  const MAX_HTML_CHARS = 30000;
+  const clean = (value) => String(value || "").replace(/\s+/g, " ").trim();
+  const pickMeta = (selectors) => {
+    for (const selector of selectors) {
+      const el = document.querySelector(selector);
+      const value = el?.getAttribute?.("content") || el?.textContent || "";
+      const cleaned = clean(value);
+      if (cleaned) return cleaned;
+    }
+    return "";
+  };
+
+  const title = clean(
+    pickMeta([
+      'meta[property="og:title"]',
+      'meta[name="twitter:title"]',
+      "h1",
+    ]) || document.title,
+  );
+  const author = pickMeta([
+    'meta[name="author"]',
+    'meta[property="article:author"]',
+    '[rel="author"]',
+    ".byline",
+    ".author",
+  ]);
+
+  const candidates = [
+    "article",
+    '[role="main"]',
+    "main",
+    ".article",
+    ".post",
+    ".entry-content",
+    ".content",
+    "#content",
+    "body",
+  ];
+
+  let best = document.body;
+  let bestText = clean(document.body?.innerText || "");
+  for (const selector of candidates) {
+    const nodes = Array.from(document.querySelectorAll(selector));
+    for (const node of nodes) {
+      const text = clean(node.innerText || "");
+      if (text.length > bestText.length * 0.45 && text.length > 800) {
+        best = node;
+        bestText = text;
+      }
+    }
+  }
+
+  const rawText = bestText.slice(0, MAX_TEXT_CHARS);
+  const compactHtml = [
+    "<article>",
+    title ? `<h1>${title}</h1>` : "",
+    author ? `<p data-author="${author}">${author}</p>` : "",
+    `<pre>${rawText}</pre>`,
+    "</article>",
+  ].join("").slice(0, MAX_HTML_CHARS);
+
+  return {
+    html: compactHtml,
+    text: rawText,
+    title,
+    authors: author ? [{ author_first_name: author, author_last_name: "" }] : null,
+    extractedFrom: best?.tagName || "BODY",
+  };
+}
+
 async function pollForScrapeJob() {
   // debounce
   if (Date.now() - lastPollAt < POLL_INTERVAL_MS) return;
@@ -2180,10 +2303,9 @@ async function handleScrapeJob(job) {
       url = targetTab.url;
       console.log(`[EXT] 📍 Using active tab ${targetTab.id}: ${url}`);
     } else if (scrape_mode === "scrape_specific_url") {
-      // Find tab matching target_url
-      targetTab = tabs.find(
-        (t) => t.url === target_url || t.url?.startsWith(target_url),
-      );
+      // Find tab matching target_url. PDF tabs may already be swapped to
+      // extension viewer.html?src=<original-pdf-url>, so compare against both.
+      targetTab = findTabForScrapeTarget(tabs, target_url);
       if (!targetTab) {
         console.error(`[EXT] ❌ No tab found matching target URL: ${target_url}`);
         console.log(`[EXT] 📋 Available tabs (${tabs.length}):`, tabs.map(t => ({ id: t.id, url: t.url })));
@@ -2291,13 +2413,17 @@ async function handleScrapeJob(job) {
         console.log(
           `[EXT] PDF extraction failed (${err.message}), falling back to HTML extraction`,
         );
-        raw_html = await safeExecuteScript(
+        const compactPage = await safeExecuteScript(
           targetTab.id,
-          () => document.documentElement.outerHTML,
-          'PDF fallback HTML extraction'
+          extractCompactPageForScrape,
+          'PDF fallback compact extraction'
         );
+        raw_html = compactPage?.html || null;
+        pdfText = pdfText || compactPage?.text || null;
+        pdfTitle = pdfTitle || compactPage?.title || null;
+        pdfAuthors = pdfAuthors || compactPage?.authors || null;
         console.log(
-          `[EXT] Extracted ${raw_html.length} chars HTML from tab ${targetTab.id}`,
+          `[EXT] Extracted compact fallback from tab ${targetTab.id}: html=${raw_html?.length || 0}, text=${pdfText?.length || 0}`,
         );
       }
       scrapeBody = {
@@ -2363,15 +2489,20 @@ async function handleScrapeJob(job) {
         linked_publisher: fb_linked_publisher || undefined,
       };
     } else {
-      // Extract HTML from regular webpage
-      raw_html = await safeExecuteScript(
+      // Extract compact readable content from regular webpage.
+      // Avoid document.documentElement.outerHTML here: serializing a large modern DOM can lock the browser.
+      const compactPage = await safeExecuteScript(
         targetTab.id,
-        () => document.documentElement.outerHTML,
-        'HTML extraction'
+        extractCompactPageForScrape,
+        'compact HTML/text extraction'
       );
+      raw_html = compactPage?.html || null;
+      pdfText = compactPage?.text || null;
+      pdfTitle = compactPage?.title || null;
+      pdfAuthors = compactPage?.authors || null;
 
       console.log(
-        `[EXT] Extracted ${raw_html.length} chars from tab ${targetTab.id}`,
+        `[EXT] Extracted compact content from tab ${targetTab.id}: html=${raw_html?.length || 0}, text=${pdfText?.length || 0}, source=${compactPage?.extractedFrom || 'unknown'}`,
       );
       scrapeBody = {
         url: actualUrl,

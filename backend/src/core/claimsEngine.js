@@ -287,68 +287,14 @@ Return JSON: {"specificity": X, "controversy": Y, "materiality": Z, "reasoning":
     const system = prompts.system;
     const tasks = prompts.user;
 
-    const outputShape = `
-OUTPUT (STRICT JSON):
-{
-  "generalTopic": "<string>",
-  "specificTopics": ["<string>", "<string>"],
-  "thesis": "<string>",
-  "pillars": [
-    {
-      "id": "P1",
-      "label": "<string>",
-      "summary": "<string>",
-      "centrality": 0-100,
-      "claims": [
-        {
-          "text": "<claim>",
-          "role": "pillar_support",
-          "parentId": "P1",
-          "centrality": 0-100,
-          "verifiability": 0-100
-        }
-      ]
-    }
-  ],
-  "evidenceClaims": [
-    {
-      "text": "<claim>",
-      "role": "evidence",
-      "parentId": "P1",
-      "centrality": 0-100,
-      "verifiability": 0-100
-    }
-  ],
-  "backgroundClaims": [
-    {
-      "text": "<claim>",
-      "role": "background",
-      "parentId": "",
-      "centrality": 0-100,
-      "verifiability": 0-100
-    }
-  ],
-  "claims": [
-    {
-      "text": "<claim>",
-      "role": "thesis|pillar|evidence|background",
-      "parentId": "",
-      "centrality": 0-100,
-      "verifiability": 0-100
-    }
-  ],
-  "testimonials": [
-    { "text": "<testimonial1>", "name": "<optional>", "imageUrl": "<optional>" }
-  ]
-}
-`.trim();
-
     // When extracting from a reference, use task claims as GUIDANCE for prioritization,
     // not as a filter. Still extract ALL worthy factual claims from the reference.
-    const taskClaimsInstruction = (taskClaimsContext && taskClaimsContext.length > 0)
-      ? `
+    const buildTaskClaimsText = () =>
+      taskClaimsContext.map((c, i) => `  ${i + 1}. "${c}"`).join('\n');
+
+    const fallbackTaskClaimsInstruction = `
 ⚠️ CONTEXT - The SOURCE article being fact-checked contains these claims:
-${taskClaimsContext.map((c, i) => `  ${i + 1}. "${c}"`).join('\n')}
+{{taskClaims}}
 
 ⚠️ DO NOT extract the above SOURCE claims themselves.
 
@@ -371,8 +317,22 @@ EXTRACTION INSTRUCTIONS:
 → Extract ALL worthy claims, but RANK responsive claims higher than general background.
 → ONLY extract NEW statements from the TEXT below, NOT the SOURCE claims listed above.
 
-`
-      : "";
+`;
+
+    let taskClaimsInstruction = "";
+    if (taskClaimsContext && taskClaimsContext.length > 0) {
+      let template = fallbackTaskClaimsInstruction;
+      try {
+        const contextPrompt = await this.promptManager.getPrompt(
+          'claim_extraction_source_context_instruction',
+          { system: '', user: fallbackTaskClaimsInstruction, parameters: {} }
+        );
+        template = contextPrompt.user || contextPrompt.system || fallbackTaskClaimsInstruction;
+      } catch {
+        template = fallbackTaskClaimsInstruction;
+      }
+      taskClaimsInstruction = template.replace(/\{\{taskClaims\}\}/g, buildTaskClaimsText());
+    }
 
     if (taskClaimsInstruction) {
       console.log(`🎯 [ClaimExtractor] Context-aware instruction built (${taskClaimsContext.length} claims):`);
@@ -390,16 +350,13 @@ You are a fact-checking assistant.
 ${taskClaimsInstruction}
 ${tasks}
 
-${includeTopicsAndTestimonials ? outputShape : ""}
-
 ${testimonialsText}
 
 TEXT:
 ${chunk}
 `.trim();
 
-    const schemaHint =
-      '{"generalTopic":"","specificTopics":[],"thesis":"","pillars":[{"id":"P1","label":"","summary":"","centrality":0,"claims":[{"text":"","role":"pillar_support","parentId":"P1","centrality":0,"verifiability":0}]}],"evidenceClaims":[{"text":"","role":"evidence","parentId":"P1","centrality":0,"verifiability":0}],"backgroundClaims":[{"text":"","role":"background","parentId":"","centrality":0,"verifiability":0}],"claims":[{"text":"","role":"thesis","parentId":"","centrality":0,"verifiability":0}],"testimonials":[{"text":"","name":"","imageUrl":""}]}';
+    const schemaHint = "";
 
     const out = await this.llm.generate({
       system,
@@ -430,11 +387,14 @@ ${chunk}
         if (!text || !String(text).trim()) continue;
 
         flattened.push({
+          id: entry.id || entry.claimId || entry.claim_id || null,
           text: String(text).trim(),
           role: entry.role || fallbackRole,
           parentId: entry.parentId || entry.parent_id || null,
           centrality: entry.centrality ?? null,
           verifiability: entry.verifiability ?? null,
+          priority: entry.priority ?? null,
+          searchText: entry.searchText || entry.search_text || "",
         });
       }
 
@@ -444,29 +404,38 @@ ${chunk}
     const structuredClaims = [];
     const claimsFromOut = flattenClaimEntries(out.claims, null);
     const thesisClaims = reasoningStack.thesis
-      ? [{ text: reasoningStack.thesis, role: 'thesis', parentId: null, centrality: null, verifiability: null }]
+      ? [{ id: 'thesis', text: reasoningStack.thesis, role: 'thesis', parentId: null, centrality: null, verifiability: null }]
       : [];
     const pillarClaims = flattenClaimEntries(
       reasoningStack.pillars.flatMap((pillar, index) => {
+        const pillarId = pillar?.id || `P${index + 1}`;
         const pillarSummary = pillar?.summary || pillar?.label || pillar?.text || "";
         const pillarHeader = pillarSummary
-          ? [{ text: pillarSummary, role: 'pillar', parentId: pillar?.id || `P${index + 1}`, centrality: pillar?.centrality ?? null, verifiability: pillar?.verifiability ?? null }]
+          ? [{ id: pillarId, text: pillarSummary, role: 'pillar', parentId: 'thesis', centrality: pillar?.centrality ?? null, verifiability: pillar?.verifiability ?? null }]
           : [];
         const nestedClaims = flattenClaimEntries(pillar?.claims || [], 'pillar_support').map((entry) => ({
           ...entry,
-          parentId: entry.parentId || pillar?.id || `P${index + 1}`,
+          parentId: entry.parentId || pillarId,
         }));
         return [...pillarHeader, ...nestedClaims];
       })
     );
     const evidenceClaims = flattenClaimEntries(reasoningStack.evidenceClaims, 'evidence');
     const backgroundClaims = flattenClaimEntries(reasoningStack.backgroundClaims, 'background');
+    const allowedRoles = new Set(['thesis', 'pillar', 'pillar_support', 'evidence', 'background']);
+    const normalizeRole = (claim) => {
+      if (!claim || typeof claim !== 'object') return claim;
+      if (!claim.role || allowedRoles.has(claim.role)) return claim;
+      return { ...claim, role: 'evidence' };
+    };
 
-    if (claimsFromOut.length > 0) {
-      structuredClaims.push(...claimsFromOut);
-    } else {
-      structuredClaims.push(...thesisClaims, ...pillarClaims, ...evidenceClaims, ...backgroundClaims);
-    }
+    structuredClaims.push(
+      ...thesisClaims,
+      ...pillarClaims,
+      ...evidenceClaims,
+      ...backgroundClaims,
+      ...claimsFromOut
+    );
 
     // Post-process: dedupe & clamp
     const rawClaims = structuredClaims;
@@ -487,7 +456,7 @@ ${chunk}
         .replace(/\s+/g, " ");
       if (norm && !seen.has(norm.toLowerCase())) {
         seen.add(norm.toLowerCase());
-        deduped.push({ ...c, text: norm });
+        deduped.push(normalizeRole({ ...c, text: norm }));
       }
     }
 

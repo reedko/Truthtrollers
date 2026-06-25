@@ -7,6 +7,7 @@ interface TaskStore {
   currentUrl: string | null;
   isContentDetected: boolean;
   setTask: (task: Task) => void;
+  syncTaskFromStorage: (task: Task | null) => void;
   setCurrentUrl: (url: string) => void;
   setContentDetected: (detected: boolean) => void;
 }
@@ -35,6 +36,9 @@ const useTaskStore = create<TaskStore>((set) => {
     setTask: (task) => {
       set({ task });
       browser.storage.local.set({ task });
+    },
+    syncTaskFromStorage: (task) => {
+      set({ task });
     },
     setCurrentUrl: (url) => {
       set({ currentUrl: url });

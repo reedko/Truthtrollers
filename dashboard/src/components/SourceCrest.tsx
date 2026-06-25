@@ -7,7 +7,7 @@
  * Do NOT rename to "Badge" — this is a SourceCrest throughout.
  */
 
-import React from "react";
+import React, { useId } from "react";
 import { Tooltip } from "@chakra-ui/react";
 import { SourceType, Reliability } from "../utils/normalizeSourceProfile";
 
@@ -55,6 +55,7 @@ interface SourceCrestProps {
   reliability?: Reliability; // kept for callers; not used for display
   score?: number;            // kept for callers; not used for display
   admiraltyCode?: string;    // A-E or Ø letter + 1-5 or Ø number, e.g. "D4", "AØ", "ØØ"
+  cacheStatus?: "fresh" | "cached";
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   showLabel?: boolean;
   active?: boolean;
@@ -71,6 +72,7 @@ const SourceCrest: React.FC<SourceCrestProps> = ({
   reliability = "unchecked",
   score,
   admiraltyCode,
+  cacheStatus = "fresh",
   size = "sm",
   showLabel = false,
   active = false,
@@ -78,6 +80,7 @@ const SourceCrest: React.FC<SourceCrestProps> = ({
 }) => {
   const w = SIZE_PX[size];
   const h = Math.round(w * 1.25);
+  const reactId = useId().replace(/:/g, "");
 
   // Always Admiralty mode. F and 6 are legacy DB values that display as Ø.
   // No code → ØØ (not yet assessed).
@@ -90,11 +93,12 @@ const SourceCrest: React.FC<SourceCrestProps> = ({
 
   const shieldTopText = admLetter;
   const shieldBotText = admNumber;
-  const uid = `sc-${admLetter}${admNumber}-${size}`;
+  const uid = `sc-${reactId}-${admLetter}${admNumber}-${size}`;
 
   const tooltipParts = [
     publisherName,
     `${admLetter}${admNumber} · ${ADMIRALTY_LETTER_LABEL[admLetter] ?? ""} · ${ADMIRALTY_NUMBER_LABEL[admNumber] ?? ""}`,
+    cacheStatus === "cached" ? "Cached publisher-level SourceCrest" : null,
   ].filter(Boolean);
 
   const animId = `sc-pulse-${uid}`;
@@ -111,9 +115,8 @@ const SourceCrest: React.FC<SourceCrestProps> = ({
         flexShrink: 0,
         lineHeight: 0,
         filter: active
-          ? `drop-shadow(0 0 ${Math.round(w * 0.5)}px ${c.glow}) drop-shadow(0 0 ${Math.round(w * 0.25)}px ${c.rim})`
-          : `drop-shadow(0 0 ${Math.round(w * 0.18)}px ${c.glow}88)`,
-        transition: active ? "filter 0.1s" : "filter 0.6s",
+          ? `drop-shadow(0 0 ${Math.round(w * 0.35)}px ${c.glow})`
+          : "none",
       }}
       onClick={onClick}
       role={onClick ? "button" : "img"}
@@ -153,8 +156,8 @@ const SourceCrest: React.FC<SourceCrestProps> = ({
         {/* Glass bevel */}
         <path d={BEVEL} fill="none" stroke="rgba(255,255,255,0.17)" strokeWidth="1"/>
 
-        {/* Top shine band */}
-        <path d={SHINE} fill="rgba(255,255,255,0.09)"/>
+        {/* Top shine band. Cached publisher-level crests omit the gleam as a subtle stale/cache marker. */}
+        {cacheStatus !== "cached" && <path d={SHINE} fill="rgba(255,255,255,0.09)"/>}
 
         {/* Outer rim accent */}
         <path d={SHIELD} fill="none" stroke={c.rim} strokeWidth="0.6" opacity="0.45"/>
@@ -192,7 +195,7 @@ const SourceCrest: React.FC<SourceCrestProps> = ({
   );
 
   return (
-    <Tooltip label={tooltipParts.join(" · ") || undefined} hasArrow placement="top" openDelay={150}>
+    <Tooltip label={tooltipParts.join(" · ") || undefined} hasArrow placement="top" openDelay={500} closeDelay={0}>
       <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", lineHeight: 0 }}>
         {crest}
         {showLabel && (

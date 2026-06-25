@@ -317,7 +317,7 @@ export async function runEvidenceEngine({
               title =
                 cand.title || (await getMainHeadline($)) || "AI Reference";
               authors = await extractAuthors($);
-              publisher = await extractPublisher($);
+              publisher = await extractPublisher($, cand.url);
               thumbnail = getBestImage($, cand.url) || "";
 
               // ─────────────────────────────────────────────

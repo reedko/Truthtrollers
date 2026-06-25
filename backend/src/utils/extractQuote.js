@@ -146,6 +146,15 @@ STANCE CLASSIFICATION RULES:
 • nuance: Source adds context, caveats, limitations, or partial agreement/disagreement
 • insufficient: Source mentions the claim but takes no clear position
 
+ATOMIC ASSERTION RULES:
+• Evaluate the exact factual assertion in CLAIM, not a broader topic nearby.
+• If CLAIM includes an attribution wrapper like "X revealed that Y", evaluate Y as the core assertion and use X only for search/context.
+• If CLAIM alleges misconduct such as "ordered scientists to destroy evidence", "destroyed evidence", "fraud", "cover-up", or "data manipulation", support requires a quote directly addressing that misconduct.
+• A quote saying data was "omitted", "excluded", "not reported", or "re-analyzed" does NOT support a claim that evidence was destroyed or that scientists were ordered to destroy it.
+• A quote saying "MMR does not cause autism" or "no link was found" does NOT by itself refute that someone ordered evidence destroyed; mark it nuance unless it also addresses the alleged order/destruction/cover-up.
+• For destruction/order allegations, use refute only when the source says the alleged destruction/order did not happen, was unsupported, was false/misleading, or contradicts the alleged misconduct.
+• Do not infer support from implication. The quote must bear on the specific assertion.
+
 CRITICAL:
 - If the source expresses skepticism, doubt, or criticism → "refute"
 - If the source is a fact-check that rates the claim false/misleading → "refute"

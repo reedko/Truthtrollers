@@ -2142,6 +2142,78 @@ let lastPollAt = 0;
 
 // ---------- helpers ----------
 
+function extractCompactPageForScrape() {
+  const MAX_TEXT_CHARS = 120000;
+  const MAX_HTML_CHARS = 30000;
+  const clean = (value) => String(value || "").replace(/\s+/g, " ").trim();
+  const pickMeta = (selectors) => {
+    for (const selector of selectors) {
+      const el = document.querySelector(selector);
+      const value = el?.getAttribute?.("content") || el?.textContent || "";
+      const cleaned = clean(value);
+      if (cleaned) return cleaned;
+    }
+    return "";
+  };
+
+  const title = clean(
+    pickMeta([
+      'meta[property="og:title"]',
+      'meta[name="twitter:title"]',
+      "h1",
+    ]) || document.title,
+  );
+  const author = pickMeta([
+    'meta[name="author"]',
+    'meta[property="article:author"]',
+    '[rel="author"]',
+    ".byline",
+    ".author",
+  ]);
+
+  const candidates = [
+    "article",
+    '[role="main"]',
+    "main",
+    ".article",
+    ".post",
+    ".entry-content",
+    ".content",
+    "#content",
+    "body",
+  ];
+
+  let best = document.body;
+  let bestText = clean(document.body?.innerText || "");
+  for (const selector of candidates) {
+    const nodes = Array.from(document.querySelectorAll(selector));
+    for (const node of nodes) {
+      const text = clean(node.innerText || "");
+      if (text.length > bestText.length * 0.45 && text.length > 800) {
+        best = node;
+        bestText = text;
+      }
+    }
+  }
+
+  const rawText = bestText.slice(0, MAX_TEXT_CHARS);
+  const compactHtml = [
+    "<article>",
+    title ? `<h1>${title}</h1>` : "",
+    author ? `<p data-author="${author}">${author}</p>` : "",
+    `<pre>${rawText}</pre>`,
+    "</article>",
+  ].join("").slice(0, MAX_HTML_CHARS);
+
+  return {
+    html: compactHtml,
+    text: rawText,
+    title,
+    authors: author ? [{ author_first_name: author, author_last_name: "" }] : null,
+    extractedFrom: best?.tagName || "BODY",
+  };
+}
+
 async function pollForScrapeJob() {
   // debounce
   if (Date.now() - lastPollAt < POLL_INTERVAL_MS) return;

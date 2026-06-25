@@ -124,6 +124,7 @@ export interface ReferenceWithClaims {
   rating_label?: string | null;
   rating_type?: string | null;
   admiralty_code?: string | null; // from admiralty_evaluations join
+  admiralty_source?: "content" | "publisher_cached" | null;
   author_id?: number;
 }
 export type UnifiedReference = ReferenceWithClaims;
@@ -141,6 +142,15 @@ export interface Claim {
   centrality_score?: number | null;
   verifiability_score?: number | null;
   claim_order?: number | null;
+  object_claim_text?: string | null;
+  is_attribution?: boolean | number | null;
+  speaker_entity?: string | null;
+  article_stance?: "endorses" | "rejects" | "neutral" | "unclear" | string | null;
+  argument_function?: "thesis" | "supporting_premise" | "evidence" | "opposing_claim_to_refute" | "background" | "reported_neutral" | "unclear" | string | null;
+  score_transform?: "normal" | "invert" | "none" | "review" | string | null;
+  accountability_eligible?: boolean | number | null;
+  argument_mapping_confidence?: number | null;
+  argument_mapping_rationale?: string | null;
   references?: ClaimReference[]; // References that support/refute the claim
   relationship_type?: string; // Type of relationship to the content (if relevant)
   content_id?: number;
@@ -229,6 +239,7 @@ export interface ClaimLinks {
   notes?: string;
   support_level?: number;
   verimeter_score?: number | null; // 👈 Add this if missing
+  created_by_ai?: boolean | number;
 }
 
 export interface LinkedClaim {

@@ -6,6 +6,7 @@
 import { ClaimExtractor } from "./claimsEngine.js";
 import { openAiLLM } from "./openAiLLM.js";
 import { persistClaims } from "../storage/persistClaims.js";
+import { classifyAttributionClaim } from "../utils/normalizeEvidenceClaim.js";
 import logger from "../utils/logger.js";
 
 /**
@@ -160,8 +161,25 @@ export async function processTaskClaims({ query, taskContentId, text, claimType 
   // returns array of new claimIds
   // -----------------------------------------------------
   const claimsForPersistence = claims.map((claim) => {
-    if (typeof claim === "string") return { text: claim };
-    return claim;
+    const normalized = typeof claim === "string" ? { text: claim } : { ...claim };
+    if (claimType !== "task") return normalized;
+
+    const attribution = classifyAttributionClaim(normalized.text);
+    if (!attribution.isAttribution || !attribution.objectText) return normalized;
+
+    return {
+      ...normalized,
+      relationshipType: "provenance",
+      searchText: normalized.searchText || normalized.search_text || attribution.objectText,
+      objectText: attribution.objectText,
+      attributionText: attribution.attributionText,
+      speakerEntity: attribution.speakerEntity,
+      endorsementPolarity: attribution.endorsementPolarity,
+      accountabilityEligible: attribution.accountabilityEligible,
+      centrality: Math.min(Number(normalized.centrality ?? 0) || 0, 0.05),
+      verifiability: Math.max(Number(normalized.verifiability ?? 0) || 0, 0.1),
+      priority: Math.min(Number(normalized.priority ?? 0) || 0, 10),
+    };
   });
 
   const claimIds = await persistClaims(query, taskContentId, claimsForPersistence, claimType, claimType, clearOldLinks);
@@ -175,7 +193,16 @@ export async function processTaskClaims({ query, taskContentId, text, claimType 
   // -----------------------------------------------------
   const result = claimIds.map((id, i) => ({
     id,
-    text: typeof claims[i] === "string" ? claims[i] : claims[i]?.text,
+    text: claimsForPersistence[i]?.text,
+    role: claimsForPersistence[i]?.role || null,
+    centrality: claimsForPersistence[i]?.centrality ?? null,
+    verifiability: claimsForPersistence[i]?.verifiability ?? null,
+    priority: claimsForPersistence[i]?.priority ?? null,
+    searchText: claimsForPersistence[i]?.searchText || claimsForPersistence[i]?.search_text || "",
+    relationshipType: claimsForPersistence[i]?.relationshipType || claimsForPersistence[i]?.relationship_type || claimType,
+    objectText: claimsForPersistence[i]?.objectText || "",
+    endorsementPolarity: claimsForPersistence[i]?.endorsementPolarity || null,
+    accountabilityEligible: claimsForPersistence[i]?.accountabilityEligible ?? null,
   }));
 
   logger.log(

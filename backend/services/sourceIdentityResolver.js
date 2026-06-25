@@ -35,6 +35,19 @@ function deriveDisplayName(domain) {
   return base ? base.charAt(0).toUpperCase() + base.slice(1) : null;
 }
 
+function repositoryIdentityForUrl(url, rootDomain) {
+  const host = String(rootDomain || "").toLowerCase();
+  if (host === "bvsalud.org" || host.endsWith(".bvsalud.org")) {
+    return {
+      name: "Biblioteca Virtual em Saúde",
+      sourceType: "reference",
+      sourceIdentityKind: "primary_document",
+      resolutionStatus: "matched_metadata",
+    };
+  }
+  return null;
+}
+
 // ── Lightweight page-meta fetch (JSON-LD + og:site_name) ─────────────────────
 const PAGE_FETCH_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
 const PAGE_FETCH_TIMEOUT_MS = 6000;
@@ -199,15 +212,24 @@ function makeBase(sourceUrl) {
 }
 
 // ── Cache read ────────────────────────────────────────────────────────────────
-async function checkCache(query, normalizedUrl, rootDomain) {
+async function checkCache(query, normalizedUrl, rootDomain, { allowDomainFallback = true } = {}) {
   try {
-    const rows = await query(
+    let rows = await query(
       `SELECT * FROM source_identity_cache
-       WHERE normalized_url = ? OR root_domain = ?
+       WHERE normalized_url = ?
        ORDER BY resolution_level DESC, last_checked_at DESC
        LIMIT 1`,
-      [normalizedUrl, rootDomain]
+      [normalizedUrl]
     );
+    if (!rows.length && allowDomainFallback) {
+      rows = await query(
+        `SELECT * FROM source_identity_cache
+         WHERE root_domain = ?
+         ORDER BY resolution_level DESC, last_checked_at DESC
+         LIMIT 1`,
+        [rootDomain]
+      );
+    }
     if (!rows.length) return null;
     const r = rows[0];
     const base = makeBase(r.source_url);
@@ -233,8 +255,17 @@ async function checkCache(query, normalizedUrl, rootDomain) {
 }
 
 // ── Publisher DB lookup ───────────────────────────────────────────────────────
-async function lookupPublisher(query, rootDomain, hintName) {
+async function lookupPublisher(query, rootDomain, hintName, { preferHintName = false } = {}) {
   try {
+    if (preferHintName && hintName) {
+      const byName = await query(
+        `SELECT publisher_id, publisher_name FROM publishers WHERE publisher_name = ? LIMIT 1`,
+        [hintName]
+      );
+      if (byName.length) return byName[0];
+      return null;
+    }
+
     // publisher_domains table (multi-domain support)
     const byDomain = await query(
       `SELECT p.publisher_id, p.publisher_name
@@ -363,6 +394,14 @@ export async function resolveSourceIdentity(sourceUrl, options = {}) {
     identity.resolutionLevel  = 1;
     identity.resolutionStatus = "domain_only";
     identity.sourceIdentityKind = "domain_fallback";
+    const repositoryIdentity = repositoryIdentityForUrl(normalizedUrl, rootDomain);
+    if (repositoryIdentity) {
+      identity.publisherName = repositoryIdentity.name;
+      identity.sourceType = repositoryIdentity.sourceType;
+      identity.sourceIdentityKind = repositoryIdentity.sourceIdentityKind;
+      identity.resolutionStatus = repositoryIdentity.resolutionStatus;
+      identity.resolutionLevel = 2;
+    }
 
     if (title)    identity.metadata.title  = title;
     if (author)   identity.metadata.author = author;
@@ -427,6 +466,9 @@ export async function resolveSourceIdentity(sourceUrl, options = {}) {
     if (hintName) {
       candidates.push({ source: "metadata", name: hintName, confidence: "medium" });
     }
+    if (repositoryIdentity && !candidates.some(c => c.name === repositoryIdentity.name)) {
+      candidates.push({ source: "repository", name: repositoryIdentity.name, confidence: "medium" });
+    }
     if (platform.isPlatform && platform.accountName) {
       candidates.push({ source: "platform_account", name: platform.accountName, confidence: "high" });
     }
@@ -440,7 +482,7 @@ export async function resolveSourceIdentity(sourceUrl, options = {}) {
     identity.candidates = candidates;
 
     // Best publisher name: page meta > hint > platform account > domain
-    identity.publisherName = candidates[0]?.name ?? domainName;
+    identity.publisherName = candidates[0]?.name ?? identity.publisherName ?? domainName;
 
     // ── No DB → return level 1-2 result ─────────────────────────────────────
     if (!query) {
@@ -450,16 +492,28 @@ export async function resolveSourceIdentity(sourceUrl, options = {}) {
 
     // ── Cache check ──────────────────────────────────────────────────────────
     if (!force) {
-      const cached = await checkCache(query, normalizedUrl, rootDomain);
+      const allowDomainFallback = !(platform.isPlatform && platform.accountName);
+      const cached = await checkCache(query, normalizedUrl, rootDomain, { allowDomainFallback });
       if (cached && cached.resolutionLevel >= identity.resolutionLevel) {
+        const cachedIsGenericPlatform =
+          platform.isPlatform &&
+          platform.accountName &&
+          String(cached.publisherName || "").toLowerCase() === String(platform.platformName || "").toLowerCase();
+        if (cachedIsGenericPlatform) {
+          // Keep resolving: exact platform-account URLs should not inherit the
+          // generic platform publisher's ratings.
+        } else {
         // Merge freshly-derived candidates into cached result (cache doesn't store them)
-        cached.candidates = candidates;
-        return cached;
+          cached.candidates = candidates;
+          return cached;
+        }
       }
     }
 
     // ── Level 3: DB publisher lookup ─────────────────────────────────────────
-    const dbMatch = await lookupPublisher(query, rootDomain, hintName);
+    const dbMatch = await lookupPublisher(query, rootDomain, hintName || identity.publisherName, {
+      preferHintName: platform.isPlatform && !!platform.accountName,
+    });
     if (dbMatch) {
       identity.publisherId      = dbMatch.publisher_id;
       identity.publisherName    = dbMatch.publisher_name;

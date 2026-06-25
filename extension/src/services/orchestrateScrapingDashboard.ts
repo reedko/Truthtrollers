@@ -2,7 +2,6 @@
 import {
   fetchPageContent,
   extractAuthors,
-  extractPublisher,
   extractReferences,
 } from "../services/extractMetaDataUtils";
 import {
@@ -189,9 +188,10 @@ export const orchestrateScraping = async (
       return false;
     });
 
+    // Publisher extraction is handled by the backend scrape pipeline.
     const publisherName = diffbotData.publisher
       ? { name: diffbotData.publisher.trim() }
-      : await extractPublisher($);
+      : null;
 
     const videoId = extractVideoIdFromUrl(url);
     let imageUrl = "";

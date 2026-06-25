@@ -4,14 +4,10 @@ import {
   Box,
   Card,
   CardBody,
-  Heading,
   Spinner,
   Center,
   Select,
   Text,
-  useColorMode,
-  Switch,
-  HStack,
   Button,
   Icon,
   useDisclosure,
@@ -26,27 +22,24 @@ import { ViewerScopeBadge } from "../components/ViewerScopeBadge";
 import { VerimeterModeToggle } from "../components/VerimeterModeToggle";
 import { useVerimeterMode } from "../contexts/VerimeterModeContext";
 import GeneratePublicReviewButton from "../components/reviewArticles/GeneratePublicReviewButton";
+import GraphControlBar, { GraphMetricPill } from "../components/GraphControlBar";
 import {
   updateScoresForContent,
   fetchContentScores,
-  fetchAIEvidenceLinks,
+  fetchClaimsAndLinkedReferencesForTask,
   fetchTask,
 } from "../services/useDashboardAPI";
 
 const WorkspacePage = () => {
   const { contentId: routeContentId } = useParams<{ contentId?: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { mode, setMode, aiWeight } = useVerimeterMode();
+  const { mode, aiWeight } = useVerimeterMode();
   const [verimeterScore, setVerimeterScore] = useState<number | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [linkFilter, setLinkFilterState] = useState<"all" | "user" | "ai">(() => {
-    const saved = localStorage.getItem("workspaceLinkFilter");
-    return saved === "user" || saved === "ai" || saved === "all" ? saved : "all";
-  });
   const [hasCheckedUserLinks, setHasCheckedUserLinks] = useState(false);
+  const [userLinkCount, setUserLinkCount] = useState<number | null>(null);
   const [bubbleStyle, setBubbleStyleState] = useState<boolean>(() => localStorage.getItem("workspaceBubbleStyle") === "true");
   const navigate = useNavigate();
-  const { colorMode } = useColorMode();
   const {
     isOpen: isSubmitRatingOpen,
     onOpen: onOpenSubmitRating,
@@ -59,28 +52,14 @@ const WorkspacePage = () => {
   const selectedRedirect = useTaskStore((s) => s.selectedRedirect);
   const viewerId = useTaskStore((s) => s.viewingUserId);
   const viewScope = useTaskStore((s) => s.viewScope);
+  const linkFilter = useTaskStore((s) => s.graphLinkFilter);
   const setViewingUserId = useTaskStore((s) => s.setViewingUserId);
   const setViewScope = useTaskStore((s) => s.setViewScope);
-
-  const setPersistentLinkFilter = (next: "all" | "user" | "ai") => {
-    setLinkFilterState(next);
-    localStorage.setItem("workspaceLinkFilter", next);
-    if (next === "user") setMode("user");
-    if (next === "ai") setMode("ai");
-    if (next === "all") setMode("combined");
-  };
 
   const setPersistentBubbleStyle = (next: boolean) => {
     setBubbleStyleState(next);
     localStorage.setItem("workspaceBubbleStyle", String(next));
   };
-
-  useEffect(() => {
-    if (linkFilter === "user" && mode !== "user") setMode("user");
-    if (linkFilter === "ai" && mode !== "ai") setMode("ai");
-    if (linkFilter === "all" && mode !== "combined") setMode("combined");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Refs to prevent circular updates between URL params and store
   const isInitialMount = useRef(true);
@@ -186,17 +165,19 @@ const WorkspacePage = () => {
 
   // Check for user-created links and default filter to 'user' if they exist
   useEffect(() => {
+    setHasCheckedUserLinks(false);
+    setUserLinkCount(null);
+  }, [taskId, viewerId, viewScope]);
+
+  useEffect(() => {
     if (taskId && !hasCheckedUserLinks) {
-      fetchAIEvidenceLinks(taskId).then((links) => {
-        const hasUserLinks = links.some((link) => !link.created_by_ai);
-        const savedFilter = localStorage.getItem("workspaceLinkFilter");
-        if (hasUserLinks && !savedFilter) {
-          setPersistentLinkFilter("user");
-        }
+      fetchClaimsAndLinkedReferencesForTask(taskId, viewerId, viewScope).then((links) => {
+        const count = links.length;
+        setUserLinkCount(count);
         setHasCheckedUserLinks(true);
       });
     }
-  }, [taskId, hasCheckedUserLinks]);
+  }, [taskId, viewerId, viewScope, hasCheckedUserLinks]);
 
   // Try to restore selectedTask from content list if missing
   useEffect(() => {
@@ -271,70 +252,44 @@ const WorkspacePage = () => {
       <StickyTitleBar alwaysVisible={true} />
 
       <Box w="100%">
-        <Card mb={6} mt={2} maxW="1400px" mx="auto">
+        <Card mb={6} mt={2} w="100%">
           <CardBody>
             <UnifiedHeader refreshKey={refreshKey} />
           </CardBody>
         </Card>
 
-        {/* Control Bar */}
-        <Box
-          className="mr-card mr-card-purple"
-          bg="transparent"
-          mb={2}
-          display="flex"
-          gap={16}
-          alignItems="center"
-          justifyContent="space-between"
-          p={4}
-          position="relative"
-          zIndex={1}
-          borderLeftRadius="24px"
-          overflow="visible"
-          sx={{
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              left: 0,
-              top: 0,
-              width: "20px",
-              height: "100%",
-              background:
-                "linear-gradient(90deg, rgba(113, 219, 255, 0.3) 0%, transparent 100%)",
-              borderLeftRadius: "24px",
-              pointerEvents: "none",
-              zIndex: -1,
-            },
-          }}
+        <GraphControlBar
+          title="Workspace"
+          metrics={
+            <>
+              <GraphMetricPill
+                tone="cyan"
+                label="Score"
+                value={typeof verimeterScore === "number" ? Math.round(verimeterScore) : "N/A"}
+              />
+              <GraphMetricPill tone="purple" label="Mode" value={mode.toUpperCase()} />
+              <GraphMetricPill
+                tone="blue"
+                label="Links"
+                value={linkFilter === "all" ? "All" : linkFilter === "user" ? "User" : "AI"}
+              />
+              <GraphMetricPill tone="green" label="User Links" value={userLinkCount ?? "-"} />
+            </>
+          }
         >
-          {/* Workspace Label Box */}
-          <Box>
-            <Heading size="md" className="mr-text-primary">
-              Workspace
-            </Heading>
-          </Box>
-          {/* Link Filter */}
           <Box
             display="flex"
             alignItems="center"
             gap={2}
-            bg={
-              colorMode === "dark"
-                ? "rgba(15, 23, 42, 0.6)"
-                : "rgba(255, 255, 255, 0.6)"
-            }
+            bg="rgba(15, 23, 42, 0.6)"
             px={3}
             py={2}
             borderRadius="full"
-            border="1px solid"
-            borderColor={
-              colorMode === "dark"
-                ? "rgba(113, 219, 255, 0.2)"
-                : "rgba(71, 85, 105, 0.2)"
-            }
+            border="1px solid rgba(113, 219, 255, 0.2)"
             boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.15)"
             position="relative"
             zIndex={500}
+            flexShrink={0}
           >
             <Text
               className="mr-text-muted"
@@ -343,75 +298,23 @@ const WorkspacePage = () => {
               letterSpacing="1px"
               whiteSpace="nowrap"
             >
-              Link Filter
+              Bubble
             </Text>
             <Select
               size="sm"
-              width="150px"
-              value={linkFilter}
-              onChange={(e) =>
-                setPersistentLinkFilter(e.target.value as "all" | "user" | "ai")
-              }
-              bg={colorMode === "dark" ? "rgba(15, 23, 42, 0.9)" : "white"}
-              border="1px solid"
-              borderColor={
-                colorMode === "dark"
-                  ? "var(--mr-blue-border)"
-                  : "rgba(71, 85, 105, 0.3)"
-              }
-              color={
-                colorMode === "dark" ? "var(--mr-text-primary)" : "gray.800"
-              }
+              width="92px"
+              value={bubbleStyle ? "on" : "off"}
+              onChange={(e) => setPersistentBubbleStyle(e.target.value === "on")}
+              bg="rgba(15, 23, 42, 0.9)"
+              border="1px solid var(--mr-blue-border)"
+              color="var(--mr-text-primary)"
               borderRadius="full"
               boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.4)"
-              _hover={{
-                borderColor:
-                  colorMode === "dark"
-                    ? "var(--mr-blue)"
-                    : "rgba(71, 85, 105, 0.5)",
-              }}
             >
-              <option value="all">All Links</option>
-              <option value="user">User Links</option>
-              <option value="ai">AI Links</option>
+              <option value="on">On</option>
+              <option value="off">Off</option>
             </Select>
           </Box>
-
-          {/* 3D Bubble Toggle */}
-          <HStack
-            spacing={2}
-            bg={
-              colorMode === "dark"
-                ? "rgba(15, 23, 42, 0.6)"
-                : "rgba(255, 255, 255, 0.6)"
-            }
-            px={3}
-            py={2}
-            borderRadius="full"
-            border="1px solid"
-            borderColor={
-              colorMode === "dark"
-                ? "rgba(113, 219, 255, 0.2)"
-                : "rgba(71, 85, 105, 0.2)"
-            }
-            boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.15)"
-          >
-            <Text
-              className="mr-text-muted"
-              fontSize="xs"
-              textTransform="uppercase"
-              letterSpacing="1px"
-              whiteSpace="nowrap"
-            >
-              3D Bubble
-            </Text>
-            <Switch
-              isChecked={bubbleStyle}
-              onChange={(e) => setPersistentBubbleStyle(e.target.checked)}
-              colorScheme="purple"
-              size="sm"
-            />
-          </HStack>
 
           {/* Submit Rating Button */}
           <Button
@@ -437,7 +340,7 @@ const WorkspacePage = () => {
           <Box position="relative" zIndex={500}>
             <ViewerScopeBadge />
           </Box>
-        </Box>
+        </GraphControlBar>
 
         <Workspace
           contentId={taskId}

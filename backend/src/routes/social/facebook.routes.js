@@ -6,7 +6,7 @@
 import { Router } from "express";
 import logger from "../../utils/logger.js";
 import { scrapeFacebookPost, cleanFacebookPostText } from "../../scrapers/facebookScraper.js";
-import { parseFacebookMeta } from "../../utils/parseSocialPublisher.js";
+import { inferFacebookChannelFromText, parseFacebookMeta } from "../../utils/parseSocialPublisher.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -114,6 +114,10 @@ export default function createFacebookRoutes({ query }) {
 
         // Derive distribution-layer metadata from the Facebook post URL
         const fbMeta = parseFacebookMeta(url);
+        const inferredChannel = inferFacebookChannelFromText(result.postText);
+        const fbChannel = inferredChannel ||
+          (!/^facebook group \d+$/i.test(fbMeta.channel || "") ? fbMeta.channel : null) ||
+          fbMeta.publisherLabel;
 
         // Try to extract linked article domain from post text if extension didn't find it
         let resolvedLinkedPublisher = null;
@@ -131,7 +135,7 @@ export default function createFacebookRoutes({ query }) {
 
         // Prefer the real publisher domain from the shared article (sent by extension or
         // extracted from post text), then fall back to "Facebook" — never use the group slug.
-        const resolvedSource = media_source || resolvedLinkedPublisher || fbMeta.publisherLabel;
+        const resolvedSource = fbChannel || fbMeta.publisherLabel;
 
         contentId = await createContentInternal(query, {
           content_name: result.postText.substring(0, 100) || "Facebook Post",
@@ -139,9 +143,9 @@ export default function createFacebookRoutes({ query }) {
           media_source: resolvedSource,
           topic: "social_media",
           platform: "facebook",
-          distribution_channel: fbMeta.channel,
+          distribution_channel: fbChannel || fbMeta.channel,
           linked_url: linked_url || null,
-          linked_publisher: linked_url ? resolvedSource : (resolvedLinkedPublisher || null),
+          linked_publisher: linked_url ? (media_source || resolvedLinkedPublisher || null) : (resolvedLinkedPublisher || null),
           subtopics: ["facebook"],
           content_type: "task",
           thumbnail: result.images?.[0] || null,
@@ -203,6 +207,7 @@ export default function createFacebookRoutes({ query }) {
               await runEvidenceEngine({
                 taskContentId: contentId,
                 claimIds,
+                claims: taskClaims,
                 readableText: result.postText,
               });
 

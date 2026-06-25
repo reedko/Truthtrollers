@@ -209,6 +209,11 @@ async function fetchManualLinks(query, contentId, userId = null, targetClaimId =
        target_claim.claim_text AS case_claim_text,
        cl.source_claim_id,
        source_claim.claim_text AS source_claim_text,
+       target_cc.relationship_type AS target_relationship_type,
+       target_cc.object_claim_text,
+       target_cc.article_stance,
+       target_cc.argument_function,
+       target_cc.score_transform,
        cl.relationship,
        cl.support_level,
        cl.user_id,
@@ -247,8 +252,15 @@ async function fetchManualLinks(query, contentId, userId = null, targetClaimId =
        AND COALESCE(cl.created_by_ai, 0) = 0
        AND cl.support_level IS NOT NULL
        AND cl.support_level != 0
+       AND COALESCE(target_cc.score_transform, 'normal') NOT IN ('none', 'review')
+       AND (
+         COALESCE(target_cc.relationship_type, '') <> 'provenance'
+         OR COALESCE(target_cc.score_transform, '') IN ('normal', 'invert')
+       )
      GROUP BY
        cl.claim_link_id, cl.target_claim_id, target_claim.claim_text,
+       target_cc.relationship_type, target_cc.object_claim_text,
+       target_cc.article_stance, target_cc.argument_function, target_cc.score_transform,
        cl.source_claim_id, source_claim.claim_text, cl.relationship,
        cl.support_level, cl.user_id, source_content.content_id,
        source_p.publisher_id, source_p.publisher_name
@@ -258,7 +270,9 @@ async function fetchManualLinks(query, contentId, userId = null, targetClaimId =
 }
 
 async function explainLink(query, link, policy) {
-  const supportLevel = clamp(Number(link.support_level) || 0, -1, 1);
+  const rawSupportLevel = clamp(Number(link.support_level) || 0, -1, 1);
+  const scoreTransform = link.score_transform || "normal";
+  const supportLevel = scoreTransform === "invert" ? -rawSupportLevel : rawSupportLevel;
   const factors = [];
 
   const sourceCrest = policy.components.source_crest.enabled
@@ -285,7 +299,9 @@ async function explainLink(query, link, policy) {
   const weight = factors.reduce((product, factor) => product * (Number(factor.factor) || 1), 1);
   return {
     ...link,
+    raw_support_level: rawSupportLevel,
     support_level: supportLevel,
+    article_score_transform: scoreTransform,
     weight,
     weighted_score: supportLevel * weight,
     factors,

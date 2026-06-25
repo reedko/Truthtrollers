@@ -68,10 +68,32 @@ interface PublisherProfile {
   profile_url?: string;
 }
 
+interface ExternalSignal {
+  provider: string;
+  signal_type: string;
+  admiralty_effect_type: "contextual" | "direct" | "provenance" | "cap" | "downgrade" | string;
+  normalized_score?: number | null;
+  reliability_bucket?: string | null;
+  confidence_delta?: number | null;
+  reliability_delta?: number | null;
+  cap?: string | null;
+  cap_reason?: string | null;
+  flags?: string | string[] | null;
+  matched_name?: string | null;
+  matched_domain?: string | null;
+  match_confidence?: number | null;
+  evidence_url?: string | null;
+  explanation?: string | null;
+  retrieved_at?: string | null;
+  error_status?: string | null;
+}
+
 interface EnrichmentData {
   publisher: { publisher_id: number; publisher_name: string; domain?: string; description?: string };
   ratings: PublisherRating[];
   profiles: PublisherProfile[];
+  externalSignals?: ExternalSignal[];
+  admiraltyCode?: string;
 }
 
 interface EnrichRunResult {
@@ -79,6 +101,33 @@ interface EnrichRunResult {
   status?: string;
   reason?: string;
   results?: Record<string, { status: string }>;
+}
+
+const PROVIDER_KEY: Record<string, string> = {
+  "Ad Fontes": "adfontes",
+  AllSides: "allsides",
+  Crossref: "crossref",
+  GDELT: "gdelt",
+  "IRS TEOS": "irs_teos",
+  MBFC: "mbfc",
+  NewsGuard: "newsguard",
+  OpenAlex: "openalex",
+  OpenCorporates: "opencorporates",
+  RDAP: "rdap",
+  "SEC EDGAR": "sec_edgar",
+  SCImago: "scimago",
+  Wayback: "wayback",
+  Wikidata: "wikidata",
+  Wikipedia: "wikipedia",
+};
+
+function isGenericSocialPublisherName(value?: string | null) {
+  return /^(facebook|facebook\.com|twitter\/x|x|x\.com|instagram|instagram\.com|tiktok|tiktok\.com)$/i
+    .test(String(value || "").trim());
+}
+
+function isNumericFacebookGroupPlaceholder(value?: string | null) {
+  return /^facebook group \d+$/i.test(String(value || "").trim());
 }
 
 export interface SourceCandidate {
@@ -138,7 +187,7 @@ export interface SourceDetailModalProps {
   sourceType?: SourceType;
   reliability?: Reliability;
   admiraltyCode?: string; // pre-computed Admiralty code from the ref list (e.g. "F6")
-  onPublisherLinked?: (publisherId: number, publisherName: string) => void;
+  onPublisherLinked?: (publisherId: number, publisherName: string, admiraltyCode?: string | null) => void;
 }
 
 // ── Veracity score bar (0–100) ────────────────────────────────────────────────
@@ -266,7 +315,18 @@ const ENRICHMENT_PROVIDERS = [
   { key: "AllSides",  label: "AllSides",    desc: "Media bias rating" },
   { key: "Ad Fontes", label: "Ad Fontes",   desc: "Reliability & bias" },
   { key: "Wikipedia", label: "Wikipedia",   desc: "Publisher profile" },
+  { key: "Wikidata",  label: "Wikidata",    desc: "Entity identity and relationships" },
   { key: "SCImago",   label: "SCImago",     desc: "Journal impact ranking (academic)" },
+  { key: "MBFC",      label: "MBFC",        desc: "Factuality / credibility where seeded", requiresConfig: false },
+  { key: "NewsGuard", label: "NewsGuard",   desc: "Licensed reliability score if configured", requiresConfig: true },
+  { key: "Crossref",  label: "Crossref",    desc: "DOI / ISSN / journal metadata", requiresConfig: false },
+  { key: "OpenAlex",  label: "OpenAlex",    desc: "Scholarly source/work provenance", requiresConfig: false },
+  { key: "Wayback",   label: "Wayback",     desc: "Domain archive footprint", requiresConfig: false },
+  { key: "RDAP",      label: "RDAP",        desc: "Domain registration age", requiresConfig: false },
+  { key: "OpenCorporates", label: "OpenCorporates", desc: "Legal entity identity if configured", requiresConfig: true },
+  { key: "IRS TEOS",  label: "IRS TEOS",    desc: "Nonprofit verification if configured", requiresConfig: true },
+  { key: "SEC EDGAR", label: "SEC EDGAR",   desc: "Public issuer / regulated entity checks", requiresConfig: true },
+  { key: "GDELT",     label: "GDELT",       desc: "Independent footprint", requiresConfig: false },
 ];
 
 const CREDIBILITY_PROVIDERS = [
@@ -467,6 +527,10 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
   const applyAdmiraltyCode = (code: string) => {
     setLiveAdmiraltyCode(code);
   };
+  const onPublisherLinkedRef = useRef(onPublisherLinked);
+  useEffect(() => {
+    onPublisherLinkedRef.current = onPublisherLinked;
+  }, [onPublisherLinked]);
 
   // Memoized so the object identity is stable across renders — prevents every useCallback
   // that lists authHeaders as a dep from being recreated on every render.
@@ -475,8 +539,26 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
     [token]
   );
 
-  // Reset when a different publisher is opened
-  useEffect(() => { setResolvedId(publisherId); setCustomName(publisherName); }, [publisherId, publisherName]);
+  // Reset all source-scoped state when a different source is opened. If the new
+  // source has no publisher id, leaving the prior enrichment in place is worse
+  // than showing an empty state.
+  useEffect(() => {
+    setResolvedId(publisherId);
+    setCustomName(publisherName);
+    setEnrichment(null);
+    setEnrichResult(null);
+    setEnrichError(null);
+    setLinkError(null);
+    setSourceIdentity(null);
+    setLineage(null);
+    setDomainCheckResult(null);
+    setLinkedPublisher(null);
+    setLinkedUrl(null);
+    setContentPlatform(null);
+    setContentChannel(null);
+    setLiveAdmiraltyCode(null);
+    setScrapeStatus(null);
+  }, [publisherId, publisherName, sourceUrl, contentId]);
 
   // Load source identity when we have a URL
   const loadSourceIdentity = useCallback((force = false) => {
@@ -487,6 +569,56 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
       .then((d: SourceIdentity) => {
         setSourceIdentity(d);
+        const platformAccount = d.candidates?.find((candidate) =>
+          candidate.source === "platform_account" &&
+          candidate.confidence === "high" &&
+          candidate.name
+        );
+        const preferredPlatformName =
+          contentChannel && !isNumericFacebookGroupPlaceholder(contentChannel)
+            ? contentChannel
+            : platformAccount?.name;
+        const currentName = enrichment?.publisher.publisher_name ?? publisherName;
+        const shouldReplaceGenericPlatform =
+          !!preferredPlatformName &&
+          !isNumericFacebookGroupPlaceholder(preferredPlatformName) &&
+          !!contentId &&
+          /facebook\.com|twitter\.com|x\.com|instagram\.com|tiktok\.com/i.test(sourceUrl) &&
+          isGenericSocialPublisherName(currentName);
+
+        if (shouldReplaceGenericPlatform) {
+          setCustomName(preferredPlatformName);
+          setResolvedId(undefined);
+          setEnrichment(null);
+          setLiveAdmiraltyCode(null);
+          setEnrichRunning(true);
+          fetch(`${API_BASE_URL}/api/publishers/enrich-and-link`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json", ...authHeaders },
+            body: JSON.stringify({
+              name: preferredPlatformName,
+              contentId,
+              sourceUrl,
+              force: true,
+            }),
+          })
+            .then(r => r.ok ? r.json() : Promise.reject(r.status))
+            .then((linkData) => {
+              if (linkData?.publisherId) {
+                setResolvedId(linkData.publisherId);
+                const newCode = linkData.enrichResult?.admiraltyUpdates?.[contentId];
+                onPublisherLinked?.(linkData.publisherId, preferredPlatformName, newCode ?? null);
+                loadEnrichment(linkData.publisherId);
+                if (newCode) applyAdmiraltyCode(newCode);
+              }
+            })
+            .catch(() => {
+              setShowRelink(true);
+            })
+            .finally(() => setEnrichRunning(false));
+          return;
+        }
         // Pre-fill from best candidate if the user hasn't manually edited.
         // Don't replace a proper DB name with a low-confidence domain guess.
         if (d.candidates?.length) {
@@ -505,7 +637,7 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
       })
       .catch(() => {})
       .finally(() => setIdentityLoading(false));
-  }, [sourceUrl, resolvedId, publisherName]);
+  }, [sourceUrl, resolvedId, publisherName, enrichment, contentId, contentChannel, authHeaders, onPublisherLinked]);
 
   // Fire source-identity detection once when the modal opens (not on every resolvedId change —
   // that would create a loop because loadSourceIdentity itself updates resolvedId).
@@ -583,10 +715,6 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
           setResolvedId(d.publisherId);
           loadEnrichment(d.publisherId);
         }
-        // If the backend fetch is blocked, immediately fall back to the extension scrape path.
-        if (d.pageBlocked && contentId) {
-          scrapeForPublisher(sourceUrl ?? undefined);
-        }
       })
       .catch(() => {})
       .finally(() => setDomainCheckLoading(false));
@@ -620,14 +748,14 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
       const { scrape_job_id } = jobData;
       if (!scrape_job_id) throw new Error("No scrape_job_id in response — check backend logs");
 
-      setScrapeStatus(`Job #${scrape_job_id} queued — extension will open the URL and scrape it…`);
-      console.log(`[scrapeForPublisher] job #${scrape_job_id} created, polling every 4s up to 90s`);
+      setScrapeStatus(`Job #${scrape_job_id} queued — waiting for extension scrape…`);
+      console.log(`[scrapeForPublisher] job #${scrape_job_id} created, polling every 10s up to 90s`);
 
       // Poll up to 90 s (extension polls every 10 s, so allow ~3 cycles + processing time)
       const deadline = Date.now() + 90_000;
       let lastStatus = "";
       while (Date.now() < deadline && isMounted.current) {
-        await new Promise(r => setTimeout(r, 4000));
+        await new Promise(r => setTimeout(r, 10000));
         const statusRes = await fetch(`${API_BASE_URL}/api/scrape-jobs/${scrape_job_id}/status`, {
           credentials: "include", headers: authHeaders,
         });
@@ -676,9 +804,9 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
               console.log("[scrapeForPublisher] enrich-and-link result:", linkData);
               if (linkData.publisherId) {
                 setResolvedId(linkData.publisherId);
-                onPublisherLinked?.(linkData.publisherId, scrapedName);
-                loadEnrichment(linkData.publisherId);
                 const newCode = linkData.enrichResult?.admiraltyUpdates?.[contentId];
+                onPublisherLinked?.(linkData.publisherId, scrapedName, newCode ?? pubData?.admiralty_code ?? null);
+                loadEnrichment(linkData.publisherId);
                 if (newCode) applyAdmiraltyCode(newCode);
               }
             }
@@ -689,8 +817,68 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
           break;
         }
         if (status === "failed") {
-          setScrapeStatus("Scrape failed — try reloading the tab and retrying.");
+          const errorMessage = String(statusData?.error_message || "");
           console.error("[scrapeForPublisher] job failed", statusData);
+
+          if (/No tab found for URL/i.test(errorMessage) && scrapeUrl) {
+            setScrapeStatus("Tab not found — scraping directly from backend…");
+            try {
+              const directRes = await fetch(`${API_BASE_URL}/api/scrape-reference`, {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json", ...authHeaders },
+                body: JSON.stringify({
+                  url: scrapeUrl,
+                  taskContentId: contentId,
+                  force: true,
+                }),
+              });
+              const directData = await directRes.json().catch(() => null);
+              if (!directRes.ok || !directData?.success) {
+                throw new Error(directData?.error || `direct scrape failed: ${directRes.status}`);
+              }
+
+              const directContentId = directData.contentId || contentId;
+              const directPubRes = await fetch(`${API_BASE_URL}/api/publishers/for-content/${directContentId}`, {
+                credentials: "include",
+                headers: authHeaders,
+              });
+              const directPubData = directPubRes.ok ? await directPubRes.json() : null;
+              const directPublisherId = directPubData?.publisher_id;
+              const directPublisherName = directPubData?.publisher_name;
+              if (directPublisherName) {
+                const linkRes = await fetch(`${API_BASE_URL}/api/publishers/enrich-and-link`, {
+                  method: "POST",
+                  credentials: "include",
+                  headers: { "Content-Type": "application/json", ...authHeaders },
+                  body: JSON.stringify({
+                    name: directPublisherName,
+                    contentId,
+                    sourceUrl: sourceUrl ?? scrapeUrl,
+                    force: true,
+                  }),
+                });
+                const linkData = linkRes.ok ? await linkRes.json().catch(() => null) : null;
+                const linkedId = linkData?.publisherId ?? directPublisherId;
+                if (linkedId) {
+                  setResolvedId(linkedId);
+                  const newCode = linkData?.enrichResult?.admiraltyUpdates?.[contentId];
+                  onPublisherLinked?.(linkedId, directPublisherName, newCode ?? directPubData?.admiralty_code ?? null);
+                  loadEnrichment(linkedId);
+                  if (newCode) applyAdmiraltyCode(newCode);
+                }
+              }
+              loadSourceIdentity(true);
+              setScrapeStatus(null);
+              break;
+            } catch (fallbackErr: any) {
+              console.error("[scrapeForPublisher] direct backend fallback failed:", fallbackErr);
+              setScrapeStatus(`Scrape failed — ${fallbackErr?.message || "direct fallback failed"}`);
+              break;
+            }
+          }
+
+          setScrapeStatus("Scrape failed — try reloading the tab and retrying.");
           break;
         }
         setScrapeStatus(`Job #${scrape_job_id} ${status}… (keep the tab open)`);
@@ -709,14 +897,25 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
 
   const loadEnrichment = useCallback((overrideId?: number) => {
     const id = overrideId ?? resolvedId;
-    if (!id) return;
+    if (!id) {
+      setEnrichment(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    fetch(`${API_BASE_URL}/api/publishers/${id}/enrichment`, { credentials: "include", headers: authHeaders })
+    const params = contentId ? `?contentId=${encodeURIComponent(String(contentId))}` : "";
+    fetch(`${API_BASE_URL}/api/publishers/${id}/enrichment${params}`, { credentials: "include", headers: authHeaders })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
-      .then((d: EnrichmentData) => setEnrichment(d))
+      .then((d: EnrichmentData) => {
+        setEnrichment(d);
+        if (d.admiraltyCode) {
+          applyAdmiraltyCode(d.admiraltyCode);
+          onPublisherLinkedRef.current?.(id, d.publisher.publisher_name, d.admiraltyCode);
+        }
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [resolvedId]);
+  }, [resolvedId, contentId, authHeaders]);
 
   useEffect(() => {
     if (isOpen) {
@@ -762,7 +961,7 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
       if (contentId && enrichResult?.admiraltyUpdates?.[contentId]) {
         applyAdmiraltyCode(enrichResult.admiraltyUpdates[contentId]);
       }
-      onPublisherLinked?.(newId, nameToLink);
+      onPublisherLinked?.(newId, nameToLink, enrichResult?.admiraltyUpdates?.[contentId] ?? enrichResult?.admiraltyCode ?? null);
       loadEnrichment(newId);
     } catch (e: any) {
       const msg = e?.message ?? "Failed to enrich & link publisher";
@@ -805,6 +1004,9 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
       // update or from the publisher-level evaluation (whichever the server provides).
       const newCode = result?.admiraltyUpdates?.[contentId ?? ""] ?? result?.admiraltyCode;
       if (newCode) applyAdmiraltyCode(newCode);
+      if (newCode && targetId) {
+        onPublisherLinked?.(targetId, enrichment?.publisher.publisher_name ?? publisherName, newCode);
+      }
       loadEnrichment(targetId); // reload ratings (also refreshes enrichment.admiraltyCode)
     } catch (err: any) {
       setEnrichError(err?.message ?? "Enrichment failed");
@@ -815,31 +1017,102 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
 
   // ── Derived values ────────────────────────────────────────────────────────
   const firstProfile  = enrichment?.profiles[0];
+  const bestVeracityRating = useMemo(() => {
+    const scored = enrichment?.ratings
+      ?.filter((rating) => rating.veracity_score != null)
+      .sort((a, b) => Number(b.veracity_score) - Number(a.veracity_score));
+    return scored?.[0] ?? null;
+  }, [enrichment]);
   const liveProfile   = useMemo(() => normalizeSourceProfile({
     publisher_name: enrichment?.publisher.publisher_name ?? publisherName,
-    rating_label:   enrichment?.ratings[0]?.rating_label,
-    rating_type:    firstProfile?.source_type ?? enrichment?.ratings[0]?.rating_type,
-    veracity_score: enrichment?.ratings.find(r => r.veracity_score != null)?.veracity_score,
-  }), [enrichment, publisherName, firstProfile]);
+    rating_label:   bestVeracityRating?.rating_label ?? enrichment?.ratings[0]?.rating_label,
+    rating_type:    firstProfile?.source_type ?? bestVeracityRating?.rating_type ?? enrichment?.ratings[0]?.rating_type,
+    veracity_score: bestVeracityRating?.veracity_score,
+  }), [enrichment, publisherName, firstProfile, bestVeracityRating]);
   const displayType:        SourceType  = sourceType  ?? liveProfile.sourceType;
   const displayReliability: Reliability = reliability ?? liveProfile.reliability;
+  const detectedPlatformAccount = sourceIdentity?.candidates?.find((candidate) =>
+    candidate.source === "platform_account" &&
+    candidate.confidence === "high" &&
+    candidate.name
+  );
+  const preferredDisplayedPlatformAccount =
+    contentChannel && !isNumericFacebookGroupPlaceholder(contentChannel)
+      ? contentChannel
+      : detectedPlatformAccount?.name;
+  const suppressGenericPlatformRating =
+    !!preferredDisplayedPlatformAccount &&
+    sourceUrl != null &&
+    /facebook\.com|twitter\.com|x\.com|instagram\.com|tiktok\.com/i.test(sourceUrl) &&
+    isGenericSocialPublisherName(enrichment?.publisher.publisher_name ?? publisherName);
+  const displayedPublisherName = suppressGenericPlatformRating
+    ? preferredDisplayedPlatformAccount
+    : (enrichment?.publisher.publisher_name ?? sourceIdentity?.publisherName ?? publisherName);
+  const displayedReliability: Reliability = suppressGenericPlatformRating ? "unchecked" : displayReliability;
+  const displayedType: SourceType = suppressGenericPlatformRating ? (sourceIdentity?.sourceType as SourceType) || "social" : displayType;
+  const displayedAdmiraltyCode = suppressGenericPlatformRating
+    ? null
+    : (liveAdmiraltyCode ?? (enrichment as any)?.admiraltyCode ?? liveProfile.admiraltyCode ?? admiraltyCode);
 
-  const allSides   = enrichment?.ratings.find(r => r.source?.toLowerCase().includes("allsides"));
-  const adFontes   = enrichment?.ratings.find(r => r.source?.toLowerCase().includes("ad fontes") || r.source?.toLowerCase().includes("adfont"));
-  const mbfc       = enrichment?.ratings.find(r => r.source?.toLowerCase().includes("mbfc") || r.source?.toLowerCase().includes("media bias"));
-  const otherRatings = enrichment?.ratings.filter(r => r !== allSides && r !== adFontes && r !== mbfc && r.veracity_score != null) ?? [];
+  const visibleRatings = suppressGenericPlatformRating ? [] : (enrichment?.ratings ?? []);
+  const allSides   = visibleRatings.find(r => r.source?.toLowerCase().includes("allsides"));
+  const adFontes   = visibleRatings.find(r => r.source?.toLowerCase().includes("ad fontes") || r.source?.toLowerCase().includes("adfont"));
+  const mbfc       = visibleRatings.find(r => r.source?.toLowerCase().includes("mbfc") || r.source?.toLowerCase().includes("media bias"));
+  const otherRatings = visibleRatings.filter(r => r !== allSides && r !== adFontes && r !== mbfc && r.veracity_score != null) ?? [];
   const hasRatings   = !!(allSides || adFontes || mbfc || otherRatings.length);
+  const externalSignals = suppressGenericPlatformRating ? [] : (enrichment?.externalSignals ?? []);
+  const latestSignalFor = (labelOrKey: string) => {
+    const key = PROVIDER_KEY[labelOrKey] || labelOrKey.toLowerCase().replace(/\s+/g, "_");
+    return externalSignals.find((signal) => String(signal.provider || "").toLowerCase() === key);
+  };
+  const parseFlags = (flags: ExternalSignal["flags"]) => {
+    if (Array.isArray(flags)) return flags;
+    if (!flags) return [];
+    try {
+      const parsed = JSON.parse(String(flags));
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [String(flags)];
+    }
+  };
+  const signalStatus = (signal?: ExternalSignal | null, provider?: { requiresConfig?: boolean }) => {
+    if (!signal) return { label: "not run", color: "var(--mr-text-muted)", enabled: true };
+    if (signal.error_status === "missing_config" && provider?.requiresConfig === false) {
+      return { label: "needs rerun", color: "#F6AD55", enabled: true };
+    }
+    if (signal.error_status === "missing_config") return { label: "not configured", color: "#A0AEC0", enabled: false };
+    if (signal.error_status === "not_implemented") return { label: "not implemented", color: "#A0AEC0", enabled: false };
+    if (signal.error_status === "no_match") return { label: "no match", color: "#F6AD55", enabled: true };
+    if (signal.error_status || parseFlags(signal.flags).some((flag) => String(flag).startsWith("provider_"))) {
+      return { label: signal.error_status || "attempted", color: "#F6AD55", enabled: true };
+    }
+    if (signal.normalized_score != null) return { label: `${signal.admiralty_effect_type} ${Math.round(Number(signal.normalized_score))}`, color: "#48BB78", enabled: true };
+    return { label: signal.admiralty_effect_type || "stored", color: "#48BB78", enabled: true };
+  };
+  const signalSummary = (signal?: ExternalSignal | null) => {
+    if (!signal) return "No recent provider result stored yet.";
+    const bits = [
+      signal.reliability_bucket ? `bucket ${signal.reliability_bucket}` : null,
+      signal.cap ? `cap ${signal.cap}` : null,
+      signal.matched_name ? `match ${signal.matched_name}` : null,
+      signal.matched_domain ? signal.matched_domain : null,
+      signal.explanation,
+    ].filter(Boolean);
+    return bits.join(" · ") || signal.error_status || "Provider attempted.";
+  };
 
   const reliabilityScheme = (r: Reliability) =>
     r === "high" ? "green" : r === "medium" ? "blue" : r === "mixed" ? "yellow" : r === "low" ? "orange" : r === "flagged" ? "red" : "gray";
 
   const providerDot = (key: string) => {
+    const signal = latestSignalFor(key);
+    if (signal) return signalStatus(signal).color;
     if (enrichRunning) return "#f6ad55";
     const s = enrichResult?.results?.[key]?.status;
     if (s === "found")     return "#48bb78";
     if (s === "skipped")   return "var(--mr-blue)";
     if (s === "not_found" || s === "error") return "#fc8181";
-    return enrichment?.ratings.some(r => r.source?.toLowerCase().includes(key.toLowerCase())) ? "#48bb78" : "var(--mr-text-muted)";
+    return visibleRatings.some(r => r.source?.toLowerCase().includes(key.toLowerCase())) ? "#48bb78" : "var(--mr-text-muted)";
   };
 
   const biasScheme = (label?: string) => {
@@ -872,19 +1145,19 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
           {/* ── Header ── */}
           <ModalHeader pb={2} pt={5} position="relative" zIndex={1}>
             <HStack spacing={3}>
-              <SourceCrest publisherName={enrichment?.publisher.publisher_name ?? publisherName}
-                sourceType={displayType} reliability={displayReliability} score={liveProfile.score}
-                admiraltyCode={liveAdmiraltyCode ?? (enrichment as any)?.admiraltyCode ?? liveProfile.admiraltyCode ?? admiraltyCode}
+              <SourceCrest publisherName={displayedPublisherName ?? publisherName}
+                sourceType={displayedType} reliability={displayedReliability} score={suppressGenericPlatformRating ? undefined : liveProfile.score}
+                admiraltyCode={displayedAdmiraltyCode ?? undefined}
                 size="lg" />
               <VStack align="start" spacing={0} flex={1} minW={0}>
                 <Text className="mr-heading" fontSize="md" letterSpacing="0.06em" noOfLines={2}>
-                  {enrichment?.publisher.publisher_name ?? sourceIdentity?.publisherName ?? publisherName}
+                  {displayedPublisherName}
                 </Text>
                 <HStack spacing={1} mt="3px" flexWrap="wrap">
                   <Badge fontSize="2xs" bg="rgba(0,162,255,0.15)" color="var(--mr-blue)"
-                    border="1px solid rgba(0,162,255,0.35)">{displayType}</Badge>
-                  <Badge fontSize="2xs" colorScheme={reliabilityScheme(displayReliability)} variant="subtle">
-                    {displayReliability}
+                    border="1px solid rgba(0,162,255,0.35)">{displayedType}</Badge>
+                  <Badge fontSize="2xs" colorScheme={reliabilityScheme(displayedReliability)} variant="subtle">
+                    {displayedReliability}
                   </Badge>
                   {enrichment?.publisher.domain && (
                     <Badge fontSize="2xs" bg="rgba(255,255,255,0.05)" color="var(--mr-text-muted)"
@@ -933,8 +1206,9 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                   const isLinked   = !!resolvedId;
                   const isSocial   = sourceUrl ? /facebook\.com|twitter\.com|x\.com|instagram\.com|tiktok\.com/i.test(sourceUrl) : false;
                   const articleUrl = linkedUrl || (linkedPublisher ? `https://${linkedPublisher}` : null);
-                  // Rescrape target: prefer actual article URL for social chains, else source URL
-                  const scrapeTarget = (isSocial ? articleUrl : null) ?? sourceUrl ?? undefined;
+                  // Re-scrape Source means the distribution source URL itself.
+                  // Linked article provenance is tracked separately.
+                  const scrapeTarget = sourceUrl ?? undefined;
                   const linkedName   = enrichment?.publisher.publisher_name ?? (isLinked ? (customName || publisherName) : null);
 
                   return (
@@ -1391,21 +1665,56 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                   {/* Provider status rows */}
                   <VStack spacing={1} align="stretch" mb={3} mt={2}>
                     {ENRICHMENT_PROVIDERS.map(p => {
-                      const rating = enrichment?.ratings.find(r =>
+                      const rating = visibleRatings.find(r =>
                         r.source?.toLowerCase().includes(p.key.toLowerCase())
                       );
+                      const signal = latestSignalFor(p.key);
+                      const status = signal ? signalStatus(signal, p) : rating
+                        ? { label: "rating on file", color: "#48BB78", enabled: true }
+                        : signalStatus(signal, p);
                       return (
-                        <HStack key={p.key} spacing={3} py="3px"
+                        <HStack key={p.key} spacing={3} py="5px" align="start"
                           borderBottom="1px solid rgba(0,162,255,0.08)" _last={{ borderBottom: "none" }}>
-                          <Box w="7px" h="7px" borderRadius="full" flexShrink={0}
+                          <Box w="7px" h="7px" borderRadius="full" flexShrink={0} mt="5px"
                             style={{ background: providerDot(p.key), boxShadow: `0 0 6px ${providerDot(p.key)}` }} />
-                          <Text fontSize="xs" fontWeight="700" color="var(--mr-text-primary)" minW="76px">{p.label}</Text>
-                          <Text fontSize="2xs" color="var(--mr-text-muted)" flex={1}>{p.desc}</Text>
-                          {rating?.last_checked && (
-                            <Text fontSize="2xs" color="var(--mr-text-muted)" flexShrink={0}>
-                              {new Date(rating.last_checked).toLocaleDateString()}
+                          <VStack align="start" spacing={0.5} flex={1} minW={0}>
+                            <HStack spacing={1.5} flexWrap="wrap">
+                              <Text fontSize="xs" fontWeight="700" color="var(--mr-text-primary)" minW="78px">{p.label}</Text>
+                              <Badge fontSize="2xs" color={status.color} bg="rgba(255,255,255,0.04)" border="1px solid rgba(255,255,255,0.09)">
+                                {status.enabled ? "enabled" : "disabled"}
+                              </Badge>
+                              <Badge fontSize="2xs" color={status.color} bg="rgba(255,255,255,0.04)" border="1px solid rgba(255,255,255,0.09)">
+                                {enrichRunning && !signal ? "running" : status.label}
+                              </Badge>
+                              {signal?.cap && (
+                                <Badge fontSize="2xs" color="#F6AD55" bg="rgba(246,173,85,0.08)" border="1px solid rgba(246,173,85,0.2)">
+                                  cap {signal.cap}
+                                </Badge>
+                              )}
+                            </HStack>
+                            <Text fontSize="2xs" color="var(--mr-text-muted)" noOfLines={2}>
+                              {signal ? signalSummary(signal) : rating
+                                ? `${rating.rating_type || "rating"}${rating.veracity_score != null ? ` · ${Math.round(Number(rating.veracity_score))}%` : ""}${rating.rating_label ? ` · ${rating.rating_label}` : ""}`
+                                : p.desc}
                             </Text>
-                          )}
+                            <HStack spacing={2} flexWrap="wrap">
+                              {signal?.evidence_url && (
+                                <Link href={signal.evidence_url} isExternal fontSize="2xs" color="var(--mr-blue)">
+                                  evidence <ExternalLinkIcon mx="2px" />
+                                </Link>
+                              )}
+                              {signal?.retrieved_at && (
+                                <Text fontSize="2xs" color="var(--mr-text-muted)">
+                                  {new Date(signal.retrieved_at).toLocaleTimeString()}
+                                </Text>
+                              )}
+                              {rating?.last_checked && !signal?.retrieved_at && (
+                                <Text fontSize="2xs" color="var(--mr-text-muted)">
+                                  rating {new Date(rating.last_checked).toLocaleDateString()}
+                                </Text>
+                              )}
+                            </HStack>
+                          </VStack>
                         </HStack>
                       );
                     })}
@@ -1593,6 +1902,31 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                 Credibility Checks
               </Button>
             )}
+            <Tooltip
+              label={
+                sourceUrl && contentId
+                  ? "Open this source in a tab and ask the extension to scrape it again."
+                  : "A source URL and reference content id are required to rescrape."
+              }
+              hasArrow
+              openDelay={300}
+            >
+              <Button
+                size="sm"
+                leftIcon={<RepeatIcon />}
+                isLoading={scrapePolling}
+                loadingText="Scraping"
+                isDisabled={!sourceUrl || !contentId || scrapePolling}
+                bg="rgba(0,162,255,0.12)"
+                color="var(--mr-blue)"
+                border="1px solid rgba(0,162,255,0.35)"
+                _hover={{ bg: "rgba(0,162,255,0.22)" }}
+                _disabled={{ opacity: 0.45, cursor: "not-allowed" }}
+                onClick={() => scrapeForPublisher(sourceUrl)}
+              >
+                Re-scrape Source
+              </Button>
+            </Tooltip>
             <Button size="sm" bg="transparent" color="var(--mr-text-muted)"
               border="1px solid rgba(255,255,255,0.1)"
               _hover={{ color: "var(--mr-text-primary)", borderColor: "rgba(255,255,255,0.2)" }}

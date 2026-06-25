@@ -10,6 +10,7 @@ import logger from "../../utils/logger.js";
 
 // Single-pass scraping functions
 import { scrapeTask } from "../../core/scrapeTask.js";
+import { inferFacebookChannelFromText, parseFacebookMeta } from "../../utils/parseSocialPublisher.js";
 import { scrapeReference } from "../../core/scrapeReference.js"; // Used by /api/scrape-reference (legacy endpoint)
 
 // Storage helpers
@@ -22,6 +23,7 @@ import { persistPublishers } from "../../storage/persistPublishers.js";
 // Claims + Evidence engines
 import { processTaskClaims } from "../../core/processTaskClaims.js";
 import { runEvidenceEngine } from "../../core/runEvidenceEngine.js";
+import { mapArgumentFunctions } from "../../core/argumentMappingEngine.js";
 import { matchClaimsToTaskClaims } from "../../core/matchClaims.js";
 import { openAiLLM } from "../../core/openAiLLM.js";
 import { resolveSourceIdentity } from "../../../services/sourceIdentityResolver.js";
@@ -465,9 +467,16 @@ export default function createContentScrapeRoutes({ query }) {
           }
         }
 
-        // For Facebook posts: prefer the linked article domain over the platform name
-        const resolvedMediaSource = resolvedLinkedPublisher ||
-          (platform === "facebook" ? "Facebook" : media_source || "Test");
+        // Facebook distribution identity is the group/page. A linked article is
+        // stored separately as provenance, not as the post publisher.
+        const fbMeta = platform === "facebook" ? parseFacebookMeta(url) : null;
+        const inferredFbChannel = platform === "facebook" ? inferFacebookChannelFromText(raw_text) : null;
+        const fbChannel = inferredFbChannel ||
+          (distribution_channel && !/^facebook group \d+$/i.test(distribution_channel) ? distribution_channel : null) ||
+          fbMeta?.publisherLabel;
+        const resolvedMediaSource = platform === "facebook"
+          ? (fbChannel || (media_source && !/^facebook$/i.test(media_source) ? media_source : null) || "Facebook")
+          : (media_source || "Test");
 
         // Create task content row
         taskContentId = await createContentInternal(query, {
@@ -480,7 +489,7 @@ export default function createContentScrapeRoutes({ query }) {
           thumbnail: thumbnail || null,
           details: raw_text.slice(0, 500),
           platform,
-          distribution_channel,
+          distribution_channel: platform === "facebook" ? (fbChannel || distribution_channel) : distribution_channel,
           linked_url,
           linked_publisher: resolvedLinkedPublisher,
         });
@@ -590,7 +599,34 @@ export default function createContentScrapeRoutes({ query }) {
         text,
       });
 
-      const claimIds = taskClaims.map((c) => c.id);
+      const argumentMappings = await mapArgumentFunctions({
+        query,
+        taskContentId,
+        articleText: text,
+        claims: taskClaims,
+      });
+      const mappingByClaimId = new Map(
+        argumentMappings.map((item) => [Number(item.claimId), item])
+      );
+      const mappedTaskClaims = taskClaims.map((claim) => {
+        const mapping = mappingByClaimId.get(Number(claim.id));
+        if (!mapping) return claim;
+        return {
+          ...claim,
+          objectClaim: mapping.objectClaim,
+          objectText: mapping.objectClaim || claim.objectText,
+          searchText: mapping.objectClaim || claim.searchText,
+          isAttribution: mapping.isAttribution,
+          speakerEntity: mapping.speakerEntity,
+          articleStance: mapping.articleStance,
+          argumentFunction: mapping.argumentFunction,
+          scoreTransform: mapping.scoreTransform,
+          accountabilityEligible: mapping.accountabilityEligible,
+          argumentMappingConfidence: mapping.confidence,
+        };
+      });
+
+      const claimIds = mappedTaskClaims.map((c) => c.id);
 
       // -----------------------------------------------------------------
       // 4. Run Evidence Engine (AI evidence references)
@@ -601,6 +637,7 @@ export default function createContentScrapeRoutes({ query }) {
         await runEvidenceEngine({
           taskContentId,
           claimIds,
+          claims: mappedTaskClaims,
           readableText: text,
         });
 
@@ -614,6 +651,13 @@ export default function createContentScrapeRoutes({ query }) {
         claimConfidenceMap, // Pass confidence map for storing per-claim confidence
       });
 
+      const enableReferenceClaimExtraction =
+        process.env.ENABLE_REFERENCE_CLAIM_EXTRACTION !== "false";
+      const maxReferenceClaimExtraction = Number.parseInt(
+        process.env.MAX_REFERENCE_CLAIM_EXTRACTION ?? "8",
+        10,
+      );
+
       // -----------------------------------------------------------------
       // 6. Extract claims FROM references (reference internal claims)
       //    Process in batches to prevent connection pool exhaustion
@@ -623,7 +667,7 @@ export default function createContentScrapeRoutes({ query }) {
       // -----------------------------------------------------------------
 
       // Filter valid references (exclude self-references and short text)
-      const validReferences = aiReferences.filter((ref) => {
+      const candidateReferences = enableReferenceClaimExtraction ? aiReferences.filter((ref) => {
         // Filter out references without content_id
         if (!ref.referenceContentId) return false;
 
@@ -645,19 +689,39 @@ export default function createContentScrapeRoutes({ query }) {
         }
 
         return true;
-      });
+      }) : [];
+      const validReferences = candidateReferences.slice(
+        0,
+        Number.isFinite(maxReferenceClaimExtraction) && maxReferenceClaimExtraction > 0
+          ? maxReferenceClaimExtraction
+          : 8,
+      );
+      // Keep this conservative by default. Reference claim extraction is LLM-heavy;
+      // concurrency can be raised locally with REFERENCE_CLAIM_EXTRACTION_BATCH_SIZE.
+      const BATCH_SIZE = Math.max(
+        1,
+        Number.parseInt(
+          process.env.REFERENCE_CLAIM_EXTRACTION_BATCH_SIZE ?? "1",
+          10,
+        ) || 1,
+      );
 
-      logger.log(`🔄 [/api/scrape-task] Processing ${validReferences.length} references in batches of 3 for optimal performance`);
+      if (!enableReferenceClaimExtraction) {
+        logger.log(
+          `⏭️  [/api/scrape-task] Skipping reference-claim extraction; ENABLE_REFERENCE_CLAIM_EXTRACTION=false`
+        );
+      } else {
+        if (candidateReferences.length > validReferences.length) {
+          logger.log(
+            `🔒 [/api/scrape-task] Reference-claim extraction capped at ${validReferences.length}/${candidateReferences.length} references; set MAX_REFERENCE_CLAIM_EXTRACTION to adjust`
+          );
+        }
+        logger.log(`🔄 [/api/scrape-task] Processing ${validReferences.length} references in batches of ${BATCH_SIZE}`);
+      }
 
       // Track processing stats
       let processedSuccessfully = 0;
       let failedReferences = [];
-
-      // Process references in BATCHES OF 3 to balance speed vs resource usage:
-      // - Database pool: 10 connections, 3 refs × 3 connections/ref = 9 connections (safe)
-      // - OpenAI rate limit: 3 refs × 3 LLM calls/ref = 9 RPM (well under typical 60-90 RPM limit)
-      // - 3× faster than sequential, but prevents pool exhaustion
-      const BATCH_SIZE = 3;
 
       // Helper function to process a single reference
       const processReference = async (ref) => {

@@ -2,7 +2,8 @@
 // Wayback Machine / Internet Archive — check if URL is archived, get original URL.
 // Public API — no API key required.
 
-const CDX_API = "https://archive.org/wayback/available";
+const AVAILABLE_API = "https://archive.org/wayback/available";
+const CDX_API = "https://web.archive.org/cdx";
 const TIMEOUT_MS = 8000;
 
 async function fetchWithTimeout(url, ms = TIMEOUT_MS) {
@@ -26,7 +27,7 @@ export const waybackProvider = {
   async healthCheck() {
     const t0 = Date.now();
     try {
-      const res = await fetchWithTimeout(`${CDX_API}?url=reuters.com`);
+      const res = await fetchWithTimeout(`${AVAILABLE_API}?url=reuters.com`);
       return { providerName: "wayback", ok: res.ok, status: res.ok ? "ok" : "unavailable", message: res.ok ? "Wayback API reachable" : `HTTP ${res.status}`, latencyMs: Date.now() - t0, checkedAt: new Date().toISOString() };
     } catch (err) {
       return { providerName: "wayback", ok: false, status: err.name === "AbortError" ? "unavailable" : "error", message: err.message, latencyMs: Date.now() - t0, checkedAt: new Date().toISOString() };
@@ -39,13 +40,33 @@ export const waybackProvider = {
     if (!url) return { providerName: "wayback", ok: false, matchFound: false, status: "no_match", errorMessage: "No URL provided", latencyMs: 0 };
 
     try {
-      const res = await fetchWithTimeout(`${CDX_API}?url=${encodeURIComponent(url)}`);
-      if (!res.ok) return { providerName: "wayback", ok: false, matchFound: false, status: "unexpected_response", errorMessage: `HTTP ${res.status}`, latencyMs: Date.now() - t0 };
-
-      const data = await res.json();
+      const availableRes = await fetchWithTimeout(`${AVAILABLE_API}?url=${encodeURIComponent(url)}`);
+      if (!availableRes.ok) return { providerName: "wayback", ok: false, matchFound: false, status: "unexpected_response", errorMessage: `HTTP ${availableRes.status}`, latencyMs: Date.now() - t0 };
+      const data = await availableRes.json();
       const snap = data?.archived_snapshots?.closest;
 
-      if (!snap?.available) {
+      const cdxUrl =
+        `${CDX_API}?url=${encodeURIComponent(domain || url)}&output=json&fl=timestamp,original,statuscode,mimetype&collapse=digest&limit=2000`;
+      let captures = [];
+      try {
+        const cdxRes = await fetchWithTimeout(cdxUrl);
+        if (cdxRes.ok) {
+          const cdxData = await cdxRes.json();
+          captures = Array.isArray(cdxData) ? cdxData.slice(1) : [];
+        }
+      } catch {}
+
+      const timestamps = captures.map((row) => row?.[0]).filter(Boolean).sort();
+      const firstTimestamp = timestamps[0] || snap?.timestamp || null;
+      const latestTimestamp = timestamps[timestamps.length - 1] || snap?.timestamp || null;
+      const firstSeenDate = firstTimestamp
+        ? `${firstTimestamp.slice(0, 4)}-${firstTimestamp.slice(4, 6)}-${firstTimestamp.slice(6, 8)}`
+        : null;
+      const archiveAgeYears = firstSeenDate
+        ? Math.max(0, (Date.now() - new Date(firstSeenDate).getTime()) / 31557600000)
+        : null;
+
+      if (!snap?.available && captures.length === 0) {
         return { providerName: "wayback", ok: true, matchFound: false, status: "no_match", notArchived: true, latencyMs: Date.now() - t0 };
       }
 
@@ -59,6 +80,10 @@ export const waybackProvider = {
           domain: domain ?? null,
           archiveUrl: snap.url ?? null,
           archiveTimestamp: snap.timestamp ?? null,
+          firstSeen: firstSeenDate,
+          latestCapture: latestTimestamp,
+          captureCount: captures.length || (snap?.available ? 1 : 0),
+          archiveAgeYears,
           isArchived: true,
           originalUrl: url,
           bias: null,

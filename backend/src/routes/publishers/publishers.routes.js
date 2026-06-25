@@ -55,6 +55,25 @@ function buildProviderResultsFromDb(ratings, profiles) {
   return results;
 }
 
+function isAutomaticScholarlyOrWikiRow(row) {
+  return /^(wikipedia|wikidata|scimago)$/i.test(String(row?.source || row?.provider || ""));
+}
+
+function hasDirectRatingSignal(ratings) {
+  return ratings.some((rating) =>
+    rating.veracity_score != null ||
+    rating.bias_score != null ||
+    (rating.rating_label && !isAutomaticScholarlyOrWikiRow(rating))
+  );
+}
+
+function isGenericSocialPublisher(publisher) {
+  const name = String(publisher?.publisher_name || "").trim().toLowerCase();
+  const domain = String(publisher?.domain || "").trim().toLowerCase();
+  return /^(facebook|facebook\.com|twitter\/x|twitter|twitter\.com|x|x\.com|instagram|instagram\.com|tiktok|tiktok\.com)$/.test(name) ||
+    /^(facebook|twitter|x|instagram|tiktok)\.com$/.test(domain);
+}
+
 export default function createPublishersRoutes({ query, pool }) {
   const router = Router();
 
@@ -137,14 +156,57 @@ export default function createPublishersRoutes({ query, pool }) {
 
   /**
    * GET /api/publishers/for-content/:contentId
-   * Returns the most recently linked publisher for a content record.
-   * Used by the modal after a scrape job completes to find what the extension stored.
+   * Returns the most recently linked publisher and the resolved crest for a content record.
+   * Content-level admiralty is authoritative; publisher-level admiralty is fallback.
    */
   router.get("/api/publishers/for-content/:contentId", async (req, res) => {
     const { contentId } = req.params;
     try {
       const rows = await query(
-        `SELECT p.publisher_id, p.publisher_name
+        `SELECT p.publisher_id, p.publisher_name,
+                COALESCE(
+                  (SELECT ae.admiralty_code
+                     FROM admiralty_evaluations ae
+                    WHERE ae.target_type = 'content'
+                      AND ae.target_id = cp.content_id
+                      AND ae.publisher_id = p.publisher_id
+                      AND ae.evaluation_status NOT IN ('insufficient_data')
+                      AND ae.admiralty_code REGEXP '^[A-E]'
+                    ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested'),
+                             ae.updated_at DESC
+                    LIMIT 1),
+                  (SELECT ae.admiralty_code
+                     FROM admiralty_evaluations ae
+                    WHERE ae.target_type = 'publisher'
+                      AND ae.target_id = p.publisher_id
+                      AND ae.evaluation_status NOT IN ('insufficient_data')
+                      AND ae.admiralty_code REGEXP '^[A-E]'
+                    ORDER BY FIELD(ae.evaluation_status,'human_confirmed','community_reviewed','machine_suggested'),
+                             ae.updated_at DESC
+                    LIMIT 1)
+                ) AS admiralty_code,
+                CASE
+                  WHEN EXISTS (
+                    SELECT 1
+                      FROM admiralty_evaluations ae
+                     WHERE ae.target_type = 'content'
+                       AND ae.target_id = cp.content_id
+                       AND ae.publisher_id = p.publisher_id
+                       AND ae.evaluation_status NOT IN ('insufficient_data')
+                       AND ae.admiralty_code REGEXP '^[A-E]'
+                     LIMIT 1
+                  ) THEN 'content'
+                  WHEN EXISTS (
+                    SELECT 1
+                      FROM admiralty_evaluations ae
+                     WHERE ae.target_type = 'publisher'
+                       AND ae.target_id = p.publisher_id
+                       AND ae.evaluation_status NOT IN ('insufficient_data')
+                       AND ae.admiralty_code REGEXP '^[A-E]'
+                     LIMIT 1
+                  ) THEN 'publisher'
+                  ELSE NULL
+                END AS admiralty_source
          FROM content_publishers cp
          JOIN publishers p ON cp.publisher_id = p.publisher_id
          WHERE cp.content_id = ?
@@ -152,8 +214,15 @@ export default function createPublishersRoutes({ query, pool }) {
          LIMIT 1`,
         [contentId]
       );
-      if (!rows.length) return res.json({ publisher_id: null, publisher_name: null });
-      res.json({ publisher_id: rows[0].publisher_id, publisher_name: rows[0].publisher_name });
+      if (!rows.length) {
+        return res.json({ publisher_id: null, publisher_name: null, admiralty_code: null, admiralty_source: null });
+      }
+      res.json({
+        publisher_id: rows[0].publisher_id,
+        publisher_name: rows[0].publisher_name,
+        admiralty_code: rows[0].admiralty_code ?? null,
+        admiralty_source: rows[0].admiralty_source ?? null,
+      });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
@@ -615,9 +684,11 @@ export default function createPublishersRoutes({ query, pool }) {
    */
   router.get("/api/publishers/:publisherId/enrichment", async (req, res) => {
     const { publisherId } = req.params;
+    const contentId = Number.parseInt(String(req.query.contentId ?? ""), 10);
+    const hasContentId = Number.isFinite(contentId);
 
     try {
-      const [[publisher], ratings, profiles, [admRow]] = await Promise.all([
+      const [[publisher], rawRatings, rawProfiles, rawExternalSignals, [admRow]] = await Promise.all([
         query(
           `SELECT publisher_id, publisher_name, domain, publisher_icon, description
            FROM publishers WHERE publisher_id = ? LIMIT 1`,
@@ -643,7 +714,22 @@ export default function createPublishersRoutes({ query, pool }) {
           [publisherId]
         ),
         query(
-          `SELECT admiralty_code FROM admiralty_evaluations
+          `SELECT provider, signal_type, admiralty_effect_type, normalized_score,
+                  reliability_bucket, confidence_delta, reliability_delta, cap,
+                  cap_reason, flags, matched_name, matched_domain, match_confidence,
+                  evidence_url, explanation, retrieved_at, error_status
+             FROM publisher_external_signals
+            WHERE publisher_id = ?
+              AND (expires_at IS NULL OR expires_at > NOW())
+            ORDER BY retrieved_at DESC, id DESC
+            LIMIT 80`,
+          [publisherId]
+        ).catch((err) => {
+          if (err?.code === "ER_NO_SUCH_TABLE") return [];
+          throw err;
+        }),
+        query(
+          `SELECT admiralty_code, evaluation_status FROM admiralty_evaluations
            WHERE target_type = 'publisher' AND target_id = ?
              AND evaluation_status NOT IN ('insufficient_data')
            ORDER BY FIELD(evaluation_status,'human_confirmed','community_reviewed','machine_suggested'),
@@ -657,11 +743,45 @@ export default function createPublishersRoutes({ query, pool }) {
         return res.status(404).json({ error: "Publisher not found" });
       }
 
+      const isSocialDistributionPublisher = isGenericSocialPublisher(publisher);
+      const ratings = isSocialDistributionPublisher
+        ? rawRatings.filter((row) => !isAutomaticScholarlyOrWikiRow(row))
+        : rawRatings;
+      const profiles = isSocialDistributionPublisher
+        ? rawProfiles.filter((row) => !isAutomaticScholarlyOrWikiRow(row))
+        : rawProfiles;
+      const externalSignals = isSocialDistributionPublisher
+        ? rawExternalSignals.filter((row) => !/^(wikipedia|wikidata|scimago|crossref|openalex)$/i.test(String(row.provider || "")))
+        : rawExternalSignals;
+
       // Auto-evaluate admiralty if no code stored yet but we have rating/profile data.
       // This means the SourceCrest shows a code the moment enrichment data exists —
       // no manual re-enrich required.
       let admiraltyCode = admRow?.admiralty_code ?? null;
-      if (!admiraltyCode && (ratings.length > 0 || profiles.length > 0)) {
+      if (hasContentId) {
+        const [contentAdmRow] = await query(
+          `SELECT admiralty_code, evaluation_status
+             FROM admiralty_evaluations
+            WHERE target_type = 'content'
+              AND target_id = ?
+              AND publisher_id = ?
+              AND evaluation_status NOT IN ('insufficient_data')
+              AND admiralty_code REGEXP '^[A-E]'
+            ORDER BY FIELD(evaluation_status,'human_confirmed','community_reviewed','machine_suggested'),
+                     updated_at DESC
+            LIMIT 1`,
+          [contentId, publisherId]
+        );
+        admiraltyCode = contentAdmRow?.admiralty_code ?? admiraltyCode;
+      }
+      const canRefreshMachineCode =
+        !admRow?.evaluation_status ||
+        admRow.evaluation_status === "machine_suggested";
+      const hasUsableSignal = hasDirectRatingSignal(ratings);
+      if (isSocialDistributionPublisher && !hasUsableSignal && canRefreshMachineCode) {
+        admiraltyCode = null;
+      }
+      if ((!admiraltyCode || (canRefreshMachineCode && admiraltyCode.startsWith("Ø"))) && hasUsableSignal) {
         try {
           const { evaluateAdmiraltyCode, storeEvaluation } = await import("../../../services/admiraltyEvaluator.js");
           const evaluation = await evaluateAdmiraltyCode({
@@ -686,7 +806,7 @@ export default function createPublishersRoutes({ query, pool }) {
         }
       }
 
-      res.json({ publisher, ratings, profiles, admiraltyCode });
+      res.json({ publisher, ratings, profiles, externalSignals, admiraltyCode });
     } catch (err) {
       console.error("Error fetching publisher enrichment:", err);
       res.status(500).json({ error: "Failed to fetch publisher enrichment" });
@@ -716,72 +836,45 @@ export default function createPublishersRoutes({ query, pool }) {
         "../../services/publisherEnrichmentService.js"
       );
 
+      let sourceUrl = reqSourceUrl;
+      if (!sourceUrl && contentId) {
+        const [contentRow] = await query(`SELECT url FROM content WHERE content_id = ? LIMIT 1`, [contentId]);
+        sourceUrl = contentRow?.url || null;
+      }
+
       const enrichResult = await enrichPublisherIfNeeded({
         query,
         publisherId: publisher.publisher_id,
         publisherName: publisher.publisher_name,
         domain: publisher.domain || null,
+        sourceUrl: sourceUrl || null,
         force,
         context: "case_content",
       });
 
-      // After enrichment, run admiralty evaluation and store it
-      let admiraltyCode = null;
-      const admiraltyUpdates = {};
+      let admiraltyCode = enrichResult?.admiraltyCode || null;
+      const admiraltyUpdates = { ...(enrichResult?.admiraltyUpdates || {}) };
       try {
-        const { evaluateAdmiraltyCode, storeEvaluation } = await import("../../../services/admiraltyEvaluator.js");
-        const { lookupPublisherAllProviders } = await import("../../../services/sourceProviders/sourceProviderRegistry.js");
-
-        // Resolve source URL from request or from the content row
-        let sourceUrl = reqSourceUrl;
-        if (!sourceUrl && contentId) {
-          const [contentRow] = await query(`SELECT url FROM content WHERE content_id = ? LIMIT 1`, [contentId]);
-          sourceUrl = contentRow?.url || null;
-        }
-
-        const [profileRows, ratingRows] = await Promise.all([
-          query(`SELECT source_type FROM publisher_profiles WHERE publisher_id = ? ORDER BY last_checked DESC LIMIT 1`, [publisher.publisher_id]),
-          query(`SELECT source, rating_label, rating_type, bias_score, veracity_score, score, confidence FROM publisher_ratings WHERE publisher_id = ? AND user_id IS NULL ORDER BY last_checked DESC`, [publisher.publisher_id]),
-        ]);
-
-        const providerResults = await lookupPublisherAllProviders({
-          sourceUrl: sourceUrl || undefined,
-          publisherName: publisher.publisher_name,
-        });
-
-        const evaluation = await evaluateAdmiraltyCode({
-          sourceUrl: sourceUrl || undefined,
-          publisherName: publisher.publisher_name,
-          sourceIdentity: { sourceType: profileRows[0]?.source_type || undefined, resolutionLevel: 3 },
-          existingSourceRatings: ratingRows,
-          providerResults,
-        });
-
-        admiraltyCode = evaluation.admiraltyCode;
-
-        // Store at publisher level — cascades to all content on next lookup via COALESCE fallback
-        await storeEvaluation(query, {
-          targetType: "publisher", targetId: publisher.publisher_id,
-          sourceUrl: sourceUrl || null, publisherId: publisher.publisher_id,
-          evaluation,
-        });
-
-        // Also store at content level for the specific content being viewed right now
+        const [admRow] = await query(
+          `SELECT admiralty_code FROM admiralty_evaluations
+            WHERE target_type = 'publisher' AND target_id = ?
+              AND evaluation_status NOT IN ('insufficient_data')
+            ORDER BY FIELD(evaluation_status,'human_confirmed','community_reviewed','machine_suggested'),
+                     updated_at DESC
+            LIMIT 1`,
+          [publisher.publisher_id]
+        );
+        admiraltyCode = admiraltyCode || admRow?.admiralty_code || null;
         if (contentId) {
-          await storeEvaluation(query, {
-            targetType: "content", targetId: contentId,
-            sourceUrl: sourceUrl || null, publisherId: publisher.publisher_id,
-            evaluation,
-          });
-          admiraltyUpdates[contentId] = admiraltyCode;
+          admiraltyUpdates[contentId] = admiraltyUpdates[contentId] || admiraltyCode;
         }
       } catch (admiraltyErr) {
-        console.error("[publishers/enrich] Admiralty evaluation failed:", admiraltyErr.message);
+        console.error("[publishers/enrich] Admiralty lookup after enrichment failed:", admiraltyErr.message);
       }
 
       // Refresh source-identity cache so "URL only / needs review" clears after enrichment
       if (reqSourceUrl || contentId) {
-        let refreshUrl = reqSourceUrl;
+        let refreshUrl = sourceUrl;
         if (!refreshUrl && contentId) {
           try {
             const [c] = await query(`SELECT url FROM content WHERE content_id = ? LIMIT 1`, [contentId]);

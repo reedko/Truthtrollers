@@ -126,10 +126,11 @@ export const openAiLLM = {
               { role: "system", content: system },
               {
                 role: "user",
-                content:
-                  user +
-                  "\n\nReturn ONLY valid JSON. JSON shape hint: " +
-                  schemaHint,
+                content: schemaHint
+                  ? user +
+                    "\n\nReturn ONLY valid JSON. JSON shape hint: " +
+                    schemaHint
+                  : user,
               },
             ],
           }),

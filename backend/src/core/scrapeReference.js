@@ -36,6 +36,21 @@ function domainFromUrl(url) {
   }
 }
 
+function repositoryPublisherFromUrl(url) {
+  const domain = domainFromUrl(url);
+  if (!domain) return null;
+  if (/^iarc\.who\.int$/i.test(domain)) {
+    return { name: "International Agency for Research on Cancer", confidence: "curated" };
+  }
+  if (/^who\.int$/i.test(domain) || /\.who\.int$/i.test(domain)) {
+    return { name: "World Health Organization", confidence: "curated" };
+  }
+  if (/bvsalud\.org$/i.test(domain) || domain.includes(".bvsalud.org")) {
+    return { name: "Biblioteca Virtual em Saúde" };
+  }
+  return null;
+}
+
 async function ensureReferencePublisherLink(query, { referenceContentId, url, publisher }) {
   const pubName = publisher?.name;
   if (!pubName || pubName === "Unknown Publisher" || JUNK_PUBLISHER_RE.test(pubName)) {
@@ -51,8 +66,10 @@ async function ensureReferencePublisherLink(query, { referenceContentId, url, pu
   const urlDomain = domainFromUrl(url);
   let publisherId = null;
   let publisherName = pubName.trim();
+  const isPublisherProxy = publisher?.role === "journal" || publisher?.confidence === "proxy";
+  const isCuratedUrlPublisher = publisher?.confidence === "curated";
 
-  if (urlDomain) {
+  if (urlDomain && !isPublisherProxy && !isCuratedUrlPublisher) {
     const domainResults = await query(
       `SELECT
          p.publisher_id,
@@ -79,6 +96,10 @@ async function ensureReferencePublisherLink(query, { referenceContentId, url, pu
         publisherName = existingName;
       }
     }
+  } else if (isPublisherProxy) {
+    logger.log(
+      `🧾 [scrapeReference] Linking scholarly source proxy "${publisherName}" directly; not reusing prior publisher for ${urlDomain}`
+    );
   }
 
   if (!publisherId) {
@@ -161,7 +182,7 @@ async function resolvePublisherChain(url, depth, dbQuery) {
     const $ = cheerio.load(html);
     const curHost = new URL(url).hostname.replace(/^www\./, '');
 
-    let pub = await extractPublisher($);
+    let pub = await extractPublisher($, url);
     const ogSite = $('meta[property="og:site_name"]').attr('content')
       || $('meta[name="publisher"]').attr('content');
     if (!pub?.name && ogSite?.trim().length > 1) pub = { name: ogSite.trim() };
@@ -346,11 +367,11 @@ export async function scrapeReference(query, {
     }
     // For HTML: use cheerio-based extractor. For PDFs (raw_text only): scan first-page lines.
     // Skip HTML publisher extraction on bot-blocked pages — would pick up "reCAPTCHA" etc.
-    let publisher = ($ && !botBlocked) ? await extractPublisher($) : (() => {
+    let publisher = ($ && !botBlocked) ? await extractPublisher($, url) : (() => {
       const lines = (raw_text || "").replace(/\r/g, "").slice(0, 4000)
         .split(/\n+/).map(s => s.trim()).filter(s => s.length > 3);
       const name = choosePdfPublisher({}, lines);
-      return name ? { name } : null;
+      return name ? { name } : repositoryPublisherFromUrl(url);
     })();
 
     // Domain fallback: if no publisher extracted (snippet-only Tavily text, bot-blocked page,

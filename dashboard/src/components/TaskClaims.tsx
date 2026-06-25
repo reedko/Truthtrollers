@@ -59,6 +59,7 @@ interface TaskClaimsProps {
     rationale: string,
     supportLevel: number,
   ) => void;
+  onFocusReference?: (referenceId: number) => void;
   linkSelection?: {
     active: boolean;
     source?: Pick<Claim, "claim_id" | "claim_text"> | null;
@@ -159,6 +160,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   onVerifyClaim,
   onTaskClaimClick,
   onOpenLinkOverlay,
+  onFocusReference,
   taskId,
   linkSelection,
   onPickTargetForLink,
@@ -173,6 +175,9 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   onHardDeleteClaims,
 }) => {
   const claimRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const claimRectCacheRef = useRef<Array<{ claim: Claim; rect: DOMRect }>>([]);
+  const hoverRafRef = useRef<number | null>(null);
+  const lastPointerRef = useRef<{ x: number; y: number } | null>(null);
 
   // Keep a ref to onDropReferenceClaim so handleMouseUp never captures a stale version
   const onDropRef = useRef(onDropReferenceClaim);
@@ -247,8 +252,10 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
     const role = String(claim.claim_role || claim.claim_type || "").toLowerCase();
     if (role === "thesis" || role === "task") return 0;
     if (role === "pillar") return 1;
-    if (role === "evidence" || role === "reference" || role === "snippet") return 2;
-    return 3;
+    if (role === "pillar_support") return 2;
+    if (role === "evidence" || role === "reference" || role === "snippet") return 3;
+    if (role === "fallibility_critical") return 4;
+    return 5;
   };
 
   const claimTree = useMemo(() => {
@@ -288,32 +295,85 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   }, [claims]);
 
   const getRoleLabel = (claim: Claim) => {
+    const relationship = String(claim.relationship_type || "").toLowerCase();
+    if (relationship.split(",").map((part) => part.trim()).includes("provenance")) return "PROVENANCE";
     const role = String(claim.claim_role || claim.claim_type || "background").toLowerCase();
     if (role === "task") return "THESIS";
     if (role === "thesis") return "THESIS";
     if (role === "pillar") return "PILLAR";
+    if (role === "pillar_support") return "PILLAR SUPPORT";
+    if (role === "fallibility_critical") return "CRITICAL";
     if (role === "evidence" || role === "reference" || role === "snippet") return "EVIDENCE";
     return "BACKGROUND";
   };
 
   const getRoleAccent = (claim: Claim) => {
+    const relationship = String(claim.relationship_type || "").toLowerCase();
+    if (relationship.split(",").map((part) => part.trim()).includes("provenance")) return "#F6AD55";
     const role = String(claim.claim_role || claim.claim_type || "background").toLowerCase();
     if (role === "thesis" || role === "task") return "#63B3ED";
     if (role === "pillar") return "#9F7AEA";
+    if (role === "pillar_support") return "#D69E2E";
+    if (role === "fallibility_critical") return "#E53E3E";
     if (role === "evidence" || role === "reference" || role === "snippet") return "#38A169";
     return "#A0AEC0";
   };
 
   const getRoleDescription = (claim: Claim) => {
     const role = getRoleLabel(claim);
+    if (role === "PROVENANCE") return "Attribution wrapper: this can show who said or published a claim, but it does not directly add truth weight to the case score.";
     if (role === "THESIS") return "Main claim or top-level assertion for this case.";
     if (role === "PILLAR") return "Supporting claim that organizes evidence under the thesis.";
+    if (role === "PILLAR SUPPORT") return "Intermediate claim that connects a pillar to evidence.";
+    if (role === "CRITICAL") return "High-impact claim whose failure would weaken the argument.";
     if (role === "EVIDENCE") return "Evidence-level claim tied to a source or supporting detail.";
     return "Context or side detail that is not central to the argument.";
   };
 
+  const getEmbeddedAssertion = (claim: Claim) => {
+    const mappedObject = String(claim.object_claim_text || "").trim();
+    if (mappedObject) return mappedObject;
+
+    const relationship = String(claim.relationship_type || "").toLowerCase();
+    if (!relationship.split(",").map((part) => part.trim()).includes("provenance")) return "";
+
+    const text = String(claim.claim_text || "").trim().replace(/\s+/g, " ");
+    const patterns = [
+      /^(?:.+?)\s+(?:revealed|reveals|claimed|claims|alleged|alleges|said|says|stated|states|reported|reports|asserted|asserts|argued|argues|testified|testifies|wrote|writes|published|publishes)\s+that\s+(.+)$/i,
+      /^(?:according to|per)\s+[^,]+,\s*(.+)$/i,
+    ];
+
+    for (const pattern of patterns) {
+      const match = text.match(pattern);
+      if (match?.[1]) return match[1].trim().replace(/\.$/, "") + ".";
+    }
+    return "";
+  };
+
+  const getArgumentBadge = (claim: Claim) => {
+    const fn = String(claim.argument_function || "").toLowerCase();
+    if (fn === "opposing_claim_to_refute") return { label: "OPPOSING", color: "#F97316", tip: "The article presents this as a claim it is trying to refute; evidence impact is inverted." };
+    if (fn === "supporting_premise") return { label: "PREMISE", color: "#2DD4BF", tip: "The article uses this claim to support its argument." };
+    if (fn === "evidence") return { label: "EVIDENCE", color: "#38A169", tip: "The article uses this as evidence for its argument." };
+    if (fn === "reported_neutral") return { label: "NEUTRAL", color: "#A0AEC0", tip: "The article reports this without clear direct scoring impact." };
+    if (fn === "background") return { label: "BACKGROUND", color: "#A0AEC0", tip: "Contextual claim with limited direct scoring impact." };
+    return null;
+  };
+
+  const getScoreTransformBadge = (claim: Claim) => {
+    const transform = String(claim.score_transform || "").toLowerCase();
+    if (transform === "invert") return { label: "INVERTS SCORE", color: "#F97316", tip: "Support for the evaluated assertion weakens the article; refutation strengthens it." };
+    if (transform === "none") return { label: "NO SCORE", color: "#A0AEC0", tip: "This claim is visible for audit but does not directly affect the article score." };
+    if (transform === "review") return { label: "REVIEW", color: "#ECC94B", tip: "Argument impact is unclear and should be reviewed before scoring." };
+    if (transform === "normal") return { label: "NORMAL SCORE", color: "#38A169", tip: "Support/refutation affects the article in the normal direction." };
+    return null;
+  };
+
   const renderClaimNode = (claim: Claim, depth = 0): React.ReactNode => {
     const childClaims = claimTree.children.get(claim.claim_id) || [];
+    const embeddedAssertion = getEmbeddedAssertion(claim);
+    const argumentBadge = getArgumentBadge(claim);
+    const scoreBadge = getScoreTransformBadge(claim);
 
     const existingLink =
       linkSelection?.active && linkSelection.source
@@ -477,12 +537,43 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
                   </Box>
                 </Tooltip>
               )}
+              {argumentBadge && (
+                <Tooltip label={argumentBadge.tip} hasArrow openDelay={900}>
+                  <Box px={1.5} py={0} borderRadius="md" border="1px solid" fontSize="9px" lineHeight="16px" flexShrink={0} sx={claimBadgeSx(argumentBadge.color)}>
+                    {argumentBadge.label}
+                  </Box>
+                </Tooltip>
+              )}
+              {scoreBadge && (
+                <Tooltip label={scoreBadge.tip} hasArrow openDelay={900}>
+                  <Box px={1.5} py={0} borderRadius="md" border="1px solid" fontSize="9px" lineHeight="16px" flexShrink={0} sx={claimBadgeSx(scoreBadge.color)}>
+                    {scoreBadge.label}
+                  </Box>
+                </Tooltip>
+              )}
             </HStack>
             <Tooltip label={claim.claim_text} hasArrow isDisabled={!!draggingClaim}>
               <Text flex="1" noOfLines={1} fontSize="0.9rem" lineHeight="1.3" position="relative" zIndex={1}>
                 {claim.claim_text}
               </Text>
             </Tooltip>
+            {embeddedAssertion && (
+              <Tooltip
+                label="Evidence search and refute/support matching should evaluate this embedded assertion, while the wrapper only records attribution."
+                hasArrow
+                openDelay={700}
+              >
+                <Text
+                  fontSize="10px"
+                  lineHeight="1.2"
+                  color="rgba(246,173,85,0.85)"
+                  noOfLines={1}
+                  maxW="100%"
+                >
+                  Evaluates: {embeddedAssertion}
+                </Text>
+              </Tooltip>
+            )}
           </VStack>
           <Box position="relative" zIndex={3} alignSelf="center" ml={2} onClick={(e) => e.stopPropagation()}>
             <Menu placement="bottom-end">
@@ -544,47 +635,59 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
   };
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!draggingClaim) return;
+    if (!draggingClaim) {
+      claimRectCacheRef.current = [];
+      setHoveredClaimId(null);
+      return;
+    }
 
-      for (const claim of claims) {
+    claimRectCacheRef.current = claims
+      .map((claim) => {
         const box = claimRefs.current[claim.claim_id];
-        if (box) {
-          const rect = box.getBoundingClientRect();
-          const isInside =
-            e.clientX >= rect.left &&
-            e.clientX <= rect.right &&
-            e.clientY >= rect.top &&
-            e.clientY <= rect.bottom;
+        return box ? { claim, rect: box.getBoundingClientRect() } : null;
+      })
+      .filter(Boolean) as Array<{ claim: Claim; rect: DOMRect }>;
 
-          if (isInside) {
-            setHoveredClaimId(claim.claim_id);
-            return;
-          }
+    const updateHoveredClaim = () => {
+      hoverRafRef.current = null;
+      const pointer = lastPointerRef.current;
+      if (!pointer) return;
+
+      for (const { claim, rect } of claimRectCacheRef.current) {
+        if (
+          pointer.x >= rect.left &&
+          pointer.x <= rect.right &&
+          pointer.y >= rect.top &&
+          pointer.y <= rect.bottom
+        ) {
+          setHoveredClaimId(claim.claim_id);
+          return;
         }
       }
 
       setHoveredClaimId(null);
     };
 
+    const handleMouseMove = (e: MouseEvent) => {
+      lastPointerRef.current = { x: e.clientX, y: e.clientY };
+      if (hoverRafRef.current != null) return;
+      hoverRafRef.current = window.requestAnimationFrame(updateHoveredClaim);
+    };
+
     // Re-scan rects at release time — does NOT rely on stale hoveredClaimId state
     const handleMouseUp = (e: MouseEvent) => {
       if (!draggingClaim) return;
 
-      for (const claim of claims) {
-        const box = claimRefs.current[claim.claim_id];
-        if (box) {
-          const rect = box.getBoundingClientRect();
-          if (
-            e.clientX >= rect.left &&
-            e.clientX <= rect.right &&
-            e.clientY >= rect.top &&
-            e.clientY <= rect.bottom
-          ) {
-            onDropRef.current(draggingClaim, claim);
-            setHoveredClaimId(null);
-            return;
-          }
+      for (const { claim, rect } of claimRectCacheRef.current) {
+        if (
+          e.clientX >= rect.left &&
+          e.clientX <= rect.right &&
+          e.clientY >= rect.top &&
+          e.clientY <= rect.bottom
+        ) {
+          onDropRef.current(draggingClaim, claim);
+          setHoveredClaimId(null);
+          return;
         }
       }
     };
@@ -593,6 +696,10 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
     document.addEventListener("mouseup", handleMouseUp);
 
     return () => {
+      if (hoverRafRef.current != null) {
+        window.cancelAnimationFrame(hoverRafRef.current);
+        hoverRafRef.current = null;
+      }
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
@@ -740,6 +847,7 @@ const TaskClaims: React.FC<TaskClaimsProps> = ({
         onOpenLinkOverlay={onOpenLinkOverlay}
         contentId={contentId}
         viewerId={viewerId}
+        onFocusReference={onFocusReference}
       />
 
       {/* Evidence Confirmation Modal */}

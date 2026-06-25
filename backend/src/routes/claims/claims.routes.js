@@ -20,7 +20,8 @@ const derivedClaimRoleSql = (alias) => `
     CASE
       WHEN ${alias}.claim_depth = 0 THEN 'thesis'
       WHEN ${alias}.claim_depth = 1 THEN 'pillar'
-      WHEN ${alias}.claim_depth >= 2 THEN 'evidence'
+      WHEN ${alias}.claim_depth = 2 THEN 'pillar_support'
+      WHEN ${alias}.claim_depth >= 3 THEN 'evidence'
       WHEN ${alias}.relationship_type IN ('task', 'content') THEN 'thesis'
       WHEN ${alias}.relationship_type IN ('reference', 'snippet') THEN 'evidence'
       ELSE 'background'
@@ -34,7 +35,8 @@ const derivedClaimDepthSql = (alias) => `
     CASE
       WHEN ${alias}.claim_role = 'thesis' THEN 0
       WHEN ${alias}.claim_role = 'pillar' THEN 1
-      WHEN ${alias}.claim_role = 'evidence' THEN 2
+      WHEN ${alias}.claim_role = 'pillar_support' THEN 2
+      WHEN ${alias}.claim_role IN ('evidence', 'fallibility_critical') THEN 3
       WHEN ${alias}.relationship_type IN ('task', 'content') THEN 0
       WHEN ${alias}.relationship_type IN ('reference', 'snippet') THEN 2
       ELSE 3
@@ -46,8 +48,10 @@ const claimRolePrioritySql = (alias) => `
   CASE ${derivedClaimRoleSql(alias)}
     WHEN 'thesis' THEN 0
     WHEN 'pillar' THEN 1
-    WHEN 'evidence' THEN 2
-    ELSE 3
+    WHEN 'pillar_support' THEN 2
+    WHEN 'evidence' THEN 3
+    WHEN 'fallibility_critical' THEN 4
+    ELSE 5
   END
 `;
 
@@ -268,6 +272,15 @@ export default function createClaimsRoutes({ query, pool }) {
       cc.centrality_score,
       cc.verifiability_score,
       cc.claim_order,
+      cc.object_claim_text,
+      cc.is_attribution,
+      cc.speaker_entity,
+      cc.article_stance,
+      cc.argument_function,
+      cc.score_transform,
+      cc.accountability_eligible,
+      cc.argument_mapping_confidence,
+      cc.argument_mapping_rationale,
       COALESCE(GROUP_CONCAT(DISTINCT cc.relationship_type ORDER BY cc.relationship_type SEPARATOR ', '), '') AS relationship_type,
       ${scope === "admin" ? "cc.user_id AS created_by_user_id," : ""}
       COALESCE(
@@ -297,7 +310,10 @@ export default function createClaimsRoutes({ query, pool }) {
       ${userFilter}
     GROUP BY c.claim_id, c.claim_text, c.veracity_score, c.confidence_level, c.last_verified, c.claim_type,
              cc.claim_role, cc.claim_depth, cc.relationship_type,
-             cc.parent_claim_id, cc.centrality_score, cc.verifiability_score, cc.claim_order, cc.user_id
+             cc.parent_claim_id, cc.centrality_score, cc.verifiability_score, cc.claim_order,
+             cc.object_claim_text, cc.is_attribution, cc.speaker_entity, cc.article_stance,
+             cc.argument_function, cc.score_transform, cc.accountability_eligible,
+             cc.argument_mapping_confidence, cc.argument_mapping_rationale, cc.user_id
     ORDER BY
       ${claimRolePrioritySql("cc")},
       COALESCE(cc.claim_order, 999999) ASC,
@@ -926,6 +942,7 @@ WHERE cc_task.content_id = ?
       cl.relationship,
       cl.support_level AS confidence,
       cl.notes AS notes,
+      cl.created_by_ai,
       ${scope === "admin" ? "cl.user_id AS created_by_user_id," : ""}
       ${scope === "admin" ? "cl.disabled AS is_disabled," : ""}
       cl.created_at
@@ -1243,6 +1260,15 @@ WHERE cc_task.content_id = ?
           cc.centrality_score,
           cc.verifiability_score,
           cc.claim_order,
+          cc.object_claim_text,
+          cc.is_attribution,
+          cc.speaker_entity,
+          cc.article_stance,
+          cc.argument_function,
+          cc.score_transform,
+          cc.accountability_eligible,
+          cc.argument_mapping_confidence,
+          cc.argument_mapping_rationale,
           GROUP_CONCAT(DISTINCT cc.relationship_type ORDER BY cc.relationship_type SEPARATOR ', ') AS relationship_type,
           MAX(cc.content_id) AS content_id,
           ${scope === "admin" ? "GROUP_CONCAT(DISTINCT cc.user_id) AS created_by_user_id," : ""}
@@ -1255,7 +1281,10 @@ WHERE cc_task.content_id = ?
           ${userFilter}
         GROUP BY c.claim_id, c.claim_text, c.claim_type, c.veracity_score, c.confidence_level, c.last_verified,
                  cc.claim_role, cc.claim_depth, cc.relationship_type,
-                 cc.parent_claim_id, cc.centrality_score, cc.verifiability_score, cc.claim_order, cc.user_id
+                 cc.parent_claim_id, cc.centrality_score, cc.verifiability_score, cc.claim_order,
+                 cc.object_claim_text, cc.is_attribution, cc.speaker_entity, cc.article_stance,
+                 cc.argument_function, cc.score_transform, cc.accountability_eligible,
+                 cc.argument_mapping_confidence, cc.argument_mapping_rationale, cc.user_id
         ORDER BY
           ${claimRolePrioritySql("cc")},
           COALESCE(cc.claim_order, 999999) ASC,

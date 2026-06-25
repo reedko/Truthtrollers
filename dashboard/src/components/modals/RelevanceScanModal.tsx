@@ -52,6 +52,7 @@ interface RelevanceScanModalProps {
   ) => void;
   contentId?: number; // Task content_id for fetching computed scores
   viewerId?: number | null; // User viewing for scope filtering
+  onFocusReference?: (referenceId: number) => void;
 }
 
 const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
@@ -63,6 +64,7 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
   onOpenLinkOverlay,
   contentId,
   viewerId,
+  onFocusReference,
 }) => {
   const { colorMode } = useColorMode();
   const toast = useToast();
@@ -703,7 +705,8 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
               </HStack>
 
               {documentLinks.map((docLink) => {
-                const reference = references.find(r => r.reference_content_id === docLink.reference_content_id);
+                const referenceId = Number(docLink.reference_content_id);
+                const reference = references.find(r => Number(r.reference_content_id) === referenceId);
                 const stanceColor = getStanceColor(docLink.stance);
 
                 return (
@@ -721,6 +724,23 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                     }
                     position="relative"
                     overflow="hidden"
+                    cursor={reference ? "pointer" : "default"}
+                    role={reference ? "button" : undefined}
+                    tabIndex={reference ? 0 : undefined}
+                    onClick={() => {
+                      if (reference) onFocusReference?.(referenceId);
+                    }}
+                    onKeyDown={(event) => {
+                      if (!reference) return;
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onFocusReference?.(referenceId);
+                      }
+                    }}
+                    _hover={reference ? {
+                      transform: "translateY(-1px)",
+                      borderColor: `${stanceColor}.300`,
+                    } : undefined}
                   >
                     {/* Curved left edge glow */}
                     <Box

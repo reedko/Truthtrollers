@@ -25,6 +25,7 @@ import { GraphNode, Link } from "../../../shared/entities/types";
 import UnifiedHeader from "../components/UnifiedHeader";
 import StickyTitleBar from "../components/StickyTitleBar";
 import GraphLegend from "../components/GraphLegend";
+import GraphControlBar, { GraphMetricPill } from "../components/GraphControlBar";
 import {
   updateScoresForContent,
   fetchContentScores,
@@ -51,6 +52,8 @@ const MoleculeMapPage = () => {
   const selectedTaskId = useTaskStore((s) => s.selectedTaskId);
   const viewerId = useTaskStore((s) => s.viewingUserId);
   const viewScope = useTaskStore((s) => s.viewScope);
+  const graphLinkFilter = useTaskStore((s) => s.graphLinkFilter);
+  const graphEntityScope = useTaskStore((s) => s.graphEntityScope);
   const setSelectedTask = useTaskStore((s) => s.setSelectedTask);
   const setRedirect = useTaskStore((s) => s.setRedirect);
   const setViewingUserId = useTaskStore((s) => s.setViewingUserId);
@@ -74,7 +77,6 @@ const MoleculeMapPage = () => {
   const [loadingViews, setLoadingViews] = useState(true);
   const [showPinnedOnly, setShowPinnedOnly] = useState(false);
   const [dimUnpinned, setDimUnpinned] = useState(false); // Dim unpinned nodes (default: true)
-  const [showReferenceAuthors, setShowReferenceAuthors] = useState(false); // OFF by default to keep graph readable
 
   const handleVerimeterRefresh = async (contentId: number) => {
     await updateScoresForContent(contentId, viewerId);
@@ -209,39 +211,58 @@ const MoleculeMapPage = () => {
 
   // Add dimming metadata to nodes or filter them based on showPinnedOnly toggle
   useEffect(() => {
-    // Helper: Determine if an author node is connected to the task (vs only to references)
-    const isTaskAuthor = (authorId: string): boolean => {
+    const linkMatchesFilter = (link: Link): boolean => {
+      const relation = link.relation;
+      const isClaimLink = relation === "supports" || relation === "refutes" || relation === "related";
+      if (!isClaimLink) return true;
+      if (graphLinkFilter === "user") return !link.created_by_ai;
+      if (graphLinkFilter === "ai") return Boolean(link.created_by_ai);
+      return true;
+    };
+    const baseLinks = graphData.links.filter(linkMatchesFilter);
+    const baseLinkedNodeIds = new Set<string>();
+    baseLinks.forEach((link) => {
+      baseLinkedNodeIds.add(link.source);
+      baseLinkedNodeIds.add(link.target);
+    });
+    const pruneUnlinkedByFilter = (items: GraphNode[]) => {
+      if (graphLinkFilter === "all") return items;
+      return items.filter((node) => node.type === "task" || baseLinkedNodeIds.has(node.id));
+    };
+
+    // Helper: Determine if an author/publisher node is connected to the task (vs only to references)
+    const isTaskEntity = (nodeId: string): boolean => {
       // Find the task node
       const taskNode = graphData.nodes.find((n) => n.type === "task");
       if (!taskNode) return false;
 
       // Check if this author is linked to the task node
-      return graphData.links.some(
+      return baseLinks.some(
         (link) =>
-          (link.source === authorId && link.target === taskNode.id) ||
-          (link.target === authorId && link.source === taskNode.id),
+          (link.source === nodeId && link.target === taskNode.id) ||
+          (link.target === nodeId && link.source === taskNode.id),
       );
+    };
+    const filterMetadataScope = (items: GraphNode[]) => {
+      if (graphEntityScope === "all") return items;
+      return items.filter((node) => {
+        if (node.type === "author" || node.type === "publisher") {
+          return isTaskEntity(node.id);
+        }
+        return true;
+      });
     };
 
     // If no active view, still filter reference authors based on toggle
     if (!activeViewId || views.length === 0) {
-      if (!showReferenceAuthors) {
-        const filteredNodes = graphData.nodes.filter((node) => {
-          if (node.type === "author") {
-            return isTaskAuthor(node.id);
-          }
-          return true;
-        });
-        const filteredNodeIds = new Set(filteredNodes.map((n) => n.id));
-        const filteredLinks = graphData.links.filter(
-          (link) =>
-            filteredNodeIds.has(link.source) &&
-            filteredNodeIds.has(link.target),
-        );
-        setFilteredGraphData({ nodes: filteredNodes, links: filteredLinks });
-      } else {
-        setFilteredGraphData(graphData);
-      }
+      const filteredNodes = pruneUnlinkedByFilter(filterMetadataScope(graphData.nodes));
+      const filteredNodeIds = new Set(filteredNodes.map((n) => n.id));
+      const filteredLinks = baseLinks.filter(
+        (link) =>
+          filteredNodeIds.has(link.source) &&
+          filteredNodeIds.has(link.target),
+      );
+      setFilteredGraphData({ nodes: filteredNodes, links: filteredLinks });
       return;
     }
 
@@ -265,10 +286,13 @@ const MoleculeMapPage = () => {
         if (node.type === "task") return true;
         if (node.type === "author") {
           // Always show task authors, hide reference authors based on toggle
-          if (isTaskAuthor(node.id)) return true;
-          return showReferenceAuthors;
+          if (isTaskEntity(node.id)) return true;
+          return graphEntityScope === "all";
         }
-        if (node.type === "publisher") return true;
+        if (node.type === "publisher") {
+          if (isTaskEntity(node.id)) return true;
+          return graphEntityScope === "all";
+        }
         if (node.type === "taskClaim") return true;
         if (node.type === "reference") {
           return pinnedIds.has(node.content_id!);
@@ -279,14 +303,15 @@ const MoleculeMapPage = () => {
         return false;
       });
 
-      const filteredNodeIds = new Set(filteredNodes.map((n) => n.id));
-      const filteredLinks = graphData.links.filter(
+      const metadataFilteredNodes = pruneUnlinkedByFilter(filterMetadataScope(filteredNodes));
+      const filteredNodeIds = new Set(metadataFilteredNodes.map((n) => n.id));
+      const filteredLinks = baseLinks.filter(
         (link) =>
           filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target),
       );
 
       setFilteredGraphData({
-        nodes: filteredNodes,
+        nodes: metadataFilteredNodes,
         links: filteredLinks,
       });
     } else {
@@ -319,18 +344,10 @@ const MoleculeMapPage = () => {
         return node;
       });
 
-      // Filter out reference authors if toggle is off
-      if (!showReferenceAuthors) {
-        nodesWithDimming = nodesWithDimming.filter((node) => {
-          if (node.type === "author") {
-            return isTaskAuthor(node.id);
-          }
-          return true;
-        });
-      }
+      nodesWithDimming = pruneUnlinkedByFilter(filterMetadataScope(nodesWithDimming));
 
       const filteredNodeIds = new Set(nodesWithDimming.map((n) => n.id));
-      const filteredLinks = graphData.links.filter(
+      const filteredLinks = baseLinks.filter(
         (link) =>
           filteredNodeIds.has(link.source) && filteredNodeIds.has(link.target),
       );
@@ -346,7 +363,8 @@ const MoleculeMapPage = () => {
     views,
     showPinnedOnly,
     dimUnpinned,
-    showReferenceAuthors,
+    graphEntityScope,
+    graphLinkFilter,
   ]);
 
   // View management handlers
@@ -696,6 +714,13 @@ const MoleculeMapPage = () => {
       )
     : new Set();
   const currentDisplayMode = activeView?.display_mode || "circles";
+  const moleculeMetrics = {
+    claims: filteredGraphData.nodes.filter((node) => node.type === "taskClaim" || node.type === "refClaim").length,
+    sources: filteredGraphData.nodes.filter((node) => node.type === "reference").length,
+    authors: filteredGraphData.nodes.filter((node) => node.type === "author").length,
+    links: filteredGraphData.links.length,
+    userLinks: filteredGraphData.links.filter((link) => !link.created_by_ai).length,
+  };
 
   console.log("🎨 Current display mode:", currentDisplayMode);
   console.log("🎨 Active view:", activeView);
@@ -721,40 +746,19 @@ const MoleculeMapPage = () => {
         </CardBody>
       </Card>
 
-      {/* Control Bar */}
-      <Box
-        className="mr-card"
-        mb={2}
-        display="flex"
-        gap={{ base: 1, md: 1.5, lg: 2 }}
-        alignItems="center"
-        justifyContent="flex-start"
-        p={{ base: 1.5, md: 2, lg: 3 }}
-        position="relative"
-        zIndex={0}
-        flexWrap="nowrap"
-        borderLeftRadius="24px"
-        overflow="visible"
-        sx={{
-          "&::before": {
-            content: '""',
-            position: "absolute",
-            left: 0,
-            top: 0,
-            width: "20px",
-            height: "100%",
-            background:
-              "linear-gradient(90deg, rgba(113, 219, 255, 0.3) 0%, transparent 100%)",
-            borderLeftRadius: "24px",
-            pointerEvents: "none",
-            zIndex: 10,
-          },
-        }}
+      <GraphControlBar
+        title="Molecule"
+        showEntityScope
+        metrics={
+          <>
+            <GraphMetricPill tone="purple" label="Claims" value={moleculeMetrics.claims} />
+            <GraphMetricPill tone="green" label="Sources" value={moleculeMetrics.sources} />
+            <GraphMetricPill tone="blue" label="Authors" value={moleculeMetrics.authors} />
+            <GraphMetricPill tone="cyan" label="Links" value={moleculeMetrics.links} />
+            <GraphMetricPill tone="purple" label="User Links" value={moleculeMetrics.userLinks} />
+          </>
+        }
       >
-        {/* Molecule Label Box */}
-        <Heading size={{ base: "xs", md: "sm" }} className="mr-text-primary" whiteSpace="nowrap" minW="auto">
-          Molecule
-        </Heading>
 
         <Box position="relative" zIndex={500}>
           <DisplayModeSwitcher
@@ -841,68 +845,6 @@ const MoleculeMapPage = () => {
           </Select>
         </Box>
 
-        {/* Authors Dropdown */}
-        <Box
-          display="flex"
-          alignItems="center"
-          gap={{ base: 0.5, md: 1 }}
-          bg={
-            colorMode === "dark"
-              ? "rgba(15, 23, 42, 0.6)"
-              : "rgba(255, 255, 255, 0.6)"
-          }
-          px={{ base: 1.5, md: 2 }}
-          py={{ base: 0.5, md: 1 }}
-          borderRadius="full"
-          border="1px solid"
-          borderColor={
-            colorMode === "dark"
-              ? "rgba(113, 219, 255, 0.2)"
-              : "rgba(71, 85, 105, 0.2)"
-          }
-          boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.15)"
-          position="relative"
-          zIndex={500}
-        >
-          <Text
-            className="mr-text-muted"
-            fontSize={{ base: "8px", md: "9px", lg: "10px" }}
-            textTransform="uppercase"
-            letterSpacing="0.3px"
-            whiteSpace="nowrap"
-            display={{ base: "none", lg: "block" }}
-          >
-            Authors
-          </Text>
-          <Select
-            size="xs"
-            width={{ base: "85px", md: "100px", lg: "120px" }}
-            fontSize={{ base: "9px", md: "10px", lg: "11px" }}
-            height={{ base: "20px", md: "24px" }}
-            value={showReferenceAuthors ? "all" : "task"}
-            onChange={(e) => setShowReferenceAuthors(e.target.value === "all")}
-            bg={colorMode === "dark" ? "rgba(15, 23, 42, 0.9)" : "white"}
-            border="1px solid"
-            borderColor={
-              colorMode === "dark"
-                ? "var(--mr-blue-border)"
-                : "rgba(71, 85, 105, 0.3)"
-            }
-            color={colorMode === "dark" ? "var(--mr-text-primary)" : "gray.800"}
-            borderRadius="full"
-            boxShadow="inset 0 2px 4px rgba(0, 0, 0, 0.4)"
-            _hover={{
-              borderColor:
-                colorMode === "dark"
-                  ? "var(--mr-blue)"
-                  : "rgba(71, 85, 105, 0.5)",
-            }}
-          >
-            <option value="task">👤 Task</option>
-            <option value="all">👥 All</option>
-          </Select>
-        </Box>
-
         {/* Views Dropdown */}
         <Box
           display="flex"
@@ -956,7 +898,7 @@ const MoleculeMapPage = () => {
         <Box position="relative" zIndex={500}>
           <ViewerScopeBadge />
         </Box>
-      </Box>
+      </GraphControlBar>
 
       {filteredGraphData.nodes.length > 0 ? (
         <Box position="relative" height="78vh">

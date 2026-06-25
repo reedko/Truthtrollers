@@ -39,6 +39,7 @@ export async function persistClaims(
   }
 
   const claimIds = [];
+  const virtualIdToClaimId = new Map();
 
   for (let claimOrder = 0; claimOrder < claims.length; claimOrder++) {
     const claimEntry = claims[claimOrder];
@@ -49,8 +50,17 @@ export async function persistClaims(
     const claimRole = typeof claimEntry === "object" && claimEntry !== null
       ? (claimEntry.role || null)
       : null;
-    const parentClaimId = typeof claimEntry === "object" && claimEntry !== null
+    const linkRelationshipType = typeof claimEntry === "object" && claimEntry !== null
+      ? (claimEntry.relationshipType || claimEntry.relationship_type || relationshipType)
+      : relationshipType;
+    const rawParentClaimId = typeof claimEntry === "object" && claimEntry !== null
       ? (claimEntry.parentClaimId ?? claimEntry.parent_claim_id ?? null)
+      : null;
+    const virtualParentId = typeof claimEntry === "object" && claimEntry !== null
+      ? (claimEntry.parentId ?? claimEntry.parent_id ?? null)
+      : null;
+    const virtualClaimId = typeof claimEntry === "object" && claimEntry !== null
+      ? (claimEntry.id ?? claimEntry.claimId ?? claimEntry.claim_id ?? null)
       : null;
     const claimDepth = typeof claimEntry === "object" && claimEntry !== null
       ? (claimEntry.claimDepth ?? claimEntry.claim_depth ?? null)
@@ -60,6 +70,18 @@ export async function persistClaims(
       : null;
     const verifiabilityScore = typeof claimEntry === "object" && claimEntry !== null
       ? (claimEntry.verifiability ?? claimEntry.verifiabilityScore ?? claimEntry.verifiability_score ?? null)
+      : null;
+    const objectClaimText = typeof claimEntry === "object" && claimEntry !== null
+      ? (claimEntry.objectClaim ?? claimEntry.objectText ?? claimEntry.object_claim_text ?? null)
+      : null;
+    const isAttribution = typeof claimEntry === "object" && claimEntry !== null
+      ? (claimEntry.isAttribution ?? claimEntry.is_attribution ?? null)
+      : null;
+    const speakerEntity = typeof claimEntry === "object" && claimEntry !== null
+      ? (claimEntry.speakerEntity ?? claimEntry.speaker_entity ?? null)
+      : null;
+    const accountabilityEligible = typeof claimEntry === "object" && claimEntry !== null
+      ? (claimEntry.accountabilityEligible ?? claimEntry.accountability_eligible ?? null)
       : null;
     const inferredClaimDepth = claimDepth !== null && claimDepth !== undefined
       ? claimDepth
@@ -106,33 +128,48 @@ export async function persistClaims(
     }
 
     claimIds.push(claimId);
+    if (virtualClaimId !== null && virtualClaimId !== undefined && String(virtualClaimId).trim()) {
+      virtualIdToClaimId.set(String(virtualClaimId), claimId);
+    }
+
+    const parsedParentClaimId = Number(rawParentClaimId);
+    const parentClaimId = Number.isInteger(parsedParentClaimId) && parsedParentClaimId > 0
+      ? parsedParentClaimId
+      : virtualParentId != null && virtualIdToClaimId.has(String(virtualParentId))
+        ? virtualIdToClaimId.get(String(virtualParentId))
+        : null;
 
     // 2) Link claim to content (check if link already exists to avoid duplicates)
     const existingLink = await query(
       `SELECT 1 AS exists_link FROM content_claims WHERE content_id = ? AND claim_id = ? AND relationship_type = ? LIMIT 1`,
-      [contentId, claimId, relationshipType]
+      [contentId, claimId, linkRelationshipType]
     );
 
     if (existingLink.length === 0) {
       await query(
         `
           INSERT INTO content_claims
-            (content_id, claim_id, relationship_type, claim_role, parent_claim_id, claim_depth, centrality_score, verifiability_score, claim_order)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (content_id, claim_id, relationship_type, claim_role, parent_claim_id, claim_depth, centrality_score, verifiability_score, claim_order,
+             object_claim_text, is_attribution, speaker_entity, accountability_eligible)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
         [
           contentId,
           claimId,
-          relationshipType,
+          linkRelationshipType,
           claimRole,
           parentClaimId,
           inferredClaimDepth,
           centralityScore,
           verifiabilityScore,
           claimOrder,
+          objectClaimText,
+          isAttribution == null ? null : (isAttribution ? 1 : 0),
+          speakerEntity,
+          accountabilityEligible == null ? null : (accountabilityEligible ? 1 : 0),
         ]
       );
-      console.log(`🔗 [persistClaims] Linked claim_id ${claimId} to content_id ${contentId} (${relationshipType})`);
+      console.log(`🔗 [persistClaims] Linked claim_id ${claimId} to content_id ${contentId} (${linkRelationshipType})`);
     } else {
       await query(
         `
@@ -142,7 +179,11 @@ export async function persistClaims(
               claim_depth = COALESCE(?, claim_depth),
               centrality_score = COALESCE(?, centrality_score),
               verifiability_score = COALESCE(?, verifiability_score),
-              claim_order = COALESCE(?, claim_order)
+              claim_order = COALESCE(?, claim_order),
+              object_claim_text = COALESCE(?, object_claim_text),
+              is_attribution = COALESCE(?, is_attribution),
+              speaker_entity = COALESCE(?, speaker_entity),
+              accountability_eligible = COALESCE(?, accountability_eligible)
           WHERE content_id = ? AND claim_id = ? AND relationship_type = ?
         `,
         [
@@ -152,9 +193,13 @@ export async function persistClaims(
           centralityScore,
           verifiabilityScore,
           claimOrder,
+          objectClaimText,
+          isAttribution == null ? null : (isAttribution ? 1 : 0),
+          speakerEntity,
+          accountabilityEligible == null ? null : (accountabilityEligible ? 1 : 0),
           contentId,
           claimId,
-          relationshipType,
+          linkRelationshipType,
         ]
       );
       console.log(`⏭️  [persistClaims] Link already exists: claim_id ${claimId} → content_id ${contentId} (metadata updated if present)`);

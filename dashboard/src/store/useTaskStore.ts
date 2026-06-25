@@ -34,6 +34,8 @@ const normalizeUser = (u: any) =>
     username: String(u?.username ?? u?.name ?? u?.email ?? ""),
   } as User);
 export type ViewScope = 'all' | 'user' | 'admin';
+export type GraphLinkFilter = "all" | "user" | "ai";
+export type GraphEntityScope = "task" | "all";
 
 export interface BackgroundJob {
   id: string;
@@ -67,6 +69,8 @@ export interface TaskStoreState {
   claimsByTask: { [taskId: number]: Claim[] };
   viewingUserId: number | null;
   viewScope: ViewScope; // 'all' | 'user' | 'admin'
+  graphLinkFilter: GraphLinkFilter;
+  graphEntityScope: GraphEntityScope;
   selectedPivotTasks: Task[];
   hasHydrated: boolean;
   claimScores: {};
@@ -86,6 +90,8 @@ export interface TaskStoreState {
   resetTasks: () => void;
   setViewingUserId: (id: number | null) => void;
   setViewScope: (scope: ViewScope) => void;
+  setGraphLinkFilter: (filter: GraphLinkFilter) => void;
+  setGraphEntityScope: (scope: GraphEntityScope) => void;
   setSelectedPivotTasks: (tasks: Task[]) => void;
   setSelectedTask: (input: Task | number | null) => void;
   setRedirect: (path: string) => void;
@@ -146,6 +152,8 @@ export const useTaskStore = create<TaskStoreState>()(
       claimsByTask: {},
       viewingUserId: undefined,
       viewScope: 'all', // Default to all (equal) view
+      graphLinkFilter: "all",
+      graphEntityScope: "task",
       hasHydrated: false,
       verimeterScores: {},
       claimScores: {},
@@ -194,6 +202,8 @@ export const useTaskStore = create<TaskStoreState>()(
 
       setViewingUserId: (id: number | null) => set({ viewingUserId: id }),
       setViewScope: (scope: ViewScope) => set({ viewScope: scope }),
+      setGraphLinkFilter: (filter: GraphLinkFilter) => set({ graphLinkFilter: filter }),
+      setGraphEntityScope: (scope: GraphEntityScope) => set({ graphEntityScope: scope }),
       setRedirect: (path) => {
         // Never redirect to TextPad - it's a creation tool, not a work page
         if (path === "/textpad") {
@@ -423,6 +433,8 @@ export const useTaskStore = create<TaskStoreState>()(
           lastWorkPage: rest.lastWorkPage,
           viewingUserId: rest.viewingUserId,
           viewScope: rest.viewScope,
+          graphLinkFilter: rest.graphLinkFilter,
+          graphEntityScope: rest.graphEntityScope,
         };
       },
       onRehydrateStorage: () => () => {

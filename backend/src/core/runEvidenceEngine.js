@@ -33,6 +33,7 @@ import { extractPublisher } from "../utils/extractPublisher.js";
 import { extractInlineRefs } from "../utils/extractInlineRefs.js";
 import { getMainHeadline } from "../utils/getMainHeadline.js";
 import { getBestImage } from "../utils/getBestImage.js";
+import { buildEvidenceClaimContext } from "../utils/normalizeEvidenceClaim.js";
 import logger from "../utils/logger.js";
 import * as cheerio from "cheerio";
 import { JSDOM } from "jsdom";
@@ -75,9 +76,262 @@ async function ensureContentRelation(query, taskContentId, referenceContentId) {
   }
 }
 
+const JUNK_PUBLISHER_RE = /^(unknown( publisher)?|web|website|home|index|default|page|site|blog|news|online|internet|portal|network|media|publications?|facebook|youtube|twitter|instagram|tiktok|reddit|linkedin|pinterest|snapchat|telegram|x\.com|recaptcha|just a moment|cloudflare|attention required|one more step|checking your browser|access denied|bot protected)$/i;
+
+function domainFromUrl(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+function usablePublisherName(name) {
+  const cleaned = String(name || "").trim();
+  if (!cleaned || cleaned.length < 2) return null;
+  if (JUNK_PUBLISHER_RE.test(cleaned)) return null;
+  return cleaned;
+}
+
+function isLegitSourceCrestCode(code) {
+  const normalized = String(code || "").trim().toUpperCase();
+  if (!/^[A-EØ][1-5Ø]$/.test(normalized)) return false;
+  return !normalized.startsWith("Ø");
+}
+
+async function getCachedPublisherCrest(publisherId) {
+  if (!publisherId) return null;
+  try {
+    const rows = await query(
+      `SELECT admiralty_code, evaluation_status, updated_at, created_at
+         FROM admiralty_evaluations
+        WHERE target_type = 'publisher'
+          AND target_id = ?
+          AND evaluation_status NOT IN ('insufficient_data')
+        ORDER BY FIELD(evaluation_status,'human_confirmed','community_reviewed','machine_suggested'),
+                 updated_at DESC,
+                 created_at DESC
+        LIMIT 1`,
+      [publisherId]
+    );
+    const row = rows[0] || null;
+    if (!row || !isLegitSourceCrestCode(row.admiralty_code)) return null;
+    return row;
+  } catch (err) {
+    logger.warn(`⚠️  [Evidence] Publisher SourceCrest cache lookup failed for ${publisherId}: ${err.message}`);
+    return null;
+  }
+}
+
+async function ensureReferencePublisherLink({
+  referenceContentId,
+  url,
+  publisher,
+  title,
+  author,
+}) {
+  if (!referenceContentId || !url) return null;
+
+  const hintName = usablePublisherName(publisher?.name);
+  let identity = null;
+  try {
+    identity = await resolveSourceIdentity(url, {
+      query,
+      hintName,
+      title,
+      author,
+    });
+  } catch (err) {
+    logger.warn(`⚠️  [Evidence] Source identity resolution failed for ${url}: ${err.message}`);
+  }
+
+  const publisherName =
+    (publisher?.role === "journal" || publisher?.confidence === "proxy" ? hintName : null) ||
+    usablePublisherName(identity?.publisherName) ||
+    hintName ||
+    usablePublisherName(domainFromUrl(url));
+
+  if (!publisherName) {
+    logger.warn(`⚠️  [Evidence] No usable publisher resolved for reference ${referenceContentId}: ${url}`);
+    return null;
+  }
+
+  let publisherId = identity?.publisherId || null;
+  if (!publisherId) {
+    const rows = await query(
+      `CALL InsertOrGetPublisher(?, NULL, NULL, @publisherId)`,
+      [publisherName]
+    );
+    publisherId = rows[0]?.[0]?.publisherId || null;
+  }
+
+  if (!publisherId) {
+    logger.warn(`⚠️  [Evidence] InsertOrGetPublisher returned no ID for "${publisherName}"`);
+    return null;
+  }
+
+  await query(
+    `INSERT IGNORE INTO content_publishers (content_id, publisher_id) VALUES (?, ?)`,
+    [referenceContentId, publisherId]
+  );
+
+  logger.log(
+    `🛡 [Evidence] Linked publisher "${publisherName}" (id=${publisherId}) to reference ${referenceContentId}`
+  );
+
+  const cachedCrest = await getCachedPublisherCrest(publisherId);
+
+  return {
+    publisherId,
+    publisherName,
+    sourceType: identity?.sourceType || "unknown",
+    resolutionLevel: identity?.resolutionLevel || 3,
+    cachedCrest,
+  };
+}
+
+function enrichReferencePublisherAsync({ referenceContentId, url, publisherLink }) {
+  if (!publisherLink?.publisherId) return;
+  if (publisherLink.cachedCrest) {
+    logger.log(
+      `🛡 [Evidence] Using cached publisher SourceCrest ${publisherLink.cachedCrest.admiralty_code} for reference ${referenceContentId}; skipping scrape-time enrichment`
+    );
+    return;
+  }
+
+  (async () => {
+    try {
+      const { enrichPublisherIfNeeded } = await import("../services/publisherEnrichmentService.js");
+      const { evaluateAdmiraltyCode, storeEvaluation } = await import("../../services/admiraltyEvaluator.js");
+
+      const enrichResult = await enrichPublisherIfNeeded({
+        query,
+        publisherId: publisherLink.publisherId,
+        publisherName: publisherLink.publisherName,
+        sourceUrl: url,
+        force: false,
+        context: "reference_source",
+      });
+
+      const [profileRows, ratingRows] = await Promise.all([
+        query(
+          `SELECT source_type FROM publisher_profiles WHERE publisher_id = ? ORDER BY last_checked DESC LIMIT 1`,
+          [publisherLink.publisherId]
+        ),
+        query(
+          `SELECT source, rating_label, rating_type, bias_score, veracity_score, score, confidence
+             FROM publisher_ratings WHERE publisher_id = ? AND user_id IS NULL ORDER BY last_checked DESC`,
+          [publisherLink.publisherId]
+        ),
+      ]);
+
+      const evaluation = await evaluateAdmiraltyCode({
+        sourceUrl: url,
+        publisherName: publisherLink.publisherName,
+        sourceIdentity: {
+          sourceType: profileRows[0]?.source_type || publisherLink.sourceType,
+          resolutionLevel: publisherLink.resolutionLevel || 3,
+        },
+        existingSourceRatings: ratingRows,
+      });
+
+      await storeEvaluation(query, {
+        targetType: "content",
+        targetId: referenceContentId,
+        sourceUrl: url,
+        publisherId: publisherLink.publisherId,
+        evaluation,
+      });
+
+      logger.log(
+        `🛡 [Evidence] SourceCrest enriched for reference ${referenceContentId}: "${publisherLink.publisherName}" code=${evaluation.admiraltyCode} status=${enrichResult?.status ?? "done"}`
+      );
+    } catch (err) {
+      logger.warn(
+        `⚠️  [Evidence] SourceCrest enrichment skipped for reference ${referenceContentId}: ${err.message}`
+      );
+    }
+  })();
+}
+
+function clampScore(value, fallback = 0) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(0, Math.min(100, n));
+}
+
+export function buildSearchTargets(claim) {
+  const text = String(claim?.searchText || claim?.promptText || claim?.text || "").trim();
+  const originalText = String(claim?.originalText || claim?.text || "").trim();
+  const source = text || originalText;
+  if (!source) return [];
+
+  const targets = [];
+  const add = (query, matchedPart, intent = "both") => {
+    const cleaned = String(query || "").replace(/\s+/g, " ").trim();
+    if (!cleaned) return;
+    if (targets.some((t) => t.query.toLowerCase() === cleaned.toLowerCase())) return;
+    targets.push({ query: cleaned, matchedPart, intent });
+  };
+
+  const attributionPattern = /\b(said|says|claimed|claims|alleged|alleges|reported|reports|according to|revealed|stated|wrote|testified)\b/i;
+  const hasAttribution = attributionPattern.test(originalText) || attributionPattern.test(source);
+  const combinedText = `${source} ${originalText}`.toLowerCase();
+  const isCdcMmrAutismClaim =
+    /\bcdc\b|centers for disease control/.test(combinedText) &&
+    /\bmmr\b|measles/.test(combinedText) &&
+    /autism/.test(combinedText);
+  const allegesManipulatedData =
+    /manipulat|omit|omitted|exclude|excluded|data/.test(combinedText);
+  const allegesDestroyedData =
+    /destroy|destroyed|shred|shredded|discard|discarded/.test(combinedText);
+
+  if (isCdcMmrAutismClaim && allegesManipulatedData) {
+    add(
+      "CDC MMR autism DeStefano 2004 data manipulation omitted data",
+      "object_claim",
+      "refute",
+    );
+    add(
+      "DeStefano 2004 MMR autism study data available Thompson Hooker",
+      "study_or_event_identity",
+      "refute",
+    );
+  }
+
+  if (isCdcMmrAutismClaim && allegesDestroyedData) {
+    add(
+      "CDC MMR autism study raw data destroyed available DeStefano Thompson",
+      "object_claim",
+      "refute",
+    );
+  }
+
+  if (hasAttribution) {
+    const parts = source.split(attributionPattern).map((part) => part.trim()).filter(Boolean);
+    const beforeVerb = parts[0] || "";
+    const afterVerb = parts.slice(2).join(" ") || parts[1] || "";
+
+    add(afterVerb || source, "object_claim");
+    add([beforeVerb, afterVerb].filter(Boolean).join(" "), "attribution");
+  } else {
+    add(source, "object_claim");
+  }
+
+  const identityTerms = source
+    .match(/\b(?:[A-Z][A-Za-z0-9'’.-]+(?:\s+[A-Z][A-Za-z0-9'’.-]+){0,4}|\d{4}|[A-Z]{2,})\b/g);
+  if (identityTerms?.length) {
+    add(identityTerms.slice(0, 8).join(" "), "study_or_event_identity", "context");
+  }
+
+  add(source, "context", "context");
+  return targets.slice(0, 3);
+}
+
 export async function runEvidenceEngine({
   taskContentId,
   claimIds,
+  claims: claimMetadata = [],
   readableText,
 }) {
   logger.log("🟣 [runEvidenceEngine] Starting evidence run…");
@@ -102,10 +356,52 @@ export async function runEvidenceEngine({
     [claimIds]
   );
 
-  const claims = rows.map((row) => ({
-    id: row.claim_id,
-    text: row.claim_text,
-  }));
+  const metadataById = new Map(
+    Array.isArray(claimMetadata)
+      ? claimMetadata.map((claim) => [Number(claim.id), claim])
+      : []
+  );
+  const rowById = new Map(rows.map((row) => [Number(row.claim_id), row]));
+
+  const claims = claimIds
+    .map((claimId) => rowById.get(Number(claimId)))
+    .filter(Boolean)
+    .map((row) => {
+      const meta = metadataById.get(Number(row.claim_id)) || {};
+      const mappedObjectClaim = String(meta.objectClaim || meta.object_claim_text || meta.objectText || "").trim();
+      const searchText = String(mappedObjectClaim || meta.searchText || meta.search_text || "").trim();
+      const context = buildEvidenceClaimContext(searchText || row.claim_text);
+      if (context.changed) {
+        logger.log(
+          `🎯 [Evidence] Atomic claim normalization for ${row.claim_id}: "${context.coreText}"`
+        );
+      }
+      const claim = {
+        id: row.claim_id,
+        text: context.coreText,
+        originalText: context.originalText,
+        promptText: context.promptText,
+        role: meta.role || null,
+        centrality: clampScore(meta.centrality, 0),
+        verifiability: clampScore(meta.verifiability, 0),
+        priority: clampScore(meta.priority, 0),
+        searchText,
+        objectClaim: mappedObjectClaim,
+        isAttribution: Boolean(meta.isAttribution || meta.is_attribution),
+        speakerEntity: meta.speakerEntity || meta.speaker_entity || "",
+        articleStance: meta.articleStance || meta.article_stance || "",
+        argumentFunction: meta.argumentFunction || meta.argument_function || "",
+        scoreTransform: meta.scoreTransform || meta.score_transform || "",
+      };
+      claim.searchTargets = buildSearchTargets(claim);
+      return claim;
+    }).sort((a, b) =>
+      (b.priority - a.priority) ||
+      (b.verifiability - a.verifiability) ||
+      (b.centrality - a.centrality)
+    );
+
+  claimIds.splice(0, claimIds.length, ...claims.map((claim) => claim.id));
 
   // Map to store processed references (URL → metadata)
   const referenceCache = new Map();
@@ -348,7 +644,7 @@ export async function runEvidenceEngine({
               title =
                 cand.title || (await getMainHeadline($)) || "AI Reference";
               authors = await extractAuthors($);
-              publisher = await extractPublisher($);
+              publisher = await extractPublisher($, cand.url);
               thumbnail = getBestImage($, cand.url) || "";
 
               // ─────────────────────────────────────────────
@@ -433,6 +729,19 @@ export async function runEvidenceEngine({
               // CRITICAL: Link reference to task via content_relations
               // ─────────────────────────────────────────────
               await ensureContentRelation(query, taskContentId, stubContentId);
+
+              const publisherLink = await ensureReferencePublisherLink({
+                referenceContentId: stubContentId,
+                url: cand.url,
+                publisher,
+                title,
+                author: authors?.[0]?.name || authors?.[0] || null,
+              });
+              enrichReferencePublisherAsync({
+                referenceContentId: stubContentId,
+                url: cand.url,
+                publisherLink,
+              });
 
               // Calculate quality for this candidate
               const base = cand.score ?? 0;
@@ -519,13 +828,18 @@ export async function runEvidenceEngine({
               await persistPublishers(query, referenceContentId, { publisher_name: publisher.name });
             }
 
-            // Resolve + cache source identity — fire-and-forget, never blocks evidence engine
-            resolveSourceIdentity(cand.url, {
-              query,
-              hintName: publisher?.name || null,
-              title: title || null,
-              author: authors?.[0]?.name || null,
-            }).catch(() => {});
+            const publisherLink = await ensureReferencePublisherLink({
+              referenceContentId,
+              url: cand.url,
+              publisher,
+              title,
+              author: authors?.[0]?.name || authors?.[0] || null,
+            });
+            enrichReferencePublisherAsync({
+              referenceContentId,
+              url: cand.url,
+              publisherLink,
+            });
 
             // Detect source lineage (excerpt/repost/pointer/archive) — fire-and-forget
             resolveSourceLineage(cand.url, { query }).catch(() => {});
@@ -599,6 +913,19 @@ export async function runEvidenceEngine({
             // ─────────────────────────────────────────────
             await ensureContentRelation(query, taskContentId, stubContentId);
 
+            const publisherLink = await ensureReferencePublisherLink({
+              referenceContentId: stubContentId,
+              url: cand.url,
+              publisher: null,
+              title: cand.title || "Failed Reference",
+              author: null,
+            });
+            enrichReferencePublisherAsync({
+              referenceContentId: stubContentId,
+              url: cand.url,
+              publisherLink,
+            });
+
             // Calculate quality for this candidate
             const base = cand.score ?? 0;
             const boost = cand.domain?.match(
@@ -654,11 +981,14 @@ export async function runEvidenceEngine({
     enableRedTeam: false,
 
     // Apply mode-specific config (or fallback to defaults)
-    queriesPerClaim: modeConfig.queriesPerClaim || 6,
-    topKQueries: modeConfig.queriesPerClaim || 6,
-    topKCandidates: modeConfig.queriesPerClaim || 6,
+    queriesPerClaim: Math.min(modeConfig.queriesPerClaim || 6, 3),
+    topKQueries: Math.min(modeConfig.queriesPerClaim || 6, 3),
+    topKCandidates: Math.min(modeConfig.topKCandidates || modeConfig.queriesPerClaim || 6, 9),
     maxEvidencePerDoc: 2,
-    maxEvidenceCandidates: modeConfig.maxEvidenceCandidates || 4,
+    maxEvidenceCandidates: Math.min(modeConfig.maxEvidenceCandidates || 4, 9),
+    maxSearchTargetsPerClaim: 3,
+    maxSourcesComparedPerClaim: 9,
+    maxRetriesPerClaim: 1,
 
     // Mode-specific settings
     enableFringeSearch: modeConfig.enableFringeSearch || false,
@@ -793,88 +1123,51 @@ export async function runEvidenceEngine({
   }
 
   // ─────────────────────────────────────────────
-  // Add ALL cached references (even if LLM found no evidence)
-  // We still want to extract claims from them OR save search snippets
+  // Keep failed scrape stubs only when the search snippet still gives us
+  // claim provenance. Those become dotted document-level links with a retry
+  // affordance. Everything else is unlinked to avoid orphan source cards.
   // ─────────────────────────────────────────────
   for (const [url, refData] of referenceCache.entries()) {
     if (!evidenceByUrl.has(url)) {
-      if (refData.isFailed) {
-        // Failed reference - analyze search snippet with LLM to get stance
-        let snippetStance = "insufficient";
-        let snippetRationale = "Failed to scrape - using search snippet";
+      const hasClaimProvenance =
+        Array.isArray(refData.claimIndices) && refData.claimIndices.length > 0;
+      const snippet = String(refData.snippet || "").trim();
 
-        if (refData.snippet && refData.claimIndices && refData.claimIndices.length > 0) {
-          // Get the first claim this reference was matched to
-          const firstClaimIndex = refData.claimIndices[0];
-          const claim = claims[firstClaimIndex];
-
-          if (claim) {
-            try {
-              // Analyze snippet with LLM
-              const snippetAnalysis = await openAiLLM.generate({
-                system: `You analyze search snippets to determine if they support, refute, or add nuance to a task claim.
-The stance is ALWAYS relative to the task claim, not whether the source itself is credible or true.
-Use "refute" when the snippet says the opposite of the task claim's comparison, causal statement, or factual assertion.`,
-                user: `TASK CLAIM:
-${claim.text}
-
-SOURCE:
-${refData.title}
-
-SNIPPET:
-${refData.snippet}
-
-Does this snippet support, refute, nuance, or provide insufficient evidence for the TASK CLAIM?`,
-                schemaHint: '{"stance":"support|refute|nuance|insufficient","summary":"brief explanation"}',
-                temperature: 0.1,
-              });
-
-              if (snippetAnalysis?.stance) {
-                const normalizedSnippetStance = String(snippetAnalysis.stance).trim().toLowerCase();
-                snippetStance = ["support", "refute", "nuance", "insufficient"].includes(normalizedSnippetStance)
-                  ? normalizedSnippetStance
-                  : "insufficient";
-                snippetRationale = snippetAnalysis.summary || "Analysis based on search snippet";
-              }
-            } catch (err) {
-              logger.warn(`⚠️  [Evidence] Failed to analyze snippet for ${url}:`, err.message);
-            }
-          }
-        }
-
+      if (refData.isFailed && hasClaimProvenance && snippet) {
         evidenceByUrl.set(url, {
           referenceContentId: refData.referenceContentId,
           url,
           title: refData.title,
-          stance: snippetStance,
-          why: snippetRationale,
-          quote: refData.snippet || null, // Use search engine snippet
-          claims: [...(refData.claimIndices || [])], // COPY array to avoid mutation
-          quality: refData.quality || 0, // Use cached quality
-          cleanText: "", // No text - failed
-          scrapeStatus: "snippet_only", // Mark as snippet-only scrape
+          stance: "nuance",
+          why:
+            "Search result snippet matched this claim, but the source scrape failed. Rescrape the source to verify the document-level match.",
+          quote: snippet,
+          claims: [...refData.claimIndices],
+          quality: refData.quality || 0.25,
+          cleanText: "",
+          scrapeStatus: "snippet_only",
         });
         logger.log(
-          `⚠️  [Evidence] Adding failed reference with analyzed snippet (stance: ${snippetStance}): ${url}`
+          `🧷 [Evidence] Keeping failed source as snippet-only document link: ${url}`
         );
-      } else if (refData.cleanText) {
-        // Reference was fetched but LLM found no evidence - use search snippet as fallback
-        evidenceByUrl.set(url, {
-          referenceContentId: refData.referenceContentId,
-          url,
-          title: refData.title,
-          stance: "insufficient", // No evidence found
-          why: "No relevant evidence extracted by LLM - using search snippet",
-          quote: refData.snippet || null, // Use search snippet as fallback
-          claims: [...(refData.claimIndices || [])], // COPY array to avoid mutation
-          quality: refData.quality || 0, // Use cached quality
-          cleanText: refData.cleanText,
-          scrapeStatus: "full", // Was fully scraped, just no evidence found
-        });
-        logger.log(
-          `📝 [Evidence] Adding reference with no LLM evidence, using snippet for claim extraction: ${url} (claims: ${refData.claimIndices})`
-        );
+        continue;
       }
+
+      if (refData.referenceContentId) {
+        try {
+          await query(
+            `DELETE FROM content_relations
+             WHERE content_id = ? AND reference_content_id = ? AND is_system = 1`,
+            [taskContentId, refData.referenceContentId]
+          );
+        } catch (err) {
+          logger.warn(
+            `⚠️  [Evidence] Failed to unlink orphan source ${refData.referenceContentId}: ${err.message}`
+          );
+        }
+      }
+
+      logger.log(`⏭️  [Evidence] Skipping unlinked source with no extracted evidence: ${url}`);
     }
   }
 

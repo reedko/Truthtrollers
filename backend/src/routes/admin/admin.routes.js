@@ -25,7 +25,8 @@ const derivedClaimRoleSql = (alias) => `
     CASE
       WHEN ${alias}.claim_depth = 0 THEN 'thesis'
       WHEN ${alias}.claim_depth = 1 THEN 'pillar'
-      WHEN ${alias}.claim_depth >= 2 THEN 'evidence'
+      WHEN ${alias}.claim_depth = 2 THEN 'pillar_support'
+      WHEN ${alias}.claim_depth >= 3 THEN 'evidence'
       WHEN ${alias}.relationship_type IN ('task', 'content') THEN 'thesis'
       WHEN ${alias}.relationship_type IN ('reference', 'snippet') THEN 'evidence'
       ELSE 'background'
@@ -39,7 +40,8 @@ const derivedClaimDepthSql = (alias) => `
     CASE
       WHEN ${alias}.claim_role = 'thesis' THEN 0
       WHEN ${alias}.claim_role = 'pillar' THEN 1
-      WHEN ${alias}.claim_role = 'evidence' THEN 2
+      WHEN ${alias}.claim_role = 'pillar_support' THEN 2
+      WHEN ${alias}.claim_role IN ('evidence', 'fallibility_critical') THEN 3
       WHEN ${alias}.relationship_type IN ('task', 'content') THEN 0
       WHEN ${alias}.relationship_type IN ('reference', 'snippet') THEN 2
       ELSE 3
@@ -51,8 +53,10 @@ const claimRolePrioritySql = (alias) => `
   CASE ${derivedClaimRoleSql(alias)}
     WHEN 'thesis' THEN 0
     WHEN 'pillar' THEN 1
-    WHEN 'evidence' THEN 2
-    ELSE 3
+    WHEN 'pillar_support' THEN 2
+    WHEN 'evidence' THEN 3
+    WHEN 'fallibility_critical' THEN 4
+    ELSE 5
   END
 `;
 
@@ -645,7 +649,7 @@ export default function createAdminRouter({ query, pool }) {
       return res.status(400).json({ error: "No hierarchy updates provided" });
     }
 
-    const validRoles = new Set(["thesis", "pillar", "evidence", "background", null]);
+    const validRoles = new Set(["thesis", "pillar", "pillar_support", "evidence", "background", "fallibility_critical", null]);
     const normalizedUpdates = [];
     for (const update of updates) {
       const claimId = Number(update?.claim_id);
@@ -803,10 +807,11 @@ export default function createAdminRouter({ query, pool }) {
       const system = [
         "You are helping a super-admin repair claim hierarchy for a fact-checking platform.",
         "Return strict JSON only.",
-        "Classify each claim as thesis, pillar, evidence, or background.",
+        "Classify each claim as thesis, pillar, pillar_support, evidence, background, or fallibility_critical.",
         "Choose a single thesis if the content has one central assertion.",
         "Pillars should directly support the thesis.",
-        "Evidence should support a specific pillar.",
+        "Pillar_support claims are intermediate claims that connect a pillar to evidence.",
+        "Evidence should support a specific pillar or pillar_support claim.",
         "Background is for context or side details that are not central.",
         "Use claim_id integers from the provided list only.",
       ].join("\n");
@@ -818,7 +823,7 @@ export default function createAdminRouter({ query, pool }) {
           suggestions: [
             {
               claim_id: 123,
-              claim_role: "thesis|pillar|evidence|background",
+              claim_role: "thesis|pillar|pillar_support|evidence|background|fallibility_critical",
               parent_claim_id: 123,
               claim_depth: 0,
               centrality_score: 0,
@@ -835,7 +840,7 @@ export default function createAdminRouter({ query, pool }) {
         user,
         schemaHint: "{" +
           "\"suggestions\":[{" +
-          "\"claim_id\":number,\"claim_role\":\"thesis|pillar|evidence|background\",\"parent_claim_id\":number|null," +
+          "\"claim_id\":number,\"claim_role\":\"thesis|pillar|pillar_support|evidence|background|fallibility_critical\",\"parent_claim_id\":number|null," +
           "\"claim_depth\":number,\"centrality_score\":number,\"verifiability_score\":number,\"claim_order\":number,\"reason\":string" +
           "}]}",
         temperature: 0.2,

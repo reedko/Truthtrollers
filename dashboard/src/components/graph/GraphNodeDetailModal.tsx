@@ -46,6 +46,9 @@ interface GraphNodeDetailModalProps {
   reference?: ReferenceWithClaims | null;
   sourceClaims?: GraphNodeDetailSourceClaim[];
   statusItems?: GraphNodeDetailStatus[];
+  placement?: "center" | "right" | "left";
+  safeTop?: number;
+  safeBottom?: number;
   onClose: () => void;
   onSourceCrestClick?: (reference: ReferenceWithClaims) => void;
 }
@@ -161,6 +164,9 @@ export default function GraphNodeDetailModal({
   reference,
   sourceClaims = [],
   statusItems = [],
+  placement = "right",
+  safeTop = 20,
+  safeBottom = 20,
   onClose,
   onSourceCrestClick,
 }: GraphNodeDetailModalProps) {
@@ -171,32 +177,37 @@ export default function GraphNodeDetailModal({
     ...(relation ? [{ label: "Relation", value: relationLabel, tone: relationTone(relation) }] : []),
     ...statusItems,
   ];
+  const alignItems =
+    placement === "left" ? "flex-start" : placement === "center" ? "center" : "flex-end";
 
   return createPortal(
     <Box
       position="fixed"
       inset={0}
       zIndex={2400}
-      bg="rgba(0, 6, 18, 0.58)"
-      backdropFilter="blur(8px)"
+      bg="transparent"
       display="flex"
       alignItems="center"
-      justifyContent="center"
-      p={{ base: 3, md: 5 }}
+      justifyContent={alignItems}
+      px={{ base: 3, md: 5 }}
+      pt={`${safeTop}px`}
+      pb={`${safeBottom}px`}
+      pointerEvents="none"
       onClick={onClose}
     >
       <Box
         role="dialog"
         aria-modal="true"
-        w="min(94vw, 720px)"
-        maxH="min(86vh, 760px)"
+        w={placement === "center" ? "min(94vw, 720px)" : "min(92vw, 560px)"}
+        maxH={`min(calc(100vh - ${safeTop + safeBottom}px), 760px)`}
         overflow="hidden"
         border="1px solid rgba(113, 219, 255, 0.32)"
         borderRadius="10px"
-        bg="linear-gradient(145deg, rgba(4, 15, 34, 0.98), rgba(10, 28, 54, 0.96))"
+        bg="linear-gradient(145deg, rgba(4, 15, 34, 0.94), rgba(10, 28, 54, 0.92))"
         color="var(--mr-text-primary, #eaf6ff)"
         boxShadow="0 28px 80px rgba(0,0,0,0.62), 0 0 42px rgba(0,162,255,0.18), inset 0 1px 0 rgba(255,255,255,0.08)"
         position="relative"
+        pointerEvents="auto"
         onClick={(event) => event.stopPropagation()}
       >
         <Box position="absolute" left={0} top={0} bottom={0} w="24px" bg="linear-gradient(90deg, rgba(113,219,255,0.35), transparent)" />
@@ -255,7 +266,7 @@ export default function GraphNodeDetailModal({
           position="relative"
           px={{ base: 4, md: 5 }}
           py={4}
-          maxH="calc(min(86vh, 760px) - 132px)"
+          maxH="calc(min(84vh, 760px) - 132px)"
           overflowY="auto"
           sx={{ WebkitOverflowScrolling: "touch" }}
         >

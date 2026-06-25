@@ -29,14 +29,16 @@ function extractFacebookChannel(url: string): string | null {
     const groupMatch = pathname.match(/^\/groups\/([^/]+)/i);
     if (groupMatch) {
       const slug = groupMatch[1];
-      return /^\d+$/.test(slug) ? `Facebook Group ${slug}` : slug.replace(/[_-]/g, " ");
+      return /^\d+$/.test(slug)
+        ? `Facebook Group ${slug}`
+        : slug.replace(/[._-]+/g, " ").replace(/\s+/g, " ").trim().replace(/\b\w/g, (ch) => ch.toUpperCase());
     }
     const pageMatch = pathname.match(/^\/([^/]+)\/posts\//i);
     const reserved = new Set(["pages", "permalink", "photo", "photos", "video", "videos",
       "events", "profile", "groups", "watch", "marketplace", "gaming",
       "stories", "notifications", "friends", "messages"]);
     if (pageMatch && !reserved.has(pageMatch[1].toLowerCase())) {
-      return pageMatch[1].replace(/[._-]/g, " ");
+      return pageMatch[1].replace(/[._-]+/g, " ").replace(/\s+/g, " ").trim().replace(/\b\w/g, (ch) => ch.toUpperCase());
     }
   } catch {}
   return null;
@@ -1056,9 +1058,7 @@ export async function scrapeFacebookPost(
         distribution_channel: extractFacebookChannel(postData.url),
         linked_url: postData.sharedLinkUrl || undefined,
         linked_publisher: postData.sharedLinkDomain || undefined,
-        // Use the real publisher domain from the shared article when found;
-        // fall back to "Facebook" — the backend will also try parseFacebookMeta
-        media_source: postData.sharedLinkDomain || "Facebook",
+        media_source: extractFacebookChannel(postData.url) || "Facebook",
         authors: authorData ? [authorData] : undefined,
         // Send the extracted post text to help backend use correct title/text
         content_name: postData.postText?.substring(0, 100) || "Facebook Post",

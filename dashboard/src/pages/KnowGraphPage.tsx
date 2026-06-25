@@ -15,9 +15,6 @@ import {
   Center,
   useColorMode,
   Divider,
-  Menu,
-  MenuButton,
-  MenuList,
   Button,
   Icon,
   useToast,
@@ -27,12 +24,272 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTaskStore, ViewScope } from '../store/useTaskStore';
 import { ViewerScopeBadge } from '../components/ViewerScopeBadge';
 import { VerimeterModeToggle } from '../components/VerimeterModeToggle';
+import GraphControlBar, { GraphMetricPill } from '../components/GraphControlBar';
 import UnifiedHeader from '../components/UnifiedHeader';
 import StickyTitleBar from '../components/StickyTitleBar';
 import CytoscapeKnowGraph from '../components/CytoscapeKnowGraph';
-import { api, fetchNewGraphDataFromLegacyRoute } from '../services/api';
+import { api } from '../services/api';
+import {
+  fetchClaimsAndLinkedReferencesForTask,
+  fetchAuthors,
+  fetchClaimsWithEvidence,
+  fetchPublishers,
+  fetchReferencesWithClaimsForTask,
+} from '../services/useDashboardAPI';
 import { captureElementAsPng } from '../utils/domSnapshot';
-import { GraphNode, Link } from '../../../shared/entities/types';
+import { ensureArray } from '../utils/normalize';
+import { Claim, ClaimLinks, GraphNode, Link, ReferenceWithClaims } from '../../../shared/entities/types';
+
+function relationForClaimLink(link: ClaimLinks): "supports" | "refutes" | "related" {
+  if (link.relationship === "supports" || link.relationship === "refutes") return link.relationship;
+  return "related";
+}
+
+function supportValueForClaimLink(link: ClaimLinks): number {
+  const value = Number(link.support_level ?? link.confidence ?? 0);
+  if (!Number.isFinite(value)) return 0;
+  return Math.abs(value) > 1 ? value / 100 : value;
+}
+
+function buildKnowGraphFromWorkspaceLinks({
+  task,
+  caseClaims,
+  references,
+  claimLinks,
+}: {
+  task: { content_id: number; content_name?: string; url?: string; authors?: any[]; publishers?: any[] };
+  caseClaims: Claim[];
+  references: ReferenceWithClaims[];
+  claimLinks: ClaimLinks[];
+}): { nodes: GraphNode[]; links: Link[] } {
+  const nodesById = new Map<string, GraphNode>();
+  const links: Link[] = [];
+  const linksById = new Set<string>();
+  const referencesById = new Map(references.map((reference) => [reference.reference_content_id, reference]));
+
+  const addNode = (node: GraphNode) => {
+    if (!nodesById.has(node.id)) nodesById.set(node.id, node);
+  };
+  const addLink = (link: Link) => {
+    if (linksById.has(link.id)) return;
+    linksById.add(link.id);
+    links.push(link);
+  };
+
+  addNode(new GraphNode(
+    `task-${task.content_id}`,
+    task.content_name || "Case",
+    "task",
+    0,
+    0,
+    task.url,
+    task.content_id,
+  ));
+
+  const taskAuthors = ensureArray<any>(task.authors);
+  const taskPublishers = ensureArray<any>(task.publishers);
+
+  taskAuthors.forEach((author) => {
+    const authorName = [author.author_first_name, author.author_last_name]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+    if (!author.author_id || !authorName) return;
+    const authorNode = new GraphNode(
+      `author-${author.author_id}`,
+      authorName,
+      "author",
+      0,
+      0,
+      undefined,
+      task.content_id,
+      undefined,
+      undefined,
+      author.author_id,
+    );
+    Object.assign(authorNode, {
+      description: author.description,
+      author_profile_pic: author.author_profile_pic,
+      author_title: author.author_title,
+    });
+    addNode(authorNode);
+    addLink({
+      id: `task-${task.content_id}-author-${author.author_id}`,
+      source: `task-${task.content_id}`,
+      target: authorNode.id,
+      type: "authored_by",
+      content_id: task.content_id,
+    });
+  });
+
+  taskPublishers.forEach((publisher) => {
+    if (!publisher.publisher_id || !publisher.publisher_name) return;
+    const publisherNode = new GraphNode(
+      `publisher-${publisher.publisher_id}`,
+      publisher.publisher_name,
+      "publisher",
+      0,
+      0,
+      undefined,
+      task.content_id,
+      undefined,
+      publisher.publisher_id,
+      undefined,
+    );
+    Object.assign(publisherNode, {
+      admiralty_code: publisher.admiralty_code ?? null,
+    });
+    addNode(publisherNode);
+    addLink({
+      id: `task-${task.content_id}-publisher-${publisher.publisher_id}`,
+      source: `task-${task.content_id}`,
+      target: publisherNode.id,
+      type: "published_by",
+      content_id: task.content_id,
+    });
+  });
+
+  caseClaims.forEach((claim) => {
+    const node = new GraphNode(
+      `claim-${claim.claim_id}`,
+      claim.claim_text,
+      "taskClaim",
+      0,
+      0,
+      undefined,
+      task.content_id,
+      claim.claim_id,
+    );
+    Object.assign(node, {
+      veracity_score: claim.veracity_score,
+      confidence_level: claim.confidence_level,
+    });
+    addNode(node);
+  });
+
+  claimLinks.forEach((claimLink) => {
+    const reference = referencesById.get(claimLink.right_reference_id);
+    const sourceClaim = reference?.claims?.find((claim) => claim.claim_id === claimLink.source_claim_id);
+    const sourceClaimNodeId = `claim-link-source-${claimLink.id || claimLink.claim_link_id}`;
+
+    const sourceClaimNode = new GraphNode(
+      sourceClaimNodeId,
+      sourceClaim?.claim_text || `Source claim ${claimLink.source_claim_id}`,
+      "refClaim",
+      0,
+      0,
+      reference?.url,
+      claimLink.right_reference_id,
+      claimLink.source_claim_id,
+      reference?.publisher_id,
+      reference?.author_id,
+    );
+    Object.assign(sourceClaimNode, {
+      veracity_score: sourceClaim?.veracity_score,
+      confidence_level: sourceClaim?.confidence_level,
+    });
+    addNode(sourceClaimNode);
+
+    const sourceNode = new GraphNode(
+      `reference-${claimLink.right_reference_id}`,
+      reference?.content_name || `Source ${claimLink.right_reference_id}`,
+      "reference",
+      0,
+      0,
+      reference?.url,
+      claimLink.right_reference_id,
+      undefined,
+      reference?.publisher_id,
+      reference?.author_id,
+    );
+    Object.assign(sourceNode, {
+      rating: reference?.publisher_veracity ?? undefined,
+      admiralty_code: reference?.admiralty_code ?? null,
+      added_by_user_id: reference?.added_by_user_id,
+      is_system: reference?.is_system,
+      reference: reference ?? null,
+      sourceClaims: reference?.claims?.map((claim, index) => ({
+        id: claim.claim_id,
+        label: `SC${index + 1}`,
+        text: claim.claim_text,
+        sourceName: reference.content_name,
+        sourceUrl: reference.url,
+        reference,
+      })) ?? [],
+    });
+    addNode(sourceNode);
+
+    if (reference?.author_id && reference.author_name?.trim()) {
+      const authorNode = new GraphNode(
+        `author-${reference.author_id}`,
+        reference.author_name.trim(),
+        "author",
+        0,
+        0,
+        undefined,
+        reference.reference_content_id,
+        undefined,
+        undefined,
+        reference.author_id,
+      );
+      addNode(authorNode);
+      addLink({
+        id: `reference-${reference.reference_content_id}-author-${reference.author_id}`,
+        source: `reference-${reference.reference_content_id}`,
+        target: authorNode.id,
+        type: "authored_by",
+        content_id: reference.reference_content_id,
+      });
+    }
+
+    if (reference?.publisher_id && reference.publisher_name?.trim()) {
+      const publisherNode = new GraphNode(
+        `publisher-${reference.publisher_id}`,
+        reference.publisher_name.trim(),
+        "publisher",
+        0,
+        0,
+        reference.url,
+        reference.reference_content_id,
+        undefined,
+        reference.publisher_id,
+        undefined,
+      );
+      Object.assign(publisherNode, {
+        rating: reference.publisher_veracity ?? undefined,
+        admiralty_code: reference.admiralty_code ?? null,
+      });
+      addNode(publisherNode);
+      addLink({
+        id: `reference-${reference.reference_content_id}-publisher-${reference.publisher_id}`,
+        source: `reference-${reference.reference_content_id}`,
+        target: publisherNode.id,
+        type: "published_by",
+        content_id: reference.reference_content_id,
+      });
+    }
+
+    const relation = relationForClaimLink(claimLink);
+    const supportLevel = supportValueForClaimLink(claimLink);
+    addLink({
+      id: `claim-link-${claimLink.id || claimLink.claim_link_id}`,
+      source: `claim-${claimLink.left_claim_id}`,
+      target: sourceClaimNodeId,
+      type: relation,
+      relation,
+      value: Math.abs(supportLevel),
+      support_level: supportLevel,
+      notes: claimLink.notes || "",
+      content_id: task.content_id,
+      created_by_ai: Boolean(claimLink.created_by_ai),
+    });
+  });
+
+  return {
+    nodes: Array.from(nodesById.values()),
+    links,
+  };
+}
 
 const KnowGraphPage = () => {
   const { colorMode } = useColorMode();
@@ -43,6 +300,7 @@ const KnowGraphPage = () => {
   const selectedTask = useTaskStore((s) => s.selectedTask);
   const selectedTaskId = useTaskStore((s) => s.selectedTaskId);
   const viewerId = useTaskStore((s) => s.viewingUserId);
+  const viewScope = useTaskStore((s) => s.viewScope);
   const setViewingUserId = useTaskStore((s) => s.setViewingUserId);
   const setViewScope = useTaskStore((s) => s.setViewScope);
   const setSelectedTask = useTaskStore((s) => s.setSelectedTask);
@@ -89,17 +347,23 @@ const KnowGraphPage = () => {
 
       setLoading(true);
       try {
-        // Create a GraphNode from the selected task
-        const taskNode = new GraphNode(
-          `task-${selectedTask.content_id}`,
-          selectedTask.content_name || 'Case',
-          'task',
-          0,
-          0,
-          undefined,
-          selectedTask.content_id
-        );
-        const result = await fetchNewGraphDataFromLegacyRoute(taskNode);
+        const [caseClaims, references, claimLinks, taskAuthors, taskPublishers] = await Promise.all([
+          fetchClaimsWithEvidence(selectedTask.content_id, viewerId, viewScope),
+          fetchReferencesWithClaimsForTask(selectedTask.content_id, viewerId, viewScope),
+          fetchClaimsAndLinkedReferencesForTask(selectedTask.content_id, viewerId, viewScope),
+          fetchAuthors(selectedTask.content_id),
+          fetchPublishers(selectedTask.content_id),
+        ]);
+        const result = buildKnowGraphFromWorkspaceLinks({
+          task: {
+            ...selectedTask,
+            authors: taskAuthors,
+            publishers: taskPublishers,
+          },
+          caseClaims,
+          references,
+          claimLinks,
+        });
         setGraphData(result);
       } catch (err) {
         console.error('🔥 Error loading graph data:', err);
@@ -115,7 +379,7 @@ const KnowGraphPage = () => {
     }
 
     loadGraph();
-  }, [selectedTask, navigate]);
+  }, [selectedTask, viewerId, viewScope, navigate]);
 
   const handleNodeClick = (node: GraphNode) => {
     setSelectedNode(node);
@@ -248,87 +512,19 @@ const KnowGraphPage = () => {
         </CardBody>
       </Card>
 
-      {/* Control Bar */}
-      <Box
-        mb={4}
-        display="flex"
-        gap={3}
-        alignItems="center"
-        justifyContent="space-between"
-        p={4}
-        borderRadius="12px"
-        bg={
-          colorMode === 'dark'
-            ? 'linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.9))'
-            : 'linear-gradient(135deg, rgba(100, 116, 139, 0.25) 0%, rgba(148, 163, 184, 0.3) 50%, rgba(71, 85, 105, 0.25) 100%)'
+      <Box mb={3}>
+      <GraphControlBar
+        title="Knowledge Graph"
+        metrics={
+          <>
+            <GraphMetricPill tone="purple" label="Case Claims" value={metrics.caseClaims} />
+            <GraphMetricPill tone="blue" label="Source Claims" value={metrics.sourceClaims} />
+            <GraphMetricPill tone="green" label="Sources" value={metrics.sources} />
+            <GraphMetricPill tone="cyan" label="Support" value={metrics.supportLinks} />
+            <GraphMetricPill tone="red" label="Refute" value={metrics.refuteLinks} />
+          </>
         }
-        border="1px solid"
-        borderColor={colorMode === 'dark' ? 'rgba(0, 162, 255, 0.4)' : 'rgba(71, 85, 105, 0.4)'}
-        boxShadow={
-          colorMode === 'dark'
-            ? '0 8px 32px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 162, 255, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
-            : '0 4px 16px rgba(71, 85, 105, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.4)'
-        }
-        position="relative"
-        zIndex={100}
-        overflowX="auto"
-        overflowY="visible"
       >
-        <Box
-          bg={colorMode === 'dark' ? 'whiteAlpha.100' : 'blackAlpha.50'}
-          px={3}
-          py={2}
-          borderRadius="md"
-          border="1px solid"
-          borderColor={colorMode === 'dark' ? 'whiteAlpha.200' : 'blackAlpha.200'}
-        >
-          <Heading size="md">Knowledge Graph</Heading>
-        </Box>
-
-        {/* Compact Metrics - Collapsible */}
-        <Menu>
-          <MenuButton
-            as={Button}
-            size="sm"
-            variant="ghost"
-            rightIcon={<Text fontSize="xs">▼</Text>}
-            bg={colorMode === 'dark' ? 'whiteAlpha.100' : 'blackAlpha.50'}
-            _hover={{ bg: colorMode === 'dark' ? 'whiteAlpha.200' : 'blackAlpha.100' }}
-          >
-            <HStack spacing={2}>
-              <Text fontSize="sm" fontWeight="medium">Metrics</Text>
-              <Badge colorScheme="blue" fontSize="xs">{metrics.caseClaims + metrics.sourceClaims}</Badge>
-            </HStack>
-          </MenuButton>
-          <MenuList fontSize="xs" minW="200px" zIndex={10000}>
-            <Box px={3} py={2}>
-              <VStack align="stretch" spacing={1.5}>
-                <HStack justify="space-between">
-                  <Text color="gray.400">Case Claims:</Text>
-                  <Text fontWeight="bold">{metrics.caseClaims}</Text>
-                </HStack>
-                <HStack justify="space-between">
-                  <Text color="gray.400">Source Claims:</Text>
-                  <Text fontWeight="bold">{metrics.sourceClaims}</Text>
-                </HStack>
-                <HStack justify="space-between">
-                  <Text color="gray.400">Sources:</Text>
-                  <Text fontWeight="bold">{metrics.sources}</Text>
-                </HStack>
-                <Divider />
-                <HStack justify="space-between">
-                  <Text color="green.400">Support:</Text>
-                  <Text fontWeight="bold" color="green.400">{metrics.supportLinks}</Text>
-                </HStack>
-                <HStack justify="space-between">
-                  <Text color="red.400">Refute:</Text>
-                  <Text fontWeight="bold" color="red.400">{metrics.refuteLinks}</Text>
-                </HStack>
-              </VStack>
-            </Box>
-          </MenuList>
-        </Menu>
-
         <VerimeterModeToggle compact />
         <ViewerScopeBadge />
 
@@ -337,7 +533,7 @@ const KnowGraphPage = () => {
           size="sm"
           flexShrink={0}
           minW="142px"
-          px={4}
+          px={3}
           leftIcon={<Icon as={FiCamera} />}
           onClick={handleSaveSnapshot}
           isLoading={savingSnapshot}
@@ -347,6 +543,7 @@ const KnowGraphPage = () => {
         >
           Save Snapshot
         </Button>
+      </GraphControlBar>
       </Box>
 
       {/* Main layout - full width graph with floating panels */}
@@ -415,7 +612,7 @@ const KnowGraphPage = () => {
           boxShadow="0 18px 54px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.03)"
           maxW={{ base: "140px", xl: "260px" }}
           overflow="visible"
-          style={{ background: "linear-gradient(135deg, rgba(8, 22, 58, 0.92), rgba(14, 32, 72, 0.86))", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }}
+          style={{ background: "linear-gradient(135deg, rgba(8, 22, 58, 0.92), rgba(14, 32, 72, 0.86))" }}
           sx={{
             "&::before": {
               content: '""',

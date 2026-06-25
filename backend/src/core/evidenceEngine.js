@@ -37,6 +37,21 @@ export class EvidenceEngine {
     const label = `[EV][queries][${claim.id}]`;
     logger.time(label);
 
+    if (Array.isArray(claim.searchTargets) && claim.searchTargets.length > 0) {
+      const directQueries = claim.searchTargets.slice(0, n).map((target) => ({
+        claimId: claim.id,
+        query: target.query,
+        intent: target.intent || "both",
+        matchedPart: target.matchedPart || "object_claim",
+      }));
+      logger.log(`🎯 [EV][queries][${claim.id}] Using direct search targets:`, directQueries);
+      logger.timeEnd(label);
+      return dedupe(
+        directQueries,
+        (q) => `${q.intent}|${q.matchedPart}|${String(q.query || "").toLowerCase()}`
+      );
+    }
+
     // Adjust prompt based on search mode
     let fallbackSystem, fallbackUser;
 
@@ -89,7 +104,7 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
 
         system = systemPrompt.system;
         user = userPrompt.user
-          .replace(/\{\{claimText\}\}/g, claim.text)
+          .replace(/\{\{claimText\}\}/g, claim.promptText || claim.text)
           .replace(/\{\{context\}\}/g, JSON.stringify(ctx ?? {}))
           .replace(/\{\{n\}\}/g, n);
 
@@ -104,14 +119,14 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
         logger.warn(`⚠️ [EvidenceEngine] Error loading DB prompts, using fallback:`, err.message);
         // Use fallback - replace template variables
         user = fallbackUser
-          .replace(/\{\{claimText\}\}/g, claim.text)
+          .replace(/\{\{claimText\}\}/g, claim.promptText || claim.text)
           .replace(/\{\{context\}\}/g, JSON.stringify(ctx ?? {}))
           .replace(/\{\{n\}\}/g, n);
       }
     } else {
       // No promptManager, use fallback with template replacement
       user = fallbackUser
-        .replace(/\{\{claimText\}\}/g, claim.text)
+        .replace(/\{\{claimText\}\}/g, claim.promptText || claim.text)
         .replace(/\{\{context\}\}/g, JSON.stringify(ctx ?? {}))
         .replace(/\{\{n\}\}/g, n);
     }
@@ -261,7 +276,11 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
 
       // Tag every result with this query's intent so we can bucket later
       const intent = q.intent || 'background';
-      return sub.map(r => ({ ...r, searchIntent: intent }));
+      return sub.map(r => ({
+        ...r,
+        searchIntent: intent,
+        matchedPart: q.matchedPart || 'context',
+      }));
     });
 
     //
@@ -466,6 +485,7 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
         summary: (it.summary || "").trim(),
         stance: it.stance || "insufficient",
         searchIntent: cand.searchIntent || 'background',
+        matchedPart: cand.matchedPart || 'context',
         quality: quality(cand),
         location: it.location || undefined,
         raw_text: html,
@@ -675,6 +695,14 @@ TASK:
       );
 
       let adj = this.adjudicate(claim, evs);
+      if (evs.length === 0) {
+        adj = {
+          ...adj,
+          finalVerdict: "insufficient",
+          unresolved_search_failed: true,
+          rationale: "No matching evidence found within search/source caps.",
+        };
+      }
       if (opt.enableRedTeam) {
         adj = await this.redTeam(claim, adj, evs);
       }

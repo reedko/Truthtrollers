@@ -579,6 +579,7 @@ export default function createTTLiveRouter({ query, pool }) {
             const { aiReferences, claimConfidenceMap } = await runEvidenceEngine({
               taskContentId,
               claimIds,
+              claims: taskClaims,
               readableText: text,
             });
 

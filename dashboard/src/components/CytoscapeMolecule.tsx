@@ -28,7 +28,6 @@ import {
   saveNodePositions,
   getCytoscapeStyles,
   EdgeTooltip,
-  ClaimModal,
   EdgeModal,
   NodePopup,
   ContextMenu,
@@ -107,6 +106,55 @@ interface CytoscapeMoleculeProps {
 
 type LinkData = CytoscapeMoleculeProps["links"][number];
 
+function semiCircleOrbitPosition({
+  centerX,
+  centerY,
+  index,
+  total,
+  side,
+  baseRadius = 1180,
+}: {
+  centerX: number;
+  centerY: number;
+  index: number;
+  total: number;
+  side: "left" | "right";
+  baseRadius?: number;
+}) {
+  const nodesPerRing = 8;
+  const ring = Math.floor(index / nodesPerRing);
+  const positionInRing = index % nodesPerRing;
+  const nodesInRing = Math.min(nodesPerRing, total - ring * nodesPerRing);
+  const t = nodesInRing > 1 ? positionInRing / (nodesInRing - 1) : 0.5;
+  const centerAngle = side === "left" ? Math.PI : 0;
+  const arcSpan = Math.PI * 0.92;
+  const angle = centerAngle - arcSpan / 2 + t * arcSpan;
+  const radius = baseRadius + ring * 210 + positionInRing * 12;
+
+  return {
+    x: centerX + radius * Math.cos(angle),
+    y: centerY + radius * Math.sin(angle),
+  };
+}
+
+function moleculeOuterMetadataRadius({
+  refCount,
+  spiralStart,
+  growthFactor,
+  angleStep,
+}: {
+  refCount: number;
+  spiralStart: number;
+  growthFactor: number;
+  angleStep: number;
+}) {
+  const fallbackRadius = 1180;
+  if (refCount <= 0) return fallbackRadius;
+  const maxReferenceAngle = Math.max(0, refCount - 1) * angleStep;
+  const maxReferenceRadius = spiralStart * Math.exp(growthFactor * maxReferenceAngle);
+  return Math.max(fallbackRadius, maxReferenceRadius + 520);
+}
+
 const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
   nodes,
   links,
@@ -164,6 +212,8 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
   const originalNodePositions = useRef<
     Record<string, { x: number; y: number }>
   >({});
+  const overlaySyncRafRef = useRef<number | null>(null);
+  const viewportSyncRafRef = useRef<number | null>(null);
 
   // State for overlay rendering
   const [overlayNodes, setOverlayNodes] = useState<cytoscape.NodeSingular[]>(
@@ -288,6 +338,12 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     const spiralStart = 400; // Starting radius
     const growthFactor = clamp(0.05, 0.12, 0.12 - Math.log(refCount) * 0.015); // Very gentle growth
     const angleStep = clamp(0.25, 0.4, 0.4 - Math.log(refCount) * 0.02); // Tighter angle steps
+    const metadataBaseRadius = moleculeOuterMetadataRadius({
+      refCount,
+      spiralStart,
+      growthFactor,
+      angleStep,
+    });
 
     // Calculate claim aggregate for each reference (for edge coloring)
     const getClaimAggregate = (
@@ -358,30 +414,32 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       let x = centerX + radius * Math.cos(angle);
       let y = centerY + radius * Math.sin(angle);
 
-      // AUTHORS: Far left edge - OUTSIDE the spiral
       if (n.type === "author") {
-        const authorIndex = baseNodes
-          .filter((node) => node.type === "author")
-          .findIndex((a) => a.id === n.id);
-        x = centerX - 1200; // Further left
-        y =
-          centerY +
-          (authorIndex -
-            baseNodes.filter((node) => node.type === "author").length / 2) *
-            150;
+        const authors = baseNodes.filter((node) => node.type === "author");
+        const pos = semiCircleOrbitPosition({
+          centerX,
+          centerY,
+          index: authors.findIndex((a) => a.id === n.id),
+          total: authors.length,
+          side: "left",
+          baseRadius: metadataBaseRadius,
+        });
+        x = pos.x;
+        y = pos.y;
       }
 
-      // PUBLISHERS: Far right edge - OUTSIDE the spiral
       if (n.type === "publisher") {
-        const publisherIndex = baseNodes
-          .filter((node) => node.type === "publisher")
-          .findIndex((p) => p.id === n.id);
-        x = centerX + 1200; // Further right
-        y =
-          centerY +
-          (publisherIndex -
-            baseNodes.filter((node) => node.type === "publisher").length / 2) *
-            150;
+        const publishers = baseNodes.filter((node) => node.type === "publisher");
+        const pos = semiCircleOrbitPosition({
+          centerX,
+          centerY,
+          index: publishers.findIndex((p) => p.id === n.id),
+          total: publishers.length,
+          side: "right",
+          baseRadius: metadataBaseRadius,
+        });
+        x = pos.x;
+        y = pos.y;
       }
 
       return {
@@ -763,13 +821,31 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     );
     activatedNodeIdsRef.current = activatedNodeIds;
 
-    // Function to update overlay positions and zoom
-    const updateOverlays = () => {
+    const syncOverlayNodes = () => {
+      setOverlayNodes(cy.nodes().toArray());
+    };
+
+    const syncViewport = () => {
       if (cyRef.current) {
         setContainerRect(cyRef.current.getBoundingClientRect());
       }
-      setOverlayNodes(cy.nodes().toArray());
       setZoomLevel(cy.zoom());
+    };
+
+    const scheduleOverlaySync = () => {
+      if (overlaySyncRafRef.current !== null) return;
+      overlaySyncRafRef.current = window.requestAnimationFrame(() => {
+        overlaySyncRafRef.current = null;
+        syncOverlayNodes();
+      });
+    };
+
+    const scheduleViewportSync = () => {
+      if (viewportSyncRafRef.current !== null) return;
+      viewportSyncRafRef.current = window.requestAnimationFrame(() => {
+        viewportSyncRafRef.current = null;
+        syncViewport();
+      });
     };
 
     cy.ready(() => {
@@ -781,14 +857,18 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       });
 
       // Initial overlay render
-      updateOverlays();
+      syncOverlayNodes();
+      syncViewport();
     });
     cyInstance.current = cy;
 
-    // Update overlays on position changes (drag, animate, zoom, pan)
-    cy.on("position", updateOverlays);
-    cy.on("pan zoom", updateOverlays);
-    cy.on("add remove", updateOverlays);
+    // Update viewport metrics on motion; only rebuild overlay node list when graph structure changes.
+    cy.on("position", scheduleViewportSync);
+    cy.on("pan zoom", scheduleViewportSync);
+    cy.on("add remove", () => {
+      scheduleOverlaySync();
+      scheduleViewportSync();
+    });
 
     // Save positions when user finishes dragging nodes (exclude claim nodes)
     cy.on("dragfree", "node", (event) => {
@@ -949,7 +1029,6 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
       // 📦 Send clicked node to external handler
       if (onNodeClick) onNodeClick(node.data());
-      setSelectedNodeData(node.data());
       // 🧠 Handle claim node click - show both refClaim and taskClaim
       if (type === "refClaim" || type === "taskClaim") {
         const claimId = node.id();
@@ -1005,11 +1084,13 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
             connectedEdge?.data("rationale") ||
             connectedEdge?.data("notes"),
         });
+        setSelectedNodeData(null);
         return;
       }
 
       // 📍 Handle reference click (show claims)
       if (type === "reference") {
+        setSelectedNodeData(node.data());
         const clickedRefId = node.id();
 
         // If clicking the same ref that's already showing claims, do nothing
@@ -1053,8 +1134,11 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
 
       // 📍 Handle task click - do nothing, keep claims visible
       if (type === "task") {
+        setSelectedNodeData(node.data());
         return;
       }
+
+      setSelectedNodeData(node.data());
     });
 
     // 🎯 Handle edge click (relation line between claims)
@@ -1146,6 +1230,14 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
     });
 
     return () => {
+      if (overlaySyncRafRef.current !== null) {
+        window.cancelAnimationFrame(overlaySyncRafRef.current);
+        overlaySyncRafRef.current = null;
+      }
+      if (viewportSyncRafRef.current !== null) {
+        window.cancelAnimationFrame(viewportSyncRafRef.current);
+        viewportSyncRafRef.current = null;
+      }
       // Don't destroy graph if case claims are visible
       const caseClaimsExist = cy ? cy.nodes('[type="caseClaim"]').length > 0 : false;
       if (caseClaimsExist) {
@@ -1267,6 +1359,12 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
       const spiralStart = 400; // Match initial layout
       const growthFactor = clamp(0.05, 0.12, 0.12 - Math.log(refCount) * 0.015);
       const angleStep = clamp(0.25, 0.4, 0.4 - Math.log(refCount) * 0.02);
+      const metadataBaseRadius = moleculeOuterMetadataRadius({
+        refCount,
+        spiralStart,
+        growthFactor,
+        angleStep,
+      });
 
       const positionedNodes: any[] = [];
 
@@ -1299,17 +1397,31 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           x = centerX + radius * Math.cos(angle);
           y = centerY + radius * Math.sin(angle);
         } else if (n.type === "author") {
-          // Authors on left
           const authorIndex = authors.findIndex((a: any) => a.id === n.id);
-          x = centerX - 950;
-          y = centerY + (authorIndex - authors.length / 2) * 150;
+          const pos = semiCircleOrbitPosition({
+            centerX,
+            centerY,
+            index: authorIndex,
+            total: authors.length,
+            side: "left",
+            baseRadius: metadataBaseRadius,
+          });
+          x = pos.x;
+          y = pos.y;
         } else if (n.type === "publisher") {
-          // Publishers on right
           const publisherIndex = publishers.findIndex(
             (p: any) => p.id === n.id,
           );
-          x = centerX + 950;
-          y = centerY + (publisherIndex - publishers.length / 2) * 150;
+          const pos = semiCircleOrbitPosition({
+            centerX,
+            centerY,
+            index: publisherIndex,
+            total: publishers.length,
+            side: "right",
+            baseRadius: metadataBaseRadius,
+          });
+          x = pos.x;
+          y = pos.y;
         }
 
         positionedNodes.push({
@@ -2159,11 +2271,20 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
           sourceClaim={selectedClaim.label}
           caseClaim={selectedClaim.taskClaimLabel}
           rationale={selectedClaim.rationale}
+          placement="right"
+          safeTop={128}
+          safeBottom={24}
           onClose={() => setSelectedClaim(null)}
         />
       )}
 
-      {selectedNodeData && !selectedClaim && (
+      {selectedNodeData &&
+        !selectedClaim &&
+        selectedNodeData.type !== "reference" &&
+        selectedNodeData.type !== "author" &&
+        selectedNodeData.type !== "publisher" &&
+        selectedNodeData.type !== "refClaim" &&
+        selectedNodeData.type !== "taskClaim" && (
         <GraphNodeDetailModal
           isOpen={!!selectedNodeData && !selectedClaim}
           kicker={
@@ -2224,6 +2345,9 @@ const CytoscapeMolecule: React.FC<CytoscapeMoleculeProps> = ({
                 ]
               : []
           }
+          placement="right"
+          safeTop={128}
+          safeBottom={24}
           onSourceCrestClick={() => setSourceDetailOpen(true)}
           onClose={() => setSelectedNodeData(null)}
         />

@@ -92,7 +92,8 @@ const ScrapeReferenceModal: React.FC<{
         isClosable: true,
       });
 
-      // Poll for job completion
+      // Poll for job completion. PDF retries can legitimately spend time in:
+      // extension PDF fetch, backend PDF parse, and /api/scrape-reference.
       const checkJobStatus = async () => {
         const statusResponse = await fetch(
           `${BASE_URL}/api/scrape-jobs/${result.scrape_job_id}/status`,
@@ -143,30 +144,40 @@ const ScrapeReferenceModal: React.FC<{
         return false;
       };
 
-      // Poll every 2 seconds for up to 30 seconds
-      let attempts = 0;
-      const maxAttempts = 15;
-      const pollInterval = setInterval(async () => {
-        attempts++;
-        const done = await checkJobStatus();
+      // Poll every 2 seconds for up to 5 minutes. The backend auto-resets
+      // abandoned claimed jobs after 5 minutes, so this matches server behavior.
+      const deadline = Date.now() + 300_000;
+      await new Promise<void>((resolve) => {
+        const pollInterval = window.setInterval(async () => {
+          let done = false;
+          try {
+            done = await checkJobStatus();
+          } catch (pollError) {
+            console.warn("Scrape job status poll failed:", pollError);
+          }
 
-        if (done || attempts >= maxAttempts) {
-          clearInterval(pollInterval);
-          if (attempts >= maxAttempts) {
-            // End background job on timeout
+          if (done) {
+            window.clearInterval(pollInterval);
+            resolve();
+            return;
+          }
+
+          if (Date.now() >= deadline) {
+            window.clearInterval(pollInterval);
             useTaskStore.getState().endBackgroundJob(jobId);
 
             toast({
-              title: "Timeout",
-              description: "Scrape job is taking longer than expected. Check extension console.",
+              title: "Still Scraping",
+              description: "The scrape job is still running. Keep the source tab open and check again shortly.",
               status: "warning",
               duration: 5000,
               isClosable: true,
             });
             setIsScraping(false);
+            resolve();
           }
-        }
-      }, 2000);
+        }, 2000);
+      });
     } catch (error) {
       console.error("❌ Error in scraping reference:", error);
 
@@ -182,9 +193,8 @@ const ScrapeReferenceModal: React.FC<{
         duration: 3000,
         isClosable: true,
       });
+      setIsScraping(false);
     }
-
-    setIsScraping(false);
   };
 
   return (

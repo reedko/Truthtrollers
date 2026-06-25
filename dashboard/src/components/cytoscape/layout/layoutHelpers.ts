@@ -159,7 +159,6 @@ export function arrangeSourcesAroundCase({
   const dy = clickedRefPos.y - center.y;
   const angleToClickedRef = Math.atan2(dy, dx);
 
-  // Separate references from authors/publishers
   const otherReferences = cy
     .nodes()
     .filter((node) => {
@@ -172,9 +171,10 @@ export function arrangeSourcesAroundCase({
       );
     })
     .toArray() as cytoscape.NodeSingular[];
+  const authors = cy.nodes('[type = "author"]').toArray() as cytoscape.NodeSingular[];
+  const publishers = cy.nodes('[type = "publisher"]').toArray() as cytoscape.NodeSingular[];
 
-  // Don't move authors and publishers - keep them in original positions
-  if (otherReferences.length === 0) return;
+  if (otherReferences.length === 0 && authors.length === 0 && publishers.length === 0) return;
 
   // 3/4 circle arc (270 degrees)
   const arcSpan = (Math.PI * 3) / 2;
@@ -196,6 +196,27 @@ export function arrangeSourcesAroundCase({
   }
 
   const radiusStagger = 140;
+  const outerMetadataRadius = baseRadius + Math.max(0, arcsNeeded - 1) * radiusStagger + 520;
+  const positionSemiCircle = (
+    items: cytoscape.NodeSingular[],
+    side: "left" | "right",
+  ) => {
+    const nodesPerRing = 8;
+    const centerAngle = side === "left" ? Math.PI : 0;
+    const span = Math.PI * 0.92;
+    items.forEach((item, index) => {
+      const ring = Math.floor(index / nodesPerRing);
+      const positionInRing = index % nodesPerRing;
+      const nodesInRing = Math.min(nodesPerRing, items.length - ring * nodesPerRing);
+      const t = nodesInRing > 1 ? positionInRing / (nodesInRing - 1) : 0.5;
+      const angle = centerAngle - span / 2 + t * span;
+      const radius = outerMetadataRadius + ring * 210 + positionInRing * 12;
+      item.position({
+        x: center.x + radius * Math.cos(angle),
+        y: center.y + radius * Math.sin(angle),
+      });
+    });
+  };
 
   cy.batch(() => {
     otherReferences.forEach((node, i) => {
@@ -222,5 +243,7 @@ export function arrangeSourcesAroundCase({
 
       node.position({ x: newX, y: newY });
     });
+    positionSemiCircle(authors, "left");
+    positionSemiCircle(publishers, "right");
   });
 }

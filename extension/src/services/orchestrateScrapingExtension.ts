@@ -15,7 +15,6 @@ import {
 import {
   fetchPageContent,
   extractAuthors,
-  extractPublisher,
   extractReferences,
 } from "../services/extractMetaDataUtils";
 
@@ -211,8 +210,8 @@ export async function orchestrateScraping(
       ),
     ];
 
-    // Publisher
-    publisherName = publisherName || (await extractPublisher($));
+    // Publisher extraction is handled by the backend scrape pipeline.
+    publisherName = null;
 
     // Thumbnail
     if (!thumbnail) {

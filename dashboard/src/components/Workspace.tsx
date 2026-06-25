@@ -101,7 +101,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
     Claim,
     "claim_id" | "claim_text"
   > | null>(null);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [hoveredClaimId, setHoveredClaimId] = useState<number | null>(null);
   const [selectedReference, setSelectedReference] =
     useState<ReferenceWithClaims | null>(null);
@@ -118,6 +117,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
   const leftRef = useRef<HTMLDivElement | null>(null);
   const rightRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const dragTooltipRef = useRef<HTMLDivElement | null>(null);
+  const dragTooltipRafRef = useRef<number | null>(null);
   const [leftX, setLeftX] = useState(0);
   const [rightX, setRightX] = useState(0);
   const [computedHeight, setComputedHeight] = useState(500);
@@ -131,6 +132,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
   >(null);
   const [isRelevanceScanModalOpen, setIsRelevanceScanModalOpen] =
     useState(false);
+  const [focusedReferenceId, setFocusedReferenceId] = useState<number | null>(null);
   const [scanningTaskClaim, setScanningTaskClaim] = useState<Claim | null>(
     null,
   );
@@ -254,6 +256,32 @@ const Workspace: React.FC<WorkspaceProps> = ({
     }
   }, [claims, references, computedHeight, onHeightChange]);
 
+  useEffect(() => {
+    if (!draggingClaim) return;
+
+    const handleMouseMove = (event: MouseEvent) => {
+      if (dragTooltipRafRef.current != null) return;
+      const x = event.clientX + 20;
+      const y = event.clientY - 80;
+
+      dragTooltipRafRef.current = window.requestAnimationFrame(() => {
+        dragTooltipRafRef.current = null;
+        if (dragTooltipRef.current) {
+          dragTooltipRef.current.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+        }
+      });
+    };
+
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    return () => {
+      if (dragTooltipRafRef.current != null) {
+        window.cancelAnimationFrame(dragTooltipRafRef.current);
+        dragTooltipRafRef.current = null;
+      }
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, [draggingClaim]);
+
   const handleTaskClaimRelevanceScan = (claim: Claim) => {
     console.log(
       "[Workspace] Opening relevance scan for task claim:",
@@ -294,6 +322,20 @@ const Workspace: React.FC<WorkspaceProps> = ({
     setIsClaimViewModalOpen(false); // close TaskClaims-internal scan modal
     setReopenScanAfterLink(true);
     setIsClaimLinkModalOpen(true);
+  };
+
+  const handleFocusReferenceFromDocLink = (referenceId: number) => {
+    const reference = references.find(
+      (ref) => Number(ref.reference_content_id) === Number(referenceId),
+    );
+    if (!reference) return;
+
+    setIsRelevanceScanModalOpen(false);
+    setIsClaimViewModalOpen(false);
+    setIsReferenceClaimsModalOpen(false);
+    setFocusedReferenceId(null);
+    window.setTimeout(() => setFocusedReferenceId(referenceId), 0);
+    setSelectedReference(reference);
   };
 
   const handleSelectReferenceClaim = async (
@@ -517,7 +559,6 @@ const Workspace: React.FC<WorkspaceProps> = ({
       bgRepeat="no-repeat"
       borderColor={borderColor}
       minHeight={`${computedHeight}px`} // dynamic min height computed above
-      onMouseMove={draggingClaim ? (e) => setMousePosition({ x: e.clientX, y: e.clientY }) : undefined}
       position="relative"
       overflow="visible"
       zIndex={100}
@@ -607,6 +648,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
             }}
             onTaskClaimClick={handleTaskClaimRelevanceScan}
             onOpenLinkOverlay={handleOpenLinkOverlayFromScan}
+            onFocusReference={handleFocusReferenceFromDocLink}
             draggingClaim={draggingClaim}
             onDropReferenceClaim={handleDropReferenceClaim}
             taskId={contentId}
@@ -680,7 +722,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
                         ? ("refute" as const)
                         : ai.stance === "nuance"
                           ? ("nuance" as const)
-                          : ("support" as const), // fallback
+                          : ("nuance" as const), // fallback/context/insufficient
                   confidence: ai.support_level, // Use support_level for line thickness/opacity
                   notes: ai.rationale || "",
                 })),
@@ -725,6 +767,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
             bubbleStyle={bubbleStyle}
             claimLinks={claimLinks}
             isSuperAdmin={isSuperAdmin}
+            focusedReferenceId={focusedReferenceId}
             onHardDeleteReferences={async (referenceIds) => {
               await hardDeleteReferences(contentId, referenceIds);
               sessionRefreshReferences();
@@ -873,12 +916,14 @@ const Workspace: React.FC<WorkspaceProps> = ({
         onOpenLinkOverlay={handleOpenLinkOverlayFromScan}
         contentId={contentId}
         viewerId={viewerId}
+        onFocusReference={handleFocusReferenceFromDocLink}
       />
       {draggingClaim && hoveredClaimId && (
         <Box
+          ref={dragTooltipRef}
           position="fixed"
-          top={mousePosition.y - 80} // Shift 400px up
-          left={mousePosition.x + 20} // Shift 400px left
+          top={0}
+          left={0}
           bg="gray.700"
           color="white"
           px={4}
@@ -889,6 +934,8 @@ const Workspace: React.FC<WorkspaceProps> = ({
           zIndex={3000}
           fontSize="sm"
           pointerEvents="none"
+          transform="translate3d(-9999px, -9999px, 0)"
+          willChange="transform"
         >
           {claims.find((c) => c.claim_id === hoveredClaimId)?.claim_text}
         </Box>

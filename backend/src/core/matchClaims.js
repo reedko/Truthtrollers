@@ -13,6 +13,13 @@ const STANCE_CONTRACT = `STANCE CONTRACT:
 - If the task claim says A > B and the reference says B > A, stance must be "refute".
 - Never use "support" merely because the reference source appears credible or the reference claim is true.`;
 
+const MISCONDUCT_CONTRACT = `MISCONDUCT / ATTRIBUTION CONTRACT:
+- If the task claim contains an attribution wrapper such as "X revealed that Y", evaluate the core assertion Y while using X only as context.
+- For claims alleging fraud, cover-up, suppression, destruction of evidence, data manipulation, or institutional misconduct, support requires the reference claim to address that specific misconduct.
+- A reference claim saying data was "omitted", "excluded", "not reported", or "re-analyzed" does not support a task claim saying evidence was destroyed or that scientists were ordered to destroy it.
+- A reference claim saying "MMR does not cause autism" does not by itself refute an alleged order to destroy evidence; it may be nuance unless it addresses the alleged order, destruction, concealment, or cover-up.
+- Do not infer stronger misconduct than the reference actually states.`;
+
 function normalizeStance(rawStance) {
   const stance = String(rawStance || "").trim().toLowerCase();
   if (["support", "supports", "supported", "for"].includes(stance)) return "support";
@@ -179,7 +186,7 @@ If no reference claims address any task claims, return empty array [].`;
     }
   }
 
-  system = `${system}\n\n${STANCE_CONTRACT}`;
+  system = `${system}\n\n${STANCE_CONTRACT}\n\n${MISCONDUCT_CONTRACT}`;
   user = `${user}\n\nBefore returning JSON, verify each stance follows the stance contract and that supportLevel is positive for support, negative for refute, and zero for insufficient.`;
 
   const schemaHint = `[

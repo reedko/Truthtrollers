@@ -12,6 +12,16 @@
 import logger from "../utils/logger.js";
 import { tavilySearch } from "../core/tavilySearch.js";
 import { openAiLLM } from "../core/openAiLLM.js";
+import {
+  lookupPublisherAllProviders,
+  lookupPublisherFromProvider,
+} from "../../services/sourceProviders/sourceProviderRegistry.js";
+import {
+  loadProviderSignals,
+  persistProviderSignals,
+  updatePublisherSignalSummary,
+} from "./providerSignalPersistenceService.js";
+import fs from "fs/promises";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 
@@ -23,6 +33,19 @@ const FRESHNESS_DAYS = 30;
 const FETCH_TIMEOUT_MS = 15000;
 const SEARCH_TIMEOUT_MS = 12000;
 const MAX_PAGE_TEXT_CHARS = 20000;
+const SECOND_PASS_PROVIDERS = [
+  "mbfc",
+  "opensources",
+  "newsguard",
+  "crossref",
+  "openalex",
+  "wayback",
+  "rdap",
+  "opencorporates",
+  "irs_teos",
+  "sec_edgar",
+  "gdelt",
+];
 
 // AllSides label → numeric bias score (used for backward-compat with UI that expects a number)
 const ALLSIDES_SCORE = {
@@ -106,6 +129,31 @@ async function fetchPageText(url) {
   }
 }
 
+async function fetchPageHtml(url) {
+  if (!isSafeUrl(url)) throw new Error(`SSRF blocked: ${url}`);
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  try {
+    const resp = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "User-Agent": BROWSER_UA,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Cache-Control": "no-cache",
+        "Upgrade-Insecure-Requests": "1",
+      },
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status} from ${url}`);
+    return await resp.text();
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 // ────────────────────────────────────────────────────────────
 // Freshness checks
 // ────────────────────────────────────────────────────────────
@@ -173,6 +221,59 @@ function normalizeNameForMatch(value) {
     .replace(/\b(the|and|of|for|media|news|newspaper|press|free|online|official|website|wikipedia)\b/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function looksLikeScholarlySourceName(value, sourceUrl = null) {
+  const name = String(value || "").toLowerCase();
+  const url = String(sourceUrl || "").toLowerCase();
+  if (/\b(journal|revista|annals|proceedings|transactions|bulletin|letters|reports|archives|acta)\b/.test(name)) {
+    return true;
+  }
+  if (/\b(issn|doi|scimago|scopus|pubmed|bvsalud|ncbi|springer|wiley|elsevier|sciencedirect|nature\.com|plos\.org|tandfonline)\b/.test(url)) {
+    return true;
+  }
+  return false;
+}
+
+function isSocialPlatformUrl(value = null) {
+  return /(?:^|\/\/)(?:www\.)?(facebook|x|twitter|instagram|tiktok)\.com\b/i.test(String(value || ""));
+}
+
+function inferSourceTypeFromPublisherName(value = "") {
+  const name = String(value || "").toLowerCase();
+  if (/international agency for research on cancer|\biarc\b/.test(name)) return "academic";
+  return null;
+}
+
+async function clearAutomaticSocialEnrichment(query, publisherId) {
+  if (!publisherId) return;
+  try {
+    await Promise.all([
+      query(
+        `DELETE FROM publisher_ratings
+          WHERE publisher_id = ?
+            AND user_id IS NULL
+            AND source IN ('Wikipedia', 'Wikidata', 'SCImago')`,
+        [publisherId]
+      ),
+      query(
+        `DELETE FROM publisher_profiles
+          WHERE publisher_id = ?
+            AND source IN ('Wikipedia', 'Wikidata', 'SCImago')`,
+        [publisherId]
+      ),
+      query(
+        `DELETE FROM publisher_external_signals
+          WHERE publisher_id = ?
+            AND provider IN ('wikipedia', 'wikidata', 'scimago', 'crossref', 'openalex')`,
+        [publisherId]
+      ).catch((err) => {
+        if (err?.code !== "ER_NO_SUCH_TABLE") throw err;
+      }),
+    ]);
+  } catch (err) {
+    logger.warn(`[enrichment] Failed to clear automatic social enrichment for publisher ${publisherId}: ${err.message}`);
+  }
 }
 
 function significantNameTokens(value) {
@@ -774,6 +875,80 @@ async function runWikipedia(query, { publisherId, publisherName, domain }) {
 }
 
 // ────────────────────────────────────────────────────────────
+// Provider: Wikidata
+// ────────────────────────────────────────────────────────────
+
+async function runWikidata(query, { publisherId, publisherName, domain, sourceUrl }) {
+  const provider = "Wikidata";
+  const searchQuery = `wikidata domain lookup: ${domain || sourceUrl || publisherName}`;
+
+  logger.log(`[enrichment] Wikidata lookup for: ${publisherName}`);
+
+  let result;
+  try {
+    result = await lookupPublisherFromProvider("wikidata", {
+      domain,
+      publisherName,
+      sourceUrl,
+    });
+  } catch (err) {
+    await logEnrichmentRun(query, { publisherId, domain, provider, searchQuery, status: "error", errorMessage: err.message });
+    return { status: "error" };
+  }
+
+  if (!result?.matchFound || !result?.normalized) {
+    await logEnrichmentRun(query, {
+      publisherId,
+      domain,
+      provider,
+      searchQuery,
+      status: result?.status === "error" || result?.status === "unavailable" ? "error" : "not_found",
+      errorMessage: result?.errorMessage || null,
+      rawResultJson: result || null,
+    });
+    return { status: result?.status || "not_found" };
+  }
+
+  const normalized = result.normalized;
+  const profileUrl = normalized.externalUrl || null;
+  const descriptionParts = [
+    normalized.publisherName ? `Wikidata entity: ${normalized.publisherName}` : null,
+    normalized.externalId || null,
+  ].filter(Boolean);
+
+  await upsertPublisherProfile(query, {
+    publisherId,
+    source: "Wikidata",
+    profileUrl,
+    description: descriptionParts.join(" · ") || null,
+    ownershipNotes: null,
+    fundingNotes: null,
+    credibilityNotes: null,
+    politicalNotes: null,
+    sourceType: normalized.sourceType || inferSourceTypeFromPublisherName(normalized.publisherName || publisherName) || null,
+    country: normalized.country || null,
+    evidenceQuote: normalized.externalId || normalized.publisherName || null,
+    confidence: result.confidence || "medium",
+    extractionMethod: "unknown",
+    rawPayload: result,
+  });
+
+  await logEnrichmentRun(query, {
+    publisherId,
+    domain,
+    provider,
+    searchQuery,
+    candidateUrl: profileUrl,
+    status: "found",
+    confidence: result.confidence || "medium",
+    rawResultJson: result,
+  });
+
+  logger.log(`[enrichment] ✅ Wikidata profile stored for ${publisherName} (${result.confidence || "medium"})`);
+  return { status: "found", confidence: result.confidence || "medium" };
+}
+
+// ────────────────────────────────────────────────────────────
 // Provider: SCImago Journal Rankings
 // ────────────────────────────────────────────────────────────
 
@@ -782,58 +957,281 @@ async function runWikipedia(query, { publisherId, publisherName, domain }) {
 // Q4 = bottom 25% → still peer-reviewed but weaker citation standing.
 const SJR_QUARTILE_SCORE = { Q1: 88, Q2: 72, Q3: 55, Q4: 40 };
 const SCIMAGO_API = "https://www.scimagojr.com/journalsearch.php";
+const SCIMAGO_CSV_URL = new URL("../../assets/data/scimagojr 2023.csv", import.meta.url);
 
-async function runSCImago(query, { publisherId, publisherName, domain }) {
+let scimagoCsvCache = null;
+
+function parseScimagoCsvLine(line) {
+  const cells = [];
+  let current = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (ch === ";" && !inQuotes) {
+      cells.push(current);
+      current = "";
+    } else {
+      current += ch;
+    }
+  }
+  cells.push(current);
+  return cells.map((cell) => cell.trim());
+}
+
+function normalizeJournalName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\b(the|journal|official|publication|magazine)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function decimalCommaToString(value) {
+  const cleaned = String(value || "").trim();
+  if (!cleaned) return null;
+  return cleaned.replace(",", ".");
+}
+
+function splitScimagoList(value) {
+  return String(value || "")
+    .split(";")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeIssn(value = "") {
+  const compact = String(value || "").toUpperCase().replace(/[^0-9X]/g, "");
+  if (!/^\d{7}[\dX]$/.test(compact)) return null;
+  return `${compact.slice(0, 4)}-${compact.slice(4)}`;
+}
+
+function extractIssns(...values) {
+  const found = new Set();
+  for (const value of values) {
+    const text = String(value || "");
+    const candidates = [
+      ...text.matchAll(/\b\d{4}-\d{3}[\dX]\b/gi),
+      ...text.matchAll(/\b\d{7}[\dX]\b/gi),
+    ];
+    for (const match of candidates) {
+      const issn = normalizeIssn(match[0]);
+      if (issn) found.add(issn);
+    }
+  }
+  return [...found];
+}
+
+function firstMetaContent(document, selectors) {
+  for (const selector of selectors) {
+    const value = document.querySelector(selector)?.getAttribute("content")?.trim();
+    if (value) return value;
+  }
+  return null;
+}
+
+function extractScholarlyContextFromHtml(html) {
+  if (!html) return null;
+  const dom = new JSDOM(html);
+  const { document } = dom.window;
+  const journalTitle = firstMetaContent(document, [
+    'meta[name="citation_journal_title"]',
+    'meta[property="citation_journal_title"]',
+    'meta[name="prism.publicationName"]',
+    'meta[name="dc.source"]',
+    'meta[name="DC.source"]',
+  ]);
+  const doi = firstMetaContent(document, [
+    'meta[name="citation_doi"]',
+    'meta[property="citation_doi"]',
+    'meta[name="dc.identifier"]',
+    'meta[name="DC.identifier"]',
+    'meta[name="prism.doi"]',
+  ]);
+  const issnValues = [
+    ...Array.from(document.querySelectorAll('meta[name="citation_issn"], meta[property="citation_issn"], meta[name="prism.issn"], meta[name="prism.eIssn"]'))
+      .map((el) => el.getAttribute("content")),
+  ];
+  const issns = extractIssns(...issnValues, doi);
+  if (!journalTitle && !doi && !issns.length) return null;
+  return {
+    journalTitle,
+    doi: doi?.match(/\b10\.\d{4,9}\/[-._;()/:A-Z0-9]+\b/i)?.[0]?.replace(/[).,;]+$/, "") || null,
+    issn: issns.join(", ") || null,
+  };
+}
+
+async function fetchScholarlyContext(sourceUrl) {
+  if (!sourceUrl) return null;
+  try {
+    const html = await fetchPageHtml(sourceUrl);
+    return extractScholarlyContextFromHtml(html);
+  } catch (err) {
+    logger.warn(`[enrichment] Failed to fetch scholarly metadata for SCImago: ${err.message}`);
+    return null;
+  }
+}
+
+function scimagoRowToJournal(row) {
+  const categories = splitScimagoList(row["Categories"]).map((item) => {
+    const match = item.match(/^(.+?)\s+\((Q[1-4])\)$/i);
+    return { name: match ? match[1].trim() : item, quartile: match?.[2] || null };
+  });
+  return {
+    title: row.Title,
+    sourceid: row.Sourceid,
+    rank: row.Rank,
+    type: row.Type,
+    sjr_best_quartile: row["SJR Best Quartile"],
+    sjr: [{ value: decimalCommaToString(row.SJR) }],
+    h_index: row["H index"] ? Number(row["H index"]) : null,
+    country: row.Country || null,
+    region: row.Region || null,
+    issn: splitScimagoList(String(row.Issn || "").replace(/,/g, ";")),
+    publisher: row.Publisher || null,
+    coverage: row.Coverage || null,
+    categories,
+    areas: splitScimagoList(row.Areas).map((name) => ({ name })),
+    externalUrl: row.Sourceid ? `https://www.scimagojr.com/journalsearch.php?q=${encodeURIComponent(row.Sourceid)}&tip=sid&clean=0` : null,
+    rawCsvRow: row,
+  };
+}
+
+async function loadScimagoCsvRows() {
+  if (scimagoCsvCache) return scimagoCsvCache;
+  const text = await fs.readFile(SCIMAGO_CSV_URL, "utf8");
+  const lines = text.split(/\r?\n/).filter(Boolean);
+  const headers = parseScimagoCsvLine(lines.shift() || "");
+  scimagoCsvCache = lines.map((line) => {
+    const cells = parseScimagoCsvLine(line);
+    return Object.fromEntries(headers.map((header, idx) => [header, cells[idx] ?? ""]));
+  });
+  return scimagoCsvCache;
+}
+
+async function lookupScimagoLocal(publisherName) {
+  const rows = await loadScimagoCsvRows();
+  const queryName = normalizeJournalName(publisherName);
+  if (!queryName) return [];
+
+  const scored = rows
+    .map((row) => {
+      const title = row.Title || "";
+      const normalizedTitle = normalizeJournalName(title);
+      let score = 0;
+      if (normalizedTitle === queryName) score = 100;
+      else if (normalizedTitle.includes(queryName) || queryName.includes(normalizedTitle)) score = 85;
+      else {
+        const queryTokens = queryName.split(" ").filter((token) => token.length >= 4);
+        const titleTokens = new Set(normalizedTitle.split(" "));
+        const matched = queryTokens.filter((token) => titleTokens.has(token)).length;
+        score = queryTokens.length ? Math.round((matched / queryTokens.length) * 70) : 0;
+      }
+      return { row, score };
+    })
+    .filter(({ score }) => score >= 60)
+    .sort((a, b) => b.score - a.score || Number(a.row.Rank || 999999) - Number(b.row.Rank || 999999));
+
+  return scored.slice(0, 5).map(({ row }) => scimagoRowToJournal(row));
+}
+
+async function lookupScimagoLocalByIssn(issn) {
+  const issns = extractIssns(issn);
+  if (!issns.length) return [];
+  const compactIssns = new Set(issns.map((value) => value.replace(/-/g, "")));
+  const rows = await loadScimagoCsvRows();
+  return rows
+    .filter((row) => {
+      const rowIssns = extractIssns(row.Issn).map((value) => value.replace(/-/g, ""));
+      return rowIssns.some((value) => compactIssns.has(value));
+    })
+    .slice(0, 5)
+    .map((row) => scimagoRowToJournal(row));
+}
+
+async function runSCImago(query, { publisherId, publisherName, domain, sourceUrl }) {
   const provider = "SCImago";
+  const scholarlyContext = await fetchScholarlyContext(sourceUrl);
+  const hasScholarlySourceContext = Boolean(scholarlyContext?.journalTitle || scholarlyContext?.issn);
+  const publisherLooksLikeJournal = /\b(journal|revista|annals|proceedings|transactions|bulletin|letters|reports|archives|acta)\b/i.test(String(publisherName || ""));
+  if (!hasScholarlySourceContext && !publisherLooksLikeJournal) {
+    logger.log(`[enrichment] SCImago skipped: no journal/ISSN context for "${publisherName}"`);
+    await logEnrichmentRun(query, {
+      publisherId,
+      domain,
+      provider,
+      searchQuery: publisherName,
+      status: "not_found",
+      errorMessage: "no journal/ISSN context",
+    });
+    return { status: "not_found" };
+  }
+  const searchName = scholarlyContext?.journalTitle || publisherName;
 
-  logger.log(`[enrichment] SCImago search for: ${publisherName}`);
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  logger.log(`[enrichment] SCImago search for: ${searchName}${searchName !== publisherName ? ` (publisher ${publisherName})` : ""}`);
 
   let journals = [];
   try {
-    const apiUrl = `${SCIMAGO_API}?q=${encodeURIComponent(publisherName)}&tip=jrn&out=json`;
-    const resp = await fetch(apiUrl, {
-      signal: controller.signal,
-      headers: {
-        "User-Agent": BROWSER_UA,
-        "Accept": "application/json, text/javascript, */*",
-        "Referer": "https://www.scimagojr.com/",
-      },
-    });
-    clearTimeout(timer);
-    if (!resp.ok) {
-      // 404/no-results from SCImago for non-journal publishers is expected — not a hard error
-      clearTimeout(timer);
-      await logEnrichmentRun(query, { publisherId, domain, provider, searchQuery: publisherName, status: "not_found", errorMessage: `HTTP ${resp.status}` });
-      return { status: "not_found" };
-    }
-    const text = await resp.text();
-    try {
-      journals = JSON.parse(text);
-    } catch {
-      // SCImago returns HTML for some queries (e.g. non-journal publishers) — treat as not_found
-      clearTimeout(timer);
-      await logEnrichmentRun(query, { publisherId, domain, provider, searchQuery: publisherName, status: "not_found", errorMessage: "non-JSON response" });
-      return { status: "not_found" };
+    journals = scholarlyContext?.issn
+      ? await lookupScimagoLocalByIssn(scholarlyContext.issn)
+      : [];
+    if (!journals.length) {
+      journals = await lookupScimagoLocal(searchName);
     }
   } catch (err) {
-    clearTimeout(timer);
-    await logEnrichmentRun(query, {
-      publisherId, domain, provider, searchQuery: publisherName,
-      status: "error", errorMessage: err.message,
-    });
-    return { status: "error" };
+    logger.warn(`[enrichment] SCImago local CSV lookup failed: ${err.message}`);
+  }
+
+  if (!journals.length) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+      const apiUrl = `${SCIMAGO_API}?q=${encodeURIComponent(searchName)}&tip=jrn&out=json`;
+      const resp = await fetch(apiUrl, {
+        signal: controller.signal,
+        headers: {
+          "User-Agent": BROWSER_UA,
+          "Accept": "application/json, text/javascript, */*",
+          "Referer": "https://www.scimagojr.com/",
+        },
+      });
+      clearTimeout(timer);
+      if (!resp.ok) {
+        await logEnrichmentRun(query, { publisherId, domain, provider, searchQuery: searchName, status: "not_found", errorMessage: `HTTP ${resp.status}` });
+        return { status: "not_found" };
+      }
+      const text = await resp.text();
+      try {
+        journals = JSON.parse(text);
+      } catch {
+        await logEnrichmentRun(query, { publisherId, domain, provider, searchQuery: searchName, status: "not_found", errorMessage: "non-JSON response; local CSV no_match" });
+        return { status: "not_found" };
+      }
+    } catch (err) {
+      clearTimeout(timer);
+      await logEnrichmentRun(query, {
+        publisherId, domain, provider, searchQuery: searchName,
+        status: "error", errorMessage: err.message,
+      });
+      return { status: "error" };
+    }
   }
 
   if (!Array.isArray(journals) || journals.length === 0) {
-    await logEnrichmentRun(query, { publisherId, domain, provider, searchQuery: publisherName, status: "not_found" });
+    await logEnrichmentRun(query, { publisherId, domain, provider, searchQuery: searchName, status: "not_found" });
     return { status: "not_found" };
   }
 
   // Pick best title match — exact first, then substring, then first result
-  const lowerName = publisherName.toLowerCase();
+  const lowerName = searchName.toLowerCase();
   const best =
     journals.find(j => (j.title ?? "").toLowerCase() === lowerName) ??
     journals.find(j => (j.title ?? "").toLowerCase().includes(lowerName)) ??
@@ -853,7 +1251,7 @@ async function runSCImago(query, { publisherId, publisherName, domain }) {
   const ratingLabel   = validQ ?? (sjrScore ? `SJR ${sjrScore}` : null);
   const confidence    = (best.title ?? "").toLowerCase() === lowerName ? "high" : "medium";
 
-  const profileUrl = `${SCIMAGO_API}?q=${encodeURIComponent(publisherName)}&tip=jrn`;
+  const profileUrl = best.externalUrl || `${SCIMAGO_API}?q=${encodeURIComponent(searchName)}&tip=jrn`;
   const noteParts  = [
     validQ     && `Quartile: ${validQ}`,
     sjrScore   && `SJR: ${sjrScore}`,
@@ -862,14 +1260,14 @@ async function runSCImago(query, { publisherId, publisherName, domain }) {
     issn       && `ISSN: ${issn}`,
   ].filter(Boolean);
 
-  const rawPayload = { best, quartile, sjrScore, hIndex, areas, categories, issn, country };
+  const rawPayload = { best, quartile, sjrScore, hIndex, areas, categories, issn, country, publisherName, searchName, scholarlyContext };
 
   // Write rating (only if we have useful data)
   if (veracityScore !== null || sjrScore !== null) {
     await insertPublisherRating(query, {
       publisherId,
       source: "SCImago",
-      ratingType: "academic_impact",
+      ratingType: "veracity",
       ratingLabel,
       biasScore: null,
       veracityScore,
@@ -877,8 +1275,8 @@ async function runSCImago(query, { publisherId, publisherName, domain }) {
       candidateUrl: profileUrl,
       notes: noteParts.join(" | ") || null,
       confidence,
-      extractionMethod: "api",
-      evidenceQuote: `${best.title ?? publisherName} — ${validQ ?? "no quartile"}, SJR ${sjrScore ?? "N/A"}, H-index ${hIndex ?? "N/A"}`,
+      extractionMethod: "licensed_api",
+      evidenceQuote: `${best.title ?? searchName} — ${validQ ?? "no quartile"}, SJR ${sjrScore ?? "N/A"}, H-index ${hIndex ?? "N/A"}`,
       rawPayload,
     });
   }
@@ -900,12 +1298,12 @@ async function runSCImago(query, { publisherId, publisherName, domain }) {
         }. ${categories ? `Categories: ${categories}.` : ""}`
       : `Indexed in Scopus/SCImago. ${areas ? `Areas: ${areas}.` : ""}`,
     confidence,
-    extractionMethod: "api",
+    extractionMethod: "unknown",
     rawPayload,
   });
 
   await logEnrichmentRun(query, {
-    publisherId, domain, provider, searchQuery: publisherName,
+    publisherId, domain, provider, searchQuery: searchName,
     candidateUrl: profileUrl,
     status: veracityScore !== null ? "found" : "ambiguous",
     extractedVeracityScore: veracityScore,
@@ -914,8 +1312,64 @@ async function runSCImago(query, { publisherId, publisherName, domain }) {
     rawResultJson: rawPayload,
   });
 
-  logger.log(`[enrichment] ✅ SCImago: ${publisherName} → ${validQ ?? "no quartile"} SJR=${sjrScore} H=${hIndex} (${confidence})`);
-  return { status: veracityScore !== null ? "found" : "ambiguous", quartile: validQ, sjrScore, hIndex, areas, veracityScore, confidence };
+  logger.log(`[enrichment] ✅ SCImago: ${searchName} → ${validQ ?? "no quartile"} SJR=${sjrScore} H=${hIndex} (${confidence})`);
+  return {
+    status: veracityScore !== null ? "found" : "ambiguous",
+    sourceName: best.title ?? searchName,
+    issn,
+    quartile: validQ,
+    sjrScore,
+    hIndex,
+    areas,
+    veracityScore,
+    confidence,
+  };
+}
+
+function parseProviderPayload(value) {
+  if (!value) return null;
+  if (typeof value === "object") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function scimagoContextFromPayload(payload) {
+  const data = parseProviderPayload(payload);
+  if (!data) return null;
+  const best = data.best || {};
+  const issn = data.issn || best.issn;
+  const areas = data.areas || best.areas;
+  return {
+    sourceName: best.title || data.sourceName || null,
+    issn: Array.isArray(issn) ? issn.join(", ") : (issn || null),
+    areas: Array.isArray(areas)
+      ? areas.map((area) => area?.name || area).filter(Boolean).join(", ")
+      : (areas || null),
+  };
+}
+
+async function loadStoredScimagoContext(query, publisherId) {
+  try {
+    const rows = await query(
+      `(SELECT raw_provider_payload, last_checked
+          FROM publisher_ratings
+         WHERE publisher_id = ? AND source = 'SCImago' AND raw_provider_payload IS NOT NULL
+        UNION ALL
+        SELECT raw_provider_payload, last_checked
+          FROM publisher_profiles
+         WHERE publisher_id = ? AND source = 'SCImago' AND raw_provider_payload IS NOT NULL)
+       ORDER BY last_checked DESC
+       LIMIT 1`,
+      [publisherId, publisherId]
+    );
+    return scimagoContextFromPayload(rows[0]?.raw_provider_payload);
+  } catch (err) {
+    logger.warn(`[enrichment] Failed to load stored SCImago context: ${err.message}`);
+    return null;
+  }
 }
 
 // ────────────────────────────────────────────────────────────
@@ -977,7 +1431,11 @@ export async function backfillMissingScores(query) {
     if (profiles.length === 0) return;
 
     // Pre-filter to only publishers we can actually score — avoids noisy startup logs
-    const scoreable = profiles.filter(p => deriveScoreFromProfile(p) !== null);
+    const scoreable = profiles.filter((p) => {
+      const sourceType = String(p.source_type || "").toLowerCase();
+      if (/\b(social|platform|user.generated)\b/.test(sourceType)) return false;
+      return deriveScoreFromProfile(p) !== null;
+    });
     if (scoreable.length === 0) return;
     logger.log(`[enrichment] 🔄 Backfilling scores for ${scoreable.length} publisher(s) with Wikipedia profiles but no score`);
 
@@ -1020,11 +1478,12 @@ async function reEvaluateAdmiraltyForPublisher(query, resolvedId, label) {
   try {
     const { evaluateAdmiraltyCode, storeEvaluation } = await import("../../services/admiraltyEvaluator.js");
 
-    const [profile] = await query(
-      `SELECT source_type FROM publisher_profiles WHERE publisher_id = ? ORDER BY last_checked DESC LIMIT 1`,
+    const profiles = await query(
+      `SELECT source, profile_url, description, credibility_notes, source_type, country
+         FROM publisher_profiles WHERE publisher_id = ? ORDER BY last_checked DESC`,
       [resolvedId]
     );
-    const dbSourceType = profile?.source_type || null;
+    const dbSourceType = profiles.find((p) => p.source_type)?.source_type || null;
 
     const existingSourceRatings = await query(
       `SELECT source, rating_label, rating_type, bias_score, veracity_score, score, confidence
@@ -1033,8 +1492,8 @@ async function reEvaluateAdmiraltyForPublisher(query, resolvedId, label) {
       [resolvedId]
     );
 
-    // Reconstruct normalized provider signals from stored rating labels so that
-    // MBFC/AdFontes labels still influence the letter without a live re-lookup.
+    // Reconstruct normalized provider signals from stored rows so DB-backed
+    // ratings still influence the letter without a live re-lookup.
     const providerResults = existingSourceRatings.map(r => {
       const src   = (r.source ?? "").toLowerCase();
       const lbl   = (r.rating_label ?? "").toLowerCase();
@@ -1042,16 +1501,43 @@ async function reEvaluateAdmiraltyForPublisher(query, resolvedId, label) {
         lbl.includes("high") || lbl.includes("very reliable")                           ? "high"  :
         lbl.includes("low")  || lbl.includes("unreliable") || lbl.includes("questionable") ? "low"   :
         lbl.includes("mixed") || lbl.includes("mostly reliable")                        ? "medium" : null;
+      const providerName = src.includes("mbfc") || src.includes("media bias") ? "mbfc"
+        : src.includes("ad fontes") || src.includes("adfont") ? "adfontes"
+        : src.includes("allsides") ? "allsides"
+        : src.includes("wikipedia") ? "wikipedia"
+        : src.includes("scimago") ? "scimago"
+        : src;
       return {
-        providerName: src.includes("mbfc") || src.includes("media bias") ? "mbfc"
-                    : src.includes("ad fontes") || src.includes("adfont") ? "adfontes"
-                    : src.includes("allsides") ? "allsides"
-                    : src.includes("wikipedia") ? "wikipedia"
-                    : src,
+        providerName,
         matchFound: true,
-        normalized: { reliability },
+        normalized: {
+          reliability,
+          reliabilityScore: r.veracity_score ?? null,
+          veracityScore: r.veracity_score ?? null,
+          biasScore: r.bias_score ?? null,
+          sourceName: r.rating_label ?? null,
+        },
       };
     });
+    for (const p of profiles) {
+      const src = (p.source ?? "").toLowerCase();
+      providerResults.push({
+        providerName: src.includes("wikidata") ? "wikidata"
+          : src.includes("wikipedia") ? "wikipedia"
+          : src.includes("scimago") ? "scimago"
+          : src,
+        matchFound: true,
+        normalized: {
+          publisherName: label,
+          sourceType: p.source_type ?? null,
+          country: p.country ?? null,
+          externalUrl: p.profile_url ?? null,
+          description: p.description ?? null,
+          reliabilityScore: src.includes("wikipedia") ? null : undefined,
+        },
+      });
+    }
+    const storedSignals = await loadProviderSignals(query, resolvedId);
 
     const contentRows = await query(
       `SELECT cp.content_id, c.url FROM content_publishers cp
@@ -1067,6 +1553,7 @@ async function reEvaluateAdmiraltyForPublisher(query, resolvedId, label) {
       sourceIdentity: { sourceType: dbSourceType || undefined, resolutionLevel: 3 },
       existingSourceRatings,
       providerResults,
+      providerSignals: storedSignals,
     });
     await storeEvaluation(query, {
       targetType: "publisher",
@@ -1130,11 +1617,6 @@ export async function enrichPublisherIfNeeded({
   context = "case_content",
 }) {
   try {
-    if (!tavilySearch) {
-      logger.warn("[enrichment] TAVILY_API_KEY not set — skipping publisher enrichment");
-      return { status: "skipped", reason: "tavily_not_configured" };
-    }
-
     // 1. Normalize domain — reject localhost/private origins (dev-server URLs must not corrupt enrichment)
     const rawDomain = providedDomain || normalizeDomain(sourceUrl) || null;
     const domain = (rawDomain && rawDomain !== "localhost" && !rawDomain.startsWith("127.") && !rawDomain.startsWith("192.168.")) ? rawDomain : null;
@@ -1168,34 +1650,56 @@ export async function enrichPublisherIfNeeded({
     const label = publisherName || `publisher_${resolvedId}`;
     logger.log(`[enrichment] Starting for "${label}" id=${resolvedId} domain=${domain} context=${context}`);
 
+    if (isSocialPlatformUrl(sourceUrl)) {
+      logger.log(`[enrichment] Skipping automatic publisher enrichment for social platform source "${label}" (${sourceUrl})`);
+      await clearAutomaticSocialEnrichment(query, resolvedId);
+      const admiraltyUpdates = await reEvaluateAdmiraltyForPublisher(query, resolvedId, label);
+      return {
+        status: "skipped",
+        reason: "social_platform_distribution_source",
+        admiraltyUpdates,
+      };
+    }
+
+    if (!tavilySearch) {
+      logger.warn("[enrichment] TAVILY_API_KEY not set — skipping Tavily-backed providers only");
+    }
+
     // 3. Per-provider freshness checks (parallelized)
-    const [allSidesStale, adFontesStale, wikiStale, scimagoStale] = await Promise.all([
+    const [allSidesStale, adFontesStale, wikiStale, wikidataStale, scimagoStale] = await Promise.all([
       force ? true : isStaleRating(query, resolvedId, "AllSides"),
       force ? true : isStaleRating(query, resolvedId, "Ad Fontes"),
       force ? true : isStaleProfile(query, resolvedId, "Wikipedia"),
+      force ? true : isStaleProfile(query, resolvedId, "Wikidata"),
       force ? true : isStaleRating(query, resolvedId, "SCImago"),
     ]);
 
-    if (!allSidesStale && !adFontesStale && !wikiStale && !scimagoStale) {
+    if (!allSidesStale && !adFontesStale && !wikiStale && !wikidataStale && !scimagoStale) {
       logger.log(`[enrichment] All providers fresh for "${label}" — re-evaluating Admiralty only`);
       const admiraltyUpdates = await reEvaluateAdmiraltyForPublisher(query, resolvedId, label);
       return { status: "skipped", reason: "all_fresh", admiraltyUpdates };
     }
 
     logger.log(
-      `[enrichment] Stale providers — AllSides:${allSidesStale} AdFontes:${adFontesStale} Wikipedia:${wikiStale} SCImago:${scimagoStale}`
+      `[enrichment] Stale providers — AllSides:${allSidesStale} AdFontes:${adFontesStale} Wikipedia:${wikiStale} Wikidata:${wikidataStale} SCImago:${scimagoStale}`
     );
 
     // 4. Collect stale tasks
     const tasks = [];
-    const ctx = { publisherId: resolvedId, publisherName: label, domain };
+    const ctx = { publisherId: resolvedId, publisherName: label, domain, sourceUrl };
 
-    if (allSidesStale)  tasks.push({ name: "AllSides",  fn: () => runAllSides(query, ctx) });
-    if (adFontesStale)  tasks.push({ name: "Ad Fontes", fn: () => runAdFontes(query, ctx) });
-    if (wikiStale)      tasks.push({ name: "Wikipedia", fn: () => runWikipedia(query, ctx) });
-    if (scimagoStale)   tasks.push({ name: "SCImago",   fn: () => runSCImago(query, ctx) });
+    if (tavilySearch && allSidesStale)  tasks.push({ name: "AllSides",  fn: () => runAllSides(query, ctx) });
+    if (tavilySearch && adFontesStale)  tasks.push({ name: "Ad Fontes", fn: () => runAdFontes(query, ctx) });
+    if (tavilySearch && wikiStale)      tasks.push({ name: "Wikipedia", fn: () => runWikipedia(query, ctx) });
+    if (wikidataStale)  tasks.push({ name: "Wikidata",  fn: () => runWikidata(query, ctx) });
+    if (scimagoStale && looksLikeScholarlySourceName(label, sourceUrl)) {
+      tasks.push({ name: "SCImago", fn: () => runSCImago(query, ctx) });
+    } else if (scimagoStale) {
+      logger.log(`[enrichment] SCImago skipped for non-scholarly source label "${label}"`);
+    }
 
     // 5. Run with concurrency limit of 2 (rate-limit friendly)
+    const firstPassStartedAt = Date.now();
     const results = {};
     for (let i = 0; i < tasks.length; i += 2) {
       const batch = tasks.slice(i, i + 2);
@@ -1212,7 +1716,62 @@ export async function enrichPublisherIfNeeded({
     }
 
     const summary = Object.fromEntries(Object.entries(results).map(([k, v]) => [k, v.status]));
-    logger.log(`[enrichment] Done for "${label}":`, summary);
+    logger.log(`[enrichment] First pass for "${label}" finished in ${Date.now() - firstPassStartedAt}ms:`, summary);
+
+    try {
+      const secondPassStartedAt = Date.now();
+      const currentScimagoContext = results.SCImago?.status === "found" || results.SCImago?.status === "ambiguous"
+        ? {
+            sourceName: results.SCImago.sourceName,
+            issn: results.SCImago.issn,
+            areas: results.SCImago.areas,
+          }
+        : null;
+      const storedScimagoContext = currentScimagoContext ? null : await loadStoredScimagoContext(query, resolvedId);
+      const scholarlyContext = currentScimagoContext || storedScimagoContext;
+      const articleText = scholarlyContext
+        ? [
+            scholarlyContext.sourceName,
+            scholarlyContext.issn,
+            scholarlyContext.areas,
+            "journal",
+            "academic",
+            "issn",
+          ].filter(Boolean).join(" ")
+        : null;
+      const providerResults = await lookupPublisherAllProviders(
+        {
+          domain,
+          publisherName: label,
+          sourceUrl,
+          title: scholarlyContext?.sourceName || label,
+          articleText,
+          issn: scholarlyContext?.issn || null,
+        },
+        {
+          providers: SECOND_PASS_PROVIDERS,
+        }
+      );
+      const signals = await persistProviderSignals(query, {
+        publisherId: resolvedId,
+        domain,
+        entityName: label,
+        providerResults,
+        matchContext: { sourceUrl },
+      });
+      await updatePublisherSignalSummary(query, resolvedId, signals);
+      logger.log(
+        `[enrichment] Second pass for "${label}" finished in ${Date.now() - secondPassStartedAt}ms (${providerResults.length} providers, ${signals.length} signals)`
+      );
+      results.externalSignals = {
+        status: "stored",
+        providers: providerResults.map((result) => result.providerName),
+        signalCount: signals.length,
+      };
+    } catch (err) {
+      results.externalSignals = { status: "error", error: err.message };
+      logger.warn(`[enrichment] External provider signal mapping failed for "${label}":`, err.message);
+    }
 
     // Re-evaluate Admiralty synchronously so the updated codes are included in
     // the response. Callers can use admiraltyUpdates[contentId] to refresh the

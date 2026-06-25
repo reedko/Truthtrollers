@@ -366,7 +366,7 @@ export default function createContentIncrementalRoutes({ query }) {
   router.post("/api/content/:id/claims/:claimId/evidence/rerun", async (req, res) => {
     const contentId = parseInt(req.params.id);
     const claimId = parseInt(req.params.claimId);
-    const { mode = "standard" } = req.body;
+    const { mode = "standard", processReferences = false } = req.body;
 
     logger.log(`\n${'='.repeat(80)}`);
     logger.log(`🔬 [Evidence Re-run] content_id=${contentId}, claim_id=${claimId}, mode=${mode}`);
@@ -421,6 +421,19 @@ export default function createContentIncrementalRoutes({ query }) {
         claimIds: [claimId],
         claimConfidenceMap,
       });
+
+      if (!processReferences) {
+        logger.log(
+          `⏭️  [Evidence Re-run] Skipping reference claim extraction/link matching for single-claim rerun`
+        );
+        return res.json({
+          success: true,
+          evidence_count: aiReferences.length,
+          references_processed: 0,
+          skipped_reference_processing: true,
+          mode: mode
+        });
+      }
 
       // Process references (extract claims and match)
       const validReferences = aiReferences.filter((ref) => {

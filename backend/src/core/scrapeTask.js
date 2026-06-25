@@ -213,7 +213,7 @@ export async function scrapeTask(
 
     // Only extract publisher if not already provided via mediaSource
     if (!publisher) {
-      publisher = await extractPublisher($);
+      publisher = await extractPublisher($, url);
     }
 
     // Extract thumbnail if not already set (from PDF)

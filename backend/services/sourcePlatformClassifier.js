@@ -49,17 +49,32 @@ const PLATFORMS = {
   "odysee.com":        { name: "Odysee",          type: "platform", acctRe: /^\/@([^/?#]+)/ },
 };
 
+function humanizeAccountLabel(value) {
+  return String(value || "")
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
 function extractAccount(def, url) {
   const { acctRe, reserved } = def;
   if (!acctRe || !url) return null;
   try {
     const path = new URL(url).pathname;
+    const facebookGroup = path.match(/^\/groups\/([^/?#]+)/i);
+    if (def.name === "Facebook" && facebookGroup) {
+      const slug = decodeURIComponent(facebookGroup[1]);
+      return /^\d+$/.test(slug)
+        ? `Facebook Group ${slug}`
+        : humanizeAccountLabel(slug);
+    }
     const m = path.match(acctRe);
     if (!m) return null;
     const account = decodeURIComponent(m[1]).replace(/^@/, "");
     // Reject platform reserved paths (groups, events, etc.) — not real account names
     if (reserved?.has(account.toLowerCase())) return null;
-    return account;
+    return humanizeAccountLabel(account);
   } catch {
     return null;
   }

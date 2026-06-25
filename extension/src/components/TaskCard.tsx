@@ -66,7 +66,7 @@ const getProgressColor = (progress: string | null) => {
 };
 
 const TaskCard: React.FC = () => {
-  const { task, currentUrl, setTask, setCurrentUrl } = useTaskStore();
+  const { task, currentUrl, setTask, syncTaskFromStorage, setCurrentUrl } = useTaskStore();
   const { loading, error, scrapeTask } = useTaskScraper();
   const [visible, setVisible] = useState(false);
 
@@ -155,12 +155,12 @@ const TaskCard: React.FC = () => {
     ) => {
       if (areaName === "local" && changes.task) {
         const newTask = changes.task.newValue as Task | undefined;
-        console.log("📦 [TaskCard] Storage changed, reloading task:", newTask);
         if (newTask) {
-          setTask(newTask);
+          // syncTaskFromStorage updates state only — no storage write — breaks the bounce-back loop
+          syncTaskFromStorage(newTask);
           setVisible(true);
         } else {
-          // Task was cleared - hide popup
+          syncTaskFromStorage(null);
           setVisible(false);
         }
       }
@@ -171,7 +171,7 @@ const TaskCard: React.FC = () => {
     return () => {
       browser.storage.onChanged.removeListener(handleStorageChange);
     };
-  }, [setTask]);
+  }, [syncTaskFromStorage]);
 
   useEffect(() => {
     if (!task?.content_id) return;
@@ -198,7 +198,6 @@ const TaskCard: React.FC = () => {
           rating_counts: response.ratingCounts,
         };
         setTask(nextTask as Task);
-        await browser.storage.local.set({ task: nextTask });
       } catch (err) {
         console.warn("[TaskCard] Failed to refresh verimeter score:", err);
       }

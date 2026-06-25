@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="504" viewBox="0 0 800 504" role="img" aria-label="Claim-Link Mini Graphics">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#07111f"/>
+      <stop offset="100%" stop-color="#0f172a"/>
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="100%" height="100%" rx="18" fill="url(#bg)"/>
+  <rect x="10" y="10" width="780" height="484" rx="16" fill="rgba(255,255,255,0.04)" stroke="#38bdf8" stroke-opacity="0.32"/>
+  <text x="28" y="42" fill="#38bdf8" font-family="Inter, Arial, sans-serif" font-size="18" font-weight="700">Claim-Link Mini Graphics</text>
+  
+      <rect x="28" y="56" width="744" height="60" rx="14" fill="#06111f" stroke="#38bdf8" stroke-opacity="0.22"/>
+      <rect x="44" y="66" width="220" height="40" rx="10" fill="#0b2038" stroke="#38bdf8" stroke-opacity="0.42"/>
+      <text x="58" y="84" fill="#e0f2fe" font-family="Inter, Arial" font-size="11" font-weight="700">CASE</text>
+      <text x="58" y="100" fill="#e0f2fe" font-family="Inter, Arial" font-size="11">Public health claims about v...</text>
+      <rect x="306" y="78" width="188" height="16" rx="8" fill="#111827"/>
+      <rect x="306" y="78" width="63" height="16" rx="8" fill="#f87171" opacity="0.78"/>
+      <rect x="369" y="78" width="62" height="16" fill="#fbbf24" opacity="0.78"/>
+      <rect x="431" y="78" width="63" height="16" rx="8" fill="#22c55e" opacity="0.78"/>
+      <line x1="310.7" y1="69" x2="310.7" y2="103" stroke="#f87171" stroke-width="4" stroke-linecap="round"/>
+      <text x="400" y="68" text-anchor="middle" fill="#f87171" font-family="Inter, Arial" font-size="12" font-weight="800">refutes -95%</text>
+      <text x="306" y="113" fill="#f87171" font-family="Inter, Arial" font-size="9" font-weight="700">REFUTE</text>
+      <text x="383" y="113" fill="#fbbf24" font-family="Inter, Arial" font-size="9" font-weight="700">MIXED</text>
+      <text x="454" y="113" fill="#22c55e" font-family="Inter, Arial" font-size="9" font-weight="700">SUPPORT</text>
+      <rect x="536" y="66" width="220" height="40" rx="10" fill="#0d261c" stroke="#22c55e" stroke-opacity="0.42"/>
+      <text x="550" y="84" fill="#dcfce7" font-family="Inter, Arial" font-size="11" font-weight="700">SOURCE</text>
+      <text x="550" y="100" fill="#dcfce7" font-family="Inter, Arial" font-size="11">Vaccines are generally safe ...</text>
+      <rect x="28" y="132" width="744" height="60" rx="14" fill="#06111f" stroke="#38bdf8" stroke-opacity="0.22"/>
+      <rect x="44" y="142" width="220" height="40" rx="10" fill="#0b2038" stroke="#38bdf8" stroke-opacity="0.42"/>
+      <text x="58" y="160" fill="#e0f2fe" font-family="Inter, Arial" font-size="11" font-weight="700">CASE</text>
+      <text x="58" y="176" fill="#e0f2fe" font-family="Inter, Arial" font-size="11">A study found that infants e...</text>
+      <rect x="306" y="154" width="188" height="16" rx="8" fill="#111827"/>
+      <rect x="306" y="154" width="63" height="16" rx="8" fill="#f87171" opacity="0.78"/>
+      <rect x="369" y="154" width="62" height="16" fill="#fbbf24" opacity="0.78"/>
+      <rect x="431" y="154" width="63" height="16" rx="8" fill="#22c55e" opacity="0.78"/>
+      <line x1="315.4" y1="145" x2="315.4" y2="179" stroke="#f87171" stroke-width="4" stroke-linecap="round"/>
+      <text x="400" y="144" text-anchor="middle" fill="#f87171" font-family="Inter, Arial" font-size="12" font-weight="800">refutes -90%</text>
+      <text x="306" y="189" fill="#f87171" font-family="Inter, Arial" font-size="9" font-weight="700">REFUTE</text>
+      <text x="383" y="189" fill="#fbbf24" font-family="Inter, Arial" font-size="9" font-weight="700">MIXED</text>
+      <text x="454" y="189" fill="#22c55e" font-family="Inter, Arial" font-size="9" font-weight="700">SUPPORT</text>
+      <rect x="536" y="142" width="220" height="40" rx="10" fill="#0d261c" stroke="#22c55e" stroke-opacity="0.42"/>
+      <text x="550" y="160" fill="#dcfce7" font-family="Inter, Arial" font-size="11" font-weight="700">SOURCE</text>
+      <text x="550" y="176" fill="#dcfce7" font-family="Inter, Arial" font-size="11">GACVS found that studies wit...</text>
+      <rect x="28" y="208" width="744" height="60" rx="14" fill="#06111f" stroke="#38bdf8" stroke-opacity="0.22"/>
+      <rect x="44" y="218" width="220" height="40" rx="10" fill="#0b2038" stroke="#38bdf8" stroke-opacity="0.42"/>
+      <text x="58" y="236" fill="#e0f2fe" font-family="Inter, Arial" font-size="11" font-weight="700">CASE</text>
+      <text x="58" y="252" fill="#e0f2fe" font-family="Inter, Arial" font-size="11">The health department's ad c...</text>
+      <rect x="306" y="230" width="188" height="16" rx="8" fill="#111827"/>
+      <rect x="306" y="230" width="63" height="16" rx="8" fill="#f87171" opacity="0.78"/>
+      <rect x="369" y="230" width="62" height="16" fill="#fbbf24" opacity="0.78"/>
+      <rect x="431" y="230" width="63" height="16" rx="8" fill="#22c55e" opacity="0.78"/>
+      <line x1="353" y1="221" x2="353" y2="255" stroke="#f87171" stroke-width="4" stroke-linecap="round"/>
+      <text x="400" y="220" text-anchor="middle" fill="#f87171" font-family="Inter, Arial" font-size="12" font-weight="800">refutes -50%</text>
+      <text x="306" y="265" fill="#f87171" font-family="Inter, Arial" font-size="9" font-weight="700">REFUTE</text>
+      <text x="383" y="265" fill="#fbbf24" font-family="Inter, Arial" font-size="9" font-weight="700">MIXED</text>
+      <text x="454" y="265" fill="#22c55e" font-family="Inter, Arial" font-size="9" font-weight="700">SUPPORT</text>
+      <rect x="536" y="218" width="220" height="40" rx="10" fill="#0d261c" stroke="#22c55e" stroke-opacity="0.42"/>
+      <text x="550" y="236" fill="#dcfce7" font-family="Inter, Arial" font-size="11" font-weight="700">SOURCE</text>
+      <text x="550" y="252" fill="#dcfce7" font-family="Inter, Arial" font-size="11">Vaccines are generally safe ...</text>
+      <rect x="28" y="284" width="744" height="60" rx="14" fill="#06111f" stroke="#38bdf8" stroke-opacity="0.22"/>
+      <rect x="44" y="294" width="220" height="40" rx="10" fill="#0b2038" stroke="#38bdf8" stroke-opacity="0.42"/>
+      <text x="58" y="312" fill="#e0f2fe" font-family="Inter, Arial" font-size="11" font-weight="700">CASE</text>
+      <text x="58" y="328" fill="#e0f2fe" font-family="Inter, Arial" font-size="11">The CDC's own data showed th...</text>
+      <rect x="306" y="306" width="188" height="16" rx="8" fill="#111827"/>
+      <rect x="306" y="306" width="63" height="16" rx="8" fill="#f87171" opacity="0.78"/>
+      <rect x="369" y="306" width="62" height="16" fill="#fbbf24" opacity="0.78"/>
+      <rect x="431" y="306" width="63" height="16" rx="8" fill="#22c55e" opacity="0.78"/>
+      <line x1="381.2" y1="297" x2="381.2" y2="331" stroke="#f87171" stroke-width="4" stroke-linecap="round"/>
+      <text x="400" y="296" text-anchor="middle" fill="#f87171" font-family="Inter, Arial" font-size="12" font-weight="800">refutes -20%</text>
+      <text x="306" y="341" fill="#f87171" font-family="Inter, Arial" font-size="9" font-weight="700">REFUTE</text>
+      <text x="383" y="341" fill="#fbbf24" font-family="Inter, Arial" font-size="9" font-weight="700">MIXED</text>
+      <text x="454" y="341" fill="#22c55e" font-family="Inter, Arial" font-size="9" font-weight="700">SUPPORT</text>
+      <rect x="536" y="294" width="220" height="40" rx="10" fill="#0d261c" stroke="#22c55e" stroke-opacity="0.42"/>
+      <text x="550" y="312" fill="#dcfce7" font-family="Inter, Arial" font-size="11" font-weight="700">SOURCE</text>
+      <text x="550" y="328" fill="#dcfce7" font-family="Inter, Arial" font-size="11">The CDC's own data showed th...</text>
+      <rect x="28" y="360" width="744" height="60" rx="14" fill="#06111f" stroke="#38bdf8" stroke-opacity="0.22"/>
+      <rect x="44" y="370" width="220" height="40" rx="10" fill="#0b2038" stroke="#38bdf8" stroke-opacity="0.42"/>
+      <text x="58" y="388" fill="#e0f2fe" font-family="Inter, Arial" font-size="11" font-weight="700">CASE</text>
+      <text x="58" y="404" fill="#e0f2fe" font-family="Inter, Arial" font-size="11">The CDC's own data showed th...</text>
+      <rect x="306" y="382" width="188" height="16" rx="8" fill="#111827"/>
+      <rect x="306" y="382" width="63" height="16" rx="8" fill="#f87171" opacity="0.78"/>
+      <rect x="369" y="382" width="62" height="16" fill="#fbbf24" opacity="0.78"/>
+      <rect x="431" y="382" width="63" height="16" rx="8" fill="#22c55e" opacity="0.78"/>
+      <line x1="381.2" y1="373" x2="381.2" y2="407" stroke="#f87171" stroke-width="4" stroke-linecap="round"/>
+      <text x="400" y="372" text-anchor="middle" fill="#f87171" font-family="Inter, Arial" font-size="12" font-weight="800">refutes -20%</text>
+      <text x="306" y="417" fill="#f87171" font-family="Inter, Arial" font-size="9" font-weight="700">REFUTE</text>
+      <text x="383" y="417" fill="#fbbf24" font-family="Inter, Arial" font-size="9" font-weight="700">MIXED</text>
+      <text x="454" y="417" fill="#22c55e" font-family="Inter, Arial" font-size="9" font-weight="700">SUPPORT</text>
+      <rect x="536" y="370" width="220" height="40" rx="10" fill="#0d261c" stroke="#22c55e" stroke-opacity="0.42"/>
+      <text x="550" y="388" fill="#dcfce7" font-family="Inter, Arial" font-size="11" font-weight="700">SOURCE</text>
+      <text x="550" y="404" fill="#dcfce7" font-family="Inter, Arial" font-size="11">The CDC's own data showed th...</text>
+</svg>

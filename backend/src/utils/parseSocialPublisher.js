@@ -9,6 +9,35 @@ const FB_RESERVED = new Set([
   "stories", "notifications", "friends", "messages",
 ]);
 
+function humanizeFacebookLabel(value) {
+  return String(value || "")
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (ch) => ch.toUpperCase());
+}
+
+export function inferFacebookChannelFromText(text) {
+  const bad = new Set([
+    "facebook", "like", "comment", "share", "follow", "see more", "join group",
+    "notifications", "public group", "private group", "author", "admin",
+  ]);
+  const lines = String(text || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length >= 3 && line.length <= 80);
+  for (const line of lines.slice(0, 40)) {
+    const cleaned = line.replace(/\s+/g, " ").trim();
+    const lower = cleaned.toLowerCase();
+    if (bad.has(lower)) continue;
+    if (/^facebook group \d+$/i.test(cleaned)) continue;
+    if (/^[A-Z0-9][A-Z0-9 &'’.-]{2,}$/.test(cleaned) && /[A-Z]{2}/.test(cleaned)) {
+      return humanizeFacebookLabel(cleaned);
+    }
+  }
+  return null;
+}
+
 /**
  * parseFacebookMeta(url) → { platform, channel, publisherLabel }
  *
@@ -31,14 +60,13 @@ export function parseFacebookMeta(url) {
       const slug = groupMatch[1];
       const channel = /^\d+$/.test(slug)
         ? `Facebook Group ${slug}`
-        : slug.replace(/[_-]/g, " ");
-      // Groups are distribution channels, not publishers — don't use slug as publisherLabel
-      return { platform: "facebook", channel, publisherLabel: "Facebook" };
+        : humanizeFacebookLabel(slug);
+      return { platform: "facebook", channel, publisherLabel: channel };
     }
 
     const pageMatch = pathname.match(/^\/([^/]+)\/posts\//i);
     if (pageMatch && !FB_RESERVED.has(pageMatch[1].toLowerCase())) {
-      const channel = pageMatch[1].replace(/[._-]/g, " ");
+      const channel = humanizeFacebookLabel(pageMatch[1]);
       return { platform: "facebook", channel, publisherLabel: channel };
     }
   } catch { /* bad URL */ }
