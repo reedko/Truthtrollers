@@ -919,6 +919,25 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
           const scrapedPublisherId = pubData?.publisher_id;
           console.log(`[scrapeForPublisher] publisher from ref content ${lookupId}:`, scrapedName, pubData);
 
+          // Refresh social_provenance, platform, channel — these are written during
+          // scrapeReference and won't be in modal state until we re-fetch.
+          if (contentId) {
+            fetch(`${API_BASE_URL}/api/content/${contentId}`, { credentials: "include", headers: authHeaders })
+              .then(r => r.ok ? r.json() : null)
+              .then(d => {
+                if (!d) return;
+                if (d.platform) setContentPlatform(d.platform);
+                if (d.distribution_channel) setContentChannel(d.distribution_channel);
+                const sp = d.social_provenance
+                  ? (typeof d.social_provenance === "string"
+                      ? (() => { try { return JSON.parse(d.social_provenance); } catch { return null; } })()
+                      : d.social_provenance)
+                  : null;
+                if (sp) setSocialProvenance(sp);
+              })
+              .catch(() => {});
+          }
+
           if (scrapedName && scrapedPublisherId) {
             // scrapeReference has already replaced the content→publisher link in
             // the database. Reflect that committed state immediately; requiring
@@ -1363,14 +1382,31 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                           <HStack spacing={3} flexWrap="wrap">
                             <HStack spacing={1}>
                               <Text fontSize="2xs" color="var(--mr-text-muted)" textTransform="uppercase" letterSpacing="0.08em">Platform</Text>
-                              <Badge fontSize="2xs" px={2} borderRadius="sm"
-                                style={{ background: "rgba(0,162,255,0.12)", color: "var(--mr-blue)", border: "1px solid rgba(0,162,255,0.3)" }}>
-                                {contentPlatform
-                                  ? contentPlatform.charAt(0).toUpperCase() + contentPlatform.slice(1)
-                                  : (isSocial ? "Social" : "Web")}
-                              </Badge>
+                              {isSocial && (
+                                <Badge fontSize="2xs" px={2} borderRadius="sm"
+                                  style={{ background: "rgba(0,162,255,0.12)", color: "var(--mr-blue)", border: "1px solid rgba(0,162,255,0.3)" }}>
+                                  Social
+                                </Badge>
+                              )}
+                              {(isSocial && /facebook\.com/i.test(sourceUrl ?? "")) || /^facebook$/i.test(contentPlatform ?? "") ? (
+                                <Badge fontSize="2xs" px={2} borderRadius="sm"
+                                  style={{ background: "rgba(66,103,178,0.2)", color: "#7b9fe0", border: "1px solid rgba(66,103,178,0.4)" }}>
+                                  Facebook
+                                </Badge>
+                              ) : contentPlatform && !isSocial ? (
+                                <Badge fontSize="2xs" px={2} borderRadius="sm"
+                                  style={{ background: "rgba(0,162,255,0.12)", color: "var(--mr-blue)", border: "1px solid rgba(0,162,255,0.3)" }}>
+                                  {contentPlatform.charAt(0).toUpperCase() + contentPlatform.slice(1)}
+                                </Badge>
+                              ) : !isSocial ? (
+                                <Badge fontSize="2xs" px={2} borderRadius="sm"
+                                  style={{ background: "rgba(0,162,255,0.12)", color: "var(--mr-blue)", border: "1px solid rgba(0,162,255,0.3)" }}>
+                                  Web
+                                </Badge>
+                              ) : null}
                             </HStack>
-                            {contentChannel && (
+                            {/* Suppress Channel when facebookContainer already shows the same group name */}
+                            {contentChannel && (!facebookContainer || facebookContainer.name !== contentChannel) && (
                               <HStack spacing={1}>
                                 <Text fontSize="2xs" color="var(--mr-text-muted)" textTransform="uppercase" letterSpacing="0.08em">Channel</Text>
                                 <Badge fontSize="2xs" px={2} borderRadius="sm"
@@ -1385,15 +1421,23 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                         {/* ── Facebook container provenance ── */}
                         {facebookContainer && (
                           <Box pt="2px">
-                            <Text fontSize="2xs" color="var(--mr-text-muted)" textTransform="uppercase" letterSpacing="0.08em">
-                              {facebookContainer.containerType === "facebook_group" ? "Posted in group" : "Posted via"}
-                            </Text>
+                            <HStack spacing={1} align="center" mb="2px">
+                              <Text fontSize="2xs" color="var(--mr-text-muted)" textTransform="uppercase" letterSpacing="0.08em">
+                                {facebookContainer.containerType === "facebook_group" ? "Facebook Group" : "Posted via"}
+                              </Text>
+                              {facebookContainer.containerType === "facebook_group" && (
+                                <Badge fontSize="2xs" px={1} borderRadius="sm"
+                                  style={{ background: "rgba(66,103,178,0.2)", color: "#7b9fe0", border: "1px solid rgba(66,103,178,0.4)" }}>
+                                  Group
+                                </Badge>
+                              )}
+                            </HStack>
                             <Text fontSize="sm" fontWeight="900" color="var(--mr-text-primary)" lineHeight="1.25">
                               {facebookContainer.name}
                             </Text>
                             {facebookContainer.directSocialPublisher && (
-                              <Text fontSize="2xs" color="var(--mr-text-muted)" mt="2px">
-                                Posted by {facebookContainer.directSocialPublisher}
+                              <Text fontSize="2xs" color="var(--mr-text-muted)" mt="3px">
+                                Posted by <Text as="span" color="var(--mr-text-primary)" fontWeight="600">{facebookContainer.directSocialPublisher}</Text>
                               </Text>
                             )}
                           </Box>

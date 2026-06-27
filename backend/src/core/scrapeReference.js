@@ -596,6 +596,12 @@ export async function scrapeReference(query, {
         });
         logger.log(`[FB-TRACE] chooseFacebookPublisher returned: "${selected?.name || "null"}" role=${selected?.role || "none"}`);
         if (selected) publisher = selected;
+        // Save the poster (directSocialPublisher) as an author only for pure posts —
+        // if the post links to an external article, that article's authors take precedence.
+        if (socialProvenance.directSocialPublisher && !socialProvenance.sharedSourceUrl &&
+          !authors.some(a => a === socialProvenance.directSocialPublisher || a?.name === socialProvenance.directSocialPublisher)) {
+          authors = [...authors, { name: socialProvenance.directSocialPublisher }];
+        }
         socialProvenance.substantiveSourceStatus = socialProvenance.sharedSourceUrl
           ? (resolvedSubstantiveName ? "resolved" : (socialProvenance.substantiveSourceStatus || "extraction_failed"))
           : "not_present";

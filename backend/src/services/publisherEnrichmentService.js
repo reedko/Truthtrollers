@@ -21,9 +21,14 @@ import {
   persistProviderSignals,
   updatePublisherSignalSummary,
 } from "./providerSignalPersistenceService.js";
+import {
+  discoverOwnSiteOrgStatus,
+  providerResultsFromOrgStatus,
+} from "./ownSiteOrgStatusService.js";
 import fs from "fs/promises";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
+import { publisherProviderFlags } from "../../services/sourceProviders/providerFeatureFlags.js";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -33,6 +38,10 @@ const FRESHNESS_DAYS = 30;
 const FETCH_TIMEOUT_MS = 15000;
 const SEARCH_TIMEOUT_MS = 12000;
 const MAX_PAGE_TEXT_CHARS = 20000;
+const DEFAULT_PROVIDER_CONCURRENCY = Math.max(
+  1,
+  Number.parseInt(process.env.PUBLISHER_ENRICHMENT_CONCURRENCY || "2", 10) || 2
+);
 const SECOND_PASS_PROVIDERS = [
   "mbfc",
   "opensources",
@@ -180,6 +189,41 @@ async function isStaleProfile(query, publisherId, source) {
   const last = rows[0]?.last_checked;
   if (!last) return true;
   return (Date.now() - new Date(last).getTime()) / 86400000 > FRESHNESS_DAYS;
+}
+
+async function isOwnSiteOrgStatusStale(query, publisherId) {
+  try {
+    const rows = await query(
+      `SELECT MAX(retrieved_at) AS last_checked
+         FROM publisher_external_signals
+        WHERE publisher_id = ? AND provider = 'own_site_org_status'`,
+      [publisherId]
+    );
+    const last = rows[0]?.last_checked;
+    if (!last) return true;
+    return (Date.now() - new Date(last).getTime()) / 86400000 > FRESHNESS_DAYS;
+  } catch {
+    return true;
+  }
+}
+
+async function persistAndSummarizeSignals(query, {
+  publisherId,
+  domain,
+  entityName,
+  providerResults,
+  matchContext = {},
+}) {
+  const signals = await persistProviderSignals(query, {
+    publisherId,
+    domain,
+    entityName,
+    providerResults,
+    matchContext,
+  });
+  const allSignals = await loadProviderSignals(query, publisherId);
+  await updatePublisherSignalSummary(query, publisherId, allSignals);
+  return signals;
 }
 
 // ────────────────────────────────────────────────────────────
@@ -1574,6 +1618,7 @@ async function reEvaluateAdmiraltyForPublisher(query, resolvedId, label) {
         sourceIdentity: { sourceType: dbSourceType || undefined, resolutionLevel: 3 },
         existingSourceRatings,
         providerResults,
+        providerSignals: storedSignals,
       });
       await storeEvaluation(query, {
         targetType: "content",
@@ -1615,6 +1660,9 @@ export async function enrichPublisherIfNeeded({
   domain: providedDomain,
   force = false,
   context = "case_content",
+  skipExternalSignals = false,
+  skipOwnSiteOrgStatus = false,
+  maxProviderConcurrency = DEFAULT_PROVIDER_CONCURRENCY,
 }) {
   try {
     // 1. Normalize domain — reject localhost/private origins (dev-server URLs must not corrupt enrichment)
@@ -1650,7 +1698,12 @@ export async function enrichPublisherIfNeeded({
     const label = publisherName || `publisher_${resolvedId}`;
     logger.log(`[enrichment] Starting for "${label}" id=${resolvedId} domain=${domain} context=${context}`);
 
-    if (isSocialPlatformUrl(sourceUrl)) {
+    // Skip enrichment when the SOURCE is a social platform AND the publisher is just
+    // the platform itself (e.g. "Facebook", "facebook.com"). Do NOT skip when the
+    // publisher is a real named entity (e.g. a Facebook group named "Neil deGrasse Tyson")
+    // — those entities have Wikipedia pages and external signal data worth enriching.
+    const isGenericSocialPublisher = /^(facebook|facebook\.com|twitter|twitter\.com|x\.com|instagram|instagram\.com|tiktok|tiktok\.com|unknown publisher)$/i.test(String(label || "").trim());
+    if (isSocialPlatformUrl(sourceUrl) && isGenericSocialPublisher) {
       logger.log(`[enrichment] Skipping automatic publisher enrichment for social platform source "${label}" (${sourceUrl})`);
       await clearAutomaticSocialEnrichment(query, resolvedId);
       const admiraltyUpdates = await reEvaluateAdmiraltyForPublisher(query, resolvedId, label);
@@ -1665,20 +1718,17 @@ export async function enrichPublisherIfNeeded({
       logger.warn("[enrichment] TAVILY_API_KEY not set — skipping Tavily-backed providers only");
     }
 
-    // 3. Per-provider freshness checks (parallelized)
+    const providerFlags = publisherProviderFlags();
+
+    // 3. Per-provider freshness checks (parallelized). Disabled providers are
+    // not stale: forcing enrichment must not bypass an explicit provider gate.
     const [allSidesStale, adFontesStale, wikiStale, wikidataStale, scimagoStale] = await Promise.all([
-      force ? true : isStaleRating(query, resolvedId, "AllSides"),
-      force ? true : isStaleRating(query, resolvedId, "Ad Fontes"),
+      providerFlags.allSides && providerFlags.searchLlmFallback ? (force ? true : isStaleRating(query, resolvedId, "AllSides")) : false,
+      providerFlags.adFontes && providerFlags.searchLlmFallback ? (force ? true : isStaleRating(query, resolvedId, "Ad Fontes")) : false,
       force ? true : isStaleProfile(query, resolvedId, "Wikipedia"),
       force ? true : isStaleProfile(query, resolvedId, "Wikidata"),
       force ? true : isStaleRating(query, resolvedId, "SCImago"),
     ]);
-
-    if (!allSidesStale && !adFontesStale && !wikiStale && !wikidataStale && !scimagoStale) {
-      logger.log(`[enrichment] All providers fresh for "${label}" — re-evaluating Admiralty only`);
-      const admiraltyUpdates = await reEvaluateAdmiraltyForPublisher(query, resolvedId, label);
-      return { status: "skipped", reason: "all_fresh", admiraltyUpdates };
-    }
 
     logger.log(
       `[enrichment] Stale providers — AllSides:${allSidesStale} AdFontes:${adFontesStale} Wikipedia:${wikiStale} Wikidata:${wikidataStale} SCImago:${scimagoStale}`
@@ -1688,26 +1738,38 @@ export async function enrichPublisherIfNeeded({
     const tasks = [];
     const ctx = { publisherId: resolvedId, publisherName: label, domain, sourceUrl };
 
-    if (tavilySearch && allSidesStale)  tasks.push({ name: "AllSides",  fn: () => runAllSides(query, ctx) });
-    if (tavilySearch && adFontesStale)  tasks.push({ name: "Ad Fontes", fn: () => runAdFontes(query, ctx) });
-    if (tavilySearch && wikiStale)      tasks.push({ name: "Wikipedia", fn: () => runWikipedia(query, ctx) });
+    if (tavilySearch && providerFlags.allSides && providerFlags.searchLlmFallback && allSidesStale) tasks.push({ name: "AllSides", fn: () => runAllSides(query, ctx) });
+    if (tavilySearch && providerFlags.adFontes && providerFlags.searchLlmFallback && adFontesStale) tasks.push({ name: "Ad Fontes", fn: () => runAdFontes(query, ctx) });
+    if (tavilySearch && wikiStale) tasks.push({ name: "Wikipedia", fn: () => runWikipedia(query, ctx) });
+    else if (wikiStale) tasks.push({ name: "Wikipedia", fn: async () => ({ status: "skipped", reason: "tavily_not_configured" }) });
     if (wikidataStale)  tasks.push({ name: "Wikidata",  fn: () => runWikidata(query, ctx) });
     if (scimagoStale && looksLikeScholarlySourceName(label, sourceUrl)) {
       tasks.push({ name: "SCImago", fn: () => runSCImago(query, ctx) });
     } else if (scimagoStale) {
       logger.log(`[enrichment] SCImago skipped for non-scholarly source label "${label}"`);
+      tasks.push({ name: "SCImago", fn: async () => ({ status: "skipped", reason: "non_scholarly_source" }) });
     }
 
-    // 5. Run with concurrency limit of 2 (rate-limit friendly)
+    // 5. Run with a small concurrency limit. Interactive modal calls pass 1 so
+    // browser/server resources do not get saturated by parallel search + LLM work.
     const firstPassStartedAt = Date.now();
-    const results = {};
-    for (let i = 0; i < tasks.length; i += 2) {
-      const batch = tasks.slice(i, i + 2);
+    const results = {
+      ...(!providerFlags.allSides ? { AllSides: { status: "disabled", reason: "data_access_pending" } } : {}),
+      ...(!providerFlags.adFontes ? { "Ad Fontes": { status: "disabled" } } : {}),
+      ...((providerFlags.allSides || providerFlags.adFontes) && !providerFlags.searchLlmFallback
+        ? { SearchLlmRatingFallback: { status: "disabled" } }
+        : {}),
+    };
+    const concurrency = Math.max(1, Math.min(3, Number(maxProviderConcurrency) || DEFAULT_PROVIDER_CONCURRENCY));
+    for (let i = 0; i < tasks.length; i += concurrency) {
+      const batch = tasks.slice(i, i + concurrency);
+      batch.forEach((task) => logger.log(`[enrichment] Provider ${task.name} started for "${label}"`));
       const settled = await Promise.allSettled(batch.map((t) => t.fn()));
       batch.forEach((t, idx) => {
         const s = settled[idx];
         if (s.status === "fulfilled") {
           results[t.name] = s.value;
+          logger.log(`[enrichment] Provider ${t.name} finished for "${label}": ${s.value?.status || "unknown"}`);
         } else {
           results[t.name] = { status: "error" };
           logger.error(`[enrichment] ${t.name} threw unexpectedly:`, s.reason?.message);
@@ -1716,8 +1778,77 @@ export async function enrichPublisherIfNeeded({
     }
 
     const summary = Object.fromEntries(Object.entries(results).map(([k, v]) => [k, v.status]));
-    logger.log(`[enrichment] First pass for "${label}" finished in ${Date.now() - firstPassStartedAt}ms:`, summary);
+    logger.log(`[enrichment] First pass for "${label}" finished in ${Date.now() - firstPassStartedAt}ms: ${JSON.stringify(summary)}`);
 
+    const ownSiteStatusStale = force ? true : await isOwnSiteOrgStatusStale(query, resolvedId);
+    if (domain && ownSiteStatusStale && !skipOwnSiteOrgStatus) {
+      try {
+        const orgStartedAt = Date.now();
+        const orgStatus = await discoverOwnSiteOrgStatus({
+          publisherName: label,
+          sourceUrl,
+          domain,
+          maxPages: skipExternalSignals ? 3 : 4,
+        });
+        if (orgStatus) {
+          const orgProviderResults = providerResultsFromOrgStatus(orgStatus);
+          // A verified own-site ownership statement is sufficient to classify an
+          // institutional source even when Wikipedia/Wikidata have no matching
+          // profile. Persist that identity so Admiralty re-evaluation can produce
+          // an honest type-based letter (for example government -> BØ).
+          if (orgStatus.normalized?.publisher_type === "government_organization") {
+            const identityEvidence = orgStatus.normalized.evidence?.find(
+              (item) => item.field === "publisher_type" && item.value === "government_organization"
+            );
+            await upsertPublisherProfile(query, {
+              publisherId: resolvedId,
+              source: "Own Site",
+              profileUrl: identityEvidence?.source_url || sourceUrl || null,
+              description: orgStatus.normalized.use_note || "Official government source",
+              ownershipNotes: identityEvidence?.snippet || "Self-described government-operated source",
+              fundingNotes: null,
+              credibilityNotes: "Official government source; claim-level credibility remains separately assessed.",
+              politicalNotes: null,
+              sourceType: "government",
+              country: null,
+              evidenceQuote: identityEvidence?.snippet || null,
+              confidence: "high",
+              // The production column is still an enum and does not yet include
+              // an own-site value. Source="Own Site" and rawPayload preserve the
+              // provenance; use a schema-safe enum value so the profile persists.
+              extractionMethod: "unknown",
+              rawPayload: orgStatus,
+            });
+          }
+          await persistAndSummarizeSignals(query, {
+            publisherId: resolvedId,
+            domain,
+            entityName: label,
+            providerResults: orgProviderResults,
+            matchContext: { sourceUrl },
+          });
+          results.OwnSiteOrgStatus = {
+            status: orgStatus.status,
+            evidenceCount: orgStatus.normalized?.evidence?.length || 0,
+          };
+          logger.log(
+            `[enrichment] Own-site org status for "${label}" finished in ${Date.now() - orgStartedAt}ms: ${orgStatus.status}`
+          );
+        }
+      } catch (err) {
+        results.OwnSiteOrgStatus = { status: "error", error: err.message };
+        logger.warn(`[enrichment] Own-site org status failed for "${label}":`, err.message);
+      }
+    } else if (domain && !skipOwnSiteOrgStatus) {
+      results.OwnSiteOrgStatus = { status: "skipped", reason: "fresh" };
+    } else if (domain) {
+      results.OwnSiteOrgStatus = { status: "skipped", reason: "separate_rescrape_required" };
+    }
+
+    if (skipExternalSignals) {
+      logger.log(`[enrichment] External provider signal pass skipped for interactive request "${label}"`);
+      results.externalSignals = { status: "skipped", reason: "interactive_request" };
+    } else {
     try {
       const secondPassStartedAt = Date.now();
       const currentScimagoContext = results.SCImago?.status === "found" || results.SCImago?.status === "ambiguous"
@@ -1727,7 +1858,12 @@ export async function enrichPublisherIfNeeded({
             areas: results.SCImago.areas,
           }
         : null;
-      const storedScimagoContext = currentScimagoContext ? null : await loadStoredScimagoContext(query, resolvedId);
+      // Never let an old SCImago row turn an ordinary website into a scholarly
+      // source. Historical false matches must not seed Crossref/OpenAlex.
+      const scholarlyEligible = Boolean(currentScimagoContext) || looksLikeScholarlySourceName(label, sourceUrl);
+      const storedScimagoContext = currentScimagoContext || !scholarlyEligible
+        ? null
+        : await loadStoredScimagoContext(query, resolvedId);
       const scholarlyContext = currentScimagoContext || storedScimagoContext;
       const articleText = scholarlyContext
         ? [
@@ -1752,14 +1888,13 @@ export async function enrichPublisherIfNeeded({
           providers: SECOND_PASS_PROVIDERS,
         }
       );
-      const signals = await persistProviderSignals(query, {
+      const signals = await persistAndSummarizeSignals(query, {
         publisherId: resolvedId,
         domain,
         entityName: label,
         providerResults,
         matchContext: { sourceUrl },
       });
-      await updatePublisherSignalSummary(query, resolvedId, signals);
       logger.log(
         `[enrichment] Second pass for "${label}" finished in ${Date.now() - secondPassStartedAt}ms (${providerResults.length} providers, ${signals.length} signals)`
       );
@@ -1772,13 +1907,21 @@ export async function enrichPublisherIfNeeded({
       results.externalSignals = { status: "error", error: err.message };
       logger.warn(`[enrichment] External provider signal mapping failed for "${label}":`, err.message);
     }
+    }
 
     // Re-evaluate Admiralty synchronously so the updated codes are included in
     // the response. Callers can use admiraltyUpdates[contentId] to refresh the
     // crest without a page reload.
     const admiraltyUpdates = await reEvaluateAdmiraltyForPublisher(query, resolvedId, label);
 
-    return { status: "done", publisherId: resolvedId, results, admiraltyUpdates };
+    return {
+      status: "done",
+      publisherId: resolvedId,
+      tasks_run: tasks.length,
+      results,
+      provider_summary: Object.fromEntries(Object.entries(results).map(([name, value]) => [name, value?.status || "unknown"])),
+      admiraltyUpdates,
+    };
 
   } catch (err) {
     // Never propagate — callers treat enrichment as best-effort

@@ -79,6 +79,21 @@ export function chooseFacebookPublisher({ provenance, resolvedLinkedPublisher = 
   if (provenance?.sharedSourceUrl && linkedName) {
     return { name: linkedName, role: "substantive_publisher", confidence: "linked_source" };
   }
+  // For group posts, the GROUP is the publisher; the poster is the author (saved separately).
+  if (provenance?.containerName) {
+    const isGroup = (provenance.containerType || "facebook_group") === "facebook_group";
+    const displayName = isGroup ? `${provenance.containerName} (Facebook Group)` : provenance.containerName;
+    return {
+      name: displayName,
+      role: "social_container",
+      sourceType: "social",
+      confidence: "partial_visible_dom",
+      containerId: provenance.containerId,
+      containerType: provenance.containerType || "facebook_group",
+      profileUrl: provenance.groupUrl || null,
+      poster: provenance.directSocialPublisher || null,
+    };
+  }
   if (provenance?.directSocialPublisher) {
     return {
       name: provenance.directSocialPublisher,
@@ -86,16 +101,6 @@ export function chooseFacebookPublisher({ provenance, resolvedLinkedPublisher = 
       confidence: "visible_dom",
       containerId: provenance.containerId,
       profileUrl: provenance.directSocialPublisherUrl || null,
-    };
-  }
-  if (provenance?.containerName) {
-    return {
-      name: provenance.containerName,
-      role: "social_container",
-      sourceType: "social",
-      confidence: "partial_visible_dom",
-      containerId: provenance.containerId,
-      profileUrl: provenance.groupUrl || null,
     };
   }
   if (provenance?.containerId) {
