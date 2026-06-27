@@ -13,6 +13,11 @@ import { createContentInternal } from "../storage/createContentInternal.js";
 import { getBestImage } from "../utils/getBestImage.js";
 import { choosePdfPublisher } from "../utils/pdfPublisherExtractor.js";
 import { parseSocialPublisher } from "../utils/parseSocialPublisher.js";
+import {
+  chooseFacebookPublisher,
+  isGenericFacebookPublisher,
+  normalizeFacebookProvenance,
+} from "../utils/facebookProvenance.js";
 
 const SOURCE_ATTR_RE = /\b(source|via|originally published|originally at|reprinted from|cross[- ]?posted from|from the)\b/i;
 const MAX_CHAIN_DEPTH = 3;
@@ -36,9 +41,18 @@ function domainFromUrl(url) {
   }
 }
 
+function isDomainLikePublisherName(value = "") {
+  return /^[a-z0-9][a-z0-9-]*(?:\.[a-z0-9-]+)+$/i.test(String(value).trim());
+}
+
 function repositoryPublisherFromUrl(url) {
   const domain = domainFromUrl(url);
   if (!domain) return null;
+  if (/^(?:www\.)?humanforschung-schweiz\.ch$/i.test(domain)) {
+    // HumRes is the publication/portal name. FOPH is its verified government
+    // operator and is stored by own-site enrichment as ownership/source type.
+    return { name: "Human Research Switzerland", confidence: "curated" };
+  }
   if (/^iarc\.who\.int$/i.test(domain)) {
     return { name: "International Agency for Research on Cancer", confidence: "curated" };
   }
@@ -68,8 +82,39 @@ async function ensureReferencePublisherLink(query, { referenceContentId, url, pu
   let publisherName = pubName.trim();
   const isPublisherProxy = publisher?.role === "journal" || publisher?.confidence === "proxy";
   const isCuratedUrlPublisher = publisher?.confidence === "curated";
+  const isSocialPublisher = ["social_container", "social_container_placeholder", "direct_social_publisher"].includes(publisher?.role);
 
-  if (urlDomain && !isPublisherProxy && !isCuratedUrlPublisher) {
+  // Prefer an already-known canonical publisher record before considering a
+  // domain-derived record linked to older scrapes.
+  const exactPublisherRows = await query(
+    `SELECT publisher_id, publisher_name FROM publishers WHERE publisher_name = ? LIMIT 1`,
+    [publisherName]
+  );
+  if (exactPublisherRows.length > 0) {
+    publisherId = exactPublisherRows[0].publisher_id;
+    publisherName = exactPublisherRows[0].publisher_name;
+  }
+
+  // A later extension scrape can see the real group name even when the first
+  // URL-only scrape could not. Upgrade the group-specific numeric placeholder
+  // in place; never rename a global "Facebook" record to a particular group.
+  if (!publisherId && publisher?.role === "social_container" && publisher?.containerId) {
+    const placeholderRows = await query(
+      `SELECT publisher_id, publisher_name
+         FROM publishers
+        WHERE publisher_name IN (?, ?)
+        ORDER BY publisher_id
+        LIMIT 1`,
+      [String(publisher.containerId), `Facebook group ${publisher.containerId}`]
+    );
+    if (placeholderRows.length > 0) {
+      publisherId = placeholderRows[0].publisher_id;
+      await query(`UPDATE publishers SET publisher_name = ? WHERE publisher_id = ?`, [publisherName, publisherId]);
+      logger.log(`[facebookProvenance] upgradedPublisher="${placeholderRows[0].publisher_name}" → "${publisherName}" container_id=${publisher.containerId}`);
+    }
+  }
+
+  if (!publisherId && urlDomain && !isPublisherProxy && !isCuratedUrlPublisher && !isSocialPublisher) {
     const domainResults = await query(
       `SELECT
          p.publisher_id,
@@ -89,7 +134,8 @@ async function ensureReferencePublisherLink(query, { referenceContentId, url, pu
     if (domainResults.length > 0) {
       publisherId = domainResults[0].publisher_id;
       const existingName = domainResults[0].publisher_name;
-      if (publisherName.length > existingName.length + 8 && !publisherName.includes("://")) {
+      const replacingDomainPlaceholder = isDomainLikePublisherName(existingName) && !isDomainLikePublisherName(publisherName);
+      if (replacingDomainPlaceholder || (publisherName.length > existingName.length + 8 && !publisherName.includes("://"))) {
         await query(`UPDATE publishers SET publisher_name = ? WHERE publisher_id = ?`, [publisherName, publisherId]);
         logger.log(`📝 [scrapeReference] Upgraded publisher "${existingName}" → "${publisherName}" for ${urlDomain}`);
       } else {
@@ -118,6 +164,38 @@ async function ensureReferencePublisherLink(query, { referenceContentId, url, pu
   await query(`DELETE FROM content_publishers WHERE content_id = ?`, [referenceContentId]);
   await query(`INSERT INTO content_publishers (content_id, publisher_id) VALUES (?, ?)`, [referenceContentId, publisherId]);
 
+  if (isSocialPublisher) {
+    try {
+      const existingSocialProfile = await query(
+        `SELECT publisher_profile_id FROM publisher_profiles WHERE publisher_id = ? AND source = 'Facebook DOM' LIMIT 1`,
+        [publisherId]
+      );
+      const profileUrl = publisher?.profileUrl ||
+        (publisher?.containerId ? `https://www.facebook.com/groups/${publisher.containerId}/` : url);
+      const rawPayload = JSON.stringify({ role: publisher.role, containerId: publisher.containerId || null });
+      if (existingSocialProfile.length > 0) {
+        await query(
+          `UPDATE publisher_profiles
+              SET profile_url = ?, source_type = 'social', confidence = ?, extraction_method = 'unknown',
+                  last_checked = NOW(), raw_provider_payload = ?
+            WHERE publisher_profile_id = ?`,
+          [profileUrl, publisher.confidence === "url_only" ? "low" : "medium", rawPayload, existingSocialProfile[0].publisher_profile_id]
+        );
+      } else {
+        await query(
+          `INSERT INTO publisher_profiles
+            (publisher_id, source, profile_url, description, source_type, confidence,
+             extraction_method, last_checked, raw_provider_payload)
+           VALUES (?, 'Facebook DOM', ?, ?, 'social', ?, 'unknown', NOW(), ?)`,
+          [publisherId, profileUrl, "Facebook group or account identified from extension-visible post metadata.",
+            publisher.confidence === "url_only" ? "low" : "medium", rawPayload]
+        );
+      }
+    } catch (profileErr) {
+      logger.warn(`[facebookProvenance] publisher profile write skipped: ${profileErr.message}`);
+    }
+  }
+
   return { publisherId, publisherName, needsAdmiralty };
 }
 
@@ -129,7 +207,7 @@ async function ensureReferencePublisherLink(query, { referenceContentId, url, pu
  *   3. Check canonical URL on a different domain → recurse.
  *   4. Check source-attribution elements → recurse.
  */
-async function resolvePublisherChain(url, depth, dbQuery) {
+export async function resolvePublisherChain(url, depth, dbQuery) {
   if (depth >= MAX_CHAIN_DEPTH) return null;
 
   // ── 1. DB short-circuit ──────────────────────────────────────────────────
@@ -147,7 +225,10 @@ async function resolvePublisherChain(url, depth, dbQuery) {
       );
       if (rows?.[0]) {
         const name = rows[0].publisher_name;
-        if (name && !JUNK_PUBLISHER_RE.test(name) && name.length > 2) {
+        // A bare domain is only a placeholder, not a resolved publisher name.
+        // Keep following the article so childrenshealthdefense.org can become
+        // "Children's Health Defense", for example.
+        if (name && !JUNK_PUBLISHER_RE.test(name) && !isDomainLikePublisherName(name) && name.length > 2) {
           logger.log(`📦 [chain:${depth}] Already in DB: "${name}" for ${url}`);
           return { name, content_id: rows[0].content_id };
         }
@@ -300,8 +381,11 @@ async function resolvePublisherChain(url, depth, dbQuery) {
 export async function scrapeReference(query, {
   url, raw_text, raw_html, title,
   authors: providedAuthors, taskContentId,
+  providedPublisherName,
+  forcePublisherEnrichment = false,
   // Distribution-layer provenance (optional — from social posts)
   platform, distribution_channel, linked_url, linked_publisher,
+  socialProvenance,
 }) {
   try {
     logger.log(`🟦 [scrapeReference] Processing reference: ${url}`);
@@ -367,12 +451,27 @@ export async function scrapeReference(query, {
     }
     // For HTML: use cheerio-based extractor. For PDFs (raw_text only): scan first-page lines.
     // Skip HTML publisher extraction on bot-blocked pages — would pick up "reCAPTCHA" etc.
-    let publisher = ($ && !botBlocked) ? await extractPublisher($, url) : (() => {
-      const lines = (raw_text || "").replace(/\r/g, "").slice(0, 4000)
-        .split(/\n+/).map(s => s.trim()).filter(s => s.length > 3);
-      const name = choosePdfPublisher({}, lines);
-      return name ? { name } : repositoryPublisherFromUrl(url);
-    })();
+    const curatedPublisher = repositoryPublisherFromUrl(url);
+    const isFacebookUrl = /facebook\.com/i.test(url);
+    // Facebook publisher selection is handled entirely by the Facebook-specific
+    // block below (chooseFacebookPublisher + linked-article chain). Return null
+    // here so that block isn't fighting a bad value set by extractPublisher or
+    // choosePdfPublisher (which is for PDFs only, not social HTML).
+    let publisher = curatedPublisher
+      || (providedPublisherName && !JUNK_PUBLISHER_RE.test(String(providedPublisherName).trim())
+        ? { name: String(providedPublisherName).trim(), confidence: "extension_metadata" }
+        : isFacebookUrl ? null
+        : ($ && !botBlocked) ? await extractPublisher($, url)
+        : (() => {
+            const lines = (raw_text || "").replace(/\r/g, "").slice(0, 4000)
+              .split(/\n+/).map(s => s.trim()).filter(s => s.length > 3);
+            const name = choosePdfPublisher({}, lines);
+            return name ? { name } : repositoryPublisherFromUrl(url);
+          })());
+
+    if (publisher?.confidence === "extension_metadata") {
+      logger.log(`🏷️  [scrapeReference] Using extension publisher metadata: "${publisher.name}"`);
+    }
 
     // Domain fallback: if no publisher extracted (snippet-only Tavily text, bot-blocked page,
     // or PDF with no metadata), use the URL hostname. This ensures PubMed, NIH, etc.
@@ -386,13 +485,23 @@ export async function scrapeReference(query, {
       }
     }
 
-    // For Facebook URLs: extract the linked article domain from the raw HTML
-    // using regex. The extension sends the full page HTML even when text
-    // extraction fails, so we can find the linked domain here without a live DOM.
-    // Do this BEFORE the social-name override so the article domain wins.
-    if (/facebook\.com/i.test(url) && raw_html && !linked_publisher) {
-      let extractedUrl = null;
-      let extractedDomain = null;
+    // For Facebook URLs, extension-provided provenance and HTML-discovered
+    // provenance must converge on the same recursive publisher resolver.
+    // Previously the recursive lookup ran only when linked_publisher was absent,
+    // so successful extension extraction accidentally skipped the best step.
+    if (/facebook\.com/i.test(url)) {
+      logger.log(`[FB-TRACE] publisher BEFORE facebook block: "${publisher?.name || "null"}" role=${publisher?.role || "none"}`);
+      logger.log(`[FB-TRACE] socialProvenance from extension: ${socialProvenance ? JSON.stringify({ containerName: socialProvenance.containerName, directSocialPublisher: socialProvenance.directSocialPublisher, containerId: socialProvenance.containerId }) : "NOT SENT"}`);
+      logger.log(`[FB-TRACE] linked_url from extension: ${linked_url || "none"}, linked_publisher: ${linked_publisher || "none"}`);
+      socialProvenance = normalizeFacebookProvenance(socialProvenance, url);
+      platform = "facebook";
+      distribution_channel = socialProvenance?.containerName || distribution_channel ||
+        (socialProvenance?.containerId ? `Facebook group ${socialProvenance.containerId}` : null);
+      logger.log(`[facebookProvenance] detected=true url_type=${socialProvenance?.urlType || "facebook_post"}`);
+      logger.log(`[facebookProvenance] platform=Facebook container_id=${socialProvenance?.containerId || "none"} post_id=${socialProvenance?.postId || "none"}`);
+      logger.log(`[facebookProvenance] containerName="${socialProvenance?.containerName || "not visible"}"`);
+      let extractedUrl = linked_url || null;
+      let extractedDomain = linked_publisher || null;
       const SKIP = /^(facebook|fbcdn|instagram|messenger|whatsapp|adobe|google|apple|amazon|akamai|cloudfront|googleapis|gstatic|youtube|twitter|tiktok|snapchat|pinterest|linkedin)\./i;
 
       const tryUrl = (rawUrl) => {
@@ -405,10 +514,16 @@ export async function scrapeReference(query, {
         return null;
       };
 
+      if (!extractedDomain && extractedUrl) {
+        try {
+          extractedDomain = new URL(extractedUrl).hostname.replace(/^www\./, "");
+        } catch {}
+      }
+
       let m;
 
       // Pattern 2: data-lynx-uri attribute — Facebook adds this to links in post text
-      if (!extractedDomain) {
+      if (!extractedDomain && raw_html) {
         const lynxRe = /data-lynx-uri="(https?:\/\/[^"]+)"/gi;
         while (!extractedDomain && (m = lynxRe.exec(raw_html)) !== null) {
           const result = tryUrl(m[1]);
@@ -418,7 +533,7 @@ export async function scrapeReference(query, {
 
       // Pattern 3: Facebook's GraphQL/JSON embedded in page — "url":"https://..." for story attachments.
       // Keyed on "url" or "link" within 200 chars of "attachment" to stay on-topic.
-      if (!extractedDomain) {
+      if (!extractedDomain && raw_html) {
         const attachRe = /attachments?[^}]{0,200}"(?:url|link|href)"\s*:\s*"(https?:\\?\/\\?\/[^"]{10,300})"/gi;
         while (!extractedDomain && (m = attachRe.exec(raw_html)) !== null) {
           const result = tryUrl(m[1]);
@@ -427,7 +542,7 @@ export async function scrapeReference(query, {
       }
 
       // Pattern 4: "display_url" JSON key — Facebook embeds the link preview domain here
-      if (!extractedDomain) {
+      if (!extractedDomain && raw_html) {
         const DOMAIN_RE = /^[a-z0-9][a-z0-9-]{0,61}[a-z0-9]?\.[a-z]{2,}(?:\.[a-z]{2,})?$/i;
         const displayUrlRe = /"display_url"\s*:\s*"([^"]{4,100})"/gi;
         while (!extractedDomain && (m = displayUrlRe.exec(raw_html)) !== null) {
@@ -438,9 +553,9 @@ export async function scrapeReference(query, {
         }
       }
 
-      if (extractedDomain) {
-        logger.log(`🔗 [scrapeReference] Extracted linked publisher from raw HTML: ${extractedDomain}${extractedUrl ? ` (${extractedUrl.slice(0,80)})` : ''}`);
-        linked_publisher = extractedDomain;
+      logger.log(`[FB-TRACE] after HTML patterns: extractedUrl=${extractedUrl || "none"} extractedDomain=${extractedDomain || "none"}`);
+      if (extractedDomain || extractedUrl) {
+        logger.log(`🔗 [scrapeReference] Resolving Facebook linked publisher: ${extractedDomain || "unknown domain"}${extractedUrl ? ` (${extractedUrl.slice(0,80)})` : ''}`);
         // Strip tracking params (fbclid, utm_*) from the linked URL before storing
         if (extractedUrl) {
           try {
@@ -450,20 +565,46 @@ export async function scrapeReference(query, {
             extractedUrl = u.href;
           } catch {}
         }
-        linked_url = linked_url || extractedUrl || null;
-        publisher = { name: extractedDomain };
+        linked_url = extractedUrl || linked_url || null;
+        linked_publisher = extractedDomain || linked_publisher || null;
+        if (extractedDomain) publisher = { name: extractedDomain };
 
         // Recursively resolve the publisher by following the article chain.
-        // Use the full article URL when we have one; fall back to the root domain (Pattern 4 only gets a domain).
-        const chainUrl = extractedUrl || `https://${extractedDomain}`;
-        {
+        // Use the full article URL when available; otherwise follow the domain root.
+        const chainUrl = extractedUrl || linked_url || (extractedDomain ? `https://${extractedDomain}` : null);
+        if (chainUrl) {
+          logger.log(`[FB-TRACE] calling resolvePublisherChain on: ${chainUrl.slice(0,100)}`);
           const resolved = await resolvePublisherChain(chainUrl, 0, query);
+          logger.log(`[FB-TRACE] resolvePublisherChain returned: "${resolved?.name || "null"}"`);
           if (resolved?.name && !JUNK_PUBLISHER_RE.test(resolved.name)) {
             publisher = resolved;
             logger.log(`📰 [scrapeReference] Resolved publisher chain → "${resolved.name}"`);
           }
         }
       }
+
+      logger.log(`[FB-TRACE] publisher BEFORE chooseFacebookPublisher: "${publisher?.name || "null"}"`);
+      if (socialProvenance) {
+        socialProvenance.sharedSourceUrl = linked_url || socialProvenance.sharedSourceUrl || null;
+        socialProvenance.sharedSourceDomain = linked_publisher || socialProvenance.sharedSourceDomain || null;
+        const resolvedSubstantiveName = socialProvenance.sharedSourceUrl && publisher?.name &&
+          !isGenericFacebookPublisher(publisher.name) ? publisher.name : null;
+        logger.log(`[FB-TRACE] resolvedSubstantiveName="${resolvedSubstantiveName || "null"}" sharedSourceUrl=${socialProvenance.sharedSourceUrl || "none"}`);
+        const selected = chooseFacebookPublisher({
+          provenance: socialProvenance,
+          resolvedLinkedPublisher: resolvedSubstantiveName,
+        });
+        logger.log(`[FB-TRACE] chooseFacebookPublisher returned: "${selected?.name || "null"}" role=${selected?.role || "none"}`);
+        if (selected) publisher = selected;
+        socialProvenance.substantiveSourceStatus = socialProvenance.sharedSourceUrl
+          ? (resolvedSubstantiveName ? "resolved" : (socialProvenance.substantiveSourceStatus || "extraction_failed"))
+          : "not_present";
+        socialProvenance.substantiveSourcePublisher = resolvedSubstantiveName || null;
+        socialProvenance.ultimatePublisher = resolvedSubstantiveName || null;
+        logger.log(`[facebookProvenance] directPublisher="${socialProvenance.directSocialPublisher || "not visible"}" sharedSource=${socialProvenance.sharedSourceUrl || "none"}`);
+        logger.log(`[facebookProvenance] selectedPublisher="${publisher?.name || "none"}" role=${publisher?.role || "unknown"}`);
+      }
+      logger.log(`[FB-TRACE] publisher FINAL after facebook block: "${publisher?.name || "null"}"`);
     }
 
     // Social URLs (Facebook groups/pages) carry the publisher in the URL itself —
@@ -531,6 +672,7 @@ export async function scrapeReference(query, {
       distribution_channel,
       linked_url,
       linked_publisher,
+      social_provenance: socialProvenance,
     });
 
     logger.log(
@@ -553,7 +695,7 @@ export async function scrapeReference(query, {
     (async () => {
       try {
         const { evaluateAdmiraltyCode, storeEvaluation } = await import("../../services/admiraltyEvaluator.js");
-        const { enrichPublisherIfNeeded } = await import("../../services/publisherEnrichmentService.js");
+        const { enrichPublisherIfNeeded } = await import("../services/publisherEnrichmentService.js");
 
         if (!publisherLink?.publisherId) {
           logger.warn(`⚠️  [scrapeReference] No linked publisher for ${url} — skipping enrichment`);
@@ -569,7 +711,7 @@ export async function scrapeReference(query, {
           publisherName: publisherLink.publisherName,
           domain: null,
           sourceUrl: url,
-          force: publisherLink.needsAdmiralty,
+          force: forcePublisherEnrichment || publisherLink.needsAdmiralty,
           context: "case_content",
         });
         logger.log(`📚 [scrapeReference] Publisher enriched: "${publisherLink.publisherName}" id=${publisherLink.publisherId} status=${enrichResult?.status ?? 'done'}`);
@@ -633,6 +775,7 @@ export async function scrapeReference(query, {
       text,
       authors,
       publisher,
+      publisherLink,
     };
   } catch (err) {
     logger.error("❌ [scrapeReference] Fatal error on:", url, err);

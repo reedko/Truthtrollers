@@ -2436,11 +2436,12 @@ async function handleScrapeJob(job) {
         taskContentId: task_content_id,
       };
     } else if (actualUrl && /facebook\.com/i.test(actualUrl)) {
-      // For Facebook: extract ONLY the post article element to avoid ad/sidebar noise.
-      // Also extract any linked external URL directly from the post DOM while we have it.
+      // For Facebook: extract the post article element plus structured group provenance.
       const fbData = await safeExecuteScript(
         targetTab.id,
         () => {
+          const cleanText = (v) => String(v || '').replace(/\s+/g, ' ').trim();
+
           const isExternal = (href) => {
             try {
               const h = new URL(href).hostname.replace(/^www\./, '');
@@ -2449,29 +2450,166 @@ async function handleScrapeJob(job) {
             } catch { return false; }
           };
 
-          // First role="article" on a post page is the post itself.
+          // First role="article" is the post itself.
           const articles = Array.from(document.querySelectorAll('[role="article"]'));
-          const postEl = articles[0] || document.body;
+          // Try to find the outermost post article — the one that contains other articles
+          // (link preview cards) is the full post; if no nesting, fall back to articles[0].
+          const postEl = articles.find(a => articles.some(b => b !== a && a.contains(b))) || articles[0] || document.body;
 
+          // ── Linked external URL ──────────────────────────────────────────
           let linkedUrl = null;
-
-          // 1. data-lynx-uri — Facebook sets this on external links in post text
           const lynxEl = postEl.querySelector('[data-lynx-uri]');
           if (lynxEl) {
             const uri = lynxEl.getAttribute('data-lynx-uri') || '';
             if (uri.startsWith('http') && isExternal(uri)) linkedUrl = uri;
           }
-
-          // 2. Direct external <a href> within the post
           if (!linkedUrl) {
             for (const a of postEl.querySelectorAll('a[href^="http"]')) {
               if (isExternal(a.href)) { linkedUrl = a.href; break; }
             }
           }
 
-          return { html: postEl.outerHTML, linkedUrl };
+          // ── Group / container metadata ───────────────────────────────────
+          const pathMatch = location.pathname.match(/^\/groups\/([^/]+)(?:\/posts\/(\d+))?/i);
+          const rawContainer = pathMatch?.[1] || null;
+          const containerId = rawContainer && /^\d+$/.test(rawContainer) ? rawContainer : null;
+          const containerSlug = rawContainer && !/^\d+$/.test(rawContainer) ? rawContainer : null;
+          const postId = pathMatch?.[2] || null;
+
+          const isUsefulName = (v) => {
+            const t = cleanText(v);
+            return t.length >= 2 && t.length <= 100 && !/^\d+$/.test(t) &&
+              !/^(facebook|group|groups|public group|private group|view group|join group|see more|log in|sign up)$/i.test(t);
+          };
+          const cleanGroupName = (v) => cleanText(v)
+            .replace(/\s+(?:public|private) group(?:\s*[·|].*)?$/i, '')
+            .replace(/\s*[·|]\s*\d[\d,.]*\s+members?.*$/i, '')
+            .trim();
+
+          let containerName = null;
+          let groupUrl = null;
+          const _dbg = { title: document.title, ogTitle: '', p1: 'skip', p2: [], p3: 'skip', postElTag: postEl?.tagName || 'null', articleCount: articles.length, articleTexts: articles.slice(0,4).map((a,i) => `[${i}] ${cleanText(a.textContent||'').slice(0,80)}`), postElIdx: articles.indexOf(postEl) };
+
+          // Priority 1: document.title — Facebook formats group post titles as
+          // "(NOTIFS) GROUP_NAME | ARTICLE_TITLE | Facebook". The group name is the
+          // FIRST part (with optional notification badge stripped); the article title
+          // is the middle part. Requires >= 3 parts so 2-part titles (no group) are ignored.
+          if (postId) {
+            const titleParts = document.title.split(/\s*\|\s*/).map(cleanGroupName).filter(Boolean);
+            _dbg.p1 = `parts=${titleParts.length}: ${JSON.stringify(titleParts)}`;
+            if (titleParts.length >= 3) {
+              const last = titleParts[titleParts.length - 1];
+              if (/^facebook$/i.test(last)) {
+                // Strip leading notification badge "(20+) " from group name
+                const rawFirst = titleParts[0].replace(/^\(\d+\+?\)\s*/, '').trim();
+                if (isUsefulName(rawFirst)) {
+                  containerName = rawFirst;
+                  _dbg.p1 += ' → SET';
+                }
+              }
+            }
+          }
+
+          // Priority 2: DOM anchor scan — look for group root link OUTSIDE all
+          // role="article" elements (the group nav link is in the outer wrapper).
+          if (!containerName && rawContainer) {
+            for (const anchor of document.querySelectorAll('a[href*="/groups/"]')) {
+              try {
+                const path = new URL(anchor.href, location.href).pathname;
+                const m = path.match(/^\/groups\/([^/]+)\/?$/i);
+                if (!m) continue;
+                if (m[1] !== rawContainer) continue;
+                const inArticle = articles.some(a => a.contains(anchor));
+                const name = cleanGroupName(
+                  anchor.innerText || anchor.textContent || anchor.getAttribute('aria-label') || ''
+                );
+                _dbg.p2.push({ path, name: name.slice(0, 40), inArticle });
+                if (!inArticle && isUsefulName(name)) {
+                  containerName = name;
+                  groupUrl = anchor.href;
+                  break;
+                }
+              } catch { continue; }
+            }
+          }
+
+          // Priority 3: og:title "posted in" pattern (rare variant)
+          if (!containerName) {
+            const ogTitle = document.querySelector('meta[property="og:title"]')?.content || '';
+            _dbg.ogTitle = ogTitle;
+            const m = ogTitle.match(/(?:posted?\s+in|in the group)\s+[""]?([^""|]{2,80})[""]?/i);
+            _dbg.p3 = m ? `matched: "${m[1]}"` : 'no match';
+            if (m) {
+              const candidate = cleanGroupName(m[1]);
+              if (isUsefulName(candidate)) { containerName = candidate; _dbg.p3 += ' → SET'; }
+            }
+          }
+
+          // ── Direct social publisher ──────────────────────────────────────
+          // The post author link is in the outer header wrapper, NOT inside any
+          // role="article" element. Comment author links ARE inside their article.
+          // So: search the whole page for /groups/{id}/user/{userId} links but
+          // skip any that are inside any article element (those are comments).
+          let directSocialPublisher = null;
+          let directSocialPublisherUrl = null;
+          _dbg.postLinks = [];
+          for (const anchor of document.querySelectorAll('a[href]')) {
+            let href = '', path = '';
+            try { const u = new URL(anchor.href, location.href); href = u.href; path = u.pathname; } catch { continue; }
+            const name = cleanText(anchor.innerText || anchor.textContent || anchor.getAttribute('aria-label'));
+            if (!isUsefulName(name) || name === containerName) continue;
+            if (!/^\/groups\/[^/]+\/user\/\d+/i.test(path)) continue;
+            // Skip links inside any article element (those belong to comments)
+            if (articles.some(a => a.contains(anchor))) continue;
+            if (_dbg.postLinks.length < 5) _dbg.postLinks.push({ path, name: name.slice(0, 40) });
+            directSocialPublisher = name;
+            directSocialPublisherUrl = href;
+            break;
+          }
+
+          // ── Associated entities (public figures visibly linked to post/group) ──
+          // Only collect entities with explicit DOM evidence — never infer from text alone.
+          const associatedEntities = [];
+          const seenEntities = new Set([containerName, directSocialPublisher].filter(Boolean));
+          for (const anchor of document.querySelectorAll('a[href]')) {
+            try {
+              const path = new URL(anchor.href, location.href).pathname;
+              // Only public figure/page profile links (not group, not user-in-group)
+              if (!/^\/[^/]+\/?$/.test(path)) continue;
+              if (/^\/(groups|pages|events|marketplace|watch|gaming|help|legal)\b/i.test(path)) continue;
+              const name = cleanText(anchor.innerText || anchor.textContent || anchor.getAttribute('aria-label'));
+              if (!isUsefulName(name) || seenEntities.has(name)) continue;
+              seenEntities.add(name);
+              associatedEntities.push({
+                name,
+                relationship: 'associated_public_figure_or_brand',
+                evidence: anchor.href,
+                confidence: 'visible_dom',
+              });
+              if (associatedEntities.length >= 3) break;
+            } catch { continue; }
+          }
+
+          const socialProvenance = {
+            platform: 'Facebook',
+            platformDomain: 'facebook.com',
+            urlType: postId ? 'facebook_group_post' : (rawContainer ? 'facebook_group' : 'facebook_post'),
+            containerType: rawContainer ? 'facebook_group' : null,
+            containerName: containerName || null,
+            containerId: containerId || null,
+            containerSlug: containerSlug || null,
+            postId: postId || null,
+            groupUrl: groupUrl || null,
+            directSocialPublisher: directSocialPublisher || null,
+            directSocialPublisherUrl: directSocialPublisherUrl || null,
+            sharedSourceUrl: linkedUrl || null,
+            associatedEntities,
+            extractionStatus: containerName ? 'partial_extension_dom' : 'extension_dom_required',
+          };
+
+          return { html: postEl.outerHTML, linkedUrl, socialProvenance, _debug: _dbg };
         },
-        'Facebook post HTML extraction'
+        'Facebook post HTML + provenance extraction'
       );
 
       raw_html = fbData?.html || null;
@@ -2479,14 +2617,18 @@ async function handleScrapeJob(job) {
       const fb_linked_publisher = fb_linked_url
         ? (() => { try { return new URL(fb_linked_url).hostname.replace(/^www\./, ''); } catch { return null; } })()
         : null;
+      const fbProvenance = fbData?.socialProvenance || null;
 
       console.log(`[EXT] Facebook post: extracted ${raw_html?.length || 0} chars, linked_url=${fb_linked_url || 'none'}`);
+      console.log(`[EXT] [facebookProvenance] containerName="${fbProvenance?.containerName || 'not visible'}" directPublisher="${fbProvenance?.directSocialPublisher || 'not visible'}" sharedSource=${fb_linked_url || 'none'}`);
+      console.log(`[EXT] [FB-DEBUG]`, JSON.stringify(fbData?._debug || {}));
       scrapeBody = {
         url: actualUrl,
         raw_html: raw_html,
         taskContentId: task_content_id,
         linked_url: fb_linked_url || undefined,
         linked_publisher: fb_linked_publisher || undefined,
+        socialProvenance: fbProvenance || undefined,
       };
     } else {
       // Extract compact readable content from regular webpage.

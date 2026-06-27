@@ -36,6 +36,7 @@ import { ExternalLinkIcon, RepeatIcon, ChevronDownIcon, ChevronUpIcon } from "@c
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/useAuthStore";
 import SourceCrest from "../SourceCrest";
+import type { SourceAlignment } from "../SourceCrest";
 import CredibilityInfoModal from "./CredibilityInfoModal";
 import { normalizeSourceProfile } from "../../utils/normalizeSourceProfile";
 import type { SourceType, Reliability } from "../../utils/normalizeSourceProfile";
@@ -88,11 +89,29 @@ interface ExternalSignal {
   error_status?: string | null;
 }
 
+interface EnrichmentRun {
+  provider: string;
+  status: string;
+  candidate_url?: string | null;
+  confidence?: string | null;
+  error_message?: string | null;
+  created_at?: string | null;
+}
+
 interface EnrichmentData {
   publisher: { publisher_id: number; publisher_name: string; domain?: string; description?: string };
   ratings: PublisherRating[];
   profiles: PublisherProfile[];
   externalSignals?: ExternalSignal[];
+  enrichmentRuns?: EnrichmentRun[];
+  publisherStatus?: {
+    publisher_type?: string | null;
+    stakeholder_alignment?: string | null;
+    ultimate_publisher_or_interest_group?: string | null;
+    use_note?: string | null;
+    evidence?: Array<{ source_url?: string | null; snippet?: string | null; field?: string }>;
+  } | null;
+  sourceAlignment?: SourceAlignment | null;
   admiraltyCode?: string;
 }
 
@@ -101,6 +120,7 @@ interface EnrichRunResult {
   status?: string;
   reason?: string;
   results?: Record<string, { status: string }>;
+  [providerName: string]: any;
 }
 
 const PROVIDER_KEY: Record<string, string> = {
@@ -131,7 +151,7 @@ function isNumericFacebookGroupPlaceholder(value?: string | null) {
 }
 
 export interface SourceCandidate {
-  source: "matched" | "metadata" | "platform_account" | "platform" | "domain";
+  source: "matched" | "metadata" | "platform_account" | "platform" | "repository" | "domain";
   name: string;
   confidence: "high" | "medium" | "low";
 }
@@ -311,16 +331,23 @@ const ActionPanel: React.FC<{
 );
 
 // ── Provider status dots ──────────────────────────────────────────────────────
-const ENRICHMENT_PROVIDERS = [
-  { key: "AllSides",  label: "AllSides",    desc: "Media bias rating" },
-  { key: "Ad Fontes", label: "Ad Fontes",   desc: "Reliability & bias" },
+const ENRICHMENT_PROVIDERS: Array<{
+  key: string;
+  label: string;
+  desc: string;
+  requiresConfig?: boolean;
+  enabled?: boolean;
+  disabledReason?: string;
+}> = [
+  { key: "AllSides",  label: "AllSides",    desc: "Historical ratings remain visible", enabled: false, disabledReason: "data access pending" },
+  { key: "Ad Fontes", label: "Ad Fontes",   desc: "Historical ratings remain visible", enabled: false, disabledReason: "disabled" },
   { key: "Wikipedia", label: "Wikipedia",   desc: "Publisher profile" },
   { key: "Wikidata",  label: "Wikidata",    desc: "Entity identity and relationships" },
   { key: "SCImago",   label: "SCImago",     desc: "Journal impact ranking (academic)" },
   { key: "MBFC",      label: "MBFC",        desc: "Factuality / credibility where seeded", requiresConfig: false },
   { key: "NewsGuard", label: "NewsGuard",   desc: "Licensed reliability score if configured", requiresConfig: true },
   { key: "Crossref",  label: "Crossref",    desc: "DOI / ISSN / journal metadata", requiresConfig: false },
-  { key: "OpenAlex",  label: "OpenAlex",    desc: "Scholarly source/work provenance", requiresConfig: false },
+  { key: "OpenAlex",  label: "OpenAlex",    desc: "Scholarly source/work provenance", requiresConfig: true },
   { key: "Wayback",   label: "Wayback",     desc: "Domain archive footprint", requiresConfig: false },
   { key: "RDAP",      label: "RDAP",        desc: "Domain registration age", requiresConfig: false },
   { key: "OpenCorporates", label: "OpenCorporates", desc: "Legal entity identity if configured", requiresConfig: true },
@@ -328,6 +355,10 @@ const ENRICHMENT_PROVIDERS = [
   { key: "SEC EDGAR", label: "SEC EDGAR",   desc: "Public issuer / regulated entity checks", requiresConfig: true },
   { key: "GDELT",     label: "GDELT",       desc: "Independent footprint", requiresConfig: false },
 ];
+
+// The top-level Force refresh intentionally runs only the lightweight first
+// pass. External-signal providers and own-site re-scraping are separate jobs.
+const QUICK_REFRESH_PROVIDER_KEYS = new Set(["Wikipedia", "Wikidata", "SCImago"]);
 
 const CREDIBILITY_PROVIDERS = [
   { label: "OpenSanctions", desc: "Sanctions & PEP lists" },
@@ -509,16 +540,18 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
   const [identityLoading, setIdentityLoading] = useState(false);
   const [scrapePolling,   setScrapePolling]   = useState(false);
   const [scrapeStatus,    setScrapeStatus]    = useState<string | null>(null);
+  const [rescrapeDetected, setRescrapeDetected] = useState(false);
   const [lineage,         setLineage]         = useState<SourceLineage | null>(null);
   const [lineageLoading,  setLineageLoading]  = useState(false);
   const [showIdentity,    setShowIdentity]    = useState(false);
   const [showLineage,     setShowLineage]     = useState(false);
   const [showRelink,      setShowRelink]      = useState(false);
+  const [showDisabledProviders, setShowDisabledProviders] = useState(false);
   // Provenance fields fetched from the content row
-  const [linkedPublisher, setLinkedPublisher] = useState<string | null>(null);
-  const [linkedUrl,       setLinkedUrl]       = useState<string | null>(null);
-  const [contentPlatform, setContentPlatform] = useState<string | null>(null);
-  const [contentChannel,  setContentChannel]  = useState<string | null>(null);
+  const [linkedPublisher,  setLinkedPublisher]  = useState<string | null>(null);
+  const [contentPlatform,  setContentPlatform]  = useState<string | null>(null);
+  const [contentChannel,   setContentChannel]   = useState<string | null>(null);
+  const [socialProvenance, setSocialProvenance] = useState<Record<string, unknown> | null>(null);
   // Background domain check result (source-identity on the linked publisher domain)
   const [domainCheckResult, setDomainCheckResult] = useState<SourceIdentity | null>(null);
   const [domainCheckLoading, setDomainCheckLoading] = useState(false);
@@ -553,11 +586,11 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
     setLineage(null);
     setDomainCheckResult(null);
     setLinkedPublisher(null);
-    setLinkedUrl(null);
     setContentPlatform(null);
     setContentChannel(null);
     setLiveAdmiraltyCode(null);
     setScrapeStatus(null);
+    setRescrapeDetected(false);
   }, [publisherId, publisherName, sourceUrl, contentId]);
 
   // Load source identity when we have a URL
@@ -601,6 +634,8 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
               contentId,
               sourceUrl,
               force: true,
+              skipExternalSignals: true,
+              maxProviderConcurrency: 1,
             }),
           })
             .then(r => r.ok ? r.json() : Promise.reject(r.status))
@@ -652,13 +687,17 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
           .then(data => {
             if (!data) return;
             const lp: string | null = data.linked_publisher ?? null;
-            const lu: string | null = data.linked_url ?? null;
             const pl: string | null = data.platform ?? null;
             const ch: string | null = data.distribution_channel ?? null;
+            const sp = data.social_provenance
+              ? (typeof data.social_provenance === "string"
+                  ? (() => { try { return JSON.parse(data.social_provenance); } catch { return null; } })()
+                  : data.social_provenance)
+              : null;
             setLinkedPublisher(lp);
-            setLinkedUrl(lu);
             setContentPlatform(pl);
             setContentChannel(ch);
+            setSocialProvenance(sp);
             if (lp) {
               // Pre-fill the input with the linked article domain (don't clobber user edits)
               setCustomName(prev => (prev === "Facebook" || prev === "Twitter/X" || !prev) ? lp : prev);
@@ -722,19 +761,114 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
 
   // ── Create scrape job → extension picks it up (opens tab), polls for completion → re-resolve ─
   // targetUrl: if supplied, scrape THIS URL instead of sourceUrl (e.g. the linked article URL)
-  const scrapeForPublisher = useCallback(async (targetUrl?: string) => {
+  const scrapeForPublisher = useCallback(async (targetUrl?: string, useExtension = false) => {
     const scrapeUrl = targetUrl || sourceUrl;
-    if (!scrapeUrl || !contentId || scrapePolling) return;
+    if (!scrapeUrl || scrapePolling) return;
+    if (useExtension && !contentId) {
+      setScrapeStatus("Extension scrape requires a content id.");
+      return;
+    }
     setScrapePolling(true);
-    setScrapeStatus("Opening tab…");
+    setScrapeStatus(useExtension ? "Opening tab…" : "Refreshing from backend…");
 
-    // Open the URL in a new tab so the user can handle captchas/bot-walls.
-    // The extension running in that tab will pick up the queued scrape job.
-    window.open(scrapeUrl, '_blank', 'noopener');
+    if (useExtension) {
+      // Open the URL only for explicit extension scrapes so normal SourceCrest
+      // refreshes do not steal focus from the dashboard.
+      window.open(scrapeUrl, '_blank', 'noopener');
+    }
 
-    setScrapeStatus("Submitting scrape job…");
+    if (useExtension) setScrapeStatus("Submitting scrape job…");
     try {
-      const jobBody = { mode: "scrape_specific_url", url: scrapeUrl, taskContentId: contentId };
+      if (!useExtension) {
+        const params = new URLSearchParams({ url: scrapeUrl, force: "1" });
+        const identityRes = await fetch(`${API_BASE_URL}/api/source-identity?${params}`, {
+          credentials: "include",
+          headers: authHeaders,
+        });
+        const identityData: SourceIdentity | null = identityRes.ok ? await identityRes.json() : null;
+        if (!identityRes.ok || !identityData) {
+          throw new Error(`source identity failed: ${identityRes.status}`);
+        }
+
+        setSourceIdentity(identityData);
+        const bestCandidate = identityData.candidates?.find((candidate) =>
+          candidate.name && candidate.confidence !== "low"
+        );
+        const resolvedPublisherId = identityData.publisherId ?? null;
+        const resolvedPublisherName = bestCandidate?.name ?? identityData.publisherName ?? null;
+        const currentPublisherName = enrichment?.publisher.publisher_name ?? publisherName;
+
+        if (resolvedId && resolvedPublisherId && resolvedPublisherId !== resolvedId) {
+          setCustomName(resolvedPublisherName || currentPublisherName);
+          setShowRelink(true);
+          setScrapeStatus(`Different publisher detected: ${resolvedPublisherName || `record #${resolvedPublisherId}`}. Review it under Change publisher.`);
+          return;
+        }
+        if (resolvedId && resolvedPublisherName && currentPublisherName &&
+            resolvedPublisherName.trim().toLowerCase() !== currentPublisherName.trim().toLowerCase()) {
+          setCustomName(resolvedPublisherName);
+          setShowRelink(true);
+          setScrapeStatus(`Different publisher detected: ${resolvedPublisherName}. Review it under Change publisher.`);
+          return;
+        }
+
+        if (resolvedPublisherId) {
+          setResolvedId(resolvedPublisherId);
+          setScrapeStatus("Refreshing provider ratings…");
+          const enrichRes = await fetch(`${API_BASE_URL}/api/publishers/${resolvedPublisherId}/enrich`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json", ...authHeaders },
+            body: JSON.stringify({
+              force: true,
+              contentId: contentId ?? null,
+              sourceUrl: sourceUrl ?? scrapeUrl,
+              skipExternalSignals: true,
+              maxProviderConcurrency: 1,
+            }),
+          });
+          const enrichData = enrichRes.ok ? await enrichRes.json().catch(() => null) : null;
+          const result = enrichData?.result ?? enrichData;
+          if (result) setEnrichResult(result);
+          const newCode = contentId ? result?.admiraltyUpdates?.[contentId] ?? result?.admiraltyCode : result?.admiraltyCode;
+          if (newCode) applyAdmiraltyCode(newCode);
+          loadEnrichment(resolvedPublisherId);
+        } else if (resolvedPublisherName) {
+          setCustomName(resolvedPublisherName);
+          setScrapeStatus(`Linking "${resolvedPublisherName}" and enriching…`);
+          const linkRes = await fetch(`${API_BASE_URL}/api/publishers/enrich-and-link`, {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json", ...authHeaders },
+            body: JSON.stringify({
+              name: resolvedPublisherName,
+              contentId: contentId ?? null,
+              sourceUrl: sourceUrl ?? scrapeUrl,
+              force: true,
+              skipExternalSignals: true,
+              maxProviderConcurrency: 1,
+            }),
+          });
+          const linkData = linkRes.ok ? await linkRes.json().catch(() => null) : null;
+          const linkedId = linkData?.publisherId;
+          if (linkedId) {
+            setResolvedId(linkedId);
+            setEnrichResult(linkData?.enrichResult ?? null);
+            const newCode = contentId ? linkData?.enrichResult?.admiraltyUpdates?.[contentId] ?? linkData?.enrichResult?.admiraltyCode : linkData?.enrichResult?.admiraltyCode;
+            onPublisherLinked?.(linkedId, resolvedPublisherName, newCode ?? null);
+            loadEnrichment(linkedId);
+            if (newCode) applyAdmiraltyCode(newCode);
+          }
+        } else {
+          setScrapeStatus("No confident publisher identity found.");
+          return;
+        }
+        loadLineage(true);
+        setScrapeStatus(null);
+        return;
+      }
+
+      const jobBody = { mode: "scrape_specific_url", url: scrapeUrl };
       console.log("[scrapeForPublisher] POST /api/scrape-request", jobBody);
       const jobRes = await fetch(`${API_BASE_URL}/api/scrape-request`, {
         method: "POST",
@@ -782,100 +916,62 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
           });
           const pubData = pubRes.ok ? await pubRes.json() : null;
           const scrapedName = pubData?.publisher_name;
+          const scrapedPublisherId = pubData?.publisher_id;
           console.log(`[scrapeForPublisher] publisher from ref content ${lookupId}:`, scrapedName, pubData);
 
-          if (scrapedName) {
-            // enrich-and-link does DELETE + INSERT so it replaces any stale link,
-            // updates source_identity_cache, and runs AllSides/Wikipedia enrichment
-            setScrapeStatus(`Linking "${scrapedName}" and enriching…`);
-            const linkRes = await fetch(`${API_BASE_URL}/api/publishers/enrich-and-link`, {
-              method: "POST",
-              credentials: "include",
-              headers: { "Content-Type": "application/json", ...authHeaders },
-              body: JSON.stringify({
-                name: scrapedName,
-                contentId,
-                sourceUrl: sourceUrl ?? undefined,
-                force: true,
-              }),
-            });
-            if (linkRes.ok) {
-              const linkData = await linkRes.json();
-              console.log("[scrapeForPublisher] enrich-and-link result:", linkData);
-              if (linkData.publisherId) {
-                setResolvedId(linkData.publisherId);
-                const newCode = linkData.enrichResult?.admiraltyUpdates?.[contentId];
-                onPublisherLinked?.(linkData.publisherId, scrapedName, newCode ?? pubData?.admiralty_code ?? null);
-                loadEnrichment(linkData.publisherId);
-                if (newCode) applyAdmiraltyCode(newCode);
-              }
+          if (scrapedName && scrapedPublisherId) {
+            // scrapeReference has already replaced the content→publisher link in
+            // the database. Reflect that committed state immediately; requiring
+            // another "Save publisher link" click left the modal and reference
+            // list showing stale pre-scrape data.
+            setResolvedId(scrapedPublisherId);
+            setCustomName(scrapedName);
+            setShowRelink(false);
+            setRescrapeDetected(false);
+            if (pubData?.admiralty_code) applyAdmiraltyCode(pubData.admiralty_code);
+            onPublisherLinkedRef.current?.(scrapedPublisherId, scrapedName, pubData?.admiralty_code ?? null);
+            loadEnrichment(scrapedPublisherId, true);
+
+            // The extension job completes after the publisher link is written,
+            // while publisher enrichment deliberately continues in the backend.
+            // Follow that second phase so its profile/crest appears without
+            // closing and reopening the modal.
+            setScrapeStatus(`Publisher updated to "${scrapedName}" — enrichment running…`);
+            const enrichmentDeadline = Date.now() + 45_000;
+            let completedCode = pubData?.admiralty_code ?? null;
+            while (!completedCode && Date.now() < enrichmentDeadline && isMounted.current) {
+              await new Promise(r => setTimeout(r, 3000));
+              const refreshedPubRes = await fetch(`${API_BASE_URL}/api/publishers/for-content/${lookupId}`, {
+                credentials: "include", headers: authHeaders,
+              });
+              const refreshedPub = refreshedPubRes.ok ? await refreshedPubRes.json() : null;
+              completedCode = refreshedPub?.admiralty_code ?? null;
+              loadEnrichment(scrapedPublisherId, true);
             }
+            if (completedCode) {
+              applyAdmiraltyCode(completedCode);
+              onPublisherLinkedRef.current?.(scrapedPublisherId, scrapedName, completedCode);
+              setScrapeStatus(`Publisher updated to "${scrapedName}" · SourceCrest ${completedCode}`);
+            } else {
+              setScrapeStatus(`Publisher updated to "${scrapedName}"; enrichment has not produced a SourceCrest yet.`);
+            }
+          } else {
+            setScrapeStatus("Scrape completed, but no publisher was detected.");
           }
 
-          loadSourceIdentity(true);
-          setScrapeStatus(null);
+          // The publisher linked by scrapeReference is authoritative here. A
+          // second identity resolution can still point at an older duplicate
+          // publisher record and overwrite the modal state we just refreshed.
+          if (!scrapedPublisherId) loadSourceIdentity(true);
           break;
         }
         if (status === "failed") {
           const errorMessage = String(statusData?.error_message || "");
           console.error("[scrapeForPublisher] job failed", statusData);
 
-          if (/No tab found for URL/i.test(errorMessage) && scrapeUrl) {
-            setScrapeStatus("Tab not found — scraping directly from backend…");
-            try {
-              const directRes = await fetch(`${API_BASE_URL}/api/scrape-reference`, {
-                method: "POST",
-                credentials: "include",
-                headers: { "Content-Type": "application/json", ...authHeaders },
-                body: JSON.stringify({
-                  url: scrapeUrl,
-                  taskContentId: contentId,
-                  force: true,
-                }),
-              });
-              const directData = await directRes.json().catch(() => null);
-              if (!directRes.ok || !directData?.success) {
-                throw new Error(directData?.error || `direct scrape failed: ${directRes.status}`);
-              }
-
-              const directContentId = directData.contentId || contentId;
-              const directPubRes = await fetch(`${API_BASE_URL}/api/publishers/for-content/${directContentId}`, {
-                credentials: "include",
-                headers: authHeaders,
-              });
-              const directPubData = directPubRes.ok ? await directPubRes.json() : null;
-              const directPublisherId = directPubData?.publisher_id;
-              const directPublisherName = directPubData?.publisher_name;
-              if (directPublisherName) {
-                const linkRes = await fetch(`${API_BASE_URL}/api/publishers/enrich-and-link`, {
-                  method: "POST",
-                  credentials: "include",
-                  headers: { "Content-Type": "application/json", ...authHeaders },
-                  body: JSON.stringify({
-                    name: directPublisherName,
-                    contentId,
-                    sourceUrl: sourceUrl ?? scrapeUrl,
-                    force: true,
-                  }),
-                });
-                const linkData = linkRes.ok ? await linkRes.json().catch(() => null) : null;
-                const linkedId = linkData?.publisherId ?? directPublisherId;
-                if (linkedId) {
-                  setResolvedId(linkedId);
-                  const newCode = linkData?.enrichResult?.admiraltyUpdates?.[contentId];
-                  onPublisherLinked?.(linkedId, directPublisherName, newCode ?? directPubData?.admiralty_code ?? null);
-                  loadEnrichment(linkedId);
-                  if (newCode) applyAdmiraltyCode(newCode);
-                }
-              }
-              loadSourceIdentity(true);
-              setScrapeStatus(null);
-              break;
-            } catch (fallbackErr: any) {
-              console.error("[scrapeForPublisher] direct backend fallback failed:", fallbackErr);
-              setScrapeStatus(`Scrape failed — ${fallbackErr?.message || "direct fallback failed"}`);
-              break;
-            }
+          if (/No tab found for URL/i.test(errorMessage)) {
+            setScrapeStatus("Extension could not find the opened tab. Keep it open, then retry the explicit re-scrape.");
+            break;
           }
 
           setScrapeStatus("Scrape failed — try reloading the tab and retrying.");
@@ -893,16 +989,18 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
     } finally {
       setScrapePolling(false);
     }
-  }, [sourceUrl, contentId, scrapePolling, authHeaders, loadSourceIdentity]);
+  }, [sourceUrl, contentId, scrapePolling, authHeaders, loadSourceIdentity, loadLineage, resolvedId, enrichment, publisherName]);
 
-  const loadEnrichment = useCallback((overrideId?: number) => {
+  const loadEnrichment = useCallback((overrideId?: number, background = false) => {
     const id = overrideId ?? resolvedId;
     if (!id) {
       setEnrichment(null);
       setLoading(false);
       return;
     }
-    setLoading(true);
+    // Background reloads must not replace the modal body with a spinner. Doing
+    // so shrinks/recenters the modal and makes controls move under the pointer.
+    if (!background) setLoading(true);
     const params = contentId ? `?contentId=${encodeURIComponent(String(contentId))}` : "";
     fetch(`${API_BASE_URL}/api/publishers/${id}/enrichment${params}`, { credentials: "include", headers: authHeaders })
       .then(r => r.ok ? r.json() : Promise.reject(r.status))
@@ -910,11 +1008,10 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
         setEnrichment(d);
         if (d.admiraltyCode) {
           applyAdmiraltyCode(d.admiraltyCode);
-          onPublisherLinkedRef.current?.(id, d.publisher.publisher_name, d.admiraltyCode);
         }
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => { if (!background) setLoading(false); });
   }, [resolvedId, contentId, authHeaders]);
 
   useEffect(() => {
@@ -925,6 +1022,13 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
       if (!publisherId) setShowRelink(true);
     }
   }, [isOpen, loadEnrichment]);
+
+  useEffect(() => {
+    if (!resolvedId && sourceIdentity?.publisherId) {
+      setResolvedId(sourceIdentity.publisherId);
+      loadEnrichment(sourceIdentity.publisherId);
+    }
+  }, [resolvedId, sourceIdentity?.publisherId, loadEnrichment]);
 
   // ── Enrich & Link: create/find publisher, run AllSides/AdFontes/Wikipedia, link to content ─
   const linkPublisher = async () => {
@@ -946,6 +1050,10 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
           domain: sourceIdentity?.rootDomain ?? undefined,
           contentId,
           sourceUrl: sourceUrl ?? undefined,
+          force: rescrapeDetected,
+          skipExternalSignals: true,
+          skipOwnSiteOrgStatus: false,
+          maxProviderConcurrency: 1,
         }),
       });
       if (!res.ok) {
@@ -963,6 +1071,7 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
       }
       onPublisherLinked?.(newId, nameToLink, enrichResult?.admiraltyUpdates?.[contentId] ?? enrichResult?.admiraltyCode ?? null);
       loadEnrichment(newId);
+      setRescrapeDetected(false);
     } catch (e: any) {
       const msg = e?.message ?? "Failed to enrich & link publisher";
       setLinkError(msg);
@@ -981,10 +1090,10 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
     }
   };
 
-  // ── Run AllSides + Ad Fontes + Wikipedia ─────────────────────────────────
-  // overrideId: use when calling immediately after setResolvedId (state not yet propagated)
-  const runMediaEnrichment = async (force: boolean, overrideId?: number) => {
-    const targetId = overrideId ?? resolvedId;
+  // Refresh ratings and the crest for the publisher already linked here.
+  // Identity discovery and extension scraping are intentionally separate.
+  const forceRefreshPublisher = async () => {
+    const targetId = resolvedId ?? sourceIdentity?.publisherId ?? domainCheckResult?.publisherId ?? undefined;
     if (!targetId || enrichRunning) return;
     setEnrichRunning(true);
     setEnrichResult(null);
@@ -994,22 +1103,27 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json", ...authHeaders },
-        body: JSON.stringify({ force, contentId: contentId ?? null, sourceUrl: sourceUrl ?? null }),
+        body: JSON.stringify({
+          force: true,
+          contentId: contentId ?? null,
+          sourceUrl: sourceUrl ?? null,
+          skipExternalSignals: true,
+          skipOwnSiteOrgStatus: true,
+          maxProviderConcurrency: 1,
+        }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const result = data.result ?? data;
       setEnrichResult(result);
-      // Apply the admiralty code returned by the server — either from a content-specific
-      // update or from the publisher-level evaluation (whichever the server provides).
       const newCode = result?.admiraltyUpdates?.[contentId ?? ""] ?? result?.admiraltyCode;
-      if (newCode) applyAdmiraltyCode(newCode);
-      if (newCode && targetId) {
+      if (newCode) {
+        applyAdmiraltyCode(newCode);
         onPublisherLinked?.(targetId, enrichment?.publisher.publisher_name ?? publisherName, newCode);
       }
-      loadEnrichment(targetId); // reload ratings (also refreshes enrichment.admiraltyCode)
+      loadEnrichment(targetId, true);
     } catch (err: any) {
-      setEnrichError(err?.message ?? "Enrichment failed");
+      setEnrichError(err?.message ?? "Force refresh failed");
     } finally {
       setEnrichRunning(false);
     }
@@ -1029,8 +1143,37 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
     rating_type:    firstProfile?.source_type ?? bestVeracityRating?.rating_type ?? enrichment?.ratings[0]?.rating_type,
     veracity_score: bestVeracityRating?.veracity_score,
   }), [enrichment, publisherName, firstProfile, bestVeracityRating]);
-  const displayType:        SourceType  = sourceType  ?? liveProfile.sourceType;
-  const displayReliability: Reliability = reliability ?? liveProfile.reliability;
+  const governmentOperatorName = useMemo(() => {
+    if (enrichment?.sourceAlignment?.marker !== "GOV") return null;
+    const storedOperator = enrichment.publisherStatus?.ultimate_publisher_or_interest_group;
+    if (storedOperator && storedOperator !== "government public authority") return storedOperator;
+    const evidenceText = [
+      ...(enrichment.publisherStatus?.evidence?.map(item => item.snippet) ?? []),
+      ...enrichment.profiles.flatMap(profile => [profile.ownership_notes]),
+    ].filter(Boolean).join(" ");
+    return /\bFederal Office of Public Health(?:\s*\(FOPH\)|\s+FOPH)?\b/i.test(evidenceText)
+      ? "Federal Office of Public Health (FOPH)"
+      : null;
+  }, [enrichment]);
+
+  const facebookContainer = useMemo(() => {
+    const isFacebook = /facebook/i.test(contentPlatform ?? "") || /facebook\.com/i.test(sourceUrl ?? "");
+    if (!isFacebook) return null;
+    const sp = socialProvenance as Record<string, unknown> | null;
+    const name = (sp?.containerName as string | undefined) ??
+      (!isNumericFacebookGroupPlaceholder(contentChannel) ? contentChannel : null);
+    if (!name) return null;
+    return {
+      name,
+      containerType: (sp?.containerType as string | undefined) ?? "facebook_group",
+      directSocialPublisher: sp?.directSocialPublisher as string | undefined,
+    };
+  }, [contentPlatform, sourceUrl, socialProvenance, contentChannel]);
+
+  const displayType: SourceType =
+    sourceType ?? (sourceIdentity?.sourceType as SourceType | undefined) ?? liveProfile.sourceType;
+  const displayReliability: Reliability =
+    reliability ?? (sourceIdentity?.reliability as Reliability | undefined) ?? liveProfile.reliability;
   const detectedPlatformAccount = sourceIdentity?.candidates?.find((candidate) =>
     candidate.source === "platform_account" &&
     candidate.confidence === "high" &&
@@ -1082,6 +1225,7 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
     }
     if (signal.error_status === "missing_config") return { label: "not configured", color: "#A0AEC0", enabled: false };
     if (signal.error_status === "not_implemented") return { label: "not implemented", color: "#A0AEC0", enabled: false };
+    if (signal.error_status === "disabled") return { label: "disabled", color: "#A0AEC0", enabled: false };
     if (signal.error_status === "no_match") return { label: "no match", color: "#F6AD55", enabled: true };
     if (signal.error_status || parseFlags(signal.flags).some((flag) => String(flag).startsWith("provider_"))) {
       return { label: signal.error_status || "attempted", color: "#F6AD55", enabled: true };
@@ -1089,6 +1233,18 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
     if (signal.normalized_score != null) return { label: `${signal.admiralty_effect_type} ${Math.round(Number(signal.normalized_score))}`, color: "#48BB78", enabled: true };
     return { label: signal.admiralty_effect_type || "stored", color: "#48BB78", enabled: true };
   };
+  const latestRunStatusFor = (key: string) => {
+    return enrichResult?.results?.[key]?.status ?? enrichResult?.[key]?.status ?? latestPersistedRunFor(key)?.status;
+  };
+  function latestPersistedRunFor(key: string) {
+    const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, "");
+    return enrichment?.enrichmentRuns?.find(run =>
+      String(run.provider || "").toLowerCase().replace(/[^a-z0-9]/g, "") === normalized
+    );
+  }
+  const isProviderDisabled = (provider: (typeof ENRICHMENT_PROVIDERS)[number]) =>
+    provider.enabled === false || signalStatus(latestSignalFor(provider.key), provider).enabled === false;
+  const disabledEnrichmentProviders = ENRICHMENT_PROVIDERS.filter(isProviderDisabled);
   const signalSummary = (signal?: ExternalSignal | null) => {
     if (!signal) return "No recent provider result stored yet.";
     const bits = [
@@ -1108,7 +1264,7 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
     const signal = latestSignalFor(key);
     if (signal) return signalStatus(signal).color;
     if (enrichRunning) return "#f6ad55";
-    const s = enrichResult?.results?.[key]?.status;
+    const s = latestRunStatusFor(key);
     if (s === "found")     return "#48bb78";
     if (s === "skipped")   return "var(--mr-blue)";
     if (s === "not_found" || s === "error") return "#fc8181";
@@ -1126,7 +1282,8 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
     return "gray";
   };
 
-  const noId = !resolvedId;
+  const activePublisherId = resolvedId ?? sourceIdentity?.publisherId ?? domainCheckResult?.publisherId ?? undefined;
+  const noId = !activePublisherId;
 
   return (
     <>
@@ -1136,18 +1293,16 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
           style={{
             background: "linear-gradient(145deg,rgba(8,14,26,0.98) 0%,rgba(4,7,16,0.99) 100%)",
             border: "1px solid rgba(0,162,255,0.3)",
-            boxShadow: "0 0 80px rgba(0,162,255,0.12), 0 32px 64px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08)",
+            boxShadow: "0 18px 42px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.08)",
           }}
         >
-          <div className="mr-glow-bar mr-glow-bar-blue" />
-          <div className="mr-scanlines" />
-
           {/* ── Header ── */}
           <ModalHeader pb={2} pt={5} position="relative" zIndex={1}>
             <HStack spacing={3}>
               <SourceCrest publisherName={displayedPublisherName ?? publisherName}
                 sourceType={displayedType} reliability={displayedReliability} score={suppressGenericPlatformRating ? undefined : liveProfile.score}
                 admiraltyCode={displayedAdmiraltyCode ?? undefined}
+                alignment={suppressGenericPlatformRating ? null : enrichment?.sourceAlignment}
                 size="lg" />
               <VStack align="start" spacing={0} flex={1} minW={0}>
                 <Text className="mr-heading" fontSize="md" letterSpacing="0.06em" noOfLines={2}>
@@ -1163,26 +1318,16 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                     <Badge fontSize="2xs" bg="rgba(255,255,255,0.05)" color="var(--mr-text-muted)"
                       border="1px solid rgba(255,255,255,0.1)">{enrichment.publisher.domain}</Badge>
                   )}
-                  <Tooltip label={noId ? "Link a publisher first" : "Re-run all enrichment providers"} hasArrow openDelay={300}>
-                    <Button
-                      size="xs"
-                      height="16px"
-                      px={2}
-                      fontSize="2xs"
-                      isLoading={enrichRunning}
+                  <Tooltip label={noId ? "Link a publisher first" : "Refresh ratings and rebuild this publisher's SourceCrest. Does not open a tab or change the publisher link."} hasArrow>
+                    <Button size="xs" height="18px" px={2} fontSize="2xs"
+                      leftIcon={<RepeatIcon boxSize="9px" />}
+                      isLoading={enrichRunning} loadingText="Refreshing"
                       isDisabled={noId || enrichRunning}
-                      onClick={() => runMediaEnrichment(true)}
-                      style={{
-                        background: "rgba(0,162,255,0.12)",
-                        border: "1px solid rgba(0,162,255,0.35)",
-                        color: "var(--mr-blue)",
-                        borderRadius: "4px",
-                      }}
-                      _hover={{ background: "rgba(0,162,255,0.22)" }}
-                      _disabled={{ opacity: 0.4, cursor: "not-allowed" }}
-                    >
-                      <RepeatIcon boxSize="9px" mr="3px" />
-                      Re-enrich
+                      onClick={forceRefreshPublisher}
+                      bg="rgba(0,162,255,0.12)" color="var(--mr-blue)"
+                      border="1px solid rgba(0,162,255,0.35)" borderRadius="md"
+                      _hover={{ bg: "rgba(0,162,255,0.22)" }}>
+                      Force refresh
                     </Button>
                   </Tooltip>
                 </HStack>
@@ -1192,7 +1337,7 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
           <ModalCloseButton color="var(--mr-text-muted)" zIndex={10}
             _hover={{ color: "var(--mr-blue)", bg: "rgba(0,162,255,0.1)" }} />
 
-          <ModalBody pb={4} position="relative" zIndex={1} overflowY="auto">
+          <ModalBody pb={4} position="relative" zIndex={1} overflowY="auto" minH="420px">
             {loading ? (
               <HStack justify="center" py={8}>
                 <Spinner size="sm" color="var(--mr-blue)" />
@@ -1203,12 +1348,8 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
 
                 {/* ══ Publisher status + scrape ══════════════════════════ */}
                 {contentId && (() => {
-                  const isLinked   = !!resolvedId;
+                  const isLinked   = !!activePublisherId;
                   const isSocial   = sourceUrl ? /facebook\.com|twitter\.com|x\.com|instagram\.com|tiktok\.com/i.test(sourceUrl) : false;
-                  const articleUrl = linkedUrl || (linkedPublisher ? `https://${linkedPublisher}` : null);
-                  // Re-scrape Source means the distribution source URL itself.
-                  // Linked article provenance is tracked separately.
-                  const scrapeTarget = sourceUrl ?? undefined;
                   const linkedName   = enrichment?.publisher.publisher_name ?? (isLinked ? (customName || publisherName) : null);
 
                   return (
@@ -1224,7 +1365,9 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                               <Text fontSize="2xs" color="var(--mr-text-muted)" textTransform="uppercase" letterSpacing="0.08em">Platform</Text>
                               <Badge fontSize="2xs" px={2} borderRadius="sm"
                                 style={{ background: "rgba(0,162,255,0.12)", color: "var(--mr-blue)", border: "1px solid rgba(0,162,255,0.3)" }}>
-                                {contentPlatform ?? (isSocial ? "social" : "web")}
+                                {contentPlatform
+                                  ? contentPlatform.charAt(0).toUpperCase() + contentPlatform.slice(1)
+                                  : (isSocial ? "Social" : "Web")}
                               </Badge>
                             </HStack>
                             {contentChannel && (
@@ -1239,7 +1382,24 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                           </HStack>
                         )}
 
-                        {/* ── Publisher status + rescrape (always) ── */}
+                        {/* ── Facebook container provenance ── */}
+                        {facebookContainer && (
+                          <Box pt="2px">
+                            <Text fontSize="2xs" color="var(--mr-text-muted)" textTransform="uppercase" letterSpacing="0.08em">
+                              {facebookContainer.containerType === "facebook_group" ? "Posted in group" : "Posted via"}
+                            </Text>
+                            <Text fontSize="sm" fontWeight="900" color="var(--mr-text-primary)" lineHeight="1.25">
+                              {facebookContainer.name}
+                            </Text>
+                            {facebookContainer.directSocialPublisher && (
+                              <Text fontSize="2xs" color="var(--mr-text-muted)" mt="2px">
+                                Posted by {facebookContainer.directSocialPublisher}
+                              </Text>
+                            )}
+                          </Box>
+                        )}
+
+                        {/* ── Publisher status ── */}
                         <HStack spacing={2} justify="space-between" align="center" flexWrap="wrap">
                           <HStack spacing={1}>
                             {isLinked ? (
@@ -1252,17 +1412,6 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                               </Text>
                             )}
                           </HStack>
-                          {scrapeTarget && (
-                            <Button size="xs"
-                              isLoading={scrapePolling} loadingText="Scraping…"
-                              bg="rgba(0,162,255,0.12)" color="var(--mr-blue)"
-                              border="1px solid rgba(0,162,255,0.35)" borderRadius="md"
-                              height="22px" px={3} fontSize="2xs" fontWeight="700"
-                              _hover={{ bg: "rgba(0,162,255,0.22)" }}
-                              onClick={() => scrapeForPublisher(scrapeTarget)}>
-                              Re-scrape
-                            </Button>
-                          )}
                         </HStack>
 
                         {/* Linked article domain (social chain info) */}
@@ -1328,6 +1477,48 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                   );
                 })()}
 
+                {enrichment?.sourceAlignment && (
+                  <Box px={3} py={3} borderRadius="xl"
+                    style={{ background: "rgba(246,173,85,0.06)", border: "1px solid rgba(246,173,85,0.28)" }}>
+                    <HStack justify="space-between" align="start" spacing={3}>
+                      <VStack align="start" spacing={1}>
+                        <HStack spacing={2} flexWrap="wrap">
+                          <Badge fontSize="2xs" color="#fff" bg="rgba(246,173,85,0.28)"
+                            border="1px solid rgba(246,173,85,0.6)">
+                            {enrichment.sourceAlignment.marker}
+                          </Badge>
+                          <Text fontSize="xs" fontWeight="800" color="var(--mr-text-primary)">
+                            {enrichment.sourceAlignment.label}
+                          </Text>
+                          <Text fontSize="2xs" color="#f6ad55" textTransform="uppercase">
+                            {enrichment.sourceAlignment.degree} material-interest risk
+                            {enrichment.sourceAlignment.riskScore != null ? ` · ${Math.round(enrichment.sourceAlignment.riskScore)}/100` : ""}
+                          </Text>
+                        </HStack>
+                        {governmentOperatorName && (
+                          <Box pt="2px">
+                            <Text fontSize="2xs" color="var(--mr-text-muted)" textTransform="uppercase" letterSpacing="0.08em">
+                              Operated by
+                            </Text>
+                            <Text fontSize="sm" fontWeight="900" color="var(--mr-text-primary)" lineHeight="1.25">
+                              {governmentOperatorName}
+                            </Text>
+                          </Box>
+                        )}
+                        <Text fontSize="2xs" color="var(--mr-text-muted)" lineHeight="1.55">
+                          {enrichment.sourceAlignment.explanation || "This publisher has a disclosed institutional alignment that may matter for claims affecting its interests."}
+                        </Text>
+                        {enrichment.publisherStatus?.evidence?.find(item => item.source_url)?.source_url && (
+                          <Link href={enrichment.publisherStatus.evidence.find(item => item.source_url)?.source_url ?? undefined}
+                            isExternal fontSize="2xs" color="var(--mr-blue)">
+                            View self-described evidence <ExternalLinkIcon mx="2px" />
+                          </Link>
+                        )}
+                      </VStack>
+                    </HStack>
+                  </Box>
+                )}
+
                 {/* ══ How we identified this source ══════════════════════ */}
                 {sourceUrl && (sourceIdentity || identityLoading) && (
                   <Box borderRadius="lg" overflow="hidden"
@@ -1365,14 +1556,6 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                         )}
                       </HStack>
                       <HStack spacing={1}>
-                        {!identityLoading && (
-                          <Button size="xs" variant="ghost" color="var(--mr-text-muted)" height="14px" minW="auto" px={1}
-                            _hover={{ color: "var(--mr-blue)" }}
-                            onClick={e => { e.stopPropagation(); loadSourceIdentity(true); }}
-                            title="Re-resolve">
-                            <RepeatIcon boxSize="9px" />
-                          </Button>
-                        )}
                         {showIdentity ? <ChevronUpIcon color="var(--mr-text-muted)" boxSize="12px"/> : <ChevronDownIcon color="var(--mr-text-muted)" boxSize="12px"/>}
                       </HStack>
                     </HStack>
@@ -1402,21 +1585,15 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                             <Box>
                               {sourceIdentity.pageBlocked && (
                                 <Text fontSize="2xs" color="rgba(252,129,129,0.7)" mb={1}>
-                                  The backend fetch is blocked for this URL. The modal will fall back to the extension scrape path so the open tab can be read directly.
+                                  The backend fetch is blocked for this URL. Use the extension scrape button only when you want to open a tab and read the page directly.
                                 </Text>
                               )}
                               {scrapeStatus && (
                                 <Text fontSize="2xs" color="rgba(246,173,85,0.7)" mb={1}>{scrapeStatus}</Text>
                               )}
-                              <Button size="xs"
-                                bg="rgba(246,173,85,0.08)" color="rgba(246,173,85,0.6)"
-                                border="1px solid rgba(246,173,85,0.2)" borderRadius="md"
-                                height="20px" px={2} fontSize="2xs"
-                                isLoading={scrapePolling} loadingText="Waiting for scrape…"
-                                _hover={{ bg: "rgba(246,173,85,0.18)", color: "#f6ad55" }}
-                                onClick={() => scrapeForPublisher()}>
-                                Open &amp; Scrape for Publisher
-                              </Button>
+                              <Text fontSize="2xs" color="var(--mr-text-muted)">
+                                Use Open tab &amp; re-scrape source under Change publisher only if background lookup cannot recover the identity.
+                              </Text>
                             </Box>
                           )}
                         </Box>
@@ -1487,7 +1664,7 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                     >
                       <Text fontSize="2xs" fontWeight="700" textTransform="uppercase" letterSpacing="0.08em"
                         style={{ color: noId ? "#f6ad55" : "var(--mr-text-muted)" }}>
-                        {noId ? "Publisher not linked — fix required" : "Fix or update publisher"}
+                        {noId ? "Publisher not linked — action required" : "Change publisher"}
                       </Text>
                       {showRelink ? <ChevronUpIcon color="var(--mr-text-muted)" boxSize="12px"/> : <ChevronDownIcon color="var(--mr-text-muted)" boxSize="12px"/>}
                     </HStack>
@@ -1495,22 +1672,19 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                       <Box px={3} py={3}>
                         <Text fontSize="2xs" color="var(--mr-text-muted)" mb={2} lineHeight="1.6">
                           {noId
-                            ? "No publisher record is linked to this article yet. Choose a name below and click Enrich & Link — this creates the publisher record, fetches AllSides / Ad Fontes / Wikipedia ratings, and links everything in one step."
+                            ? "No publisher record is linked to this article yet. Choose a name below and click Link publisher — this creates the publisher record, fetches available ratings, and links everything in one step."
                             : "The linked publisher can be corrected here. Candidates below are names detected automatically from the article URL — they may differ from the publisher shown in the title if it was set manually via scrape."}
                         </Text>
-                        {sourceUrl && (
-                          <HStack mb={2}>
-                            <Button size="xs"
-                              bg="rgba(246,173,85,0.08)" color="rgba(246,173,85,0.6)"
-                              border="1px solid rgba(246,173,85,0.2)" borderRadius="md"
-                              height="18px" px={2} fontSize="2xs"
-                              isLoading={identityLoading} loadingText="Resolving…"
-                              _hover={{ bg: "rgba(246,173,85,0.18)", color: "#f6ad55" }}
-                              onClick={() => loadSourceIdentity(true)}>
-                              Re-detect from URL
-                            </Button>
-                          </HStack>
-                        )}
+                        <Tooltip label="Fallback only: opens the source in a new tab, queues an extension scrape, then refreshes and offers the detected publisher." hasArrow>
+                          <Button size="xs"
+                            bg="rgba(246,173,85,0.1)" color="#f6ad55"
+                            border="1px solid rgba(246,173,85,0.35)" borderRadius="md"
+                            isLoading={scrapePolling} loadingText="Waiting for extension…"
+                            isDisabled={!sourceUrl || scrapePolling}
+                            onClick={() => scrapeForPublisher(undefined, true)}>
+                            Open tab &amp; re-scrape source
+                          </Button>
+                        </Tooltip>
                     </Box>
                     </Collapse>
                   </Box>
@@ -1609,17 +1783,6 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                               <Text fontSize="2xs" color="rgba(252,129,129,0.8)">
                                 Background check blocked — page requires login or blocks bots.
                               </Text>
-                              {contentId && (
-                                <Button size="xs"
-                                  bg="rgba(252,129,129,0.1)" color="rgba(252,129,129,0.8)"
-                                  border="1px solid rgba(252,129,129,0.25)" borderRadius="md"
-                                  height="18px" px={2} fontSize="2xs"
-                                  isLoading={scrapePolling} loadingText="Waiting…"
-                                  _hover={{ bg: "rgba(252,129,129,0.2)" }}
-                                  onClick={() => scrapeForPublisher()}>
-                                  Open in tab &amp; scrape via extension
-                                </Button>
-                              )}
                             </VStack>
                           ) : (
                             <Text fontSize="2xs" color="rgba(72,187,120,0.9)" lineHeight="1.5">
@@ -1642,7 +1805,7 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                           isDisabled={!customName.trim()}
                           onClick={linkPublisher}
                         >
-                          {noId ? "Enrich & Link" : "Enrich & Re-link"}
+                          {rescrapeDetected ? "Save publisher link & force refresh" : "Save publisher link"}
                         </Button>
                         {linkError && (
                           <Text fontSize="2xs" color="#fc8181">{linkError}</Text>
@@ -1655,7 +1818,7 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                 {/* ══ PIPELINE 1: Media Enrichment ══════════════════════════ */}
                 <ActionPanel
                   title="Media Enrichment"
-                  subtitle="AllSides · Ad Fontes · Wikipedia — writes to publisher ratings"
+                  subtitle="Direct providers and profiles; disabled ratings remain visible historically"
                   accentVar="var(--mr-blue)"
                   borderVar="rgba(0,162,255,0.35)"
                   glowVar="rgba(0,162,255,0.08)"
@@ -1664,19 +1827,34 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                 >
                   {/* Provider status rows */}
                   <VStack spacing={1} align="stretch" mb={3} mt={2}>
-                    {ENRICHMENT_PROVIDERS.map(p => {
+                    {ENRICHMENT_PROVIDERS.filter(p => !isProviderDisabled(p)).map(p => {
                       const rating = visibleRatings.find(r =>
                         r.source?.toLowerCase().includes(p.key.toLowerCase())
                       );
                       const signal = latestSignalFor(p.key);
-                      const status = signal ? signalStatus(signal, p) : rating
+                      const persistedRun = latestPersistedRunFor(p.key);
+                      const runStatus = latestRunStatusFor(p.key);
+                      const storedStatus = signal ? signalStatus(signal, p) : rating
                         ? { label: "rating on file", color: "#48BB78", enabled: true }
-                        : signalStatus(signal, p);
+                        : runStatus
+                          ? {
+                              label: runStatus === "found" ? "found" : runStatus.replace(/_/g, " "),
+                              color: runStatus === "found" ? "#48BB78" : runStatus === "skipped" ? "var(--mr-blue)" : "#F6AD55",
+                              enabled: true,
+                            }
+                          : signalStatus(signal, p);
+                      const explicitlyDisabled = "enabled" in p && p.enabled === false;
+                      const isQuickRefreshProvider = QUICK_REFRESH_PROVIDER_KEYS.has(p.key);
+                      const status = explicitlyDisabled
+                        ? { label: p.disabledReason || "disabled", color: "var(--mr-text-muted)", enabled: false }
+                        : enrichRunning && isQuickRefreshProvider
+                          ? { label: "checking", color: "#F6AD55", enabled: true }
+                        : storedStatus;
                       return (
                         <HStack key={p.key} spacing={3} py="5px" align="start"
                           borderBottom="1px solid rgba(0,162,255,0.08)" _last={{ borderBottom: "none" }}>
                           <Box w="7px" h="7px" borderRadius="full" flexShrink={0} mt="5px"
-                            style={{ background: providerDot(p.key), boxShadow: `0 0 6px ${providerDot(p.key)}` }} />
+                            style={{ background: status.color, boxShadow: `0 0 6px ${status.color}` }} />
                           <VStack align="start" spacing={0.5} flex={1} minW={0}>
                             <HStack spacing={1.5} flexWrap="wrap">
                               <Text fontSize="xs" fontWeight="700" color="var(--mr-text-primary)" minW="78px">{p.label}</Text>
@@ -1684,7 +1862,7 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                                 {status.enabled ? "enabled" : "disabled"}
                               </Badge>
                               <Badge fontSize="2xs" color={status.color} bg="rgba(255,255,255,0.04)" border="1px solid rgba(255,255,255,0.09)">
-                                {enrichRunning && !signal ? "running" : status.label}
+                                {status.label}
                               </Badge>
                               {signal?.cap && (
                                 <Badge fontSize="2xs" color="#F6AD55" bg="rgba(246,173,85,0.08)" border="1px solid rgba(246,173,85,0.2)">
@@ -1695,7 +1873,9 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                             <Text fontSize="2xs" color="var(--mr-text-muted)" noOfLines={2}>
                               {signal ? signalSummary(signal) : rating
                                 ? `${rating.rating_type || "rating"}${rating.veracity_score != null ? ` · ${Math.round(Number(rating.veracity_score))}%` : ""}${rating.rating_label ? ` · ${rating.rating_label}` : ""}`
-                                : p.desc}
+                                : persistedRun
+                                  ? `${persistedRun.status.replace(/_/g, " ")}${persistedRun.error_message ? ` · ${persistedRun.error_message}` : ""}`
+                                  : p.desc}
                             </Text>
                             <HStack spacing={2} flexWrap="wrap">
                               {signal?.evidence_url && (
@@ -1713,6 +1893,11 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                                   rating {new Date(rating.last_checked).toLocaleDateString()}
                                 </Text>
                               )}
+                              {persistedRun?.created_at && !signal?.retrieved_at && !rating?.last_checked && (
+                                <Text fontSize="2xs" color="var(--mr-text-muted)">
+                                  attempted {new Date(persistedRun.created_at).toLocaleTimeString()}
+                                </Text>
+                              )}
                             </HStack>
                           </VStack>
                         </HStack>
@@ -1720,38 +1905,59 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                     })}
                   </VStack>
 
-                  {/* Action buttons */}
-                  <HStack spacing={2}>
-                    <Tooltip
-                      label={noId ? "Link a publisher record first (see above)" : "Run stale providers only"}
-                      placement="top" shouldWrapChildren
-                    >
-                      <Button size="xs"
-                        bg="rgba(0,162,255,0.12)" color="var(--mr-blue)"
-                        border="1px solid rgba(0,162,255,0.35)" borderRadius="md"
-                        _hover={{ bg: "rgba(0,162,255,0.25)", boxShadow: "0 0 14px rgba(0,162,255,0.3)" }}
-                        isDisabled={noId || enrichRunning}
-                        onClick={() => runMediaEnrichment(false)}
-                      >
-                        Run
-                      </Button>
-                    </Tooltip>
-                    <Tooltip
-                      label={noId ? "Link a publisher record first (see above)" : "Force re-fetch all providers"}
-                      placement="top" shouldWrapChildren
-                    >
-                      <Button size="xs"
-                        leftIcon={enrichRunning ? <Spinner size="xs" color="var(--mr-blue)" /> : <RepeatIcon />}
-                        bg="rgba(0,162,255,0.08)" color="var(--mr-blue)"
-                        border="1px solid rgba(0,162,255,0.25)" borderRadius="md"
-                        _hover={{ bg: "rgba(0,162,255,0.2)", boxShadow: "0 0 14px rgba(0,162,255,0.3)" }}
-                        isDisabled={noId || enrichRunning}
-                        onClick={() => runMediaEnrichment(true)}
-                      >
-                        {enrichRunning ? "Running…" : "Force Refresh"}
-                      </Button>
-                    </Tooltip>
-                  </HStack>
+                  {disabledEnrichmentProviders.length > 0 && (
+                    <Box mb={3} borderRadius="md" border="1px solid rgba(255,255,255,0.08)" overflow="hidden">
+                      <HStack px={3} py={2} justify="space-between" cursor="pointer"
+                        bg="rgba(255,255,255,0.025)"
+                        onClick={() => setShowDisabledProviders(value => !value)}>
+                        <Text fontSize="2xs" color="var(--mr-text-muted)" fontWeight="700">
+                          Disabled / unavailable resources ({disabledEnrichmentProviders.length})
+                        </Text>
+                        {showDisabledProviders
+                          ? <ChevronUpIcon color="var(--mr-text-muted)" boxSize="12px" />
+                          : <ChevronDownIcon color="var(--mr-text-muted)" boxSize="12px" />}
+                      </HStack>
+                      <Collapse in={showDisabledProviders} animateOpacity={false}>
+                        <VStack spacing={0} align="stretch" px={3} pb={2}>
+                          {disabledEnrichmentProviders.map(provider => {
+                            const signal = latestSignalFor(provider.key);
+                            const rating = visibleRatings.find(item =>
+                              item.source?.toLowerCase().includes(provider.key.toLowerCase())
+                            );
+                            const status = provider.enabled === false
+                              ? provider.disabledReason || "disabled"
+                              : signalStatus(signal, provider).label;
+                            return (
+                              <HStack key={provider.key} py="5px" justify="space-between" align="start"
+                                borderTop="1px solid rgba(255,255,255,0.05)">
+                                <VStack align="start" spacing={0} minW={0}>
+                                  <Text fontSize="xs" color="var(--mr-text-muted)" fontWeight="700">{provider.label}</Text>
+                                  <Text fontSize="2xs" color="var(--mr-text-muted)" noOfLines={2}>
+                                    {rating
+                                      ? `Historical ${rating.rating_label || rating.rating_type || "rating"}${rating.last_checked ? ` · ${new Date(rating.last_checked).toLocaleDateString()}` : ""}`
+                                      : provider.desc}
+                                  </Text>
+                                </VStack>
+                                <Badge fontSize="2xs" color="#A0AEC0" bg="rgba(255,255,255,0.04)">{status}</Badge>
+                              </HStack>
+                            );
+                          })}
+                        </VStack>
+                      </Collapse>
+                    </Box>
+                  )}
+
+                  {enrichRunning && (
+                    <Box mt={2} px={3} py={2} borderRadius="md"
+                      style={{ background: "rgba(246,173,85,0.08)", border: "1px solid rgba(246,173,85,0.25)" }}>
+                      <HStack spacing={2}>
+                        <Spinner size="xs" color="#F6AD55" />
+                        <Text fontSize="2xs" color="#F6AD55">
+                          Refresh request is running on the backend. This panel will stay in place until the summary returns.
+                        </Text>
+                      </HStack>
+                    </Box>
+                  )}
 
                   {/* Feedback */}
                   {enrichResult && !enrichRunning && (
@@ -1764,7 +1970,10 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                         style={{ color: enrichResult.status === "skipped" ? "var(--mr-blue)" : "#68d391" }}>
                         {enrichResult.status === "skipped"
                           ? `All providers up to date (${enrichResult.reason ?? "fresh"})`
-                          : `Updated ${enrichResult.tasks_run ?? 0} provider(s) — ratings refreshed`}
+                          : `Checked ${enrichResult.tasks_run ?? 0} active provider(s): ${Object.entries(enrichResult.results ?? {})
+                              .filter(([name]) => name !== "SearchLlmRatingFallback")
+                              .map(([name, value]) => `${name} ${value.status}`)
+                              .join(" · ") || "no provider results returned"}`}
                       </Text>
                     </Box>
                   )}
@@ -1886,7 +2095,7 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                     <Text fontSize="xs" color="var(--mr-text-muted)" textAlign="center">
                       {noId
                         ? "Link a publisher record above to enable enrichment."
-                        : "No ratings yet — click Run above to fetch from AllSides, Ad Fontes, and Wikipedia."}
+                        : "No ratings yet — use Force refresh at the top to fetch available provider ratings."}
                     </Text>
                   </Box>
                 )}
@@ -1898,35 +2107,10 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
             position="relative" zIndex={1}>
             {!noId && (
               <Button size="sm" className="mr-button" rightIcon={<ExternalLinkIcon />}
-                onClick={() => { onClose(); navigate(`/credibility?publisherId=${resolvedId}`); }}>
+                onClick={() => { onClose(); navigate(`/credibility?publisherId=${activePublisherId}`); }}>
                 Credibility Checks
               </Button>
             )}
-            <Tooltip
-              label={
-                sourceUrl && contentId
-                  ? "Open this source in a tab and ask the extension to scrape it again."
-                  : "A source URL and reference content id are required to rescrape."
-              }
-              hasArrow
-              openDelay={300}
-            >
-              <Button
-                size="sm"
-                leftIcon={<RepeatIcon />}
-                isLoading={scrapePolling}
-                loadingText="Scraping"
-                isDisabled={!sourceUrl || !contentId || scrapePolling}
-                bg="rgba(0,162,255,0.12)"
-                color="var(--mr-blue)"
-                border="1px solid rgba(0,162,255,0.35)"
-                _hover={{ bg: "rgba(0,162,255,0.22)" }}
-                _disabled={{ opacity: 0.45, cursor: "not-allowed" }}
-                onClick={() => scrapeForPublisher(sourceUrl)}
-              >
-                Re-scrape Source
-              </Button>
-            </Tooltip>
             <Button size="sm" bg="transparent" color="var(--mr-text-muted)"
               border="1px solid rgba(255,255,255,0.1)"
               _hover={{ color: "var(--mr-text-primary)", borderColor: "rgba(255,255,255,0.2)" }}
