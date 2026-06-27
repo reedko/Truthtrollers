@@ -1321,7 +1321,14 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
               <SourceCrest publisherName={displayedPublisherName ?? publisherName}
                 sourceType={displayedType} reliability={displayedReliability} score={suppressGenericPlatformRating ? undefined : liveProfile.score}
                 admiraltyCode={displayedAdmiraltyCode ?? undefined}
-                alignment={suppressGenericPlatformRating ? null : enrichment?.sourceAlignment}
+                alignment={suppressGenericPlatformRating ? null :
+                  enrichment?.sourceAlignment ??
+                  (/facebook\.com|twitter\.com|x\.com|instagram\.com|tiktok\.com/i.test(sourceUrl ?? "") ? {
+                    marker: "SOC",
+                    label: "Social media source — admiralty reflects entity, not platform",
+                    riskScore: null,
+                  } : null)
+                }
                 size="lg" />
               <VStack align="start" spacing={0} flex={1} minW={0}>
                 <Text className="mr-heading" fontSize="md" letterSpacing="0.06em" noOfLines={2}>

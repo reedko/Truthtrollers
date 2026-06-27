@@ -107,13 +107,11 @@ const SourceCrest: React.FC<SourceCrestProps> = ({
   const c = ADMIRALTY_COLORS[admLetter] ?? ADMIRALTY_COLORS["Ø"];
 
   // A sash is a verified alignment/provenance assertion. Never infer one from
-  // sourceType alone: source type may be heuristic and can be inherited from a
-  // different publisher when legacy content has multiple links.
-  // Exception: "social" sourceType is always authoritative (set by chooseFacebookPublisher
-  // or equivalent — it is never heuristically inherited).
+  // sourceType alone — source type is heuristic and can be inherited incorrectly.
+  // SOC sash is shown only when explicitly passed via alignment.marker === "SOC".
   const effectiveAlignment: SourceAlignment | null = alignment ?? null;
-  const showSocialSash = sourceType === "social" && !effectiveAlignment;
-  const hasSash = !!effectiveAlignment || showSocialSash;
+  const showSocialSash = effectiveAlignment?.marker === "SOC";
+  const hasSash = !!effectiveAlignment;
 
   const shieldTopText = admLetter;
   const shieldBotText = admNumber;
@@ -219,28 +217,11 @@ const SourceCrest: React.FC<SourceCrestProps> = ({
           {shieldTopText}
         </text>
 
-        {/* Social sash — purple/indigo, shows SOC */}
-        {showSocialSash && (
-          <g clipPath={`url(#${uid}-shield-clip)`}>
-            <path d={SASH} fill={`url(#${uid}-soc)`} opacity="0.92"/>
-            <path d="M2,22 L62,42" fill="none" stroke="rgba(255,255,255,0.68)" strokeWidth="0.9"/>
-            <path d="M2,47 L62,67" fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth="1.1"/>
-            <text x="32" y="44.5" textAnchor="middle" dominantBaseline="middle"
-              fontSize="11"
-              fontWeight="900" fontFamily="system-ui, -apple-system, sans-serif"
-              fill="#FFFFFF" stroke="rgba(2,6,23,0.82)" strokeWidth="1.8"
-              paintOrder="stroke" strokeLinejoin="round" letterSpacing="0.35"
-              transform="rotate(18 32 44.5)">
-              SOC
-            </text>
-          </g>
-        )}
-
-        {/* Alignment sash — risk-colored, shows alignment marker */}
+        {/* Alignment sash — risk-colored for IND/GOV/CORP etc, purple for SOC */}
         {effectiveAlignment && (
           <g aria-label={`${effectiveAlignment.marker} ${effectiveAlignment.label}${riskScore == null ? "" : ` ${Math.round(riskScore)} out of 100 material-interest risk`}`}
             clipPath={`url(#${uid}-shield-clip)`}>
-            <path d={SASH} fill={`url(#${uid}-risk)`} opacity="0.94"/>
+            <path d={SASH} fill={showSocialSash ? `url(#${uid}-soc)` : `url(#${uid}-risk)`} opacity="0.94"/>
             <path d="M2,22 L62,42" fill="none" stroke="rgba(255,255,255,0.68)" strokeWidth="0.9"/>
             <path d="M2,47 L62,67" fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth="1.1"/>
             <path d="M3,24 L61,43" fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.6"/>

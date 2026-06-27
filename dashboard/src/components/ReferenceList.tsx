@@ -467,9 +467,23 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                       veracity_score: ref.publisher_veracity ?? undefined,
                       rating_label: ref.rating_label ?? undefined,
                       rating_type: ref.rating_type ?? undefined,
+                      source_type: ref.source_type ?? undefined,
                       admiralty_code: ref.admiralty_code ?? undefined,
                     })}
                     size="xs"
+                    alignment={ref.alignment_marker ? {
+                      marker: ref.alignment_marker,
+                      label: ref.alignment_marker === "IND"
+                        ? "Industry aligned"
+                        : ref.alignment_marker === "GOV"
+                          ? "Government source"
+                          : "Institutionally aligned",
+                      riskScore: ref.alignment_risk_score,
+                    } : /facebook\.com|twitter\.com|x\.com|instagram\.com|tiktok\.com/i.test(ref.url ?? "") ? {
+                      marker: "SOC",
+                      label: "Social media source — admiralty reflects entity, not platform",
+                      riskScore: null,
+                    } : null}
                     cacheStatus={ref.admiralty_source === "publisher_cached" ? "cached" : "fresh"}
                     active={!!ref.publisher_id && ref.publisher_id === glowPublisherId}
                     onClick={(e) => { e?.stopPropagation(); setSourceDetailRef(ref); }}
@@ -623,7 +637,6 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
               const refId = sourceDetailRef.reference_content_id;
               const pid = sourceDetailRef.publisher_id ?? null;
               setSourceDetailRef(null);
-              onUpdateReferences?.();
               focusReferenceCard(refId);
               if (pid) {
                 setGlowPublisherId(pid);
