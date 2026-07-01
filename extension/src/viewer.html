@@ -25,10 +25,25 @@
         inset: auto 16px 16px auto;
         z-index: 2147483647;
       }
+      #scrape-status {
+        display: none;
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 2147483647;
+        padding: 10px 14px;
+        border: 1px solid rgba(14, 165, 233, 0.75);
+        border-radius: 999px;
+        background: rgba(8, 20, 38, 0.92);
+        color: #bae6fd;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+        font: 600 13px/1.2 system-ui, sans-serif;
+      }
     </style>
   </head>
   <body>
     <div id="popup-root"></div>
+    <div id="scrape-status" role="status" aria-live="polite"></div>
     <div id="wrap"><embed id="pdf" type="application/pdf" /></div>
 
     <!-- external scripts only (no inline) -->

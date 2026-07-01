@@ -1,0 +1,624 @@
+// src/components/PubCard.tsx
+import {
+  Box,
+  Image,
+  Text,
+  Center,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Button,
+  Input,
+  VStack,
+  HStack,
+  useDisclosure,
+  useToast,
+  Select,
+  Portal,
+} from "@chakra-ui/react";
+import { Publisher, PublisherRating } from "../../../shared/entities/types";
+import {
+  uploadImage,
+  fetchPublisherRatings,
+  fetchPublisher,
+  updatePublisherBio,
+  addPublishersToContent,
+  removePublisherFromContent,
+  fetchPublishers,
+} from "../services/useDashboardAPI";
+import PubRatingModal from "./modals/PubRatingModal";
+import PubBioModal from "./modals/PubBioModal";
+import ViewRatingsModal from "./modals/ViewRatingsModal";
+import CredibilityInfoModal from "./modals/CredibilityInfoModal";
+import ResponsiveOverlay from "./overlays/ResponsiveOverlay";
+import { useEffect, useRef, useState } from "react";
+import SourceCrest from "./SourceCrest";
+import { normalizeSourceProfile } from "../utils/normalizeSourceProfile";
+import SourceDetailModal from "./modals/SourceDetailModal";
+
+interface PubCardProps {
+  publishers: Publisher[];
+  compact?: boolean;
+  contentId?: number;
+}
+
+const publisherTitleSx = {
+  position: "relative",
+  overflow: "hidden",
+  bg: "linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.82))",
+  border: "1px solid rgba(234, 179, 8, 0.55)",
+  color: "rgba(254, 240, 138, 0.96)",
+  boxShadow:
+    "0 8px 24px rgba(0,0,0,0.45), 0 0 24px rgba(234, 179, 8, 0.2), inset 0 1px 0 rgba(255,255,255,0.12)",
+  _before: {
+    content: '""',
+    position: "absolute",
+    left: 0,
+    top: 0,
+    width: "20px",
+    height: "100%",
+    background: "linear-gradient(90deg, rgba(234, 179, 8, 0.42) 0%, rgba(234, 179, 8, 0) 100%)",
+    borderLeftRadius: "md",
+    pointerEvents: "none",
+  },
+} as const;
+
+const PubCard: React.FC<PubCardProps> = ({ publishers, compact = false, contentId }) => {
+  const [activePublisher, setActivePublisher] = useState<Publisher | null>(
+    publishers[0],
+  );
+  const [ratings, setRatings] = useState<PublisherRating[]>([]);
+  const [publisherList, setPublisherList] = useState<Publisher[]>(publishers);
+  const [allRatings, setAllRatings] = useState<{
+    [publisherId: number]: PublisherRating[];
+  }>({});
+  const toast = useToast();
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const {
+    isOpen: isRatingOpen,
+    onOpen: onRatingOpen,
+    onClose: onRatingClose,
+  } = useDisclosure();
+  const {
+    isOpen: isViewRatingsOpen,
+    onOpen: onViewRatingsOpen,
+    onClose: onViewRatingsClose,
+  } = useDisclosure();
+  const {
+    isOpen: isBioOpen,
+    onOpen: onBioOpen,
+    onClose: onBioClose,
+  } = useDisclosure();
+  const {
+    isOpen: isCredibilityOpen,
+    onOpen: onCredibilityOpen,
+    onClose: onCredibilityClose,
+  } = useDisclosure();
+  const {
+    isOpen: isAddPublisherOpen,
+    onOpen: onAddPublisherOpen,
+    onClose: onAddPublisherClose,
+  } = useDisclosure();
+  const [newPublisherName, setNewPublisherName] = useState("");
+  const [sourceDetailOpen, setSourceDetailOpen] = useState(false);
+
+  useEffect(() => {
+    if (publishers.length > 0) {
+      setPublisherList(publishers);
+      setActivePublisher(publishers[0]);
+    }
+  }, [publishers]);
+
+  useEffect(() => {
+    const loadAllRatings = async () => {
+      const map: { [publisherId: number]: PublisherRating[] } = {};
+      for (const pub of publishers) {
+        const pubRatings = await fetchPublisherRatings(pub.publisher_id);
+        map[pub.publisher_id] = pubRatings;
+      }
+      setAllRatings(map);
+    };
+    if (publishers.length) loadAllRatings();
+  }, [publishers]);
+
+  useEffect(() => {
+    const loadRatings = async () => {
+      if (activePublisher) {
+        const ratings = await fetchPublisherRatings(
+          activePublisher.publisher_id,
+        );
+        setRatings(ratings);
+      }
+    };
+    loadRatings();
+  }, [activePublisher]);
+
+  const handleRatingsUpdate = (
+    publisherId: number,
+    updated: PublisherRating[],
+  ) => {
+    setAllRatings((prev) => ({
+      ...prev,
+      [publisherId]: updated,
+    }));
+  };
+
+  const handleUpload = async (file: File, publisherId: number) => {
+    const result = await uploadImage(publisherId, file, "publishers");
+    if (result) {
+      toast({
+        title: "Image Uploaded",
+        description: "Publisher icon updated!",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      const updatedPublisher = await fetchPublisher(publisherId);
+      if (updatedPublisher) {
+        setPublisherList((prev) =>
+          prev.map((a) =>
+            a.publisher_id === publisherId ? updatedPublisher : a,
+          ),
+        );
+        setActivePublisher(updatedPublisher);
+      }
+    }
+  };
+
+  const avgScore = (ratings: PublisherRating[], key: keyof PublisherRating) => {
+    const values = ratings.map((r) => r[key] as number).filter(v => v != null && !isNaN(v));
+    if (!values.length) return "-";
+    return (values.reduce((acc, val) => acc + val, 0) / values.length).toFixed(1);
+  };
+
+  const getBiasEmoji = (score: number) =>
+    score <= -5 || score >= 5 ? "🔴" : "🟢";
+  const getVeracityEmoji = (score: number) =>
+    score > 5 ? "🟢" : score < 0 ? "🔴" : "⚪";
+
+  const currentRatings = activePublisher
+    ? allRatings[activePublisher.publisher_id] || []
+    : [];
+
+  // Enrichment rows come back with user_id === null
+  const enrichmentRatings = currentRatings.filter(r => r.user_id == null);
+  const userRatings = currentRatings.filter(r => r.user_id != null);
+
+  const allSidesRating = enrichmentRatings.find(r => r.source === "AllSides");
+  const adFontesRating = enrichmentRatings.find(r => r.source === "Ad Fontes");
+
+  // Compact single-line bias display: prefer AllSides label, fall back to avg user score
+  const biasDisplay = allSidesRating?.rating_label
+    ?? (userRatings.length ? avgScore(userRatings, "bias_score") : "-");
+
+  const avgBias = userRatings.length ? avgScore(userRatings, "bias_score") : "-";
+  const avgVeracity = userRatings.length ? avgScore(userRatings, "veracity_score") : "-";
+  const handleSaveBio = async (newBio: string) => {
+    if (!activePublisher) return;
+
+    await updatePublisherBio(activePublisher.publisher_id, newBio);
+
+    // 🔄 Update publisherList
+    setPublisherList((prev) =>
+      prev.map((p) =>
+        p.publisher_id === activePublisher.publisher_id
+          ? { ...p, description: newBio }
+          : p,
+      ),
+    );
+
+    // 🔄 Update activePublisher
+    setActivePublisher((prev) =>
+      prev && prev.publisher_id === activePublisher.publisher_id
+        ? { ...prev, description: newBio }
+        : prev,
+    );
+
+    toast({
+      title: "Description Updated",
+      description: "Publisher bio updated successfully.",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    });
+  };
+
+  const handleAddPublisher = async () => {
+    if (!contentId || !newPublisherName.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a publisher name",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    const success = await addPublishersToContent(contentId, [
+      { name: newPublisherName.trim() },
+    ]);
+
+    if (success) {
+      toast({
+        title: "Publisher Added",
+        description: "Publisher has been added to content",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      // Refresh publisher list
+      const updatedPublishers = await fetchPublishers(contentId);
+      setPublisherList(updatedPublishers);
+      if (updatedPublishers.length > 0) {
+        setActivePublisher(updatedPublishers[updatedPublishers.length - 1]);
+      }
+
+      setNewPublisherName("");
+      onAddPublisherClose();
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to add publisher",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleRemovePublisher = async () => {
+    if (!contentId || !activePublisher) return;
+
+    const success = await removePublisherFromContent(
+      contentId,
+      activePublisher.publisher_id,
+    );
+
+    if (success) {
+      toast({
+        title: "Publisher Removed",
+        description: "Publisher has been removed from content",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      // Refresh publisher list
+      const updatedPublishers = await fetchPublishers(contentId);
+      setPublisherList(updatedPublishers);
+      if (updatedPublishers.length > 0) {
+        setActivePublisher(updatedPublishers[0]);
+      } else {
+        setActivePublisher(null);
+      }
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to remove publisher",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
+  // If no publisher, show placeholder
+  const displayName = activePublisher?.publisher_name || "Unknown Publisher";
+  const hasPublisher = !!activePublisher;
+
+  return (
+    <>
+    <Center>
+      <Box
+        ref={cardRef}
+        className="mr-card mr-card-yellow"
+        p={compact ? 1 : 3}
+        w="100%"
+        height={compact ? "130px" : "405px"}
+        display="flex"
+        flexDirection="column"
+        justifyContent="space-between"
+      >
+        <div className="mr-glow-bar mr-glow-bar-yellow" />
+        <div className="mr-scanlines" />
+        <Box flex="1" minH={0} overflow="hidden">
+          <Center>
+            <Text
+              className="mr-badge mr-badge-yellow"
+              fontSize={compact ? "7px" : "sm"}
+              mb={compact ? 0 : 1}
+              lineHeight={compact ? "1" : "normal"}
+            >
+              Publisher Details
+            </Text>
+          </Center>
+
+          {publisherList.length > 1 ? (
+            <Select
+              size={compact ? "xs" : "sm"}
+              value={activePublisher?.publisher_id}
+              onChange={(e) => {
+                const selected = publisherList.find(
+                  (p) => p.publisher_id === parseInt(e.target.value),
+                );
+                if (selected) setActivePublisher(selected);
+              }}
+              mb={compact ? 1 : 3}
+              fontSize={compact ? "8px" : "md"}
+              h={compact ? "18px" : "auto"}
+              textAlign="center"
+              bg="whiteAlpha.800"
+              color="gray.800"
+              borderRadius="md"
+            >
+              {publisherList.map((pub) => (
+                <option key={pub.publisher_id} value={pub.publisher_id}>
+                  {pub.publisher_name}
+                </option>
+              ))}
+            </Select>
+          ) : (
+            <HStack justify="center" spacing={1} mt={compact ? 0 : 2} mb={compact ? 1 : 2} flexWrap="wrap">
+              <Text
+                fontWeight="semibold"
+                fontSize={compact ? "9px" : "lg"}
+                textAlign="center"
+                borderRadius="md"
+                px={compact ? 1 : 2}
+                py={compact ? 0 : 1}
+                minH={compact ? "18px" : "52px"}
+                h={compact ? "18px" : "52px"}
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                noOfLines={1}
+                overflow="hidden"
+                textOverflow="ellipsis"
+                w="100%"
+                sx={publisherTitleSx}
+              >
+                {displayName}
+              </Text>
+            </HStack>
+          )}
+
+          <VStack spacing={0}>
+            <Box
+              as="button"
+              onClick={() => hasPublisher && fileInputRef.current?.click()}
+              cursor={hasPublisher ? "pointer" : "not-allowed"}
+              borderRadius="full"
+              overflow="hidden"
+              border="2px solid #ccc"
+              boxSize={compact ? "40px" : "100px"}
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              mt={compact ? 0 : "25px"}
+              marginBottom={compact ? "2px" : "8px"}
+              opacity={hasPublisher ? 1 : 0.5}
+            >
+              {activePublisher?.publisher_icon ? (
+                <Image
+                  src={`${import.meta.env.VITE_API_BASE_URL}/${
+                    activePublisher.publisher_icon
+                  }`}
+                  alt={activePublisher.publisher_name}
+                  boxSize={compact ? "40px" : "100px"}
+                  objectFit="cover"
+                />
+              ) : (
+                <Text fontSize={compact ? "7px" : "xs"} color="gray.300">
+                  {hasPublisher ? "Upload" : "No Icon"}
+                </Text>
+              )}
+            </Box>
+            <HStack justify="center" spacing={2} minH={compact ? "18px" : "30px"} mb={compact ? 0 : 1}>
+              <SourceCrest
+                {...normalizeSourceProfile({
+                  publisher_name: activePublisher?.publisher_name,
+                  veracity_score: typeof avgVeracity === "number" ? avgVeracity : undefined,
+                  rating_label: enrichmentRatings[0]?.rating_label,
+                  rating_type: enrichmentRatings[0]?.rating_type,
+                  admiralty_code: activePublisher?.admiralty_code ?? undefined,
+                })}
+                size={compact ? "xs" : "sm"}
+                onClick={(e) => { e?.stopPropagation(); setSourceDetailOpen(true); }}
+              />
+              <Text fontSize={compact ? "7px" : "xs"} color="var(--mr-text-secondary)" noOfLines={1}>
+                {biasDisplay !== "-" ? `Bias ${biasDisplay}` : "Source profile"}
+              </Text>
+            </HStack>
+            {compact && (
+              <Text fontSize="6px" color="var(--mr-text-secondary)" lineHeight="1" mb={1}>
+                {allSidesRating?.rating_label
+                  ? `AllSides: ${allSidesRating.rating_label}`
+                  : `Bias: ${avgBias}`}
+              </Text>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              onChange={(e) => {
+                if (e.target.files?.[0] && activePublisher) {
+                  handleUpload(e.target.files[0], activePublisher.publisher_id);
+                }
+              }}
+              style={{ display: "none" }}
+            />
+          </VStack>
+
+          {!compact && !hasPublisher && (
+            <Text
+              className="mr-text-secondary"
+              fontSize="sm"
+              mt={2}
+              px={2}
+              textAlign="center"
+              color="gray.500"
+            >
+              No publisher information available
+            </Text>
+          )}
+        </Box>
+
+        <HStack spacing={compact ? 1 : 2} w="100%">
+          <Box flex="1" minW={0}>
+            <Button
+              onClick={onViewRatingsOpen}
+              className="mr-button"
+              w="100%"
+              isDisabled={!hasPublisher}
+              size={compact ? "xs" : "md"}
+              fontSize={compact ? "8px" : "md"}
+              h={compact ? "20px" : "auto"}
+              px={compact ? 1 : undefined}
+            >
+              Ratings
+            </Button>
+          </Box>
+          <Box flex="1" minW={0}>
+            <Menu isLazy>
+              <MenuButton
+                as={Button}
+                className="mr-button"
+                w="100%"
+                pl={compact ? 0 : "20px"}
+                isDisabled={!hasPublisher}
+                size={compact ? "xs" : "md"}
+                fontSize={compact ? "8px" : "md"}
+                h={compact ? "20px" : "auto"}
+                px={compact ? 1 : undefined}
+              >
+                <Text ml={compact ? 0 : -2}>Actions</Text>
+              </MenuButton>
+              <Portal>
+                <MenuList zIndex={9999} fontSize={compact ? "xs" : "md"}>
+                  <MenuItem onClick={() => onRatingOpen()}>
+                    📊 Manage Ratings
+                  </MenuItem>
+                  <MenuItem onClick={() => onBioOpen()}>
+                    ✏️ Edit Description
+                  </MenuItem>
+                  <MenuItem onClick={() => onCredibilityOpen()}>
+                    🔍 Check Credibility
+                  </MenuItem>
+                  {contentId && (
+                    <>
+                      <MenuItem onClick={onAddPublisherOpen}>
+                        ➕ Add Publisher
+                      </MenuItem>
+                      {activePublisher && publisherList.length > 1 && (
+                        <MenuItem onClick={handleRemovePublisher} color="red.400">
+                          🗑️ Remove Publisher
+                        </MenuItem>
+                      )}
+                    </>
+                  )}
+                </MenuList>
+              </Portal>
+            </Menu>
+          </Box>
+        </HStack>
+
+        <ViewRatingsModal
+          isOpen={isViewRatingsOpen}
+          onClose={onViewRatingsClose}
+          ratings={currentRatings}
+          publisherName={activePublisher?.publisher_name}
+        />
+
+        {activePublisher && isRatingOpen && (
+          <PubRatingModal
+            isOpen={isRatingOpen}
+            onClose={onRatingClose}
+            publisherId={activePublisher.publisher_id}
+            onRatingsUpdate={handleRatingsUpdate}
+          />
+        )}
+
+        {activePublisher && isBioOpen && (
+          <PubBioModal
+            isOpen={isBioOpen}
+            onClose={onBioClose}
+            publisherId={activePublisher.publisher_id}
+            currentBio={activePublisher.description}
+            onSave={handleSaveBio}
+          />
+        )}
+
+        {activePublisher && isCredibilityOpen && (
+          <CredibilityInfoModal
+            isOpen={isCredibilityOpen}
+            onClose={onCredibilityClose}
+            entityType="publisher"
+            entityId={activePublisher.publisher_id}
+            entityName={activePublisher.publisher_name}
+          />
+        )}
+
+        {contentId && (
+          <ResponsiveOverlay
+            isOpen={isAddPublisherOpen}
+            onClose={onAddPublisherClose}
+            title="Add Publisher"
+            footer={
+              <>
+                <Button className="mr-button" mr={3} onClick={handleAddPublisher}>
+                  Add
+                </Button>
+                <Button onClick={onAddPublisherClose}>Cancel</Button>
+              </>
+            }
+            size="md"
+          >
+            <VStack spacing={4} align="stretch">
+              <Text className="mr-text-primary">
+                Enter the publisher's name (e.g., "The New York Times" or "BBC News")
+              </Text>
+              <Input
+                className="mr-input"
+                placeholder="Publisher name"
+                value={newPublisherName}
+                onChange={(e) => setNewPublisherName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    handleAddPublisher();
+                  }
+                }}
+              />
+            </VStack>
+          </ResponsiveOverlay>
+        )}
+      </Box>
+    </Center>
+
+    {activePublisher && (() => {
+      const profile = normalizeSourceProfile({
+        publisher_name: activePublisher.publisher_name,
+        veracity_score: typeof avgVeracity === "number" ? avgVeracity : undefined,
+        rating_label: enrichmentRatings[0]?.rating_label,
+        rating_type: enrichmentRatings[0]?.rating_type,
+      });
+      return (
+        <SourceDetailModal
+          isOpen={sourceDetailOpen}
+          onClose={() => setSourceDetailOpen(false)}
+          publisherId={activePublisher.publisher_id}
+          publisherName={activePublisher.publisher_name}
+          sourceType={profile.sourceType}
+          reliability={profile.reliability}
+        />
+      );
+    })()}
+    </>
+  );
+};
+
+export default PubCard;

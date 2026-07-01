@@ -95,7 +95,7 @@ import createTTLiveSystemRouter from "./src/routes/ttlive/index.js";
 import { initSocketServer } from "./src/realtime/socketServer.js";
 
 // Logger utility
-import { clearLogFile } from "./src/utils/logger.js";
+import { clearLogFile, logger } from "./src/utils/logger.js";
 
 // Redis caching (optional)
 import { initRedis, getRedisClient } from "./src/db/redis.js";
@@ -220,8 +220,9 @@ app.use(
 app.use((req, res, next) => {
   // Skip logging for image API requests to reduce console spam
   if (!req.path.startsWith("/api/image/")) {
-    const logMsg = `[${new Date().toISOString()}] ${req.method} ${req.path} | Origin: ${req.headers.origin || "none"} | IP: ${req.headers["x-forwarded-for"] || req.socket.remoteAddress}\n`;
-    process.stderr.write(logMsg);
+    const logMsg = `${req.method} ${req.path} | Origin: ${req.headers.origin || "none"} | IP: ${req.headers["x-forwarded-for"] || req.socket.remoteAddress}`;
+    process.stderr.write(`[${new Date().toISOString()}] ${logMsg}\n`);
+    logger.log(logMsg);
   }
   next();
 });
@@ -363,10 +364,7 @@ app.get("/api/health", (req, res) => {
 // ─────────────────────────────────────────────
 // Initialize Logger (clear log file on startup)
 // ─────────────────────────────────────────────
-const DISABLE_STARTUP_LOG_ROTATION = true; // temporary boot diagnostic
-if (!DISABLE_STARTUP_LOG_ROTATION) {
-  clearLogFile();
-}
+clearLogFile();
 
 // ─────────────────────────────────────────────
 // Database Health Check (fail fast if DB is down)
@@ -411,7 +409,7 @@ httpServer.listen(httpPort, async () => {
     console.warn("⚠️  Could not create admiralty_evaluations:", err.message);
   }
 
-  // Add content provenance columns (platform, distribution_channel, linked_url, linked_publisher).
+  // Add content provenance columns (platform, channel, linked source, structured social metadata).
   // Each ALTER TABLE is run individually so a duplicate-column error on an already-migrated
   // DB is silently ignored without blocking the rest.
   try {

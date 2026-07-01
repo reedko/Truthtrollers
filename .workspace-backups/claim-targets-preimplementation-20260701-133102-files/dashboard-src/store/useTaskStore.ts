@@ -1,0 +1,445 @@
+import { create } from "zustand";
+import { devtools, persist } from "zustand/middleware";
+import {
+  Task,
+  User,
+  Author,
+  Publisher,
+  LitReference,
+  TaskAuthor,
+  TaskReference,
+  AuthReference,
+  Claim,
+} from "../../../shared/entities/types";
+import {
+  fetchTasks as fetchTasksAPI,
+  fetchUsers as apiFetchUsers,
+  fetchAssignedUsers as apiFetchAssignedUsers, // <-- alias to avoid confusion
+  fetchTasksForUser as fetchTasksForUserAPI,
+  fetchReferencesForTask,
+  fetchClaimsForTask,
+  fetchClaimReferences,
+  fetchAuthors,
+  fetchPublishers,
+  addReferenceToTask,
+  addReferenceToClaim,
+  deleteReferenceFromTask,
+  fetchUnifiedTasksByPivot,
+  fetchClaimScoresForTask,
+} from "../services/useDashboardAPI";
+import { ensureArray } from "../utils/normalize";
+const normalizeUser = (u: any) =>
+  ({
+    user_id: Number(u?.user_id ?? u?.userId ?? u?.id),
+    username: String(u?.username ?? u?.name ?? u?.email ?? ""),
+  } as User);
+export type ViewScope = 'all' | 'user' | 'admin';
+export type GraphLinkFilter = "all" | "user" | "ai";
+export type GraphEntityScope = "task" | "all";
+
+export interface BackgroundJob {
+  id: string;
+  message: string;
+  startedAt: number;
+}
+
+export interface TaskStoreState {
+  verimeterScores: { [contentId: number]: number };
+  content: Task[];
+  assignedTasks: Task[];
+  filteredTasks: Task[];
+  selectedTopic: string | undefined;
+  searchQuery: string;
+  users: User[];
+  references: { [taskId: number]: LitReference[] };
+  claimReferences: {
+    [claimId: number]: { referenceId: number; supportLevel: number }[];
+  };
+  authors: { [taskId: number]: Author[] };
+  publishers: { [taskId: number]: Publisher[] };
+  assignedUsers: { [taskId: number]: User[] };
+  content_authors: TaskAuthor[];
+  content_relations: TaskReference[];
+  auth_references: AuthReference[];
+  selectedTaskId: number | null;
+  selectedTask: Task | null;
+  selectedRedirect: string;
+  lastWorkPage: string; // Last workspace/gamespace/molecule page visited
+  currentPage: number;
+  claimsByTask: { [taskId: number]: Claim[] };
+  viewingUserId: number | null;
+  viewScope: ViewScope; // 'all' | 'user' | 'admin'
+  graphLinkFilter: GraphLinkFilter;
+  graphEntityScope: GraphEntityScope;
+  selectedPivotTasks: Task[];
+  hasHydrated: boolean;
+  claimScores: {};
+  backgroundJobs: BackgroundJob[];
+  toggleAssignedUserLocal: (
+    taskId: number,
+    user: Pick<User, "user_id" | "username">
+  ) => void;
+  setClaimScores: (
+    taskId: number,
+    scores: { [claimId: number]: number }
+  ) => void;
+
+  fetchClaimScores: (taskId: number) => void;
+
+  setVerimeterScore: (contentId: number, score: number) => void;
+  resetTasks: () => void;
+  setViewingUserId: (id: number | null) => void;
+  setViewScope: (scope: ViewScope) => void;
+  setGraphLinkFilter: (filter: GraphLinkFilter) => void;
+  setGraphEntityScope: (scope: GraphEntityScope) => void;
+  setSelectedPivotTasks: (tasks: Task[]) => void;
+  setSelectedTask: (input: Task | number | null) => void;
+  setRedirect: (path: string) => void;
+  fetchTasks: () => Promise<void>;
+  fetchTasksForUser: (userId: number, showInactive?: boolean) => Promise<void>;
+  fetchUsers: () => Promise<void>;
+  fetchAssignedUsers: (taskId: number) => Promise<void>;
+  fetchAuthors: (taskId: number) => Promise<void>;
+  fetchPublishers: (taskId: number) => Promise<void>;
+  fetchReferences: (taskId: number) => Promise<void>;
+  fetchClaims: (taskId: number) => Promise<void>;
+  fetchClaimReferences: (claimId: number) => Promise<void>;
+  fetchTasksByPivot: (
+    type: "task" | "author" | "publisher",
+    id: number
+  ) => Promise<Task[]>;
+  addReferenceToTask: (taskId: number, referenceId: number) => Promise<void>;
+  deleteReferenceFromTask: (
+    taskId: number,
+    referenceId: number
+  ) => Promise<void>;
+  addReferenceToClaim: (
+    claimId: number,
+    referenceId: number,
+    userId: number,
+    supportLevel: number
+  ) => Promise<void>;
+  setSelectedTopic: (topicName: string | undefined) => void;
+  setSearchQuery: (query: string) => void;
+  loadMoreTasks: () => Promise<void>;
+  startBackgroundJob: (message: string) => string;
+  endBackgroundJob: (id: string) => void;
+}
+
+export const useTaskStore = create<TaskStoreState>()(
+  persist(
+    devtools((set, get) => ({
+      content: [],
+      assignedTasks: [],
+      filteredTasks: [],
+      selectedTopic: undefined,
+      searchQuery: "",
+      users: [],
+      references: {},
+      claimReferences: {},
+      authors: {},
+      publishers: {},
+      assignedUsers: {},
+      content_authors: [],
+      content_relations: [],
+      auth_references: [],
+      selectedTaskId: null,
+      selectedTask: null,
+      selectedPivotTasks: [],
+      selectedRedirect: "/dashboard",
+      lastWorkPage: "/workspace", // Default to workspace
+      currentPage: 0,
+      claimsByTask: {},
+      viewingUserId: undefined,
+      viewScope: 'all', // Default to all (equal) view
+      graphLinkFilter: "all",
+      graphEntityScope: "task",
+      hasHydrated: false,
+      verimeterScores: {},
+      claimScores: {},
+      backgroundJobs: [],
+
+      setClaimScores: (taskId: number, scores: { [claimId: number]: number }) =>
+        set((s) => ({
+          claimScores: {
+            ...s.claimScores,
+            [taskId]: scores,
+          },
+        })),
+
+      startBackgroundJob: (message: string) => {
+        const id = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        set((s) => ({
+          backgroundJobs: [...s.backgroundJobs, { id, message, startedAt: Date.now() }],
+        }));
+        return id;
+      },
+
+      endBackgroundJob: (id: string) => {
+        set((s) => ({
+          backgroundJobs: s.backgroundJobs.filter((job) => job.id !== id),
+        }));
+      },
+
+      fetchClaimScores: async (taskId: number) => {
+        const { viewingUserId } = get();
+        const scores = await fetchClaimScoresForTask(taskId, viewingUserId);
+        get().setClaimScores(taskId, scores);
+      },
+      setVerimeterScore: (contentId, score) =>
+        set((s) => ({
+          verimeterScores: {
+            ...s.verimeterScores,
+            [contentId]: score,
+          },
+        })),
+      resetTasks: () =>
+        set(() => ({
+          selectedTask: null,
+          claimsByTask: {},
+          tasks: [],
+        })),
+
+      setViewingUserId: (id: number | null) => set({ viewingUserId: id }),
+      setViewScope: (scope: ViewScope) => set({ viewScope: scope }),
+      setGraphLinkFilter: (filter: GraphLinkFilter) => set({ graphLinkFilter: filter }),
+      setGraphEntityScope: (scope: GraphEntityScope) => set({ graphEntityScope: scope }),
+      setRedirect: (path) => {
+        // Never redirect to TextPad - it's a creation tool, not a work page
+        if (path === "/textpad") {
+          return;
+        }
+
+        // Track work pages (workspace, gamespace, molecule)
+        const workPages = ["/workspace", "/gamespace", "/molecule"];
+        if (workPages.includes(path)) {
+          set({ selectedRedirect: path, lastWorkPage: path });
+        } else {
+          set({ selectedRedirect: path });
+        }
+      },
+
+      setSelectedTask: (input) => {
+        if (input === null) {
+          set({ selectedTask: null, selectedTaskId: null });
+        } else if (typeof input === "number") {
+          const found = get().content.find((t) => t.content_id === input);
+          if (found) {
+            set({ selectedTaskId: input, selectedTask: found });
+          } else {
+            set({ selectedTaskId: input, selectedTask: null });
+          }
+        } else {
+          set({ selectedTask: input, selectedTaskId: input.content_id });
+        }
+      },
+      setSelectedPivotTasks: (tasks) => {
+        set({ selectedPivotTasks: tasks });
+      },
+
+      fetchTasksByPivot: async (type, id) => {
+        const results = await fetchUnifiedTasksByPivot(type, id);
+        const authorsMap: Record<number, Author[]> = {};
+        const publishersMap: Record<number, Publisher[]> = {};
+
+        results.forEach((task) => {
+          authorsMap[task.content_id] = Array.isArray(task.authors)
+            ? task.authors
+            : [];
+          publishersMap[task.content_id] = Array.isArray(task.publishers)
+            ? task.publishers
+            : [];
+        });
+
+        set({
+          selectedPivotTasks: results,
+          authors: { ...get().authors, ...authorsMap },
+          publishers: { ...get().publishers, ...publishersMap },
+        });
+
+        return results;
+      },
+
+      fetchTasks: async () => {
+        const { currentPage } = get();
+        const content = await fetchTasksAPI(currentPage + 1, 100);
+        const authorsMap: Record<number, Author[]> = {};
+        const publishersMap: Record<number, Publisher[]> = {};
+
+        content.forEach((task) => {
+          authorsMap[task.content_id] = Array.isArray(task.authors)
+            ? task.authors
+            : [];
+          publishersMap[task.content_id] = Array.isArray(task.publishers)
+            ? task.publishers
+            : [];
+        });
+
+        const combined = [...get().content, ...content];
+        const deduped = Array.from(
+          new Map(combined.map((t) => [t.content_id, t])).values()
+        );
+
+        set({
+          content: deduped,
+          filteredTasks: deduped,
+          authors: { ...get().authors, ...authorsMap },
+          publishers: { ...get().publishers, ...publishersMap },
+          currentPage: currentPage + 1,
+        });
+      },
+
+      fetchTasksForUser: async (userId: number, showInactive = false) => {
+        const tasks = await fetchTasksForUserAPI(userId, showInactive);
+        const authorsMap: Record<number, Author[]> = {};
+        const publishersMap: Record<number, Publisher[]> = {};
+        tasks.forEach((task) => {
+          authorsMap[task.content_id] = ensureArray<Author>(task.authors);
+          publishersMap[task.content_id] = ensureArray<Publisher>(task.publishers);
+        });
+        set({
+          assignedTasks: tasks,
+          authors: { ...get().authors, ...authorsMap },
+          publishers: { ...get().publishers, ...publishersMap },
+        });
+      },
+
+      fetchUsers: async () => {
+        const users = await apiFetchUsers();
+        // normalize everything once on ingest
+        set({ users: users.map(normalizeUser) });
+      },
+
+      fetchAssignedUsers: async (taskId) => {
+        const assigned = await apiFetchAssignedUsers(taskId);
+        const normalized = assigned.map(normalizeUser);
+        set((s) => ({
+          assignedUsers: { ...s.assignedUsers, [taskId]: normalized }, // immutable replace
+        }));
+      },
+
+      toggleAssignedUserLocal: (taskId, user) =>
+        set((state) => {
+          const list = state.assignedUsers[taskId] ?? [];
+          const uid = Number(user.user_id);
+          const exists = list.some((u) => Number(u.user_id) === uid);
+          const next = exists
+            ? list.filter((u) => Number(u.user_id) !== uid)
+            : [...list, { user_id: uid, username: user.username } as User];
+          return {
+            assignedUsers: { ...state.assignedUsers, [taskId]: next }, // immutable replace
+          };
+        }),
+
+      fetchAuthors: async (taskId) => {
+        const authors = await fetchAuthors(taskId);
+        set((s) => ({
+          authors: { ...s.authors, [taskId]: authors },
+        }));
+      },
+
+      fetchPublishers: async (taskId) => {
+        const publishers = await fetchPublishers(taskId);
+        set((s) => ({
+          publishers: { ...s.publishers, [taskId]: publishers },
+        }));
+      },
+
+      fetchReferences: async (taskId) => {
+        const refs = await fetchReferencesForTask(taskId);
+        set((s) => ({
+          references: { ...s.references, [taskId]: refs },
+        }));
+      },
+
+      fetchClaims: async (taskId) => {
+        const { viewingUserId } = get();
+        const claims = await fetchClaimsForTask(taskId, viewingUserId);
+        set((s) => ({
+          claimsByTask: {
+            ...s.claimsByTask,
+            [taskId]: claims,
+          },
+        }));
+      },
+
+      fetchClaimReferences: async (claimId) => {
+        const refs = await fetchClaimReferences(claimId);
+        set((s) => ({
+          claimReferences: { ...s.claimReferences, [claimId]: refs },
+        }));
+      },
+
+      addReferenceToTask: async (taskId, refId) => {
+        await addReferenceToTask(taskId, refId);
+        await get().fetchReferences(taskId);
+      },
+
+      deleteReferenceFromTask: async (taskId, refId) => {
+        await deleteReferenceFromTask(taskId, refId);
+        await get().fetchReferences(taskId);
+      },
+
+      addReferenceToClaim: async (claimId, refId, userId, level) => {
+        await addReferenceToClaim(claimId, refId, userId, level);
+        set((s) => ({
+          claimReferences: {
+            ...s.claimReferences,
+            [claimId]: [
+              ...(s.claimReferences[claimId] || []),
+              { referenceId: refId, supportLevel: level },
+            ],
+          },
+        }));
+      },
+
+      setSelectedTopic: (topic) => {
+        const filtered = get().content.filter((t) =>
+          topic ? t.topic === topic : true
+        );
+        set({ selectedTopic: topic, filteredTasks: filtered });
+      },
+
+      setSearchQuery: (query) => {
+        const { content, selectedTopic } = get();
+        const filtered = content.filter((t) => {
+          return (
+            (!selectedTopic || t.topic === selectedTopic) &&
+            (!query ||
+              t.content_name.toLowerCase().includes(query.toLowerCase()))
+          );
+        });
+        set({ searchQuery: query, filteredTasks: filtered });
+      },
+
+      loadMoreTasks: async () => {
+        const { currentPage } = get();
+        const newTasks = await fetchTasksAPI(currentPage + 1, 25);
+        const combined = [...get().content, ...newTasks];
+        const deduped = Array.from(
+          new Map(combined.map((t) => [t.content_id, t])).values()
+        );
+        set({ content: deduped, currentPage: currentPage + 1 });
+      },
+    }), { enabled: import.meta.env.DEV, name: "task-store" }),
+    {
+      name: "task-store",
+      partialize: (state) => {
+        const { hasHydrated, ...rest } = state;
+        return {
+          selectedTaskId: rest.selectedTaskId,
+          selectedTask: rest.selectedTask,
+          selectedRedirect: rest.selectedRedirect,
+          lastWorkPage: rest.lastWorkPage,
+          viewingUserId: rest.viewingUserId,
+          viewScope: rest.viewScope,
+          graphLinkFilter: rest.graphLinkFilter,
+          graphEntityScope: rest.graphEntityScope,
+        };
+      },
+      onRehydrateStorage: () => () => {
+        useTaskStore.setState({ hasHydrated: true });
+      },
+    }
+  )
+);

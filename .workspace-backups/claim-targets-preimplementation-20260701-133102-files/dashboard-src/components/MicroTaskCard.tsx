@@ -1,0 +1,74 @@
+// src/components/MicroTaskCard.tsx
+import {
+  Box,
+  Text,
+  Image,
+  Button,
+  VStack,
+  Progress,
+  useColorModeValue,
+  Center,
+} from "@chakra-ui/react";
+import { Task } from "../../../shared/entities/types";
+const API_BASE_URL = import.meta.env.VITE_BASE_URL || "https://localhost:5001";
+
+interface MicroTaskCardProps {
+  task: Task;
+  onSelect: (task: Task) => void;
+}
+
+const MicroTaskCard: React.FC<MicroTaskCardProps> = ({ task, onSelect }) => {
+  const bg = useColorModeValue("gray.100", "gray.800");
+
+  return (
+    <Box
+      maxW="175px"
+      minW="90px"
+      flex="1"
+      className="mr-card mr-card-purple"
+      p={2}
+      display="flex"
+      flexDirection="column"
+      position="relative"
+    >
+      <div className="mr-glow-bar mr-glow-bar-purple" />
+      <div className="mr-scanlines" />
+      <VStack spacing={1} align="center">
+        <Text className="mr-text-primary" fontSize="xs" fontWeight="bold" noOfLines={2}>
+          {task.content_name}
+        </Text>
+
+        <Image
+          src={`${API_BASE_URL}/${task.thumbnail}`}
+          alt={task.content_name}
+          boxSize="80px"
+          borderRadius="md"
+          objectFit="cover"
+        />
+
+        <Progress
+          size="xs"
+          value={
+            task.progress === "Completed"
+              ? 100
+              : task.progress === "Started"
+              ? 50
+              : 0
+          }
+          colorScheme="teal"
+          w="full"
+        />
+        <Button
+          size="xs"
+          colorScheme="teal"
+          variant="solid"
+          onClick={() => onSelect(task)}
+        >
+          Select
+        </Button>
+      </VStack>
+    </Box>
+  );
+};
+
+export default MicroTaskCard;

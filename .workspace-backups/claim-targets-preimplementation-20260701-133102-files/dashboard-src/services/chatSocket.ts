@@ -1,0 +1,230 @@
+// dashboard/src/services/chatSocket.ts
+import { io, Socket } from "socket.io-client";
+import { useChatStore, ChatMessage, Conversation } from "../store/useChatStore";
+import { useAuthStore } from "../store/useAuthStore";
+
+// Hardcoded relative path for chat REST calls — always proxied through Vite/nginx
+// Relative URLs always match the page protocol, no mixed-content issues.
+const BASE_URL = "/api";
+// Socket connects to same origin — Vite proxy (dev) or nginx (prod) routes /socket.io
+const SOCKET_URL = "";
+console.log("[chat] BASE_URL =", BASE_URL);
+
+let socket: Socket | null = null;
+let currentUserId: number | null = null;
+
+// Listen for token refresh events
+if (typeof window !== 'undefined') {
+  window.addEventListener('token-refreshed', ((event: CustomEvent) => {
+    const { token: newToken } = event.detail;
+    console.log('[chat] Token refreshed, reconnecting socket...');
+
+    if (socket && currentUserId) {
+      // Disconnect old socket
+      socket.disconnect();
+      // Reconnect with new token
+      socket = io(SOCKET_URL, {
+        auth: { token: newToken },
+        transports: ["websocket", "polling"],
+        reconnectionAttempts: 5,
+        reconnectionDelay: 2000,
+      });
+      setupSocketHandlers(socket, currentUserId);
+      console.log('[chat] Socket reconnected with new token');
+    }
+  }) as EventListener);
+}
+
+function setupSocketHandlers(sock: Socket, myUserId: number) {
+  const store = useChatStore.getState();
+
+  sock.on("connect", () => {
+    console.log("[chat] connected:", sock.id);
+    store.setSocket(sock);
+    fetchConversations();
+  });
+
+  sock.on("disconnect", () => {
+    console.log("[chat] disconnected");
+    store.setSocket(null);
+  });
+
+  sock.on("connect_error", (err) => {
+    console.warn("[chat] connect error:", err.message);
+  });
+
+  sock.on("new_message", (msg: ChatMessage) => {
+    const partnerId = msg.sender_id === myUserId ? msg.recipient_id : msg.sender_id;
+    const state = useChatStore.getState();
+    const existing = state.messages[partnerId] || [];
+
+    if (existing.some((m) => m.id === msg.id)) return;
+
+    const updatedMessages = [...existing, msg];
+    state.setMessages(partnerId, updatedMessages);
+
+    const convs = [...state.conversations];
+    const idx = convs.findIndex((c) => c.partner_id === partnerId);
+    const isActive = state.activePartnerId === partnerId && state.isBubbleOpen;
+
+    if (idx >= 0) {
+      convs[idx] = {
+        ...convs[idx],
+        latest_body: msg.body,
+        latest_at: msg.created_at,
+        unread_count: isActive ? 0 : convs[idx].unread_count + (msg.sender_id !== myUserId ? 1 : 0),
+      };
+    } else if (msg.sender_id !== myUserId) {
+      convs.push({
+        partner_id: partnerId,
+        partner_username: msg.sender_username,
+        partner_avatar: msg.sender_avatar,
+        latest_body: msg.body,
+        latest_at: msg.created_at,
+        unread_count: isActive ? 0 : 1,
+      });
+    }
+    convs.sort((a, b) => new Date(b.latest_at).getTime() - new Date(a.latest_at).getTime());
+    const unreadTotal = convs.reduce((sum, c) => sum + (c.unread_count || 0), 0);
+    useChatStore.setState({ conversations: convs, unreadTotal });
+
+    if (isActive && msg.sender_id !== myUserId) {
+      markRead(partnerId);
+    }
+  });
+
+  sock.on("presence", ({ user_id, online }: { user_id: number; online: boolean }) => {
+    useChatStore.getState().setPresence(user_id, online);
+  });
+
+  sock.on("messages_read", ({ by }: { by: number }) => {
+    const state = useChatStore.getState();
+    const msgs = state.messages[by];
+    if (!msgs) return;
+    const updated = msgs.map((m) =>
+      m.recipient_id === by && !m.read_at ? { ...m, read_at: new Date().toISOString() } : m
+    );
+    state.setMessages(by, updated);
+  });
+}
+
+export function connectChat(jwt: string, myUserId: number): Socket {
+  if (socket?.connected) return socket;
+
+  currentUserId = myUserId;
+  socket = io(SOCKET_URL, {
+    auth: { token: jwt },
+    transports: ["websocket", "polling"],
+    reconnectionAttempts: 5,
+    reconnectionDelay: 2000,
+  });
+
+  setupSocketHandlers(socket, myUserId);
+  return socket;
+}
+
+export function disconnectChat() {
+  socket?.disconnect();
+  socket = null;
+  useChatStore.getState().setSocket(null);
+}
+
+export function sendMessage(recipientId: number, body: string) {
+  if (!socket?.connected) {
+    console.warn("[chat] not connected, cannot send");
+    return;
+  }
+  socket.emit("send_message", { recipientId, body });
+}
+
+export function markRead(partnerId: number) {
+  socket?.emit("mark_read", { senderId: partnerId });
+  useChatStore.getState().markRead(partnerId);
+}
+
+export async function fetchConversations() {
+  const jwt = useAuthStore.getState().user?.jwt;
+  if (!jwt) return;
+  try {
+    const res = await fetch(`${BASE_URL}/api/chat/conversations`, {
+      headers: { Authorization: `Bearer ${jwt}` },
+    });
+    if (res.ok) {
+      const data: Conversation[] = await res.json();
+      useChatStore.getState().setConversations(data);
+    } else {
+      console.error(`[chat] fetchConversations ${res.status} ${res.statusText}`);
+    }
+  } catch (err) {
+    console.error("[chat] fetchConversations error:", err);
+  }
+}
+
+export async function fetchMessages(partnerId: number, before?: string): Promise<ChatMessage[]> {
+  const jwt = useAuthStore.getState().user?.jwt;
+  if (!jwt) return [];
+  const url = `${BASE_URL}/api/chat/messages/${partnerId}${before ? `?before=${before}` : ""}`;
+  try {
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${jwt}` } });
+    return res.ok ? res.json() : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function searchUsers(q: string) {
+  const jwt = useAuthStore.getState().user?.jwt;
+  if (!jwt || !q.trim()) return [];
+  const url = `${BASE_URL}/api/users/search?q=${encodeURIComponent(q)}`;
+  try {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${jwt}` },
+    });
+    if (!res.ok) {
+      console.error(`[chat] searchUsers ${res.status} from ${url}`);
+      return [];
+    }
+    return res.json();
+  } catch (err) {
+    console.error(`[chat] searchUsers error fetching ${url}:`, err);
+    return [];
+  }
+}
+
+export async function fetchAllUsers() {
+  const jwt = useAuthStore.getState().user?.jwt;
+  if (!jwt) return [];
+  const url = `${BASE_URL}/api/users/all`;
+  try {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${jwt}` },
+    });
+    if (!res.ok) {
+      console.error(`[chat] fetchAllUsers ${res.status} from ${url}`);
+      return [];
+    }
+    return res.json();
+  } catch (err) {
+    console.error(`[chat] fetchAllUsers error fetching ${url}:`, err);
+    return [];
+  }
+}
+
+export async function fetchOnlineUsers() {
+  const jwt = useAuthStore.getState().user?.jwt;
+  if (!jwt) return [];
+  const url = `${BASE_URL}/api/users/online`;
+  try {
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${jwt}` },
+    });
+    if (!res.ok) {
+      console.error(`[chat] fetchOnlineUsers ${res.status} from ${url}`);
+      return [];
+    }
+    return res.json();
+  } catch (err) {
+    console.error(`[chat] fetchOnlineUsers error fetching ${url}:`, err);
+    return [];
+  }
+}

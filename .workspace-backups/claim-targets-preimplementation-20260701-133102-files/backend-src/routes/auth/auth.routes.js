@@ -1,0 +1,766 @@
+// /backend/src/routes/auth/auth.routes.js
+import { Router } from "express";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import { verifyCaptcha } from "../../utils/captcha.js";
+import { createSessionLogger } from "../../utils/sessionLogger.js";
+import { sendPasswordResetEmail, sendPasswordChangedEmail } from "../../utils/emailService.js";
+
+export default function({ query, pool }) {
+  const router = Router();
+
+// Create session logger (logSuccessfulLogin removed - now handled inline)
+const { logFailedLogin, logRegistrationAttempt } =
+  createSessionLogger(query);
+
+/**
+ * Extract the real client IP from x-forwarded-for header
+ * x-forwarded-for format: "client_ip, proxy1_ip, proxy2_ip"
+ * We want just the first one (the actual user's IP)
+ */
+function getClientIP(req) {
+  const forwarded = req.headers["x-forwarded-for"];
+  const socketAddr = req.socket.remoteAddress;
+
+  // 🔍 DIAGNOSTIC: Log raw IP data
+  if (forwarded || socketAddr) {
+    process.stderr.write(`[IP DEBUG] forwarded="${forwarded}" (len=${forwarded?.length}), socket="${socketAddr}" (len=${socketAddr?.length})\n`);
+  }
+
+  if (forwarded) {
+    // Take the first IP in the comma-separated list
+    const firstIP = forwarded.split(',')[0].trim();
+    process.stderr.write(`[IP DEBUG] Using first IP from x-forwarded-for: "${firstIP}" (len=${firstIP.length})\n`);
+    return firstIP;
+  }
+
+  const result = socketAddr || 'unknown';
+  process.stderr.write(`[IP DEBUG] Using socket address: "${result}" (len=${result.length})\n`);
+  return result;
+}
+
+/**
+ * POST /api/register
+ * Register a new user
+ */
+router.post("/api/register", async (req, res) => {
+  const { username, password, email, captcha } = req.body;
+  const rawIP = getClientIP(req);
+  const ipAddress = rawIP ? String(rawIP).substring(0, 100) : 'unknown';
+
+  if (!username || !password || !email || !captcha) {
+    await logRegistrationAttempt({
+      username,
+      email,
+      ipAddress,
+      success: false,
+      message: "Missing required fields or CAPTCHA",
+      userAgent: req.headers["user-agent"],
+    });
+    return res
+      .status(400)
+      .json({ error: "All fields and CAPTCHA are required." });
+  }
+
+  const isHuman = await verifyCaptcha(captcha);
+  if (!isHuman) {
+    await logRegistrationAttempt({
+      username,
+      email,
+      ipAddress,
+      success: false,
+      message: "Failed CAPTCHA verification",
+      userAgent: req.headers["user-agent"],
+    });
+    return res.status(403).json({ error: "Failed CAPTCHA verification" });
+  }
+
+  // ✅ CHECK BETA ACCESS - only allowed emails can register
+  try {
+    const allowedUsers = await query(
+      "SELECT allowed FROM allowed_users WHERE email_address = ? AND allowed = TRUE",
+      [email]
+    );
+
+    if (allowedUsers.length === 0) {
+      await logRegistrationAttempt({
+        username,
+        email,
+        ipAddress,
+        success: false,
+        message: "Not on beta access list",
+        userAgent: req.headers["user-agent"],
+      });
+      return res.status(403).json({
+        error: "BETA_ACCESS_DENIED",
+        message: "The site is currently down for development. Please check back later!"
+      });
+    }
+
+    console.log(`✅ Beta access confirmed for: ${email}`);
+  } catch (err) {
+    console.error("Error checking beta access:", err);
+    return res.status(500).json({ error: "Failed to verify beta access" });
+  }
+
+  const hashedPassword = bcrypt.hashSync(password, 10);
+  const sql = "INSERT INTO users (username, password, email, registered_at) VALUES (?, ?, ?, NOW())";
+  const params = [username, hashedPassword, email];
+
+  pool.query(sql, params, async (err, result) => {
+    if (err) {
+      if (err.code === "ER_DUP_ENTRY") {
+        await logRegistrationAttempt({
+          username,
+          email,
+          ipAddress,
+          success: false,
+          message: "Duplicate username or email",
+          userAgent: req.headers["user-agent"],
+        });
+        return res
+          .status(409)
+          .json({ error: "Username or email already exists." });
+      }
+
+      console.error("Error registering user:", err);
+      await logRegistrationAttempt({
+        username,
+        email,
+        ipAddress,
+        success: false,
+        message: `Database error: ${err.message}`,
+        userAgent: req.headers["user-agent"],
+      });
+      return res.status(500).json({ error: "Database error." });
+    }
+
+    // Log success
+    await logRegistrationAttempt({
+      username,
+      email,
+      ipAddress,
+      success: true,
+      message: "Registration successful",
+      userAgent: req.headers["user-agent"],
+    });
+
+    res.status(201).json({
+      user: {
+        id: result.insertId,
+        username,
+        email,
+      },
+    });
+  });
+});
+
+/**
+ * POST /api/login
+ * Login user and return JWT token
+ */
+router.post("/api/login", async (req, res) => {
+  const { username, password, captcha, fingerprint } = req.body;
+  const rawIP = getClientIP(req);
+
+  // 🛡️ DEFENSIVE: Truncate IP to 100 chars MAX (DB limit)
+  const ipAddress = rawIP ? String(rawIP).substring(0, 100) : 'unknown';
+
+  if (rawIP && rawIP.length > 100) {
+    process.stderr.write(`[${new Date().toISOString()}] ⚠️ IP TRUNCATED: original=${rawIP.length} chars, truncated to 100\n`);
+  }
+
+  // Write directly to stderr for immediate logging
+  process.stderr.write(`[${new Date().toISOString()}] 🔐 LOGIN ATTEMPT: user=${username}, ip=${ipAddress} (len=${ipAddress?.length})\n`);
+  console.log(`🔐 Login attempt: username=${username}, skipCaptcha=${req.headers["x-skip-captcha"]}, ip=${ipAddress}`);
+
+  // CAPTCHA bypass for extensions or post-registration
+  const skipCaptcha = req.headers["x-skip-captcha"] === "true";
+
+  if (!username || !password || (!skipCaptcha && !captcha)) {
+    console.log(`❌ Login failed: Missing fields - username=${!!username}, password=${!!password}, captcha=${!!captcha}`);
+    return res.status(400).json({ error: "Missing required fields (username, password, or CAPTCHA)" });
+  }
+
+  if (!skipCaptcha) {
+    const isHuman = await verifyCaptcha(captcha);
+    if (!isHuman) {
+      console.log(`❌ Login failed: CAPTCHA verification failed for ${username}`);
+      await logFailedLogin({
+        username,
+        ipAddress,
+        userAgent: req.headers["user-agent"],
+        reason: "captcha_failed",
+        fingerprint,
+      });
+
+      return res.status(403).json({ error: "CAPTCHA verification failed - please try again" });
+    }
+  }
+
+  // Support login with username OR email
+  const sql = "SELECT * FROM users WHERE username = ? OR email = ?";
+  pool.query(sql, [username, username], async (err, results) => {
+    if (err) {
+      console.error("❌ Login database error:", err);
+      return res.status(500).json({ error: "Database error - please try again later" });
+    }
+
+    if (results.length === 0) {
+      console.log(`❌ Login failed: User not found - ${username}`);
+      await logFailedLogin({
+        username,
+        ipAddress,
+        userAgent: req.headers["user-agent"],
+        reason: "user_not_found",
+        fingerprint,
+      });
+      return res.status(404).json({ error: "User not found - please check your username/email" });
+    }
+
+    const user = results[0];
+
+    // ✅ CHECK BETA ACCESS - verify user's email is on allowed list
+    try {
+      const allowedUsers = await query(
+        "SELECT allowed FROM allowed_users WHERE email_address = ? AND allowed = TRUE",
+        [user.email]
+      );
+
+      if (allowedUsers.length === 0) {
+        console.log(`❌ Login failed: Not on beta access list - ${user.email}`);
+        await logFailedLogin({
+          username,
+          ipAddress,
+          userAgent: req.headers["user-agent"],
+          reason: "beta_access_denied",
+          fingerprint,
+        });
+        return res.status(403).json({
+          error: "BETA_ACCESS_DENIED",
+          message: "The site is currently down for development. Please check back later!"
+        });
+      }
+
+      console.log(`✅ Beta access confirmed for: ${user.email}`);
+    } catch (betaErr) {
+      console.error("Error checking beta access:", betaErr);
+      return res.status(500).json({ error: "Failed to verify beta access" });
+    }
+
+    // ✅ CHECK USER ENABLED STATUS - prevent disabled users from logging in
+    if (user.enabled === 0 || user.enabled === false) {
+      console.log(`❌ Login failed: User account disabled - ${user.username}`);
+      await logFailedLogin({
+        username,
+        ipAddress,
+        userAgent: req.headers["user-agent"],
+        reason: "account_disabled",
+        fingerprint,
+      });
+      return res.status(403).json({
+        error: "ACCOUNT_DISABLED",
+        message: "Your account has been disabled. Please contact support for assistance."
+      });
+    }
+
+    const isValidPassword = bcrypt.compareSync(password, user.password);
+
+    if (!isValidPassword) {
+      console.log(`❌ Login failed: Invalid password for ${username}`);
+      await logFailedLogin({
+        username,
+        ipAddress,
+        userAgent: req.headers["user-agent"],
+        reason: "invalid_password",
+        fingerprint,
+      });
+      return res.status(401).json({ error: "Invalid password - please try again" });
+    }
+
+    // Password is valid - proceed with login
+    try {
+      // Update last_accessed_at timestamp
+      await query("UPDATE users SET last_accessed_at = NOW() WHERE user_id = ?", [user.user_id]);
+
+      // Get user's role(s) from user_roles table BEFORE creating JWT
+      let userRole = 'user'; // default role
+      try {
+        const userRoles = await query(`
+          SELECT r.name
+          FROM user_roles ur
+          JOIN roles r ON ur.role_id = r.role_id
+          WHERE ur.user_id = ?
+        `, [user.user_id]);
+
+        // Use the first role found, prioritize super_admin if present
+        if (userRoles.length > 0) {
+          const roleNames = userRoles.map(row => row.name);
+          userRole = roleNames.includes('super_admin') ? 'super_admin' : roleNames[0];
+        }
+      } catch (roleErr) {
+        console.error("Error fetching user role:", roleErr);
+        // Continue with default role
+      }
+
+      // Create JWT with role included
+      const token = jwt.sign(
+        {
+          user_id: user.user_id,
+          username: user.username,
+          can_post: true,
+          role: userRole,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "30d" } // 30 day sessions - users stay logged in
+      );
+
+      // --- SESSION LOGIC ---
+      // Always create session for ALL logins (web browser + extension)
+      // Use fingerprint if provided, otherwise use IP address as identifier
+      const sessionFingerprint = fingerprint || `web_${ipAddress}`;
+
+      try {
+        // Truncate IP if too long (safety measure)
+        const safeIpAddress = ipAddress ? String(ipAddress).substring(0, 100) : 'unknown';
+
+        // Create/update session for this login
+        await query(
+          `INSERT INTO user_sessions (device_fingerprint, user_id, jwt, updated_at, login_time, ip_address)
+           VALUES (?, ?, ?, NOW(), NOW(), ?)
+           ON DUPLICATE KEY UPDATE
+             jwt = VALUES(jwt),
+             updated_at = NOW(),
+             login_time = NOW(),
+             ip_address = VALUES(ip_address)`,
+          [sessionFingerprint, user.user_id, token, safeIpAddress]
+        );
+
+        console.log(`✅ Session created/updated: user=${user.user_id}, fingerprint=${sessionFingerprint}`);
+      } catch (sessionErr) {
+        // Log error prominently but don't fail the login
+        process.stderr.write(`🚨 FAILED TO CREATE SESSION: ${sessionErr.message} (code: ${sessionErr.code}, sqlState: ${sessionErr.sqlState})\n`);
+        console.error('🚨 Session creation failed:', sessionErr);
+        console.error('  User ID:', user.user_id);
+        console.error('  Fingerprint:', sessionFingerprint);
+        console.error('  IP:', ipAddress);
+      }
+
+      // Log the login event
+      await query(
+        "INSERT INTO login_events (user_id, fingerprint, event_type, ip_address, details) VALUES (?, ?, 'login', ?, ?)",
+        [
+          user.user_id,
+          sessionFingerprint,
+          ipAddress,
+          JSON.stringify({ username, agent: req.headers["user-agent"] }),
+        ]
+      );
+
+      // Session already created above, no need for logSuccessfulLogin
+
+      // Decode token to log expiration
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const expiresAt = new Date(decoded.exp * 1000);
+      const now = new Date();
+
+      console.log(`✅ Login successful: ${username} (user_id=${user.user_id}, role=${userRole})`);
+      console.log(`   Token issued at: ${now.toLocaleTimeString()}`);
+      console.log(`   Token expires at: ${expiresAt.toLocaleTimeString()}`);
+      console.log(`   Token duration: 60 minutes\n`);
+
+      return res.status(200).json({
+        auth: true,
+        token,
+        user: {
+          user_id: user.user_id,
+          username: user.username,
+          can_post: true,
+          user_profile_image: user.user_profile_image ?? null,
+          role: userRole,
+        },
+      });
+    } catch (loginErr) {
+      console.error("❌ Login session error:", loginErr);
+      return res.status(500).json({ error: "Failed to create session - please try again" });
+    }
+  });
+});
+
+/**
+ * POST /api/logout
+ * Logout user by deleting session
+ */
+router.post("/api/logout", (req, res) => {
+  const { fingerprint } = req.body;
+  if (!fingerprint) {
+    return res.status(400).json({ error: "Missing fingerprint" });
+  }
+
+  const rawIP = getClientIP(req);
+  const ipAddress = rawIP ? String(rawIP).substring(0, 100) : 'unknown';
+
+  // 1. First, get the user_id for audit logging
+  pool.query(
+    "SELECT user_id FROM user_sessions WHERE device_fingerprint = ? LIMIT 1",
+    [fingerprint],
+    (err, results) => {
+      if (err) {
+        console.error("Error selecting session for logout:", err);
+        return res.status(500).json({ error: "Database query failed" });
+      }
+
+      const userId = results.length ? results[0].user_id : null;
+
+      // 2. Delete the session row
+      pool.query(
+        "DELETE FROM user_sessions WHERE device_fingerprint = ?",
+        [fingerprint],
+        (err2) => {
+          if (err2) {
+            console.error("Error deleting session:", err2);
+            return res.status(500).json({ error: "Failed to log out" });
+          }
+
+          // 3. Optionally log the event for auditing
+          pool.query(
+            "INSERT INTO login_events (user_id, fingerprint, event_type, ip_address, details) VALUES (?, ?, 'logout', ?, ?)",
+            [
+              userId,
+              fingerprint,
+              ipAddress,
+              JSON.stringify({ agent: req.headers["user-agent"] }),
+            ],
+            (err3) => {
+              if (err3) {
+                console.error("Error logging logout event:", err3);
+                // We still return success, since session was deleted!
+              }
+              res.json({ success: true });
+            }
+          );
+        }
+      );
+    }
+  );
+});
+
+/**
+ * POST /api/reset-password
+ * Request password reset - generates token and sends email
+ */
+router.post("/api/reset-password", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  try {
+    // 1. Check if user exists
+    const users = await query("SELECT user_id, username, email FROM users WHERE email = ?", [email]);
+
+    if (users.length === 0) {
+      // Don't reveal if email exists or not (security best practice)
+      return res.status(200).json({
+        message: "If that email exists, a password reset link has been sent."
+      });
+    }
+
+    const user = users[0];
+
+    // 2. Generate secure random token
+    const token = crypto.randomBytes(32).toString('hex');
+
+    // 3. Set expiration to 1 hour from now
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    // 4. Delete any existing tokens for this user
+    await query("DELETE FROM password_reset_tokens WHERE user_id = ?", [user.user_id]);
+
+    // 5. Store new token
+    await query(
+      "INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)",
+      [user.user_id, token, expiresAt]
+    );
+
+    // 6. Send email with reset link
+    await sendPasswordResetEmail(user.email, token, user.username);
+
+    // 7. Log the reset request
+    const rawIP = getClientIP(req);
+    const ipAddress = rawIP ? String(rawIP).substring(0, 100) : 'unknown';
+    await query(
+      "INSERT INTO login_events (user_id, fingerprint, event_type, ip_address, details) VALUES (?, ?, 'password_reset_request', ?, ?)",
+      [user.user_id, 'email_reset', ipAddress, JSON.stringify({ email })]
+    );
+
+    res.status(200).json({
+      message: "If that email exists, a password reset link has been sent."
+    });
+  } catch (error) {
+    console.error("Password reset request error:", error);
+    res.status(500).json({ error: "Failed to process password reset request" });
+  }
+});
+
+/**
+ * POST /api/test-email
+ * Test email sending functionality
+ */
+router.post("/api/test-email", async (req, res) => {
+  const { email, type } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  try {
+    if (type === "reset") {
+      // Test password reset email
+      const testToken = "test-token-" + Date.now();
+      await sendPasswordResetEmail(email, testToken, "TestUser");
+      res.status(200).json({
+        success: true,
+        message: "Password reset email sent successfully",
+        type: "reset"
+      });
+    } else if (type === "confirmation") {
+      // Test password changed confirmation email
+      await sendPasswordChangedEmail(email, "TestUser");
+      res.status(200).json({
+        success: true,
+        message: "Password confirmation email sent successfully",
+        type: "confirmation"
+      });
+    } else {
+      return res.status(400).json({ error: "Invalid email type. Use 'reset' or 'confirmation'" });
+    }
+  } catch (error) {
+    console.error("Email test error:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message || "Failed to send test email"
+    });
+  }
+});
+
+/**
+ * POST /api/verify-reset-token
+ * Verify if a password reset token is valid
+ */
+router.post("/api/verify-reset-token", async (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ error: "Token is required" });
+  }
+
+  try {
+    const tokens = await query(
+      `SELECT prt.*, u.username, u.email
+       FROM password_reset_tokens prt
+       JOIN users u ON prt.user_id = u.user_id
+       WHERE prt.token = ? AND prt.used = FALSE AND prt.expires_at > NOW()`,
+      [token]
+    );
+
+    if (tokens.length === 0) {
+      return res.status(400).json({
+        valid: false,
+        error: "Invalid or expired token"
+      });
+    }
+
+    const tokenData = tokens[0];
+    res.status(200).json({
+      valid: true,
+      email: tokenData.email,
+      username: tokenData.username
+    });
+  } catch (error) {
+    console.error("Token verification error:", error);
+    res.status(500).json({ error: "Failed to verify token" });
+  }
+});
+
+/**
+ * POST /api/reset-password-with-token
+ * Complete password reset with valid token
+ */
+router.post("/api/reset-password-with-token", async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  if (!token || !newPassword) {
+    return res.status(400).json({ error: "Token and new password are required" });
+  }
+
+  try {
+    // 1. Verify token is valid and not expired
+    const tokens = await query(
+      `SELECT prt.*, u.user_id, u.username, u.email
+       FROM password_reset_tokens prt
+       JOIN users u ON prt.user_id = u.user_id
+       WHERE prt.token = ? AND prt.used = FALSE AND prt.expires_at > NOW()`,
+      [token]
+    );
+
+    if (tokens.length === 0) {
+      return res.status(400).json({ error: "Invalid or expired token" });
+    }
+
+    const tokenData = tokens[0];
+
+    // 2. Hash the new password
+    const hashedPassword = bcrypt.hashSync(newPassword, 10);
+
+    // 3. Update user's password
+    await query(
+      "UPDATE users SET password = ? WHERE user_id = ?",
+      [hashedPassword, tokenData.user_id]
+    );
+
+    // 4. Mark token as used
+    await query(
+      "UPDATE password_reset_tokens SET used = TRUE WHERE token = ?",
+      [token]
+    );
+
+    // 5. Log the password change
+    const rawIP = getClientIP(req);
+    const ipAddress = rawIP ? String(rawIP).substring(0, 100) : 'unknown';
+    await query(
+      "INSERT INTO login_events (user_id, fingerprint, event_type, ip_address, details) VALUES (?, ?, 'password_changed', ?, ?)",
+      [tokenData.user_id, 'email_reset', ipAddress, JSON.stringify({ email: tokenData.email })]
+    );
+
+    // 6. Send confirmation email
+    await sendPasswordChangedEmail(tokenData.email, tokenData.username);
+
+    res.status(200).json({
+      message: "Password reset successful",
+      success: true
+    });
+  } catch (error) {
+    console.error("Password reset completion error:", error);
+    res.status(500).json({ error: "Failed to reset password" });
+  }
+});
+
+/**
+ * POST /api/refresh-token
+ * Refresh JWT token to extend session
+ */
+router.post("/api/refresh-token", async (req, res) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+
+  const now = new Date();
+  console.log(`\n🔄 [${now.toLocaleTimeString()}] Token refresh request received`);
+
+  if (!token) {
+    console.error(`❌ [${now.toLocaleTimeString()}] Token refresh FAILED: No token provided`);
+    return res.status(401).json({ error: "No token provided" });
+  }
+
+  try {
+    // Verify the current token (even if close to expiration)
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Calculate how much time was remaining on old token
+    const oldExpiresAt = new Date(decoded.exp * 1000);
+    const timeRemaining = oldExpiresAt - now;
+    const minutesRemaining = Math.floor(timeRemaining / 1000 / 60);
+
+    console.log(`   User: ${decoded.username} (ID: ${decoded.user_id})`);
+    console.log(`   Old token expires at: ${oldExpiresAt.toLocaleTimeString()}`);
+    console.log(`   Time remaining on old token: ${minutesRemaining} minutes`);
+
+    // Get fresh user role from database
+    let userRole = 'user';
+    try {
+      const userRoles = await query(`
+        SELECT r.name
+        FROM user_roles ur
+        JOIN roles r ON ur.role_id = r.role_id
+        WHERE ur.user_id = ?
+      `, [decoded.user_id]);
+
+      if (userRoles.length > 0) {
+        const roleNames = userRoles.map(row => row.name);
+        userRole = roleNames.includes('super_admin') ? 'super_admin' : roleNames[0];
+      }
+    } catch (roleErr) {
+      console.error("Error fetching user role during token refresh:", roleErr);
+    }
+
+    // Issue a new token with extended expiration (include role in JWT)
+    const newToken = jwt.sign(
+      {
+        user_id: decoded.user_id,
+        username: decoded.username,
+        can_post: decoded.can_post || true,
+        role: userRole,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "30d" } // 30 day sessions - users stay logged in
+    );
+
+    // Update session to keep user appearing online
+    try {
+      const ipAddress = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      const safeIpAddress = ipAddress ? String(ipAddress).substring(0, 100) : 'unknown';
+      const sessionFingerprint = `web_${ipAddress}`; // Match login fingerprint format
+
+      await query(
+        `UPDATE user_sessions
+         SET jwt = ?, updated_at = NOW()
+         WHERE user_id = ? AND device_fingerprint = ?`,
+        [newToken, decoded.user_id, sessionFingerprint]
+      );
+
+      console.log(`✅ Session updated for user ${decoded.user_id}`);
+    } catch (sessionErr) {
+      console.error('⚠️ Failed to update session during token refresh:', sessionErr.message);
+      // Don't fail the refresh if session update fails
+    }
+
+    // Decode new token to log expiration
+    const newDecoded = jwt.verify(newToken, process.env.JWT_SECRET);
+    const newExpiresAt = new Date(newDecoded.exp * 1000);
+
+    console.log(`✅ [${now.toLocaleTimeString()}] Token refreshed successfully`);
+    console.log(`   New token expires at: ${newExpiresAt.toLocaleTimeString()}`);
+    console.log(`   New token duration: 60 minutes\n`);
+
+    return res.status(200).json({
+      token: newToken,
+      user: {
+        user_id: decoded.user_id,
+        username: decoded.username,
+        can_post: decoded.can_post || true,
+        role: userRole,
+      },
+    });
+  } catch (error) {
+    const errorTime = new Date();
+    console.error(`\n❌ [${errorTime.toLocaleTimeString()}] Token refresh FAILED`);
+    console.error(`   Error type: ${error.name}`);
+    console.error(`   Error message: ${error.message}`);
+
+    if (error.name === 'TokenExpiredError') {
+      const expiredAt = new Date(error.expiredAt);
+      console.error(`   Token expired at: ${expiredAt.toLocaleTimeString()}`);
+      console.error(`   Current time: ${errorTime.toLocaleTimeString()}`);
+      console.error(`   Token was expired for: ${Math.floor((errorTime - expiredAt) / 1000 / 60)} minutes`);
+    }
+    console.error(`   Full error:`, error);
+    console.error('');
+
+    return res.status(401).json({ error: "Invalid or expired token" });
+  }
+});
+
+  return router;
+}

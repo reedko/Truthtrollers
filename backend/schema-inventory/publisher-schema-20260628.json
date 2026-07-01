@@ -1,0 +1,167 @@
+{
+  "capturedAt": "2026-06-28T09:57:39.104Z",
+  "server": {
+    "version": "8.0.33",
+    "database_name": "truthtrollers",
+    "character_set_database": "utf8mb4",
+    "collation_database": "utf8mb4_0900_ai_ci"
+  },
+  "tables": {
+    "content": {
+      "exists": true,
+      "createSql": "CREATE TABLE `content` (\n  `content_id` int NOT NULL AUTO_INCREMENT,\n  `content_name` varchar(1000) DEFAULT NULL,\n  `media_source` varchar(255) DEFAULT NULL,\n  `url` varchar(1000) DEFAULT NULL,\n  `assigned` enum('assigned','unassigned') NOT NULL DEFAULT 'unassigned',\n  `progress` enum('unassigned','Assigned','Started','Partially Complete','Awaiting Evaluation','Completed') NOT NULL DEFAULT 'unassigned',\n  `users` text,\n  `details` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci,\n  `thumbnail` varchar(255) DEFAULT NULL,\n  `topic` varchar(255) DEFAULT NULL,\n  `subtopic` varchar(255) DEFAULT NULL,\n  `content_type` enum('task','reference','both') NOT NULL DEFAULT 'task',\n  `is_retracted` tinyint DEFAULT '0',\n  `is_active` tinyint DEFAULT '1',\n  `canonical_url_hash` varchar(64) DEFAULT NULL COMMENT 'SHA-256 hash of canonical URL for privacy-preserving lookups',\n  `canonical_url` varchar(2048) DEFAULT NULL COMMENT 'Canonicalized version of URL (normalized, tracking params removed)',\n  `content_text` text COMMENT 'Full cleaned text (up to 8000 chars) for quality analysis',\n  `extraction_mode` varchar(50) DEFAULT NULL COMMENT 'Extraction mode override (set by evidence rerun modal): edge, ranked, comprehensive. NULL = use global default',\n  `platform` varchar(50) DEFAULT NULL COMMENT 'Distribution platform: facebook, twitter, reddit, youtube, web, etc.',\n  `distribution_channel` varchar(255) DEFAULT NULL COMMENT 'Specific group, page, subreddit, or channel within the platform',\n  `linked_url` text COMMENT 'External article or resource URL shared or embedded inside this content',\n  `linked_publisher` varchar(255) DEFAULT NULL COMMENT 'Publisher name or domain of the linked article',\n  `social_provenance` json DEFAULT NULL COMMENT 'Structured social platform, container, poster, linked-source, and extraction metadata',\n  PRIMARY KEY (`content_id`),\n  KEY `idx_content_is_active` (`is_active`),\n  KEY `idx_content_canonical_url_hash` (`canonical_url_hash`),\n  KEY `idx_content_canonical_url` (`canonical_url`(255))\n) ENGINE=InnoDB AUTO_INCREMENT=16053 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci"
+    },
+    "publishers": {
+      "exists": true,
+      "createSql": "CREATE TABLE `publishers` (\n  `publisher_id` int NOT NULL AUTO_INCREMENT,\n  `publisher_name` varchar(255) NOT NULL,\n  `publisher_owner` varchar(255) DEFAULT NULL,\n  `publisher_icon` varchar(255) DEFAULT NULL,\n  `bias_score` float DEFAULT NULL,\n  `veracity_score` float DEFAULT NULL,\n  `external_rating_source` varchar(255) DEFAULT NULL,\n  `external_rating` float DEFAULT NULL,\n  `description` text,\n  `domain` varchar(255) DEFAULT NULL,\n  `identity_confidence` decimal(5,4) DEFAULT NULL,\n  `source_type` varchar(64) DEFAULT NULL,\n  `source_type_confidence` decimal(5,4) DEFAULT NULL,\n  `independent_footprint_score` decimal(6,2) DEFAULT NULL,\n  `conflict_of_interest_score` decimal(6,2) DEFAULT NULL,\n  `reliability_signal_present` tinyint(1) DEFAULT NULL,\n  `direct_reliability_score` decimal(6,2) DEFAULT NULL,\n  `contextual_credibility_score` decimal(6,2) DEFAULT NULL,\n  `provenance_score` decimal(6,2) DEFAULT NULL,\n  `publication_legitimacy_score` decimal(6,2) DEFAULT NULL,\n  `reliability_cap` varchar(4) DEFAULT NULL,\n  `reliability_cap_reason` text,\n  `reliability_signal_sources` json DEFAULT NULL,\n  `last_enriched_at` datetime DEFAULT NULL,\n  PRIMARY KEY (`publisher_id`),\n  KEY `idx_domain` (`domain`)\n) ENGINE=InnoDB AUTO_INCREMENT=1216 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci"
+    },
+    "content_publishers": {
+      "exists": true,
+      "createSql": "CREATE TABLE `content_publishers` (\n  `content_publisher_id` int NOT NULL AUTO_INCREMENT,\n  `content_id` int NOT NULL,\n  `publisher_id` int NOT NULL,\n  PRIMARY KEY (`content_publisher_id`),\n  UNIQUE KEY `unique_content_publishers` (`content_id`,`publisher_id`),\n  KEY `content_publishers_fk_1_idx` (`content_id`),\n  CONSTRAINT `content_publishers_fk_1` FOREIGN KEY (`content_id`) REFERENCES `content` (`content_id`) ON DELETE CASCADE,\n  CONSTRAINT `fk_content` FOREIGN KEY (`content_id`) REFERENCES `content` (`content_id`) ON DELETE CASCADE\n) ENGINE=InnoDB AUTO_INCREMENT=3861 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci"
+    },
+    "publisher_domains": {
+      "exists": true,
+      "createSql": "CREATE TABLE `publisher_domains` (\n  `publisher_domain_id` int NOT NULL AUTO_INCREMENT,\n  `publisher_id` int NOT NULL,\n  `domain` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `root_domain` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `match_type` enum('exact','root','subdomain','alias') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'exact',\n  `confidence` enum('high','medium','low') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'high',\n  `is_platform_host` tinyint(1) NOT NULL DEFAULT '0',\n  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`publisher_domain_id`),\n  UNIQUE KEY `uq_pd_domain` (`domain`),\n  KEY `fk_pd_publisher` (`publisher_id`),\n  KEY `idx_pd_root_domain` (`root_domain`),\n  CONSTRAINT `fk_pd_publisher` FOREIGN KEY (`publisher_id`) REFERENCES `publishers` (`publisher_id`) ON DELETE CASCADE\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    },
+    "publisher_ratings": {
+      "exists": true,
+      "createSql": "CREATE TABLE `publisher_ratings` (\n  `publisher_rating_id` int NOT NULL AUTO_INCREMENT,\n  `publisher_id` int NOT NULL,\n  `source` varchar(100) DEFAULT NULL,\n  `rating_label` varchar(100) DEFAULT NULL,\n  `rating_type` enum('bias','reliability','veracity','profile','ownership','unknown') DEFAULT 'unknown',\n  `score` decimal(5,2) DEFAULT NULL,\n  `url` text,\n  `last_checked` datetime DEFAULT NULL,\n  `bias_score` decimal(5,2) DEFAULT NULL,\n  `veracity_score` decimal(5,2) DEFAULT NULL,\n  `topic_id` int DEFAULT NULL,\n  `notes` varchar(255) DEFAULT NULL,\n  `confidence` enum('high','medium','low','unknown') DEFAULT 'unknown',\n  `extraction_method` enum('licensed_api','tavily_search','tavily_extract','llm_extraction','manual','community','unknown') DEFAULT 'unknown',\n  `evidence_quote` varchar(500) DEFAULT NULL,\n  `raw_provider_payload` longtext,\n  `user_id` int DEFAULT NULL COMMENT 'User who created this rating (NULL = system/global rating)',\n  PRIMARY KEY (`publisher_rating_id`),\n  UNIQUE KEY `uq_pub_source_type` (`publisher_id`,`source`(80),`rating_type`),\n  KEY `idx_pr_enrichment` (`publisher_id`,`source`,`rating_type`,`last_checked`),\n  CONSTRAINT `publisher_ratings_ibfk_1_cascade` FOREIGN KEY (`publisher_id`) REFERENCES `publishers` (`publisher_id`) ON DELETE CASCADE\n) ENGINE=InnoDB AUTO_INCREMENT=3485 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci"
+    },
+    "publisher_profiles": {
+      "exists": true,
+      "createSql": "CREATE TABLE `publisher_profiles` (\n  `publisher_profile_id` int NOT NULL AUTO_INCREMENT,\n  `publisher_id` int NOT NULL,\n  `source` varchar(100) NOT NULL,\n  `profile_url` text,\n  `description` text,\n  `ownership_notes` text,\n  `funding_notes` text,\n  `credibility_notes` text,\n  `political_notes` text,\n  `source_type` varchar(100) DEFAULT NULL,\n  `country` varchar(100) DEFAULT NULL,\n  `evidence_quote` varchar(500) DEFAULT NULL,\n  `confidence` enum('high','medium','low','unknown') DEFAULT 'unknown',\n  `extraction_method` enum('tavily_search','tavily_extract','llm_extraction','manual','community','unknown') DEFAULT 'unknown',\n  `last_checked` datetime DEFAULT NULL,\n  `raw_provider_payload` longtext,\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY (`publisher_profile_id`),\n  KEY `publisher_id` (`publisher_id`),\n  KEY `idx_pp_lookup` (`publisher_id`,`source`,`last_checked`),\n  CONSTRAINT `publisher_profiles_fk_cascade` FOREIGN KEY (`publisher_id`) REFERENCES `publishers` (`publisher_id`) ON DELETE CASCADE\n) ENGINE=InnoDB AUTO_INCREMENT=102 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci"
+    },
+    "publisher_enrichment_runs": {
+      "exists": true,
+      "createSql": "CREATE TABLE `publisher_enrichment_runs` (\n  `enrichment_run_id` int NOT NULL AUTO_INCREMENT,\n  `publisher_id` int NOT NULL,\n  `domain` varchar(255) DEFAULT NULL,\n  `provider` varchar(100) NOT NULL,\n  `search_query` text,\n  `candidate_url` text,\n  `status` enum('found','not_found','ambiguous','error','skipped_recent') DEFAULT 'found',\n  `extracted_rating_label` varchar(100) DEFAULT NULL,\n  `extracted_bias_score` decimal(5,2) DEFAULT NULL,\n  `extracted_veracity_score` decimal(5,2) DEFAULT NULL,\n  `extracted_reliability_score` decimal(5,2) DEFAULT NULL,\n  `evidence_quote` varchar(500) DEFAULT NULL,\n  `confidence` enum('high','medium','low','unknown') DEFAULT 'unknown',\n  `error_message` text,\n  `raw_result_json` longtext,\n  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`enrichment_run_id`),\n  KEY `idx_per_publisher` (`publisher_id`),\n  KEY `idx_per_provider` (`provider`),\n  KEY `idx_per_pub_prov` (`publisher_id`,`provider`,`created_at`),\n  CONSTRAINT `publisher_enrichment_runs_fk_cascade` FOREIGN KEY (`publisher_id`) REFERENCES `publishers` (`publisher_id`) ON DELETE CASCADE\n) ENGINE=InnoDB AUTO_INCREMENT=1130 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci"
+    },
+    "publisher_external_signals": {
+      "exists": true,
+      "createSql": "CREATE TABLE `publisher_external_signals` (\n  `id` bigint unsigned NOT NULL AUTO_INCREMENT,\n  `publisher_id` int DEFAULT NULL,\n  `domain` varchar(255) DEFAULT NULL,\n  `entity_name` varchar(255) DEFAULT NULL,\n  `provider` varchar(80) NOT NULL,\n  `signal_type` varchar(80) NOT NULL,\n  `admiralty_effect_type` varchar(32) NOT NULL,\n  `normalized_score` decimal(6,2) DEFAULT NULL,\n  `reliability_bucket` varchar(32) DEFAULT NULL,\n  `confidence_delta` decimal(6,4) DEFAULT NULL,\n  `reliability_delta` decimal(6,2) DEFAULT NULL,\n  `cap` varchar(4) DEFAULT NULL,\n  `cap_reason` text,\n  `flags` json DEFAULT NULL,\n  `raw_value` json DEFAULT NULL,\n  `matched_name` varchar(255) DEFAULT NULL,\n  `matched_domain` varchar(255) DEFAULT NULL,\n  `match_confidence` decimal(6,4) DEFAULT NULL,\n  `evidence_url` text,\n  `explanation` text,\n  `retrieved_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  `expires_at` datetime DEFAULT NULL,\n  `error_status` varchar(80) DEFAULT NULL,\n  PRIMARY KEY (`id`),\n  KEY `idx_publisher_provider` (`publisher_id`,`provider`),\n  KEY `idx_domain_provider` (`domain`,`provider`),\n  KEY `idx_effect` (`admiralty_effect_type`),\n  KEY `idx_retrieved` (`retrieved_at`)\n) ENGINE=InnoDB AUTO_INCREMENT=581 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci"
+    },
+    "publisher_relationships": {
+      "exists": true,
+      "createSql": "CREATE TABLE `publisher_relationships` (\n  `id` bigint unsigned NOT NULL AUTO_INCREMENT,\n  `publisher_id` int NOT NULL,\n  `related_entity_name` varchar(255) NOT NULL,\n  `related_entity_id` varchar(255) DEFAULT NULL,\n  `relationship_type` varchar(64) NOT NULL,\n  `provider` varchar(80) NOT NULL,\n  `evidence_url` text,\n  `confidence` decimal(6,4) DEFAULT NULL,\n  `raw_value` json DEFAULT NULL,\n  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`id`),\n  KEY `idx_publisher_rel` (`publisher_id`,`relationship_type`),\n  KEY `idx_provider` (`provider`)\n) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci"
+    },
+    "publisher_credibility_checks": {
+      "exists": true,
+      "createSql": "CREATE TABLE `publisher_credibility_checks` (\n  `check_id` int NOT NULL AUTO_INCREMENT,\n  `publisher_id` int NOT NULL,\n  `source` varchar(50) NOT NULL,\n  `checked_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,\n  `risk_level` enum('none','low','medium','high','critical','unknown') DEFAULT 'unknown',\n  `score` decimal(5,2) DEFAULT NULL,\n  `has_matches` tinyint(1) DEFAULT '0',\n  `match_count` int DEFAULT '0',\n  `highest_score` decimal(5,4) DEFAULT NULL,\n  `categories` json DEFAULT NULL,\n  `flags` json DEFAULT NULL,\n  `risk_reasons` json DEFAULT NULL,\n  `matches` json DEFAULT NULL,\n  `raw_response` json DEFAULT NULL,\n  `error` varchar(500) DEFAULT NULL,\n  PRIMARY KEY (`check_id`),\n  KEY `idx_publisher_id` (`publisher_id`),\n  KEY `idx_source` (`source`),\n  KEY `idx_checked_at` (`checked_at`),\n  KEY `idx_risk_level` (`risk_level`),\n  CONSTRAINT `publisher_credibility_checks_ibfk_1` FOREIGN KEY (`publisher_id`) REFERENCES `publishers` (`publisher_id`) ON DELETE CASCADE\n) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci"
+    },
+    "source_identity_cache": {
+      "exists": true,
+      "createSql": "CREATE TABLE `source_identity_cache` (\n  `source_identity_cache_id` int NOT NULL AUTO_INCREMENT,\n  `source_url` varchar(2048) COLLATE utf8mb4_unicode_ci NOT NULL,\n  `normalized_url` varchar(2048) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `root_domain` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `publisher_id` int DEFAULT NULL,\n  `publisher_name` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL,\n  `source_identity_kind` enum('publisher_domain','platform_hosted','primary_document','government_source','academic_source','archive_snapshot','domain_fallback','unresolved') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'unresolved',\n  `resolution_level` tinyint NOT NULL DEFAULT '0',\n  `resolution_status` enum('matched_existing_publisher','matched_publisher_domain','matched_platform_host','matched_metadata','matched_archive','domain_only','unresolved') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'unresolved',\n  `source_type` enum('primary','government','academic','journalism','reference','advocacy','corporate','opinion','social','platform','unknown') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'unknown',\n  `reliability` enum('high','medium','mixed','low','flagged','unchecked') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'unchecked',\n  `needs_human_review` tinyint(1) NOT NULL DEFAULT '1',\n  `metadata_json` json DEFAULT NULL,\n  `last_checked_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,\n  PRIMARY KEY (`source_identity_cache_id`),\n  UNIQUE KEY `uq_sic_normalized_url` (`normalized_url`(512)),\n  KEY `idx_sic_root_domain` (`root_domain`),\n  KEY `idx_sic_publisher_id` (`publisher_id`),\n  CONSTRAINT `fk_sic_publisher` FOREIGN KEY (`publisher_id`) REFERENCES `publishers` (`publisher_id`) ON DELETE SET NULL\n) ENGINE=InnoDB AUTO_INCREMENT=470 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    },
+    "content_publishing_context": {
+      "exists": false
+    },
+    "content_publishing_identifiers": {
+      "exists": false
+    }
+  },
+  "routines": [
+    {
+      "ROUTINE_NAME": "check_rate_limit",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "compute_and_store_verimeter_score_for_claim",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "compute_and_store_verimeter_score_for_content",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "compute_simple_verimeter_for_content",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "compute_trollmeter_score",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "compute_verimeter_for_content",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "delete_content_cascade",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "delete_task_and_references",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "GetContentWithTopics",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "get_adjusted_bias_weight",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "InsertContentAndTopics",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "InsertContentAuthor",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "InsertContentPublisher",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "InsertContentRelation",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "InsertOrGetAuthor",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "InsertOrGetPublisher",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "InsertOrGetReference",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "InsertTaskAndTopics",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "InsertTaskPublisher",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "recalculate_user_reputation",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "record_social_post",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "refresh_all_user_reputation",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "update_argument_signoff_count",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "update_argument_validation_status",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "update_post_replies_count",
+      "ROUTINE_TYPE": "PROCEDURE"
+    },
+    {
+      "ROUTINE_NAME": "update_thread_stats",
+      "ROUTINE_TYPE": "PROCEDURE"
+    }
+  ]
+}

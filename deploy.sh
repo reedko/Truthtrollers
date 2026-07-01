@@ -201,6 +201,7 @@ chown -R root:root $BACKEND_PATH/
 
 # User content directories (ensure they exist with correct permissions)
 mkdir -p $BACKEND_PATH/assets/documents/tasks
+mkdir -p $BACKEND_PATH/assets/docs/open-data/opencorporates
 mkdir -p $BACKEND_PATH/assets/images/content
 mkdir -p $BACKEND_PATH/assets/images/users
 mkdir -p $BACKEND_PATH/assets/images/authors

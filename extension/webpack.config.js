@@ -59,7 +59,13 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        use: ["style-loader", "css-loader"], // Ensure CSS is bundled
+        oneOf: [
+          {
+            resourceQuery: /inline/,
+            use: [{ loader: "css-loader", options: { exportType: "string" } }],
+          },
+          { use: ["style-loader", "css-loader"] },
+        ],
       },
       {
         test: /\.(jpe?g|png|gif|svg)$/i,
