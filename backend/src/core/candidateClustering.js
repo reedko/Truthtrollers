@@ -185,9 +185,7 @@ function shouldClusterEvaluationCandidates(a, b, aTokens, bTokens) {
   }
 
   // Log diagnostic for singleton cluster (no matches found)
-  if (process.env.DEBUG_CLUSTERING === 'true') {
-    console.log(`[CLUSTERING_DIAGNOSTIC] ${a.claimText?.substring(0,60)} vs ${b.claimText?.substring(0,60)} | rejections=${rejections.join('|')}`);
-  }
+  console.log(`[CLUSTERING_DIAGNOSTIC] ${a.claimText?.substring(0,60)} vs ${b.claimText?.substring(0,60)} | rejections=${rejections.join('|')}`);
 
   return false;
 }
@@ -261,11 +259,9 @@ export function clusterEvaluationCandidates(candidates = []) {
   }
 
   // Diagnostic: log each candidate's profile before clustering
-  if (process.env.DEBUG_CLUSTERING === 'true') {
-    for (let i = 0; i < list.length; i++) {
-      const c = list[i];
-      console.log(`[CANDIDATE_${i}] ${c.claimText?.substring(0, 80)} | actors=${(c.namedActors || []).join(',')} | docs=${(c.namedStudiesOrDocuments || []).join(',')} | laws=${(c.namedLawsOrPolicies || []).join(',')} | datasets=${(c.namedDatasets || []).join(',')} | claimType=${JSON.stringify(c.claimType)}`);
-    }
+  for (let i = 0; i < list.length; i++) {
+    const c = list[i];
+    console.log(`[CANDIDATE_${i}] ${c.claimText?.substring(0, 80)} | actors=${(c.namedActors || []).join(',')} | docs=${(c.namedStudiesOrDocuments || []).join(',')} | laws=${(c.namedLawsOrPolicies || []).join(',')} | datasets=${(c.namedDatasets || []).join(',')} | claimType=${JSON.stringify(c.claimType)}`);
   }
 
   const tokenSets = list.map((c) => tokenSet(c.claimText || ""));
