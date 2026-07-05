@@ -98,35 +98,73 @@ function extractStatistics(candidate = {}) {
  * Uses multi-key matching: if ANY key matches, they cluster together (single-linkage).
  */
 function shouldClusterEvaluationCandidates(a, b, aTokens, bTokens) {
+  const reasons = [];
+  const rejections = [];
+
   // Text similarity: Jaccard overlap of tokens
   const textSim = jaccard(aTokens, bTokens);
-  if (textSim >= NEAR_DUP_JACCARD) return true;
+  if (textSim >= NEAR_DUP_JACCARD) {
+    reasons.push(`jaccard_sim=${textSim.toFixed(2)}`);
+    return true;
+  }
+  rejections.push(`jaccard_sim=${textSim.toFixed(2)}<${NEAR_DUP_JACCARD}`);
 
   // Same subject/actor
   const aActor = extractNamedEntity(a);
   const bActor = extractNamedEntity(b);
-  if (aActor && bActor && aActor === bActor) return true;
+  if (aActor && bActor && aActor === bActor) {
+    reasons.push(`same_actor=${aActor}`);
+    return true;
+  }
+  if (!aActor) rejections.push('no_actor_a');
+  if (!bActor) rejections.push('no_actor_b');
+  if (aActor && bActor) rejections.push(`diff_actors=${aActor}vs${bActor}`);
 
   // Same named study/document/law/dataset
   const aDocs = extractNamedDocuments(a);
   const bDocs = extractNamedDocuments(b);
-  if (arraySetIntersection(aDocs, bDocs)) return true;
+  if (arraySetIntersection(aDocs, bDocs)) {
+    reasons.push(`same_docs=${aDocs.join('+')}`);
+    return true;
+  }
+  if (aDocs.length === 0) rejections.push('no_docs_a');
+  if (bDocs.length === 0) rejections.push('no_docs_b');
+  if (aDocs.length > 0 && bDocs.length > 0) rejections.push(`diff_docs=${aDocs.join(',')}vs${bDocs.join(',')}`);
 
   const aLaws = extractNamedLaws(a);
   const bLaws = extractNamedLaws(b);
-  if (arraySetIntersection(aLaws, bLaws)) return true;
+  if (arraySetIntersection(aLaws, bLaws)) {
+    reasons.push(`same_laws=${aLaws.join('+')}`);
+    return true;
+  }
+  if (aLaws.length === 0) rejections.push('no_laws_a');
+  if (bLaws.length === 0) rejections.push('no_laws_b');
+  if (aLaws.length > 0 && bLaws.length > 0) rejections.push(`diff_laws=${aLaws.join(',')}vs${bLaws.join(',')}`);
 
   const aDatasets = extractNamedDatasets(a);
   const bDatasets = extractNamedDatasets(b);
-  if (arraySetIntersection(aDatasets, bDatasets)) return true;
+  if (arraySetIntersection(aDatasets, bDatasets)) {
+    reasons.push(`same_datasets=${aDatasets.join('+')}`);
+    return true;
+  }
+  if (aDatasets.length === 0) rejections.push('no_datasets_a');
+  if (bDatasets.length === 0) rejections.push('no_datasets_b');
+  if (aDatasets.length > 0 && bDatasets.length > 0) rejections.push(`diff_datasets=${aDatasets.join(',')}vs${bDatasets.join(',')}`);
 
   // Same statistic/date/quantity (exact string match after normalization)
   const aStats = extractStatistics(a);
   const bStats = extractStatistics(b);
   if (aStats.length > 0 && bStats.length > 0) {
     for (const stat of aStats) {
-      if (bStats.includes(stat)) return true;
+      if (bStats.includes(stat)) {
+        reasons.push(`same_stat=${stat}`);
+        return true;
+      }
     }
+    rejections.push(`diff_stats=${aStats.join(',')}vs${bStats.join(',')}`);
+  } else {
+    if (aStats.length === 0) rejections.push('no_stats_a');
+    if (bStats.length === 0) rejections.push('no_stats_b');
   }
 
   // noveltyHint and localRepetitionSignals indicate repetition
@@ -137,7 +175,18 @@ function shouldClusterEvaluationCandidates(a, b, aTokens, bTokens) {
     // Both marked as non-novel in same context; may cluster
     const aReps = a.localRepetitionSignals;
     const bReps = b.localRepetitionSignals;
-    if (aReps && bReps && String(aReps) === String(bReps)) return true;
+    if (aReps && bReps && String(aReps) === String(bReps)) {
+      reasons.push('same_repetition_signals');
+      return true;
+    }
+    rejections.push(`diff_novelty_reps=${aNovalty}/${bNovalty}`);
+  } else {
+    rejections.push(`novelty_mismatch=${aNovalty}vs${bNovalty}`);
+  }
+
+  // Log diagnostic for singleton cluster (no matches found)
+  if (process.env.DEBUG_CLUSTERING === 'true') {
+    console.log(`[CLUSTERING_DIAGNOSTIC] ${a.claimText?.substring(0,60)} vs ${b.claimText?.substring(0,60)} | rejections=${rejections.join('|')}`);
   }
 
   return false;
@@ -211,6 +260,14 @@ export function clusterEvaluationCandidates(candidates = []) {
     return { clusterIdByIndex: [], clusters: new Map(), totalClusters: 0 };
   }
 
+  // Diagnostic: log each candidate's profile before clustering
+  if (process.env.DEBUG_CLUSTERING === 'true') {
+    for (let i = 0; i < list.length; i++) {
+      const c = list[i];
+      console.log(`[CANDIDATE_${i}] ${c.claimText?.substring(0, 80)} | actors=${(c.namedActors || []).join(',')} | docs=${(c.namedStudiesOrDocuments || []).join(',')} | laws=${(c.namedLawsOrPolicies || []).join(',')} | datasets=${(c.namedDatasets || []).join(',')} | claimType=${JSON.stringify(c.claimType)}`);
+    }
+  }
+
   const tokenSets = list.map((c) => tokenSet(c.claimText || ""));
   const parent = list.map((_, i) => i);
 
@@ -274,6 +331,11 @@ export function clusterEvaluationCandidates(candidates = []) {
     cluster.representative = { ...list[bestIndex], sourceIndex: bestIndex };
     cluster.size = cluster.memberIndexes.length;
   }
+
+  // Diagnostic: count singletons vs. merged clusters
+  const singletonClusters = Array.from(clusters.values()).filter(c => c.size === 1).length;
+  const mergedClusters = clusters.size - singletonClusters;
+  console.log(`[EVALUATION_CLUSTERING_RESULT] input=${list.length} | clusters=${clusters.size} | singletons=${singletonClusters} | merged=${mergedClusters} | reduction_ratio=${(list.length / clusters.size).toFixed(2)}x`);
 
   return { clusterIdByIndex, clusters, totalClusters: clusters.size };
 }
