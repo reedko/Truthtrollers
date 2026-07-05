@@ -944,7 +944,7 @@ Return:
         system,
         user,
         schemaHint: "",
-        temperature: 0.1,
+        temperature: 0.3,
         maxRetries: 1,
         timeout: 60000,
       });
