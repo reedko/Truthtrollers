@@ -99,6 +99,36 @@ export async function persistAIResults(
             ]
           );
         } catch (err) {
+          if (["abstract_only", "identity_only"].includes(link.scrape_status) && /truncat|enum|scrape_status/i.test(String(err.message || ""))) {
+            try {
+              // Older databases may still constrain scrape_status to the
+              // legacy values. Preserve the provisional link using the legacy
+              // status; the content topic lets the read path expose it as
+              // abstract_only until that schema is widened.
+              await query(
+                `INSERT INTO reference_claim_links
+                 (claim_id, reference_content_id, stance, score, confidence, support_level, rationale, evidence_text, evidence_offsets, created_by_ai, verified_by_user_id, scrape_status)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'snippet_only')`,
+                [
+                  link.claim_id,
+                  link.reference_content_id,
+                  link.stance,
+                  link.score,
+                  link.confidence,
+                  link.support_level,
+                  link.rationale,
+                  link.evidence_text,
+                  link.evidence_offsets,
+                  link.created_by_ai,
+                  link.verified_by_user_id,
+                ],
+              );
+              logger.warn(`⚠️  [persistAIResults] Stored ${link.scrape_status} link ${link.claim_id} with legacy snippet_only DB status`);
+              continue;
+            } catch (fallbackError) {
+              logger.warn(`⚠️  [persistAIResults] Abstract-only fallback insert failed for claim ${link.claim_id}:`, fallbackError.message);
+            }
+          }
           logger.warn(
             `⚠️  [persistAIResults] Failed to insert reference_claim_link for claim ${link.claim_id}:`,
             err.message

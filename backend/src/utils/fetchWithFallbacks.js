@@ -91,6 +91,33 @@ async function fetchWithPuppeteer(url) {
   }
 }
 
+export async function fetchWaybackSnapshot(url, maxLength = 50000) {
+  if (!url) return null;
+  try {
+    logger.log(`🕰️ [fetchWithFallbacks] Checking Wayback availability: ${url}`);
+    const availabilityUrl = `https://archive.org/wayback/available?url=${encodeURIComponent(url)}`;
+    const availResp = await axios.get(availabilityUrl, { timeout: 5000 });
+    const snapshot = availResp.data?.archived_snapshots?.closest;
+    if (!snapshot?.available) {
+      logger.warn(`⚠️ [fetchWithFallbacks] No Wayback snapshots available for: ${url}`);
+      return null;
+    }
+    const snapshotUrl = snapshot.url;
+    const rawSnapshotUrl = snapshotUrl.replace(/\/web\/(\d+)\//, "/web/$1id_/");
+    logger.log(`🕰️ [fetchWithFallbacks] Fetching raw snapshot: ${rawSnapshotUrl}`);
+    const html = await fetchWithPuppeteer(rawSnapshotUrl);
+    if (!html || html.length < 100 || isBlockedContent(html, url)) {
+      logger.warn(`⚠️ [fetchWithFallbacks] Wayback snapshot unusable for: ${url}`);
+      return null;
+    }
+    logger.log(`✅ [fetchWithFallbacks] Success with Wayback (${html.length} chars)`);
+    return { text: html.slice(0, maxLength), method: "wayback", snapshotUrl: rawSnapshotUrl };
+  } catch (err) {
+    logger.warn(`⚠️ [fetchWithFallbacks] Wayback Machine failed:`, err.message);
+    return null;
+  }
+}
+
 /**
  * Fetch URL text with fallbacks:
  * 1. Try axios with DEFAULT_HEADERS
@@ -152,52 +179,8 @@ export async function fetchTextWithFallbacks(url, maxLength = 50000) {
   }
 
   // Try 3: Wayback Machine with Puppeteer
-  try {
-    // Step 1: Get most recent snapshot from Availability API
-    logger.log(`🕰️ [fetchWithFallbacks] Checking Wayback availability: ${url}`);
-
-    const availabilityUrl = `https://archive.org/wayback/available?url=${encodeURIComponent(url)}`;
-    const availResp = await axios.get(availabilityUrl, { timeout: 5000 });
-
-    const snapshot = availResp.data?.archived_snapshots?.closest;
-    if (!snapshot || !snapshot.available) {
-      logger.warn(`⚠️ [fetchWithFallbacks] No Wayback snapshots available for: ${url}`);
-      return null;
-    }
-
-    const snapshotUrl = snapshot.url;
-    logger.log(`🕰️ [fetchWithFallbacks] Found Wayback snapshot: ${snapshotUrl}`);
-
-    // Step 2: Fetch the snapshot with id_ modifier (raw content, no toolbar)
-    // Format: https://web.archive.org/web/20230101123456id_/https://example.com
-    const rawSnapshotUrl = snapshotUrl.replace(/\/web\/(\d+)\//, '/web/$1id_/');
-    logger.log(`🕰️ [fetchWithFallbacks] Fetching raw snapshot: ${rawSnapshotUrl}`);
-
-    const html = await fetchWithPuppeteer(rawSnapshotUrl);
-
-    if (!html || html.length < 100) {
-      logger.warn(
-        `⚠️ [fetchWithFallbacks] Wayback returned empty/tiny content (${html?.length || 0} chars) for: ${url}`
-      );
-      return null;
-    }
-
-    // Check if Wayback gave us a promo page instead of content
-    if (isBlockedContent(html, url)) {
-      logger.warn(`⚠️ [fetchWithFallbacks] Wayback returned blocked/promo page for: ${url}`);
-      return null;
-    }
-
-    logger.log(
-      `✅ [fetchWithFallbacks] Success with Wayback (${html.length} chars)`
-    );
-    return { text: html.slice(0, maxLength), method: "wayback" };
-  } catch (err) {
-    logger.warn(
-      `⚠️ [fetchWithFallbacks] Wayback Machine failed:`,
-      err.message
-    );
-  }
+  const wayback = await fetchWaybackSnapshot(url, maxLength);
+  if (wayback) return wayback;
 
   // All methods failed
   logger.error(`❌ [fetchWithFallbacks] All methods failed for: ${url}`);

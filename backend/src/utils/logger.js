@@ -57,22 +57,24 @@ const writeToFile = (message) => {
   }
 };
 
+const serialize = (a) => (typeof a === "string" ? a : JSON.stringify(a));
+
 // Custom console wrapper
 export const logger = {
   log: (...args) => {
-    const message = args.join(" ");
+    const message = args.map(serialize).join(" ");
     if (ENABLE_CONSOLE_LOGGING) console.log(...args);
     writeToFile(message);
   },
 
   error: (...args) => {
-    const message = args.join(" ");
+    const message = args.map(serialize).join(" ");
     if (ENABLE_CONSOLE_LOGGING) console.error(...args);
     writeToFile(`ERROR: ${message}`);
   },
 
   warn: (...args) => {
-    const message = args.join(" ");
+    const message = args.map(serialize).join(" ");
     if (ENABLE_CONSOLE_LOGGING) console.warn(...args);
     writeToFile(`WARN: ${message}`);
   },

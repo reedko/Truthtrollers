@@ -16,9 +16,10 @@
 // --------------------------------------------------------------
 
 import { openAiLLM } from "./openAiLLM.js";
-import { tavilySearch } from "./tavilySearch.js";
-import { bingSearch } from "./bingSearch.js";
 import { duckDuckGoSearch } from "./duckDuckGoSearch.js";
+import { createEvidenceRetrievalGateway } from "./evidenceRetrievalGateway.js";
+import { loadSearchGatewayConfig } from "./searchGatewayConfig.js";
+import { loadClaimEvaluationTargets } from "./evaluationTargetStore.js";
 import { EvidenceEngine } from "./evidenceEngine.js";
 import { SourceQualityScorer } from "./sourceQualityScorer.js";
 import PromptManager from "./promptManager.js";
@@ -33,16 +34,31 @@ import { extractInlineRefs } from "../utils/extractInlineRefs.js";
 import { getMainHeadline } from "../utils/getMainHeadline.js";
 import { getBestImage } from "../utils/getBestImage.js";
 import { buildEvidenceClaimContext } from "../utils/normalizeEvidenceClaim.js";
-import { buildEvidenceNeedV1, buildEvidenceTargetQueries, tokenizeBearingText } from "./evidenceNeed.js";
+import { buildEvidenceNeedV1, buildEvidenceTargetQueries, buildEvidenceNeedFromEvaluationTargets, tokenizeBearingText } from "./evidenceNeed.js";
+import { NEUTRAL_STANCE_GOAL, lanesForTargetType, normalizePurposeLane, providerProfileForLane } from "./evidencePurposeLanes.js";
 import { isBearingShadowEnabled, isSnippetBearingLlmEnabled } from "./snippetBearing.js";
 import { loadBearingGatingConfig } from "./bearingConfig.js";
 import { recordEvidenceComparisonRun } from "./evidenceComparisonRegistry.js";
+import { createEvidenceRepairAudit } from "./evidenceRepairAudit.js";
+import {
+  appendPreservedEvidenceAssertion,
+  assertionFingerprint,
+  buildPreservedEvidenceAssertion,
+  persistDirectEvidenceAssertions,
+} from "./evidenceAssertionPersistence.js";
+import { buildRetrievalContextsForClaim } from "./retrievalContext.js";
+import { discoverStudyIdentities } from "./studyIdentityDiscovery.js";
+import { extractCitationDerivedCandidates, extractPdfTextWithFallback } from "./citationExpansion.js";
+import { buildIdentityDocumentLink } from "./identityBearing.js";
+import { buildAcademicPublishingIdentity } from "./academicContentResolver.js";
 import logger from "../utils/logger.js";
 import * as cheerio from "cheerio";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 
 import fetch from "node-fetch";
+import { isUsableSourceEntityName } from "../utils/publisherNameValidation.js";
+import { fetchWaybackSnapshot } from "../utils/fetchWithFallbacks.js";
 
 /**
  * Helper: Ensure content_relations record exists linking reference to task
@@ -95,7 +111,7 @@ function domainFromUrl(url) {
 
 function usablePublisherName(name) {
   const cleaned = String(name || "").trim();
-  if (!cleaned || cleaned.length < 2) return null;
+  if (!isUsableSourceEntityName(cleaned)) return null;
   if (JUNK_PUBLISHER_RE.test(cleaned)) return null;
   return cleaned;
 }
@@ -270,6 +286,42 @@ function clampScore(value, fallback = 0) {
   return Math.max(0, Math.min(100, n));
 }
 
+// Phase 4: structured query plan logging per evaluation target
+function logEvidenceQueryPlan(claim) {
+  const targets = Array.isArray(claim.evaluationTargets) ? claim.evaluationTargets : [];
+  const queries = (Array.isArray(claim.searchTargets) ? claim.searchTargets : []).map((t) => t.query).filter(Boolean);
+  const planned = queries.length > 0;
+
+  if (!targets.length) {
+    logger.log(`[QUERY_PLAN] ${JSON.stringify({
+      claim_id: claim.id,
+      evaluation_target_id: null,
+      target_type: "legacy",
+      target_text: String(claim.searchText || claim.text || "").slice(0, 200),
+      queries,
+      execution_status: planned ? "planned" : "skipped",
+      skip_reason: planned ? null : "no_search_targets_generated",
+    })}`);
+    return;
+  }
+
+  for (const target of targets.filter((t) => t.searchEligible !== false)) {
+    logger.log(`[QUERY_PLAN] ${JSON.stringify({
+      claim_id: claim.id,
+      evaluation_target_id: target.evaluationTargetId || null,
+      target_type: target.targetType || "unknown",
+      target_text: String(target.targetText || "").slice(0, 200),
+      queries,
+      execution_status: planned ? "planned" : "skipped",
+      skip_reason: planned ? null : "no_search_targets_generated",
+    })}`);
+  }
+
+  if (targets.some((t) => t.searchEligible !== false) && !planned) {
+    logger.warn(`[QUERY_PLAN] claim_id=${claim.id} has search-eligible targets but generated no queries — check evaluation target fields`);
+  }
+}
+
 export function buildSearchTargets(claim) {
   const text = String(claim?.searchText || claim?.promptText || claim?.text || "").trim();
   const originalText = String(claim?.originalText || claim?.text || "").trim();
@@ -356,11 +408,20 @@ export function addEvidenceTargetProvenance(searchTargets, evidenceNeed) {
   const targets = Array.isArray(evidenceNeed?.evidenceTargets) ? evidenceNeed.evidenceTargets : [];
   return (Array.isArray(searchTargets) ? searchTargets : []).map((searchTarget, index) => {
     const target = targets[index] || targets[0] || {};
+    const evidenceTargetType = searchTarget.evidenceTargetType || target.evidenceTargetType || "other";
+    // Carry a purpose lane (evidentiary job) rather than a desired stance.
+    const purposeLane = normalizePurposeLane(
+      searchTarget.purposeLane || target.purposeLane,
+      lanesForTargetType(evidenceTargetType)[0],
+    );
     return {
       ...searchTarget,
-      stanceGoal: searchTarget.stanceGoal || target.stanceGoal || searchTarget.intent || "open",
+      purposeLane,
+      providerProfile: searchTarget.providerProfile || providerProfileForLane(purposeLane),
+      // Legacy stance field kept neutral for backward compatibility only.
+      stanceGoal: NEUTRAL_STANCE_GOAL,
       evidenceTargetId: searchTarget.evidenceTargetId || target.id || "legacy-direct",
-      evidenceTargetType: searchTarget.evidenceTargetType || target.evidenceTargetType || "other",
+      evidenceTargetType,
       bearingRequirement: searchTarget.bearingRequirement || target.bearingRequirement || "direct_truth_value",
     };
   });
@@ -382,6 +443,8 @@ export function buildEvidenceQueryContexts(claims) {
 
   return Object.fromEntries(safeClaims.map((claim) => [Number(claim.id), {
     caseSubjectTerms,
+    retrievalContext: claim.retrievalContext || null,
+    retrievalContexts: Array.isArray(claim.retrievalContexts) ? claim.retrievalContexts : [],
     relatedCaseClaims: safeClaims
       .filter((other) => Number(other.id) !== Number(claim.id))
       .slice(0, 4)
@@ -395,6 +458,7 @@ export async function runEvidenceEngine({
   claimIds,
   claims: claimMetadata = [],
   readableText,
+  onProgress = null,
 }) {
   const evidenceRunStartedAtMs = Date.now();
   logger.log("🟣 [runEvidenceEngine] Starting evidence run…");
@@ -403,6 +467,11 @@ export async function runEvidenceEngine({
   if (!taskContentId) throw new Error("Missing taskContentId");
   if (!Array.isArray(claimIds) || claimIds.length === 0)
     throw new Error("No claims passed to EvidenceEngine");
+
+  // Log the initial claim count before filtering
+  logger.log(`📊 [runEvidenceEngine] Received ${claimIds.length} total claim IDs (will filter to selectedEvaluationClaims only)`);
+  // Phase 4: visible-claim limit applies to claims, not to individual evaluation targets
+  logger.log(`[QUERY_PLAN] Processing ${selectedEvaluationClaimIds.length} selected evaluation claim(s) (filtered from ${claimIds.length} total) for content ${taskContentId}`);
 
   // Fetch task URL to exclude it from being used as its own reference
   const taskRows = await query(
@@ -415,12 +484,51 @@ export async function runEvidenceEngine({
   }
 
   const bearingConfig = await loadBearingGatingConfig({ query });
+  const searchGatewayConfig = await loadSearchGatewayConfig({ query });
+  const searchGateway = createEvidenceRetrievalGateway({ config: searchGatewayConfig });
 
-  // Fetch claim text from DB
+  // ═══════════════════════════════════════════════════════════════════
+  // EVIDENCE LANE GATING
+  // ═══════════════════════════════════════════════════════════════════
+  // Gate evidence retrieval, bearing, and verdict mapping to selectedEvaluationClaims only.
+  // Background claims must:
+  //   - searchEligible=false (set by argumentMappingEngine)
+  //   - verdictEligible=false (set by argumentMappingEngine)
+  //   - skip bearing entirely (via perClaimLimits.background=0 in bearingConfig)
+  //   - sourceEligible=true (preserve for future source use)
+  // ═══════════════════════════════════════════════════════════════════
+  const evaluationEligibilityRows = await query(
+    `SELECT claim_id, selected_for_evaluation, argument_function FROM content_claims
+      WHERE content_id = ? AND claim_id IN (?)`,
+    [taskContentId, claimIds]
+  );
+  const evaluationEligibilityMap = new Map(
+    evaluationEligibilityRows.map((row) => [Number(row.claim_id), row])
+  );
+  const selectedEvaluationClaimIds = claimIds.filter((claimId) => {
+    const eligibility = evaluationEligibilityMap.get(Number(claimId));
+    if (!eligibility) return true; // Default to true if not found
+    return eligibility.selected_for_evaluation === 1 || eligibility.selected_for_evaluation === true;
+  });
+  const backgroundClaimIds = claimIds.filter((claimId) => {
+    const eligibility = evaluationEligibilityMap.get(Number(claimId));
+    if (!eligibility) return false;
+    return eligibility.selected_for_evaluation === 0 || eligibility.selected_for_evaluation === false;
+  });
+
+  logger.log(`🔍 [EVIDENCE_LANE_GATING] Filtering claims: ${claimIds.length} total → ${selectedEvaluationClaimIds.length} evaluation + ${backgroundClaimIds.length} background`);
+  if (backgroundClaimIds.length > 0) {
+    logger.log(`🚫 [EVIDENCE_LANE_GATING] Background claims will skip: evidence_retrieval, bearing_evaluation, verdict_mapping, scoring`);
+    logger.log(`   Background claim IDs: ${backgroundClaimIds.slice(0, 5).join(", ")}${backgroundClaimIds.length > 5 ? "…" : ""}`);
+    logger.log(`   Background claims preserved with sourceEligible=true for future source use`);
+  }
+
+  // Fetch claim text from DB (for selected evaluation claims only)
   const rows = await query(
     `SELECT claim_id, claim_text FROM claims WHERE claim_id IN (?)`,
-    [claimIds]
+    [selectedEvaluationClaimIds.length > 0 ? selectedEvaluationClaimIds : [-1]]
   );
+  const persistedTargetsByClaim = await loadClaimEvaluationTargets(query, taskContentId, selectedEvaluationClaimIds);
 
   const metadataById = new Map(
     Array.isArray(claimMetadata)
@@ -429,12 +537,21 @@ export async function runEvidenceEngine({
   );
   const rowById = new Map(rows.map((row) => [Number(row.claim_id), row]));
 
-  const claims = claimIds
+  const claims = selectedEvaluationClaimIds
     .map((claimId) => rowById.get(Number(claimId)))
     .filter(Boolean)
     .map((row) => {
       const meta = metadataById.get(Number(row.claim_id)) || {};
-      const mappedObjectClaim = String(meta.objectClaim || meta.object_claim_text || meta.objectText || "").trim();
+      const evaluationTargets = Array.isArray(meta.targets) && meta.targets.length
+        ? meta.targets
+        : (persistedTargetsByClaim.get(Number(row.claim_id)) || []);
+      const primarySubstantiveTarget = evaluationTargets.find((target) =>
+        String(target.targetType || target.target_type).toLowerCase() === "substantive"
+      );
+      const mappedObjectClaim = String(
+        meta.objectClaim || meta.object_claim_text || meta.objectText ||
+        primarySubstantiveTarget?.targetText || primarySubstantiveTarget?.target_text || ""
+      ).trim();
       const searchText = String(mappedObjectClaim || meta.searchText || meta.search_text || "").trim();
       const context = buildEvidenceClaimContext(searchText || row.claim_text);
       if (context.changed) {
@@ -458,6 +575,13 @@ export async function runEvidenceEngine({
         articleStance: meta.articleStance || meta.article_stance || "",
         argumentFunction: meta.argumentFunction || meta.argument_function || "",
         scoreTransform: meta.scoreTransform || meta.score_transform || "",
+        argumentMappingRationale: meta.argumentMappingRationale || meta.argument_mapping_rationale || "",
+        targetMappingUnresolved: Boolean(
+          meta.targetMappingUnresolved ||
+          String(meta.argumentMappingRationale || meta.argument_mapping_rationale || "").startsWith("target_mapping_unresolved:") ||
+          evaluationTargets.some((target) => String(target.mappingRationale || target.mapping_rationale || "")
+            .startsWith("target_mapping_unresolved:")),
+        ),
         claimKind: meta.claimKind || meta.claim_kind || "",
         evidenceType: meta.evidenceType || meta.evidence_type || "",
         namedEntities: Array.isArray(meta.namedEntities) ? meta.namedEntities : [],
@@ -466,13 +590,27 @@ export async function runEvidenceEngine({
         sourceCitedInArticle: meta.sourceCitedInArticle || "",
         isFallibilityCritical: Boolean(meta.isFallibilityCritical || meta.is_fallibility_critical),
         searchAssertions: Array.isArray(meta.searchAssertions) ? meta.searchAssertions : [],
+        evaluationTargets,
+        evaluationTargetId: primarySubstantiveTarget?.evaluationTargetId || primarySubstantiveTarget?.evaluation_target_id || null,
       };
       const targetRoutingEnabled = isEvidenceTargetRoutingEnabled();
+      const multiTargetEnabled = process.env.ENABLE_MULTI_TARGET_EVIDENCE === "true";
+      const hasPersistedTargets = Array.isArray(evaluationTargets) && evaluationTargets.some((t) => t.searchEligible !== false);
       if (targetRoutingEnabled || isBearingShadowEnabled() || bearingConfig.enableBearingGating) {
-        claim.evidenceNeed = buildEvidenceNeedV1(claim);
+        // Phase 5: use typed evaluation targets for richer query lanes when available
+        claim.evidenceNeed = (multiTargetEnabled && hasPersistedTargets)
+          ? buildEvidenceNeedFromEvaluationTargets(claim, evaluationTargets)
+          : buildEvidenceNeedV1(claim);
       }
+      claim.retrievalContexts = buildRetrievalContextsForClaim(claim, {
+        articleText: readableText,
+      });
+      claim.retrievalContext = claim.retrievalContexts.find(
+        (retrievalContext) => retrievalContext.evaluationTargetType === "substantive",
+      ) || claim.retrievalContexts[0] || null;
+      const queryLimit = (multiTargetEnabled && hasPersistedTargets) ? 9 : 3;
       const assertionTargets = targetRoutingEnabled
-        ? buildEvidenceTargetQueries(claim.evidenceNeed, 3).filter((target) => target.matchedPart === "search_assertion")
+        ? buildEvidenceTargetQueries(claim.evidenceNeed, queryLimit).filter((target) => target.matchedPart === "search_assertion")
         : [];
       const legacySearchTargets = buildSearchTargets(claim);
       claim.searchTargets = targetRoutingEnabled ? assertionTargets : legacySearchTargets;
@@ -486,13 +624,146 @@ export async function runEvidenceEngine({
       (b.centrality - a.centrality)
     );
 
-  claimIds.splice(0, claimIds.length, ...claims.map((claim) => claim.id));
+  await discoverStudyIdentities({
+    query,
+    taskContentId,
+    claims,
+    search: searchGateway,
+  });
+  for (const claim of claims) {
+    const multiTargetEnabled = process.env.ENABLE_MULTI_TARGET_EVIDENCE === "true";
+    const hasPersistedTargets = Array.isArray(claim.evaluationTargets) &&
+      claim.evaluationTargets.some((target) => target.searchEligible !== false);
+    if (isEvidenceTargetRoutingEnabled() || isBearingShadowEnabled() || bearingConfig.enableBearingGating) {
+      claim.evidenceNeed = (multiTargetEnabled && hasPersistedTargets)
+        ? buildEvidenceNeedFromEvaluationTargets(claim, claim.evaluationTargets)
+        : buildEvidenceNeedV1(claim);
+    }
+    claim.retrievalContexts = buildRetrievalContextsForClaim(claim, { articleText: readableText });
+    claim.retrievalContext = claim.retrievalContexts.find(
+      (retrievalContext) => retrievalContext.evaluationTargetType === "substantive",
+    ) || claim.retrievalContexts[0] || null;
+    const queryLimit = multiTargetEnabled && hasPersistedTargets ? 9 : 3;
+    const assertionTargets = isEvidenceTargetRoutingEnabled()
+      ? buildEvidenceTargetQueries(claim.evidenceNeed, queryLimit).filter((target) => target.matchedPart === "search_assertion")
+      : [];
+    const legacySearchTargets = buildSearchTargets(claim);
+    claim.searchTargets = isEvidenceTargetRoutingEnabled() ? assertionTargets : legacySearchTargets;
+    claim.fallbackSearchTargets = isEvidenceTargetRoutingEnabled()
+      ? addEvidenceTargetProvenance(legacySearchTargets, claim.evidenceNeed)
+      : [];
+    for (const retrievalContext of claim.retrievalContexts) {
+      logger.log(`[RETRIEVAL_CONTEXT] ${JSON.stringify({
+        event: "retrieval_context_built",
+        taskContentId,
+        claimId: claim.id,
+        ...retrievalContext,
+        articlePassageContext: String(retrievalContext.articlePassageContext || "").slice(0, 1200),
+      })}`);
+    }
+    logEvidenceQueryPlan(claim);
+  }
+
+  selectedEvaluationClaimIds.splice(0, selectedEvaluationClaimIds.length, ...claims.map((claim) => claim.id));
 
   // Map to store processed references (URL → metadata)
   const referenceCache = new Map();
 
   // Track failed candidates for UI fallback (manual dashboard scrape)
   const failedCandidates = [];
+
+  async function persistAcademicApiReference(cand, claimIndex, fallbackReason = "Ordinary scrape unavailable") {
+    const api = cand?.academicApiContent;
+    const cleanText = String(api?.cleanText || "").trim().slice(0, 60000);
+    if (!api?.apiBacked || cleanText.length < 100) return null;
+
+    const title = api.title || cand.title || "Academic source";
+    const authors = (api.authors || []).map((name) => ({ name })).filter((item) => item.name);
+    const publisherName = usablePublisherName(api.publisher) || usablePublisherName(api.journal) || null;
+    const publisher = publisherName ? { name: publisherName } : null;
+    const publishingIdentity = buildAcademicPublishingIdentity(api, cand.url);
+    const retrievalMode = api.retrievalMode === "full_text" ? "full_text" : "abstract_only";
+    const referenceContentId = await createContentInternal(query, {
+      content_name: title,
+      url: cand.url,
+      media_source: publisherName || "PubMed",
+      topic: cand.protectedDocumentIdentity
+        ? "AI Evidence (Study Identity)"
+        : retrievalMode === "full_text" ? "AI Evidence" : "AI Evidence (Abstract Only)",
+      subtopics: [],
+      content_type: "reference",
+      taskContentId,
+      thumbnail: "",
+      details: `${retrievalMode}: ${cleanText.slice(0, 450)}`,
+    });
+    await ensureContentRelation(query, taskContentId, referenceContentId);
+    await query(`UPDATE content SET content_text = ? WHERE content_id = ?`, [cleanText, referenceContentId]);
+    const identityResult = await processPublishingIdentity({
+      query,
+      contentId: referenceContentId,
+      identity: publishingIdentity,
+      authors,
+    });
+    logger.log(`[ACADEMIC_METADATA] Persisted authoritative metadata for reference ${referenceContentId}: ` +
+      `authors=${authors.length}, publisher=${api.publisher || "none"}, venue=${api.journal || "none"}; ` +
+      `skipped generic author/publisher extraction`);
+
+    const citationCandidates = extractCitationDerivedCandidates({
+      text: cleanText,
+      sourceCandidate: cand,
+    });
+    const quality = Math.max(0, Math.min(1.2, Number(cand.score) || 0));
+    referenceCache.set(cand.url, {
+      referenceContentId,
+      title,
+      authors,
+      publisher,
+      publishingIdentity,
+      publishingIdentityPersistence: identityResult.persistence,
+      thumbnail: "",
+      cleanText,
+      snippet: cand.snippet || "",
+      quality,
+      citationCount: citationCandidates.length,
+      citationCandidates,
+      retrievalMode,
+      apiBacked: true,
+      ordinaryScrapeFailed: true,
+      fallbackReason,
+      protectedDocumentIdentity: Boolean(cand.protectedDocumentIdentity),
+      identityBearingScore: cand.identityBearingScore || null,
+      identityBearingType: cand.identityBearingType || null,
+      identityBearingRationale: cand.identityBearingRationale || null,
+      identityTargetId: cand.identityTargetId || null,
+      url: cand.url,
+      claimIndices: claimIndex !== -1 ? [claimIndex] : [],
+    });
+    if (retrievalMode === "abstract_only") {
+      failedCandidates.push({
+        url: cand.url,
+        title,
+        reason: `Abstract retrieved through PubMed API; full webpage unavailable (${fallbackReason})`,
+        contentId: referenceContentId,
+        scrapeStatus: "abstract_only",
+      });
+    }
+    logger.log(`[ACADEMIC_API] ${JSON.stringify({
+      event: "academic_api_reference_persisted",
+      url: String(cand.url || "").slice(0, 500),
+      referenceContentId,
+      retrievalMode,
+      textChars: cleanText.length,
+      ordinaryScrapeFailure: String(fallbackReason || "").slice(0, 240),
+    })}`);
+    return {
+      cleanText,
+      citationCount: citationCandidates.length,
+      citationCandidates,
+      retrievalMode,
+      apiBacked: true,
+      isProcessed: true,
+    };
+  }
 
   // Initialize promptManager for database-driven prompts
   const promptManager = new PromptManager(query);
@@ -531,47 +802,12 @@ export async function runEvidenceEngine({
       llm: openAiLLM,
       promptManager,
       search: {
-        internal: tavilySearch.internal ?? (() => []),
+        internal: searchGateway.internal,
         web: async (opts) => {
-          if (runOptions.searchEngine === "tavily") {
-            const start = Date.now();
-            const results = await tavilySearch.web(opts);
-            const duration = Date.now() - start;
-            logger.log(
-              `⏱️  [BENCHMARK] Tavily search took ${duration}ms for query: "${opts.query}"`
-            );
-            return results;
-          }
-          if (runOptions.searchEngine === "bing") {
-            const start = Date.now();
-            const results = await bingSearch(opts);
-            const duration = Date.now() - start;
-            logger.log(
-              `⏱️  [BENCHMARK] Bing search took ${duration}ms for query: "${opts.query}"`
-            );
-            return results;
-          }
-
-          // hybrid
-          const startTav = Date.now();
-          const startBing = Date.now();
-          const [tav, bing] = await Promise.all([
-            tavilySearch.web(opts).then((r) => {
-              const duration = Date.now() - startTav;
-              logger.log(
-                `⏱️  [BENCHMARK] Tavily (hybrid) took ${duration}ms for query: "${opts.query}"`
-              );
-              return r;
-            }),
-            bingSearch(opts).then((r) => {
-              const duration = Date.now() - startBing;
-              logger.log(
-                `⏱️  [BENCHMARK] Bing (hybrid) took ${duration}ms for query: "${opts.query}"`
-              );
-              return r;
-            }),
-          ]);
-          return [...(tav || []), ...(bing || [])];
+          const start = Date.now();
+          const results = await searchGateway.web(opts);
+          logger.log(`⏱️  [BENCHMARK] Search gateway took ${Date.now() - start}ms for query: "${opts.query}"`);
+          return results;
         },
         // Fringe search for low-quality sources (DuckDuckGo - less filtered)
         fringe: async (opts) => {
@@ -611,8 +847,19 @@ export async function runEvidenceEngine({
               return {
                 cleanText: cached.cleanText,
                 citationCount: cached.citationCount || 0,
+                citationCandidates: cached.citationCandidates || [],
+                retrievalMode: cached.retrievalMode || "full_text",
+                apiBacked: Boolean(cached.apiBacked),
                 isProcessed: true, // Flag that this is already processed
               };
+            }
+
+            // PMC XML is already the full article and is preferable to a
+            // brittle HTML scrape. Abstract-only records still attempt the
+            // ordinary URL below so accessible publisher full text can upgrade
+            // them to `full_text`.
+            if (cand.academicApiContent?.retrievalMode === "full_text") {
+              return persistAcademicApiReference(cand, claimIndex, "PMC full text retrieved through NCBI API");
             }
 
             logger.log(`🌐 [Evidence] Fetching: ${cand.url}`);
@@ -620,14 +867,32 @@ export async function runEvidenceEngine({
             // ─────────────────────────────────────────────
             // 1. FETCH and DETECT content type
             // ─────────────────────────────────────────────
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+            let resp = null;
+            let waybackFallback = null;
+            try {
+              const controller = new AbortController();
+              const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+              try {
+                resp = await fetch(cand.url, { signal: controller.signal });
+              } finally {
+                clearTimeout(timeout);
+              }
+              if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            } catch (directFetchError) {
+              if (!cand.protectedDocumentIdentity) throw directFetchError;
+              logger.log(`[IDENTITY_WAYBACK_FALLBACK] ${JSON.stringify({
+                event: "identity_wayback_attempt",
+                claimId: claim.id,
+                url: String(cand.url || "").slice(0, 500),
+                identityRole: cand.identityRole || cand.identityBearingType || null,
+                directFetchError: String(directFetchError.message || directFetchError).slice(0, 240),
+              })}`);
+              waybackFallback = await fetchWaybackSnapshot(cand.url, 60000);
+              if (!waybackFallback?.text) throw directFetchError;
+            }
 
-            const resp = await fetch(cand.url, { signal: controller.signal });
-            clearTimeout(timeout);
-
-            const contentType = resp.headers.get('content-type') || '';
-            const isPdf = contentType.includes('application/pdf') || cand.url.toLowerCase().match(/\.pdf($|\?)/);
+            const contentType = waybackFallback ? 'text/html' : (resp.headers.get('content-type') || '');
+            const isPdf = !waybackFallback && (contentType.includes('application/pdf') || cand.url.toLowerCase().match(/\.pdf($|\?)/));
 
             let html = null;
             let pdfExtractedText = null;
@@ -638,11 +903,13 @@ export async function runEvidenceEngine({
             if (isPdf) {
               logger.log(`📄 [Evidence] Detected PDF (Content-Type: ${contentType}), extracting text...`);
               try {
-                // Import pdf-parse dynamically
                 const pdfParse = (await import('pdf-parse')).default;
-
+                const pdfParseDirect = (await import('pdf-parse/lib/pdf-parse.js')).default;
                 const buffer = await resp.arrayBuffer();
-                const parsed = await pdfParse(Buffer.from(buffer));
+                const parsed = await extractPdfTextWithFallback(Buffer.from(buffer), {
+                  primaryParser: pdfParse,
+                  fallbackParser: pdfParseDirect,
+                });
 
                 let fullText = (parsed.text || "").replace(/\r/g, "");
 
@@ -655,15 +922,17 @@ export async function runEvidenceEngine({
                 pdfExtractedText = fullText;
                 pdfTitle = parsed.info?.Title?.trim() || null;
                 pdfAuthors = parsed.info?.Author?.trim() || null;
-                pdfIdentity = (await processPublishingIdentity({
-                  documentType: "pdf",
-                  pdfInfo: parsed.info || {},
-                  pdfMetadata: parsed.metadata || null,
-                  pdfText: fullText,
-                  sourceUrl: cand.url,
-                })).identity;
+                pdfIdentity = cand.academicApiContent
+                  ? buildAcademicPublishingIdentity(cand.academicApiContent, cand.url)
+                  : (await processPublishingIdentity({
+                      documentType: "pdf",
+                      pdfInfo: parsed.info || {},
+                      pdfMetadata: parsed.metadata || null,
+                      pdfText: fullText,
+                      sourceUrl: cand.url,
+                    })).identity;
 
-                logger.log(`📄 [Evidence] PDF extracted: ${pdfExtractedText.length} chars, ${parsed.numpages} pages`);
+                logger.log(`📄 [Evidence] PDF extracted: ${pdfExtractedText.length} chars, ${parsed.numpages || 0} pages, method=${parsed.method || 'none'}`);
               } catch (pdfErr) {
                 logger.warn(`⚠️  [Evidence] PDF extraction failed: ${pdfErr.message} - will create stub reference`);
                 // Set empty text so it creates a stub reference that can be manually scraped
@@ -673,7 +942,7 @@ export async function runEvidenceEngine({
               // ─────────────────────────────────────────────
               // HTML content - get text
               // ─────────────────────────────────────────────
-              html = await resp.text();
+              html = waybackFallback?.text || await resp.text();
 
               if (!html || html.length < 100) {
                 logger.warn(`⚠️  [Evidence] Empty response from ${cand.url}`);
@@ -681,12 +950,27 @@ export async function runEvidenceEngine({
               }
 
               logger.log(`✅ [Evidence] Fetched ${html.length} chars`);
+              if (waybackFallback) {
+                logger.log(`[IDENTITY_WAYBACK_FALLBACK] ${JSON.stringify({
+                  event: "identity_wayback_success",
+                  claimId: claim.id,
+                  url: String(cand.url || "").slice(0, 500),
+                  snapshotUrl: String(waybackFallback.snapshotUrl || "").slice(0, 700),
+                  chars: html.length,
+                })}`);
+              }
             }
 
             // ─────────────────────────────────────────────
             // 2. EXTRACT METADATA based on content type
             // ─────────────────────────────────────────────
             let title, authors, publisher, publishingIdentity, thumbnail, cleanText, citationCount = 0;
+            let retrievalMode = "full_text";
+            let apiBacked = false;
+            const academicApi = cand.academicApiContent;
+            const hasAuthoritativeAcademicMetadata = Boolean(academicApi?.apiBacked && (
+              academicApi.authors?.length || academicApi.journal || academicApi.publisher
+            ));
 
             if (isPdf) {
               // PDF metadata extraction
@@ -708,10 +992,14 @@ export async function runEvidenceEngine({
                 ? (pdfTitleBase.startsWith('[PDF]') ? pdfTitleBase : `[PDF] ${pdfTitleBase}`)
                 : "[PDF] Document";
 
-              publishingIdentity = pdfIdentity;
-              authors = publishingIdentity?.document?.authors?.length
-                ? publishingIdentity.document.authors
-                : pdfAuthors ? [{ name: pdfAuthors }] : [];
+              publishingIdentity = hasAuthoritativeAcademicMetadata
+                ? buildAcademicPublishingIdentity(academicApi, cand.url)
+                : pdfIdentity;
+              authors = hasAuthoritativeAcademicMetadata
+                ? (academicApi.authors || []).map((name) => ({ name }))
+                : publishingIdentity?.document?.authors?.length
+                  ? publishingIdentity.document.authors
+                  : pdfAuthors ? [{ name: pdfAuthors }] : [];
               publisher = publishingIdentity
                 ? (await processPublishingIdentity({ identity: publishingIdentity })).legacyPublisher
                 : null;
@@ -739,12 +1027,18 @@ export async function runEvidenceEngine({
               // ─────────────────────────────────────────────
               // 3. EXTRACT METADATA (from full HTML)
               // ─────────────────────────────────────────────
-              title =
-                cand.title || (await getMainHeadline($)) || "AI Reference";
-              authors = await extractAuthors($);
-              const identityResult = await processPublishingIdentity({ $, sourceUrl: cand.url });
-              publishingIdentity = identityResult.identity;
-              publisher = identityResult.legacyPublisher;
+              title = academicApi?.title || cand.title || (await getMainHeadline($)) || "AI Reference";
+              if (hasAuthoritativeAcademicMetadata) {
+                authors = (academicApi.authors || []).map((name) => ({ name }));
+                publishingIdentity = buildAcademicPublishingIdentity(academicApi, cand.url);
+                publisher = (await processPublishingIdentity({ identity: publishingIdentity })).legacyPublisher;
+                logger.log(`[ACADEMIC_METADATA] Using API authors/publishing identity for ${cand.url}; skipped HTML metadata extraction`);
+              } else {
+                authors = await extractAuthors($);
+                const identityResult = await processPublishingIdentity({ $, sourceUrl: cand.url });
+                publishingIdentity = identityResult.identity;
+                publisher = identityResult.legacyPublisher;
+              }
               thumbnail = getBestImage($, cand.url) || "";
 
               // ─────────────────────────────────────────────
@@ -799,6 +1093,31 @@ export async function runEvidenceEngine({
               }
             }
 
+            const api = academicApi;
+            if (api?.cleanText?.length >= 100) {
+              const academicHost = /(?:pubmed|pmc|ncbi)\.nlm\.nih\.gov/i.test(cand.url || "");
+              const likelyBlock = /access denied|captcha|are you a robot|enable javascript|checking your browser/i.test(cleanText || "");
+              const ordinaryLooksLikeFullText = !academicHost && !likelyBlock &&
+                cleanText.length >= Math.max(1500, api.cleanText.length + 1000);
+              if (!ordinaryLooksLikeFullText) {
+                cleanText = api.cleanText.slice(0, 60000);
+                title = api.title || title;
+                authors = (api.authors || []).map((name) => ({ name }));
+                publisher = usablePublisherName(api.publisher)
+                  ? { name: api.publisher }
+                  : usablePublisherName(api.journal) ? { name: api.journal } : publisher;
+                retrievalMode = api.retrievalMode === "full_text" ? "full_text" : "abstract_only";
+                apiBacked = true;
+                logger.log(`[ACADEMIC_API] Using ${retrievalMode} API text for ${cand.url} (${cleanText.length} chars)`);
+              }
+            }
+
+            const citationCandidates = extractCitationDerivedCandidates({
+              text: cleanText,
+              html: html || "",
+              sourceCandidate: cand,
+            });
+
             if (cleanText.length < 100) {
               logger.warn(
                 `⚠️  [Evidence] Insufficient text (${cleanText.length} chars): ${cand.url}`
@@ -813,7 +1132,7 @@ export async function runEvidenceEngine({
                 content_name: title,
                 url: cand.url,
                 media_source: publisher?.name || "Unknown",
-                topic: "AI Evidence (Failed)",
+                topic: cand.protectedDocumentIdentity ? "AI Evidence (Study Identity)" : "AI Evidence (Failed)",
                 subtopics: [],
                 content_type: "reference",
                 taskContentId,
@@ -830,12 +1149,14 @@ export async function runEvidenceEngine({
               // ─────────────────────────────────────────────
               await ensureContentRelation(query, taskContentId, stubContentId);
 
-              const persistedStubIdentity = (await processPublishingIdentity({
+              const persistedStubResult = await processPublishingIdentity({
                 query,
                 contentId: stubContentId,
                 identity: publishingIdentity,
                 fallbackPublisher: publisher,
-              })).persistence;
+                authors: hasAuthoritativeAcademicMetadata ? authors : null,
+              });
+              const persistedStubIdentity = persistedStubResult.persistence;
               const publisherLink = persistedStubIdentity?.primaryEntityId
                 ? {
                     publisherId: persistedStubIdentity.primaryEntityId,
@@ -854,12 +1175,14 @@ export async function runEvidenceEngine({
                     title,
                     author: authors?.[0]?.name || authors?.[0] || null,
                   });
-              enrichReferencePublisherAsync({
-                query,
-                referenceContentId: stubContentId,
-                url: cand.url,
-                publisherLink,
-              });
+              if (!hasAuthoritativeAcademicMetadata) {
+                enrichReferencePublisherAsync({
+                  query,
+                  referenceContentId: stubContentId,
+                  url: cand.url,
+                  publisherLink,
+                });
+              }
 
               // Calculate quality for this candidate
               const base = cand.score ?? 0;
@@ -881,7 +1204,14 @@ export async function runEvidenceEngine({
                 cleanText: "", // Empty - needs manual scrape
                 snippet: cand.snippet || "", // Save search engine snippet
                 quality, // Store quality
+                citationCandidates,
                 isFailed: true, // Mark as needing manual scrape
+                protectedDocumentIdentity: Boolean(cand.protectedDocumentIdentity),
+                identityBearingScore: cand.identityBearingScore || null,
+                identityBearingType: cand.identityBearingType || null,
+                identityBearingRationale: cand.identityBearingRationale || null,
+                identityTargetId: cand.identityTargetId || null,
+                url: cand.url,
                 claimIndices: claimIndex !== -1 ? [claimIndex] : [], // Track which claim requested this
               });
 
@@ -893,7 +1223,12 @@ export async function runEvidenceEngine({
                 contentId: stubContentId,
               });
 
-              return null;
+              return citationCandidates.length ? {
+                cleanText: "",
+                citationCount: 0,
+                citationCandidates,
+                isProcessed: true,
+              } : null;
             }
 
             // ─────────────────────────────────────────────
@@ -903,7 +1238,7 @@ export async function runEvidenceEngine({
               content_name: title,
               url: cand.url,
               media_source: publisher?.name || "Unknown",
-              topic: "AI Evidence",
+              topic: cand.protectedDocumentIdentity ? "AI Evidence (Study Identity)" : "AI Evidence",
               subtopics: [],
               content_type: "reference",
               taskContentId,
@@ -940,13 +1275,17 @@ export async function runEvidenceEngine({
             // ─────────────────────────────────────────────
             // 6. PERSIST AUTHORS & PUBLISHERS
             // ─────────────────────────────────────────────
-            await persistAuthors(query, referenceContentId, authors);
-            const persistedIdentity = (await processPublishingIdentity({
+            if (!hasAuthoritativeAcademicMetadata) {
+              await persistAuthors(query, referenceContentId, authors);
+            }
+            const persistedResult = await processPublishingIdentity({
               query,
               contentId: referenceContentId,
               identity: publishingIdentity,
               fallbackPublisher: publisher?.name && publisher.name !== "Unknown Publisher" ? publisher : null,
-            })).persistence;
+              authors: hasAuthoritativeAcademicMetadata ? authors : null,
+            });
+            const persistedIdentity = persistedResult.persistence;
 
             const primaryName = persistedIdentity?.primaryEntityId === persistedIdentity?.publicationVenueId
               ? publishingIdentity?.entities?.publication_venue?.name
@@ -967,12 +1306,16 @@ export async function runEvidenceEngine({
                   title,
                   author: authors?.[0]?.name || authors?.[0] || null,
                 });
-            enrichReferencePublisherAsync({
-              query,
-              referenceContentId,
-              url: cand.url,
-              publisherLink,
-            });
+            if (!hasAuthoritativeAcademicMetadata) {
+              enrichReferencePublisherAsync({
+                query,
+                referenceContentId,
+                url: cand.url,
+                publisherLink,
+              });
+            } else {
+              logger.log(`[ACADEMIC_METADATA] Authoritative authors/publisher/venue persisted for ${referenceContentId}; skipped generic metadata enrichment`);
+            }
 
             // Detect source lineage (excerpt/repost/pointer/archive) — fire-and-forget
             resolveSourceLineage(cand.url, { query }).catch(() => {});
@@ -1004,6 +1347,15 @@ export async function runEvidenceEngine({
               snippet: cand.snippet || "", // Store search snippet for fallback
               quality, // Store quality for later use
               citationCount, // Store citation count for quality scoring
+              citationCandidates,
+              retrievalMode,
+              apiBacked,
+              protectedDocumentIdentity: Boolean(cand.protectedDocumentIdentity),
+              identityBearingScore: cand.identityBearingScore || null,
+              identityBearingType: cand.identityBearingType || null,
+              identityBearingRationale: cand.identityBearingRationale || null,
+              identityTargetId: cand.identityTargetId || null,
+              url: cand.url,
               claimIndices: claimIndex !== -1 ? [claimIndex] : [], // Track which claim requested this
             });
 
@@ -1015,12 +1367,18 @@ export async function runEvidenceEngine({
             return {
               cleanText,
               citationCount,
+              citationCandidates,
+              retrievalMode,
+              apiBacked,
               isProcessed: true, // Flag that this is already processed
             };
           } catch (err) {
             logger.warn(
               `⚠️  [Evidence] Fetch failed for ${cand.url}: ${err.message}`
             );
+
+            const apiFallback = await persistAcademicApiReference(cand, claimIndex, err.message);
+            if (apiFallback) return apiFallback;
 
             // ─────────────────────────────────────────────
             // Create stub content row for failed reference
@@ -1029,7 +1387,7 @@ export async function runEvidenceEngine({
               content_name: cand.title || "Failed Reference",
               url: cand.url,
               media_source: "Unknown",
-              topic: "AI Evidence (Failed)",
+              topic: cand.protectedDocumentIdentity ? "AI Evidence (Study Identity)" : "AI Evidence (Failed)",
               subtopics: [],
               content_type: "reference",
               taskContentId,
@@ -1082,6 +1440,12 @@ export async function runEvidenceEngine({
               snippet: cand.snippet || "", // Save search engine snippet
               quality, // Store quality
               isFailed: true,
+              protectedDocumentIdentity: Boolean(cand.protectedDocumentIdentity),
+              identityBearingScore: cand.identityBearingScore || null,
+              identityBearingType: cand.identityBearingType || null,
+              identityBearingRationale: cand.identityBearingRationale || null,
+              identityTargetId: cand.identityTargetId || null,
+              url: cand.url,
               claimIndices: claimIndex !== -1 ? [claimIndex] : [], // Track which claim requested this
             });
 
@@ -1104,6 +1468,104 @@ export async function runEvidenceEngine({
     }
   );
 
+  const repairAudit = createEvidenceRepairAudit({
+    taskContentId,
+    claims,
+  });
+
+  // R8: persist each completed source/target result immediately. The final
+  // route-level pass remains an idempotent reconciliation pass, but a later
+  // timeout can no longer discard links that were already found.
+  const processedSourceUrls = new Set();
+  const bearingAssertionKeys = new Set();
+  const persistedClaimLinkIds = new Set();
+  const incrementalAssertions = new Map();
+  let reconciledClaimLinkCount = 0;
+  const reportProgress = (details) => {
+    if (typeof onProgress === "function") onProgress(details);
+  };
+  const onSourceProcessed = async ({ claim, candidate, evidence = [], ...details }) => {
+    const sourceUrl = candidate?.url || evidence[0]?.url || null;
+    if (sourceUrl) processedSourceUrls.add(sourceUrl);
+    const refData = sourceUrl ? referenceCache.get(sourceUrl) : null;
+    const assertions = [];
+
+    if (refData?.referenceContentId) {
+      for (const item of evidence) {
+        const traceId = repairAudit.recordEvidenceHandoff(item, {
+          status: "preserved_for_incremental_persistence",
+          reason: "R8_source_target_completed",
+          referenceContentId: refData.referenceContentId,
+        });
+        const assertion = buildPreservedEvidenceAssertion(
+          item,
+          {
+            claim,
+            adjudication: {
+              unresolvedTargetIds: (claim?.evaluationTargets || [])
+                .map((target) => Number(target.evaluationTargetId))
+                .filter(Boolean),
+            },
+          },
+          refData,
+          traceId,
+        );
+        const key = [
+          assertion.referenceContentId,
+          assertion.taskClaimId,
+          assertion.evaluationTargetId,
+          assertionFingerprint(assertion),
+        ].join(":");
+        if (!incrementalAssertions.has(key)) {
+          incrementalAssertions.set(key, assertion);
+          bearingAssertionKeys.add(key);
+          assertions.push(assertion);
+        }
+      }
+    }
+
+    if (assertions.length) {
+      const persisted = await persistDirectEvidenceAssertions({
+        query,
+        taskContentId,
+        aiReferences: [{
+          referenceContentId: refData.referenceContentId,
+          url: sourceUrl,
+          evidenceAssertions: assertions,
+        }],
+        repairAudit,
+      });
+      for (const outcome of persisted.outcomes || []) {
+        if (outcome.status === "persisted" && outcome.claimLinkId) {
+          persistedClaimLinkIds.add(Number(outcome.claimLinkId));
+        }
+      }
+      try {
+        const rows = await query(
+          `SELECT COUNT(*) AS count
+             FROM reference_claim_task_links
+            WHERE task_claim_id IN (?)`,
+          [selectedEvaluationClaimIds],
+        );
+        reconciledClaimLinkCount = Number(rows?.[0]?.count) || 0;
+      } catch (error) {
+        reconciledClaimLinkCount = persistedClaimLinkIds.size;
+        logger.warn(`[R8_PROGRESS] Could not reconcile durable claim-link count: ${error.message}`);
+      }
+    }
+
+    reportProgress({
+      counts: {
+        sourcesProcessed: processedSourceUrls.size,
+        bearingAssertionsFound: bearingAssertionKeys.size,
+        claimLevelLinksPersisted: reconciledClaimLinkCount,
+      },
+      activeClaimId: Number(claim?.id) || null,
+      activeSourceUrl: String(sourceUrl || "").slice(0, 500) || null,
+      ...details,
+    });
+  };
+
   // engine.run(claims, contexts, opt)
   // contexts can be null/undefined if not needed
   const runOptions = {
@@ -1113,6 +1575,7 @@ export async function runEvidenceEngine({
     enableBearingPacketLive: bearingConfig.enableBearingPacketLive,
     bearingConfig,
     maxSnippetCandidatesPerClaim: bearingConfig.maxSnippetCandidatesPerClaim,
+    maxSourcesToScrapePerTarget: searchGatewayConfig.maxSourcesToScrapePerTarget,
     enableInternal: true,
     enableWeb: true,
     searchEngine: "hybrid",
@@ -1122,13 +1585,14 @@ export async function runEvidenceEngine({
     enableRedTeam: false,
 
     // Apply mode-specific config (or fallback to defaults)
-    queriesPerClaim: Math.min(modeConfig.queriesPerClaim || 6, 3),
-    topKQueries: Math.min(modeConfig.queriesPerClaim || 6, 3),
-    topKCandidates: Math.min(modeConfig.topKCandidates || modeConfig.queriesPerClaim || 6, 9),
+    queriesPerClaim: bearingConfig.enableBearingGating ? 9 : Math.min(modeConfig.queriesPerClaim || 6, 3),
+    topKQueries: bearingConfig.enableBearingGating ? 9 : Math.min(modeConfig.queriesPerClaim || 6, 3),
+    topKCandidates: bearingConfig.enableBearingGating ? 12 : Math.min(modeConfig.topKCandidates || modeConfig.queriesPerClaim || 6, 9),
     maxEvidencePerDoc: 2,
     maxEvidenceCandidates: Math.min(modeConfig.maxEvidenceCandidates || 4, 9),
-    maxSearchTargetsPerClaim: 3,
-    maxSourcesComparedPerClaim: 9,
+    maxSearchTargetsPerClaim: bearingConfig.enableBearingGating ? 9 : 3,
+    maxSourcesComparedPerClaim: bearingConfig.enableBearingGating ? 20 : 9,
+    topKPerIntent: bearingConfig.enableBearingGating ? 8 : 4,
     maxRetriesPerClaim: 1,
 
     // Mode-specific settings
@@ -1137,17 +1601,50 @@ export async function runEvidenceEngine({
     topKFringeCandidates: modeConfig.topKFringeCandidates || 3,
     maxFringeEvidenceCandidates: modeConfig.maxFringeEvidenceCandidates || 2,
 
-    enableBalancedSearch: modeConfig.enableBalancedSearch || false,
-    supportQueries: modeConfig.supportQueries || 3,
-    refuteQueries: modeConfig.refuteQueries || 3,
-    nuanceQueries: modeConfig.nuanceQueries || 3,
-    targetSupport: modeConfig.targetSupport || 3,
-    targetRefute: modeConfig.targetRefute || 3,
-    targetNuance: modeConfig.targetNuance || 3,
+    // Stance-quota query options (enableBalancedSearch / support|refute|nuance
+    // counts) were removed: query generation is purpose-lane based and stance is
+    // classified only after retrieval. See docs/evidence-query-stance-analysis.md.
+
+    // Candidate cap hierarchy (see candidateSurvival.js). These are count valves,
+    // not provider-score filters. Bearing (not provider score) decides survival.
+    //   A. Raw provider results            — no bearing cap.
+    //   B. Canonical merge / provenance     — no provider-score cut.
+    //   C. Pre-bearing pool                 — maxPreBearingCandidatesPerClaim,
+    //      maxCandidatesPerPurposeLane (coarse valve), maxVerifiedDocumentCandidates
+    //      (reserved). This REPLACES the old topKPerIntent / topKCandidates
+    //      pre-bearing provider-score/intent-bucket trimming.
+    //   D. LLM bearing batch                — maxLlmBearingCandidatesPerClaim,
+    //      ordered by verified reserved slots -> deterministic bearing -> richness
+    //      -> role -> provider score (final tie-break only).
+    //   E. Post-bearing selection           — the EXISTING caps (maxEvidenceCandidates,
+    //      getPerClaimBearingLimit(), maxSourcesComparedPerClaim, globalScrapeLimitPerContent)
+    //      apply only AFTER bearing.
+    maxPreBearingCandidatesPerClaim: modeConfig.maxPreBearingCandidatesPerClaim || 50,
+    maxLlmBearingCandidatesPerClaim: modeConfig.maxLlmBearingCandidatesPerClaim || 12,
+    maxCandidatesPerPurposeLane: modeConfig.maxCandidatesPerPurposeLane || 10,
+    maxVerifiedDocumentCandidates: modeConfig.maxVerifiedDocumentCandidates || 8,
+    // Snippet-bearing robustness: split the per-claim LLM budget into small
+    // per-target sub-batches so one timeout cannot collapse the whole claim.
+    maxCandidatesPerTargetBatch: modeConfig.maxCandidatesPerTargetBatch || 6,
+    snippetBearingTimeoutMs: modeConfig.snippetBearingTimeoutMs || 15000,
     excludeUrl: taskUrl, // Exclude task URL from being used as its own reference
+    repairAudit,
+    onProgress: reportProgress,
+    onSourceProcessed,
   };
 
+  // ═══════════════════════════════════════════════════════════════════
+  // ACCEPTANCE CRITERIA: Evidence engine receives only selectedEvaluationClaims
+  // ═══════════════════════════════════════════════════════════════════
+  logger.log(`✅ [runEvidenceEngine] EVIDENCE PIPELINE ACCEPTANCE CRITERIA`);
+  logger.log(`   - Total claims received: ${claimIds.length}`);
+  logger.log(`   - Background claims skipped: ${backgroundClaimIds.length}`);
+  logger.log(`   - Evaluation claims sent to engine: ${selectedEvaluationClaimIds.length} (max 12)`);
+  logger.log(`   - Background claims excluded from: evidence retrieval, bearing gating, verdict mapping, scoring`);
+  logger.log(`   - Background claims preserved: sourceEligible=true for future use`);
+
   const results = await engine.run(claims, buildEvidenceQueryContexts(claims), runOptions);
+  for (const result of results) repairAudit.recordEngineResult(result);
 
   // Build confidence map: claimIndex → confidence
   const claimConfidenceMap = new Map();
@@ -1169,14 +1666,39 @@ export async function runEvidenceEngine({
     const fringeItems = claimResult.fringeEvidence || [];
 
     for (const ev of evidenceItems) {
-      if (!ev.url) continue;
+      if (!ev.url) {
+        repairAudit.recordEvidenceHandoff(ev, {
+          status: "rejected",
+          reason: "missing_source_url",
+        });
+        continue;
+      }
 
       // Get reference metadata from cache
       const refData = referenceCache.get(ev.url);
       if (!refData) {
+        repairAudit.recordEvidenceHandoff(ev, {
+          status: "rejected",
+          reason: "missing_reference_cache",
+        });
         logger.warn(`⚠️  [Evidence] No cached data for ${ev.url}, skipping`);
         continue;
       }
+      const incrementalKey = [
+        Number(refData.referenceContentId),
+        Number(ev?.claimId || claimResult?.claim?.id),
+        Number(ev?.evidenceTargetId),
+        assertionFingerprint(ev),
+      ].join(":");
+      const incrementallyPersisted = incrementalAssertions.get(incrementalKey);
+      const traceId = incrementallyPersisted?.traceId || repairAudit.recordEvidenceHandoff(ev, {
+        status: "preserved_for_direct_persistence",
+        reason: "R1_evidence_assertion_preserved_on_ai_reference",
+        referenceContentId: refData.referenceContentId,
+      });
+      // Rebuild with the final adjudication so targetUnresolved is accurate,
+      // while retaining the one handoff trace created during incremental commit.
+      const evidenceAssertion = buildPreservedEvidenceAssertion(ev, claimResult, refData, traceId);
 
       // ─────────────────────────────────────────────
       // Save quality scores to database (from combined LLM call)
@@ -1235,6 +1757,7 @@ export async function runEvidenceEngine({
 
       const existing = evidenceByUrl.get(ev.url);
       if (existing) {
+        appendPreservedEvidenceAssertion(existing, evidenceAssertion);
         // Add this claim to existing reference
         if (!existing.claims.includes(claimIndex)) {
           existing.claims.push(claimIndex);
@@ -1257,7 +1780,8 @@ export async function runEvidenceEngine({
           claims: [claimIndex],
           quality: ev.quality,
           cleanText: refData.cleanText, // ← From cache (for claim extraction)
-          scrapeStatus: "full", // Successfully scraped full content
+          scrapeStatus: refData.retrievalMode === "abstract_only" ? "abstract_only" : "full",
+          evidenceAssertions: [evidenceAssertion],
         });
       }
     }
@@ -1274,12 +1798,53 @@ export async function runEvidenceEngine({
         Array.isArray(refData.claimIndices) && refData.claimIndices.length > 0;
       const snippet = String(refData.snippet || "").trim();
 
+      const identityLink = buildIdentityDocumentLink({
+        candidate: { ...refData, url },
+        refData,
+      });
+      if (identityLink && hasClaimProvenance) {
+        evidenceByUrl.set(url, identityLink);
+        logger.log(`[IDENTITY_BEARING] ${JSON.stringify({
+          event: "identity_document_link_preserved",
+          taskContentId,
+          url: String(url).slice(0, 500),
+          referenceContentId: refData.referenceContentId,
+          claimIndices: refData.claimIndices,
+          identityBearingScore: identityLink.identityBearingScore,
+          identityBearingType: identityLink.identityBearingType,
+          identityTargetId: identityLink.identityTargetId,
+          scrapeStatus: identityLink.scrapeStatus,
+        })}`);
+        continue;
+      }
+
+      if (refData.apiBacked && hasClaimProvenance && refData.cleanText) {
+        const status = refData.retrievalMode === "full_text" ? "full_text" : "abstract_only";
+        evidenceByUrl.set(url, {
+          referenceContentId: refData.referenceContentId,
+          url,
+          title: refData.title,
+          stance: "insufficient",
+          why: status === "abstract_only"
+            ? "PubMed abstract retrieved through the NCBI API. No explicit claim-level assertion passed bearing; full text can be retried."
+            : "PMC full text retrieved through the NCBI API, but no explicit claim-level assertion passed bearing.",
+          quote: String(refData.cleanText).slice(0, 1200),
+          claims: [...refData.claimIndices],
+          quality: refData.quality || 0.35,
+          cleanText: refData.cleanText,
+          scrapeStatus: status === "abstract_only" ? "abstract_only" : "full",
+          documentOnly: true,
+        });
+        logger.log(`🧷 [Evidence] Keeping API-backed ${status} document link: ${url}`);
+        continue;
+      }
+
       if (refData.isFailed && hasClaimProvenance && snippet) {
         evidenceByUrl.set(url, {
           referenceContentId: refData.referenceContentId,
           url,
           title: refData.title,
-          stance: "nuance",
+          stance: "insufficient",
           why:
             "Search result snippet matched this claim, but the source scrape failed. Rescrape the source to verify the document-level match.",
           quote: snippet,
@@ -1287,6 +1852,7 @@ export async function runEvidenceEngine({
           quality: refData.quality || 0.25,
           cleanText: "",
           scrapeStatus: "snippet_only",
+          documentOnly: true,
         });
         logger.log(
           `🧷 [Evidence] Keeping failed source as snippet-only document link: ${url}`
@@ -1319,6 +1885,23 @@ export async function runEvidenceEngine({
         .filter((result) => result?.evidencePacket)
         .map((result) => result.evidencePacket)
     : [];
+  const claimProgress = results.map((result) => {
+    const evidenceCount = Array.isArray(result?.evidence) ? result.evidence.length : 0;
+    return {
+      claimId: Number(result?.claim?.id) || null,
+      bearingAssertionsFound: evidenceCount,
+      unresolvedTargetIds: Array.isArray(result?.adjudication?.unresolvedTargetIds)
+        ? result.adjudication.unresolvedTargetIds.map(Number).filter(Boolean)
+        : [],
+      unresolvedReason: evidenceCount === 0
+        ? String(
+            result?.bearingGatingSkipReason ||
+            result?.adjudication?.rationale ||
+            "Document candidates were found, but no qualifying target-bearing assertion was extracted."
+          ).slice(0, 500)
+        : null,
+    };
+  });
 
   logger.log(
     `🟣 [runEvidenceEngine] Returning ${aiReferences.length} AI references (fully processed)`
@@ -1367,6 +1950,8 @@ export async function runEvidenceEngine({
     aiReferences,
     failedCandidates, // For UI to display as "scrape manually" options
     claimConfidenceMap, // Map of claimIndex → confidence for persistAIResults
+    repairAudit,
+    claimProgress,
     ...(bearingConfig.enableBearingPacket ? { evidencePackets } : {}),
   };
 }

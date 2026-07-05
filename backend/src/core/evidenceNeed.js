@@ -1,3 +1,9 @@
+import {
+  isGlueQuery,
+  isInstructionLikeQuery,
+  laneAllowsGenericTopic,
+} from "./evidencePurposeLanes.js";
+
 const STOP_WORDS = new Set([
   "a", "an", "and", "are", "as", "at", "be", "been", "being", "by",
   "did", "do", "does", "for", "from", "had", "has", "have", "he", "her",
@@ -273,12 +279,16 @@ export function buildEvidenceTargetQueries(evidenceNeed, limit = 3) {
     if (!query) continue;
     const normalized = query.toLowerCase();
     if (queries.some((item) => item.query.toLowerCase() === normalized)) continue;
+    const persistedTargetId = target.evaluationTargetId || target.evaluation_target_id || null;
     queries.push({
       query,
       intent: target.stanceGoal || "open",
       stanceGoal: target.stanceGoal || "open",
       matchedPart: target.source === "search_assertion" ? "search_assertion" : "object_claim",
-      evidenceTargetId: target.id || null,
+      // `id` identifies the search lane. Extraction and persistence must use
+      // the numeric claim_evaluation_targets id instead.
+      ...(persistedTargetId ? { evidenceLaneId: target.id || null } : {}),
+      evidenceTargetId: persistedTargetId || target.id || null,
       evidenceTargetType: target.evidenceTargetType || "other",
       bearingRequirement: target.bearingRequirement || "direct_truth_value",
     });
@@ -297,11 +307,17 @@ const GENERIC_QUERY_TERMS = new Set([
  * This is intentionally lexical and conservative: it prevents generic LLM
  * output from reaching providers without pretending to judge query quality.
  */
-export function validateEvidenceTargetQuery(evidenceNeed, query) {
+export function validateEvidenceTargetQuery(evidenceNeed, query, purposeLane = null) {
   const queryTokens = unique(tokenizeBearingText(query), 50);
   if (queryTokens.length < 3) {
     return { valid: false, reasons: ["query_too_short"] };
   }
+
+  const reasons = [];
+  // Purpose-based rejections (not stance-based): a query must be a real search
+  // string, never a conversational instruction or a malformed glue string.
+  if (isInstructionLikeQuery(query)) reasons.push("instruction_like_query");
+  if (isGlueQuery(query)) reasons.push("glue_query");
 
   const anchorTokens = new Set(unique([
     ...(evidenceNeed?.subjectTerms || []).flatMap(tokenizeBearingText),
@@ -313,9 +329,10 @@ export function validateEvidenceTargetQuery(evidenceNeed, query) {
   const substantive = queryTokens.filter((token) => !GENERIC_QUERY_TERMS.has(token));
   const overlap = substantive.filter((token) => anchorTokens.has(token));
   const requiredOverlap = anchorTokens.size <= 1 ? 1 : 2;
-  const reasons = [];
-  if (substantive.length < 2) reasons.push("query_is_generic");
-  if (anchorTokens.size && overlap.length < requiredOverlap) reasons.push("insufficient_claim_anchors");
+  // Generic topic-only queries are allowed only for the causal_background lane.
+  const allowGeneric = laneAllowsGenericTopic(purposeLane);
+  if (substantive.length < 2 && !allowGeneric) reasons.push("query_is_generic");
+  if (anchorTokens.size && overlap.length < requiredOverlap && !allowGeneric) reasons.push("insufficient_claim_anchors");
   return {
     valid: reasons.length === 0,
     reasons,
@@ -410,4 +427,116 @@ export function buildEvidenceNeedV1(claim = {}) {
   return Array.isArray(claim.searchAssertions) && claim.searchAssertions.length > 0
     ? buildEvidenceNeedsFromSearchAssertions(claim, baseNeed)
     : baseNeed;
+}
+
+// ─── Phase 5: evaluation-target-aware query lane builder ─────────────────────
+
+export function buildQueryLanesFromEvaluationTargets(evaluationTargets, claimContext = {}) {
+  const eligible = (evaluationTargets || []).filter((t) => t.searchEligible !== false);
+  if (!eligible.length) return [];
+
+  const lanes = [];
+  const seen = new Set();
+  const composeTargetQuery = (...parts) => {
+    const cleaned = parts.map((part) => String(part || "").replace(/\s+/g, " ").trim()).filter(Boolean);
+    return cleaned.filter((part, index) => {
+      const normalized = part.toLowerCase();
+      return !cleaned.some((other, otherIndex) =>
+        otherIndex !== index && other.length > part.length && other.toLowerCase().includes(normalized)
+      );
+    }).join(" ");
+  };
+
+  const addLane = (id, stanceGoal, evidenceTargetType, bearingRequirement, queryHint, mustIncludeTerms, evaluationTargetId, targetType) => {
+    const cleaned = String(queryHint || "").replace(/\s+/g, " ").trim();
+    if (!cleaned || seen.has(cleaned.toLowerCase())) return;
+    seen.add(cleaned.toLowerCase());
+    lanes.push({ id, stanceGoal, evidenceTargetType, bearingRequirement, queryHint: cleaned,
+      mustIncludeTerms: (mustIncludeTerms || []).filter(Boolean),
+      evaluationTargetId: evaluationTargetId || null,
+      evaluationTargetType: targetType || null,
+      source: "search_assertion" });
+  };
+
+  for (const target of eligible) {
+    const ttype = String(target.targetType || target.target_type || "substantive").toLowerCase();
+    const text = String(target.targetText || target.target_text || "").trim();
+    const subject = String(target.subjectEntity || "").trim();
+    const predicate = String(target.predicate || "").trim();
+    const object = String(target.objectText || "").trim();
+    const alleged = String(target.allegedAction || "").trim();
+    const studyTitle = String(target.studyTitle || "").trim();
+    const studyYear = target.studyYear ? String(target.studyYear) : "";
+    const studyAuthors = String(target.studyAuthors || "").trim();
+    const studyId = String(target.studyIdentifier || "").trim();
+    const population = String(target.populationScope || "").trim();
+    const tid = target.evaluationTargetId || ttype;
+
+    if (ttype === "attribution") {
+      const speaker = subject || claimContext.speakerEntity || "";
+      addLane(`attribution-statement-${tid}`, "origin", "primary_source", "source_attribution",
+        [speaker, predicate, object].filter(Boolean).join(" ") || text,
+        speaker ? [speaker] : [], tid, ttype);
+    }
+
+    if (ttype === "substantive") {
+      // Lane: alleged conduct or methodology (primary)
+      addLane(`substantive-conduct-${tid}`, "open", "primary_source",
+        alleged ? "direct_truth_value" : "warrant_test",
+        composeTargetQuery(subject, alleged || predicate, object, population) || text,
+        [subject, alleged].filter(Boolean), tid, ttype);
+      // Lane: original study (when study identity is known)
+      if (studyTitle || studyId || studyAuthors) {
+        addLane(`substantive-study-${tid}`, "open", "original_study", "warrant_test",
+          [studyTitle, studyYear, studyAuthors, studyId, population].filter(Boolean).join(" "),
+          [studyTitle, studyId].filter(Boolean), tid, ttype);
+      }
+      // Lane: official/coauthor response
+      if (subject) {
+        addLane(`substantive-response-${tid}`, "open", "official_statement", "source_attribution",
+          [subject, "response official statement", object || alleged].filter(Boolean).join(" "),
+          [subject].filter(Boolean), tid, ttype);
+      }
+      // Lane: independent methodological analysis
+      if (alleged || predicate) {
+        addLane(`substantive-method-${tid}`, "open", "original_study", "warrant_test",
+          [object || text, "independent analysis methodology"].filter(Boolean).join(" "),
+          [], tid, ttype);
+      }
+    }
+
+    if (ttype === "inference") {
+      addLane(`inference-${tid}`, "open", "other", "direct_truth_value", text,
+        [subject, alleged].filter(Boolean), tid, ttype);
+    }
+
+    if (ttype === "study_identity") {
+      const studyTerms = [studyTitle, studyYear, studyAuthors, studyId, subject, population, object].filter(Boolean);
+      addLane(`study-identity-${tid}`, "open", "original_study", "warrant_test",
+        studyTerms.join(" ") || text,
+        [studyTitle, studyId].filter(Boolean), tid, ttype);
+    }
+  }
+
+  return lanes;
+}
+
+export function buildEvidenceNeedFromEvaluationTargets(claim = {}, evaluationTargets = []) {
+  const base = buildEvidenceNeedV1({ ...claim, searchAssertions: [] });
+  const lanes = buildQueryLanesFromEvaluationTargets(evaluationTargets, {
+    claimId: base.claimId,
+    claimText: base.claimText,
+    speakerEntity: base.speakerEntity,
+  });
+  if (!lanes.length) return base;
+  return {
+    ...base,
+    evidenceTargets: lanes,
+    derivation: {
+      method: "evaluation_targets_v1",
+      evaluationTargetCount: evaluationTargets.length,
+      searchEligibleLaneCount: lanes.length,
+      warnings: base.derivation?.warnings || [],
+    },
+  };
 }

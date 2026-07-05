@@ -675,9 +675,11 @@ router.post("/api/submit-text", async (req, res) => {
     const { processTaskClaims } = await import("../../core/processTaskClaims.js");
     const { runEvidenceEngine } = await import("../../core/runEvidenceEngine.js");
     const { matchClaimsToTaskClaims } = await import("../../core/matchClaims.js");
+    const { enrichTaskClaimsForMatching, dualWriteTargetEvidenceLinks } = await import("../../core/evaluationTargetStore.js");
     const { persistAIResults } = await import("../../storage/persistAIResults.js");
     const { openAiLLM } = await import("../../core/openAiLLM.js");
     const { persistClaims } = await import("../../storage/persistClaims.js");
+    const { persistDirectEvidenceAssertions } = await import("../../core/evidenceAssertionPersistence.js");
     const { default: PromptManager } = await import("../../core/promptManager.js");
     const claimMatchPromptManager = new PromptManager(query);
 
@@ -703,9 +705,13 @@ router.post("/api/submit-text", async (req, res) => {
         send("evidence", `Found ${aiReferences.length} reference${aiReferences.length !== 1 ? "s" : ""}`, 70);
 
         await persistAIResults(query, { contentId: taskContentId, evidenceRefs: aiReferences, claimIds, claimConfidenceMap });
+        await persistDirectEvidenceAssertions({ query, taskContentId, aiReferences });
 
-        const refsToProcess = aiReferences.filter((ref) => ref.referenceContentId);
-        send("references", `Processing ${refsToProcess.length} references…`, 75);
+        // Retired: target-aware bearing extraction already persisted the
+        // qualifying source assertions and exact task/target links above.
+        const refsToProcess = [];
+        logger.log(`⏭️  [/api/submit-text] Legacy broad reference-claim extraction is retired`);
+        send("references", "Target-linked evidence persisted", 95);
 
         let refsDone = 0;
         const claimExtractionPromises = refsToProcess.map(async (ref) => {
@@ -724,9 +730,10 @@ router.post("/api/submit-text", async (req, res) => {
                 clearOldLinks: true,  // Clear old reference links before extracting new claims
               });
               if (extractedClaims.length > 0) {
+                const enrichedTaskClaimsForRef = await enrichTaskClaimsForMatching(query, taskContentId, taskClaims);
                 const claimMatches = await matchClaimsToTaskClaims({
                   referenceClaims: extractedClaims,
-                  taskClaims,
+                  taskClaims: enrichedTaskClaimsForRef,
                   llm: openAiLLM,
                   promptManager: claimMatchPromptManager,
                 });
@@ -749,6 +756,7 @@ router.post("/api/submit-text", async (req, res) => {
                     logger.error(`   refClaim=${match.referenceClaimId}, taskClaim=${match.taskClaimId}, stance=${match.stance}`);
                   }
                 }
+                await dualWriteTargetEvidenceLinks(query, taskContentId, claimMatches, ref.referenceContentId);
                 logger.log(`✅ [/api/submit-text] Created ${claimMatches.length} AI-suggested links (reference_claim_task_links) for reference ${ref.referenceContentId}`);
               }
             }

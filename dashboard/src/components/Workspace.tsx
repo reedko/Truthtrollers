@@ -54,6 +54,7 @@ import MobileWorkspaceShell from "./MobileWorkspaceShell";
 import usePermissions from "../hooks/usePermissions";
 import { useVerimeterMode } from "../contexts/VerimeterModeContext";
 import { normalizeSourceProfile, SourceProfile } from "../utils/normalizeSourceProfile";
+import { fetchScrapeEvaluationProgress } from "../services/referenceClaimRelevance";
 
 interface WorkspaceProps {
   contentId: number;
@@ -92,6 +93,48 @@ const Workspace: React.FC<WorkspaceProps> = ({
     import("../../../shared/entities/types").AIEvidenceLink[]
   >([]);
   const [refreshLinks, setRefreshLinks] = useState(false);
+  const evaluationProgressVersionRef = useRef<number>(-1);
+
+  // R8: refresh references, scores, and map links as incremental evidence
+  // assertions become durable. Polling stops once the backend run is terminal.
+  useEffect(() => {
+    if (!contentId) return;
+    let cancelled = false;
+    let interval: number | null = null;
+    const poll = async () => {
+      try {
+        const progress = await fetchScrapeEvaluationProgress(contentId);
+        if (cancelled) return;
+        const version = Number(progress.progressVersion ?? 0);
+        if (version > evaluationProgressVersionRef.current) {
+          const hadPriorVersion = evaluationProgressVersionRef.current >= 0;
+          evaluationProgressVersionRef.current = version;
+          if (hadPriorVersion) {
+            await Promise.all([sessionRefreshReferences(), refreshClaims(), refreshScores()]);
+            setRefreshLinks((value) => !value);
+          }
+        }
+        if ((progress.status === "complete" || progress.status === "failed" || progress.status === "unknown") && interval !== null) {
+          window.clearInterval(interval);
+          interval = null;
+        }
+        return progress.status;
+      } catch (error) {
+        console.warn("[Workspace] Evidence progress refresh failed:", error);
+        return "unknown" as const;
+      }
+    };
+    evaluationProgressVersionRef.current = -1;
+    void poll().then((status) => {
+      if (!cancelled && status === "running" && interval === null) {
+        interval = window.setInterval(poll, 2000);
+      }
+    });
+    return () => {
+      cancelled = true;
+      if (interval !== null) window.clearInterval(interval);
+    };
+  }, [contentId, sessionRefreshReferences, refreshClaims, refreshScores]);
   const [sourceClaim, setSourceClaim] = useState<Pick<
     Claim,
     "claim_id" | "claim_text"

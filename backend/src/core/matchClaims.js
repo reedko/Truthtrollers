@@ -7,6 +7,7 @@
 import logger from "../utils/logger.js";
 import { loadBearingGatingConfig } from "./bearingConfig.js";
 import { applyQuantitativeStanceGuard } from "./quantitativeClaimGuard.js";
+import { applyEvaluationTargetGuard } from "../utils/extractQuote.js";
 
 const bearingPacketConfigCache = new WeakMap();
 
@@ -157,6 +158,14 @@ export async function matchClaimsToTaskClaims({
     return [];
   }
 
+  // Unresolved complex mappings may still retrieve attribution/study-identity
+  // material, but they cannot generate verdict links or affect article scoring.
+  taskClaims = taskClaims.filter((claim) => !claim?.targetMappingUnresolved);
+  if (taskClaims.length === 0) {
+    logger.log('🔗 [matchClaims] No verdict-eligible task claims after fail-closed mapping guard');
+    return [];
+  }
+
   if (typeof enableBearingPacket !== "boolean") {
     if (process.env.ENABLE_BEARING_PACKET === "true" || process.env.ENABLE_BEARING_PACKET === "false") {
       enableBearingPacket = isBearingPacketEnabled();
@@ -211,7 +220,13 @@ Correct stance: refute. The reference says the opposite of the task claim.
 
 Return ONLY matches where the reference claim meaningfully addresses a task claim.`;
 
-  const taskClaimsList = taskClaims.map((tc, i) => `[T${i + 1}] ${tc.text}`).join('\n');
+  const taskClaimsList = taskClaims.map((tc, i) => {
+    const verdictTargets = (tc.evaluationTargets || []).filter((t) => t.verdictEligible !== false);
+    const targetSuffix = verdictTargets.length
+      ? `\n  Evaluation targets: ${verdictTargets.map((t) => `[${t.targetType}#${t.evaluationTargetId || "unpersisted"}] ${t.targetText}`).join(" | ")}`
+      : "";
+    return `[T${i + 1}] ${tc.text}${targetSuffix}`;
+  }).join('\n');
   const referenceClaimsList = referenceClaims.map((rc, i) => `[R${i + 1}] ${rc.text}`).join('\n');
 
   const fallbackUser = `
@@ -269,8 +284,8 @@ If no reference claims address any task claims, return empty array [].`;
   system = `${system}\n\n${STANCE_CONTRACT}\n\n${MISCONDUCT_CONTRACT}`;
   user = `${user}\n\nBefore returning JSON, verify each stance follows the stance contract and that supportLevel is positive for support, negative for refute, and zero for insufficient.`;
   if (enableBearingPacket) {
-    system += `\n\nBEARING CONTRACT:\nScore whether each reference claim bears on the exact task claim, separately from source credibility. Topic overlap alone is bearingType none. Association cannot fully support a causal claim. A broad fact-check must address the exact component.`;
-    user += `\n\nFor each match also return bearingScore (0-1), bearingType (direct|indirect|context|origin|steelman|none), claimComponentAddressed (whole_claim|subject|relation|object|scope|attribution|warrant|none), causalStrength (causal|mechanistic|associative|correlational|not_applicable|unclear), and a short bearingReason. Omit topic-only matches.`;
+    system += `\n\nBEARING CONTRACT:\nScore whether each reference claim bears on the exact task claim predicate, separately from source credibility. Topic overlap alone is bearingType none. Association cannot fully support a causal claim. A broad fact-check must address the exact component.\n\nPREDICATE-LEVEL BEARING (Phase 7):\nTask claims may include typed evaluation targets (shown as [attribution], [substantive], [inference], [study_identity]). Score bearing against the specific target predicate:\n• attribution: the reference bears only if it addresses whether the named person actually made this specific statement/allegation. Evidence about whether the underlying assertion is true does NOT bear here.\n• substantive: the reference bears only if it addresses whether this specific action, event, or condition occurred. Attribution evidence does NOT bear here.\n• inference: the reference bears only if it addresses whether this specific conclusion follows from the underlying facts.\n• study_identity: the reference bears if it helps resolve the exact study, dataset, or document referenced.\n• Shared topic or shared subject entity alone is NOT sufficient for predicate-level bearing.`;
+    user += `\n\nFor each match also return the single evaluationTargetId and evaluationTargetType it addresses, plus bearingScore (0-1), bearingType (direct|indirect|context|origin|steelman|none), claimComponentAddressed (whole_claim|subject|relation|object|scope|attribution|warrant|none), causalStrength (causal|mechanistic|associative|correlational|not_applicable|unclear), and a short bearingReason. If a task claim has multiple targets, never omit the target id/type. Omit topic-only matches.`;
   }
 
   // openAiLLM uses response_format=json_object, so the top-level contract must
@@ -285,7 +300,7 @@ If no reference claims address any task claims, return empty array [].`;
     "veracityScore": <number 0-1>,
     "confidence": <number 0.15-0.98>,
     "supportLevel": <number -1.2 to 1.2>,
-    "rationale": "<string>"${enableBearingPacket ? ',\n    "bearingScore": <number 0-1>,\n    "bearingType": "direct|indirect|context|origin|steelman|none",\n    "claimComponentAddressed": "whole_claim|subject|relation|object|scope|attribution|warrant|none",\n    "causalStrength": "causal|mechanistic|associative|correlational|not_applicable|unclear",\n    "bearingReason": "<string>"' : ''}
+    "rationale": "<string>"${enableBearingPacket ? ',\n    "evaluationTargetId": <number>,\n    "evaluationTargetType": "attribution|substantive|inference|study_identity",\n    "bearingScore": <number 0-1>,\n    "bearingType": "direct|indirect|context|origin|steelman|none",\n    "claimComponentAddressed": "whole_claim|subject|relation|object|scope|attribution|warrant|none",\n    "causalStrength": "causal|mechanistic|associative|correlational|not_applicable|unclear",\n    "bearingReason": "<string>"' : ''}
   }
 ]}`;
 
@@ -354,7 +369,37 @@ If no reference claims address any task claims, return empty array [].`;
         const normalizedStance = override?.stance || proposedStance;
         const relationship = relationshipFromStance(normalizedStance);
         const supportLevel = normalizeSupportLevel(match.supportLevel, normalizedStance, confidence);
-        const bearing = enableBearingPacket ? normalizeBearingMatch(match) : null;
+        let bearing = enableBearingPacket ? normalizeBearingMatch(match) : null;
+        let evaluationTarget = null;
+        if (enableBearingPacket) {
+          const targets = (taskClaim.evaluationTargets || []).filter((target) => target.verdictEligible !== false);
+          const explicitId = Number(match.evaluationTargetId || match.evaluation_target_id) || null;
+          const explicitType = String(match.evaluationTargetType || match.evaluation_target_type || "").toLowerCase();
+          evaluationTarget = explicitId
+            ? targets.find((target) => Number(target.evaluationTargetId) === explicitId)
+            : explicitType
+              ? targets.find((target) => String(target.targetType).toLowerCase() === explicitType)
+              : targets.length === 1 ? targets[0] : null;
+          if (targets.length > 1 && !evaluationTarget) return null;
+          if (evaluationTarget) {
+            const guarded = applyEvaluationTargetGuard(evaluationTarget, {
+              quote: referenceClaim.text,
+              summary: match.rationale,
+              stance: normalizedStance,
+              bearing_score: bearing.bearingScore,
+              bearing_type: bearing.bearingType,
+              claim_component_addressed: bearing.claimComponentAddressed,
+              bearing_reason: bearing.bearingReason,
+            });
+            bearing = {
+              ...bearing,
+              bearingScore: guarded.bearing_score,
+              bearingType: guarded.bearing_type,
+              claimComponentAddressed: guarded.claim_component_addressed,
+              bearingReason: guarded.bearing_reason,
+            };
+          }
+        }
 
         if (enableBearingPacket && (
           normalizedStance === "insufficient" ||
@@ -375,6 +420,10 @@ If no reference claims address any task claims, return empty array [].`;
             ? `${match.rationale || ""} [Stance corrected: ${override.reason}]`.trim()
             : match.rationale || `${relationship} claim via automated matching`,
           ...(bearing ? bearing : {}),
+          ...(evaluationTarget ? {
+            evaluationTargetId: evaluationTarget.evaluationTargetId,
+            evaluationTargetType: evaluationTarget.targetType,
+          } : {}),
         };
       })
       .filter(Boolean);

@@ -224,7 +224,7 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
               {failedReferences.length > 0 && (
                 <>
                   <Text fontWeight="bold" color="orange.500" mt={4}>
-                    ⚠️ Failed Scrapes - Manual Retry Needed:
+                    ⚠️ Provisional Sources — Full Text Retry Available:
                   </Text>
                   {failedReferences.map((failed) => (
                     <HStack
@@ -251,7 +251,11 @@ const ReferenceModal: React.FC<ReferenceModalProps> = ({
                           </Link>
                         </Tooltip>
                         <Text fontSize="xs" color="gray.600">
-                          {failed.failure_reason}
+                          {failed.scrape_status === "abstract_only"
+                            ? "PubMed abstract available; full text has not been retrieved."
+                            : failed.scrape_status === "identity_only"
+                              ? "This is the identified study or a direct analysis of it; its identity does not establish the verdict."
+                            : failed.failure_reason}
                         </Text>
                         {failed.linked_claims_count > 0 && (
                           <Text fontSize="xs" color="blue.600">

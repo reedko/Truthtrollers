@@ -123,6 +123,35 @@ test("claim gate reserves a capped search slot for the thesis", () => {
   assert.deepEqual(claims.map((claim) => claim.id), [10, 11, 12, 13, 14, 15, 16, 17, 1]);
 });
 
+test("neutral attribution does not suppress its searchable substantive object", () => {
+  const claim = {
+    id: 53544,
+    role: "pillar_support",
+    argumentFunction: "unclear",
+    scoreTransform: "none",
+    evaluationTargets: [
+      { targetType: "attribution", searchEligible: true, verdictEligible: true, scoreTransform: "none" },
+      { targetType: "substantive", searchEligible: true, verdictEligible: true, scoreTransform: "review" },
+    ],
+  };
+  const selected = selectClaimsForBearingGating([claim], config({ maxClaimsSearchedPerContent: 8 }));
+  assert.deepEqual(selected.eligible.map((item) => item.id), [53544]);
+  assert.equal(selected.skipped.length, 0);
+});
+
+test("argument-function background remains excluded even when its display role says pillar", () => {
+  const claim = {
+    id: 53542,
+    role: "pillar",
+    argumentFunction: "background",
+    scoreTransform: "none",
+    evaluationTargets: [{ targetType: "substantive", searchEligible: true, verdictEligible: true }],
+  };
+  const selected = selectClaimsForBearingGating([claim], config());
+  assert.equal(selected.eligible.length, 0);
+  assert.equal(selected.skipped[0].reason, "background_claim");
+});
+
 test("selection is bearing-first and does not reward authority or force balance", () => {
   const candidates = [
     candidate("direct", 0.88, { expectedStance: "support" }),
@@ -136,7 +165,8 @@ test("selection is bearing-first and does not reward authority or force balance"
   ];
   const plan = selectCandidatesForClaim(thesisClaim, candidates, config());
   assert.deepEqual(plan.selectedCandidates.map((item) => item.id), ["direct"]);
-  assert.ok(plan.decisions.some((item) => item.candidate.id === "authority" && item.decision === "skip"));
+  assert.ok(plan.decisions.some((item) => item.candidate.id === "authority" && item.decision === "maybe"));
+  assert.ok(plan.expansionCandidates.some((item) => item.id === "authority"), "snippet-low candidate remains available for adaptive inspection");
 });
 
 test("origin is protected, while a junk steelman is not", () => {
@@ -145,6 +175,8 @@ test("origin is protected, while a junk steelman is not", () => {
       evidenceTargetType: "primary_source",
       stanceGoal: "origin",
       bearingType: "origin",
+      protectedDocumentIdentity: true,
+      identityBearingScore: 1,
       expectedStance: "insufficient",
     }),
     candidate("direct", 0.8),
@@ -167,6 +199,22 @@ test("origin is protected, while a junk steelman is not", () => {
   assert.ok(ids.includes("direct"));
   assert.ok(ids.includes("useful-steelman"));
   assert.equal(ids.includes("junk-steelman"), false);
+});
+
+test("a weak direct-looking wrong-actor page does not outrank stronger target-specific origins", () => {
+  const claim = { ...thesisClaim, role: "pillar_support" };
+  const plan = selectCandidatesForClaim(claim, [
+    candidate("thompson-statement", 0.6, { bearingType: "origin", evidenceTargetType: "primary_source", stanceGoal: "origin", protectedDocumentIdentity: true, identityBearingScore: 1 }),
+    candidate("regulations-response", 0.525, { bearingType: "origin", evidenceTargetType: "primary_source", stanceGoal: "origin", protectedDocumentIdentity: true, identityBearingScore: 0.95 }),
+    candidate("whistleblower-analysis", 0.45, { bearingType: "origin", evidenceTargetType: "primary_source", stanceGoal: "origin", protectedDocumentIdentity: true, identityBearingScore: 0.9 }),
+    candidate("wakefield-page", 0.3, { bearingType: "direct", evidenceTargetType: "primary_source", stanceGoal: "open" }),
+  ], config({ perClaimLimits: { pillar_support: 3 } }));
+
+  assert.deepEqual(
+    plan.selectedCandidates.map((item) => item.id),
+    ["thompson-statement", "regulations-response", "whistleblower-analysis"],
+  );
+  assert.ok(plan.expansionCandidates.some((item) => item.id === "wakefield-page"));
 });
 
 test("all-low candidate sets retain at most one conservative fallback", () => {
@@ -313,4 +361,121 @@ test("gated EvidenceEngine enforces claim/global limits and reuses canonical URL
     if (originalLlm === undefined) delete process.env.ENABLE_SNIPPET_BEARING_LLM;
     else process.env.ENABLE_SNIPPET_BEARING_LLM = originalLlm;
   }
+});
+
+test("adaptive extraction continues past a failed source and processes the complete next source", async () => {
+  const seenMaxQuotes = [];
+  const engine = new EvidenceEngine({
+    fetcher: {
+      async getText(candidate) {
+        if (candidate.id === "failed") return null;
+        return { isProcessed: true, cleanText: "A complete source containing several distinct findings.", citationCount: 0 };
+      },
+    },
+    extractQuotesAndScoreQuality: async ({ maxQuotes }) => {
+      seenMaxQuotes.push(maxQuotes);
+      const distinctFindings = [
+        "The protocol retained every enrolled participant.",
+        "The published table disclosed the subgroup result.",
+        "The archived dataset remains available for reanalysis.",
+        "The prespecified model controlled for birth weight.",
+        "The authors documented the exclusion criteria.",
+      ];
+      return {
+        quotes: distinctFindings.map((quote) => ({
+          quote,
+          stance: "refute",
+          summary: "Direct finding",
+          bearing_score: 0.9,
+          bearing_type: "direct",
+          claim_component_addressed: "whole_claim",
+          causal_strength: "not_applicable",
+          bearing_reason: "Directly tests the target.",
+        })),
+        qualityScores: null,
+      };
+    },
+  });
+  const claim = {
+    id: 77,
+    text: "CDC manipulated the study data.",
+    evaluationTargets: [{ evaluationTargetId: 41, targetType: "substantive", targetText: "CDC manipulated the study data.", verdictEligible: true }],
+  };
+  const pool = [
+    candidate("failed", 0.9, { evidenceTargetId: 41, evidenceTargetType: "primary_source" }),
+    candidate("recovery", 0.2, { evidenceTargetId: 41, evidenceTargetType: "original_study" }),
+  ];
+  const allocation = {
+    usedCanonicalUrls: new Set([pool[0].url]),
+    globalLimit: 2,
+    remainingUniqueSlots: 1,
+  };
+  const result = await engine._runAdaptiveExtraction(claim, pool, {
+    bearingConfig: config({ minHighBearingClaimsPerTarget: 5, globalScrapeLimitPerContent: 2 }),
+    maxSourcesToScrapePerTarget: 2,
+    maxEvidencePerDoc: 2,
+  }, { initialCandidates: [pool[0]], allocation });
+
+  assert.equal(result.sourcesProcessed, 2);
+  assert.deepEqual(result.unresolvedTargetIds, []);
+  assert.equal(result.highBearingStats["41"], 5);
+  assert.deepEqual(result.processedCandidates.map((item) => item.id), ["failed", "recovery"]);
+  assert.ok(seenMaxQuotes[0] >= 5, "adaptive source extraction must not retain the legacy two-quote cap");
+});
+
+test("adaptive round robin counts delivered bearing sources, not failed attempts, and reaches 24", async () => {
+  const fetched = [];
+  const engine = new EvidenceEngine({
+    fetcher: {
+      async getText(item) {
+        fetched.push(item.id);
+        if (item.id === "failed") return null;
+        return { isProcessed: true, cleanText: `Full bearing text for ${item.id}`, citationCount: 0 };
+      },
+    },
+    extractQuotesAndScoreQuality: async ({ url }) => ({
+      quotes: [{
+        quote: `Direct evidence from ${url}`,
+        stance: "support",
+        bearing_score: 0.9,
+        bearing_type: "direct",
+        claim_component_addressed: "whole_claim",
+        bearing_reason: "Directly tests the target.",
+      }],
+      qualityScores: null,
+    }),
+  });
+  const makePlan = (claimId, targetId, prefix, count, includeFailure = false) => {
+    const claim = {
+      id: claimId,
+      text: `Claim ${claimId}`,
+      evaluationTargets: [{ evaluationTargetId: targetId, targetText: `Claim ${claimId}`, verdictEligible: true }],
+    };
+    const rankedCandidates = [
+      ...(includeFailure ? [candidate("failed", 1, { evidenceTargetId: targetId })] : []),
+      ...Array.from({ length: count }, (_, index) => candidate(`${prefix}-${index}`, 0.9, { evidenceTargetId: targetId })),
+    ];
+    return { plan: { claim, rankedCandidates } };
+  };
+  const run = await engine._runAdaptiveExtractionRoundRobin([
+    makePlan(1, 101, "a", 12, true),
+    makePlan(2, 102, "b", 12),
+  ], {
+    bearingConfig: config({
+      minDeliveredSourcesPerContent: 24,
+      maxSourceAttemptsPerContent: 30,
+      minBearingLinksPerClaim: 3,
+      maxSnippetCandidatesPerClaim: 20,
+      maxSourcesComparedPerClaim: 20,
+    }),
+    maxSourcesToScrapePerTarget: 20,
+    maxEvidencePerDoc: 2,
+  });
+
+  assert.equal(run.deliveredUrls.size, 24);
+  assert.equal(run.attemptedUrls.size, 25, "failed fetch is an attempt but not a delivered source");
+  assert.ok(run.byClaimId.get(1).bearingLinkCount >= 3);
+  assert.ok(run.byClaimId.get(2).bearingLinkCount >= 3);
+  assert.equal(run.byClaimId.get(1).evidence.some((item) => item.candidateId === "failed"), false);
+  assert.equal(fetched.length, 25);
 });

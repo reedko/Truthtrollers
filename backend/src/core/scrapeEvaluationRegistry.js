@@ -10,9 +10,11 @@ export function setScrapeEvaluationStatus(contentId, status, details = {}) {
   const contentKey = key(contentId);
   if (!contentKey) return null;
   const record = {
+    ...(runs.get(contentKey) || {}),
     contentId: contentKey,
     status,
     updatedAt: new Date().toISOString(),
+    progressVersion: Number(runs.get(contentKey)?.progressVersion || 0) + 1,
     ...details,
   };
   runs.set(contentKey, record);
@@ -23,7 +25,17 @@ export function setScrapeEvaluationStatus(contentId, status, details = {}) {
   return record;
 }
 
+export function updateScrapeEvaluationProgress(contentId, details = {}) {
+  const existing = getScrapeEvaluationStatus(contentId) || {};
+  return setScrapeEvaluationStatus(contentId, existing.status || "running", {
+    ...details,
+    counts: {
+      ...(existing.counts || {}),
+      ...(details.counts || {}),
+    },
+  });
+}
+
 export function getScrapeEvaluationStatus(contentId) {
   return runs.get(key(contentId)) || null;
 }
-

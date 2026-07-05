@@ -81,6 +81,76 @@ export function applyQuantitativeGuardToQuote(claimText, quote) {
   };
 }
 
+function entityAliases(subjectEntity) {
+  const raw = String(subjectEntity || "").trim();
+  if (!raw) return [];
+  const words = raw.toLowerCase().match(/[a-z0-9]+/g) || [];
+  const aliases = [raw.toLowerCase()];
+  const acronym = words.filter((word) => !["the", "of", "and", "researchers", "officials", "authors"].includes(word))
+    .map((word) => word[0]).join("");
+  if (acronym.length >= 2) aliases.push(acronym);
+  const alreadyAcronym = words.find((word) => word.length >= 2 && word.length <= 6 && raw.includes(word.toUpperCase()));
+  if (alreadyAcronym) aliases.push(alreadyAcronym);
+  if (words.length > 1 && words.at(-1).length >= 4) aliases.push(words.at(-1));
+  return [...new Set(aliases.filter(Boolean))];
+}
+
+function containsEntity(text, subjectEntity) {
+  const normalized = ` ${String(text || "").toLowerCase().replace(/[^a-z0-9]+/g, " ")} `;
+  return entityAliases(subjectEntity).some((alias) => {
+    const needle = alias.replace(/[^a-z0-9]+/g, " ").trim();
+    return needle && normalized.includes(` ${needle} `);
+  });
+}
+
+function downgradeTargetMismatch(quote, reason, component = "none") {
+  return {
+    ...quote,
+    stance: "insufficient",
+    bearing_score: Math.min(Number(quote?.bearing_score) || 0, 0.2),
+    bearing_type: "context",
+    claim_component_addressed: component,
+    bearing_reason: boundedText(`${reason} ${quote?.bearing_reason || ""}`, 500),
+    target_guard: reason,
+  };
+}
+
+/**
+ * Deterministic Phase 7 backstop. The LLM may not turn a different actor doing
+ * the same thing into a refutation, or an allegation into proof of its object.
+ */
+export function applyEvaluationTargetGuard(evaluationTarget, quote) {
+  if (!evaluationTarget || !quote) return quote;
+  const targetType = String(evaluationTarget.targetType || evaluationTarget.target_type || "").toLowerCase();
+  const subject = evaluationTarget.subjectEntity || evaluationTarget.subject_entity || "";
+  const evidenceText = `${quote.quote || ""} ${quote.summary || ""}`;
+  // Actor identity must be present in the evidence itself. An LLM-generated
+  // summary such as "Wakefield, rather than the CDC" must not manufacture a
+  // CDC match that the quoted source assertion does not contain.
+  const subjectPresent = !subject || containsEntity(quote.quote || "", subject);
+
+  if (["attribution", "substantive"].includes(targetType) && subject && !subjectPresent) {
+    return downgradeTargetMismatch(
+      quote,
+      `Target actor mismatch: the evidence does not identify ${subject}.`,
+      targetType === "attribution" ? "attribution" : "none",
+    );
+  }
+
+  if (targetType === "substantive") {
+    const reportsAllegation = /\b(said|says|stated|claimed|claims|alleged|alleges|revealed|according to|accused)\b/i.test(evidenceText);
+    const independentlyAddressesConduct = /\b(records?|documents?|protocol|methods?|analysis|analyses|dataset|data (?:show|shows|showed)|included|excluded|omitted|removed|destroyed|retained|published|available|audit|investigation (?:found|concluded))\b/i.test(evidenceText);
+    if (reportsAllegation && !independentlyAddressesConduct) {
+      return downgradeTargetMismatch(
+        quote,
+        "Attribution-only evidence cannot establish the substantive target.",
+        "attribution",
+      );
+    }
+  }
+  return quote;
+}
+
 function logPostScrapeBearing({ claimText, sourceTitle, url, quotes, documentBearingScore }) {
   const record = {
     event: "post_scrape_bearing_shadow",
@@ -198,8 +268,52 @@ export async function extractBestQuote({
  * @param {boolean} params.enablePostScrapeBearing - Optional feature override
  * @returns {Promise<Object>} {quotes: [...], qualityScores: {...}}
  */
+function buildTargetBearingContext(target) {
+  if (!target) return "";
+  const { targetType, targetText, subjectEntity, predicate, objectText, allegedAction } = target;
+  const lines = [
+    `\nEVALUATION TARGET — score bearing against this specific predicate, not the visible claim above:`,
+    `Type: ${targetType}`,
+    `Target assertion: ${targetText}`,
+  ];
+  if (targetType === "attribution") {
+    lines.push(
+      `\nATTRIBUTION BEARING RULES (STRICT):`,
+      `• Evidence bears ONLY if it addresses whether ${subjectEntity || "the named person"} actually made this specific statement or allegation.`,
+      `• Evidence about whether the underlying assertion is true does NOT bear on this attribution target.`,
+      `• "CDC did/did not manipulate data" is NOT bearing here — that addresses the object claim, not whether ${subjectEntity || "the speaker"} made the allegation.`,
+      `• Do not let substantive or topical evidence count as attribution evidence.`,
+    );
+  } else if (targetType === "substantive") {
+    const action = allegedAction || predicate || "see target text";
+    lines.push(
+      `\nSUBSTANTIVE BEARING RULES (STRICT):`,
+      `• Evidence bears ONLY if it addresses whether this specific action, event, or condition actually occurred.`,
+      `• Alleged action: ${action}`,
+      `• Attribution evidence (whether someone made a statement about it) does NOT bear on this target.`,
+      `• General topical evidence (same subject domain) does NOT bear unless it directly addresses the alleged action or explicitly contradicts it.`,
+      `• Do not let attribution or inference evidence count as substantive evidence.`,
+    );
+  } else if (targetType === "inference") {
+    lines.push(
+      `\nINFERENCE BEARING RULES (STRICT):`,
+      `• Evidence bears ONLY if it addresses whether this specific conclusion or consequence logically follows from the underlying facts.`,
+      `• Evidence about whether the underlying facts occurred does NOT automatically bear on the inference.`,
+      `• Do not let attribution or substantive evidence count as inference evidence.`,
+    );
+  } else if (targetType === "study_identity") {
+    lines.push(
+      `\nSTUDY IDENTITY BEARING RULES:`,
+      `• Evidence bears if it helps identify, confirm, or characterize the exact study, dataset, document, subgroup, population, or analysis referenced.`,
+      `• General topical evidence not specifically tied to the referenced study does NOT bear.`,
+    );
+  }
+  return lines.join("\n");
+}
+
 export async function extractQuotesAndScoreQuality({
   claimText,
+  evaluationTarget = null,
   fullText,
   sourceTitle = "Unknown Source",
   url = "",
@@ -264,10 +378,13 @@ BEARING RULES:
       ? `• If CLAIM says "X said/revealed Y", distinguish two questions: whether X said Y (attribution) and whether Y is true (object). Label claim_component_addressed accordingly and do not substitute one for the other.`
       : `• If CLAIM includes an attribution wrapper like "X revealed that Y", evaluate Y as the core assertion and use X only for search/context.`;
 
+    const targetBearingContext = enablePostScrapeBearing ? buildTargetBearingContext(evaluationTarget) : "";
+
     const user = `TASK 1: Extract verbatim quotes that directly bear on the claim and classify stance.
 TASK 2: Score source quality across 8 dimensions (0-10 scale, matching GameSpace scoring).
 
 CLAIM: ${claimText}
+${targetBearingContext}
 
 SOURCE METADATA:
 - Title: ${sourceTitle}
@@ -367,9 +484,12 @@ RISK (higher = riskier):
           summary: (it.summary || "").trim(),
           location: it.location || undefined,
         };
-        return enablePostScrapeBearing
-          ? applyQuantitativeGuardToQuote(claimText, { ...legacyQuote, ...normalizePostScrapeBearingFields(it) })
-          : legacyQuote;
+        if (!enablePostScrapeBearing) return legacyQuote;
+        const normalized = applyQuantitativeGuardToQuote(
+          claimText,
+          { ...legacyQuote, ...normalizePostScrapeBearingFields(it) },
+        );
+        return applyEvaluationTargetGuard(evaluationTarget, normalized);
       });
 
     // Extract quality scores

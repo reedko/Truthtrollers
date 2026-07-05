@@ -127,6 +127,9 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
   const [failedReferenceIds, setFailedReferenceIds] = useState<Set<number>>(
     new Set(),
   );
+  const [provisionalStatuses, setProvisionalStatuses] = useState<Map<number, string>>(
+    new Map(),
+  );
   const [isScrapeModalOpen, setIsScrapeModalOpen] = useState(false);
   const [retryUrl, setRetryUrl] = useState("");
   const [sourceDetailRef, setSourceDetailRef] = useState<ReferenceWithClaims | null>(null);
@@ -204,6 +207,9 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
       fetchFailedReferences(taskId).then((failedRefs) => {
         const ids = new Set(failedRefs.map((ref) => ref.content_id));
         setFailedReferenceIds(ids);
+        setProvisionalStatuses(new Map(
+          failedRefs.map((ref) => [ref.content_id, ref.scrape_status || "failed"]),
+        ));
         console.log(
           `📋 Found ${failedRefs.length} failed references for task ${taskId}:`,
           failedRefs,
@@ -554,18 +560,27 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                       </Text>
                     </Tooltip>
                     {isFailedReference(ref.reference_content_id) && (
-                      <Button
-                        size="xs"
-                        colorScheme="orange"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          window.open(ref.url, "_blank");
-                          setRetryUrl(ref.url || "");
-                          setIsScrapeModalOpen(true);
-                        }}
-                      >
-                        Retry Scrape
-                      </Button>
+                      <HStack spacing={1}>
+                        <Badge colorScheme="orange" variant="subtle">
+                          {provisionalStatuses.get(ref.reference_content_id) === "abstract_only"
+                            ? "Abstract only"
+                            : provisionalStatuses.get(ref.reference_content_id) === "identity_only"
+                              ? "Study subject"
+                            : "Snippet only"}
+                        </Badge>
+                        <Button
+                          size="xs"
+                          colorScheme="orange"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(ref.url, "_blank");
+                            setRetryUrl(ref.url || "");
+                            setIsScrapeModalOpen(true);
+                          }}
+                        >
+                          Retry Scrape
+                        </Button>
+                      </HStack>
                     )}
                   </HStack>
                   {/* Byline */}

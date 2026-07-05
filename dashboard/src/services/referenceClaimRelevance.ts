@@ -58,6 +58,37 @@ export interface ClaimWithRelevance extends Claim {
   hasLink: boolean;
 }
 
+export interface ScrapeEvaluationProgress {
+  contentId: number;
+  status: "unknown" | "running" | "complete" | "failed";
+  updatedAt: string | null;
+  progressVersion?: number;
+  counts?: {
+    sourcesDiscovered?: number;
+    sourcesProcessed?: number;
+    bearingAssertionsFound?: number;
+    claimLevelLinksPersisted?: number;
+  };
+  claims?: Array<{
+    claimId: number;
+    bearingAssertionsFound: number;
+    unresolvedTargetIds?: number[];
+    unresolvedReason?: string | null;
+  }>;
+  error?: string;
+}
+
+export async function fetchScrapeEvaluationProgress(
+  contentId: number,
+): Promise<ScrapeEvaluationProgress> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/scrape-evaluation-status/${contentId}`,
+    { credentials: "include" },
+  );
+  if (!response.ok) throw new Error("Failed to fetch scrape evaluation progress");
+  return response.json();
+}
+
 /**
  * Fetch reference claim → task claim links for a specific task claim
  */

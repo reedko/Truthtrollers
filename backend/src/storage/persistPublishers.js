@@ -1,6 +1,10 @@
 import { pool } from "../db/pool.js";
 import logger from "../utils/logger.js";
 import { SOURCE_IDENTITY_VERSION } from "../utils/publishingIdentityContract.js";
+import {
+  cleanSourceEntityName,
+  isUsableSourceEntityName,
+} from "../utils/publisherNameValidation.js";
 
 function json(value) {
   return value == null ? null : JSON.stringify(value);
@@ -32,8 +36,8 @@ export function normalizeVenueType(value) {
 }
 
 function boundedName(value) {
-  const name = String(value || "").replace(/\s+/g, " ").trim();
-  return name ? name.slice(0, 255) : null;
+  const name = cleanSourceEntityName(value);
+  return isUsableSourceEntityName(name) ? name.slice(0, 255) : null;
 }
 
 function normalizedLegacyPublisher(publisher) {
@@ -209,8 +213,8 @@ export async function persistSourceIdentity(query, contentId, identity, options 
          raw_metadata = VALUES(raw_metadata)`,
       [
         contentId, contextType, context.platform || null,
-        context.publisher_name_observed || organization?.name || null,
-        context.venue_name || venue?.name || null,
+        boundedName(context.publisher_name_observed) || organization?.name || null,
+        boundedName(context.venue_name) || venue?.name || null,
         normalizeVenueType(context.venue_type || venue?.venue_type),
         context.article_type || null, context.volume || null, context.issue || null,
         context.publication_date || null, context.publication_year || null,

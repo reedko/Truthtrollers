@@ -12,8 +12,14 @@ import { runEvidenceEngine } from "../../core/runEvidenceEngine.js";
 import { persistAIResults } from "../../storage/persistAIResults.js";
 import { processTaskClaims } from "../../core/processTaskClaims.js";
 import { matchClaimsToTaskClaims } from "../../core/matchClaims.js";
+import { enrichTaskClaimsForMatching, dualWriteTargetEvidenceLinks } from "../../core/evaluationTargetStore.js";
 import { openAiLLM } from "../../core/openAiLLM.js";
 import PromptManager from "../../core/promptManager.js";
+import { persistDirectEvidenceAssertions } from "../../core/evidenceAssertionPersistence.js";
+
+// The evidence engine now persists target-linked assertions itself. The old
+// post-pass repeated full-source claim extraction and all-claim matching.
+const LEGACY_REFERENCE_CLAIM_EXTRACTION_RETIRED = true;
 
 /**
  * Generate a stable hash for a claim text (for change detection)
@@ -168,10 +174,24 @@ export async function performIncrementalUpdate(query, contentId, newClaims, full
       claimIds: newClaimIds,
       claimConfidenceMap,
     });
+    await persistDirectEvidenceAssertions({
+      query,
+      taskContentId: contentId,
+      aiReferences,
+    });
 
     // -----------------------------------------------------------------
-    // 6. Process references (extract claims and match)
+    // 6. Legacy reference post-processing (retired)
     // -----------------------------------------------------------------
+    if (LEGACY_REFERENCE_CLAIM_EXTRACTION_RETIRED) {
+      logger.log(`⏭️  [Incremental] Legacy broad reference-claim extraction is retired; using target-linked bearing assertions only`);
+      evidenceResults = {
+        referencesFound: aiReferences.length,
+        referencesProcessed: 0,
+        failedCandidates: failedCandidates || [],
+        skippedLegacyReferenceProcessing: true,
+      };
+    } else {
     const validReferences = aiReferences.filter((ref) => {
       if (!ref.referenceContentId) return false;
       if (ref.referenceContentId === contentId) return false;
@@ -190,10 +210,11 @@ export async function performIncrementalUpdate(query, contentId, newClaims, full
        AND cc.relationship_type IN ('task', 'content')`,
       [contentId]
     );
-    const allTaskClaims = allTaskClaimsRows.map(row => ({
+    const allTaskClaimsRaw = allTaskClaimsRows.map(row => ({
       id: row.claim_id,
       text: row.claim_text
     }));
+    const allTaskClaims = await enrichTaskClaimsForMatching(query, contentId, allTaskClaimsRaw);
 
     // Process references in batches of 3
     const BATCH_SIZE = 3;
@@ -261,6 +282,7 @@ export async function performIncrementalUpdate(query, contentId, newClaims, full
                  VALUES ${placeholders}`,
                 flatValues
               );
+              await dualWriteTargetEvidenceLinks(query, contentId, claimMatches, ref.referenceContentId);
             }
           }
         }
@@ -286,6 +308,7 @@ export async function performIncrementalUpdate(query, contentId, newClaims, full
       referencesProcessed: processedSuccessfully,
       failedCandidates: failedCandidates || []
     };
+    }
   } else {
     logger.log(`⏭️  [Incremental] No new claims - skipping evidence engine`);
   }
@@ -425,16 +448,22 @@ export default function createContentIncrementalRoutes({ query }) {
         claimIds: [claimId],
         claimConfidenceMap,
       });
+      await persistDirectEvidenceAssertions({
+        query,
+        taskContentId: contentId,
+        aiReferences,
+      });
 
-      if (!processReferences) {
+      if (LEGACY_REFERENCE_CLAIM_EXTRACTION_RETIRED || !processReferences) {
         logger.log(
-          `⏭️  [Evidence Re-run] Skipping reference claim extraction/link matching for single-claim rerun`
+          `⏭️  [Evidence Re-run] Legacy broad reference claim extraction/link matching is retired`
         );
         return res.json({
           success: true,
           evidence_count: aiReferences.length,
           references_processed: 0,
           skipped_reference_processing: true,
+          legacy_reference_processing_retired: true,
           mode: mode
         });
       }
@@ -457,10 +486,11 @@ export default function createContentIncrementalRoutes({ query }) {
         [claimId]
       );
 
-      const taskClaims = taskClaimRow.map(row => ({
+      const taskClaimsRaw = taskClaimRow.map(row => ({
         id: claimId,
         text: row.claim_text
       }));
+      const taskClaims = await enrichTaskClaimsForMatching(query, contentId, taskClaimsRaw);
 
       // Process references in batches
       const BATCH_SIZE = 3;
@@ -530,6 +560,7 @@ export default function createContentIncrementalRoutes({ query }) {
                      rationale = VALUES(rationale)`,
                   flatValues
                 );
+                await dualWriteTargetEvidenceLinks(query, contentId, claimMatches, ref.referenceContentId);
               }
             }
           }

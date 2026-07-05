@@ -1,5 +1,9 @@
 import logger from "./logger.js";
 import { SOURCE_IDENTITY_VERSION } from "./publishingIdentityContract.js";
+import {
+  cleanSourceEntityName,
+  isUsableSourceEntityName,
+} from "./publisherNameValidation.js";
 
 export { SOURCE_IDENTITY_VERSION } from "./publishingIdentityContract.js";
 
@@ -10,12 +14,7 @@ const SOCIAL_HOST_RE = /(^|\.)(facebook|instagram|twitter|x|tiktok|reddit|linked
 const REPOSITORY_HOST_RE = /(^|\.)(pubmed\.ncbi\.nlm\.nih\.gov|bvsalud\.org|researchgate\.net|semanticscholar\.org)$/i;
 
 function clean(value) {
-  return String(value || "")
-    .replace(/\s+/g, " ")
-    .replace(/[®™]/g, "")
-    .replace(/^\s*[:：\-–—|]\s*/, "")
-    .replace(/\s*[•:：\-–—|]\s*$/, "")
-    .trim();
+  return cleanSourceEntityName(value);
 }
 
 function evidence(value) {
@@ -25,7 +24,7 @@ function evidence(value) {
 
 function validName(value, { allowAggregator = false } = {}) {
   const name = clean(value);
-  if (!name || name.length < 3 || name.length > 255 || JUNK_NAME_RE.test(name)) return null;
+  if (!isUsableSourceEntityName(name) || JUNK_NAME_RE.test(name)) return null;
   if (!allowAggregator && AGGREGATOR_RE.test(name)) return null;
   return name;
 }
@@ -151,7 +150,12 @@ function uniqueIdentifiers(items) {
 }
 
 function labeledValue($, labels) {
-  const body = $("body").text().replace(/\r/g, "\n");
+  // Never treat JavaScript, CSS, templates, or form controls as visible
+  // publisher evidence. Tracking code commonly contains strings such as
+  // `Publisher: params.utm_source`.
+  const visibleRoot = $("body").clone();
+  visibleRoot.find("script, style, noscript, template, textarea, input, select, option").remove();
+  const body = visibleRoot.text().replace(/\r/g, "\n");
   for (const label of labels) {
     const match = body.match(new RegExp(`${label}\\s*[:：]\\s*([^\\n|]{2,180})(?:\\n|\\||$)`, "i"));
     if (match?.[1]) return { value: clean(match[1]), quote: clean(match[0]) };
@@ -295,13 +299,15 @@ export async function extractHtmlPublishingIdentity($, sourceUrl = "") {
 export function chooseLegacyPrimaryPublisher(identity) {
   const organization = identity?.entities?.publishing_organization;
   const venue = identity?.entities?.publication_venue;
-  if (organization?.name && organization.confidence >= 0.5) {
+  const organizationName = isUsableSourceEntityName(organization?.name) ? organization.name : null;
+  const venueName = isUsableSourceEntityName(venue?.name) ? venue.name : null;
+  if (organizationName && organization.confidence >= 0.5) {
     return { name: organization.name, role: "publisher", confidence: organization.method || "metadata", identity };
   }
-  if (venue?.name) {
+  if (venueName) {
     return { name: venue.name, role: "journal", confidence: "proxy", note: "Publication venue used as a legacy publisher proxy.", identity };
   }
-  if (organization?.name) return { name: organization.name, role: "publisher", confidence: "fallback", identity };
+  if (organizationName) return { name: organization.name, role: "publisher", confidence: "fallback", identity };
   return { name: "Unknown Publisher", role: "legacy_unspecified", confidence: "unknown", identity };
 }
 

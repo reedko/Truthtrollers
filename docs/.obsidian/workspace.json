@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "claim-evaluation-targets-adaptive-bearing-plan-best-bearing-pool.md",
+                "file": "veristrata_tm_claim_extraction_final_final_final_plan.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "claim-evaluation-targets-adaptive-bearing-plan-best-bearing-pool"
+              "title": "veristrata_tm_claim_extraction_final_final_final_plan"
             }
           }
         ]
@@ -185,8 +185,21 @@
   },
   "active": "556b733afeac46fc",
   "lastOpenFiles": [
-    "claim-evaluation-targets-adaptive-bearing-plan-resequenced-phase-x-metadata-admin.md",
+    "veristrata_claim_extraction_plan_comparison_final.md",
+    "veristrata_tm_claim_extraction_final_final_final_plan.md",
+    "veristrata_claim_extraction_chunking_plan.md",
+    "CLAIM_EXTRACTION_PLAN.md",
+    "evidence-pipeline-audit-content-16833.md",
+    "audit-content-16892-claim-extraction-and-evidence.md",
+    "veristrata_scrape_pipeline_mct_v3.md",
+    "bearing-shadow-audit.md",
+    "evidence-query-stance-analysis.md",
+    "context-rich-query-and-evidence-handoff-repair-plan.md",
+    "scrape-pipeline-audit.md",
+    "theme-family-assisted-claim-extraction.md",
+    "current-bearing-evidence-flow.md",
     "claim-evaluation-targets-adaptive-bearing-plan-best-bearing-pool.md",
+    "claim-evaluation-targets-adaptive-bearing-plan-resequenced-phase-x-metadata-admin.md",
     "claim-evaluation-targets-adaptive-bearing-plan-resequenced-phase-x.md"
   ]
 }

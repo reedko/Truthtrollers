@@ -19,6 +19,7 @@ import { getMainHeadline } from "../utils/getMainHeadline.js";
 import { getBestImage } from "../utils/getBestImage.js";
 import { persistTaskContent } from "../storage/persistContentAndEvidence.js";
 import * as cheerio from "cheerio";
+import { isUsableSourceEntityName } from "../utils/publisherNameValidation.js";
 
 /**
  * scrapeTask(query, url, raw_html?, mediaSource?, providedAuthors?)
@@ -57,6 +58,7 @@ export async function scrapeTask(
     // publisher. Treating them as publisher hints suppresses the canonical
     // extractor and is how otherwise valid publisher metadata gets missed.
     const usablePublisherHint = typeof mediaSource === "string" &&
+      isUsableSourceEntityName(mediaSource) &&
       !/^(web|website|article|content|pdf|unknown( publisher)?|facebook|youtube)$/i.test(mediaSource.trim())
         ? mediaSource.trim()
         : null;

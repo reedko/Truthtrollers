@@ -50,6 +50,9 @@ export async function persistClaims(
     const claimRole = typeof claimEntry === "object" && claimEntry !== null
       ? (claimEntry.role || null)
       : null;
+    const claimType_ = typeof claimEntry === "object" && claimEntry !== null
+      ? (claimEntry.type || null)
+      : null;
     const linkRelationshipType = typeof claimEntry === "object" && claimEntry !== null
       ? (claimEntry.relationshipType || claimEntry.relationship_type || relationshipType)
       : relationshipType;
@@ -145,13 +148,25 @@ export async function persistClaims(
       [contentId, claimId, linkRelationshipType]
     );
 
+    // Determine evaluation lane flags based on claim type (evaluation vs background)
+    const isEvaluationClaim = claimType_ === "evaluation";
+    const isBackgroundClaim = claimType_ === "background";
+    const selectedForEvaluation = isEvaluationClaim ? 1 : 0;
+    const evaluationEligible = isEvaluationClaim ? 1 : 0;
+    const verdictEligible = isEvaluationClaim ? 1 : 0;
+    const searchEligible = isEvaluationClaim ? 1 : 0;
+    const sourceEligible = isBackgroundClaim ? 1 : (isEvaluationClaim ? 1 : 0);
+    const visibility = isEvaluationClaim ? "workspace_eval" : (isBackgroundClaim ? "workspace_background" : "workspace");
+    const selectedForBackground = isBackgroundClaim ? 1 : 0;
+
     if (existingLink.length === 0) {
       await query(
         `
           INSERT INTO content_claims
             (content_id, claim_id, relationship_type, claim_role, parent_claim_id, claim_depth, centrality_score, verifiability_score, claim_order,
-             object_claim_text, is_attribution, speaker_entity, accountability_eligible)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             object_claim_text, is_attribution, speaker_entity, accountability_eligible, selected_for_evaluation, evaluation_eligible,
+             verdict_eligible, search_eligible, source_eligible, visibility, selected_for_background)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `,
         [
           contentId,
@@ -167,9 +182,16 @@ export async function persistClaims(
           isAttribution == null ? null : (isAttribution ? 1 : 0),
           speakerEntity,
           accountabilityEligible == null ? null : (accountabilityEligible ? 1 : 0),
+          selectedForEvaluation,
+          evaluationEligible,
+          verdictEligible,
+          searchEligible,
+          sourceEligible,
+          visibility,
+          selectedForBackground,
         ]
       );
-      console.log(`🔗 [persistClaims] Linked claim_id ${claimId} to content_id ${contentId} (${linkRelationshipType})`);
+      console.log(`🔗 [persistClaims] Linked claim_id ${claimId} to content_id ${contentId} (${linkRelationshipType}, ${isEvaluationClaim ? 'evaluation' : isBackgroundClaim ? 'background' : 'other'})`);
     } else {
       await query(
         `
@@ -183,7 +205,10 @@ export async function persistClaims(
               object_claim_text = COALESCE(?, object_claim_text),
               is_attribution = COALESCE(?, is_attribution),
               speaker_entity = COALESCE(?, speaker_entity),
-              accountability_eligible = COALESCE(?, accountability_eligible)
+              accountability_eligible = COALESCE(?, accountability_eligible),
+              selected_for_evaluation = ?, evaluation_eligible = ?,
+              verdict_eligible = ?, search_eligible = ?, source_eligible = ?,
+              visibility = ?, selected_for_background = ?
           WHERE content_id = ? AND claim_id = ? AND relationship_type = ?
         `,
         [
@@ -197,12 +222,19 @@ export async function persistClaims(
           isAttribution == null ? null : (isAttribution ? 1 : 0),
           speakerEntity,
           accountabilityEligible == null ? null : (accountabilityEligible ? 1 : 0),
+          selectedForEvaluation,
+          evaluationEligible,
+          verdictEligible,
+          searchEligible,
+          sourceEligible,
+          visibility,
+          selectedForBackground,
           contentId,
           claimId,
           linkRelationshipType,
         ]
       );
-      console.log(`⏭️  [persistClaims] Link already exists: claim_id ${claimId} → content_id ${contentId} (metadata updated if present)`);
+      console.log(`⏭️  [persistClaims] Link already exists: claim_id ${claimId} → content_id ${contentId} (${isEvaluationClaim ? 'evaluation' : isBackgroundClaim ? 'background' : 'other'})`);
     }
   }
 

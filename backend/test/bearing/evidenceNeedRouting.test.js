@@ -5,10 +5,26 @@ import { ClaimExtractor } from "../../src/core/claimsEngine.js";
 import {
   buildEvidenceNeedV1,
   buildEvidenceTargetQueries,
+  buildQueryLanesFromEvaluationTargets,
   queryPreservesNumericScope,
   validateEvidenceTargetQuery,
   validateEvidenceNeed,
 } from "../../src/core/evidenceNeed.js";
+
+test("substantive query composition does not duplicate an alleged action already present in the proposition", () => {
+  const lanes = buildQueryLanesFromEvaluationTargets([{
+    evaluationTargetId: 41,
+    targetType: "substantive",
+    targetText: "Data linking the MMR vaccine to autism was manipulated by the CDC.",
+    subjectEntity: "CDC",
+    allegedAction: "manipulated",
+    objectText: "Data linking the MMR vaccine to autism was manipulated by the CDC.",
+    searchEligible: true,
+  }]);
+  const conduct = lanes.find((lane) => lane.id === "substantive-conduct-41");
+  assert.equal(conduct.queryHint, "Data linking the MMR vaccine to autism was manipulated by the CDC.");
+  assert.doesNotMatch(conduct.queryHint, /^manipulated Data/i);
+});
 import {
   addEvidenceTargetProvenance,
   buildEvidenceQueryContexts,
@@ -60,6 +76,7 @@ test("claim extraction preserves assertion and fallibility metadata", async () =
     chunk: claimText,
     tokenLength: 20,
     incomingTestimonials: [],
+    contentRole: "source",
   });
   const preserved = result.claimsDetailed.find((claim) => claim.text === claimText);
 
@@ -107,8 +124,13 @@ test("missing assertions retain a safe legacy fallback with provenance", () => {
   const legacy = buildSearchTargets(claim);
   const routed = addEvidenceTargetProvenance(legacy, need);
 
-  assert.deepEqual(routed.map(({ stanceGoal, evidenceTargetId, evidenceTargetType, bearingRequirement, ...rest }) => rest), legacy);
-  assert.ok(routed.every((target) => target.stanceGoal && target.evidenceTargetId));
+  assert.deepEqual(
+    routed.map(({ stanceGoal, evidenceTargetId, evidenceTargetType, bearingRequirement, purposeLane, providerProfile, ...rest }) => rest),
+    legacy,
+  );
+  // Purpose lane replaces desired stance; stanceGoal is retained but neutral.
+  assert.ok(routed.every((target) => target.purposeLane && target.evidenceTargetId));
+  assert.ok(routed.every((target) => target.stanceGoal === "open"));
   assert.ok(routed.every((target) => target.evidenceTargetType && target.bearingRequirement));
 });
 
@@ -262,8 +284,62 @@ test("assertion targets run first and target-aware generation fills remaining sl
     "pediatric cardiac surgery age cohort study",
   ]);
   assert.equal(calls.length, 1);
-  assert.match(calls[0].user, /Produce at most 2 precise queries/);
+  assert.match(calls[0].user, /Generate up to 2 search queries/);
+  assert.doesNotMatch(calls[0].user, /support.*refute.*nuance/i);
   assert.doesNotMatch(calls[0].user, /\"id\":\"assertion\"/);
+});
+
+test("live bearing query generation produces purpose-lane queries (no stance quota) with target routing", async () => {
+  // Purpose lanes describe evidentiary jobs, never a desired stance. The model
+  // is asked for distinct purpose lanes; stance is classified after retrieval.
+  const lanes = [
+    "attribution_record", "official_response", "alleged_conduct",
+    "independent_methodology", "independent_reanalysis", "inference_limitations",
+    "causal_background", "original_document", "study_identity",
+  ];
+  const engine = new EvidenceEngine({
+    llm: {
+      generate: async () => ({
+        queries: lanes.map((purposeLane, index) => ({
+          queryText: `Agency X omitted subgroup data ${purposeLane} ${index}`,
+          purposeLane,
+          reasonForQuery: `pursue ${purposeLane}`,
+          evidenceTargetId: "substantive-lane",
+          evidenceTargetType: "primary_source",
+          bearingRequirement: "direct_truth_value",
+        })),
+      }),
+    },
+  });
+  const queries = await engine.generateQueries({
+    id: 99,
+    text: "Agency X omitted subgroup data.",
+    evidenceNeed: {
+      effectiveClaimText: "Agency X omitted subgroup data.",
+      evidenceTargets: [{
+        id: "substantive-lane",
+        evaluationTargetId: 700,
+        queryHint: "Agency X omitted subgroup data",
+        evidenceTargetType: "primary_source",
+        stanceGoal: "open",
+        bearingRequirement: "direct_truth_value",
+      }],
+    },
+    searchTargets: [],
+    fallbackSearchTargets: [],
+  }, {}, 9, { enableBearingGating: true });
+
+  // No stance labels survive: every query carries a valid purpose lane and a
+  // neutral legacy intent/stanceGoal.
+  assert.ok(queries.length >= 3);
+  assert.ok(queries.every((query) => lanes.includes(query.purposeLane)));
+  assert.ok(queries.every((query) => query.intent === "evidence"));
+  assert.ok(queries.every((query) => query.stanceGoal === "open"));
+  assert.ok(!queries.some((query) => ["support", "refute", "nuance"].includes(query.purposeLane)));
+  // Purpose diversity: several distinct lanes are represented, not one bucket.
+  assert.ok(new Set(queries.map((query) => query.purposeLane)).size >= 3);
+  assert.ok(queries.every((query) => query.evidenceTargetId === 700));
+  assert.ok(queries.every((query) => query.evidenceLaneId === "substantive-lane"));
 });
 
 test("missing assertions invoke target-aware generation before legacy fallback", async () => {

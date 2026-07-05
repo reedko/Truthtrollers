@@ -9,6 +9,22 @@ import { persistClaims } from "../storage/persistClaims.js";
 import { classifyAttributionClaim } from "../utils/normalizeEvidenceClaim.js";
 import logger from "../utils/logger.js";
 
+export function chunkContentForClaimExtraction(text, maxCharsPerChunk = 6000) {
+  const content = String(text || "");
+  const chunkSize = Math.max(1, Number(maxCharsPerChunk) || 6000);
+  const chunks = [];
+
+  for (let start = 0; start < content.length; start += chunkSize) {
+    const chunkText = content.slice(start, start + chunkSize);
+    chunks.push({
+      text: chunkText,
+      tokenLength: Math.round(chunkText.length / 4),
+    });
+  }
+
+  return chunks;
+}
+
 /**
  * processTaskClaims({
  *    query,
@@ -99,10 +115,13 @@ export async function processTaskClaims({ query, taskContentId, text, claimType 
   logger.log(`🟩 [processTaskClaims] Using extraction mode: ${mode}`);
   logger.log(`🟩 [processTaskClaims] Using content role: ${contentRole}`);
 
+  const chunks = chunkContentForClaimExtraction(text);
+  logger.log(`📦 [processTaskClaims] Sending ${chunks.length} claim-extraction chunk(s) (max 6000 chars each)`);
+
   const extraction = await extractor.analyzeContent({
-    chunks: [{ text, tokenLength: Math.round(text.length / 4) }],
+    chunks,
     existingTestimonials: [],
-    maxConcurrency: 1,
+    maxConcurrency: 3,
     extractionMode: mode,
     taskClaimsContext,
     contentRole,

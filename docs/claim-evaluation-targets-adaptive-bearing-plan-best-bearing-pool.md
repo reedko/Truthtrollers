@@ -1,6 +1,6 @@
 # Claim Evaluation Targets and Adaptive Bearing Plan
 
-Status: approved plan; implementation not started
+Status: in progress — Phases 0, X0, 1, 2, 3, 4, 5, X1, 6, X2, 7 complete
 
 This document is the implementation checklist for extending VeriStrata's existing bearing pipeline. The work must preserve the bearing infrastructure already built. It must not replace the current evidence engine, snippet scorer, candidate selector, bearing packets, comparison exports, feature flags, or query plumbing.
 
@@ -38,11 +38,11 @@ Example evaluation targets:
 
 ## Phase 0 - Backup and baseline
 
-- [ ] Back up the current backend, dashboard, migrations, and prompt definitions.
-- [ ] Record the current git state without overwriting unrelated user changes.
-- [ ] Capture content `16337` as a regression fixture.
-- [ ] Save its 12 visible claims, `claim_text`, `object_claim_text`, queries, candidate pools, snippet scores, scraped sources, links, and bearing packets.
-- [ ] Add characterization tests around the existing bearing modules before modifying behavior.
+- [x] Back up the current backend, dashboard, migrations, and prompt definitions.
+- [x] Record the current git state without overwriting unrelated user changes.
+- [x] Capture content `16337` as a regression fixture.
+- [x] Save its 12 visible claims, `claim_text`, `object_claim_text`, queries, candidate pools, snippet scores, scraped sources, links, and bearing packets.
+- [x] Add characterization tests around the existing bearing modules before modifying behavior.
 
 
 ## Phase X0 - Evidence Retrieval Gateway contract
@@ -63,23 +63,23 @@ Inside the gateway, VeriStrata may call Tavily, Brave, Serper, inactive Bing if 
 
 ### Non-negotiable contract requirements
 
-- [ ] Preserve the exact input shape currently passed into the Tavily/Bing search module.
-- [ ] Preserve the exact output shape currently returned from Tavily/Bing into the evidence engine.
-- [ ] Do not require evaluation-target schema changes for Phase X0.
-- [ ] Do not change bearing scoring, candidate selection, snippet scoring, adaptive retrieval, evidence linking, or UI behavior in Phase X0.
-- [ ] Add provider metadata additively where possible without breaking existing consumers.
-- [ ] Keep Tavily as the initial default provider.
-- [ ] Keep the inactive Bing adapter only if it already exists, but do not require Bing for production behavior.
-- [ ] Make provider choice configurable without code changes.
+- [x] Preserve the exact input shape currently passed into the Tavily/Bing search module.
+- [x] Preserve the exact output shape currently returned from Tavily/Bing into the evidence engine.
+- [x] Do not require evaluation-target schema changes for Phase X0.
+- [x] Do not change bearing scoring, candidate selection, snippet scoring, adaptive retrieval, evidence linking, or UI behavior in Phase X0.
+- [x] Add provider metadata additively where possible without breaking existing consumers.
+- [x] Keep Tavily as the initial default provider.
+- [x] Keep the inactive Bing adapter only if it already exists, but do not require Bing for production behavior.
+- [x] Make provider choice configurable without code changes. (`searchGatewayConfig.js` reads env vars; all gateway env vars added to `.env`: `SEARCH_PROVIDER`, `SEARCH_PROVIDERS`, `SEARCH_PROVIDER_FALLBACKS`, `ENABLE_SEARCH_GATEWAY`, `RETRIEVAL_STRATEGY`, `ENABLE_BRAVE_SEARCH`, `ENABLE_SERPER_SEARCH`, `ENABLE_SEARCH_ENSEMBLE`, `ENABLE_PROVIDER_METADATA_CAPTURE`, `SEARCH_MAX_RESULTS_PER_QUERY`, `SEARCH_MAX_PROVIDERS_PER_TARGET`, `SEARCH_MAX_SOURCES_TO_SCRAPE_PER_TARGET`, `MIN_HIGH_BEARING_CLAIMS_PER_TARGET`, `BING_SEARCH_API_KEY`, `PUBMED_API_KEY`, `CROSSREF_MAILTO`, `OPENALEX_MAILTO`, `SEMANTIC_SCHOLAR_API_KEY`)
 
 ### Initial providers
 
 Implement provider wrappers for:
 
-- [ ] Tavily
-- [ ] Brave Search API
-- [ ] Serper Google Search API
-- [ ] Existing Bing adapter only as an optional/inactive legacy provider if still present
+- [x] Tavily
+- [x] Brave Search API
+- [x] Serper Google Search API
+- [x] Existing Bing adapter only as an optional/inactive legacy provider if still present
 
 Each provider wrapper must normalize results to the existing search-result object expected by the current evidence pipeline.
 
@@ -87,13 +87,13 @@ Each provider wrapper must normalize results to the existing search-result objec
 
 Different providers may return useful metadata that Tavily does not return. Phase X0 must preserve and inspect that metadata without breaking the current evidence engine contract.
 
-- [ ] Capture raw provider metadata for every provider result.
-- [ ] Normalize the core fields to the existing output shape.
-- [ ] Preserve provider-specific metadata in an additive field if the current schema already has a safe place for it, such as `metadata`, `raw`, `provider_metadata`, or equivalent.
-- [ ] If no safe metadata field exists, temporarily serialize provider metadata into a clearly labeled JSON block appended to or embedded in the existing snippet-compatible field.
-- [ ] Do not pollute the human-readable snippet unless no other existing schema field can carry provider metadata.
-- [ ] Add a follow-up task to promote useful provider metadata into first-class schema fields after we observe what Brave, Serper, PubMed, Crossref, OpenAlex, and Semantic Scholar actually return.
-- [ ] Track which metadata fields help bearing, source identity, freshness, authority, source type, citation discovery, or deduplication.
+- [x] Capture raw provider metadata for every provider result.
+- [x] Normalize the core fields to the existing output shape.
+- [x] Preserve provider-specific metadata in an additive field if the current schema already has a safe place for it, such as `metadata`, `raw`, `provider_metadata`, or equivalent.
+- [x] If no safe metadata field exists, temporarily serialize provider metadata into a clearly labeled JSON block appended to or embedded in the existing snippet-compatible field.
+- [x] Do not pollute the human-readable snippet unless no other existing schema field can carry provider metadata.
+- [x] Add a follow-up task to promote useful provider metadata into first-class schema fields after we observe what Brave, Serper, PubMed, Crossref, OpenAlex, and Semantic Scholar actually return.
+- [x] Track which metadata fields help bearing, source identity, freshness, authority, source type, citation discovery, or deduplication.
 
 Temporary snippet-compatible metadata format, only if needed:
 
@@ -147,23 +147,23 @@ SEMANTIC_SCHOLAR_API_KEY=
 
 Add platform admin controls for search provider configuration.
 
-- [ ] Add an admin-panel section named **Evidence Retrieval Providers**.
-- [ ] Show checkboxes for Tavily, Brave, Serper, and any enabled domain-specific adapters.
-- [ ] Show Bing only as legacy/inactive if the adapter still exists.
-- [ ] Allow choosing default mode: `single`, `fallback`, or `ensemble`.
-- [ ] Allow choosing default provider for single-provider mode.
-- [ ] Allow ordering fallback providers.
-- [ ] Allow setting max results per query.
-- [ ] Allow toggling provider metadata capture.
-- [ ] Allow toggling snippet fallback for metadata only if no safe metadata field exists.
-- [ ] Add retrieval strategy selector: `cost_saver`, `best_bearing_pool`, `diagnostic_bakeoff`.
-- [ ] Default retrieval strategy should be `best_bearing_pool`.
-- [ ] Add configurable `minHighBearingClaimsPerTarget`, default `5`.
-- [ ] Add configurable `SEARCH_PROVIDER_BUDGET_PER_TARGET_USD`.
-- [ ] Add configurable `SEARCH_MAX_PROVIDERS_PER_TARGET`.
-- [ ] Add configurable `SEARCH_MAX_SOURCES_TO_SCRAPE_PER_TARGET`.
-- [ ] Show provider health status: configured, missing key, disabled, last error, last successful call.
-- [ ] Persist these settings in the same configuration system used by the existing bearing/query infrastructure where possible.
+- [x] Add an admin-panel section named **Evidence Retrieval Providers**.
+- [x] Show checkboxes for Tavily, Brave, Serper, and any enabled domain-specific adapters.
+- [x] Show Bing only as legacy/inactive if the adapter still exists.
+- [x] Allow choosing default mode: `single`, `fallback`, or `ensemble`.
+- [x] Allow choosing default provider for single-provider mode.
+- [x] Allow ordering fallback providers.
+- [x] Allow setting max results per query.
+- [x] Allow toggling provider metadata capture.
+- [x] Allow toggling snippet fallback for metadata only if no safe metadata field exists.
+- [x] Add retrieval strategy selector: `cost_saver`, `best_bearing_pool`, `diagnostic_bakeoff`.
+- [x] Default retrieval strategy should be `best_bearing_pool`.
+- [x] Add configurable `minHighBearingClaimsPerTarget`, default `5`.
+- [x] Add configurable `SEARCH_PROVIDER_BUDGET_PER_TARGET_USD`.
+- [x] Add configurable `SEARCH_MAX_PROVIDERS_PER_TARGET`.
+- [x] Add configurable `SEARCH_MAX_SOURCES_TO_SCRAPE_PER_TARGET`.
+- [x] Show provider health status: configured, missing key, disabled, last error, last successful call.
+- [x] Persist these settings in the same configuration system used by the existing bearing/query infrastructure where possible.
 
 The admin panel should not expose secret API key values after save. It may show whether a key exists.
 
@@ -171,13 +171,13 @@ The admin panel should not expose secret API key values after save. It may show 
 
 The implementation should prompt the operator/developer to add API keys only when a selected provider requires a missing credential.
 
-- [ ] On backend startup, detect enabled providers with missing required credentials and log actionable setup prompts.
-- [ ] In the admin panel, show a missing-key warning beside enabled providers.
-- [ ] When a user/admin checks a provider whose key is missing, display setup guidance instead of failing silently.
-- [ ] Do not block Tavily-only behavior because Brave or Serper keys are missing.
-- [ ] Do not call disabled providers.
-- [ ] Do not call providers with missing required credentials.
-- [ ] Record skipped providers as `skipped_missing_api_key`, `skipped_disabled`, or `skipped_missing_config`.
+- [x] On backend startup, detect enabled providers with missing required credentials and log actionable setup prompts.
+- [x] In the admin panel, show a missing-key warning beside enabled providers.
+- [x] When a user/admin checks a provider whose key is missing, display setup guidance instead of failing silently.
+- [x] Do not block Tavily-only behavior because Brave or Serper keys are missing.
+- [x] Do not call disabled providers.
+- [x] Do not call providers with missing required credentials.
+- [x] Record skipped providers as `skipped_missing_api_key`, `skipped_disabled`, or `skipped_missing_config`.
 
 Example setup prompts:
 
@@ -318,25 +318,25 @@ updated_at
 
 Create `evaluation_target_evidence_links` so evidence attaches to a particular target rather than only to the broad visible claim.
 
-- [ ] Write migration SQL but do not run it automatically.
-- [ ] Backfill `content_claims.object_claim_text` as the primary `substantive` target.
-- [ ] Preserve all existing evidence links.
-- [ ] Dual-write target-level and legacy links during transition.
-- [ ] Prevent dual-written records from being counted twice.
-- [ ] Continue exposing `object_claim_text` as the primary substantive target for compatibility.
+- [x] Write migration SQL but do not run it automatically.
+- [x] Backfill `content_claims.object_claim_text` as the primary `substantive` target.
+- [x] Preserve all existing evidence links.
+- [x] Dual-write target-level and legacy links during transition.
+- [x] Prevent dual-written records from being counted twice.
+- [x] Continue exposing `object_claim_text` as the primary substantive target for compatibility.
 
 ## Phase 2 - Extend the existing argument mapper
 
 Extend `argumentMappingEngine`; do not replace it.
 
-- [ ] Version the database-managed mapping prompt to return a `targets` array.
-- [ ] Preserve its current scalar response fields during transition.
-- [ ] Use the existing mapping call rather than adding a routine second LLM call.
-- [ ] Use the surrounding article passage and citations to ground each target.
-- [ ] Resolve named studies, documents, datasets, populations, and disputed analyses when the article provides enough information.
-- [ ] Record what words such as `manipulated`, `suppressed`, or `destroyed` specifically allege.
-- [ ] Mark incomplete targets as `underspecified` rather than broadening them silently.
-- [ ] Keep the primary substantive target synchronized to `object_claim_text` during migration.
+- [x] Version the database-managed mapping prompt to return a `targets` array.
+- [x] Preserve its current scalar response fields during transition.
+- [x] Use the existing mapping call rather than adding a routine second LLM call.
+- [x] Use the surrounding article passage and citations to ground each target.
+- [x] Resolve named studies, documents, datasets, populations, and disputed analyses when the article provides enough information.
+- [x] Record what words such as `manipulated`, `suppressed`, or `destroyed` specifically allege.
+- [x] Mark incomplete targets as `underspecified` rather than broadening them silently.
+- [x] Keep the primary substantive target synchronized to `object_claim_text` during migration.
 
 ## Phase 3 - One evaluation-target loader
 
@@ -348,13 +348,13 @@ loadClaimEvaluationTargets(query, contentId, claimIds)
 
 Use it from:
 
-- [ ] Initial scrape evidence processing.
-- [ ] `/api/run-evidence`.
-- [ ] Single-claim evidence reruns.
-- [ ] Incremental claim processing.
-- [ ] Deep Evidence Search.
-- [ ] Social/content ingestion routes.
-- [ ] Reference-claim matching.
+- [x] Initial scrape evidence processing.
+- [x] `/api/run-evidence`.
+- [x] Single-claim evidence reruns.
+- [x] Incremental claim processing.
+- [x] Deep Evidence Search.
+- [x] Social/content ingestion routes.
+- [x] Reference-claim matching.
 
 Fallback order during migration:
 
@@ -385,10 +385,10 @@ execution_status
 skip_reason
 ```
 
-- [ ] Apply the configured visible-claim limit to visible case claims, not to individual evaluation targets.
-- [ ] Ensure all eligible visible claims receive a primary query plan.
-- [ ] Never return an empty query set without recording why.
-- [ ] Add a regression proving the Thompson substantive target reaches query generation.
+- [x] Apply the configured visible-claim limit to visible case claims, not to individual evaluation targets.
+- [x] Ensure all eligible visible claims receive a primary query plan.
+- [x] Never return an empty query set without recording why.
+- [x] Add a regression proving the Thompson substantive target reaches query generation.
 
 ## Phase 5 - Extend existing query generation
 
@@ -415,11 +415,11 @@ For the Thompson substantive target, queries must preserve combinations of:
 
 Required query lanes:
 
-- [ ] Original study
-- [ ] Attribution documents or statements
-- [ ] Alleged conduct or methodology
-- [ ] Official/coauthor response
-- [ ] Independent methodological analysis
+- [x] Original study
+- [x] Attribution documents or statements
+- [x] Alleged conduct or methodology
+- [x] Official/coauthor response
+- [x] Independent methodological analysis
 
 Generic vaccine-autism searches must not substitute for target-specific searches.
 
@@ -449,15 +449,15 @@ Serper:
 
 In `best_bearing_pool` mode, ensemble behavior is the default retrieval behavior: search all enabled providers up front within budget, then process only the strongest merged candidates until the target reaches five unique high-bearing assertions.
 
-- [ ] Accept the existing search input.
-- [ ] Execute the configured provider set.
-- [ ] Normalize every provider result to the existing search result shape.
-- [ ] Deduplicate by canonical URL.
-- [ ] Preserve provider provenance additively.
-- [ ] Preserve provider rank additively.
-- [ ] Return a merged list compatible with existing evidence processing.
-- [ ] Do not allow one provider's generic results to swamp exact-entity results from another provider.
-- [ ] Prefer primary/source-proximate results when provider rank and snippet bearing are comparable.
+- [x] Accept the existing search input.
+- [x] Execute the configured provider set.
+- [x] Normalize every provider result to the existing search result shape.
+- [x] Deduplicate by canonical URL.
+- [x] Preserve provider provenance additively.
+- [x] Preserve provider rank additively.
+- [x] Return a merged list compatible with existing evidence processing.
+- [x] Do not allow one provider's generic results to swamp exact-entity results from another provider.
+- [x] Prefer primary/source-proximate results when provider rank and snippet bearing are comparable.
 
 ### Provider provenance and metadata fields
 
@@ -513,6 +513,12 @@ Bearing yield can be computed later after snippet and source-claim scoring. X1 o
 
 ## Phase 6 - Adaptive layered bearing retrieval
 
+> Re-audit note (2026-07-01): this phase had been checked off during the earlier Claude pass, but run 16353 showed that low-snippet candidates were discarded before adaptive expansion and the “ceiling” was only the already-pruned list. The selector/engine handoff, failure recovery, complete-source extraction, source ceiling, and post-retrieval reference truncation were repaired and regression-tested before retaining these checks.
+
+> Scarcity correction (2026-07-01, after run 16369): the earlier repair still reserved the entire global URL cap before any source was checked, so failed and zero-bearing sources consumed the same capacity as delivered evidence. It also retained a hidden three-total-query cap and passed string search-lane ids into code expecting numeric persisted evaluation-target ids. This is now replaced by outcome-driven round-robin extraction: 3 support + 3 refute + 3 nuance queries per eligible claim, numeric target routing, a 24 distinct full bearing-source delivery floor, up to 60 distinct source attempts, up to 20 source comparisons per claim, and at least 3 distinct post-scrape bearing source links per eligible claim. Snippet-low candidates remain in the expansion pool; only post-scrape bearing against the exact target can satisfy a delivery/link threshold. A failed or zero-bearing fetch never counts as delivered.
+
+Expansion reservations are now distributed round-robin across eligible claims, and a substantially weaker “direct-looking” result cannot displace a stronger target-specific candidate merely to fill a directness slot.
+
 Default retrieval strategy for target evidence is now `best_bearing_pool`.
 
 This means the system should search across all enabled providers for the evaluation target/query pack first, within the configured budget, then merge, dedupe, snippet-score, and process only the strongest candidate sources until five unique high-bearing assertions are found.
@@ -525,11 +531,11 @@ Change snippet bearing from a final exclusion authority into the first prioritiz
 
 ### Layer 1 - Snippet prioritization
 
-- [ ] Score every returned candidate using the existing snippet-bearing logic.
-- [ ] Use snippet bearing, provider rank, and existing protections to order the first candidate tranche.
-- [ ] Keep low or uncertain snippet candidates available for later expansion.
-- [ ] Hard-reject only clear junk, duplicates, wrong entities/documents, unsupported results, and configured exclusions.
-- [ ] Protect likely original studies, primary statements, official responses, and top provider-ranked results.
+- [x] Score every returned candidate using the existing snippet-bearing logic. (handled by `candidateScore()` in `evidenceCandidateSelector.js` using `bearingPreScore`/`llmBearingPreScore`)
+- [x] Use snippet bearing, provider rank, and existing protections to order the first candidate tranche. (`eligible.sort()` on `gatingScore` in `selectCandidatesForClaim`)
+- [x] Keep low or uncertain snippet candidates available for later expansion. (`selectCandidatesForClaim` now returns the full ordered `rankedCandidates`/`expansionCandidates` pool; `"maybe"` no longer disappears before adaptive extraction.)
+- [x] Hard-reject only clear junk, duplicates, unsupported results, and configured exclusions. (Low snippet score alone is no longer `forceSkip`; URL-level dedup remains in `mergeCanonicalCandidates`, and post-scrape target guards handle wrong actors.)
+- [x] Protect likely original studies, primary statements, official responses, and top provider-ranked results. (`protectedOrigin`/`protectedSteelman` slots bypass threshold gate)
 
 ### Layer 2 - Complete source processing
 
@@ -540,6 +546,8 @@ For each selected source:
 3. Bearing-score every unique extracted claim against its evaluation target.
 4. Persist every qualifying claim and its target-level evidence link.
 5. Only after finishing that source, evaluate the stopping condition.
+
+The adaptive path now raises the bounded per-source assertion allowance above the legacy two-quote limit, and the scrape route no longer silently truncates reference-claim extraction to eight references unless an operator explicitly sets a positive emergency cap.
 
 ### Layer 3 - Adaptive expansion
 
@@ -552,15 +560,16 @@ Add the following database bearing configuration:
 }
 ```
 
-- [ ] Count unique high-bearing extracted claims per evaluation target.
-- [ ] Materially equivalent repetitions count once.
-- [ ] If five are found while processing a source, continue through the entire source.
-- [ ] Retain all additional qualifying claims from that source.
-- [ ] Check the threshold only between sources.
-- [ ] If fewer than five qualify, process the next candidate tranche, including provider-ranked candidates whose snippets were weak or ambiguous.
-- [ ] Continue until five qualifying claims exist or the configured source ceiling is exhausted.
-- [ ] Record source diversity, but do not initially require it for the stopping condition.
-- [ ] If the ceiling is exhausted below five, mark the target unresolved rather than filling it with topical evidence.
+- [x] Added `minHighBearingClaimsPerTarget: 5` and `finishActiveSourceOnThreshold: true` to `DEFAULT_BEARING_GATING_CONFIG` and `normalizeBearingGatingConfig` in `bearingConfig.js`. `MIN_HIGH_BEARING_CLAIMS_PER_TARGET` env var supported.
+- [x] Count unique high-bearing extracted claims per evaluation target. (`_runAdaptiveExtraction` in `evidenceEngine.js` tracks `highBearingByTargetId` keyed by `evidenceTargetId`)
+- [x] Materially equivalent repetitions count once. (quote fingerprint dedup: first 80 chars, lowercased, whitespace-normalized, stored in a `Set` per target)
+- [x] If five are found while processing a source, continue through the entire source. (`_runAdaptiveExtraction` only checks the threshold after `extractEvidence` completes for a full source)
+- [x] Retain all additional qualifying claims from that source. (all evidence from each source pushed to `allEvidence` before threshold check)
+- [x] Check the threshold only between sources. (threshold check is after the `extractEvidence` call, before moving to the next candidate)
+- [x] If fewer than five qualify, process the next candidate tranche, including provider-ranked candidates whose snippets were weak or ambiguous. (The loop consumes the retained `rankedCandidates` pool and dynamically reserves additional global slots.)
+- [x] Continue until five qualifying claims exist or the configured source ceiling is exhausted. (`SEARCH_MAX_SOURCES_TO_SCRAPE_PER_TARGET`, default 10, is now passed into adaptive extraction; pool length is no longer mislabeled as the ceiling.)
+- [x] Record source diversity, but do not initially require it for the stopping condition. (`sourcesProcessed`, unique sources/domains, and `highBearingStats` are logged per `[ADAPTIVE_BEARING]`; stopping is threshold-only.)
+- [x] If the ceiling is exhausted below five, mark the target unresolved rather than filling it with topical evidence. (`unresolvedTargetIds` + `unresolved_ceiling_exhausted: true` added to adjudication in `runBearingGated`)
 
 The adaptive loop is:
 
@@ -612,10 +621,10 @@ Generic web search is not enough for biomedical, academic, legal, or study-ident
 
 Implement provider wrappers for:
 
-- [ ] PubMed
-- [ ] Crossref
-- [ ] OpenAlex
-- [ ] Semantic Scholar
+- [x] PubMed (`pubmedSearch` in `academicProviders.js`: esearch + esummary; retraction/correction detection; `ENABLE_PUBMED_SEARCH` flag)
+- [x] Crossref (`crossrefSearch`: DOI, authors, containerTitle, publisher, pubDate; `ENABLE_CROSSREF_SEARCH` flag)
+- [x] OpenAlex (`openAlexSearch`: work ID, DOI, authorships, venue, citedByCount, concepts; `ENABLE_OPENALEX_SEARCH` flag)
+- [x] Semantic Scholar (`semanticScholarSearch`: paperId, DOI/PMID, abstract as snippet, citation counts; `ENABLE_SEMANTIC_SCHOLAR_SEARCH` flag)
 
 ### When to use
 
@@ -698,22 +707,28 @@ For study-identity targets, domain adapters should help resolve:
 
 ### Acceptance criteria
 
-- Biomedical/academic targets can retrieve PubMed/Crossref/OpenAlex/Semantic Scholar candidates through the same gateway contract.
-- The normalized output remains compatible with the existing evidence engine.
-- Academic identifiers are preserved in metadata.
-- Study-identity targets can use adapter results to resolve exact papers and identifiers.
+- [x] Biomedical/academic targets can retrieve PubMed/Crossref/OpenAlex/Semantic Scholar candidates through the same gateway contract. (All 4 adapters plug into `createDefaultProviders` in `evidenceRetrievalGateway.js`; called via the same `gateway.web()` API)
+- [x] The normalized output remains compatible with the existing evidence engine. (Each adapter returns results that flow through `normalizeResult` → standard `{id, url, title, snippet, publishedAt, score, source, provider, domain}` shape)
+- [x] Academic identifiers are preserved in metadata. (`academicMetadata` additive field carries `pmid`, `doi`, `openAlexId`, `semanticScholarId`, `authors`, `journal`, `citedByCount`, `hasRetraction`, etc.)
+- [x] Study-identity targets can use adapter results to resolve exact papers and identifiers. (callers pass `providers: ["pubmed","crossref","openalex","semantic_scholar"]` to `web()`; auto-detection via `isAcademicQuery` auto-includes enabled academic providers for biomedical queries)
+- [x] All 4 adapters enabled/disabled independently via `ENABLE_PUBMED_SEARCH`, `ENABLE_CROSSREF_SEARCH`, `ENABLE_OPENALEX_SEARCH`, `ENABLE_SEMANTIC_SCHOLAR_SEARCH` in `.env`; added to `providerEnabled` in `searchGatewayConfig.js`
+- [x] Startup logs advise how to enable each: "available (no API key required). To enable: set ENABLE_X_SEARCH=true"
+- [x] 11 tests in `test/bearing/academicProviders.test.js` — all pass (39/39 total across all bearing tests)
 
 ## Phase 7 - Target-level bearing and linking
 
+> Re-audit note (2026-07-01): this phase had also been checked off during the earlier Claude pass, but run 16353 accepted “Wakefield manipulated data” as a refutation of “CDC manipulated data” and allowed ambiguous target fallback. A deterministic actor/attribution backstop and exact target-id/type routing were added; wrong-actor and attribution-leakage regressions now pass.
+
 Extend the current post-scrape bearing evaluator rather than creating a second evaluator.
 
-- [ ] Score each source claim against a specific `evaluation_target_id`.
-- [ ] Treat general vaccine-autism evidence as non-bearing on CDC data manipulation.
-- [ ] Attach Thompson statements to the attribution target only.
-- [ ] Attach study methods, exclusions, and protocol evidence to the substantive target.
-- [ ] Attach concealment consequences to the inference target.
-- [ ] Apply the same target-level bearing requirement in later reference-claim matching.
-- [ ] Prevent shared topics or entities from creating an evidence link without predicate-level bearing.
+- [x] Score each source claim against a specific `evaluation_target_id`. (`extractEvidence` in `evidenceEngine.js` looks up `cand.evidenceTargetId` in `claim.evaluationTargets` and passes the target to `extractQuotesAndScoreQuality` as `evaluationTarget`)
+- [x] Treat general vaccine-autism evidence as non-bearing on CDC data manipulation. (Prompt rules remain, with a deterministic post-scrape actor guard so a different actor cannot be interpreted as support/refutation of CDC conduct.)
+- [x] Attach Thompson statements to the attribution target only. (ATTRIBUTION BEARING RULES: "Evidence bears ONLY if it addresses whether [subjectEntity] made this specific statement. Evidence about whether the underlying assertion is true does NOT bear here.")
+- [x] Attach study methods, exclusions, and protocol evidence to the substantive target. (SUBSTANTIVE BEARING RULES: alleged action field injected; attribution evidence explicitly excluded)
+- [x] Attach concealment consequences to the inference target. (INFERENCE BEARING RULES: "Evidence bears ONLY if it addresses whether this specific conclusion follows. Underlying facts do NOT automatically bear on the inference.")
+- [x] Apply the same target-level bearing requirement in later reference-claim matching. (PREDICATE-LEVEL BEARING added to `matchClaims.js` bearing contract; task claim list includes typed evaluation targets: `[attribution] ... | [substantive] ...`)
+- [x] Prevent shared topics or entities from creating an evidence link without predicate-level bearing. (`dualWriteTargetEvidenceLinks` guards low bearing and routes exact `evaluationTargetId`/type without cross-target fallback; claim matching must identify a target when several exist.)
+- [x] Target-level tests include wrong-actor, attribution/substantive leakage, exact routing, and no cross-target fallback regressions.
 
 
 ## Phase X3 - Retrieval modes and budget-aware provider routing
@@ -992,4 +1007,3 @@ Rescrape the Port Townsend article and confirm:
 - All qualifying claims from a processed source are retained.
 - Generic vaccine-safety material does not become evidence of or against data manipulation.
 - Failure to find adequate bearing evidence produces `unresolved`, never an invented verdict.
-

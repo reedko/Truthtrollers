@@ -198,6 +198,7 @@ export interface FailedReference {
   failure_reason: string;
   created_at: string;
   linked_claims_count: number;
+  scrape_status?: "snippet_only" | "abstract_only" | "identity_only" | "failed" | string;
 }
 
 export interface ClaimLinker {

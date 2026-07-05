@@ -6,6 +6,7 @@ import { SOURCE_IDENTITY_VERSION } from "../utils/publishingIdentityContract.js"
 import { extractPdfPublishingIdentity } from "../utils/extractPdfPublishingIdentity.js";
 import { persistPublishers } from "../storage/persistPublishers.js";
 import { persistAuthors } from "../storage/persistAuthors.js";
+import { isUsableSourceEntityName } from "../utils/publisherNameValidation.js";
 
 function buildSocialIdentity({ sourceUrl, platform, distributionChannel, linkedUrl, linkedPublisher, provenance }) {
   const normalizedPlatform = String(platform || provenance?.platform || "social").toLowerCase();
@@ -88,7 +89,8 @@ export async function processPublishingIdentity({
   const legacyCandidateName = String(
     legacyCandidate?.name || legacyCandidate?.publisher_name || legacyCandidate || "",
   ).trim();
-  const selectedLegacyPublisher = /^unknown(?: publisher)?$/i.test(legacyCandidateName)
+  const selectedLegacyPublisher = /^unknown(?: publisher)?$/i.test(legacyCandidateName) ||
+    !isUsableSourceEntityName(legacyCandidateName)
     ? null
     : legacyCandidate;
   const persistence = query && contentId

@@ -1,0 +1,39 @@
+-- 2026-07-04-01 seed local claim-extraction prompts
+-- Seeds the local-chunk claim-extraction / document-synthesis / complex-target
+-- mapping prompts that previously only existed in the JS migration
+-- (migrations/add_local_claim_mapping_prompts.js). Without these the claim
+-- extractor falls back to code defaults and emits fragmented, un-synthesized
+-- claims (see docs/audit-content-16892-claim-extraction-and-evidence.md).
+--
+-- prompt_type = 'combined'; prompt_text = "SYSTEM:\n<system>\n\nUSER:\n<user>"
+-- (parsed by PromptManager.getPrompt, split on /\n\s*USER:\s*\n/).
+-- Idempotent style: deactivates any current active version, then inserts the
+-- next version as active. Safe to rerun.
+
+-- claim_local_extraction
+SET @claim_local_extraction_text = 'SYSTEM:\nExtract locally verifiable claims from one article chunk.\n\nReturn strict JSON only. Use only the supplied chunk; do not use outside knowledge.\nKeep each claim tied to the nearby language that gives it meaning. Do not construct a\ndocument-wide argument hierarchy here.\n\nFor each claim return:\n- claimText: a complete factual assertion\n- localSourceExcerpt: one to three short exact sentences from this chunk that contain the claim\n  and preserve nearby actor, study/year, action, population, subgroup, or protocol clues\n- localRoleSuggestion: thesis | pillar | evidence | background | opposing_claim | unclear\n- articleStance: endorses | rejects | neutral | unclear\n- namedActors: people or organizations acting in the claim\n- namedStudiesOrDocuments: specifically named or clearly referenced works, datasets, laws, protocols, or reports\n- allegedAction: the alleged act for misconduct/attribution claims, otherwise empty\n- claimType: booleans for attribution, misconduct, causation, disputed_study, statistical,\n  legal_or_regulatory, and background\n- thesisCandidate: true only if this chunk expresses a likely article thesis\n- pillarCandidate: true only if the claim appears to carry a major part of the article\'s argument\n\nSeparate what a speaker allegedly said from whether the embedded proposition is true in the\nmetadata, but keep claimText faithful to the article. Preserve named actors, studies, actions,\nnumbers, populations, and qualifications. Avoid generic topic summaries.\n\nUSER:\nExtract {{minClaims}} to {{maxClaims}} locally grounded claims when the chunk contains\nthat many worthy claims. Return fewer when it does not.\n\nReturn:\n{\n  "localClaims": [\n    {\n      "claimText": "",\n      "localSourceExcerpt": "",\n      "localRoleSuggestion": "thesis|pillar|evidence|background|opposing_claim|unclear",\n      "articleStance": "endorses|rejects|neutral|unclear",\n      "namedActors": [],\n      "namedStudiesOrDocuments": [],\n      "allegedAction": "",\n      "claimType": {\n        "attribution": false,\n        "misconduct": false,\n        "causation": false,\n        "disputed_study": false,\n        "statistical": false,\n        "legal_or_regulatory": false,\n        "background": false\n      },\n      "thesisCandidate": false,\n      "pillarCandidate": false,\n      "confidence": 0\n    }\n  ]\n}\n\nARTICLE CHUNK:\n{{chunk}}';
+SET @claim_local_extraction_params = '{"max_claims":12}';
+UPDATE llm_prompts SET is_active = FALSE WHERE prompt_name = 'claim_local_extraction';
+SET @claim_local_extraction_id = (SELECT COALESCE(MAX(CAST(prompt_id AS UNSIGNED)), 0) + 1 FROM llm_prompts);
+SET @claim_local_extraction_ver = (SELECT COALESCE(MAX(version), 0) + 1 FROM llm_prompts WHERE prompt_name = 'claim_local_extraction');
+INSERT INTO llm_prompts (prompt_id, prompt_name, prompt_type, prompt_text, parameters, version, is_active)
+VALUES (@claim_local_extraction_id, 'claim_local_extraction', 'combined', @claim_local_extraction_text, @claim_local_extraction_params, @claim_local_extraction_ver, TRUE);
+
+-- claim_document_synthesis
+SET @claim_document_synthesis_text = 'SYSTEM:\nOrganize structured local claim records into one article-level argument map.\n\nReturn strict JSON only. Do not fact-check and do not use outside knowledge. The article body is\nintentionally absent. Use the claim texts, exact local excerpts, local role suggestions, stance,\nand candidate markers already extracted from each chunk.\n\nDo not rewrite claims or invent missing local context. Assign every localClaimId a final role and\narticle stance. Prefer a claim explicitly marked thesisCandidate for the global thesis. Pillars\nmust be load-bearing propositions, not generic topics.\n\nUSER:\nSTRUCTURED LOCAL CLAIMS:\n{{claimsJson}}\n\nReturn:\n{\n  "globalThesis": "",\n  "globalPillars": [\n    { "text": "", "memberClaimIds": [] }\n  ],\n  "claimRelationships": [\n    { "fromClaimId": "", "toClaimId": "", "relationship": "supports|opposes|evidence_for|background_to" }\n  ],\n  "claimAssignments": [\n    {\n      "localClaimId": "",\n      "finalRole": "thesis|pillar|evidence|background|opposing_claim|unclear",\n      "articleStance": "endorses|rejects|neutral|unclear",\n      "parentClaimId": "",\n      "thesisLoadScore": 0\n    }\n  ]\n}\n\nInclude one claimAssignments item for every input localClaimId.';
+SET @claim_document_synthesis_params = '{}';
+UPDATE llm_prompts SET is_active = FALSE WHERE prompt_name = 'claim_document_synthesis';
+SET @claim_document_synthesis_id = (SELECT COALESCE(MAX(CAST(prompt_id AS UNSIGNED)), 0) + 1 FROM llm_prompts);
+SET @claim_document_synthesis_ver = (SELECT COALESCE(MAX(version), 0) + 1 FROM llm_prompts WHERE prompt_name = 'claim_document_synthesis');
+INSERT INTO llm_prompts (prompt_id, prompt_name, prompt_type, prompt_text, parameters, version, is_active)
+VALUES (@claim_document_synthesis_id, 'claim_document_synthesis', 'combined', @claim_document_synthesis_text, @claim_document_synthesis_params, @claim_document_synthesis_ver, TRUE);
+
+-- claim_complex_target_mapping
+SET @claim_complex_target_mapping_text = 'SYSTEM:\nResolve one complex claim using only its article thesis, claim text, exact local\nexcerpt, and already-extracted local metadata. Return strict JSON only. Do not fact-check and do\nnot use outside knowledge.\n\nSeparate attribution (who made an allegation) from substantive truth (whether the alleged conduct\noccurred). Preserve the named actor, alleged action, object acted upon, and study/document clues.\nDo not broaden a specific misconduct or data-handling allegation into a generic topic. If the exact\nstudy is not named, say underspecified and retain every available identity clue.\n\nUSER:\nARTICLE THESIS:\n{{articleThesis}}\n\nONE CLAIM:\n{{claimText}}\n\nLOCAL SOURCE EXCERPT:\n{{localSourceExcerpt}}\n\nEXTRACTED LOCAL METADATA:\n{{metadataJson}}\n\nReturn:\n{\n  "objectClaim": "",\n  "speakerEntity": "",\n  "subjectEntity": "",\n  "allegedAction": "",\n  "actionObject": "",\n  "namedStudyOrDocument": "",\n  "studyIdentityClues": [],\n  "impliesInference": false,\n  "inferenceText": "",\n  "articleStance": "endorses|rejects|neutral|unclear",\n  "argumentFunction": "thesis|supporting_premise|evidence|opposing_claim_to_refute|background|reported_neutral|unclear",\n  "mappingStatus": "resolved|underspecified",\n  "confidence": 0,\n  "rationale": ""\n}';
+SET @claim_complex_target_mapping_params = '{}';
+UPDATE llm_prompts SET is_active = FALSE WHERE prompt_name = 'claim_complex_target_mapping';
+SET @claim_complex_target_mapping_id = (SELECT COALESCE(MAX(CAST(prompt_id AS UNSIGNED)), 0) + 1 FROM llm_prompts);
+SET @claim_complex_target_mapping_ver = (SELECT COALESCE(MAX(version), 0) + 1 FROM llm_prompts WHERE prompt_name = 'claim_complex_target_mapping');
+INSERT INTO llm_prompts (prompt_id, prompt_name, prompt_type, prompt_text, parameters, version, is_active)
+VALUES (@claim_complex_target_mapping_id, 'claim_complex_target_mapping', 'combined', @claim_complex_target_mapping_text, @claim_complex_target_mapping_params, @claim_complex_target_mapping_ver, TRUE);
+

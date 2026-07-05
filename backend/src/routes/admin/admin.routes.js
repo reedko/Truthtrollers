@@ -18,6 +18,12 @@ import {
   getVerimeterPolicy,
   saveVerimeterPolicy,
 } from "../../services/verimeterScoringService.js";
+import {
+  getSearchProviderStatus,
+  loadSearchGatewayConfig,
+  saveSearchGatewayConfig,
+} from "../../core/searchGatewayConfig.js";
+import { getEvidenceRetrievalProviderHealth } from "../../core/evidenceRetrievalGateway.js";
 
 const derivedClaimRoleSql = (alias) => `
   COALESCE(
@@ -109,6 +115,36 @@ export default function createAdminRouter({ query, pool }) {
     } catch (err) {
       logger.error("❌ Error saving Verimeter policy:", err);
       res.status(500).json({ error: "Failed to save Verimeter policy" });
+    }
+  });
+
+  router.get("/api/admin/evidence-retrieval-providers", authenticateToken, async (req, res) => {
+    if (!requireSuperAdmin(req, res)) return;
+    try {
+      const config = await loadSearchGatewayConfig({ query });
+      const status = getSearchProviderStatus(config);
+      const health = getEvidenceRetrievalProviderHealth();
+      res.json({
+        success: true,
+        config,
+        providers: Object.fromEntries(Object.entries(status).map(([name, item]) => [name, { ...item, ...(health[name] || {}) }])),
+      });
+    } catch (error) {
+      logger.error("Failed to load evidence retrieval provider config:", error);
+      res.status(500).json({ error: "Failed to load evidence retrieval provider config" });
+    }
+  });
+
+  router.put("/api/admin/evidence-retrieval-providers", authenticateToken, async (req, res) => {
+    if (!requireSuperAdmin(req, res)) return;
+    try {
+      const config = await saveSearchGatewayConfig(query, req.body?.config || {});
+      const status = getSearchProviderStatus(config);
+      const enabledMissingKeys = Object.values(status).filter((item) => item.enabled && !item.configured);
+      res.json({ success: true, config, providers: status, warnings: enabledMissingKeys.map((item) => `${item.provider} is enabled but its API key is missing`) });
+    } catch (error) {
+      logger.error("Failed to save evidence retrieval provider config:", error);
+      res.status(500).json({ error: "Failed to save evidence retrieval provider config" });
     }
   });
 

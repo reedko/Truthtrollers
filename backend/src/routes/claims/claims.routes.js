@@ -1432,12 +1432,18 @@ WHERE cc_task.content_id = ?
           ref.content_name,
           ref.url,
           MAX(rcl.rationale) AS failure_reason,
+          MAX(CASE
+            WHEN ref.topic = 'AI Evidence (Study Identity)' THEN 'identity_only'
+            WHEN ref.topic = 'AI Evidence (Abstract Only)' THEN 'abstract_only'
+            ELSE rcl.scrape_status
+          END) AS scrape_status,
           COUNT(rcl.ref_claim_link_id) AS linked_claims_count
         FROM content ref
         INNER JOIN reference_claim_links rcl ON ref.content_id = rcl.reference_content_id
         INNER JOIN content_relations cr ON ref.content_id = cr.reference_content_id
         WHERE cr.content_id = ?
-          AND rcl.scrape_status IN ('snippet_only', 'failed')
+          AND (rcl.scrape_status IN ('snippet_only', 'abstract_only', 'identity_only', 'failed')
+               OR ref.topic IN ('AI Evidence (Abstract Only)', 'AI Evidence (Study Identity)'))
         GROUP BY ref.content_id, ref.content_name, ref.url
         ORDER BY ref.content_id DESC
       `;

@@ -217,7 +217,11 @@ test("batch cap scores at most 12 candidates and keeps overflow candidates as de
     score: 1 - index / 100,
     source: "web_search",
   })));
-  let seenPayload = [];
+  // Candidates share no target, so they group into "_claim" and are split into
+  // per-target sub-batches of maxCandidatesPerTargetBatch. The per-claim LLM
+  // budget (12) is still honored across sub-batches; overflow falls back.
+  const perCallSizes = [];
+  const scoredUrls = new Set();
   const result = await assessSnippetBearingBatch({
     claim,
     evidenceNeed,
@@ -225,9 +229,11 @@ test("batch cap scores at most 12 candidates and keeps overflow candidates as de
     llm: {
       async generate(args) {
         const match = args.user.match(/SEARCH CANDIDATES:\n(\[[\s\S]*?\])\n\nFor every candidate/);
-        seenPayload = JSON.parse(match[1]);
+        const payload = JSON.parse(match[1]);
+        perCallSizes.push(payload.length);
+        for (const item of payload) scoredUrls.add(item.url);
         return {
-          results: seenPayload.map((item) => ({
+          results: payload.map((item) => ({
             candidateKey: item.candidateKey,
             url: item.url,
             bearingPreScore: 0.5,
@@ -241,9 +247,13 @@ test("batch cap scores at most 12 candidates and keeps overflow candidates as de
       },
     },
     maxCandidates: 99,
+    maxCandidatesPerTargetBatch: 6,
   });
 
-  assert.equal(seenPayload.length, 12);
+  // Each sub-batch is bounded by maxCandidatesPerTargetBatch; the per-claim total
+  // scored is bounded by 12; the 2 overflow candidates never reach the LLM.
+  assert.ok(perCallSizes.every((size) => size <= 6));
+  assert.equal(scoredUrls.size, 12);
   assert.equal(result.candidates.length, 14);
   assert.deepEqual(result.candidates.map((item) => item.id), many.map((item) => item.id));
   assert.equal(result.candidates[11].llmBearingPreScore, 0.5);

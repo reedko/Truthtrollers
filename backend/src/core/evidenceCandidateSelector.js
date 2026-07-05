@@ -1,6 +1,7 @@
 import logger from "../utils/logger.js";
 import { canonicalizeUrl } from "../utils/canonicalizeUrl.js";
 import { getPerClaimBearingLimit } from "./bearingConfig.js";
+import { rankCandidatesByCoverage } from "./adaptiveAllocation.js";
 
 function bounded(value, max) {
   const text = String(value || "").replace(/\s+/g, " ").trim();
@@ -19,19 +20,22 @@ function candidateScore(candidate) {
 }
 
 function isOriginCandidate(candidate) {
-  return candidate?.bearingType === "origin" ||
-    candidate?.stanceGoal === "origin" ||
-    candidate?.evidenceTargetType === "primary_source" ||
-    candidate?.evidenceTargetType === "original_study";
+  // Query intent describes what the search asked for, not what the returned
+  // document actually is. Only a separately verified document identity may
+  // receive origin protection.
+  return candidate?.protectedDocumentIdentity === true || candidate?.verifiedOriginDocument === true;
 }
 
 function isSteelmanCandidate(candidate) {
-  return candidate?.bearingType === "steelman" || candidate?.stanceGoal === "steelman";
+  // Only the post-retrieval bearing classification may mark a candidate as a
+  // steelman. The query's purpose lane / legacy stanceGoal must never decide it.
+  return candidate?.bearingType === "steelman";
 }
 
 function isLimitationCandidate(candidate) {
+  // Determined from classified content (expectedStance / claimComponentAddressed),
+  // never from the query's desired stance.
   return candidate?.expectedStance === "nuance" ||
-    candidate?.stanceGoal === "limitations" ||
     candidate?.claimComponentAddressed === "scope" ||
     candidate?.claimComponentAddressed === "warrant";
 }
@@ -57,9 +61,16 @@ export function mergeCanonicalCandidates(candidates = []) {
       provider: candidate.provider || candidate.source || "unknown",
       providerRank: candidate.providerRank ?? null,
       query: candidate.query || null,
+      // Purpose lane the query pursued (never a stance). Kept for the
+      // purposeLane -> classified-stance yield metric.
+      purposeLane: candidate.purposeLane || candidate.retrievalPurpose || null,
+      providerProfile: candidate.providerProfile || null,
+      // Legacy fields retained (neutral) for backward compatibility only.
       searchIntent: candidate.searchIntent || null,
       stanceGoal: candidate.stanceGoal || null,
       evidenceTargetType: candidate.evidenceTargetType || null,
+      evidenceTargetId: candidate.evidenceTargetId || null,
+      bearingRequirement: candidate.bearingRequirement || null,
     };
     if (!existing) {
       groups.set(key, {
@@ -74,6 +85,18 @@ export function mergeCanonicalCandidates(candidates = []) {
       ...better,
       canonicalUrl: key,
       retrievalProvenance: [...existing.retrievalProvenance, provenance],
+      protectedDocumentIdentity: Boolean(existing.protectedDocumentIdentity || candidate.protectedDocumentIdentity),
+      identityBearingScore: Math.max(
+        Number(existing.identityBearingScore) || 0,
+        Number(candidate.identityBearingScore) || 0,
+      ) || null,
+      identityBearingType: candidate.identityBearingScore > existing.identityBearingScore
+        ? candidate.identityBearingType
+        : existing.identityBearingType || candidate.identityBearingType,
+      identityBearingRationale: candidate.identityBearingScore > existing.identityBearingScore
+        ? candidate.identityBearingRationale
+        : existing.identityBearingRationale || candidate.identityBearingRationale,
+      identityTargetId: existing.identityTargetId || candidate.identityTargetId || null,
     });
   }
   return [...groups.values()];
@@ -83,12 +106,22 @@ export function selectClaimsForBearingGating(claims = [], config) {
   const candidates = [];
   const skipped = [];
   for (const claim of claims) {
-    const role = String(claim?.role || claim?.argumentFunction || "").toLowerCase();
-    if (role === "background") {
+    const role = String(claim?.role || "").toLowerCase();
+    const argumentFunction = String(claim?.argumentFunction || "").toLowerCase();
+    if (role === "background" || argumentFunction === "background") {
       skipped.push({ claim, reason: "background_claim" });
       continue;
     }
-    if (claim?.scoreTransform === "none") {
+    const hasSearchableSubstantiveTarget = (claim?.evaluationTargets || []).some((target) => {
+      const type = String(target?.targetType || target?.target_type || "").toLowerCase();
+      return target?.searchEligible !== false && target?.search_eligible !== 0 &&
+        target?.verdictEligible !== false && target?.verdict_eligible !== 0 &&
+        ["substantive", "inference"].includes(type);
+    });
+    // scoreTransform controls how a finding affects the article's aggregate
+    // score. It is not permission to suppress a separately searchable object
+    // proposition carried by a neutral attribution.
+    if (claim?.scoreTransform === "none" && !hasSearchableSubstantiveTarget) {
       skipped.push({ claim, reason: "score_transform_none" });
       continue;
     }
@@ -126,6 +159,8 @@ export function selectCandidatesForClaim(claim, candidates = [], config, options
       claim,
       mergedCandidates: mergeCanonicalCandidates(candidates),
       selectedCandidates: [],
+      rankedCandidates: [],
+      expansionCandidates: [],
       decisions: candidates.map((candidate) => ({ candidate, decision: "skip", reason: "per_claim_limit_zero" })),
       perClaimLimit,
     };
@@ -134,6 +169,7 @@ export function selectCandidatesForClaim(claim, candidates = [], config, options
   const mergedCandidates = mergeCanonicalCandidates(candidates);
   const decisions = [];
   const eligible = [];
+  const uncertain = [];
   for (const candidate of mergedCandidates) {
     const score = candidateScore(candidate);
     const origin = isOriginCandidate(candidate);
@@ -147,7 +183,8 @@ export function selectCandidatesForClaim(claim, candidates = [], config, options
       Number(candidate?.deterministicBearingScore) >= config.minBearingToScrape;
     const highDisagreement = Number.isFinite(disagreement) && disagreement >= 0.4;
     const protectedSteelman = steelman && (score >= forceThreshold || oneScorerHigh || highDisagreement);
-    const forceSkip = score < forceThreshold && !oneScorerHigh && !highDisagreement && !origin && !protectedSteelman;
+    const explicitJunk = candidate?.excluded === true || candidate?.unsupported === true || !candidateKey(candidate);
+    const forceSkip = explicitJunk;
     const passes = score >= config.minBearingToScrape || origin || protectedSteelman || highDisagreement;
 
     if (forceSkip) {
@@ -156,17 +193,45 @@ export function selectCandidatesForClaim(claim, candidates = [], config, options
       eligible.push({ ...candidate, gatingScore: score, protectedOrigin: origin, protectedSteelman });
       decisions.push({ candidate, decision: "eligible", reason: origin ? "protected_origin" : protectedSteelman ? "protected_steelman" : highDisagreement ? "scorer_disagreement" : "bearing_threshold", score });
     } else {
+      uncertain.push({ ...candidate, gatingScore: score, protectedOrigin: origin, protectedSteelman });
       decisions.push({ candidate, decision: "maybe", reason: "below_bearing_threshold", score });
     }
   }
 
   eligible.sort((a, b) => (b.gatingScore - a.gatingScore) || ((b.score ?? 0) - (a.score ?? 0)));
+  uncertain.sort((a, b) =>
+    (b.gatingScore - a.gatingScore) ||
+    ((a.providerRank ?? Number.MAX_SAFE_INTEGER) - (b.providerRank ?? Number.MAX_SAFE_INTEGER)) ||
+    ((b.score ?? 0) - (a.score ?? 0))
+  );
   const selected = [];
+  const identities = eligible
+    .filter((candidate) => candidate.protectedDocumentIdentity)
+    .sort((a, b) => (Number(b.identityBearingScore) || 0) - (Number(a.identityBearingScore) || 0));
+  const verifiedIdentityLimit = Math.min(3, Math.max(config.maxIdentitySlotsPerClaim ?? 0, identities.length));
+  for (const candidate of identities.slice(0, verifiedIdentityLimit)) {
+    if (selected.length >= perClaimLimit) break;
+    addUnique(selected, candidate, "document_identity_slot");
+  }
   const origins = eligible.filter((candidate) => candidate.protectedOrigin);
   for (const candidate of origins.slice(0, config.maxOriginSlotsPerClaim)) {
+    if (selected.length >= perClaimLimit) break;
     addUnique(selected, candidate, "origin_slot");
   }
-  addUnique(selected, eligible.find(isDirectCandidate) || eligible[0], "best_direct");
+  const bestRemaining = eligible.find((candidate) =>
+    !selected.some((item) => candidateKey(item) === candidateKey(candidate))
+  );
+  const bestDirect = eligible.find((candidate) =>
+    isDirectCandidate(candidate) &&
+    !selected.some((item) => candidateKey(item) === candidateKey(candidate))
+  );
+  // Directness is useful only when it is competitive. The old unconditional
+  // direct slot selected a much weaker Wakefield page ahead of stronger
+  // Thompson/CDC-specific candidates.
+  const directIsCompetitive = bestDirect && (
+    !bestRemaining || candidateScore(bestDirect) >= candidateScore(bestRemaining) - 0.15
+  );
+  addUnique(selected, directIsCompetitive ? bestDirect : bestRemaining, directIsCompetitive ? "best_direct" : "best_ranked");
 
   const selectedStances = new Set(selected.map((candidate) => candidate.expectedStance).filter(Boolean));
   const diversityCandidate = eligible.find((candidate) =>
@@ -189,32 +254,53 @@ export function selectCandidatesForClaim(claim, candidates = [], config, options
   }
 
   if (selected.length === 0) {
-    const fallback = mergedCandidates
-      .map((candidate) => ({ ...candidate, gatingScore: candidateScore(candidate) }))
-      .sort((a, b) => b.gatingScore - a.gatingScore)
-      .find((candidate) => candidate.gatingScore >= config.forceSkipBelowBearing || isOriginCandidate(candidate));
+    const fallback = uncertain[0];
     addUnique(selected, fallback, isOriginCandidate(fallback) ? "origin_fallback" : "single_best_fallback");
   }
+
+  // Phase 6: selection defines the first tranche only. Snippet-low and
+  // uncertain candidates remain in a stable ranked pool for post-scrape
+  // adaptive expansion; snippet scoring is not a final exclusion authority.
+  const rankedCandidates = [];
+  // Every verified study-object document precedes ordinary candidates even
+  // when the visible claim's first-tranche size is smaller than the number of
+  // retained identity roles. The adaptive loop is therefore able to inspect
+  // all (bounded to three) without provider rank or snippet score displacing
+  // one of them.
+  for (const candidate of [...identities.slice(0, 3), ...selected, ...eligible, ...uncertain]) {
+    addUnique(rankedCandidates, candidate, candidate.gatingSelectionReason || "adaptive_pool");
+  }
+  const initialCandidates = selected.slice(0, perClaimLimit);
+  const initialKeys = new Set(initialCandidates.map(candidateKey));
 
   return {
     claim,
     mergedCandidates,
-    selectedCandidates: selected.slice(0, perClaimLimit),
+    selectedCandidates: initialCandidates,
+    rankedCandidates,
+    expansionCandidates: rankedCandidates.filter((candidate) => !initialKeys.has(candidateKey(candidate))),
     decisions,
     perClaimLimit,
   };
 }
 
 export function allocateCandidatesAcrossClaims(plans = [], config) {
-  const selectedByClaimId = new Map(plans.map((plan) => [Number(plan.claim.id), []]));
+  // Step 19: within each claim, order attempts coverage-first (uncovered central
+  // target roles before general/low-coverage material). Fairness across claims
+  // (the round-robin below) remains only as an anti-starvation secondary guard.
+  const orderedPlans = plans.map((plan) => {
+    const coverage = rankCandidatesByCoverage(plan.claim, plan.selectedCandidates || []);
+    return { ...plan, selectedCandidates: coverage.ordered };
+  });
+  const selectedByClaimId = new Map(orderedPlans.map((plan) => [Number(plan.claim.id), []]));
   const usedCanonicalUrls = new Set();
-  const cursors = new Map(plans.map((plan) => [Number(plan.claim.id), 0]));
+  const cursors = new Map(orderedPlans.map((plan) => [Number(plan.claim.id), 0]));
   const globalLimit = config.globalScrapeLimitPerContent;
   let progressed = true;
 
   while (progressed) {
     progressed = false;
-    for (const plan of plans) {
+    for (const plan of orderedPlans) {
       const claimId = Number(plan.claim.id);
       const cursor = cursors.get(claimId) || 0;
       if (cursor >= plan.selectedCandidates.length) continue;
@@ -276,5 +362,27 @@ export function logBearingGatingAudit({ taskContentId = null, claim, candidates,
     }),
   };
   logger.log(`[BEARING_GATING] ${JSON.stringify(record)}`);
+
+  // Metric: for each query purpose lane, what stance distribution did the
+  // returned candidates actually classify to? This lets us observe whether a
+  // lane tends to surface support/refute/nuance WITHOUT forcing stance at query
+  // time. Stance here is the post-retrieval bearing classification, not intent.
+  const selectedKeySet = new Set(selectedCandidates.map(candidateKey));
+  const laneYield = {};
+  for (const candidate of candidates) {
+    const lane = candidate.purposeLane || candidate.retrievalPurpose || "unknown";
+    const stance = candidate.expectedStance || "unclassified";
+    const bucket = laneYield[lane] || (laneYield[lane] = { total: 0, selected: 0, stances: {} });
+    bucket.total += 1;
+    if (selectedKeySet.has(candidateKey(candidate))) bucket.selected += 1;
+    bucket.stances[stance] = (bucket.stances[stance] || 0) + 1;
+  }
+  logger.log(`[PURPOSE_LANE_YIELD] ${JSON.stringify({
+    event: "purpose_lane_stance_distribution",
+    taskContentId,
+    claimId: claim?.id ?? null,
+    laneYield,
+  })}`);
+
   return record;
 }

@@ -22,6 +22,47 @@ import {
   queryPreservesNumericScope,
   validateEvidenceTargetQuery,
 } from "./evidenceNeed.js";
+import { retrievalContextForTarget } from "./retrievalContext.js";
+import { buildAnchoredQueryPack } from "./anchoredQueryPack.js";
+import { expandCandidateTargetAssignments } from "./evidenceTargetProvenance.js";
+import { rankCandidatesByCoverage, logAdaptiveAllocationAudit } from "./adaptiveAllocation.js";
+import { resolvedWorkCandidatesForClaim, isRejectableEvidenceUrl } from "./citationExpansion.js";
+import { enrichAcademicCandidates } from "./academicContentResolver.js";
+import { applyIdentityBearing } from "./identityBearing.js";
+import {
+  DEFAULT_PURPOSE_LANE,
+  NEUTRAL_INTENT,
+  NEUTRAL_STANCE_GOAL,
+  normalizePurposeLane,
+  providerProfileForLane,
+  providersForProfile,
+} from "./evidencePurposeLanes.js";
+import {
+  DROP_REASONS,
+  DROP_STAGES,
+  boundCandidateUnion,
+  deriveVerifiedDocumentRole,
+  logCandidateDrop,
+  mergeCanonicalOccurrence,
+  orderForLlmBearing,
+  resolveSurvivalBounds,
+} from "./candidateSurvival.js";
+
+function qualifiesForBearingQuota(item, minBearing) {
+  if (!item || item.stance === "insufficient") return false;
+  if (item.bearingScore !== undefined && Number(item.bearingScore) < minBearing) return false;
+  const retrievalMode = String(item.retrievalMode || "full_text");
+  if (retrievalMode === "snippet_only" || retrievalMode === "metadata_only") return false;
+  if (retrievalMode !== "abstract_only") return true;
+
+  // Abstract-only evidence may count only when the extractor found an actual,
+  // direct assertion in the API abstract. Topic overlap or attribution alone
+  // must not terminate substantive full-text retrieval.
+  const component = String(item.claimComponentAddressed || "").toLowerCase();
+  return String(item.bearingType || "").toLowerCase() === "direct" &&
+    String(item.quote || "").trim().length >= 25 &&
+    !["", "none", "subject", "attribution", "context"].includes(component);
+}
 
 function dedupe(arr, keyFn) {
   const s = new Set();
@@ -52,6 +93,72 @@ export class EvidenceEngine {
   ) {
     this.deps = deps;
     this.cfg = cfg;
+    // Step 20: per-run canonical-source acquisition cache + single-flight map.
+    // A canonical URL is fetched/persisted/cleaned once per run; many target
+    // assignments reuse the same cached source object. The engine is constructed
+    // per run (runEvidenceEngine), so instance scope == run scope; run()/
+    // runBearingGated() also reset these defensively.
+    this._canonicalSourceCache = new Map();
+    this._canonicalSourceInFlight = new Map();
+    this._canonicalSourceRequests = new Map();
+  }
+
+  // Acquire a canonical source exactly once per run. Concurrent requests for the
+  // same canonical URL await the in-flight promise instead of issuing a second
+  // fetch/stub/clean. Target-specific evaluation still runs per assignment on the
+  // shared cached source. (Step 20.)
+  async _acquireCanonicalSource(cand, claim, opt = {}) {
+    const key = canonicalizeUrl(cand?.url) || cand?.url || "";
+    if (!key) {
+      // No canonical key — cannot coalesce; fetch directly (rare).
+      return this.deps.fetcher.getText(cand, claim);
+    }
+    this._canonicalSourceRequests.set(key, (this._canonicalSourceRequests.get(key) || 0) + 1);
+    const assignmentCount = this._canonicalSourceRequests.get(key);
+
+    const logAcquisition = (fields) => logger.log(`[CANONICAL_SOURCE_ACQUISITION] ${JSON.stringify({
+      event: "canonical_source_acquisition",
+      taskContentId: opt.taskContentId || null,
+      claimId: claim?.id ?? null,
+      canonicalUrl: String(key).slice(0, 500),
+      targetId: cand?.evidenceTargetId ?? null,
+      assignmentCount,
+      ...fields,
+    })}`);
+
+    if (this._canonicalSourceCache.has(key)) {
+      const cached = this._canonicalSourceCache.get(key);
+      logAcquisition({ fetchedOnce: false, reusedForTargets: true, inFlightAwaited: false, referenceId: cached?.referenceContentId ?? cached?.referenceId ?? null });
+      return cached;
+    }
+    if (this._canonicalSourceInFlight.has(key)) {
+      logAcquisition({ fetchedOnce: false, reusedForTargets: true, inFlightAwaited: true });
+      return this._canonicalSourceInFlight.get(key);
+    }
+
+    const promise = (async () => this.deps.fetcher.getText(cand, claim))();
+    this._canonicalSourceInFlight.set(key, promise);
+    try {
+      const result = await promise;
+      this._canonicalSourceCache.set(key, result);
+      logAcquisition({
+        fetchedOnce: true, persistedOnce: true, cleanedOnce: Boolean(result?.isProcessed),
+        reusedForTargets: false, inFlightAwaited: false,
+        referenceId: result?.referenceContentId ?? result?.referenceId ?? null,
+      });
+      return result;
+    } catch (error) {
+      logAcquisition({ fetchedOnce: true, error: String(error?.message || error).slice(0, 300) });
+      throw error;
+    } finally {
+      this._canonicalSourceInFlight.delete(key);
+    }
+  }
+
+  _resetCanonicalSourceCache() {
+    this._canonicalSourceCache = new Map();
+    this._canonicalSourceInFlight = new Map();
+    this._canonicalSourceRequests = new Map();
   }
 
   async generateQueries(claim, ctx, n = 6, searchMode = null) {
@@ -60,16 +167,26 @@ export class EvidenceEngine {
 
     const queryLimit = Math.max(1, Number(n) || 1);
     const mapDirectTargets = (targets) => dedupe(
-      (Array.isArray(targets) ? targets : []).map((target) => ({
-        claimId: claim.id,
-        query: target.query,
-        intent: target.intent || "both",
-        stanceGoal: target.stanceGoal || target.intent || "open",
-        matchedPart: target.matchedPart || "object_claim",
-        evidenceTargetId: target.evidenceTargetId || null,
-        evidenceTargetType: target.evidenceTargetType || "other",
-        bearingRequirement: target.bearingRequirement || "direct_truth_value",
-      })).filter((query) => String(query.query || "").trim()),
+      (Array.isArray(targets) ? targets : []).map((target) => {
+        const purposeLane = normalizePurposeLane(target.purposeLane, DEFAULT_PURPOSE_LANE);
+        return {
+          claimId: claim.id,
+          query: target.query,
+          // Purpose lanes describe the evidentiary job, not a desired stance.
+          purposeLane,
+          providerProfile: target.providerProfile || providerProfileForLane(purposeLane),
+          reasonForQuery: target.reasonForQuery || null,
+          // Legacy stance fields retained for backward compatibility only; set to
+          // neutral so nothing downstream can treat them as a stance quota.
+          intent: NEUTRAL_INTENT,
+          stanceGoal: NEUTRAL_STANCE_GOAL,
+          matchedPart: target.matchedPart || "object_claim",
+          evidenceLaneId: target.evidenceLaneId || null,
+          evidenceTargetId: target.evidenceTargetId || null,
+          evidenceTargetType: target.evidenceTargetType || "other",
+          bearingRequirement: target.bearingRequirement || "direct_truth_value",
+        };
+      }).filter((query) => String(query.query || "").trim()),
       (query) => String(query.query || "").trim().toLowerCase(),
     );
     const directQueries = mapDirectTargets(claim.searchTargets).slice(0, queryLimit);
@@ -83,7 +200,7 @@ export class EvidenceEngine {
     }
 
     const generatedQueryLimit = queryLimit - directQueries.length;
-    const directTargetIds = new Set(directQueries.map((query) => String(query.evidenceTargetId || "")).filter(Boolean));
+    const directTargetIds = new Set(directQueries.map((query) => String(query.evidenceLaneId || query.evidenceTargetId || "")).filter(Boolean));
     const allEvidenceTargets = Array.isArray(claim.evidenceNeed?.evidenceTargets)
       ? claim.evidenceNeed.evidenceTargets
       : [];
@@ -95,35 +212,35 @@ export class EvidenceEngine {
         }
       : claim.evidenceNeed;
 
-    // Adjust prompt based on search mode
-    let fallbackSystem, fallbackUser;
+    // Purpose-lane query generation. We no longer request support/refute/nuance
+    // stance quotas: those labels never controlled retrieval (the provider only
+    // ever receives the query string) and stance is classified after retrieval
+    // from returned content vs. the target (see snippetBearing.js). Instead we
+    // ask for queries that each pursue a distinct evidentiary *purpose*.
+    logger.log(`🎯 [EV][queries][${claim.id}] Purpose-lane query generation`);
 
-    if (targetAware) {
-      fallbackSystem = "You generate compact, evidence-targeted search queries for one atomic fact-checking claim. Return strict JSON only. Preserve named entities, dates, predicates, scope, and causal strength. Every query must contain enough claim anchors to be intelligible by itself. Do not output generic topic queries or manufacture support/refute quotas.";
-      fallbackUser = `Claim: {{claimText}}\nContext: {{context}}\nEvidence need: {{evidenceNeed}}\n\nProduce at most {{n}} precise queries for the listed evidence targets. Every result must include evidenceTargetId, evidenceTargetType, stanceGoal, and bearingRequirement. Preserve exact numbers, populations, dates, doses, and timeframes in at least one query when present. Use target-appropriate retrieval language such as registry, cohort, dataset, transcript, original study, systematic review, methodology, or limitations only when it fits the evidence target. You may include at most one bounded steelman query when it tests a direct opposing case. Do not broaden the claim.`;
-    } else if (searchMode?.enableBalancedSearch) {
-      logger.log(`🎯 [EV][queries][${claim.id}] BALANCED SEARCH MODE ACTIVE - Targeting ${searchMode.supportQueries} support, ${searchMode.refuteQueries} refute, ${searchMode.nuanceQueries} nuance`);
-      // Mode 3: Balanced search - explicitly request support/refute/nuance
-      fallbackSystem = "You generate diverse search queries for fact-checking. CRITICAL: Create EQUAL numbers of queries for sources that SUPPORT, REFUTE, and provide NUANCED perspectives on the claim.";
-      fallbackUser = `Claim: {{claimText}}\nContext: {{context}}\n\nTask: Produce EXACTLY {{n}} queries with BALANCED intent distribution:
-- ${searchMode.supportQueries || 3} queries to find sources that SUPPORT the claim
-- ${searchMode.refuteQueries || 3} queries to find sources that REFUTE the claim
-- ${searchMode.nuanceQueries || 3} queries to find sources that provide NUANCED perspective
+    const fallbackSystem =
+      "You generate compact search queries for one atomic fact-checking claim. Return strict JSON only. " +
+      "Generate search queries that retrieve documents bearing on the target. Do NOT try to force support, " +
+      "refutation, or nuance — stance will be classified later from retrieved content. Each query should pursue " +
+      "a distinct evidentiary purpose (a purposeLane). Preserve named entities, dates, predicates, scope, and " +
+      "causal strength; every query must contain enough claim anchors to be intelligible by itself. Do not output " +
+      "generic topic queries except when purposeLane is causal_background.";
 
-CRITICAL: Design queries to actively find OPPOSING viewpoints. For refute queries, search for debunking, fact-checks, counterarguments, alternative interpretations. For support queries, search for confirmatory evidence, corroboration, similar findings. For nuance queries, search for context, caveats, limitations, partial agreements.`;
-    } else {
-      logger.log(`🎯 [EV][queries][${claim.id}] Standard search mode`);
-
-      // Mode 1 & 2: Standard query generation
-      fallbackSystem = "You generate diverse, high-precision search queries for fact-checking. CRITICAL: You must create queries designed to find sources that SUPPORT, REFUTE, and provide NUANCED perspectives on the claim.";
-      fallbackUser = `Claim: {{claimText}}\nContext: {{context}}\n\nTask: Produce {{n}} queries across intents with the following distribution:
-- At least 2 queries designed to find sources that SUPPORT the claim (prefer 3)
-- At least 2 queries designed to find sources that REFUTE the claim (prefer 3)
-- At least 1 query designed to find sources that provide NUANCED perspective on the claim (prefer 3)
-- The remaining queries can cover background or factbox information
-
-IMPORTANT: Design your queries to actively seek out sources with different perspectives. For refute queries, look for credible counterarguments, debunking sites, fact-checks, or alternative evidence. For support queries, look for sources that would confirm or provide evidence for the claim. For nuance queries, look for sources that provide context, caveats, or partial support/refutation.`;
-    }
+    const fallbackUser =
+      `Claim: {{claimText}}\nContext: {{context}}\nEvidence need: {{evidenceNeed}}\n\n` +
+      `Generate up to {{n}} search queries that retrieve documents bearing on the listed evidence targets. ` +
+      `Do not try to force support, refutation, or nuance; stance is classified later from retrieved content. ` +
+      `Each query must pursue a distinct evidentiary purpose. Assign each query a purposeLane from: ` +
+      `attribution_record, study_identity, original_document, alleged_conduct, official_response, ` +
+      `independent_methodology, independent_reanalysis, causal_background, inference_limitations, ` +
+      `legal_or_policy_context, source_context. Prefer covering several DIFFERENT purpose lanes over repeating one. ` +
+      `Every result must include queryText, purposeLane, evidenceTargetId (the supplied lane id), evidenceTargetType, ` +
+      `and reasonForQuery. Preserve exact numbers, populations, dates, doses, and timeframes in at least one query ` +
+      `when present. Use purpose-appropriate retrieval language such as registry, cohort, dataset, transcript, ` +
+      `original study, systematic review, reanalysis, methodology, or limitations only when it fits the purpose. ` +
+      `Do not broaden the claim, do not restate the claim verbatim, and do not write instruction-like queries ` +
+      `("Review whether...", "Investigate...").`;
 
     let system = fallbackSystem;
     let user = fallbackUser;
@@ -131,18 +248,16 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
     // Try to load from database if promptManager is available
     if (this.deps.promptManager) {
       try {
+        // Purpose-lane prompt names. These are intentionally NEW names so the
+        // stale support/refute/nuance stance-quota prompts are never fetched;
+        // until a purpose-lane prompt is stored in the DB the code fallback is
+        // authoritative.
         const systemPrompt = await this.deps.promptManager.getPrompt(
-          targetAware ? 'evidence_target_query_generation_system' : 'evidence_query_generation_system',
+          'evidence_purpose_query_generation_system',
           { system: fallbackSystem, user: '', parameters: {} }
         );
 
-        // Choose user prompt based on search mode
-        const userPromptName = targetAware
-          ? 'evidence_target_query_generation_user'
-          : searchMode?.enableBalancedSearch
-          ? 'evidence_query_generation_user_balanced'
-          : 'evidence_query_generation_user';
-
+        const userPromptName = 'evidence_purpose_query_generation_user';
         logger.log(`🎯 [EV][queries][${claim.id}] Loading prompt: ${userPromptName}`);
 
         const userPrompt = await this.deps.promptManager.getPrompt(
@@ -156,14 +271,6 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
           .replace(/\{\{context\}\}/g, JSON.stringify(ctx ?? {}))
           .replace(/\{\{evidenceNeed\}\}/g, JSON.stringify(evidenceNeedForGeneration || {}))
           .replace(/\{\{n\}\}/g, generatedQueryLimit);
-
-        // For balanced mode, also replace query distribution variables
-        if (searchMode?.enableBalancedSearch) {
-          user = user
-            .replace(/\{\{supportQueries\}\}/g, searchMode.supportQueries || 3)
-            .replace(/\{\{refuteQueries\}\}/g, searchMode.refuteQueries || 3)
-            .replace(/\{\{nuanceQueries\}\}/g, searchMode.nuanceQueries || 3);
-        }
       } catch (err) {
         logger.warn(`⚠️ [EvidenceEngine] Error loading DB prompts, using fallback:`, err.message);
         // Use fallback - replace template variables
@@ -182,9 +289,8 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
         .replace(/\{\{n\}\}/g, generatedQueryLimit);
     }
 
-    const schema = targetAware
-      ? '{"queries":[{"query":"...","intent":"support|refute|both|context","stanceGoal":"support|refute|both|context|open|steelman","evidenceTargetId":"...","evidenceTargetType":"primary_source|original_study|systematic_review|dataset|official_statement|other","bearingRequirement":"direct_truth_value|source_attribution|causal_mechanism|warrant_test"}]}'
-      : '{"queries":[{"query":"...","intent":"support|refute|nuance|background|factbox"}]}';
+    // Purpose-lane schema. No stance fields are requested from the model.
+    const schema = '{"queries":[{"queryText":"...","purposeLane":"attribution_record|study_identity|original_document|alleged_conduct|official_response|independent_methodology|independent_reanalysis|causal_background|inference_limitations|legal_or_policy_context|source_context","evidenceTargetId":"...","evidenceTargetType":"primary_source|original_study|systematic_review|dataset|official_statement|other","reasonForQuery":"..."}]}';
 
     let out;
     try {
@@ -195,13 +301,10 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
         temperature: 0.2,
       });
     } catch (error) {
-      const recovered = dedupe(
-        [...directQueries, ...fallbackQueries],
-        (query) => String(query.query || "").trim().toLowerCase(),
-      ).slice(0, queryLimit);
-      logger.warn(`⚠️ [EV][queries][${claim.id}] Target-aware query generation failed; using safe fallback: ${error.message}`);
-      logger.timeEnd(label);
-      return recovered;
+      logger.warn(`⚠️ [EV][queries][${claim.id}] Purpose-lane query generation failed; using safe fallback: ${error.message}`);
+      // Continue through the deterministic completion path, which fills distinct
+      // purpose lanes (never stance quotas).
+      out = { queries: [] };
     }
 
     const queriesArray = out && Array.isArray(out.queries) ? out.queries : [];
@@ -213,20 +316,28 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
     const rejectedGeneratedQueries = [];
     const generatedQueries = queriesArray.slice(0, generatedQueryLimit).map((q) => {
       const target = targetById.get(String(q.evidenceTargetId || "")) || defaultTarget;
+      const persistedTargetId = target.evaluationTargetId || target.evaluation_target_id || null;
+      const purposeLane = normalizePurposeLane(q.purposeLane, DEFAULT_PURPOSE_LANE);
       return {
         claimId: claim.id,
-        query: q.query,
-        intent: q.intent || q.stanceGoal || "both",
-        stanceGoal: q.stanceGoal || target.stanceGoal || q.intent || "open",
-        evidenceTargetId: q.evidenceTargetId || target.id || null,
+        // Accept queryText (new) or query (legacy) from the model.
+        query: q.queryText || q.query,
+        purposeLane,
+        providerProfile: q.providerProfile || providerProfileForLane(purposeLane),
+        reasonForQuery: q.reasonForQuery || null,
+        // Legacy stance fields kept neutral for backward compatibility only.
+        intent: NEUTRAL_INTENT,
+        stanceGoal: NEUTRAL_STANCE_GOAL,
+        ...(persistedTargetId ? { evidenceLaneId: target.id || q.evidenceTargetId || null } : {}),
+        evidenceTargetId: persistedTargetId || target.id || q.evidenceTargetId || null,
         evidenceTargetType: q.evidenceTargetType || target.evidenceTargetType || "other",
         bearingRequirement: q.bearingRequirement || target.bearingRequirement || "direct_truth_value",
       };
     }).filter((query) => {
       if (!String(query.query || "").trim()) return false;
-      const validation = validateEvidenceTargetQuery(claim.evidenceNeed, query.query);
+      const validation = validateEvidenceTargetQuery(claim.evidenceNeed, query.query, query.purposeLane);
       if (validation.valid) return true;
-      rejectedGeneratedQueries.push({ query: query.query, reasons: validation.reasons });
+      rejectedGeneratedQueries.push({ query: query.query, purposeLane: query.purposeLane, reasons: validation.reasons });
       return false;
     });
 
@@ -242,7 +353,26 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
       [...directQueries, ...(generatedQueries.length ? generatedQueries : fallbackQueries)],
       (query) => String(query.query || "").trim().toLowerCase(),
     );
-    let queries = (combined.length ? combined : fallbackQueries).slice(0, queryLimit);
+    let queries = combined.length ? combined : fallbackQueries;
+    if (targetAware && searchMode?.enableBearingGating) {
+      const anchoredPack = buildAnchoredQueryPack({ claim, existingQueries: queries, limit: queryLimit });
+      queries = anchoredPack.queries;
+      logger.log(`[ANCHORED_QUERY_PACK] ${JSON.stringify({
+        event: "anchored_evidence_queries",
+        claimId: claim.id,
+        accepted: queries.map((query) => ({
+          query: String(query.query || "").slice(0, 500),
+          purposeLane: query.purposeLane || null,
+          providerProfile: query.providerProfile || null,
+          reasonForQuery: query.reasonForQuery || null,
+          evaluationTargetId: query.evidenceTargetId,
+          evaluationTargetType: query.evidenceTargetType,
+        })),
+        rejected: anchoredPack.rejected.slice(0, 12),
+      })}`);
+    } else {
+      queries = queries.slice(0, queryLimit);
+    }
     const requiresNumericCoverage = (claim.evidenceNeed?.scopeTerms || []).some((term) => /\d/.test(String(term)));
     if (requiresNumericCoverage && !queries.some((query) => queryPreservesNumericScope(claim.evidenceNeed, query.query))) {
       const numericFallback = fallbackQueries.find((query) => queryPreservesNumericScope(claim.evidenceNeed, query.query));
@@ -261,9 +391,12 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
       claimText: String(claim.text || "").slice(0, 500),
       queries: queries.map((query) => ({
         query: String(query.query || "").slice(0, 300),
+        purposeLane: query.purposeLane || null,
+        providerProfile: query.providerProfile || null,
+        reasonForQuery: query.reasonForQuery || null,
         evidenceTargetId: query.evidenceTargetId,
+        evidenceLaneId: query.evidenceLaneId,
         evidenceTargetType: query.evidenceTargetType,
-        stanceGoal: query.stanceGoal,
         bearingRequirement: query.bearingRequirement,
         preservesNumericScope: queryPreservesNumericScope(claim.evidenceNeed, query.query),
       })),
@@ -372,6 +505,7 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
                 const internal = await this.deps.search.internal({
                   query: q.query,
                   topK,
+                  retrievalContext: retrievalContextForTarget(claim, q.evidenceTargetId),
                 });
                 if (internal?.length) sub.push(...internal);
               })()
@@ -379,11 +513,21 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
 
           opt.enableWeb
             ? (async () => {
+                // Provider routing is purpose-based: a query's purposeLane maps
+                // to a provider profile (web / academic / official). We pass the
+                // resolved providers additively so e.g. study_identity and
+                // causal_background reach academic APIs.
+                const purposeProviders = providersForProfile(
+                  q.providerProfile || q.purposeLane,
+                  this.deps.search.providerEnabled || {},
+                );
                 const web = await this.deps.search.web({
                   query: q.query,
                   topK,
                   prefer: opt.preferDomains,
                   avoid: opt.avoidDomains,
+                  ...(purposeProviders.length ? { providers: purposeProviders } : {}),
+                  retrievalContext: retrievalContextForTarget(claim, q.evidenceTargetId),
                 });
                 if (web?.length) sub.push(...web);
               })()
@@ -391,17 +535,25 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
         ].filter(Boolean)
       );
 
-      // Tag every result with this query's intent so we can bucket later
-      const intent = q.intent || 'background';
+      // Tag every result with the query's purpose lane (never a stance). Stance
+      // is classified downstream from the returned content vs. the target.
+      const retrievalPurpose = q.purposeLane || DEFAULT_PURPOSE_LANE;
       return sub.map(r => ({
         ...r,
-        searchIntent: intent,
+        retrievalPurpose,
+        purposeLane: retrievalPurpose,
+        providerProfile: q.providerProfile || null,
+        // Legacy tags kept neutral for backward compatibility; not used for
+        // candidate selection or stance.
+        searchIntent: NEUTRAL_INTENT,
         matchedPart: q.matchedPart || 'context',
         query: q.query,
-        stanceGoal: q.stanceGoal || q.intent || "open",
+        stanceGoal: NEUTRAL_STANCE_GOAL,
         evidenceTargetType: q.evidenceTargetType || null,
         evidenceTargetId: q.evidenceTargetId || null,
+        evidenceLaneId: q.evidenceLaneId || null,
         bearingRequirement: q.bearingRequirement || null,
+        retrievalContext: retrievalContextForTarget(claim, q.evidenceTargetId),
       }));
     });
 
@@ -429,43 +581,67 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
 
     logger.timeEnd(label);
 
-    // Deduplicate by URL — when same URL appears from multiple queries,
-    // keep the highest-scoring copy and preserve its searchIntent
+    // Deduplicate by URL. When the same URL appears from multiple queries we do
+    // NOT simply keep the highest provider-score copy: we keep the RICHEST record
+    // (verified identity > API abstract > longest bearing text > source type >
+    // provider score) and union all provenance. If one provider returned a weak
+    // snippet but another returned an abstract, the canonical record adopts the
+    // richer bearing text. (§2 candidate-survival repair.)
     const best = new Map();
     for (const c of chunks) {
       if (!c) continue;
       const id = c.id || c.url || `${c.source}:${c.title}`;
+      const occurrence = {
+        query: c.query || null,
+        provider: c.provider || c.source || null,
+        providerScore: Number.isFinite(Number(c.score)) ? Number(c.score) : null,
+        purposeLane: c.purposeLane || c.retrievalPurpose || null,
+        searchIntent: c.searchIntent || null,
+        stanceGoal: c.stanceGoal || null,
+        evidenceTargetId: c.evidenceTargetId || null,
+        evidenceLaneId: c.evidenceLaneId || null,
+        evidenceTargetType: c.evidenceTargetType || null,
+        bearingRequirement: c.bearingRequirement || null,
+        snippet: c.snippet || null,
+        bearingTextSource: c.bearingTextSource || null,
+      };
       const prev = best.get(id);
-      if (!prev || (c.score ?? 0) > (prev.score ?? 0)) {
-        best.set(id, c);
+      if (!prev) {
+        best.set(id, { ...c, targetProvenance: [occurrence], retrievalProvenance: [occurrence] });
+      } else {
+        best.set(id, mergeCanonicalOccurrence(prev, { ...c, targetProvenance: [occurrence], retrievalProvenance: [occurrence] }));
       }
     }
 
-    // Group deduplicated candidates by intent, take top N per bucket
-    // This guarantees stance diversity instead of whatever the global top-12 happen to be
-    const topKPerIntent = opt.topKPerIntent ?? 4;
-    const INTENT_LIMITS = {
-      support:    topKPerIntent,
-      refute:     topKPerIntent,
-      nuance:     Math.ceil(topKPerIntent / 2),
-      background: 2,
-      factbox:    2,
-    };
-
-    const byIntent = {};
-    for (const c of best.values()) {
-      const intent = c.searchIntent || 'background';
-      if (!byIntent[intent]) byIntent[intent] = [];
-      byIntent[intent].push(c);
+    // Enrich PMID/PMC/DOI candidates before the bearing scorer sees them.
+    // This preserves ordering while replacing search snippets with API-backed
+    // title/abstract/MeSH/publication metadata where available.
+    const enrichedAcademic = await enrichAcademicCandidates([...best.values()]);
+    best.clear();
+    for (const candidate of enrichedAcademic) {
+      best.set(candidate.id || candidate.url || `${candidate.source}:${candidate.title}`, candidate);
     }
 
-    let finalCandidates = [];
-    for (const [intent, bucket] of Object.entries(byIntent)) {
-      const limit = INTENT_LIMITS[intent] ?? topKPerIntent;
-      const sorted = bucket.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-      finalCandidates.push(...sorted.slice(0, limit));
-      logger.log(`🎯 [EV][intent-bucket][${claim.id}] ${intent}: ${Math.min(sorted.length, limit)}/${sorted.length} selected`);
+    // Preserve a bounded UNION of plausible candidates. We no longer trim by
+    // provider score before bearing: candidates are cut only by coarse count
+    // safety valves (per purpose lane, per claim), verified documents bypass
+    // those caps, and every drop is logged for the survival audit. Bearing (not
+    // provider score) decides final survival downstream. (§3/§4.)
+    const survivalBounds = resolveSurvivalBounds(opt);
+    const { kept, dropped } = boundCandidateUnion({
+      candidates: [...best.values()],
+      bounds: survivalBounds,
+    });
+    for (const { candidate, reason } of dropped) {
+      logCandidateDrop({ claim, taskContentId: opt.taskContentId || null, stage: DROP_STAGES.PRE_BEARING_POOL, candidate, reason });
     }
+    let finalCandidates = kept;
+    const laneCoverage = finalCandidates.reduce((acc, c) => {
+      const lane = c.purposeLane || c.retrievalPurpose || DEFAULT_PURPOSE_LANE;
+      acc[lane] = (acc[lane] || 0) + 1;
+      return acc;
+    }, {});
+    logger.log(`🎯 [EV][pool-union][${claim.id}] kept ${finalCandidates.length}, dropped ${dropped.length}, lanes ${JSON.stringify(laneCoverage)}`);
 
     // Filter out excluded URL (e.g., task URL to prevent self-referencing)
     if (opt.excludeUrl) {
@@ -489,7 +665,7 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
     }
 
     logger.log(
-      `🟩 [DEBUG] Candidates for ${claim.id}: ${finalCandidates.length} total (intent-bucketed), scores: ${finalCandidates.map(c => `${c.searchIntent}:${c.score?.toFixed(2) || 'null'}`).join(', ')}`
+      `🟩 [DEBUG] Candidates for ${claim.id}: ${finalCandidates.length} total (purpose-lane-bucketed), scores: ${finalCandidates.map(c => `${c.purposeLane || c.retrievalPurpose || 'unknown'}:${c.score?.toFixed(2) || 'null'}`).join(', ')}`
     );
 
     return finalCandidates;
@@ -498,11 +674,14 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
   async extractEvidence(claim, cand, opt) {
     const url = cand.url || cand.id || "unknown";
     const shortUrl = url.length > 80 ? url.slice(0, 77) + "..." : url;
+    const targetLabel = cand.evidenceTargetId ? `[target:${cand.evidenceTargetId}]` : "";
 
-    const fetchLabel = `[EV][fetch][${claim.id}][${shortUrl}]`;
+    const fetchLabel = `[EV][fetch][${claim.id}]${targetLabel}[${shortUrl}]`;
     logger.time(fetchLabel);
 
-    const fetchResult = await this.deps.fetcher.getText(cand, claim);
+    // Step 20: acquire the canonical source once per run; many target
+    // assignments for the same URL reuse the cached fetched/cleaned source.
+    const fetchResult = await this._acquireCanonicalSource(cand, claim, opt);
     logger.timeEnd(fetchLabel);
 
     if (!fetchResult) {
@@ -512,12 +691,19 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
 
     // Handle both old format (string) and new format (object with cleanText + citationCount)
     let cleanText, citationCount, html;
+    const retrievalMode = typeof fetchResult === "object"
+      ? (fetchResult.retrievalMode || "full_text")
+      : "full_text";
 
     if (typeof fetchResult === 'object' && fetchResult.isProcessed) {
       // New format: already processed by runEvidenceEngine
       cleanText = fetchResult.cleanText;
       citationCount = fetchResult.citationCount || 0;
       html = cleanText; // Store for raw_text field
+      if (typeof opt.citationSink === "function" && fetchResult.citationCandidates?.length) {
+        opt.citationSink(fetchResult.citationCandidates);
+      }
+      if (!cleanText || !String(cleanText).trim()) return [];
       logger.log(
         `♻️  [Evidence] Using pre-processed text (${citationCount} citations) from ${shortUrl}`
       );
@@ -559,11 +745,20 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
     const extractQuotesAndScoreQuality = this.deps.extractQuotesAndScoreQuality ||
       (await import("../utils/extractQuote.js")).extractQuotesAndScoreQuality;
 
-    const llmLabel = `[EV][llm-evidence+quality][${claim.id}][${shortUrl}]`;
+    const llmLabel = `[EV][llm-evidence+quality][${claim.id}]${targetLabel}[${shortUrl}]`;
     logger.time(llmLabel);
+
+    // Phase 7: pass the specific evaluation target so bearing is scored against
+    // the target predicate, not just the visible claim text.
+    const evaluationTarget = cand.evidenceTargetId
+      ? (claim.evaluationTargets || []).find(
+          (t) => String(t.evaluationTargetId) === String(cand.evidenceTargetId),
+        ) ?? null
+      : null;
 
     const result = await extractQuotesAndScoreQuality({
       claimText: claim.text,
+      evaluationTarget,
       fullText: cleanText,
       sourceTitle: cand.title || cand.url,
       url: cand.url || "",
@@ -635,8 +830,15 @@ IMPORTANT: Design your queries to actively seek out sources with different persp
         bearingPreScore: cand.bearingPreScore ?? cand.combinedBearingPreScore ?? null,
         triageDecision: cand.triageDecision || cand.deterministicBearingDecision || null,
         evidenceTargetId: cand.evidenceTargetId || null,
-        evidenceTargetType: cand.evidenceTargetType || null,
+        evidenceTargetType: cand.evidenceTargetType || (evaluationTarget?.targetType) || null,
         bearingRequirement: cand.bearingRequirement || null,
+        evaluationTargetText: evaluationTarget?.targetText || null,
+        // Carry the source's document role so the Step 21 post-scrape target-fit
+        // guard can tell a primary statement / study page / amplifier apart.
+        verifiedDocumentRole: cand.verifiedDocumentRole || null,
+        identityRole: cand.identityRole || cand.identityBearingType || null,
+        retrievalMode,
+        apiBacked: Boolean(fetchResult?.apiBacked),
       });
     }
 
@@ -843,11 +1045,136 @@ TASK:
       opt,
     );
     let candidates = await this.retrieveCandidates(claim, queries, opt);
+
+    // §7 anchor-poisoning DETECTION (non-destructive). Actual demotion of a
+    // false resolved-work anchor lives in the query/retrieval-context layer and
+    // is handled by the follow-up pass; here we only surface the problem so it is
+    // visible in the survival audit. Flag any resolved work that is used as a
+    // required anchor but is not a verified document (e.g. a press release title).
+    const requiredAnchorSet = new Set(
+      (Array.isArray(claim.retrievalContexts) ? claim.retrievalContexts : [])
+        .flatMap((context) => context.requiredAnchors || [])
+        .map((anchor) => String(anchor || "").trim().toLowerCase())
+        .filter(Boolean),
+    );
+    for (const work of resolvedWorkCandidatesForClaim(claim)) {
+      const title = String(work.title || "").trim();
+      if (!title || !requiredAnchorSet.has(title.toLowerCase())) continue;
+      const role = deriveVerifiedDocumentRole(work);
+      if (!role?.verified) {
+        logger.warn(`[ANCHOR_POISONING_AUDIT] ${JSON.stringify({
+          event: "unverified_resolved_work_anchor",
+          claimId: claim.id,
+          title: title.slice(0, 200),
+          url: String(work.url || "").slice(0, 500),
+          verifiedDocumentRole: role?.role || null,
+          recommendation: "demote_anchor_to_optional_or_remove",
+        })}`);
+      }
+    }
+
+    const existingUrls = new Set(candidates.map((candidate) => canonicalizeUrl(candidate.url) || candidate.url));
+    for (const candidate of resolvedWorkCandidatesForClaim(claim)) {
+      const key = canonicalizeUrl(candidate.url) || candidate.url;
+      if (key && !existingUrls.has(key)) {
+        candidates.push(candidate);
+        existingUrls.add(key);
+        logger.log(`[IDENTITY_CANDIDATE_INJECTED] ${JSON.stringify({
+          event: "identity_candidate_injected",
+          claimId: claim.id,
+          url: String(candidate.url || "").slice(0, 500),
+          identityRole: candidate.identityRole || candidate.identityBearingType || null,
+          identityTargetId: candidate.identityTargetId || null,
+          evidenceTargetId: candidate.evidenceTargetId || null,
+          targetProvenance: candidate.targetProvenance || [],
+        })}`);
+      }
+    }
+    candidates = await enrichAcademicCandidates(candidates);
+    // §6: stamp a verifiedDocumentRole derived from the document's OWN properties
+    // (DOI/PMID/PMC, official domain, resolved identity) — never from the query's
+    // requested evidenceTargetType. A press release returned by an original-study
+    // query is not an original study.
+    candidates = candidates.map((candidate) => {
+      const role = deriveVerifiedDocumentRole(candidate);
+      return role
+        ? { ...candidate, verifiedDocumentRole: role.role, verifiedDocument: role.verified, verifiedDocumentSignals: role.signals }
+        : candidate;
+    });
+    const academicWorks = new Map();
+    for (const candidate of candidates.filter((item) => item.academicApiContent?.apiBacked)) {
+      const ids = candidate.academicApiContent.identifiers || {};
+      const key = ids.pmid || ids.pmcid || ids.doi || canonicalizeUrl(candidate.url) || candidate.url;
+      if (!key) continue;
+      const entry = academicWorks.get(key) || { routes: new Set(), urls: new Set(), title: candidate.title || "" };
+      for (const route of candidate.discoveryRoutes || []) entry.routes.add(route);
+      if (candidate.academicDiscoveryRoute === "direct_academic_search") entry.routes.add("direct_academic_search");
+      if (candidate.academicDiscoveryRoute === "web_discovered_identifier") entry.routes.add("web_search");
+      if (candidate.academicDiscoveryRoute === "direct_and_web") {
+        entry.routes.add("direct_academic_search");
+        entry.routes.add("web_search");
+      }
+      entry.urls.add(candidate.url);
+      academicWorks.set(key, entry);
+    }
+    if (academicWorks.size) {
+      const works = [...academicWorks.entries()].map(([identifier, entry]) => {
+        const direct = entry.routes.has("direct_academic_search");
+        const web = entry.routes.has("web_search");
+        return {
+          identifier: String(identifier).slice(0, 200),
+          route: direct && web ? "direct_and_web" : direct ? "direct_only" : "web_identifier_only",
+          title: String(entry.title).slice(0, 300),
+          urls: [...entry.urls].slice(0, 4),
+        };
+      });
+      logger.log(`[ACADEMIC_DISCOVERY_ROUTES] ${JSON.stringify({
+        event: "academic_discovery_route_summary",
+        taskContentId: opt.taskContentId || null,
+        claimId: claim.id,
+        uniqueAcademicWorks: works.length,
+        directOnly: works.filter((work) => work.route === "direct_only").length,
+        webIdentifierOnly: works.filter((work) => work.route === "web_identifier_only").length,
+        directAndWeb: works.filter((work) => work.route === "direct_and_web").length,
+        works: works.slice(0, 20),
+      })}`);
+    }
+    candidates = applyIdentityBearing(claim, candidates);
+    if ((isBearingShadowEnabled() || opt.enableBearingGating) && claim.evidenceNeed) {
+      candidates = scoreCandidatesInBearingShadow(
+        claim.evidenceNeed,
+        candidates,
+        { minBearingToScrape: opt.minBearingToScrape },
+      );
+    }
     const snippetBearingLlmEnabled =
       (isBearingShadowEnabled() || opt.enableBearingGating) &&
       isSnippetBearingLlmEnabled() &&
       Boolean(claim.evidenceNeed);
     if (snippetBearingLlmEnabled) {
+      const bounds = resolveSurvivalBounds(opt);
+      // In the gated bearing path, choose which candidates enter the (expensive)
+      // LLM bearing batch by DETERMINISTIC bearing score + verified document role
+      // + bearing-text richness — never provider score. Verified documents get
+      // reserved slots. Candidates beyond the cap still survive downstream with
+      // their deterministic score; they are logged as excluded from the LLM
+      // batch. The legacy shadow path keeps its original fetched order.
+      if (opt.enableBearingGating) {
+        const { ordered, excludedFromLlm } = orderForLlmBearing({ candidates, bounds });
+        for (const candidate of excludedFromLlm) {
+          logCandidateDrop({
+            claim,
+            taskContentId: opt.taskContentId || null,
+            // Non-verified candidates cut here were ranked below the LLM cap by
+            // DETERMINISTIC bearing (verified docs bypass this gate via reserved
+            // slots). They still survive downstream with their deterministic score.
+            stage: DROP_STAGES.DETERMINISTIC_BEARING_GATE,
+            candidate,
+            reason: DROP_REASONS.BEYOND_LLM_BEARING_CAP,
+          });
+        }
+        candidates = ordered;
+      }
       const batch = await assessSnippetBearingBatch({
         claim,
         evidenceNeed: claim.evidenceNeed,
@@ -855,14 +1182,343 @@ TASK:
         llm: this.deps.llm,
         promptManager: this.deps.promptManager || null,
         taskContentId: opt.taskContentId || null,
-        maxCandidates: opt.maxSnippetCandidatesPerClaim || 12,
+        maxCandidates: opt.maxSnippetCandidatesPerClaim || bounds.maxLlmBearingCandidatesPerClaim,
+        maxCandidatesPerTargetBatch: opt.maxCandidatesPerTargetBatch,
+        subBatchTimeoutMs: opt.snippetBearingTimeoutMs,
       });
       candidates = batch.candidates;
     }
+    opt.repairAudit?.recordQueryPack({ claim, queries });
     return { claim, index, context: ctx, queries, candidates, snippetBearingLlmEnabled };
   }
 
+  async _runAdaptiveExtraction(claim, candidatePool, opt, runtime = {}) {
+    const config = opt.bearingConfig;
+    const minHighBearing = config.minHighBearingClaimsPerTarget ?? 5;
+    const minBearingForCounting = config.minBearingForPacket ?? 0.35;
+    const sourceCeiling = Math.max(
+      1,
+      Number(opt.maxSourcesToScrapePerTarget ?? config.maxSourcesToScrapePerTarget ?? 10),
+    );
+    const initialCandidates = runtime.initialCandidates || [];
+    const allocation = runtime.allocation || null;
+    const dedupedCandidates = [];
+    const orderedKeys = new Set();
+    for (const candidate of [...initialCandidates, ...(candidatePool || [])]) {
+      const key = canonicalizeUrl(candidate?.url) || candidate?.url;
+      if (!key || orderedKeys.has(key)) continue;
+      orderedKeys.add(key);
+      dedupedCandidates.push(candidate);
+    }
+    // Step 19: spend scrape attempts coverage-first. Initial (already-attempted)
+    // candidates keep their lead; the remaining pool is ordered so uncovered,
+    // central target roles are attempted before general/low-coverage material.
+    const initialKeySet = new Set(initialCandidates.map((c) => canonicalizeUrl(c?.url) || c?.url).filter(Boolean));
+    const leadCandidates = dedupedCandidates.filter((c) => initialKeySet.has(canonicalizeUrl(c?.url) || c?.url));
+    const poolCandidates = dedupedCandidates.filter((c) => !initialKeySet.has(canonicalizeUrl(c?.url) || c?.url));
+    const coverage = rankCandidatesByCoverage(claim, poolCandidates);
+    const orderedCandidates = [...leadCandidates, ...coverage.ordered];
+    logAdaptiveAllocationAudit({ taskContentId: opt.taskContentId || null, claim, auditRows: coverage.auditRows });
+
+    const verdictEligibleTargetIds = new Set(
+      (claim.evaluationTargets || [])
+        .filter((t) => t.verdictEligible !== false)
+        .map((t) => String(t.evaluationTargetId))
+        .filter(Boolean),
+    );
+
+    const allEvidence = [];
+    const highBearingByTargetId = new Map();
+    const sourceUrls = new Set();
+    const sourceDomains = new Set();
+    let sourcesProcessed = 0;
+    let ceilingExhausted = false;
+    let globalBudgetExhausted = false;
+    const processedCandidates = [];
+
+    for (const candidate of orderedCandidates) {
+      if (sourcesProcessed >= sourceCeiling) break;
+      const isInitial = initialCandidates.some((item) =>
+        (canonicalizeUrl(item?.url) || item?.url) === (canonicalizeUrl(candidate?.url) || candidate?.url)
+      );
+      if (!isInitial && allocation) {
+        const reserved = reserveAdditionalCandidates([candidate], allocation, 1);
+        if (reserved.length === 0) {
+          globalBudgetExhausted = allocation.remainingUniqueSlots <= 0;
+          continue;
+        }
+      }
+
+      let evidence = [];
+      try {
+        // Complete the active source before checking the threshold. The legacy
+        // two-quote cap made a five-assertion target impossible to satisfy from
+        // a rich source, so adaptive extraction permits a bounded full tranche.
+        evidence = (await Promise.all(expandCandidateTargetAssignments(candidate).map((assignment) =>
+          this.extractEvidence(claim, assignment, {
+            ...opt,
+            maxEvidencePerDoc: Math.max(
+              Number(opt.maxEvidencePerDoc) || 0,
+              Math.min(12, minHighBearing * 2),
+            ),
+          })
+        ))).flat();
+      } catch (error) {
+        logger.warn(`[ADAPTIVE_BEARING] claim=${claim.id} source failed; continuing to next candidate: ${error.message}`);
+      }
+      sourcesProcessed++;
+      processedCandidates.push(candidate);
+      const sourceKey = canonicalizeUrl(candidate?.url) || candidate?.url;
+      if (sourceKey) sourceUrls.add(sourceKey);
+      try {
+        if (candidate?.url) sourceDomains.add(new URL(candidate.url).hostname.toLowerCase());
+      } catch {
+        // Invalid URLs were already screened by candidate selection.
+      }
+      allEvidence.push(...evidence);
+
+      for (const item of evidence) {
+        const targetId = item.evidenceTargetId ? String(item.evidenceTargetId) : null;
+        if (!targetId) continue;
+        const isHighBearing = qualifiesForBearingQuota(item, minBearingForCounting);
+        if (isHighBearing) {
+          if (!highBearingByTargetId.has(targetId)) highBearingByTargetId.set(targetId, []);
+          const fp = String(item.quote || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().slice(0, 500);
+          if (fp) {
+            const tokens = new Set(fp.split(" ").filter((token) => token.length > 2));
+            const equivalent = highBearingByTargetId.get(targetId).some((existing) => {
+              if (existing.fp === fp) return true;
+              const intersection = [...tokens].filter((token) => existing.tokens.has(token)).length;
+              const union = new Set([...tokens, ...existing.tokens]).size;
+              return union > 0 && intersection / union >= 0.85;
+            });
+            if (!equivalent) highBearingByTargetId.get(targetId).push({ fp, tokens });
+          }
+        }
+      }
+
+      if (verdictEligibleTargetIds.size > 0) {
+        const allResolved = [...verdictEligibleTargetIds].every(
+          (targetId) => (highBearingByTargetId.get(targetId)?.length ?? 0) >= minHighBearing,
+        );
+        if (allResolved) {
+          logger.log(`[ADAPTIVE_BEARING] claim=${claim.id} threshold=${minHighBearing} reached for all targets after ${sourcesProcessed} sources`);
+          break;
+        }
+      }
+    }
+
+    const unresolvedTargetIds = [...verdictEligibleTargetIds].filter(
+      (targetId) => (highBearingByTargetId.get(targetId)?.length ?? 0) < minHighBearing,
+    );
+
+    const poolExhausted = processedCandidates.length >= orderedCandidates.length;
+    if (unresolvedTargetIds.length > 0 &&
+        (sourcesProcessed >= sourceCeiling || poolExhausted || globalBudgetExhausted)) ceilingExhausted = true;
+
+    const highBearingStats = Object.fromEntries(
+      [...highBearingByTargetId.entries()].map(([k, v]) => [k, v.length]),
+    );
+
+    logger.log(`[ADAPTIVE_BEARING] ${JSON.stringify({
+      event: "adaptive_extraction_complete",
+      claimId: claim.id,
+      sourcesProcessed,
+      ceilingExhausted,
+      sourceCeiling,
+      poolCandidateCount: orderedCandidates.length,
+      globalBudgetExhausted,
+      uniqueSourceCount: sourceUrls.size,
+      uniqueDomainCount: sourceDomains.size,
+      highBearingStats,
+      unresolvedTargetIds,
+      totalEvidence: allEvidence.length,
+    })}`);
+
+    return {
+      evidence: allEvidence,
+      unresolvedTargetIds,
+      ceilingExhausted,
+      highBearingStats,
+      sourcesProcessed,
+      processedCandidates,
+      globalBudgetExhausted,
+    };
+  }
+
+  async _runAdaptiveExtractionRoundRobin(adaptivePlans, opt) {
+    const config = opt.bearingConfig;
+    const minBearing = config.minBearingForPacket ?? 0.35;
+    const minLinks = config.minBearingLinksPerClaim ?? 3;
+    const minDelivered = config.minDeliveredSourcesPerContent ?? 24;
+    const maxUniqueAttempts = Math.max(minDelivered, config.maxSourceAttemptsPerContent ?? 60);
+    const sourceCeiling = Math.max(
+      config.maxSourcesComparedPerClaim ?? 20,
+      Number(opt.maxSourcesToScrapePerTarget) || 0,
+    );
+    const states = adaptivePlans.map(({ plan }) => {
+      // Step 19: order this claim's attempts coverage-first so uncovered central
+      // target roles (study identity, substantive conduct, methodology) are
+      // attempted before general/low-coverage material.
+      const coverage = rankCandidatesByCoverage(plan.claim, plan.rankedCandidates || []);
+      logAdaptiveAllocationAudit({ taskContentId: opt.taskContentId || null, claim: plan.claim, auditRows: coverage.auditRows });
+      return {
+      plan,
+      rankedCandidates: coverage.ordered,
+      cursor: 0,
+      sourcesProcessed: 0,
+      protectedStudiesProcessed: 0,
+      processedCandidates: [],
+      evidence: [],
+      bearingSourceUrls: new Set(),
+      highBearingByTargetId: new Map(),
+      verdictTargetIds: new Set((plan.claim.evaluationTargets || [])
+        .filter((target) => target.verdictEligible !== false)
+        .map((target) => String(target.evaluationTargetId))
+        .filter(Boolean)),
+      // Every target this claim legitimately owns. Used as a pre-scrape guard so
+      // a candidate (or citation-derived candidate) carrying a foreign target
+      // cannot leak evidence onto this claim.
+      validTargetIds: new Set((plan.claim.evaluationTargets || [])
+        .map((target) => String(target.evaluationTargetId))
+        .filter(Boolean)),
+      };
+    });
+    const attemptedUrls = new Set();
+    const deliveredUrls = new Set();
+    const maxProtectedStudies = 3;
+    const hasPendingProtectedStudy = (state) =>
+      state.protectedStudiesProcessed < maxProtectedStudies &&
+      state.rankedCandidates.slice(state.cursor).some((candidate) =>
+        candidate?.protectedDocumentIdentity === true && Number(candidate.identityBearingScore) >= 0.8
+      );
+    let madeProgress = true;
+
+    while (madeProgress && (
+      attemptedUrls.size < maxUniqueAttempts || states.some(hasPendingProtectedStudy)
+    )) {
+      madeProgress = false;
+      const needGlobalSources = deliveredUrls.size < minDelivered;
+      for (const state of states) {
+        const needsLinks = state.bearingSourceUrls.size < minLinks;
+        const needsProtectedStudy = hasPendingProtectedStudy(state);
+        if (!needGlobalSources && !needsLinks && !needsProtectedStudy) continue;
+        if (state.sourcesProcessed >= sourceCeiling && !needsProtectedStudy) continue;
+
+        let candidate = null;
+        while (state.cursor < state.rankedCandidates.length && !candidate) {
+          const next = state.rankedCandidates[state.cursor++];
+          const key = canonicalizeUrl(next?.url) || next?.url;
+          if (!key) continue;
+          // Pre-scrape guards: never spend a scrape slot on an impossible
+          // evidence URL (asset/login) or on a candidate whose target does not
+          // belong to this claim.
+          if (isRejectableEvidenceUrl(next.url)) {
+            logger.log(`[CITATION_EXPANSION] ${JSON.stringify({ event: "candidate_rejected_asset_url", claimId: state.plan.claim.id, url: String(next.url || "").slice(0, 500) })}`);
+            continue;
+          }
+          const nextTargetId = next.evidenceTargetId ? String(next.evidenceTargetId) : "";
+          if (nextTargetId && state.validTargetIds.size && !state.validTargetIds.has(nextTargetId)) {
+            logger.log(`[CITATION_EXPANSION] ${JSON.stringify({ event: "candidate_rejected_target_mismatch", claimId: state.plan.claim.id, url: String(next.url || "").slice(0, 500), candidateTargetId: nextTargetId })}`);
+            continue;
+          }
+          if (attemptedUrls.size >= maxUniqueAttempts &&
+            !(next.protectedDocumentIdentity === true && Number(next.identityBearingScore) >= 0.8)) {
+            continue;
+          }
+          candidate = next;
+        }
+        if (!candidate) continue;
+        const sourceKey = canonicalizeUrl(candidate.url) || candidate.url;
+        const isNewGlobalAttempt = !attemptedUrls.has(sourceKey);
+        const isProtectedStudy = candidate.protectedDocumentIdentity === true &&
+          Number(candidate.identityBearingScore) >= 0.8;
+        if (isNewGlobalAttempt && attemptedUrls.size >= maxUniqueAttempts && !isProtectedStudy) break;
+        attemptedUrls.add(sourceKey);
+        madeProgress = true;
+        state.sourcesProcessed++;
+        if (isProtectedStudy) {
+          state.protectedStudiesProcessed++;
+        }
+        state.processedCandidates.push(candidate);
+
+        let extracted = [];
+        try {
+          extracted = (await Promise.all(expandCandidateTargetAssignments(candidate).map((assignment) =>
+            this.extractEvidence(state.plan.claim, assignment, {
+              ...opt,
+              maxEvidencePerDoc: Math.max(Number(opt.maxEvidencePerDoc) || 0, 6),
+            })
+          ))).flat();
+        } catch (error) {
+          logger.warn(`[ADAPTIVE_BEARING] claim=${state.plan.claim.id} source failed; continuing: ${error.message}`);
+        }
+        const qualifying = extracted.filter((item) => {
+          const targetId = item.evidenceTargetId ? String(item.evidenceTargetId) : "";
+          if (!targetId || !state.verdictTargetIds.has(targetId)) return false;
+          return qualifiesForBearingQuota(item, minBearing);
+        });
+        if (typeof opt.onSourceProcessed === "function") {
+          await opt.onSourceProcessed({
+            claim: state.plan.claim,
+            candidate,
+            evidence: qualifying,
+            attemptedUniqueSources: attemptedUrls.size,
+            deliveredBearingSources: deliveredUrls.size + (qualifying.length ? 1 : 0),
+          });
+        }
+        if (!qualifying.length) continue;
+
+        deliveredUrls.add(sourceKey);
+        state.bearingSourceUrls.add(sourceKey);
+        state.evidence.push(...qualifying);
+        for (const item of qualifying) {
+          const targetId = String(item.evidenceTargetId);
+          if (!state.highBearingByTargetId.has(targetId)) state.highBearingByTargetId.set(targetId, new Set());
+          const fingerprint = String(item.quote || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().slice(0, 500);
+          if (fingerprint) state.highBearingByTargetId.get(targetId).add(fingerprint);
+        }
+      }
+    }
+
+    const byClaimId = new Map();
+    for (const state of states) {
+      const highBearingStats = Object.fromEntries(
+        [...state.highBearingByTargetId.entries()].map(([id, values]) => [id, values.size]),
+      );
+      const unresolvedTargetIds = [...state.verdictTargetIds].filter(
+        (id) => (state.highBearingByTargetId.get(id)?.size || 0) < (config.minHighBearingClaimsPerTarget ?? 3),
+      );
+      byClaimId.set(Number(state.plan.claim.id), {
+        evidence: state.evidence,
+        processedCandidates: state.processedCandidates,
+        sourcesProcessed: state.sourcesProcessed,
+        bearingLinkCount: state.bearingSourceUrls.size,
+        highBearingStats,
+        unresolvedTargetIds,
+        ceilingExhausted: state.bearingSourceUrls.size < minLinks || unresolvedTargetIds.length > 0,
+        globalBudgetExhausted: attemptedUrls.size >= maxUniqueAttempts,
+      });
+    }
+    logger.log(`[ADAPTIVE_BEARING] ${JSON.stringify({
+      event: "adaptive_round_robin_complete",
+      attemptedUniqueSources: attemptedUrls.size,
+      deliveredBearingSources: deliveredUrls.size,
+      requiredDeliveredSources: minDelivered,
+      requiredBearingLinksPerClaim: minLinks,
+      maxUniqueAttempts,
+      claims: states.map((state) => ({
+        claimId: state.plan.claim.id,
+        sourcesProcessed: state.sourcesProcessed,
+        bearingLinks: state.bearingSourceUrls.size,
+        poolSize: state.rankedCandidates.length,
+      })),
+    })}`);
+    return { byClaimId, attemptedUrls, deliveredUrls };
+  }
+
   async runBearingGated(claims, contexts, opt) {
+    this._resetCanonicalSourceCache();
     const config = opt.bearingConfig;
     const results = new Array(claims.length);
     const { eligible, skipped } = selectClaimsForBearingGating(claims, config);
@@ -872,6 +1528,12 @@ TASK:
       const claim = claims[index];
       if (eligibleIds.has(Number(claim.id))) continue;
       const skippedInfo = skipped.find((item) => Number(item.claim.id) === Number(claim.id));
+      opt.repairAudit?.recordQueryPack({
+        claim,
+        queries: [],
+        status: "skipped",
+        reason: skippedInfo?.reason || "ineligible_claim",
+      });
       results[index] = {
         claim,
         context: contexts ? contexts[claim.id] : undefined,
@@ -905,7 +1567,24 @@ TASK:
       ...selectCandidatesForClaim(item.claim, item.candidates, config),
       prepared: item,
     }));
-    const allocation = allocateCandidatesAcrossClaims(plans, config);
+    opt.onProgress?.({
+      counts: {
+        sourcesDiscovered: new Set(plans.flatMap((plan) =>
+          plan.rankedCandidates.map((candidate) => canonicalizeUrl(candidate.url) || candidate.url)
+        ).filter(Boolean)).size,
+      },
+    });
+    const isAdaptivePlan = (plan) => Boolean(
+      config.finishActiveSourceOnThreshold && plan.claim.evaluationTargets?.length
+    );
+    // Reserve only the first source for adaptive claims. The previous code
+    // allocated the entire global budget before adaptive retrieval began,
+    // leaving no capacity for the required next tranche.
+    const allocationPlans = plans.map((plan) => isAdaptivePlan(plan)
+      ? { ...plan, selectedCandidates: [] }
+      : plan
+    );
+    const allocation = allocateCandidatesAcrossClaims(allocationPlans, config);
 
     logger.log(`[BEARING_GATING] ${JSON.stringify({
       event: "bearing_gating_global_allocation",
@@ -920,6 +1599,7 @@ TASK:
     })}`);
 
     const occurrences = [];
+    const adaptivePlansForExtraction = [];
     for (const plan of plans) {
       const selectedCandidates = allocation.selectedByClaimId.get(Number(plan.claim.id)) || [];
       const selectedKeys = new Set(selectedCandidates.map((candidate) => canonicalizeUrl(candidate.url) || candidate.url));
@@ -938,8 +1618,15 @@ TASK:
         selectedCandidates,
         decisions: plan.decisions,
       });
-      for (let candidateIndex = 0; candidateIndex < selectedCandidates.length; candidateIndex++) {
-        occurrences.push({ plan, candidate: selectedCandidates[candidateIndex], candidateIndex });
+      const isAdaptive = isAdaptivePlan(plan);
+      if (isAdaptive) {
+        adaptivePlansForExtraction.push({ plan, selectedCandidates });
+      } else {
+        for (const candidate of selectedCandidates) {
+          for (const assignment of expandCandidateTargetAssignments(candidate)) {
+            occurrences.push({ plan, candidate: assignment });
+          }
+        }
       }
     }
 
@@ -959,7 +1646,7 @@ TASK:
         ? { ...occurrence.candidate, originalUrl: occurrence.candidate.url, url: canonicalUrlOverride }
         : occurrence.candidate;
       const evidence = await this.extractEvidence(occurrence.plan.claim, candidate, opt);
-      evidenceByClaimId.get(Number(occurrence.plan.claim.id))[occurrence.candidateIndex] = evidence;
+      evidenceByClaimId.get(Number(occurrence.plan.claim.id)).push(...evidence);
     };
     await Promise.all([...firstByCanonical.values()].map((occurrence) => extractOccurrence(occurrence)));
     await Promise.all(duplicateOccurrences.map((occurrence) => {
@@ -967,9 +1654,20 @@ TASK:
       return extractOccurrence(occurrence, first.candidate.url);
     }));
 
+    const adaptiveMetaByClaimId = new Map();
+    if (adaptivePlansForExtraction.length) {
+      const adaptiveRun = await this._runAdaptiveExtractionRoundRobin(adaptivePlansForExtraction, opt);
+      for (const [claimId, adaptiveResult] of adaptiveRun.byClaimId) {
+        evidenceByClaimId.set(claimId, adaptiveResult.evidence);
+        adaptiveMetaByClaimId.set(claimId, adaptiveResult);
+      }
+    }
+
     for (const plan of plans) {
       const { claim, index, context, queries, candidates, snippetBearingLlmEnabled } = plan.prepared;
-      const selectedCandidates = allocation.selectedByClaimId.get(Number(claim.id)) || [];
+      const adaptiveMeta = adaptiveMetaByClaimId.get(Number(claim.id));
+      const selectedCandidates = adaptiveMeta?.processedCandidates ||
+        allocation.selectedByClaimId.get(Number(claim.id)) || [];
       const evs = (evidenceByClaimId.get(Number(claim.id)) || []).flat();
       if (snippetBearingLlmEnabled) {
         logSnippetBearingCalibration({
@@ -983,18 +1681,36 @@ TASK:
       const evidencePacket = opt.enableBearingPacket
         ? this.buildPacketSidecar(claim, evs, opt)
         : null;
-      const adjudicationEvidence = opt.enableBearingPacketLive
-        ? this.packetEvidenceForAdjudication(evidencePacket)
-        : evs;
+      const adjudicationEvidence = claim.targetMappingUnresolved
+        ? []
+        : opt.enableBearingPacketLive
+          ? this.packetEvidenceForAdjudication(evidencePacket)
+          : evs;
       let adjudication = this.adjudicate(claim, adjudicationEvidence);
       if (adjudicationEvidence.length === 0) {
         adjudication = {
           ...adjudication,
           finalVerdict: "insufficient",
           unresolved_search_failed: true,
-          rationale: opt.enableBearingPacketLive && evs.length > 0
-            ? "No verdict-eligible evidence passed the live bearing packet."
-            : "No matching evidence found within bearing/source caps.",
+          rationale: claim.targetMappingUnresolved
+            ? "Target mapping is unresolved; attribution/study-identity retrieval cannot affect the article verdict."
+            : opt.enableBearingPacketLive && evs.length > 0
+              ? "No verdict-eligible evidence passed the live bearing packet."
+              : "No matching evidence found within bearing/source caps.",
+        };
+      }
+      if (adaptiveMeta) {
+        adjudication = {
+          ...adjudication,
+          unresolvedTargetIds: adaptiveMeta.unresolvedTargetIds || [],
+          highBearingStats: adaptiveMeta.highBearingStats || {},
+          sourcesProcessed: adaptiveMeta.sourcesProcessed || 0,
+        };
+      }
+      if (adaptiveMeta?.unresolvedTargetIds?.length > 0 && adaptiveMeta.ceilingExhausted) {
+        adjudication = {
+          ...adjudication,
+          unresolved_ceiling_exhausted: true,
         };
       }
       if (opt.enableRedTeam) adjudication = await this.redTeam(claim, adjudication, adjudicationEvidence);
@@ -1043,6 +1759,8 @@ TASK:
             promptManager: this.deps.promptManager || null,
             taskContentId: opt.taskContentId || null,
             maxCandidates: opt.maxSnippetCandidatesPerClaim || 12,
+            maxCandidatesPerTargetBatch: opt.maxCandidatesPerTargetBatch,
+            subBatchTimeoutMs: opt.snippetBearingTimeoutMs,
           });
           fringeCandidates = batch.candidates;
         }
@@ -1094,6 +1812,7 @@ TASK:
     if (opt.enableBearingGating) {
       return this.runBearingGated(claims, contexts, opt);
     }
+    this._resetCanonicalSourceCache();
 
     const maxParallel = this.cfg.maxParallelClaims ?? 3;
     const results = new Array(claims.length);
@@ -1120,6 +1839,7 @@ TASK:
       );
 
       let candidates = await this.retrieveCandidates(claim, queries, opt);
+      opt.repairAudit?.recordQueryPack({ claim, queries });
 
       const snippetBearingLlmEnabled =
         isBearingShadowEnabled() &&
@@ -1134,6 +1854,8 @@ TASK:
           promptManager: this.deps.promptManager || null,
           taskContentId: opt.taskContentId || null,
           maxCandidates: opt.maxSnippetCandidatesPerClaim || 12,
+          maxCandidatesPerTargetBatch: opt.maxCandidatesPerTargetBatch,
+          subBatchTimeoutMs: opt.snippetBearingTimeoutMs,
         });
         // Phase 3 remains a same-length, same-order map. No gating or sorting.
         candidates = batch.candidates;
@@ -1178,17 +1900,20 @@ TASK:
         });
       }
 
-      let adj = this.adjudicate(claim, evs);
-      if (evs.length === 0) {
+      const verdictEvidence = claim.targetMappingUnresolved ? [] : evs;
+      let adj = this.adjudicate(claim, verdictEvidence);
+      if (verdictEvidence.length === 0) {
         adj = {
           ...adj,
           finalVerdict: "insufficient",
           unresolved_search_failed: true,
-          rationale: "No matching evidence found within search/source caps.",
+          rationale: claim.targetMappingUnresolved
+            ? "Target mapping is unresolved; attribution/study-identity retrieval cannot affect the article verdict."
+            : "No matching evidence found within search/source caps.",
         };
       }
       if (opt.enableRedTeam) {
-        adj = await this.redTeam(claim, adj, evs);
+        adj = await this.redTeam(claim, adj, verdictEvidence);
       }
 
       // ═══════════════════════════════════════════════════════════════════
@@ -1270,7 +1995,7 @@ TASK:
         } : {}),
       };
 
-      if (opt.enableBearingPacketLive && row.evidencePacket) {
+      if (opt.enableBearingPacketLive && row.evidencePacket && !claim.targetMappingUnresolved) {
         const packetEvidence = this.packetEvidenceForAdjudication(row.evidencePacket);
         row.adjudication = this.adjudicate(claim, packetEvidence);
         if (packetEvidence.length === 0) {

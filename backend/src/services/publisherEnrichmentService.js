@@ -29,6 +29,7 @@ import fs from "fs/promises";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import { publisherProviderFlags } from "../../services/sourceProviders/providerFeatureFlags.js";
+import { isUsableSourceEntityName } from "../utils/publisherNameValidation.js";
 
 // ────────────────────────────────────────────────────────────
 // Constants
@@ -1687,6 +1688,10 @@ export async function enrichPublisherIfNeeded({
   maxProviderConcurrency = DEFAULT_PROVIDER_CONCURRENCY,
 }) {
   try {
+    if (publisherName && !isUsableSourceEntityName(publisherName)) {
+      logger.warn(`[enrichment] Rejected invalid publisher label before lookup: "${String(publisherName).slice(0, 160)}"`);
+      return { status: "skipped", reason: "invalid_publisher_name" };
+    }
     // 1. Normalize domain — reject localhost/private origins (dev-server URLs must not corrupt enrichment)
     const rawDomain = providedDomain || normalizeDomain(sourceUrl) || null;
     const domain = (rawDomain && rawDomain !== "localhost" && !rawDomain.startsWith("127.") && !rawDomain.startsWith("192.168.")) ? rawDomain : null;

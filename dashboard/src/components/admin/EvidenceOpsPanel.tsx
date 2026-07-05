@@ -18,6 +18,7 @@ import { api } from "../../services/api";
 import LLMPromptsEditor from "./LLMPromptsEditor";
 import ConfigurationMatrix from "./ConfigurationMatrix";
 import AdvancedPromptEditor from "./AdvancedPromptEditor";
+import EvidenceRetrievalProvidersPanel from "./EvidenceRetrievalProvidersPanel";
 
 export default function EvidenceOpsPanel() {
   const [evidenceMode, setEvidenceMode] = useState<string>("fringe_on_support");
@@ -153,6 +154,9 @@ export default function EvidenceOpsPanel() {
             </Tab>
             <Tab _selected={{ bg: "rgba(0, 162, 255, 0.2)", color: "cyan.300" }}>
               Configuration Matrix
+            </Tab>
+            <Tab _selected={{ bg: "rgba(0, 162, 255, 0.2)", color: "cyan.300" }}>
+              Retrieval Providers
             </Tab>
           </TabList>
 
@@ -433,6 +437,9 @@ export default function EvidenceOpsPanel() {
             {/* Configuration Matrix Tab */}
             <TabPanel px={0}>
               <ConfigurationMatrix />
+            </TabPanel>
+            <TabPanel px={0}>
+              <EvidenceRetrievalProvidersPanel />
             </TabPanel>
           </TabPanels>
         </Tabs>

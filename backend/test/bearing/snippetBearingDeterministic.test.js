@@ -38,6 +38,29 @@ const cognitionClaim = {
   role: "thesis",
 };
 
+test("academic bearing uses API text while retaining the provider search snippet", () => {
+  const evidenceNeed = buildEvidenceNeedV1({
+    id: 102,
+    text: "CDC researchers manipulated MMR autism study data.",
+    role: "pillar",
+  });
+  const candidate = {
+    url: "https://pubmed.ncbi.nlm.nih.gov/14754936/",
+    title: "Academic record",
+    snippet: "General vaccine research page.",
+    searchSnippet: "General vaccine research page.",
+    bearingText: "CDC researchers analyzed MMR vaccination timing and autism study data.",
+    bearingTextSource: "pubmed_abstract",
+  };
+  const withApiText = scoreSnippetBearingDeterministic(evidenceNeed, candidate);
+  const searchOnly = scoreSnippetBearingDeterministic(evidenceNeed, { ...candidate, bearingText: "" });
+  assert.ok(withApiText.score > searchOnly.score);
+  const logRecord = buildBearingShadowLogRecord({ claim: { id: 102, text: "claim", evidenceNeed }, candidate });
+  assert.equal(logRecord.searchSnippet, "General vaccine research page.");
+  assert.equal(logRecord.bearingTextSource, "pubmed_abstract");
+  assert.ok(logRecord.bearingText.includes("MMR vaccination timing"));
+});
+
 test("shadow scoring is non-mutating and preserves candidate order and legacy fields", () => {
   const evidenceNeed = deepFreeze(buildEvidenceNeedV1(cognitionClaim));
   const candidates = deepFreeze([
@@ -245,4 +268,64 @@ test("structured shadow logs cap title, snippet, reason, query, and claim text",
   assert.ok(record.snippet.length <= 1000);
   assert.ok(record.query.length <= 500);
   assert.ok(record.reason.length <= 500);
+});
+
+// ─── Thompson/CDC whistleblower regression ────────────────────────────────────
+// Candidate snippets for Thompson allegation claims must survive pre-scrape
+// deterministic scoring with a non-zero score when mustInclude and
+// attributionOrCausal signals are present, even when the predicate is absent
+// from the short truncated snippet.
+
+import { combineBearingPreScores } from "../../src/core/snippetBearing.js";
+
+const thompsonEvidenceNeed = {
+  subjectTerms: ["william thompson", "cdc", "whistleblower"],
+  relationTerms: ["manipulated", "omitted", "altered", "excluded", "committed fraud"],
+  objectTerms: ["mmr", "autism", "data", "study", "analysis"],
+  scopeTerms: ["2004", "destefano", "pediatrics"],
+  mustIncludeTerms: ["william thompson", "cdc", "mmr"],
+  claimType: "attribution",
+  allegedAction: "omitted data",
+  speakerTerms: ["william thompson"],
+  evidenceTargets: [{ evidenceTargetType: "primary_source" }],
+};
+
+test("Thompson: mustInclude + attribution yields non-zero deterministic score", () => {
+  const result = scoreSnippetBearingDeterministic(thompsonEvidenceNeed, {
+    title: "Statement of William W. Thompson Ph.D. Regarding the 2004 Article Examining MMR and Autism",
+    snippet: "CDC whistleblower William Thompson alleged that data were omitted from a 2004 Pediatrics study on MMR vaccination and autism.",
+  });
+  assert.ok(result.components.mustInclude > 0, `mustInclude must be > 0, got ${result.components.mustInclude}`);
+  assert.ok(result.components.attributionOrCausal > 0, `attributionOrCausal must be > 0, got ${result.components.attributionOrCausal}`);
+  assert.ok(result.score > 0, `deterministicScore must be > 0, got ${result.score}`);
+  assert.ok(result.score >= 0.25, `deterministicScore must be >= 0.25 for strong mustInclude+attribution, got ${result.score}`);
+});
+
+test("Thompson: combined score is not crushed when LLM is high", () => {
+  const det = scoreSnippetBearingDeterministic(thompsonEvidenceNeed, {
+    title: "Statement of William W. Thompson Ph.D. Regarding the 2004 Article Examining MMR and Autism",
+    snippet: "CDC whistleblower William Thompson alleged that data were omitted from a 2004 Pediatrics study on MMR vaccination and autism.",
+  });
+  const combined = combineBearingPreScores(det.score, 0.8);
+  assert.ok(combined.bearingPreScore >= 0.50, `combinedScore must be >= 0.50 when LLM=0.8, got ${combined.bearingPreScore}`);
+});
+
+test("Thompson: topicOnlyPenalty suppressed when mustInclude is strong", () => {
+  // Candidate has subject match but relation=0, object=0 — normally triggers topicOnlyPenalty.
+  // With mustInclude=1 present, penalty must be suppressed.
+  const result = scoreSnippetBearingDeterministic(thompsonEvidenceNeed, {
+    title: "CDC researcher William Thompson statement on MMR vaccine study",
+    snippet: "William Thompson is a CDC scientist who worked on vaccine safety research.",
+  });
+  assert.equal(result.components.topicOnlyPenalty, 0, `topicOnlyPenalty must be 0 when mustInclude is strong, got ${result.components.topicOnlyPenalty}`);
+  assert.ok(result.score > 0, `score must be > 0 despite low relation/object when mustInclude present, got ${result.score}`);
+});
+
+test("junk article still gets low score despite topic match", () => {
+  // A generic page that just mentions MMR and autism without any bearing signal.
+  const result = scoreSnippetBearingDeterministic(thompsonEvidenceNeed, {
+    title: "News roundup",
+    snippet: "Today's health news covers various topics including weather, politics, and general interest stories.",
+  });
+  assert.ok(result.score < 0.2, `junk article must score < 0.2, got ${result.score}`);
 });

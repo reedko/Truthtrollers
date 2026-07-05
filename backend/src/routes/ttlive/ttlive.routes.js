@@ -539,7 +539,9 @@ export default function createTTLiveRouter({ query, pool }) {
             const { processTaskClaims } = await import('../../core/processTaskClaims.js');
             const { runEvidenceEngine } = await import('../../core/runEvidenceEngine.js');
             const { persistAIResults } = await import('../../storage/persistAIResults.js');
+            const { persistDirectEvidenceAssertions } = await import('../../core/evidenceAssertionPersistence.js');
             const { matchClaimsToTaskClaims } = await import('../../core/matchClaims.js');
+            const { enrichTaskClaimsForMatching, dualWriteTargetEvidenceLinks } = await import('../../core/evaluationTargetStore.js');
             const { openAiLLM } = await import('../../core/openAiLLM.js');
             const { default: PromptManager } = await import('../../core/promptManager.js');
             const claimMatchPromptManager = new PromptManager(query);
@@ -595,12 +597,18 @@ export default function createTTLiveRouter({ query, pool }) {
               claimIds,
               claimConfidenceMap,
             });
+            const directAssertionPersistence = await persistDirectEvidenceAssertions({
+              query,
+              taskContentId,
+              aiReferences,
+            });
 
-            // 6. Match reference claims to task claims (same as scrape-task)
-            console.log(`🔗 Matching source claims to task claims...`);
+            // 6. Legacy broad reference extraction/matching is retired. The
+            // target-aware bearing assertions were persisted directly above.
+            console.log(`⏭️ Legacy broad reference-claim extraction is retired`);
             let totalClaimLinks = 0;
 
-            for (const ref of aiReferences) {
+            for (const ref of []) {
               if (!ref.referenceContentId) continue;
 
               try {
@@ -631,10 +639,11 @@ export default function createTTLiveRouter({ query, pool }) {
 
                 if (extractedClaims.length > 0) {
                   // Match reference claims to task claims
-                  const taskClaimsForMatching = taskClaims.map(tc => ({
+                  const taskClaimsForMatchingRaw = taskClaims.map(tc => ({
                     id: tc.id,
                     text: tc.text
                   }));
+                  const taskClaimsForMatching = await enrichTaskClaimsForMatching(query, taskContentId, taskClaimsForMatchingRaw);
 
                   const claimMatches = await matchClaimsToTaskClaims({
                     referenceClaims: extractedClaims,
@@ -675,6 +684,7 @@ export default function createTTLiveRouter({ query, pool }) {
                        VALUES ${placeholders}`,
                       flatValues
                     );
+                    await dualWriteTargetEvidenceLinks(query, taskContentId, claimMatches, ref.referenceContentId);
                     totalClaimLinks += claimMatches.length;
                     console.log(`   ✅ Created ${claimMatches.length} claim links for reference ${ref.referenceContentId}`);
                   }
@@ -683,6 +693,9 @@ export default function createTTLiveRouter({ query, pool }) {
                 console.error(`   ⚠️  Error matching claims for reference ${ref.referenceContentId}:`, err.message);
               }
             }
+
+            totalClaimLinks = [...directAssertionPersistence.persistedByClaim.values()]
+              .reduce((sum, count) => sum + Number(count || 0), 0);
 
             console.log(`🔗 Created ${totalClaimLinks} total claim links (source claims → task claims)`);
 

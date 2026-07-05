@@ -5,7 +5,7 @@ export const DEFAULT_BEARING_GATING_CONFIG = Object.freeze({
   enableBearingGating: false,
   minBearingToScrape: 0.35,
   forceSkipBelowBearing: 0.15,
-  deterministicForceSkipBelow: 0.10,
+  deterministicForceSkipBelow: 0.1,
   maxClaimsSearchedPerContent: 8,
   globalScrapeLimitPerContent: 16,
   deepenGlobalScrapeLimit: 24,
@@ -47,31 +47,84 @@ export function normalizeBearingGatingConfig(raw = {}, env = process.env) {
   const defaults = DEFAULT_BEARING_GATING_CONFIG;
   let enableBearingGating = raw.enableBearingGating === true;
   if (env.ENABLE_BEARING_GATING === "true") enableBearingGating = true;
-  if (env.ENABLE_BEARING_GATING === "false") enableBearingGating = false;
+  if (env.ENABLE_BEARING_GATING === "false") enableBearingGating = true;
 
   const perClaimLimits = {};
   for (const [role, fallback] of Object.entries(defaults.perClaimLimits)) {
-    perClaimLimits[role] = clampInteger(raw?.perClaimLimits?.[role], fallback, 0, 8);
+    perClaimLimits[role] = clampInteger(
+      raw?.perClaimLimits?.[role],
+      fallback,
+      0,
+      8,
+    );
   }
-  const minBearingToScrape = clampNumber(raw.minBearingToScrape, defaults.minBearingToScrape, 0, 1);
+  const minBearingToScrape = clampNumber(
+    raw.minBearingToScrape,
+    defaults.minBearingToScrape,
+    0,
+    1,
+  );
 
   return {
     version: 1,
     enableBearingGating,
     minBearingToScrape,
-    forceSkipBelowBearing: clampNumber(raw.forceSkipBelowBearing, defaults.forceSkipBelowBearing, 0, minBearingToScrape),
-    deterministicForceSkipBelow: clampNumber(raw.deterministicForceSkipBelow, defaults.deterministicForceSkipBelow, 0, minBearingToScrape),
-    maxClaimsSearchedPerContent: clampInteger(raw.maxClaimsSearchedPerContent, defaults.maxClaimsSearchedPerContent, 1, 20),
-    globalScrapeLimitPerContent: clampInteger(raw.globalScrapeLimitPerContent, defaults.globalScrapeLimitPerContent, 1, 100),
-    deepenGlobalScrapeLimit: clampInteger(raw.deepenGlobalScrapeLimit, defaults.deepenGlobalScrapeLimit, 1, 100),
-    maxSnippetCandidatesPerClaim: clampInteger(raw.maxSnippetCandidatesPerClaim, defaults.maxSnippetCandidatesPerClaim, 1, 20),
-    maxOriginSlotsPerClaim: clampInteger(raw.maxOriginSlotsPerClaim, defaults.maxOriginSlotsPerClaim, 0, 2),
-    maxSteelmanSlotsPerClaim: clampInteger(raw.maxSteelmanSlotsPerClaim, defaults.maxSteelmanSlotsPerClaim, 0, 2),
+    forceSkipBelowBearing: clampNumber(
+      raw.forceSkipBelowBearing,
+      defaults.forceSkipBelowBearing,
+      0,
+      minBearingToScrape,
+    ),
+    deterministicForceSkipBelow: clampNumber(
+      raw.deterministicForceSkipBelow,
+      defaults.deterministicForceSkipBelow,
+      0,
+      minBearingToScrape,
+    ),
+    maxClaimsSearchedPerContent: clampInteger(
+      raw.maxClaimsSearchedPerContent,
+      defaults.maxClaimsSearchedPerContent,
+      1,
+      20,
+    ),
+    globalScrapeLimitPerContent: clampInteger(
+      raw.globalScrapeLimitPerContent,
+      defaults.globalScrapeLimitPerContent,
+      1,
+      100,
+    ),
+    deepenGlobalScrapeLimit: clampInteger(
+      raw.deepenGlobalScrapeLimit,
+      defaults.deepenGlobalScrapeLimit,
+      1,
+      100,
+    ),
+    maxSnippetCandidatesPerClaim: clampInteger(
+      raw.maxSnippetCandidatesPerClaim,
+      defaults.maxSnippetCandidatesPerClaim,
+      1,
+      20,
+    ),
+    maxOriginSlotsPerClaim: clampInteger(
+      raw.maxOriginSlotsPerClaim,
+      defaults.maxOriginSlotsPerClaim,
+      0,
+      2,
+    ),
+    maxSteelmanSlotsPerClaim: clampInteger(
+      raw.maxSteelmanSlotsPerClaim,
+      defaults.maxSteelmanSlotsPerClaim,
+      0,
+      2,
+    ),
     perClaimLimits,
   };
 }
 
-export async function loadBearingGatingConfig({ query = null, env = process.env } = {}) {
+export async function loadBearingGatingConfig({
+  query = null,
+  env = process.env,
+} = {}) {
   let raw = {};
   if (typeof query === "function") {
     try {
@@ -80,14 +133,22 @@ export async function loadBearingGatingConfig({ query = null, env = process.env 
       );
       raw = parseJson(rows?.[0]?.config_value);
     } catch (error) {
-      logger.warn(`[BearingConfig] Could not load bearing_config; using safe defaults: ${error.message}`);
+      logger.warn(
+        `[BearingConfig] Could not load bearing_config; using safe defaults: ${error.message}`,
+      );
     }
   }
   return normalizeBearingGatingConfig(raw, env);
 }
 
-export function getPerClaimBearingLimit(claim, config = DEFAULT_BEARING_GATING_CONFIG) {
-  if (claim?.evidenceNeed?.claimType === "attribution" || claim?.isAttribution) {
+export function getPerClaimBearingLimit(
+  claim,
+  config = DEFAULT_BEARING_GATING_CONFIG,
+) {
+  if (
+    claim?.evidenceNeed?.claimType === "attribution" ||
+    claim?.isAttribution
+  ) {
     return config.perClaimLimits.attribution;
   }
   const role = String(claim?.role || "default").toLowerCase();

@@ -93,6 +93,8 @@ import createContentRatingRouter from "./src/routes/evaluation/content-rating.ro
 import createDiscussionSystemRouter from "./src/routes/discussion/index.js";
 import createTTLiveSystemRouter from "./src/routes/ttlive/index.js";
 import { initSocketServer } from "./src/realtime/socketServer.js";
+import { loadSearchGatewayConfig } from "./src/core/searchGatewayConfig.js";
+import { logMissingSearchProviderKeys } from "./src/core/evidenceRetrievalGateway.js";
 
 // Logger utility
 import { clearLogFile, logger } from "./src/utils/logger.js";
@@ -131,6 +133,10 @@ const query = async (...args) => {
     throw error;
   }
 };
+
+loadSearchGatewayConfig({ query })
+  .then((config) => logMissingSearchProviderKeys(config))
+  .catch((error) => logger.warn(`[SEARCH_GATEWAY] Startup configuration check failed: ${error.message}`));
 
 // ─────────────────────────────────────────────
 // TLS / HTTPS Setup

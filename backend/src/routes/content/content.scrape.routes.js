@@ -26,10 +26,19 @@ import { processTaskClaims } from "../../core/processTaskClaims.js";
 import {
   getScrapeEvaluationStatus,
   setScrapeEvaluationStatus,
+  updateScrapeEvaluationProgress,
 } from "../../core/scrapeEvaluationRegistry.js";
 import { runEvidenceEngine } from "../../core/runEvidenceEngine.js";
 import { mapArgumentFunctions } from "../../core/argumentMappingEngine.js";
 import { matchClaimsToTaskClaims } from "../../core/matchClaims.js";
+import { enrichTaskClaimsForMatching, dualWriteTargetEvidenceLinks } from "../../core/evaluationTargetStore.js";
+import {
+  buildUnresolvedTargetScope,
+  filterExtractedClaimsAgainstDirectAssertions,
+  persistDirectEvidenceAssertions,
+  restrictTaskClaimsToEvidenceScope,
+  upsertReferenceClaimTaskLinks,
+} from "../../core/evidenceAssertionPersistence.js";
 import { openAiLLM } from "../../core/openAiLLM.js";
 import {
   finishOpenAiUsageCapture,
@@ -40,6 +49,12 @@ import { attachEvidenceComparisonTokenUsage } from "../../core/evidenceCompariso
 import PromptManager from "../../core/promptManager.js";
 import { resolveSourceIdentity } from "../../../services/sourceIdentityResolver.js";
 import { resolveSourceLineage } from "../../../services/sourceLineageResolver.js";
+
+// Retired: the target-aware bearing pass now extracts and persists source
+// assertions directly. Running a second broad claim-extraction/matching pass
+// over every reference duplicates work and can place every case claim into
+// every source prompt.
+const LEGACY_REFERENCE_CLAIM_EXTRACTION_RETIRED = true;
 
 export default function createContentScrapeRoutes({ query }) {
   const router = Router();
@@ -665,7 +680,15 @@ export default function createContentScrapeRoutes({ query }) {
       // leave the extension spinner running for several minutes.
       if (defer_evaluation === true && !res.headersSent) {
         evaluationContentId = taskContentId;
-        setScrapeEvaluationStatus(taskContentId, "running", { url });
+        setScrapeEvaluationStatus(taskContentId, "running", {
+          url,
+          counts: {
+            sourcesDiscovered: 0,
+            sourcesProcessed: 0,
+            bearingAssertionsFound: 0,
+            claimLevelLinksPersisted: 0,
+          },
+        });
         res.json({
           success: true,
           contentId: taskContentId,
@@ -687,7 +710,6 @@ export default function createContentScrapeRoutes({ query }) {
       const argumentMappings = await mapArgumentFunctions({
         query,
         taskContentId,
-        articleText: text,
         claims: taskClaims,
       });
       const mappingByClaimId = new Map(
@@ -708,6 +730,8 @@ export default function createContentScrapeRoutes({ query }) {
           scoreTransform: mapping.scoreTransform,
           accountabilityEligible: mapping.accountabilityEligible,
           argumentMappingConfidence: mapping.confidence,
+          argumentMappingRationale: mapping.rationale,
+          targetMappingUnresolved: mapping.targetMappingUnresolved,
         };
       });
 
@@ -719,13 +743,18 @@ export default function createContentScrapeRoutes({ query }) {
       //    → References are FULLY PROCESSED during fetch (inline)
       //    → Returns: { aiReferences, failedCandidates, claimConfidenceMap }
       // -----------------------------------------------------------------
-      const { aiReferences, failedCandidates, claimConfidenceMap } =
+      const { aiReferences, failedCandidates, claimConfidenceMap, repairAudit, claimProgress } =
         await runEvidenceEngine({
           query,
           taskContentId,
           claimIds,
           claims: mappedTaskClaims,
           readableText: text,
+          onProgress: (progress) => {
+            if (evaluationContentId) {
+              updateScrapeEvaluationProgress(evaluationContentId, progress);
+            }
+          },
         });
       usageAfterEvidence = getOpenAiUsageCapture();
 
@@ -738,13 +767,15 @@ export default function createContentScrapeRoutes({ query }) {
         claimIds,
         claimConfidenceMap, // Pass confidence map for storing per-claim confidence
       });
+      const directAssertionPersistence = await persistDirectEvidenceAssertions({
+        query,
+        taskContentId,
+        aiReferences,
+        repairAudit,
+      });
 
-      const enableReferenceClaimExtraction =
-        process.env.ENABLE_REFERENCE_CLAIM_EXTRACTION !== "false";
-      const maxReferenceClaimExtraction = Number.parseInt(
-        process.env.MAX_REFERENCE_CLAIM_EXTRACTION ?? "8",
-        10,
-      );
+      const enableReferenceClaimExtraction = !LEGACY_REFERENCE_CLAIM_EXTRACTION_RETIRED;
+      const maxReferenceClaimExtraction = 0;
 
       // -----------------------------------------------------------------
       // 6. Extract claims FROM references (reference internal claims)
@@ -778,12 +809,12 @@ export default function createContentScrapeRoutes({ query }) {
 
         return true;
       }) : [];
-      const validReferences = candidateReferences.slice(
-        0,
-        Number.isFinite(maxReferenceClaimExtraction) && maxReferenceClaimExtraction > 0
-          ? maxReferenceClaimExtraction
-          : 8,
-      );
+      // Phase 6 complete-source processing: no silent default truncation after
+      // sources have already been retrieved and selected. Operators may still
+      // set a positive emergency cap explicitly.
+      const validReferences = Number.isFinite(maxReferenceClaimExtraction) && maxReferenceClaimExtraction > 0
+        ? candidateReferences.slice(0, maxReferenceClaimExtraction)
+        : candidateReferences;
       // Keep this conservative by default. Reference claim extraction is LLM-heavy;
       // concurrency can be raised locally with REFERENCE_CLAIM_EXTRACTION_BATCH_SIZE.
       const BATCH_SIZE = Math.max(
@@ -796,7 +827,7 @@ export default function createContentScrapeRoutes({ query }) {
 
       if (!enableReferenceClaimExtraction) {
         logger.log(
-          `⏭️  [/api/scrape-task] Skipping reference-claim extraction; ENABLE_REFERENCE_CLAIM_EXTRACTION=false`
+          `⏭️  [/api/scrape-task] Legacy broad reference-claim extraction is retired; using target-linked bearing assertions only`
         );
       } else {
         if (candidateReferences.length > validReferences.length) {
@@ -810,12 +841,21 @@ export default function createContentScrapeRoutes({ query }) {
       // Track processing stats
       let processedSuccessfully = 0;
       let failedReferences = [];
+      const claimLevelLinksPersistedByClaim = new Map(
+        directAssertionPersistence.persistedByClaim,
+      );
 
       // Helper function to process a single reference
       const processReference = async (ref) => {
         try {
+          const extractionScope = buildUnresolvedTargetScope(ref);
+          const directAssertions = directAssertionPersistence.assertionsByReferenceContentId.get(
+            Number(ref.referenceContentId),
+          ) || [];
           // a) Create snippet claim from search engine snippet
-            if (ref.quote) {
+            if (ref.quote && !directAssertions.some((assertion) =>
+              String(assertion.quote || "").trim() === String(ref.quote).trim()
+            )) {
               await persistClaims(
                 query,
                 ref.referenceContentId,
@@ -831,13 +871,20 @@ export default function createContentScrapeRoutes({ query }) {
             // b) Extract reference claims from full text (if available)
             //    Pass task claim texts so the LLM also pulls statements that
             //    directly respond to / contradict / support those claims.
-            if (ref.cleanText) {
+            if (ref.cleanText && extractionScope.shouldExtractAdditional) {
+              const targetContextTexts = extractionScope.unresolvedTargets
+                .map((target) => target.targetText)
+                .filter(Boolean);
               const extractedClaims = await processTaskClaims({
                 query,
                 taskContentId: ref.referenceContentId,
                 text: ref.cleanText,
                 claimType: "reference",
-                taskClaimsContext: taskClaims.map((c) => c.text),
+                taskClaimsContext: extractionScope.hasDirectAssertions
+                  ? targetContextTexts
+                  : taskClaims.map((c) => c.text),
+                existingAssertions: extractionScope.existingAssertions,
+                unresolvedTargetContexts: extractionScope.unresolvedTargets,
               });
 
               if (extractedClaims.length === 0) {
@@ -855,57 +902,51 @@ export default function createContentScrapeRoutes({ query }) {
                 // c) Auto-generate claim_links (reference claims → task claims with veracity scores)
                 try {
                   logger.log(`🔗 [/api/scrape-task] Calling matchClaimsToTaskClaims for reference ${ref.referenceContentId}...`);
-                  logger.log(`   Reference claims: ${extractedClaims.length}, Task claims: ${taskClaims.length}`);
+                  const additionalClaims = filterExtractedClaimsAgainstDirectAssertions(
+                    extractedClaims,
+                    directAssertions,
+                  );
+                  logger.log(`   Reference claims: ${extractedClaims.length}, additional after direct-assertion dedupe: ${additionalClaims.length}, Task claims: ${taskClaims.length}`);
 
-                  const claimMatches = await matchClaimsToTaskClaims({
-                    referenceClaims: extractedClaims,
-                    taskClaims: taskClaims,
-                    llm: openAiLLM,
-                    promptManager: new PromptManager(query),
-                  });
-
-                  logger.log(`🔗 [/api/scrape-task] matchClaimsToTaskClaims returned ${claimMatches.length} matches`);
-
-                  // ⚡ OPTIMIZATION: Batch insert AI-suggested links instead of sequential inserts
-                  if (claimMatches.length > 0) {
-                    const values = claimMatches.map(match => {
-                      // Map stance values: 'supports' -> 'support', 'refutes' -> 'refute', 'related' -> 'nuance'
-                      let mappedStance = match.stance;
-                      if (match.stance === 'supports') mappedStance = 'support';
-                      else if (match.stance === 'refutes') mappedStance = 'refute';
-                      else if (match.stance === 'related') mappedStance = 'nuance';
-
-                      return [
-                        match.referenceClaimId,
-                        match.taskClaimId,
-                        mappedStance,
-                        Math.round((match.veracityScore || 0.5) * 100), // score: 0-100
-                        match.confidence, // 0.15-0.98
-                        match.supportLevel, // -1.2 to +1.2
-                        match.rationale,
-                        null, // quote
-                        1 // created_by_ai
-                      ];
+                  if (additionalClaims.length === 0) {
+                    logger.log(`⏭️  [/api/scrape-task] All extracted claims for reference ${ref.referenceContentId} were already preserved by direct bearing persistence`);
+                  } else {
+                    const enrichedTaskClaims = await enrichTaskClaimsForMatching(query, taskContentId, taskClaims);
+                    const enrichedTaskClaimsForRef = extractionScope.hasDirectAssertions
+                      ? restrictTaskClaimsToEvidenceScope(enrichedTaskClaims, extractionScope)
+                      : enrichedTaskClaims;
+                    if (enrichedTaskClaimsForRef.length === 0) {
+                      logger.warn(`⚠️  [/api/scrape-task] No unresolved originating targets remain for reference ${ref.referenceContentId}; skipping secondary matcher`);
+                      return { success: true };
+                    }
+                    const claimMatches = await matchClaimsToTaskClaims({
+                      referenceClaims: additionalClaims,
+                      taskClaims: enrichedTaskClaimsForRef,
+                      llm: openAiLLM,
+                      promptManager: new PromptManager(query),
                     });
 
-                    // Batch insert all AI-suggested links at once
-                    const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
-                    const flatValues = values.flat();
+                    logger.log(`🔗 [/api/scrape-task] matchClaimsToTaskClaims returned ${claimMatches.length} matches`);
 
-                    await query(
-                      `INSERT INTO reference_claim_task_links
-                       (reference_claim_id, task_claim_id, stance, score, confidence, support_level, rationale, quote, created_by_ai)
-                       VALUES ${placeholders}`,
-                      flatValues
-                    );
+                    if (claimMatches.length > 0) {
+                      const persistedMatches = await upsertReferenceClaimTaskLinks(query, claimMatches);
+                      for (const match of persistedMatches) {
+                        const claimId = Number(match.taskClaimId);
+                        claimLevelLinksPersistedByClaim.set(
+                          claimId,
+                          (claimLevelLinksPersistedByClaim.get(claimId) || 0) + 1,
+                        );
+                      }
+                      await dualWriteTargetEvidenceLinks(query, taskContentId, persistedMatches, ref.referenceContentId);
 
-                    logger.log(
-                      `✅ [/api/scrape-task] Batch created ${claimMatches.length} AI-suggested links (reference_claim_task_links) for reference ${ref.referenceContentId}`
-                    );
-                  } else {
-                    logger.warn(
-                      `⚠️  [/api/scrape-task] No AI-suggested links created for reference ${ref.referenceContentId} (0 matches from LLM)`
-                    );
+                      logger.log(
+                        `✅ [/api/scrape-task] Upserted ${persistedMatches.length} additional AI-suggested links (reference_claim_task_links) for reference ${ref.referenceContentId}`
+                      );
+                    } else {
+                      logger.warn(
+                        `⚠️  [/api/scrape-task] No AI-suggested links created for reference ${ref.referenceContentId} (0 matches from LLM)`
+                      );
+                    }
                   }
                 } catch (linkErr) {
                   logger.error(
@@ -920,6 +961,8 @@ export default function createContentScrapeRoutes({ query }) {
                   });
                 }
               }
+            } else if (ref.cleanText && extractionScope.hasDirectAssertions) {
+              logger.log(`⏭️  [/api/scrape-task] Skipping full-source rediscovery for reference ${ref.referenceContentId}; all originating targets already met their bearing threshold`);
             }
 
           // Mark as successfully processed
@@ -968,6 +1011,10 @@ export default function createContentScrapeRoutes({ query }) {
         });
       }
       logger.log(`${'='.repeat(80)}\n`);
+      repairAudit?.finalize({
+        assertionsPersistedByClaim: directAssertionPersistence.persistedByClaim,
+        claimLevelLinksPersistedByClaim,
+      });
 
       // -----------------------------------------------------------------
       // 7. Return unified reference set to extension
@@ -979,7 +1026,21 @@ export default function createContentScrapeRoutes({ query }) {
       finalizeTokenUsage();
 
       if (evaluationContentId) {
-        setScrapeEvaluationStatus(evaluationContentId, "complete", { url });
+        const linkCountRows = await query(
+          `SELECT COUNT(*) AS count
+             FROM reference_claim_task_links
+            WHERE task_claim_id IN (?)`,
+          [claimIds],
+        );
+        const currentProgress = getScrapeEvaluationStatus(evaluationContentId) || {};
+        setScrapeEvaluationStatus(evaluationContentId, "complete", {
+          url,
+          counts: {
+            ...(currentProgress.counts || {}),
+            claimLevelLinksPersisted: Number(linkCountRows?.[0]?.count) || 0,
+          },
+          claims: claimProgress || [],
+        });
       }
 
       if (res.headersSent) return;
@@ -1338,10 +1399,11 @@ export default function createContentScrapeRoutes({ query }) {
             );
 
             if (taskClaimRows.length > 0) {
-              const taskClaimsForMatching = taskClaimRows.map(row => ({
+              const taskClaimsForMatchingRaw = taskClaimRows.map(row => ({
                 id: row.claim_id,
                 text: row.claim_text
               }));
+              const taskClaimsForMatching = await enrichTaskClaimsForMatching(query, taskContentId, taskClaimsForMatchingRaw);
 
               logger.log(`  ⏱️  Calling matchClaimsToTaskClaims with ${refClaims.length} ref claims and ${taskClaimsForMatching.length} task claims...`);
               const claimMatches = await matchClaimsToTaskClaims({
@@ -1377,6 +1439,7 @@ export default function createContentScrapeRoutes({ query }) {
               );
             }
 
+            await dualWriteTargetEvidenceLinks(query, taskContentId, claimMatches, referenceContentId);
             if (claimMatches.length > 0) {
               logger.log(
                 `✅ [/api/scrape-reference] Created ${claimMatches.length} claim_links for manual scrape ${referenceContentId}`
@@ -1406,7 +1469,7 @@ export default function createContentScrapeRoutes({ query }) {
            JOIN content_claims cc ON rcl.claim_id = cc.claim_id
            JOIN claims c ON cc.claim_id = c.claim_id
            WHERE rcl.reference_content_id = ?
-           AND rcl.scrape_status IN ('snippet_only', 'failed')`,
+           AND rcl.scrape_status IN ('snippet_only', 'abstract_only', 'identity_only', 'failed')`,
           [referenceContentId]
         );
 

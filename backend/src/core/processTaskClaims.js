@@ -20,6 +20,7 @@ import {
   CLAIM_EXTRACTION_EVALUATION_MAX_CLAIMS,
   CLAIM_EXTRACTION_BACKGROUND_MAX_CLAIMS,
 } from "./claimReduction.js";
+import { runTargetedRepairPass } from "./claimRepairPass.js";
 
 export function chunkContentForClaimExtraction(text, maxCharsPerChunk = 6000) {
   const content = String(text || "");
@@ -239,13 +240,45 @@ export async function processTaskClaims({
   }
 
   // =====================================================
+  // REPAIR PASS: Targeted repair for coverage gaps
+  // =====================================================
+  logger.log("🟩 [processTaskClaims] STEP 3.5/6: Running targeted repair pass…");
+
+  let repairPassOutcome = "disabled";
+  const { repairClaim, outcome: repairOutcome } = await runTargetedRepairPass({
+    finalFrame,
+    chunkSurveys,
+    selectedEvaluationClaims: [], // Empty at this stage, but available for context
+  });
+
+  repairPassOutcome = repairOutcome;
+
+  if (repairClaim) {
+    logger.log(`[processTaskClaims] Repair pass generated claim: "${repairClaim.claimText.substring(0, 60)}..."`);
+  } else {
+    logger.log(`[processTaskClaims] Repair pass outcome: ${repairOutcome}`);
+  }
+
+  // =====================================================
   // PROMPT 7 PREP: Cluster candidates
   // =====================================================
   logger.log("🟩 [processTaskClaims] STEP 4/6: Cluster candidates…");
   const clusterResult = await clusterCandidates(chunkSurveys);
-  const evaluationClusterGroups = clusterResult.evaluationClusterGroups || [];
+  let evaluationClusterGroups = clusterResult.evaluationClusterGroups || [];
   const backgroundClusterGroups = clusterResult.backgroundClusterGroups || [];
   logger.log(`[processTaskClaims] Clustering complete: ${evaluationClusterGroups.length} evaluation clusters, ${backgroundClusterGroups.length} background clusters`);
+
+  // Add repair claim to evaluation clusters if generated
+  if (repairClaim) {
+    const repairCluster = {
+      representative: repairClaim,
+      variants: [repairClaim],
+      clusterScore: repairClaim.importanceToArticleGuess || 0.7,
+      sourceChunks: new Set([repairClaim.sourceChunkIndex || 0]),
+    };
+    evaluationClusterGroups.push(repairCluster);
+    logger.log(`[processTaskClaims] Added repair claim to evaluation clusters (now ${evaluationClusterGroups.length} total)`);
+  }
 
   // =====================================================
   // PROMPT 8: Reduce to selected claims
@@ -254,6 +287,9 @@ export async function processTaskClaims({
 
   // Reduce evaluation claims
   const selectedEvaluationClaims = await reduceEvaluationClaims(evaluationClusterGroups, finalFrame);
+
+  // Check if repair claim was included in final selection
+  const repairClaimIncluded = selectedEvaluationClaims.some((c) => c.repairPass === true);
 
   // Validate evaluation claims
   if (selectedEvaluationClaims.length > CLAIM_EXTRACTION_EVALUATION_MAX_CLAIMS) {
@@ -273,6 +309,22 @@ export async function processTaskClaims({
   }
 
   logger.log(`[processTaskClaims] Evaluation claims selected: ${selectedEvaluationClaims.length}/${CLAIM_EXTRACTION_EVALUATION_MAX_CLAIMS}`);
+
+  // Log REPAIR_PASS_COMPLETED with outcome
+  let repairPassStatus = "none_needed";
+  if (repairPassOutcome === "disabled") {
+    repairPassStatus = "disabled";
+  } else if (repairClaimIncluded) {
+    repairPassStatus = "added";
+  } else if (repairClaim !== null) {
+    repairPassStatus = "rejected";
+  } else if (repairPassOutcome === "attempted") {
+    repairPassStatus = "none_found";
+  }
+
+  logger.log(
+    `REPAIR_PASS_COMPLETED | status=${repairPassStatus} | repairClaimIncluded=${repairClaimIncluded} | coverageGaps=${finalFrame.coverageGaps?.length || 0}`
+  );
 
   // Reduce background claims
   const selectedSourceBackgroundClaims = await reduceBackgroundClaims(backgroundClusterGroups, finalFrame);

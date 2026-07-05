@@ -30,6 +30,8 @@ import {
   sortClaimsByRelevance,
   ClaimWithRelevance,
   ReferenceDocumentLink,
+  ScrapeEvaluationProgress,
+  fetchScrapeEvaluationProgress,
 } from "../../services/referenceClaimRelevance";
 import { fetchClaimScoresForTask, fetchAIEvidenceLinks } from "../../services/useDashboardAPI";
 import VerimeterBar from "../VerimeterBar";
@@ -91,6 +93,8 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
   // Debug panel expand/collapse state
   const [debugExpanded, setDebugExpanded] = useState(false);
   const [sourceDetailRef, setSourceDetailRef] = useState<import("../../../../shared/entities/types").ReferenceWithClaims | null>(null);
+  const [evaluationProgress, setEvaluationProgress] = useState<ScrapeEvaluationProgress | null>(null);
+  const lastProgressVersion = useRef<number>(-1);
 
   // ── On open: load existing links immediately, don't re-scan ──────────────
   useEffect(() => {
@@ -100,6 +104,48 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       loadComputedScore();
     }
   }, [isOpen, taskClaim?.claim_id, references.length]); // eslint-disable-line
+
+  // R8: direct links are committed source-by-source. Refresh this modal when
+  // the backend reports a new persistence version instead of presenting a
+  // stale zero-link state until the whole scrape finishes.
+  useEffect(() => {
+    if (!isOpen || !contentId || !taskClaim) return;
+    let cancelled = false;
+    let interval: number | null = null;
+    const poll = async () => {
+      try {
+        const progress = await fetchScrapeEvaluationProgress(contentId);
+        if (cancelled) return;
+        setEvaluationProgress(progress);
+        const version = Number(progress.progressVersion ?? 0);
+        if (version > lastProgressVersion.current) {
+          const hadPriorVersion = lastProgressVersion.current >= 0;
+          lastProgressVersion.current = version;
+          if (hadPriorVersion) {
+            await Promise.all([loadExistingLinks(), loadComputedScore()]);
+          }
+        }
+        if ((progress.status === "complete" || progress.status === "failed" || progress.status === "unknown") && interval !== null) {
+          window.clearInterval(interval);
+          interval = null;
+        }
+        return progress.status;
+      } catch (error) {
+        console.warn("[RelevanceScan] Progress refresh failed:", error);
+        return "unknown" as const;
+      }
+    };
+    lastProgressVersion.current = -1;
+    void poll().then((status) => {
+      if (!cancelled && status === "running" && interval === null) {
+        interval = window.setInterval(poll, 2000);
+      }
+    });
+    return () => {
+      cancelled = true;
+      if (interval !== null) window.clearInterval(interval);
+    };
+  }, [isOpen, contentId, taskClaim?.claim_id]); // eslint-disable-line
 
   // ── Load computed verimeter score based on reference claim links ──────────
   const loadComputedScore = async () => {
@@ -654,6 +700,24 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
         <ModalCloseButton />
 
         <ModalBody>
+          {evaluationProgress && evaluationProgress.status !== "unknown" && (
+            <Box mb={4} p={3} borderWidth="1px" borderColor={colorMode === "dark" ? "gray.700" : "gray.200"} borderRadius="md">
+              <HStack spacing={3} wrap="wrap">
+                <Badge colorScheme={evaluationProgress.status === "complete" ? "green" : evaluationProgress.status === "failed" ? "red" : "teal"}>
+                  {evaluationProgress.status === "running" ? "Evidence running" : evaluationProgress.status}
+                </Badge>
+                <Text fontSize="xs">Discovered {evaluationProgress.counts?.sourcesDiscovered ?? 0}</Text>
+                <Text fontSize="xs">Processed {evaluationProgress.counts?.sourcesProcessed ?? 0}</Text>
+                <Text fontSize="xs">Bearing assertions {evaluationProgress.counts?.bearingAssertionsFound ?? 0}</Text>
+                <Text fontSize="xs">Claim links {evaluationProgress.counts?.claimLevelLinksPersisted ?? 0}</Text>
+              </HStack>
+              {evaluationProgress.claims?.find((item) => Number(item.claimId) === Number(taskClaim?.claim_id))?.unresolvedReason && (
+                <Text mt={2} fontSize="xs" color="orange.300">
+                  Unresolved: {evaluationProgress.claims.find((item) => Number(item.claimId) === Number(taskClaim?.claim_id))?.unresolvedReason}
+                </Text>
+              )}
+            </Box>
+          )}
           {/* Loading existing */}
           {isLoadingExisting && (
             <HStack justify="center" py={6}>
@@ -688,9 +752,13 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
           {/* Empty state */}
           {!isBusy && topClaims.length === 0 && documentLinks.length === 0 && (
             <Box textAlign="center" py={10}>
-              <Text color="gray.400" fontSize="md" mb={2}>No scanned links yet</Text>
+              <Text color="gray.400" fontSize="md" mb={2}>
+                {evaluationProgress?.status === "running" ? "Evidence search is still running" : "No scanned links yet"}
+              </Text>
               <Text color="gray.500" fontSize="sm" mb={4}>
-                Click "Scan for Links" below to find relevant source claims.
+                {evaluationProgress?.status === "running"
+                  ? "Claim-level links will appear here as each source is completed."
+                  : "Click \"Scan for Links\" below to find relevant source claims."}
               </Text>
             </Box>
           )}

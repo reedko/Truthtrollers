@@ -19,6 +19,7 @@ import {
   isGenericFacebookPublisher,
   normalizeFacebookProvenance,
 } from "../utils/facebookProvenance.js";
+import { isUsableSourceEntityName } from "../utils/publisherNameValidation.js";
 
 const SOURCE_ATTR_RE = /\b(source|via|originally published|originally at|reprinted from|cross[- ]?posted from|from the)\b/i;
 const MAX_CHAIN_DEPTH = 3;
@@ -68,7 +69,7 @@ function repositoryPublisherFromUrl(url) {
 
 async function ensureReferencePublisherLink(query, { referenceContentId, url, publisher }) {
   const pubName = publisher?.name;
-  if (!pubName || pubName === "Unknown Publisher" || JUNK_PUBLISHER_RE.test(pubName)) {
+  if (!isUsableSourceEntityName(pubName) || pubName === "Unknown Publisher" || JUNK_PUBLISHER_RE.test(pubName)) {
     logger.warn(`⚠️  [scrapeReference] No publisher name resolved for ${url} — skipping publisher link`);
     return null;
   }
@@ -483,7 +484,7 @@ export async function scrapeReference(query, {
     // provided list to suppress the full PDF byline.
     authors = mergeAuthors(initialIdentityResult.authors, authors);
     let publisher = curatedPublisher
-      || (providedPublisherName && !JUNK_PUBLISHER_RE.test(String(providedPublisherName).trim())
+      || (providedPublisherName && isUsableSourceEntityName(providedPublisherName) && !JUNK_PUBLISHER_RE.test(String(providedPublisherName).trim())
         ? { name: String(providedPublisherName).trim(), confidence: "extension_metadata" }
         : isFacebookUrl ? null
         : initialIdentityResult.legacyPublisher);
@@ -595,7 +596,7 @@ export async function scrapeReference(query, {
           logger.log(`[FB-TRACE] calling resolvePublisherChain on: ${chainUrl.slice(0,100)}`);
           const resolved = await resolvePublisherChain(chainUrl, 0, query);
           logger.log(`[FB-TRACE] resolvePublisherChain returned: "${resolved?.name || "null"}"`);
-          if (resolved?.name && !JUNK_PUBLISHER_RE.test(resolved.name)) {
+          if (isUsableSourceEntityName(resolved?.name) && !JUNK_PUBLISHER_RE.test(resolved.name)) {
             publisher = resolved;
             logger.log(`📰 [scrapeReference] Resolved publisher chain → "${resolved.name}"`);
           }
