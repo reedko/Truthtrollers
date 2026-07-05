@@ -149,9 +149,10 @@ export async function reduceEvaluationClaims(evaluationClusterGroups = [], final
     const representative = cluster.representative;
     if (!representative) continue;
 
-    // CRITICAL: Do NOT persist if candidateOnly=true
-    if (representative.candidateOnly === true) {
-      logger.warn(`[reduceEvaluationClaims] Skipping candidate-only claim: "${representative.claimText?.substring(0, 60)}..."`);
+    // CRITICAL: Do NOT persist if candidateOnly=true AND has no source excerpt
+    // If it has localSourceExcerpt from survey, it's a valid source and should be persisted
+    if (representative.candidateOnly === true && !representative.localSourceExcerpt) {
+      logger.warn(`[reduceEvaluationClaims] Skipping candidate-only claim with no source: "${representative.claimText?.substring(0, 60)}..."`);
       continue;
     }
 
@@ -234,9 +235,10 @@ export async function reduceBackgroundClaims(backgroundClusterGroups = [], final
     const representative = cluster.representative;
     if (!representative) continue;
 
-    // CRITICAL: Do NOT persist if candidateOnly=true
-    if (representative.candidateOnly === true) {
-      logger.warn(`[reduceBackgroundClaims] Skipping candidate-only claim: "${representative.claimText?.substring(0, 60)}..."`);
+    // CRITICAL: Do NOT persist if candidateOnly=true AND has no source excerpt
+    // If it has localSourceExcerpt from survey, it's a valid source and should be persisted
+    if (representative.candidateOnly === true && !representative.localSourceExcerpt) {
+      logger.warn(`[reduceBackgroundClaims] Skipping candidate-only claim with no source: "${representative.claimText?.substring(0, 60)}..."`);
       continue;
     }
 
