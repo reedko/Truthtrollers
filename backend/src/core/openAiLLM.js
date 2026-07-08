@@ -7,7 +7,8 @@ import { recordOpenAiUsage } from "./openAiUsageTelemetry.js";
 
 dotenv.config();
 
-const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
+// Read API key at call time, not import time (allows scripts to set env vars before importing)
+const getOpenAiApiKey = () => process.env.OPENAI_API_KEY || process.env.REACT_APP_OPENAI_API_KEY;
 
 // Create persistent HTTPS agent with connection pooling for OpenAI API
 // This reuses TCP connections instead of creating new ones for each request
@@ -33,7 +34,7 @@ export const openAiLLM = {
       const resp = await fetch("https://api.openai.com/v1/models", {
         method: "GET",
         headers: {
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          Authorization: `Bearer ${getOpenAiApiKey()}`,
         },
         signal: controller.signal,
         agent: httpsAgent, // Use connection pool
@@ -117,7 +118,7 @@ export const openAiLLM = {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${OPENAI_API_KEY}`,
+            Authorization: `Bearer ${getOpenAiApiKey()}`,
           },
           body: JSON.stringify({
             model: "gpt-4o-mini", // 🏎 faster than gpt-4-turbo
