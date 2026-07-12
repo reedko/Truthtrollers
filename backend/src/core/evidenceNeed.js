@@ -39,6 +39,7 @@ const CAUSAL_RE = /\b(cause[sd]?|causing|causal|leads? to|led to|results? in|res
 const ASSOCIATION_RE = /\b(associat(?:ed|ion)|correlat(?:ed|ion)|linked (?:to|with)|relationship between|coincid(?:e|ed|ence))\b/i;
 const METHODOLOGY_RE = /\b(methodolog(?:y|ical)|sample size|randomi[sz]ed|control group|cohort|confound(?:er|ing)?|study design|selection bias|statistical method)\b/i;
 const INTERPRETIVE_RE = /\b(suggests?|implies?|interpret(?:s|ed|ation)?|argues?|indicates?)\b/i;
+const SECONDARY_STUDY_TITLE_RE = /\b(?:systematic review|meta-analysis|review|an update of|update of|scientific evidence)\b/i;
 
 export function normalizeBearingText(value) {
   return String(value || "")
@@ -284,6 +285,7 @@ export function buildEvidenceTargetQueries(evidenceNeed, limit = 3) {
       query,
       intent: target.stanceGoal || "open",
       stanceGoal: target.stanceGoal || "open",
+      purposeLane: target.purposeLane || null,
       matchedPart: target.source === "search_assertion" ? "search_assertion" : "object_claim",
       // `id` identifies the search lane. Extraction and persistence must use
       // the numeric claim_evaluation_targets id instead.
@@ -291,6 +293,10 @@ export function buildEvidenceTargetQueries(evidenceNeed, limit = 3) {
       evidenceTargetId: persistedTargetId || target.id || null,
       evidenceTargetType: target.evidenceTargetType || "other",
       bearingRequirement: target.bearingRequirement || "direct_truth_value",
+      ...(target.bearingCriteria ? { bearingCriteria: target.bearingCriteria } : {}),
+      ...(target.weakBearing ? { weakBearing: true } : {}),
+      ...(target.queryExpansionSourceClaimIds?.length ? { queryExpansionSourceClaimIds: target.queryExpansionSourceClaimIds } : {}),
+      ...(target.queryExpansionAudit ? { queryExpansionAudit: target.queryExpansionAudit } : {}),
     });
     if (queries.length >= maxQueries) break;
   }
@@ -301,6 +307,23 @@ const GENERIC_QUERY_TERMS = new Set([
   "article", "background", "context", "data", "evidence", "fact", "facts",
   "information", "news", "report", "research", "source", "study",
 ]);
+
+const GENERIC_EXPANSION_TERMS = new Set([
+  ...GENERIC_QUERY_TERMS,
+  "agency", "analysis", "claim", "claims", "document", "documents",
+  "government", "industry", "law", "legal", "policy", "record",
+  "records", "statement", "topic",
+]);
+
+const PREDICATE_FAMILIES = [
+  ["fraud", "fraudulent", "manipulate", "manipulated", "manipulation", "fabricate", "fabricated", "falsify", "falsified", "misrepresent", "misrepresented", "omit", "omitted", "exclude", "excluded", "conceal", "concealed", "suppress", "suppressed", "rework", "reworked"],
+  ["destroy", "destroyed", "delete", "deleted", "discard", "discarded", "shred", "shredded"],
+  ["cause", "causes", "caused", "causal", "trigger", "triggered", "produce", "produced"],
+  ["associate", "associated", "association", "correlate", "correlated", "linked", "relationship"],
+  ["increase", "increased", "higher", "raise", "raised", "exceed", "exceeded"],
+  ["decrease", "decreased", "lower", "reduce", "reduced"],
+  ["release", "released", "publish", "published", "declare", "declared", "state", "stated"],
+];
 
 /**
  * Reject search strings that cannot be traced back to the exact claim need.
@@ -447,15 +470,104 @@ export function buildQueryLanesFromEvaluationTargets(evaluationTargets, claimCon
     }).join(" ");
   };
 
-  const addLane = (id, stanceGoal, evidenceTargetType, bearingRequirement, queryHint, mustIncludeTerms, evaluationTargetId, targetType) => {
+  const laneMeta = (target, extra = {}) => ({
+    bearingCriteria: target.bearingCriteria || null,
+    weakBearing: Boolean(target.weakBearing || target.bearingCriteria?.weak),
+    ...extra,
+  });
+  const inferPurposeLane = (id, evidenceTargetType) => {
+    const laneId = String(id || "").toLowerCase();
+    const type = String(evidenceTargetType || "").toLowerCase();
+    if (laneId.includes("study-identity") || type === "original_study") return "study_identity";
+    if (laneId.includes("attribution")) return "attribution_provenance";
+    if (laneId.includes("response") || type === "official_statement") return "official_response";
+    if (laneId.includes("method") || laneId.includes("reanalysis")) return "methodology_reanalysis";
+    if (laneId.includes("record") || laneId.includes("legal")) return "primary_record";
+    return "target_primary";
+  };
+
+  const addLane = (id, stanceGoal, evidenceTargetType, bearingRequirement, queryHint, mustIncludeTerms, evaluationTargetId, targetType, extra = {}) => {
     const cleaned = String(queryHint || "").replace(/\s+/g, " ").trim();
     if (!cleaned || seen.has(cleaned.toLowerCase())) return;
     seen.add(cleaned.toLowerCase());
-    lanes.push({ id, stanceGoal, evidenceTargetType, bearingRequirement, queryHint: cleaned,
+    lanes.push({ id, stanceGoal, purposeLane: extra.purposeLane || inferPurposeLane(id, evidenceTargetType), evidenceTargetType, bearingRequirement, queryHint: cleaned,
       mustIncludeTerms: (mustIncludeTerms || []).filter(Boolean),
       evaluationTargetId: evaluationTargetId || null,
       evaluationTargetType: targetType || null,
+      ...extra,
       source: "search_assertion" });
+  };
+
+  const normalizedTokenSet = (value) => new Set(tokenizeBearingText(value)
+    .filter((token) => !GENERIC_EXPANSION_TERMS.has(token)));
+  const hasPredicateFamilyBridge = (termTokens, targetTokens) =>
+    PREDICATE_FAMILIES.some((family) => {
+      const familySet = new Set(family);
+      return termTokens.some((token) => familySet.has(token)) &&
+        targetTokens.some((token) => familySet.has(token));
+    });
+  const criteriaTerms = (criteria) => [
+    ...(Array.isArray(criteria?.mustMatch) ? criteria.mustMatch : []),
+    ...(Array.isArray(criteria?.shouldMatch) ? criteria.shouldMatch : []),
+  ];
+  const filterExpansionTerms = ({ target, baseText, rawTerms, docHints }) => {
+    const bearingCriteria = target.bearingCriteria || {};
+    const localAnchorText = [
+      baseText,
+      target.subjectEntity,
+      target.predicate,
+      target.objectText,
+      target.allegedAction,
+      target.studyTitle,
+      target.studyAuthors,
+      target.studyIdentifier,
+      target.populationScope,
+      ...criteriaTerms(bearingCriteria),
+    ].filter(Boolean).join(" ");
+    const targetTokens = [...normalizedTokenSet(localAnchorText)];
+    const targetTokenSet = new Set(targetTokens);
+    const rawDocHints = docHints.map((hint) => String(hint || "").trim()).filter(Boolean);
+    const localDocHints = rawDocHints.filter((hint) => {
+      const hintTokens = tokenizeBearingText(hint).filter((token) => !GENERIC_EXPANSION_TERMS.has(token));
+      return hintTokens.some((token) => targetTokenSet.has(token));
+    });
+    const localDocTokenSet = normalizedTokenSet(localDocHints.join(" "));
+    const numericAnchorText = normalizeBearingText(`${localAnchorText} ${localDocHints.join(" ")}`);
+    const audit = [];
+    const accepted = [];
+    for (const rawTerm of rawTerms) {
+      const term = String(rawTerm || "").replace(/\s+/g, " ").trim();
+      if (!term) continue;
+      const termTokens = tokenizeBearingText(term).filter((token) => !GENERIC_EXPANSION_TERMS.has(token));
+      const normalized = normalizeBearingText(term);
+      const termNumbers = term.match(/\b(?:19|20)\d{2}|\d+(?:\.\d+)?%?\b/g) || [];
+      const exactInBase = normalizeBearingText(baseText).includes(normalized);
+      const overlapsTarget = termTokens.some((token) => targetTokenSet.has(token));
+      const overlapsLocalDoc = termTokens.some((token) => localDocTokenSet.has(token));
+      const predicateFamilyBridge = hasPredicateFamilyBridge(termTokens, targetTokens);
+      const numericLocallyAnchored = termNumbers.length === 0 || termNumbers.every((number) => numericAnchorText.includes(number));
+      const broad = termTokens.length === 0;
+      const acceptedReason = !broad && numericLocallyAnchored && (
+        exactInBase ? "target_text" :
+        overlapsTarget ? "target_or_criteria_overlap" :
+        overlapsLocalDoc ? "local_document_hint_overlap" :
+        predicateFamilyBridge ? "predicate_family" :
+        null
+      );
+      if (acceptedReason) {
+        accepted.push(term);
+        audit.push({ term, accepted: true, reason: acceptedReason });
+      } else {
+        audit.push({
+          term,
+          accepted: false,
+          reason: broad ? "generic_or_class_label"
+            : !numericLocallyAnchored ? "numeric_or_date_not_locally_anchored"
+            : "no_target_or_predicate_bridge",
+        });
+      }
+    }
+    return { accepted: unique(accepted, 6), localDocHints: unique(localDocHints, 4), audit };
   };
 
   for (const target of eligible) {
@@ -465,18 +577,24 @@ export function buildQueryLanesFromEvaluationTargets(evaluationTargets, claimCon
     const predicate = String(target.predicate || "").trim();
     const object = String(target.objectText || "").trim();
     const alleged = String(target.allegedAction || "").trim();
-    const studyTitle = String(target.studyTitle || "").trim();
-    const studyYear = target.studyYear ? String(target.studyYear) : "";
-    const studyAuthors = String(target.studyAuthors || "").trim();
-    const studyId = String(target.studyIdentifier || "").trim();
-    const population = String(target.populationScope || "").trim();
+    const studyTitle = String(target.studyTitle || target.study_title || "").trim();
+    const studyYear = target.studyYear || target.study_year ? String(target.studyYear || target.study_year) : "";
+    const studyAuthors = String(target.studyAuthors || target.study_authors || "").trim();
+    const studyId = String(target.studyIdentifier || target.study_identifier || "").trim();
+    const population = String(target.populationScope || target.population_scope || "").trim();
+    const qh = target.queryHints || target.query_hints || {};
+    const hintStudies = Array.isArray(qh.studiesOrDocuments) ? qh.studiesOrDocuments : [];
+    const hintNumbers = Array.isArray(qh.numbersOrStatistics) ? qh.numbersOrStatistics : [];
+    const hintedYears = hintNumbers.filter((value) => /\b(?:19|20)\d{2}\b/.test(String(value)));
+    const storedStudyYearConflict = Boolean(studyYear && hintedYears.length && !hintedYears.includes(studyYear));
+    const suppressStoredStudy = SECONDARY_STUDY_TITLE_RE.test(studyTitle) || storedStudyYearConflict;
     const tid = target.evaluationTargetId || ttype;
 
     if (ttype === "attribution") {
       const speaker = subject || claimContext.speakerEntity || "";
       addLane(`attribution-statement-${tid}`, "origin", "primary_source", "source_attribution",
         [speaker, predicate, object].filter(Boolean).join(" ") || text,
-        speaker ? [speaker] : [], tid, ttype);
+        speaker ? [speaker] : [], tid, ttype, laneMeta(target));
     }
 
     if (ttype === "substantive") {
@@ -484,37 +602,47 @@ export function buildQueryLanesFromEvaluationTargets(evaluationTargets, claimCon
       addLane(`substantive-conduct-${tid}`, "open", "primary_source",
         alleged ? "direct_truth_value" : "warrant_test",
         composeTargetQuery(subject, alleged || predicate, object, population) || text,
-        [subject, alleged].filter(Boolean), tid, ttype);
+        [subject, alleged].filter(Boolean), tid, ttype, laneMeta(target));
       // Lane: original study (when study identity is known)
       if (studyTitle || studyId || studyAuthors) {
         addLane(`substantive-study-${tid}`, "open", "original_study", "warrant_test",
           [studyTitle, studyYear, studyAuthors, studyId, population].filter(Boolean).join(" "),
-          [studyTitle, studyId].filter(Boolean), tid, ttype);
+          [studyTitle, studyId].filter(Boolean), tid, ttype, laneMeta(target));
       }
       // Lane: official/coauthor response
       if (subject) {
         addLane(`substantive-response-${tid}`, "open", "official_statement", "source_attribution",
           [subject, "response official statement", object || alleged].filter(Boolean).join(" "),
-          [subject].filter(Boolean), tid, ttype);
+          [subject].filter(Boolean), tid, ttype, laneMeta(target));
       }
       // Lane: independent methodological analysis
       if (alleged || predicate) {
         addLane(`substantive-method-${tid}`, "open", "original_study", "warrant_test",
           [object || text, "independent analysis methodology"].filter(Boolean).join(" "),
-          [], tid, ttype);
+          [], tid, ttype, laneMeta(target));
       }
     }
 
     if (ttype === "inference") {
       addLane(`inference-${tid}`, "open", "other", "direct_truth_value", text,
-        [subject, alleged].filter(Boolean), tid, ttype);
+        [subject, alleged].filter(Boolean), tid, ttype, laneMeta(target));
     }
 
     if (ttype === "study_identity") {
-      const studyTerms = [studyTitle, studyYear, studyAuthors, studyId, subject, population, object].filter(Boolean);
+      const studyTerms = unique([
+        ...hintStudies,
+        suppressStoredStudy ? "" : studyTitle,
+        suppressStoredStudy ? "" : studyYear,
+        ...hintNumbers,
+        suppressStoredStudy ? "" : studyAuthors,
+        suppressStoredStudy ? "" : studyId,
+        subject,
+        population,
+        object,
+      ], 12);
       addLane(`study-identity-${tid}`, "open", "original_study", "warrant_test",
         studyTerms.join(" ") || text,
-        [studyTitle, studyId].filter(Boolean), tid, ttype);
+        unique([...hintStudies, suppressStoredStudy ? "" : studyTitle, suppressStoredStudy ? "" : studyId], 6), tid, ttype, laneMeta(target));
     }
 
     // TM4 query-hint expansion lane: sidecar evidence-affordance siblings
@@ -522,26 +650,48 @@ export function buildQueryLanesFromEvaluationTargets(evaluationTargets, claimCon
     // reanalysis, a named law) that the plain targetText does not carry. Fully
     // generic — uses whatever expansion terms/document hints Phase 3 attached;
     // added as an ADDITIONAL lane so existing lanes are unaffected.
-    const qh = target.queryHints || {};
     const expansionTerms = Array.isArray(qh.expansionTerms) ? qh.expansionTerms : [];
     const docHints = (Array.isArray(qh.documentAffordanceHints) ? qh.documentAffordanceHints : [])
       // drop the generic class labels (they are not search terms) and the
       // "referenced by the article" scaffolding; keep any concrete phrases.
       .filter((h) => !/_/.test(h) && !/referenced by the article/i.test(h));
-    const leadTerms = [...expansionTerms, ...docHints]
+    const expansion = filterExpansionTerms({
+      target,
+      baseText: text,
+      rawTerms: expansionTerms,
+      docHints,
+    });
+    const sourceClaimIds = Array.isArray(qh.queryExpansionSourceClaimIds)
+      ? qh.queryExpansionSourceClaimIds.map((id) => String(id)).filter(Boolean)
+      : [];
+    const queryExpansionAudit = {
+      sourceClaimIds,
+      acceptedTerms: expansion.accepted,
+      acceptedDocumentHints: expansion.localDocHints,
+      rejectedTerms: expansion.audit.filter((row) => !row.accepted).slice(0, 12),
+    };
+    const leadTerms = [...expansion.accepted, ...expansion.localDocHints]
       .map((t) => String(t || "").trim())
       .filter(Boolean);
     if (leadTerms.length) {
-      const leadQuery = composeTargetQuery(subject || claimContext.speakerEntity || "", ...leadTerms.slice(0, 10));
+      const leadQuery = composeTargetQuery(subject || claimContext.speakerEntity || "", ...leadTerms.slice(0, 6));
       addLane(`tm4-doc-lead-${tid}`, "open", "primary_source", "warrant_test",
-        leadQuery, [], tid, ttype);
+        leadQuery, [], tid, ttype, laneMeta(target, {
+          queryExpansionSourceClaimIds: sourceClaimIds,
+          queryExpansionAudit,
+        }));
     }
     // If Phase 3 built an enriched primary query that meaningfully extends the
-    // targetText, add it verbatim as its own lane too.
+    // targetText, add a constrained target-local version as its own lane too.
     const pqt = String(target.primaryQueryText || "").trim();
     if (pqt && pqt.length > text.length + 8 && pqt.toLowerCase() !== text.toLowerCase()) {
+      const constrainedPrimary = composeTargetQuery(text, ...expansion.accepted.slice(0, 6));
       addLane(`tm4-primary-query-${tid}`, "open", "primary_source", "warrant_test",
-        pqt, [], tid, ttype);
+        constrainedPrimary, [], tid, ttype, laneMeta(target, {
+          queryExpansionSourceClaimIds: sourceClaimIds,
+          queryExpansionAudit,
+          rawPrimaryQueryText: pqt,
+        }));
     }
   }
 

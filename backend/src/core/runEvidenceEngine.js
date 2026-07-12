@@ -292,8 +292,21 @@ function clampScore(value, fallback = 0) {
 // return value `queryPlan`).
 function logEvidenceQueryPlan(claim, sink = null) {
   const targets = Array.isArray(claim.evaluationTargets) ? claim.evaluationTargets : [];
-  const queries = (Array.isArray(claim.searchTargets) ? claim.searchTargets : []).map((t) => t.query).filter(Boolean);
+  const searchTargets = Array.isArray(claim.searchTargets) ? claim.searchTargets : [];
+  const queries = searchTargets.map((t) => t.query).filter(Boolean);
   const planned = queries.length > 0;
+  const inferPurposeLane = (query) => {
+    const explicit = query.purposeLane || query.retrievalPurpose;
+    if (explicit) return explicit;
+    const laneId = String(query.evidenceLaneId || "").toLowerCase();
+    const type = String(query.evidenceTargetType || "").toLowerCase();
+    if (laneId.includes("study-identity") || type === "original_study") return "study_identity";
+    if (laneId.includes("attribution")) return "attribution_provenance";
+    if (laneId.includes("response") || type === "official_statement") return "official_response";
+    if (laneId.includes("method") || laneId.includes("reanalysis")) return "methodology_reanalysis";
+    if (laneId.includes("record") || laneId.includes("legal")) return "primary_record";
+    return "target_primary";
+  };
   const emit = (entry) => {
     logger.log(`[QUERY_PLAN] ${JSON.stringify(entry)}`);
     if (Array.isArray(sink)) sink.push(entry);
@@ -313,16 +326,30 @@ function logEvidenceQueryPlan(claim, sink = null) {
   }
 
   for (const target of targets.filter((t) => t.searchEligible !== false)) {
+    const tid = target.evaluationTargetId || null;
+    const targetQueries = searchTargets.filter((query) =>
+      !tid || String(query.evidenceTargetId || "") === String(tid)
+    );
     emit({
       claim_id: claim.id,
-      evaluation_target_id: target.evaluationTargetId || null,
+      evaluation_target_id: tid,
       target_type: target.targetType || "unknown",
       target_text: String(target.targetText || "").slice(0, 200),
+      primary_query_text: String(target.primaryQueryText || "").slice(0, 500) || null,
+      bearing_criteria: target.bearingCriteria || null,
       // Provenance for debugging: which sidecar siblings fed the expansion.
       query_expansion_source_claim_ids: (target.queryHints?.queryExpansionSourceClaimIds || []),
-      queries,
-      execution_status: planned ? "planned" : "skipped",
-      skip_reason: planned ? null : "no_search_targets_generated",
+      queries: targetQueries.map((query) => query.query).filter(Boolean),
+      query_details: targetQueries.map((query) => ({
+        lane_id: query.evidenceLaneId || null,
+        query: String(query.query || "").slice(0, 700),
+        purpose_lane: inferPurposeLane(query),
+        expansion_source_claim_ids: query.queryExpansionSourceClaimIds || [],
+        expansion_audit: query.queryExpansionAudit || null,
+        bearing_criteria_used: query.bearingCriteria || null,
+      })),
+      execution_status: targetQueries.length ? "planned" : "skipped",
+      skip_reason: targetQueries.length ? null : "no_search_targets_generated_for_target",
     });
   }
 
@@ -468,6 +495,7 @@ export async function runEvidenceEngine({
   claims: claimMetadata = [],
   readableText,
   onProgress = null,
+  evidenceOptions = {},
 }) {
   const evidenceRunStartedAtMs = Date.now();
   logger.log("🟣 [runEvidenceEngine] Starting evidence run…");
@@ -490,7 +518,15 @@ export async function runEvidenceEngine({
     logger.log(`🚫 [Evidence] Will skip task URL as reference: ${taskUrl}`);
   }
 
-  const bearingConfig = await loadBearingGatingConfig({ query });
+  const loadedBearingConfig = await loadBearingGatingConfig({ query });
+  const bearingConfig = {
+    ...loadedBearingConfig,
+    ...(evidenceOptions.bearingConfig || {}),
+    perClaimLimits: {
+      ...(loadedBearingConfig.perClaimLimits || {}),
+      ...(evidenceOptions.bearingConfig?.perClaimLimits || {}),
+    },
+  };
   const searchGatewayConfig = await loadSearchGatewayConfig({ query });
   const searchGateway = createEvidenceRetrievalGateway({ config: searchGatewayConfig });
 
@@ -916,12 +952,10 @@ export async function runEvidenceEngine({
             if (isPdf) {
               logger.log(`📄 [Evidence] Detected PDF (Content-Type: ${contentType}), extracting text...`);
               try {
-                const pdfParse = (await import('pdf-parse')).default;
                 const pdfParseDirect = (await import('pdf-parse/lib/pdf-parse.js')).default;
                 const buffer = await resp.arrayBuffer();
                 const parsed = await extractPdfTextWithFallback(Buffer.from(buffer), {
-                  primaryParser: pdfParse,
-                  fallbackParser: pdfParseDirect,
+                  primaryParser: pdfParseDirect,
                 });
 
                 let fullText = (parsed.text || "").replace(/\r/g, "");
@@ -1587,7 +1621,7 @@ export async function runEvidenceEngine({
     enableBearingPacket: bearingConfig.enableBearingPacket,
     enableBearingPacketLive: bearingConfig.enableBearingPacketLive,
     bearingConfig,
-    maxSnippetCandidatesPerClaim: bearingConfig.maxSnippetCandidatesPerClaim,
+    maxSnippetCandidatesPerClaim: evidenceOptions.maxSnippetCandidatesPerClaim ?? bearingConfig.maxSnippetCandidatesPerClaim,
     maxSourcesToScrapePerTarget: searchGatewayConfig.maxSourcesToScrapePerTarget,
     enableInternal: true,
     enableWeb: true,
@@ -1598,18 +1632,18 @@ export async function runEvidenceEngine({
     enableRedTeam: false,
 
     // Apply mode-specific config (or fallback to defaults)
-    queriesPerClaim: bearingConfig.enableBearingGating ? 9 : Math.min(modeConfig.queriesPerClaim || 6, 3),
-    topKQueries: bearingConfig.enableBearingGating ? 9 : Math.min(modeConfig.queriesPerClaim || 6, 3),
-    topKCandidates: bearingConfig.enableBearingGating ? 12 : Math.min(modeConfig.topKCandidates || modeConfig.queriesPerClaim || 6, 9),
+    queriesPerClaim: evidenceOptions.queriesPerClaim ?? (bearingConfig.enableBearingGating ? 9 : Math.min(modeConfig.queriesPerClaim || 6, 3)),
+    topKQueries: evidenceOptions.topKQueries ?? (bearingConfig.enableBearingGating ? 9 : Math.min(modeConfig.queriesPerClaim || 6, 3)),
+    topKCandidates: evidenceOptions.topKCandidates ?? (bearingConfig.enableBearingGating ? 12 : Math.min(modeConfig.topKCandidates || modeConfig.queriesPerClaim || 6, 9)),
     maxEvidencePerDoc: 2,
     maxEvidenceCandidates: Math.min(modeConfig.maxEvidenceCandidates || 4, 9),
-    maxSearchTargetsPerClaim: bearingConfig.enableBearingGating ? 9 : 3,
-    maxSourcesComparedPerClaim: bearingConfig.enableBearingGating ? 20 : 9,
-    topKPerIntent: bearingConfig.enableBearingGating ? 8 : 4,
+    maxSearchTargetsPerClaim: evidenceOptions.maxSearchTargetsPerClaim ?? (bearingConfig.enableBearingGating ? 9 : 3),
+    maxSourcesComparedPerClaim: evidenceOptions.maxSourcesComparedPerClaim ?? (bearingConfig.enableBearingGating ? 20 : 9),
+    topKPerIntent: evidenceOptions.topKPerIntent ?? (bearingConfig.enableBearingGating ? 8 : 4),
     maxRetriesPerClaim: 1,
 
     // Mode-specific settings
-    enableFringeSearch: modeConfig.enableFringeSearch || false,
+    enableFringeSearch: evidenceOptions.enableFringeSearch ?? (modeConfig.enableFringeSearch || false),
     topKFringeQueries: modeConfig.topKFringeQueries || 3,
     topKFringeCandidates: modeConfig.topKFringeCandidates || 3,
     maxFringeEvidenceCandidates: modeConfig.maxFringeEvidenceCandidates || 2,
@@ -1632,10 +1666,10 @@ export async function runEvidenceEngine({
     //   E. Post-bearing selection           — the EXISTING caps (maxEvidenceCandidates,
     //      getPerClaimBearingLimit(), maxSourcesComparedPerClaim, globalScrapeLimitPerContent)
     //      apply only AFTER bearing.
-    maxPreBearingCandidatesPerClaim: modeConfig.maxPreBearingCandidatesPerClaim || 50,
-    maxLlmBearingCandidatesPerClaim: modeConfig.maxLlmBearingCandidatesPerClaim || 12,
-    maxCandidatesPerPurposeLane: modeConfig.maxCandidatesPerPurposeLane || 10,
-    maxVerifiedDocumentCandidates: modeConfig.maxVerifiedDocumentCandidates || 8,
+    maxPreBearingCandidatesPerClaim: evidenceOptions.maxPreBearingCandidatesPerClaim ?? modeConfig.maxPreBearingCandidatesPerClaim ?? 50,
+    maxLlmBearingCandidatesPerClaim: evidenceOptions.maxLlmBearingCandidatesPerClaim ?? modeConfig.maxLlmBearingCandidatesPerClaim ?? 12,
+    maxCandidatesPerPurposeLane: evidenceOptions.maxCandidatesPerPurposeLane ?? modeConfig.maxCandidatesPerPurposeLane ?? 10,
+    maxVerifiedDocumentCandidates: evidenceOptions.maxVerifiedDocumentCandidates ?? modeConfig.maxVerifiedDocumentCandidates ?? 8,
     // Snippet-bearing robustness: split the per-claim LLM budget into small
     // per-target sub-batches so one timeout cannot collapse the whole claim.
     maxCandidatesPerTargetBatch: modeConfig.maxCandidatesPerTargetBatch || 6,
@@ -1644,6 +1678,7 @@ export async function runEvidenceEngine({
     repairAudit,
     onProgress: reportProgress,
     onSourceProcessed,
+    candidatePlanOnly: evidenceOptions.candidatePlanOnly === true,
   };
 
   // ═══════════════════════════════════════════════════════════════════
@@ -1658,6 +1693,9 @@ export async function runEvidenceEngine({
 
   const results = await engine.run(claims, buildEvidenceQueryContexts(claims), runOptions);
   for (const result of results) repairAudit.recordEngineResult(result);
+  const candidatePlans = results
+    .map((result) => result?.candidatePlan)
+    .filter(Boolean);
 
   // Build confidence map: claimIndex → confidence
   const claimConfidenceMap = new Map();
@@ -1964,6 +2002,7 @@ export async function runEvidenceEngine({
     failedCandidates, // For UI to display as "scrape manually" options
     claimConfidenceMap, // Map of claimIndex → confidence for persistAIResults
     queryPlan: queryPlanTrace, // Machine-readable per-target query plan for evidence debugging
+    candidatePlans,
     repairAudit,
     claimProgress,
     ...(bearingConfig.enableBearingPacket ? { evidencePackets } : {}),

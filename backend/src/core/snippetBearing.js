@@ -214,6 +214,73 @@ function overlapScore(terms, normalizedText, tokenSet, stemSet, { phraseBonus = 
   return clamp01(matched / cleanTerms.length + Math.min(0.3, bonus));
 }
 
+function normalizeCriteriaList(value, limit = 12) {
+  return [...new Set((Array.isArray(value) ? value : [])
+    .map((item) => String(item || "").replace(/\s+/g, " ").trim())
+    .filter(Boolean))]
+    .slice(0, limit);
+}
+
+function targetCriteriaForCandidate(evidenceNeed = {}, candidate = {}) {
+  if (candidate.bearingCriteria) return candidate.bearingCriteria;
+  const candidateTargetId = String(candidate.evidenceTargetId || "");
+  const targets = Array.isArray(evidenceNeed.evidenceTargets) ? evidenceNeed.evidenceTargets : [];
+  const target = targets.find((item) =>
+    candidateTargetId && String(item.evaluationTargetId || item.evidenceTargetId || item.id || "") === candidateTargetId
+  );
+  return target?.bearingCriteria || null;
+}
+
+function scoreBearingCriteria(criteria = null, normalizedText, tokenSet, stemSet) {
+  if (!criteria || typeof criteria !== "object") {
+    return {
+      mustScore: null,
+      shouldScore: null,
+      rejectIfOnlyScore: null,
+      weak: false,
+      adjustment: 0,
+      decisiveReject: false,
+      reasons: [],
+    };
+  }
+  const must = normalizeCriteriaList(criteria.mustMatch);
+  const should = normalizeCriteriaList(criteria.shouldMatch);
+  const rejectIfOnly = normalizeCriteriaList(criteria.rejectIfOnly);
+  const mustScore = must.length ? overlapScore(must, normalizedText, tokenSet, stemSet, { phraseBonus: true }) : null;
+  const shouldScore = should.length ? overlapScore(should, normalizedText, tokenSet, stemSet, { phraseBonus: true }) : null;
+  const rejectScore = rejectIfOnly.length ? overlapScore(rejectIfOnly, normalizedText, tokenSet, stemSet, { phraseBonus: true }) : null;
+  const mustMissing = must.length > 0 && mustScore < 0.34;
+  const rejectOnly = rejectIfOnly.length > 0 && rejectScore >= 0.5 && (must.length === 0 || mustScore < 0.34);
+  const weak = Boolean(criteria.weak);
+  const reasons = [];
+  let adjustment = 0;
+  if (mustMissing) {
+    adjustment -= 0.22;
+    reasons.push("mustMatch_missing_or_weak");
+  }
+  if (shouldScore !== null && shouldScore >= 0.34) {
+    adjustment += Math.min(0.18, shouldScore * 0.18);
+    reasons.push("shouldMatch_present");
+  }
+  if (rejectOnly) {
+    adjustment -= 0.35;
+    reasons.push("rejectIfOnly_without_mustMatch");
+  }
+  if (weak) {
+    adjustment -= 0.08;
+    reasons.push("weak_target");
+  }
+  return {
+    mustScore,
+    shouldScore,
+    rejectIfOnlyScore: rejectScore,
+    weak,
+    adjustment,
+    decisiveReject: rejectOnly,
+    reasons,
+  };
+}
+
 function scopeAlignment(scopeTerms, normalizedText, tokenSet, stemSet) {
   if (!scopeTerms?.length) return 0.5;
   return overlapScore(scopeTerms, normalizedText, tokenSet, stemSet, { phraseBonus: true });
@@ -318,6 +385,12 @@ export function scoreSnippetBearingDeterministic(evidenceNeed = {}, candidate = 
   const mustInclude = overlapScore(evidenceNeed.mustIncludeTerms, normalizedText, tokenSet, stemSet, { phraseBonus: true });
   const attributionOrCausal = attributionOrCausalAlignment(evidenceNeed, normalizedText, tokenSet, stemSet);
   const targetFit = targetFitScore(evidenceNeed.evidenceTargets, normalizedText);
+  const criteriaScore = scoreBearingCriteria(
+    targetCriteriaForCandidate(evidenceNeed, candidate),
+    normalizedText,
+    tokenSet,
+    stemSet,
+  );
   const deterministicConfidence = deterministicCoverageConfidence({
     evidenceNeed,
     subject,
@@ -368,6 +441,8 @@ export function scoreSnippetBearingDeterministic(evidenceNeed = {}, candidate = 
       score = Math.max(score, 0.15);
     }
   }
+  score = round4(score + criteriaScore.adjustment);
+  if (criteriaScore.decisiveReject) score = Math.min(score, 0.14);
   const components = {
     subject: round4(subject),
     relation: round4(relation),
@@ -376,6 +451,15 @@ export function scoreSnippetBearingDeterministic(evidenceNeed = {}, candidate = 
     mustInclude: round4(mustInclude),
     attributionOrCausal: round4(attributionOrCausal),
     targetFit: round4(targetFit),
+    bearingCriteria: {
+      mustMatch: criteriaScore.mustScore === null ? null : round4(criteriaScore.mustScore),
+      shouldMatch: criteriaScore.shouldScore === null ? null : round4(criteriaScore.shouldScore),
+      rejectIfOnly: criteriaScore.rejectIfOnlyScore === null ? null : round4(criteriaScore.rejectIfOnlyScore),
+      weak: criteriaScore.weak,
+      adjustment: round4(Math.abs(criteriaScore.adjustment)) * Math.sign(criteriaScore.adjustment || 0),
+      decisiveReject: criteriaScore.decisiveReject,
+      reasons: criteriaScore.reasons,
+    },
     topicOnlyPenalty,
     genericPagePenalty,
     noClaimPenalty,
@@ -391,9 +475,9 @@ export function scoreSnippetBearingDeterministic(evidenceNeed = {}, candidate = 
     score,
     confidence: round4(deterministicConfidence),
     components,
-    wouldScrape: score >= minBearingToScrape,
-    decision: score >= minBearingToScrape ? "scrape" : score >= 0.15 ? "maybe" : "skip",
-    reason: `Strongest components: ${strongest || "none"}; penalties=${round4(penalties)}${score > rawScore ? `; floor_applied: raw=${rawScore}` : ""}.`,
+    wouldScrape: score >= minBearingToScrape && !criteriaScore.decisiveReject,
+    decision: criteriaScore.decisiveReject ? "skip" : score >= minBearingToScrape ? "scrape" : score >= 0.15 ? "maybe" : "skip",
+    reason: `Strongest components: ${strongest || "none"}; penalties=${round4(penalties)}; criteria=${criteriaScore.reasons.join("|") || "none"}${score > rawScore ? `; floor_or_criteria_applied: raw=${rawScore}` : ""}.`,
     method: BEARING_SHADOW_METHOD,
     configVersion: BEARING_SHADOW_CONFIG_VERSION,
   };
@@ -487,6 +571,7 @@ function buildSnippetCandidatePayload(candidates, maxCandidates) {
     searchIntent: candidate.searchIntent || null,
     stanceGoal: candidate.stanceGoal || null,
     evidenceTargetType: candidate.evidenceTargetType || null,
+    bearingCriteria: candidate.bearingCriteria || null,
     deterministicBearingScore: candidate.deterministicBearingScore ?? null,
     deterministicComponents: candidate.deterministicBearingComponents || null,
   }));
@@ -860,8 +945,9 @@ function logSnippetBearingResults({ taskContentId, claim, candidates }) {
     deterministicBearingScore: candidate.deterministicBearingScore ?? null,
     llmBearingScore: candidate.llmBearingScore ?? candidate.llmBearingPreScore ?? null,
     finalBearingScore: candidate.bearingPreScore ?? null,
-    finalBearingLabel: candidate.expectedStance || null,
-    fallbackUsed: Boolean(candidate.fallbackUsed),
+      finalBearingLabel: candidate.expectedStance || null,
+      bearingCriteria: candidate.bearingCriteria || candidate.deterministicBearingComponents?.bearingCriteria || null,
+      fallbackUsed: Boolean(candidate.fallbackUsed),
     fallbackReason: candidate.fallbackReason || null,
     attributionOnly: Boolean(candidate.deterministicAttributionOnly),
     allegationRepetition: Boolean(candidate.deterministicAllegationRepetition),
@@ -958,6 +1044,7 @@ export function buildBearingShadowLogRecord({ taskContentId = null, claim, candi
     searchIntent: candidate?.searchIntent || null,
     matchedPart: candidate?.matchedPart || null,
     evidenceTargetType: candidate?.evidenceTargetType || null,
+    bearingCriteria: candidate?.bearingCriteria || null,
     stanceGoal: candidate?.stanceGoal || null,
     deterministicBearingScore: candidate?.deterministicBearingScore ?? null,
     deterministicBearingConfidence: candidate?.deterministicBearingConfidence ?? null,

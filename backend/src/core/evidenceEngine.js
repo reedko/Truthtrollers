@@ -19,6 +19,7 @@ import {
 import { canonicalizeUrl } from "../utils/canonicalizeUrl.js";
 import { buildEvidencePacket } from "./evidencePacketBuilder.js";
 import {
+  tokenizeBearingText,
   queryPreservesNumericScope,
   validateEvidenceTargetQuery,
 } from "./evidenceNeed.js";
@@ -75,6 +76,72 @@ function dedupe(arr, keyFn) {
     }
   }
   return out;
+}
+
+const STUDY_REFINEMENT_STOPWORDS = new Set([
+  "about", "after", "agency", "autism", "before", "behind", "candidate", "claims",
+  "data", "document", "evidence", "facts", "hidden", "journal", "linked", "linking",
+  "measles", "mumps", "paper", "questioned", "research", "rubella", "study", "that",
+  "their", "timing", "vaccination", "vaccinations", "vaccine", "vaccines", "with",
+]);
+
+function candidateText(candidate = {}) {
+  return [
+    candidate.title,
+    candidate.snippet,
+    candidate.searchSnippet,
+    candidate.bearingText,
+  ].filter(Boolean).join(" ");
+}
+
+function extractCandidateStudyAnchors(candidates = [], claim = {}) {
+  const studyLike = candidates.filter((candidate) => {
+    const lane = normalizePurposeLane(candidate.purposeLane || candidate.retrievalPurpose, DEFAULT_PURPOSE_LANE);
+    const text = candidateText(candidate);
+    return lane === "study_identity" || /\b(?:study|paper|journal|reanalysis|analysis|doi|pmid|pubmed|pediatrics)\b/i.test(text);
+  });
+  const text = studyLike.slice(0, 12).map(candidateText).join(" ");
+  if (!text) return [];
+  const years = [...text.matchAll(/\b(?:19|20)\d{2}\b/g)].map((match) => match[0]);
+  const titleCase = [...text.matchAll(/\b[A-Z][a-z]{3,}(?:\s+[A-Z][a-z]{3,}){0,2}\b/g)]
+    .map((match) => match[0])
+    .filter((value) => !/\b(?:The|This|That|When|Where|Journal|Download|Congressional|Record|State|Health|Children|Family|Facts)\b/.test(value));
+  const journalish = [...text.matchAll(/\b(?:Pediatrics|PubMed|Translational Neurodegeneration|Journal of [A-Z][A-Za-z ]+)\b/g)]
+    .map((match) => match[0]);
+  const claimAnchors = [
+    claim.speakerEntity,
+    claim.evidenceNeed?.speakerEntity,
+    ...(claim.evidenceNeed?.mustIncludeTerms || []),
+    ...(claim.evidenceNeed?.subjectTerms || []).slice(0, 5),
+  ];
+  const tokens = tokenizeBearingText(text)
+    .filter((token) => token.length > 4 && !STUDY_REFINEMENT_STOPWORDS.has(token))
+    .slice(0, 20);
+  return dedupe([
+    ...claimAnchors,
+    ...years,
+    ...journalish,
+    ...titleCase,
+    ...tokens,
+    "reanalysis",
+  ].filter(Boolean), (value) => String(value).toLowerCase()).slice(0, 10);
+}
+
+function buildCandidateDiscoveredStudyQueries(candidates = [], claim = {}) {
+  const anchors = extractCandidateStudyAnchors(candidates, claim);
+  const required = new Set((claim.evidenceNeed?.mustIncludeTerms || []).flatMap(tokenizeBearingText));
+  const hasClaimOverlap = anchors.some((anchor) => tokenizeBearingText(anchor).some((token) => required.has(token)));
+  if (anchors.length < 4 || !hasClaimOverlap) return [];
+  const year = anchors.find((anchor) => /\b(?:19|20)\d{2}\b/.test(anchor)) || "";
+  const person = claim.speakerEntity || claim.evidenceNeed?.speakerEntity || "";
+  const journal = anchors.find((anchor) => /\b(?:Pediatrics|PubMed|Journal|Neurodegeneration)\b/i.test(anchor)) || "";
+  const distinctive = anchors
+    .filter((anchor) => anchor !== person && anchor !== year && anchor !== journal)
+    .slice(0, 6);
+  return dedupe([
+    [person, year, journal, ...distinctive.slice(0, 4), "study"].filter(Boolean).join(" "),
+    [person, ...distinctive.slice(0, 5), "reanalysis"].filter(Boolean).join(" "),
+  ], (query) => query.toLowerCase()).filter((query) => tokenizeBearingText(query).length >= 4).slice(0, 2);
 }
 
 export class EvidenceEngine {
@@ -161,6 +228,102 @@ export class EvidenceEngine {
     this._canonicalSourceRequests = new Map();
   }
 
+  _buildCandidatePlan({ plan, selectedCandidates = [], allocation = null }) {
+    const selectedKeys = new Set(selectedCandidates.map((candidate) =>
+      canonicalizeUrl(candidate?.url) || candidate?.url || candidate?.id || ""
+    ));
+    const rankedKeys = new Set();
+    const rows = [];
+    const rankSource = Array.isArray(plan.rankedCandidates) && plan.rankedCandidates.length
+      ? plan.rankedCandidates
+      : plan.mergedCandidates || plan.prepared?.candidates || [];
+    for (const candidate of rankSource) {
+      const key = canonicalizeUrl(candidate?.url) || candidate?.url || candidate?.id || "";
+      if (!key || rankedKeys.has(key)) continue;
+      rankedKeys.add(key);
+      const role = deriveVerifiedDocumentRole(candidate);
+      const decision = (plan.decisions || []).find((item) => {
+        const itemKey = canonicalizeUrl(item.candidate?.url) || item.candidate?.url || item.candidate?.id || "";
+        return itemKey === key;
+      });
+      rows.push({
+        rank: rows.length + 1,
+        wouldScrape: selectedKeys.has(key),
+        scrapeReason: selectedKeys.has(key)
+          ? candidate.gatingSelectionReason || decision?.reason || "selected"
+          : decision?.reason || candidate.gatingSelectionReason || "not_selected",
+        canonicalUrl: key,
+        url: candidate.url || candidate.id || "",
+        title: candidate.title || "",
+        provider: candidate.provider || candidate.source || "",
+        query: candidate.query || "",
+        purposeLane: candidate.purposeLane || candidate.retrievalPurpose || "",
+        evidenceLaneId: candidate.evidenceLaneId || null,
+        evidenceTargetId: candidate.evidenceTargetId || null,
+        evidenceTargetType: candidate.evidenceTargetType || null,
+        bearingRequirement: candidate.bearingRequirement || null,
+        providerScore: Number.isFinite(Number(candidate.score)) ? Number(candidate.score) : null,
+        retrievalPromiseScore: Number.isFinite(Number(candidate.retrievalPromiseScore))
+          ? Number(candidate.retrievalPromiseScore)
+          : null,
+        retrievalPromiseLane: candidate.retrievalPromiseLane || null,
+        retrievalPromiseReasons: candidate.retrievalPromiseReasons || [],
+        deterministicBearingScore: Number.isFinite(Number(candidate.deterministicBearingScore))
+          ? Number(candidate.deterministicBearingScore)
+          : null,
+        llmBearingScore: Number.isFinite(Number(candidate.llmBearingPreScore))
+          ? Number(candidate.llmBearingPreScore)
+          : null,
+        bearingPreScore: Number.isFinite(Number(candidate.bearingPreScore))
+          ? Number(candidate.bearingPreScore)
+          : null,
+        expectedStance: candidate.expectedStance || null,
+        bearingType: candidate.bearingType || null,
+        claimComponentAddressed: candidate.claimComponentAddressed || null,
+        verifiedDocumentRole: role?.role || null,
+        verifiedDocument: Boolean(role?.verified),
+        protectedDocumentIdentity: Boolean(candidate.protectedDocumentIdentity),
+        academicApiBacked: Boolean(candidate.academicApiContent?.apiBacked),
+        bearingTextSource: candidate.bearingTextSource || (candidate.bearingText ? "bearing_text" : "search_snippet"),
+        bearingTextChars: String(candidate.bearingText || candidate.snippet || "").length,
+        snippet: String(candidate.bearingText || candidate.snippet || "").replace(/\s+/g, " ").trim().slice(0, 1000),
+      });
+    }
+    return {
+      claimId: plan.claim?.id ?? null,
+      claimText: plan.claim?.text || "",
+      evidenceNeed: plan.claim?.evidenceNeed || null,
+      evaluationTargets: (plan.claim?.evaluationTargets || []).map((target) => ({
+        id: target.id || target.evidenceTargetId || null,
+        targetText: target.targetText || target.text || target.queryText || "",
+        targetType: target.targetType || target.type || null,
+        evidenceTargetType: target.evidenceTargetType || null,
+        retrievalPurpose: target.retrievalPurpose || target.purposeLane || null,
+        bearingRequirement: target.bearingRequirement || null,
+        bearingCriteria: target.bearingCriteria || null,
+        weakBearing: target.weakBearing || null,
+        searchEligible: target.searchEligible !== false,
+      })),
+      queries: (plan.prepared?.queries || []).map((query) => ({
+        query: query.query || query.queryText || "",
+        purposeLane: query.purposeLane || query.retrievalPurpose || "",
+        evidenceLaneId: query.evidenceLaneId || null,
+        evidenceTargetId: query.evidenceTargetId || null,
+        evidenceTargetType: query.evidenceTargetType || null,
+        reasonForQuery: query.reasonForQuery || "",
+        bearingCriteria: query.bearingCriteria || null,
+        weakBearing: query.weakBearing || null,
+        queryExpansionSourceClaimIds: query.queryExpansionSourceClaimIds || [],
+        queryExpansionAudit: query.queryExpansionAudit || null,
+      })),
+      candidateCount: plan.mergedCandidates?.length || plan.prepared?.candidates?.length || rows.length,
+      rankedCandidateCount: rows.length,
+      wouldScrapeCount: rows.filter((row) => row.wouldScrape).length,
+      globalBudgetRemaining: allocation?.remainingUniqueSlots ?? null,
+      candidates: rows,
+    };
+  }
+
   async generateQueries(claim, ctx, n = 6, searchMode = null) {
     const label = `[EV][queries][${claim.id}]`;
     logger.time(label);
@@ -185,6 +348,10 @@ export class EvidenceEngine {
           evidenceTargetId: target.evidenceTargetId || null,
           evidenceTargetType: target.evidenceTargetType || "other",
           bearingRequirement: target.bearingRequirement || "direct_truth_value",
+          bearingCriteria: target.bearingCriteria || null,
+          weakBearing: Boolean(target.weakBearing),
+          queryExpansionSourceClaimIds: target.queryExpansionSourceClaimIds || [],
+          queryExpansionAudit: target.queryExpansionAudit || null,
         };
       }).filter((query) => String(query.query || "").trim()),
       (query) => String(query.query || "").trim().toLowerCase(),
@@ -332,6 +499,10 @@ export class EvidenceEngine {
         evidenceTargetId: persistedTargetId || target.id || q.evidenceTargetId || null,
         evidenceTargetType: q.evidenceTargetType || target.evidenceTargetType || "other",
         bearingRequirement: q.bearingRequirement || target.bearingRequirement || "direct_truth_value",
+        bearingCriteria: q.bearingCriteria || target.bearingCriteria || null,
+        weakBearing: Boolean(q.weakBearing || target.weakBearing),
+        queryExpansionSourceClaimIds: q.queryExpansionSourceClaimIds || target.queryExpansionSourceClaimIds || [],
+        queryExpansionAudit: q.queryExpansionAudit || target.queryExpansionAudit || null,
       };
     }).filter((query) => {
       if (!String(query.query || "").trim()) return false;
@@ -398,6 +569,10 @@ export class EvidenceEngine {
         evidenceLaneId: query.evidenceLaneId,
         evidenceTargetType: query.evidenceTargetType,
         bearingRequirement: query.bearingRequirement,
+        bearingCriteria: query.bearingCriteria || null,
+        weakBearing: Boolean(query.weakBearing),
+        queryExpansionSourceClaimIds: query.queryExpansionSourceClaimIds || [],
+        queryExpansionAudit: query.queryExpansionAudit || null,
         preservesNumericScope: queryPreservesNumericScope(claim.evidenceNeed, query.query),
       })),
     })}`);
@@ -553,6 +728,10 @@ export class EvidenceEngine {
         evidenceTargetId: q.evidenceTargetId || null,
         evidenceLaneId: q.evidenceLaneId || null,
         bearingRequirement: q.bearingRequirement || null,
+        bearingCriteria: q.bearingCriteria || null,
+        weakBearing: Boolean(q.weakBearing),
+        queryExpansionSourceClaimIds: q.queryExpansionSourceClaimIds || [],
+        queryExpansionAudit: q.queryExpansionAudit || null,
         retrievalContext: retrievalContextForTarget(claim, q.evidenceTargetId),
       }));
     });
@@ -602,6 +781,10 @@ export class EvidenceEngine {
         evidenceLaneId: c.evidenceLaneId || null,
         evidenceTargetType: c.evidenceTargetType || null,
         bearingRequirement: c.bearingRequirement || null,
+        bearingCriteria: c.bearingCriteria || null,
+        weakBearing: Boolean(c.weakBearing),
+        queryExpansionSourceClaimIds: c.queryExpansionSourceClaimIds || [],
+        queryExpansionAudit: c.queryExpansionAudit || null,
         snippet: c.snippet || null,
         bearingTextSource: c.bearingTextSource || null,
       };
@@ -620,6 +803,61 @@ export class EvidenceEngine {
     best.clear();
     for (const candidate of enrichedAcademic) {
       best.set(candidate.id || candidate.url || `${candidate.source}:${candidate.title}`, candidate);
+    }
+
+    const studyRefinementQueries = buildCandidateDiscoveredStudyQueries([...best.values()], claim);
+    if (studyRefinementQueries.length && opt.enableWeb !== false) {
+      const purposeProviders = providersForProfile("study_identity", this.deps.search.providerEnabled || {});
+      logger.log(`[CANDIDATE_STUDY_REFINEMENT] ${JSON.stringify({
+        event: "candidate_discovered_study_refinement",
+        claimId: claim.id,
+        queries: studyRefinementQueries,
+      })}`);
+      for (const refinementQuery of studyRefinementQueries) {
+        try {
+          const found = await this.deps.search.web({
+            query: refinementQuery,
+            topK: Math.min(5, topK),
+            ...(purposeProviders.length ? { providers: purposeProviders } : {}),
+            retrievalContext: claim.retrievalContext || null,
+          });
+          const tagged = (found || []).map((candidate) => ({
+            ...candidate,
+            retrievalPurpose: "study_identity",
+            purposeLane: "study_identity",
+            providerProfile: "study_identity",
+            searchIntent: NEUTRAL_INTENT,
+            matchedPart: "candidate_discovered_study_anchor",
+            query: refinementQuery,
+            stanceGoal: NEUTRAL_STANCE_GOAL,
+            evidenceTargetType: "original_study",
+            bearingRequirement: "warrant_test",
+            candidateDiscoveredStudyRefinement: true,
+          }));
+          const enriched = await enrichAcademicCandidates(tagged);
+          for (const candidate of enriched) {
+            const id = candidate.id || candidate.url || `${candidate.source}:${candidate.title}`;
+            const occurrence = {
+              query: refinementQuery,
+              provider: candidate.provider || candidate.source || null,
+              providerScore: Number.isFinite(Number(candidate.score)) ? Number(candidate.score) : null,
+              purposeLane: "study_identity",
+              searchIntent: NEUTRAL_INTENT,
+              stanceGoal: NEUTRAL_STANCE_GOAL,
+              evidenceTargetType: "original_study",
+              bearingRequirement: "warrant_test",
+              snippet: candidate.snippet || null,
+              bearingTextSource: candidate.bearingTextSource || null,
+              candidateDiscoveredStudyRefinement: true,
+            };
+            const next = { ...candidate, targetProvenance: [occurrence], retrievalProvenance: [occurrence] };
+            const prev = best.get(id);
+            best.set(id, prev ? mergeCanonicalOccurrence(prev, next) : next);
+          }
+        } catch (err) {
+          logger.warn(`[CANDIDATE_STUDY_REFINEMENT] failed for claim ${claim.id}: ${err.message}`);
+        }
+      }
     }
 
     // Preserve a bounded UNION of plausible candidates. We no longer trim by
@@ -1597,6 +1835,43 @@ TASK:
       remainingUniqueSlots: allocation.remainingUniqueSlots,
       configVersion: config.version,
     })}`);
+
+    if (opt.candidatePlanOnly) {
+      for (const plan of plans) {
+        const selectedCandidates = plan.selectedCandidates || [];
+        logBearingGatingAudit({
+          taskContentId: opt.taskContentId || null,
+          claim: plan.claim,
+          candidates: plan.mergedCandidates,
+          selectedCandidates,
+          decisions: plan.decisions,
+        });
+        results[plan.prepared.index] = {
+          claim: plan.claim,
+          context: plan.prepared.context,
+          meta: undefined,
+          queries: plan.prepared.queries,
+          candidates: plan.prepared.candidates,
+          selectedCandidates,
+          evidence: [],
+          adjudication: {
+            claimId: plan.claim.id,
+            finalVerdict: "insufficient",
+            confidence: 0.15,
+            rationale: "Candidate-plan-only run stopped before source scraping.",
+            evidenceIds: [],
+            counters: [],
+            unresolved_search_failed: true,
+          },
+          fringeQueries: [],
+          fringeCandidates: [],
+          fringeEvidence: [],
+          candidatePlan: this._buildCandidatePlan({ plan, selectedCandidates, allocation }),
+        };
+      }
+      logger.log("🧭 [Evidence] Candidate-plan-only run complete; skipping source scraping");
+      return results;
+    }
 
     const occurrences = [];
     const adaptivePlansForExtraction = [];

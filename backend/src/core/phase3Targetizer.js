@@ -832,6 +832,139 @@ function enrichTargetsWithExpansion(finalTargets, expansionByClaimId) {
   }
 }
 
+// ---- described-study identity descriptor (Tier 1, generic) -----------------
+// When a claim references a study/report/dataset by DESCRIPTION but does not
+// NAME it (no title/author/journal in the article), the study_identity target
+// otherwise ships a placeholder query. Here we synthesize a deterministic,
+// fixture-agnostic study descriptor from the claim's own extracted structured
+// fields + a publication year mined from same-cluster siblings. This gives the
+// evidence engine a crisp "actor org year substance outcome study" identity
+// query BEFORE search, and seeds study_title/study_year/studiesOrDocuments so
+// the engine's own resolver (studyIdentityDiscovery) starts warm instead of
+// rediscovering these terms mid-scrape. No study is named here — the resolver
+// still fills the real title/authors/identifier afterward.
+//
+// Generic English function words + common reporting verbs only — NEVER
+// fixture-specific entity names (no actor/agency/substance literals).
+const DESCRIPTOR_STOP = new Set([
+  "data", "study", "studies", "report", "reports", "analysis", "result", "results",
+  "evidence", "research", "finding", "findings", "record", "records", "document",
+  "the", "a", "an", "and", "or", "of", "to", "in", "on", "by", "as", "at", "it",
+  "was", "were", "is", "are", "be", "been", "being", "had", "has", "have", "that",
+  "this", "these", "those", "their", "its", "from", "with", "for", "who", "which",
+  "they", "them", "into", "then", "than", "when", "after", "before", "over", "under",
+  "linking", "linked", "showed", "shown", "revealed", "conducted", "released",
+  "ordered", "destroy", "destroyed", "reworked", "manipulated", "suppressed",
+  "claim", "claimed", "alleged", "said", "stated", "reported", "disclosed",
+  "agency", "officials", "official", "scientist", "scientists", "whistleblower",
+  "vaccine", "vaccines", "years", "year", "later", "earlier", "privately",
+]);
+
+// Pull 4-digit years that sit in the same sentence as a study-class noun (i.e.
+// a publication/study year, not an incidental date).
+function studyYearsFromText(text) {
+  const out = [];
+  for (const sentence of String(text || "").split(/[.!?]+/)) {
+    if (YEAR_PUBLICATION_RE.test(sentence)) {
+      for (const y of sentence.match(/\b(?:19|20)\d{2}\b/g) || []) out.push(y);
+    }
+  }
+  return out;
+}
+
+// Build a described-study descriptor from a claim + its same-cluster siblings.
+// Returns null unless there is genuine study context AND a discriminating
+// identity anchor (a named actor or a publication year), so generic thesis
+// claims never get a spurious study identity.
+function describedStudyDescriptor(claim, clusterSiblings = []) {
+  const actors = uniq([...(claim.namedActors || []), claim.speakerOrSource]);
+  const orgs = uniq(claim.namedOrganizations);
+  const substances = uniq(claim.namedSubstancesOrProducts);
+  const anchors = uniq(claim.clusterAnchors);
+
+  const yearText = [claim, ...clusterSiblings]
+    .map((c) => `${c.visibleClaimText || ""} ${c.canonicalExcerpt || ""}`)
+    .join(" . ");
+  const numYears = (claim.numbersOrStatistics || [])
+    .map((n) => String(n).trim())
+    .filter((n) => /^(?:19|20)\d{2}$/.test(n));
+  const year = uniq([...studyYearsFromText(yearText), ...numYears])[0] || "";
+
+  // Bounded, generic outcome/topic tokens from the substantive proposition:
+  // content words not already captured by an entity/substance and not stopwords.
+  const covered = new Set(
+    [...actors, ...orgs, ...substances].flatMap((p) => String(p).toLowerCase().split(/\s+/))
+  );
+  const outcome = [];
+  for (const tok of String(claim.embeddedSubstantiveClaim || claim.visibleClaimText || "")
+    .toLowerCase().match(/\b[a-z][a-z-]{3,}\b/g) || []) {
+    if (DESCRIPTOR_STOP.has(tok) || covered.has(tok) || outcome.includes(tok)) continue;
+    outcome.push(tok);
+    if (outcome.length >= 3) break;
+  }
+
+  const hasStudyContext = STUDY_TERM_RE.test(
+    `${claim.visibleClaimText || ""} ${claim.canonicalExcerpt || ""} ${clusterSiblings
+      .map((c) => `${c.visibleClaimText || ""} ${c.canonicalExcerpt || ""}`).join(" ")}`
+  );
+  const hasIdentityAnchor = actors.length > 0 || !!year;
+  const tokens = uniq([...actors, ...orgs, year, ...substances, ...anchors, ...outcome]);
+  if (!hasStudyContext || !hasIdentityAnchor || tokens.length < 3) return null;
+  return { descriptor: [...tokens, "study"].join(" "), year, tokens };
+}
+
+/**
+ * Seed study_identity targets with a described-study descriptor + publication
+ * year so the query/persistence carries a concrete study handle BEFORE search.
+ * Runs after cleanup/expansion so it can lead the (possibly expanded) query.
+ */
+function enrichStudyIdentityDescriptors(finalTargets, input, idField) {
+  const claimById = new Map();
+  const byCluster = new Map();
+  for (const c of input) {
+    const id = c[idField] || c.claimId;
+    if (!id) continue;
+    claimById.set(id, c);
+    const cl = c.phase2ClusterId;
+    if (cl) {
+      if (!byCluster.has(cl)) byCluster.set(cl, []);
+      byCluster.get(cl).push(c);
+    }
+  }
+  for (const t of finalTargets) {
+    if (t.targetType !== "study_identity") continue;
+    const claim = claimById.get(t.sourceClaimId);
+    if (!claim) continue;
+    const siblings = (byCluster.get(claim.phase2ClusterId) || [])
+      .filter((c) => (c[idField] || c.claimId) !== t.sourceClaimId);
+    const built = describedStudyDescriptor(claim, siblings);
+    if (!built) continue;
+
+    const qh = t.queryHints || (t.queryHints = {});
+    if (!(qh.studiesOrDocuments || []).length) qh.studiesOrDocuments = [built.descriptor];
+    if (built.year) qh.numbersOrStatistics = uniq([...(qh.numbersOrStatistics || []), built.year]);
+    const existing = qh.primaryQueryText || "";
+    qh.primaryQueryText = existing.toLowerCase().includes(built.descriptor.toLowerCase())
+      ? existing
+      : [built.descriptor, existing].filter(Boolean).join(" ").trim();
+
+    // Replace the bare "needs disambiguation" placeholder text with the concrete
+    // descriptor so retrieval-context year/anchor mining sees it and study_title
+    // persistence (studies[0]) carries a real handle.
+    if (/needs disambiguation/i.test(t.targetText || "") || !t.targetText) {
+      t.targetText = `Identify the study/document: ${built.descriptor}`;
+    }
+    t.studyDescriptor = built.descriptor;
+    if (built.year) t.studyYear = Number(built.year) || null;
+    t.studyIdentityEnrichment = {
+      descriptor: built.descriptor,
+      year: built.year || null,
+      tokens: built.tokens,
+      source: "tm4_described_study_descriptor",
+    };
+  }
+}
+
 export function targetizeClaimOccurrences(claimOccurrences, options = {}) {
   const idField = options.idField || "claimId";
   const emitInference = options.emitInferenceTargets ?? true;
@@ -1150,6 +1283,12 @@ export function targetizeClaimOccurrences(claimOccurrences, options = {}) {
   // Sidecar evidence-affordance query expansion — applied AFTER cleanup so the
   // cleaned query text is the base being enriched. Posture is never altered.
   enrichTargetsWithExpansion(finalTargets, expansionByClaimId);
+
+  // Tier 1: seed described-but-unnamed study_identity targets with a concrete
+  // study descriptor + publication year so the evidence engine queries a real
+  // study handle before search (and its resolver starts warm). Generic; never
+  // names a study or hardcodes fixture entities.
+  enrichStudyIdentityDescriptors(finalTargets, input, idField);
 
   // Diagnostics
   const targetsByType = {};

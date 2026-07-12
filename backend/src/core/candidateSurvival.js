@@ -56,6 +56,7 @@ export function resolveSurvivalBounds(opt = {}) {
 }
 
 const OFFICIAL_DOMAIN_RE = /(^|\.)(?:cdc\.gov|nih\.gov|ncbi\.nlm\.nih\.gov|who\.int|fda\.gov|nature\.com|nejm\.org|thelancet\.com|bmj\.com|jamanetwork\.com|cochranelibrary\.com|cochrane\.org|europepmc\.org|clinicaltrials\.gov|\w+\.gov|\w+\.edu)$/i;
+const ACADEMIC_SOCIAL_DOMAIN_RE = /(^|\.)(?:academia\.edu|researchgate\.net|semanticscholar\.org|mendeley\.com|ssrn\.com)$/i;
 const PRESS_RELEASE_DOMAIN_RE = /(^|\.)(?:globenewswire\.com|prnewswire\.com|businesswire\.com|prweb\.com|newswire\.com|einnews\.com|marketwatch\.com\/press-release)$/i;
 const NEWS_DOMAIN_RE = /(^|\.)(?:cnn\.com|edition\.cnn\.com|nytimes\.com|washingtonpost\.com|theguardian\.com|foxnews\.com|nbcnews\.com|reuters\.com|apnews\.com|bbc\.co\.uk|bbc\.com|forbes\.com|huffpost\.com|vox\.com)$/i;
 
@@ -114,7 +115,8 @@ export function deriveVerifiedDocumentRole(candidate = {}) {
   if (candidate.academicApiContent?.apiBacked) signals.push("api_backed");
   if (candidate.protectedDocumentIdentity) signals.push("protected_identity");
   if (candidate.resolvedWorkIdentity) signals.push("resolved_work");
-  if (OFFICIAL_DOMAIN_RE.test(domain)) signals.push(`official_domain:${domain}`);
+  const officialDomain = OFFICIAL_DOMAIN_RE.test(domain) && !ACADEMIC_SOCIAL_DOMAIN_RE.test(domain);
+  if (officialDomain) signals.push(`official_domain:${domain}`);
 
   const identityRole = String(candidate.identityRole || candidate.identityBearingType || "").toLowerCase();
 
@@ -140,14 +142,14 @@ export function deriveVerifiedDocumentRole(candidate = {}) {
     news: "news_or_commentary_candidate",
   };
   if (roleMap[identityRole]) {
-    const verified = hasBibId || OFFICIAL_DOMAIN_RE.test(domain) || candidate.protectedDocumentIdentity === true;
+    const verified = hasBibId || officialDomain || candidate.protectedDocumentIdentity === true;
     return { role: roleMap[identityRole], verified, signals };
   }
 
   if (hasBibId) {
     return { role: "original_study_candidate", verified: true, signals };
   }
-  if (OFFICIAL_DOMAIN_RE.test(domain)) {
+  if (officialDomain) {
     return { role: "official_study_page_candidate", verified: true, signals };
   }
   // Recognizable news/commentary outlets are labeled but NOT verified documents.
@@ -181,7 +183,7 @@ function sourceTypeRank(candidate) {
   if (role?.verified) return 4;
   if (role) return 3;
   const domain = domainOf(candidate);
-  if (OFFICIAL_DOMAIN_RE.test(domain)) return 3;
+  if (OFFICIAL_DOMAIN_RE.test(domain) && !ACADEMIC_SOCIAL_DOMAIN_RE.test(domain)) return 3;
   if (PRESS_RELEASE_DOMAIN_RE.test(domain)) return 0;
   return 1;
 }
@@ -240,6 +242,11 @@ export function mergeCanonicalOccurrence(existing, incoming) {
     purposeLane: c.purposeLane || c.retrievalPurpose || null,
     evidenceTargetId: c.evidenceTargetId || null,
     evidenceTargetType: c.evidenceTargetType || null,
+    bearingRequirement: c.bearingRequirement || null,
+    bearingCriteria: c.bearingCriteria || null,
+    weakBearing: Boolean(c.weakBearing),
+    queryExpansionSourceClaimIds: c.queryExpansionSourceClaimIds || [],
+    queryExpansionAudit: c.queryExpansionAudit || null,
     snippet: c.snippet || null,
     bearingTextSource: c.bearingTextSource || null,
   });

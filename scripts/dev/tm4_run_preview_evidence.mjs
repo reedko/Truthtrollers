@@ -23,6 +23,13 @@
  * Usage:
  *   node scripts/dev/tm4_run_preview_evidence.mjs --run <previewRunId|latest> [--limit N]
  *     --limit N        dev cap: only the first N selected claims (default: all)
+ *     --claim-id ID    dev cap: run exactly one persisted claim_id
+ *     --max-scrapes N  dev cap: max source fetch/extract attempts per claim/content
+ *     --max-pre-bearing N   dev cap: max candidates retained before bearing
+ *     --max-llm-bearing N   dev cap: max candidates sent to snippet-bearing LLM
+ *     --max-queries N  dev cap: max query lanes/searches per claim
+ *     --no-adaptive    dev cap: disable adaptive deepening after first tranche
+ *     --candidate-plan-only  write query/candidate/ranking plan and skip scraping
  *     --per-claim N    max references kept per claim (default from selection summary, 3)
  *     --max-refs N     max references kept globally (default from selection summary, 27)
  */
@@ -46,6 +53,13 @@ const getArg = (name) => {
 };
 const RUN = getArg("--run") || "latest";
 const LIMIT = Number(getArg("--limit")) || 0;
+const CLAIM_ID = Number(getArg("--claim-id")) || 0;
+const MAX_SCRAPES = Number(getArg("--max-scrapes")) || 0;
+const MAX_PRE_BEARING = Number(getArg("--max-pre-bearing")) || 0;
+const MAX_LLM_BEARING = Number(getArg("--max-llm-bearing")) || 0;
+const MAX_QUERIES = Number(getArg("--max-queries")) || 0;
+const NO_ADAPTIVE = args.includes("--no-adaptive");
+const CANDIDATE_PLAN_ONLY = args.includes("--candidate-plan-only");
 
 async function loadSidecar() {
   let file;
@@ -92,11 +106,20 @@ async function main() {
   let evalClaims = sidecar.claimMap
     .filter((c) => byClaim.has(c.dbClaimId))
     .sort((a, b) => byClaim.get(a.dbClaimId).rank - byClaim.get(b.dbClaimId).rank);
+  if (CLAIM_ID > 0) {
+    evalClaims = evalClaims.filter((c) => Number(c.dbClaimId) === CLAIM_ID);
+    if (!evalClaims.length) {
+      throw new Error(`--claim-id ${CLAIM_ID} is not a selected evidence candidate for run ${sidecar.previewRunId}`);
+    }
+  }
   if (LIMIT > 0) evalClaims = evalClaims.slice(0, LIMIT);
   const claimIds = evalClaims.map((c) => c.dbClaimId);
   const searchTargetCount = evalClaims.reduce((s, c) => s + byClaim.get(c.dbClaimId).targets.length, 0);
-  console.log(`— Evidence candidates (DB-gated): ${evalClaims.length} selected claims${LIMIT ? ` (dev cap --limit ${LIMIT})` : ""}, ${searchTargetCount} search-eligible targets`);
+  console.log(`— Evidence candidates (DB-gated): ${evalClaims.length} selected claims${CLAIM_ID ? ` (dev cap --claim-id ${CLAIM_ID})` : LIMIT ? ` (dev cap --limit ${LIMIT})` : ""}, ${searchTargetCount} search-eligible targets`);
   console.log(`— Evidence budget: ≤${PER_CLAIM_CAP} refs/claim, ≤${GLOBAL_CAP} total, URL-deduped`);
+  if (MAX_SCRAPES || MAX_PRE_BEARING || MAX_LLM_BEARING || MAX_QUERIES || NO_ADAPTIVE || CANDIDATE_PLAN_ONLY) {
+    console.log(`— Dev evidence caps: maxScrapes=${MAX_SCRAPES || "default"}, maxPreBearing=${MAX_PRE_BEARING || "default"}, maxLlmBearing=${MAX_LLM_BEARING || "default"}, maxQueries=${MAX_QUERIES || "default"}, adaptive=${NO_ADAPTIVE ? "off" : "default"}, candidatePlanOnly=${CANDIDATE_PLAN_ONLY ? "yes" : "no"}`);
+  }
 
   // Claim metadata for the engine. Persisted claim_evaluation_targets carry the
   // TM4 target text/type/transform; primary_query_text (from the DB) rides in
@@ -131,15 +154,122 @@ async function main() {
 
   console.log("— Running evidence engine (this makes live search + LLM calls)…\n");
   const startedAt = new Date().toISOString();
-  const { aiReferences, failedCandidates, claimConfidenceMap, queryPlan } = await runEvidenceEngine({
+  const { aiReferences, failedCandidates, claimConfidenceMap, queryPlan, candidatePlans } = await runEvidenceEngine({
     query,
     taskContentId: sidecar.contentId,
     claimIds,
     claims: claimMetadata,
     readableText,
+    evidenceOptions: {
+      ...(MAX_QUERIES ? {
+        queriesPerClaim: MAX_QUERIES,
+        topKQueries: MAX_QUERIES,
+        maxSearchTargetsPerClaim: MAX_QUERIES,
+      } : {}),
+      ...(MAX_PRE_BEARING ? {
+        maxPreBearingCandidatesPerClaim: MAX_PRE_BEARING,
+        maxCandidatesPerPurposeLane: Math.max(1, Math.min(MAX_PRE_BEARING, Math.ceil(MAX_PRE_BEARING / 2))),
+      } : {}),
+      ...(MAX_LLM_BEARING ? {
+        maxLlmBearingCandidatesPerClaim: MAX_LLM_BEARING,
+        maxSnippetCandidatesPerClaim: MAX_LLM_BEARING,
+        maxCandidatesPerTargetBatch: Math.max(1, Math.min(MAX_LLM_BEARING, 3)),
+      } : {}),
+      ...(MAX_SCRAPES ? {
+        maxSourcesToScrapePerTarget: MAX_SCRAPES,
+        maxSourcesComparedPerClaim: MAX_SCRAPES,
+        topKCandidates: MAX_SCRAPES,
+        topKPerIntent: MAX_SCRAPES,
+        bearingConfig: {
+          globalScrapeLimitPerContent: MAX_SCRAPES,
+          deepenGlobalScrapeLimit: MAX_SCRAPES,
+          minDeliveredSourcesPerContent: MAX_SCRAPES,
+          maxSourceAttemptsPerContent: MAX_SCRAPES,
+          maxSourcesComparedPerClaim: MAX_SCRAPES,
+          minBearingLinksPerClaim: 1,
+          perClaimLimits: {
+            thesis: MAX_SCRAPES,
+            pillar: MAX_SCRAPES,
+            pillar_support: MAX_SCRAPES,
+            evidence: MAX_SCRAPES,
+            attribution: MAX_SCRAPES,
+            default: MAX_SCRAPES,
+          },
+        },
+      } : {}),
+      ...(NO_ADAPTIVE ? {
+        bearingConfig: {
+          ...(MAX_SCRAPES ? {
+            globalScrapeLimitPerContent: MAX_SCRAPES,
+            deepenGlobalScrapeLimit: MAX_SCRAPES,
+            minDeliveredSourcesPerContent: MAX_SCRAPES,
+            maxSourceAttemptsPerContent: MAX_SCRAPES,
+            maxSourcesComparedPerClaim: MAX_SCRAPES,
+            minBearingLinksPerClaim: 1,
+            perClaimLimits: {
+              thesis: MAX_SCRAPES,
+              pillar: MAX_SCRAPES,
+              pillar_support: MAX_SCRAPES,
+              evidence: MAX_SCRAPES,
+              attribution: MAX_SCRAPES,
+              default: MAX_SCRAPES,
+            },
+          } : {}),
+          finishActiveSourceOnThreshold: false,
+        },
+      } : {}),
+      ...(CANDIDATE_PLAN_ONLY ? { candidatePlanOnly: true } : {}),
+    },
   });
 
   console.log(`\n✅ Evidence engine: ${aiReferences?.length || 0} references, ${failedCandidates?.length || 0} failed candidates`);
+
+  let candidatePlanPath = null;
+  if (Array.isArray(candidatePlans) && candidatePlans.length) {
+    const suffix = CLAIM_ID ? `_claim${CLAIM_ID}` : LIMIT ? `_limit${LIMIT}` : "";
+    candidatePlanPath = path.join(RUNS_DIR, `${sidecar.previewRunId}${suffix}.candidateplan.json`);
+    await fs.writeFile(candidatePlanPath, JSON.stringify({
+      previewRunId: sidecar.previewRunId,
+      contentId: sidecar.contentId,
+      generatedAt: new Date().toISOString(),
+      candidatePlanOnly: CANDIDATE_PLAN_ONLY,
+      claimIds,
+      devCaps: {
+        maxScrapes: MAX_SCRAPES || null,
+        maxPreBearing: MAX_PRE_BEARING || null,
+        maxLlmBearing: MAX_LLM_BEARING || null,
+        maxQueries: MAX_QUERIES || null,
+        adaptiveDisabled: NO_ADAPTIVE,
+      },
+      plans: candidatePlans,
+    }, null, 2));
+    console.log(`🧭 Candidate plan: ${path.relative(ROOT, candidatePlanPath)} (${candidatePlans.length} claim plan${candidatePlans.length === 1 ? "" : "s"})`);
+  }
+
+  if (CANDIDATE_PLAN_ONLY) {
+    sidecar.evidenceRuns.push({
+      startedAt,
+      finishedAt: new Date().toISOString(),
+      claimIds,
+      limit: LIMIT || null,
+      claimId: CLAIM_ID || null,
+      candidatePlanOnly: true,
+      candidatePlanFile: candidatePlanPath ? path.basename(candidatePlanPath) : null,
+      candidatePlanClaimCount: candidatePlans?.length || 0,
+      devCaps: {
+        maxScrapes: MAX_SCRAPES || null,
+        maxPreBearing: MAX_PRE_BEARING || null,
+        maxLlmBearing: MAX_LLM_BEARING || null,
+        maxQueries: MAX_QUERIES || null,
+        adaptiveDisabled: NO_ADAPTIVE,
+      },
+    });
+    await fs.writeFile(sidecarPath, JSON.stringify(sidecar, null, 2));
+    console.log("=".repeat(70));
+    console.log(`✅ Candidate-plan-only run complete for ${sidecar.previewRunId}`);
+    console.log("=".repeat(70));
+    process.exit(0);
+  }
 
   // Persist the structured QUERY_PLAN trace for evidence debugging (JSONL).
   let queryPlanPath = null;
@@ -226,7 +356,16 @@ async function main() {
     finishedAt: new Date().toISOString(),
     claimIds,
     limit: LIMIT || null,
+    claimId: CLAIM_ID || null,
     budget: { perClaimCap: PER_CLAIM_CAP, globalCap: GLOBAL_CAP },
+    devCaps: {
+      maxScrapes: MAX_SCRAPES || null,
+      maxPreBearing: MAX_PRE_BEARING || null,
+      maxLlmBearing: MAX_LLM_BEARING || null,
+      maxQueries: MAX_QUERIES || null,
+      adaptiveDisabled: NO_ADAPTIVE,
+    },
+    candidatePlanFile: candidatePlanPath ? path.basename(candidatePlanPath) : null,
     engineReferenceCount: aiReferences?.length || 0,
     keptReferenceCount: keptRefs.length,
     keptStubCount: keptRefs.filter((r) => isStub(r)).length,

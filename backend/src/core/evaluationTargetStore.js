@@ -38,6 +38,8 @@ export function normalizeEvaluationTarget(raw = {}, context = {}) {
     // the query builder can consume them; null when the column is absent.
     primaryQueryText: clean(raw.primaryQueryText || raw.primary_query_text || (raw.queryHints || parseJsonSafe(raw.query_hints_json))?.primaryQueryText),
     queryHints: raw.queryHints || parseJsonSafe(raw.query_hints_json) || null,
+    bearingCriteria: raw.bearingCriteria || parseJsonSafe(raw.bearing_criteria_json) || null,
+    weakBearing: bool(raw.weakBearing ?? raw.weak_bearing, false),
   };
 }
 

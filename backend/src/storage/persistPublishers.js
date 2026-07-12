@@ -163,9 +163,13 @@ function normalizeIdentifier(item) {
   const type = String(item?.identifier_type || item?.type || "other").toLowerCase();
   let value = String(item?.normalized_value || item?.value || "").trim();
   if (!value) return null;
+  const rawScope = String(item?.identifier_scope || item?.scope || "unknown").toLowerCase();
+  const scope = rawScope === "article" || rawScope === "paper" ? "work"
+    : rawScope === "journal" ? "venue"
+    : ["work", "venue", "edition", "unknown"].includes(rawScope) ? rawScope : "unknown";
   if (type === "doi") value = value.replace(/^https?:\/\/(?:dx\.)?doi\.org\//i, "").replace(/^doi\s*:\s*/i, "").toLowerCase();
   if (type === "issn" || type === "eissn") value = value.toUpperCase().replace(/[^0-9X]/g, "").replace(/^(\w{4})(\w{4})$/, "$1-$2");
-  return { ...item, type, value: value.slice(0, 255) };
+  return { ...item, type, scope, value: value.slice(0, 255) };
 }
 
 function hostname(sourceUrl) {
@@ -175,6 +179,37 @@ function hostname(sourceUrl) {
 function rootDomain(domain) {
   if (!domain) return null;
   return domain.split(".").slice(-2).join(".");
+}
+
+function normalizePublicationDate(value) {
+  const text = String(value || "").trim();
+  if (!text) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+  if (/^\d{4}-\d{2}$/.test(text)) return `${text}-01`;
+  const yearOnly = text.match(/^((?:19|20)\d{2})$/);
+  if (yearOnly) return `${yearOnly[1]}-01-01`;
+  const monthNames = {
+    jan: "01", january: "01",
+    feb: "02", february: "02",
+    mar: "03", march: "03",
+    apr: "04", april: "04",
+    may: "05",
+    jun: "06", june: "06",
+    jul: "07", july: "07",
+    aug: "08", august: "08",
+    sep: "09", sept: "09", september: "09",
+    oct: "10", october: "10",
+    nov: "11", november: "11",
+    dec: "12", december: "12",
+  };
+  const yearMonth = text.match(/^((?:19|20)\d{2})\s+([A-Za-z]{3,9})\b/);
+  if (yearMonth) {
+    const month = monthNames[yearMonth[2].toLowerCase()];
+    if (month) return `${yearMonth[1]}-${month}-01`;
+  }
+  const parsed = new Date(text);
+  if (!Number.isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
+  return null;
 }
 
 export async function persistSourceIdentity(query, contentId, identity, options = {}) {
@@ -217,7 +252,7 @@ export async function persistSourceIdentity(query, contentId, identity, options 
         boundedName(context.venue_name) || venue?.name || null,
         normalizeVenueType(context.venue_type || venue?.venue_type),
         context.article_type || null, context.volume || null, context.issue || null,
-        context.publication_date || null, context.publication_year || null,
+        normalizePublicationDate(context.publication_date), context.publication_year || null,
         context.distribution_channel || null,
         context.linked_url || null, context.linked_publisher_observed || null,
         json(context.social_provenance), context.extraction_method || null,
@@ -245,7 +280,7 @@ export async function persistSourceIdentity(query, contentId, identity, options 
          ON DUPLICATE KEY UPDATE raw_value = VALUES(raw_value),
            identifier_scope = VALUES(identifier_scope), extraction_method = VALUES(extraction_method),
            extraction_confidence = VALUES(extraction_confidence), evidence_quote = VALUES(evidence_quote)`,
-        [contextId, item.type, item.identifier_scope || item.scope || "unknown", item.value,
+        [contextId, item.type, item.scope || "unknown", item.value,
           item.raw_value || item.value || null, item.extraction_method || null,
           confidenceLabel(item.extraction_confidence), String(item.evidence_quote || "").slice(0, 500) || null],
       );

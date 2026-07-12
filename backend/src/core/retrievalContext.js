@@ -3,6 +3,7 @@ import { isVerifiedResolvedWork } from "./candidateSurvival.js";
 import logger from "../utils/logger.js";
 
 const MAX_PASSAGE = 1200;
+const SECONDARY_STUDY_TITLE_RE = /\b(?:systematic review|meta-analysis|review|an update of|update of|scientific evidence)\b/i;
 
 function clean(value, max = 500) {
   return String(value ?? "").replace(/\s+/g, " ").trim().slice(0, max);
@@ -96,6 +97,24 @@ function resolvedWorkForTarget(target) {
   };
 }
 
+function queryHintsForTarget(target = {}) {
+  const hints = target.queryHints || target.query_hints || target.query_hints_json || {};
+  return hints && typeof hints === "object" ? hints : {};
+}
+
+function stableResolvedWorkIdentity(work = {}) {
+  const status = clean(work.resolutionStatus || work.resolution_status, 40).toLowerCase();
+  const title = clean(work.title, 700);
+  if (SECONDARY_STUDY_TITLE_RE.test(title)) return false;
+  return Boolean(
+    clean(work.identifier || work.doi || work.pmid || work.pmcid || work.url, 500) ||
+    (title && clean(work.authors, 500)) ||
+    (["resolved", "identified", "verified"].includes(status) && (
+      clean(work.identifier, 500) || clean(work.authors, 500) || clean(work.url, 500)
+    ))
+  );
+}
+
 export function buildRetrievalContextsForClaim(claim = {}, {
   articleText = "",
   caseSubjectTerms = [],
@@ -122,6 +141,28 @@ export function buildRetrievalContextsForClaim(claim = {}, {
     const studyTitle = clean(targetValue(target, "studyTitle", "study_title"), 700);
     const studyAuthors = clean(targetValue(target, "studyAuthors", "study_authors"), 500);
     const studyIdentifier = clean(targetValue(target, "studyIdentifier", "study_identifier"), 255);
+    const studyYear = clean(targetValue(target, "studyYear", "study_year"), 20);
+    const queryHints = queryHintsForTarget(target);
+    const hintedYears = unique([
+      ...list(queryHints.numbersOrStatistics),
+      ...extractYears(list(queryHints.studiesOrDocuments)),
+    ], 12);
+    const storedStudyYearConflict = Boolean(studyYear && hintedYears.length && !hintedYears.includes(studyYear));
+    const suppressStoredStudy = SECONDARY_STUDY_TITLE_RE.test(studyTitle) || storedStudyYearConflict;
+    const targetRequiredEntities = unique([
+      ...list(queryHints.requiredEntities),
+      ...list(queryHints.optionalEntities),
+    ], 12);
+    const targetStudyClues = unique([
+      suppressStoredStudy ? "" : studyTitle,
+      suppressStoredStudy ? "" : studyAuthors,
+      suppressStoredStudy ? "" : studyIdentifier,
+      ...list(queryHints.studiesOrDocuments),
+    ], 12);
+    const targetNumericClues = unique([
+      ...list(queryHints.numbersOrStatistics),
+      ...extractYears(targetStudyClues),
+    ], 12);
     const sourceExcerpt = clean(targetValue(target, "sourceExcerpt", "source_excerpt"), 1000);
     const speakerEntities = unique([
       claim.speakerEntity,
@@ -129,6 +170,7 @@ export function buildRetrievalContextsForClaim(claim = {}, {
     ], 8);
     const namedEntities = unique([
       ...list(claim.namedEntities),
+      ...targetRequiredEntities,
       subject,
       ...speakerEntities,
     ], 16);
@@ -136,8 +178,7 @@ export function buildRetrievalContextsForClaim(claim = {}, {
       ...speakerEntities,
       ...namedEntities,
       ...list(claim.studiesOrDocuments),
-      studyTitle,
-      studyIdentifier,
+      ...targetStudyClues,
       ...caseSubjectTerms,
     ], 20);
     const articlePassageContext = findNearbyArticlePassage(articleText, passageAnchors);
@@ -148,31 +189,33 @@ export function buildRetrievalContextsForClaim(claim = {}, {
       object,
       sourceExcerpt,
       articlePassageContext,
+      ...targetStudyClues,
     ];
     const resolvedWork = resolvedWorkForTarget(target);
     const inheritedResolvedWorks = (Array.isArray(claim.resolvedWorks) ? claim.resolvedWorks : [])
       .filter((work) => work && typeof work === "object")
       .filter((work) => !work.evaluationTargetId || Number(work.evaluationTargetId) === evaluationTargetId);
     const resolvedWorks = [
-      ...(resolvedWork ? [resolvedWork] : []),
+      ...(resolvedWork && stableResolvedWorkIdentity(resolvedWork) ? [resolvedWork] : []),
       ...inheritedResolvedWorks,
     ].filter((work, index, all) => all.findIndex((candidate) =>
       (candidate.identifier || candidate.title) === (work.identifier || work.title)
     ) === index).slice(0, 5);
-    const studyResolutionRequired = resolvedWorks.length === 0 && unresolvedWorkReference(evidenceStrings);
+    const studyResolutionRequired = resolvedWorks.length === 0 && (
+      targetStudyClues.length > 0 || unresolvedWorkReference(evidenceStrings)
+    );
     const studyClues = unique([
       ...list(claim.studiesOrDocuments),
-      studyTitle,
-      studyAuthors,
-      studyIdentifier,
+      ...targetStudyClues,
       studyResolutionRequired ? "Referenced study/document identity unresolved" : "",
     ], 12);
     const sourceCitations = unique([
       claim.sourceCitedInArticle,
-      targetValue(target, "studyIdentifier", "study_identifier"),
+      suppressStoredStudy ? "" : targetValue(target, "studyIdentifier", "study_identifier"),
     ], 12);
     const dates = unique([
       ...list(claim.dates),
+      ...targetNumericClues,
       ...extractYears(evidenceStrings),
     ], 12);
     const organizations = unique(namedEntities.filter(organizationLike), 10);

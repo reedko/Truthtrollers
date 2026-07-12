@@ -119,7 +119,13 @@ export async function loadBearingGatingConfig({ query = null, env = process.env 
 }
 
 export function getPerClaimBearingLimit(claim, config = DEFAULT_BEARING_GATING_CONFIG) {
-  if (claim?.evidenceNeed?.claimType === "attribution" || claim?.isAttribution) {
+  const hasSearchableSubstantiveTarget = (claim?.evaluationTargets || []).some((target) => {
+    const type = String(target?.targetType || target?.target_type || "").toLowerCase();
+    return target?.searchEligible !== false && target?.search_eligible !== 0 &&
+      target?.verdictEligible !== false && target?.verdict_eligible !== 0 &&
+      ["substantive", "inference"].includes(type);
+  });
+  if ((claim?.evidenceNeed?.claimType === "attribution" || claim?.isAttribution) && !hasSearchableSubstantiveTarget) {
     return config.perClaimLimits.attribution;
   }
   const role = String(claim?.role || claim?.argumentFunction || "default").toLowerCase();

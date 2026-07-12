@@ -213,7 +213,9 @@ export async function loadTm4EvidenceCandidates(query, contentId) {
       `SELECT sec.tm4_selected_evaluation_claim_id, sec.claim_id, sec.content_claim_id,
               sec.selection_rank, sec.representative_claim_text, sec.source_claim_id,
               t.evaluation_target_id, t.target_type, t.target_text,
-              t.primary_query_text, t.score_transform, t.verdict_eligible
+              t.primary_query_text, t.query_hints_json, t.bearing_criteria_json,
+              t.score_transform, t.search_eligible, t.verdict_eligible,
+              t.weak_bearing, t.needs_atomic_split
          FROM tm4_selected_evaluation_claims sec
          LEFT JOIN claim_evaluation_targets t
            ON t.content_id = sec.content_id AND t.claim_id = sec.claim_id AND t.search_eligible = 1

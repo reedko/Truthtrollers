@@ -296,6 +296,7 @@ function mapTargetForStore(target, claim) {
     verdictEligible: target.verdictEligible !== false,
     resolutionStatus: "mapped",
     studyTitle: storeType === "study_identity" ? studies[0] || "" : "",
+    studyYear: storeType === "study_identity" ? (target.studyYear || null) : null,
     mappingConfidence: Number(target.mappingConfidence) || 0,
     mappingRationale: "tm4:" + JSON.stringify({
       previewRunId: PREVIEW_RUN_ID,

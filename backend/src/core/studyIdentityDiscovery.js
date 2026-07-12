@@ -5,9 +5,12 @@ import { retrievalContextForTarget } from "./retrievalContext.js";
 
 const clean = (value, max = 1000) => String(value ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 const unique = (values, limit = 20) => [...new Set((values || []).map((value) => clean(value)).filter(Boolean))].slice(0, limit);
+const studySearchClues = (context = {}) => (context.studyClues || [])
+  .filter((clue) => !/referenced study\/document identity unresolved/i.test(clue));
 const GENERIC_IDENTITY_TOKENS = new Set([
   "autism", "data", "evidence", "measles", "mumps", "paper", "research", "rubella", "study", "vaccine",
 ]);
+const SECONDARY_STUDY_TITLE_RE = /\b(?:systematic review|meta-analysis|review|an update of|update of|scientific evidence)\b/i;
 
 function boundedIdentity(identity = {}) {
   return {
@@ -35,6 +38,8 @@ function boundedIdentity(identity = {}) {
 function explicitStudyYears(context = {}) {
   const values = [
     ...(context.studyYears || []),
+    ...(context.dates || []),
+    ...studySearchClues(context),
     context.targetText,
     context.objectClaimText,
     context.articlePassageContext,
@@ -55,18 +60,24 @@ function explicitStudyYears(context = {}) {
 export function buildStudyIdentityDiscoveryQueries(context = {}) {
   const people = context.speakerEntities || [];
   const organizations = context.organizations || [];
+  const studyClues = studySearchClues(context);
+  const clueTerms = unique(
+    studyClues.flatMap((clue) => tokenizeBearingText(clue).filter((token) => token.length > 3)),
+    10,
+  );
   const topics = unique([
+    ...clueTerms,
     ...(context.requiredAnchors || []),
     ...tokenizeBearingText(`${context.objectClaimText || ""} ${context.targetText || ""}`)
       .filter((token) => token.length > 3),
   ], 10);
   const studyYears = explicitStudyYears(context);
-  const base = unique([...people, ...organizations, ...studyYears, ...topics], 10);
+  const base = unique([...people, ...organizations, ...studyYears, ...clueTerms, ...topics], 12);
   const queries = [];
   if (base.length) queries.push([...base, "study"].join(" "));
   const population = (context.populations || [])[0];
-  const second = unique([...people, ...organizations, ...studyYears, population, ...topics.slice(0, 5)], 10);
-  if (second.length) queries.push([...second, "paper analysis"].join(" "));
+  const second = unique([...studyYears, population, ...clueTerms, ...people, ...organizations, ...topics.slice(0, 4)], 12);
+  if (second.length) queries.push([...second, "journal paper analysis"].join(" "));
   return unique(queries, 2);
 }
 
@@ -131,7 +142,7 @@ function classifyStudyCandidate(identity = {}) {
   if (pressRelease) return { role: "press_release", primaryEligible: false, retainEligible: false, reason: "press_release_not_study_identity" };
 
   const reanalysis = /\bre-?analy(?:sis|sed|zed)|\bsecondary analysis\b|\breexamin(?:e|ed|ation)/.test(combined);
-  const review = /\b(?:systematic review|meta-analysis|review|update of the (?:scientific )?evidence)\b/.test(title);
+  const review = SECONDARY_STUDY_TITLE_RE.test(title);
   const official = /(?:^|\.)gov$/.test(hostname) || /\.gov\//.test(url);
   const academicProvider = ["pubmed", "openalex", "crossref", "semantic_scholar"].includes(provider);
   const scholarly = Boolean(identity.identifier || academicProvider || /doi\.org|pubmed\.ncbi|pmc\.ncbi|link\.springer|sciencedirect|wiley|tandfonline/.test(url));
@@ -240,10 +251,13 @@ export function resolveStudyIdentityCandidates(candidates = [], context = {}) {
   const primaryCandidates = ranked.filter((item) =>
     item.classification.primaryEligible && item.grounded && item.score >= 0.5
   );
-  const best = primaryCandidates[0] || null;
-  const runnerUp = primaryCandidates[1] || null;
+  const stableOriginal = primaryCandidates.find((item) =>
+    item.classification.role === "original_study" && Boolean(item.identity.identifier)
+  );
+  const best = stableOriginal || primaryCandidates[0] || null;
+  const runnerUp = primaryCandidates.find((item) => item !== best) || null;
   const ambiguous = Boolean(
-    best && runnerUp && best.classification.role === runnerUp.classification.role &&
+    best && runnerUp && !stableOriginal && best.classification.role === runnerUp.classification.role &&
     best.score - runnerUp.score < 0.08 && !sameBibliographicIdentity(best, runnerUp)
   );
   const primary = best && !ambiguous ? best : null;
@@ -341,11 +355,22 @@ function assignWorkTargets(work, claim, studyTargetId) {
   };
 }
 
+function studyYearConflict(target = {}) {
+  const storedYear = clean(target.studyYear || target.study_year, 20);
+  const hints = target.queryHints || target.query_hints || {};
+  const hintYears = Array.isArray(hints.numbersOrStatistics)
+    ? hints.numbersOrStatistics.map((value) => clean(value, 20)).filter((value) => /\b(?:19|20)\d{2}\b/.test(value))
+    : [];
+  return Boolean(storedYear && hintYears.length && !hintYears.includes(storedYear));
+}
+
 export async function discoverStudyIdentities({ query, taskContentId, claims, search }) {
   for (const claim of claims || []) {
     const studyTargets = (claim.evaluationTargets || []).filter((target) =>
       String(target.targetType || target.target_type) === "study_identity" &&
-      !target.studyIdentifier && !target.study_identifier
+      (!target.studyIdentifier && !target.study_identifier ||
+        SECONDARY_STUDY_TITLE_RE.test(String(target.studyTitle || target.study_title || "")) ||
+        studyYearConflict(target))
     );
     for (const target of studyTargets) {
       const targetId = Number(target.evaluationTargetId || target.evaluation_target_id) || null;
