@@ -516,6 +516,33 @@ export function buildQueryLanesFromEvaluationTargets(evaluationTargets, claimCon
         studyTerms.join(" ") || text,
         [studyTitle, studyId].filter(Boolean), tid, ttype);
     }
+
+    // TM4 query-hint expansion lane: sidecar evidence-affordance siblings
+    // contribute document-lead terms (e.g. a released/reworked report, a
+    // reanalysis, a named law) that the plain targetText does not carry. Fully
+    // generic — uses whatever expansion terms/document hints Phase 3 attached;
+    // added as an ADDITIONAL lane so existing lanes are unaffected.
+    const qh = target.queryHints || {};
+    const expansionTerms = Array.isArray(qh.expansionTerms) ? qh.expansionTerms : [];
+    const docHints = (Array.isArray(qh.documentAffordanceHints) ? qh.documentAffordanceHints : [])
+      // drop the generic class labels (they are not search terms) and the
+      // "referenced by the article" scaffolding; keep any concrete phrases.
+      .filter((h) => !/_/.test(h) && !/referenced by the article/i.test(h));
+    const leadTerms = [...expansionTerms, ...docHints]
+      .map((t) => String(t || "").trim())
+      .filter(Boolean);
+    if (leadTerms.length) {
+      const leadQuery = composeTargetQuery(subject || claimContext.speakerEntity || "", ...leadTerms.slice(0, 10));
+      addLane(`tm4-doc-lead-${tid}`, "open", "primary_source", "warrant_test",
+        leadQuery, [], tid, ttype);
+    }
+    // If Phase 3 built an enriched primary query that meaningfully extends the
+    // targetText, add it verbatim as its own lane too.
+    const pqt = String(target.primaryQueryText || "").trim();
+    if (pqt && pqt.length > text.length + 8 && pqt.toLowerCase() !== text.toLowerCase()) {
+      addLane(`tm4-primary-query-${tid}`, "open", "primary_source", "warrant_test",
+        pqt, [], tid, ttype);
+    }
   }
 
   return lanes;

@@ -33,7 +33,19 @@ export function normalizeEvaluationTarget(raw = {}, context = {}) {
     targetOrder: Number(raw.targetOrder ?? raw.target_order ?? context.targetOrder) || 0,
     mappingConfidence: Number(raw.mappingConfidence ?? raw.mapping_confidence ?? context.mappingConfidence) || 0,
     mappingRationale: clean(raw.mappingRationale || raw.mapping_rationale || context.mappingRationale),
+    // TM4 query-hint layer (Phase 3): the enriched primary query + the sidecar
+    // evidence-affordance expansion (sibling document leads). Surfaced here so
+    // the query builder can consume them; null when the column is absent.
+    primaryQueryText: clean(raw.primaryQueryText || raw.primary_query_text || (raw.queryHints || parseJsonSafe(raw.query_hints_json))?.primaryQueryText),
+    queryHints: raw.queryHints || parseJsonSafe(raw.query_hints_json) || null,
   };
+}
+
+// Parse a JSON column that may arrive as a string or already-parsed object.
+function parseJsonSafe(v) {
+  if (!v) return null;
+  if (typeof v === "object") return v;
+  try { return JSON.parse(v); } catch { return null; }
 }
 
 export async function loadClaimEvaluationTargets(query, contentId, claimIds = [], {

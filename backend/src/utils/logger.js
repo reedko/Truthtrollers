@@ -26,14 +26,24 @@ const getLogFilePath = () => {
   return path.join(logsDir, `evidence-${date}.log`);
 };
 
-// Clear log file on startup
+// Rotate log file on startup. Truncating here destroyed forensic history when
+// the server restarted mid-run (a restart wiped another process's retrieval
+// telemetry on 2026-07-08), so the previous log is renamed aside instead.
 export const clearLogFile = () => {
   if (!ENABLE_FILE_LOGGING) return;
 
   const logFile = getLogFilePath();
   const timestamp = new Date().toISOString();
-  const header = `\n${"=".repeat(80)}\n[${timestamp}] SERVER STARTED - Log Cleared\n${"=".repeat(80)}\n\n`;
+  const header = `\n${"=".repeat(80)}\n[${timestamp}] SERVER STARTED - Log Rotated\n${"=".repeat(80)}\n\n`;
 
+  try {
+    if (fs.existsSync(logFile) && fs.statSync(logFile).size > 0) {
+      const suffix = timestamp.replace(/[:.]/g, "-");
+      fs.renameSync(logFile, logFile.replace(/\.log$/, `.${suffix}.old.log`));
+    }
+  } catch {
+    // Rotation is best-effort; never block startup on it.
+  }
   fs.writeFileSync(logFile, header);
   if (ENABLE_CONSOLE_LOGGING) {
     console.log(`📝 Log file initialized: ${logFile}`);

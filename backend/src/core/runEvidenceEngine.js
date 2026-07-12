@@ -286,14 +286,21 @@ function clampScore(value, fallback = 0) {
   return Math.max(0, Math.min(100, n));
 }
 
-// Phase 4: structured query plan logging per evaluation target
-function logEvidenceQueryPlan(claim) {
+// Phase 4: structured query plan logging per evaluation target.
+// `sink` (optional) collects each entry so callers can persist a machine-
+// readable query-plan trace for evidence debugging (see runEvidenceEngine
+// return value `queryPlan`).
+function logEvidenceQueryPlan(claim, sink = null) {
   const targets = Array.isArray(claim.evaluationTargets) ? claim.evaluationTargets : [];
   const queries = (Array.isArray(claim.searchTargets) ? claim.searchTargets : []).map((t) => t.query).filter(Boolean);
   const planned = queries.length > 0;
+  const emit = (entry) => {
+    logger.log(`[QUERY_PLAN] ${JSON.stringify(entry)}`);
+    if (Array.isArray(sink)) sink.push(entry);
+  };
 
   if (!targets.length) {
-    logger.log(`[QUERY_PLAN] ${JSON.stringify({
+    emit({
       claim_id: claim.id,
       evaluation_target_id: null,
       target_type: "legacy",
@@ -301,20 +308,22 @@ function logEvidenceQueryPlan(claim) {
       queries,
       execution_status: planned ? "planned" : "skipped",
       skip_reason: planned ? null : "no_search_targets_generated",
-    })}`);
+    });
     return;
   }
 
   for (const target of targets.filter((t) => t.searchEligible !== false)) {
-    logger.log(`[QUERY_PLAN] ${JSON.stringify({
+    emit({
       claim_id: claim.id,
       evaluation_target_id: target.evaluationTargetId || null,
       target_type: target.targetType || "unknown",
       target_text: String(target.targetText || "").slice(0, 200),
+      // Provenance for debugging: which sidecar siblings fed the expansion.
+      query_expansion_source_claim_ids: (target.queryHints?.queryExpansionSourceClaimIds || []),
       queries,
       execution_status: planned ? "planned" : "skipped",
       skip_reason: planned ? null : "no_search_targets_generated",
-    })}`);
+    });
   }
 
   if (targets.some((t) => t.searchEligible !== false) && !planned) {
@@ -470,8 +479,6 @@ export async function runEvidenceEngine({
 
   // Log the initial claim count before filtering
   logger.log(`📊 [runEvidenceEngine] Received ${claimIds.length} total claim IDs (will filter to selectedEvaluationClaims only)`);
-  // Phase 4: visible-claim limit applies to claims, not to individual evaluation targets
-  logger.log(`[QUERY_PLAN] Processing ${selectedEvaluationClaimIds.length} selected evaluation claim(s) (filtered from ${claimIds.length} total) for content ${taskContentId}`);
 
   // Fetch task URL to exclude it from being used as its own reference
   const taskRows = await query(
@@ -515,6 +522,8 @@ export async function runEvidenceEngine({
     if (!eligibility) return false;
     return eligibility.selected_for_evaluation === 0 || eligibility.selected_for_evaluation === false;
   });
+  // Phase 4: visible-claim limit applies to claims, not to individual evaluation targets
+  logger.log(`[QUERY_PLAN] Processing ${selectedEvaluationClaimIds.length} selected evaluation claim(s) (filtered from ${claimIds.length} total) for content ${taskContentId}`);
 
   logger.log(`🔍 [EVIDENCE_LANE_GATING] Filtering claims: ${claimIds.length} total → ${selectedEvaluationClaimIds.length} evaluation + ${backgroundClaimIds.length} background`);
   if (backgroundClaimIds.length > 0) {
@@ -624,6 +633,10 @@ export async function runEvidenceEngine({
       (b.centrality - a.centrality)
     );
 
+  // Machine-readable query-plan trace (returned as `queryPlan`) so callers can
+  // persist it to a file for evidence debugging.
+  const queryPlanTrace = [];
+
   await discoverStudyIdentities({
     query,
     taskContentId,
@@ -661,7 +674,7 @@ export async function runEvidenceEngine({
         articlePassageContext: String(retrievalContext.articlePassageContext || "").slice(0, 1200),
       })}`);
     }
-    logEvidenceQueryPlan(claim);
+    logEvidenceQueryPlan(claim, queryPlanTrace);
   }
 
   selectedEvaluationClaimIds.splice(0, selectedEvaluationClaimIds.length, ...claims.map((claim) => claim.id));
@@ -1950,6 +1963,7 @@ export async function runEvidenceEngine({
     aiReferences,
     failedCandidates, // For UI to display as "scrape manually" options
     claimConfidenceMap, // Map of claimIndex → confidence for persistAIResults
+    queryPlan: queryPlanTrace, // Machine-readable per-target query plan for evidence debugging
     repairAudit,
     claimProgress,
     ...(bearingConfig.enableBearingPacket ? { evidencePackets } : {}),

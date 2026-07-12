@@ -50,6 +50,12 @@ const RHETORIC_STRIP_RE = /\b(breathtaking|loudly trumpeting|bombardment of|so-c
 const INFERENCE_CUE_RE =
   /\b(set the stage|paved the way|enabled|led to|opened the door|resulted in|gave rise|created the conditions|misled|mislead|deceiv|cover[- ]?up|captured|industry capture|because of this|as a result)\b/i;
 
+// Institutional-action / data-integrity allegation verbs. Used ONLY to decide
+// whether an unattributed allegation should carry a provenance-only
+// attribution target pointing at the section's attributed source.
+const ALLEGATION_VERB_RE =
+  /\b(destroy\w*|manipulat\w*|falsif\w*|fabricat\w*|conceal\w*|suppress\w*|withh?[eo]ld\w*|omitt?\w*|cover\w*[- ]?up|re-?work\w*|shredd?\w*|delet\w*)\b/i;
+
 const CAUSAL_SAFETY_FORMS = new Set(["causal_claim"]);
 const SUBSTANTIVE_FORMS = new Set([
   "direct_assertion",
@@ -110,6 +116,32 @@ function hasConcreteStudyObject(claim) {
     YEAR_PUBLICATION_RE.test(text) ||
     NAMED_INSTITUTION_STUDY_RE.test(text)
   );
+}
+
+/**
+ * Generic disambiguation hint for a study/document a claim references but does
+ * not name. Built from the claim's own entities + the document class word it
+ * uses — no article-specific taxonomy. E.g. "CDC MMR study referenced by the
+ * article".
+ */
+function buildStudyIdentityHint(claim) {
+  const text = `${claim.visibleClaimText || ""} ${claim.embeddedSubstantiveClaim || ""}`;
+  const docClass =
+    (/\b(law|act|statute|regulation|amendment)\b/i.exec(text) || [])[0] ||
+    (/\b(report|memo|assessment)\b/i.exec(text) || [])[0] ||
+    (/\b(dataset|database|registry|records?)\b/i.exec(text) || [])[0] ||
+    (/\b(transcript|meeting)\b/i.exec(text) || [])[0] ||
+    (/\b(stud(?:y|ies)|analysis|trial|paper|review)\b/i.exec(text) || [])[0] ||
+    "study/document";
+  const entities = [
+    ...uniq(claim.namedOrganizations),
+    ...uniq(claim.namedActors),
+    ...uniq(claim.namedSubstancesOrProducts),
+    ...((text.match(/\b[A-Z]{2,}\b/g) || [])),
+    ...((text.match(/\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b/g) || [])),
+  ];
+  const salient = [...new Set(entities.map((e) => String(e).trim()).filter(Boolean))].slice(0, 3).join(" ");
+  return `${salient ? salient + " " : ""}${String(docClass).toLowerCase()} referenced by the article`.trim();
 }
 
 /**
@@ -706,11 +738,130 @@ function cleanupSubstantiveTargets(targets, diag) {
  *   - emitInferenceTargets (default true)
  * @returns {{targets: Array<object>, diagnostics: object}}
  */
+/**
+ * If a claim has no document target of its own but a related sibling points at
+ * a concrete document, add ONE disambiguation-flagged study_identity target
+ * sourced from the sibling. Runs in the per-claim loop (study_identity targets
+ * are not touched by substantive cleanup, so this survives intact).
+ */
+function addSiblingDocumentTarget(perClaimTargets, expansion, claim) {
+  if (!expansion || !(expansion.queryExpansionSourceClaimIds || []).length) return;
+  const hasDocTarget = perClaimTargets.some((t) => ["study_identity", "evidence_landscape"].includes(t.targetType));
+  if (!hasDocTarget) {
+    const hints = expansion.documentAffordanceHints || [];
+    const hint = hints.find((h) => /referenced by the article|report|study|dataset|record|filing/i.test(h)) ||
+      hints[0] || "document referenced by a related claim";
+    perClaimTargets.push({
+      targetType: "study_identity",
+      needsDisambiguation: true,
+      documentAffordanceClass: expansion.documentAffordanceClass,
+      identityHint: hint,
+      targetText: `Identify the underlying document/record from a related claim (needs disambiguation): ${hint}`,
+      scoreTransform: "none",
+      searchEligible: true,
+      verdictEligible: false,
+      // Weak bearing: the underlying document is not yet named (that is the
+      // point of a disambiguation target), so it carries shouldMatch keywords +
+      // a rejectIfOnly guard + notes rather than a concrete mustMatch object.
+      bearingCriteria: bc(
+        [],
+        uniq([...(expansion.shouldMatchTerms || []), ...(expansion.documentAffordanceHints || [])]),
+        uniq([...(expansion.rejectIfOnlyTerms || []), "a source that mentions the topic but not the specific document/record"]),
+        true,
+        `sibling-sourced document identity (${expansion.documentAffordanceClass}); disambiguate the underlying document referenced by ${(expansion.queryExpansionSourceClaimIds || []).join(", ")}`
+      ),
+      queryHints: {
+        ...buildQueryHints(claim, [claim.searchText || claim.visibleClaimText, ...(expansion.additionalQueryTerms || [])].filter(Boolean).join(" ")),
+        expansionTerms: expansion.additionalQueryTerms || [],
+        documentAffordanceHints: hints,
+        queryExpansionSourceClaimIds: expansion.queryExpansionSourceClaimIds || [],
+        siblingEvidenceHints: expansion.siblingEvidenceHints || [],
+      },
+      queryExpansionSourceClaimIds: expansion.queryExpansionSourceClaimIds || [],
+      documentAffordanceHints: hints,
+      mappingReason:
+        "a related (unselected) sibling claim points at a concrete document with stronger evidence affordance; added as a disambiguation-flagged study_identity so evidence search can resolve it without selecting the sibling",
+      mappingConfidence: 0.5,
+    });
+  }
+}
+
+/**
+ * Enrich already-finalized search targets with sibling evidence-affordance
+ * query terms + bearing hints + provenance. Applied AFTER substantive cleanup
+ * so the cleaned query text is the base. Never changes scoreTransform or
+ * verdictEligible — article posture (invert/normal/none) is untouched.
+ */
+function enrichTargetsWithExpansion(finalTargets, expansionByClaimId) {
+  if (!expansionByClaimId) return;
+  const low = (s) => String(s || "").toLowerCase();
+  for (const t of finalTargets) {
+    const expansion = expansionByClaimId[t.sourceClaimId];
+    if (!expansion || !(expansion.queryExpansionSourceClaimIds || []).length) continue;
+    if (t.searchEligible === false) continue;
+    if (!["substantive", "study_identity", "evidence_landscape"].includes(t.targetType)) continue;
+    const qh = t.queryHints || (t.queryHints = {});
+    const before = qh.primaryQueryText || "";
+    const bearingBefore = JSON.parse(JSON.stringify(t.bearingCriteria || {}));
+    const existing = new Set(low(before).split(/\s+/));
+    const add = (expansion.additionalQueryTerms || []).filter((term) => !existing.has(low(term)));
+    const after = [before, ...add].filter(Boolean).join(" ").trim();
+    qh.primaryQueryText = after;
+    qh.expansionTerms = expansion.additionalQueryTerms || [];
+    qh.documentAffordanceHints = expansion.documentAffordanceHints || [];
+    qh.queryExpansionSourceClaimIds = expansion.queryExpansionSourceClaimIds || [];
+    qh.siblingEvidenceHints = expansion.siblingEvidenceHints || [];
+    if (t.bearingCriteria) {
+      t.bearingCriteria.shouldMatch = uniq([...(t.bearingCriteria.shouldMatch || []), ...(expansion.shouldMatchTerms || [])]);
+      t.bearingCriteria.rejectIfOnly = uniq([...(t.bearingCriteria.rejectIfOnly || []), ...(expansion.rejectIfOnlyTerms || [])]);
+      const note = `query-expanded from sibling document affordance (${expansion.documentAffordanceClass})`;
+      t.bearingCriteria.bearingNotes = t.bearingCriteria.bearingNotes ? `${t.bearingCriteria.bearingNotes}; ${note}` : note;
+    }
+    t.queryExpansionSourceClaimIds = expansion.queryExpansionSourceClaimIds || [];
+    t.documentAffordanceHints = expansion.documentAffordanceHints || [];
+    t.queryExpansion = {
+      queryBeforeExpansion: before,
+      queryAfterExpansion: after,
+      bearingCriteriaBefore: bearingBefore,
+      bearingCriteriaAfter: JSON.parse(JSON.stringify(t.bearingCriteria || {})),
+      queryExpansionSourceClaimIds: expansion.queryExpansionSourceClaimIds || [],
+      documentAffordanceHints: expansion.documentAffordanceHints || [],
+      siblingEvidenceHints: expansion.siblingEvidenceHints || [],
+      documentAffordanceClass: expansion.documentAffordanceClass,
+    };
+  }
+}
+
 export function targetizeClaimOccurrences(claimOccurrences, options = {}) {
   const idField = options.idField || "claimId";
   const emitInference = options.emitInferenceTargets ?? true;
+  // Generic sidecar evidence-affordance query expansion (optional). Keyed by
+  // selected claimId → { additionalQueryTerms, siblingEvidenceHints,
+  // documentAffordanceHints, shouldMatchTerms, rejectIfOnlyTerms,
+  // documentAffordanceClass, queryExpansionSourceClaimIds }. Never selects the
+  // sibling; only enriches this claim's search targets. See
+  // tm4EvidenceAffordanceExpansion.js.
+  const expansionByClaimId = options.expansionByClaimId || {};
 
   const input = Array.isArray(claimOccurrences) ? claimOccurrences : [];
+
+  // Section-level attribution provenance: an unattributed allegation is often
+  // the article's own restatement of a source's revelation reported in the
+  // same section (e.g. a whistleblower). Map section → attributed speaker so
+  // such claims can carry a provenance-only attribution target.
+  const speakerBySection = new Map();
+  for (const c of input) {
+    const speaker = (c.speakerOrSource || "").trim();
+    if (!speaker) continue;
+    const attributed =
+      c.claimForm === "attributed_assertion" ||
+      c.claimForm === "quoted_claim" ||
+      c.targetHints?.needsAttributionTarget === true;
+    if (!attributed) continue;
+    const section = String(c[idField] || c.claimId || "").split("-")[0];
+    if (section && !speakerBySection.has(section)) speakerBySection.set(section, speaker);
+  }
+
   const targets = [];
   const warnings = [];
   const claimsWithNoTargets = [];
@@ -795,6 +946,31 @@ export function targetizeClaimOccurrences(claimOccurrences, options = {}) {
           : "attributed/quoted claim; attribution provenance only (verdict carried by sibling target)",
         mappingConfidence: 0.9,
       });
+    } else if (ALLEGATION_VERB_RE.test(`${claim.visibleClaimText || ""} ${claim.embeddedSubstantiveClaim || ""}`)) {
+      // Unattributed allegation whose named source is an attributed speaker
+      // from the same section: the allegation's provenance is that source's
+      // account, so preserve it as a provenance-only attribution target
+      // (verdict stays with the substantive sibling).
+      const section = String(claimId).split("-")[0];
+      const sectionSpeaker = speakerBySection.get(section) || "";
+      const speakerNamed = sectionSpeaker
+        .split(/\s+/)
+        .some((w) => w.length >= 4 && (claim.visibleClaimText || "").includes(w));
+      if (sectionSpeaker && speakerNamed) {
+        const proposition = firstNonEmpty(claim.embeddedSubstantiveClaim, claim.visibleClaimText);
+        perClaimTargets.push({
+          targetType: "attribution",
+          targetText: `${sectionSpeaker} made or conveyed the claim that ${proposition}`,
+          scoreTransform: "none",
+          searchEligible: true,
+          verdictEligible: false,
+          bearingCriteria: buildBearingCriteria(claim, "attribution", proposition),
+          queryHints: buildQueryHints(claim, `${sectionSpeaker} ${proposition}`),
+          mappingReason:
+            "unattributed allegation naming the section's attributed source; attribution provenance only (verdict carried by sibling target)",
+          mappingConfidence: 0.7,
+        });
+      }
     }
 
     // ---- (3b) Substantive target push (suppressed for lit-existence) --
@@ -867,12 +1043,37 @@ export function targetizeClaimOccurrences(claimOccurrences, options = {}) {
             "resolves the study/document object identity needed before substantive evidence scoring",
           mappingConfidence: namedStudies.length ? 0.85 : 0.7,
         });
+      } else if (!isMaxim) {
+        // The claim points at a study/document class but does NOT name it
+        // (e.g. "the reworked study was released…"). Do NOT drop the document
+        // affordance — emit a disambiguation-flagged study_identity target so
+        // the evidence run can still resolve the referenced document, with a
+        // generic identity hint built from the claim's entities + topic terms.
+        const hint = buildStudyIdentityHint(claim);
+        perClaimTargets.push({
+          targetType: "study_identity",
+          needsDisambiguation: true,
+          identityHint: hint,
+          targetText: `Identify the study/document referenced (needs disambiguation): ${hint}`,
+          scoreTransform: "none",
+          searchEligible: true,
+          verdictEligible: false,
+          bearingCriteria: buildBearingCriteria(claim, "study_identity"),
+          queryHints: buildQueryHints(claim, firstNonEmpty(claim.searchText, hint, claim.visibleClaimText)),
+          mappingReason:
+            "claim references a study/document class without naming it; emitted as study_identity with needsDisambiguation so evidence search can resolve the document rather than dropping its affordance",
+          mappingConfidence: 0.55,
+        });
+        studyIdentitySuppressed.push({
+          claimId,
+          reason: "study/document referenced but unnamed — emitted study_identity with needsDisambiguation instead of dropping",
+          resolved: "needs_disambiguation",
+          text: (claim.visibleClaimText || "").slice(0, 100),
+        });
       } else {
         studyIdentitySuppressed.push({
           claimId,
-          reason: isMaxim
-            ? "logical maxim, not a study/document"
-            : "no concrete identifiable study/document/dataset/law/report/film/meeting object",
+          reason: "logical maxim, not a study/document",
           text: (claim.visibleClaimText || "").slice(0, 100),
         });
       }
@@ -907,6 +1108,11 @@ export function targetizeClaimOccurrences(claimOccurrences, options = {}) {
       }
     }
 
+    // Generic evidence-affordance expansion (sidecar): if a sibling points at a
+    // concrete document this claim lacks, add a disambiguation study_identity.
+    // (Query/bearing enrichment of existing targets happens AFTER cleanup.)
+    addSiblingDocumentTarget(perClaimTargets, expansionByClaimId[claimId], claim);
+
     // Finalize per-claim targets with IDs + shared context.
     const typeSeq = {};
     for (const t of perClaimTargets) {
@@ -940,6 +1146,10 @@ export function targetizeClaimOccurrences(claimOccurrences, options = {}) {
   // Substantive atomicity / rhetoric cleanup (fix 4). Splits/rewrites are
   // applied here; non-substantive targets pass through untouched.
   const finalTargets = cleanupSubstantiveTargets(targets, cleanupDiag);
+
+  // Sidecar evidence-affordance query expansion — applied AFTER cleanup so the
+  // cleaned query text is the base being enriched. Posture is never altered.
+  enrichTargetsWithExpansion(finalTargets, expansionByClaimId);
 
   // Diagnostics
   const targetsByType = {};

@@ -97,7 +97,16 @@ async function main() {
   for (const t of targets) {
     // ---- Check 1: study_identity specificity ------------------------
     if (t.targetType === "study_identity") {
-      if (LITERATURE_EXISTENCE_RE.test(t.targetText)) {
+      // A disambiguation study_identity (needsDisambiguation=true) is
+      // INTENTIONALLY object-less: the article/sibling references a document
+      // class without naming it, so it is resolved via identityHint + query
+      // expansion + weak bearing. Acknowledged, not flagged as no-object.
+      if (t.needsDisambiguation === true) {
+        acknowledged.push({
+          targetId: t.targetId,
+          reason: `study_identity needs disambiguation (${t.documentAffordanceClass || "document"}): ${t.identityHint || t.targetText}`,
+        });
+      } else if (LITERATURE_EXISTENCE_RE.test(t.targetText)) {
         addFlag(t, "study_identity_should_be_evidence_landscape", "high",
           `asserts existence/absence of a body of literature, not a specific study → reclassify as evidence_landscape/literature_existence: "${t.targetText}"`);
       } else if (LOGICAL_MAXIM_RE.test(t.targetText)) {

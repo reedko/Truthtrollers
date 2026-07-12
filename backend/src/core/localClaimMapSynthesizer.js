@@ -34,6 +34,8 @@ export class LocalClaimMapSynthesizer {
       temperature: options.temperature ?? 0.2,
       timeoutMs: options.timeoutMs ?? 90000,
       maxRetries: options.maxRetries ?? 1,
+      // Optional raw-response capture hook (test/preview runs only).
+      captureRaw: typeof options.captureRaw === "function" ? options.captureRaw : null,
     };
 
     this.systemPrompt = options.systemPrompt || this.getHardcodedSystemPrompt();
@@ -113,12 +115,24 @@ export class LocalClaimMapSynthesizer {
       });
 
       this.diagnostics.totalOpenAICalls++;
+      // Optional raw-response capture (test/preview runs): records prompts and
+      // the raw pre-parse response, plus parse outcome.
+      const capture = (outcome) => this.llmConfig.captureRaw?.("phase2_claim_map_synthesis", {
+        articleTitle,
+        model: this.llmConfig.model,
+        temperature: this.llmConfig.temperature,
+        systemPrompt: this.systemPrompt,
+        userPrompt: user,
+        ...outcome,
+      }, out);
 
       // Parse response
       let parsed = null;
+      let parseFailed = null;
       try {
         parsed = typeof out === "string" ? JSON.parse(out) : out;
       } catch (parseErr) {
+        parseFailed = parseErr;
         this.diagnostics.parseFailures.push({
           error: parseErr.message,
           rawSnippet: typeof out === "string" ? out.substring(0, 200) : String(out).substring(0, 200),
@@ -132,6 +146,9 @@ export class LocalClaimMapSynthesizer {
           warnings: [`Parse failure: ${parseErr.message}`],
         };
       }
+      capture(parseFailed
+        ? { parseStatus: "parse_failure", parseError: parseFailed.message }
+        : { parseStatus: "ok", acceptedClaimCount: (parsed.claimAssignments || []).length });
 
       // Validate and reattach excerpts to synthesized claims
       let synthesizedClaims = parsed.synthesizedClaims || [];

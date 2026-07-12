@@ -20,6 +20,8 @@ export class AtomicVisibleClaimsExtractor {
       timeoutMs: options.timeoutMs ?? 120000,
       maxRetries: options.maxRetries ?? 1,
       maxClaims: options.maxClaims ?? 7,
+      // Optional raw-response capture hook (test/preview runs only).
+      captureRaw: typeof options.captureRaw === "function" ? options.captureRaw : null,
     };
 
     // Article-level stance context, injected into every section prompt.
@@ -68,12 +70,25 @@ export class AtomicVisibleClaimsExtractor {
       });
 
       this.diagnostics.totalOpenAICalls++;
+      // Optional raw-response capture (test/preview runs): records prompts and
+      // the raw pre-parse response, plus parse/acceptance outcome, so parse
+      // and validation failures are fully reconstructable.
+      const capture = (outcome) => this.llmConfig.captureRaw?.("phase1_atomic_extraction", {
+        sectionIndex,
+        sectionHeading,
+        model: this.llmConfig.model,
+        temperature: this.llmConfig.temperature,
+        systemPrompt,
+        userPrompt,
+        ...outcome,
+      }, llmResult);
 
       // Parse result
       let parsed;
       try {
         parsed = typeof llmResult === "string" ? JSON.parse(llmResult) : llmResult;
       } catch (e) {
+        capture({ parseStatus: "parse_failure", parseError: e.message });
         return {
           sectionIndex,
           sectionHeading,
@@ -90,6 +105,11 @@ export class AtomicVisibleClaimsExtractor {
         sectionText,
         sentences
       );
+      capture({
+        parseStatus: "ok",
+        acceptedClaimCount: processedClaims.length,
+        rejectedClaimCount: Math.max(0, (parsed.visibleClaims || []).length - processedClaims.length),
+      });
 
       return {
         sectionIndex,
