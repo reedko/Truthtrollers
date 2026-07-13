@@ -808,18 +808,20 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
   const scrapeForPublisher = useCallback(async (targetUrl?: string, useExtension = false) => {
     const scrapeUrl = targetUrl || sourceUrl;
     if (!scrapeUrl || scrapePolling) return;
+
+    if (useExtension) {
+      // Always open the source first. Even when this modal lacks enough task
+      // context to queue a scrape job, the user still needs the tab to clear
+      // bot checks, paywalls, or consent screens.
+      window.open(scrapeUrl, '_blank', 'noopener');
+    }
+
     if (useExtension && !contentId) {
       setScrapeStatus("Extension scrape requires a content id.");
       return;
     }
     setScrapePolling(true);
     setScrapeStatus(useExtension ? "Opening tab…" : "Refreshing from backend…");
-
-    if (useExtension) {
-      // Open the URL only for explicit extension scrapes so normal SourceCrest
-      // refreshes do not steal focus from the dashboard.
-      window.open(scrapeUrl, '_blank', 'noopener');
-    }
 
     if (useExtension) setScrapeStatus("Submitting scrape job…");
     try {

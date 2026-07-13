@@ -202,11 +202,11 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       console.log(`🔍 [RelevanceScan] Loading links for task claim ${taskClaim.claim_id}`);
       console.log(`🔍 [RelevanceScan] Built ${all.length} reference claims from ${references.length} references`);
 
-      const existingLinks = await fetchReferenceClaimTaskLinks(taskClaim.claim_id);
+      const existingLinks = await fetchReferenceClaimTaskLinks(taskClaim.claim_id, contentId);
       console.log(`🔍 [RelevanceScan] Fetched ${existingLinks.length} claim-to-claim links from backend:`, existingLinks);
 
       // Also fetch document-level links (reference_claim_links)
-      const docLinks = await fetchReferenceDocumentLinks(taskClaim.claim_id);
+      const docLinks = await fetchReferenceDocumentLinks(taskClaim.claim_id, contentId);
       console.log(`🔍 [RelevanceScan] Fetched ${docLinks.length} document-level links from backend:`, docLinks);
       setDocumentLinks(docLinks);
 
@@ -293,7 +293,7 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
       let refMap = initialBuild.refMap;
 
       // Fetch existing AI assessments from reference_claim_task_links
-      const existingLinks = await fetchReferenceClaimTaskLinks(taskClaim.claim_id);
+      const existingLinks = await fetchReferenceClaimTaskLinks(taskClaim.claim_id, contentId);
 
       // For quick mode, fetch references that have dotted lines (reference_claim_links)
       // AND include references with existing high-relevance assessments
@@ -385,7 +385,9 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
             claim.claim_id,
             taskClaim.claim_id,
             claim.claim_text,
-            taskClaim.claim_text
+            taskClaim.claim_text,
+            contentId,
+            refMap.get(claim.claim_id) ?? null
           );
           if (link) {
             newLinks.push(link);
@@ -792,7 +794,7 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                     }
                     position="relative"
                     overflow="hidden"
-                    cursor={reference ? "pointer" : "default"}
+                    cursor={reference ? "pointer" : "not-allowed"}
                     role={reference ? "button" : undefined}
                     tabIndex={reference ? 0 : undefined}
                     onClick={() => {
@@ -884,6 +886,11 @@ const RelevanceScanModal: React.FC<RelevanceScanModalProps> = ({
                           </Text>
                         </HStack>
                       </VStack>
+                    )}
+                    {!reference && (
+                      <Text fontSize="2xs" color="orange.300" mb={2}>
+                        Source is not linked to the current task source list.
+                      </Text>
                     )}
 
                     {docLink.rationale && (

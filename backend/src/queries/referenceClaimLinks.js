@@ -3,6 +3,8 @@
 export async function insertReferenceClaimLink(query, row) {
   const {
     claim_id,
+    task_claim_id = claim_id,
+    content_relation_id = null,
     reference_content_id,
     stance,
     score = null,
@@ -20,12 +22,14 @@ export async function insertReferenceClaimLink(query, row) {
 
   const sql = `
     INSERT INTO reference_claim_links
-      (claim_id, reference_content_id, stance, score, rationale, evidence_text, evidence_offsets, created_by_ai, verified_by_user_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (claim_id, task_claim_id, content_relation_id, reference_content_id, stance, score, rationale, evidence_text, evidence_offsets, created_by_ai, verified_by_user_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   const params = [
     claim_id,
+    task_claim_id,
+    content_relation_id,
     reference_content_id,
     stance,
     score,
@@ -58,12 +62,14 @@ export async function insertReferenceClaimLinksBulk(query, items = []) {
 
   const sql = `
     INSERT INTO reference_claim_links
-      (claim_id, reference_content_id, stance, score, rationale, evidence_text, evidence_offsets, created_by_ai, verified_by_user_id)
+      (claim_id, task_claim_id, content_relation_id, reference_content_id, stance, score, rationale, evidence_text, evidence_offsets, created_by_ai, verified_by_user_id)
     VALUES ?
   `;
 
   const values = items.map((row) => [
     row.claim_id,
+    row.task_claim_id ?? row.claim_id,
+    row.content_relation_id ?? null,
     row.reference_content_id,
     row.stance,
     row.score ?? null,

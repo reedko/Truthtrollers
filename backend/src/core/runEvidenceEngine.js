@@ -67,28 +67,30 @@ import { fetchWaybackSnapshot } from "../utils/fetchWithFallbacks.js";
 async function ensureContentRelation(query, taskContentId, referenceContentId) {
   if (taskContentId === referenceContentId) {
     logger.warn(`⚠️ [Evidence] Skipping self-referential content_relation for content_id=${taskContentId}`);
-    return;
+    return null;
   }
   try {
     // Check if relation already exists
     const existing = await query(
-      `SELECT 1 FROM content_relations WHERE content_id = ? AND reference_content_id = ?`,
+      `SELECT content_relation_id FROM content_relations WHERE content_id = ? AND reference_content_id = ? LIMIT 1`,
       [taskContentId, referenceContentId]
     );
 
     if (existing.length === 0) {
       // Insert the relation with is_system=1 (AI-created)
-      await query(
+      const inserted = await query(
         `INSERT INTO content_relations (content_id, reference_content_id, added_by_user_id, is_system) VALUES (?, ?, NULL, 1)`,
         [taskContentId, referenceContentId]
       );
       logger.log(
         `🔗 [Evidence] Linked reference ${referenceContentId} to task ${taskContentId}`
       );
+      return Number(inserted?.insertId) || null;
     } else {
       logger.log(
         `✓ [Evidence] Relation already exists: task ${taskContentId} → reference ${referenceContentId}`
       );
+      return Number(existing[0]?.content_relation_id) || null;
     }
   } catch (err) {
     logger.error(
@@ -96,6 +98,7 @@ async function ensureContentRelation(query, taskContentId, referenceContentId) {
       err
     );
     // Don't throw - we want to continue processing other references
+    return null;
   }
 }
 
@@ -745,7 +748,7 @@ export async function runEvidenceEngine({
       thumbnail: "",
       details: `${retrievalMode}: ${cleanText.slice(0, 450)}`,
     });
-    await ensureContentRelation(query, taskContentId, referenceContentId);
+    const contentRelationId = await ensureContentRelation(query, taskContentId, referenceContentId);
     await query(`UPDATE content SET content_text = ? WHERE content_id = ?`, [cleanText, referenceContentId]);
     const identityResult = await processPublishingIdentity({
       query,
@@ -764,6 +767,7 @@ export async function runEvidenceEngine({
     const quality = Math.max(0, Math.min(1.2, Number(cand.score) || 0));
     referenceCache.set(cand.url, {
       referenceContentId,
+      contentRelationId,
       title,
       authors,
       publisher,
@@ -780,6 +784,11 @@ export async function runEvidenceEngine({
       ordinaryScrapeFailed: true,
       fallbackReason,
       protectedDocumentIdentity: Boolean(cand.protectedDocumentIdentity),
+      selectedForScrape: cand.selectedForScrape === true,
+      selectedScrapeReason: cand.selectedScrapeReason || null,
+      evidenceTargetId: cand.evidenceTargetId || null,
+      evidenceTargetType: cand.evidenceTargetType || null,
+      purposeLane: cand.purposeLane || cand.retrievalPurpose || null,
       identityBearingScore: cand.identityBearingScore || null,
       identityBearingType: cand.identityBearingType || null,
       identityBearingRationale: cand.identityBearingRationale || null,
@@ -1194,7 +1203,7 @@ export async function runEvidenceEngine({
               // ─────────────────────────────────────────────
               // CRITICAL: Link reference to task via content_relations
               // ─────────────────────────────────────────────
-              await ensureContentRelation(query, taskContentId, stubContentId);
+              const contentRelationId = await ensureContentRelation(query, taskContentId, stubContentId);
 
               const persistedStubResult = await processPublishingIdentity({
                 query,
@@ -1244,6 +1253,7 @@ export async function runEvidenceEngine({
               // Include search snippet as evidence since full scrape failed
               referenceCache.set(cand.url, {
                 referenceContentId: stubContentId,
+                contentRelationId,
                 title,
                 authors,
                 publisher,
@@ -1254,6 +1264,11 @@ export async function runEvidenceEngine({
                 citationCandidates,
                 isFailed: true, // Mark as needing manual scrape
                 protectedDocumentIdentity: Boolean(cand.protectedDocumentIdentity),
+                selectedForScrape: cand.selectedForScrape === true,
+                selectedScrapeReason: cand.selectedScrapeReason || null,
+                evidenceTargetId: cand.evidenceTargetId || null,
+                evidenceTargetType: cand.evidenceTargetType || null,
+                purposeLane: cand.purposeLane || cand.retrievalPurpose || null,
                 identityBearingScore: cand.identityBearingScore || null,
                 identityBearingType: cand.identityBearingType || null,
                 identityBearingRationale: cand.identityBearingRationale || null,
@@ -1300,7 +1315,7 @@ export async function runEvidenceEngine({
             // ─────────────────────────────────────────────
             // CRITICAL: Link reference to task via content_relations
             // ─────────────────────────────────────────────
-            await ensureContentRelation(query, taskContentId, referenceContentId);
+            const contentRelationId = await ensureContentRelation(query, taskContentId, referenceContentId);
 
             // ─────────────────────────────────────────────
             // 5.5. SAVE FULL CLEANED TEXT (for quality analysis)
@@ -1387,6 +1402,7 @@ export async function runEvidenceEngine({
 
             referenceCache.set(cand.url, {
               referenceContentId,
+              contentRelationId,
               title,
               authors,
               publisher,
@@ -1398,6 +1414,11 @@ export async function runEvidenceEngine({
               retrievalMode,
               apiBacked,
               protectedDocumentIdentity: Boolean(cand.protectedDocumentIdentity),
+              selectedForScrape: cand.selectedForScrape === true,
+              selectedScrapeReason: cand.selectedScrapeReason || null,
+              evidenceTargetId: cand.evidenceTargetId || null,
+              evidenceTargetType: cand.evidenceTargetType || null,
+              purposeLane: cand.purposeLane || cand.retrievalPurpose || null,
               identityBearingScore: cand.identityBearingScore || null,
               identityBearingType: cand.identityBearingType || null,
               identityBearingRationale: cand.identityBearingRationale || null,
@@ -1449,7 +1470,7 @@ export async function runEvidenceEngine({
             // ─────────────────────────────────────────────
             // CRITICAL: Link reference to task via content_relations
             // ─────────────────────────────────────────────
-            await ensureContentRelation(query, taskContentId, stubContentId);
+            const contentRelationId = await ensureContentRelation(query, taskContentId, stubContentId);
 
             const publisherLink = await ensureReferencePublisherLink({
               query,
@@ -1479,6 +1500,7 @@ export async function runEvidenceEngine({
             // Include search snippet as evidence since full scrape failed
             referenceCache.set(cand.url, {
               referenceContentId: stubContentId,
+              contentRelationId,
               title: cand.title || "Failed Reference",
               authors: [],
               publisher: null,
@@ -1577,6 +1599,7 @@ export async function runEvidenceEngine({
         taskContentId,
         aiReferences: [{
           referenceContentId: refData.referenceContentId,
+          contentRelationId: refData.contentRelationId,
           url: sourceUrl,
           evidenceAssertions: assertions,
         }],
@@ -1823,6 +1846,7 @@ export async function runEvidenceEngine({
         // New reference
         evidenceByUrl.set(ev.url, {
           referenceContentId: refData.referenceContentId, // ← From cache
+          contentRelationId: refData.contentRelationId,
           url: ev.url,
           title: refData.title, // ← From cache
           stance: ev.stance,
@@ -1873,6 +1897,7 @@ export async function runEvidenceEngine({
         const status = refData.retrievalMode === "full_text" ? "full_text" : "abstract_only";
         evidenceByUrl.set(url, {
           referenceContentId: refData.referenceContentId,
+          contentRelationId: refData.contentRelationId,
           url,
           title: refData.title,
           stance: "insufficient",
@@ -1890,9 +1915,50 @@ export async function runEvidenceEngine({
         continue;
       }
 
+      if (refData.selectedForScrape && hasClaimProvenance) {
+        const hasFullText = String(refData.cleanText || "").trim().length >= 100;
+        const status = hasFullText
+          ? (refData.retrievalMode === "abstract_only" ? "abstract_only" : "full")
+          : "snippet_only";
+        evidenceByUrl.set(url, {
+          referenceContentId: refData.referenceContentId,
+          contentRelationId: refData.contentRelationId,
+          url,
+          title: refData.title,
+          stance: "insufficient",
+          why: hasFullText
+            ? "Selected by retrieval triage and scraped, but no explicit target-bearing assertion passed post-fetch bearing."
+            : "Selected by retrieval triage, but full source text was not available; kept as a selected scrape stub.",
+          quote: hasFullText
+            ? String(refData.cleanText).slice(0, 1200)
+            : String(refData.snippet || "").slice(0, 1200),
+          claims: [...refData.claimIndices],
+          quality: refData.quality || (hasFullText ? 0.35 : 0.25),
+          cleanText: refData.cleanText || "",
+          scrapeStatus: status,
+          documentOnly: true,
+          selectedForScrape: true,
+          selectedScrapeReason: refData.selectedScrapeReason || "allocated_candidate_plan",
+          evidenceTargetId: refData.evidenceTargetId || null,
+          evidenceTargetType: refData.evidenceTargetType || null,
+          purposeLane: refData.purposeLane || null,
+        });
+        logger.log(`[SELECTED_SCRAPE_PRESERVED] ${JSON.stringify({
+          event: "selected_scrape_document_link_preserved",
+          taskContentId,
+          url: String(url).slice(0, 500),
+          referenceContentId: refData.referenceContentId,
+          claimIndices: refData.claimIndices,
+          scrapeStatus: status,
+          reason: refData.selectedScrapeReason || "allocated_candidate_plan",
+        })}`);
+        continue;
+      }
+
       if (refData.isFailed && hasClaimProvenance && snippet) {
         evidenceByUrl.set(url, {
           referenceContentId: refData.referenceContentId,
+          contentRelationId: refData.contentRelationId,
           url,
           title: refData.title,
           stance: "insufficient",

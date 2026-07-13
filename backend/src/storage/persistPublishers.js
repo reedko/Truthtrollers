@@ -56,6 +56,14 @@ function connectionQuery(connection) {
   });
 }
 
+function isRetryableTransactionError(error) {
+  return ["ER_LOCK_DEADLOCK", "ER_LOCK_WAIT_TIMEOUT"].includes(error?.code);
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function inTransaction(fallbackQuery, options, callback) {
   if (options.transactionQuery) return callback(options.transactionQuery);
   if (options.transaction === false) return callback(fallbackQuery);
@@ -80,8 +88,11 @@ async function inTransaction(fallbackQuery, options, callback) {
 async function upsertEntity(query, entity) {
   const name = boundedName(entity?.name);
   if (!name) return null;
-  const rows = await query("CALL InsertOrGetPublisher(?, NULL, NULL, @publisherId)", [name]);
-  const publisherId = rows?.[0]?.[0]?.publisherId || null;
+  const publisherId = await insertOrGetPublisherId(query, {
+    name,
+    owner: null,
+    icon: null,
+  });
   if (!publisherId) throw new Error(`Could not create or resolve source entity: ${name}`);
   await query(
     `UPDATE publishers
@@ -91,6 +102,28 @@ async function upsertEntity(query, entity) {
     [entity.entity_type || "other", confidenceNumber(entity.confidence), publisherId],
   );
   return { ...entity, name, publisherId };
+}
+
+async function insertOrGetPublisherId(query, { name, owner = null, icon = null } = {}) {
+  const publisherName = boundedName(name);
+  if (!publisherName) return null;
+
+  const existing = await query(
+    `SELECT publisher_id
+       FROM publishers
+      WHERE publisher_name = ?
+      ORDER BY publisher_id
+      LIMIT 1`,
+    [publisherName],
+  );
+  if (existing?.[0]?.publisher_id) return existing[0].publisher_id;
+
+  const result = await query(
+    `INSERT INTO publishers (publisher_name, publisher_owner, publisher_icon)
+     VALUES (?, ?, ?)`,
+    [publisherName, owner || null, icon || null],
+  );
+  return result?.insertId || null;
 }
 
 export async function linkPublisherRole(query, contentId, {
@@ -215,7 +248,7 @@ function normalizePublicationDate(value) {
 export async function persistSourceIdentity(query, contentId, identity, options = {}) {
   if (!contentId || identity?.version !== SOURCE_IDENTITY_VERSION) return null;
 
-  return inTransaction(query, options, async (tx) => {
+  const run = () => inTransaction(query, options, async (tx) => {
     const organization = await upsertEntity(tx, identity.entities?.publishing_organization);
     const venue = await upsertEntity(tx, identity.entities?.publication_venue);
     const extraEntities = [];
@@ -358,6 +391,18 @@ export async function persistSourceIdentity(query, contentId, identity, options 
       linkedEntities: links.map((link) => ({ publisherId: link.publisherId, name: link.name, role: link.role })),
     };
   });
+
+  const maxAttempts = options.transactionQuery || options.transaction === false ? 1 : 3;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await run();
+    } catch (error) {
+      if (!isRetryableTransactionError(error) || attempt >= maxAttempts) throw error;
+      const delayMs = 75 * attempt;
+      logger.warn(`Publisher identity transaction hit ${error.code}; retrying content ${contentId} (${attempt + 1}/${maxAttempts}) after ${delayMs}ms.`);
+      await sleep(delayMs);
+    }
+  }
 }
 
 export async function persistPublishers(query, contentId, publisher = null, options = {}) {
@@ -377,12 +422,11 @@ export async function persistPublishers(query, contentId, publisher = null, opti
 
   const legacy = normalizedLegacyPublisher(publisher);
   if (!contentId || !legacy?.publisher_name) return null;
-  const rows = await query("CALL InsertOrGetPublisher(?, ?, ?, @publisherId)", [
-    legacy.publisher_name,
-    legacy.publisher_owner,
-    legacy.publisher_icon,
-  ]);
-  const publisherId = rows?.[0]?.[0]?.publisherId || null;
+  const publisherId = await insertOrGetPublisherId(query, {
+    name: legacy.publisher_name,
+    owner: legacy.publisher_owner,
+    icon: legacy.publisher_icon,
+  });
   if (!publisherId) return null;
   await linkPublisherRole(query, contentId, {
     publisherId,

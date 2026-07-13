@@ -58,6 +58,25 @@ const LEGACY_REFERENCE_CLAIM_EXTRACTION_RETIRED = true;
 
 export default function createContentScrapeRoutes({ query }) {
   const router = Router();
+  const ensureContentRelation = async (taskContentId, referenceContentId) => {
+    const taskId = Number(taskContentId);
+    const refId = Number(referenceContentId);
+    if (!taskId || !refId || taskId === refId) return null;
+    const existing = await query(
+      `SELECT content_relation_id
+         FROM content_relations
+        WHERE content_id = ? AND reference_content_id = ?
+        LIMIT 1`,
+      [taskId, refId],
+    );
+    if (existing.length > 0) return Number(existing[0].content_relation_id) || null;
+    const inserted = await query(
+      `INSERT INTO content_relations (content_id, reference_content_id, added_by_user_id, is_system)
+       VALUES (?, ?, NULL, 1)`,
+      [taskId, refId],
+    );
+    return Number(inserted?.insertId) || null;
+  };
   /**
    * Dashboard → request a scrape
    */
@@ -1138,6 +1157,7 @@ export default function createContentScrapeRoutes({ query }) {
       let existingContentId = null;
       let existingContentName = null;
       let isRetryScrape = false;
+      let contentRelationId = null;
 
       if (existing.length > 0) {
         existingContentId = existing[0].content_id;
@@ -1148,22 +1168,10 @@ export default function createContentScrapeRoutes({ query }) {
 
         // Ensure content_relations link exists (if taskContentId provided and not self-referential)
         if (taskContentId && taskContentId !== existingContentId) {
-          const relationCheck = await query(
-            `SELECT 1 FROM content_relations WHERE content_id = ? AND reference_content_id = ?`,
-            [taskContentId, existingContentId]
-          );
-
-          if (relationCheck.length === 0) {
-            await query(
-              `INSERT INTO content_relations (content_id, reference_content_id, added_by_user_id, is_system) VALUES (?, ?, ?, ?)`,
-              [taskContentId, existingContentId, null, 1]
-            );
+          contentRelationId = await ensureContentRelation(taskContentId, existingContentId);
+          if (contentRelationId) {
             logger.log(
-              `🔗 [/api/scrape-reference] Created content_relations: task ${taskContentId} → reference ${existingContentId}`
-            );
-          } else {
-            logger.log(
-              `✓ [/api/scrape-reference] Content_relations already exists: task ${taskContentId} → reference ${existingContentId}`
+              `🔗 [/api/scrape-reference] Ensured content_relations ${contentRelationId}: task ${taskContentId} → reference ${existingContentId}`
             );
           }
         } else if (taskContentId && taskContentId === existingContentId) {
@@ -1287,6 +1295,9 @@ export default function createContentScrapeRoutes({ query }) {
       }
 
       const { referenceContentId, text } = scrapeResult;
+      if (!contentRelationId && taskContentId && taskContentId !== referenceContentId) {
+        contentRelationId = await ensureContentRelation(taskContentId, referenceContentId);
+      }
 
       // scrapeReference persists and links its publisher before starting
       // enrichment. Only use this as a defensive fallback if that link failed.
@@ -1414,30 +1425,11 @@ export default function createContentScrapeRoutes({ query }) {
               });
             logger.log(`  ✅ [4/5] Matched ${claimMatches.length} claims (${Date.now() - startTime}ms)`);
 
-            // Insert into reference_claim_task_links (AI-suggested links)
-            for (const match of claimMatches) {
-              // Map stance values: 'supports' -> 'support', 'refutes' -> 'refute', 'related' -> 'nuance'
-              let mappedStance = match.stance;
-              if (match.stance === 'supports') mappedStance = 'support';
-              else if (match.stance === 'refutes') mappedStance = 'refute';
-              else if (match.stance === 'related') mappedStance = 'nuance';
-
-              await query(
-                `INSERT INTO reference_claim_task_links
-                 (reference_claim_id, task_claim_id, stance, score, confidence, support_level, rationale, quote, created_by_ai)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-                [
-                  match.referenceClaimId,
-                  match.taskClaimId,
-                  mappedStance,
-                  Math.round((match.veracityScore || 0.5) * 100),
-                  match.confidence,
-                  match.supportLevel,
-                  match.rationale,
-                  null
-                ]
-              );
-            }
+            await upsertReferenceClaimTaskLinks(query, claimMatches.map((match) => ({
+              ...match,
+              contentRelationId,
+              quote: match.quote || null,
+            })));
 
             await dualWriteTargetEvidenceLinks(query, taskContentId, claimMatches, referenceContentId);
             if (claimMatches.length > 0) {
@@ -1539,6 +1531,8 @@ export default function createContentScrapeRoutes({ query }) {
       if (Array.isArray(claimIds) && claimIds.length > 0) {
         const referenceClaimLinksToInsert = claimIds.map((taskClaimId) => ({
           claim_id: taskClaimId,
+          task_claim_id: taskClaimId,
+          content_relation_id: contentRelationId,
           reference_content_id: referenceContentId,
           stance: stance || "insufficient",
           score: quality ? Math.round(quality * 100) : 0,

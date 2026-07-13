@@ -11,6 +11,7 @@ const API_BASE_URL =
 
 export interface ReferenceClaimTaskLink {
   reference_claim_task_links_id: number;
+  content_relation_id?: number;
   reference_claim_id: number;
   task_claim_id: number;
   stance: "support" | "refute" | "nuance" | "insufficient";
@@ -35,6 +36,7 @@ export interface ReferenceClaimTaskLink {
 
 export interface ReferenceDocumentLink {
   ref_claim_link_id: number;
+  content_relation_id?: number;
   claim_id: number; // task claim ID
   reference_content_id: number;
   stance: "support" | "refute" | "nuance" | "insufficient";
@@ -93,10 +95,13 @@ export async function fetchScrapeEvaluationProgress(
  * Fetch reference claim → task claim links for a specific task claim
  */
 export async function fetchReferenceClaimTaskLinks(
-  taskClaimId: number
+  taskClaimId: number,
+  contentId?: number | null,
 ): Promise<ReferenceClaimTaskLink[]> {
+  const params = new URLSearchParams();
+  if (contentId) params.set("contentId", String(contentId));
   const response = await fetch(
-    `${API_BASE_URL}/api/reference-claim-task-links/${taskClaimId}`,
+    `${API_BASE_URL}/api/reference-claim-task-links/${taskClaimId}${params.toString() ? `?${params.toString()}` : ""}`,
     {
       credentials: "include",
     }
@@ -110,6 +115,9 @@ export async function fetchReferenceClaimTaskLinks(
   return links.map((link) => ({
     ...link,
     reference_claim_task_links_id: Number(link.reference_claim_task_links_id),
+    content_relation_id: link.content_relation_id == null
+      ? undefined
+      : Number(link.content_relation_id),
     reference_claim_id: Number(link.reference_claim_id),
     task_claim_id: Number(link.task_claim_id),
     score: Number(link.score) || 0,
@@ -126,10 +134,13 @@ export async function fetchReferenceClaimTaskLinks(
  * These are AI assessments of entire reference documents, not individual claims
  */
 export async function fetchReferenceDocumentLinks(
-  taskClaimId: number
+  taskClaimId: number,
+  contentId?: number | null,
 ): Promise<ReferenceDocumentLink[]> {
+  const params = new URLSearchParams();
+  if (contentId) params.set("contentId", String(contentId));
   const response = await fetch(
-    `${API_BASE_URL}/api/task-claim/reference-links/${taskClaimId}`,
+    `${API_BASE_URL}/api/task-claim/reference-links/${taskClaimId}${params.toString() ? `?${params.toString()}` : ""}`,
     {
       credentials: "include",
     }
@@ -150,11 +161,13 @@ export async function assessReferenceClaimRelevance(
   referenceClaimId: number,
   taskClaimId: number,
   referenceClaimText: string,
-  taskClaimText: string
+  taskClaimText: string,
+  contentId?: number | null,
+  referenceContentId?: number | null,
 ): Promise<{ didAssess: boolean; link?: ReferenceClaimTaskLink }> {
   try {
     // Check if assessment already exists
-    const existingLinks = await fetchReferenceClaimTaskLinks(taskClaimId);
+    const existingLinks = await fetchReferenceClaimTaskLinks(taskClaimId, contentId);
     const existingLink = existingLinks.find(
       (link) => link.reference_claim_id === referenceClaimId
     );
@@ -182,6 +195,8 @@ export async function assessReferenceClaimRelevance(
         taskClaimId,
         referenceClaimText,
         taskClaimText,
+        contentId,
+        referenceContentId,
       }),
     });
 

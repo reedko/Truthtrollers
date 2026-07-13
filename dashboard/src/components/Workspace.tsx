@@ -835,6 +835,9 @@ const Workspace: React.FC<WorkspaceProps> = ({
           onClose={() => setIsReferenceClaimsModalOpen(false)}
           reference={selectedReference}
           onRescrape={() => {
+            if (selectedReference?.url) {
+              window.open(selectedReference.url, "_blank", "noopener");
+            }
             setIsReferenceClaimsModalOpen(false);
             setIsReferenceRescrapeOpen(true);
           }}

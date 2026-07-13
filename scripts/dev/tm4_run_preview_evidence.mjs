@@ -15,8 +15,9 @@
  * claims-and-linked-references directly and does not require it.
  *
  * EVIDENCE BUDGET (product requirement): evidence runs only on the Phase 2b
- * selected claims; after the engine returns, references are ranked by quality
- * and capped (~3 strong references per claim, ~27 global, URL-deduped).
+ * selected claims; after the engine returns, references are ranked by
+ * post-fetch evidence value and capped (~5 strong references per selected
+ * claim, global default = selected claim count × per-claim cap, URL-deduped).
  * Surplus references the engine created are unlinked and, when exclusive to
  * this preview, deleted.
  *
@@ -24,14 +25,14 @@
  *   node scripts/dev/tm4_run_preview_evidence.mjs --run <previewRunId|latest> [--limit N]
  *     --limit N        dev cap: only the first N selected claims (default: all)
  *     --claim-id ID    dev cap: run exactly one persisted claim_id
- *     --max-scrapes N  dev cap: max source fetch/extract attempts per claim/content
+ *     --max-scrapes N  dev cap: max unique source fetch/extract attempts for this run
  *     --max-pre-bearing N   dev cap: max candidates retained before bearing
  *     --max-llm-bearing N   dev cap: max candidates sent to snippet-bearing LLM
  *     --max-queries N  dev cap: max query lanes/searches per claim
  *     --no-adaptive    dev cap: disable adaptive deepening after first tranche
  *     --candidate-plan-only  write query/candidate/ranking plan and skip scraping
- *     --per-claim N    max references kept per claim (default from selection summary, 3)
- *     --max-refs N     max references kept globally (default from selection summary, 27)
+ *     --per-claim N    max references kept per claim (default from selection summary, floor 5)
+ *     --max-refs N     max references kept globally (default: selected claims × per-claim cap)
  */
 
 import fs from "fs/promises";
@@ -89,8 +90,9 @@ async function main() {
   if (!rows.length) throw new Error(`content_id ${sidecar.contentId} is not a marked TM4 preview task; refusing to run`);
 
   const budget = sidecar.selectionSummary?.evidenceBudget || {};
-  const PER_CLAIM_CAP = Number(getArg("--per-claim")) || budget.perClaimReferenceCap || 3;
-  const GLOBAL_CAP = Number(getArg("--max-refs")) || budget.globalReferenceCap || 27;
+  const DEFAULT_PER_CLAIM_CAP = 5;
+  const PER_CLAIM_CAP = Number(getArg("--per-claim")) ||
+    Math.max(DEFAULT_PER_CLAIM_CAP, Number(budget.perClaimReferenceCap) || 0);
 
   // EVIDENCE GATING: candidates come from the DB, not the sidecar — the join
   // tm4_selected_evaluation_claims (is_evidence_eligible=1) →
@@ -114,6 +116,8 @@ async function main() {
   }
   if (LIMIT > 0) evalClaims = evalClaims.slice(0, LIMIT);
   const claimIds = evalClaims.map((c) => c.dbClaimId);
+  const GLOBAL_CAP = Number(getArg("--max-refs")) ||
+    Math.max(Number(budget.globalReferenceCap) || 0, evalClaims.length * PER_CLAIM_CAP);
   const searchTargetCount = evalClaims.reduce((s, c) => s + byClaim.get(c.dbClaimId).targets.length, 0);
   console.log(`— Evidence candidates (DB-gated): ${evalClaims.length} selected claims${CLAIM_ID ? ` (dev cap --claim-id ${CLAIM_ID})` : LIMIT ? ` (dev cap --limit ${LIMIT})` : ""}, ${searchTargetCount} search-eligible targets`);
   console.log(`— Evidence budget: ≤${PER_CLAIM_CAP} refs/claim, ≤${GLOBAL_CAP} total, URL-deduped`);
@@ -154,6 +158,26 @@ async function main() {
 
   console.log("— Running evidence engine (this makes live search + LLM calls)…\n");
   const startedAt = new Date().toISOString();
+  const perClaimBearingLimits = {
+    thesis: PER_CLAIM_CAP,
+    pillar: PER_CLAIM_CAP,
+    pillar_support: PER_CLAIM_CAP,
+    evidence: PER_CLAIM_CAP,
+    attribution: Math.min(PER_CLAIM_CAP, 3),
+    default: PER_CLAIM_CAP,
+  };
+  const bearingConfigOverride = {
+    ...(MAX_SCRAPES ? {
+      globalScrapeLimitPerContent: MAX_SCRAPES,
+      deepenGlobalScrapeLimit: MAX_SCRAPES,
+      minDeliveredSourcesPerContent: MAX_SCRAPES,
+      maxSourceAttemptsPerContent: MAX_SCRAPES,
+    } : {}),
+    maxSourcesComparedPerClaim: PER_CLAIM_CAP,
+    minBearingLinksPerClaim: 1,
+    perClaimLimits: perClaimBearingLimits,
+    ...(NO_ADAPTIVE ? { finishActiveSourceOnThreshold: false } : {}),
+  };
   const { aiReferences, failedCandidates, claimConfidenceMap, queryPlan, candidatePlans } = await runEvidenceEngine({
     query,
     taskContentId: sidecar.contentId,
@@ -175,49 +199,9 @@ async function main() {
         maxSnippetCandidatesPerClaim: MAX_LLM_BEARING,
         maxCandidatesPerTargetBatch: Math.max(1, Math.min(MAX_LLM_BEARING, 3)),
       } : {}),
-      ...(MAX_SCRAPES ? {
-        maxSourcesToScrapePerTarget: MAX_SCRAPES,
-        maxSourcesComparedPerClaim: MAX_SCRAPES,
-        topKCandidates: MAX_SCRAPES,
-        topKPerIntent: MAX_SCRAPES,
-        bearingConfig: {
-          globalScrapeLimitPerContent: MAX_SCRAPES,
-          deepenGlobalScrapeLimit: MAX_SCRAPES,
-          minDeliveredSourcesPerContent: MAX_SCRAPES,
-          maxSourceAttemptsPerContent: MAX_SCRAPES,
-          maxSourcesComparedPerClaim: MAX_SCRAPES,
-          minBearingLinksPerClaim: 1,
-          perClaimLimits: {
-            thesis: MAX_SCRAPES,
-            pillar: MAX_SCRAPES,
-            pillar_support: MAX_SCRAPES,
-            evidence: MAX_SCRAPES,
-            attribution: MAX_SCRAPES,
-            default: MAX_SCRAPES,
-          },
-        },
-      } : {}),
-      ...(NO_ADAPTIVE ? {
-        bearingConfig: {
-          ...(MAX_SCRAPES ? {
-            globalScrapeLimitPerContent: MAX_SCRAPES,
-            deepenGlobalScrapeLimit: MAX_SCRAPES,
-            minDeliveredSourcesPerContent: MAX_SCRAPES,
-            maxSourceAttemptsPerContent: MAX_SCRAPES,
-            maxSourcesComparedPerClaim: MAX_SCRAPES,
-            minBearingLinksPerClaim: 1,
-            perClaimLimits: {
-              thesis: MAX_SCRAPES,
-              pillar: MAX_SCRAPES,
-              pillar_support: MAX_SCRAPES,
-              evidence: MAX_SCRAPES,
-              attribution: MAX_SCRAPES,
-              default: MAX_SCRAPES,
-            },
-          } : {}),
-          finishActiveSourceOnThreshold: false,
-        },
-      } : {}),
+      maxSourcesToScrapePerTarget: PER_CLAIM_CAP,
+      maxSourcesComparedPerClaim: PER_CLAIM_CAP,
+      bearingConfig: bearingConfigOverride,
       ...(CANDIDATE_PLAN_ONLY ? { candidatePlanOnly: true } : {}),
     },
   });
@@ -279,8 +263,10 @@ async function main() {
     console.log(`🧭 Query plan trace: ${path.relative(ROOT, queryPlanPath)} (${queryPlan.length} target entries)`);
   }
 
-  // ---- Evidence budget: rank by scrape tier then quality, cap per claim +
-  // globally, dedupe URLs. Failed-scrape stubs (stance 'insufficient',
+  // ---- Evidence budget: rank by post-fetch evidence value then quality, cap
+  // per claim + globally, dedupe URLs. A scraped source that passed target fit
+  // should not be displaced by a generic/high-domain restatement just because
+  // the source-quality number is higher. Failed-scrape stubs (stance 'insufficient',
   // snippet_only) may not displace real evidence: max 1 stub per claim, only
   // for claims short on full references, global stub cap, quality floor.
   // (Diagnosed 2026-07-09: 15/21 kept refs on 17162 were stubs, drowning the
@@ -288,12 +274,43 @@ async function main() {
   const MAX_STUBS_PER_CLAIM = 1;
   const GLOBAL_STUB_CAP = 5;
   const STUB_QUALITY_FLOOR = 0.2;
-  const isStub = (ref) => ref.documentOnly === true || (ref.scrapeStatus && ref.scrapeStatus !== "full");
+  const isSnippetStub = (ref) => ["snippet_only", "failed"].includes(String(ref.scrapeStatus || ""));
+  const isStub = (ref) => (
+    ref.documentOnly === true &&
+    !["full", "abstract_only", "full_text"].includes(String(ref.scrapeStatus || ""))
+  ) || isSnippetStub(ref);
+  const refText = (ref) => JSON.stringify({
+    title: ref.title,
+    url: ref.url,
+    stance: ref.stance,
+    scrapeStatus: ref.scrapeStatus,
+    evidenceAssertions: ref.evidenceAssertions,
+  }).toLowerCase();
+  const finalBudgetPriority = (ref) => {
+    const text = refText(ref);
+    let score = 0;
+    if (isStub(ref)) score -= 100;
+    if (ref.scrapeStatus === "full") score += 30;
+    if (ref.scrapeStatus === "abstract_only") score += 20;
+    if (text.includes("direct_substantive")) score += 80;
+    if (text.includes("study_identity_context")) score += 45;
+    if (text.includes("methodology_context")) score += 35;
+    if (text.includes("official_response")) score += 30;
+    if (text.includes("attribution_only")) score += 20;
+    if (text.includes("original_study") || text.includes("official_study_page")) score += 35;
+    if (text.includes("pmid") || text.includes("pubmed") || text.includes("doi")) score += 12;
+    if (text.includes("allegation_repetition")) score -= 45;
+    if (text.includes("topic_only")) score -= 35;
+    if (text.includes("insufficient")) score -= 25;
+    return score;
+  };
   const keptRefs = [];
   const droppedRefs = [];
   {
     const sorted = [...(aiReferences || [])].sort((a, b) =>
-      (Number(isStub(a)) - Number(isStub(b))) || ((b.quality || 0) - (a.quality || 0)));
+      (Number(isStub(a)) - Number(isStub(b))) ||
+      (finalBudgetPriority(b) - finalBudgetPriority(a)) ||
+      ((b.quality || 0) - (a.quality || 0)));
     const seenUrls = new Set();
     const keptPerClaim = new Map(); // claim index → { full, stub }
     let stubsKept = 0;

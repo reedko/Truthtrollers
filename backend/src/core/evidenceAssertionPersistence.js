@@ -63,6 +63,7 @@ export function buildPreservedEvidenceAssertion(evidence, claimResult, reference
     claimComponentAddressed: evidence?.claimComponentAddressed || null,
     sourceUrl: evidence?.url || "",
     referenceContentId: Number(referenceData?.referenceContentId) || null,
+    contentRelationId: Number(referenceData?.contentRelationId || referenceData?.content_relation_id) || null,
     confidence: Number(claimResult?.adjudication?.confidence) || null,
     traceId,
     targetUnresolved: unresolvedTargetIds
@@ -160,8 +161,9 @@ export function dedupeClaimMatchesByPair(matches = []) {
   for (const match of Array.isArray(matches) ? matches : []) {
     const referenceClaimId = Number(match?.referenceClaimId);
     const taskClaimId = Number(match?.taskClaimId);
+    const contentRelationId = Number(match?.contentRelationId || match?.content_relation_id) || 0;
     if (!referenceClaimId || !taskClaimId) continue;
-    const key = `${referenceClaimId}:${taskClaimId}`;
+    const key = `${contentRelationId}:${referenceClaimId}:${taskClaimId}`;
     byPair.set(key, byPair.has(key) ? strongerMatch(byPair.get(key), match) : match);
   }
   return [...byPair.values()];
@@ -182,12 +184,14 @@ export async function upsertReferenceClaimTaskLinks(query, matches = []) {
       : ({ support: 1, refute: -1, nuance: 0.5, insufficient: 0 }[stance] || 0) * confidence * bearingScore;
     const rationale = String(match.rationale || "").slice(0, 2000);
     const quote = String(match.quote || "").slice(0, 10000) || null;
+    const contentRelationId = Number(match.contentRelationId || match.content_relation_id) || null;
 
     await query(
       `INSERT INTO reference_claim_task_links
-       (reference_claim_id, task_claim_id, stance, score, confidence, support_level, rationale, quote, created_by_ai)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+       (content_relation_id, reference_claim_id, task_claim_id, stance, score, confidence, support_level, rationale, quote, created_by_ai)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)
        ON DUPLICATE KEY UPDATE
+         content_relation_id = COALESCE(VALUES(content_relation_id), content_relation_id),
          stance = IF(VALUES(confidence) > COALESCE(confidence, 0), VALUES(stance), stance),
          score = GREATEST(COALESCE(score, 0), VALUES(score)),
          support_level = IF(ABS(VALUES(support_level)) >= ABS(COALESCE(support_level, 0)), VALUES(support_level), support_level),
@@ -196,6 +200,7 @@ export async function upsertReferenceClaimTaskLinks(query, matches = []) {
          confidence = GREATEST(COALESCE(confidence, 0), VALUES(confidence)),
          created_by_ai = 1`,
       [
+        contentRelationId,
         Number(match.referenceClaimId),
         Number(match.taskClaimId),
         stance,
@@ -210,8 +215,9 @@ export async function upsertReferenceClaimTaskLinks(query, matches = []) {
       `SELECT reference_claim_task_links_id
          FROM reference_claim_task_links
         WHERE reference_claim_id = ? AND task_claim_id = ?
+          AND (content_relation_id <=> ? OR ? IS NULL)
         LIMIT 1`,
-      [Number(match.referenceClaimId), Number(match.taskClaimId)],
+      [Number(match.referenceClaimId), Number(match.taskClaimId), contentRelationId, contentRelationId],
     );
     persisted.push({
       ...match,
@@ -294,6 +300,7 @@ export async function persistDirectEvidenceAssertions({
         const directMatch = {
           referenceClaimId,
           taskClaimId: claimId,
+          contentRelationId: assertion.contentRelationId,
           stance: assertion.stance,
           veracityScore: clamp01(assertion.bearingScore),
           confidence: clamp01(assertion.confidence, assertion.bearingScore),

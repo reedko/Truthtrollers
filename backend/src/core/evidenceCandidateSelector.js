@@ -132,6 +132,61 @@ function isOfficialStudyIdentityPage(candidate) {
   return /\b(?:study|paper|analysis|report)\b/.test(title) || /\b(?:study|paper|analysis|report)\b/.test(url);
 }
 
+function isArchiveOrPointerWrapper(candidate) {
+  const role = deriveVerifiedDocumentRole(candidate);
+  if (role?.role === "original_study_candidate") return false;
+  const lane = quotaLane(candidate);
+  if (lane !== "study_identity" && lane !== "primary_record") return false;
+  const title = String(candidate?.title || "").toLowerCase();
+  const snippet = String(candidate?.snippet || candidate?.bearingText || "").toLowerCase();
+  const url = String(candidate?.url || "").toLowerCase();
+  let host = "";
+  let path = "";
+  try {
+    const parsed = new URL(candidate?.url || "");
+    host = parsed.hostname.toLowerCase().replace(/^www\./, "");
+    path = parsed.pathname.toLowerCase();
+  } catch {
+    // Leave host/path empty; title/snippet checks still apply.
+  }
+  const archiveLike = host.startsWith("archive.") ||
+    host === "web.archive.org" ||
+    /(?:^|[.-])archive(?:[.-]|$)/i.test(host) ||
+    /\/(?:archive|archived|webcache)\//i.test(path) ||
+    /\b(?:archived|archive notice|archived page|archived content)\b/.test(`${title} ${snippet}`);
+  const pointerLike = /\b(?:study|paper|report|document|publication|article)\b/.test(`${title} ${snippet} ${path}`) &&
+    /\b(?:about|notice|summary|page|safety|concerns|archive|archived)\b/.test(`${title} ${snippet} ${path}`);
+  return archiveLike && pointerLike;
+}
+
+function annotateDeferredWrapperCandidates(candidates = []) {
+  const canonicalByTarget = new Map();
+  for (const candidate of candidates) {
+    const role = deriveVerifiedDocumentRole(candidate);
+    const targetId = candidate?.evidenceTargetId ? String(candidate.evidenceTargetId) : "";
+    if (!targetId || role?.role !== "original_study_candidate" || !role?.verified) continue;
+    const existing = canonicalByTarget.get(targetId);
+    if (!existing || (Number(candidate.identityBearingScore) || 0) > (Number(existing.identityBearingScore) || 0)) {
+      canonicalByTarget.set(targetId, candidate);
+    }
+  }
+  if (!canonicalByTarget.size) return candidates;
+  return candidates.map((candidate) => {
+    const targetId = candidate?.evidenceTargetId ? String(candidate.evidenceTargetId) : "";
+    const canonical = targetId ? canonicalByTarget.get(targetId) : null;
+    if (!canonical || candidateKey(canonical) === candidateKey(candidate) || !isArchiveOrPointerWrapper(candidate)) {
+      return candidate;
+    }
+    return {
+      ...candidate,
+      sourceWrapperDeferred: true,
+      deferredToCanonicalUrl: canonical.url || canonical.canonicalUrl || candidateKey(canonical),
+      deferredToCanonicalTitle: canonical.title || "",
+      wrapperDeferredReason: "verified_original_study_for_same_target",
+    };
+  });
+}
+
 function looksLikeCommentaryOrReview(candidate) {
   const title = String(candidate?.title || "").toLowerCase();
   const url = String(candidate?.url || "").toLowerCase();
@@ -240,6 +295,10 @@ function retrievalPromiseForCandidate(claim, candidate) {
   if (looksLikeGenericDataPortal(candidate, matchedAnchors)) {
     score = Math.min(score, 0.18);
     reasons.push("capped_generic_data_portal");
+  }
+  if (candidate?.sourceWrapperDeferred) {
+    score = Math.min(score, 0.12);
+    reasons.push(`deferred_to_canonical:${String(candidate.deferredToCanonicalUrl || "").slice(0, 120)}`);
   }
 
   return {
@@ -408,7 +467,7 @@ export function selectCandidatesForClaim(claim, candidates = [], config, options
     };
   }
 
-  const mergedCandidates = mergeCanonicalCandidates(candidates);
+  const mergedCandidates = annotateDeferredWrapperCandidates(mergeCanonicalCandidates(candidates));
   const decisions = [];
   const eligible = [];
   const uncertain = [];
@@ -429,11 +488,17 @@ export function selectCandidatesForClaim(claim, candidates = [], config, options
     const highDisagreement = Number.isFinite(disagreement) && disagreement >= 0.4;
     const protectedSteelman = steelman && (score >= forceThreshold || oneScorerHigh || highDisagreement);
     const explicitJunk = candidate?.excluded === true || candidate?.unsupported === true || !candidateKey(candidate);
-    const forceSkip = explicitJunk;
+    const forceSkip = explicitJunk || candidate?.sourceWrapperDeferred === true;
     const passes = promiseScore >= 0.22 || origin || protectedSteelman || highDisagreement;
 
     if (forceSkip) {
-      decisions.push({ candidate: scoredCandidate, decision: "skip", reason: "force_skip_explicit_junk", score, retrievalPromiseScore: promiseScore });
+      decisions.push({
+        candidate: scoredCandidate,
+        decision: "skip",
+        reason: candidate?.sourceWrapperDeferred ? "deferred_to_verified_canonical_study" : "force_skip_explicit_junk",
+        score,
+        retrievalPromiseScore: promiseScore,
+      });
     } else if (passes) {
       eligible.push({ ...scoredCandidate, gatingScore: promiseScore, snippetBearingGateScore: score, protectedOrigin: origin, protectedSteelman });
       decisions.push({

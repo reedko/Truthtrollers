@@ -5,12 +5,32 @@ import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import { linkPublisherRole } from "../../storage/persistPublishers.js";
+import { upsertReferenceClaimTaskLinks } from "../../core/evidenceAssertionPersistence.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default function({ query, pool }) {
   const router = Router();
+  const ensureContentRelation = async (taskContentId, referenceContentId) => {
+    const taskId = Number(taskContentId);
+    const refId = Number(referenceContentId);
+    if (!taskId || !refId || taskId === refId) return null;
+    const existing = await query(
+      `SELECT content_relation_id
+         FROM content_relations
+        WHERE content_id = ? AND reference_content_id = ?
+        LIMIT 1`,
+      [taskId, refId],
+    );
+    if (existing.length > 0) return Number(existing[0].content_relation_id) || null;
+    const inserted = await query(
+      `INSERT INTO content_relations (content_id, reference_content_id, added_by_user_id, is_system)
+       VALUES (?, ?, NULL, 1)`,
+      [taskId, refId],
+    );
+    return Number(inserted?.insertId) || null;
+  };
 
 /**
  * GET /api/tasks/:id
@@ -737,25 +757,12 @@ router.post("/api/submit-text", async (req, res) => {
                   llm: openAiLLM,
                   promptManager: claimMatchPromptManager,
                 });
-                for (const match of claimMatches) {
-                  try {
-                    // Map stance values: claim_links uses 'supports'/'refutes'/'related',
-                    // reference_claim_task_links uses 'support'/'refute'/'nuance'/'insufficient'
-                    let mappedStance = match.stance;
-                    if (match.stance === 'supports') mappedStance = 'support';
-                    else if (match.stance === 'refutes') mappedStance = 'refute';
-                    else if (match.stance === 'related') mappedStance = 'nuance';
-
-                    await query(
-                      `INSERT INTO reference_claim_task_links (reference_claim_id, task_claim_id, stance, score, confidence, support_level, rationale, quote, created_by_ai)
-                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-                      [match.referenceClaimId, match.taskClaimId, mappedStance, Math.round((match.veracityScore || 0.5) * 100), match.confidence, match.supportLevel, match.rationale, null]
-                    );
-                  } catch (insertErr) {
-                    logger.error(`❌ [/api/submit-text] Failed to insert AI-suggested link: ${insertErr.message}`);
-                    logger.error(`   refClaim=${match.referenceClaimId}, taskClaim=${match.taskClaimId}, stance=${match.stance}`);
-                  }
-                }
+                const contentRelationId = await ensureContentRelation(taskContentId, ref.referenceContentId);
+                await upsertReferenceClaimTaskLinks(query, claimMatches.map((match) => ({
+                  ...match,
+                  contentRelationId,
+                  quote: match.quote || null,
+                })));
                 await dualWriteTargetEvidenceLinks(query, taskContentId, claimMatches, ref.referenceContentId);
                 logger.log(`✅ [/api/submit-text] Created ${claimMatches.length} AI-suggested links (reference_claim_task_links) for reference ${ref.referenceContentId}`);
               }

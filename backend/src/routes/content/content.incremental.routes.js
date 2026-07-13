@@ -15,11 +15,31 @@ import { matchClaimsToTaskClaims } from "../../core/matchClaims.js";
 import { enrichTaskClaimsForMatching, dualWriteTargetEvidenceLinks } from "../../core/evaluationTargetStore.js";
 import { openAiLLM } from "../../core/openAiLLM.js";
 import PromptManager from "../../core/promptManager.js";
-import { persistDirectEvidenceAssertions } from "../../core/evidenceAssertionPersistence.js";
+import { persistDirectEvidenceAssertions, upsertReferenceClaimTaskLinks } from "../../core/evidenceAssertionPersistence.js";
 
 // The evidence engine now persists target-linked assertions itself. The old
 // post-pass repeated full-source claim extraction and all-claim matching.
 const LEGACY_REFERENCE_CLAIM_EXTRACTION_RETIRED = true;
+
+async function ensureContentRelation(query, taskContentId, referenceContentId) {
+  const taskId = Number(taskContentId);
+  const refId = Number(referenceContentId);
+  if (!taskId || !refId || taskId === refId) return null;
+  const existing = await query(
+    `SELECT content_relation_id
+       FROM content_relations
+      WHERE content_id = ? AND reference_content_id = ?
+      LIMIT 1`,
+    [taskId, refId],
+  );
+  if (existing.length > 0) return Number(existing[0].content_relation_id) || null;
+  const inserted = await query(
+    `INSERT INTO content_relations (content_id, reference_content_id, added_by_user_id, is_system)
+     VALUES (?, ?, NULL, 1)`,
+    [taskId, refId],
+  );
+  return Number(inserted?.insertId) || null;
+}
 
 /**
  * Generate a stable hash for a claim text (for change detection)
@@ -252,36 +272,13 @@ export async function performIncrementalUpdate(query, contentId, newClaims, full
               promptManager: new PromptManager(query),
             });
 
-            // Batch insert matches
             if (claimMatches.length > 0) {
-              const values = claimMatches.map(match => {
-                let mappedStance = match.stance;
-                if (match.stance === 'supports') mappedStance = 'support';
-                else if (match.stance === 'refutes') mappedStance = 'refute';
-                else if (match.stance === 'related') mappedStance = 'nuance';
-
-                return [
-                  match.referenceClaimId,
-                  match.taskClaimId,
-                  mappedStance,
-                  Math.round((match.veracityScore || 0.5) * 100),
-                  match.confidence,
-                  match.supportLevel,
-                  match.rationale,
-                  null,
-                  1
-                ];
-              });
-
-              const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
-              const flatValues = values.flat();
-
-              await query(
-                `INSERT INTO reference_claim_task_links
-                 (reference_claim_id, task_claim_id, stance, score, confidence, support_level, rationale, quote, created_by_ai)
-                 VALUES ${placeholders}`,
-                flatValues
-              );
+              const contentRelationId = await ensureContentRelation(query, contentId, ref.referenceContentId);
+              await upsertReferenceClaimTaskLinks(query, claimMatches.map((match) => ({
+                ...match,
+                contentRelationId,
+                quote: match.quote || null,
+              })));
               await dualWriteTargetEvidenceLinks(query, contentId, claimMatches, ref.referenceContentId);
             }
           }
@@ -526,40 +523,12 @@ export default function createContentIncrementalRoutes({ query }) {
               });
 
               if (claimMatches.length > 0) {
-                const values = claimMatches.map(match => {
-                  let mappedStance = match.stance;
-                  if (match.stance === 'supports') mappedStance = 'support';
-                  else if (match.stance === 'refutes') mappedStance = 'refute';
-                  else if (match.stance === 'related') mappedStance = 'nuance';
-
-                  return [
-                    match.referenceClaimId,
-                    match.taskClaimId,
-                    mappedStance,
-                    Math.round((match.veracityScore || 0.5) * 100), // score
-                    match.confidence || 0.5,
-                    match.supportLevel || 0,
-                    match.explanation || match.rationale || '',
-                    null, // quote
-                    1 // created_by_ai
-                  ];
-                });
-
-                const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
-                const flatValues = values.flat();
-
-                await query(
-                  `INSERT INTO reference_claim_task_links
-                   (reference_claim_id, task_claim_id, stance, score, confidence, support_level, rationale, quote, created_by_ai)
-                   VALUES ${placeholders}
-                   ON DUPLICATE KEY UPDATE
-                     stance = VALUES(stance),
-                     score = VALUES(score),
-                     confidence = VALUES(confidence),
-                     support_level = VALUES(support_level),
-                     rationale = VALUES(rationale)`,
-                  flatValues
-                );
+                const contentRelationId = await ensureContentRelation(query, contentId, ref.referenceContentId);
+                await upsertReferenceClaimTaskLinks(query, claimMatches.map((match) => ({
+                  ...match,
+                  contentRelationId,
+                  quote: match.quote || null,
+                })));
                 await dualWriteTargetEvidenceLinks(query, contentId, claimMatches, ref.referenceContentId);
               }
             }

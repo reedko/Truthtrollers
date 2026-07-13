@@ -19,6 +19,7 @@ export async function persistAIResults(
     }
 
     const referenceContentId = ref.referenceContentId;
+    const contentRelationId = Number(ref.contentRelationId || ref.content_relation_id) || null;
     const stance = ref.stance || "insufficient";
     const why = ref.why || ref.summary || ref.quote || null;
     const quote = ref.quote || null;
@@ -62,6 +63,8 @@ export async function persistAIResults(
 
         return {
           claim_id: taskClaimId,
+          task_claim_id: taskClaimId,
+          content_relation_id: contentRelationId,
           reference_content_id: referenceContentId,
           stance,
           score: Math.round(quality * 100),
@@ -81,10 +84,12 @@ export async function persistAIResults(
         try {
           await query(
             `INSERT INTO reference_claim_links
-             (claim_id, reference_content_id, stance, score, confidence, support_level, rationale, evidence_text, evidence_offsets, created_by_ai, verified_by_user_id, scrape_status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             (claim_id, task_claim_id, content_relation_id, reference_content_id, stance, score, confidence, support_level, rationale, evidence_text, evidence_offsets, created_by_ai, verified_by_user_id, scrape_status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               link.claim_id,
+              link.task_claim_id,
+              link.content_relation_id,
               link.reference_content_id,
               link.stance,
               link.score,
@@ -107,10 +112,12 @@ export async function persistAIResults(
               // abstract_only until that schema is widened.
               await query(
                 `INSERT INTO reference_claim_links
-                 (claim_id, reference_content_id, stance, score, confidence, support_level, rationale, evidence_text, evidence_offsets, created_by_ai, verified_by_user_id, scrape_status)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'snippet_only')`,
+                 (claim_id, task_claim_id, content_relation_id, reference_content_id, stance, score, confidence, support_level, rationale, evidence_text, evidence_offsets, created_by_ai, verified_by_user_id, scrape_status)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'snippet_only')`,
                 [
                   link.claim_id,
+                  link.task_claim_id,
+                  link.content_relation_id,
                   link.reference_content_id,
                   link.stance,
                   link.score,

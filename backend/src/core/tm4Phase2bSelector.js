@@ -61,7 +61,7 @@ export const TM4_SELECTION_DEFAULTS = {
   maxRepairIterations: 2,
   repairIntrinsicMargin: 0.10, // repair candidates must be within this of the selection floor
   evidenceBudget: {
-    perClaimReferenceCap: 3, // ~2-4 strong/high-bearing references per claim
+    perClaimReferenceCap: 5, // up to 5 strong/high-bearing references per claim
     globalReferenceCap: 27, // ~24-30 total references
   },
 };

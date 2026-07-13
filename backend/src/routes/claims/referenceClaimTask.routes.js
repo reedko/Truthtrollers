@@ -5,6 +5,28 @@
 import { Router } from "express";
 import { assessClaimRelevance } from "../../core/assessClaimRelevance.js";
 
+async function ensureContentRelationForLink(query, taskContentId, referenceContentId) {
+  const taskId = Number(taskContentId);
+  const refId = Number(referenceContentId);
+  if (!taskId || !refId || taskId === refId) return null;
+
+  const existing = await query(
+    `SELECT content_relation_id
+       FROM content_relations
+      WHERE content_id = ? AND reference_content_id = ?
+      LIMIT 1`,
+    [taskId, refId],
+  );
+  if (existing.length > 0) return Number(existing[0].content_relation_id) || null;
+
+  const inserted = await query(
+    `INSERT INTO content_relations (content_id, reference_content_id, added_by_user_id, is_system)
+     VALUES (?, ?, NULL, 1)`,
+    [taskId, refId],
+  );
+  return Number(inserted?.insertId) || null;
+}
+
 export default function createReferenceClaimTaskRoutes({ query, pool }) {
   const router = Router();
 
@@ -16,31 +38,53 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
   router.get("/api/task-claim/reference-links/:taskClaimId", async (req, res) => {
     try {
       const taskClaimId = parseInt(req.params.taskClaimId, 10);
+      const contentId = req.query.contentId ? parseInt(req.query.contentId, 10) : null;
 
       if (!taskClaimId) {
         return res.status(400).json({ error: "Invalid task claim ID" });
       }
 
-      // Query reference_claim_links to find references with dotted lines
+      const contentScopeJoin = contentId
+        ? `INNER JOIN content_relations cr
+             ON cr.content_id = ?
+            AND (
+              cr.content_relation_id = rcl.content_relation_id
+              OR (rcl.content_relation_id IS NULL AND cr.reference_content_id = rcl.reference_content_id)
+            )`
+        : "";
+      const params = contentId ? [contentId, taskClaimId] : [taskClaimId];
+
+      // Query reference_claim_links to find references with dotted lines.
+      // When contentId is supplied, keep this scoped to the currently open task;
+      // claim IDs can be reused across preview/materialized content rows.
       const links = await query(
         `SELECT
-          ref_claim_link_id,
-          claim_id,
-          reference_content_id,
-          stance,
-          score,
-          rationale,
-          evidence_text,
-          evidence_offsets,
-          created_by_ai,
-          verified_by_user_id,
-          created_at
-         FROM reference_claim_links
-         WHERE claim_id = ?`,
-        [taskClaimId]
+          rcl.ref_claim_link_id,
+          rcl.content_relation_id,
+          rcl.claim_id,
+          rcl.reference_content_id,
+          rcl.stance,
+          rcl.score,
+          rcl.confidence,
+          rcl.support_level,
+          rcl.rationale,
+          rcl.evidence_text,
+          rcl.evidence_offsets,
+          rcl.created_by_ai,
+          rcl.verified_by_user_id,
+          rcl.created_at
+         FROM reference_claim_links rcl
+         ${contentScopeJoin}
+         WHERE rcl.claim_id = ?
+         ORDER BY
+           CASE WHEN rcl.stance IN ('support', 'refute') THEN 0 ELSE 1 END,
+           ABS(COALESCE(rcl.support_level, 0)) DESC,
+           COALESCE(rcl.confidence, 0) DESC,
+           rcl.ref_claim_link_id DESC`,
+        params
       );
 
-      console.log(`🔗 Found ${links.length} reference document links (dotted lines) for task claim ${taskClaimId}`);
+      console.log(`🔗 Found ${links.length} reference document links (dotted lines) for task claim ${taskClaimId}${contentId ? ` content ${contentId}` : ""}`);
 
       return res.json(links);
     } catch (err) {
@@ -57,6 +101,7 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
   router.get("/api/reference-claim-task-links/:taskClaimId", async (req, res) => {
     try {
       const taskClaimId = parseInt(req.params.taskClaimId, 10);
+      const contentId = req.query.contentId ? parseInt(req.query.contentId, 10) : null;
 
       if (!taskClaimId) {
         return res.status(400).json({ error: "Invalid task claim ID" });
@@ -68,6 +113,7 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
       const links = await query(
         `SELECT
           rctl.reference_claim_task_links_id,
+          rctl.content_relation_id,
           rctl.reference_claim_id,
           rctl.task_claim_id,
           rctl.stance,
@@ -88,12 +134,15 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
          LEFT JOIN claims c ON rctl.reference_claim_id = c.claim_id
          LEFT JOIN content_claims cc ON c.claim_id = cc.claim_id
          LEFT JOIN content ON cc.content_id = content.content_id
+         LEFT JOIN content_relations cr_scope ON cr_scope.content_relation_id = rctl.content_relation_id
          WHERE rctl.task_claim_id = ?
+           AND (? IS NULL OR cr_scope.content_id = ?)
 
          UNION ALL
 
          SELECT
           cl.claim_link_id AS reference_claim_task_links_id,
+          NULL AS content_relation_id,
           cl.source_claim_id AS reference_claim_id,
           cl.target_claim_id AS task_claim_id,
           CASE
@@ -120,11 +169,16 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
          LEFT JOIN content_claims cc ON c.claim_id = cc.claim_id
          LEFT JOIN content ON cc.content_id = content.content_id
          WHERE cl.target_claim_id = ? AND cl.disabled = 0
+           AND (? IS NULL OR EXISTS (
+             SELECT 1 FROM content_relations cr
+              WHERE cr.content_id = ? AND cr.reference_content_id = content.content_id
+           ))
 
          UNION ALL
 
          SELECT
           cl.claim_link_id AS reference_claim_task_links_id,
+          NULL AS content_relation_id,
           cl.target_claim_id AS reference_claim_id,
           cl.source_claim_id AS task_claim_id,
           CASE
@@ -150,8 +204,12 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
          LEFT JOIN claims c ON cl.target_claim_id = c.claim_id
          LEFT JOIN content_claims cc ON c.claim_id = cc.claim_id
          LEFT JOIN content ON cc.content_id = content.content_id
-         WHERE cl.source_claim_id = ? AND cl.disabled = 0`,
-        [taskClaimId, taskClaimId, taskClaimId]
+         WHERE cl.source_claim_id = ? AND cl.disabled = 0
+           AND (? IS NULL OR EXISTS (
+             SELECT 1 FROM content_relations cr
+              WHERE cr.content_id = ? AND cr.reference_content_id = content.content_id
+           ))`,
+        [taskClaimId, contentId, contentId, taskClaimId, contentId, contentId, taskClaimId, contentId, contentId]
       );
 
       // Debug logging
@@ -190,6 +248,9 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
         taskClaimId,
         referenceClaimText,
         taskClaimText,
+        contentId,
+        referenceContentId,
+        contentRelationId,
       } = req.body;
 
       if (!referenceClaimId || !taskClaimId || !referenceClaimText || !taskClaimText) {
@@ -201,12 +262,15 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
       console.log(
         `[Assess Claim] Ref claim ${referenceClaimId} → Task claim ${taskClaimId}`
       );
+      const resolvedContentRelationId = Number(contentRelationId) ||
+        await ensureContentRelationForLink(query, contentId, referenceContentId);
 
       // Check if assessment already exists
       const existing = await query(
         `SELECT * FROM reference_claim_task_links
-         WHERE reference_claim_id = ? AND task_claim_id = ?`,
-        [referenceClaimId, taskClaimId]
+         WHERE reference_claim_id = ? AND task_claim_id = ?
+           AND (content_relation_id <=> ? OR ? IS NULL)`,
+        [referenceClaimId, taskClaimId, resolvedContentRelationId, resolvedContentRelationId]
       );
 
       if (existing.length > 0) {
@@ -238,6 +302,7 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
       // Insert into database
       const result = await query(
         `INSERT INTO reference_claim_task_links (
+          content_relation_id,
           reference_claim_id,
           task_claim_id,
           stance,
@@ -247,8 +312,9 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
           rationale,
           quote,
           created_by_ai
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
+          resolvedContentRelationId,
           referenceClaimId,
           taskClaimId,
           assessment.stance,
@@ -289,6 +355,9 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
   router.post("/api/reference-claim-links/approve", async (req, res) => {
     try {
       const { claim_id, reference_content_id, user_id, stance, support_level } = req.body;
+      const contentId = req.body.contentId || req.body.task_content_id || null;
+      const contentRelationId = Number(req.body.contentRelationId || req.body.content_relation_id) ||
+        await ensureContentRelationForLink(query, contentId, reference_content_id);
 
       if (!claim_id || !reference_content_id || !user_id) {
         return res.status(400).json({
@@ -304,9 +373,12 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
          SET verified_by_user_id = ?,
              stance = COALESCE(?, stance),
              support_level = COALESCE(?, support_level),
+             content_relation_id = COALESCE(?, content_relation_id),
+             task_claim_id = COALESCE(task_claim_id, claim_id),
              verified_at = NOW()
-         WHERE claim_id = ? AND reference_content_id = ?`,
-        [user_id, stance, support_level, claim_id, reference_content_id]
+         WHERE claim_id = ? AND reference_content_id = ?
+           AND (content_relation_id <=> ? OR ? IS NULL)`,
+        [user_id, stance, support_level, contentRelationId, claim_id, reference_content_id, contentRelationId, contentRelationId]
       );
 
       if (result.affectedRows === 0) {
@@ -314,14 +386,16 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
         await query(
           `INSERT INTO reference_claim_links (
             claim_id,
+            task_claim_id,
+            content_relation_id,
             reference_content_id,
             stance,
             support_level,
             verified_by_user_id,
             created_by_ai,
             verified_at
-          ) VALUES (?, ?, ?, ?, ?, false, NOW())`,
-          [claim_id, reference_content_id, stance || 'support', support_level || 1.0, user_id]
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, false, NOW())`,
+          [claim_id, claim_id, contentRelationId, reference_content_id, stance || 'support', support_level || 1.0, user_id]
         );
         console.log(`[Approve Link] Created new link`);
       } else {
@@ -357,6 +431,9 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
         taskClaimId,
         referenceClaimText,
         taskClaimText,
+        contentId,
+        referenceContentId,
+        contentRelationId,
         systemPrompt,
         customInstructions,
       } = req.body;
@@ -370,12 +447,15 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
       console.log(
         `[Reassess Claim] Ref claim ${referenceClaimId} → Task claim ${taskClaimId}`
       );
+      const resolvedContentRelationId = Number(contentRelationId) ||
+        await ensureContentRelationForLink(query, contentId, referenceContentId);
 
       // Delete existing assessment
       await query(
         `DELETE FROM reference_claim_task_links
-         WHERE reference_claim_id = ? AND task_claim_id = ?`,
-        [referenceClaimId, taskClaimId]
+         WHERE reference_claim_id = ? AND task_claim_id = ?
+           AND (content_relation_id <=> ? OR ? IS NULL)`,
+        [referenceClaimId, taskClaimId, resolvedContentRelationId, resolvedContentRelationId]
       );
 
       console.log(`[Reassess Claim] Deleted existing assessment`);
@@ -391,6 +471,7 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
       // Insert new assessment into database
       const result = await query(
         `INSERT INTO reference_claim_task_links (
+          content_relation_id,
           reference_claim_id,
           task_claim_id,
           stance,
@@ -400,8 +481,9 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
           rationale,
           quote,
           created_by_ai
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
+          resolvedContentRelationId,
           referenceClaimId,
           taskClaimId,
           assessment.stance,

@@ -8,7 +8,9 @@ const unique = (values, limit = 20) => [...new Set((values || []).map((value) =>
 const studySearchClues = (context = {}) => (context.studyClues || [])
   .filter((clue) => !/referenced study\/document identity unresolved/i.test(clue));
 const GENERIC_IDENTITY_TOKENS = new Set([
-  "autism", "data", "evidence", "measles", "mumps", "paper", "research", "rubella", "study", "vaccine",
+  "adverse", "analysis", "autism", "data", "deaths", "events", "evidence", "health",
+  "journal", "measles", "mumps", "paper", "public", "research", "rubella", "safety",
+  "study", "system", "vaccine", "vaccines",
 ]);
 const SECONDARY_STUDY_TITLE_RE = /\b(?:systematic review|meta-analysis|review|an update of|update of|scientific evidence)\b/i;
 
@@ -225,6 +227,37 @@ function scoreIdentity(identity, context, classification) {
   };
 }
 
+function meaningfulAnchorTokens(values = []) {
+  return [...new Set(values
+    .flatMap((value) => tokenizeBearingText(value))
+    .filter((token) => token.length > 3 && !GENERIC_IDENTITY_TOKENS.has(token)))];
+}
+
+function hasLocalHardAnchorMatch(item, context = {}) {
+  const identity = item.identity || {};
+  const haystack = tokenSet(`${identity.title} ${identity.authors} ${identity.journalOrInstitution} ${identity.snippet}`);
+  const studyYears = explicitStudyYears(context);
+  if (studyYears.length > 0) {
+    return item.yearMatch;
+  }
+
+  const speakerOrAuthor = item.scoreComponents?.authorMatch > 0;
+  if (speakerOrAuthor) return true;
+
+  const namedAnchorTokens = meaningfulAnchorTokens([
+    ...(context.speakerEntities || []),
+    ...(context.organizations || []),
+  ]);
+  const namedOverlap = namedAnchorTokens.filter((token) => haystack.has(token));
+  if (namedOverlap.length >= 1 && item.anchorOverlap >= 2) return true;
+
+  const clueTokens = meaningfulAnchorTokens(studySearchClues(context));
+  const clueOverlap = clueTokens.filter((token) => haystack.has(token));
+  if (clueTokens.length >= 3 && clueOverlap.length >= 3) return true;
+
+  return false;
+}
+
 function classifyAndScoreCandidates(candidates = [], context = {}) {
   const distinct = new Map();
   for (const candidate of candidates) {
@@ -249,7 +282,10 @@ function sameBibliographicIdentity(first, second) {
 export function resolveStudyIdentityCandidates(candidates = [], context = {}) {
   const ranked = classifyAndScoreCandidates(candidates, context);
   const primaryCandidates = ranked.filter((item) =>
-    item.classification.primaryEligible && item.grounded && item.score >= 0.5
+    item.classification.primaryEligible &&
+    item.grounded &&
+    item.score >= 0.5 &&
+    hasLocalHardAnchorMatch(item, context)
   );
   const stableOriginal = primaryCandidates.find((item) =>
     item.classification.role === "original_study" && Boolean(item.identity.identifier)
@@ -268,9 +304,24 @@ export function resolveStudyIdentityCandidates(candidates = [], context = {}) {
     retained.push(item);
   };
   addRetained(primary);
-  addRetained(ranked.find((item) => item.classification.role === "official_study_page" && item.grounded && item.score >= 0.45));
-  addRetained(ranked.find((item) => item.classification.role === "reanalysis" && item.grounded && item.score >= 0.4));
-  addRetained(ranked.find((item) => item.classification.role === "attribution_document" && item.grounded && item.score >= 0.4));
+  addRetained(ranked.find((item) =>
+    item.classification.role === "official_study_page" &&
+    item.grounded &&
+    item.score >= 0.45 &&
+    hasLocalHardAnchorMatch(item, context)
+  ));
+  addRetained(ranked.find((item) =>
+    item.classification.role === "reanalysis" &&
+    item.grounded &&
+    item.score >= 0.4 &&
+    hasLocalHardAnchorMatch(item, context)
+  ));
+  addRetained(ranked.find((item) =>
+    item.classification.role === "attribution_document" &&
+    item.grounded &&
+    item.score >= 0.4 &&
+    hasLocalHardAnchorMatch(item, context)
+  ));
 
   const retainedWorks = retained.slice(0, 3).map((item) => ({
     ...item.identity,

@@ -63,15 +63,80 @@ function citationUrls(text) {
     .filter(({ url }) => /(?:doi\.org|pubmed\.ncbi\.nlm\.nih\.gov|pmc\.ncbi\.nlm\.nih\.gov|ncbi\.nlm\.nih\.gov\/pmc|\.gov\/.*(?:report|study|document)|\.pdf(?:$|\?))/i.test(url));
 }
 
+function isAcademicIdentifierUrl(url) {
+  return /(?:doi\.org|pubmed\.ncbi\.nlm\.nih\.gov|pmc\.ncbi\.nlm\.nih\.gov|ncbi\.nlm\.nih\.gov\/pmc)/i.test(String(url || ""));
+}
+
+function looksLikePointerWrapper(sourceCandidate = {}) {
+  const url = String(sourceCandidate.url || "");
+  const title = String(sourceCandidate.title || "").toLowerCase();
+  const snippet = String(sourceCandidate.snippet || sourceCandidate.bearingText || "").toLowerCase();
+  const text = `${title} ${snippet} ${url.toLowerCase()}`;
+  let host = "";
+  let path = "";
+  try {
+    const parsed = new URL(url);
+    host = parsed.hostname.toLowerCase().replace(/^www\./, "");
+    path = parsed.pathname.toLowerCase();
+  } catch {
+    // Non-URL candidates are not wrapper pages.
+  }
+  const archiveLike = host.startsWith("archive.") ||
+    host === "web.archive.org" ||
+    /(?:^|[.-])archive(?:[.-]|$)/i.test(host) ||
+    /\/(?:archive|archived|webcache)\//i.test(path) ||
+    /\b(?:archived|archive notice|archived page|archived content)\b/.test(text);
+  const pointerLike = /\b(?:study|paper|report|document|publication|article)\b/.test(`${text} ${path}`) &&
+    /\b(?:about|notice|summary|page|archive|archived|source|full text|publication)\b/.test(`${text} ${path}`);
+  return archiveLike && pointerLike;
+}
+
 export function extractCitationDerivedCandidates({ text = "", html = "", sourceCandidate = {} } = {}) {
-  // Retired deliberately. Bibliographies, reference widgets, and journal-page
-  // furniture are not evidence candidates. The one study/document explicitly
-  // identified by a case claim enters through resolvedWorkCandidatesForClaim;
-  // citations found inside that study must not recursively expand the run.
-  void text;
-  void html;
-  void sourceCandidate;
-  return [];
+  // General recursive citation expansion stays retired. Bibliographies,
+  // reference widgets, and journal-page furniture are not evidence candidates.
+  // Narrow exception: archived/pointer wrapper pages may name the actual
+  // study/document by hard academic identifier. Preserve only PMID/PMC/DOI
+  // targets so a wrapper can lead us to the canonical source without reopening
+  // broad citation recursion.
+  if (!looksLikePointerWrapper(sourceCandidate)) return [];
+  const byCanonical = new Map();
+  for (const item of [
+    ...identifierUrls(text),
+    ...identifierUrls(html),
+    ...citationUrls(text).filter((candidate) => isAcademicIdentifierUrl(candidate.url)),
+    ...citationUrls(html).filter((candidate) => isAcademicIdentifierUrl(candidate.url)),
+  ]) {
+    if (isRejectableEvidenceUrl(item.url)) continue;
+    const canonical = canonicalizeUrl(item.url) || item.url;
+    if (!canonical || byCanonical.has(canonical)) continue;
+    byCanonical.set(canonical, {
+      id: `pointer-derived:${canonical}`,
+      url: item.url,
+      title: item.identifier || "Pointer-derived academic source",
+      snippet: item.citationContext || sourceCandidate.snippet || "",
+      score: Math.max(0.7, Number(sourceCandidate.score) || 0),
+      source: "pointer_citation",
+      provider: "pointer_citation",
+      citationDerived: true,
+      pointerDerived: true,
+      originatingSourceUrl: sourceCandidate.url || null,
+      purposeLane: sourceCandidate.purposeLane || sourceCandidate.retrievalPurpose || "study_identity",
+      retrievalPurpose: sourceCandidate.retrievalPurpose || sourceCandidate.purposeLane || "study_identity",
+      evidenceLaneId: sourceCandidate.evidenceLaneId || null,
+      evidenceTargetId: sourceCandidate.evidenceTargetId || null,
+      evidenceTargetType: sourceCandidate.evidenceTargetType || null,
+      bearingRequirement: sourceCandidate.bearingRequirement || null,
+      bearingCriteria: sourceCandidate.bearingCriteria || null,
+      targetProvenance: sourceCandidate.targetProvenance || [{
+        evidenceTargetId: sourceCandidate.evidenceTargetId || null,
+        evidenceTargetType: sourceCandidate.evidenceTargetType || null,
+        stanceGoal: sourceCandidate.stanceGoal || null,
+        bearingRequirement: sourceCandidate.bearingRequirement || null,
+        query: sourceCandidate.query || null,
+      }],
+    });
+  }
+  return [...byCanonical.values()].slice(0, 5);
 }
 
 export function resolvedWorkCandidatesForClaim(claim = {}) {

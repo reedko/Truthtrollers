@@ -218,6 +218,61 @@ async function downloadAndSaveAuthorImage(query, authorId, imageUrl) {
   }
 }
 
+async function insertOrGetAuthorId(query, parsed, author = {}) {
+  const displayName = parsed.display_name || [
+    parsed.first_name,
+    parsed.middle_name,
+    parsed.last_name,
+  ].filter(Boolean).join(" ").trim();
+
+  const existingByDisplay = displayName
+    ? await query(
+        `SELECT author_id
+           FROM authors
+          WHERE author_display_name = ?
+          ORDER BY author_id
+          LIMIT 1`,
+        [displayName]
+      )
+    : [];
+  if (existingByDisplay?.[0]?.author_id) return existingByDisplay[0].author_id;
+
+  const existingByName = await query(
+    `SELECT author_id
+       FROM authors
+      WHERE COALESCE(author_first_name, '') = COALESCE(?, '')
+        AND COALESCE(author_middle_name, '') = COALESCE(?, '')
+        AND COALESCE(author_last_name, '') = COALESCE(?, '')
+      ORDER BY author_id
+      LIMIT 1`,
+    [
+      parsed.first_name || null,
+      parsed.middle_name || null,
+      parsed.last_name || null,
+    ]
+  );
+  if (existingByName?.[0]?.author_id) return existingByName[0].author_id;
+
+  const result = await query(
+    `INSERT INTO authors
+       (author_first_name, author_middle_name, author_last_name, author_title,
+        author_suffix, author_display_name, description, author_profile_pic)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      parsed.first_name || null,
+      parsed.middle_name || null,
+      parsed.last_name || null,
+      parsed.title || null,
+      parsed.suffix || null,
+      displayName || null,
+      author.description || null,
+      author.image || null,
+    ]
+  );
+
+  return result?.insertId || null;
+}
+
 /**
  * persistAuthors(pool, contentId, authors)
  *
@@ -262,29 +317,10 @@ export async function persistAuthors(query, contentId, authors = [], { replaceEx
 
     // 2. Parse it
     const parsed = parseAuthorName(rawName);
-    const sql = `
-      CALL InsertOrGetAuthor(?, ?, ?, ?, ?, ?, ?, ?, @authorId);
-    `;
-
-    const params = [
-      parsed.first_name,
-      parsed.middle_name,
-      parsed.last_name,
-      parsed.title,
-      parsed.suffix,
-      parsed.display_name,
-      author.description || null,
-      author.image || null,
-    ];
-
-    // IMPORTANT: legacy behavior → result[0][0]
-    const result = await query(sql, params);
-
-    const callRows = result[0]; // CALL returns rows in result[0]
-    const authorId = callRows?.[0]?.authorId;
+    const authorId = await insertOrGetAuthorId(query, parsed, author);
 
     if (!authorId) {
-      logger.error("❌ persistAuthors: SP did not return authorId");
+      logger.error("❌ persistAuthors: could not create or resolve authorId");
       continue;
     }
 

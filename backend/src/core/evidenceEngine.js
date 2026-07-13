@@ -234,9 +234,14 @@ export class EvidenceEngine {
     ));
     const rankedKeys = new Set();
     const rows = [];
-    const rankSource = Array.isArray(plan.rankedCandidates) && plan.rankedCandidates.length
-      ? plan.rankedCandidates
-      : plan.mergedCandidates || plan.prepared?.candidates || [];
+    const rankSource = dedupe(
+      [
+        ...(Array.isArray(plan.rankedCandidates) ? plan.rankedCandidates : []),
+        ...(Array.isArray(plan.mergedCandidates) ? plan.mergedCandidates : []),
+        ...(Array.isArray(plan.prepared?.candidates) ? plan.prepared.candidates : []),
+      ],
+      (candidate) => canonicalizeUrl(candidate?.url) || candidate?.url || candidate?.id || "",
+    );
     for (const candidate of rankSource) {
       const key = canonicalizeUrl(candidate?.url) || candidate?.url || candidate?.id || "";
       if (!key || rankedKeys.has(key)) continue;
@@ -283,6 +288,9 @@ export class EvidenceEngine {
         verifiedDocumentRole: role?.role || null,
         verifiedDocument: Boolean(role?.verified),
         protectedDocumentIdentity: Boolean(candidate.protectedDocumentIdentity),
+        sourceWrapperDeferred: Boolean(candidate.sourceWrapperDeferred),
+        deferredToCanonicalUrl: candidate.deferredToCanonicalUrl || null,
+        wrapperDeferredReason: candidate.wrapperDeferredReason || null,
         academicApiBacked: Boolean(candidate.academicApiContent?.apiBacked),
         bearingTextSource: candidate.bearingTextSource || (candidate.bearingText ? "bearing_text" : "search_snippet"),
         bearingTextChars: String(candidate.bearingText || candidate.snippet || "").length,
@@ -319,6 +327,7 @@ export class EvidenceEngine {
       candidateCount: plan.mergedCandidates?.length || plan.prepared?.candidates?.length || rows.length,
       rankedCandidateCount: rows.length,
       wouldScrapeCount: rows.filter((row) => row.wouldScrape).length,
+      selectedCanonicalUrls: rows.filter((row) => row.wouldScrape).map((row) => row.canonicalUrl),
       globalBudgetRemaining: allocation?.remainingUniqueSlots ?? null,
       candidates: rows,
     };
@@ -805,7 +814,14 @@ export class EvidenceEngine {
       best.set(candidate.id || candidate.url || `${candidate.source}:${candidate.title}`, candidate);
     }
 
-    const studyRefinementQueries = buildCandidateDiscoveredStudyQueries([...best.values()], claim);
+    // Post-TM4 study identity must be driven by the TM4 claim/target package
+    // and retrieval contexts, not by opportunistic snippet mining. The old
+    // candidate-discovered refinement could turn vague targets like "1999
+    // study" or "the act" into unrelated stable-ID papers. Keep the helper
+    // available only behind an explicit diagnostic flag.
+    const studyRefinementQueries = opt.enableCandidateDiscoveredStudyRefinement === true
+      ? buildCandidateDiscoveredStudyQueries([...best.values()], claim)
+      : [];
     if (studyRefinementQueries.length && opt.enableWeb !== false) {
       const purposeProviders = providersForProfile("study_identity", this.deps.search.providerEnabled || {});
       logger.log(`[CANDIDATE_STUDY_REFINEMENT] ${JSON.stringify({
@@ -1403,10 +1419,10 @@ TASK:
           logCandidateDrop({
             claim,
             taskContentId: opt.taskContentId || null,
-            // Non-verified candidates cut here were ranked below the LLM cap by
-            // DETERMINISTIC bearing (verified docs bypass this gate via reserved
-            // slots). They still survive downstream with their deterministic score.
-            stage: DROP_STAGES.DETERMINISTIC_BEARING_GATE,
+            // These candidates are only excluded from the expensive LLM snippet
+            // batch. They still survive downstream with their deterministic
+            // retrieval-promise score and may be selected for scrape.
+            stage: DROP_STAGES.LLM_BEARING_BATCH,
             candidate,
             reason: DROP_REASONS.BEYOND_LLM_BEARING_CAP,
           });
@@ -1678,6 +1694,11 @@ TASK:
         if (isProtectedStudy) {
           state.protectedStudiesProcessed++;
         }
+        candidate = {
+          ...candidate,
+          selectedForScrape: true,
+          selectedScrapeReason: candidate.gatingSelectionReason || "adaptive_ranked_pool",
+        };
         state.processedCandidates.push(candidate);
 
         let extracted = [];
@@ -1838,7 +1859,9 @@ TASK:
 
     if (opt.candidatePlanOnly) {
       for (const plan of plans) {
-        const selectedCandidates = plan.selectedCandidates || [];
+        const selectedCandidates = allocation.selectedByClaimId.get(Number(plan.claim.id)) ||
+          plan.selectedCandidates ||
+          [];
         logBearingGatingAudit({
           taskContentId: opt.taskContentId || null,
           claim: plan.claim,
@@ -1899,7 +1922,14 @@ TASK:
       } else {
         for (const candidate of selectedCandidates) {
           for (const assignment of expandCandidateTargetAssignments(candidate)) {
-            occurrences.push({ plan, candidate: assignment });
+            occurrences.push({
+              plan,
+              candidate: {
+                ...assignment,
+                selectedForScrape: true,
+                selectedScrapeReason: candidate.gatingSelectionReason || "allocated_candidate_plan",
+              },
+            });
           }
         }
       }
@@ -2002,6 +2032,7 @@ TASK:
         fringeQueries: [],
         fringeCandidates: [],
         fringeEvidence: [],
+        candidatePlan: this._buildCandidatePlan({ plan, selectedCandidates, allocation }),
       };
     }
 

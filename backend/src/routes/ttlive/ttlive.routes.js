@@ -542,6 +542,7 @@ export default function createTTLiveRouter({ query, pool }) {
             const { persistDirectEvidenceAssertions } = await import('../../core/evidenceAssertionPersistence.js');
             const { matchClaimsToTaskClaims } = await import('../../core/matchClaims.js');
             const { enrichTaskClaimsForMatching, dualWriteTargetEvidenceLinks } = await import('../../core/evaluationTargetStore.js');
+            const { upsertReferenceClaimTaskLinks } = await import('../../core/evidenceAssertionPersistence.js');
             const { openAiLLM } = await import('../../core/openAiLLM.js');
             const { default: PromptManager } = await import('../../core/promptManager.js');
             const claimMatchPromptManager = new PromptManager(query);
@@ -652,38 +653,28 @@ export default function createTTLiveRouter({ query, pool }) {
                     promptManager: claimMatchPromptManager,
                   });
 
-                  // Insert reference_claim_task_links (same table as scrape-task uses)
                   if (claimMatches.length > 0) {
-                    const values = claimMatches.map(match => {
-                      // Map stance values
-                      let mappedStance = match.stance;
-                      if (match.stance === 'supports') mappedStance = 'support';
-                      else if (match.stance === 'refutes') mappedStance = 'refute';
-                      else if (match.stance === 'related') mappedStance = 'nuance';
-
-                      return [
-                        match.referenceClaimId,
-                        match.taskClaimId,
-                        mappedStance,
-                        Math.round((match.veracityScore || 0.5) * 100), // score: 0-100
-                        match.confidence, // 0.15-0.98
-                        match.supportLevel, // -1.2 to +1.2
-                        match.rationale,
-                        null, // quote
-                        1 // created_by_ai
-                      ];
-                    });
-
-                    // Batch insert
-                    const placeholders = values.map(() => '(?, ?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
-                    const flatValues = values.flat();
-
-                    await query(
-                      `INSERT INTO reference_claim_task_links
-                       (reference_claim_id, task_claim_id, stance, score, confidence, support_level, rationale, quote, created_by_ai)
-                       VALUES ${placeholders}`,
-                      flatValues
+                    const relationRows = await query(
+                      `SELECT content_relation_id
+                         FROM content_relations
+                        WHERE content_id = ? AND reference_content_id = ?
+                        LIMIT 1`,
+                      [taskContentId, ref.referenceContentId],
                     );
+                    let contentRelationId = Number(relationRows?.[0]?.content_relation_id) || null;
+                    if (!contentRelationId && taskContentId !== ref.referenceContentId) {
+                      const inserted = await query(
+                        `INSERT INTO content_relations (content_id, reference_content_id, added_by_user_id, is_system)
+                         VALUES (?, ?, NULL, 1)`,
+                        [taskContentId, ref.referenceContentId],
+                      );
+                      contentRelationId = Number(inserted?.insertId) || null;
+                    }
+                    await upsertReferenceClaimTaskLinks(query, claimMatches.map((match) => ({
+                      ...match,
+                      contentRelationId,
+                      quote: match.quote || null,
+                    })));
                     await dualWriteTargetEvidenceLinks(query, taskContentId, claimMatches, ref.referenceContentId);
                     totalClaimLinks += claimMatches.length;
                     console.log(`   ✅ Created ${claimMatches.length} claim links for reference ${ref.referenceContentId}`);
