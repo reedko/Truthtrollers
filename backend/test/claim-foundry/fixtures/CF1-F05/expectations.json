@@ -1,0 +1,56 @@
+{
+  "fixtureId": "CF1-F05",
+  "fixtureRevision": 1,
+  "fixtureClass": "multiple_named_studies",
+  "status": "frozen",
+  "requiredConcepts": [
+    "The author disputes the claim that placebo treatments activate a powerful general healing mechanism.",
+    "The article distinguishes subjective patient-reported outcomes from objective outcomes such as survival and tumor shrinkage.",
+    "Named reviews and reanalyses attribute apparent placebo benefits to small subjective effects, biased reporting, natural history, regression to the mean, and trial artifacts.",
+    "Open-label placebo, veterinary, and health-governor examples are assessed separately rather than blended into one body of evidence."
+  ],
+  "requiredPillars": [
+    "Systematic reviews find little general clinically important placebo effect",
+    "Classic placebo estimates are weakened by reanalysis of study design and natural-history effects",
+    "Open-label placebo trials retain expectancy-producing scripts and other methodological problems",
+    "Veterinary placebo findings demonstrate observer or caregiver reporting effects rather than confirmed animal improvement",
+    "The proposed biological health governor is presented as speculative rather than established"
+  ],
+  "requiredSourceRegions": [
+    { "label": "2001 review", "excerpt": "Is the Placebo Powerless?" },
+    { "label": "2010 Cochrane review", "excerpt": "Placebo interventions for all clinical conditions" },
+    { "label": "1997 reanalysis", "excerpt": "The Powerful Placebo Effect: Fact or Fiction?" },
+    { "label": "open-label low-back-pain trial", "excerpt": "open-label placebo trial for chronic low back pain" },
+    { "label": "veterinary osteoarthritis study", "excerpt": "owners reported improvement roughly 57% of the time" },
+    { "label": "health-governor commentary", "excerpt": "health governor" }
+  ],
+  "prohibitedInterpretations": [
+    "Findings from different reviews, trials, diseases, species, or outcome types are merged into one study.",
+    "Small changes in subjective pain or nausea are converted into objective biological healing.",
+    "Open-label placebo trials are described as entirely free of expectancy cues or deception concerns.",
+    "Owner-reported improvement in dogs is treated as medically confirmed improvement in the animals.",
+    "The health-governor hypothesis is presented as an empirically established mechanism.",
+    "The author claims that contextual care and patient perception can never affect reported symptoms."
+  ],
+  "expectedExecutionPath": "normal",
+  "humanReviewNotes": [
+    "Keep the identity, date, population, endpoint, and limitation of each named work attached to that work.",
+    "The article quotes claims it criticizes; preserve the distinction between Phil Starks, cited researchers, study participants, and David Gorski's conclusions."
+  ],
+  "source": {
+    "file": "becdb025-794f-443d-b915-4819866debdb/pasted-text.txt",
+    "htmlSnapshotSha256": "a7c86d94026f9916b7f0a1d103e9aeb0aeb0f2386fc9806a7478fcae2553a9e7",
+    "articleContentHash": "14cc6ae056ca46d2e587be28741546a0e540b93e126a442229e71d2e572f1583",
+    "canonicalUrl": "https://sciencebasedmedicine.org/the-myth-of-the-magically-powerful-placebo-returns/",
+    "rightsStatus": "permission_confirmed_by_repository_owner",
+    "extractionNote": "Main entry content only; share controls, author biography, categories, comments, navigation, recommendations, and extension markup excluded."
+  },
+  "approval": {
+    "status": "approved",
+    "rightsReviewed": true,
+    "reviewers": [
+      { "reviewerId": "repository-owner", "decision": "approved", "approvedAt": "2026-07-14T00:00:00Z" },
+      { "reviewerId": "independent-reviewer", "decision": "approved", "approvedAt": "2026-07-14T00:00:00Z" }
+    ]
+  }
+}

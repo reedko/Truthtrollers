@@ -97,6 +97,9 @@ export const openAiLLM = {
    *  - temperature: optional
    *  - maxRetries: optional (default 3)
    *  - timeout: optional in ms (default 30000)
+   *  - model: optional (default preserves existing gpt-4o-mini behavior)
+   *  - maxOutputTokens: optional provider output ceiling
+   *  - returnMetadata: optional transport envelope for callers needing usage/model
    */
   async generate({
     system,
@@ -105,6 +108,10 @@ export const openAiLLM = {
     temperature = 0.2,
     maxRetries = 3,
     timeout = 30000,
+    model = "gpt-4o-mini",
+    maxOutputTokens = null,
+    returnMetadata = false,
+    jsonSchema = null,
   }) {
     let lastError;
 
@@ -121,14 +128,18 @@ export const openAiLLM = {
             Authorization: `Bearer ${getOpenAiApiKey()}`,
           },
           body: JSON.stringify({
-            model: "gpt-4o-mini", // 🏎 faster than gpt-4-turbo
+            model,
             temperature,
-            response_format: { type: "json_object" },
+            response_format: jsonSchema
+              ? { type: "json_schema", json_schema: jsonSchema }
+              : { type: "json_object" },
+            ...(Number.isInteger(maxOutputTokens) && maxOutputTokens > 0
+              ? { max_tokens: maxOutputTokens } : {}),
             messages: [
               { role: "system", content: system },
               {
                 role: "user",
-                content: schemaHint
+                content: schemaHint && !jsonSchema
                   ? user +
                     "\n\nReturn ONLY valid JSON. JSON shape hint: " +
                     schemaHint
@@ -176,19 +187,36 @@ export const openAiLLM = {
         }
 
         let parsed;
+        let providerResponse;
         try {
           const json = JSON.parse(text);
+          providerResponse = json;
           // Record provider-reported usage before parsing the assistant payload.
           // Malformed JSON content is still billable and may be retried.
-          recordOpenAiUsage(json.usage, json.model || "gpt-4o-mini");
+          recordOpenAiUsage(json.usage, json.model || model);
           const content = json.choices?.[0]?.message?.content ?? "{}";
+          const finishReason = json.choices?.[0]?.finish_reason;
+          if (finishReason === "length") {
+            const truncated = new Error("OpenAI structured output hit its token limit");
+            truncated.code = "CF1_MODEL_OUTPUT_TRUNCATED";
+            throw truncated;
+          }
+          if (content.length - content.trimEnd().length > 1_024) {
+            const whitespace = new Error("OpenAI structured output ended with excessive whitespace");
+            whitespace.code = "CF1_MODEL_EXCESSIVE_WHITESPACE";
+            throw whitespace;
+          }
           parsed = JSON.parse(content);
         } catch (e) {
           logger.error("[openAiLLM] failed to parse JSON-mode response:", text);
-          throw new Error("Failed to parse JSON from OpenAI: " + e.message);
+          const parseError = new Error("Failed to parse JSON from OpenAI: " + e.message);
+          parseError.usage = providerResponse?.usage;
+          parseError.model = providerResponse?.model || model;
+          throw parseError;
         }
 
-        return parsed;
+        return returnMetadata ? { output: parsed, usage: providerResponse.usage,
+          model: providerResponse.model || model, rawResponse: providerResponse } : parsed;
       } catch (error) {
         lastError = error;
 

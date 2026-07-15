@@ -1,0 +1,53 @@
+{
+  "fixtureId": "CF1-F01",
+  "fixtureRevision": 2,
+  "fixtureClass": "straightforward_argument",
+  "status": "frozen",
+  "requiredConcepts": [
+    "The study compares age at first MMR vaccination in children with autism and school-matched controls.",
+    "Vaccination before 18 months or before 24 months was not associated with autism case status in the overall sample or evaluated subgroups.",
+    "Vaccination before 36 months was more common among cases in the total sample, but the authors attribute this likely to immunization requirements for early-intervention enrollment.",
+    "The birth-certificate subsample estimate for vaccination before 36 months was lower and its confidence interval included no association."
+  ],
+  "requiredPillars": [
+    "Population-based case-control design and school matching",
+    "Results at the prespecified 18-, 24-, and 36-month cutoffs",
+    "Regression and other clinical subgroup results",
+    "Study limitations and the authors' explanation of the 36-month finding"
+  ],
+  "requiredSourceRegions": [
+    { "label": "study objective", "excerpt": "To compare ages at first measles-mumps-rubella (MMR) vaccination" },
+    { "label": "primary negative result", "excerpt": "similar proportions of case and control children had been vaccinated before 18 months or before 24 months of age." },
+    { "label": "36-month result", "excerpt": "more case children (93%) than control children (91%) were vaccinated before 36 months" },
+    { "label": "authors' explanation", "excerpt": "be an artifact of immunization requirements for preschool special education attendance in case children." }
+  ],
+  "prohibitedInterpretations": [
+    "The study found that MMR vaccination causes autism.",
+    "The study found no difference at any vaccination-age cutoff.",
+    "The 36-month association is presented without the authors' selection explanation and birth-certificate analysis.",
+    "The study tested whether thimerosal exposure causes autism.",
+    "The study directly measured a precise date of autism onset."
+  ],
+  "expectedExecutionPath": "normal",
+  "humanReviewNotes": [
+    "Preserve the distinction between an observed association and the authors' causal interpretation.",
+    "Do not turn cited background studies into findings of this study."
+  ],
+  "source": {
+    "file": "artifacts/evidence/mmRstudy.pdf",
+    "pdfSha256": "950de077f1fecfa72fbaa3af0b690859e18a5f0cc1997b362ffae426974a00dc",
+    "articleContentHash": "3b1605c4e295ee9c50b20f905bf038ba1fd41a6c277c77e74f5c0d4e38739c2c",
+    "doi": "10.1542/peds.113.2.259",
+    "rightsStatus": "permission_confirmed_by_repository_owner",
+    "articlePagesUsed": "1-8",
+    "extractionNote": "PDF text through the conclusion with acknowledgments and references excluded; original line wrapping, inline page headers, publisher/front matter, and table text are retained from the source extraction."
+  },
+  "approval": {
+    "status": "approved",
+    "rightsReviewed": true,
+    "reviewers": [
+      { "reviewerId": "repository-owner", "decision": "approved", "approvedAt": "2026-07-13T12:58:58Z" },
+      { "reviewerId": "independent-reviewer", "decision": "approved", "approvedAt": "2026-07-14T00:00:00Z" }
+    ]
+  }
+}

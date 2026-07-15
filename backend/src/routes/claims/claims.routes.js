@@ -3,6 +3,7 @@ import { Router } from "express";
 import { logUserActivity } from "../../utils/logUserActivity.js";
 import { authenticateToken } from "../../middleware/auth.js";
 import { calculateAIContentScore, calculateAIClaimScore } from "../../modules/aiRatings.js";
+import { contentClaimReadScope } from "../../claim-foundry/veristrata/loadActiveProjection.js";
 import {
   calculateUserClaimScore,
   calculateUserClaimScoresForContent,
@@ -239,7 +240,16 @@ export default function createClaimsRoutes({ query, pool }) {
 
     let userFilter = "";
     // viewerId first for the JOIN, then content_id for WHERE clause
-    const params = [viewerId || null, content_id];
+    let cf1Scope = { sql: "1 = 1", params: [] };
+    try {
+      if (String(process.env.CF1_WORKSPACE_READS_ENABLED).toLowerCase() === "true") {
+        cf1Scope = await contentClaimReadScope(query, content_id);
+      }
+    } catch (error) {
+      console.error("Error resolving CF1 claim projection:", error);
+      return res.status(500).json({ error: "Database query failed" });
+    }
+    const params = [viewerId || null, content_id, ...cf1Scope.params];
 
     // Apply filtering based on scope
     if (scope === "admin") {
@@ -306,6 +316,7 @@ export default function createClaimsRoutes({ query, pool }) {
     LEFT JOIN content ref ON cr.reference_content_id = ref.content_id
     LEFT JOIN user_claim_visibility ucv ON c.claim_id = ucv.claim_id AND ucv.user_id = ?
     WHERE cc.content_id = ?
+      AND ${cf1Scope.sql}
       AND (ucv.is_hidden IS NULL OR ucv.is_hidden = FALSE)
       ${userFilter}
     GROUP BY c.claim_id, c.claim_text, c.veracity_score, c.confidence_level, c.last_verified, c.claim_type,

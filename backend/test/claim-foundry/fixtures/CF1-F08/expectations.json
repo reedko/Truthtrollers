@@ -1,0 +1,49 @@
+{
+  "fixtureId": "CF1-F08",
+  "fixtureRevision": 1,
+  "fixtureClass": "short_factual_report",
+  "status": "frozen",
+  "requiredConcepts": [
+    "A moderate earthquake occurred in northern Japan early Monday without reported damage or casualties.",
+    "The report distinguishes the headline magnitude from the U.S. Geological Survey measurement rather than forcing one value.",
+    "Location and depth are attributed to the U.S. Geological Survey.",
+    "No tsunami advisory was issued, and the event was outside the area covered by an existing megaquake advisory."
+  ],
+  "requiredPillars": [],
+  "requiredSourceRegions": [
+    { "label": "event and immediate outcome", "excerpt": "A magnitude 6.2 earthquake shook part of northern Japan early Monday, but there was no damage or casualties" },
+    { "label": "tsunami status", "excerpt": "No tsunami advisory was issued by the Japan Meteorological Agency" },
+    { "label": "location and depth", "excerpt": "18 kilometers (11 miles) west of the small town of Sarabetsu" },
+    { "label": "USGS magnitude", "excerpt": "It measured the quake’s strength at 6.1 magnitude" },
+    { "label": "advisory scope", "excerpt": "Monday’s quake was outside of the area subject to a megaquake advisory" }
+  ],
+  "prohibitedInterpretations": [
+    "The report is padded into a developed argument with invented theme pillars.",
+    "The 6.2 and 6.1 magnitude values are silently merged or one is discarded without attribution.",
+    "Absence of reported damage or casualties is rewritten as proof that no effects could later be discovered.",
+    "No tsunami advisory is rewritten as a claim that a tsunami was physically impossible.",
+    "The prior 7.7 offshore earthquake is treated as the same event as Monday’s inland earthquake.",
+    "The contextual megaquake advisory is presented as applying to Monday’s quake."
+  ],
+  "expectedExecutionPath": "normal",
+  "humanReviewNotes": [
+    "A proportionate package should contain only a few selected factual claims and no manufactured argumentative structure.",
+    "Preserve actor, time, place, distance, depth, magnitude, and agency attribution qualifiers."
+  ],
+  "source": {
+    "file": "90e2e4a3-59f3-4b59-9187-859219462858/pasted-text.txt",
+    "htmlSnapshotSha256": "bbb1c24bdee030d0f73edecadaa12a8b225b85fa366659d9b08ea6f9d3c0c265",
+    "articleContentHash": "6313f3ddf83e15b32964adcd2b1f3d16c8b1e0d8e46524480168ba4c1fa872ec",
+    "canonicalUrl": "https://apnews.com/article/japan-earthquake-north-sarabetsu-hokkaido-6b7f2eccde92efeda27fe00f07b64262",
+    "rightsStatus": "permission_confirmed_by_repository_owner",
+    "extractionNote": "Five AP story-body paragraphs only; donation prompts, navigation, recommendations, comments, footer, and extension markup excluded."
+  },
+  "approval": {
+    "status": "approved",
+    "rightsReviewed": true,
+    "reviewers": [
+      { "reviewerId": "repository-owner", "decision": "approved", "approvedAt": "2026-07-14T00:00:00Z" },
+      { "reviewerId": "independent-reviewer", "decision": "approved", "approvedAt": "2026-07-14T00:00:00Z" }
+    ]
+  }
+}

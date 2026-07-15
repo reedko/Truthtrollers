@@ -1,0 +1,56 @@
+{
+  "fixtureId": "CF1-F02",
+  "fixtureRevision": 2,
+  "fixtureClass": "rebuttal_article",
+  "status": "frozen",
+  "requiredConcepts": [
+    "The article reports Michael Antoniou's argument that regulatory conclusions of glyphosate safety rest on inadequate and industry-shaped testing.",
+    "The opposing position includes regulatory reliance on glyphosate-only tests, industry-sponsored studies, accepted exposure limits, and the claim that the targeted plant pathway is absent in humans.",
+    "The rebuttal distinguishes pure glyphosate from more toxic commercial formulations while still alleging harms from glyphosate itself.",
+    "The article uses formulation, mixture, microbiome, low-dose animal, and carcinogenicity evidence to dispute the safety conclusion."
+  ],
+  "requiredPillars": [
+    "Regulators test isolated glyphosate rather than complete products encountered in practice",
+    "Industry-sponsored evidence and eligibility rules shape regulatory safety assessments",
+    "Single-pesticide testing does not represent real-world chemical mixtures",
+    "The plant-pathway safety argument overlooks effects on the human microbiome",
+    "Independent low-dose and lifetime animal findings are presented as inconsistent with current safety limits"
+  ],
+  "requiredSourceRegions": [
+    { "label": "formulation distinction", "excerpt": "products “far more toxic” than glyphosate on its own" },
+    { "label": "industry evidence criticism", "excerpt": "regulatory agencies around the world rely heavily on industry-sponsored research" },
+    { "label": "opposing biological premise", "excerpt": "targets a biological pathway found in plants but not in humans" },
+    { "label": "microbiome rebuttal", "excerpt": "The same pathway exists in many bacteria and fungi, including microorganisms that make up the human gut microbiome" },
+    { "label": "carcinogenicity conclusion", "excerpt": "glyphosate and glyphosate herbicides are definitely carcinogenic" },
+    { "label": "policy conclusion", "excerpt": "We cannot set an acceptable daily safe intake limit" }
+  ],
+  "prohibitedInterpretations": [
+    "The article says pure glyphosate is harmless or non-toxic.",
+    "Greater toxicity of commercial formulations is treated as inconsistent with alleged toxicity of glyphosate itself.",
+    "Regulatory and industry safety positions are presented as the article author's conclusion.",
+    "Antoniou's allegations and interpretations are converted into unattributed scientific consensus.",
+    "Animal findings are silently rewritten as demonstrated human clinical outcomes.",
+    "Temporal association, toxicity, and carcinogenicity are collapsed into interchangeable claims."
+  ],
+  "expectedExecutionPath": "normal",
+  "humanReviewNotes": [
+    "Preserve nested attribution: Jill Erzen reports an interview in which Michael Antoniou describes studies, industry positions, and regulatory practices.",
+    "The pure-compound versus commercial-formulation distinction is an intentional qualification, not an internal contradiction."
+  ],
+  "source": {
+    "file": "1d973fe5-528d-41bf-8246-7fa0c0d57e91/pasted-text.txt",
+    "htmlSnapshotSha256": "bb419a6cb178cd34ace31fc253af8f41153fa50000035db4c9b16d0d92658189",
+    "articleContentHash": "bcd5ed643c49c1f10fb1bb8c9e4d9512d1a56474db29b6345ca8c9d4e6ed9bd5",
+    "canonicalUrl": "https://childrenshealthdefense.org/defender/deceptively-toxic-how-regulators-chemical-companies-get-away-with-calling-glyphosate-safe/",
+    "rightsStatus": "permission_confirmed_by_repository_owner",
+    "extractionNote": "Main article body only; audio controls, promotion and donation inserts, related stories, sharing and republication UI, author biography, categories, comments, and extension markup excluded."
+  },
+  "approval": {
+    "status": "approved",
+    "rightsReviewed": true,
+    "reviewers": [
+      { "reviewerId": "repository-owner", "decision": "approved", "approvedAt": "2026-07-14T00:00:00Z" },
+      { "reviewerId": "independent-reviewer", "decision": "approved", "approvedAt": "2026-07-14T00:00:00Z" }
+    ]
+  }
+}

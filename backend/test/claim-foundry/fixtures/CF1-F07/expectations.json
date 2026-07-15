@@ -1,0 +1,50 @@
+{
+  "fixtureId": "CF1-F07",
+  "fixtureRevision": 1,
+  "fixtureClass": "weak_or_absent_thesis",
+  "status": "frozen",
+  "requiredConcepts": [
+    "The article is organized as a survey of unresolved dark-matter questions rather than an argument for one answer.",
+    "Its stable theme is uncertainty about dark matter's identity, detection, composition, interactions, distribution, and existence.",
+    "WIMPs, axions, dark photons, charged dark matter, neutron decay, and modified gravity are presented as candidates or hypotheses, not conclusions.",
+    "Conflicting experimental results and nondetections remain attached to their individual experiments and limitations."
+  ],
+  "requiredPillars": [],
+  "requiredSourceRegions": [
+    { "label": "survey framing", "excerpt": "Here are the 11 biggest unanswered questions about dark matter" },
+    { "label": "WIMP uncertainty", "excerpt": "After decades of searching, not one of these detectors has made a credible discovery" },
+    { "label": "multi-particle hypothesis", "excerpt": "There is no good reason to assume that all the dark matter in the universe is built out of one type of particle" },
+    { "label": "galaxy dispute", "excerpt": "a separate team posted an analysis suggesting that van Dokkum's team had mismeasured the distance" },
+    { "label": "DAMA disagreement", "excerpt": "no other experiment has seen anything like this" },
+    { "label": "existence uncertainty", "excerpt": "Dark matter is still an unconfirmed model" }
+  ],
+  "prohibitedInterpretations": [
+    "The article concludes that WIMPs, axions, dark photons, or any other candidate constitute dark matter.",
+    "The eleven questions are inflated into eleven theme pillars or eleven selected claims by default.",
+    "A reported hypothesis is converted into the author's endorsed thesis.",
+    "DAMA/LIBRA's claimed signal is presented as independently replicated detection.",
+    "The NGC 1052-DF2 disagreement is resolved by silently choosing one team's analysis.",
+    "The article's final observation that evidence favors dark matter is expanded into a claim that its nature has been established."
+  ],
+  "expectedExecutionPath": "normal",
+  "humanReviewNotes": [
+    "Theme confidence may be high, but thesis confidence should be low or thesis should be absent; topic coherence is not an argumentative conclusion.",
+    "A valid package may select only a few evidence-ready claims and should not pad the result to represent every question."
+  ],
+  "source": {
+    "file": "bb2c2f08-2d58-421f-b0e9-38a1467f4ab5/pasted-text.txt",
+    "htmlSnapshotSha256": "328199d149fcd6d17d48a9e2540af25e6cc233d7d77eb2b91c55b1ba03772850",
+    "articleContentHash": "fbecac56caaada6ca849a988520def34acc4ad6fc0d6e76a39ed6ac0e92141d9",
+    "canonicalUrl": "https://www.livescience.com/64113-dark-matter-mysteries.html",
+    "rightsStatus": "permission_confirmed_by_repository_owner",
+    "extractionNote": "Publisher-marked article paragraphs and headings only; images, captions, ads, inline recommendations, newsletter form, author biography, navigation, and extension markup excluded."
+  },
+  "approval": {
+    "status": "approved",
+    "rightsReviewed": true,
+    "reviewers": [
+      { "reviewerId": "repository-owner", "decision": "approved", "approvedAt": "2026-07-14T00:00:00Z" },
+      { "reviewerId": "independent-reviewer", "decision": "approved", "approvedAt": "2026-07-14T00:00:00Z" }
+    ]
+  }
+}

@@ -1,0 +1,220 @@
+{
+  "schemaVersion": "cf1.claimPackage.v1",
+  "pipelineVersion": "cf1.0.0",
+  "packageId": "cf1pkg_01JEXAMPLE0000000000000000",
+  "packageVersion": 1,
+  "supersedesPackageId": null,
+  "runId": "cf1run_01JEXAMPLE0000000000000000",
+  "status": "ready_for_evidence",
+  "createdAt": "2026-07-13T10:00:00.000Z",
+  "article": {
+    "consumerContentRef": "example-article-1",
+    "title": "City Audit Finds Delays in Bridge Repairs",
+    "text": "A city audit found that required bridge repairs were delayed for two years. The transport department says procurement rules caused the delay. The audit states that the department waited nine months before opening the procurement process. The article argues that management failures, rather than procurement rules alone, caused the delay.",
+    "url": "https://example.test/city-audit-bridge-repairs",
+    "publisher": "Example News",
+    "authors": ["Alex Rivera"],
+    "publishedAt": "2026-06-01T08:00:00Z",
+    "language": "en",
+    "observedHeadline": "City Audit Finds Delays in Bridge Repairs",
+    "metadataWarnings": [],
+    "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "sourceAtoms": [
+    {"atomId": "A001", "order": 0, "type": "paragraph", "text": "A city audit found that required bridge repairs were delayed for two years.", "sourceOffsets": {"start": 0, "end": 75}, "layoutSignals": {}, "linkIds": [], "diagnosticFlags": []},
+    {"atomId": "A002", "order": 1, "type": "paragraph", "text": "The transport department says procurement rules caused the delay.", "sourceOffsets": {"start": 76, "end": 141}, "layoutSignals": {}, "linkIds": [], "diagnosticFlags": []},
+    {"atomId": "A003", "order": 2, "type": "paragraph", "text": "The audit states that the department waited nine months before opening the procurement process. The article argues that management failures, rather than procurement rules alone, caused the delay.", "sourceOffsets": {"start": 142, "end": 337}, "layoutSignals": {}, "linkIds": [], "diagnosticFlags": []}
+  ],
+  "sourceUnits": [
+    {"unitId": "U001", "atomId": "A001", "order": 0, "type": "sentence", "text": "A city audit found that required bridge repairs were delayed for two years.", "sourceOffsets": {"start": 0, "end": 75}},
+    {"unitId": "U002", "atomId": "A002", "order": 1, "type": "sentence", "text": "The transport department says procurement rules caused the delay.", "sourceOffsets": {"start": 76, "end": 141}},
+    {"unitId": "U003", "atomId": "A003", "order": 2, "type": "sentence", "text": "The audit states that the department waited nine months before opening the procurement process.", "sourceOffsets": {"start": 142, "end": 237}},
+    {"unitId": "U004", "atomId": "A003", "order": 3, "type": "sentence", "text": "The article argues that management failures, rather than procurement rules alone, caused the delay.", "sourceOffsets": {"start": 238, "end": 337}}
+  ],
+  "semanticBlocks": [
+    {
+      "blockId": "B001",
+      "order": 0,
+      "heading": "",
+      "text": "A city audit found that required bridge repairs were delayed for two years.",
+      "structuralType": "paragraph_group",
+      "semanticFunction": "thesis_framing",
+      "articleStance": "endorses",
+      "speakerEntities": ["city audit"],
+      "sourceAtomIds": ["A001"],
+      "sourceUnitIds": ["U001"],
+      "sourceOffsets": {"start": 0, "end": 75},
+      "relatedBlockIds": ["B002", "B003"],
+      "confidence": 0.96
+    },
+    {
+      "blockId": "B002",
+      "order": 1,
+      "heading": "",
+      "text": "The transport department says procurement rules caused the delay.",
+      "structuralType": "paragraph_group",
+      "semanticFunction": "opponent_position",
+      "articleStance": "reports",
+      "speakerEntities": ["transport department"],
+      "sourceAtomIds": ["A002"],
+      "sourceUnitIds": ["U002"],
+      "sourceOffsets": {"start": 76, "end": 141},
+      "relatedBlockIds": ["B003"],
+      "confidence": 0.94
+    },
+    {
+      "blockId": "B003",
+      "order": 2,
+      "heading": "",
+      "text": "The audit states that the department waited nine months before opening the procurement process. The article argues that management failures, rather than procurement rules alone, caused the delay.",
+      "structuralType": "paragraph_group",
+      "semanticFunction": "rebuttal",
+      "articleStance": "endorses",
+      "speakerEntities": ["city audit", "article author"],
+      "sourceAtomIds": ["A003"],
+      "sourceUnitIds": ["U003", "U004"],
+      "sourceOffsets": {"start": 142, "end": 337},
+      "relatedBlockIds": ["B001", "B002"],
+      "confidence": 0.95
+    }
+  ],
+  "rawAssertions": [
+    {
+      "rawAssertionId": "R001",
+      "text": "Required bridge repairs were delayed for two years.",
+      "sourceUnitIds": ["U001"],
+      "sourceBlockIds": ["B001"],
+      "sourceSpans": [{"sourceUnitIds": ["U001"], "text": "A city audit found that required bridge repairs were delayed for two years.", "start": 0, "end": 75}],
+      "sourceExcerpt": "A city audit found that required bridge repairs were delayed for two years.",
+      "sourceOffsets": [{"start": 0, "end": 75}],
+      "assertionForm": "direct",
+      "articleUse": "endorsed",
+      "namedEntities": ["bridge repairs"],
+      "namedWorks": ["city audit"],
+      "numbersAndDates": ["two years"],
+      "reconciliation": {"canonicalRawAssertionId": "R001", "relationship": "unique", "relatedRawAssertionIds": [], "rationale": "Only occurrence."}
+    },
+    {
+      "rawAssertionId": "R002",
+      "text": "The transport department attributed the repair delay to procurement rules.",
+      "sourceUnitIds": ["U002"],
+      "sourceBlockIds": ["B002"],
+      "sourceSpans": [{"sourceUnitIds": ["U002"], "text": "The transport department says procurement rules caused the delay.", "start": 76, "end": 141}],
+      "sourceExcerpt": "The transport department says procurement rules caused the delay.",
+      "sourceOffsets": [{"start": 76, "end": 141}],
+      "speakerEntity": "transport department",
+      "assertionForm": "attributed",
+      "articleUse": "opponent_to_rebut",
+      "namedEntities": ["transport department", "procurement rules"],
+      "namedWorks": [],
+      "numbersAndDates": [],
+      "reconciliation": {"canonicalRawAssertionId": "R002", "relationship": "unique", "relatedRawAssertionIds": [], "rationale": "Only occurrence."}
+    },
+    {
+      "rawAssertionId": "R003",
+      "text": "The department waited nine months before opening procurement.",
+      "sourceUnitIds": ["U003"],
+      "sourceBlockIds": ["B003"],
+      "sourceSpans": [{"sourceUnitIds": ["U003"], "text": "The audit states that the department waited nine months before opening the procurement process.", "start": 142, "end": 237}],
+      "sourceExcerpt": "The audit states that the department waited nine months before opening the procurement process.",
+      "sourceOffsets": [{"start": 142, "end": 237}],
+      "assertionForm": "statistical",
+      "articleUse": "endorsed",
+      "namedEntities": ["transport department", "procurement process"],
+      "namedWorks": ["city audit"],
+      "numbersAndDates": ["nine months"],
+      "reconciliation": {"canonicalRawAssertionId": "R003", "relationship": "unique", "relatedRawAssertionIds": [], "rationale": "Only occurrence."}
+    }
+  ],
+  "articleMap": {
+    "theme": "Responsibility for delays in required bridge repairs.",
+    "thesis": {"text": "Management failures materially caused the repair delay.", "sourceBlockIds": ["B003"], "rawAssertionIds": ["R003"]},
+    "pillars": [{"pillarId": "P01", "label": "Delayed management action", "text": "The department delayed opening procurement for nine months.", "sourceBlockIds": ["B003"], "rawAssertionIds": ["R003"], "importance": "load_bearing"}],
+    "clusters": [{"clusterId": "C01", "label": "Causes of delay", "rawAssertionIds": ["R002", "R003"], "relationship": "reasoning_chain"}],
+    "opponentPositions": [{"text": "Procurement rules caused the delay.", "sourceBlockIds": ["B002"], "rawAssertionIds": ["R002"]}],
+    "qualifications": [{"text": "Procurement rules may have contributed but were not the sole cause.", "sourceBlockIds": ["B003"], "rawAssertionIds": ["R002", "R003"]}],
+    "mapWarnings": []
+  },
+  "internalConsistencyFindings": [],
+  "selectedEvaluationClaims": [
+    {
+      "selectedClaimId": "S01",
+      "claimText": "The transport department waited nine months before opening procurement for required bridge repairs.",
+      "sourceRawAssertionIds": ["R003"],
+      "sourceUnitIds": ["U003"],
+      "sourceBlockIds": ["B003"],
+      "sourceSpans": [{"sourceUnitIds": ["U003"], "text": "The audit states that the department waited nine months before opening the procurement process.", "start": 142, "end": 237}],
+      "sourceExcerpt": "The audit states that the department waited nine months before opening the procurement process.",
+      "sourceOffsets": [{"start": 142, "end": 237}],
+      "articleRole": "pillar",
+      "relatedPillarIds": ["P01"],
+      "materiality": "high",
+      "counterfactualImpact": "If false, the article loses its clearest evidence that management delay contributed to the two-year repair delay.",
+      "selectionRationale": "This is the measurable factual hinge supporting the article's management-failure thesis.",
+      "scoreTransform": "normal",
+      "searchEligible": true,
+      "verdictEligible": true,
+      "confidence": 0.95
+    }
+  ],
+  "phase3Targets": [
+    {
+      "targetId": "T001",
+      "selectedClaimId": "S01",
+      "targetText": "The transport department waited nine months before opening procurement for the required bridge repairs.",
+      "targetType": "article_endorsed_substantive",
+      "scoreTransform": "normal",
+      "searchEligible": true,
+      "verdictEligible": true,
+      "sourceUnitIds": ["U003"],
+      "sourceBlockIds": ["B003"],
+      "sourceRawAssertionIds": ["R003"],
+      "sourceSpans": [{"sourceUnitIds": ["U003"], "text": "The audit states that the department waited nine months before opening the procurement process.", "start": 142, "end": 237}],
+      "sourceExcerpt": "The audit states that the department waited nine months before opening the procurement process.",
+      "sourceOffsets": [{"start": 142, "end": 237}],
+      "mappingStatus": "resolved",
+      "mappingRationale": "Direct measurable proposition used to support the article's first pillar."
+    }
+  ],
+  "evidenceNeedCards": [
+    {
+      "cardId": "ENC-T001",
+      "targetId": "T001",
+      "selectedClaimId": "S01",
+      "targetText": "The transport department waited nine months before opening procurement for the required bridge repairs.",
+      "targetType": "article_endorsed_substantive",
+      "scoreTransform": "normal",
+      "searchEligible": true,
+      "verdictEligible": true,
+      "evidenceRolesNeeded": ["primary-record", "official-response"],
+      "bearingCriteria": {
+        "mustMatch": ["the same bridge-repair procurement process", "when the department opened procurement"],
+        "shouldMatch": ["the audit timeline", "reasons recorded for the delay"],
+        "rejectIfOnly": ["discusses city procurement delays generally", "repeats the article without examining the audit or procurement record"],
+        "weak": false
+      },
+      "queryLaneSeeds": [
+        {"laneType": "primary-record", "query": "city bridge repair audit procurement opened nine months", "purpose": "Locate the audit or procurement timeline.", "sourceFieldsUsed": ["targetText", "namedWorks"]}
+      ],
+      "identifierHints": {"doi": [], "pmid": [], "titleExact": ["city audit"], "authorYear": [], "quotedDocumentNames": ["city audit"], "canonicalSourceIds": []}
+    }
+  ],
+  "diagnostics": {
+    "rawAssertionCount": 3,
+    "selectedClaimCount": 1,
+    "targetCount": 1,
+    "evidenceNeedCardCount": 1,
+    "selectionCountException": "Short illustrative article contains one load-bearing externally testable claim.",
+    "modelCalls": 1,
+    "repairCalls": 0
+  },
+  "verification": {
+    "valid": true,
+    "blockingErrors": [],
+    "warnings": [{"code": "CF1_SHORT_ARTICLE_SELECTION", "path": "/selectedEvaluationClaims", "message": "Selection count below eight is justified by the short article.", "relatedIds": ["S01"]}],
+    "verifiedAt": "2026-07-13T10:00:01.000Z",
+    "verifierVersion": "cf1-verifier-1",
+    "repairAttempted": false
+  },
+  "packageHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+}

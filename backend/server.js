@@ -92,6 +92,8 @@ import createEvaluationRouter from "./src/routes/evaluation/evaluation.routes.js
 import createContentRatingRouter from "./src/routes/evaluation/content-rating.routes.js";
 import createDiscussionSystemRouter from "./src/routes/discussion/index.js";
 import createTTLiveSystemRouter from "./src/routes/ttlive/index.js";
+import createClaimFoundryRouter from "./src/routes/claim-foundry/index.js";
+import { createCf1Runtime } from "./src/routes/claim-foundry/runtime.js";
 import { initSocketServer } from "./src/realtime/socketServer.js";
 import { loadSearchGatewayConfig } from "./src/core/searchGatewayConfig.js";
 import { logMissingSearchProviderKeys } from "./src/core/evidenceRetrievalGateway.js";
@@ -236,6 +238,11 @@ app.use((req, res, next) => {
 app.use(bodyParser.json({ limit: "500mb" }));
 app.use(bodyParser.urlencoded({ extended: true, limit: "500mb" }));
 app.use(cookieParser());
+
+// Portable CF1 API. Disabled until its migration, consumer keys, and model transport are configured.
+if (String(process.env.CF1_API_ENABLED).toLowerCase() === "true") {
+  app.use("/", createClaimFoundryRouter(createCf1Runtime({ query, pool })));
+}
 
 // ─────────────────────────────────────────────
 // Static assets
