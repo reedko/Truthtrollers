@@ -199,20 +199,23 @@ export function createEvidenceRetrievalGateway({ config = {}, env = process.env,
   const status = getSearchProviderStatus(normalized, env);
 
   async function callProvider(provider, options) {
-    if (!normalized.providerEnabled?.[provider]) return { provider, results: [], skipped: "skipped_disabled" };
-    if (!status[provider]?.configured && !providers) return { provider, results: [], skipped: "skipped_missing_api_key" };
-    if (typeof adapters[provider] !== "function") return { provider, results: [], skipped: "skipped_missing_config" };
+    const startedAt = Date.now();
+    const skipped = (reason) => ({ provider, results: [], skipped: reason, elapsedMs: Date.now() - startedAt });
+    if (!normalized.providerEnabled?.[provider]) return skipped("skipped_disabled");
+    if (!status[provider]?.configured && !providers) return skipped("skipped_missing_api_key");
+    if (typeof adapters[provider] !== "function") return skipped("skipped_missing_config");
     try {
       const raw = await adapters[provider](options);
       providerHealth.set(provider, { lastSuccessfulCall: new Date().toISOString(), lastError: null });
-      return { provider, results: raw.map((item, index) => normalizeResult(provider, item, index, options.query, normalized.captureProviderMetadata)), rawCount: raw.length };
+      return { provider, results: raw.map((item, index) => normalizeResult(provider, item, index, options.query, normalized.captureProviderMetadata)), rawCount: raw.length, elapsedMs: Date.now() - startedAt };
     } catch (error) {
       providerHealth.set(provider, { ...(providerHealth.get(provider) || {}), lastError: bounded(error.message, 240), lastErrorAt: new Date().toISOString() });
-      return { provider, results: [], error: bounded(error.message, 240) };
+      return { provider, results: [], error: bounded(error.message, 240), elapsedMs: Date.now() - startedAt };
     }
   }
 
   async function web(input = {}) {
+    const requestStartedAt = Date.now();
     const options = { ...input, topK: Math.min(Number(input.topK) || normalized.maxResultsPerQuery, normalized.maxResultsPerQuery) };
     if (!options.query?.trim()) return [];
     let providerOrder;
@@ -256,6 +259,24 @@ export function createEvidenceRetrievalGateway({ config = {}, env = process.env,
       if (stat.results_returned > 0 || stat.unique_candidates_added > 0) {
         log.log(`[SEARCH_GATEWAY_PROVIDER] ${JSON.stringify(stat)}`);
       }
+    }
+    if (input.returnDiagnostics) {
+      return {
+        results,
+        diagnostics: {
+          query: bounded(options.query, 2_000),
+          elapsedMs: Date.now() - requestStartedAt,
+          resultCount: results.length,
+          providers: calls.map((call) => ({
+            provider: call.provider,
+            elapsedMs: call.elapsedMs || 0,
+            rawResultCount: call.rawCount || 0,
+            normalizedResultCount: call.results.length,
+            skipped: call.skipped || null,
+            error: call.error || null,
+          })),
+        },
+      };
     }
     return results;
   }

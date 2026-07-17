@@ -1,8 +1,10 @@
 # EvidenceRun ER1 MCT
 
-**Status:** Draft informed by CF1 development; not approved for implementation
+**Status:** ER1-0/1 approved; ER1-2A.2 query repair implemented offline; live rerun pending
 **Product boundary:** Provider-neutral evidence agent consuming immutable CF1 packages
-**File rule:** Every handwritten implementation file must be 500 lines or fewer; target 250 or fewer
+**Module root:** `backend/src/evidence-run/`, parallel to `backend/src/claim-foundry/`
+**File rule:** Keep handwritten modules at or below 250 lines; 500 lines is the absolute maximum
+**Implementation checklist:** `docs/evidence_run_er1_implementation_plan.md`
 
 ## 1. Purpose
 
@@ -13,6 +15,19 @@ without changing the CF1 package.
 
 VeriStrata is one ER1 consumer. ER1 must not assume a dashboard, browser extension,
 live scrape route, or VeriStrata-only content ID at its portable boundary.
+
+### Claim and assertion roles
+
+- A **claim** is a proposition selected from the content currently being evaluated.
+- An **assertion** is a proposition extracted from a source acquired as evidence.
+- Claims and assertions are propositionally fungible and may reuse the same canonical
+  `claims` representation. Their names describe roles in the current evaluation, not
+  permanently different kinds of proposition.
+- An ER1 assertion does not automatically become an evaluation claim. If its source is
+  later independently evaluated, CF1 selection or an explicit consumer action may enrich
+  that content relationship with evaluation, verdict, and search eligibility flags.
+- Promotion changes the content-relative association and evaluation package; it does not
+  create a globally permanent evaluation role for the proposition.
 
 ## 2. Governing outcomes
 
@@ -200,6 +215,78 @@ Every accepted evidence assertion must retain:
 Publisher reputation cannot substitute for bearing. A low-reputation source may provide
 claim provenance; a prestigious but merely topical paper may still be non-bearing.
 
+### 9.1 Requested evidentiary coverage
+
+The ER1 request may contain the legacy `balancePolicy` vocabulary (`support`, `refute`,
+and `qualify`). Those values are falsifiability hypotheses supplied by the consumer, not
+known source stances and not provider-query lane types. The discovery planner translates
+them into role-diverse routes such as primary result, independent review, reanalysis or
+correction, methodology or limitation, subgroup or scope, definition, official/legal
+context, and claim provenance.
+
+When broader coverage is requested, ER1 must:
+
+- create distinct evidence-role routes from proposition components and CF1 falsifiability;
+- allocate initial retrieval and fetch budget across targets and evidence roles;
+- never add stance-hunting words or a claim's logical opposite to manufacture diversity;
+- classify final bearing only after source acquisition and proposition assessment;
+- keep `qualify` for evidence that materially narrows scope, population, conditions,
+  magnitude, certainty, or causal interpretation;
+- keep merely topical/contextual material out of the qualifying lane;
+- prefer independent sources and avoid counting syndications, citations of one underlying
+  study, or publisher-family duplicates as independent corroboration;
+- have the critic identify missing requested lanes and permit the one bounded follow-up
+  wave to target a specific missing bearing direction;
+- report `requested_bearing_not_found` when a lane remains empty rather than relabel weak
+  evidence or infer that absence proves the opposite stance.
+
+Role diversity must not become false equivalence. ER1 reports the strength, directness, authority,
+and independence of each lane even when the counts look symmetric. A well-supported
+consensus and a weak dissenting source remain visibly unequal. User-facing “nuance” maps
+to material `qualify` findings; generic contextual relevance does not score as nuance.
+
+### 9.2 Admiralty, SourceCrest, and provenance
+
+ER1 must reuse VeriStrata's existing Admiralty and provenance features rather than create
+a competing credibility score. For every acquired or locally reused source, ER1 should:
+
+- load existing content- and publisher-level `admiralty_evaluations` when available;
+- preserve the Admiralty source-reliability letter, information-credibility number,
+  evaluation status, contributing signals, caps, reasons, and evaluation timestamp;
+- reuse publisher identity/enrichment and normalized provider signals, including their
+  match confidence and evidence URLs;
+- retain the complete retrieval lineage from CF1 target and query lane through provider
+  result, requested/final/canonical URL, identity resolution, acquisition method, content
+  version/hash, passage, extracted assertion, bearing decision, and persistence IDs;
+- distinguish observed metadata, provider-supplied metadata, deterministic inference,
+  model extraction, and human-confirmed identity fields, each with provenance/confidence;
+- expose the stored Admiralty snapshot and provenance references in the immutable ER1
+  result so later SourceCrest/verimeter processing can reproduce its inputs.
+
+Admiralty and bearing remain orthogonal. Admiralty may influence source-role allocation,
+corroboration needs, evidence weighting, and warnings, but it cannot turn topical material
+into bearing evidence or suppress a low-reliability source needed for provenance, opposing
+position, or contradiction analysis. ER1 must not double-count the same publisher/provider
+signal as both reliability and independent corroboration. Missing Admiralty enrichment
+must not block the standard runtime deadline; ER1 records `not_assessed` and may schedule
+separate enrichment through the existing feature boundary.
+
+SourceCrest currently remains the audited deterministic path: call the existing external
+signal providers, preserve their responses/provenance, and apply the existing formula. ER1
+must place that behavior behind a `sourceQualityProvider` boundary rather than embed the
+formula or provider calls in its coordinator. It reads a current cached rating first. For a
+publisher likely to contribute accepted evidence, a missing or stale rating may be refreshed
+concurrently when budgets and the completion deadline permit. The result records
+`assessed`, `pending`, or `not_assessed`; evidence extraction never waits for it.
+
+The same boundary may later support an agentic publisher-assessment provider. Such an agent
+must produce an inspectable evidence bundle: resolved publisher identity, claims about the
+publisher, exact supporting sources/passages, conflicts, uncertainty, and a provisional
+rating with policy version. It must not silently replace the deterministic SourceCrest,
+invent reputation facts, use the evidence source's own self-description as independent
+corroboration, or share an opaque score with the bearing judgment. Human-confirmed and
+formula-derived ratings remain distinguishable from provisional agent assessments.
+
 ## 10. Retrieval and persistence rules
 
 - Deduplicate by canonical source identity while preserving every query/target route.
@@ -213,13 +300,54 @@ claim provenance; a prestigious but merely topical paper may still be non-bearin
 - Failed fetches, unresolved works, rejected candidates, and non-bearing sources receive
   bounded diagnostic outcomes instead of disappearing.
 
+### 10.1 Local source repository and document identity
+
+ER1 must search VeriStrata's accumulated source repository before and alongside external
+discovery. Local records are candidates, not automatically valid evidence, and enter the
+same target-bearing triage as web results.
+
+Document identity has four distinct layers:
+
+- internal `content_id`: stable VeriStrata source identity;
+- normalized URL plus URL aliases: fast pre-fetch lookup and redirect/canonical history;
+- external work identifiers such as DOI, PMID, PMCID, docket number, or ISBN: consolidation
+  across different URLs and repositories;
+- content-version hash: identity of the exact normalized text used for assertion grounding.
+
+The URL is a locator, not the permanent unique identity. ER1 normalizes a returned search
+URL and checks its aliases before fetching. If a usable current full-text version exists,
+ER1 reuses it. Metadata-only, snippet-only, truncated, broken, or policy-stale records may
+be reacquired after candidate triage. Fetching records the requested URL, final URL,
+declared canonical URL, discovered identifiers, acquisition method, and content hash.
+
+Normalized full text must be retained by version. Assertions bind to the exact version/hash
+and grounding from which they were extracted. A later content change does not silently
+move old assertions into new text.
+
+Prior extraction is target-conditioned and therefore intentionally incomplete. For a new
+target, ER1 first searches existing grounded assertions, then searches the stored full text
+and may extract additional target-bearing assertions without downloading the document
+again. Prior bearing may be reused only after target equivalence and compatible polarity,
+population, scope, time, and definitions are established; otherwise bearing is reassessed.
+
+This identity and version boundary must support a future vector/RAG retrieval adapter over
+sources, claims, assertions, and passages. Vector similarity will nominate candidates; it
+will never replace exact grounding, source identity, target-specific bearing assessment,
+or deterministic verification.
+
 ## 11. Budget and efficiency rules
 
+- The standard ten-claim profile must return a verified result in less than 100 seconds,
+  including explicit unresolved outcomes for work that cannot finish within the deadline.
+- Stop launching new retrieval and scrape work early enough to verify and write the result.
 - Set hard ceilings for provider calls, model calls, fetched documents, tokens, and time.
 - Do not enrich or search raw CF1 assertions.
 - Resolve shared works once per ER1 run and reuse them across routed targets.
 - Batch bearing assessment where order and target identity remain explicit.
 - Cache provider results and acquired content by canonical identity.
+- Reuse cached Admiralty/provider-signal evaluations and record their snapshot identity;
+  do not repeat external credibility enrichment inside the critical path when it is stale
+  or missing.
 - Critic-driven follow-up retrieval must identify the missing role or bearing gap first.
 - Never run a second generic claim-matching pipeline over sources already evaluated
   against explicit targets.
@@ -293,10 +421,34 @@ claim provenance; a prestigious but merely topical paper may still be non-bearin
 - automatic learning or activation of retrieval rules;
 - social/transcript-specific retrieval behavior;
 - replacing publisher or author persistence;
+- vector database selection, embedding generation, and RAG activation;
+- agentic SourceCrest replacement or automatic activation of provisional publisher ratings;
 - final verdict aggregation policy beyond preserving bearing evidence.
 
 ## 15. Readiness
 
-This document captures the current learned ER1 direction. ER1 implementation is not yet
-authorized. ER1-0 must reconcile this draft with the live evidence code and database,
-produce exact schemas and comparative fixtures, and receive reviewer approval first.
+This document captures the current learned ER1 direction. ER1-0 and ER1-1 now provide
+portable schemas, frozen CF1 inputs, offline package verification, target/identity planning,
+deterministic query lanes, and inspectable artifacts. They perform no retrieval, resolution,
+scraping, model, database, or migration work. ER1-2A adds bounded network-capable provider
+search and pre-fetch candidate triage only. No source body fetch, assertion extraction,
+bearing, stance, database write, migration, or projection is implemented. ER1-2B remains
+blocked pending reviewer approval.
+
+### ER1-2A.1 query-planning correction
+
+CF1 query seeds are audit hints, not executable provider queries. ER1 compiles target
+queries from the proposition, falsifiability outcomes, must/should/reject boundaries,
+source roles/types, scope, and related-claim guidance. Its discovery-time bearing labels
+are superseded by ER1-2A.2 below. Exact identity, context-work resolution, and
+target-evidence discovery have separate lane classes and budgets. Generic or
+underspecified context phrases are deferred without consuming target-evidence budget.
+
+### ER1-2A.2 terminology and strategy correction
+
+Candidate discovery is role-diverse and falsifiability-driven. CF1 `wouldSupportIf`,
+`wouldRefuteIf`, and `wouldQualifyIf` select useful evidence roles, but those terms never
+become source stance, provider lane types, or literal search instructions. Provider queries
+are compiled from proposition anchors, scope, source roles, and evidence roles. Literal
+stance-hunting terms and mixed logical opposites are diagnosed as planner errors. Stance
+and `bearingScore` remain prohibited before acquisition and post-fetch bearing assessment.
