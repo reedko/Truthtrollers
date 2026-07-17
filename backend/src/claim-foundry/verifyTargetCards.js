@@ -1,4 +1,8 @@
 import { findUngroundedIdentifierHints, isIdentifierFormatValid } from "./identifierHints.js";
+import {
+  articleStanceForScoreTransform,
+  deriveSelectedClaimPosture,
+} from "./claimPosture.js";
 
 function issue(code, path, message, relatedIds = []) {
   return { code, path, message, relatedIds };
@@ -8,11 +12,18 @@ export function verifyTargetsAndCards(packageValue) {
   const errors = [];
   const targets = packageValue.phase3Targets ?? [];
   const cards = packageValue.evidenceNeedCards ?? [];
+  const selectedClaims = packageValue.selectedEvaluationClaims ?? [];
   const targetCounts = new Map();
 
   for (const card of cards) targetCounts.set(card.targetId, (targetCounts.get(card.targetId) ?? 0) + 1);
   for (const [index, target] of targets.entries()) {
     const path = `/phase3Targets/${index}`;
+    const selectedIndex = selectedClaims.findIndex((candidate) =>
+      candidate.selectedClaimId === target.selectedClaimId);
+    const selected = selectedClaims[selectedIndex];
+    const posture = selected
+      ? deriveSelectedClaimPosture(selected, packageValue.rawAssertions)
+      : null;
     if (targetCounts.get(target.targetId) !== 1) {
       errors.push(issue("CF1_TARGET_CARD_CARDINALITY", path, "Every target must have exactly one Evidence Need Card", [target.targetId]));
     }
@@ -30,6 +41,26 @@ export function verifyTargetsAndCards(packageValue) {
     if (target.targetType === "opponent_substantive"
       && (target.scoreTransform !== "invert" || !target.verdictEligible)) {
       errors.push(issue("CF1_INVALID_TARGET_POSTURE", path, "Opponent target must use invert and be verdict eligible", [target.targetId]));
+    }
+    if (selected && (selected.scoreTransform !== target.scoreTransform
+      || selected.verdictEligible !== target.verdictEligible)) {
+      errors.push(issue("CF1_CLAIM_TARGET_POSTURE_MISMATCH", path,
+        "Selected claim and target must use the same score transform and verdict eligibility",
+        [selected.selectedClaimId, target.targetId]));
+    }
+    if (selected && (selected.scoreTransform !== posture.scoreTransform
+      || selected.verdictEligible !== posture.verdictEligible
+      || target.targetType !== posture.targetType)) {
+      errors.push(issue("CF1_DERIVED_POSTURE_MISMATCH",
+        `/selectedEvaluationClaims/${selectedIndex}`,
+        "Claim and target posture must match the host derivation from article role/use",
+        [selected.selectedClaimId, target.targetId]));
+    }
+    if (selected && articleStanceForScoreTransform(selected.scoreTransform)
+      !== articleStanceForScoreTransform(target.scoreTransform)) {
+      errors.push(issue("CF1_PROJECTED_STANCE_MISMATCH", path,
+        "Selected claim and target would project contradictory article stances",
+        [selected.selectedClaimId, target.targetId]));
     }
   }
 

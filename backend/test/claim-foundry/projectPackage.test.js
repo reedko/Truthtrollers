@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { projectCf1Package } from "../../src/claim-foundry/veristrata/projectPackage.js";
+import { assertProjectionMapped, projectCf1Package } from "../../src/claim-foundry/veristrata/projectPackage.js";
 import { createValidPackage } from "./fixtures/packages.js";
 
 function harness({ projected = false, partial = false } = {}) {
@@ -47,4 +47,23 @@ test("partial projection is preserved for operator inspection", async () => {
   const { dependencies } = harness({ partial: true });
   await assert.rejects(projectCf1Package({ bindingId: 9 }, dependencies),
     { code: "CF1_PARTIAL_PROJECTION" });
+});
+
+test("field-completeness guard throws when a decided field reaches no column", () => {
+  // A decided source (gradeTarget) with a null mapped column is the exact silent-drop
+  // class the audit surfaced; the guard must fail loudly instead.
+  assert.throws(() => assertProjectionMapped("target", "T001", {
+    gradeTarget: ["attribution", null],
+  }), { code: "CF1_PROJECTION_FIELD_UNMAPPED" });
+  // Baseline (source null → not decided) and matched pairs are both fine.
+  assert.doesNotThrow(() => assertProjectionMapped("target", "T001", {
+    gradeTarget: [null, null], scoreTransform: ["normal", "normal"], verdictEligible: [false, 0],
+  }));
+});
+
+test("baseline projection passes the field-completeness guard (null-by-design)", async () => {
+  const { calls, dependencies } = harness();
+  await projectCf1Package({ bindingId: 9 }, dependencies);
+  assert.equal(calls.targets[0].cf1GradeTarget, null);
+  assert.equal(calls.links[0].value.cf1ThesisHinge, null);
 });

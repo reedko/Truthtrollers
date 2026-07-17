@@ -26,7 +26,9 @@ function groundedVenue(text, year) {
 function groundedInstitutions(text) {
   const block = String(text).match(/From the\s+([\s\S]{0,3000}?)(?:Received for publication|Reprint requests|Correspondence)/i)?.[1];
   if (!block) return [];
-  return unique(block.split(";").map(clean).filter((item) =>
+  const withoutAffiliationMarker = (value) => clean(value)
+    .replace(/^(?:and\s+)?[*†‡§]+\s*/i, "").trim();
+  return unique(block.split(";").map(withoutAffiliationMarker).filter((item) =>
     /\b(?:University|Institute|Centers?|Department|Program|Agency|Hospital|Foundation|Administration)\b/i.test(item)))
     .slice(0, 12);
 }

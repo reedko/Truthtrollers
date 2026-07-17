@@ -33,6 +33,20 @@ test("no-persistence normal run produces only a verified final package", async (
   assert.equal(result.artifactRefs.artifactRoot, null);
 });
 
+test("package article adopts ArticleDocument safe canonicalization", async () => {
+  const fixture = createArticleAndBlocks();
+  const article = { ...fixture.article,
+    text: fixture.article.text.replace("audit", "au\u00addit") };
+  delete article.contentHash;
+  const calls = [];
+  const result = await runClaimFoundry({ article, options: OPTIONS,
+    dependencies: { modelRunner: modelRunner(() => createAgentDraft(), calls) } });
+  assert.equal(result.run.status, "ready_for_evidence");
+  assert.equal(result.claimPackage.article.text.includes("\u00ad"), false);
+  assert.equal(result.claimPackage.article.contentHash,
+    result.claimPackage.sourceDocument.contentHash);
+});
+
 test("repairable normal run uses one repair and then finalizes", async () => {
   const { article } = createArticleAndBlocks();
   const calls = [];

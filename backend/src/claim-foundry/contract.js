@@ -83,6 +83,15 @@ export const CF1_TARGET_TYPES = frozen([
 
 export const CF1_MAPPING_STATUSES = frozen(["resolved", "needs_review", "unresolved"]);
 
+export const CF1_VERIFICATION_TARGETS = frozen([
+  "substantive", "both_needed",
+]);
+
+// Knob B — attribution-vs-substance hinge. thesisHinge is a once-per-article model
+// judgment (Call 1); gradeTarget is host-derived per target and stays verdict-eligible.
+export const CF1_THESIS_HINGES = frozen(["substance", "attribution", "mixed"]);
+export const CF1_GRADE_TARGETS = frozen(["substance", "attribution"]);
+
 export const CF1_EVIDENCE_ROLES = frozen([
   "target-primary", "study-identity", "attribution-provenance", "official-response",
   "methodology-reanalysis", "primary-record", "context-background",

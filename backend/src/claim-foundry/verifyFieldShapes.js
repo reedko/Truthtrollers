@@ -1,3 +1,5 @@
+import { CF1_GRADE_TARGETS, CF1_THESIS_HINGES, CF1_VERIFICATION_TARGETS } from "./contract.js";
+
 function issue(code, path, message, relatedIds = []) {
   return { code, path, message, relatedIds };
 }
@@ -49,6 +51,10 @@ export function verifyFieldShapes(pkg) {
     text(errors, item.reconciliation?.rationale, `${path}/reconciliation/rationale`, 1_000);
   }
   const map = pkg.articleMap ?? {};
+  if (map.thesisHinge != null && !CF1_THESIS_HINGES.includes(map.thesisHinge)) {
+    errors.push(issue("CF1_INVALID_THESIS_HINGE", "/articleMap/thesisHinge",
+      `Expected one of: ${CF1_THESIS_HINGES.join(", ")}`));
+  }
   stringArray(errors, map.mapWarnings, "/articleMap/mapWarnings", 20, 500);
   for (const [index, item] of (map.pillars ?? []).entries()) text(errors, item.label, `/articleMap/pillars/${index}/label`, 200);
   for (const [index, item] of (map.clusters ?? []).entries()) text(errors, item.label, `/articleMap/clusters/${index}/label`, 200);
@@ -91,6 +97,20 @@ export function verifyFieldShapes(pkg) {
     }
     for (const field of ["doi", "pmid", "titleExact", "authorYear", "quotedDocumentNames", "canonicalSourceIds"]) {
       stringArray(errors, item.identifierHints?.[field], `${path}/identifierHints/${field}`, 12, 500);
+    }
+    // Optional while only the two-call path emits it; validated strictly when present.
+    if (item.disputedQuestion != null) {
+      if (!CF1_VERIFICATION_TARGETS.includes(item.disputedQuestion.verificationTarget)) {
+        errors.push(issue("CF1_INVALID_VERIFICATION_TARGET", `${path}/disputedQuestion/verificationTarget`,
+          `Expected one of: ${CF1_VERIFICATION_TARGETS.join(", ")}`));
+      }
+      text(errors, item.disputedQuestion.disputedProposition, `${path}/disputedQuestion/disputedProposition`, 500);
+      text(errors, item.disputedQuestion.stipulatedByArticle, `${path}/disputedQuestion/stipulatedByArticle`, 500, true);
+      text(errors, item.disputedQuestion.whyThisTarget, `${path}/disputedQuestion/whyThisTarget`, 500);
+    }
+    if (item.gradeTarget != null && !CF1_GRADE_TARGETS.includes(item.gradeTarget)) {
+      errors.push(issue("CF1_INVALID_GRADE_TARGET", `${path}/gradeTarget`,
+        `Expected one of: ${CF1_GRADE_TARGETS.join(", ")}`));
     }
   }
   return errors;

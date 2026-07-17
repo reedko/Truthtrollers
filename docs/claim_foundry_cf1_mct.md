@@ -1272,10 +1272,8 @@ The host validates source-unit grounding, normalizes citation callouts, deduplic
 alternate mentions, assigns stable package-local IDs (`NW001`, `NW002`, ...), and builds
 the `namedWorkPool`.
 
-Call 2 receives a compact read-only pool and may return only:
-
-- `relevantNamedWorkIds`, capped at six per selected claim; and
-- an optional `namedWorkRelevanceNote`, capped at 240 characters.
+Call 2 receives a compact read-only pool and may return only `relevantNamedWorkIds`,
+capped at six per selected claim. It does not author a named-work relevance note.
 
 Every returned ID must be a unique member of the supplied pool. The Call 2 schema has no
 free-text named-work title, author, organization, or document-name fields. It also omits
@@ -1287,6 +1285,81 @@ The current primary article is never inferred as an external named work.
 Provider output that ends because of a token limit or contains more than 1,024 trailing
 whitespace characters is rejected before JSON parsing. All Call 2 strings and arrays are
 bounded by schema, with host validation supplying uniqueness and subset enforcement.
+
+### 28.3 Fast Call 1 correction
+
+An expanded Call 1 that required 16–20 candidates plus an exhaustive model-authored
+named-work inventory reproducibly regressed F01 semantic-inventory time from 24.6 seconds
+to 47–49 seconds. The expanded runs used 15,781–16,030 tokens and returned 16 candidates
+plus six to eight named works. A following Call 2 also timed out at 120 seconds; source
+identity bundle assembly was not the cause because it runs after enrichment.
+
+Call 1 therefore returns at most 12 candidates and aims for 10–12 only when the article
+supports them. The schema permits 8–12 for substantial articles so weak material is not
+padded with filler. It no longer returns a separate named-work inventory. Deterministic
+host preprocessing builds and deduplicates the named-work pool, assigns stable IDs, and
+associates grounded works with candidates before host selection and Call 2.
+
+The first isolated F01 measurement after this correction completed in 25.1 seconds with
+13,206 input tokens, 1,317 output tokens, and 14,523 total tokens. It returned eight
+candidates; the host independently retained five named works. This restores Call 1 to the
+prior speed range while preserving host-owned identity information. Full two-call package
+performance remains to be remeasured.
+
+### 28.4 Compact semantic Call 2 and host query expansion
+
+Call 2 no longer authors the complete ER1 package repeatedly for every selected claim.
+Its v2 contract returns only semantic judgments the host cannot safely derive: optional
+revised claim wording, concrete support/refute/qualification criteria, must-match and
+reject-if-only boundaries, one source strategy, compact search concepts, bounded
+named-work IDs, and cautions.
+
+The host expands that kernel into the unchanged final package. It creates verification
+questions and theme-bearing text, maps source strategies to source types and evidence
+roles, carries grounded identifiers, constructs article-primary, semantic, and named-work
+query lanes, attaches exact provenance, and emits deterministic empty/default fields.
+Official-record routing is enforced when Call 2's own semantic guidance requires an
+authoritative agency, government, legal, scientific-observation, or administrative
+record. External named-work claims route to their validated works. The complete global
+named-work pool remains available to ER1 even when no claim-level association is selected.
+
+The earlier F01 package used 5,531 Call 2 input tokens and 2,293 output tokens in 55.9
+seconds. Compact F01 Call 2 used 3,600 input and 1,120 output tokens in 25.6 seconds while
+retaining eight selected claims and a valid full package. The complete comparable run is
+approximately 19,374 tokens versus 22,392 before compaction. F08 compact Call 2 used
+1,510 input and 418 output tokens in 12.7 seconds; its valid package routes earthquake,
+tsunami, location, and depth guidance to authoritative records through host expansion.
+
+These are directional measurements, not a provider-latency guarantee. Acceptance still
+depends on useful claim wording, concrete falsifiability boundaries, discriminating query
+concepts, correct source routing, complete deterministic verification, and no evidence
+search inside CF1.
+
+### 28.5 Compact eight-fixture measurement
+
+The compact two-call path produced valid packages for F01-F08 with no repair calls and
+no evidence searches. The accepted packages used 98,038 tokens across 16 model calls and
+464.4 seconds of model time. At the GPT-4o mini rates checked 2026-07-15, their estimated
+API cost was $0.0217. F01 used 19,342 tokens in 84.8 seconds; F08 used 3,920 tokens in
+24.6 seconds. The complete claim packages and per-call measurements are recorded in:
+
+```text
+artifacts/claim-foundry/agent-runs/eight-fixture-compact-20260715/
+  claim-packages-by-fixture.md
+```
+
+Rejected development attempts increased actual suite spend to 134,725 billed tokens,
+23 physical model calls, 627.9 seconds of model-call time, and an estimated $0.0304.
+Those attempts exposed three host-contract defects: source-unit lists were not always
+normalized to ArticleDocument order; the target of eight claims was incorrectly treated
+as a reason to reject a smaller distinct portfolio; and Call 2 once repeated protected
+named-work text instead of using only its host ID. The host now normalizes every grounded
+Call 1 and selected-claim unit list, treats 8-10 as a target rather than a padding rule,
+and retains the protected named-work rejection. One sandbox DNS failure reached no model
+and incurred no tokens.
+
+The regression suite passes 213/213 tests. This comparison still does not authorize live
+scrape activation or ER1 execution.
 
 ## 29. Citation-aware source identity (ArticleDocument v3)
 

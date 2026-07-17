@@ -14,7 +14,7 @@ import { verifyFieldShapes } from "./verifyFieldShapes.js";
 import { validateArticleInput } from "./validateArticleInput.js";
 import { verifySourceIdentity } from "./verifySourceIdentity.js";
 
-export const CF1_VERIFIER_VERSION = "cf1-verifier-2";
+export const CF1_VERIFIER_VERSION = "cf1-verifier-3";
 
 function makeIssue(code, path, message, relatedIds = []) {
   return { code, path, message, relatedIds: relatedIds.filter(Boolean).slice(0, 20) };

@@ -43,6 +43,23 @@ test("verifier enforces target posture and copy consistency", () => {
   assert.ok(codes(result).has("CF1_CARD_TARGET_MISMATCH"));
 });
 
+test("verifier blocks an opponent claim whose claim-side transform contradicts its target", () => {
+  const draft = createPackageDraft();
+  draft.rawAssertions[0].articleUse = "opponent_to_rebut";
+  draft.selectedEvaluationClaims[0].articleRole = "opponent_claim";
+  draft.selectedEvaluationClaims[0].scoreTransform = "normal";
+  draft.phase3Targets[0].targetType = "opponent_substantive";
+  draft.phase3Targets[0].scoreTransform = "invert";
+  draft.evidenceNeedCards[0].targetType = "opponent_substantive";
+  draft.evidenceNeedCards[0].scoreTransform = "invert";
+
+  const result = verifyCf1Package(draft);
+  assert.equal(result.valid, false);
+  assert.ok(codes(result).has("CF1_CLAIM_TARGET_POSTURE_MISMATCH"));
+  assert.ok(codes(result).has("CF1_DERIVED_POSTURE_MISMATCH"));
+  assert.ok(codes(result).has("CF1_PROJECTED_STANCE_MISMATCH"));
+});
+
 test("source-identity failures are terminal while semantic failures are repairable", () => {
   const draft = createPackageDraft();
   draft.article.contentHash = "a".repeat(64);

@@ -1,6 +1,7 @@
 import { Cf1Error } from "./errors.js";
 import { validateRepairResponse } from "./repairContract.js";
 import { deriveUnitGrounding, inheritAssertionGrounding } from "./grounding.js";
+import { synchronizePackageClaimPostures } from "./claimPosture.js";
 
 function decode(segment) {
   return segment.replace(/~1/g, "/").replace(/~0/g, "~");
@@ -72,6 +73,11 @@ function normalizeAddedCards(packageDraft) {
   }
 }
 
+function touchesClaimPosture(repair) {
+  return /^\/(?:rawAssertions|selectedEvaluationClaims|phase3Targets)\/\d+\/(?:articleUse|articleRole|sourceRawAssertionIds|selectedClaimId|targetType|scoreTransform|verdictEligible)(?:\/|$)/
+    .test(repair.path);
+}
+
 export function applyCf1Repair(packageDraft, repairResponse, allowedPaths) {
   const validated = validateRepairResponse(repairResponse, allowedPaths);
   const repaired = structuredClone(packageDraft);
@@ -85,6 +91,7 @@ export function applyCf1Repair(packageDraft, repairResponse, allowedPaths) {
     for (const repair of validated.repairs) applyOperation(repaired, repair);
     normalizeAddedCards(repaired);
     recomputeGrounding(repaired);
+    if (validated.repairs.some(touchesClaimPosture)) synchronizePackageClaimPostures(repaired);
     synchronizeCards(repaired);
     return repaired;
   } catch (cause) {

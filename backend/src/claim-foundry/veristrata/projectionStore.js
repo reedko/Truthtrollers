@@ -21,12 +21,14 @@ export function insertCf1ContentClaim(query, contentId, claimId, value) {
      article_stance, argument_function, search_eligible, verdict_eligible,
      selected_for_evaluation, evaluation_eligible, visibility,
      argument_mapping_rationale, argument_mapping_confidence,
-     claim_foundry_package_id, claim_foundry_selected_claim_id, claim_foundry_binding_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, 'workspace_eval', ?, ?, ?, ?, ?)`,
+     claim_foundry_package_id, claim_foundry_selected_claim_id, claim_foundry_binding_id,
+     cf1_grade_target, cf1_thesis_hinge)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 1, 'workspace_eval', ?, ?, ?, ?, ?, ?, ?)`,
   [contentId, claimId, value.relationshipType, value.claimRole, value.claimOrder,
     value.scoreTransform, value.articleStance, value.argumentFunction,
     value.searchEligible, value.verdictEligible, value.rationale, value.confidence,
-    value.packageId, value.selectedClaimId, value.bindingId]);
+    value.packageId, value.selectedClaimId, value.bindingId,
+    value.cf1GradeTarget, value.cf1ThesisHinge]);
 }
 
 export function insertCf1Target(query, value) {
@@ -35,13 +37,13 @@ export function insertCf1Target(query, value) {
      article_stance, score_transform, search_eligible, verdict_eligible, resolution_status,
      target_order, mapping_rationale, primary_query_text, query_hints_json,
      bearing_criteria_json, claim_foundry_package_id, claim_foundry_target_id,
-     claim_foundry_card_id, evidence_need_card_json)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     claim_foundry_card_id, evidence_need_card_json, cf1_grade_target, cf1_verification_target)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   [value.contentId, value.claimId, value.targetType, value.targetText, value.objectText,
     value.sourceExcerpt, value.articleStance, value.scoreTransform, value.searchEligible,
     value.verdictEligible, value.resolutionStatus, value.targetOrder, value.mappingRationale,
     value.primaryQueryText, value.queryHintsJson, value.bearingCriteriaJson, value.packageId,
-    value.targetId, value.cardId, value.cardJson]);
+    value.targetId, value.cardId, value.cardJson, value.cf1GradeTarget, value.cf1VerificationTarget]);
 }
 
 export async function countCf1Projection(query, packageId) {

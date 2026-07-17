@@ -47,6 +47,11 @@ export async function runClaimFoundry({ article: inputArticle, options, dependen
     state.articleDocument = articleDocumentFromText({ text: state.article.text,
       metadata: { title: state.article.title, language: state.article.language },
       sourceDescriptor: { consumerContentRef: state.article.consumerContentRef ?? null } });
+    // ArticleDocument owns CF1's canonical source representation. Safe adapter
+    // normalization (for example, removing PDF soft hyphens) must therefore be
+    // reflected in the article carried into prompts, hashes, and the package.
+    state.article = { ...state.article, text: state.articleDocument.canonicalText,
+      contentHash: state.articleDocument.contentHash };
     state.structuralBlocks = buildArticleSourceBlocks(state.articleDocument, config.blockOptions);
     const coverage = verifyArticleSourceBlocks(state.articleDocument, state.structuralBlocks,
       config.blockOptions);

@@ -68,16 +68,17 @@ export async function runCf1Agent({ runId, article, structuralBlocks, sourceUnit
     const fullArticle = article.text.length >= 5_000;
     const inventoryRaw = await stage("semantic_inventory", buildSemanticInventoryPrompt(context));
     const inventory = verifySemanticInventory(inventoryRaw, { sourceUnits, article,
-      minimumCandidates: fullArticle ? 16 : 1 });
+      minimumCandidates: fullArticle ? 8 : 1 });
     state.semanticInventoryOutput = structuredClone(inventory);
     state.orientation = { theme: inventory.theme.text, thesis: inventory.thesis.text,
       pillars: structuredClone(inventory.pillars) };
-    recordAgentStep(state, "orientation_materialized", clock, { source: "semantic_inventory" });
+    recordAgentStep(state, "orientation_materialized", clock, { source: "semantic_inventory",
+      themeWarnings: inventory.themeWarnings ?? [] });
     state.initialWorkProduct = { initialCandidates: structuredClone(inventory.candidateClaims) };
     recordAgentStep(state, "initial_claims_materialized", clock,
       { source: "semantic_inventory", claimCount: inventory.candidateClaims.length });
     const critic = runHostSemanticCritic(inventory, { sourceUnits, structuralBlocks,
-      targetMinimum: fullArticle ? 8 : 1, targetMaximum: fullArticle ? 10 : 10 });
+      targetMinimum: fullArticle ? 8 : 1, targetMaximum: fullArticle ? 12 : 10 });
     state.criticReport = structuredClone(critic);
     recordAgentStep(state, "host_semantic_critic", clock,
       { selectedClaimCount: critic.selectedClaims.length, findingCount: critic.findings.length });

@@ -1,6 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { verifySemanticInventory } from "../../src/claim-foundry/twoCallAgentVerification.js";
+import { semanticInventorySchemaForArticle } from
+  "../../src/claim-foundry/prompts/semanticInventorySchema.js";
+import { buildSemanticInventoryPrompt } from
+  "../../src/claim-foundry/prompts/semanticInventoryPrompt.js";
 
 const work = (mentionText, workType, sourceUnitIds, citationCallout = null) => ({
   mentionText, workType, citationCallout, source: "text_mention", confidence: "medium",
@@ -16,9 +20,6 @@ test("Call 1 preserves visible named-work cues independently of claim selection"
     sourceUnitIds: ["U0001"] }, thesis: { text: "The case series influenced the hypothesis.",
     sourceUnitIds: ["U0001"] }, pillars: [{ label: "Case-series influence",
       text: "The case series influenced the hypothesis.", importance: "major", sourceUnitIds: ["U0001"] }],
-    namedWorks: [work("Wakefield et al", "study_or_case_series", ["U0001"], "15"),
-      work("DSM-IV", "standard_or_manual", ["U0002"]),
-      work("Invented report", "review_report", ["U0001"])],
     candidateClaims: [{ claimText: "Wakefield and colleagues described a case series involving children.",
       sourceUnitIds: ["U0001"], articleRole: "pillar", articleUse: "reported",
       assertionSource: "Wakefield et al", materiality: "medium",
@@ -32,7 +33,21 @@ test("Call 1 preserves visible named-work cues independently of claim selection"
     ["Wakefield et al"]);
 });
 
-test("host pool deduplicates alternate labels for the same cited work", () => {
+test("fast Call 1 caps candidates and leaves named-work inventory to the host", () => {
+  const article = { title: "Substantial article", text: "x".repeat(5_001) };
+  const schema = semanticInventorySchemaForArticle(article).schema;
+  const prompt = buildSemanticInventoryPrompt({ article, structuralBlocks: [], sourceUnits: [] });
+  assert.equal(schema.properties.candidateClaims.minItems, 8);
+  assert.equal(schema.properties.candidateClaims.maxItems, 12);
+  assert.equal(schema.required.includes("namedWorks"), false);
+  assert.equal("namedWorks" in schema.properties, false);
+  assert.match(prompt.system, /host owns named-work detection/);
+  assert.match(prompt.user, /up to 12 candidateClaims/);
+  assert.doesNotMatch(prompt.user, /host will select/i);
+  assert.doesNotMatch(prompt.user, /Independently inventory every text-visible named/);
+});
+
+test("host pool deduplicates optional legacy work proposals", () => {
   const sourceUnits = [{ unitId: "U0001",
     text: "Wakefield et al15 published a report; the Wakefield et al. study15 was later discussed." }];
   const base = work("Wakefield et al", "study_or_case_series", ["U0001"], "15");

@@ -1,4 +1,5 @@
 import { verifyOneCallAgentOutput } from "./oneCallAgentVerification.js";
+import { deriveClaimPosture } from "./claimPosture.js";
 
 const candidateId = (index) => `candidate-${index}`;
 const revisedId = (index) => `revised-${index}`;
@@ -54,14 +55,6 @@ function identifierHints(candidates, article) {
     quotedDocumentNames: works.map((work) => work.mentionText),
     canonicalSourceIds: [],
   };
-}
-
-function targetPosture(claim) {
-  if (claim.articleRole === "opponent_claim"
-    || ["opponent_to_rebut", "rejected"].includes(claim.articleUse)) {
-    return { targetType: "opponent_substantive", scoreTransform: "invert" };
-  }
-  return { targetType: "article_endorsed_substantive", scoreTransform: "normal" };
 }
 
 function querySeed(claim) {
@@ -127,6 +120,7 @@ export function expandOneCallAgentOutput(output, { structuralBlocks, article, sk
   }));
   const articleMap = {
     theme: output.orientation.theme,
+    thesisHinge: output.orientation.thesisHinge ?? null,
     thesis: mappedProposition(output.orientation.thesis,
       bestCandidateIndexes(output.orientation.thesis, candidates), candidates, blocksByUnit),
     pillars,
@@ -142,25 +136,31 @@ export function expandOneCallAgentOutput(output, { structuralBlocks, article, sk
       candidates[index].claimText, [index], candidates, blocksByUnit)),
     mapWarnings: [],
   };
-  const selectedEvaluationClaims = output.selectedClaims.map((claim, index) => {
+  const claimsWithPosture = output.selectedClaims.map((claim) => ({
+    claim,
+    // Knob A only: the attribution/substance hinge remains the separate gradeTarget field.
+    posture: deriveClaimPosture(claim),
+  }));
+  const selectedEvaluationClaims = claimsWithPosture.map(({ claim, posture }, index) => {
     const labels = new Set(claim.relatedPillarLabels.map((label) => label.toLocaleLowerCase()));
     const related = pillars.filter((pillar) => labels.has(pillar.label.toLocaleLowerCase()));
     const relatedPillarIds = related.map((pillar) => pillar.pillarId);
     const relatedSummary = related.map((pillar) => `${pillar.label} (${pillar.importance})`).join(", ");
-    const posture = targetPosture(claim);
     return { selectedClaimId: selectedId(index), claimText: claim.claimText,
       sourceRawAssertionIds: [revisedId(index)], articleRole: claim.articleRole, relatedPillarIds,
-      materiality: claim.materiality,
+      materiality: claim.materiality, origin: claim.origin ?? "model",
       counterfactualImpact: claim.themeBearing,
       selectionRationale: `Theme gate (${relatedSummary}): ${claim.themeBearing}`,
-      scoreTransform: posture.scoreTransform, searchEligible: true, verdictEligible: true,
+      scoreTransform: posture.scoreTransform, searchEligible: true,
+      verdictEligible: posture.verdictEligible, gradeTarget: claim.gradeTarget ?? null,
       confidence: 0.8, claimMode: claim.claimMode };
   });
-  const phase3Targets = output.selectedClaims.map((claim, index) => {
-    const posture = targetPosture(claim);
+  const phase3Targets = claimsWithPosture.map(({ claim, posture }, index) => {
     return { targetId: `target-${index}`, selectedClaimId: selectedId(index),
-      targetText: claim.claimText, ...posture, searchEligible: true,
-      verdictEligible: true, sourceRawAssertionIds: [revisedId(index)], mappingStatus: "resolved",
+      targetText: claim.claimText, targetType: posture.targetType,
+      scoreTransform: posture.scoreTransform, searchEligible: true,
+      verdictEligible: posture.verdictEligible, gradeTarget: claim.gradeTarget ?? null,
+      sourceRawAssertionIds: [revisedId(index)], mappingStatus: "resolved",
       mappingRationale: "Derived from the revised selected claim." };
   });
   const evidenceNeedCards = output.selectedClaims.map((claim, index) => {

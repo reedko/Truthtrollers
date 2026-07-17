@@ -109,6 +109,7 @@ export function createOneCallAgentOutput() {
 export function createSemanticInventoryOutput() {
   const output = createOneCallAgentOutput();
   return {
+    thesisHinge: "substance",
     theme: { text: output.orientation.theme, sourceUnitIds: ["U0001", "U0002"] },
     thesis: { text: output.orientation.thesis, sourceUnitIds: ["U0002"] },
     pillars: output.orientation.pillars.map((pillar) => ({ ...pillar, sourceUnitIds: ["U0002"] })),
@@ -130,21 +131,21 @@ export function createSemanticInventoryOutput() {
 }
 
 export function createSelectedEnrichmentOutput() {
-  const claim = createOneCallAgentOutput().selectedClaims[0];
-  const { claimText, claimTrueIf, claimFalseIf, claimQualifiedIf, themeBearing } = claim;
-  return { enrichedClaims: [{ claimText, claimTrueIf, claimFalseIf, claimQualifiedIf,
-    themeBearing, candidateId: "C02", relevantNamedWorkIds: ["NW001"],
-    namedWorkRelevanceNote: "NW001 is the primary record for the timing claim.",
-    verificationQuestion: "Did the city audit find that bridge-repair procurement began nine months late?",
-    bestSourceTypes: ["city audit", "procurement timeline"],
-    requiredEvidenceRoles: ["target-primary", "primary-record", "study-identity"],
+  return { enrichedClaims: [{ candidateId: "C02",
+    revisedClaimText: "The city audit found that bridge-repair procurement began nine months late.",
+    disputedQuestion: {
+      verificationTarget: "substantive",
+      disputedProposition: "Whether bridge-repair procurement actually began nine months late.",
+      stipulatedByArticle: "The article reports that the city audit found a nine-month procurement delay.",
+      whyThisTarget: "The audit finding is stipulated; the contested issue is the underlying timeline.",
+    },
+    supportCriteria: ["The dated audit timeline places procurement nine months after its required start."],
+    refuteCriteria: ["The dated audit timeline shows procurement began on time or less than nine months late."],
+    qualifyCriteria: ["The nine-month figure applies to a different procurement milestone."],
     mustMatch: ["same bridge-repair procurement", "nine-month timing"],
-    shouldMatch: ["city audit timeline"],
     rejectIfOnly: ["A source discusses bridge repairs without documenting procurement timing."],
-    weakBearing: false, warnings: [],
-    identifierHints: { doi: ["10.1234/Bridge.7"], pmid: [], canonicalSourceIds: [] },
-    queryLaneSeeds: [{ laneType: "primary-record", query: "city audit bridge procurement nine months",
-      purpose: "Locate the dated procurement timeline." }],
+    sourceStrategy: "official_record", searchConcepts: ["bridge procurement", "nine-month delay"],
+    relevantNamedWorkIds: ["NW001"], cautions: [],
   }] };
 }
 

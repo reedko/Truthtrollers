@@ -55,7 +55,14 @@ function groundingCorpus(pkg, bundle) {
   const links = (pkg.sourceLinks ?? []).filter((item) => bundle.articleLinkIds.includes(item.linkId));
   const primary = bundle.identityKind === "primary_article"
     ? [pkg.article, pkg.sourceDocument?.metadata?.bibliographicMetadata] : [];
-  return normalized(JSON.stringify([work, ...units, ...references, ...links, ...primary]));
+  const strings = (value) => {
+    if (value == null) return [];
+    if (typeof value === "string" || typeof value === "number") return [String(value)];
+    if (Array.isArray(value)) return value.flatMap(strings);
+    if (typeof value === "object") return Object.values(value).flatMap(strings);
+    return [];
+  };
+  return normalized(strings([work, ...units, ...references, ...links, ...primary]).join(" "));
 }
 
 function checkGroundedMetadata(pkg, bundle, path, errors) {

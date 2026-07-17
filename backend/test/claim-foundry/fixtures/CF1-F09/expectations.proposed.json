@@ -1,0 +1,69 @@
+{
+  "fixtureId": "CF1-F09",
+  "fixtureRevision": 1,
+  "fixtureClass": "long_rebuttal_with_multiple_named_works",
+  "status": "review_pending",
+  "requiredConcepts": [
+    "Distinguish public-health statements quoted for rebuttal from propositions the article itself endorses.",
+    "Preserve who supplies each assertion across the author, Jefferson County Public Health, quoted speakers, named studies, institutions, and legal parties.",
+    "Represent the article's major argumentative sections without treating every reported number, quotation, or contextual detail as equally central.",
+    "Retain useful named-work and source-identity hints while preserving whether a statement is an allegation, reported finding, quotation, or author conclusion."
+  ],
+  "requiredPillars": [],
+  "requiredSourceRegions": [
+    {
+      "label": "article purpose and response frame",
+      "excerpt": "This article will share JCPH’s response to questions we sent them about their cartoon, including a request for sources/evidence to support their claims."
+    },
+    {
+      "label": "quoted positions under rebuttal",
+      "excerpt": "So far, there have been no credible studies that link vaccination to chronic disease."
+    },
+    {
+      "label": "second quoted position under rebuttal",
+      "excerpt": "Vaccines are tested more than any other medicine you could give your kid."
+    },
+    {
+      "label": "local uptake reporting",
+      "excerpt": "the HepB vaccine dose given at birth shows 72.8% uptake in 2022, declining to 53% in 2025"
+    },
+    {
+      "label": "national legal-policy section",
+      "excerpt": "On a national level, the stakes are far higher. The struggle to maintain control of the vaccine narrative has expanded from the kind of censorship and dismissal we are subject to locally to an intense legal battle in federal court."
+    }
+  ],
+  "prohibitedInterpretations": [
+    "Statements attributed to JCPH or other opponents are presented as positions endorsed by the article.",
+    "The article's allegations, quoted allegations, or descriptions of lawsuits are rewritten as independently established facts.",
+    "Distinct studies, books, reports, datasets, speakers, and legal proceedings are merged into one unnamed source.",
+    "Rhetorical questions are silently converted into affirmative factual assertions.",
+    "Claims visible only inside excluded images or charts are invented from surrounding prose.",
+    "Material from Part 1 is treated as directly observed source text rather than a summary or cross-reference supplied by this article.",
+    "A fixed claim list or fixed pillar wording is imposed as an answer key before CF1 reads the article."
+  ],
+  "expectedExecutionPath": "long",
+  "humanReviewNotes": [
+    "This is primarily a stance, attribution, named-work, and portfolio-selection stress fixture; it is not a truth-label fixture.",
+    "No predetermined selected-claim list or pillar labels are required. Review whether the resulting portfolio represents the article's own argument and preserves opponent-versus-endorsed polarity.",
+    "The normalized fixture retains visible captions and link text but does not OCR image-only text or preserve link URLs in article.text."
+  ],
+  "source": {
+    "file": "9e72de95-ab49-4b0e-9c1c-9d0d3183a19d/pasted-text.txt",
+    "htmlSnapshotSha256": "06ecbdabf666231ffb12687ccbb1314294c6c29040b7eb1de67a79ed9739031b",
+    "articleContentHash": "f3f77c916085d492136d9f7f060ba9344fddd2df57d96ab818dc9c38fc200b81",
+    "canonicalUrl": "https://www.porttownsendfreepress.com/2026/05/16/public-healths-truth-about-vaccines-part-2/",
+    "rightsStatus": "permission_confirmed_by_repository_owner",
+    "extractionNote": "Divi post-content only. Navigation, scripts, styles, comments, author biography, and images were excluded; visible headings, quotations, lists, captions, and link text were retained."
+  },
+  "approval": {
+    "status": "review_pending",
+    "rightsReviewed": true,
+    "reviewers": [
+      {
+        "reviewerId": "repository-owner",
+        "decision": "approved_source_and_extraction",
+        "approvedAt": "2026-07-16T00:00:00Z"
+      }
+    ]
+  }
+}

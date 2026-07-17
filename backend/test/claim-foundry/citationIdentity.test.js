@@ -124,6 +124,27 @@ test("a labeled text DOI becomes a grounded primary-article identity hint", () =
   assert.deepEqual(normalized.sourceIdentityBundles[0].identifiers.doi, ["10.7777/plain.9"]);
 });
 
+test("primary identity strips generic affiliation footnote markers", () => {
+  const document = articleDocumentFromText({ text: `From the *National Immunization Program,
+    Centers for Disease Control and Prevention; and §National Center on Birth Defects,
+    Centers for Disease Control and Prevention. Received for publication January 1.
+
+    The article reports a sufficiently detailed factual result.`,
+  metadata: { title: "Affiliation markers" } });
+  const article = validateArticleInput({ title: "Affiliation markers", text: document.canonicalText });
+  const blocks = buildArticleSourceBlocks(document, { targetMinChars: 1, targetMaxChars: 500,
+    hardMaxChars: 1_000 });
+  const normalized = normalizeAgentDraft(createAgentDraft(), { article, articleDocument: document,
+    structuralBlocks: blocks });
+  assert.deepEqual(normalized.sourceIdentityBundles[0].institutions,
+    ["National Immunization Program, Centers for Disease Control and Prevention",
+      "National Center on Birth Defects, Centers for Disease Control and Prevention."]);
+  const pkg = assembleCf1Package({ article, articleDocument: document, normalizedDraft: normalized,
+    packageId: createPackageId(), runId: createRunId() });
+  assert.equal(verifySourceIdentity(pkg).some((error) =>
+    error.code === "CF1_SOURCE_IDENTITY_UNGROUNDED"), false);
+});
+
 test("HTML citation metadata becomes host-grounded primary identity fields", () => {
   const document = articleDocumentFromHtml({ html: `<html><head>
     <meta name="citation_title" content="A Grounded Study">

@@ -6,7 +6,8 @@ function articleIdentity(article) {
   const surname = author.split(/\s+/).at(-1) || null;
   const year = String(article?.publishedAt ?? "").match(/\b(?:19|20)\d{2}\b/)?.[0] ?? null;
   const title = String(article?.title ?? "").trim();
-  return { doi, surname, year, title };
+  const publisher = String(article?.publisher ?? "").trim() || null;
+  return { doi, surname, year, title, publisher };
 }
 
 function articleQuerySeed(article, claim) {
@@ -26,8 +27,31 @@ function articleQuerySeed(article, claim) {
     sourceFieldsUsed: ["article.author", "article.publishedAt", "article.title", "article.url", "claimText"] };
 }
 
+function semanticQuerySeed(claim) {
+  const source = !/^(?:the )?(?:article|authors?|study)$/i.test(claim.assertionSource)
+    ? claim.assertionSource : null;
+  const concepts = [...new Set([source, ...(claim.searchConcepts ?? []), ...claim.mustMatch]
+    .filter(Boolean).map((value) => String(value).trim()))];
+  if (!concepts.length) return null;
+  return { laneType: claim.sourceStrategy ?? "evidence", query: concepts.join(" ").slice(0, 320),
+    purpose: "Find evidence that directly tests the claim's required distinctions.",
+    sourceFieldsUsed: ["assertionSource", "searchConcepts", "mustMatch"] };
+}
+
+// The article's own identity (surname/year/title/own DOI) is evidence only when the article
+// itself is the disputed authorship — i.e. an attribution-hinge claim whose asserter is the
+// article. For any substantive-graded dispute the article cannot be its own evidence, so its
+// identity must not seed queries or identifier hints (the Step 2 circularity kill). A cited
+// work's identity is unaffected either way. The baseline path (no gradeTarget) is unchanged.
+function attachesOwnIdentity(claim) {
+  if (claim.gradeTarget == null) return true;
+  return claim.gradeTarget === "attribution"
+    && /^(?:the )?(?:article|authors?|study)$/i.test(claim.assertionSource ?? "");
+}
+
 function mergeSeeds(article, claim) {
-  const generated = articleQuerySeed(article, claim);
+  const generated = attachesOwnIdentity(claim) ? articleQuerySeed(article, claim) : null;
+  const semantic = semanticQuerySeed(claim);
   const workSeeds = (claim.namedWorkHints ?? []).slice(0, 3).map((work) => ({
     laneType: "named-work",
     query: [work.mentionText, work.citationCallout,
@@ -35,13 +59,13 @@ function mergeSeeds(article, claim) {
     purpose: `Resolve host-validated named work ${work.namedWorkId}.`,
     sourceFieldsUsed: ["namedWorkPool"],
   })).filter((seed) => seed.query);
-  const seeds = [...(generated ? [generated] : []), ...claim.queryLaneSeeds.map((seed) => ({ ...seed,
-    sourceFieldsUsed: ["claimText", "scope", "identifierHints"] })), ...workSeeds];
+  const seeds = [...(generated ? [generated] : []), ...(semantic ? [semantic] : []), ...workSeeds];
   return [...new Map(seeds.map((seed) => [seed.query.toLowerCase(), seed])).values()];
 }
 
-function mergeIdentifiers(article, hints) {
-  const result = structuredClone(hints);
+function mergeIdentifiers(article, claim) {
+  const result = structuredClone(claim.identifierHints);
+  if (!attachesOwnIdentity(claim)) return result;
   const { doi } = articleIdentity(article);
   result.doi = [...new Set([...(result.doi ?? []), ...(doi ? [doi] : [])])];
   return result;
@@ -65,11 +89,13 @@ export function expandTwoCallAgentOutput(oldShape, { structuralBlocks, article }
         relatedClaimText: other.claimText }] : [];
     });
     return { targetId: `target-${index}`, evidenceRolesNeeded: roles,
+      disputedQuestion: structuredClone(claim.disputedQuestion ?? null),
+      gradeTarget: claim.gradeTarget ?? null, origin: claim.origin ?? "model",
       bestSourceTypes: claim.bestSourceTypes,
       bearingCriteria: { mustMatch: claim.mustMatch, shouldMatch: claim.shouldMatch,
         rejectIfOnly: rejectRules, weak: claim.weakBearing },
       queryLaneSeeds: mergeSeeds(article, claim),
-      identifierHints: mergeIdentifiers(article, claim.identifierHints),
+      identifierHints: mergeIdentifiers(article, claim),
       falsifiability: { verificationQuestion: claim.verificationQuestion,
         wouldSupportIf: claim.claimTrueIf, wouldRefuteIf: claim.claimFalseIf,
         wouldQualifyIf: claim.claimQualifiedIf, notEnoughIfOnly: rejectIfOnly },

@@ -1,18 +1,14 @@
 import { Cf1Error } from "./errors.js";
 import { isExplanatoryClaim, relatedResultExplanationPairs } from "./hostClaimRelations.js";
 import { isContextualRationale, isMaterialLimitation, isSynthesisThesis } from "./hostClaimPolicy.js";
+import { minimumGroundingOverlap, semanticWords } from "./semanticGrounding.js";
 
 const roleRank = { thesis: 0, pillar: 1, consistency_hinge: 2, qualification: 3,
   pillar_support: 4, opponent_claim: 5 };
 const materialityRank = { high: 0, medium: 1, low: 2 };
-
 function words(value) {
-  const stop = new Set(["that", "this", "with", "from", "were", "their", "which", "there",
-    "have", "been", "among", "more", "most", "article", "study"]);
-  return new Set((String(value).toLowerCase().match(/[a-z0-9]{4,}/g) ?? [])
-    .filter((word) => !stop.has(word)));
+  return semanticWords(value);
 }
-
 function similarity(left, right) {
   const a = words(left); const b = words(right);
   if (!a.size || !b.size) return 0;
@@ -29,6 +25,8 @@ function grounded(candidate, unitsById) {
       && candidate.sourceUnitIds.every((id) => unitsById.has(id)),
     overlap, source };
 }
+
+const groundingMinimum = (candidate) => minimumGroundingOverlap(candidate.sourceUnitIds);
 
 function routine(candidate) {
   return candidate.materiality !== "high"
@@ -57,12 +55,24 @@ function compare(left, right) {
     || left._index - right._index;
 }
 
+// Backfill stance: adopt the articleUse of model candidates grounded in the pillar's own
+// source units only when they all agree; anything else stays "unclear" rather than forcing
+// a stance the host cannot verify.
+function backfillArticleUse(pillar, candidates) {
+  const pillarUnits = new Set(pillar.sourceUnitIds);
+  const uses = [...new Set(candidates
+    .filter((candidate) => candidate.sourceUnitIds.some((id) => pillarUnits.has(id)))
+    .map((candidate) => candidate.articleUse))];
+  return uses.length === 1 ? uses[0] : "unclear";
+}
+
 export function runHostSemanticCritic(inventory, { sourceUnits, structuralBlocks = [],
-  targetMinimum = 8, targetMaximum = 10 } = {}) {
+  targetMinimum = 8, targetMaximum = 12 } = {}) {
   const unitsById = new Map(sourceUnits.map((unit) => [unit.unitId, unit]));
   const unitOrder = new Map(sourceUnits.map((unit, index) => [unit.unitId, index]));
   const labels = new Set(inventory.pillars.map((pillar) => pillar.label));
   const findings = [];
+  for (const item of inventory.candidateClaims) item.origin = item.origin ?? "model";
   const candidates = inventory.candidateClaims.map((item, index) => ({ ...structuredClone(item),
     candidateId: `C${String(index + 1).padStart(2, "0")}`, _index: index }));
   for (const candidate of candidates) {
@@ -86,8 +96,10 @@ export function runHostSemanticCritic(inventory, { sourceUnits, structuralBlocks
   for (const pillar of substantivePillars(inventory)) {
     if (candidates.some((candidate) => candidate.relatedPillarLabels.includes(pillar.label))) continue;
     const promoted = { claimText: pillar.text, sourceUnitIds: [...pillar.sourceUnitIds],
-      articleRole: "pillar", articleUse: "endorsed", assertionSource: "article",
-      materiality: "high", relatedPillarLabels: [pillar.label], namedWorkHints: [],
+      articleRole: "pillar", articleUse: backfillArticleUse(pillar, candidates),
+      assertionSource: "article", origin: "host_pillar_backfill",
+      materiality: pillar.importance === "load_bearing" ? "high" : "medium",
+      relatedPillarLabels: [pillar.label], namedWorkHints: [],
       scope: pillar.text.slice(0, 400),
       evidenceUsefulnessHint: `External evidence should directly test the ${pillar.label} proposition.`,
       candidateId: `C${String(candidates.length + 1).padStart(2, "0")}`, _index: candidates.length };
@@ -102,6 +114,7 @@ export function runHostSemanticCritic(inventory, { sourceUnits, structuralBlocks
   const rejected = new Map();
   for (const candidate of candidates) {
     let support = grounded(candidate, unitsById);
+    const minimumOverlap = groundingMinimum(candidate);
     if (support.validRefs && support.overlap < 3) {
       const linkedMajor = substantivePillars(inventory).filter((pillar) =>
         candidate.relatedPillarLabels.includes(pillar.label));
@@ -109,7 +122,8 @@ export function runHostSemanticCritic(inventory, { sourceUnits, structuralBlocks
         ...linkedMajor.flatMap((pillar) => pillar.sourceUnitIds)])]
         .sort((left, right) => unitOrder.get(left) - unitOrder.get(right));
       const expanded = grounded({ ...candidate, sourceUnitIds: expandedIds }, unitsById);
-      if (expanded.validRefs && expanded.overlap >= 3) {
+      if (expanded.validRefs && expanded.overlap >= groundingMinimum({ ...candidate,
+        sourceUnitIds: expandedIds })) {
         candidate.sourceUnitIds = expandedIds;
         support = expanded;
         findings.push({ type: "grounding_context_expanded", severity: "material",
@@ -118,7 +132,8 @@ export function runHostSemanticCritic(inventory, { sourceUnits, structuralBlocks
           recommendedAction: "Host added only the linked pillar's grounded source units and revalidated." });
       }
       if (support.overlap < 3) {
-        const originalIds = new Set(candidate.sourceUnitIds);
+        const originalIds = new Set([...candidate.sourceUnitIds,
+          ...linkedMajor.flatMap((pillar) => pillar.sourceUnitIds)]);
         const blockUnitIds = new Set(structuralBlocks.filter((block) =>
           block.sourceUnitIds.some((id) => originalIds.has(id))).flatMap((block) => block.sourceUnitIds));
         const claimWords = words(candidate.claimText);
@@ -128,7 +143,8 @@ export function runHostSemanticCritic(inventory, { sourceUnits, structuralBlocks
         const structuralIds = [...new Set([...candidate.sourceUnitIds, ...siblings.map((item) => item.id)])]
           .sort((left, right) => unitOrder.get(left) - unitOrder.get(right));
         const structural = grounded({ ...candidate, sourceUnitIds: structuralIds }, unitsById);
-        if (structural.overlap >= 3) {
+        if (structural.overlap >= groundingMinimum({ ...candidate,
+          sourceUnitIds: structuralIds })) {
           candidate.sourceUnitIds = structuralIds;
           support = structural;
           findings.push({ type: "grounding_context_expanded", severity: "material",
@@ -139,7 +155,7 @@ export function runHostSemanticCritic(inventory, { sourceUnits, structuralBlocks
       }
     }
     const unknownLabels = candidate.relatedPillarLabels.filter((label) => !labels.has(label));
-    if (!support.validRefs || support.overlap < 3 || unknownLabels.length
+    if (!support.validRefs || support.overlap < groundingMinimum(candidate) || unknownLabels.length
       || !candidate.relatedPillarLabels.length) {
       rejected.set(candidate.candidateId, "unsupported_or_overbroad");
       findings.push({ type: "unsupported_or_overbroad", severity: "blocking",
@@ -223,10 +239,15 @@ export function runHostSemanticCritic(inventory, { sourceUnits, structuralBlocks
     throw new Cf1Error("CF1_MISSING_PILLAR_COVERAGE",
       `Host selection left major pillars uncovered: ${uncoveredPillarLabels.join(", ")}`, { status: 422 });
   }
-  if (selected.length < Math.min(targetMinimum, candidates.length)) {
+  const hardMinimum = Math.min(1, pool.length);
+  if (selected.length < hardMinimum) {
     throw new Cf1Error("CF1_INSUFFICIENT_SELECTED_CLAIMS",
       `Host selection retained only ${selected.length} usable claims`, { status: 422 });
   }
+  if (selected.length < Math.min(targetMinimum, pool.length)) findings.push({ type: "portfolio_below_target",
+    severity: "minor", candidateIds: selected.map((item) => item.candidateId),
+    pillarLabels: [...covered], problem: `Only ${selected.length} distinct usable claims survived host selection.`,
+    recommendedAction: "Accept the smaller portfolio instead of padding it with duplicates or weak claims." });
   const relatedClaimPairs = relatedResultExplanationPairs(selected);
   for (const pair of relatedClaimPairs) findings.push({ type: "related_result_explanation",
     severity: "material", candidateIds: [pair.resultCandidateId, pair.explanationCandidateId],

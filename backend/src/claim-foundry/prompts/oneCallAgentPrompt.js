@@ -39,9 +39,9 @@ For a long research article, the final portfolio must contain 8-10 claims and no
 methodology/limitation claims. Prefer the central result, major exceptions or subgroup results, the article's
 explanation of surprising findings, and consequential named studies/reviews the article relies upon. Do not
 replace a concrete result or causal explanation with a vague statement about "concerns" or "implications."
-Match the article's actual inferential strength. A study of vaccination timing and autism status cannot by
-itself establish the broader proposition that MMR never causes autism. Do not turn "no association was found
-for the measured exposure, outcome, and population" into "X does not cause Y."
+Match the article's actual inferential strength. A study of one exposure window and one outcome cannot by
+itself establish the broader proposition that the exposure never causes the outcome. Do not turn "no
+association was found for the measured exposure, outcome, and population" into "X does not cause Y."
 
 For namedWorkHints, retain partial descriptions such as "the 2004 NIH study" even when no formal title is
 given. Never invent a title, author, sponsor, year, or identifier. assertionSource names who supplies the
@@ -50,8 +50,9 @@ or document.
 
 claimTrueIf describes evidence that would make the selected claim itself true; claimFalseIf describes evidence
 that would make that same claim false. Do not answer whether the overall article would be supported. Example:
-claim "MMR before 18 months was not associated with autism"; claimTrueIf "the under-18-month analysis finds
-no meaningful association"; claimFalseIf "the analysis finds a meaningful association." Never reverse these.
+claim "Exposure before the threshold age was not associated with the outcome"; claimTrueIf "the
+below-threshold analysis finds no meaningful association"; claimFalseIf "the analysis finds a meaningful
+association." Never reverse these.
 Preserve target polarity: a claim that X likely caused Y
 cannot become a target saying X did not cause Y. A statement that a study did not evaluate X is a scope
 limitation, not a finding of no association.

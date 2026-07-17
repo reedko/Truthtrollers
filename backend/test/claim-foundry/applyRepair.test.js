@@ -19,6 +19,18 @@ test("allowlisted repair is immutable and card copies resynchronize", () => {
   assert.equal(verifyCf1Package(repaired).valid, true);
 });
 
+test("repair cannot leave claim, target, and card posture copies divergent", () => {
+  const draft = createPackageDraft();
+  const path = "/selectedEvaluationClaims/0/scoreTransform";
+  const repaired = applyCf1Repair(draft,
+    { repairs: [repair(path, "invert")], cannotRepair: [] }, [path]);
+
+  assert.equal(repaired.selectedEvaluationClaims[0].scoreTransform, "normal");
+  assert.equal(repaired.phase3Targets[0].scoreTransform, "normal");
+  assert.equal(repaired.evidenceNeedCards[0].scoreTransform, "normal");
+  assert.equal(verifyCf1Package(repaired).valid, true);
+});
+
 test("source-unit repair recomputes every deterministic grounding field", () => {
   const draft = createPackageDraft();
   draft.rawAssertions[0].sourceUnitIds = ["U0001"];
