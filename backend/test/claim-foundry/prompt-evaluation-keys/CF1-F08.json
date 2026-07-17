@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "cf1.promptEvaluationKey.v1",
+  "fixtureId": "CF1-F08",
+  "targets": [
+    {
+      "targetId": "cf1-f08-concept-01",
+      "category": "required_concept",
+      "description": "A moderate earthquake occurred in northern Japan early Monday without reported damage or casualties.",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f08-concept-02",
+      "category": "required_concept",
+      "description": "The report distinguishes the headline magnitude from the U.S. Geological Survey measurement rather than forcing one value.",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f08-concept-03",
+      "category": "required_concept",
+      "description": "Location and depth are attributed to the U.S. Geological Survey.",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f08-concept-04",
+      "category": "required_concept",
+      "description": "No tsunami advisory was issued, and the event was outside the area covered by an existing megaquake advisory.",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f08-region-01",
+      "category": "required_source_region",
+      "description": "event and immediate outcome",
+      "excerpt": "A magnitude 6.2 earthquake shook part of northern Japan early Monday, but there was no damage or casualties",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f08-region-02",
+      "category": "required_source_region",
+      "description": "tsunami status",
+      "excerpt": "No tsunami advisory was issued by the Japan Meteorological Agency",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f08-region-03",
+      "category": "required_source_region",
+      "description": "location and depth",
+      "excerpt": "18 kilometers (11 miles) west of the small town of Sarabetsu",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f08-region-04",
+      "category": "required_source_region",
+      "description": "USGS magnitude",
+      "excerpt": "It measured the quake’s strength at 6.1 magnitude",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f08-region-05",
+      "category": "required_source_region",
+      "description": "advisory scope",
+      "excerpt": "Monday’s quake was outside of the area subject to a megaquake advisory",
+      "required": true
+    }
+  ],
+  "prohibitedInterpretations": [
+    "The report is padded into a developed argument with invented theme pillars.",
+    "The 6.2 and 6.1 magnitude values are silently merged or one is discarded without attribution.",
+    "Absence of reported damage or casualties is rewritten as proof that no effects could later be discovered.",
+    "No tsunami advisory is rewritten as a claim that a tsunami was physically impossible.",
+    "The prior 7.7 offshore earthquake is treated as the same event as Monday’s inland earthquake.",
+    "The contextual megaquake advisory is presented as applying to Monday’s quake."
+  ],
+  "reviewNotes": [
+    "A proportionate package should contain only a few selected factual claims and no manufactured argumentative structure.",
+    "Preserve actor, time, place, distance, depth, magnitude, and agency attribution qualifiers."
+  ]
+}

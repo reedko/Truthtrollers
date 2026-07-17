@@ -1,0 +1,114 @@
+{
+  "schemaVersion": "cf1.promptEvaluationKey.v1",
+  "fixtureId": "CF1-F02",
+  "targets": [
+    {
+      "targetId": "cf1-f02-concept-01",
+      "category": "required_concept",
+      "description": "The article reports Michael Antoniou's argument that regulatory conclusions of glyphosate safety rest on inadequate and industry-shaped testing.",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f02-concept-02",
+      "category": "required_concept",
+      "description": "The opposing position includes regulatory reliance on glyphosate-only tests, industry-sponsored studies, accepted exposure limits, and the claim that the targeted plant pathway is absent in humans.",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f02-concept-03",
+      "category": "required_concept",
+      "description": "The rebuttal distinguishes pure glyphosate from more toxic commercial formulations while still alleging harms from glyphosate itself.",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f02-concept-04",
+      "category": "required_concept",
+      "description": "The article uses formulation, mixture, microbiome, low-dose animal, and carcinogenicity evidence to dispute the safety conclusion.",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f02-pillar-01",
+      "category": "required_pillar",
+      "description": "Regulators test isolated glyphosate rather than complete products encountered in practice",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f02-pillar-02",
+      "category": "required_pillar",
+      "description": "Industry-sponsored evidence and eligibility rules shape regulatory safety assessments",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f02-pillar-03",
+      "category": "required_pillar",
+      "description": "Single-pesticide testing does not represent real-world chemical mixtures",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f02-pillar-04",
+      "category": "required_pillar",
+      "description": "The plant-pathway safety argument overlooks effects on the human microbiome",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f02-pillar-05",
+      "category": "required_pillar",
+      "description": "Independent low-dose and lifetime animal findings are presented as inconsistent with current safety limits",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f02-region-01",
+      "category": "required_source_region",
+      "description": "formulation distinction",
+      "excerpt": "products “far more toxic” than glyphosate on its own",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f02-region-02",
+      "category": "required_source_region",
+      "description": "industry evidence criticism",
+      "excerpt": "regulatory agencies around the world rely heavily on industry-sponsored research",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f02-region-03",
+      "category": "required_source_region",
+      "description": "opposing biological premise",
+      "excerpt": "targets a biological pathway found in plants but not in humans",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f02-region-04",
+      "category": "required_source_region",
+      "description": "microbiome rebuttal",
+      "excerpt": "The same pathway exists in many bacteria and fungi, including microorganisms that make up the human gut microbiome",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f02-region-05",
+      "category": "required_source_region",
+      "description": "carcinogenicity conclusion",
+      "excerpt": "glyphosate and glyphosate herbicides are definitely carcinogenic",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f02-region-06",
+      "category": "required_source_region",
+      "description": "policy conclusion",
+      "excerpt": "We cannot set an acceptable daily safe intake limit",
+      "required": true
+    }
+  ],
+  "prohibitedInterpretations": [
+    "The article says pure glyphosate is harmless or non-toxic.",
+    "Greater toxicity of commercial formulations is treated as inconsistent with alleged toxicity of glyphosate itself.",
+    "Regulatory and industry safety positions are presented as the article author's conclusion.",
+    "Antoniou's allegations and interpretations are converted into unattributed scientific consensus.",
+    "Animal findings are silently rewritten as demonstrated human clinical outcomes.",
+    "Temporal association, toxicity, and carcinogenicity are collapsed into interchangeable claims."
+  ],
+  "reviewNotes": [
+    "Preserve nested attribution: Jill Erzen reports an interview in which Michael Antoniou describes studies, industry positions, and regulatory practices.",
+    "The pure-compound versus commercial-formulation distinction is an intentional qualification, not an internal contradiction."
+  ]
+}

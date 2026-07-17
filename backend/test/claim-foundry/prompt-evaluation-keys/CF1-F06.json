@@ -1,0 +1,101 @@
+{
+  "schemaVersion": "cf1.promptEvaluationKey.v1",
+  "fixtureId": "CF1-F06",
+  "targets": [
+    {
+      "targetId": "cf1-f06-concept-01",
+      "category": "required_concept",
+      "description": "The article uses an obituary frame to assert that the Great Barrier Reef has died in its entirety.",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f06-concept-02",
+      "category": "required_concept",
+      "description": "Its concrete account instead reports severe but geographically bounded and partial coral mortality, including up to 50 percent in the warmer northern region.",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f06-concept-03",
+      "category": "required_concept",
+      "description": "The article attributes historical observations, forecasts, and policy statements to their respective speakers and institutions.",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f06-concept-04",
+      "category": "required_concept",
+      "description": "Bleaching, coral death, diminished recovery prospects, and death of the entire reef must remain distinct concepts.",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f06-pillar-01",
+      "category": "required_pillar",
+      "description": "The reef's ecological scale and historical importance",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f06-pillar-02",
+      "category": "required_pillar",
+      "description": "Repeated bleaching and ocean acidification associated with climate change",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f06-pillar-03",
+      "category": "required_pillar",
+      "description": "Conservation efforts and alleged governmental obstruction",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f06-pillar-04",
+      "category": "required_pillar",
+      "description": "The obituary's whole-reef death claim versus its partial-loss evidence",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f06-region-01",
+      "category": "required_source_region",
+      "description": "whole-reef death assertion",
+      "excerpt": "The Great Barrier Reef of Australia passed away",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f06-region-02",
+      "category": "required_source_region",
+      "description": "bleaching recovery qualification",
+      "excerpt": "If water temperatures soon return to normal, the corals can recruit new algae and recover",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f06-region-03",
+      "category": "required_source_region",
+      "description": "bounded mortality evidence",
+      "excerpt": "As much as 50 percent of the coral in the warmer, northern part of the reef died",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f06-region-04",
+      "category": "required_source_region",
+      "description": "future-oriented expert statement",
+      "excerpt": "I think I may outlive the reef",
+      "required": true
+    },
+    {
+      "targetId": "cf1-f06-region-05",
+      "category": "required_source_region",
+      "description": "government attribution",
+      "excerpt": "negative comments about the status of World Heritage-listed properties impacted on tourism",
+      "required": true
+    }
+  ],
+  "prohibitedInterpretations": [
+    "Every use of death language is treated as literal without recognizing the sustained obituary metaphor.",
+    "Bleached coral is automatically classified as dead coral.",
+    "Possible recovery after temperatures normalize is treated as proof that the 2016 bleaching event caused no mortality.",
+    "The death of up to half the coral in one region is silently expanded to measured death of the entire reef.",
+    "Veron's prediction that he may outlive the reef is treated as confirmation that the reef had already died.",
+    "Quoted government reasoning is presented as the author's own justification for suppressing the report."
+  ],
+  "reviewNotes": [
+    "The required consistency finding is the mismatch between the literal whole-reef obituary claim and the article's own geographically bounded partial-mortality evidence.",
+    "The finding should describe an internal evidentiary conflict, not decide the reef's true external status. Ordinary bleaching and recovery qualifications are deliberate negative controls."
+  ]
+}
