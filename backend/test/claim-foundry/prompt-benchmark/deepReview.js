@@ -109,6 +109,10 @@ function call1ClaimRow({ base, selected, diagnostic, unitsById }) {
     scoreTransformCheck: transform,
     assertionSourceKind: diagnostic?.assertionSourceKind ?? null,
     assertionSourceName: diagnostic?.assertionSourceName ?? null,
+    sourceProposition: diagnostic?.sourceProposition ?? null,
+    articleResponse: diagnostic?.articleResponse ?? null,
+    articleResponseUnitIds: diagnostic?.articleResponseUnitIds ?? [],
+    articleResponseGroundingText: excerpt(diagnostic?.articleResponseUnitIds, unitsById),
     expectedTransform,
     transformConsistent: transform && expectedTransform ? transform === expectedTransform : null,
   };
@@ -198,6 +202,7 @@ export function collectDeepRows({ benchmarkDir, phase, manifest, labelsByProfile
 
 export const CSV_COLUMNS = ["fixture", "repeat", "profile", "origin", "runStatus",
   "failureClass", "propositionCore", "claimText", "articleRole", "articleUse", "assertionSource",
+  "sourceProposition", "articleResponse", "articleResponseUnitIds", "articleResponseGroundingText",
   "assertionSourceKind", "assertionSourceName", "ifSupportedEffect", "ifRefutedEffect",
   "scoreTransformCheck", "expectedTransform", "transformConsistent", "materiality",
   "scope", "relatedPillarLabels", "sourceUnitIds", "groundingText", "verificationTarget",

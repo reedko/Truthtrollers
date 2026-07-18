@@ -76,7 +76,12 @@ function detail(r){
     + ' | transform check: <b>'+esc(r.scoreTransformCheck ?? "not emitted")+'</b>'
     + '<br>effect/transform consistency: '+consistency
     + '<br>typed assertion source: '+esc(r.assertionSourceKind ?? "not emitted")
-    + ' / '+esc(r.assertionSourceName ?? "not emitted")+'</p></div>';
+    + ' / '+esc(r.assertionSourceName ?? "not emitted")+'</p>'
+    + (r.sourceProposition ? '<p><span class="tag c1">RELATION TRACE</span>source proposition P: '
+      + esc(r.sourceProposition)+'<br>article response: <b>'+esc(r.articleResponse)+'</b>'
+      + '<details><summary>Article-response text (units '+esc((r.articleResponseUnitIds||[]).join(", "))
+      + ')</summary><blockquote>'+esc(r.articleResponseGroundingText)+'</blockquote></details></p>' : '')
+    + '</div>';
   }
   const strat = r.hostStrategyOverride
     ? esc(r.sourceStrategy_emitted)+" → "+esc(r.sourceStrategy_resolved)+" <b class=ov>(host override)</b>"
@@ -125,9 +130,13 @@ function claimsView(rows){
     ["articleUse","Use"],["assertionSource","Source"],["ifSupportedEffect","If supported"],
     ["ifRefutedEffect","If refuted"],["scoreTransformCheck","Transform"],["materiality","Mat."]]
     : [["profile","Profile"],["repeat","Rep"],["origin","Origin"],
-    ["runStatus","Status"],["failureClass","Failure"],["claimText","Claim"],
-    ["verificationTarget","Target"],["sourceStrategy_emitted","Strategy (C2)"],
-    ["sourceStrategy_resolved","Strategy (HOST)"],["materiality","Mat."]];
+    ["runStatus","Status"],["failureClass","Failure"],["propositionCore","Proposition P"],
+    ["claimText","Final claim"],["articleRole","Role"],["articleUse","Use"],
+    ["assertionSource","Source"],["ifSupportedEffect","If supported"],
+    ["ifRefutedEffect","If refuted"],["scoreTransformCheck","Transform (C1)"],
+    ["scoreTransform","Transform (HOST)"],["verificationTarget","Target"],
+    ["sourceStrategy_emitted","Strategy (C2)"],["sourceStrategy_resolved","Strategy (HOST)"],
+    ["materiality","Mat."]];
   if (sortKey) rows = [...rows].sort((a,b)=>String(a[sortKey]??"").localeCompare(String(b[sortKey]??""))*sortDir);
   let h = "<table><thead><tr>"+cols.map(([k,l])=>'<th data-k="'+k+'">'+l+"</th>").join("")+"</tr></thead><tbody>";
   rows.forEach((r,i)=>{

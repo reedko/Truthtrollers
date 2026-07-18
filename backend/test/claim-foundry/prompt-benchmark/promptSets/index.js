@@ -30,6 +30,11 @@ import { SET_E2_C_WARRANT_V1 } from "./setE2CWarrantV1.js";
 import { CF1_POSTURE_FIRST_SOURCE_STABLE_SCHEMA_V3 }
   from "./postureFirstSourceStableSchemaV3.js";
 import { SET_H_CONSOLIDATED_SOURCE_POSTURE_V1 } from "./setHConsolidatedSourcePostureV1.js";
+import { CF1_CANONICAL_PROPOSITION_INVENTORY_SCHEMA_V1, CF1_CANONICAL_PROPOSITION_INVENTORY_SCHEMA_V2, CF1_CANONICAL_PROPOSITION_INVENTORY_SCHEMA_V3 }
+  from "./canonicalPropositionInventorySchemaV1.js";
+import { SET_E_CANONICAL_PROPOSITION_V1, SET_E_CANONICAL_PROPOSITION_V2, SET_E_CANONICAL_PROPOSITION_V3 } from "./setECanonicalPropositionV1.js";
+import { SET_E_SOURCE_PROPOSITION_RESPONSE_V1, SET_X_SOURCE_PROPOSITION_RESPONSE_V1 } from "./setECanonicalPropositionV1.js";
+import { CF1_SOURCE_PROPOSITION_RESPONSE_SCHEMA_V1, CF1_SOURCE_PROPOSITION_RESPONSE_SCHEMA_V2 } from "./sourcePropositionResponseSchemaV1.js";
 
 export const canonicalSchemaHash = (schema) =>
   crypto.createHash("sha256").update(JSON.stringify(schema)).digest("hex");
@@ -43,6 +48,11 @@ const AUDITED_SCHEMAS = Object.freeze({
   cf1_selected_enrichment_v3: CF1_SELECTED_ENRICHMENT_SCHEMA,
   cf1_selected_enrichment_v4: CF1_SELECTED_ENRICHMENT_WARRANT_SCHEMA,
   cf1_semantic_inventory_posture_first_source_stable_v3: CF1_POSTURE_FIRST_SOURCE_STABLE_SCHEMA_V3,
+  cf1_semantic_inventory_canonical_proposition_v1: CF1_CANONICAL_PROPOSITION_INVENTORY_SCHEMA_V1,
+  cf1_semantic_inventory_canonical_proposition_v2: CF1_CANONICAL_PROPOSITION_INVENTORY_SCHEMA_V2,
+  cf1_semantic_inventory_canonical_proposition_v3: CF1_CANONICAL_PROPOSITION_INVENTORY_SCHEMA_V3,
+  cf1_semantic_inventory_source_proposition_response_v1: CF1_SOURCE_PROPOSITION_RESPONSE_SCHEMA_V1,
+  cf1_semantic_inventory_source_proposition_response_v2: CF1_SOURCE_PROPOSITION_RESPONSE_SCHEMA_V2,
 });
 
 // Static allowlist. Cross-pair finalists are added here as explicit new entries
@@ -62,6 +72,11 @@ const PAIR_PROFILES = Object.freeze([
   SET_E2_C_FULL_V1,
   SET_E2_C_WARRANT_V1,
   SET_H_CONSOLIDATED_SOURCE_POSTURE_V1,
+  SET_E_CANONICAL_PROPOSITION_V1,
+  SET_E_CANONICAL_PROPOSITION_V2,
+  SET_E_CANONICAL_PROPOSITION_V3,
+  SET_E_SOURCE_PROPOSITION_RESPONSE_V1,
+  SET_X_SOURCE_PROPOSITION_RESPONSE_V1,
 ]);
 
 const PROFILE_ID = /^set-[a-z0-9]+(?:-[a-z0-9]+)*-v\d+$/;

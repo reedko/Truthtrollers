@@ -29,7 +29,10 @@ test("registry preserves original arms and adds corrected B2/C2/D2/E2 arms", () 
     "set-f-recall-posture-source-v1", "set-b-fidelity-ladder-v2",
     "set-c-claim-contract-v2", "set-d-orientation-posture-trace-v2",
     "set-e-posture-first-order-v2", "set-e-posture-first-c-full-v1",
-    "set-e-posture-first-c-warrant-v1", "set-h-consolidated-source-posture-v1"]);
+    "set-e-posture-first-c-warrant-v1", "set-h-consolidated-source-posture-v1",
+    "set-e-canonical-proposition-v1", "set-e-canonical-proposition-v2",
+    "set-e-canonical-proposition-v3", "set-e-source-proposition-response-v1",
+    "set-x-source-proposition-response-v1"]);
   assert.equal(profiles[0].id, "set-control-current-v1");
   assert.equal(profiles.find((profile) => profile.id === "set-e-posture-first-order-v2").call1Only,
     true);
@@ -80,13 +83,23 @@ test("original arms use live schemas; diagnostic arms use their audited schemas"
       const propositionV2 = profile.call1.schemaName === "cf1_semantic_inventory_proposition_v2";
       const sourceStable = profile.call1.schemaName
         === "cf1_semantic_inventory_posture_first_source_stable_v3";
+      const canonicalProposition = ["cf1_semantic_inventory_canonical_proposition_v1",
+        "cf1_semantic_inventory_canonical_proposition_v2",
+        "cf1_semantic_inventory_canonical_proposition_v3"].includes(profile.call1.schemaName);
+      const sourcePropositionResponse = ["cf1_semantic_inventory_source_proposition_response_v1",
+        "cf1_semantic_inventory_source_proposition_response_v2"].includes(profile.call1.schemaName);
       assert.equal(call1.responseSchema.name, profile.call1.schemaName);
       assert.deepEqual(Object.keys(call1.responseSchema.schema.properties),
         hybrid
           ? ["theme", "thesis", "pillars", "thesisHinge", "opponentScan", "candidateClaims"]
           : ["theme", "thesis", "pillars", "thesisHinge", "candidateClaims"]);
       assert.deepEqual(Object.keys(call1.responseSchema.schema.properties.candidateClaims.items.properties),
-        hybrid
+        sourcePropositionResponse
+          ? ["sourceProposition", "assertionSource", "sourceUnitIds", "articleResponse",
+            "articleResponseUnitIds", "ifSupportedEffect", "ifRefutedEffect", "articleUse",
+            "articleRole", "scoreTransformCheck", "materiality", "relatedPillarLabels", "scope",
+            "evidenceUsefulnessHint"]
+          : hybrid
           ? ["propositionCore", "ifSupportedEffect", "ifRefutedEffect", "articleUse",
             "articleRole", "scoreTransformCheck", "assertionSourceKind", "assertionSourceName",
             "claimText", "sourceUnitIds", "materiality", "relatedPillarLabels", "scope",
@@ -100,6 +113,10 @@ test("original arms use live schemas; diagnostic arms use their audited schemas"
             "articleRole", "scoreTransformCheck", "assertionSourceKind", "assertionSourceName",
             "claimText", "sourceUnitIds", "materiality", "relatedPillarLabels", "scope",
             "evidenceUsefulnessHint"]
+          : canonicalProposition
+          ? ["propositionCore", "ifSupportedEffect", "ifRefutedEffect", "articleUse",
+            "articleRole", "scoreTransformCheck", "assertionSource", "sourceUnitIds",
+            "materiality", "relatedPillarLabels", "scope", "evidenceUsefulnessHint"]
           : ["propositionCore", "ifSupportedEffect", "ifRefutedEffect", "articleUse",
             "articleRole", "scoreTransformCheck", "assertionSource", "claimText", "sourceUnitIds",
             "materiality", "relatedPillarLabels", "scope", "evidenceUsefulnessHint"]);
@@ -213,6 +230,26 @@ test("corrected arms retain the proposition trace and reject proposition/source 
     assert.throws(() => profilePromptBuilders(id),
       (error) => error.code === "CF1_PROMPT_REGISTRY_INVALID");
   }
+});
+
+test("canonical-proposition arm copies the one model proposition into live claimText", () => {
+  const profile = getPairProfile("set-e-canonical-proposition-v1");
+  const candidate = { propositionCore: "A factual proposition.",
+    ifSupportedEffect: "weakens", ifRefutedEffect: "strengthens",
+    articleUse: "opponent_to_rebut", articleRole: "opponent_claim",
+    scoreTransformCheck: "invert", assertionSource: "Named institution",
+    sourceUnitIds: ["U001"], materiality: "high", relatedPillarLabels: ["P"], scope: "article",
+    evidenceUsefulnessHint: "An independent record testing the proposition." };
+  const output = { theme: { text: "A broad proposition.", sourceUnitIds: ["U001"] },
+    thesis: { text: "A specific proposition.", sourceUnitIds: ["U001"] },
+    pillars: [{ label: "P", text: "A pillar proposition.", importance: "load_bearing",
+      sourceUnitIds: ["U001"] }], thesisHinge: "substance", candidateClaims: [candidate] };
+  const adapted = profile.call1.adaptOutput(output);
+  assert.equal(adapted.candidateClaims[0].claimText, "A factual proposition.");
+  assert.equal(adapted.candidateClaims[0].propositionCore, "A factual proposition.");
+  assert.throws(() => profile.call1.adaptOutput({ ...output,
+    candidateClaims: [{ ...candidate, propositionCore: "" }] }),
+  (error) => error.code === "CF1_AGENT_SEMANTIC_INVALID");
 });
 
 test("corrected prompt instructions are fixture-neutral and source/posture independent", () => {

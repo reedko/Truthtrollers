@@ -47,10 +47,15 @@ function writeRunFiles(dir, files) {
   writeFileSync(path.join(dir, "files.sha256"), `${hashes.join("\n")}\n`);
 }
 
+function apiSamplingSeed(seed, profileId, fixtureId) {
+  return Number.parseInt(createHash("sha256").update(`${seed}:${profileId}:${fixtureId}`)
+    .digest("hex").slice(0, 8), 16);
+}
+
 function provenance({ config, phase, mode, subjectKey, subjectHash, profile, repeat, seed,
-  fingerprints, startedAt, finishedAt, usage, attempts, status, error }) {
+  apiSeed, systemFingerprint, fingerprints, startedAt, finishedAt, usage, attempts, status, error }) {
   return { benchmarkId: config.benchmarkId, phase, mode, [mode === "call2" ? "packetId" : "fixtureId"]: subjectKey,
-    repeat, seed, pairProfileId: profile.id,
+    repeat, seed, apiSeed: apiSeed ?? null, systemFingerprint: systemFingerprint ?? null, pairProfileId: profile.id,
     call1: { version: profile.call1.version, schemaName: profile.call1.schemaName },
     call2: { version: profile.call2.version, schemaName: profile.call2.schemaName },
     fingerprints, model: config.model, temperature: config.temperature ?? 0,
@@ -69,11 +74,13 @@ export async function runCall1Generation({ config, benchmarkDir, phase, profileI
   const prompt = profile.call1.build({ article, structuralBlocks,
     sourceUnits: articleDocument.sourceUnits });
   const fingerprints = { call1: promptFingerprints(prompt) };
+  const apiSeed = apiSamplingSeed(seed, profileId, fixture.fixtureId);
   const startedAt = clock().toISOString();
   let status = "completed"; let error; let response; let verified;
   try {
     response = await modelRunner.invokeStructured({ ...prompt, model: config.model,
       temperature: config.temperature ?? 0, timeoutMs: config.timeoutMs, maximumAttempts: 1,
+      seed: apiSeed,
       maxOutputTokens: config.budgetLimits.maxOutputTokensPerCall,
       usageContext: { component: "claim_foundry", path: "benchmark", stage: "semantic_inventory" } });
     const adapted = profile.call1.adaptOutput
@@ -85,6 +92,7 @@ export async function runCall1Generation({ config, benchmarkDir, phase, profileI
   const finishedAt = clock().toISOString();
   const entry = provenance({ config, phase, mode: "call1", subjectKey: fixture.fixtureId,
     subjectHash: article.contentHash, profile, repeat, seed, fingerprints, startedAt,
+    apiSeed, systemFingerprint: response?.rawResponse?.system_fingerprint ?? null,
     finishedAt, usage: response?.usage, attempts: response?.attempts, status, error });
   writeRunFiles(dir, {
     "request-provenance.json": entry,
@@ -103,7 +111,7 @@ export async function runFullGeneration({ config, benchmarkDir, phase, profileId
   const startedAt = clock().toISOString();
   const result = await runClaimFoundry({ article: fixture.article,
     options: { model: config.model, temperature: config.temperature ?? 0,
-      seed: Number.parseInt(createHash("sha256").update(`${seed}:${profileId}:${fixture.fixtureId}`).digest("hex").slice(0, 8), 16),
+      seed: apiSamplingSeed(seed, profileId, fixture.fixtureId),
       timeoutMs: config.timeoutMs, budgetLimits: config.budgetLimits,
       modelContextTokens: config.modelContextTokens ?? 128_000,
       blockOptions: config.blockOptions, allowRepair: false, artifactRoot: dir },
@@ -116,6 +124,8 @@ export async function runFullGeneration({ config, benchmarkDir, phase, profileId
   const status = result.run.status === "ready_for_evidence" ? "completed" : result.run.status;
   const entry = provenance({ config, phase, mode: "full", subjectKey: fixture.fixtureId,
     subjectHash: result.articleContentHash ?? null, profile, repeat, seed,
+    apiSeed: apiSamplingSeed(seed, profileId, fixture.fixtureId),
+    systemFingerprint: result.run?.systemFingerprint ?? null,
     fingerprints: result.agentState?.promptFingerprints ?? null,
     startedAt, finishedAt, usage: result.run.usage, attempts: null,
     status, error: result.run.error ?? undefined });
