@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "cf1.fixtureMetadata.v1",
+  "fixtureId": "CF1-F02",
+  "fixtureRevision": 2,
+  "fixtureClass": "rebuttal_article",
+  "status": "frozen",
+  "expectedExecutionPath": "normal",
+  "articleFileSha256": "dc803a9853cc19234393e894ac389f038e83040fe0410f63380e379cea9044b6",
+  "source": {
+    "file": "1d973fe5-528d-41bf-8246-7fa0c0d57e91/pasted-text.txt",
+    "htmlSnapshotSha256": "bb419a6cb178cd34ace31fc253af8f41153fa50000035db4c9b16d0d92658189",
+    "articleContentHash": "bcd5ed643c49c1f10fb1bb8c9e4d9512d1a56474db29b6345ca8c9d4e6ed9bd5",
+    "canonicalUrl": "https://childrenshealthdefense.org/defender/deceptively-toxic-how-regulators-chemical-companies-get-away-with-calling-glyphosate-safe/",
+    "rightsStatus": "permission_confirmed_by_repository_owner",
+    "extractionNote": "Main article body only; audio controls, promotion and donation inserts, related stories, sharing and republication UI, author biography, categories, comments, and extension markup excluded."
+  },
+  "approval": {
+    "status": "approved",
+    "rightsReviewed": true,
+    "reviewers": [
+      {
+        "reviewerId": "repository-owner",
+        "decision": "approved",
+        "approvedAt": "2026-07-14T00:00:00Z"
+      },
+      {
+        "reviewerId": "independent-reviewer",
+        "decision": "approved",
+        "approvedAt": "2026-07-14T00:00:00Z"
+      }
+    ]
+  }
+}

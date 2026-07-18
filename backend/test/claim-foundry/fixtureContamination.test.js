@@ -41,6 +41,9 @@ const DENYLISTED_FIXTURE_TERMS = [
 const PRODUCTION_ROOTS = [
   fileURLToPath(new URL("../../src/claim-foundry/", import.meta.url)),
   fileURLToPath(new URL("../../src/evidence-run/", import.meta.url)),
+  // Benchmark prompt arms are prompt text headed for production; scan them the
+  // same way (coder plan §5.1).
+  fileURLToPath(new URL("./prompt-benchmark/promptSets/", import.meta.url)),
 ];
 const SRC_ROOT = fileURLToPath(new URL("../../src/", import.meta.url));
 

@@ -106,6 +106,7 @@ export const openAiLLM = {
     user,
     schemaHint,
     temperature = 0.2,
+    seed = undefined,
     maxRetries = 3,
     timeout = 30000,
     model = "gpt-4o-mini",
@@ -130,6 +131,7 @@ export const openAiLLM = {
           body: JSON.stringify({
             model,
             temperature,
+            ...(Number.isInteger(seed) ? { seed } : {}),
             response_format: jsonSchema
               ? { type: "json_schema", json_schema: jsonSchema }
               : { type: "json_object" },

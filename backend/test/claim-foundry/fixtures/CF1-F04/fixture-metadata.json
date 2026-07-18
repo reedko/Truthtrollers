@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "cf1.fixtureMetadata.v1",
+  "fixtureId": "CF1-F04",
+  "fixtureRevision": 1,
+  "fixtureClass": "heavy_quotation_attribution",
+  "status": "frozen",
+  "expectedExecutionPath": "normal",
+  "articleFileSha256": "6523550a1de26e85f91765647f0ec003b03db77e8754b904a87f5bd9d93f4ce0",
+  "source": {
+    "file": "195af372-7055-4822-9682-991170e951c4/pasted-text.txt",
+    "htmlSnapshotSha256": "1b0f80a2d584a37b8c80529e7fb62c9846d1ccb315140d9e23c99671af8a5272",
+    "articleContentHash": "5992ba92223bf96056585199cb1023b54b82c0cde2f06630831a881ca7bae283",
+    "canonicalUrl": "https://www.theatlantic.com/ideas/2026/07/nuclear-weapons-limits-cold-war-deterrence/687883/",
+    "rightsStatus": "permission_confirmed_by_repository_owner",
+    "extractionNote": "Structured article paragraphs only; related-story cards, paywall UI, ads, comments, recommendations, and extension markup excluded."
+  },
+  "approval": {
+    "status": "approved",
+    "rightsReviewed": true,
+    "reviewers": [
+      {
+        "reviewerId": "repository-owner",
+        "decision": "approved",
+        "approvedAt": "2026-07-13T13:21:50Z"
+      },
+      {
+        "reviewerId": "independent-reviewer",
+        "decision": "approved",
+        "approvedAt": "2026-07-14T00:00:00Z"
+      }
+    ]
+  }
+}

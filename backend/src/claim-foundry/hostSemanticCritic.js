@@ -225,7 +225,7 @@ export function runHostSemanticCritic(inventory, { sourceUnits, structuralBlocks
   select(pool.find((candidate) => candidate.articleRole === "thesis" && !isSynthesisThesis(candidate)));
   select(pool.find(isMaterialLimitation));
   for (const candidate of pool) {
-    if (selected.length >= targetMinimum) break;
+    if (selected.length >= targetMaximum) break;
     select(candidate);
   }
   const covered = new Set(selected.flatMap((candidate) => candidate.relatedPillarLabels));

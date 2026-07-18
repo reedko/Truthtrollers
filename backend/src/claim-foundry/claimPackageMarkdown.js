@@ -9,6 +9,7 @@ function claimSection(claim, card, pillars) {
     `- Role: ${claim.articleRole}; materiality: ${claim.materiality}; mode: ${claim.claimMode ?? "unspecified"}`,
     `- Pillars: ${relatedPillars.join(", ") || "none"}`,
     `- Why it matters: ${text(claim.counterfactualImpact) || "Not supplied"}`,
+    `- Warrant: ${text(card?.warrant ?? claim.warrant) || "None — direct factual claim"}`,
     "",
     "### Falsifiability",
     "",

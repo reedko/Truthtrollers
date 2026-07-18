@@ -1,5 +1,11 @@
 import { semanticInventorySchemaForArticle } from "./semanticInventorySchema.js";
 
+// Exported for the prompt-benchmark arms: every arm must serialize the
+// structured article identically to the live builder.
+export function serializeStructuredArticle(blocks, sourceUnits) {
+  return source(blocks, sourceUnits);
+}
+
 function source(blocks, sourceUnits) {
   const units = new Map(sourceUnits.map((unit) => [unit.unitId, unit]));
   return blocks.map((block) => JSON.stringify({ heading: block.heading,

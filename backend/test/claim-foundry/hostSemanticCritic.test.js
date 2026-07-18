@@ -108,7 +108,8 @@ test("host demotes background and routine methods behind article-own material cl
   const report = runHostSemanticCritic(value,
     { sourceUnits, targetMinimum: 1, targetMaximum: 3 });
   assert.deepEqual(report.selectedClaims.map((claim) => claim.claimText),
-    ["River contamination doubled after the spill."]);
+    ["River contamination doubled after the spill.",
+      "Researchers matched twelve sites by distance."]);
   assert.ok(report.findings.some((finding) => finding.type === "routine_method_or_sample"));
 });
 
@@ -176,6 +177,35 @@ test("raised selection cap admits the limitation pick after full pillar coverage
   const raised = runHostSemanticCritic(structuredClone(value),
     { sourceUnits, targetMinimum: 2, targetMaximum: 3 });
   assert.ok(raised.selectedClaims.some((claim) => claim.articleRole === "qualification"));
+});
+
+test("target minimum is a floor and selection continues to the maximum", () => {
+  const sourceUnits = [
+    { unitId: "U0001", text: "The audit counted 120 unresolved bridge defects." },
+    { unitId: "U0002", text: "Budget records show maintenance appropriations fell eighteen percent." },
+    { unitId: "U0003", text: "Inspection logs list forty emergency bridge closures." },
+  ];
+  const value = { theme: { text: "Bridge maintenance failures accumulated.", sourceUnitIds: ["U0001"] },
+    thesis: { text: "Bridge maintenance failures accumulated.", sourceUnitIds: ["U0001"] },
+    pillars: [{ label: "Infrastructure failures", text: "Bridge maintenance failures accumulated.",
+      importance: "major", sourceUnitIds: ["U0001", "U0002", "U0003"] }],
+    candidateClaims: [
+      { claimText: "The audit counted 120 unresolved bridge defects.", sourceUnitIds: ["U0001"],
+        articleRole: "pillar", articleUse: "endorsed", assertionSource: "the audit", materiality: "high",
+        relatedPillarLabels: ["Infrastructure failures"], namedWorkHints: [], scope: "unresolved defects",
+        evidenceUsefulnessHint: "Check the audit defect count." },
+      { claimText: "Maintenance appropriations fell eighteen percent.", sourceUnitIds: ["U0002"],
+        articleRole: "pillar_support", articleUse: "endorsed", assertionSource: "budget records",
+        materiality: "high", relatedPillarLabels: ["Infrastructure failures"], namedWorkHints: [],
+        scope: "maintenance appropriations", evidenceUsefulnessHint: "Check the budget records." },
+      { claimText: "Inspection logs list forty emergency bridge closures.", sourceUnitIds: ["U0003"],
+        articleRole: "pillar_support", articleUse: "endorsed", assertionSource: "inspection logs",
+        materiality: "high", relatedPillarLabels: ["Infrastructure failures"], namedWorkHints: [],
+        scope: "emergency bridge closures", evidenceUsefulnessHint: "Check the inspection logs." },
+    ] };
+  const report = runHostSemanticCritic(value,
+    { sourceUnits, targetMinimum: 1, targetMaximum: 3 });
+  assert.equal(report.selectedClaims.length, 3);
 });
 
 test("host records a generic observed-result and explanation relationship", () => {

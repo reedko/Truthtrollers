@@ -153,7 +153,7 @@ export function expandOneCallAgentOutput(output, { structuralBlocks, article, sk
       selectionRationale: `Theme gate (${relatedSummary}): ${claim.themeBearing}`,
       scoreTransform: posture.scoreTransform, searchEligible: true,
       verdictEligible: posture.verdictEligible, gradeTarget: claim.gradeTarget ?? null,
-      confidence: 0.8, claimMode: claim.claimMode };
+      confidence: 0.8, claimMode: claim.claimMode, warrant: claim.warrant ?? null };
   });
   const phase3Targets = claimsWithPosture.map(({ claim, posture }, index) => {
     return { targetId: `target-${index}`, selectedClaimId: selectedId(index),
@@ -166,6 +166,7 @@ export function expandOneCallAgentOutput(output, { structuralBlocks, article, sk
   const evidenceNeedCards = output.selectedClaims.map((claim, index) => {
     const rejectIfOnly = nonBearingRule(claim);
     return { targetId: `target-${index}`, evidenceRolesNeeded: evidenceRoles(claim),
+      warrant: claim.warrant ?? null,
       bearingCriteria: { mustMatch: mustMatch(claim), shouldMatch: [claim.scope],
         rejectIfOnly: [rejectIfOnly], weak: false },
       queryLaneSeeds: [{ laneType: "primary", query: querySeed(claim),

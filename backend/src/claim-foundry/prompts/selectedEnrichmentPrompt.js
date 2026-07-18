@@ -1,4 +1,5 @@
-import { CF1_SELECTED_ENRICHMENT_SCHEMA } from "./selectedEnrichmentSchema.js";
+import { CF1_SELECTED_ENRICHMENT_SCHEMA, CF1_SELECTED_ENRICHMENT_WARRANT_SCHEMA }
+  from "./selectedEnrichmentSchema.js";
 
 function criticInstructions(selectedClaims, criticReport) {
   return selectedClaims.map((claim) => ({ candidateId: claim.candidateId,
@@ -19,11 +20,47 @@ function selectedPackets(selectedClaims) {
   }));
 }
 
-export function buildSelectedEnrichmentPrompt({ orientation, selectedClaims, criticReport,
+// Exported for the prompt-benchmark arms: the five host-supplied blocks must be
+// serialized identically, in identical positions, by every arm's Call 2 builder.
+export function buildEnrichmentContextBlocks({ orientation, selectedClaims, criticReport,
   sourceUnits, namedWorkPool = [] }) {
-  const responseSchema = structuredClone(CF1_SELECTED_ENRICHMENT_SCHEMA);
+  return `ORIENTATION:
+${JSON.stringify(orientation)}
+
+SELECTED CLAIM PACKETS:
+${JSON.stringify(selectedPackets(selectedClaims))}
+
+ACTIONABLE CRITIC INSTRUCTIONS:
+${JSON.stringify(criticInstructions(selectedClaims, criticReport))}
+
+HOST-VALIDATED NAMED WORK POOL:
+${JSON.stringify(namedWorkPool.map(({ namedWorkId, mentionText, workType, citationCallout, sourceUnitIds }) =>
+    ({ namedWorkId, label: mentionText, workType, citationCallout, sourceUnitIds })))}
+
+ALLOWED SOURCE UNITS:
+${JSON.stringify(sourceUnits.map(({ unitId, text }) => ({ unitId, text })))}`;
+}
+
+// Exported for the prompt-benchmark arms: every arm pins the enriched-claims
+// count to the host selection exactly as the live builder does.
+export function selectedEnrichmentSchemaForClaims(selectedClaims) {
+  return enrichmentSchemaForClaims(selectedClaims, CF1_SELECTED_ENRICHMENT_SCHEMA);
+}
+
+export function selectedEnrichmentWarrantSchemaForClaims(selectedClaims) {
+  return enrichmentSchemaForClaims(selectedClaims, CF1_SELECTED_ENRICHMENT_WARRANT_SCHEMA);
+}
+
+function enrichmentSchemaForClaims(selectedClaims, baseSchema) {
+  const responseSchema = structuredClone(baseSchema);
   responseSchema.schema.properties.enrichedClaims.minItems = selectedClaims.length;
   responseSchema.schema.properties.enrichedClaims.maxItems = selectedClaims.length;
+  return responseSchema;
+}
+
+export function buildSelectedEnrichmentPrompt({ orientation, selectedClaims, criticReport,
+  sourceUnits, namedWorkPool = [] }) {
+  const responseSchema = selectedEnrichmentSchemaForClaims(selectedClaims);
   return {
     system: `You are CF1's selected-claim evidence planner. Supply only semantic guidance the host
 cannot derive mechanically. Preserve polarity, attribution, scope, comparison, uncertainty, numbers,
@@ -60,21 +97,7 @@ Do not copy a named-work label into searchConcepts or cautions when its namedWor
 host will build identity-specific queries from that ID. Keep searchConcepts semantic and non-identifying.
 Emit JSON immediately.
 
-ORIENTATION:
-${JSON.stringify(orientation)}
-
-SELECTED CLAIM PACKETS:
-${JSON.stringify(selectedPackets(selectedClaims))}
-
-ACTIONABLE CRITIC INSTRUCTIONS:
-${JSON.stringify(criticInstructions(selectedClaims, criticReport))}
-
-HOST-VALIDATED NAMED WORK POOL:
-${JSON.stringify(namedWorkPool.map(({ namedWorkId, mentionText, workType, citationCallout, sourceUnitIds }) =>
-    ({ namedWorkId, label: mentionText, workType, citationCallout, sourceUnitIds })))}
-
-ALLOWED SOURCE UNITS:
-${JSON.stringify(sourceUnits.map(({ unitId, text }) => ({ unitId, text })))}`,
+${buildEnrichmentContextBlocks({ orientation, selectedClaims, criticReport, sourceUnits, namedWorkPool })}`,
     responseSchema,
   };
 }

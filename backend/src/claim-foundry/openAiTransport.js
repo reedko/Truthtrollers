@@ -16,6 +16,7 @@ export function createOpenAiCf1Transport({ llm = openAiLLM } = {}) {
           && request.responseSchema?.schema
           ? { jsonSchema: request.responseSchema } : {}),
         temperature: request.temperature,
+        seed: request.seed,
         model: request.model,
         maxOutputTokens: request.maxOutputTokens,
         timeout: request.timeoutMs,

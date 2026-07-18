@@ -180,6 +180,7 @@ export function verifySelectedEnrichment(output, { selectedClaims, inventory, so
     const rejectIfOnly = exclusion && !item.rejectIfOnly.includes(exclusion)
       ? [...item.rejectIfOnly, exclusion].slice(0, 6) : item.rejectIfOnly;
     return { candidateId: item.candidateId, claimText,
+      warrant: item.warrant ?? null,
       disputedQuestion: structuredClone(disputed), gradeTarget,
       verificationQuestion: `Does independent evidence resolve the disputed question: ${disputed.disputedProposition}`.slice(0, 360),
       claimTrueIf: criteriaText(item.supportCriteria), claimFalseIf: criteriaText(item.refuteCriteria),

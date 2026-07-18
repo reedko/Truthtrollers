@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "cf1.fixtureMetadata.v1",
+  "fixtureId": "CF1-F07",
+  "fixtureRevision": 1,
+  "fixtureClass": "weak_or_absent_thesis",
+  "status": "frozen",
+  "expectedExecutionPath": "normal",
+  "articleFileSha256": "16980639b222515cecd167bf12592bc2078cbc9b0e1c835322caff529cb5fe47",
+  "source": {
+    "file": "bb2c2f08-2d58-421f-b0e9-38a1467f4ab5/pasted-text.txt",
+    "htmlSnapshotSha256": "328199d149fcd6d17d48a9e2540af25e6cc233d7d77eb2b91c55b1ba03772850",
+    "articleContentHash": "fbecac56caaada6ca849a988520def34acc4ad6fc0d6e76a39ed6ac0e92141d9",
+    "canonicalUrl": "https://www.livescience.com/64113-dark-matter-mysteries.html",
+    "rightsStatus": "permission_confirmed_by_repository_owner",
+    "extractionNote": "Publisher-marked article paragraphs and headings only; images, captions, ads, inline recommendations, newsletter form, author biography, navigation, and extension markup excluded."
+  },
+  "approval": {
+    "status": "approved",
+    "rightsReviewed": true,
+    "reviewers": [
+      {
+        "reviewerId": "repository-owner",
+        "decision": "approved",
+        "approvedAt": "2026-07-14T00:00:00Z"
+      },
+      {
+        "reviewerId": "independent-reviewer",
+        "decision": "approved",
+        "approvedAt": "2026-07-14T00:00:00Z"
+      }
+    ]
+  }
+}

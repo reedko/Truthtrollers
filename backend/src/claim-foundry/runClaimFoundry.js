@@ -85,13 +85,15 @@ export async function runClaimFoundry({ article: inputArticle, options, dependen
       modelRunner: deps.modelRunner,
       model: config.model,
       temperature: config.temperature ?? 0,
+      seed: config.seed,
       timeoutMs: config.timeoutMs,
       budgetLimits: config.budgetLimits,
       clockMs: deps.clockMs,
       tokenEstimator: deps.tokenEstimator,
     };
     const execution = executionMode === "agent"
-      ? await (deps.runAgent ?? runCf1Agent)({ ...executionArgs, runId, clock: deps.clock })
+      ? await (deps.runAgent ?? runCf1Agent)({ ...executionArgs, runId, clock: deps.clock,
+        promptBuilders: deps.promptBuilders })
       : state.executionDecision.path === "normal"
         ? await (deps.runNormal ?? runNormalCf1Analysis)(executionArgs)
         : await (deps.runLong ?? runLongCf1Analysis)({ ...executionArgs, modelContextTokens: config.modelContextTokens });
@@ -118,6 +120,8 @@ export async function runClaimFoundry({ article: inputArticle, options, dependen
         usage: state.run.usage,
         ...(state.agentState ? { agentRuntime: {
           status: state.agentState.status,
+          promptIdentity: state.agentState.promptIdentity ?? null,
+          promptFingerprints: state.agentState.promptFingerprints ?? null,
           stepTrace: state.agentState.stepTrace,
           artifactNames: ["article_orientation.json", "initial_claims.json", "critic_report.json",
             "revision_plan.json", "revised_claims.json", "semantic_inventory.json",
@@ -166,5 +170,6 @@ export async function runClaimFoundry({ article: inputArticle, options, dependen
   state.artifactRefs = await tryArtifacts(deps.artifactWriter, state, config.artifactRoot);
   if (state.artifactRefs.warning) state.run.warnings = [state.artifactRefs.warning];
   return { run: state.run, claimPackage: state.claimPackage ?? null,
-    verification: state.verification ?? null, artifactRefs: state.artifactRefs };
+    verification: state.verification ?? null, artifactRefs: state.artifactRefs,
+    agentState: state.agentState ?? null, articleContentHash: state.article?.contentHash ?? null };
 }

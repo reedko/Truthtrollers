@@ -89,6 +89,7 @@ export function expandTwoCallAgentOutput(oldShape, { structuralBlocks, article }
         relatedClaimText: other.claimText }] : [];
     });
     return { targetId: `target-${index}`, evidenceRolesNeeded: roles,
+      warrant: claim.warrant ?? null,
       disputedQuestion: structuredClone(claim.disputedQuestion ?? null),
       gradeTarget: claim.gradeTarget ?? null, origin: claim.origin ?? "model",
       bestSourceTypes: claim.bestSourceTypes,

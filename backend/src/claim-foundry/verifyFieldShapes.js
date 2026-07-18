@@ -69,8 +69,10 @@ export function verifyFieldShapes(pkg) {
     text(errors, item.sourceExcerpt, `${path}/sourceExcerpt`, 3_000);
     text(errors, item.counterfactualImpact, `${path}/counterfactualImpact`, 1_000);
     text(errors, item.selectionRationale, `${path}/selectionRationale`, 1_000);
+    text(errors, item.warrant, `${path}/warrant`, 280, true);
     boolean(errors, item.searchEligible, `${path}/searchEligible`);
     boolean(errors, item.verdictEligible, `${path}/verdictEligible`);
+    text(errors, item.warrant, `${path}/warrant`, 280, true);
     confidence(errors, item.confidence, `${path}/confidence`);
   }
   for (const [index, item] of (pkg.phase3Targets ?? []).entries()) {

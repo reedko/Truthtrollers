@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "cf1.fixtureMetadata.v1",
+  "fixtureId": "CF1-F03",
+  "fixtureRevision": 1,
+  "fixtureClass": "long_article",
+  "status": "frozen",
+  "expectedExecutionPath": "long",
+  "articleFileSha256": "9d667e63112f1895129d5f1c21b17fa3d5aa7733b9b0b8f9e4a0501a95381e13",
+  "source": {
+    "file": "da2e849f-6e44-4825-943a-43a866655748/pasted-text.txt",
+    "htmlSnapshotSha256": "4f3f5a69e05ec8465db094ef9b14d00ecace86e7b16255729e4c362dae157f1e",
+    "articleContentHash": "35f3f6a5b39d2a4170efe2dd9796e01542dda8bab391a58cd7e21fbc7bdc381a",
+    "canonicalUrl": "https://www.porttownsendfreepress.com/2026/04/12/public-healths-truth-about-vaccines-part-1/",
+    "rightsStatus": "permission_confirmed_by_repository_owner",
+    "extractionNote": "Canonical article title, byline, and body through the Part 2 preview; navigation, comments, extension UI, and author biography excluded."
+  },
+  "approval": {
+    "status": "approved",
+    "rightsReviewed": true,
+    "reviewers": [
+      {
+        "reviewerId": "repository-owner",
+        "decision": "approved",
+        "approvedAt": "2026-07-13T13:08:52Z"
+      },
+      {
+        "reviewerId": "independent-reviewer",
+        "decision": "approved",
+        "approvedAt": "2026-07-14T00:00:00Z"
+      }
+    ]
+  }
+}
