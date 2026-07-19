@@ -1,0 +1,18 @@
+{
+  "runId": "split-20260719-080143.-26fc33",
+  "model": "gpt-4o-mini",
+  "generatedAt": "2026-07-19T08:02:24.049Z",
+  "runs": [
+    {
+      "fixtureId": "CF1-F03",
+      "repeat": 1,
+      "seed": 3724605090,
+      "status": "failed",
+      "error": {
+        "code": "CF1_SPLIT_CENSUS_INCOMPLETE",
+        "message": "Every census packet must have exactly one outcome"
+      },
+      "elapsedMs": 40018
+    }
+  ]
+}

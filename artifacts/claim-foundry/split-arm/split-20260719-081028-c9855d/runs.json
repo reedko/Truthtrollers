@@ -1,0 +1,18 @@
+{
+  "runId": "split-20260719-081028-c9855d",
+  "model": "gpt-4o-mini",
+  "generatedAt": "2026-07-19T08:11:50.016Z",
+  "runs": [
+    {
+      "fixtureId": "CF1-F03",
+      "repeat": 1,
+      "seed": 3724605090,
+      "status": "failed",
+      "error": {
+        "code": "CF1_SPLIT_CENSUS_MINT_WITHOUT_CLAIM",
+        "message": "Census mint outcomes and minted claims are not one-to-one"
+      },
+      "elapsedMs": 81170
+    }
+  ]
+}

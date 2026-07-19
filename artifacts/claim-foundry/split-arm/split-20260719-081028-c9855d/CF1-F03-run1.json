@@ -1,0 +1,11 @@
+{
+  "fixtureId": "CF1-F03",
+  "repeat": 1,
+  "seed": 3724605090,
+  "status": "failed",
+  "error": {
+    "code": "CF1_SPLIT_CENSUS_MINT_WITHOUT_CLAIM",
+    "message": "Census mint outcomes and minted claims are not one-to-one"
+  },
+  "elapsedMs": 81170
+}

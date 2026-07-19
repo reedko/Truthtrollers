@@ -1,0 +1,77 @@
+{
+  "thesis": "Public health authorities propagate misleading information about vaccines, which has led to increased vaccine hesitancy and concerns about vaccine safety.",
+  "claims": [
+    {
+      "proposition": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+      "assertedBy": "CDC data",
+      "articleTreatment": "reports",
+      "groundingExcerpt": "U0002",
+      "evidenceQuestion": "This claim highlights the extent of vaccine hesitancy in the U.S., which is central to the article's argument about public health messaging.",
+      "supportWouldLookLike": "Statistical data from the CDC showing vaccination rates among school children and toddlers.",
+      "refuteWouldLookLike": "Data from a reliable source indicating that vaccination rates are higher than reported."
+    },
+    {
+      "proposition": "The CDC manipulated data linking the MMR vaccine to autism and ordered scientists to destroy evidence.",
+      "assertedBy": "William Thompson, CDC whistleblower",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "U0027, U0028",
+      "evidenceQuestion": "This claim is crucial as it suggests a significant breach of trust in public health authorities and supports the article's thesis about misinformation.",
+      "supportWouldLookLike": "Documentation or testimony from William Thompson or corroborating evidence of the alleged data manipulation.",
+      "refuteWouldLookLike": "Official CDC statements or independent investigations disproving the claims of data manipulation."
+    },
+    {
+      "proposition": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines.",
+      "assertedBy": "U.S. Congress",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "U0042",
+      "evidenceQuestion": "This claim underlines the financial motivations behind vaccine production and the lack of accountability, which is a key point in the article.",
+      "supportWouldLookLike": "Text of the 1986 Act and evidence of its impact on vaccine manufacturers.",
+      "refuteWouldLookLike": "Evidence showing that vaccine manufacturers are held accountable for vaccine injuries."
+    },
+    {
+      "proposition": "The childhood vaccination schedule increased from 5 doses in the 1960s to 73 doses by 2011.",
+      "assertedBy": "Historical vaccination data",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "U0048",
+      "evidenceQuestion": "This claim illustrates the rapid increase in vaccine administration, which is central to the article's argument about vaccine safety concerns.",
+      "supportWouldLookLike": "Historical vaccination schedules from health authorities showing the increase in doses over time.",
+      "refuteWouldLookLike": "Data indicating that the increase in doses has not correlated with a rise in health issues."
+    },
+    {
+      "proposition": "The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after implementing aggressive vaccination programs.",
+      "assertedBy": "Analysis of U.S. infant mortality data",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "U0053",
+      "evidenceQuestion": "This claim connects vaccination programs to adverse health outcomes, supporting the article's thesis about vaccine safety.",
+      "supportWouldLookLike": "Comparative infant mortality statistics from the U.S. and EU countries.",
+      "refuteWouldLookLike": "Data showing that infant mortality rates are unrelated to vaccination rates."
+    },
+    {
+      "proposition": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccines administered at once.",
+      "assertedBy": "FDA regulations",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "U0144",
+      "evidenceQuestion": "This claim questions the safety protocols of vaccines, which is a central concern of the article.",
+      "supportWouldLookLike": "Documentation from the CDC or FDA regarding vaccine safety testing protocols.",
+      "refuteWouldLookLike": "Evidence of safety studies conducted on the cumulative effects of aluminum in vaccines."
+    },
+    {
+      "proposition": "Thimerosal, a mercury-based preservative, was removed from childhood vaccines due to safety concerns.",
+      "assertedBy": "CDC and FDA statements",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "U0184",
+      "evidenceQuestion": "This claim highlights the ongoing concerns about vaccine ingredients and their safety, which is central to the article's argument.",
+      "supportWouldLookLike": "Official statements from the CDC and FDA regarding the removal of thimerosal and the reasons behind it.",
+      "refuteWouldLookLike": "Research showing that thimerosal is safe and does not pose health risks."
+    },
+    {
+      "proposition": "The CDC's 2000 emergency meeting regarding thimerosal revealed alarming findings about its link to autism.",
+      "assertedBy": "Dr. Thomas Verstraeten's study",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "U0185",
+      "evidenceQuestion": "This claim suggests a cover-up of critical health information, supporting the article's thesis about misinformation.",
+      "supportWouldLookLike": "Transcripts or documents from the emergency meeting that discuss the findings of the study.",
+      "refuteWouldLookLike": "Evidence showing that the findings were misinterpreted or that thimerosal is not linked to autism."
+    }
+  ]
+}

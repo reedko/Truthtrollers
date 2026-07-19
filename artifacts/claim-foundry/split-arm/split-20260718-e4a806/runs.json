@@ -1,0 +1,73 @@
+{
+  "runId": "split-20260718-e4a806",
+  "model": "gpt-4o",
+  "generatedAt": "2026-07-18T07:47:27.518Z",
+  "runs": [
+    {
+      "fixtureId": "CF1-F02",
+      "repeat": 1,
+      "seed": 3089513833,
+      "status": "failed",
+      "error": {
+        "code": "CF1_MODEL_UNAVAILABLE",
+        "message": "No usable structured model response after 1 attempt"
+      },
+      "elapsedMs": 1827
+    },
+    {
+      "fixtureId": "CF1-F02",
+      "repeat": 2,
+      "seed": 187721485,
+      "status": "failed",
+      "error": {
+        "code": "CF1_MODEL_UNAVAILABLE",
+        "message": "No usable structured model response after 1 attempt"
+      },
+      "elapsedMs": 469
+    },
+    {
+      "fixtureId": "CF1-F02",
+      "repeat": 3,
+      "seed": 3844678452,
+      "status": "failed",
+      "error": {
+        "code": "CF1_MODEL_UNAVAILABLE",
+        "message": "No usable structured model response after 1 attempt"
+      },
+      "elapsedMs": 243
+    },
+    {
+      "fixtureId": "CF1-F03",
+      "repeat": 1,
+      "seed": 3724605090,
+      "status": "failed",
+      "error": {
+        "code": "CF1_MODEL_UNAVAILABLE",
+        "message": "No usable structured model response after 1 attempt"
+      },
+      "elapsedMs": 657
+    },
+    {
+      "fixtureId": "CF1-F03",
+      "repeat": 2,
+      "seed": 2126157648,
+      "status": "failed",
+      "error": {
+        "code": "CF1_MODEL_UNAVAILABLE",
+        "message": "No usable structured model response after 1 attempt"
+      },
+      "elapsedMs": 286
+    },
+    {
+      "fixtureId": "CF1-F03",
+      "repeat": 3,
+      "seed": 3768605609,
+      "status": "failed",
+      "error": {
+        "code": "CF1_MODEL_UNAVAILABLE",
+        "message": "No usable structured model response after 1 attempt"
+      },
+      "elapsedMs": 245
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "theme": "The controversy surrounding vaccine safety and public health messaging.",
+  "thesis": "Public health authorities propagate misleading information about vaccines, which has led to increased vaccine hesitancy and concerns about vaccine safety.",
+  "claims": [
+    {
+      "claimText": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+      "sourceUnitIds": [
+        "U0002"
+      ],
+      "assertionSource": "CDC data",
+      "whyCentral": "This claim highlights the extent of vaccine hesitancy and is crucial for understanding the public health implications.",
+      "supportWouldLookLike": "Statistical data from the CDC showing vaccination rates among school children and toddlers.",
+      "refutationWouldLookLike": "Data from the CDC indicating that vaccination rates are higher than reported, or that the definitions of 'fully vaccinated' and 'unvaccinated' are misleading."
+    },
+    {
+      "claimText": "The CDC manipulated data linking the MMR vaccine to autism and ordered scientists to destroy evidence.",
+      "sourceUnitIds": [
+        "U0027",
+        "U0028"
+      ],
+      "assertionSource": "William Thompson, CDC whistleblower",
+      "whyCentral": "This claim is central to allegations of misconduct within the CDC and challenges the credibility of vaccine safety data.",
+      "supportWouldLookLike": "Documented evidence or testimonies corroborating Thompson's claims about data manipulation and destruction.",
+      "refutationWouldLookLike": "Official CDC reports or independent studies that refute Thompson's allegations and confirm the integrity of the original data."
+    },
+    {
+      "claimText": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines.",
+      "sourceUnitIds": [
+        "U0042"
+      ],
+      "assertionSource": "U.S. Congress",
+      "whyCentral": "This claim is significant as it explains the legal context that may have influenced vaccine safety practices and public trust.",
+      "supportWouldLookLike": "Legislative documents or historical records detailing the provisions of the 1986 Act.",
+      "refutationWouldLookLike": "Evidence showing that vaccine manufacturers are still held accountable under other laws or regulations."
+    },
+    {
+      "claimText": "The childhood vaccination schedule increased from 5 doses in the 1950s to 73 doses by 2011.",
+      "sourceUnitIds": [
+        "U0048"
+      ],
+      "assertionSource": "Historical vaccination data",
+      "whyCentral": "This claim illustrates the dramatic increase in vaccine administration and raises questions about safety and necessity.",
+      "supportWouldLookLike": "Historical vaccination schedules published by health authorities showing the increase in doses over time.",
+      "refutationWouldLookLike": "Data showing that the increase in doses has not correlated with a rise in adverse health outcomes."
+    },
+    {
+      "claimText": "The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after implementing aggressive vaccination programs.",
+      "sourceUnitIds": [
+        "U0053"
+      ],
+      "assertionSource": "Analysis of U.S. infant mortality data",
+      "whyCentral": "This claim connects vaccination rates to infant mortality, which is critical for evaluating vaccine safety.",
+      "supportWouldLookLike": "Comparative infant mortality statistics from the U.S. and EU countries.",
+      "refutationWouldLookLike": "Data showing that infant mortality rates are influenced by factors other than vaccination rates."
+    },
+    {
+      "claimText": "A 2005 study found that infants exposed to high levels of thimerosal had a 7.6 times higher risk of autism diagnosis.",
+      "sourceUnitIds": [
+        "U0185"
+      ],
+      "assertionSource": "Dr. Thomas Verstraeten's study",
+      "whyCentral": "This claim is pivotal in discussions about the safety of thimerosal in vaccines and its potential link to autism.",
+      "supportWouldLookLike": "Access to the original study or peer-reviewed publications confirming the findings.",
+      "refutationWouldLookLike": "Subsequent studies that disprove or fail to replicate Verstraeten's findings."
+    },
+    {
+      "claimText": "Thimerosal is still used in some flu shots and is classified as toxic hazardous waste by the EPA.",
+      "sourceUnitIds": [
+        "U0211"
+      ],
+      "assertionSource": "EPA classification",
+      "whyCentral": "This claim raises concerns about the continued use of thimerosal in vaccines and its safety profile.",
+      "supportWouldLookLike": "EPA documentation or guidelines regarding the classification of thimerosal.",
+      "refutationWouldLookLike": "Evidence showing that thimerosal in vaccines is safe and does not pose a risk to health."
+    },
+    {
+      "claimText": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccines administered at once.",
+      "sourceUnitIds": [
+        "U0159"
+      ],
+      "assertionSource": "James Lyons-Weiler and Robert Ricketson",
+      "whyCentral": "This claim questions the safety protocols surrounding vaccine administration and the potential risks of multiple vaccinations.",
+      "supportWouldLookLike": "Documentation from the CDC or FDA regarding vaccine safety testing protocols.",
+      "refutationWouldLookLike": "Evidence of studies that have tested the safety of cumulative aluminum exposure from vaccines."
+    }
+  ]
+}

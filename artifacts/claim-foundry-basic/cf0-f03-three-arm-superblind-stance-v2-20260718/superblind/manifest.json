@@ -1,0 +1,27 @@
+{
+  "experiment": "CF0 Superblind",
+  "fixture": "CF1-F03",
+  "startedAt": "2026-07-18T07:16:25.071Z",
+  "completedAt": "2026-07-18T07:16:45.819Z",
+  "model": "gpt-4o-mini-2024-07-18",
+  "systemFingerprint": "fp_1aec1bbdb8",
+  "usage": {
+    "prompt_tokens": 12937,
+    "completion_tokens": 1115,
+    "total_tokens": 14052,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "promptSha256": "43ee513e0f1462ef0be0cc81b94821f9bd4db4eab410082bdecfbc2e0993aa85",
+  "systemPromptSha256": "5a11d08352e7d17668d822a396b5cebc81196c6176ea7eaebb1d499f0d2af731",
+  "schemaSha256": "fd37cae0498bfb214a9e3d793184b4a88eec9fc672b75a724e8cecfe3aed8dc2",
+  "claimCount": 8
+}

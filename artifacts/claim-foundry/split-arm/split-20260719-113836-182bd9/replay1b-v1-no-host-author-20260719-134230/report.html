@@ -1,0 +1,530 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>CF1 Call-1 split arm — replay1b-v1-no-host-author-20260719-134230</title>
+<style>
+body{font-family:-apple-system,system-ui,sans-serif;margin:1rem 2rem;line-height:1.4;color:#222}
+h1{font-size:1.3rem}h3{margin:1.4rem 0 0.3rem;border-top:2px solid #446;padding-top:0.5rem}
+.legend{background:#f7f7e8;border:1px solid #ddc;padding:0.6rem 1rem;font-size:0.9rem;margin-bottom:0.8rem}
+table{border-collapse:collapse;width:100%;margin:0.4rem 0}
+th,td{border:1px solid #ccc;padding:0.3rem 0.45rem;font-size:0.82rem;text-align:left;vertical-align:top}
+th{background:#eee;position:sticky;top:0}
+.tag{font-weight:700;font-size:0.72rem;padding:0 0.35rem;border-radius:3px;margin-right:0.3rem}
+.c1a{background:#dbeafe}.c1b{background:#ede9fe}.host{background:#fde8c8}
+.gs{font-weight:700;font-size:0.72rem;padding:0 0.35rem;border-radius:3px}
+.gs.clustered{background:#dcfce7}.gs.borderline{background:#fef3c7}.gs.distant{background:#fee2e2}
+.cls{color:#6b21a8;font-size:0.72rem;font-weight:700}
+.ok{color:#166534;font-weight:600}.bad{color:#b91c1c;font-weight:600}
+.orient{background:#fafaff;border-left:4px solid #446;padding:0.4rem 0.8rem;margin:0.3rem 0;font-size:0.86rem}
+.orient ul{margin:0.2rem 0 0 1.2rem}
+.diag{background:#f4f4f4;padding:0.3rem 0.7rem;font-size:0.82rem;margin:0.3rem 0;border-radius:4px}
+.claim-detail>summary{font-weight:600;color:#153e75}.claim-detail[open]>summary{margin-bottom:.5rem}
+.claim-grid{display:grid;grid-template-columns:minmax(260px,1.2fr) minmax(260px,1.2fr) minmax(190px,.7fr);gap:.7rem;min-width:850px}
+.claim-grid>div{background:#fafafa;border:1px solid #ddd;padding:.5rem}.claim-grid h4{margin:0 0 .4rem;font-size:.86rem}
+.claim-grid blockquote{margin:.3rem 0 .5rem;padding:.35rem .5rem;background:white;border-left:3px solid #bbb;white-space:normal}
+.field-help{color:#666;font-size:.75rem}.stance{font-weight:700;font-size:.75rem;padding:.08rem .3rem;border-radius:3px;white-space:nowrap}
+.stance.supports_thesis{background:#dcfce7;color:#166534}.stance.contradicts_thesis{background:#fee2e2;color:#991b1b}.stance.neutral{background:#eee;color:#444}
+.run.failed{background:#fff2f2}
+details{margin:0.35rem 0}summary{cursor:pointer;font-weight:600;font-size:0.9rem}
+.muted{color:#777;font-weight:400}
+</style></head><body>
+<h1>CF1 Call-1 split arm — pipeline-y-canonical-relation-split-v1</h1>
+<div class="legend"><strong>Stage-2 report replay1b-v1-no-host-author-20260719-134230</strong> · model <code>gpt-4o-mini</code>
+· generated 2026-07-19T13:42:30.424Z.<br>
+<strong>Note:</strong> Frozen 1A replay from split-20260719-113836-182bd9; 1B v1; host author candidates removed; suppressed source candidates: none<br>
+Provenance: <span class="tag c1a">1A</span> discovery model call (propositions only)
+<span class="tag c1b">1B</span> source/posture model call (from compact packets)
+<span class="tag host">HOST</span> deterministic host step.
+groundingSpan: <span class="gs clustered">clustered</span> <span class="gs borderline">borderline</span>
+<span class="gs distant">distant</span>. Failed runs are results.</div>
+<h3>Summary</h3>
+<table><thead><tr><th>fixture</th><th>run</th><th>status</th><th>1A model</th><th>occurrence-expanded</th><th>selected</th><th>span d/b</th><th>census packets</th><th>no obvious match</th><th>tokens</th><th>ms</th></tr></thead><tbody><tr><td>CF1-F03</td><td>1</td><td><span class="ok">completed</span></td><td>20</td><td>20</td><td>12</td><td>0d / 0b</td><td>60</td><td><span class="bad">58</span></td><td>7816</td><td>0</td></tr></tbody></table>
+<section class="run"><h3>CF1-F03 · run 1 <span class="muted">seed 3724605090</span>
+    · <span class="ok">completed</span>
+    · 0ms
+    · 7816 tok</h3>
+    <div class="orient"><strong>theme:</strong> The article critiques public health narratives surrounding vaccines, suggesting they are based on misinformation and lack of transparency.<br>
+    <strong>thesis:</strong> Public health claims about vaccines are misleading and not supported by credible evidence, leading to a dangerous narrative that ignores potential vaccine-related health issues.
+    &nbsp;<span class="tag host">hinge</span> mixed
+    <ul><li>Vaccine Safety <span class="muted">(load_bearing)</span></li><li>Vaccine Efficacy <span class="muted">(load_bearing)</span></li><li>Public Health Messaging <span class="muted">(major)</span></li><li>Censorship and Information Control <span class="muted">(major)</span></li></ul></div>
+    <div class="diag">1A coverage: <b>3</b> source regions
+    · <span class="ok">complete</span>
+    · final range U0377–U0404: <span class="ok">HIT</span>
+    · selected <b>12</b> · deselected 4
+    · model discovery 20
+      → occurrence-expanded 20
+    · duplicate collapses 0
+    · stance: supports 8, contradicts 4, neutral 0
+    · deployment: rebutted 0, endorsed 0, reported 12
+    · unresolved sources 12
+    · source-resolution issues 0
+    · <span class="ok">blocking 0</span></div>
+    <details open><summary><span class="tag c1a">1A</span> discovery — canonical propositions (20)</summary>
+      <table><thead><tr><th>origin</th><th>claimText</th><th>sourceUnitIds</th><th>attributionContextUnitIds</th><th>groundingSpan</th><th>materiality</th></tr></thead><tbody><tr><td><span class="tag c1a">1A model</span></td><td>Half of American school children are not fully vaccinated.</td><td>U0002</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>high</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>At least 1 in 88 toddlers are completely unvaccinated.</td><td>U0002</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>high</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>The type of mercury in vaccines – ethylmercury – is NOT harmful to us.</td><td>U0297</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>high</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>Aluminum is used in many childhood vaccines as an adjuvant to provoke an immune response.</td><td>U0253</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>high</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>The CDC has never safety tested the cumulative aluminum load received in multiple shots.</td><td>U0279</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>high</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>The sudden death of a formerly-thriving child is shocking and was not common before mass vaccination.</td><td>U0192</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>medium</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>SIDS became the leading cause of infant mortality following the introduction of national vaccination programs in the U.S.</td><td>U0198</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>high</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>The CDC manipulated data to disprove a link between MMR vaccines and autism.</td><td>U0041</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>high</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>Thimerosal is toxic and has been linked to neurological damage.</td><td>U0308</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>high</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>The CDC's claim that thimerosal is not harmful is contradicted by its classification as toxic hazardous waste.</td><td>U0367</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>high</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>Polysorbate 80 is linked to infertility and cancer and is banned from injectables in most of Europe.</td><td>U0380</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>medium</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80.</td><td>U0392</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>high</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>The CDC partnered with pharma as the primary purchaser, distributor, and promoter of billions of dollars of vaccines annually.</td><td>U0077</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>high</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>The childhood vaccination schedule has increased from 5 doses in the 1950s to 73 doses by 2016.</td><td>U0080</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>high</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>The rise in chronic illnesses among children correlates with the increase in vaccination rates.</td><td>U0096</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>high</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>The CDC announced that no more research money would be spent on the question of vaccines causing autism, claiming 'the science is settled.'</td><td>U0046</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>high</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>The CDC's narrative about vaccines being safe and effective is described as a 'wishful fairy tale' by critics.</td><td>U0028</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>medium</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>The health department's ad claims that vaccines are tested more than any other medicine.</td><td>U0012</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>high</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>The health department's ad states that there have been no credible studies linking vaccination to chronic disease.</td><td>U0011</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>high</td></tr><tr><td><span class="tag c1a">1A model</span></td><td>The rise in vaccine hesitancy may have provoked the health department's creation of the ad.</td><td>U0403</td><td>none</td><td><span class="gs clustered">clustered</span></td><td>medium</td></tr></tbody></table></details>
+    <details open><summary><span class="tag host">HOST</span> pre-1B deterministic selection (16/20)</summary>
+      <table><thead><tr><th>index</th><th>claimText</th><th>reason</th><th>source region</th></tr></thead><tbody><tr><td>0</td><td>Half of American school children are not fully vaccinated.</td><td>pillar_coverage</td><td>0</td></tr><tr><td>1</td><td>At least 1 in 88 toddlers are completely unvaccinated.</td><td>materiality_then_source_order</td><td>0</td></tr><tr><td>2</td><td>The type of mercury in vaccines – ethylmercury – is NOT harmful to us.</td><td>materiality_then_source_order</td><td>2</td></tr><tr><td>3</td><td>Aluminum is used in many childhood vaccines as an adjuvant to provoke an immune response.</td><td>pillar_coverage</td><td>1</td></tr><tr><td>4</td><td>The CDC has never safety tested the cumulative aluminum load received in multiple shots.</td><td>source_region_coverage</td><td>2</td></tr><tr><td>6</td><td>SIDS became the leading cause of infant mortality following the introduction of national vaccination programs in the U.S.</td><td>source_region_coverage</td><td>1</td></tr><tr><td>7</td><td>The CDC manipulated data to disprove a link between MMR vaccines and autism.</td><td>materiality_then_source_order</td><td>0</td></tr><tr><td>8</td><td>Thimerosal is toxic and has been linked to neurological damage.</td><td>materiality_then_source_order</td><td>2</td></tr><tr><td>9</td><td>The CDC's claim that thimerosal is not harmful is contradicted by its classification as toxic hazardous waste.</td><td>materiality_then_source_order</td><td>2</td></tr><tr><td>11</td><td>The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80.</td><td>materiality_then_source_order</td><td>2</td></tr><tr><td>12</td><td>The CDC partnered with pharma as the primary purchaser, distributor, and promoter of billions of dollars of vaccines annually.</td><td>materiality_then_source_order</td><td>0</td></tr><tr><td>13</td><td>The childhood vaccination schedule has increased from 5 doses in the 1950s to 73 doses by 2016.</td><td>materiality_then_source_order</td><td>0</td></tr><tr><td>14</td><td>The rise in chronic illnesses among children correlates with the increase in vaccination rates.</td><td>materiality_then_source_order</td><td>0</td></tr><tr><td>15</td><td>The CDC announced that no more research money would be spent on the question of vaccines causing autism, claiming 'the science is settled.'</td><td>materiality_then_source_order</td><td>0</td></tr><tr><td>17</td><td>The health department's ad claims that vaccines are tested more than any other medicine.</td><td>materiality_then_source_order</td><td>0</td></tr><tr><td>18</td><td>The health department's ad states that there have been no credible studies linking vaccination to chronic disease.</td><td>pillar_coverage</td><td>0</td></tr></tbody></table>
+      <p class="muted">deferred: 5 (call1b_budget), 10 (call1b_budget), 16 (call1b_budget), 19 (call1b_budget)</p></details>
+    <details><summary><span class="tag c1b">1B</span> source / posture judgments (16)</summary>
+      <table><thead><tr><th>candidateId</th><th>assertionSource</th><th>source basis</th><th>source resolution</th><th>contentStance</th><th>articleDeployment</th><th>articleRole</th><th>needsSplit</th></tr></thead><tbody><tr><td>CAND01</td><td>CDC and public health authorities</td><td>none</td><td>legacy/not recorded</td><td>contradicts_thesis</td><td>reported_neutral</td><td>pillar</td><td>—</td></tr><tr><td>CAND02</td><td>CDC and public health authorities</td><td>none</td><td>legacy/not recorded</td><td>contradicts_thesis</td><td>reported_neutral</td><td>pillar</td><td>—</td></tr><tr><td>CAND03</td><td>unknown</td><td>none</td><td>legacy/not recorded</td><td>supports_thesis</td><td>reported_neutral</td><td>opponent_claim</td><td>—</td></tr><tr><td>CAND04</td><td>unknown</td><td>none</td><td>legacy/not recorded</td><td>supports_thesis</td><td>reported_neutral</td><td>opponent_claim</td><td>—</td></tr><tr><td>CAND05</td><td>unknown</td><td>none</td><td>legacy/not recorded</td><td>supports_thesis</td><td>reported_neutral</td><td>opponent_claim</td><td>—</td></tr><tr><td>CAND06</td><td>Neil Z.</td><td>none</td><td>legacy/not recorded</td><td>supports_thesis</td><td>reported_neutral</td><td>opponent_claim</td><td>—</td></tr><tr><td>CAND07</td><td>unknown</td><td>none</td><td>legacy/not recorded</td><td>supports_thesis</td><td>reported_neutral</td><td>opponent_claim</td><td>—</td></tr><tr><td>CAND08</td><td>unknown</td><td>none</td><td>legacy/not recorded</td><td>supports_thesis</td><td>reported_neutral</td><td>opponent_claim</td><td>—</td></tr><tr><td>CAND09</td><td>unknown</td><td>none</td><td>legacy/not recorded</td><td>supports_thesis</td><td>reported_neutral</td><td>opponent_claim</td><td>—</td></tr><tr><td>CAND10</td><td>unknown</td><td>none</td><td>legacy/not recorded</td><td>supports_thesis</td><td>reported_neutral</td><td>opponent_claim</td><td>—</td></tr><tr><td>CAND11</td><td>unknown</td><td>none</td><td>legacy/not recorded</td><td>supports_thesis</td><td>reported_neutral</td><td>opponent_claim</td><td>—</td></tr><tr><td>CAND12</td><td>unknown</td><td>none</td><td>legacy/not recorded</td><td>supports_thesis</td><td>reported_neutral</td><td>opponent_claim</td><td>—</td></tr><tr><td>CAND13</td><td>unknown</td><td>none</td><td>legacy/not recorded</td><td>supports_thesis</td><td>reported_neutral</td><td>opponent_claim</td><td>—</td></tr><tr><td>CAND14</td><td>unknown</td><td>none</td><td>legacy/not recorded</td><td>supports_thesis</td><td>reported_neutral</td><td>opponent_claim</td><td>—</td></tr><tr><td>CAND15</td><td>Jefferson County Public Health (JCPH)</td><td>none</td><td>legacy/not recorded</td><td>contradicts_thesis</td><td>reported_neutral</td><td>pillar</td><td>—</td></tr><tr><td>CAND16</td><td>Jefferson County Public Health (JCPH)</td><td>none</td><td>legacy/not recorded</td><td>contradicts_thesis</td><td>reported_neutral</td><td>pillar</td><td>—</td></tr></tbody></table></details>
+    <details open><summary><span class="tag host">HOST</span> merged inventory — selected claims (12)</summary>
+      <table><thead><tr><th>claim (click for full detail)</th><th>assertionSource · class</th><th>contentStance (1B)</th><th>deployment (1B)</th><th>articleUse (HOST)</th><th>articleRole</th><th>scoreTransform</th><th>materiality</th><th>groundingSpan</th></tr></thead><tbody><tr><td><details class="claim-detail"><summary>Half of American school children are not fully vaccinated.</summary>
+    <div class="claim-grid">
+      <div><h4><span class="tag c1a">1A</span> proposition and grounding</h4>
+        <strong>claimText:</strong> Half of American school children are not fully vaccinated.<br>
+        <strong>source units:</strong> U0002<br>
+        <strong>grounding text:</strong><blockquote>[U0002] “According to the CDC and public health authorities, parents who choose not to vaccinate their children are typically highly educated. CDC data reflect that half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated. Why would the parents of these children, comprising a large part of the nation’s brain trust, choose not to vaccinate their children?”</blockquote>
+        <strong>attribution-context units:</strong> none<br>
+        <strong>attribution context:</strong><blockquote>[U0001] Public Health’s “Truth” About Vaccines PART 1 by Ana Wolpin | Apr 12, 2026 | General | 33 comments
+[U0003] — Aaron Siri, from the foreword of “Vaccines, Amen: The Religion of Vaccines”</blockquote>
+        <strong>scope:</strong> population<br>
+        <strong>materiality:</strong> high<br>
+        <strong>pillars:</strong> Vaccine Efficacy<br>
+        <strong>evidence-usefulness hint:</strong> Vaccination rates from CDC or similar health organizations.<br>
+        <strong>host selection:</strong> pillar_coverage</div>
+      <div><h4><span class="tag c1b">1B</span> source and stance</h4>
+        <strong>assertion source:</strong> CDC and public health authorities<br>
+        <strong>source basis units:</strong> none<br>
+        <strong>source resolution:</strong> legacy/not recorded<br>
+        <strong>host source-candidate status:</strong> not_evaluated<br>
+        <strong>host source candidates:</strong> none<br>
+        <strong>content stance:</strong> <span class="stance contradicts_thesis">contradicts_thesis</span><br>
+        <span class="field-help">If this proposition is true, does it support, contradict, or leave the article thesis neutral?</span><br>
+        <strong>article deployment:</strong> reported_neutral<br>
+        <span class="field-help">How the article treats it: endorsed, rebutted, or merely reported.</span><br>
+        <strong>article role:</strong> pillar<br>
+        <strong>response units:</strong> none<br>
+        <strong>article response/context:</strong><blockquote>[U0003] — Aaron Siri, from the foreword of “Vaccines, Amen: The Religion of Vaccines”
+[U0004] ———————————————
+[U0005] “What’s the Truth about Vaccines?” asked Jefferson County Public Health (JCPH) in a quarter-page ad in the March 11 Port Townsend Leader. The hand-drawn, whimsical cartoon-style presentation and the ad’s content offered a light-hearted attempt to ease parents’ concerns about vaccinating their children.
+[U0006] “This is a JUDGEMENT FREE guide to learn about vaccines,” the ad opens with. “You don’t need to have your mind made up to start reading. BRING YOUR CURIOSITY!”
+[U0007] Among the statements made:
+[U0008] • “Our kids face mor…</blockquote>
+        <strong>split warning:</strong> none</div>
+      <div><h4><span class="tag host">HOST</span> deterministic result</h4>
+        <strong>articleUse:</strong> opponent_to_rebut<br>
+        <strong>scoreTransform:</strong> invert<br>
+        <strong>assertion-source class:</strong> institutional<br>
+        <strong>merged candidate IDs:</strong> CAND01<br>
+        <strong>grounding span:</strong> <span class="gs clustered">clustered</span><br>
+        <strong>final status:</strong> selected into the CF1 inventory</div>
+    </div></details></td><td>CDC and public health authorities <span class="cls">institutional</span></td><td><span class="stance contradicts_thesis">contradicts_thesis</span></td><td>reported_neutral</td><td>opponent_to_rebut</td><td>pillar</td><td>invert</td><td>high</td><td><span class="gs clustered">clustered</span></td></tr><tr><td><details class="claim-detail"><summary>At least 1 in 88 toddlers are completely unvaccinated.</summary>
+    <div class="claim-grid">
+      <div><h4><span class="tag c1a">1A</span> proposition and grounding</h4>
+        <strong>claimText:</strong> At least 1 in 88 toddlers are completely unvaccinated.<br>
+        <strong>source units:</strong> U0002<br>
+        <strong>grounding text:</strong><blockquote>[U0002] “According to the CDC and public health authorities, parents who choose not to vaccinate their children are typically highly educated. CDC data reflect that half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated. Why would the parents of these children, comprising a large part of the nation’s brain trust, choose not to vaccinate their children?”</blockquote>
+        <strong>attribution-context units:</strong> none<br>
+        <strong>attribution context:</strong><blockquote>[U0001] Public Health’s “Truth” About Vaccines PART 1 by Ana Wolpin | Apr 12, 2026 | General | 33 comments
+[U0003] — Aaron Siri, from the foreword of “Vaccines, Amen: The Religion of Vaccines”</blockquote>
+        <strong>scope:</strong> population<br>
+        <strong>materiality:</strong> high<br>
+        <strong>pillars:</strong> Vaccine Efficacy<br>
+        <strong>evidence-usefulness hint:</strong> Statistics from health surveys or CDC data.<br>
+        <strong>host selection:</strong> materiality_then_source_order</div>
+      <div><h4><span class="tag c1b">1B</span> source and stance</h4>
+        <strong>assertion source:</strong> CDC and public health authorities<br>
+        <strong>source basis units:</strong> none<br>
+        <strong>source resolution:</strong> legacy/not recorded<br>
+        <strong>host source-candidate status:</strong> not_evaluated<br>
+        <strong>host source candidates:</strong> none<br>
+        <strong>content stance:</strong> <span class="stance contradicts_thesis">contradicts_thesis</span><br>
+        <span class="field-help">If this proposition is true, does it support, contradict, or leave the article thesis neutral?</span><br>
+        <strong>article deployment:</strong> reported_neutral<br>
+        <span class="field-help">How the article treats it: endorsed, rebutted, or merely reported.</span><br>
+        <strong>article role:</strong> pillar<br>
+        <strong>response units:</strong> none<br>
+        <strong>article response/context:</strong><blockquote>[U0003] — Aaron Siri, from the foreword of “Vaccines, Amen: The Religion of Vaccines”
+[U0004] ———————————————
+[U0005] “What’s the Truth about Vaccines?” asked Jefferson County Public Health (JCPH) in a quarter-page ad in the March 11 Port Townsend Leader. The hand-drawn, whimsical cartoon-style presentation and the ad’s content offered a light-hearted attempt to ease parents’ concerns about vaccinating their children.
+[U0006] “This is a JUDGEMENT FREE guide to learn about vaccines,” the ad opens with. “You don’t need to have your mind made up to start reading. BRING YOUR CURIOSITY!”
+[U0007] Among the statements made:
+[U0008] • “Our kids face mor…</blockquote>
+        <strong>split warning:</strong> none</div>
+      <div><h4><span class="tag host">HOST</span> deterministic result</h4>
+        <strong>articleUse:</strong> opponent_to_rebut<br>
+        <strong>scoreTransform:</strong> invert<br>
+        <strong>assertion-source class:</strong> institutional<br>
+        <strong>merged candidate IDs:</strong> CAND02<br>
+        <strong>grounding span:</strong> <span class="gs clustered">clustered</span><br>
+        <strong>final status:</strong> selected into the CF1 inventory</div>
+    </div></details></td><td>CDC and public health authorities <span class="cls">institutional</span></td><td><span class="stance contradicts_thesis">contradicts_thesis</span></td><td>reported_neutral</td><td>opponent_to_rebut</td><td>pillar</td><td>invert</td><td>high</td><td><span class="gs clustered">clustered</span></td></tr><tr><td><details class="claim-detail"><summary>The health department's ad claims that vaccines are tested more than any other medicine.</summary>
+    <div class="claim-grid">
+      <div><h4><span class="tag c1a">1A</span> proposition and grounding</h4>
+        <strong>claimText:</strong> The health department's ad claims that vaccines are tested more than any other medicine.<br>
+        <strong>source units:</strong> U0012<br>
+        <strong>grounding text:</strong><blockquote>[U0012] • “Vaccines are tested more than any other medicine you could give your kid.”</blockquote>
+        <strong>attribution-context units:</strong> none<br>
+        <strong>attribution context:</strong><blockquote>[U0005] “What’s the Truth about Vaccines?” asked Jefferson County Public Health (JCPH) in a quarter-page ad in the March 11 Port Townsend Leader. The hand-drawn, whimsical cartoon-style presentation and the ad’s content offered a light-hearted attempt to ease parents’ concerns about vaccinating their children.
+[U0006] “This is a JUDGEMENT FREE guide to learn about vaccines,” the ad opens with. “You don’t need to have your mind made up to start reading. BRING YOUR CURIOSITY!”
+[U0007] Among the statements made:</blockquote>
+        <strong>scope:</strong> policy<br>
+        <strong>materiality:</strong> high<br>
+        <strong>pillars:</strong> Public Health Messaging<br>
+        <strong>evidence-usefulness hint:</strong> Comparative studies on vaccine testing protocols.<br>
+        <strong>host selection:</strong> materiality_then_source_order</div>
+      <div><h4><span class="tag c1b">1B</span> source and stance</h4>
+        <strong>assertion source:</strong> Jefferson County Public Health (JCPH)<br>
+        <strong>source basis units:</strong> none<br>
+        <strong>source resolution:</strong> legacy/not recorded<br>
+        <strong>host source-candidate status:</strong> not_evaluated<br>
+        <strong>host source candidates:</strong> none<br>
+        <strong>content stance:</strong> <span class="stance contradicts_thesis">contradicts_thesis</span><br>
+        <span class="field-help">If this proposition is true, does it support, contradict, or leave the article thesis neutral?</span><br>
+        <strong>article deployment:</strong> reported_neutral<br>
+        <span class="field-help">How the article treats it: endorsed, rebutted, or merely reported.</span><br>
+        <strong>article role:</strong> pillar<br>
+        <strong>response units:</strong> none<br>
+        <strong>article response/context:</strong><blockquote>[U0013] The health department’s ad comes at a time when childhood vaccination rates are dropping steadily across the country.
+[U0014] Along with reduction in vaccine uptake, there is also a rise in the rate of parents seeking vaccine exemptions for their children.
+[U0015] In Part 1 of this article, we will explore the growing awareness causing this shift, share some local history on attempts to open up the conversation about vaccines in our community, and examine some of the statements above that our health department has made to reassure parents that they needn’t worry about common vaccination concerns.</blockquote>
+        <strong>split warning:</strong> none</div>
+      <div><h4><span class="tag host">HOST</span> deterministic result</h4>
+        <strong>articleUse:</strong> opponent_to_rebut<br>
+        <strong>scoreTransform:</strong> invert<br>
+        <strong>assertion-source class:</strong> institutional<br>
+        <strong>merged candidate IDs:</strong> CAND15<br>
+        <strong>grounding span:</strong> <span class="gs clustered">clustered</span><br>
+        <strong>final status:</strong> selected into the CF1 inventory</div>
+    </div></details></td><td>Jefferson County Public Health (JCPH) <span class="cls">institutional</span></td><td><span class="stance contradicts_thesis">contradicts_thesis</span></td><td>reported_neutral</td><td>opponent_to_rebut</td><td>pillar</td><td>invert</td><td>high</td><td><span class="gs clustered">clustered</span></td></tr><tr><td><details class="claim-detail"><summary>The health department's ad states that there have been no credible studies linking vaccination to chronic disease.</summary>
+    <div class="claim-grid">
+      <div><h4><span class="tag c1a">1A</span> proposition and grounding</h4>
+        <strong>claimText:</strong> The health department's ad states that there have been no credible studies linking vaccination to chronic disease.<br>
+        <strong>source units:</strong> U0011<br>
+        <strong>grounding text:</strong><blockquote>[U0011] • “So far, there have been no credible studies that link vaccination to chronic disease.”</blockquote>
+        <strong>attribution-context units:</strong> none<br>
+        <strong>attribution context:</strong><blockquote>[U0005] “What’s the Truth about Vaccines?” asked Jefferson County Public Health (JCPH) in a quarter-page ad in the March 11 Port Townsend Leader. The hand-drawn, whimsical cartoon-style presentation and the ad’s content offered a light-hearted attempt to ease parents’ concerns about vaccinating their children.
+[U0006] “This is a JUDGEMENT FREE guide to learn about vaccines,” the ad opens with. “You don’t need to have your mind made up to start reading. BRING YOUR CURIOSITY!”
+[U0007] Among the statements made:</blockquote>
+        <strong>scope:</strong> policy<br>
+        <strong>materiality:</strong> high<br>
+        <strong>pillars:</strong> Public Health Messaging<br>
+        <strong>evidence-usefulness hint:</strong> Research studies on vaccination and chronic disease.<br>
+        <strong>host selection:</strong> pillar_coverage</div>
+      <div><h4><span class="tag c1b">1B</span> source and stance</h4>
+        <strong>assertion source:</strong> Jefferson County Public Health (JCPH)<br>
+        <strong>source basis units:</strong> none<br>
+        <strong>source resolution:</strong> legacy/not recorded<br>
+        <strong>host source-candidate status:</strong> not_evaluated<br>
+        <strong>host source candidates:</strong> none<br>
+        <strong>content stance:</strong> <span class="stance contradicts_thesis">contradicts_thesis</span><br>
+        <span class="field-help">If this proposition is true, does it support, contradict, or leave the article thesis neutral?</span><br>
+        <strong>article deployment:</strong> reported_neutral<br>
+        <span class="field-help">How the article treats it: endorsed, rebutted, or merely reported.</span><br>
+        <strong>article role:</strong> pillar<br>
+        <strong>response units:</strong> none<br>
+        <strong>article response/context:</strong><blockquote>[U0012] • “Vaccines are tested more than any other medicine you could give your kid.”
+[U0013] The health department’s ad comes at a time when childhood vaccination rates are dropping steadily across the country.
+[U0014] Along with reduction in vaccine uptake, there is also a rise in the rate of parents seeking vaccine exemptions for their children.
+[U0015] In Part 1 of this article, we will explore the growing awareness causing this shift, share some local history on attempts to open up the conversation about vaccines in our community, and examine some of the statements above that our health department has made to reassure pare…</blockquote>
+        <strong>split warning:</strong> none</div>
+      <div><h4><span class="tag host">HOST</span> deterministic result</h4>
+        <strong>articleUse:</strong> opponent_to_rebut<br>
+        <strong>scoreTransform:</strong> invert<br>
+        <strong>assertion-source class:</strong> institutional<br>
+        <strong>merged candidate IDs:</strong> CAND16<br>
+        <strong>grounding span:</strong> <span class="gs clustered">clustered</span><br>
+        <strong>final status:</strong> selected into the CF1 inventory</div>
+    </div></details></td><td>Jefferson County Public Health (JCPH) <span class="cls">institutional</span></td><td><span class="stance contradicts_thesis">contradicts_thesis</span></td><td>reported_neutral</td><td>opponent_to_rebut</td><td>pillar</td><td>invert</td><td>high</td><td><span class="gs clustered">clustered</span></td></tr><tr><td><details class="claim-detail"><summary>The type of mercury in vaccines – ethylmercury – is NOT harmful to us.</summary>
+    <div class="claim-grid">
+      <div><h4><span class="tag c1a">1A</span> proposition and grounding</h4>
+        <strong>claimText:</strong> The type of mercury in vaccines – ethylmercury – is NOT harmful to us.<br>
+        <strong>source units:</strong> U0297<br>
+        <strong>grounding text:</strong><blockquote>[U0297] [2] MERCURY The type of mercury in vaccines – ethylmercury – is NOT harmful to us.</blockquote>
+        <strong>attribution-context units:</strong> none<br>
+        <strong>attribution context:</strong><blockquote>none supplied</blockquote>
+        <strong>scope:</strong> ingredient<br>
+        <strong>materiality:</strong> high<br>
+        <strong>pillars:</strong> Vaccine Safety<br>
+        <strong>evidence-usefulness hint:</strong> Toxicological studies on ethylmercury.<br>
+        <strong>host selection:</strong> materiality_then_source_order</div>
+      <div><h4><span class="tag c1b">1B</span> source and stance</h4>
+        <strong>assertion source:</strong> unknown<br>
+        <strong>source basis units:</strong> none<br>
+        <strong>source resolution:</strong> legacy/not recorded<br>
+        <strong>host source-candidate status:</strong> not_evaluated<br>
+        <strong>host source candidates:</strong> none<br>
+        <strong>content stance:</strong> <span class="stance supports_thesis">supports_thesis</span><br>
+        <span class="field-help">If this proposition is true, does it support, contradict, or leave the article thesis neutral?</span><br>
+        <strong>article deployment:</strong> reported_neutral<br>
+        <span class="field-help">How the article treats it: endorsed, rebutted, or merely reported.</span><br>
+        <strong>article role:</strong> opponent_claim<br>
+        <strong>response units:</strong> none<br>
+        <strong>article response/context:</strong><blockquote>[U0298] It prevents microbial growth in multi-dose vaccines.
+[U0299] No childhood vaccines contain mercury.</blockquote>
+        <strong>split warning:</strong> none</div>
+      <div><h4><span class="tag host">HOST</span> deterministic result</h4>
+        <strong>articleUse:</strong> reported<br>
+        <strong>scoreTransform:</strong> normal<br>
+        <strong>assertion-source class:</strong> author_voice<br>
+        <strong>merged candidate IDs:</strong> CAND03<br>
+        <strong>grounding span:</strong> <span class="gs clustered">clustered</span><br>
+        <strong>final status:</strong> selected into the CF1 inventory</div>
+    </div></details></td><td>unknown <span class="cls">author_voice</span></td><td><span class="stance supports_thesis">supports_thesis</span></td><td>reported_neutral</td><td>reported</td><td>opponent_claim</td><td>normal</td><td>high</td><td><span class="gs clustered">clustered</span></td></tr><tr><td><details class="claim-detail"><summary>Aluminum is used in many childhood vaccines as an adjuvant to provoke an immune response.</summary>
+    <div class="claim-grid">
+      <div><h4><span class="tag c1a">1A</span> proposition and grounding</h4>
+        <strong>claimText:</strong> Aluminum is used in many childhood vaccines as an adjuvant to provoke an immune response.<br>
+        <strong>source units:</strong> U0253<br>
+        <strong>grounding text:</strong><blockquote>[U0253] Aluminum is used in many childhood vaccines like HepB as an adjuvant, to provoke an immune response.</blockquote>
+        <strong>attribution-context units:</strong> none<br>
+        <strong>attribution context:</strong><blockquote>[U0251] Regarding the aluminum in that tomato, according to Physicians for Informed Consent :</blockquote>
+        <strong>scope:</strong> ingredient<br>
+        <strong>materiality:</strong> high<br>
+        <strong>pillars:</strong> Vaccine Safety<br>
+        <strong>evidence-usefulness hint:</strong> Vaccine ingredient lists and studies on aluminum's effects.<br>
+        <strong>host selection:</strong> pillar_coverage</div>
+      <div><h4><span class="tag c1b">1B</span> source and stance</h4>
+        <strong>assertion source:</strong> unknown<br>
+        <strong>source basis units:</strong> none<br>
+        <strong>source resolution:</strong> legacy/not recorded<br>
+        <strong>host source-candidate status:</strong> not_evaluated<br>
+        <strong>host source candidates:</strong> none<br>
+        <strong>content stance:</strong> <span class="stance supports_thesis">supports_thesis</span><br>
+        <span class="field-help">If this proposition is true, does it support, contradict, or leave the article thesis neutral?</span><br>
+        <strong>article deployment:</strong> reported_neutral<br>
+        <span class="field-help">How the article treats it: endorsed, rebutted, or merely reported.</span><br>
+        <strong>article role:</strong> opponent_claim<br>
+        <strong>response units:</strong> none<br>
+        <strong>article response/context:</strong><blockquote>[U0254] It is known to cause brain damage at all doses.
+[U0255] Aluminum poisoning has been linked to autism, SIDs, seizures, autoimmune issues, Alzheimers, neurological damage, impaired renal function, demyelinating disorders such as MS, and cancer. [ source ]
+[U0256] In the mid-1900s, the FDA established a maximum limit of 850 mcg (0.85 mg) of aluminum per vaccine dose.
+[U0257] Then, based on a 1997 study of preterm infants receiving intravenous-feeding solutions, a safe level of exposure for injectables was shown to be a small fraction of that 850 mcg.
+[U0258] Safety limits were now set for neonates at 4-5 mcg per kilogram of body we…</blockquote>
+        <strong>split warning:</strong> none</div>
+      <div><h4><span class="tag host">HOST</span> deterministic result</h4>
+        <strong>articleUse:</strong> reported<br>
+        <strong>scoreTransform:</strong> normal<br>
+        <strong>assertion-source class:</strong> author_voice<br>
+        <strong>merged candidate IDs:</strong> CAND04<br>
+        <strong>grounding span:</strong> <span class="gs clustered">clustered</span><br>
+        <strong>final status:</strong> selected into the CF1 inventory</div>
+    </div></details></td><td>unknown <span class="cls">author_voice</span></td><td><span class="stance supports_thesis">supports_thesis</span></td><td>reported_neutral</td><td>reported</td><td>opponent_claim</td><td>normal</td><td>high</td><td><span class="gs clustered">clustered</span></td></tr><tr><td><details class="claim-detail"><summary>The CDC has never safety tested the cumulative aluminum load received in multiple shots.</summary>
+    <div class="claim-grid">
+      <div><h4><span class="tag c1a">1A</span> proposition and grounding</h4>
+        <strong>claimText:</strong> The CDC has never safety tested the cumulative aluminum load received in multiple shots.<br>
+        <strong>source units:</strong> U0279<br>
+        <strong>grounding text:</strong><blockquote>[U0279] The CDC has NEVER safety tested this cumulative load received in multiple shots.</blockquote>
+        <strong>attribution-context units:</strong> none<br>
+        <strong>attribution context:</strong><blockquote>none supplied</blockquote>
+        <strong>scope:</strong> policy<br>
+        <strong>materiality:</strong> high<br>
+        <strong>pillars:</strong> Vaccine Safety<br>
+        <strong>evidence-usefulness hint:</strong> CDC safety testing protocols and vaccine studies.<br>
+        <strong>host selection:</strong> source_region_coverage</div>
+      <div><h4><span class="tag c1b">1B</span> source and stance</h4>
+        <strong>assertion source:</strong> unknown<br>
+        <strong>source basis units:</strong> none<br>
+        <strong>source resolution:</strong> legacy/not recorded<br>
+        <strong>host source-candidate status:</strong> not_evaluated<br>
+        <strong>host source candidates:</strong> none<br>
+        <strong>content stance:</strong> <span class="stance supports_thesis">supports_thesis</span><br>
+        <span class="field-help">If this proposition is true, does it support, contradict, or leave the article thesis neutral?</span><br>
+        <strong>article deployment:</strong> reported_neutral<br>
+        <span class="field-help">How the article treats it: endorsed, rebutted, or merely reported.</span><br>
+        <strong>article role:</strong> opponent_claim<br>
+        <strong>response units:</strong> none<br>
+        <strong>article response/context:</strong><blockquote>[U0280] Physicians for Informed Consent show aluminum content for the childhood vaccines:
+[U0281] Why does the 25 mcg limit apply for other injectables but not vaccines?
+[U0282] The mid-1900s study that determined the 850 mcg limit may present the answer to that question.
+[U0283] The purpose of that study was not to determine safety — it was to find out the amount of aluminum needed to provoke an immune response.
+[U0284] A 1947 document related to the manufacture of diphtheria toxoid states, “In all instances, the amount of aluminum used shall be the minimum needed to accomplish the purpose intended.”
+[U0285] In “ Reconsideration of the immunoth…</blockquote>
+        <strong>split warning:</strong> none</div>
+      <div><h4><span class="tag host">HOST</span> deterministic result</h4>
+        <strong>articleUse:</strong> reported<br>
+        <strong>scoreTransform:</strong> normal<br>
+        <strong>assertion-source class:</strong> author_voice<br>
+        <strong>merged candidate IDs:</strong> CAND05<br>
+        <strong>grounding span:</strong> <span class="gs clustered">clustered</span><br>
+        <strong>final status:</strong> selected into the CF1 inventory</div>
+    </div></details></td><td>unknown <span class="cls">author_voice</span></td><td><span class="stance supports_thesis">supports_thesis</span></td><td>reported_neutral</td><td>reported</td><td>opponent_claim</td><td>normal</td><td>high</td><td><span class="gs clustered">clustered</span></td></tr><tr><td><details class="claim-detail"><summary>SIDS became the leading cause of infant mortality following the introduction of national vaccination programs in the U.S.</summary>
+    <div class="claim-grid">
+      <div><h4><span class="tag c1a">1A</span> proposition and grounding</h4>
+        <strong>claimText:</strong> SIDS became the leading cause of infant mortality following the introduction of national vaccination programs in the U.S.<br>
+        <strong>source units:</strong> U0198<br>
+        <strong>grounding text:</strong><blockquote>[U0198] As Neil Z.</blockquote>
+        <strong>attribution-context units:</strong> none<br>
+        <strong>attribution context:</strong><blockquote>none supplied</blockquote>
+        <strong>scope:</strong> historical<br>
+        <strong>materiality:</strong> high<br>
+        <strong>pillars:</strong> Vaccine Efficacy<br>
+        <strong>evidence-usefulness hint:</strong> Infant mortality statistics and SIDS rates over time.<br>
+        <strong>host selection:</strong> source_region_coverage</div>
+      <div><h4><span class="tag c1b">1B</span> source and stance</h4>
+        <strong>assertion source:</strong> Neil Z.<br>
+        <strong>source basis units:</strong> none<br>
+        <strong>source resolution:</strong> legacy/not recorded<br>
+        <strong>host source-candidate status:</strong> not_evaluated<br>
+        <strong>host source candidates:</strong> none<br>
+        <strong>content stance:</strong> <span class="stance supports_thesis">supports_thesis</span><br>
+        <span class="field-help">If this proposition is true, does it support, contradict, or leave the article thesis neutral?</span><br>
+        <strong>article deployment:</strong> reported_neutral<br>
+        <span class="field-help">How the article treats it: endorsed, rebutted, or merely reported.</span><br>
+        <strong>article role:</strong> opponent_claim<br>
+        <strong>response units:</strong> none<br>
+        <strong>article response/context:</strong><blockquote>[U0199] Miller observes above, following the introduction of national vaccination programs in the U.S., SIDS became the leading cause of infant mortality.
+[U0200] Like other dangers associated with vaccination, health authorities sought to explain away this new phenomenon.
+[U0201] In his 2021 report “Vaccines and sudden infant death: An analysis of the VAERS database 1990–2019 and review of the medical literature,” Miller explains:
+[U0202] “Throughout the 1980s, sudden infant deaths continued to skyrocket. Parental concerns about an apparent link between childhood vaccines and SIDS reached a fever pitch. Many parents were afrai…</blockquote>
+        <strong>split warning:</strong> none</div>
+      <div><h4><span class="tag host">HOST</span> deterministic result</h4>
+        <strong>articleUse:</strong> reported<br>
+        <strong>scoreTransform:</strong> normal<br>
+        <strong>assertion-source class:</strong> author_voice<br>
+        <strong>merged candidate IDs:</strong> CAND06<br>
+        <strong>grounding span:</strong> <span class="gs clustered">clustered</span><br>
+        <strong>final status:</strong> selected into the CF1 inventory</div>
+    </div></details></td><td>Neil Z. <span class="cls">author_voice</span></td><td><span class="stance supports_thesis">supports_thesis</span></td><td>reported_neutral</td><td>reported</td><td>opponent_claim</td><td>normal</td><td>high</td><td><span class="gs clustered">clustered</span></td></tr><tr><td><details class="claim-detail"><summary>The CDC manipulated data to disprove a link between MMR vaccines and autism.</summary>
+    <div class="claim-grid">
+      <div><h4><span class="tag c1a">1A</span> proposition and grounding</h4>
+        <strong>claimText:</strong> The CDC manipulated data to disprove a link between MMR vaccines and autism.<br>
+        <strong>source units:</strong> U0041<br>
+        <strong>grounding text:</strong><blockquote>[U0041] The fraudulent, re-worked study was then released to declare that it had proven MMR vaccines did not cause autism.</blockquote>
+        <strong>attribution-context units:</strong> none<br>
+        <strong>attribution context:</strong><blockquote>none supplied</blockquote>
+        <strong>scope:</strong> policy<br>
+        <strong>materiality:</strong> high<br>
+        <strong>pillars:</strong> Public Health Messaging<br>
+        <strong>evidence-usefulness hint:</strong> Investigative reports or whistleblower testimonies.<br>
+        <strong>host selection:</strong> materiality_then_source_order</div>
+      <div><h4><span class="tag c1b">1B</span> source and stance</h4>
+        <strong>assertion source:</strong> unknown<br>
+        <strong>source basis units:</strong> none<br>
+        <strong>source resolution:</strong> legacy/not recorded<br>
+        <strong>host source-candidate status:</strong> not_evaluated<br>
+        <strong>host source candidates:</strong> none<br>
+        <strong>content stance:</strong> <span class="stance supports_thesis">supports_thesis</span><br>
+        <span class="field-help">If this proposition is true, does it support, contradict, or leave the article thesis neutral?</span><br>
+        <strong>article deployment:</strong> reported_neutral<br>
+        <span class="field-help">How the article treats it: endorsed, rebutted, or merely reported.</span><br>
+        <strong>article role:</strong> opponent_claim<br>
+        <strong>response units:</strong> none<br>
+        <strong>article response/context:</strong><blockquote>[U0042] Believing the order to destroy data was illegal, Thompson secretly saved over 10,000 pages of documents.
+[U0043] He would reveal them a decade later, conscience-stricken over the likely damage in ongoing vaccine injury the cover-up was causing.
+[U0044] The CDC had conducted the study in response to petitions from over 5,000 parents in vaccine court who had witnessed their children regress into autism from the MMR shot.
+[U0045] When the fraudulent “results” were released, those petitions were dismissed with the stroke of a pen.
+[U0046] The CDC announced: No more research money will be spent on this question; “the science is settl…</blockquote>
+        <strong>split warning:</strong> none</div>
+      <div><h4><span class="tag host">HOST</span> deterministic result</h4>
+        <strong>articleUse:</strong> reported<br>
+        <strong>scoreTransform:</strong> normal<br>
+        <strong>assertion-source class:</strong> author_voice<br>
+        <strong>merged candidate IDs:</strong> CAND07<br>
+        <strong>grounding span:</strong> <span class="gs clustered">clustered</span><br>
+        <strong>final status:</strong> selected into the CF1 inventory</div>
+    </div></details></td><td>unknown <span class="cls">author_voice</span></td><td><span class="stance supports_thesis">supports_thesis</span></td><td>reported_neutral</td><td>reported</td><td>opponent_claim</td><td>normal</td><td>high</td><td><span class="gs clustered">clustered</span></td></tr><tr><td><details class="claim-detail"><summary>Thimerosal is toxic and has been linked to neurological damage.</summary>
+    <div class="claim-grid">
+      <div><h4><span class="tag c1a">1A</span> proposition and grounding</h4>
+        <strong>claimText:</strong> Thimerosal is toxic and has been linked to neurological damage.<br>
+        <strong>source units:</strong> U0308<br>
+        <strong>grounding text:</strong><blockquote>[U0308] Mercury is the third most toxic element on earth, 500 times more poisonous than lead.</blockquote>
+        <strong>attribution-context units:</strong> none<br>
+        <strong>attribution context:</strong><blockquote>none supplied</blockquote>
+        <strong>scope:</strong> ingredient<br>
+        <strong>materiality:</strong> high<br>
+        <strong>pillars:</strong> Vaccine Safety<br>
+        <strong>evidence-usefulness hint:</strong> Toxicological studies on thimerosal.<br>
+        <strong>host selection:</strong> materiality_then_source_order</div>
+      <div><h4><span class="tag c1b">1B</span> source and stance</h4>
+        <strong>assertion source:</strong> unknown<br>
+        <strong>source basis units:</strong> none<br>
+        <strong>source resolution:</strong> legacy/not recorded<br>
+        <strong>host source-candidate status:</strong> not_evaluated<br>
+        <strong>host source candidates:</strong> none<br>
+        <strong>content stance:</strong> <span class="stance supports_thesis">supports_thesis</span><br>
+        <span class="field-help">If this proposition is true, does it support, contradict, or leave the article thesis neutral?</span><br>
+        <strong>article deployment:</strong> reported_neutral<br>
+        <span class="field-help">How the article treats it: endorsed, rebutted, or merely reported.</span><br>
+        <strong>article role:</strong> opponent_claim<br>
+        <strong>response units:</strong> none<br>
+        <strong>article response/context:</strong><blockquote>[U0309] Thimerosal is the trade name for the 50% ethylmercury solution used since the 1930s as a preservative in vaccines.
+[U0310] Contrary to our health department’s claim, it is highly neurotoxic — dangerous enough to cause “decreased offspring survival” as Eli Lilly was required by law to disclose in its Material Safety Data Sheet for thimerosal.
+[U0311] New works have expanded on Robert F.
+[U0312] Kennedy, Jr’s 2015 book on thimerosal mentioned earlier, not least the unexpected perspective of internationally recognized criminologist Gavin de Becker, quoted above.
+[U0313] More than a review of the scientific literature, his best-sell…</blockquote>
+        <strong>split warning:</strong> none</div>
+      <div><h4><span class="tag host">HOST</span> deterministic result</h4>
+        <strong>articleUse:</strong> reported<br>
+        <strong>scoreTransform:</strong> normal<br>
+        <strong>assertion-source class:</strong> author_voice<br>
+        <strong>merged candidate IDs:</strong> CAND08<br>
+        <strong>grounding span:</strong> <span class="gs clustered">clustered</span><br>
+        <strong>final status:</strong> selected into the CF1 inventory</div>
+    </div></details></td><td>unknown <span class="cls">author_voice</span></td><td><span class="stance supports_thesis">supports_thesis</span></td><td>reported_neutral</td><td>reported</td><td>opponent_claim</td><td>normal</td><td>high</td><td><span class="gs clustered">clustered</span></td></tr><tr><td><details class="claim-detail"><summary>The CDC's claim that thimerosal is not harmful is contradicted by its classification as toxic hazardous waste.</summary>
+    <div class="claim-grid">
+      <div><h4><span class="tag c1a">1A</span> proposition and grounding</h4>
+        <strong>claimText:</strong> The CDC's claim that thimerosal is not harmful is contradicted by its classification as toxic hazardous waste.<br>
+        <strong>source units:</strong> U0367<br>
+        <strong>grounding text:</strong><blockquote>[U0367] The claim by health agencies that injected ethylmercury is benign becomes even more inconceivable in light of the fact that the EPA classifies the thimerosal in vaccines as toxic hazardous waste .</blockquote>
+        <strong>attribution-context units:</strong> none<br>
+        <strong>attribution context:</strong><blockquote>none supplied</blockquote>
+        <strong>scope:</strong> policy<br>
+        <strong>materiality:</strong> high<br>
+        <strong>pillars:</strong> Vaccine Safety<br>
+        <strong>evidence-usefulness hint:</strong> EPA regulations on hazardous waste and thimerosal.<br>
+        <strong>host selection:</strong> materiality_then_source_order</div>
+      <div><h4><span class="tag c1b">1B</span> source and stance</h4>
+        <strong>assertion source:</strong> unknown<br>
+        <strong>source basis units:</strong> none<br>
+        <strong>source resolution:</strong> legacy/not recorded<br>
+        <strong>host source-candidate status:</strong> not_evaluated<br>
+        <strong>host source candidates:</strong> none<br>
+        <strong>content stance:</strong> <span class="stance supports_thesis">supports_thesis</span><br>
+        <span class="field-help">If this proposition is true, does it support, contradict, or leave the article thesis neutral?</span><br>
+        <strong>article deployment:</strong> reported_neutral<br>
+        <span class="field-help">How the article treats it: endorsed, rebutted, or merely reported.</span><br>
+        <strong>article role:</strong> opponent_claim<br>
+        <strong>response units:</strong> none<br>
+        <strong>article response/context:</strong><blockquote>[U0368] The limit for mercury in drinking water is set at 200 parts per billion per the EPA’s Toxicity Characteristic Leaching Procedure (TCLP).
+[U0369] The mercury in multi-dose flu shots preserved with thimerosal, injected directly into the body, is 250 times higher— 50,000 parts per billion.
+[U0370] Thimerosal as a Vaccine Preservative , a summary prepared in 2025 for the CDC’s Advisory Committee for Immunization Practices (ACIP), notes that “thimerosal-containing vaccines exceed the TCLP threshold by orders of magnitude and are classified as D009 Hazardous Waste.”
+[U0371] PharmEcology’s Disposal Guidelines for the 2025-2026…</blockquote>
+        <strong>split warning:</strong> none</div>
+      <div><h4><span class="tag host">HOST</span> deterministic result</h4>
+        <strong>articleUse:</strong> reported<br>
+        <strong>scoreTransform:</strong> normal<br>
+        <strong>assertion-source class:</strong> author_voice<br>
+        <strong>merged candidate IDs:</strong> CAND09<br>
+        <strong>grounding span:</strong> <span class="gs clustered">clustered</span><br>
+        <strong>final status:</strong> selected into the CF1 inventory</div>
+    </div></details></td><td>unknown <span class="cls">author_voice</span></td><td><span class="stance supports_thesis">supports_thesis</span></td><td>reported_neutral</td><td>reported</td><td>opponent_claim</td><td>normal</td><td>high</td><td><span class="gs clustered">clustered</span></td></tr><tr><td><details class="claim-detail"><summary>The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80.</summary>
+    <div class="claim-grid">
+      <div><h4><span class="tag c1a">1A</span> proposition and grounding</h4>
+        <strong>claimText:</strong> The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80.<br>
+        <strong>source units:</strong> U0392<br>
+        <strong>grounding text:</strong><blockquote>[U0392] From the 16-page package insert of Infanrix, a DTaP vaccine “indicated for active immunization against diphtheria, tetanus, and pertussis as a 5-dose series in infants and children aged 6 weeks through 6 years”:</blockquote>
+        <strong>attribution-context units:</strong> none<br>
+        <strong>attribution context:</strong><blockquote>none supplied</blockquote>
+        <strong>scope:</strong> ingredient<br>
+        <strong>materiality:</strong> high<br>
+        <strong>pillars:</strong> Vaccine Safety<br>
+        <strong>evidence-usefulness hint:</strong> Vaccine package inserts and ingredient lists.<br>
+        <strong>host selection:</strong> materiality_then_source_order</div>
+      <div><h4><span class="tag c1b">1B</span> source and stance</h4>
+        <strong>assertion source:</strong> unknown<br>
+        <strong>source basis units:</strong> none<br>
+        <strong>source resolution:</strong> legacy/not recorded<br>
+        <strong>host source-candidate status:</strong> not_evaluated<br>
+        <strong>host source candidates:</strong> none<br>
+        <strong>content stance:</strong> <span class="stance supports_thesis">supports_thesis</span><br>
+        <span class="field-help">If this proposition is true, does it support, contradict, or leave the article thesis neutral?</span><br>
+        <strong>article deployment:</strong> reported_neutral<br>
+        <span class="field-help">How the article treats it: endorsed, rebutted, or merely reported.</span><br>
+        <strong>article role:</strong> opponent_claim<br>
+        <strong>response units:</strong> none<br>
+        <strong>article response/context:</strong><blockquote>[U0393] Along with other chemicals, DTaP formulations contain aluminum, formaldehyde and polysorbate 80.
+[U0394] The polysorbate 80 helps deliver the aluminum into the brain and other organs; the formaldehyde has the potential to damage the liver and kidneys, as well as cause cancer.
+[U0395] Depending on the manufacturer, the DTaP shot may also include bovine extract, monkey kidney tissue (suspected to contain SV-40, a cancer-causing virus), and neomycin sulfate or polymyxin B, both antibiotics.
+[U0396] At the core of the vaccine narrative, the notion that a vaccine only contains a small amount of virus, bacteria or other antig…</blockquote>
+        <strong>split warning:</strong> none</div>
+      <div><h4><span class="tag host">HOST</span> deterministic result</h4>
+        <strong>articleUse:</strong> reported<br>
+        <strong>scoreTransform:</strong> normal<br>
+        <strong>assertion-source class:</strong> author_voice<br>
+        <strong>merged candidate IDs:</strong> CAND10<br>
+        <strong>grounding span:</strong> <span class="gs clustered">clustered</span><br>
+        <strong>final status:</strong> selected into the CF1 inventory</div>
+    </div></details></td><td>unknown <span class="cls">author_voice</span></td><td><span class="stance supports_thesis">supports_thesis</span></td><td>reported_neutral</td><td>reported</td><td>opponent_claim</td><td>normal</td><td>high</td><td><span class="gs clustered">clustered</span></td></tr></tbody></table></details>
+    <details open><summary><span class="tag host">HOST</span> Census Diagnostic: Potentially Missed Attributed or Opponent Claims (60)</summary>
+      <p class="muted">The census is an experimental diagnostic. It identifies passages that may contain attributed, quoted, or opponent assertions and allows reviewers to compare them with the claims independently extracted by Call 1A. Census findings do not affect the CF1 result and do not block the pipeline.</p>
+      <div class="diag">total 60 · by trigger: block_quotation 24, attributed_statement 20, qa_passage 13, challenge_signal 3 · <span class="ok">apparently covered 2</span> · <span class="bad">no obvious match 58</span> · not evaluated 0</div>
+      <table><thead><tr><th>census ID</th><th>source unit</th><th>trigger</th><th>signals</th><th>source snippet</th><th>Call 1A comparison</th><th>diagnostic note</th></tr></thead><tbody><tr><td>CEN001</td><td>U0002</td><td>block_quotation</td><td>block_quotation</td><td>“According to the CDC and public health authorities, parents who choose not to vaccinate their children are typically highly educated. CDC data reflect that half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely…</td><td><span class="ok">Apparently covered by Call 1A</span><br><span class="muted">1A-001: Half of American school children are not fully vaccinated.</span></td><td>shares a grounded source unit with the Call 1A candidate</td></tr><tr><td>CEN002</td><td>U0005</td><td>block_quotation</td><td>block_quotation, named_source</td><td>“What’s the Truth about Vaccines?” asked Jefferson County Public Health (JCPH) in a quarter-page ad in the March 11 Port Townsend Leader. The hand-drawn, whimsical cartoon-style presentation and the ad’s content offered a light-hearted attempt to ease parents’…</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN003</td><td>U0006</td><td>block_quotation</td><td>block_quotation</td><td>“This is a JUDGEMENT FREE guide to learn about vaccines,” the ad opens with. “You don’t need to have your mind made up to start reading. BRING YOUR CURIOSITY!”</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN004</td><td>U0026</td><td>block_quotation</td><td>block_quotation</td><td>“They regurgitate canned answers they have never researched—essentially mantras,” says Siri. At their most extreme, “for those who refuse to adopt their beliefs, they demand that the refusers be censored, have their rights taken away, and be mandated to be inj…</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN005</td><td>U0027</td><td>attributed_statement</td><td>attributed_statement</td><td>As this article will show, the claims made in our health department’s ad repeat medical dogma that has persisted for decades with no basis in reality.</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN006</td><td>U0033</td><td>attributed_statement</td><td>attributed_statement, qa_passage</td><td>Is our health department simply “going with the flow,” unaware that the claims made in their ad are mythology?</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN007</td><td>U0034</td><td>qa_passage</td><td>qa_passage</td><td>Or are they so entrenched in their fervent belief in the vaccine narrative that they cannot consider information that disproves the gospel?</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN008</td><td>U0053</td><td>attributed_statement</td><td>attributed_statement, named_source</td><td>A January 2017 date was set and Huenke wrote the theater a check as a deposit for the screening.</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN009</td><td>U0059</td><td>attributed_statement</td><td>attributed_statement</td><td>In an apologetic exchange that Friedman had with Huenke after canceling the film, he said,</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN010</td><td>U0060</td><td>block_quotation</td><td>block_quotation, named_source</td><td>“I am very sorry that I caved to this and didn’t stand up to it. It was not pleasant for me or for the business that I’ve created. Actually, it was far worse than the death threat that I received when I was intending to show a movie by Michael Moore a long tim…</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN011</td><td>U0076</td><td>attributed_statement</td><td>attributed_statement, named_source</td><td>Each new childhood shot approved was automatically added to the CDC’s Childhood Vaccine Schedule, with the assurance that tens of millions of children would receive them at routine pediatric visits.</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN012</td><td>U0095</td><td>qa_passage</td><td>qa_passage</td><td>Was the rise in all these chronic diseases and even deaths a direct result of the parallel exploding vaccination program?</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN013</td><td>U0096</td><td>qa_passage</td><td>qa_passage</td><td>Did correlation equal causation?</td><td><span class="ok">Apparently covered by Call 1A</span><br><span class="muted">1A-015: The rise in chronic illnesses among children correlates with the increase in vaccination rates.</span></td><td>shares a grounded source unit with the Call 1A candidate</td></tr><tr><td>CEN014</td><td>U0102</td><td>attributed_statement</td><td>attributed_statement</td><td>Many described rushing their infants or toddlers to the ER with convulsions, 105° fevers, horrifying screams and seizures after their shots, only to be told this is normal… we see this all the time… it has nothing to do with the vaccines .</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN015</td><td>U0130</td><td>attributed_statement</td><td>attributed_statement</td><td>These, along with more recent developments, will be expanded on below and in Part 2, with the examination of JCPH’s claims.</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN016</td><td>U0135</td><td>attributed_statement</td><td>attributed_statement</td><td>By the time our vaccine study group wrapped up our research, over one hundred legislative bills were pending to eradicate vaccination choice in forty states, foreshadowing the Covid insanity to come.</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN017</td><td>U0151</td><td>attributed_statement</td><td>attributed_statement, named_source</td><td>We were told that as long as our information was credibly sourced and could be confirmed through Google Scholar, it would be acceptable.</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN018</td><td>U0154</td><td>block_quotation</td><td>block_quotation</td><td>“Unfortunately, we will not be able to print or insert your flyer in our newspaper.</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN019</td><td>U0162</td><td>attributed_statement</td><td>attributed_statement, named_source</td><td>Then, when Schumacher attempted to pay for ad space, that, too, was censored — a “business decision” he was told (see Of Covid Testing, “Misinformation” and Censorship ).</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN020</td><td>U0166</td><td>challenge_signal</td><td>challenge_signal</td><td>While the material covered in our 2017 guide thoroughly debunked the old talking points still being trotted out today by Jefferson County Public Health, nine years later the research is even more damning.</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN021</td><td>U0170</td><td>attributed_statement</td><td>attributed_statement, named_source</td><td>Peter McCullough explained in their 2025 book “Vaccines Mythology, Ideology, and Reality” :</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN022</td><td>U0171</td><td>block_quotation</td><td>block_quotation</td><td>“Prior to 2020, we had never questioned the sacred cow of vaccines. It was only in 2020, when we observed the stupendous chicanery of the COVID-19 rollout, that we began to wonder about the entire vaccine enterprise. Since then we have methodically studied the…</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN023</td><td>U0177</td><td>block_quotation</td><td>block_quotation</td><td>“You are about to learn things you can never unlearn.”</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN024</td><td>U0179</td><td>attributed_statement</td><td>attributed_statement, named_source</td><td>Let’s now consider the claims in Jefferson County Public Health’s ad.</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN025</td><td>U0181</td><td>qa_passage</td><td>qa_passage</td><td>Immune System Challenges?</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN026</td><td>U0187</td><td>block_quotation</td><td>block_quotation, named_source</td><td>“Prior to the introduction of organized vaccination programs, ‘crib death’ was so rare that it was not mentioned in infant mortality statistics… By 1972, SIDS had become the leading cause of post-neonatal mortality (infant deaths occurring between 28 days and …</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN027</td><td>U0190</td><td>block_quotation</td><td>block_quotation</td><td>“Vaccines and sudden infant death: An analysis of the VAERS database 1990–2019 and review of the medical literature”</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN028</td><td>U0195</td><td>qa_passage</td><td>qa_passage</td><td>Does correlation imply causation?</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN029</td><td>U0201</td><td>attributed_statement</td><td>attributed_statement</td><td>In his 2021 report “Vaccines and sudden infant death: An analysis of the VAERS database 1990–2019 and review of the medical literature,” Miller explains:</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN030</td><td>U0202</td><td>block_quotation</td><td>block_quotation</td><td>“Throughout the 1980s, sudden infant deaths continued to skyrocket. Parental concerns about an apparent link between childhood vaccines and SIDS reached a fever pitch. Many parents were afraid to vaccinate their babies. Authorities sought to reassure parents t…</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN031</td><td>U0205</td><td>attributed_statement</td><td>attributed_statement</td><td>In a “Back to Sleep” campaign, parents were told that their babies’ sleeping position was the culprit — that they needed to be laid on their backs, not face down.</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN032</td><td>U0211</td><td>qa_passage</td><td>qa_passage</td><td>All coincidences?</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN033</td><td>U0212</td><td>qa_passage</td><td>qa_passage</td><td>So how do impacts from vaccines being injected in children compare to environmental exposures they face when “playing outside”?</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN034</td><td>U0217</td><td>block_quotation</td><td>block_quotation</td><td>“When we are healthy, enzymes in the mouth, acid in the stomach, and microbes in the lower gut will often destroy pathogens. If a pathogen escapes these first lines of digestive defense, then the villi will prevent their access to the bloodstream. If the villi…</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN035</td><td>U0220</td><td>attributed_statement</td><td>attributed_statement</td><td>Looking at how vaccines can cause sudden infant death, Miller notes that “several theories regarding the pathogenic mechanism behind these fatal events have been proposed.”</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN036</td><td>U0226</td><td>qa_passage</td><td>qa_passage</td><td>If a single vaccine can cause SIDS in a small percentage of babies, how many children might have damage on a lesser scale from the dozens of shots received in just the first year of life?</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN037</td><td>U0236</td><td>qa_passage</td><td>qa_passage</td><td>Dangerous Chemicals in Vaccines?</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN038</td><td>U0237</td><td>qa_passage</td><td>qa_passage</td><td>“Aren’t there DANGEROUS chemicals in vaccines?</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN039</td><td>U0242</td><td>block_quotation</td><td>block_quotation</td><td>“Our calculations show that the levels of aluminum suggested by the currently used limits place infants at risk of acute, repeated, and possibly chronic exposures of toxic levels of aluminum in modern vaccine schedules.”</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN040</td><td>U0244</td><td>block_quotation</td><td>block_quotation</td><td>“Reconsideration of the immunotherapeutic pediatric safe dose levels of aluminum”</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN041</td><td>U0251</td><td>attributed_statement</td><td>attributed_statement, named_source</td><td>Regarding the aluminum in that tomato, according to Physicians for Informed Consent :</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN042</td><td>U0252</td><td>block_quotation</td><td>block_quotation, named_source</td><td>“The ATSDR [Agency for Toxic Substances and Disease Registry] oral aluminum limit is based on 0.1% of oral aluminum being absorbed into the bloodstream, as the digestive tract blocks nearly all oral aluminum (Fig. 2a). In contrast, aluminum injected intramuscu…</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN043</td><td>U0281</td><td>qa_passage</td><td>qa_passage</td><td>Why does the 25 mcg limit apply for other injectables but not vaccines?</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN044</td><td>U0284</td><td>attributed_statement</td><td>attributed_statement</td><td>A 1947 document related to the manufacture of diphtheria toxoid states, “In all instances, the amount of aluminum used shall be the minimum needed to accomplish the purpose intended.”</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN045</td><td>U0286</td><td>block_quotation</td><td>block_quotation</td><td>“FDA regulations require safety testing of constituent ingredients in drugs (21 CFR 610.15). With the exception of extraneous proteins, no component safety testing is required for vaccines or vaccine schedules. The dosing of aluminum in vaccines is based on th…</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN046</td><td>U0295</td><td>block_quotation</td><td>block_quotation</td><td>“If your baby weighs 7 pounds at birth (approximately 3 kilograms), the FDA stipulations suggest that the maximum safe dose for that newborn is 15 micrograms, sixteen times less than what is given in one hepatitis B vaccine. Since infants may not be able to ef…</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN047</td><td>U0301</td><td>block_quotation</td><td>block_quotation</td><td>“[Thimerosal] is toxic… Mutagenic in mammalian cells.“</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN048</td><td>U0304</td><td>block_quotation</td><td>block_quotation</td><td>“Comparing toxicity in two forms of mercury is like comparing the benefits of being shot with a .38 caliber bullet rather than a .45 caliber bullet. Most people would prefer Door #3: no bullet at all.”</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN049</td><td>U0306</td><td>block_quotation</td><td>block_quotation, named_source</td><td>“Forbidden Facts: Government Deceit &amp; Suppression About Brain Damage from Childhood Vaccines”</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN050</td><td>U0307</td><td>challenge_signal</td><td>challenge_signal</td><td>Entire books have debunked the absurd statement “ethylmercury is NOT harmful to us.”</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN051</td><td>U0310</td><td>challenge_signal</td><td>challenge_signal</td><td>Contrary to our health department’s claim, it is highly neurotoxic — dangerous enough to cause “decreased offspring survival” as Eli Lilly was required by law to disclose in its Material Safety Data Sheet for thimerosal.</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN052</td><td>U0315</td><td>block_quotation</td><td>block_quotation</td><td>“A silvery white poisonous metallic element used in batteries and in the preparation of chemical pesticides.”</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN053</td><td>U0317</td><td>block_quotation</td><td>block_quotation</td><td>“…and in vaccines given to children and pregnant women.”</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN054</td><td>U0318</td><td>attributed_statement</td><td>attributed_statement</td><td>Injected ethylmercury has been shown to deposit in the brain and other organs far more readily than the much-publicized methylmercury in fish, which pregnant women are warned to avoid.</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN055</td><td>U0325</td><td>qa_passage</td><td>qa_passage</td><td>If it is so harmless, why would it have been removed from them?</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN056</td><td>U0332</td><td>block_quotation</td><td>block_quotation, named_source</td><td>“The number of dose related relationships [between mercury and autism] are linear and statistically significant,” said Dr. William Weil from the American Academy of Pediatrics. “You can play with this all you want. They are linear. They are statistically signi…</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN057</td><td>U0333</td><td>qa_passage</td><td>qa_passage</td><td>The attendees were then asked What should we do now?</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN058</td><td>U0335</td><td>attributed_statement</td><td>attributed_statement</td><td>An immunologist told the assembled participants that he’d just taken an emergency call in which he’d advised his daughter-in-law who had delivered his first grandchild not to accept any mercury-laced vaccines.</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN059</td><td>U0339</td><td>block_quotation</td><td>block_quotation</td><td>“My mandate as I sit here in this group is to make sure at the end of the day that 100,000,000 are immunized with DTP, Hepatitis B and if possible Hib, this year, next year and for many years to come, and that will have to be with Thimerosal containing vaccine…</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr><tr><td>CEN060</td><td>U0346</td><td>attributed_statement</td><td>attributed_statement, named_source</td><td>De Becker notes that the CDC, FDA and vaccine-makers came up with a “magnificently creative idea” to explain away “that ethylmercury was somehow not toxic”:</td><td><span class="bad">No obvious Call 1A match</span></td><td>No shared grounded source unit with a Call 1A candidate</td></tr></tbody></table></details>
+  </section>
+</body></html>

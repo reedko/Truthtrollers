@@ -1,0 +1,205 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>CF1 blinded deep review — full-f03-h-c-three-repeat-seeded-20260718</title>
+<style>
+body{font-family:-apple-system,system-ui,sans-serif;margin:1rem 2rem;line-height:1.4}
+.legend{background:#f7f7e8;border:1px solid #ddc;padding:0.6rem 1rem;font-size:0.9rem}
+nav button{margin-right:0.5rem;padding:0.3rem 0.8rem;cursor:pointer}
+nav button.active{background:#446;color:#fff}
+#filters input,#filters select{margin-right:0.6rem;padding:0.2rem}
+table{border-collapse:collapse;width:100%;margin-top:0.6rem}
+th,td{border:1px solid #ccc;padding:0.3rem 0.45rem;font-size:0.85rem;text-align:left;vertical-align:top}
+th{background:#eee;cursor:pointer;position:sticky;top:0}
+tr.claim:hover{background:#f5f8ff;cursor:pointer}
+tr.failed{background:#fff2f2}
+.detail{background:#fafaff;border-left:4px solid #446;padding:0.5rem 1rem}
+.tag{font-weight:700;font-size:0.75rem;padding:0 0.3rem;border-radius:3px;margin-right:0.3rem}
+.c1{background:#dbeafe}.c2{background:#dcfce7}.host{background:#fde8c8}
+.detail ul{margin:0.15rem 0 0.4rem 1.3rem}
+details{margin:0.3rem 0}blockquote{background:#f6f6f6;border-left:3px solid #999;
+margin:0.3rem 0;padding:0.4rem 0.7rem;white-space:pre-wrap;font-size:0.85rem}
+.cluster td{width:100%}
+.muted{color:#777}.ov{background:#fce7f3}.bad{background:#fee2e2;color:#991b1b;font-weight:700}
+</style></head><body>
+<div class="legend"><strong>Blinded review — phase full-f03-h-c-three-repeat-seeded-20260718 (full mode).</strong>
+A <em>Profile</em> is one complete prompt arm — a Call 1 prompt + Call 2 prompt pair — under a
+seeded opaque label. Producer identities are withheld until scores are locked. Profiles present:
+Set H. Field provenance: <span class="tag c1">C1</span>Call 1 (model)
+<span class="tag c2">C2</span>Call 2 (model) <span class="tag host">HOST</span>deterministic host.
+Failed runs are results: they carry a failure class and stage.</div>
+<nav><button id="btn-claims" class="active">Claims</button>
+<button id="btn-align">Alignment by source region</button>
+<button id="btn-orient">Orientations</button></nav>
+<div id="filters">
+<input id="search" placeholder="search text…" size="28">
+<select id="f-profile"><option value="">all profiles</option></select>
+<select id="f-repeat"><option value="">all repeats</option></select>
+<select id="f-status"><option value="">all statuses</option>
+<option>completed</option><option>failed</option></select>
+<span id="count" class="muted"></span></div>
+<div id="view"></div>
+<script>
+const DATA = {"phase":"full-f03-h-c-three-repeat-seeded-20260718","mode":"full","profiles":["Set H"],"rows":[{"fixture":"CF1-F03","repeat":1,"profile":"Set H","runStatus":"completed","failureClass":"","packageValid":true,"origin":"model","claimText":"Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.","articleRole":"pillar","articleUse":"endorsed","assertionSource":"unknown","materiality":"high","propositionCore":"Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.","ifSupportedEffect":"strengthens","ifRefutedEffect":"unchanged","scoreTransformCheck":"normal","expectedTransform":"unresolved","transformConsistent":false,"scope":"national","relatedPillarLabels":["Vaccine Hesitancy and Education"],"sourceUnitIds":["U0002"],"evidenceUsefulnessHint":"demographic data","groundingText":"[U0002] “According to the CDC and public health authorities, parents who choose not to vaccinate their children are typically highly educated. CDC data reflect that half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated. Why would the parents of these children, comprising a large part of the nation’s brain trust, choose not to vaccinate their children?”","revisedClaimText":"null — unchanged","verificationTarget":"substantive","disputedProposition":"Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.","stipulatedByArticle":null,"whyThisTarget":"The dispute is whether the claim about vaccination rates among American school children is true.","warrant":null,"supportCriteria":["Demographic data showing that 50% of American school children are not fully vaccinated.","Statistics indicating that 1 in 88 toddlers are completely unvaccinated."],"refuteCriteria":["Demographic data showing that less than 50% of American school children are not fully vaccinated.","Statistics indicating that more than 1 in 88 toddlers are completely vaccinated."],"qualifyCriteria":["Data showing that the vaccination rates vary significantly by region or demographic group."],"mustMatch":["Vaccination rates among American school children","Statistics on toddler vaccination rates","National scope of the data"],"rejectIfOnly_model":["Restating the claim without providing supporting data.","Discussing vaccination rates in a different country or region.","Using outdated statistics that do not reflect current vaccination rates."],"rejectIfOnly_host":[],"sourceStrategy_emitted":"primary_article_result","sourceStrategy_resolved":"primary_article_result","hostStrategyOverride":false,"searchConcepts":["vaccination rates","American school children","toddler vaccination statistics"],"relevantNamedWorkIds":[],"cautions":[],"gradeTarget":"substance","scoreTransform":"normal","verificationQuestion":"Does independent evidence resolve the disputed question: Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.","hostWarnings":[]},{"fixture":"CF1-F03","repeat":1,"profile":"Set H","runStatus":"completed","failureClass":"","packageValid":true,"origin":"model","claimText":"Efforts to suppress information about vaccine safety and adverse effects are prevalent, as seen in community responses to screenings of films like Vaxxed.","articleRole":"pillar","articleUse":"endorsed","assertionSource":"unknown","materiality":"high","propositionCore":"Efforts to suppress information about vaccine safety and adverse effects are prevalent, as seen in community responses to screenings of films like Vaxxed.","ifSupportedEffect":"strengthens","ifRefutedEffect":"weakens","scoreTransformCheck":"normal","expectedTransform":"normal","transformConsistent":true,"scope":"local","relatedPillarLabels":["Censorship and Gatekeeping"],"sourceUnitIds":["U0055","U0062"],"evidenceUsefulnessHint":"case studies of censorship","groundingText":"[U0055] Within 24 hours of the film being announced, the screening which had been planned over months was canceled.\n[U0062] Self-appointed community gatekeeper Owen Rowe demonstrated the epitome of the angry zealotry that Siri describes.","revisedClaimText":"null — unchanged","verificationTarget":"substantive","disputedProposition":"Efforts to suppress information about vaccine safety and adverse effects are prevalent, as seen in community responses to screenings of films like Vaxxed.","stipulatedByArticle":null,"whyThisTarget":"The dispute is whether there are prevalent efforts to suppress information about vaccine safety.","warrant":null,"supportCriteria":["Case studies demonstrating community responses to screenings of films like Vaxxed that indicate suppression of information.","Evidence of organized efforts to censor discussions about vaccine safety."],"refuteCriteria":["Evidence showing that there are no significant efforts to suppress information about vaccine safety.","Case studies indicating that screenings of films like Vaxxed were well-received without any suppression."],"qualifyCriteria":["Data showing that suppression efforts are limited to specific communities or regions."],"mustMatch":["Community responses to vaccine-related screenings","Evidence of censorship or suppression","Local scope of the data"],"rejectIfOnly_model":["Restating the claim without providing supporting evidence.","Discussing vaccine safety without addressing suppression efforts.","Using examples from unrelated topics or films."],"rejectIfOnly_host":[],"sourceStrategy_emitted":"mixed_sources","sourceStrategy_resolved":"mixed_sources","hostStrategyOverride":false,"searchConcepts":["vaccine safety suppression","community responses","Vaxxed film screenings"],"relevantNamedWorkIds":[],"cautions":[],"gradeTarget":"substance","scoreTransform":"normal","verificationQuestion":"Does independent evidence resolve the disputed question: Efforts to suppress information about vaccine safety and adverse effects are prevalent, as seen in community responses to screenings of films like Vaxxed.","hostWarnings":[]},{"fixture":"CF1-F03","repeat":1,"profile":"Set H","runStatus":"completed","failureClass":"","packageValid":true,"origin":"model","claimText":"Vaccines contain toxic substances such as aluminum and mercury, which pose health risks to children.","articleRole":"pillar","articleUse":"endorsed","assertionSource":"unknown","materiality":"high","propositionCore":"Vaccines contain toxic substances such as aluminum and mercury, which pose health risks to children.","ifSupportedEffect":"strengthens","ifRefutedEffect":"weakens","scoreTransformCheck":"normal","expectedTransform":"normal","transformConsistent":true,"scope":"general","relatedPillarLabels":["Toxic Ingredients in Vaccines"],"sourceUnitIds":["U0242","U0301"],"evidenceUsefulnessHint":"toxicology studies","groundingText":"[U0242] “Our calculations show that the levels of aluminum suggested by the currently used limits place infants at risk of acute, repeated, and possibly chronic exposures of toxic levels of aluminum in modern vaccine schedules.”\n[U0301] “[Thimerosal] is toxic… Mutagenic in mammalian cells.“","revisedClaimText":"null — unchanged","verificationTarget":"substantive","disputedProposition":"Vaccines contain toxic substances such as aluminum and mercury, which pose health risks to children.","stipulatedByArticle":null,"whyThisTarget":"The dispute is whether vaccines contain toxic substances that pose health risks.","warrant":null,"supportCriteria":["Toxicology studies showing the presence of aluminum and mercury in vaccines.","Research indicating health risks associated with these substances in children."],"refuteCriteria":["Studies showing that vaccines do not contain harmful levels of aluminum or mercury.","Evidence indicating that the substances in vaccines do not pose health risks to children."],"qualifyCriteria":["Data showing that the levels of aluminum and mercury in vaccines are within safe limits."],"mustMatch":["Presence of aluminum and mercury in vaccines","Health risk assessments related to vaccine ingredients","General scope of vaccine safety"],"rejectIfOnly_model":["Restating the claim without providing supporting data.","Discussing other substances not related to aluminum or mercury.","Using studies that do not focus on vaccines."],"rejectIfOnly_host":[],"sourceStrategy_emitted":"primary_article_result","sourceStrategy_resolved":"primary_article_result","hostStrategyOverride":false,"searchConcepts":["toxic substances in vaccines","aluminum mercury health risks","vaccine safety studies"],"relevantNamedWorkIds":[],"cautions":[],"gradeTarget":"substance","scoreTransform":"normal","verificationQuestion":"Does independent evidence resolve the disputed question: Vaccines contain toxic substances such as aluminum and mercury, which pose health risks to children.","hostWarnings":[]},{"fixture":"CF1-F03","repeat":1,"profile":"Set H","runStatus":"completed","failureClass":"","packageValid":true,"origin":"model","claimText":"The 1986 National Childhood Vaccine Injury Act removed liability from drug companies for childhood vaccines they produced.","articleRole":"pillar","articleUse":"endorsed","assertionSource":"unknown","materiality":"high","propositionCore":"The 1986 National Childhood Vaccine Injury Act removed liability from drug companies for childhood vaccines they produced.","ifSupportedEffect":"strengthens","ifRefutedEffect":"unchanged","scoreTransformCheck":"normal","expectedTransform":"unresolved","transformConsistent":false,"scope":"national","relatedPillarLabels":["Historical Context of Vaccine Legislation"],"sourceUnitIds":["U0070"],"evidenceUsefulnessHint":"legislative history","groundingText":"[U0070] Bowing to the pressure, in 1986 Congress removed all liability from drug companies for childhood vaccines they produced.","revisedClaimText":"null — unchanged","verificationTarget":"substantive","disputedProposition":"The 1986 National Childhood Vaccine Injury Act removed liability from drug companies for childhood vaccines they produced.","stipulatedByArticle":null,"whyThisTarget":"The dispute is whether the 1986 Act indeed removed liability from drug companies.","warrant":null,"supportCriteria":["Legislative history showing the removal of liability in the 1986 Act.","Documentation of the implications of the Act on vaccine manufacturers."],"refuteCriteria":["Evidence showing that liability was not removed or was reinstated after the Act."],"qualifyCriteria":["Data indicating that liability removal applies only to certain vaccines or manufacturers."],"mustMatch":["Text of the 1986 National Childhood Vaccine Injury Act","Historical context of vaccine liability","National scope of the legislation"],"rejectIfOnly_model":["Restating the claim without providing legislative evidence.","Discussing vaccine liability in a different context or time period.","Using unrelated legal cases as examples."],"rejectIfOnly_host":[],"sourceStrategy_emitted":"official_record","sourceStrategy_resolved":"named_work_result","hostStrategyOverride":true,"searchConcepts":["National Childhood Vaccine Injury Act","vaccine liability","legislative history"],"relevantNamedWorkIds":["NW001"],"cautions":[],"gradeTarget":"substance","scoreTransform":"normal","verificationQuestion":"Does independent evidence resolve the disputed question: The 1986 National Childhood Vaccine Injury Act removed liability from drug companies for childhood vaccines they produced.","hostWarnings":[]},{"fixture":"CF1-F03","repeat":1,"profile":"Set H","runStatus":"completed","failureClass":"","packageValid":true,"origin":"model","claimText":"The rate of chronic illnesses in children has significantly increased since the expansion of the childhood vaccination schedule.","articleRole":"pillar","articleUse":"endorsed","assertionSource":"unknown","materiality":"high","propositionCore":"The rate of chronic illnesses in children has significantly increased since the expansion of the childhood vaccination schedule.","ifSupportedEffect":"strengthens","ifRefutedEffect":"weakens","scoreTransformCheck":"normal","expectedTransform":"normal","transformConsistent":true,"scope":"historical","relatedPillarLabels":["Rising Chronic Illness Rates"],"sourceUnitIds":["U0086"],"evidenceUsefulnessHint":"epidemiological data","groundingText":"[U0086] It was a rude awakening, especially for those of us in the Baby Boomer generation, to learn that the chronic illness rate in U.S. children which had been negligible when we were kids had jumped to 12.8% in the 1980s, then to 54% by 2011 .","revisedClaimText":"null — unchanged","verificationTarget":"substantive","disputedProposition":"The rate of chronic illnesses in children has significantly increased since the expansion of the childhood vaccination schedule.","stipulatedByArticle":null,"whyThisTarget":"The dispute is whether there is a significant increase in chronic illnesses linked to vaccination.","warrant":null,"supportCriteria":["Epidemiological data showing increased rates of chronic illnesses in children post-vaccination schedule expansion.","Research correlating vaccination schedules with chronic illness rates."],"refuteCriteria":["Data showing no significant increase in chronic illnesses among vaccinated children.","Studies indicating that chronic illness rates are unrelated to vaccination schedules."],"qualifyCriteria":["Data showing that the increase in chronic illnesses is not solely attributable to vaccination."],"mustMatch":["Chronic illness rates among children","Vaccination schedule changes","Historical scope of the data"],"rejectIfOnly_model":["Restating the claim without providing supporting epidemiological data.","Discussing chronic illnesses in adults or unrelated populations.","Using outdated statistics that do not reflect current trends."],"rejectIfOnly_host":[],"sourceStrategy_emitted":"primary_article_result","sourceStrategy_resolved":"primary_article_result","hostStrategyOverride":false,"searchConcepts":["chronic illness rates","vaccination schedule expansion","epidemiological studies"],"relevantNamedWorkIds":[],"cautions":[],"gradeTarget":"substance","scoreTransform":"normal","verificationQuestion":"Does independent evidence resolve the disputed question: The rate of chronic illnesses in children has significantly increased since the expansion of the childhood vaccination schedule.","hostWarnings":[]},{"fixture":"CF1-F03","repeat":1,"profile":"Set H","runStatus":"completed","failureClass":"","packageValid":true,"origin":"model","claimText":"The claims made in public health advertisements about vaccines repeat medical dogma that has persisted for decades with no basis in reality.","articleRole":"thesis","articleUse":"endorsed","assertionSource":"unknown","materiality":"high","propositionCore":"The claims made in public health advertisements about vaccines repeat medical dogma that has persisted for decades with no basis in reality.","ifSupportedEffect":"strengthens","ifRefutedEffect":"weakens","scoreTransformCheck":"normal","expectedTransform":"normal","transformConsistent":true,"scope":"general","relatedPillarLabels":["Public Health Messaging"],"sourceUnitIds":["U0027"],"evidenceUsefulnessHint":"analysis of public health claims","groundingText":"[U0027] As this article will show, the claims made in our health department’s ad repeat medical dogma that has persisted for decades with no basis in reality.","revisedClaimText":"null — unchanged","verificationTarget":"substantive","disputedProposition":"The claims made in public health advertisements about vaccines repeat medical dogma that has persisted for decades with no basis in reality.","stipulatedByArticle":null,"whyThisTarget":"The dispute is whether public health advertisements are based on unfounded medical dogma.","warrant":null,"supportCriteria":["Analysis of public health advertisements showing repetition of unfounded medical claims.","Evidence indicating that the claims lack scientific support."],"refuteCriteria":["Evidence showing that public health claims are based on sound scientific research.","Analysis indicating that the claims are valid and supported by data."],"qualifyCriteria":["Data showing that some claims may have a basis in reality or scientific support."],"mustMatch":["Content of public health advertisements","Historical context of medical claims","General scope of public health messaging"],"rejectIfOnly_model":["Restating the claim without providing supporting analysis.","Discussing unrelated health topics or claims.","Using examples that do not pertain to vaccines."],"rejectIfOnly_host":[],"sourceStrategy_emitted":"mixed_sources","sourceStrategy_resolved":"mixed_sources","hostStrategyOverride":false,"searchConcepts":["public health advertisements","medical dogma","vaccine claims analysis"],"relevantNamedWorkIds":[],"cautions":[],"gradeTarget":"substance","scoreTransform":"normal","verificationQuestion":"Does independent evidence resolve the disputed question: The claims made in public health advertisements about vaccines repeat medical dogma that has persisted for decades with no basis in reality.","hostWarnings":[]},{"fixture":"CF1-F03","repeat":1,"profile":"Set H","runStatus":"completed","failureClass":"","packageValid":true,"origin":"model","claimText":"The type of mercury in vaccines – ethylmercury – is harmful and linked to neurological damage.","articleRole":"pillar","articleUse":"endorsed","assertionSource":"unknown","materiality":"high","propositionCore":"The type of mercury in vaccines – ethylmercury – is harmful and linked to neurological damage.","ifSupportedEffect":"strengthens","ifRefutedEffect":"weakens","scoreTransformCheck":"normal","expectedTransform":"normal","transformConsistent":true,"scope":"specific","relatedPillarLabels":["Toxic Ingredients in Vaccines"],"sourceUnitIds":["U0255","U0301","U0306"],"evidenceUsefulnessHint":"toxicology studies","groundingText":"[U0255] Aluminum poisoning has been linked to autism, SIDs, seizures, autoimmune issues, Alzheimers, neurological damage, impaired renal function, demyelinating disorders such as MS, and cancer. [ source ]\n[U0301] “[Thimerosal] is toxic… Mutagenic in mammalian cells.“\n[U0306] “Forbidden Facts: Government Deceit & Suppression About Brain Damage from Childhood Vaccines”","revisedClaimText":"null — unchanged","verificationTarget":"substantive","disputedProposition":"The type of mercury in vaccines – ethylmercury – is harmful and linked to neurological damage.","stipulatedByArticle":null,"whyThisTarget":"The dispute is whether ethylmercury in vaccines is harmful.","warrant":null,"supportCriteria":["Toxicology studies linking ethylmercury to neurological damage.","Research indicating health risks associated with ethylmercury in vaccines."],"refuteCriteria":["Studies showing that ethylmercury does not pose health risks or is safe in vaccines.","Evidence indicating that neurological damage is unrelated to ethylmercury exposure."],"qualifyCriteria":["Data showing that the harmful effects of ethylmercury are dose-dependent or vary by individual."],"mustMatch":["Presence of ethylmercury in vaccines","Health risk assessments related to ethylmercury","Specific scope of vaccine ingredients"],"rejectIfOnly_model":["Restating the claim without providing supporting toxicology data.","Discussing other forms of mercury not related to ethylmercury.","Using studies that do not focus on vaccines."],"rejectIfOnly_host":[],"sourceStrategy_emitted":"primary_article_result","sourceStrategy_resolved":"primary_article_result","hostStrategyOverride":false,"searchConcepts":["ethylmercury health risks","neurological damage","toxicology studies vaccines"],"relevantNamedWorkIds":[],"cautions":[],"gradeTarget":"substance","scoreTransform":"normal","verificationQuestion":"Does independent evidence resolve the disputed question: The type of mercury in vaccines – ethylmercury – is harmful and linked to neurological damage.","hostWarnings":[]},{"fixture":"CF1-F03","repeat":1,"profile":"Set H","runStatus":"completed","failureClass":"","packageValid":true,"origin":"model","claimText":"The CDC has manipulated data to downplay the risks associated with vaccines, including the MMR vaccine and its link to autism.","articleRole":"pillar","articleUse":"endorsed","assertionSource":"unknown","materiality":"high","propositionCore":"The CDC has manipulated data to downplay the risks associated with vaccines, including the MMR vaccine and its link to autism.","ifSupportedEffect":"strengthens","ifRefutedEffect":"weakens","scoreTransformCheck":"normal","expectedTransform":"normal","transformConsistent":true,"scope":"historical","relatedPillarLabels":["Public Health Messaging"],"sourceUnitIds":["U0343","U0344","U0345"],"evidenceUsefulnessHint":"analysis of CDC studies","groundingText":"[U0343] Findings from the original Verstraeten Study shown above — “Increased Risk of Developmental Neurological Impairment after High Exposure to Thimerosal-Containing Vaccines in the First Month of Life” — never saw the light of day.\n[U0344] Instead the CDC “massaged” the data and in 2003 released a reworked, fraudulent version of the study loudly trumpeting that thimerosal did not cause autism and other neurodevelomental problems.\n[U0345] It’s the same playbook that CDC whistleblower William Thompson exposed decades later regarding the CDC’s study of the MMR vaccine and autism.","revisedClaimText":"null — unchanged","verificationTarget":"substantive","disputedProposition":"The CDC has manipulated data to downplay the risks associated with vaccines, including the MMR vaccine and its link to autism.","stipulatedByArticle":null,"whyThisTarget":"The dispute is whether the CDC has manipulated data regarding vaccine risks.","warrant":null,"supportCriteria":["Analysis of CDC studies showing evidence of data manipulation.","Documentation of claims regarding the MMR vaccine and autism."],"refuteCriteria":["Evidence showing that CDC data is accurate and not manipulated.","Studies indicating that the MMR vaccine does not have a link to autism."],"qualifyCriteria":["Data showing that any manipulation was limited to specific studies or contexts."],"mustMatch":["CDC study data","Claims regarding MMR vaccine and autism","Historical context of CDC practices"],"rejectIfOnly_model":["Restating the claim without providing supporting analysis.","Discussing unrelated vaccine topics or studies.","Using examples that do not pertain to the CDC."],"rejectIfOnly_host":[],"sourceStrategy_emitted":"mixed_sources","sourceStrategy_resolved":"mixed_sources","hostStrategyOverride":false,"searchConcepts":["CDC data manipulation","MMR vaccine autism link","analysis of CDC studies"],"relevantNamedWorkIds":[],"cautions":[],"gradeTarget":"substance","scoreTransform":"normal","verificationQuestion":"Does independent evidence resolve the disputed question: The CDC has manipulated data to downplay the risks associated with vaccines, including the MMR vaccine and its link to autism.","hostWarnings":[]},{"fixture":"CF1-F03","repeat":2,"profile":"Set H","runStatus":"failed","failureClass":"schema_invalid:semantic_inventory_verification","packageValid":false,"origin":"","claimText":"(no inventory — CF1_AGENT_SEMANTIC_INVALID: Candidate 2 violated H source contract)","groundingText":"","sourceUnitIds":[]},{"fixture":"CF1-F03","repeat":3,"profile":"Set H","runStatus":"failed","failureClass":"schema_invalid:semantic_inventory_verification","packageValid":false,"origin":"","claimText":"(no inventory — CF1_AGENT_SEMANTIC_INVALID: Candidate 2 violated H source contract)","groundingText":"","sourceUnitIds":[]}],"orientations":[{"fixture":"CF1-F03","repeat":1,"profile":"Set H","runStatus":"completed","failure":null,"theme":"Public health narratives and vaccine safety concerns","thesis":"Public health authorities' claims about vaccines are based on flawed data and misinformation.","thesisHinge":"substance","pillars":[{"label":"Vaccine Hesitancy and Education","importance":"load_bearing"},{"label":"Censorship and Gatekeeping","importance":"load_bearing"},{"label":"Toxic Ingredients in Vaccines","importance":"major"},{"label":"Historical Context of Vaccine Legislation","importance":"major"},{"label":"Rising Chronic Illness Rates","importance":"major"},{"label":"Public Health Messaging","importance":"supporting"}],"opponentScan":[],"call1CandidateCount":10},{"fixture":"CF1-F03","repeat":2,"profile":"Set H","runStatus":"failed","failure":{"failureClass":"schema_invalid","failureStage":"semantic_inventory_verification","errorCode":"CF1_AGENT_SEMANTIC_INVALID","errorMessage":"Candidate 2 violated H source contract"},"theme":null,"thesis":null,"thesisHinge":null,"pillars":[],"opponentScan":[],"call1CandidateCount":null},{"fixture":"CF1-F03","repeat":3,"profile":"Set H","runStatus":"failed","failure":{"failureClass":"schema_invalid","failureStage":"semantic_inventory_verification","errorCode":"CF1_AGENT_SEMANTIC_INVALID","errorMessage":"Candidate 2 violated H source contract"},"theme":null,"thesis":null,"thesisHinge":null,"pillars":[],"opponentScan":[],"call1CandidateCount":null}]};
+const esc = (v) => String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;");
+const list = (v) => (v ?? []).length ? "<ul>" + v.map((x)=>"<li>"+esc(x)+"</li>").join("") + "</ul>" : " <span class=muted>(none)</span>";
+let sortKey = null, sortDir = 1, tab = "claims";
+const S = { q:"", profile:"", repeat:"", status:"" };
+function filtered(){
+  return DATA.rows.filter((r)=>
+    (!S.profile || r.profile===S.profile) && (!S.repeat || String(r.repeat)===S.repeat)
+    && (!S.status || r.runStatus===S.status)
+    && (!S.q || JSON.stringify(r).toLowerCase().includes(S.q.toLowerCase())));
+}
+function detail(r){
+  if (DATA.mode === "call1") {
+    const consistency = r.transformConsistent === false
+      ? '<b class="bad">CONTRADICTION — effects imply '+esc(r.expectedTransform)+'</b>'
+      : r.transformConsistent === true ? "consistent" : "not emitted by this arm";
+    return '<div class="detail">'
+    + '<details><summary>Source text (units '+esc((r.sourceUnitIds||[]).join(", "))+')</summary>'
+    + '<blockquote>'+esc(r.groundingText)+'</blockquote></details>'
+    + '<p><span class="tag c1">C1</span>'+esc(r.articleRole)+' | '+esc(r.articleUse)
+    + ' | source: '+esc(r.assertionSource)+' | materiality: '+esc(r.materiality)
+    + ' | scope: '+esc(r.scope)+' | pillars: '+esc((r.relatedPillarLabels||[]).join(", "))
+    + '<br>evidenceUsefulnessHint: '+esc(r.evidenceUsefulnessHint)+'</p>'
+    + '<p><span class="tag c1">ORDER TRACE</span>propositionCore: '+esc(r.propositionCore ?? "not emitted by this arm")
+    + '<br>if supported: <b>'+esc(r.ifSupportedEffect ?? "not emitted")+'</b>'
+    + ' | if refuted: <b>'+esc(r.ifRefutedEffect ?? "not emitted")+'</b>'
+    + ' | transform check: <b>'+esc(r.scoreTransformCheck ?? "not emitted")+'</b>'
+    + '<br>effect/transform consistency: '+consistency
+    + '<br>typed assertion source: '+esc(r.assertionSourceKind ?? "not emitted")
+    + ' / '+esc(r.assertionSourceName ?? "not emitted")+'</p></div>';
+  }
+  const strat = r.hostStrategyOverride
+    ? esc(r.sourceStrategy_emitted)+" → "+esc(r.sourceStrategy_resolved)+" <b class=ov>(host override)</b>"
+    : esc(r.sourceStrategy_emitted ?? r.sourceStrategy_resolved);
+  const traceConsistency = r.transformConsistent === false
+    ? '<b class="bad">CONTRADICTION — effects imply '+esc(r.expectedTransform)+'</b>'
+    : r.transformConsistent === true ? "consistent" : "not emitted by this arm";
+  const trace = r.propositionCore ? '<p><span class="tag c1">C1 TRACE</span>'
+    + 'propositionCore: '+esc(r.propositionCore)
+    + '<br>if supported: <b>'+esc(r.ifSupportedEffect)+'</b>'
+    + ' | if refuted: <b>'+esc(r.ifRefutedEffect)+'</b>'
+    + ' | model transform check: <b>'+esc(r.scoreTransformCheck)+'</b>'
+    + '<br>expected from effects: <b>'+esc(r.expectedTransform)+'</b>'
+    + ' | consistency: '+traceConsistency+'</p>' : '';
+  return '<div class="detail">'
+  + '<details><summary>Source text (units '+esc((r.sourceUnitIds||[]).join(", "))+')</summary>'
+  + '<blockquote>'+esc(r.groundingText)+'</blockquote></details>'
+  + '<p><span class="tag c1">C1</span>'+esc(r.articleRole)+' | '+esc(r.articleUse)+' | source: '
+  + esc(r.assertionSource)+' | materiality: '+esc(r.materiality)+' | scope: '+esc(r.scope)
+  + ' | pillars: '+esc((r.relatedPillarLabels||[]).join(", "))
+  + '<br>evidenceUsefulnessHint: '+esc(r.evidenceUsefulnessHint)+'</p>'+trace
+  + '<p><span class="tag c2">C2</span>revisedClaimText: '+esc(r.revisedClaimText)
+  + '<br>verificationTarget: <b>'+esc(r.verificationTarget)+'</b>'
+  + '<br>disputedProposition: '+esc(r.disputedProposition)
+  + '<br>stipulatedByArticle: '+esc(r.stipulatedByArticle)
+  + '<br>whyThisTarget: '+esc(r.whyThisTarget)
+  + '<br>warrant: <b>'+esc(r.warrant ?? "not separately emitted — encoded in bearing criteria")+'</b></p>'
+  + '<p><span class="tag c2">C2</span>support:'+list(r.supportCriteria)
+  + 'refute:'+list(r.refuteCriteria)+'qualify:'+list(r.qualifyCriteria)
+  + 'mustMatch:'+list(r.mustMatch)+'rejectIfOnly (model):'+list(r.rejectIfOnly_model)+'</p>'
+  + '<p><span class="tag host">HOST</span>rejectIfOnly (host-appended):'+list(r.rejectIfOnly_host)
+  + 'sourceStrategy: '+strat
+  + '<br><span class="tag c2">C2</span>searchConcepts:'+list(r.searchConcepts)
+  + 'relevantNamedWorkIds: '+esc((r.relevantNamedWorkIds||[]).join(", ")||"(none)")
+  + ' | cautions:'+list(r.cautions)+'</p>'
+  + '<p><span class="tag host">HOST</span>origin: '+esc(r.origin)
+  + ' | gradeTarget: '+esc(r.gradeTarget)+' | scoreTransform: '+esc(r.scoreTransform)
+  + ' | packageValid: '+esc(r.packageValid)
+  + '<br>verificationQuestion: '+esc(r.verificationQuestion)
+  + '<br>host warnings:'+list(r.hostWarnings)+'</p></div>';
+}
+function claimsView(rows){
+  const cols = DATA.mode === "call1" ? [["profile","Profile"],["repeat","Rep"],
+    ["runStatus","Status"],["propositionCore","Proposition P"],["claimText","Final claim"],
+    ["articleRole","Role"],
+    ["articleUse","Use"],["assertionSource","Source"],["ifSupportedEffect","If supported"],
+    ["ifRefutedEffect","If refuted"],["scoreTransformCheck","Transform"],["materiality","Mat."]]
+    : [["profile","Profile"],["repeat","Rep"],["origin","Origin"],
+    ["runStatus","Status"],["failureClass","Failure"],["claimText","Claim"],
+    ["verificationTarget","Target"],["sourceStrategy_emitted","Strategy (C2)"],
+    ["sourceStrategy_resolved","Strategy (HOST)"],["materiality","Mat."]];
+  if (sortKey) rows = [...rows].sort((a,b)=>String(a[sortKey]??"").localeCompare(String(b[sortKey]??""))*sortDir);
+  let h = "<table><thead><tr>"+cols.map(([k,l])=>'<th data-k="'+k+'">'+l+"</th>").join("")+"</tr></thead><tbody>";
+  rows.forEach((r,i)=>{
+    h += '<tr class="claim'+(r.runStatus==="failed"?" failed":"")+'" data-i="'+i+'">'
+      + cols.map(([k])=>"<td>"+esc(Array.isArray(r[k])?r[k].join(", "):r[k])+"</td>").join("")+"</tr>"
+      + '<tr class="d" id="d'+i+'" style="display:none"><td colspan="'+cols.length+'">'+detail(r)+"</td></tr>";
+  });
+  return h+"</tbody></table>";
+}
+function alignView(rows){
+  const repeats = [...new Set(rows.map((r)=>r.repeat))].sort((a,b)=>a-b);
+  let h = "";
+  for (const rep of repeats){
+    const rs = rows.filter((r)=>r.repeat===rep && (r.sourceUnitIds||[]).length);
+    const parent = rs.map((_,i)=>i);
+    const find = (i)=>parent[i]===i?i:(parent[i]=find(parent[i]));
+    const unitOwner = new Map();
+    rs.forEach((r,i)=>{ for(const u of r.sourceUnitIds){
+      if(unitOwner.has(u)) parent[find(i)]=find(unitOwner.get(u)); else unitOwner.set(u,i); }});
+    const clusters = new Map();
+    rs.forEach((r,i)=>{ const root=find(i);
+      if(!clusters.has(root)) clusters.set(root,{units:new Set(),byProfile:{}});
+      const c=clusters.get(root); r.sourceUnitIds.forEach((u)=>c.units.add(u));
+      (c.byProfile[r.profile] ??= []).push(r); });
+    const ordered=[...clusters.values()].sort((a,b)=>[...a.units].sort()[0]<[...b.units].sort()[0]?-1:1);
+    h += "<h2>Repeat "+rep+"</h2><table class=cluster><thead><tr><th>Source units</th>"
+      + DATA.profiles.map((p)=>"<th>"+p+"</th>").join("")+"</tr></thead><tbody>";
+    for (const c of ordered){
+      h += "<tr><td>"+[...c.units].sort().join("<br>")+"</td>"
+        + DATA.profiles.map((p)=>"<td>"+(c.byProfile[p]??[]).map((r)=>
+          "• "+esc(r.claimText)+(r.origin==="host_pillar_backfill"?" <em class=muted>(backfill)</em>":"")).join("<br>")
+          +"</td>").join("")+"</tr>";
+    }
+    const failedHere = DATA.rows.filter((r)=>r.repeat===rep && r.runStatus==="failed");
+    const failedProfiles=[...new Set(failedHere.map((r)=>r.profile+" ("+r.failureClass+")"))];
+    if(failedProfiles.length) h+="<tr><td class=muted>failed runs</td><td colspan="+DATA.profiles.length
+      +" class=muted>"+failedProfiles.join("; ")+"</td></tr>";
+    h += "</tbody></table>";
+  }
+  return h || "<p class=muted>No grounded claims to align.</p>";
+}
+function orientView(){
+  let h = "<table><thead><tr><th>Repeat</th><th>Profile</th><th>Status</th><th>C1 candidates</th>"
+    + "<th>Theme [C1]</th><th>Thesis [C1]</th><th>Hinge [C1]</th><th>Pillars [C1]</th>"
+    + (DATA.mode === "call1" ? "<th>Opponent census [C1 diagnostic]</th>" : "")
+    + "</tr></thead><tbody>";
+  for (const o of DATA.orientations.sort((a,b)=>a.repeat-b.repeat||a.profile.localeCompare(b.profile))){
+    h += "<tr"+(o.runStatus==="failed"?' class=failed':'')+"><td>"+o.repeat+"</td><td>"+o.profile+"</td><td>"
+      + esc(o.runStatus)+(o.failure?" — "+esc(o.failure.failureClass)+":"+esc(o.failure.failureStage):"")
+      + "</td><td>"+esc(o.call1CandidateCount)+"</td><td>"+esc(o.theme)+"</td><td>"+esc(o.thesis)
+      + "</td><td>"+esc(o.thesisHinge)+"</td><td>"+esc((o.pillars||[]).map((p)=>p.label+" ("+p.importance+")").join("; "))+"</td>"
+      + (DATA.mode === "call1" ? "<td>"+esc((o.opponentScan||[]).map((p)=>
+        p.propositionCore+" ["+p.articleUse+"; "+(p.assertionSourceName||p.assertionSource||"")+ "]").join("; "))+"</td>" : "")
+      + "</tr>";
+  }
+  return h+"</tbody></table>";
+}
+function render(){
+  const rows = filtered();
+  document.getElementById("count").textContent = rows.length+" rows";
+  const view = document.getElementById("view");
+  view.innerHTML = tab==="claims" ? claimsView(rows) : tab==="align" ? alignView(rows) : orientView();
+  if (tab==="claims"){
+    view.querySelectorAll("tr.claim").forEach((tr)=>tr.addEventListener("click",()=>{
+      const d=document.getElementById("d"+tr.dataset.i);
+      d.style.display=d.style.display==="none"?"":"none";}));
+    view.querySelectorAll("th[data-k]").forEach((th)=>th.addEventListener("click",()=>{
+      sortDir = sortKey===th.dataset.k ? -sortDir : 1; sortKey=th.dataset.k; render();}));
+  }
+}
+for (const p of DATA.profiles) document.getElementById("f-profile").add(new Option(p,p));
+for (const r of [...new Set(DATA.rows.map((x)=>x.repeat))].sort((a,b)=>a-b))
+  document.getElementById("f-repeat").add(new Option("repeat "+r,String(r)));
+document.getElementById("search").addEventListener("input",(e)=>{S.q=e.target.value;render();});
+document.getElementById("f-profile").addEventListener("change",(e)=>{S.profile=e.target.value;render();});
+document.getElementById("f-repeat").addEventListener("change",(e)=>{S.repeat=e.target.value;render();});
+document.getElementById("f-status").addEventListener("change",(e)=>{S.status=e.target.value;render();});
+document.getElementById("btn-claims").addEventListener("click",(e)=>{tab="claims";setTab(e.target);});
+document.getElementById("btn-align").addEventListener("click",(e)=>{tab="align";setTab(e.target);});
+document.getElementById("btn-orient").addEventListener("click",(e)=>{tab="orient";setTab(e.target);});
+function setTab(btn){document.querySelectorAll("nav button").forEach((b)=>b.classList.remove("active"));
+btn.classList.add("active");render();}
+render();
+</script></body></html>

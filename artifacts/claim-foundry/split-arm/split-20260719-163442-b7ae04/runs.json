@@ -1,0 +1,45 @@
+{
+  "runId": "split-20260719-163442-b7ae04",
+  "arm": "attribution-host-v4",
+  "model": "gpt-4o-mini",
+  "call1aModel": "gpt-4.1-mini",
+  "call1bModel": "gpt-4.1-mini",
+  "api": "responses",
+  "includeAuthorCandidates": true,
+  "generatedAt": "2026-07-19T16:34:47.319Z",
+  "runs": [
+    {
+      "fixtureId": "CF1-F03",
+      "repeat": 1,
+      "seed": 3724605090,
+      "status": "failed",
+      "error": {
+        "code": "CF1_MODEL_UNAVAILABLE",
+        "message": "No usable structured model response after 1 attempt"
+      },
+      "elapsedMs": 1447
+    },
+    {
+      "fixtureId": "CF1-F03",
+      "repeat": 2,
+      "seed": 2126157648,
+      "status": "failed",
+      "error": {
+        "code": "CF1_MODEL_UNAVAILABLE",
+        "message": "No usable structured model response after 1 attempt"
+      },
+      "elapsedMs": 1367
+    },
+    {
+      "fixtureId": "CF1-F03",
+      "repeat": 3,
+      "seed": 3768605609,
+      "status": "failed",
+      "error": {
+        "code": "CF1_MODEL_UNAVAILABLE",
+        "message": "No usable structured model response after 1 attempt"
+      },
+      "elapsedMs": 1417
+    }
+  ]
+}

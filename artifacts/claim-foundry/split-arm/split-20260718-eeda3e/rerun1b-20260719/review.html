@@ -1,0 +1,239 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>CF1 blinded deep review — rerun1b</title>
+<style>
+body{font-family:-apple-system,system-ui,sans-serif;margin:1rem 2rem;line-height:1.4}
+.legend{background:#f7f7e8;border:1px solid #ddc;padding:0.6rem 1rem;font-size:0.9rem}
+nav button{margin-right:0.5rem;padding:0.3rem 0.8rem;cursor:pointer}
+nav button.active{background:#446;color:#fff}
+#filters input,#filters select{margin-right:0.6rem;padding:0.2rem}
+table{border-collapse:collapse;width:100%;margin-top:0.6rem}
+th,td{border:1px solid #ccc;padding:0.3rem 0.45rem;font-size:0.85rem;text-align:left;vertical-align:top}
+th{background:#eee;cursor:pointer;position:sticky;top:0}
+tr.claim:hover{background:#f5f8ff;cursor:pointer}
+tr.failed{background:#fff2f2}
+.detail{background:#fafaff;border-left:4px solid #446;padding:0.5rem 1rem}
+.tag{font-weight:700;font-size:0.75rem;padding:0 0.3rem;border-radius:3px;margin-right:0.3rem}
+.c1{background:#dbeafe}.c2{background:#dcfce7}.host{background:#fde8c8}
+.detail ul{margin:0.15rem 0 0.4rem 1.3rem}
+details{margin:0.3rem 0}blockquote{background:#f6f6f6;border-left:3px solid #999;
+margin:0.3rem 0;padding:0.4rem 0.7rem;white-space:pre-wrap;font-size:0.85rem}
+.cluster td{width:100%}
+.muted{color:#777}.ov{background:#fce7f3}.bad{background:#fee2e2;color:#991b1b;font-weight:700}
+</style></head><body>
+<div class="legend"><strong>Review — phase rerun1b (split mode).</strong>
+A <em>Profile</em> is one fixture under the contentStance/articleDeployment split arm. Profiles present:
+CF1-F03. Field provenance: <span class="tag c1">C1</span>Call 1 (model)
+<span class="tag host">HOST</span>articleUse + scoreTransform are host-derived from the model's contentStance/articleDeployment (1B never emits them).
+Failed runs are results: they carry a failure class and stage.</div>
+<nav><button id="btn-claims" class="active">Claims</button>
+<button id="btn-align">Alignment by source region</button>
+<button id="btn-orient">Orientations</button></nav>
+<div id="filters">
+<input id="search" placeholder="search text…" size="28">
+<select id="f-profile"><option value="">all profiles</option></select>
+<select id="f-repeat"><option value="">all repeats</option></select>
+<select id="f-status"><option value="">all statuses</option>
+<option>completed</option><option>failed</option></select>
+<span id="count" class="muted"></span></div>
+<div id="view"></div>
+<script>
+const DATA = {"phase":"rerun1b","mode":"split","profiles":["CF1-F03"],"rows":[{"profile":"CF1-F03","repeat":1,"runStatus":"completed","claimText":"According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.","articleRole":"opponent_claim","articleUse":"opponent_to_rebut","assertionSource":"CDC","materiality":"high","scope":"national","relatedPillarLabels":["Vaccination Rates and Exemptions"],"evidenceUsefulnessHint":"CDC vaccination data could verify this claim.","sourceUnitIds":["U0002"],"groundingText":"“According to the CDC and public health authorities, parents who choose not to vaccinate their children are typically highly educated. CDC data reflect that half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated. Why would the parents of these children, comprising a large part of the nation’s brain trust, choose not to vaccinate their children?”","contentStance":"contradicts_thesis","articleDeployment":"reported_neutral","scoreTransform":"invert","assertionSourceClass":"institutional","groundingSpan":"clustered","origin":"candidate","needsSplit":{"split":false,"reason":null},"possibleResponseText":null,"possibleResponseUnitIds":[]},{"profile":"CF1-F03","repeat":1,"runStatus":"completed","claimText":"The ad claims that vaccines are tested more than any other medicine.","articleRole":"opponent_claim","articleUse":"opponent_to_rebut","assertionSource":"Jefferson County Public Health","materiality":"high","scope":"local","relatedPillarLabels":["Claims About Vaccine Safety"],"evidenceUsefulnessHint":"Testing protocols for vaccines compared to other medicines could be examined.","sourceUnitIds":["U0012"],"groundingText":"• “Vaccines are tested more than any other medicine you could give your kid.”","contentStance":"contradicts_thesis","articleDeployment":"reported_neutral","scoreTransform":"invert","assertionSourceClass":"attributed_testimony","groundingSpan":"clustered","origin":"candidate","needsSplit":{"split":false,"reason":null},"possibleResponseText":null,"possibleResponseUnitIds":[]},{"profile":"CF1-F03","repeat":1,"runStatus":"completed","claimText":"Aluminum in vaccines is toxic and can cause neurological damage.","articleRole":"pillar","articleUse":"reported","assertionSource":"James Lyons-Weiler and Robert Ricketson","materiality":"high","scope":"scientific","relatedPillarLabels":["Aluminum in Vaccines"],"evidenceUsefulnessHint":"Studies on aluminum's effects in vaccines could provide evidence.","sourceUnitIds":["U0241","U0242","U0243","U0244","U0245","U0246","U0247","U0248","U0249","U0250","U0251","U0252"],"groundingText":"THE FACTS / ALUMINUM:  “Our calculations show that the levels of aluminum suggested by the currently used limits place infants at risk of acute, repeated, and possibly chronic exposures of toxic levels of aluminum in modern vaccine schedules.”  —James Lyons-Weiler and Robert Ricketson,  “Reconsideration of the immunotherapeutic pediatric safe dose levels of aluminum”  Folks SHOULD be nervous about aluminum being used in vaccines.  Just because it “occurs naturally” does not mean a substance is safe.  While aluminum is the most abundant metal in the earth’s crust, it is tightly bound with other elements like silica, and not bioavailable.  It has no physiological role in the body, and whether ingested, inhaled or injected, isolated aluminum is toxic.  Eating or drinking aluminum can be harmful, but both the digestive system and the liver are able to filter it before it reaches the bloodstream, affording some degree of protection.  Injecting aluminum through a vaccination bypasses these protections, placing it directly into the bloodstream.  Regarding the aluminum in that tomato, according to Physicians for Informed Consent :  “The ATSDR [Agency for Toxic Substances and Disease Registry] oral aluminum limit is based on 0.1% of oral aluminum being absorbed into the bloodstream, as the digestive tract blocks nearly all oral aluminum (Fig. 2a). In contrast, aluminum injected intramuscularly bypasses the digestive tract, and 100% of aluminum may be absorbed into the bloodstream over time (i.e.,the proportion of absorbed aluminum is 1,000 times greater).” [ source ]","contentStance":"supports_thesis","articleDeployment":"reported_neutral","scoreTransform":"normal","assertionSourceClass":"attributed_testimony","groundingSpan":"clustered","origin":"candidate","needsSplit":{"split":false,"reason":null},"possibleResponseText":null,"possibleResponseUnitIds":[]},{"profile":"CF1-F03","repeat":1,"runStatus":"completed","claimText":"There is a rise in the rate of parents seeking vaccine exemptions for their children.","articleRole":"thesis","articleUse":"reported","assertionSource":".","materiality":"high","scope":"national","relatedPillarLabels":["Vaccination Rates and Exemptions"],"evidenceUsefulnessHint":"Data on vaccine exemptions could confirm this trend.","sourceUnitIds":["U0014"],"groundingText":"Along with reduction in vaccine uptake, there is also a rise in the rate of parents seeking vaccine exemptions for their children.","contentStance":"supports_thesis","articleDeployment":"reported_neutral","scoreTransform":"normal","assertionSourceClass":"author_voice","groundingSpan":"clustered","origin":"candidate","needsSplit":{"split":false,"reason":null},"possibleResponseText":null,"possibleResponseUnitIds":[]},{"profile":"CF1-F03","repeat":1,"runStatus":"completed","claimText":"Thimerosal, a mercury-based preservative used in vaccines, is toxic and has been linked to neurological damage.","articleRole":"pillar","articleUse":"reported","assertionSource":"Manufacturer’s Material Safety Data Sheet","materiality":"high","scope":"scientific","relatedPillarLabels":["Thimerosal and Vaccine Safety"],"evidenceUsefulnessHint":"Research studies on thimerosal's effects could support or refute this claim.","sourceUnitIds":["U0300","U0301","U0302","U0303","U0304","U0305","U0306","U0307","U0308","U0309","U0310","U0311"],"groundingText":"THE FACTS / MERCURY:  “[Thimerosal] is toxic… Mutagenic in mammalian cells.“  May cause “decreased offspring survival, and offspring nervous system effects including mild to severe mental retardation and motor coordination impairment.”  —from the manufacturer’s Material Safety Data Sheet  “Comparing toxicity in two forms of mercury is like comparing the benefits of being shot with a .38 caliber bullet rather than a .45 caliber bullet. Most people would prefer Door #3: no bullet at all.”  —Gavin de Becker,  “Forbidden Facts: Government Deceit & Suppression About Brain Damage from Childhood Vaccines”  Entire books have debunked the absurd statement “ethylmercury is NOT harmful to us.”  Mercury is the third most toxic element on earth, 500 times more poisonous than lead.  Thimerosal is the trade name for the 50% ethylmercury solution used since the 1930s as a preservative in vaccines.  Contrary to our health department’s claim, it is highly neurotoxic — dangerous enough to cause “decreased offspring survival” as Eli Lilly was required by law to disclose in its Material Safety Data Sheet for thimerosal.  New works have expanded on Robert F.","contentStance":"supports_thesis","articleDeployment":"reported_neutral","scoreTransform":"normal","assertionSourceClass":"author_voice","groundingSpan":"clustered","origin":"candidate","needsSplit":{"split":false,"reason":null},"possibleResponseText":null,"possibleResponseUnitIds":[]},{"profile":"CF1-F03","repeat":1,"runStatus":"completed","claimText":"SIDS became the leading cause of post-neonatal mortality in the U.S. following the introduction of mass vaccination programs.","articleRole":"pillar","articleUse":"reported","assertionSource":"Neil Z. Miller","materiality":"high","scope":"historical","relatedPillarLabels":["SIDS and Vaccination"],"evidenceUsefulnessHint":"Mortality statistics before and after vaccination programs could be analyzed.","sourceUnitIds":["U0187","U0193","U0194","U0198","U0200","U0201"],"groundingText":"“Prior to the introduction of organized vaccination programs, ‘crib death’ was so rare that it was not mentioned in infant mortality statistics… By 1972, SIDS had become the leading cause of post-neonatal mortality (infant deaths occurring between 28 days and 1 year of life) in the United States.”  It was not until mass vaccination that the term SIDS — Sudden Infant Death Syndrome — even existed.  SIDS is the most extreme example of how vaccines can sometimes overwhelm a child’s immune system.  As Neil Z.  Like other dangers associated with vaccination, health authorities sought to explain away this new phenomenon.  In his 2021 report “Vaccines and sudden infant death: An analysis of the VAERS database 1990–2019 and review of the medical literature,” Miller explains:","contentStance":"supports_thesis","articleDeployment":"reported_neutral","scoreTransform":"normal","assertionSourceClass":"author_voice","groundingSpan":"clustered","origin":"candidate","needsSplit":{"split":false,"reason":null},"possibleResponseText":null,"possibleResponseUnitIds":[]},{"profile":"CF1-F03","repeat":1,"runStatus":"completed","claimText":"The Jefferson County Public Health ad attempted to reassure parents about vaccines through light-hearted content.","articleRole":"opponent_claim","articleUse":"opponent_to_rebut","assertionSource":"Jefferson County Public Health","materiality":"medium","scope":"local","relatedPillarLabels":["Public Health Messaging"],"evidenceUsefulnessHint":"The ad's content can be reviewed for analysis.","sourceUnitIds":["U0005","U0006"],"groundingText":"“What’s the Truth about Vaccines?” asked Jefferson County Public Health (JCPH) in a quarter-page ad in the March 11 Port Townsend Leader. The hand-drawn, whimsical cartoon-style presentation and the ad’s content offered a light-hearted attempt to ease parents’ concerns about vaccinating their children.  “This is a JUDGEMENT FREE guide to learn about vaccines,” the ad opens with. “You don’t need to have your mind made up to start reading. BRING YOUR CURIOSITY!”","contentStance":"contradicts_thesis","articleDeployment":"reported_neutral","scoreTransform":"invert","assertionSourceClass":"attributed_testimony","groundingSpan":"clustered","origin":"candidate","needsSplit":{"split":false,"reason":null},"possibleResponseText":null,"possibleResponseUnitIds":[]},{"profile":"CF1-F03","repeat":1,"runStatus":"completed","claimText":"There is a pattern of censorship regarding discussions about vaccine safety and efficacy.","articleRole":"pillar","articleUse":"reported","assertionSource":".","materiality":"medium","scope":"local","relatedPillarLabels":["Censorship and Vaccine Debate"],"evidenceUsefulnessHint":"Instances of censorship in media or public forums could be documented.","sourceUnitIds":["U0148","U0150","U0151","U0152","U0153","U0154","U0155","U0156"],"groundingText":"Over a period of several months our group developed a vaccine study guide — VACCINATION: Where there is Risk, there must be Choice .  We created a print version of the guide, and working with the Port Townsend Leader ’s advertising manager, arranged to pay for its inclusion as an insert in the newspaper.  We were told that as long as our information was credibly sourced and could be confirmed through Google Scholar, it would be acceptable.  Everything in the guide was meticulously documented — including CDC links, National Library of Medicine studies, and vaccine package inserts — all substantiated through Google Scholar.  However when Publisher Lloyd Mullen was given a copy, his note of rejection was swift:  “Unfortunately, we will not be able to print or insert your flyer in our newspaper.  The reason: correlation does not imply causation.”  Once again, allowing people to consider varied perspectives and then make up their own minds was not permitted.","contentStance":"supports_thesis","articleDeployment":"reported_neutral","scoreTransform":"normal","assertionSourceClass":"author_voice","groundingSpan":"clustered","origin":"candidate","needsSplit":{"split":false,"reason":null},"possibleResponseText":null,"possibleResponseUnitIds":[]}],"orientations":[{"repeat":1,"profile":"CF1-F03","runStatus":"completed","call1CandidateCount":8,"theme":"Public health narratives about vaccines are often challenged by claims of misinformation and censorship.","thesis":"The claims made by public health authorities regarding vaccines lack credible scientific support and are often based on misinformation.","thesisHinge":"mixed","pillars":[{"label":"Vaccination Rates and Exemptions","text":"Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.","importance":"load_bearing","sourceUnitIds":["U0002"]},{"label":"Public Health Messaging","text":"The Jefferson County Public Health ad attempted to reassure parents about vaccines through light-hearted content.","importance":"load_bearing","sourceUnitIds":["U0005","U0006"]},{"label":"Claims About Vaccine Safety","text":"The ad claims that vaccines are tested more than any other medicine.","importance":"load_bearing","sourceUnitIds":["U0012"]},{"label":"Vaccine Exemptions","text":"There is a rise in the rate of parents seeking vaccine exemptions for their children.","importance":"load_bearing","sourceUnitIds":["U0014"]},{"label":"Thimerosal and Vaccine Safety","text":"Thimerosal, a mercury-based preservative used in vaccines, is toxic and has been linked to neurological damage.","importance":"load_bearing","sourceUnitIds":["U0300","U0301","U0302","U0303","U0304","U0305","U0306","U0307","U0308","U0309","U0310","U0311"]},{"label":"Aluminum in Vaccines","text":"Aluminum in vaccines is toxic and can cause neurological damage.","importance":"load_bearing","sourceUnitIds":["U0241","U0242","U0243","U0244","U0245","U0246","U0247","U0248","U0249","U0250","U0251","U0252"]},{"label":"SIDS and Vaccination","text":"SIDS became the leading cause of post-neonatal mortality in the U.S. following the introduction of mass vaccination programs.","importance":"load_bearing","sourceUnitIds":["U0187","U0193","U0194","U0198","U0200","U0201"]},{"label":"Censorship and Vaccine Debate","text":"There is a pattern of censorship regarding discussions about vaccine safety and efficacy.","importance":"load_bearing","sourceUnitIds":["U0148","U0150","U0151","U0152","U0153","U0154","U0155","U0156"]}]}]};
+const esc = (v) => String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;");
+const list = (v) => (v ?? []).length ? "<ul>" + v.map((x)=>"<li>"+esc(x)+"</li>").join("") + "</ul>" : " <span class=muted>(none)</span>";
+let sortKey = null, sortDir = 1, tab = "claims";
+const S = { q:"", profile:"", repeat:"", status:"" };
+function filtered(){
+  return DATA.rows.filter((r)=>
+    (!S.profile || r.profile===S.profile) && (!S.repeat || String(r.repeat)===S.repeat)
+    && (!S.status || r.runStatus===S.status)
+    && (!S.q || JSON.stringify(r).toLowerCase().includes(S.q.toLowerCase())));
+}
+function detail(r){
+  if (DATA.mode === "split") {
+    return '<div class="detail">'
+    + '<details open><summary>Source text (units '+esc((r.sourceUnitIds||[]).join(", "))+')</summary>'
+    + '<blockquote>'+esc(r.groundingText)+'</blockquote></details>'
+    + '<p><span class="tag c1">C1</span>contentStance: <b>'+esc(r.contentStance)+'</b>'
+    + ' | articleDeployment: <b>'+esc(r.articleDeployment)+'</b>'
+    + ' | articleRole: '+esc(r.articleRole)+'</p>'
+    + '<p><span class="tag host">HOST</span>articleUse: <b>'+esc(r.articleUse)+'</b>'
+    + ' | scoreTransform: <b>'+esc(r.scoreTransform)+'</b>'
+    + ' | assertionSource: '+esc(r.assertionSource)+' <span class=muted>('+esc(r.assertionSourceClass)+')</span>'
+    + ' | materiality: '+esc(r.materiality)+' | groundingSpan: '+esc(r.groundingSpan)
+    + ' | origin: '+esc(r.origin)+'</p>'
+    + '<p>scope: '+esc(r.scope)+' | pillars: '+esc((r.relatedPillarLabels||[]).join(", "))
+    + '<br>evidenceUsefulnessHint: '+esc(r.evidenceUsefulnessHint)+'</p>'
+    + (r.needsSplit && r.needsSplit.split ? '<p class="bad">needsSplit: '+esc(r.needsSplit.reason)+'</p>' : '')
+    + (r.possibleResponseText ? '<details><summary>possibleResponse — distant passage (units '
+      + esc((r.possibleResponseUnitIds||[]).join(", "))+'; feeds articleDeployment only, never contentStance)</summary>'
+      + '<blockquote>'+esc(r.possibleResponseText)+'</blockquote></details>' : '')
+    + '</div>';
+  }
+  if (DATA.mode === "call1") {
+    const consistency = r.transformConsistent === false
+      ? '<b class="bad">CONTRADICTION — effects imply '+esc(r.expectedTransform)+'</b>'
+      : r.transformConsistent === true ? "consistent" : "not emitted by this arm";
+    return '<div class="detail">'
+    + '<details><summary>Source text (units '+esc((r.sourceUnitIds||[]).join(", "))+')</summary>'
+    + '<blockquote>'+esc(r.groundingText)+'</blockquote></details>'
+    + '<p><span class="tag c1">C1</span>'+esc(r.articleRole)+' | '+esc(r.articleUse)
+    + ' | source: '+esc(r.assertionSource)+' | materiality: '+esc(r.materiality)
+    + ' | scope: '+esc(r.scope)+' | pillars: '+esc((r.relatedPillarLabels||[]).join(", "))
+    + '<br>evidenceUsefulnessHint: '+esc(r.evidenceUsefulnessHint)+'</p>'
+    + '<p><span class="tag c1">ORDER TRACE</span>propositionCore: '+esc(r.propositionCore ?? "not emitted by this arm")
+    + '<br>if supported: <b>'+esc(r.ifSupportedEffect ?? "not emitted")+'</b>'
+    + ' | if refuted: <b>'+esc(r.ifRefutedEffect ?? "not emitted")+'</b>'
+    + ' | transform check: <b>'+esc(r.scoreTransformCheck ?? "not emitted")+'</b>'
+    + '<br>effect/transform consistency: '+consistency
+    + '<br>typed assertion source: '+esc(r.assertionSourceKind ?? "not emitted")
+    + ' / '+esc(r.assertionSourceName ?? "not emitted")+'</p>'
+    + (r.sourceProposition ? '<p><span class="tag c1">RELATION TRACE</span>source proposition P: '
+      + esc(r.sourceProposition)+'<br>article response: <b>'+esc(r.articleResponse)+'</b>'
+      + '<details><summary>Article-response text (units '+esc((r.articleResponseUnitIds||[]).join(", "))
+      + ')</summary><blockquote>'+esc(r.articleResponseGroundingText)+'</blockquote></details></p>' : '')
+    + '</div>';
+  }
+  const strat = r.hostStrategyOverride
+    ? esc(r.sourceStrategy_emitted)+" → "+esc(r.sourceStrategy_resolved)+" <b class=ov>(host override)</b>"
+    : esc(r.sourceStrategy_emitted ?? r.sourceStrategy_resolved);
+  const traceConsistency = r.transformConsistent === false
+    ? '<b class="bad">CONTRADICTION — effects imply '+esc(r.expectedTransform)+'</b>'
+    : r.transformConsistent === true ? "consistent" : "not emitted by this arm";
+  const trace = r.propositionCore ? '<p><span class="tag c1">C1 TRACE</span>'
+    + 'propositionCore: '+esc(r.propositionCore)
+    + '<br>if supported: <b>'+esc(r.ifSupportedEffect)+'</b>'
+    + ' | if refuted: <b>'+esc(r.ifRefutedEffect)+'</b>'
+    + ' | model transform check: <b>'+esc(r.scoreTransformCheck)+'</b>'
+    + '<br>expected from effects: <b>'+esc(r.expectedTransform)+'</b>'
+    + ' | consistency: '+traceConsistency+'</p>' : '';
+  return '<div class="detail">'
+  + '<details><summary>Source text (units '+esc((r.sourceUnitIds||[]).join(", "))+')</summary>'
+  + '<blockquote>'+esc(r.groundingText)+'</blockquote></details>'
+  + '<p><span class="tag c1">C1</span>'+esc(r.articleRole)+' | '+esc(r.articleUse)+' | source: '
+  + esc(r.assertionSource)+' | materiality: '+esc(r.materiality)+' | scope: '+esc(r.scope)
+  + ' | pillars: '+esc((r.relatedPillarLabels||[]).join(", "))
+  + '<br>evidenceUsefulnessHint: '+esc(r.evidenceUsefulnessHint)+'</p>'+trace
+  + '<p><span class="tag c2">C2</span>revisedClaimText: '+esc(r.revisedClaimText)
+  + '<br>verificationTarget: <b>'+esc(r.verificationTarget)+'</b>'
+  + '<br>disputedProposition: '+esc(r.disputedProposition)
+  + '<br>stipulatedByArticle: '+esc(r.stipulatedByArticle)
+  + '<br>whyThisTarget: '+esc(r.whyThisTarget)
+  + '<br>warrant: <b>'+esc(r.warrant ?? "not separately emitted — encoded in bearing criteria")+'</b></p>'
+  + '<p><span class="tag c2">C2</span>support:'+list(r.supportCriteria)
+  + 'refute:'+list(r.refuteCriteria)+'qualify:'+list(r.qualifyCriteria)
+  + 'mustMatch:'+list(r.mustMatch)+'rejectIfOnly (model):'+list(r.rejectIfOnly_model)+'</p>'
+  + '<p><span class="tag host">HOST</span>rejectIfOnly (host-appended):'+list(r.rejectIfOnly_host)
+  + 'sourceStrategy: '+strat
+  + '<br><span class="tag c2">C2</span>searchConcepts:'+list(r.searchConcepts)
+  + 'relevantNamedWorkIds: '+esc((r.relevantNamedWorkIds||[]).join(", ")||"(none)")
+  + ' | cautions:'+list(r.cautions)+'</p>'
+  + '<p><span class="tag host">HOST</span>origin: '+esc(r.origin)
+  + ' | gradeTarget: '+esc(r.gradeTarget)+' | scoreTransform: '+esc(r.scoreTransform)
+  + ' | packageValid: '+esc(r.packageValid)
+  + '<br>verificationQuestion: '+esc(r.verificationQuestion)
+  + '<br>host warnings:'+list(r.hostWarnings)+'</p></div>';
+}
+function claimsView(rows){
+  const cols = DATA.mode === "split" ? [["profile","Fixture"],["repeat","Rep"],
+    ["runStatus","Status"],["claimText","Claim"],["articleRole","Role"],
+    ["contentStance","contentStance [C1]"],["articleDeployment","articleDeployment [C1]"],
+    ["articleUse","articleUse [HOST]"],["scoreTransform","scoreTransform [HOST]"],
+    ["assertionSource","Source"],["assertionSourceClass","class [HOST]"],
+    ["materiality","Mat."],["groundingSpan","Span"],["origin","Origin"]]
+    : DATA.mode === "call1" ? [["profile","Profile"],["repeat","Rep"],
+    ["runStatus","Status"],["propositionCore","Proposition P"],["claimText","Final claim"],
+    ["articleRole","Role"],
+    ["articleUse","Use"],["assertionSource","Source"],["ifSupportedEffect","If supported"],
+    ["ifRefutedEffect","If refuted"],["scoreTransformCheck","Transform"],["materiality","Mat."]]
+    : [["profile","Profile"],["repeat","Rep"],["origin","Origin"],
+    ["runStatus","Status"],["failureClass","Failure"],["propositionCore","Proposition P"],
+    ["claimText","Final claim"],["articleRole","Role"],["articleUse","Use"],
+    ["assertionSource","Source"],["ifSupportedEffect","If supported"],
+    ["ifRefutedEffect","If refuted"],["scoreTransformCheck","Transform (C1)"],
+    ["scoreTransform","Transform (HOST)"],["verificationTarget","Target"],
+    ["sourceStrategy_emitted","Strategy (C2)"],["sourceStrategy_resolved","Strategy (HOST)"],
+    ["materiality","Mat."]];
+  if (sortKey) rows = [...rows].sort((a,b)=>String(a[sortKey]??"").localeCompare(String(b[sortKey]??""))*sortDir);
+  let h = "<table><thead><tr>"+cols.map(([k,l])=>'<th data-k="'+k+'">'+l+"</th>").join("")+"</tr></thead><tbody>";
+  rows.forEach((r,i)=>{
+    h += '<tr class="claim'+(r.runStatus==="failed"?" failed":"")+'" data-i="'+i+'">'
+      + cols.map(([k])=>"<td>"+esc(Array.isArray(r[k])?r[k].join(", "):r[k])+"</td>").join("")+"</tr>"
+      + '<tr class="d" id="d'+i+'" style="display:none"><td colspan="'+cols.length+'">'+detail(r)+"</td></tr>";
+  });
+  return h+"</tbody></table>";
+}
+function alignView(rows){
+  const repeats = [...new Set(rows.map((r)=>r.repeat))].sort((a,b)=>a-b);
+  let h = "";
+  for (const rep of repeats){
+    const rs = rows.filter((r)=>r.repeat===rep && (r.sourceUnitIds||[]).length);
+    const parent = rs.map((_,i)=>i);
+    const find = (i)=>parent[i]===i?i:(parent[i]=find(parent[i]));
+    const unitOwner = new Map();
+    rs.forEach((r,i)=>{ for(const u of r.sourceUnitIds){
+      if(unitOwner.has(u)) parent[find(i)]=find(unitOwner.get(u)); else unitOwner.set(u,i); }});
+    const clusters = new Map();
+    rs.forEach((r,i)=>{ const root=find(i);
+      if(!clusters.has(root)) clusters.set(root,{units:new Set(),byProfile:{}});
+      const c=clusters.get(root); r.sourceUnitIds.forEach((u)=>c.units.add(u));
+      (c.byProfile[r.profile] ??= []).push(r); });
+    const ordered=[...clusters.values()].sort((a,b)=>[...a.units].sort()[0]<[...b.units].sort()[0]?-1:1);
+    h += "<h2>Repeat "+rep+"</h2><table class=cluster><thead><tr><th>Source units</th>"
+      + DATA.profiles.map((p)=>"<th>"+p+"</th>").join("")+"</tr></thead><tbody>";
+    for (const c of ordered){
+      h += "<tr><td>"+[...c.units].sort().join("<br>")+"</td>"
+        + DATA.profiles.map((p)=>"<td>"+(c.byProfile[p]??[]).map((r)=>
+          "• "+esc(r.claimText)+(r.origin==="host_pillar_backfill"?" <em class=muted>(backfill)</em>":"")).join("<br>")
+          +"</td>").join("")+"</tr>";
+    }
+    const failedHere = DATA.rows.filter((r)=>r.repeat===rep && r.runStatus==="failed");
+    const failedProfiles=[...new Set(failedHere.map((r)=>r.profile+" ("+r.failureClass+")"))];
+    if(failedProfiles.length) h+="<tr><td class=muted>failed runs</td><td colspan="+DATA.profiles.length
+      +" class=muted>"+failedProfiles.join("; ")+"</td></tr>";
+    h += "</tbody></table>";
+  }
+  return h || "<p class=muted>No grounded claims to align.</p>";
+}
+function orientView(){
+  let h = "<table><thead><tr><th>Repeat</th><th>Profile</th><th>Status</th><th>C1 candidates</th>"
+    + "<th>Theme [C1]</th><th>Thesis [C1]</th><th>Hinge [C1]</th><th>Pillars [C1]</th>"
+    + (DATA.mode === "call1" ? "<th>Opponent census [C1 diagnostic]</th>" : "")
+    + "</tr></thead><tbody>";
+  for (const o of DATA.orientations.sort((a,b)=>a.repeat-b.repeat||a.profile.localeCompare(b.profile))){
+    h += "<tr"+(o.runStatus==="failed"?' class=failed':'')+"><td>"+o.repeat+"</td><td>"+o.profile+"</td><td>"
+      + esc(o.runStatus)+(o.failure?" — "+esc(o.failure.failureClass)+":"+esc(o.failure.failureStage):"")
+      + "</td><td>"+esc(o.call1CandidateCount)+"</td><td>"+esc(o.theme)+"</td><td>"+esc(o.thesis)
+      + "</td><td>"+esc(o.thesisHinge)+"</td><td>"+esc((o.pillars||[]).map((p)=>p.label+" ("+p.importance+")").join("; "))+"</td>"
+      + (DATA.mode === "call1" ? "<td>"+esc((o.opponentScan||[]).map((p)=>
+        p.propositionCore+" ["+p.articleUse+"; "+(p.assertionSourceName||p.assertionSource||"")+ "]").join("; "))+"</td>" : "")
+      + "</tr>";
+  }
+  return h+"</tbody></table>";
+}
+function render(){
+  const rows = filtered();
+  document.getElementById("count").textContent = rows.length+" rows";
+  const view = document.getElementById("view");
+  view.innerHTML = tab==="claims" ? claimsView(rows) : tab==="align" ? alignView(rows) : orientView();
+  if (tab==="claims"){
+    view.querySelectorAll("tr.claim").forEach((tr)=>tr.addEventListener("click",()=>{
+      const d=document.getElementById("d"+tr.dataset.i);
+      d.style.display=d.style.display==="none"?"":"none";}));
+    view.querySelectorAll("th[data-k]").forEach((th)=>th.addEventListener("click",()=>{
+      sortDir = sortKey===th.dataset.k ? -sortDir : 1; sortKey=th.dataset.k; render();}));
+  }
+}
+for (const p of DATA.profiles) document.getElementById("f-profile").add(new Option(p,p));
+for (const r of [...new Set(DATA.rows.map((x)=>x.repeat))].sort((a,b)=>a-b))
+  document.getElementById("f-repeat").add(new Option("repeat "+r,String(r)));
+document.getElementById("search").addEventListener("input",(e)=>{S.q=e.target.value;render();});
+document.getElementById("f-profile").addEventListener("change",(e)=>{S.profile=e.target.value;render();});
+document.getElementById("f-repeat").addEventListener("change",(e)=>{S.repeat=e.target.value;render();});
+document.getElementById("f-status").addEventListener("change",(e)=>{S.status=e.target.value;render();});
+document.getElementById("btn-claims").addEventListener("click",(e)=>{tab="claims";setTab(e.target);});
+document.getElementById("btn-align").addEventListener("click",(e)=>{tab="align";setTab(e.target);});
+document.getElementById("btn-orient").addEventListener("click",(e)=>{tab="orient";setTab(e.target);});
+function setTab(btn){document.querySelectorAll("nav button").forEach((b)=>b.classList.remove("active"));
+btn.classList.add("active");render();}
+render();
+</script></body></html>

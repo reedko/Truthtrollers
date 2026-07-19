@@ -1,0 +1,86 @@
+{
+  "thesis": "Public health authorities propagate misleading information about vaccines, which has led to increased vaccine hesitancy and concerns about vaccine safety.",
+  "claims": [
+    {
+      "proposition": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+      "assertedBy": "CDC data",
+      "articleTreatment": "—",
+      "groundingExcerpt": "U0002",
+      "evidenceQuestion": "This claim highlights the extent of vaccine hesitancy and is crucial for understanding the public health implications.",
+      "supportWouldLookLike": "Statistical data from the CDC showing vaccination rates among school children and toddlers.",
+      "refuteWouldLookLike": "Data from the CDC indicating that vaccination rates are higher than reported or that the definitions of 'fully vaccinated' and 'unvaccinated' differ."
+    },
+    {
+      "proposition": "The CDC manipulated data linking the MMR vaccine to autism and ordered scientists to destroy evidence.",
+      "assertedBy": "William Thompson, CDC whistleblower",
+      "articleTreatment": "—",
+      "groundingExcerpt": "U0027, U0028",
+      "evidenceQuestion": "This claim is central to allegations of misconduct within the CDC and affects public trust in vaccine safety.",
+      "supportWouldLookLike": "Documented evidence or transcripts from the CDC meetings discussing the manipulation of data.",
+      "refuteWouldLookLike": "Official CDC statements or independent investigations disproving the claims of data manipulation."
+    },
+    {
+      "proposition": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines.",
+      "assertedBy": "U.S. Congress",
+      "articleTreatment": "—",
+      "groundingExcerpt": "U0042",
+      "evidenceQuestion": "This claim is critical for understanding the legal landscape surrounding vaccine safety and accountability.",
+      "supportWouldLookLike": "Text of the 1986 National Childhood Vaccine Injury Act and its implications for vaccine manufacturers.",
+      "refuteWouldLookLike": "Evidence showing that vaccine manufacturers are still held accountable under certain conditions."
+    },
+    {
+      "proposition": "The childhood vaccination schedule increased from 5 doses in the 1950s to 73 doses by 2011.",
+      "assertedBy": "Historical vaccination data",
+      "articleTreatment": "—",
+      "groundingExcerpt": "U0048",
+      "evidenceQuestion": "This claim illustrates the dramatic increase in vaccine administration and raises questions about safety and necessity.",
+      "supportWouldLookLike": "Historical vaccination schedules from health authorities showing the increase in doses over time.",
+      "refuteWouldLookLike": "Data indicating that the increase in doses corresponds with improved public health outcomes."
+    },
+    {
+      "proposition": "The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after implementing aggressive vaccination programs.",
+      "assertedBy": "Analysis of U.S. infant mortality data",
+      "articleTreatment": "—",
+      "groundingExcerpt": "U0053",
+      "evidenceQuestion": "This claim links vaccination programs to infant mortality rates, which is a significant public health concern.",
+      "supportWouldLookLike": "Comparative infant mortality statistics from the U.S. and EU countries.",
+      "refuteWouldLookLike": "Evidence showing that other factors contributed to infant mortality rates in the U.S. that are unrelated to vaccination."
+    },
+    {
+      "proposition": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccines administered at once.",
+      "assertedBy": "James Lyons-Weiler and Robert Ricketson",
+      "articleTreatment": "—",
+      "groundingExcerpt": "U0159",
+      "evidenceQuestion": "This claim questions the safety protocols surrounding vaccine administration and is essential for evaluating vaccine safety.",
+      "supportWouldLookLike": "Documentation from the CDC or FDA regarding safety testing protocols for vaccines.",
+      "refuteWouldLookLike": "Evidence showing that cumulative safety testing has been conducted and deemed satisfactory."
+    },
+    {
+      "proposition": "Thimerosal, a mercury-based preservative, was removed from childhood vaccines due to its neurotoxic effects.",
+      "assertedBy": "CDC and public health statements",
+      "articleTreatment": "—",
+      "groundingExcerpt": "U0184",
+      "evidenceQuestion": "This claim is crucial for understanding the safety of vaccine ingredients and public health policy changes.",
+      "supportWouldLookLike": "Official statements from the CDC regarding the removal of thimerosal and its reasons.",
+      "refuteWouldLookLike": "Evidence showing that thimerosal was removed for reasons unrelated to safety concerns."
+    },
+    {
+      "proposition": "The CDC's claim that ethylmercury in vaccines is not harmful is contradicted by scientific literature.",
+      "assertedBy": "Gavin de Becker and other researchers",
+      "articleTreatment": "—",
+      "groundingExcerpt": "U0176",
+      "evidenceQuestion": "This claim challenges the safety narrative surrounding vaccine preservatives and is essential for evaluating vaccine safety.",
+      "supportWouldLookLike": "Peer-reviewed studies demonstrating the neurotoxic effects of ethylmercury.",
+      "refuteWouldLookLike": "Studies showing no significant harm from ethylmercury in vaccines."
+    },
+    {
+      "proposition": "The rise in chronic health conditions among children correlates with the increase in vaccination rates.",
+      "assertedBy": "Statistical health data",
+      "articleTreatment": "—",
+      "groundingExcerpt": "U0051",
+      "evidenceQuestion": "This claim is pivotal for evaluating the long-term health impacts of vaccination policies.",
+      "supportWouldLookLike": "Epidemiological studies showing a correlation between vaccination rates and chronic health conditions.",
+      "refuteWouldLookLike": "Research indicating that other factors, such as environmental or lifestyle changes, are responsible for the rise in chronic conditions."
+    }
+  ]
+}

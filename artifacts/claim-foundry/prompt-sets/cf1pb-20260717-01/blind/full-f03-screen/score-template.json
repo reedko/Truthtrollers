@@ -1,0 +1,417 @@
+{
+  "schemaVersion": "cf1.benchmarkScores.v1",
+  "instructions": "Mark evaluation-key targets present|partial|absent per profile; score each dimension 1-5.",
+  "packets": [
+    {
+      "subject": "CF1-F03",
+      "repeat": 1,
+      "profiles": {
+        "Profile J": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        },
+        "Profile R": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        },
+        "Profile V": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        },
+        "Profile Q": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        }
+      }
+    },
+    {
+      "subject": "CF1-F03",
+      "repeat": 2,
+      "profiles": {
+        "Profile Q": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        },
+        "Profile V": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        },
+        "Profile J": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        },
+        "Profile R": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        }
+      }
+    },
+    {
+      "subject": "CF1-F03",
+      "repeat": 3,
+      "profiles": {
+        "Profile Q": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        },
+        "Profile J": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        },
+        "Profile R": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        },
+        "Profile V": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        }
+      }
+    },
+    {
+      "subject": "CF1-F03",
+      "repeat": 4,
+      "profiles": {
+        "Profile Q": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        },
+        "Profile R": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        },
+        "Profile V": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        },
+        "Profile J": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        }
+      }
+    },
+    {
+      "subject": "CF1-F03",
+      "repeat": 5,
+      "profiles": {
+        "Profile V": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        },
+        "Profile R": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        },
+        "Profile Q": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        },
+        "Profile J": {
+          "targetJudgments": {},
+          "dimensions": {
+            "disputed_proposition_fidelity": null,
+            "attribution_substance_choice": null,
+            "polarity_scope_preservation": null,
+            "support_refute_symmetry": null,
+            "concrete_qualification": null,
+            "warranted_link_adequacy": null,
+            "mustmatch_precision": null,
+            "rejectifonly_usefulness": null,
+            "strategy_fit": null,
+            "searchconcept_discrimination": null,
+            "named_work_correctness": null,
+            "no_self_confirmation": null,
+            "package_validity": null
+          },
+          "notes": ""
+        }
+      }
+    }
+  ],
+  "evaluationTargets": []
+}

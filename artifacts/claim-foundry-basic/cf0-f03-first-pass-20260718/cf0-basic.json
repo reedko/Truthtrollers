@@ -1,0 +1,77 @@
+{
+  "thesis": "The article critiques the claims made by public health authorities regarding vaccines, suggesting they are based on flawed narratives and lack credible evidence.",
+  "claims": [
+    {
+      "proposition": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+      "assertedBy": "CDC and public health authorities",
+      "articleTreatment": "reports",
+      "groundingExcerpt": "CDC data reflect that half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+      "evidenceQuestion": "What percentage of American school children are fully vaccinated?",
+      "supportWouldLookLike": "Data showing that half of American school children are indeed not fully vaccinated.",
+      "refuteWouldLookLike": "Data indicating that a higher percentage of American school children are fully vaccinated."
+    },
+    {
+      "proposition": "Parents who choose not to vaccinate their children are typically highly educated and often scientifically literate.",
+      "assertedBy": "Aaron Siri",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "Parents who choose to forego vaccines, he says, are not only highly educated, but 'often scientifically literate.'",
+      "evidenceQuestion": "What is the education level of parents who choose not to vaccinate?",
+      "supportWouldLookLike": "Surveys or studies showing that a significant percentage of unvaccinated parents have higher education levels.",
+      "refuteWouldLookLike": "Surveys or studies showing that unvaccinated parents have lower education levels."
+    },
+    {
+      "proposition": "Vaccines are tested more than any other medicine you could give your kid.",
+      "assertedBy": "Jefferson County Public Health",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "Vaccines are tested more than any other medicine you could give your kid.",
+      "evidenceQuestion": "How do vaccine testing protocols compare to those of other medications?",
+      "supportWouldLookLike": "Evidence showing that vaccines undergo more rigorous testing than other medications.",
+      "refuteWouldLookLike": "Evidence showing that other medications undergo more rigorous testing than vaccines."
+    },
+    {
+      "proposition": "There have been no credible studies that link vaccination to chronic disease.",
+      "assertedBy": "Jefferson County Public Health",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "So far, there have been no credible studies that link vaccination to chronic disease.",
+      "evidenceQuestion": "What studies exist that link vaccination to chronic diseases?",
+      "supportWouldLookLike": "Studies that demonstrate a credible link between vaccination and chronic diseases.",
+      "refuteWouldLookLike": "Studies that show no link between vaccination and chronic diseases."
+    },
+    {
+      "proposition": "The childhood vaccination schedule has increased from 5 doses in the 1950s and 60s to 73 doses by 2011.",
+      "assertedBy": "Ana Wolpin",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "by 1986 children were receiving 25 doses/12 shots. In the decades following the 1986 act the childhood schedule exploded to 73 doses/54 shots.",
+      "evidenceQuestion": "What is the current childhood vaccination schedule in the U.S.?",
+      "supportWouldLookLike": "Documentation of the number of vaccine doses in the current childhood vaccination schedule.",
+      "refuteWouldLookLike": "Evidence showing that the number of doses has not increased as stated."
+    },
+    {
+      "proposition": "The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after the vaccination program was implemented.",
+      "assertedBy": "Ana Wolpin",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "the U.S. had twice as many first-day infant deaths as all 27 EU nations combined.",
+      "evidenceQuestion": "What are the infant mortality rates in the U.S. compared to EU nations?",
+      "supportWouldLookLike": "Statistics showing that U.S. infant mortality rates are indeed higher than those of EU nations.",
+      "refuteWouldLookLike": "Statistics showing that U.S. infant mortality rates are not higher than those of EU nations."
+    },
+    {
+      "proposition": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines.",
+      "assertedBy": "Ana Wolpin",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "in 1986 Congress removed all liability from drug companies for childhood vaccines they produced.",
+      "evidenceQuestion": "What are the implications of the 1986 National Childhood Vaccine Injury Act?",
+      "supportWouldLookLike": "Legal documentation showing that drug companies are not liable for vaccine injuries.",
+      "refuteWouldLookLike": "Evidence showing that drug companies retain some liability for vaccine injuries."
+    },
+    {
+      "proposition": "The CDC manipulated data to disprove a link between the MMR vaccine and autism.",
+      "assertedBy": "William Thompson",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "When top CDC officials learned that their 2004 study results showed a dramatic increase in autism after MMR vaccinations, they’d ordered Thompson and other scientists to destroy all evidence.",
+      "evidenceQuestion": "What evidence exists regarding the CDC's handling of data related to the MMR vaccine and autism?",
+      "supportWouldLookLike": "Documents or testimonies confirming that the CDC manipulated data regarding the MMR vaccine.",
+      "refuteWouldLookLike": "Evidence showing that the CDC's data handling was appropriate and not manipulative."
+    }
+  ]
+}

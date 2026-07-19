@@ -1,0 +1,23 @@
+[
+  {
+    "arm": "Compact source/posture",
+    "claims": 8,
+    "usage": {
+      "prompt_tokens": 12182,
+      "completion_tokens": 936,
+      "total_tokens": 13118,
+      "prompt_tokens_details": {
+        "cached_tokens": 12160,
+        "audio_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      }
+    },
+    "promptSha256": "406612ebc510f06f75836f6094096078ce05e3168264ffbad4543288ae164bb9",
+    "review": "compact-source-posture/review.html"
+  }
+]

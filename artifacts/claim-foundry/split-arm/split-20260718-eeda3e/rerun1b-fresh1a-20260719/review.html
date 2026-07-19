@@ -1,0 +1,239 @@
+<!doctype html><html><head><meta charset="utf-8">
+<title>CF1 blinded deep review — rerun1b</title>
+<style>
+body{font-family:-apple-system,system-ui,sans-serif;margin:1rem 2rem;line-height:1.4}
+.legend{background:#f7f7e8;border:1px solid #ddc;padding:0.6rem 1rem;font-size:0.9rem}
+nav button{margin-right:0.5rem;padding:0.3rem 0.8rem;cursor:pointer}
+nav button.active{background:#446;color:#fff}
+#filters input,#filters select{margin-right:0.6rem;padding:0.2rem}
+table{border-collapse:collapse;width:100%;margin-top:0.6rem}
+th,td{border:1px solid #ccc;padding:0.3rem 0.45rem;font-size:0.85rem;text-align:left;vertical-align:top}
+th{background:#eee;cursor:pointer;position:sticky;top:0}
+tr.claim:hover{background:#f5f8ff;cursor:pointer}
+tr.failed{background:#fff2f2}
+.detail{background:#fafaff;border-left:4px solid #446;padding:0.5rem 1rem}
+.tag{font-weight:700;font-size:0.75rem;padding:0 0.3rem;border-radius:3px;margin-right:0.3rem}
+.c1{background:#dbeafe}.c2{background:#dcfce7}.host{background:#fde8c8}
+.detail ul{margin:0.15rem 0 0.4rem 1.3rem}
+details{margin:0.3rem 0}blockquote{background:#f6f6f6;border-left:3px solid #999;
+margin:0.3rem 0;padding:0.4rem 0.7rem;white-space:pre-wrap;font-size:0.85rem}
+.cluster td{width:100%}
+.muted{color:#777}.ov{background:#fce7f3}.bad{background:#fee2e2;color:#991b1b;font-weight:700}
+</style></head><body>
+<div class="legend"><strong>Review — phase rerun1b (split mode).</strong>
+A <em>Profile</em> is one fixture under the contentStance/articleDeployment split arm. Profiles present:
+CF1-F03. Field provenance: <span class="tag c1">C1</span>Call 1 (model)
+<span class="tag host">HOST</span>articleUse + scoreTransform are host-derived from the model's contentStance/articleDeployment (1B never emits them).
+Failed runs are results: they carry a failure class and stage.</div>
+<nav><button id="btn-claims" class="active">Claims</button>
+<button id="btn-align">Alignment by source region</button>
+<button id="btn-orient">Orientations</button></nav>
+<div id="filters">
+<input id="search" placeholder="search text…" size="28">
+<select id="f-profile"><option value="">all profiles</option></select>
+<select id="f-repeat"><option value="">all repeats</option></select>
+<select id="f-status"><option value="">all statuses</option>
+<option>completed</option><option>failed</option></select>
+<span id="count" class="muted"></span></div>
+<div id="view"></div>
+<script>
+const DATA = {"phase":"rerun1b","mode":"split","profiles":["CF1-F03"],"rows":[{"profile":"CF1-F03","repeat":1,"runStatus":"completed","claimText":"Half of American school children are not fully vaccinated.","articleRole":"opponent_claim","articleUse":"opponent_to_rebut","assertionSource":"CDC and public health authorities","materiality":"high","scope":"national","relatedPillarLabels":["Vaccination Rates and Parental Education"],"evidenceUsefulnessHint":"Vaccination records and CDC data could verify this claim.","sourceUnitIds":["U0002"],"groundingText":"“According to the CDC and public health authorities, parents who choose not to vaccinate their children are typically highly educated. CDC data reflect that half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated. Why would the parents of these children, comprising a large part of the nation’s brain trust, choose not to vaccinate their children?”","contentStance":"contradicts_thesis","articleDeployment":"reported_neutral","scoreTransform":"invert","assertionSourceClass":"institutional","groundingSpan":"clustered","origin":"candidate","needsSplit":{"split":false,"reason":null},"possibleResponseText":null,"possibleResponseUnitIds":[]},{"profile":"CF1-F03","repeat":1,"runStatus":"completed","claimText":"At least 1 in 88 toddlers are completely unvaccinated.","articleRole":"opponent_claim","articleUse":"opponent_to_rebut","assertionSource":"CDC and public health authorities","materiality":"high","scope":"national","relatedPillarLabels":["Vaccination Rates and Parental Education"],"evidenceUsefulnessHint":"CDC data could confirm the percentage of unvaccinated toddlers.","sourceUnitIds":["U0002"],"groundingText":"“According to the CDC and public health authorities, parents who choose not to vaccinate their children are typically highly educated. CDC data reflect that half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated. Why would the parents of these children, comprising a large part of the nation’s brain trust, choose not to vaccinate their children?”","contentStance":"contradicts_thesis","articleDeployment":"reported_neutral","scoreTransform":"invert","assertionSourceClass":"institutional","groundingSpan":"clustered","origin":"candidate","needsSplit":{"split":false,"reason":null},"possibleResponseText":null,"possibleResponseUnitIds":[]},{"profile":"CF1-F03","repeat":1,"runStatus":"completed","claimText":"The health department’s ad claims that children face more challenges to their immune system while playing outside than from vaccines.","articleRole":"opponent_claim","articleUse":"opponent_to_rebut","assertionSource":"health department’s ad","materiality":"high","scope":"local","relatedPillarLabels":["Claims in Public Health Ads"],"evidenceUsefulnessHint":"Research on environmental exposures could support or refute this claim.","sourceUnitIds":["U0008"],"groundingText":"• “Our kids face more challenges to their immune system while playing outside than they do from vaccines.”","contentStance":"contradicts_thesis","articleDeployment":"reported_neutral","scoreTransform":"invert","assertionSourceClass":"institutional","groundingSpan":"clustered","origin":"candidate","needsSplit":{"split":false,"reason":null},"possibleResponseText":null,"possibleResponseUnitIds":[]},{"profile":"CF1-F03","repeat":1,"runStatus":"completed","claimText":"We are exposed to more aluminum by eating a tomato than from getting vaccines.","articleRole":"opponent_claim","articleUse":"opponent_to_rebut","assertionSource":"health department’s ad","materiality":"high","scope":"general","relatedPillarLabels":["Aluminum Exposure"],"evidenceUsefulnessHint":"Studies comparing aluminum exposure from food and vaccines could verify this.","sourceUnitIds":["U0009"],"groundingText":"• “We are exposed to more aluminum by eating a tomato than from getting vaccines!”","contentStance":"contradicts_thesis","articleDeployment":"reported_neutral","scoreTransform":"invert","assertionSourceClass":"institutional","groundingSpan":"clustered","origin":"candidate","needsSplit":{"split":false,"reason":null},"possibleResponseText":null,"possibleResponseUnitIds":[]},{"profile":"CF1-F03","repeat":1,"runStatus":"completed","claimText":"The type of mercury in vaccines – ethylmercury – is NOT harmful to us.","articleRole":"opponent_claim","articleUse":"opponent_to_rebut","assertionSource":"health department’s ad","materiality":"high","scope":"general","relatedPillarLabels":["Mercury in Vaccines"],"evidenceUsefulnessHint":"Toxicological studies on ethylmercury could provide evidence for this claim.","sourceUnitIds":["U0010"],"groundingText":"• “The type of mercury in vaccines – ethylmercury – is NOT harmful to us.”","contentStance":"contradicts_thesis","articleDeployment":"reported_neutral","scoreTransform":"invert","assertionSourceClass":"institutional","groundingSpan":"clustered","origin":"candidate","needsSplit":{"split":false,"reason":null},"possibleResponseText":null,"possibleResponseUnitIds":[]},{"profile":"CF1-F03","repeat":1,"runStatus":"completed","claimText":"So far, there have been no credible studies that link vaccination to chronic disease.","articleRole":"opponent_claim","articleUse":"opponent_to_rebut","assertionSource":"health department’s ad","materiality":"high","scope":"general","relatedPillarLabels":["Vaccination and Chronic Disease"],"evidenceUsefulnessHint":"Research studies on vaccination and chronic diseases could support or refute this.","sourceUnitIds":["U0011"],"groundingText":"• “So far, there have been no credible studies that link vaccination to chronic disease.”","contentStance":"contradicts_thesis","articleDeployment":"reported_neutral","scoreTransform":"invert","assertionSourceClass":"institutional","groundingSpan":"clustered","origin":"candidate","needsSplit":{"split":false,"reason":null},"possibleResponseText":null,"possibleResponseUnitIds":[]},{"profile":"CF1-F03","repeat":1,"runStatus":"completed","claimText":"Vaccines are tested more than any other medicine you could give your kid.","articleRole":"opponent_claim","articleUse":"opponent_to_rebut","assertionSource":"health department’s ad","materiality":"high","scope":"general","relatedPillarLabels":["Vaccine Testing"],"evidenceUsefulnessHint":"Comparative studies on vaccine testing protocols versus other medications could verify this.","sourceUnitIds":["U0012"],"groundingText":"• “Vaccines are tested more than any other medicine you could give your kid.”","contentStance":"contradicts_thesis","articleDeployment":"reported_neutral","scoreTransform":"invert","assertionSourceClass":"institutional","groundingSpan":"clustered","origin":"candidate","needsSplit":{"split":false,"reason":null},"possibleResponseText":null,"possibleResponseUnitIds":[]},{"profile":"CF1-F03","repeat":1,"runStatus":"completed","claimText":"Childhood vaccination rates are dropping steadily across the country.","articleRole":"thesis","articleUse":"reported","assertionSource":"health department’s ad","materiality":"high","scope":"national","relatedPillarLabels":["Childhood Vaccination Rates"],"evidenceUsefulnessHint":"CDC vaccination statistics could confirm this trend.","sourceUnitIds":["U0013"],"groundingText":"The health department’s ad comes at a time when childhood vaccination rates are dropping steadily across the country.","contentStance":"supports_thesis","articleDeployment":"reported_neutral","scoreTransform":"normal","assertionSourceClass":"institutional","groundingSpan":"clustered","origin":"candidate","needsSplit":{"split":false,"reason":null},"possibleResponseText":null,"possibleResponseUnitIds":[]},{"profile":"CF1-F03","repeat":1,"runStatus":"completed","claimText":"There is a rise in the rate of parents seeking vaccine exemptions for their children.","articleRole":"thesis","articleUse":"reported","assertionSource":"health department’s ad","materiality":"high","scope":"national","relatedPillarLabels":["Vaccine Exemptions"],"evidenceUsefulnessHint":"State health department records could provide evidence for this claim.","sourceUnitIds":["U0014"],"groundingText":"Along with reduction in vaccine uptake, there is also a rise in the rate of parents seeking vaccine exemptions for their children.","contentStance":"supports_thesis","articleDeployment":"reported_neutral","scoreTransform":"normal","assertionSourceClass":"institutional","groundingSpan":"clustered","origin":"candidate","needsSplit":{"split":false,"reason":null},"possibleResponseText":null,"possibleResponseUnitIds":[]}],"orientations":[{"repeat":1,"profile":"CF1-F03","runStatus":"completed","call1CandidateCount":9,"theme":"Public health narratives about vaccines are often challenged by claims of misinformation and censorship.","thesis":"The claims made by public health authorities regarding vaccines lack credible scientific support and are often based on misinformation.","thesisHinge":"mixed","pillars":[{"label":"Vaccination Rates and Parental Education","text":"Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.","importance":"load_bearing","sourceUnitIds":["U0002"]},{"label":"Claims in Public Health Ads","text":"The health department’s ad claims that children face more challenges to their immune system while playing outside than from vaccines.","importance":"load_bearing","sourceUnitIds":["U0008"]},{"label":"Aluminum Exposure","text":"We are exposed to more aluminum by eating a tomato than from getting vaccines.","importance":"load_bearing","sourceUnitIds":["U0009"]},{"label":"Mercury in Vaccines","text":"The type of mercury in vaccines – ethylmercury – is NOT harmful to us.","importance":"load_bearing","sourceUnitIds":["U0010"]},{"label":"Vaccination and Chronic Disease","text":"So far, there have been no credible studies that link vaccination to chronic disease.","importance":"load_bearing","sourceUnitIds":["U0011"]},{"label":"Vaccine Testing","text":"Vaccines are tested more than any other medicine you could give your kid.","importance":"load_bearing","sourceUnitIds":["U0012"]},{"label":"Childhood Vaccination Rates","text":"Childhood vaccination rates are dropping steadily across the country.","importance":"load_bearing","sourceUnitIds":["U0013"]},{"label":"Vaccine Exemptions","text":"There is a rise in the rate of parents seeking vaccine exemptions for their children.","importance":"load_bearing","sourceUnitIds":["U0014"]}]}]};
+const esc = (v) => String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;");
+const list = (v) => (v ?? []).length ? "<ul>" + v.map((x)=>"<li>"+esc(x)+"</li>").join("") + "</ul>" : " <span class=muted>(none)</span>";
+let sortKey = null, sortDir = 1, tab = "claims";
+const S = { q:"", profile:"", repeat:"", status:"" };
+function filtered(){
+  return DATA.rows.filter((r)=>
+    (!S.profile || r.profile===S.profile) && (!S.repeat || String(r.repeat)===S.repeat)
+    && (!S.status || r.runStatus===S.status)
+    && (!S.q || JSON.stringify(r).toLowerCase().includes(S.q.toLowerCase())));
+}
+function detail(r){
+  if (DATA.mode === "split") {
+    return '<div class="detail">'
+    + '<details open><summary>Source text (units '+esc((r.sourceUnitIds||[]).join(", "))+')</summary>'
+    + '<blockquote>'+esc(r.groundingText)+'</blockquote></details>'
+    + '<p><span class="tag c1">C1</span>contentStance: <b>'+esc(r.contentStance)+'</b>'
+    + ' | articleDeployment: <b>'+esc(r.articleDeployment)+'</b>'
+    + ' | articleRole: '+esc(r.articleRole)+'</p>'
+    + '<p><span class="tag host">HOST</span>articleUse: <b>'+esc(r.articleUse)+'</b>'
+    + ' | scoreTransform: <b>'+esc(r.scoreTransform)+'</b>'
+    + ' | assertionSource: '+esc(r.assertionSource)+' <span class=muted>('+esc(r.assertionSourceClass)+')</span>'
+    + ' | materiality: '+esc(r.materiality)+' | groundingSpan: '+esc(r.groundingSpan)
+    + ' | origin: '+esc(r.origin)+'</p>'
+    + '<p>scope: '+esc(r.scope)+' | pillars: '+esc((r.relatedPillarLabels||[]).join(", "))
+    + '<br>evidenceUsefulnessHint: '+esc(r.evidenceUsefulnessHint)+'</p>'
+    + (r.needsSplit && r.needsSplit.split ? '<p class="bad">needsSplit: '+esc(r.needsSplit.reason)+'</p>' : '')
+    + (r.possibleResponseText ? '<details><summary>possibleResponse — distant passage (units '
+      + esc((r.possibleResponseUnitIds||[]).join(", "))+'; feeds articleDeployment only, never contentStance)</summary>'
+      + '<blockquote>'+esc(r.possibleResponseText)+'</blockquote></details>' : '')
+    + '</div>';
+  }
+  if (DATA.mode === "call1") {
+    const consistency = r.transformConsistent === false
+      ? '<b class="bad">CONTRADICTION — effects imply '+esc(r.expectedTransform)+'</b>'
+      : r.transformConsistent === true ? "consistent" : "not emitted by this arm";
+    return '<div class="detail">'
+    + '<details><summary>Source text (units '+esc((r.sourceUnitIds||[]).join(", "))+')</summary>'
+    + '<blockquote>'+esc(r.groundingText)+'</blockquote></details>'
+    + '<p><span class="tag c1">C1</span>'+esc(r.articleRole)+' | '+esc(r.articleUse)
+    + ' | source: '+esc(r.assertionSource)+' | materiality: '+esc(r.materiality)
+    + ' | scope: '+esc(r.scope)+' | pillars: '+esc((r.relatedPillarLabels||[]).join(", "))
+    + '<br>evidenceUsefulnessHint: '+esc(r.evidenceUsefulnessHint)+'</p>'
+    + '<p><span class="tag c1">ORDER TRACE</span>propositionCore: '+esc(r.propositionCore ?? "not emitted by this arm")
+    + '<br>if supported: <b>'+esc(r.ifSupportedEffect ?? "not emitted")+'</b>'
+    + ' | if refuted: <b>'+esc(r.ifRefutedEffect ?? "not emitted")+'</b>'
+    + ' | transform check: <b>'+esc(r.scoreTransformCheck ?? "not emitted")+'</b>'
+    + '<br>effect/transform consistency: '+consistency
+    + '<br>typed assertion source: '+esc(r.assertionSourceKind ?? "not emitted")
+    + ' / '+esc(r.assertionSourceName ?? "not emitted")+'</p>'
+    + (r.sourceProposition ? '<p><span class="tag c1">RELATION TRACE</span>source proposition P: '
+      + esc(r.sourceProposition)+'<br>article response: <b>'+esc(r.articleResponse)+'</b>'
+      + '<details><summary>Article-response text (units '+esc((r.articleResponseUnitIds||[]).join(", "))
+      + ')</summary><blockquote>'+esc(r.articleResponseGroundingText)+'</blockquote></details></p>' : '')
+    + '</div>';
+  }
+  const strat = r.hostStrategyOverride
+    ? esc(r.sourceStrategy_emitted)+" → "+esc(r.sourceStrategy_resolved)+" <b class=ov>(host override)</b>"
+    : esc(r.sourceStrategy_emitted ?? r.sourceStrategy_resolved);
+  const traceConsistency = r.transformConsistent === false
+    ? '<b class="bad">CONTRADICTION — effects imply '+esc(r.expectedTransform)+'</b>'
+    : r.transformConsistent === true ? "consistent" : "not emitted by this arm";
+  const trace = r.propositionCore ? '<p><span class="tag c1">C1 TRACE</span>'
+    + 'propositionCore: '+esc(r.propositionCore)
+    + '<br>if supported: <b>'+esc(r.ifSupportedEffect)+'</b>'
+    + ' | if refuted: <b>'+esc(r.ifRefutedEffect)+'</b>'
+    + ' | model transform check: <b>'+esc(r.scoreTransformCheck)+'</b>'
+    + '<br>expected from effects: <b>'+esc(r.expectedTransform)+'</b>'
+    + ' | consistency: '+traceConsistency+'</p>' : '';
+  return '<div class="detail">'
+  + '<details><summary>Source text (units '+esc((r.sourceUnitIds||[]).join(", "))+')</summary>'
+  + '<blockquote>'+esc(r.groundingText)+'</blockquote></details>'
+  + '<p><span class="tag c1">C1</span>'+esc(r.articleRole)+' | '+esc(r.articleUse)+' | source: '
+  + esc(r.assertionSource)+' | materiality: '+esc(r.materiality)+' | scope: '+esc(r.scope)
+  + ' | pillars: '+esc((r.relatedPillarLabels||[]).join(", "))
+  + '<br>evidenceUsefulnessHint: '+esc(r.evidenceUsefulnessHint)+'</p>'+trace
+  + '<p><span class="tag c2">C2</span>revisedClaimText: '+esc(r.revisedClaimText)
+  + '<br>verificationTarget: <b>'+esc(r.verificationTarget)+'</b>'
+  + '<br>disputedProposition: '+esc(r.disputedProposition)
+  + '<br>stipulatedByArticle: '+esc(r.stipulatedByArticle)
+  + '<br>whyThisTarget: '+esc(r.whyThisTarget)
+  + '<br>warrant: <b>'+esc(r.warrant ?? "not separately emitted — encoded in bearing criteria")+'</b></p>'
+  + '<p><span class="tag c2">C2</span>support:'+list(r.supportCriteria)
+  + 'refute:'+list(r.refuteCriteria)+'qualify:'+list(r.qualifyCriteria)
+  + 'mustMatch:'+list(r.mustMatch)+'rejectIfOnly (model):'+list(r.rejectIfOnly_model)+'</p>'
+  + '<p><span class="tag host">HOST</span>rejectIfOnly (host-appended):'+list(r.rejectIfOnly_host)
+  + 'sourceStrategy: '+strat
+  + '<br><span class="tag c2">C2</span>searchConcepts:'+list(r.searchConcepts)
+  + 'relevantNamedWorkIds: '+esc((r.relevantNamedWorkIds||[]).join(", ")||"(none)")
+  + ' | cautions:'+list(r.cautions)+'</p>'
+  + '<p><span class="tag host">HOST</span>origin: '+esc(r.origin)
+  + ' | gradeTarget: '+esc(r.gradeTarget)+' | scoreTransform: '+esc(r.scoreTransform)
+  + ' | packageValid: '+esc(r.packageValid)
+  + '<br>verificationQuestion: '+esc(r.verificationQuestion)
+  + '<br>host warnings:'+list(r.hostWarnings)+'</p></div>';
+}
+function claimsView(rows){
+  const cols = DATA.mode === "split" ? [["profile","Fixture"],["repeat","Rep"],
+    ["runStatus","Status"],["claimText","Claim"],["articleRole","Role"],
+    ["contentStance","contentStance [C1]"],["articleDeployment","articleDeployment [C1]"],
+    ["articleUse","articleUse [HOST]"],["scoreTransform","scoreTransform [HOST]"],
+    ["assertionSource","Source"],["assertionSourceClass","class [HOST]"],
+    ["materiality","Mat."],["groundingSpan","Span"],["origin","Origin"]]
+    : DATA.mode === "call1" ? [["profile","Profile"],["repeat","Rep"],
+    ["runStatus","Status"],["propositionCore","Proposition P"],["claimText","Final claim"],
+    ["articleRole","Role"],
+    ["articleUse","Use"],["assertionSource","Source"],["ifSupportedEffect","If supported"],
+    ["ifRefutedEffect","If refuted"],["scoreTransformCheck","Transform"],["materiality","Mat."]]
+    : [["profile","Profile"],["repeat","Rep"],["origin","Origin"],
+    ["runStatus","Status"],["failureClass","Failure"],["propositionCore","Proposition P"],
+    ["claimText","Final claim"],["articleRole","Role"],["articleUse","Use"],
+    ["assertionSource","Source"],["ifSupportedEffect","If supported"],
+    ["ifRefutedEffect","If refuted"],["scoreTransformCheck","Transform (C1)"],
+    ["scoreTransform","Transform (HOST)"],["verificationTarget","Target"],
+    ["sourceStrategy_emitted","Strategy (C2)"],["sourceStrategy_resolved","Strategy (HOST)"],
+    ["materiality","Mat."]];
+  if (sortKey) rows = [...rows].sort((a,b)=>String(a[sortKey]??"").localeCompare(String(b[sortKey]??""))*sortDir);
+  let h = "<table><thead><tr>"+cols.map(([k,l])=>'<th data-k="'+k+'">'+l+"</th>").join("")+"</tr></thead><tbody>";
+  rows.forEach((r,i)=>{
+    h += '<tr class="claim'+(r.runStatus==="failed"?" failed":"")+'" data-i="'+i+'">'
+      + cols.map(([k])=>"<td>"+esc(Array.isArray(r[k])?r[k].join(", "):r[k])+"</td>").join("")+"</tr>"
+      + '<tr class="d" id="d'+i+'" style="display:none"><td colspan="'+cols.length+'">'+detail(r)+"</td></tr>";
+  });
+  return h+"</tbody></table>";
+}
+function alignView(rows){
+  const repeats = [...new Set(rows.map((r)=>r.repeat))].sort((a,b)=>a-b);
+  let h = "";
+  for (const rep of repeats){
+    const rs = rows.filter((r)=>r.repeat===rep && (r.sourceUnitIds||[]).length);
+    const parent = rs.map((_,i)=>i);
+    const find = (i)=>parent[i]===i?i:(parent[i]=find(parent[i]));
+    const unitOwner = new Map();
+    rs.forEach((r,i)=>{ for(const u of r.sourceUnitIds){
+      if(unitOwner.has(u)) parent[find(i)]=find(unitOwner.get(u)); else unitOwner.set(u,i); }});
+    const clusters = new Map();
+    rs.forEach((r,i)=>{ const root=find(i);
+      if(!clusters.has(root)) clusters.set(root,{units:new Set(),byProfile:{}});
+      const c=clusters.get(root); r.sourceUnitIds.forEach((u)=>c.units.add(u));
+      (c.byProfile[r.profile] ??= []).push(r); });
+    const ordered=[...clusters.values()].sort((a,b)=>[...a.units].sort()[0]<[...b.units].sort()[0]?-1:1);
+    h += "<h2>Repeat "+rep+"</h2><table class=cluster><thead><tr><th>Source units</th>"
+      + DATA.profiles.map((p)=>"<th>"+p+"</th>").join("")+"</tr></thead><tbody>";
+    for (const c of ordered){
+      h += "<tr><td>"+[...c.units].sort().join("<br>")+"</td>"
+        + DATA.profiles.map((p)=>"<td>"+(c.byProfile[p]??[]).map((r)=>
+          "• "+esc(r.claimText)+(r.origin==="host_pillar_backfill"?" <em class=muted>(backfill)</em>":"")).join("<br>")
+          +"</td>").join("")+"</tr>";
+    }
+    const failedHere = DATA.rows.filter((r)=>r.repeat===rep && r.runStatus==="failed");
+    const failedProfiles=[...new Set(failedHere.map((r)=>r.profile+" ("+r.failureClass+")"))];
+    if(failedProfiles.length) h+="<tr><td class=muted>failed runs</td><td colspan="+DATA.profiles.length
+      +" class=muted>"+failedProfiles.join("; ")+"</td></tr>";
+    h += "</tbody></table>";
+  }
+  return h || "<p class=muted>No grounded claims to align.</p>";
+}
+function orientView(){
+  let h = "<table><thead><tr><th>Repeat</th><th>Profile</th><th>Status</th><th>C1 candidates</th>"
+    + "<th>Theme [C1]</th><th>Thesis [C1]</th><th>Hinge [C1]</th><th>Pillars [C1]</th>"
+    + (DATA.mode === "call1" ? "<th>Opponent census [C1 diagnostic]</th>" : "")
+    + "</tr></thead><tbody>";
+  for (const o of DATA.orientations.sort((a,b)=>a.repeat-b.repeat||a.profile.localeCompare(b.profile))){
+    h += "<tr"+(o.runStatus==="failed"?' class=failed':'')+"><td>"+o.repeat+"</td><td>"+o.profile+"</td><td>"
+      + esc(o.runStatus)+(o.failure?" — "+esc(o.failure.failureClass)+":"+esc(o.failure.failureStage):"")
+      + "</td><td>"+esc(o.call1CandidateCount)+"</td><td>"+esc(o.theme)+"</td><td>"+esc(o.thesis)
+      + "</td><td>"+esc(o.thesisHinge)+"</td><td>"+esc((o.pillars||[]).map((p)=>p.label+" ("+p.importance+")").join("; "))+"</td>"
+      + (DATA.mode === "call1" ? "<td>"+esc((o.opponentScan||[]).map((p)=>
+        p.propositionCore+" ["+p.articleUse+"; "+(p.assertionSourceName||p.assertionSource||"")+ "]").join("; "))+"</td>" : "")
+      + "</tr>";
+  }
+  return h+"</tbody></table>";
+}
+function render(){
+  const rows = filtered();
+  document.getElementById("count").textContent = rows.length+" rows";
+  const view = document.getElementById("view");
+  view.innerHTML = tab==="claims" ? claimsView(rows) : tab==="align" ? alignView(rows) : orientView();
+  if (tab==="claims"){
+    view.querySelectorAll("tr.claim").forEach((tr)=>tr.addEventListener("click",()=>{
+      const d=document.getElementById("d"+tr.dataset.i);
+      d.style.display=d.style.display==="none"?"":"none";}));
+    view.querySelectorAll("th[data-k]").forEach((th)=>th.addEventListener("click",()=>{
+      sortDir = sortKey===th.dataset.k ? -sortDir : 1; sortKey=th.dataset.k; render();}));
+  }
+}
+for (const p of DATA.profiles) document.getElementById("f-profile").add(new Option(p,p));
+for (const r of [...new Set(DATA.rows.map((x)=>x.repeat))].sort((a,b)=>a-b))
+  document.getElementById("f-repeat").add(new Option("repeat "+r,String(r)));
+document.getElementById("search").addEventListener("input",(e)=>{S.q=e.target.value;render();});
+document.getElementById("f-profile").addEventListener("change",(e)=>{S.profile=e.target.value;render();});
+document.getElementById("f-repeat").addEventListener("change",(e)=>{S.repeat=e.target.value;render();});
+document.getElementById("f-status").addEventListener("change",(e)=>{S.status=e.target.value;render();});
+document.getElementById("btn-claims").addEventListener("click",(e)=>{tab="claims";setTab(e.target);});
+document.getElementById("btn-align").addEventListener("click",(e)=>{tab="align";setTab(e.target);});
+document.getElementById("btn-orient").addEventListener("click",(e)=>{tab="orient";setTab(e.target);});
+function setTab(btn){document.querySelectorAll("nav button").forEach((b)=>b.classList.remove("active"));
+btn.classList.add("active");render();}
+render();
+</script></body></html>

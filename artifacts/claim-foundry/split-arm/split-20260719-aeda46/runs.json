@@ -1,0 +1,18 @@
+{
+  "runId": "split-20260719-aeda46",
+  "model": "gpt-4o-mini",
+  "generatedAt": "2026-07-19T07:58:10.906Z",
+  "runs": [
+    {
+      "fixtureId": "CF1-F03",
+      "repeat": 1,
+      "seed": 3724605090,
+      "status": "failed",
+      "error": {
+        "code": "CF1_MODEL_UNAVAILABLE",
+        "message": "No usable structured model response after 1 attempt"
+      },
+      "elapsedMs": 146
+    }
+  ]
+}

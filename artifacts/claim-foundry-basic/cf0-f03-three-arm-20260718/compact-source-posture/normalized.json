@@ -1,0 +1,77 @@
+{
+  "thesis": "The article argues that public health narratives about vaccines are based on misinformation and that there is a significant amount of evidence suggesting vaccines may be harmful.",
+  "claims": [
+    {
+      "proposition": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+      "assertedBy": "CDC data",
+      "articleTreatment": "reports",
+      "groundingExcerpt": "U0002",
+      "evidenceQuestion": "This statistic highlights the extent of vaccine hesitancy and non-compliance among parents, which is central to the article's argument about public health narratives.",
+      "supportWouldLookLike": "Increased vaccination rates among school children and toddlers.",
+      "refuteWouldLookLike": "A significant increase in vaccination rates without a corresponding rise in vaccine-related health issues."
+    },
+    {
+      "proposition": "The CDC manipulated data to disprove a link between the MMR vaccine and autism.",
+      "assertedBy": "William Thompson, CDC whistleblower",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "U0027, U0028",
+      "evidenceQuestion": "This claim is pivotal as it suggests a cover-up that undermines trust in public health authorities and supports the article's thesis.",
+      "supportWouldLookLike": "Documented evidence of data manipulation by the CDC.",
+      "refuteWouldLookLike": "Independent verification of the CDC's findings that show no manipulation of data."
+    },
+    {
+      "proposition": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines.",
+      "assertedBy": "Article voice",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "U0042",
+      "evidenceQuestion": "This legislative change is crucial to understanding the financial motivations behind vaccine production and public health policies.",
+      "supportWouldLookLike": "Historical records confirming the passage and implications of the 1986 act.",
+      "refuteWouldLookLike": "Evidence showing that vaccine manufacturers are held liable for vaccine injuries."
+    },
+    {
+      "proposition": "The childhood vaccination schedule has increased from 5 doses in the 1960s to 73 doses by 2011.",
+      "assertedBy": "Article voice",
+      "articleTreatment": "reports",
+      "groundingExcerpt": "U0048",
+      "evidenceQuestion": "This claim illustrates the dramatic increase in vaccine administration, which is a key point in the discussion of vaccine safety.",
+      "supportWouldLookLike": "Statistical data showing the increase in vaccine doses over the decades.",
+      "refuteWouldLookLike": "Evidence that shows no significant increase in vaccine doses or that the increase is justified by health outcomes."
+    },
+    {
+      "proposition": "The U.S. has twice as many first-day infant deaths as all 27 EU nations combined.",
+      "assertedBy": "Analysis of U.S. data (1990-2010)",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "U0053",
+      "evidenceQuestion": "This claim connects vaccination rates to infant mortality, challenging the narrative of vaccine safety.",
+      "supportWouldLookLike": "Comparative infant mortality statistics between the U.S. and EU nations.",
+      "refuteWouldLookLike": "Evidence showing that U.S. infant mortality rates are not significantly higher than those in EU nations."
+    },
+    {
+      "proposition": "78.3% of deaths reported to VAERS occurred within seven days post-vaccination.",
+      "assertedBy": "Neil Z. Miller",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "U0114",
+      "evidenceQuestion": "This statistic raises concerns about the safety of vaccines and their immediate effects on health.",
+      "supportWouldLookLike": "VAERS data corroborating the timing of reported deaths post-vaccination.",
+      "refuteWouldLookLike": "Evidence showing that these deaths are unrelated to vaccination."
+    },
+    {
+      "proposition": "Aluminum in vaccines is linked to various health issues, including autism and SIDS.",
+      "assertedBy": "James Lyons-Weiler and Robert Ricketson",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "U0136",
+      "evidenceQuestion": "This claim is central to the argument against vaccine safety and the potential harm of vaccine ingredients.",
+      "supportWouldLookLike": "Research studies linking aluminum exposure to health issues in children.",
+      "refuteWouldLookLike": "Studies showing no correlation between aluminum in vaccines and health issues."
+    },
+    {
+      "proposition": "Thimerosal, a mercury-based preservative, has been shown to be neurotoxic and linked to autism.",
+      "assertedBy": "Gavin de Becker",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "U0171",
+      "evidenceQuestion": "This claim challenges the safety of vaccine preservatives and is critical to the article's argument.",
+      "supportWouldLookLike": "Scientific studies demonstrating the neurotoxic effects of thimerosal.",
+      "refuteWouldLookLike": "Evidence showing that thimerosal is safe and does not contribute to autism."
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "fixtureId": "CF1-F03",
+  "repeat": 1,
+  "seed": 3724605090,
+  "status": "failed",
+  "error": {
+    "code": "CF1_SPLIT_CENSUS_INCOMPLETE",
+    "message": "Every census packet must have exactly one outcome"
+  },
+  "elapsedMs": 51332
+}

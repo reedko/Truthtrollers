@@ -1,0 +1,22 @@
+{
+  "model": "gpt-4o-mini",
+  "distant": false,
+  "summary": [
+    {
+      "fixtureId": "CF1-F03",
+      "candidates": 9,
+      "contentStance": {
+        "contradicts_thesis": 7,
+        "supports_thesis": 2
+      },
+      "articleDeployment": {
+        "reported_neutral": 9
+      },
+      "selectedArticleUse": {
+        "opponent_to_rebut": 7,
+        "reported": 2
+      },
+      "blocking": 0
+    }
+  ]
+}

@@ -1,0 +1,2944 @@
+{
+  "fixtureId": "CF1-F02",
+  "repeat": 1,
+  "seed": 3089513833,
+  "status": "completed",
+  "result": {
+    "inventory": {
+      "theme": {
+        "text": "The regulatory process surrounding glyphosate is heavily influenced by industry, leading to safety assessments that do not accurately reflect real-world exposure risks.",
+        "sourceUnitIds": [
+          "U0001",
+          "U0002",
+          "U0004",
+          "U0011",
+          "U0012",
+          "U0015",
+          "U0017",
+          "U0020",
+          "U0025",
+          "U0054",
+          "U0060",
+          "U0070"
+        ]
+      },
+      "thesis": {
+        "text": "Regulators need to completely reassess their position on glyphosate safety due to the influence of industry data and the inadequacy of current safety limits.",
+        "sourceUnitIds": [
+          "U0070",
+          "U0071"
+        ]
+      },
+      "pillars": [
+        {
+          "label": "Industry influence on regulation",
+          "text": "Industry has shaped nearly every step of the regulatory process regarding glyphosate safety assessments.",
+          "importance": "load_bearing",
+          "sourceUnitIds": [
+            "U0001",
+            "U0004",
+            "U0029",
+            "U0030"
+          ]
+        },
+        {
+          "label": "Inadequate testing of formulations",
+          "text": "Regulators largely assess glyphosate in isolation rather than testing the commercial products that people are actually exposed to.",
+          "importance": "load_bearing",
+          "sourceUnitIds": [
+            "U0007",
+            "U0012",
+            "U0013",
+            "U0015"
+          ]
+        },
+        {
+          "label": "Toxicity of co-formulants",
+          "text": "Commercial formulations of glyphosate can be up to a thousand times more toxic than glyphosate alone due to additional ingredients.",
+          "importance": "load_bearing",
+          "sourceUnitIds": [
+            "U0011",
+            "U0010",
+            "U0020"
+          ]
+        },
+        {
+          "label": "Long-term effects of glyphosate",
+          "text": "Even minuscule doses of glyphosate herbicides can result in serious disease over time, including cancer.",
+          "importance": "load_bearing",
+          "sourceUnitIds": [
+            "U0061",
+            "U0064",
+            "U0065"
+          ]
+        },
+        {
+          "label": "Regulatory reliance on industry data",
+          "text": "Regulatory agencies rely heavily on industry-sponsored research when deciding whether glyphosate is safe, leading to similar conclusions across agencies.",
+          "importance": "load_bearing",
+          "sourceUnitIds": [
+            "U0029",
+            "U0030"
+          ]
+        },
+        {
+          "label": "Need for reassessment of safety limits",
+          "text": "Current safety limits for glyphosate are not protective enough and need to be drastically reduced based on independent research findings.",
+          "importance": "load_bearing",
+          "sourceUnitIds": [
+            "U0071",
+            "U0072"
+          ]
+        }
+      ],
+      "thesisHinge": "mixed",
+      "candidateClaims": [
+        {
+          "claimText": "Glyphosate has remained one of the world’s most widely used herbicides due to industry influence on the regulatory process.",
+          "sourceUnitIds": [
+            "U0001"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Industry influence on regulation"
+          ],
+          "scope": "global",
+          "evidenceUsefulnessHint": "Research on regulatory processes and industry influence could support or refute this claim.",
+          "articleRole": "pillar",
+          "articleUse": "reported",
+          "assertionSource": "Michael Antoniou, Ph.D."
+        },
+        {
+          "claimText": "Regulators assess glyphosate largely in isolation, without testing the commercial products that people are actually exposed to.",
+          "sourceUnitIds": [
+            "U0007"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Inadequate testing of formulations"
+          ],
+          "scope": "regulatory",
+          "evidenceUsefulnessHint": "Evidence of testing protocols and practices could validate this claim.",
+          "articleRole": "pillar",
+          "articleUse": "reported",
+          "assertionSource": "Michael Antoniou, Ph.D."
+        },
+        {
+          "claimText": "Commercial formulations of glyphosate can be up to a thousand times more toxic than glyphosate alone due to additional ingredients.",
+          "sourceUnitIds": [
+            "U0011"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Toxicity of co-formulants"
+          ],
+          "scope": "toxicology",
+          "evidenceUsefulnessHint": "Toxicity studies comparing formulations could support this claim.",
+          "articleRole": "pillar",
+          "articleUse": "reported",
+          "assertionSource": "Michael Antoniou, Ph.D."
+        },
+        {
+          "claimText": "Regulators do not require long-term toxicity testing of complete glyphosate formulations.",
+          "sourceUnitIds": [
+            "U0012"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Inadequate testing of formulations"
+          ],
+          "scope": "regulatory",
+          "evidenceUsefulnessHint": "Documentation of regulatory requirements could confirm this claim.",
+          "articleRole": "pillar",
+          "articleUse": "reported",
+          "assertionSource": "Michael Antoniou, Ph.D."
+        },
+        {
+          "claimText": "Even minuscule doses of glyphosate herbicides can result in serious disease over time, including cancer.",
+          "sourceUnitIds": [
+            "U0061"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Long-term effects of glyphosate"
+          ],
+          "scope": "health",
+          "evidenceUsefulnessHint": "Longitudinal studies on glyphosate exposure and health outcomes could validate this claim.",
+          "articleRole": "pillar",
+          "articleUse": "reported",
+          "assertionSource": "Michael Antoniou, Ph.D."
+        },
+        {
+          "claimText": "Regulatory agencies rely heavily on industry-sponsored research when deciding whether glyphosate is safe.",
+          "sourceUnitIds": [
+            "U0029"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Regulatory reliance on industry data"
+          ],
+          "scope": "regulatory",
+          "evidenceUsefulnessHint": "Analysis of research funding sources could support this claim.",
+          "articleRole": "pillar",
+          "articleUse": "reported",
+          "assertionSource": "Michael Antoniou, Ph.D."
+        },
+        {
+          "claimText": "Current safety limits for glyphosate are not protective enough and need to be drastically reduced based on independent research findings.",
+          "sourceUnitIds": [
+            "U0071"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Need for reassessment of safety limits"
+          ],
+          "scope": "regulatory",
+          "evidenceUsefulnessHint": "Comparative studies on safety limits could validate this claim.",
+          "articleRole": "pillar",
+          "articleUse": "reported",
+          "assertionSource": "Michael Antoniou, Ph.D."
+        },
+        {
+          "claimText": "Regulatory agencies have relied on a widely cited 2000 study that concluded glyphosate posed no significant safety concerns, which was later retracted due to undisclosed conflicts of interest.",
+          "sourceUnitIds": [
+            "U0031",
+            "U0033"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Regulatory reliance on industry data"
+          ],
+          "scope": "regulatory",
+          "evidenceUsefulnessHint": "Retracted studies and their impact on regulations could support this claim.",
+          "articleRole": "pillar",
+          "articleUse": "reported",
+          "assertionSource": "Michael Antoniou, Ph.D."
+        },
+        {
+          "claimText": "Antoniou's laboratory reported DNA damage and nonalcoholic fatty liver disease in animals exposed to extremely low concentrations of glyphosate formulations.",
+          "sourceUnitIds": [
+            "U0061"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Long-term effects of glyphosate"
+          ],
+          "scope": "health",
+          "evidenceUsefulnessHint": "Research findings on animal studies could validate this claim.",
+          "articleRole": "pillar",
+          "articleUse": "reported",
+          "assertionSource": "Michael Antoniou, Ph.D."
+        },
+        {
+          "claimText": "The same biological pathway targeted by glyphosate exists in many bacteria and fungi, including those in the human gut microbiome.",
+          "sourceUnitIds": [
+            "U0056"
+          ],
+          "materiality": "medium",
+          "relatedPillarLabels": [
+            "Regulators’ safety claims ‘clearly ignored’ critical piece of biology"
+          ],
+          "scope": "biology",
+          "evidenceUsefulnessHint": "Research on gut microbiome and glyphosate effects could support this claim.",
+          "articleRole": "pillar",
+          "articleUse": "reported",
+          "assertionSource": "Michael Antoniou, Ph.D."
+        },
+        {
+          "claimText": "Evidence from independent researchers shows harmful effects can occur at doses regulators describe as 'absolutely safe.'",
+          "sourceUnitIds": [
+            "U0060"
+          ],
+          "materiality": "medium",
+          "relatedPillarLabels": [
+            "Long-term effects of glyphosate"
+          ],
+          "scope": "health",
+          "evidenceUsefulnessHint": "Independent studies on glyphosate safety could validate this claim.",
+          "articleRole": "pillar",
+          "articleUse": "reported",
+          "assertionSource": "Michael Antoniou, Ph.D."
+        },
+        {
+          "claimText": "Antoniou criticized the growing use of glyphosate as a pre-harvest drying agent, which leads to glyphosate residues in the food supply.",
+          "sourceUnitIds": [
+            "U0050",
+            "U0051"
+          ],
+          "materiality": "medium",
+          "relatedPillarLabels": [
+            "Inadequate testing of formulations"
+          ],
+          "scope": "agriculture",
+          "evidenceUsefulnessHint": "Studies on glyphosate residues in food could support this claim.",
+          "articleRole": "pillar",
+          "articleUse": "reported",
+          "assertionSource": "Michael Antoniou, Ph.D."
+        }
+      ]
+    },
+    "hostSignals": [
+      {
+        "claimText": "Glyphosate has remained one of the world’s most widely used herbicides due to industry influence on the regulatory process.",
+        "origin": "candidate",
+        "candidateId": "CAND01",
+        "ifSupportedEffect": "none",
+        "ifRefutedEffect": "none",
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "attributed_testimony",
+        "scoreTransform": "none"
+      },
+      {
+        "claimText": "Regulators assess glyphosate largely in isolation, without testing the commercial products that people are actually exposed to.",
+        "origin": "candidate",
+        "candidateId": "CAND02",
+        "ifSupportedEffect": "none",
+        "ifRefutedEffect": "none",
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "attributed_testimony",
+        "scoreTransform": "none"
+      },
+      {
+        "claimText": "Commercial formulations of glyphosate can be up to a thousand times more toxic than glyphosate alone due to additional ingredients.",
+        "origin": "candidate",
+        "candidateId": "CAND03",
+        "ifSupportedEffect": "none",
+        "ifRefutedEffect": "none",
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "attributed_testimony",
+        "scoreTransform": "none"
+      },
+      {
+        "claimText": "Regulators do not require long-term toxicity testing of complete glyphosate formulations.",
+        "origin": "candidate",
+        "candidateId": "CAND04",
+        "ifSupportedEffect": "none",
+        "ifRefutedEffect": "none",
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "attributed_testimony",
+        "scoreTransform": "none"
+      },
+      {
+        "claimText": "Even minuscule doses of glyphosate herbicides can result in serious disease over time, including cancer.",
+        "origin": "candidate",
+        "candidateId": "CAND05",
+        "ifSupportedEffect": "none",
+        "ifRefutedEffect": "none",
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "attributed_testimony",
+        "scoreTransform": "none"
+      },
+      {
+        "claimText": "Regulatory agencies rely heavily on industry-sponsored research when deciding whether glyphosate is safe.",
+        "origin": "candidate",
+        "candidateId": "CAND06",
+        "ifSupportedEffect": "none",
+        "ifRefutedEffect": "none",
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "attributed_testimony",
+        "scoreTransform": "none"
+      },
+      {
+        "claimText": "Current safety limits for glyphosate are not protective enough and need to be drastically reduced based on independent research findings.",
+        "origin": "candidate",
+        "candidateId": "CAND07",
+        "ifSupportedEffect": "none",
+        "ifRefutedEffect": "none",
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "attributed_testimony",
+        "scoreTransform": "none"
+      },
+      {
+        "claimText": "Regulatory agencies have relied on a widely cited 2000 study that concluded glyphosate posed no significant safety concerns, which was later retracted due to undisclosed conflicts of interest.",
+        "origin": "candidate",
+        "candidateId": "CAND10",
+        "ifSupportedEffect": "none",
+        "ifRefutedEffect": "none",
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "attributed_testimony",
+        "scoreTransform": "none"
+      },
+      {
+        "claimText": "Antoniou's laboratory reported DNA damage and nonalcoholic fatty liver disease in animals exposed to extremely low concentrations of glyphosate formulations.",
+        "origin": "candidate",
+        "candidateId": "CAND11",
+        "ifSupportedEffect": "none",
+        "ifRefutedEffect": "none",
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "attributed_testimony",
+        "scoreTransform": "none"
+      },
+      {
+        "claimText": "The same biological pathway targeted by glyphosate exists in many bacteria and fungi, including those in the human gut microbiome.",
+        "origin": "candidate",
+        "candidateId": "CAND08",
+        "ifSupportedEffect": "none",
+        "ifRefutedEffect": "none",
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "attributed_testimony",
+        "scoreTransform": "none"
+      },
+      {
+        "claimText": "Evidence from independent researchers shows harmful effects can occur at doses regulators describe as 'absolutely safe.'",
+        "origin": "candidate",
+        "candidateId": "CAND09",
+        "ifSupportedEffect": "none",
+        "ifRefutedEffect": "none",
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "attributed_testimony",
+        "scoreTransform": "none"
+      },
+      {
+        "claimText": "Antoniou criticized the growing use of glyphosate as a pre-harvest drying agent, which leads to glyphosate residues in the food supply.",
+        "origin": "candidate",
+        "candidateId": "CAND12",
+        "ifSupportedEffect": "none",
+        "ifRefutedEffect": "none",
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "attributed_testimony",
+        "scoreTransform": "none"
+      }
+    ],
+    "censusResolution": [
+      {
+        "censusId": "CEN001",
+        "status": "resolved",
+        "as": "minted_candidate"
+      },
+      {
+        "censusId": "CEN002",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN003",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN004",
+        "status": "resolved",
+        "as": "minted_candidate"
+      },
+      {
+        "censusId": "CEN005",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN006",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN007",
+        "status": "resolved",
+        "as": "minted_candidate"
+      },
+      {
+        "censusId": "CEN008",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN009",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN010",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN011",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN012",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN013",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN014",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN015",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN016",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN017",
+        "status": "resolved",
+        "as": "minted_candidate"
+      },
+      {
+        "censusId": "CEN018",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN019",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN020",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN021",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN022",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN023",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN024",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN025",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN026",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN027",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN028",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN029",
+        "status": "resolved",
+        "as": "minted_candidate"
+      },
+      {
+        "censusId": "CEN030",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN031",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN032",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN033",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN034",
+        "status": "resolved",
+        "as": "minted_candidate"
+      },
+      {
+        "censusId": "CEN035",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN036",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN037",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN038",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN039",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN040",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN041",
+        "status": "resolved",
+        "as": "minted_candidate"
+      },
+      {
+        "censusId": "CEN042",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN043",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN044",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      },
+      {
+        "censusId": "CEN045",
+        "status": "unresolved",
+        "reason": "minted proposition was dropped before final selection"
+      }
+    ],
+    "diagnostics": {
+      "backfillCount": 13,
+      "blockingErrors": [],
+      "duplicateCollapses": [
+        {
+          "kept": "Glyphosate has remained one of the world’s most widely used herbicides due to in",
+          "dropped": "Glyphosate has remained one of the world’s most widely used herbicides due to in"
+        },
+        {
+          "kept": "Regulators assess glyphosate largely in isolation, without testing the commercia",
+          "dropped": "Regulators assess glyphosate largely in isolation, without testing the commercia"
+        },
+        {
+          "kept": "Commercial formulations of glyphosate can be up to a thousand times more toxic t",
+          "dropped": "Commercial formulations of glyphosate can be up to a thousand times more toxic t"
+        },
+        {
+          "kept": "Regulators do not require long-term toxicity testing of complete glyphosate form",
+          "dropped": "Regulators do not require long-term toxicity testing of complete glyphosate form"
+        },
+        {
+          "kept": "Even minuscule doses of glyphosate herbicides can result in serious disease over",
+          "dropped": "Even minuscule doses of glyphosate herbicides can result in serious disease over"
+        },
+        {
+          "kept": "Regulatory agencies rely heavily on industry-sponsored research when deciding wh",
+          "dropped": "Regulatory agencies rely heavily on industry-sponsored research when deciding wh"
+        },
+        {
+          "kept": "Current safety limits for glyphosate are not protective enough and need to be dr",
+          "dropped": "Current safety limits for glyphosate are not protective enough and need to be dr"
+        },
+        {
+          "kept": "The same biological pathway targeted by glyphosate exists in many bacteria and f",
+          "dropped": "The same biological pathway targeted by glyphosate exists in many bacteria and f"
+        },
+        {
+          "kept": "Evidence from independent researchers shows harmful effects can occur at doses r",
+          "dropped": "Evidence from independent researchers shows harmful effects can occur at doses r"
+        },
+        {
+          "kept": "Regulatory agencies have relied on a widely cited 2000 study that concluded glyp",
+          "dropped": "Regulatory agencies have relied on a widely cited 2000 study that concluded glyp"
+        },
+        {
+          "kept": "Antoniou's laboratory reported DNA damage and nonalcoholic fatty liver disease i",
+          "dropped": "Antoniou's laboratory reported DNA damage and nonalcoholic fatty liver disease i"
+        },
+        {
+          "kept": "Antoniou criticized the growing use of glyphosate as a pre-harvest drying agent,",
+          "dropped": "Antoniou criticized the growing use of glyphosate as a pre-harvest drying agent,"
+        }
+      ],
+      "selectedCount": 12,
+      "deselectedCount": 1,
+      "unresolvedCensus": 38
+    },
+    "droppedFromSelection": [
+      "Industry’s influence extends from the studies regulators rely on and the product"
+    ],
+    "raw": {
+      "call1a": {
+        "thesisHinge": "mixed",
+        "theme": {
+          "text": "The regulatory process surrounding glyphosate is heavily influenced by industry, leading to safety assessments that do not accurately reflect real-world exposure risks.",
+          "sourceUnitIds": [
+            "U0001",
+            "U0002",
+            "U0004",
+            "U0011",
+            "U0012",
+            "U0015",
+            "U0017",
+            "U0020",
+            "U0025",
+            "U0054",
+            "U0060",
+            "U0070"
+          ]
+        },
+        "thesis": {
+          "text": "Regulators need to completely reassess their position on glyphosate safety due to the influence of industry data and the inadequacy of current safety limits.",
+          "sourceUnitIds": [
+            "U0070",
+            "U0071"
+          ]
+        },
+        "pillars": [
+          {
+            "label": "Industry influence on regulation",
+            "text": "Industry has shaped nearly every step of the regulatory process regarding glyphosate safety assessments.",
+            "importance": "load_bearing",
+            "sourceUnitIds": [
+              "U0001",
+              "U0004",
+              "U0029",
+              "U0030"
+            ]
+          },
+          {
+            "label": "Inadequate testing of formulations",
+            "text": "Regulators largely assess glyphosate in isolation rather than testing the commercial products that people are actually exposed to.",
+            "importance": "load_bearing",
+            "sourceUnitIds": [
+              "U0007",
+              "U0012",
+              "U0013",
+              "U0015"
+            ]
+          },
+          {
+            "label": "Toxicity of co-formulants",
+            "text": "Commercial formulations of glyphosate can be up to a thousand times more toxic than glyphosate alone due to additional ingredients.",
+            "importance": "load_bearing",
+            "sourceUnitIds": [
+              "U0011",
+              "U0010",
+              "U0020"
+            ]
+          },
+          {
+            "label": "Long-term effects of glyphosate",
+            "text": "Even minuscule doses of glyphosate herbicides can result in serious disease over time, including cancer.",
+            "importance": "load_bearing",
+            "sourceUnitIds": [
+              "U0061",
+              "U0064",
+              "U0065"
+            ]
+          },
+          {
+            "label": "Regulatory reliance on industry data",
+            "text": "Regulatory agencies rely heavily on industry-sponsored research when deciding whether glyphosate is safe, leading to similar conclusions across agencies.",
+            "importance": "load_bearing",
+            "sourceUnitIds": [
+              "U0029",
+              "U0030"
+            ]
+          },
+          {
+            "label": "Need for reassessment of safety limits",
+            "text": "Current safety limits for glyphosate are not protective enough and need to be drastically reduced based on independent research findings.",
+            "importance": "load_bearing",
+            "sourceUnitIds": [
+              "U0071",
+              "U0072"
+            ]
+          }
+        ],
+        "candidateClaims": [
+          {
+            "claimText": "Glyphosate has remained one of the world’s most widely used herbicides due to industry influence on the regulatory process.",
+            "sourceUnitIds": [
+              "U0001"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Industry influence on regulation"
+            ],
+            "scope": "global",
+            "evidenceUsefulnessHint": "Research on regulatory processes and industry influence could support or refute this claim."
+          },
+          {
+            "claimText": "Regulators assess glyphosate largely in isolation, without testing the commercial products that people are actually exposed to.",
+            "sourceUnitIds": [
+              "U0007"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Inadequate testing of formulations"
+            ],
+            "scope": "regulatory",
+            "evidenceUsefulnessHint": "Evidence of testing protocols and practices could validate this claim."
+          },
+          {
+            "claimText": "Commercial formulations of glyphosate can be up to a thousand times more toxic than glyphosate alone due to additional ingredients.",
+            "sourceUnitIds": [
+              "U0011"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Toxicity of co-formulants"
+            ],
+            "scope": "toxicology",
+            "evidenceUsefulnessHint": "Toxicity studies comparing formulations could support this claim."
+          },
+          {
+            "claimText": "Regulators do not require long-term toxicity testing of complete glyphosate formulations.",
+            "sourceUnitIds": [
+              "U0012"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Inadequate testing of formulations"
+            ],
+            "scope": "regulatory",
+            "evidenceUsefulnessHint": "Documentation of regulatory requirements could confirm this claim."
+          },
+          {
+            "claimText": "Even minuscule doses of glyphosate herbicides can result in serious disease over time, including cancer.",
+            "sourceUnitIds": [
+              "U0061"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Long-term effects of glyphosate"
+            ],
+            "scope": "health",
+            "evidenceUsefulnessHint": "Longitudinal studies on glyphosate exposure and health outcomes could validate this claim."
+          },
+          {
+            "claimText": "Regulatory agencies rely heavily on industry-sponsored research when deciding whether glyphosate is safe.",
+            "sourceUnitIds": [
+              "U0029"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Regulatory reliance on industry data"
+            ],
+            "scope": "regulatory",
+            "evidenceUsefulnessHint": "Analysis of research funding sources could support this claim."
+          },
+          {
+            "claimText": "Current safety limits for glyphosate are not protective enough and need to be drastically reduced based on independent research findings.",
+            "sourceUnitIds": [
+              "U0071"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Need for reassessment of safety limits"
+            ],
+            "scope": "regulatory",
+            "evidenceUsefulnessHint": "Comparative studies on safety limits could validate this claim."
+          },
+          {
+            "claimText": "The same biological pathway targeted by glyphosate exists in many bacteria and fungi, including those in the human gut microbiome.",
+            "sourceUnitIds": [
+              "U0056"
+            ],
+            "materiality": "medium",
+            "relatedPillarLabels": [
+              "Regulators’ safety claims ‘clearly ignored’ critical piece of biology"
+            ],
+            "scope": "biology",
+            "evidenceUsefulnessHint": "Research on gut microbiome and glyphosate effects could support this claim."
+          },
+          {
+            "claimText": "Evidence from independent researchers shows harmful effects can occur at doses regulators describe as 'absolutely safe.'",
+            "sourceUnitIds": [
+              "U0060"
+            ],
+            "materiality": "medium",
+            "relatedPillarLabels": [
+              "Long-term effects of glyphosate"
+            ],
+            "scope": "health",
+            "evidenceUsefulnessHint": "Independent studies on glyphosate safety could validate this claim."
+          },
+          {
+            "claimText": "Regulatory agencies have relied on a widely cited 2000 study that concluded glyphosate posed no significant safety concerns, which was later retracted due to undisclosed conflicts of interest.",
+            "sourceUnitIds": [
+              "U0031",
+              "U0033"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Regulatory reliance on industry data"
+            ],
+            "scope": "regulatory",
+            "evidenceUsefulnessHint": "Retracted studies and their impact on regulations could support this claim."
+          },
+          {
+            "claimText": "Antoniou's laboratory reported DNA damage and nonalcoholic fatty liver disease in animals exposed to extremely low concentrations of glyphosate formulations.",
+            "sourceUnitIds": [
+              "U0061"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Long-term effects of glyphosate"
+            ],
+            "scope": "health",
+            "evidenceUsefulnessHint": "Research findings on animal studies could validate this claim."
+          },
+          {
+            "claimText": "Antoniou criticized the growing use of glyphosate as a pre-harvest drying agent, which leads to glyphosate residues in the food supply.",
+            "sourceUnitIds": [
+              "U0050",
+              "U0051"
+            ],
+            "materiality": "medium",
+            "relatedPillarLabels": [
+              "Inadequate testing of formulations"
+            ],
+            "scope": "agriculture",
+            "evidenceUsefulnessHint": "Studies on glyphosate residues in food could support this claim."
+          }
+        ]
+      },
+      "call1b": {
+        "candidateJudgments": [
+          {
+            "candidateId": "CAND01",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0001"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND02",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0007"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND03",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0011"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND04",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0012"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND05",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0061"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND06",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0029"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND07",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0071"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND08",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0056"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND09",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0060"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND10",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0031",
+              "U0033"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND11",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0061"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND12",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0050",
+              "U0051"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          }
+        ],
+        "censusOutcomes": [
+          {
+            "censusId": "CEN001",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN002",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN003",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN004",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN005",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN006",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN007",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN008",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN009",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN010",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN011",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN012",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN013",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN014",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN015",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN016",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN017",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN018",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN019",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN020",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN021",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN022",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN023",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN024",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN025",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN026",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN027",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN028",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN029",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN030",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN031",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN032",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN033",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN034",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN035",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN036",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN037",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN038",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN039",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN040",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN041",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN042",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN043",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN044",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          },
+          {
+            "censusId": "CEN045",
+            "outcome": "mint",
+            "duplicateOfCandidateId": null,
+            "note": null
+          }
+        ],
+        "mintedClaims": [
+          {
+            "censusId": "CEN001",
+            "claimText": "Glyphosate has remained one of the world’s most widely used herbicides due to industry influence on the regulatory process.",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0001"
+            ],
+            "responseUnitIds": []
+          },
+          {
+            "censusId": "CEN002",
+            "claimText": "Industry’s influence extends from the studies regulators rely on and the products they test to the exposure limits they consider safe.",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0004"
+            ],
+            "responseUnitIds": []
+          },
+          {
+            "censusId": "CEN003",
+            "claimText": "Regulators assess glyphosate largely in isolation, without testing the commercial products that people are actually exposed to.",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0007"
+            ],
+            "responseUnitIds": []
+          },
+          {
+            "censusId": "CEN004",
+            "claimText": "Commercial formulations of glyphosate can be up to a thousand times more toxic than glyphosate alone due to additional ingredients.",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0011"
+            ],
+            "responseUnitIds": []
+          },
+          {
+            "censusId": "CEN005",
+            "claimText": "Regulators do not require long-term toxicity testing of complete glyphosate formulations.",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0012"
+            ],
+            "responseUnitIds": []
+          },
+          {
+            "censusId": "CEN006",
+            "claimText": "Even minuscule doses of glyphosate herbicides can result in serious disease over time, including cancer.",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0061"
+            ],
+            "responseUnitIds": []
+          },
+          {
+            "censusId": "CEN007",
+            "claimText": "Regulatory agencies rely heavily on industry-sponsored research when deciding whether glyphosate is safe.",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0029"
+            ],
+            "responseUnitIds": []
+          },
+          {
+            "censusId": "CEN008",
+            "claimText": "Current safety limits for glyphosate are not protective enough and need to be drastically reduced based on independent research findings.",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0071"
+            ],
+            "responseUnitIds": []
+          },
+          {
+            "censusId": "CEN009",
+            "claimText": "The same biological pathway targeted by glyphosate exists in many bacteria and fungi, including those in the human gut microbiome.",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0056"
+            ],
+            "responseUnitIds": []
+          },
+          {
+            "censusId": "CEN010",
+            "claimText": "Evidence from independent researchers shows harmful effects can occur at doses regulators describe as 'absolutely safe.'",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0060"
+            ],
+            "responseUnitIds": []
+          },
+          {
+            "censusId": "CEN011",
+            "claimText": "Regulatory agencies have relied on a widely cited 2000 study that concluded glyphosate posed no significant safety concerns, which was later retracted due to undisclosed conflicts of interest.",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0031",
+              "U0033"
+            ],
+            "responseUnitIds": []
+          },
+          {
+            "censusId": "CEN012",
+            "claimText": "Antoniou's laboratory reported DNA damage and nonalcoholic fatty liver disease in animals exposed to extremely low concentrations of glyphosate formulations.",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0061"
+            ],
+            "responseUnitIds": []
+          },
+          {
+            "censusId": "CEN013",
+            "claimText": "Antoniou criticized the growing use of glyphosate as a pre-harvest drying agent, which leads to glyphosate residues in the food supply.",
+            "assertionSource": "Michael Antoniou, Ph.D.",
+            "articleUse": "reported",
+            "articleRole": "pillar",
+            "ifSupportedEffect": "none",
+            "ifRefutedEffect": "none",
+            "sourceUnitIds": [
+              "U0050",
+              "U0051"
+            ],
+            "responseUnitIds": []
+          }
+        ]
+      },
+      "packets": [
+        {
+          "id": "CAND01",
+          "origin": "candidate",
+          "claimText": "Glyphosate has remained one of the world’s most widely used herbicides due to industry influence on the regulatory process.",
+          "sourceUnitIds": [
+            "U0001"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "Glyphosate has remained one of the world’s most widely used herbicides not because the science supports its safety, but because industry has shaped nearly every step of the regulatory process, molecular geneticist and toxicologist Michael Antoniou, Ph.D. , said this week.",
+          "attributionLeadIn": null,
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "In an interview on “ The Corbett Report ,” Antoniou outlined what he sees as the biggest failures that have kept the “deceptively toxic” herbicide on the market despite a growing body of independent research linking it to serious health risks. Antoniou, professor emeritus at King’s College London, spent more than a decade leading pesticides research and building a group he described as “a world leader in glyphosate herbicide toxicology.” He said industry’s influence extends from the studies regulators rely on and the products they test to the exposure limits they consider safe. “That is not sc…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "paragraph_group",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND02",
+          "origin": "candidate",
+          "claimText": "Regulators assess glyphosate largely in isolation, without testing the commercial products that people are actually exposed to.",
+          "sourceUnitIds": [
+            "U0007"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "One of the biggest flaws in glyphosate regulation is that agencies largely assess glyphosate by itself, in isolation — instead of testing the commercial products people are actually exposed to, Antoniou said.",
+          "attributionLeadIn": "“That is not science,” he said. “That is really an act of deception.”",
+          "quoteOrSpeakerBlock": "‘Massive act of negligence’ is ‘putting public health at risk’ One of the biggest flaws in glyphosate regulation is that agencies largely assess glyphosate by itself, in isolation — instead of testing the commercial products people are actually exposed to, Antoniou said. Glyphosate alone can’t kill plants, he explained. Manufacturers add chemicals known as co-formulants that “basically punch holes in the plant cell walls,” so glyphosate can enter and destroy the plant.",
+          "localResponseWindow": "Glyphosate alone can’t kill plants, he explained. Manufacturers add chemicals known as co-formulants that “basically punch holes in the plant cell walls,” so glyphosate can enter and destroy the plant. Those additional ingredients make the products “far more toxic” than glyphosate on its own, Antoniou said. Citing research by French scientist Robin Mesnage, Ph.D. , Antoniou said commercial formulations can be “up to a thousand times more toxic than glyphosate alone.” Yet regulators don’t require long-term toxicity testing of those complete formulations. Instead, “they pass regulations based on…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND03",
+          "origin": "candidate",
+          "claimText": "Commercial formulations of glyphosate can be up to a thousand times more toxic than glyphosate alone due to additional ingredients.",
+          "sourceUnitIds": [
+            "U0011"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "Citing research by French scientist Robin Mesnage, Ph.D. , Antoniou said commercial formulations can be “up to a thousand times more toxic than glyphosate alone.”",
+          "attributionLeadIn": "Those additional ingredients make the products “far more toxic” than glyphosate on its own, Antoniou said.",
+          "quoteOrSpeakerBlock": "Those additional ingredients make the products “far more toxic” than glyphosate on its own, Antoniou said. Citing research by French scientist Robin Mesnage, Ph.D. , Antoniou said commercial formulations can be “up to a thousand times more toxic than glyphosate alone.” Yet regulators don’t require long-term toxicity testing of those complete formulations. Instead, “they pass regulations based on tests on glyphosate alone,” Antoniou said.",
+          "localResponseWindow": "Yet regulators don’t require long-term toxicity testing of those complete formulations. Instead, “they pass regulations based on tests on glyphosate alone,” Antoniou said. He called that approach “a massive act of negligence on behalf of the regulators anywhere in the world.” He stressed that people are never exposed to pure glyphosate. “When an applicator goes around spraying and they’re breathing it, they’re getting contact on their skin. It’s the whole formulation,” Antoniou said. The same formulations also end up in the food supply. Evaluating only glyphosate means “the regulator isn’t doi…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND04",
+          "origin": "candidate",
+          "claimText": "Regulators do not require long-term toxicity testing of complete glyphosate formulations.",
+          "sourceUnitIds": [
+            "U0012"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "Yet regulators don’t require long-term toxicity testing of those complete formulations.",
+          "attributionLeadIn": "Citing research by French scientist Robin Mesnage, Ph.D. , Antoniou said commercial formulations can be “up to a thousand times more toxic than glyphosate alone.”",
+          "quoteOrSpeakerBlock": "Citing research by French scientist Robin Mesnage, Ph.D. , Antoniou said commercial formulations can be “up to a thousand times more toxic than glyphosate alone.” Yet regulators don’t require long-term toxicity testing of those complete formulations. Instead, “they pass regulations based on tests on glyphosate alone,” Antoniou said. He called that approach “a massive act of negligence on behalf of the regulators anywhere in the world.”",
+          "localResponseWindow": "Instead, “they pass regulations based on tests on glyphosate alone,” Antoniou said. He called that approach “a massive act of negligence on behalf of the regulators anywhere in the world.” He stressed that people are never exposed to pure glyphosate. “When an applicator goes around spraying and they’re breathing it, they’re getting contact on their skin. It’s the whole formulation,” Antoniou said. The same formulations also end up in the food supply. Evaluating only glyphosate means “the regulator isn’t doing their job properly” and is “putting public health at risk,” he said. ‘Industry hides…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND05",
+          "origin": "candidate",
+          "claimText": "Even minuscule doses of glyphosate herbicides can result in serious disease over time, including cancer.",
+          "sourceUnitIds": [
+            "U0061"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "His laboratory has reported DNA damage and nonalcoholic fatty liver disease in animals exposed to extremely low concentrations of commercial glyphosate formulations.",
+          "attributionLeadIn": "Evidence from independent researchers also shows harmful effects can occur at doses regulators continue to describe as “absolutely safe,” Antoniou said.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "In one study, animals developed liver disease after long-term exposure to glyphosate concentrations “125,000 times below the European Union safety limit and 250,000 times below the U.S. safety limit.” “Even minuscule doses of glyphosate herbicides, given enough time, can result in serious disease,” Antoniou said. He also pointed to a June 2025 study in which rats exposed from fetal development through adulthood developed cancers, particularly leukemia, even at the currently accepted daily intake. “What this study tells us is clearly … first of all, glyphosate and glyphosate herbicides are defi…",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND06",
+          "origin": "candidate",
+          "claimText": "Regulatory agencies rely heavily on industry-sponsored research when deciding whether glyphosate is safe.",
+          "sourceUnitIds": [
+            "U0029"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "He said regulatory agencies around the world rely heavily on industry-sponsored research when deciding whether glyphosate is safe.",
+          "attributionLeadIn": "Testing only glyphosate is just one example of how industry has shaped regulation, according to Antoniou.",
+          "quoteOrSpeakerBlock": "Testing only glyphosate is just one example of how industry has shaped regulation, according to Antoniou. He said regulatory agencies around the world rely heavily on industry-sponsored research when deciding whether glyphosate is safe. Because regulators often use the same industry data, they reach similar conclusions and cite one another as supporting evidence. Antoniou pointed to a widely cited 2000 study in Regulatory Toxicology and Pharmacology that concluded glyphosate posed no significant safety concerns.",
+          "localResponseWindow": "Because regulators often use the same industry data, they reach similar conclusions and cite one another as supporting evidence. Antoniou pointed to a widely cited 2000 study in Regulatory Toxicology and Pharmacology that concluded glyphosate posed no significant safety concerns. Regulatory agencies relied on that paper for years. Earlier this year, however, the paper was retracted after evidence showed its authors had undisclosed conflicts of interest. Even more troubling, Antoniou said, “they had solid evidence that actually this paper wasn’t even written by the authors. It was ghostwritten…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND07",
+          "origin": "candidate",
+          "claimText": "Current safety limits for glyphosate are not protective enough and need to be drastically reduced based on independent research findings.",
+          "sourceUnitIds": [
+            "U0071"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "Existing safety limits are nowhere near protective enough, he said.",
+          "attributionLeadIn": "“Regulators need to completely reassess their position,” Antoniou said. “They’ve relied so heavily on industry data, which has now been questioned as to its validity.”",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "“We cannot set an acceptable daily safe intake limit,” he said. “If I was to make an educated guess right now, I would say it would probably be in the order of about a thousand times lower than where we are at the moment.” Antoniou also rejected the idea that farmers cannot transition off of glyphosate . “There are alternatives,” he said. “All it takes is the political will to support these initiatives, to really move towards a sustainable, robust and safe agricultural system.” Looking back at glyphosate’s history, Antoniou said the herbicide “was always touted by industry as the safest-ever p…",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND08",
+          "origin": "candidate",
+          "claimText": "The same biological pathway targeted by glyphosate exists in many bacteria and fungi, including those in the human gut microbiome.",
+          "sourceUnitIds": [
+            "U0056"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "The same pathway exists in many bacteria and fungi, including microorganisms that make up the human gut microbiome .",
+          "attributionLeadIn": "But that argument overlooks a critical piece of biology, he said.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "Research from Antoniou’s laboratory and others shows glyphosate can disrupt those microbial communities, contributing to gut imbalance and “the onset or the occurrence of leaky gut.” The gut microbiome plays a vital role in digestion, immune function, cardiovascular health and nervous system signaling, Antoniou said. “Monsanto clearly ignored” this mechanism of toxicity, he said. Evidence from independent researchers also shows harmful effects can occur at doses regulators continue to describe as “absolutely safe,” Antoniou said. His laboratory has reported DNA damage and nonalcoholic fatty li…",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND09",
+          "origin": "candidate",
+          "claimText": "Evidence from independent researchers shows harmful effects can occur at doses regulators describe as 'absolutely safe.'",
+          "sourceUnitIds": [
+            "U0060"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "Evidence from independent researchers also shows harmful effects can occur at doses regulators continue to describe as “absolutely safe,” Antoniou said.",
+          "attributionLeadIn": "“Monsanto clearly ignored” this mechanism of toxicity, he said.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "His laboratory has reported DNA damage and nonalcoholic fatty liver disease in animals exposed to extremely low concentrations of commercial glyphosate formulations. In one study, animals developed liver disease after long-term exposure to glyphosate concentrations “125,000 times below the European Union safety limit and 250,000 times below the U.S. safety limit.” “Even minuscule doses of glyphosate herbicides, given enough time, can result in serious disease,” Antoniou said. He also pointed to a June 2025 study in which rats exposed from fetal development through adulthood developed cancers,…",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND10",
+          "origin": "candidate",
+          "claimText": "Regulatory agencies have relied on a widely cited 2000 study that concluded glyphosate posed no significant safety concerns, which was later retracted due to undisclosed conflicts of interest.",
+          "sourceUnitIds": [
+            "U0031",
+            "U0033"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "Antoniou pointed to a widely cited 2000 study in Regulatory Toxicology and Pharmacology that concluded glyphosate posed no significant safety concerns. Earlier this year, however, the paper was retracted after evidence showed its authors had undisclosed conflicts of interest.",
+          "attributionLeadIn": "He said regulatory agencies around the world rely heavily on industry-sponsored research when deciding whether glyphosate is safe.",
+          "quoteOrSpeakerBlock": "Because regulators often use the same industry data, they reach similar conclusions and cite one another as supporting evidence. Antoniou pointed to a widely cited 2000 study in Regulatory Toxicology and Pharmacology that concluded glyphosate posed no significant safety concerns. Regulatory agencies relied on that paper for years. Earlier this year, however, the paper was retracted after evidence showed its authors had undisclosed conflicts of interest.",
+          "localResponseWindow": "Even more troubling, Antoniou said, “they had solid evidence that actually this paper wasn’t even written by the authors. It was ghostwritten by Monsanto .” According to Antoniou, the influence extends well beyond a single paper. “Regulatory agencies rely on laboratory animal toxicity studies to set their so-called safe exposure limits,” he said. However, “the criteria by which a given animal toxicity study is eligible to be considered … were set by industry.” As a result, independent studies often receive “little or no attention,” even when they “clearly have no conflicts of interest,” Antoni…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND11",
+          "origin": "candidate",
+          "claimText": "Antoniou's laboratory reported DNA damage and nonalcoholic fatty liver disease in animals exposed to extremely low concentrations of glyphosate formulations.",
+          "sourceUnitIds": [
+            "U0061"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "His laboratory has reported DNA damage and nonalcoholic fatty liver disease in animals exposed to extremely low concentrations of commercial glyphosate formulations.",
+          "attributionLeadIn": "Evidence from independent researchers also shows harmful effects can occur at doses regulators continue to describe as “absolutely safe,” Antoniou said.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "In one study, animals developed liver disease after long-term exposure to glyphosate concentrations “125,000 times below the European Union safety limit and 250,000 times below the U.S. safety limit.” “Even minuscule doses of glyphosate herbicides, given enough time, can result in serious disease,” Antoniou said. He also pointed to a June 2025 study in which rats exposed from fetal development through adulthood developed cancers, particularly leukemia, even at the currently accepted daily intake. “What this study tells us is clearly … first of all, glyphosate and glyphosate herbicides are defi…",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND12",
+          "origin": "candidate",
+          "claimText": "Antoniou criticized the growing use of glyphosate as a pre-harvest drying agent, which leads to glyphosate residues in the food supply.",
+          "sourceUnitIds": [
+            "U0050",
+            "U0051"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "Manufacturers encourage farmers to spray wheat , barley, oats , rye and other crops just days before harvest so the grain dries more uniformly and can be harvested sooner. The result is that glyphosate residues “are going straight into the humans’ food supply,” he said.",
+          "attributionLeadIn": "“And here, for me, is the most ridiculous and unbelievable use of glyphosate herbicide that has become popular in the last 20 years or so,” he said.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "“And if the glyphosate is there, so are the co-formulants.”",
+          "sectionHeading": "Safety testing doesn’t reflect ‘cocktails of pesticides’ people are exposed to",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN001",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0001"
+          ],
+          "claimUnits": "Glyphosate has remained one of the world’s most widely used herbicides not because the science supports its safety, but because industry has shaped nearly every step of the regulatory process, molecular geneticist and toxicologist Michael Antoniou, Ph.D. , said this week.",
+          "attributionLeadIn": null,
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "In an interview on “ The Corbett Report ,” Antoniou outlined what he sees as the biggest failures that have kept the “deceptively toxic” herbicide on the market despite a growing body of independent research linking it to serious health risks. Antoniou, professor emeritus at King’s College London, spent more than a decade leading pesticides research and building a group he described as “a world leader in glyphosate herbicide toxicology.” He said industry’s influence extends from the studies regulators rely on and the products they test to the exposure limits they consider safe. “That is not sc…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "paragraph_group",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN002",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0004"
+          ],
+          "claimUnits": "He said industry’s influence extends from the studies regulators rely on and the products they test to the exposure limits they consider safe.",
+          "attributionLeadIn": "Glyphosate has remained one of the world’s most widely used herbicides not because the science supports its safety, but because industry has shaped nearly every step of the regulatory process, molecular geneticist and toxicologist Michael Antoniou, Ph.D. , said this week.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "“That is not science,” he said. “That is really an act of deception.” ‘Massive act of negligence’ is ‘putting public health at risk’ One of the biggest flaws in glyphosate regulation is that agencies largely assess glyphosate by itself, in isolation — instead of testing the commercial products people are actually exposed to, Antoniou said. Glyphosate alone can’t kill plants, he explained. Manufacturers add chemicals known as co-formulants that “basically punch holes in the plant cell walls,” so glyphosate can enter and destroy the plant. Those additional ingredients make the products “far more…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "paragraph_group",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN003",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "block_quotation",
+          "censusSignals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0005"
+          ],
+          "claimUnits": "“That is not science,” he said. “That is really an act of deception.”",
+          "attributionLeadIn": "He said industry’s influence extends from the studies regulators rely on and the products they test to the exposure limits they consider safe.",
+          "quoteOrSpeakerBlock": "“That is not science,” he said. “That is really an act of deception.” ‘Massive act of negligence’ is ‘putting public health at risk’ One of the biggest flaws in glyphosate regulation is that agencies largely assess glyphosate by itself, in isolation — instead of testing the commercial products people are actually exposed to, Antoniou said.",
+          "localResponseWindow": "‘Massive act of negligence’ is ‘putting public health at risk’ One of the biggest flaws in glyphosate regulation is that agencies largely assess glyphosate by itself, in isolation — instead of testing the commercial products people are actually exposed to, Antoniou said. Glyphosate alone can’t kill plants, he explained. Manufacturers add chemicals known as co-formulants that “basically punch holes in the plant cell walls,” so glyphosate can enter and destroy the plant. Those additional ingredients make the products “far more toxic” than glyphosate on its own, Antoniou said. Citing research by…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CEN004",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0007"
+          ],
+          "claimUnits": "One of the biggest flaws in glyphosate regulation is that agencies largely assess glyphosate by itself, in isolation — instead of testing the commercial products people are actually exposed to, Antoniou said.",
+          "attributionLeadIn": "“That is not science,” he said. “That is really an act of deception.”",
+          "quoteOrSpeakerBlock": "‘Massive act of negligence’ is ‘putting public health at risk’ One of the biggest flaws in glyphosate regulation is that agencies largely assess glyphosate by itself, in isolation — instead of testing the commercial products people are actually exposed to, Antoniou said. Glyphosate alone can’t kill plants, he explained. Manufacturers add chemicals known as co-formulants that “basically punch holes in the plant cell walls,” so glyphosate can enter and destroy the plant.",
+          "localResponseWindow": "Glyphosate alone can’t kill plants, he explained. Manufacturers add chemicals known as co-formulants that “basically punch holes in the plant cell walls,” so glyphosate can enter and destroy the plant. Those additional ingredients make the products “far more toxic” than glyphosate on its own, Antoniou said. Citing research by French scientist Robin Mesnage, Ph.D. , Antoniou said commercial formulations can be “up to a thousand times more toxic than glyphosate alone.” Yet regulators don’t require long-term toxicity testing of those complete formulations. Instead, “they pass regulations based on…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN005",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0008"
+          ],
+          "claimUnits": "Glyphosate alone can’t kill plants, he explained.",
+          "attributionLeadIn": "One of the biggest flaws in glyphosate regulation is that agencies largely assess glyphosate by itself, in isolation — instead of testing the commercial products people are actually exposed to, Antoniou said.",
+          "quoteOrSpeakerBlock": "One of the biggest flaws in glyphosate regulation is that agencies largely assess glyphosate by itself, in isolation — instead of testing the commercial products people are actually exposed to, Antoniou said. Glyphosate alone can’t kill plants, he explained. Manufacturers add chemicals known as co-formulants that “basically punch holes in the plant cell walls,” so glyphosate can enter and destroy the plant. Those additional ingredients make the products “far more toxic” than glyphosate on its own, Antoniou said.",
+          "localResponseWindow": "Manufacturers add chemicals known as co-formulants that “basically punch holes in the plant cell walls,” so glyphosate can enter and destroy the plant. Those additional ingredients make the products “far more toxic” than glyphosate on its own, Antoniou said. Citing research by French scientist Robin Mesnage, Ph.D. , Antoniou said commercial formulations can be “up to a thousand times more toxic than glyphosate alone.” Yet regulators don’t require long-term toxicity testing of those complete formulations. Instead, “they pass regulations based on tests on glyphosate alone,” Antoniou said. He cal…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN006",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0010"
+          ],
+          "claimUnits": "Those additional ingredients make the products “far more toxic” than glyphosate on its own, Antoniou said.",
+          "attributionLeadIn": "Glyphosate alone can’t kill plants, he explained.",
+          "quoteOrSpeakerBlock": "Manufacturers add chemicals known as co-formulants that “basically punch holes in the plant cell walls,” so glyphosate can enter and destroy the plant. Those additional ingredients make the products “far more toxic” than glyphosate on its own, Antoniou said. Citing research by French scientist Robin Mesnage, Ph.D. , Antoniou said commercial formulations can be “up to a thousand times more toxic than glyphosate alone.” Yet regulators don’t require long-term toxicity testing of those complete formulations.",
+          "localResponseWindow": "Citing research by French scientist Robin Mesnage, Ph.D. , Antoniou said commercial formulations can be “up to a thousand times more toxic than glyphosate alone.” Yet regulators don’t require long-term toxicity testing of those complete formulations. Instead, “they pass regulations based on tests on glyphosate alone,” Antoniou said. He called that approach “a massive act of negligence on behalf of the regulators anywhere in the world.” He stressed that people are never exposed to pure glyphosate. “When an applicator goes around spraying and they’re breathing it, they’re getting contact on thei…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN007",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0011"
+          ],
+          "claimUnits": "Citing research by French scientist Robin Mesnage, Ph.D. , Antoniou said commercial formulations can be “up to a thousand times more toxic than glyphosate alone.”",
+          "attributionLeadIn": "Those additional ingredients make the products “far more toxic” than glyphosate on its own, Antoniou said.",
+          "quoteOrSpeakerBlock": "Those additional ingredients make the products “far more toxic” than glyphosate on its own, Antoniou said. Citing research by French scientist Robin Mesnage, Ph.D. , Antoniou said commercial formulations can be “up to a thousand times more toxic than glyphosate alone.” Yet regulators don’t require long-term toxicity testing of those complete formulations. Instead, “they pass regulations based on tests on glyphosate alone,” Antoniou said.",
+          "localResponseWindow": "Yet regulators don’t require long-term toxicity testing of those complete formulations. Instead, “they pass regulations based on tests on glyphosate alone,” Antoniou said. He called that approach “a massive act of negligence on behalf of the regulators anywhere in the world.” He stressed that people are never exposed to pure glyphosate. “When an applicator goes around spraying and they’re breathing it, they’re getting contact on their skin. It’s the whole formulation,” Antoniou said. The same formulations also end up in the food supply. Evaluating only glyphosate means “the regulator isn’t doi…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN008",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0013"
+          ],
+          "claimUnits": "Instead, “they pass regulations based on tests on glyphosate alone,” Antoniou said.",
+          "attributionLeadIn": "Citing research by French scientist Robin Mesnage, Ph.D. , Antoniou said commercial formulations can be “up to a thousand times more toxic than glyphosate alone.”",
+          "quoteOrSpeakerBlock": "Yet regulators don’t require long-term toxicity testing of those complete formulations. Instead, “they pass regulations based on tests on glyphosate alone,” Antoniou said. He called that approach “a massive act of negligence on behalf of the regulators anywhere in the world.” He stressed that people are never exposed to pure glyphosate.",
+          "localResponseWindow": "He called that approach “a massive act of negligence on behalf of the regulators anywhere in the world.” He stressed that people are never exposed to pure glyphosate. “When an applicator goes around spraying and they’re breathing it, they’re getting contact on their skin. It’s the whole formulation,” Antoniou said. The same formulations also end up in the food supply. Evaluating only glyphosate means “the regulator isn’t doing their job properly” and is “putting public health at risk,” he said. ‘Industry hides behind confidentiality clauses’ The problem is compounded because manufacturers don’…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN009",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "block_quotation",
+          "censusSignals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0016"
+          ],
+          "claimUnits": "“When an applicator goes around spraying and they’re breathing it, they’re getting contact on their skin. It’s the whole formulation,” Antoniou said. The same formulations also end up in the food supply.",
+          "attributionLeadIn": "Instead, “they pass regulations based on tests on glyphosate alone,” Antoniou said.",
+          "quoteOrSpeakerBlock": "He stressed that people are never exposed to pure glyphosate. “When an applicator goes around spraying and they’re breathing it, they’re getting contact on their skin. It’s the whole formulation,” Antoniou said. The same formulations also end up in the food supply. Evaluating only glyphosate means “the regulator isn’t doing their job properly” and is “putting public health at risk,” he said. ‘Industry hides behind confidentiality clauses’",
+          "localResponseWindow": "Evaluating only glyphosate means “the regulator isn’t doing their job properly” and is “putting public health at risk,” he said. ‘Industry hides behind confidentiality clauses’ The problem is compounded because manufacturers don’t disclose co-formulants on the labels of products such as Roundup , Antoniou said. Instead, the additional ingredients are simply listed as “inert” because they aren’t considered the active herbicide, even though evidence suggests some are highly toxic in their own right. “An industry hides behind confidentiality clauses,” and regulators don’t require full public disc…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CEN010",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0017"
+          ],
+          "claimUnits": "Evaluating only glyphosate means “the regulator isn’t doing their job properly” and is “putting public health at risk,” he said.",
+          "attributionLeadIn": "“When an applicator goes around spraying and they’re breathing it, they’re getting contact on their skin. It’s the whole formulation,” Antoniou said. The same formulations also end up in the food supply.",
+          "quoteOrSpeakerBlock": "“When an applicator goes around spraying and they’re breathing it, they’re getting contact on their skin. It’s the whole formulation,” Antoniou said. The same formulations also end up in the food supply. Evaluating only glyphosate means “the regulator isn’t doing their job properly” and is “putting public health at risk,” he said. ‘Industry hides behind confidentiality clauses’ The problem is compounded because manufacturers don’t disclose co-formulants on the labels of products such as Roundup , Antoniou said.",
+          "localResponseWindow": "‘Industry hides behind confidentiality clauses’ The problem is compounded because manufacturers don’t disclose co-formulants on the labels of products such as Roundup , Antoniou said. Instead, the additional ingredients are simply listed as “inert” because they aren’t considered the active herbicide, even though evidence suggests some are highly toxic in their own right. “An industry hides behind confidentiality clauses,” and regulators don’t require full public disclosure, he said. “At the end of the day, if you want to know what’s there, you have to do your own chemical, biochemical analysis…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN011",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0019"
+          ],
+          "claimUnits": "The problem is compounded because manufacturers don’t disclose co-formulants on the labels of products such as Roundup , Antoniou said.",
+          "attributionLeadIn": "Evaluating only glyphosate means “the regulator isn’t doing their job properly” and is “putting public health at risk,” he said.",
+          "quoteOrSpeakerBlock": "‘Industry hides behind confidentiality clauses’ The problem is compounded because manufacturers don’t disclose co-formulants on the labels of products such as Roundup , Antoniou said. Instead, the additional ingredients are simply listed as “inert” because they aren’t considered the active herbicide, even though evidence suggests some are highly toxic in their own right. “An industry hides behind confidentiality clauses,” and regulators don’t require full public disclosure, he said.",
+          "localResponseWindow": "Instead, the additional ingredients are simply listed as “inert” because they aren’t considered the active herbicide, even though evidence suggests some are highly toxic in their own right. “An industry hides behind confidentiality clauses,” and regulators don’t require full public disclosure, he said. “At the end of the day, if you want to know what’s there, you have to do your own chemical, biochemical analysis,” Antoniou said. His laboratory did exactly that. “The only way we could find out” what the products contained was by conducting independent chemical analyses, he said. If regulators…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN012",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "block_quotation",
+          "censusSignals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0021"
+          ],
+          "claimUnits": "“An industry hides behind confidentiality clauses,” and regulators don’t require full public disclosure, he said.",
+          "attributionLeadIn": "The problem is compounded because manufacturers don’t disclose co-formulants on the labels of products such as Roundup , Antoniou said.",
+          "quoteOrSpeakerBlock": "Instead, the additional ingredients are simply listed as “inert” because they aren’t considered the active herbicide, even though evidence suggests some are highly toxic in their own right. “An industry hides behind confidentiality clauses,” and regulators don’t require full public disclosure, he said. “At the end of the day, if you want to know what’s there, you have to do your own chemical, biochemical analysis,” Antoniou said. His laboratory did exactly that.",
+          "localResponseWindow": "“At the end of the day, if you want to know what’s there, you have to do your own chemical, biochemical analysis,” Antoniou said. His laboratory did exactly that. “The only way we could find out” what the products contained was by conducting independent chemical analyses, he said. If regulators evaluated the complete formulations instead of glyphosate alone, Antoniou said allowable exposure limits “would have to be drastically reduced,” and uses in homes, parks and other urban areas would likely be banned. ‘That is not science. That is really an act of deception’",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CEN013",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "block_quotation",
+          "censusSignals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0022"
+          ],
+          "claimUnits": "“At the end of the day, if you want to know what’s there, you have to do your own chemical, biochemical analysis,” Antoniou said.",
+          "attributionLeadIn": "“An industry hides behind confidentiality clauses,” and regulators don’t require full public disclosure, he said.",
+          "quoteOrSpeakerBlock": "“An industry hides behind confidentiality clauses,” and regulators don’t require full public disclosure, he said. “At the end of the day, if you want to know what’s there, you have to do your own chemical, biochemical analysis,” Antoniou said. His laboratory did exactly that. “The only way we could find out” what the products contained was by conducting independent chemical analyses, he said.",
+          "localResponseWindow": "His laboratory did exactly that. “The only way we could find out” what the products contained was by conducting independent chemical analyses, he said. If regulators evaluated the complete formulations instead of glyphosate alone, Antoniou said allowable exposure limits “would have to be drastically reduced,” and uses in homes, parks and other urban areas would likely be banned. ‘That is not science. That is really an act of deception’ Testing only glyphosate is just one example of how industry has shaped regulation, according to Antoniou.",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CEN014",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "block_quotation",
+          "censusSignals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0024"
+          ],
+          "claimUnits": "“The only way we could find out” what the products contained was by conducting independent chemical analyses, he said.",
+          "attributionLeadIn": "“At the end of the day, if you want to know what’s there, you have to do your own chemical, biochemical analysis,” Antoniou said.",
+          "quoteOrSpeakerBlock": "His laboratory did exactly that. “The only way we could find out” what the products contained was by conducting independent chemical analyses, he said. If regulators evaluated the complete formulations instead of glyphosate alone, Antoniou said allowable exposure limits “would have to be drastically reduced,” and uses in homes, parks and other urban areas would likely be banned. ‘That is not science.",
+          "localResponseWindow": "If regulators evaluated the complete formulations instead of glyphosate alone, Antoniou said allowable exposure limits “would have to be drastically reduced,” and uses in homes, parks and other urban areas would likely be banned. ‘That is not science. That is really an act of deception’ Testing only glyphosate is just one example of how industry has shaped regulation, according to Antoniou. He said regulatory agencies around the world rely heavily on industry-sponsored research when deciding whether glyphosate is safe. Because regulators often use the same industry data, they reach similar con…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CEN015",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0025"
+          ],
+          "claimUnits": "If regulators evaluated the complete formulations instead of glyphosate alone, Antoniou said allowable exposure limits “would have to be drastically reduced,” and uses in homes, parks and other urban areas would likely be banned.",
+          "attributionLeadIn": "“The only way we could find out” what the products contained was by conducting independent chemical analyses, he said.",
+          "quoteOrSpeakerBlock": "“The only way we could find out” what the products contained was by conducting independent chemical analyses, he said. If regulators evaluated the complete formulations instead of glyphosate alone, Antoniou said allowable exposure limits “would have to be drastically reduced,” and uses in homes, parks and other urban areas would likely be banned. ‘That is not science. That is really an act of deception’",
+          "localResponseWindow": "‘That is not science. That is really an act of deception’ Testing only glyphosate is just one example of how industry has shaped regulation, according to Antoniou. He said regulatory agencies around the world rely heavily on industry-sponsored research when deciding whether glyphosate is safe. Because regulators often use the same industry data, they reach similar conclusions and cite one another as supporting evidence. Antoniou pointed to a widely cited 2000 study in Regulatory Toxicology and Pharmacology that concluded glyphosate posed no significant safety concerns.",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN016",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0028"
+          ],
+          "claimUnits": "Testing only glyphosate is just one example of how industry has shaped regulation, according to Antoniou.",
+          "attributionLeadIn": "If regulators evaluated the complete formulations instead of glyphosate alone, Antoniou said allowable exposure limits “would have to be drastically reduced,” and uses in homes, parks and other urban areas would likely be banned.",
+          "quoteOrSpeakerBlock": "That is really an act of deception’ Testing only glyphosate is just one example of how industry has shaped regulation, according to Antoniou. He said regulatory agencies around the world rely heavily on industry-sponsored research when deciding whether glyphosate is safe. Because regulators often use the same industry data, they reach similar conclusions and cite one another as supporting evidence.",
+          "localResponseWindow": "He said regulatory agencies around the world rely heavily on industry-sponsored research when deciding whether glyphosate is safe. Because regulators often use the same industry data, they reach similar conclusions and cite one another as supporting evidence. Antoniou pointed to a widely cited 2000 study in Regulatory Toxicology and Pharmacology that concluded glyphosate posed no significant safety concerns. Regulatory agencies relied on that paper for years. Earlier this year, however, the paper was retracted after evidence showed its authors had undisclosed conflicts of interest. Even more t…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN017",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0029"
+          ],
+          "claimUnits": "He said regulatory agencies around the world rely heavily on industry-sponsored research when deciding whether glyphosate is safe.",
+          "attributionLeadIn": "Testing only glyphosate is just one example of how industry has shaped regulation, according to Antoniou.",
+          "quoteOrSpeakerBlock": "Testing only glyphosate is just one example of how industry has shaped regulation, according to Antoniou. He said regulatory agencies around the world rely heavily on industry-sponsored research when deciding whether glyphosate is safe. Because regulators often use the same industry data, they reach similar conclusions and cite one another as supporting evidence. Antoniou pointed to a widely cited 2000 study in Regulatory Toxicology and Pharmacology that concluded glyphosate posed no significant safety concerns.",
+          "localResponseWindow": "Because regulators often use the same industry data, they reach similar conclusions and cite one another as supporting evidence. Antoniou pointed to a widely cited 2000 study in Regulatory Toxicology and Pharmacology that concluded glyphosate posed no significant safety concerns. Regulatory agencies relied on that paper for years. Earlier this year, however, the paper was retracted after evidence showed its authors had undisclosed conflicts of interest. Even more troubling, Antoniou said, “they had solid evidence that actually this paper wasn’t even written by the authors. It was ghostwritten…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN018",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0034"
+          ],
+          "claimUnits": "Even more troubling, Antoniou said, “they had solid evidence that actually this paper wasn’t even written by the authors.",
+          "attributionLeadIn": "He said regulatory agencies around the world rely heavily on industry-sponsored research when deciding whether glyphosate is safe.",
+          "quoteOrSpeakerBlock": "Earlier this year, however, the paper was retracted after evidence showed its authors had undisclosed conflicts of interest. Even more troubling, Antoniou said, “they had solid evidence that actually this paper wasn’t even written by the authors. It was ghostwritten by Monsanto .” According to Antoniou, the influence extends well beyond a single paper.",
+          "localResponseWindow": "It was ghostwritten by Monsanto .” According to Antoniou, the influence extends well beyond a single paper. “Regulatory agencies rely on laboratory animal toxicity studies to set their so-called safe exposure limits,” he said. However, “the criteria by which a given animal toxicity study is eligible to be considered … were set by industry.” As a result, independent studies often receive “little or no attention,” even when they “clearly have no conflicts of interest,” Antoniou said. “That’s how influential industry has been,” he said.",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN019",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0036"
+          ],
+          "claimUnits": "According to Antoniou, the influence extends well beyond a single paper.",
+          "attributionLeadIn": "Even more troubling, Antoniou said, “they had solid evidence that actually this paper wasn’t even written by the authors.",
+          "quoteOrSpeakerBlock": "It was ghostwritten by Monsanto .” According to Antoniou, the influence extends well beyond a single paper.",
+          "localResponseWindow": "“Regulatory agencies rely on laboratory animal toxicity studies to set their so-called safe exposure limits,” he said. However, “the criteria by which a given animal toxicity study is eligible to be considered … were set by industry.” As a result, independent studies often receive “little or no attention,” even when they “clearly have no conflicts of interest,” Antoniou said. “That’s how influential industry has been,” he said.",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN020",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "block_quotation",
+          "censusSignals": [
+            "block_quotation",
+            "challenge_signal"
+          ],
+          "sourceUnitIds": [
+            "U0037"
+          ],
+          "claimUnits": "“Regulatory agencies rely on laboratory animal toxicity studies to set their so-called safe exposure limits,” he said. However, “the criteria by which a given animal toxicity study is eligible to be considered … were set by industry.”",
+          "attributionLeadIn": "According to Antoniou, the influence extends well beyond a single paper.",
+          "quoteOrSpeakerBlock": "“Regulatory agencies rely on laboratory animal toxicity studies to set their so-called safe exposure limits,” he said. However, “the criteria by which a given animal toxicity study is eligible to be considered … were set by industry.” As a result, independent studies often receive “little or no attention,” even when they “clearly have no conflicts of interest,” Antoniou said. “That’s how influential industry has been,” he said.",
+          "localResponseWindow": "As a result, independent studies often receive “little or no attention,” even when they “clearly have no conflicts of interest,” Antoniou said. “That’s how influential industry has been,” he said.",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CEN021",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0038"
+          ],
+          "claimUnits": "As a result, independent studies often receive “little or no attention,” even when they “clearly have no conflicts of interest,” Antoniou said.",
+          "attributionLeadIn": "“Regulatory agencies rely on laboratory animal toxicity studies to set their so-called safe exposure limits,” he said. However, “the criteria by which a given animal toxicity study is eligible to be considered … were set by industry.”",
+          "quoteOrSpeakerBlock": "“Regulatory agencies rely on laboratory animal toxicity studies to set their so-called safe exposure limits,” he said. However, “the criteria by which a given animal toxicity study is eligible to be considered … were set by industry.” As a result, independent studies often receive “little or no attention,” even when they “clearly have no conflicts of interest,” Antoniou said. “That’s how influential industry has been,” he said.",
+          "localResponseWindow": "“That’s how influential industry has been,” he said.",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN022",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0039"
+          ],
+          "claimUnits": "“That’s how influential industry has been,” he said.",
+          "attributionLeadIn": "As a result, independent studies often receive “little or no attention,” even when they “clearly have no conflicts of interest,” Antoniou said.",
+          "quoteOrSpeakerBlock": "As a result, independent studies often receive “little or no attention,” even when they “clearly have no conflicts of interest,” Antoniou said. “That’s how influential industry has been,” he said.",
+          "localResponseWindow": null,
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "quotation",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN023",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0041"
+          ],
+          "claimUnits": "Even if regulators relied on stronger science, they would still be evaluating glyphosate under conditions that don’t match the real world, Antoniou said.",
+          "attributionLeadIn": null,
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "Safety assessments typically examine one pesticide at a time. “But you and I, we’re all exposed to cocktails of pesticides on a daily basis,” he said. “Tens of different pesticides we can be exposed to on a daily basis through our food supply. Does the regulator take that into account? Not at all.” That gap has become even more important as weeds have become resistant to glyphosate, and farmers increasingly spray chemical cocktails , including glyphosate, 2,4-D and dicamba , he said. In one rat study, Antoniou’s team examined that combination at currently accepted exposure levels. “I mean, it…",
+          "sectionHeading": "Safety testing doesn’t reflect ‘cocktails of pesticides’ people are exposed to",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN024",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "block_quotation",
+          "censusSignals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0043"
+          ],
+          "claimUnits": "“But you and I, we’re all exposed to cocktails of pesticides on a daily basis,” he said. “Tens of different pesticides we can be exposed to on a daily basis through our food supply. Does the regulator take that into account? Not at all.”",
+          "attributionLeadIn": "Even if regulators relied on stronger science, they would still be evaluating glyphosate under conditions that don’t match the real world, Antoniou said.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "That gap has become even more important as weeds have become resistant to glyphosate, and farmers increasingly spray chemical cocktails , including glyphosate, 2,4-D and dicamba , he said. In one rat study, Antoniou’s team examined that combination at currently accepted exposure levels. “I mean, it was shockingly bad,” he said, describing severe damage to the animals’ gut structure and function. “This is another reason why our regulators … are letting us down,” Antoniou said. “They’re not protecting us properly.” He also criticized the growing use of glyphosate as a pre-harvest drying agent. “…",
+          "sectionHeading": "Safety testing doesn’t reflect ‘cocktails of pesticides’ people are exposed to",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CEN025",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0044"
+          ],
+          "claimUnits": "That gap has become even more important as weeds have become resistant to glyphosate, and farmers increasingly spray chemical cocktails , including glyphosate, 2,4-D and dicamba , he said.",
+          "attributionLeadIn": "“But you and I, we’re all exposed to cocktails of pesticides on a daily basis,” he said. “Tens of different pesticides we can be exposed to on a daily basis through our food supply. Does the regulator take that into account? Not at all.”",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "In one rat study, Antoniou’s team examined that combination at currently accepted exposure levels. “I mean, it was shockingly bad,” he said, describing severe damage to the animals’ gut structure and function. “This is another reason why our regulators … are letting us down,” Antoniou said. “They’re not protecting us properly.” He also criticized the growing use of glyphosate as a pre-harvest drying agent. “And here, for me, is the most ridiculous and unbelievable use of glyphosate herbicide that has become popular in the last 20 years or so,” he said. Manufacturers encourage farmers to spray…",
+          "sectionHeading": "Safety testing doesn’t reflect ‘cocktails of pesticides’ people are exposed to",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN026",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0046"
+          ],
+          "claimUnits": "“I mean, it was shockingly bad,” he said, describing severe damage to the animals’ gut structure and function.",
+          "attributionLeadIn": "That gap has become even more important as weeds have become resistant to glyphosate, and farmers increasingly spray chemical cocktails , including glyphosate, 2,4-D and dicamba , he said.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "“This is another reason why our regulators … are letting us down,” Antoniou said. “They’re not protecting us properly.” He also criticized the growing use of glyphosate as a pre-harvest drying agent. “And here, for me, is the most ridiculous and unbelievable use of glyphosate herbicide that has become popular in the last 20 years or so,” he said. Manufacturers encourage farmers to spray wheat , barley, oats , rye and other crops just days before harvest so the grain dries more uniformly and can be harvested sooner. The result is that glyphosate residues “are going straight into the humans’ foo…",
+          "sectionHeading": "Safety testing doesn’t reflect ‘cocktails of pesticides’ people are exposed to",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN027",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "block_quotation",
+          "censusSignals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0047"
+          ],
+          "claimUnits": "“This is another reason why our regulators … are letting us down,” Antoniou said. “They’re not protecting us properly.”",
+          "attributionLeadIn": "“I mean, it was shockingly bad,” he said, describing severe damage to the animals’ gut structure and function.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "He also criticized the growing use of glyphosate as a pre-harvest drying agent. “And here, for me, is the most ridiculous and unbelievable use of glyphosate herbicide that has become popular in the last 20 years or so,” he said. Manufacturers encourage farmers to spray wheat , barley, oats , rye and other crops just days before harvest so the grain dries more uniformly and can be harvested sooner. The result is that glyphosate residues “are going straight into the humans’ food supply,” he said. “And if the glyphosate is there, so are the co-formulants.”",
+          "sectionHeading": "Safety testing doesn’t reflect ‘cocktails of pesticides’ people are exposed to",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CEN028",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "block_quotation",
+          "censusSignals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0049"
+          ],
+          "claimUnits": "“And here, for me, is the most ridiculous and unbelievable use of glyphosate herbicide that has become popular in the last 20 years or so,” he said.",
+          "attributionLeadIn": "“This is another reason why our regulators … are letting us down,” Antoniou said. “They’re not protecting us properly.”",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "Manufacturers encourage farmers to spray wheat , barley, oats , rye and other crops just days before harvest so the grain dries more uniformly and can be harvested sooner. The result is that glyphosate residues “are going straight into the humans’ food supply,” he said. “And if the glyphosate is there, so are the co-formulants.”",
+          "sectionHeading": "Safety testing doesn’t reflect ‘cocktails of pesticides’ people are exposed to",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CEN029",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0051"
+          ],
+          "claimUnits": "The result is that glyphosate residues “are going straight into the humans’ food supply,” he said.",
+          "attributionLeadIn": "“And here, for me, is the most ridiculous and unbelievable use of glyphosate herbicide that has become popular in the last 20 years or so,” he said.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "“And if the glyphosate is there, so are the co-formulants.”",
+          "sectionHeading": "Safety testing doesn’t reflect ‘cocktails of pesticides’ people are exposed to",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN030",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0054"
+          ],
+          "claimUnits": "According to Antoniou, industry has long defended glyphosate by arguing that it targets a biological pathway found in plants but not in humans.",
+          "attributionLeadIn": null,
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "But that argument overlooks a critical piece of biology, he said. The same pathway exists in many bacteria and fungi, including microorganisms that make up the human gut microbiome . Research from Antoniou’s laboratory and others shows glyphosate can disrupt those microbial communities, contributing to gut imbalance and “the onset or the occurrence of leaky gut.” The gut microbiome plays a vital role in digestion, immune function, cardiovascular health and nervous system signaling, Antoniou said. “Monsanto clearly ignored” this mechanism of toxicity, he said. Evidence from independent research…",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN031",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0055"
+          ],
+          "claimUnits": "But that argument overlooks a critical piece of biology, he said.",
+          "attributionLeadIn": "According to Antoniou, industry has long defended glyphosate by arguing that it targets a biological pathway found in plants but not in humans.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "The same pathway exists in many bacteria and fungi, including microorganisms that make up the human gut microbiome . Research from Antoniou’s laboratory and others shows glyphosate can disrupt those microbial communities, contributing to gut imbalance and “the onset or the occurrence of leaky gut.” The gut microbiome plays a vital role in digestion, immune function, cardiovascular health and nervous system signaling, Antoniou said. “Monsanto clearly ignored” this mechanism of toxicity, he said. Evidence from independent researchers also shows harmful effects can occur at doses regulators conti…",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN032",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0058"
+          ],
+          "claimUnits": "The gut microbiome plays a vital role in digestion, immune function, cardiovascular health and nervous system signaling, Antoniou said.",
+          "attributionLeadIn": "But that argument overlooks a critical piece of biology, he said.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "“Monsanto clearly ignored” this mechanism of toxicity, he said. Evidence from independent researchers also shows harmful effects can occur at doses regulators continue to describe as “absolutely safe,” Antoniou said. His laboratory has reported DNA damage and nonalcoholic fatty liver disease in animals exposed to extremely low concentrations of commercial glyphosate formulations. In one study, animals developed liver disease after long-term exposure to glyphosate concentrations “125,000 times below the European Union safety limit and 250,000 times below the U.S. safety limit.” “Even minuscule…",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN033",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "block_quotation",
+          "censusSignals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0059"
+          ],
+          "claimUnits": "“Monsanto clearly ignored” this mechanism of toxicity, he said.",
+          "attributionLeadIn": "The gut microbiome plays a vital role in digestion, immune function, cardiovascular health and nervous system signaling, Antoniou said.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "Evidence from independent researchers also shows harmful effects can occur at doses regulators continue to describe as “absolutely safe,” Antoniou said. His laboratory has reported DNA damage and nonalcoholic fatty liver disease in animals exposed to extremely low concentrations of commercial glyphosate formulations. In one study, animals developed liver disease after long-term exposure to glyphosate concentrations “125,000 times below the European Union safety limit and 250,000 times below the U.S. safety limit.” “Even minuscule doses of glyphosate herbicides, given enough time, can result in…",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CEN034",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0060"
+          ],
+          "claimUnits": "Evidence from independent researchers also shows harmful effects can occur at doses regulators continue to describe as “absolutely safe,” Antoniou said.",
+          "attributionLeadIn": "“Monsanto clearly ignored” this mechanism of toxicity, he said.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "His laboratory has reported DNA damage and nonalcoholic fatty liver disease in animals exposed to extremely low concentrations of commercial glyphosate formulations. In one study, animals developed liver disease after long-term exposure to glyphosate concentrations “125,000 times below the European Union safety limit and 250,000 times below the U.S. safety limit.” “Even minuscule doses of glyphosate herbicides, given enough time, can result in serious disease,” Antoniou said. He also pointed to a June 2025 study in which rats exposed from fetal development through adulthood developed cancers,…",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN035",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "block_quotation",
+          "censusSignals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0063"
+          ],
+          "claimUnits": "“Even minuscule doses of glyphosate herbicides, given enough time, can result in serious disease,” Antoniou said.",
+          "attributionLeadIn": "Evidence from independent researchers also shows harmful effects can occur at doses regulators continue to describe as “absolutely safe,” Antoniou said.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "He also pointed to a June 2025 study in which rats exposed from fetal development through adulthood developed cancers, particularly leukemia, even at the currently accepted daily intake. “What this study tells us is clearly … first of all, glyphosate and glyphosate herbicides are definitely carcinogenic,” Antoniou said. “And also, clearly, the current acceptable daily intake … is clearly inaccurate or wrong.” According to Antoniou, one reason glyphosate’s risks have been underestimated is that its effects often take years to appear. “The effects can take time to manifest,” he said. As a result…",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CEN036",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "block_quotation",
+          "censusSignals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0065"
+          ],
+          "claimUnits": "“What this study tells us is clearly … first of all, glyphosate and glyphosate herbicides are definitely carcinogenic,” Antoniou said. “And also, clearly, the current acceptable daily intake … is clearly inaccurate or wrong.”",
+          "attributionLeadIn": "“Even minuscule doses of glyphosate herbicides, given enough time, can result in serious disease,” Antoniou said.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "According to Antoniou, one reason glyphosate’s risks have been underestimated is that its effects often take years to appear. “The effects can take time to manifest,” he said. As a result, “you’ll have trouble linking the two, the disease and the exposure. … They lull you into … a false sense of security,” he said. ‘Safest-ever pesticide’ paints a very dark picture for pesticides in general After reviewing thousands of published studies, Antoniou said the evidence leaves little doubt that regulators need to rethink glyphosate safety. “Regulators need to completely reassess their position,” Ant…",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CEN037",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0066"
+          ],
+          "claimUnits": "According to Antoniou, one reason glyphosate’s risks have been underestimated is that its effects often take years to appear.",
+          "attributionLeadIn": "“What this study tells us is clearly … first of all, glyphosate and glyphosate herbicides are definitely carcinogenic,” Antoniou said. “And also, clearly, the current acceptable daily intake … is clearly inaccurate or wrong.”",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "“The effects can take time to manifest,” he said. As a result, “you’ll have trouble linking the two, the disease and the exposure. … They lull you into … a false sense of security,” he said. ‘Safest-ever pesticide’ paints a very dark picture for pesticides in general After reviewing thousands of published studies, Antoniou said the evidence leaves little doubt that regulators need to rethink glyphosate safety. “Regulators need to completely reassess their position,” Antoniou said. “They’ve relied so heavily on industry data, which has now been questioned as to its validity.” Existing safety li…",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN038",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "block_quotation",
+          "censusSignals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0067"
+          ],
+          "claimUnits": "“The effects can take time to manifest,” he said. As a result, “you’ll have trouble linking the two, the disease and the exposure. … They lull you into … a false sense of security,” he said.",
+          "attributionLeadIn": "According to Antoniou, one reason glyphosate’s risks have been underestimated is that its effects often take years to appear.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "‘Safest-ever pesticide’ paints a very dark picture for pesticides in general After reviewing thousands of published studies, Antoniou said the evidence leaves little doubt that regulators need to rethink glyphosate safety. “Regulators need to completely reassess their position,” Antoniou said. “They’ve relied so heavily on industry data, which has now been questioned as to its validity.” Existing safety limits are nowhere near protective enough, he said. “We cannot set an acceptable daily safe intake limit,” he said. “If I was to make an educated guess right now, I would say it would probably…",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CEN039",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0069"
+          ],
+          "claimUnits": "After reviewing thousands of published studies, Antoniou said the evidence leaves little doubt that regulators need to rethink glyphosate safety.",
+          "attributionLeadIn": "“The effects can take time to manifest,” he said. As a result, “you’ll have trouble linking the two, the disease and the exposure. … They lull you into … a false sense of security,” he said.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "“Regulators need to completely reassess their position,” Antoniou said. “They’ve relied so heavily on industry data, which has now been questioned as to its validity.” Existing safety limits are nowhere near protective enough, he said. “We cannot set an acceptable daily safe intake limit,” he said. “If I was to make an educated guess right now, I would say it would probably be in the order of about a thousand times lower than where we are at the moment.” Antoniou also rejected the idea that farmers cannot transition off of glyphosate . “There are alternatives,” he said. “All it takes is the po…",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN040",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "block_quotation",
+          "censusSignals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0070"
+          ],
+          "claimUnits": "“Regulators need to completely reassess their position,” Antoniou said. “They’ve relied so heavily on industry data, which has now been questioned as to its validity.”",
+          "attributionLeadIn": "After reviewing thousands of published studies, Antoniou said the evidence leaves little doubt that regulators need to rethink glyphosate safety.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "Existing safety limits are nowhere near protective enough, he said. “We cannot set an acceptable daily safe intake limit,” he said. “If I was to make an educated guess right now, I would say it would probably be in the order of about a thousand times lower than where we are at the moment.” Antoniou also rejected the idea that farmers cannot transition off of glyphosate . “There are alternatives,” he said. “All it takes is the political will to support these initiatives, to really move towards a sustainable, robust and safe agricultural system.” Looking back at glyphosate’s history, Antoniou sa…",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CEN041",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0071"
+          ],
+          "claimUnits": "Existing safety limits are nowhere near protective enough, he said.",
+          "attributionLeadIn": "“Regulators need to completely reassess their position,” Antoniou said. “They’ve relied so heavily on industry data, which has now been questioned as to its validity.”",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "“We cannot set an acceptable daily safe intake limit,” he said. “If I was to make an educated guess right now, I would say it would probably be in the order of about a thousand times lower than where we are at the moment.” Antoniou also rejected the idea that farmers cannot transition off of glyphosate . “There are alternatives,” he said. “All it takes is the political will to support these initiatives, to really move towards a sustainable, robust and safe agricultural system.” Looking back at glyphosate’s history, Antoniou said the herbicide “was always touted by industry as the safest-ever p…",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN042",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "block_quotation",
+          "censusSignals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0072"
+          ],
+          "claimUnits": "“We cannot set an acceptable daily safe intake limit,” he said. “If I was to make an educated guess right now, I would say it would probably be in the order of about a thousand times lower than where we are at the moment.”",
+          "attributionLeadIn": "Existing safety limits are nowhere near protective enough, he said.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "Antoniou also rejected the idea that farmers cannot transition off of glyphosate . “There are alternatives,” he said. “All it takes is the political will to support these initiatives, to really move towards a sustainable, robust and safe agricultural system.” Looking back at glyphosate’s history, Antoniou said the herbicide “was always touted by industry as the safest-ever pesticide of any sort ever invented. … If the … so-called safest pesticide … is this bad, deceptively toxic, what about all the rest?” he asked. “It really paints a very dark picture for pesticides in general.”",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CEN043",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "block_quotation",
+          "censusSignals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0074"
+          ],
+          "claimUnits": "“There are alternatives,” he said. “All it takes is the political will to support these initiatives, to really move towards a sustainable, robust and safe agricultural system.”",
+          "attributionLeadIn": "“We cannot set an acceptable daily safe intake limit,” he said. “If I was to make an educated guess right now, I would say it would probably be in the order of about a thousand times lower than where we are at the moment.”",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "Looking back at glyphosate’s history, Antoniou said the herbicide “was always touted by industry as the safest-ever pesticide of any sort ever invented. … If the … so-called safest pesticide … is this bad, deceptively toxic, what about all the rest?” he asked. “It really paints a very dark picture for pesticides in general.”",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CEN044",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "attributed_statement",
+          "censusSignals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0075"
+          ],
+          "claimUnits": "Looking back at glyphosate’s history, Antoniou said the herbicide “was always touted by industry as the safest-ever pesticide of any sort ever invented.",
+          "attributionLeadIn": "“There are alternatives,” he said. “All it takes is the political will to support these initiatives, to really move towards a sustainable, robust and safe agricultural system.”",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "… If the … so-called safest pesticide … is this bad, deceptively toxic, what about all the rest?” he asked. “It really paints a very dark picture for pesticides in general.”",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CEN045",
+          "origin": "census",
+          "claimText": null,
+          "censusKind": "challenge_signal",
+          "censusSignals": [
+            "challenge_signal"
+          ],
+          "sourceUnitIds": [
+            "U0076"
+          ],
+          "claimUnits": "… If the … so-called safest pesticide … is this bad, deceptively toxic, what about all the rest?”",
+          "attributionLeadIn": "Looking back at glyphosate’s history, Antoniou said the herbicide “was always touted by industry as the safest-ever pesticide of any sort ever invented.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "he asked. “It really paints a very dark picture for pesticides in general.”",
+          "sectionHeading": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        }
+      ]
+    },
+    "usage": {
+      "inputTokens": 21851,
+      "outputTokens": 4452,
+      "totalTokens": 26303,
+      "cachedInputTokens": 0
+    },
+    "attempts": {
+      "call1a": 1,
+      "call1b": 1
+    }
+  },
+  "elapsedMs": 65132
+}

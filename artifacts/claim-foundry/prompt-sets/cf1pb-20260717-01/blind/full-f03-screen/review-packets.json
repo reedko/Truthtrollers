@@ -1,0 +1,2608 @@
+[
+  {
+    "subject": "CF1-F03",
+    "repeat": 1,
+    "outputs": {
+      "Profile J": {
+        "status": "completed",
+        "output": {
+          "selected": [
+            {
+              "claimText": "According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "origin": "model",
+              "articleRole": "thesis",
+              "materiality": "high",
+              "disputedProposition": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "mustMatch": [
+                "CDC vaccination statistics",
+                "American school children",
+                "toddlers"
+              ],
+              "rejectIfOnly": [
+                "Sources that merely repeat the CDC's statement without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely u"
+              ],
+              "support": "National vaccination statistics confirming the percentage of unvaccinated children.",
+              "refute": "Data showing a lower percentage of unvaccinated children than claimed.",
+              "qualify": "Statistics that indicate a significant variation in vaccination rates by region or demographic.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The health department's ad claims that vaccines are tested more than any other medicine, which is disputed by various studies.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Vaccines are tested more than any other medicine, which is disputed by various studies.",
+              "mustMatch": [
+                "vaccine testing protocols",
+                "other medicines"
+              ],
+              "rejectIfOnly": [
+                "Sources that only repeat the health department's claim without independent evidence.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Vaccines are tested more than any other medicine, which is disputed by various studies."
+              ],
+              "support": "Comparative studies on vaccine testing protocols versus other medicines.",
+              "refute": "Evidence showing that vaccines are indeed tested more rigorously than other medicines.",
+              "qualify": "Studies indicating specific contexts where vaccine testing may differ from other medicines.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "Aluminum and mercury are present in vaccines, and their safety has been questioned by various studies and experts.",
+              "origin": "host_pillar_backfill",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Aluminum and mercury are present in vaccines, and their safety has been questioned by various studies and experts.",
+              "mustMatch": [
+                "aluminum",
+                "mercury",
+                "vaccines"
+              ],
+              "rejectIfOnly": [
+                "Sources that merely repeat the claim without providing independent evidence.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Aluminum and mercury are present in vaccines, and their safety has been questioned by various studies and"
+              ],
+              "support": "Studies demonstrating the presence of aluminum and mercury in vaccines.",
+              "refute": "Evidence showing that aluminum and mercury are not present in vaccines or are proven safe.",
+              "qualify": "Research indicating specific populations or types of vaccines where safety concerns are more pronounced.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The introduction of mass vaccination programs coincided with a rise in Sudden Infant Death Syndrome (SIDS), which was not previously a recognized phenomenon.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The introduction of mass vaccination programs coincided with a rise in Sudden Infant Death Syndrome (SIDS).",
+              "mustMatch": [
+                "SIDS rates",
+                "vaccination programs",
+                "historical data"
+              ],
+              "rejectIfOnly": [
+                "Sources that only repeat the claim without providing independent historical evidence.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The introduction of mass vaccination programs coincided with a rise in Sudden Infant Death Syndrome (SIDS"
+              ],
+              "support": "Historical data showing SIDS rates before and after the introduction of vaccination programs.",
+              "refute": "Data indicating no correlation between vaccination programs and SIDS rates.",
+              "qualify": "Evidence showing that other factors contributed to the rise in SIDS rates during that period.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The 1986 National Childhood Vaccine Injury Act removed liability from vaccine manufacturers, leading to increased vaccine production without accountability for safety.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The 1986 National Childhood Vaccine Injury Act removed liability from vaccine manufacturers, leading to increased vaccine production without accountability for safety.",
+              "mustMatch": [
+                "1986 National Childhood Vaccine Injury Act",
+                "vaccine manufacturers",
+                "liability removal"
+              ],
+              "rejectIfOnly": [
+                "Sources that merely repeat the claim without providing legislative evidence.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The 1986 National Childhood Vaccine Injury Act removed liability from vaccine manufacturers, leading to i"
+              ],
+              "support": "Legislative records confirming the removal of liability from vaccine manufacturers.",
+              "refute": "Evidence showing that the Act did not lead to increased vaccine production or accountability issues.",
+              "qualify": "Contextual evidence indicating other factors influencing vaccine production rates.",
+              "strategy": "named primary work, bibliographic record"
+            },
+            {
+              "claimText": "Efforts to suppress information about vaccine safety and adverse effects have been documented, including censorship of films and public discussions.",
+              "origin": "host_pillar_backfill",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Efforts to suppress information about vaccine safety and adverse effects have been documented, including censorship of films and public discussions.",
+              "mustMatch": [
+                "censorship",
+                "vaccine safety",
+                "public discussions"
+              ],
+              "rejectIfOnly": [
+                "Sources that only repeat the claim without providing independent documentation.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Efforts to suppress information about vaccine safety and adverse effects have been documented, including "
+              ],
+              "support": "Documented cases of censorship related to vaccine safety discussions.",
+              "refute": "Evidence showing that no such suppression efforts have occurred.",
+              "qualify": "Specific instances where suppression efforts were proven ineffective or counterproductive.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "Parents have reported numerous cases of vaccine injuries, including autism and SIDS, following vaccinations, which have been largely dismissed by health authorities.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Parents have reported numerous cases of vaccine injuries, including autism and SIDS, following vaccinations, which have been largely dismissed by health authorities.",
+              "mustMatch": [
+                "vaccine injuries",
+                "autism",
+                "SIDS",
+                "parent reports"
+              ],
+              "rejectIfOnly": [
+                "Sources that only repeat the claim without providing independent testimonies.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Parents have reported numerous cases of vaccine injuries, including autism and SIDS, following vaccinatio"
+              ],
+              "support": "Anecdotal evidence from parent testimonies regarding vaccine injuries.",
+              "refute": "Evidence showing that reported cases are not credible or have been adequately addressed by health authorities.",
+              "qualify": "Data indicating the prevalence of such reports in specific demographics.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "Studies have shown a significant correlation between thimerosal exposure in vaccines and increased autism rates, which the CDC has attempted to downplay.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Studies have shown a significant correlation between thimerosal exposure in vaccines and increased autism rates, which the CDC has attempted to downplay.",
+              "mustMatch": [
+                "thimerosal",
+                "autism",
+                "correlation studies"
+              ],
+              "rejectIfOnly": [
+                "Sources that only repeat the claim without providing independent research.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Studies have shown a significant correlation between thimerosal exposure in vaccines and increased autism"
+              ],
+              "support": "Research studies showing a correlation between thimerosal exposure and autism rates.",
+              "refute": "Evidence showing no correlation between thimerosal exposure and autism rates.",
+              "qualify": "Studies indicating specific populations or conditions under which the correlation is more pronounced.",
+              "strategy": "independent primary research, systematic review"
+            }
+          ]
+        }
+      },
+      "Profile V": {
+        "status": "completed",
+        "output": {
+          "selected": [
+            {
+              "claimText": "According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "mustMatch": [
+                "Access to CDC vaccination data or independent vaccination surveys for American school children and toddlers."
+              ],
+              "rejectIfOnly": [
+                "Evidence that merely repeats the CDC's statement without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely u"
+              ],
+              "support": "Independent studies corroborate the CDC's vaccination statistics for American school children and toddlers.",
+              "refute": "Independent studies show a higher percentage of vaccinated American school children and toddlers than reported by the CDC.",
+              "qualify": "Statistics indicate a lower percentage of unvaccinated children in specific regions or demographics.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The CDC's 2000 meeting to discuss thimerosal and autism was held in secret to avoid public scrutiny.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The CDC's 2000 meeting to discuss thimerosal and autism was held in secret to avoid public scrutiny.",
+              "mustMatch": [
+                "Access to meeting minutes or records from the CDC regarding the 2000 meeting on thimerosal."
+              ],
+              "rejectIfOnly": [
+                "Evidence that merely states the meeting occurred without addressing its secrecy.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The CDC's 2000 meeting to discuss thimerosal and autism was held in secret to avoid public scrutiny."
+              ],
+              "support": "Official records or credible reports confirm the meeting was held at a location to avoid public scrutiny.",
+              "refute": "Official records or credible reports indicate the meeting was publicly accessible or not secretive.",
+              "qualify": "Evidence suggests the meeting was private but not necessarily secretive or intended to avoid scrutiny.",
+              "strategy": "official record"
+            },
+            {
+              "claimText": "The health department's ad claims that children face more challenges to their immune system while playing outside than from vaccines.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "Children face more challenges to their immune system while playing outside than from vaccines.",
+              "mustMatch": [
+                "Access to comparative studies on immune system challenges from outdoor play versus vaccines."
+              ],
+              "rejectIfOnly": [
+                "Evidence that merely repeats the health department's claim without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Children face more challenges to their immune system while playing outside than from vaccines."
+              ],
+              "support": "Comparative studies show that outdoor play poses greater immune challenges than vaccination.",
+              "refute": "Studies indicate that vaccines pose greater risks to children's immune systems than outdoor play.",
+              "qualify": "Evidence suggests that the challenges to the immune system from outdoor play are significant but not necessarily greater than those from vaccines.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "There have been no credible studies linking vaccination to chronic disease, according to the health department's ad.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "There have been no credible studies linking vaccination to chronic disease.",
+              "mustMatch": [
+                "Access to comprehensive reviews of studies on vaccination and chronic disease."
+              ],
+              "rejectIfOnly": [
+                "Evidence that merely repeats the health department's claim without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: There have been no credible studies linking vaccination to chronic disease."
+              ],
+              "support": "Independent reviews of scientific literature confirm no credible studies link vaccination to chronic disease.",
+              "refute": "Independent studies demonstrate a credible link between vaccination and chronic disease.",
+              "qualify": "Evidence suggests some studies exist but question their credibility or relevance.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The CDC manipulated data linking the MMR vaccine to autism, according to whistleblower William Thompson.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The CDC manipulated data linking the MMR vaccine to autism, according to whistleblower William Thompson.",
+              "mustMatch": [
+                "Access to CDC data and whistleblower testimony regarding the MMR vaccine."
+              ],
+              "rejectIfOnly": [
+                "Evidence that merely repeats Thompson's claim without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The CDC manipulated data linking the MMR vaccine to autism, according to whistleblower William Thompson."
+              ],
+              "support": "Independent investigations confirm that data manipulation occurred regarding the MMR vaccine and autism.",
+              "refute": "Investigations show no evidence of data manipulation by the CDC regarding the MMR vaccine and autism.",
+              "qualify": "Evidence suggests data manipulation claims are disputed or lack consensus.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+              "mustMatch": [
+                "Access to the legislative text of the 1986 National Childhood Vaccine Injury Act."
+              ],
+              "rejectIfOnly": [
+                "Evidence that merely states the Act's provisions without addressing liability.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood va"
+              ],
+              "support": "Official records confirm that the 1986 Act removed liability from drug companies for childhood vaccines.",
+              "refute": "Records indicate that some liability remains for drug companies under the 1986 Act.",
+              "qualify": "Evidence suggests that while liability was reduced, some forms of liability may still exist.",
+              "strategy": "named primary work, bibliographic record"
+            },
+            {
+              "claimText": "In 2011, 54% of American children had a diagnosed chronic health condition, according to a survey.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "In 2011, 54% of American children had a diagnosed chronic health condition, according to a survey.",
+              "mustMatch": [
+                "Access to the survey data from 2011 regarding children's health conditions."
+              ],
+              "rejectIfOnly": [
+                "Evidence that merely repeats the survey's claim without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: In 2011, 54% of American children had a diagnosed chronic health condition, according to a survey."
+              ],
+              "support": "Independent surveys corroborate that 54% of American children had a diagnosed chronic health condition in 2011.",
+              "refute": "Surveys indicate a lower percentage of American children with diagnosed chronic health conditions in 2011.",
+              "qualify": "Evidence suggests that the percentage may vary by region or demographic.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+              "mustMatch": [
+                "Access to CDC safety testing protocols regarding aluminum in vaccines."
+              ],
+              "rejectIfOnly": [
+                "Evidence that merely repeats the claim without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots."
+              ],
+              "support": "Independent reviews confirm that the CDC has not conducted safety tests on cumulative aluminum loads in vaccines.",
+              "refute": "Evidence shows that the CDC has conducted safety tests on aluminum in vaccines.",
+              "qualify": "Evidence suggests that while cumulative aluminum loads have not been tested, individual components may have been.",
+              "strategy": "independent primary research, systematic review"
+            }
+          ]
+        }
+      },
+      "Profile Q": {
+        "status": "completed",
+        "output": {
+          "selected": [
+            {
+              "claimText": "According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "mustMatch": [
+                "Access to CDC vaccination data or reports on vaccination rates among American school children and toddlers."
+              ],
+              "rejectIfOnly": [
+                "Statements or data that do not directly address the specific vaccination rates among American school children and toddlers.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 tod"
+              ],
+              "support": "Statistical data from the CDC confirming the vaccination rates among American school children and toddlers.",
+              "refute": "Statistical data from the CDC or other credible sources showing that the vaccination rates are higher than reported.",
+              "qualify": "Data showing that the vaccination rates vary significantly by region or demographic group.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The rise in vaccine hesitancy is correlated with increasing awareness of vaccine-related health issues.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "medium",
+              "disputedProposition": "The rise in vaccine hesitancy is correlated with increasing awareness of vaccine-related health issues.",
+              "mustMatch": [
+                "Access to survey data or studies that specifically examine the relationship between vaccine hesitancy and awareness of health issues."
+              ],
+              "rejectIfOnly": [
+                "General statements about vaccine hesitancy without specific correlation data.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The rise in vaccine hesitancy is correlated with increasing awareness of vaccine-related health issues."
+              ],
+              "support": "Surveys or studies showing a direct correlation between increased awareness of vaccine-related health issues and rising vaccine hesitancy.",
+              "refute": "Surveys or studies indicating that vaccine hesitancy is not correlated with awareness of health issues.",
+              "qualify": "Evidence showing that other factors, unrelated to health issues, are influencing vaccine hesitancy.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "Allegations exist that the CDC manipulated data linking the MMR vaccine to autism and ordered the destruction of evidence.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Allegations exist that the CDC manipulated data linking the MMR vaccine to autism and ordered the destruction of evidence.",
+              "mustMatch": [
+                "Access to internal CDC communications or whistleblower documentation that directly supports the allegations."
+              ],
+              "rejectIfOnly": [
+                "Statements that do not provide direct evidence of manipulation or destruction of evidence.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Allegations exist that the CDC manipulated data linking the MMR vaccine to autism and ordered the destruc"
+              ],
+              "support": "Documentation or evidence from credible sources corroborating the whistleblower's claims about data manipulation and evidence destruction.",
+              "refute": "Evidence showing that the CDC did not manipulate data or destroy evidence related to the MMR vaccine.",
+              "qualify": "Evidence indicating that while there may have been issues, they do not substantiate the claims of manipulation or destruction.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "Aluminum in vaccines is linked to various health issues, including brain damage and autism.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "Aluminum in vaccines is linked to various health issues, including brain damage and autism.",
+              "mustMatch": [
+                "Access to peer-reviewed research studies on aluminum toxicity and its effects."
+              ],
+              "rejectIfOnly": [
+                "General statements about aluminum without specific evidence linking it to vaccines.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Aluminum in vaccines is linked to various health issues, including brain damage and autism."
+              ],
+              "support": "Research studies demonstrating a causal link between aluminum in vaccines and health issues such as brain damage and autism.",
+              "refute": "Research studies showing no link between aluminum in vaccines and the mentioned health issues.",
+              "qualify": "Studies indicating that while aluminum may have health effects, they do not specifically link to vaccines or the stated health issues.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The health department's ad claims that vaccines are tested more than any other medicine given to children.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The health department's ad claims that vaccines are tested more than any other medicine given to children.",
+              "mustMatch": [
+                "Access to testing protocols or studies comparing vaccine testing to other medicines."
+              ],
+              "rejectIfOnly": [
+                "Statements that do not provide direct comparisons of testing protocols.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The health department's ad claims that vaccines are tested more than any other medicine given to children"
+              ],
+              "support": "Documentation of vaccine testing protocols compared to other medicines.",
+              "refute": "Evidence showing that other medicines are tested more rigorously than vaccines.",
+              "qualify": "Evidence indicating that the testing protocols for vaccines and other medicines are comparable.",
+              "strategy": "official record"
+            },
+            {
+              "claimText": "There have been no credible studies linking vaccination to chronic disease, according to public health authorities.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "There have been no credible studies linking vaccination to chronic disease, according to public health authorities.",
+              "mustMatch": [
+                "Access to studies or data that specifically address the link between vaccination and chronic disease."
+              ],
+              "rejectIfOnly": [
+                "Statements that do not provide direct evidence of studies linking vaccination to chronic disease.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: There have been no credible studies linking vaccination to chronic disease, according to public health au"
+              ],
+              "support": "Access to credible studies that demonstrate a link between vaccination and chronic disease.",
+              "refute": "Evidence showing that credible studies exist that link vaccination to chronic disease.",
+              "qualify": "Studies that suggest a link but do not meet the criteria for credibility as defined by public health authorities.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The CDC has been accused of conducting a cover-up regarding the safety of vaccines, particularly concerning thimerosal.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The CDC has been accused of conducting a cover-up regarding the safety of vaccines, particularly concerning thimerosal.",
+              "mustMatch": [
+                "Access to credible sources or documents that directly support the accusations."
+              ],
+              "rejectIfOnly": [
+                "General statements about vaccine safety without specific evidence of a cover-up.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The CDC has been accused of conducting a cover-up regarding the safety of vaccines, particularly concerni"
+              ],
+              "support": "Internal CDC documents or credible evidence supporting the accusations of a cover-up regarding vaccine safety.",
+              "refute": "Evidence showing that the CDC has been transparent and has not conducted a cover-up regarding vaccine safety.",
+              "qualify": "Evidence indicating that while there may be concerns, they do not substantiate the claims of a cover-up.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "Thimerosal, a mercury-based preservative used in vaccines, is classified as a neurotoxin and has been linked to autism.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "Thimerosal, a mercury-based preservative used in vaccines, is classified as a neurotoxin and has been linked to autism.",
+              "mustMatch": [
+                "Access to peer-reviewed research studies on thimerosal's effects."
+              ],
+              "rejectIfOnly": [
+                "General statements about thimerosal without specific evidence linking it to autism.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Thimerosal, a mercury-based preservative used in vaccines, is classified as a neurotoxin and has been lin"
+              ],
+              "support": "Research studies demonstrating a causal link between thimerosal and autism, as well as its classification as a neurotoxin.",
+              "refute": "Research studies showing no link between thimerosal and autism.",
+              "qualify": "Studies indicating that while thimerosal may have neurotoxic properties, they do not specifically link it to autism.",
+              "strategy": "independent primary research, systematic review"
+            }
+          ]
+        }
+      },
+      "Profile R": {
+        "status": "completed",
+        "output": {
+          "selected": [
+            {
+              "claimText": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "mustMatch": [
+                "CDC vaccination statistics",
+                "Population of American school children",
+                "Current data on vaccination rates"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing supporting data.",
+                "Proving the claim's authorship without addressing the vaccination rates."
+              ],
+              "support": "Evidence shows that at least 50% of American school children are not fully vaccinated.; Data indicates that 1 in 88 toddlers are completely unvaccinated.",
+              "refute": "Evidence shows that more than 50% of American school children are fully vaccinated.; Data indicates that fewer than 1 in 88 toddlers are completely unvaccinated.",
+              "qualify": "Vaccination rates are lower in specific regions or demographics than the national average.",
+              "strategy": "primary article or study record, underlying results"
+            },
+            {
+              "claimText": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+              "mustMatch": [
+                "Text of the 1986 National Childhood Vaccine Injury Act",
+                "Legal context surrounding vaccine liability"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing legal text or interpretations.",
+                "Proving the claim's authorship without addressing the liability issue."
+              ],
+              "support": "The text of the 1986 National Childhood Vaccine Injury Act confirms the removal of liability.; Legal interpretations of the Act support the claim.",
+              "refute": "Evidence shows that drug companies retain some liability under certain conditions.; Legal interpretations contradict the claim.",
+              "qualify": "The Act removed liability only for specific types of claims or under certain circumstances.",
+              "strategy": "named primary work, bibliographic record"
+            },
+            {
+              "claimText": "Public health authorities have engaged in censorship to suppress information that challenges the vaccine narrative.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "medium",
+              "disputedProposition": "Public health authorities have engaged in censorship to suppress information that challenges the vaccine narrative.",
+              "mustMatch": [
+                "Instances of censorship by public health authorities",
+                "Information that was suppressed"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing specific examples of censorship.",
+                "Proving the claim's authorship without addressing the censorship issue."
+              ],
+              "support": "Documented instances of censorship by public health authorities.; Evidence of suppressed information that challenges vaccine narratives.",
+              "refute": "Evidence shows that public health authorities have not engaged in censorship.; Information challenging vaccine narratives is freely available.",
+              "qualify": "Censorship occurred only in specific instances or contexts.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "There have been no credible studies linking vaccination to chronic disease, according to public health authorities.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "There have been no credible studies linking vaccination to chronic disease, according to public health authorities.",
+              "mustMatch": [
+                "Statements from public health authorities",
+                "Credible studies on vaccination and chronic disease"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing supporting evidence from authorities.",
+                "Proving the claim's authorship without addressing the study issue."
+              ],
+              "support": "Public health authorities confirm the absence of credible studies linking vaccination to chronic disease.; Evidence from reputable sources supports the claim.",
+              "refute": "Credible studies exist that link vaccination to chronic disease.; Public health authorities acknowledge such studies.",
+              "qualify": "Studies exist but are deemed not credible by public health authorities.",
+              "strategy": "primary article or study record, underlying results"
+            },
+            {
+              "claimText": "The CDC manipulated data linking the MMR vaccine to autism and ordered the destruction of evidence.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The CDC manipulated data linking the MMR vaccine to autism and ordered the destruction of evidence.",
+              "mustMatch": [
+                "Whistleblower accounts",
+                "CDC data handling records"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing specific evidence of manipulation.",
+                "Proving the claim's authorship without addressing the data issue."
+              ],
+              "support": "Evidence from whistleblower accounts supports the claim of data manipulation.; Documentation of the order to destroy evidence exists.",
+              "refute": "Evidence shows that the CDC did not manipulate data or order destruction.; Whistleblower accounts are discredited.",
+              "qualify": "Data manipulation occurred but did not directly link to the MMR vaccine and autism.",
+              "strategy": "primary article or study record, underlying results"
+            },
+            {
+              "claimText": "The rise in chronic illnesses among children correlates with the increase in the childhood vaccination schedule since 1986.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The rise in chronic illnesses among children correlates with the increase in the childhood vaccination schedule since 1986.",
+              "mustMatch": [
+                "Statistics on chronic illnesses among children",
+                "Vaccination schedule data since 1986"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing statistical evidence.",
+                "Proving the claim's authorship without addressing the correlation issue."
+              ],
+              "support": "Statistical evidence shows a correlation between chronic illnesses and vaccination rates.; Historical data supports the timeline of vaccination schedule increases.",
+              "refute": "Evidence shows no correlation between chronic illnesses and vaccination rates.; Data indicates that chronic illness rates have not increased.",
+              "qualify": "Correlation exists but is influenced by other factors.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "Thimerosal, a mercury-based preservative used in vaccines, is neurotoxic and linked to autism and other neurological disorders.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Thimerosal, a mercury-based preservative used in vaccines, is neurotoxic and linked to autism and other neurological disorders.",
+              "mustMatch": [
+                "Scientific studies on thimerosal",
+                "Evidence of neurotoxicity and links to disorders"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing scientific evidence.",
+                "Proving the claim's authorship without addressing the neurotoxicity issue."
+              ],
+              "support": "Scientific studies confirm thimerosal's neurotoxicity.; Evidence links thimerosal to autism and neurological disorders.",
+              "refute": "Studies show thimerosal is not neurotoxic.; No credible evidence links thimerosal to autism or neurological disorders.",
+              "qualify": "Thimerosal is neurotoxic but not conclusively linked to autism.",
+              "strategy": "primary article or study record, underlying results"
+            },
+            {
+              "claimText": "The CDC has classified thimerosal-containing vaccines as hazardous waste due to their mercury content.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The CDC has classified thimerosal-containing vaccines as hazardous waste due to their mercury content.",
+              "mustMatch": [
+                "CDC documentation on hazardous waste classification",
+                "Mercury content evidence in vaccines"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing supporting documentation.",
+                "Proving the claim's authorship without addressing the classification issue."
+              ],
+              "support": "Documentation from the CDC confirms the classification of thimerosal-containing vaccines as hazardous waste.; Evidence of mercury content in these vaccines supports the claim.",
+              "refute": "Evidence shows that the CDC has not classified these vaccines as hazardous waste.; Documentation contradicts the claim.",
+              "qualify": "The classification applies only under specific conditions or contexts.",
+              "strategy": "named primary work, bibliographic record"
+            }
+          ]
+        }
+      }
+    },
+    "sectionOrder": [
+      "Profile J",
+      "Profile R",
+      "Profile V",
+      "Profile Q"
+    ]
+  },
+  {
+    "subject": "CF1-F03",
+    "repeat": 2,
+    "outputs": {
+      "Profile J": {
+        "status": "completed",
+        "output": {
+          "selected": [
+            {
+              "claimText": "According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "origin": "model",
+              "articleRole": "thesis",
+              "materiality": "high",
+              "disputedProposition": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "mustMatch": [
+                "CDC vaccination statistics",
+                "American school children",
+                "toddlers"
+              ],
+              "rejectIfOnly": [
+                "Sources that merely repeat the CDC's claim without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely u"
+              ],
+              "support": "National vaccination statistics showing the percentage of fully vaccinated school children and toddlers.",
+              "refute": "Statistics showing a higher percentage of fully vaccinated school children and toddlers than claimed.",
+              "qualify": "Data indicating that the vaccination rates vary significantly by region or demographic.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "William Thompson, a senior CDC scientist, revealed that data linking the MMR vaccine to autism was manipulated by the CDC.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Data linking the MMR vaccine to autism was manipulated by the CDC.",
+              "mustMatch": [
+                "William Thompson's claims",
+                "CDC data manipulation",
+                "MMR vaccine",
+                "autism"
+              ],
+              "rejectIfOnly": [
+                "Sources that merely repeat Thompson's claims without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Data linking the MMR vaccine to autism was manipulated by the CDC."
+              ],
+              "support": "Investigative reports confirming Thompson's claims about data manipulation.",
+              "refute": "Evidence showing that the CDC's data on MMR and autism was not manipulated.",
+              "qualify": "Reports indicating that while data manipulation occurred, it did not significantly affect overall vaccine safety conclusions.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "There has been a rise in the rate of parents seeking vaccine exemptions for their children, coinciding with a decline in vaccination rates.",
+              "origin": "host_pillar_backfill",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "There has been a rise in the rate of parents seeking vaccine exemptions for their children, coinciding with a decline in vaccination rates.",
+              "mustMatch": [
+                "Vaccine exemption rates",
+                "Vaccination rates",
+                "Parents seeking exemptions"
+              ],
+              "rejectIfOnly": [
+                "Sources that merely repeat the article's claims without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: There has been a rise in the rate of parents seeking vaccine exemptions for their children, coinciding wi"
+              ],
+              "support": "Data showing an increase in vaccine exemption requests alongside a decrease in vaccination rates.",
+              "refute": "Data showing no significant change in vaccine exemption requests despite declining vaccination rates.",
+              "qualify": "Evidence indicating that the rise in exemptions is limited to specific regions or demographics.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The chronic illness rate in U.S. children increased from 12.8% in the 1980s to 54% by 2011.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The chronic illness rate in U.S. children increased from 12.8% in the 1980s to 54% by 2011.",
+              "mustMatch": [
+                "Chronic illness rates",
+                "U.S. children",
+                "1980s to 2011"
+              ],
+              "rejectIfOnly": [
+                "Sources that merely repeat the article's claims without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The chronic illness rate in U.S. children increased from 12.8% in the 1980s to 54% by 2011."
+              ],
+              "support": "Health surveys confirming the chronic illness rates in U.S. children over the specified time period.",
+              "refute": "Data showing that chronic illness rates did not increase as claimed.",
+              "qualify": "Evidence indicating that the increase in chronic illness rates is due to factors other than vaccination.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after implementing aggressive vaccination programs.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after implementing aggressive vaccination programs.",
+              "mustMatch": [
+                "Infant mortality rates",
+                "U.S. and EU comparison",
+                "first-day infant deaths"
+              ],
+              "rejectIfOnly": [
+                "Sources that merely repeat the article's claims without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after implementing aggre"
+              ],
+              "support": "Comparative infant mortality data from the U.S. and EU nations.",
+              "refute": "Data showing that the U.S. does not have higher infant mortality rates than the EU.",
+              "qualify": "Evidence indicating that the infant mortality rates vary significantly by region or demographic.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "An analysis of VAERS data showed that 78.3% of deaths reported occurred within seven days post-vaccination.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "An analysis of VAERS data showed that 78.3% of deaths reported occurred within seven days post-vaccination.",
+              "mustMatch": [
+                "VAERS data",
+                "deaths reported",
+                "post-vaccination"
+              ],
+              "rejectIfOnly": [
+                "Sources that merely repeat the article's claims without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: An analysis of VAERS data showed that 78.3% of deaths reported occurred within seven days post-vaccinatio"
+              ],
+              "support": "VAERS data confirming the percentage of deaths occurring within seven days post-vaccination.",
+              "refute": "Data showing a lower percentage of deaths occurring within seven days post-vaccination.",
+              "qualify": "Evidence indicating that the deaths reported may not be directly caused by vaccination.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "A 1999 CDC study found that infants exposed to high levels of thimerosal had a 7.6 times higher risk of autism diagnosis than unexposed peers.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "A 1999 CDC study found that infants exposed to high levels of thimerosal had a 7.6 times higher risk of autism diagnosis than unexposed peers.",
+              "mustMatch": [
+                "CDC study",
+                "thimerosal exposure",
+                "autism diagnosis risk"
+              ],
+              "rejectIfOnly": [
+                "Sources that merely repeat the article's claims without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: A 1999 CDC study found that infants exposed to high levels of thimerosal had a 7.6 times higher risk of a"
+              ],
+              "support": "The original CDC study data confirming the risk of autism diagnosis related to thimerosal exposure.",
+              "refute": "Evidence showing that thimerosal exposure does not increase autism risk.",
+              "qualify": "Reports indicating that the findings of the study have been misinterpreted or misrepresented.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "Aluminum in vaccines is known to cause brain damage at all doses and has been linked to autism, SIDS, and other neurological issues.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Aluminum in vaccines is known to cause brain damage at all doses and has been linked to autism, SIDS, and other neurological issues.",
+              "mustMatch": [
+                "aluminum in vaccines",
+                "brain damage",
+                "neurological issues"
+              ],
+              "rejectIfOnly": [
+                "Sources that merely repeat the article's claims without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Aluminum in vaccines is known to cause brain damage at all doses and has been linked to autism, SIDS, and"
+              ],
+              "support": "Research studies confirming the link between aluminum in vaccines and neurological issues.",
+              "refute": "Evidence showing no significant health risks associated with aluminum in vaccines.",
+              "qualify": "Reports indicating that the health risks are dose-dependent or vary by individual.",
+              "strategy": "independent primary research, systematic review"
+            }
+          ]
+        }
+      },
+      "Profile V": {
+        "status": "completed",
+        "output": {
+          "selected": [
+            {
+              "claimText": "According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "mustMatch": [
+                "Access to CDC vaccination data or independent studies on vaccination rates among American school children and toddlers."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the CDC's statement without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely u"
+              ],
+              "support": "Independent verification of CDC vaccination statistics showing the same rates of unvaccinated children.",
+              "refute": "Evidence showing that the actual vaccination rates are higher than reported by the CDC.",
+              "qualify": "Data indicating that the rates of unvaccinated children vary significantly by region or demographic.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The CDC manipulated data linking the MMR vaccine to autism, as revealed by whistleblower William Thompson.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The CDC manipulated data linking the MMR vaccine to autism.",
+              "mustMatch": [
+                "Access to internal CDC documents or independent investigations into the MMR vaccine studies."
+              ],
+              "rejectIfOnly": [
+                "Repetition of Thompson's claims without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The CDC manipulated data linking the MMR vaccine to autism."
+              ],
+              "support": "Independent corroboration of William Thompson's claims regarding data manipulation.",
+              "refute": "Evidence showing that the CDC's data on the MMR vaccine and autism was not manipulated.",
+              "qualify": "Documentation indicating that while data was altered, it did not affect the overall conclusions about vaccine safety.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "Aluminum in vaccines is linked to brain damage and various health issues, including autism and SIDS.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "Aluminum in vaccines is linked to brain damage and various health issues, including autism and SIDS.",
+              "mustMatch": [
+                "Access to research studies on aluminum toxicity in vaccines and their health impacts."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the claim without supporting scientific evidence.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Aluminum in vaccines is linked to brain damage and various health issues, including autism and SIDS."
+              ],
+              "support": "Peer-reviewed studies demonstrating a causal link between aluminum in vaccines and brain damage or health issues.",
+              "refute": "Evidence showing no link between aluminum in vaccines and brain damage or health issues.",
+              "qualify": "Studies indicating a correlation without establishing causation between aluminum exposure and health issues.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "More than one in two American children had a diagnosed chronic health condition by 2011, with the percentage likely higher today.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "More than one in two American children had a diagnosed chronic health condition by 2011, with the percentage likely higher today.",
+              "mustMatch": [
+                "Access to national health survey data on chronic health conditions in children."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the claim without updated statistics.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: More than one in two American children had a diagnosed chronic health condition by 2011, with the percent"
+              ],
+              "support": "Recent studies showing an increase in chronic health conditions among children since 2011.",
+              "refute": "Evidence indicating that the rates of chronic health conditions among children have decreased since 2011.",
+              "qualify": "Data showing that the increase in chronic health conditions is limited to specific demographics or conditions.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "Thimerosal, a mercury-based preservative in vaccines, is neurotoxic and linked to developmental issues.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "Thimerosal, a mercury-based preservative in vaccines, is neurotoxic and linked to developmental issues.",
+              "mustMatch": [
+                "Access to toxicology reports on thimerosal and its effects."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the claim without supporting scientific evidence.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Thimerosal, a mercury-based preservative in vaccines, is neurotoxic and linked to developmental issues."
+              ],
+              "support": "Scientific studies demonstrating the neurotoxic effects of thimerosal in vaccines.",
+              "refute": "Evidence showing that thimerosal does not have neurotoxic effects.",
+              "qualify": "Studies indicating that while thimerosal is neurotoxic, its effects are not significant at the levels used in vaccines.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The CDC's 2000 study on thimerosal and autism was manipulated to downplay the risks associated with thimerosal exposure.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The CDC's 2000 study on thimerosal and autism was manipulated to downplay the risks associated with thimerosal exposure.",
+              "mustMatch": [
+                "Access to the original study data and any internal communications regarding its analysis."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the claim without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The CDC's 2000 study on thimerosal and autism was manipulated to downplay the risks associated with thime"
+              ],
+              "support": "Independent verification of claims regarding the manipulation of the CDC's 2000 study.",
+              "refute": "Evidence showing that the study was conducted without manipulation and accurately reported its findings.",
+              "qualify": "Documentation indicating that while there were changes made, they did not significantly alter the study's conclusions.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The sudden infant death syndrome (SIDS) became the leading cause of post-neonatal mortality in the U.S. after mass vaccination programs were introduced.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The sudden infant death syndrome (SIDS) became the leading cause of post-neonatal mortality in the U.S. after mass vaccination programs were introduced.",
+              "mustMatch": [
+                "Access to historical mortality data and vaccination program timelines."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the claim without supporting evidence.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The sudden infant death syndrome (SIDS) became the leading cause of post-neonatal mortality in the U.S. a"
+              ],
+              "support": "Historical data showing a correlation between vaccination rates and SIDS rates.",
+              "refute": "Evidence showing that SIDS rates increased independently of vaccination rates.",
+              "qualify": "Data indicating that while SIDS rates increased, other factors may have contributed to this rise.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The CDC has classified thimerosal-containing vaccines as hazardous waste due to their mercury content.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The CDC has classified thimerosal-containing vaccines as hazardous waste due to their mercury content.",
+              "mustMatch": [
+                "Access to official records or guidelines from the CDC or EPA regarding hazardous waste classification."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the claim without supporting documentation.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The CDC has classified thimerosal-containing vaccines as hazardous waste due to their mercury content."
+              ],
+              "support": "Official documentation from the CDC or EPA confirming the classification of thimerosal-containing vaccines as hazardous waste.",
+              "refute": "Evidence showing that thimerosal-containing vaccines are not classified as hazardous waste.",
+              "qualify": "Documentation indicating that while there is a classification, it may not apply to all thimerosal-containing vaccines.",
+              "strategy": "official record"
+            }
+          ]
+        }
+      },
+      "Profile Q": {
+        "status": "completed",
+        "output": {
+          "selected": [
+            {
+              "claimText": "According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "mustMatch": [
+                "Access to CDC vaccination data or reports on vaccination rates among American school children and toddlers."
+              ],
+              "rejectIfOnly": [
+                "Statements reiterating the CDC's claims without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 tod"
+              ],
+              "support": "Statistical data from the CDC confirming the vaccination rates among American school children and toddlers.",
+              "refute": "Statistical data from the CDC or other credible sources showing that the vaccination rates are lower than reported.",
+              "qualify": "Data showing a different demographic or geographic scope that alters the reported rates.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "There is a rising trend of parents seeking vaccine exemptions for their children, indicating growing vaccine hesitancy.",
+              "origin": "host_pillar_backfill",
+              "articleRole": "pillar",
+              "materiality": "medium",
+              "disputedProposition": "There is a rising trend of parents seeking vaccine exemptions for their children, indicating growing vaccine hesitancy.",
+              "mustMatch": [
+                "Access to independent survey data or studies on vaccine exemption trends."
+              ],
+              "rejectIfOnly": [
+                "Reports of vaccine exemptions without context on trends or reasons.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: There is a rising trend of parents seeking vaccine exemptions for their children, indicating growing vacc"
+              ],
+              "support": "Independent studies or surveys showing an increase in vaccine exemption requests by parents.",
+              "refute": "Data showing a decrease or stability in vaccine exemption requests over time.",
+              "qualify": "Evidence that the increase in exemptions is due to factors other than vaccine hesitancy.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The type of mercury in vaccines, ethylmercury, is claimed to be not harmful, but evidence suggests it is neurotoxic and linked to developmental issues.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The type of mercury in vaccines, ethylmercury, is claimed to be not harmful, but evidence suggests it is neurotoxic and linked to developmental issues.",
+              "mustMatch": [
+                "Access to peer-reviewed studies on ethylmercury and its health effects."
+              ],
+              "rejectIfOnly": [
+                "Statements asserting ethylmercury is safe without supporting evidence.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The type of mercury in vaccines, ethylmercury, is claimed to be not harmful, but evidence suggests it is "
+              ],
+              "support": "Research studies demonstrating the neurotoxic effects of ethylmercury.",
+              "refute": "Studies showing no harmful effects of ethylmercury on health.",
+              "qualify": "Evidence indicating that the harmful effects of ethylmercury are limited to specific populations or conditions.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The CDC has been accused of conducting a cover-up regarding data linking the MMR vaccine to autism, as revealed by whistleblower William Thompson.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The CDC has been accused of conducting a cover-up regarding data linking the MMR vaccine to autism, as revealed by whistleblower William Thompson.",
+              "mustMatch": [
+                "Access to whistleblower documentation or independent investigations into CDC practices."
+              ],
+              "rejectIfOnly": [
+                "Claims of a cover-up without supporting evidence or context.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The CDC has been accused of conducting a cover-up regarding data linking the MMR vaccine to autism, as re"
+              ],
+              "support": "Documentation or evidence from credible sources supporting the claims of data manipulation by the CDC.",
+              "refute": "Evidence showing that the CDC's data handling was transparent and accurate.",
+              "qualify": "Evidence that the accusations are based on misinterpretations or misrepresentations of the data.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The health department's ad claims that children face more challenges to their immune system while playing outside than from vaccines.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The health department's ad claims that children face more challenges to their immune system while playing outside than from vaccines.",
+              "mustMatch": [
+                "Access to studies on immune system challenges related to outdoor play and vaccines."
+              ],
+              "rejectIfOnly": [
+                "Statements reiterating the health department's claims without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The health department's ad claims that children face more challenges to their immune system while playing"
+              ],
+              "support": "Research studies comparing immune challenges from outdoor play versus vaccines.",
+              "refute": "Evidence showing that vaccines pose greater challenges to children's immune systems than outdoor play.",
+              "qualify": "Evidence indicating that the health department's claims are based on outdated or misinterpreted data.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "In 1986, Congress removed all liability from drug companies for childhood vaccines, leading to a lack of accountability for vaccine safety.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "In 1986, Congress removed all liability from drug companies for childhood vaccines, leading to a lack of accountability for vaccine safety.",
+              "mustMatch": [
+                "Access to legislative records and analyses of vaccine safety accountability."
+              ],
+              "rejectIfOnly": [
+                "Statements confirming the removal of liability without discussing its implications.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: In 1986, Congress removed all liability from drug companies for childhood vaccines, leading to a lack of "
+              ],
+              "support": "Legislative records confirming the removal of liability and its implications for vaccine safety.",
+              "refute": "Evidence showing that vaccine safety accountability mechanisms remain effective despite the removal of liability.",
+              "qualify": "Evidence indicating that other forms of accountability exist for vaccine safety.",
+              "strategy": "named primary work, bibliographic record"
+            },
+            {
+              "claimText": "A 2011 study found that countries giving the least vaccines had the lowest infant mortality rates.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "medium",
+              "disputedProposition": "A 2011 study found that countries giving the least vaccines had the lowest infant mortality rates.",
+              "mustMatch": [
+                "Access to the original 2011 study and its methodology."
+              ],
+              "rejectIfOnly": [
+                "References to the study without access to its findings or methodology.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: A 2011 study found that countries giving the least vaccines had the lowest infant mortality rates."
+              ],
+              "support": "Access to the 2011 study and its findings on vaccination rates and infant mortality.",
+              "refute": "Evidence from other studies showing a different relationship between vaccination rates and infant mortality.",
+              "qualify": "Evidence indicating that the study's findings are limited to specific contexts or populations.",
+              "strategy": "named primary work, bibliographic record"
+            },
+            {
+              "claimText": "The childhood vaccination schedule has increased from 5 doses in the 1960s to 73 doses by 2016, raising concerns about safety.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "medium",
+              "disputedProposition": "The childhood vaccination schedule has increased from 5 doses in the 1960s to 73 doses by 2016, raising concerns about safety.",
+              "mustMatch": [
+                "Access to historical vaccination data and safety studies."
+              ],
+              "rejectIfOnly": [
+                "Statements confirming the increase in doses without discussing safety implications.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The childhood vaccination schedule has increased from 5 doses in the 1960s to 73 doses by 2016, raising c"
+              ],
+              "support": "Historical vaccination records confirming the increase in doses over time.",
+              "refute": "Evidence showing that the increase in doses has not led to safety concerns or adverse effects.",
+              "qualify": "Evidence indicating that the increase in doses is justified by improved health outcomes.",
+              "strategy": "official record"
+            }
+          ]
+        }
+      },
+      "Profile R": {
+        "status": "completed",
+        "output": {
+          "selected": [
+            {
+              "claimText": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "mustMatch": [
+                "CDC vaccination statistics",
+                "Population of American school children",
+                "Current vaccination rates",
+                "Time frame of the data"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing new evidence.",
+                "Discussing vaccination rates in a different population or time period."
+              ],
+              "support": "Evidence showing that CDC data confirms that half of American school children are not fully vaccinated.; Statistics indicating that at least 1 in 88 toddlers are completely unvaccinated.",
+              "refute": "Evidence showing that the CDC data is inaccurate or manipulated.; Statistics indicating that the vaccination rates are higher than reported.",
+              "qualify": "Evidence showing that the vaccination rates vary significantly by region or demographic.",
+              "strategy": "primary article or study record, underlying results"
+            },
+            {
+              "claimText": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+              "mustMatch": [
+                "Text of the 1986 National Childhood Vaccine Injury Act",
+                "Legal context of vaccine liability"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing new evidence.",
+                "Discussing vaccine liability in a different context or time period."
+              ],
+              "support": "Evidence from the text of the 1986 National Childhood Vaccine Injury Act confirming the removal of liability.; Legal interpretations or analyses that support the claim about liability removal.",
+              "refute": "Evidence showing that the 1986 Act did not remove all liability for vaccine manufacturers.",
+              "qualify": "Evidence indicating that there are exceptions or conditions under which liability may still apply.",
+              "strategy": "named primary work, bibliographic record"
+            },
+            {
+              "claimText": "Censorship of vaccine-related information is prevalent, as seen in the rejection of letters to the editor that challenge public health narratives.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "medium",
+              "disputedProposition": "Censorship of vaccine-related information is prevalent, as seen in the rejection of letters to the editor that challenge public health narratives.",
+              "mustMatch": [
+                "Instances of rejected letters to the editor",
+                "Media policies on vaccine discussions"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing new evidence.",
+                "Discussing censorship in a different context or topic."
+              ],
+              "support": "Evidence showing instances of rejected letters to the editor that challenge vaccine narratives.; Data or reports indicating a pattern of censorship in media regarding vaccine discussions.",
+              "refute": "Evidence showing that there is no significant censorship of vaccine-related information.",
+              "qualify": "Evidence indicating that censorship varies by publication or region.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "The CDC manipulated data linking the MMR vaccine to autism and ordered the destruction of evidence.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The CDC manipulated data linking the MMR vaccine to autism and ordered the destruction of evidence.",
+              "mustMatch": [
+                "Whistleblower statements",
+                "CDC internal documents"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing new evidence.",
+                "Discussing data manipulation in a different context or topic."
+              ],
+              "support": "Evidence from whistleblower statements confirming data manipulation by the CDC.; Documentation showing orders to destroy evidence related to the MMR vaccine and autism.",
+              "refute": "Evidence showing that the CDC did not manipulate data or order evidence destruction.",
+              "qualify": "Evidence indicating that data manipulation claims are based on misinterpretations or lack of context.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "The CDC has classified thimerosal in vaccines as toxic hazardous waste, yet it is still used in some vaccines.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The CDC has classified thimerosal in vaccines as toxic hazardous waste, yet it is still used in some vaccines.",
+              "mustMatch": [
+                "CDC classification of thimerosal",
+                "Current vaccine formulations"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing new evidence.",
+                "Discussing thimerosal in a different context or topic."
+              ],
+              "support": "Evidence from CDC classifications confirming thimerosal as hazardous waste.; Documentation showing that thimerosal is still used in vaccines.",
+              "refute": "Evidence showing that thimerosal is not classified as hazardous waste or is no longer used in vaccines.",
+              "qualify": "Evidence indicating that thimerosal's classification or use varies by vaccine type.",
+              "strategy": "primary article or study record, underlying results"
+            },
+            {
+              "claimText": "The presence of aluminum in vaccines is linked to various health issues, including neurological damage and autism.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The presence of aluminum in vaccines is linked to various health issues, including neurological damage and autism.",
+              "mustMatch": [
+                "Studies on aluminum toxicity",
+                "Health outcomes related to aluminum exposure"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing new evidence.",
+                "Discussing aluminum in a different context or topic."
+              ],
+              "support": "Evidence from studies linking aluminum in vaccines to health issues.; Documentation showing specific health issues associated with aluminum exposure.",
+              "refute": "Evidence showing that aluminum in vaccines is not linked to health issues.",
+              "qualify": "Evidence indicating that the link between aluminum and health issues is weak or contested.",
+              "strategy": "primary article or study record, underlying results"
+            },
+            {
+              "claimText": "The CDC's claim that ethylmercury in vaccines is not harmful contradicts evidence showing it is neurotoxic and linked to autism.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The CDC's claim that ethylmercury in vaccines is not harmful contradicts evidence showing it is neurotoxic and linked to autism.",
+              "mustMatch": [
+                "CDC statements on ethylmercury",
+                "Studies on ethylmercury toxicity"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing new evidence.",
+                "Discussing ethylmercury in a different context or topic.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The CDC's claim that ethylmercury in vaccines is not harmful contradicts evidence showing it is neurotoxi"
+              ],
+              "support": "Evidence supporting the CDC's claim that ethylmercury is not harmful.; Studies showing that ethylmercury is neurotoxic and linked to autism.",
+              "refute": "Evidence showing that the CDC's claim is incorrect or misleading.; Documentation indicating that ethylmercury is harmful.",
+              "qualify": "Evidence indicating that the harmfulness of ethylmercury is context-dependent.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "Vaccines became Big Pharma’s most profitable product division after the 1986 Act due to the removal of liability.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "medium",
+              "disputedProposition": "Vaccines became Big Pharma’s most profitable product division after the 1986 Act due to the removal of liability.",
+              "mustMatch": [
+                "Financial data on vaccine profits",
+                "Context of the 1986 Act"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing new evidence.",
+                "Discussing vaccine profits in a different context or time period."
+              ],
+              "support": "Evidence showing that vaccine profits increased significantly after the 1986 Act.; Financial reports indicating that vaccines became a major profit center for pharmaceutical companies.",
+              "refute": "Evidence showing that vaccine profits did not increase after the 1986 Act.",
+              "qualify": "Evidence indicating that other factors contributed to vaccine profitability.",
+              "strategy": "named primary work, bibliographic record"
+            }
+          ]
+        }
+      }
+    },
+    "sectionOrder": [
+      "Profile Q",
+      "Profile V",
+      "Profile J",
+      "Profile R"
+    ]
+  },
+  {
+    "subject": "CF1-F03",
+    "repeat": 3,
+    "outputs": {
+      "Profile J": {
+        "status": "failed",
+        "output": null
+      },
+      "Profile V": {
+        "status": "completed",
+        "output": {
+          "selected": [
+            {
+              "claimText": "According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "mustMatch": [
+                "Access to CDC vaccination data or independent vaccination studies in the U.S.",
+                "Population of American school children and toddlers."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the CDC's statement without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely u"
+              ],
+              "support": "Independent studies corroborate CDC vaccination statistics showing similar rates of unvaccinated children.",
+              "refute": "Evidence showing that the actual vaccination rates are significantly higher than reported by the CDC.",
+              "qualify": "Data indicating that the rates of unvaccinated children vary significantly by region or demographic.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+              "mustMatch": [
+                "Access to legal texts or interpretations of the 1986 National Childhood Vaccine Injury Act.",
+                "Scope of U.S. childhood vaccines."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the claim without legal verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood va"
+              ],
+              "support": "Legal analyses confirming that the 1986 act removed liability for vaccine manufacturers.",
+              "refute": "Evidence showing that vaccine manufacturers retain some liability under the 1986 act.",
+              "qualify": "Clarification that the act only applies to certain types of claims or injuries.",
+              "strategy": "official record"
+            },
+            {
+              "claimText": "The CDC conducted a study in 2000 that found infants exposed to high levels of thimerosal during their first month of life had a 7.6 times higher risk of autism diagnosis than their unexposed peers.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "Infants exposed to high levels of thimerosal during their first month of life had a 7.6 times higher risk of autism diagnosis than their unexposed peers.",
+              "mustMatch": [
+                "Access to the original CDC study data or independent replication studies.",
+                "Population of infants exposed to thimerosal."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the CDC's findings without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Infants exposed to high levels of thimerosal during their first month of life had a 7.6 times higher risk"
+              ],
+              "support": "Independent studies confirming the association between thimerosal exposure and autism risk.",
+              "refute": "Evidence showing no significant difference in autism rates between exposed and unexposed infants.",
+              "qualify": "Data indicating that the risk ratio is lower than 7.6 or that the study had methodological flaws.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The CDC has classified thimerosal-containing vaccines as toxic hazardous waste.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "Thimerosal-containing vaccines are classified as toxic hazardous waste by the EPA.",
+              "mustMatch": [
+                "Access to EPA classification documents regarding thimerosal.",
+                "Scope of thimerosal-containing vaccines."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the claim without EPA verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Thimerosal-containing vaccines are classified as toxic hazardous waste by the EPA."
+              ],
+              "support": "EPA documentation confirming the classification of thimerosal as hazardous waste.",
+              "refute": "Evidence showing that thimerosal does not meet the criteria for hazardous waste classification.",
+              "qualify": "Clarification that the classification applies only under specific conditions or concentrations.",
+              "strategy": "official record"
+            },
+            {
+              "claimText": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots given to infants.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots given to infants.",
+              "mustMatch": [
+                "Access to CDC safety testing protocols and records regarding aluminum in vaccines.",
+                "Scope of infants receiving multiple vaccines."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the claim without CDC verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots given to "
+              ],
+              "support": "Documentation from the CDC confirming the lack of safety testing for cumulative aluminum exposure.",
+              "refute": "Evidence showing that the CDC has conducted safety tests on aluminum loads in vaccines.",
+              "qualify": "Data indicating that some testing has been done but not on cumulative loads.",
+              "strategy": "official record"
+            },
+            {
+              "claimText": "The article claims that the CDC has manipulated data to disprove links between vaccines and autism.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The CDC has manipulated data to disprove links between vaccines and autism.",
+              "mustMatch": [
+                "Access to CDC data handling records or independent investigation results.",
+                "Scope of CDC vaccine studies."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the claim without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The CDC has manipulated data to disprove links between vaccines and autism."
+              ],
+              "support": "Independent investigations confirming data manipulation by the CDC.",
+              "refute": "Evidence showing that the CDC's data handling was transparent and accurate.",
+              "qualify": "Data indicating that while there may be concerns, no definitive manipulation has been proven.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The sudden infant death syndrome (SIDS) became the leading cause of post-neonatal mortality in the U.S. after the introduction of national vaccination programs.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "medium",
+              "disputedProposition": "The sudden infant death syndrome (SIDS) became the leading cause of post-neonatal mortality in the U.S. after the introduction of national vaccination programs.",
+              "mustMatch": [
+                "Access to historical infant mortality statistics and vaccination program data.",
+                "Scope of U.S. infant mortality rates."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the claim without statistical verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The sudden infant death syndrome (SIDS) became the leading cause of post-neonatal mortality in the U.S. a"
+              ],
+              "support": "Statistical analyses showing a correlation between vaccination rates and SIDS rates.",
+              "refute": "Evidence showing no correlation or a decrease in SIDS rates following vaccination programs.",
+              "qualify": "Data indicating that SIDS rates vary independently of vaccination rates.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The article claims that the narrative surrounding vaccines is a 'wishful fairy tale' and 'dangerous disinformation.'",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "medium",
+              "disputedProposition": "The narrative surrounding vaccines is a 'wishful fairy tale' and 'dangerous disinformation.'",
+              "mustMatch": [
+                "Access to analyses of public health messaging regarding vaccines.",
+                "Scope of public health narratives about vaccines."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the claim without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The narrative surrounding vaccines is a 'wishful fairy tale' and 'dangerous disinformation.'"
+              ],
+              "support": "Independent analyses supporting the claim that the vaccine narrative is misleading.",
+              "refute": "Evidence showing that the vaccine narrative is based on sound scientific principles.",
+              "qualify": "Data indicating that while there are criticisms, the narrative has some valid points.",
+              "strategy": "independent primary research, systematic review"
+            }
+          ]
+        }
+      },
+      "Profile Q": {
+        "status": "completed",
+        "output": {
+          "selected": [
+            {
+              "claimText": "According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "mustMatch": [
+                "Access to CDC vaccination data or reports on vaccination rates among American school children and toddlers."
+              ],
+              "rejectIfOnly": [
+                "General statements about vaccination rates without specific data from the CDC.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 tod"
+              ],
+              "support": "Statistical data from the CDC confirming the vaccination rates among American school children and toddlers.",
+              "refute": "Statistical data from the CDC or other credible sources showing different vaccination rates among American school children and toddlers.",
+              "qualify": "Data showing a different percentage of unvaccinated children or a narrower definition of what constitutes 'fully vaccinated'.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "Parents are increasingly seeking vaccine exemptions for their children, reflecting a rise in vaccine hesitancy.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "medium",
+              "disputedProposition": "Parents are increasingly seeking vaccine exemptions for their children, reflecting a rise in vaccine hesitancy.",
+              "mustMatch": [
+                "Access to records of vaccine exemption requests from health departments or schools."
+              ],
+              "rejectIfOnly": [
+                "A general statement about vaccine hesitancy without specific data on exemption requests.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Parents are increasingly seeking vaccine exemptions for their children, reflecting a rise in vaccine hesi"
+              ],
+              "support": "Data showing an increase in vaccine exemption requests over a specified time period.",
+              "refute": "Data showing a decrease or no significant change in vaccine exemption requests over the same time period.",
+              "qualify": "Data indicating that the increase in exemption requests is due to reasons other than vaccine hesitancy.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "Allegations exist that the CDC manipulated data linking the MMR vaccine to autism and ordered the destruction of evidence.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Allegations exist that the CDC manipulated data linking the MMR vaccine to autism and ordered the destruction of evidence.",
+              "mustMatch": [
+                "Access to credible whistleblower accounts or internal CDC communications regarding the MMR vaccine."
+              ],
+              "rejectIfOnly": [
+                "General statements about the CDC without specific evidence related to the allegations.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Allegations exist that the CDC manipulated data linking the MMR vaccine to autism and ordered the destruc"
+              ],
+              "support": "Access to internal CDC documents or credible whistleblower testimony corroborating the allegations.",
+              "refute": "Evidence showing that the CDC did not manipulate data or destroy evidence related to the MMR vaccine.",
+              "qualify": "Evidence suggesting that the allegations are based on misunderstandings or misinterpretations of the data.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The article claims that aluminum in vaccines is toxic and can cause brain damage at all doses.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The article claims that aluminum in vaccines is toxic and can cause brain damage at all doses.",
+              "mustMatch": [
+                "Access to peer-reviewed studies on aluminum toxicity and its effects."
+              ],
+              "rejectIfOnly": [
+                "General statements about aluminum without specific evidence of its effects in vaccines.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The article claims that aluminum in vaccines is toxic and can cause brain damage at all doses."
+              ],
+              "support": "Research studies demonstrating the neurotoxic effects of aluminum at various doses.",
+              "refute": "Research studies showing that aluminum in vaccines is safe and does not cause brain damage.",
+              "qualify": "Studies indicating that aluminum's effects vary by dose or that the context of exposure matters.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The health department's ad claims that vaccines are tested more than any other medicine given to children.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The health department's ad claims that vaccines are tested more than any other medicine given to children.",
+              "mustMatch": [
+                "Access to testing protocols and comparative studies of vaccine and medicine testing."
+              ],
+              "rejectIfOnly": [
+                "General claims about vaccine testing without specific comparative data.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The health department's ad claims that vaccines are tested more than any other medicine given to children"
+              ],
+              "support": "Documentation of vaccine testing protocols compared to those of other medicines.",
+              "refute": "Evidence showing that other medicines undergo more rigorous testing than vaccines.",
+              "qualify": "Evidence indicating that the testing protocols for vaccines are similar to those for other medicines.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "There have been no credible studies linking vaccination to chronic disease, according to public health authorities.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "There have been no credible studies linking vaccination to chronic disease, according to public health authorities.",
+              "mustMatch": [
+                "Access to peer-reviewed studies on vaccination and chronic disease."
+              ],
+              "rejectIfOnly": [
+                "General statements about vaccination without specific evidence of studies.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: There have been no credible studies linking vaccination to chronic disease, according to public health au"
+              ],
+              "support": "Access to credible studies that demonstrate a link between vaccination and chronic disease.",
+              "refute": "Evidence showing that public health authorities' claims about the absence of credible studies are accurate.",
+              "qualify": "Studies that suggest a correlation without establishing causation between vaccination and chronic disease.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The CDC has been accused of conducting a cover-up regarding the risks associated with thimerosal in vaccines.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The CDC has been accused of conducting a cover-up regarding the risks associated with thimerosal in vaccines.",
+              "mustMatch": [
+                "Access to credible whistleblower accounts or internal CDC communications regarding thimerosal."
+              ],
+              "rejectIfOnly": [
+                "General statements about the CDC without specific evidence related to thimerosal.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The CDC has been accused of conducting a cover-up regarding the risks associated with thimerosal in vacci"
+              ],
+              "support": "Access to credible evidence supporting the accusations of a cover-up by the CDC regarding thimerosal.",
+              "refute": "Evidence showing that the CDC acted transparently regarding thimerosal and its risks.",
+              "qualify": "Evidence suggesting that the accusations are based on misunderstandings or misinterpretations of the CDC's actions.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The CDC's claim that thimerosal is not harmful is contradicted by evidence showing it is neurotoxic and linked to developmental issues.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The CDC's claim that thimerosal is not harmful is contradicted by evidence showing it is neurotoxic and linked to developmental issues.",
+              "mustMatch": [
+                "Access to peer-reviewed studies on thimerosal's effects."
+              ],
+              "rejectIfOnly": [
+                "General statements about thimerosal without specific evidence of its effects.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The CDC's claim that thimerosal is not harmful is contradicted by evidence showing it is neurotoxic and l"
+              ],
+              "support": "Access to credible studies demonstrating thimerosal's neurotoxicity and its link to developmental issues.",
+              "refute": "Evidence showing that thimerosal is safe and does not cause neurotoxic effects.",
+              "qualify": "Studies indicating that the effects of thimerosal vary by dose or context.",
+              "strategy": "independent primary research, systematic review"
+            }
+          ]
+        }
+      },
+      "Profile R": {
+        "status": "completed",
+        "output": {
+          "selected": [
+            {
+              "claimText": "The CDC manipulated data linking the MMR vaccine to autism and ordered the destruction of evidence.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The CDC manipulated data linking the MMR vaccine to autism and ordered the destruction of evidence.",
+              "mustMatch": [
+                "CDC internal communications",
+                "MMR vaccine study data",
+                "evidence destruction orders"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without new evidence.",
+                "Proving the existence of the CDC without addressing the manipulation claim."
+              ],
+              "support": "Evidence of internal CDC communications confirming data manipulation.; Documentation of orders to destroy evidence related to the MMR vaccine study.",
+              "refute": "Official CDC statements denying any manipulation of data regarding the MMR vaccine.; Independent audits confirming the integrity of the MMR vaccine study data.",
+              "qualify": "Evidence showing that data manipulation was limited to specific studies rather than a broader pattern of misconduct.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "Vaccines contain toxic substances like aluminum and thimerosal, which are harmful to children's health.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Vaccines contain toxic substances like aluminum and thimerosal, which are harmful to children's health.",
+              "mustMatch": [
+                "Aluminum and thimerosal content in vaccines",
+                "Health outcomes related to vaccine exposure"
+              ],
+              "rejectIfOnly": [
+                "Discussing the presence of aluminum and thimerosal without linking to health effects.",
+                "Using studies that do not specifically address childhood vaccines."
+              ],
+              "support": "Studies showing adverse health effects linked to aluminum and thimerosal in vaccines.; Expert opinions confirming the toxicity of these substances.",
+              "refute": "Research demonstrating no significant health risks associated with aluminum and thimerosal in vaccines.; Official health guidelines stating the safety of these substances in vaccines.",
+              "qualify": "Evidence indicating that harmful effects are only present at certain exposure levels or in specific populations.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "The rate of chronic health conditions among children has increased significantly since the introduction of aggressive vaccination schedules.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The rate of chronic health conditions among children has increased significantly since the introduction of aggressive vaccination schedules.",
+              "mustMatch": [
+                "Chronic health condition statistics",
+                "Vaccination schedule timelines"
+              ],
+              "rejectIfOnly": [
+                "Citing general health trends without specific links to vaccination schedules.",
+                "Discussing chronic health conditions without vaccination context."
+              ],
+              "support": "Statistical data showing a rise in chronic health conditions post-vaccination schedule changes.; Comparative studies of health conditions in vaccinated vs. unvaccinated children.",
+              "refute": "Data showing no significant change in chronic health conditions over the same period.; Studies indicating that vaccination schedules do not correlate with health outcomes.",
+              "qualify": "Evidence suggesting that the increase in chronic health conditions is due to factors other than vaccination.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "Efforts to suppress information about vaccine risks and injuries are widespread, including censorship of public discussions.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Efforts to suppress information about vaccine risks and injuries are widespread, including censorship of public discussions.",
+              "mustMatch": [
+                "Instances of censorship",
+                "Public discussions on vaccine risks"
+              ],
+              "rejectIfOnly": [
+                "General discussions about vaccines without specific censorship examples.",
+                "Proving that vaccine risks exist without addressing censorship."
+              ],
+              "support": "Documented instances of censorship related to vaccine discussions.; Testimonies from individuals affected by censorship.",
+              "refute": "Evidence showing that public discussions about vaccine risks are freely conducted.; Official statements from health authorities denying censorship.",
+              "qualify": "Evidence indicating that censorship is limited to specific platforms or contexts.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "The increase in vaccine doses administered to children correlates with a rise in chronic health issues.",
+              "origin": "model",
+              "articleRole": "qualification",
+              "materiality": "medium",
+              "disputedProposition": "The increase in vaccine doses administered to children correlates with a rise in chronic health issues.",
+              "mustMatch": [
+                "Vaccine dose statistics",
+                "Chronic health issue data"
+              ],
+              "rejectIfOnly": [
+                "Citing general health trends without specific links to vaccination doses.",
+                "Discussing health issues without vaccination context."
+              ],
+              "support": "Statistical analysis showing correlation between vaccine doses and health issues.; Comparative studies of health outcomes in relation to vaccination rates.",
+              "refute": "Data showing no correlation between the number of vaccine doses and chronic health issues.; Studies indicating that health issues are unrelated to vaccination.",
+              "qualify": "Evidence suggesting that correlation exists only in specific populations or under certain conditions.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "Parents who choose not to vaccinate their children are often highly educated and scientifically literate.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "medium",
+              "disputedProposition": "Parents who choose not to vaccinate their children are often highly educated and scientifically literate.",
+              "mustMatch": [
+                "Educational background data",
+                "Vaccine hesitancy statistics"
+              ],
+              "rejectIfOnly": [
+                "General statements about parents without specific educational data.",
+                "Discussing vaccine hesitancy without addressing education levels."
+              ],
+              "support": "Surveys showing educational backgrounds of vaccine-hesitant parents.; Studies linking education levels to vaccine hesitancy.",
+              "refute": "Data indicating that vaccine-hesitant parents have varied educational backgrounds.; Research showing no correlation between education and vaccine hesitancy.",
+              "qualify": "Evidence suggesting that education level is only one of many factors influencing vaccine hesitancy.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "The CDC has conducted studies that were later found to be fraudulent, particularly regarding vaccine safety.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "medium",
+              "disputedProposition": "The CDC has conducted studies that were later found to be fraudulent, particularly regarding vaccine safety.",
+              "mustMatch": [
+                "CDC study data",
+                "Fraudulent practices evidence"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without new evidence.",
+                "Proving the existence of CDC studies without addressing their integrity."
+              ],
+              "support": "Evidence of fraudulent practices in CDC studies on vaccine safety.; Whistleblower testimonies confirming study misconduct.",
+              "refute": "Official CDC reports denying any fraudulent activity in their studies.; Independent reviews confirming the integrity of CDC studies.",
+              "qualify": "Evidence indicating that fraud was limited to specific studies rather than a systemic issue.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "Thimerosal, a mercury-based preservative, was removed from most childhood vaccines due to safety concerns, but is still present in some flu shots.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "medium",
+              "disputedProposition": "Thimerosal, a mercury-based preservative, was removed from most childhood vaccines due to safety concerns, but is still present in some flu shots.",
+              "mustMatch": [
+                "Thimerosal presence in vaccines",
+                "Health guidelines on thimerosal"
+              ],
+              "rejectIfOnly": [
+                "General discussions about thimerosal without specific vaccine context.",
+                "Proving thimerosal's toxicity without addressing its use in vaccines."
+              ],
+              "support": "Documentation of thimerosal's removal from childhood vaccines.; Evidence showing its continued presence in flu shots.",
+              "refute": "Official health guidelines stating that thimerosal is no longer used in any vaccines.; Research indicating that thimerosal poses no safety concerns.",
+              "qualify": "Evidence suggesting that thimerosal's presence is limited to specific vaccines or formulations.",
+              "strategy": "primary record, independent primary research"
+            }
+          ]
+        }
+      }
+    },
+    "sectionOrder": [
+      "Profile Q",
+      "Profile J",
+      "Profile R",
+      "Profile V"
+    ]
+  },
+  {
+    "subject": "CF1-F03",
+    "repeat": 4,
+    "outputs": {
+      "Profile J": {
+        "status": "failed",
+        "output": null
+      },
+      "Profile V": {
+        "status": "completed",
+        "output": {
+          "selected": [
+            {
+              "claimText": "According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "mustMatch": [
+                "Access to CDC vaccination data or independent vaccination surveys in the U.S.",
+                "Population of American school children and toddlers."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the CDC's statement without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely u"
+              ],
+              "support": "Independent studies corroborate CDC vaccination statistics showing similar rates of unvaccinated children.",
+              "refute": "Evidence shows that a higher percentage of American school children are fully vaccinated than reported by the CDC.",
+              "qualify": "Data indicates that the vaccination rates vary significantly by region or demographic.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "William Thompson, a senior CDC scientist, revealed that data linking the MMR vaccine to autism was manipulated by the CDC.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "Data linking the MMR vaccine to autism was manipulated by the CDC.",
+              "mustMatch": [
+                "Access to original CDC data and records related to the MMR vaccine study.",
+                "Expertise in vaccine safety research."
+              ],
+              "rejectIfOnly": [
+                "Repetition of Thompson's claims without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Data linking the MMR vaccine to autism was manipulated by the CDC."
+              ],
+              "support": "Independent investigations confirm that data related to the MMR vaccine and autism was altered.",
+              "refute": "Evidence shows that the data linking the MMR vaccine to autism was not manipulated.",
+              "qualify": "Findings indicate that while data was reviewed, no manipulation occurred.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The health department's ad claims that children face more challenges to their immune system while playing outside than from vaccines.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "Children face more challenges to their immune system while playing outside than from vaccines.",
+              "mustMatch": [
+                "Access to studies comparing immune challenges from outdoor play and vaccines.",
+                "Population of children in various play environments."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the health department's ad without independent evidence.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Children face more challenges to their immune system while playing outside than from vaccines."
+              ],
+              "support": "Research shows that outdoor play poses significant health risks to children's immune systems.",
+              "refute": "Evidence indicates that vaccines pose greater risks to children's immune systems than outdoor play.",
+              "qualify": "Studies show that the risks from outdoor play are context-dependent and vary by environment.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "There have been no credible studies linking vaccination to chronic disease, according to the health department's ad.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "There have been credible studies linking vaccination to chronic disease.",
+              "mustMatch": [
+                "Access to credible research studies on vaccination and chronic disease.",
+                "Population studied in relation to vaccination."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the health department's claim without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: There have been credible studies linking vaccination to chronic disease."
+              ],
+              "support": "Independent studies demonstrate a credible link between vaccination and chronic disease.",
+              "refute": "Evidence shows that no credible studies exist linking vaccination to chronic disease.",
+              "qualify": "Studies indicate a correlation but do not establish causation between vaccination and chronic disease.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+              "mustMatch": [
+                "Access to the text of the National Childhood Vaccine Injury Act and legal interpretations.",
+                "Expertise in vaccine liability law."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the Act's provisions without independent legal analysis.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood va"
+              ],
+              "support": "Legal analysis confirms that the Act removed liability for vaccine manufacturers.",
+              "refute": "Evidence shows that some liability remains for vaccine manufacturers under the Act.",
+              "qualify": "Legal interpretations indicate that liability is limited but not entirely removed.",
+              "strategy": "named primary work, bibliographic record"
+            },
+            {
+              "claimText": "An analysis of U.S. data from 1990-2010 showed that infants who received the most vaccines had the worst hospitalization and death rates.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "Infants who received the most vaccines had the worst hospitalization and death rates.",
+              "mustMatch": [
+                "Access to the U.S. health data from 1990-2010 used in the analysis.",
+                "Population of infants studied."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the analysis without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Infants who received the most vaccines had the worst hospitalization and death rates."
+              ],
+              "support": "Independent analyses confirm the correlation between high vaccination rates and increased hospitalization and death rates.",
+              "refute": "Evidence shows that higher vaccination rates correlate with lower hospitalization and death rates.",
+              "qualify": "Data indicates that the correlation is influenced by other health factors.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The CDC has stated that thimerosal in vaccines does not cause harm, despite evidence suggesting it is neurotoxic.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "Thimerosal in vaccines causes harm, despite CDC's claims that it does not.",
+              "mustMatch": [
+                "Access to studies on thimerosal's effects and CDC statements.",
+                "Expertise in toxicology and vaccine safety."
+              ],
+              "rejectIfOnly": [
+                "Repetition of CDC's statement without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Thimerosal in vaccines causes harm, despite CDC's claims that it does not."
+              ],
+              "support": "Independent studies show that thimerosal is neurotoxic and poses health risks.",
+              "refute": "Evidence supports the CDC's claim that thimerosal does not cause harm.",
+              "qualify": "Studies indicate potential risks but do not conclusively prove harm from thimerosal.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "Thimerosal-containing vaccines exceed the EPA's threshold for hazardous waste.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "Thimerosal-containing vaccines exceed the EPA's threshold for hazardous waste.",
+              "mustMatch": [
+                "Access to EPA hazardous waste regulations and thimerosal content data.",
+                "Expertise in environmental health and safety."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the EPA's classification without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Thimerosal-containing vaccines exceed the EPA's threshold for hazardous waste."
+              ],
+              "support": "Independent assessments confirm that thimerosal in vaccines exceeds EPA hazardous waste thresholds.",
+              "refute": "Evidence shows that thimerosal in vaccines does not exceed EPA hazardous waste thresholds.",
+              "qualify": "Findings indicate that while thimerosal levels are high, they do not meet all criteria for hazardous classification.",
+              "strategy": "official record"
+            }
+          ]
+        }
+      },
+      "Profile Q": {
+        "status": "completed",
+        "output": {
+          "selected": [
+            {
+              "claimText": "According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "mustMatch": [
+                "Access to CDC vaccination data or reports.",
+                "Independent health organization statistics on vaccination rates among American school children."
+              ],
+              "rejectIfOnly": [
+                "Statements reiterating the CDC's claims without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 tod"
+              ],
+              "support": "Independent verification of CDC vaccination statistics from a credible health organization or study.; Statistical data corroborating the percentage of unvaccinated children in the specified demographic.",
+              "refute": "Evidence showing that the vaccination rates reported by the CDC are significantly lower than stated.; Data indicating a higher percentage of vaccinated children than reported by the CDC.",
+              "qualify": "Data showing that the vaccination rates vary significantly by region or demographic, indicating a narrower scope than claimed.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "There is a rising trend of parents seeking vaccine exemptions for their children, indicating growing vaccine hesitancy.",
+              "origin": "host_pillar_backfill",
+              "articleRole": "pillar",
+              "materiality": "medium",
+              "disputedProposition": "There is a rising trend of parents seeking vaccine exemptions for their children, indicating growing vaccine hesitancy.",
+              "mustMatch": [
+                "Access to state or national vaccination exemption data.",
+                "Surveys reflecting parental attitudes towards vaccines."
+              ],
+              "rejectIfOnly": [
+                "General statements about vaccine hesitancy without specific data on exemption requests.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: There is a rising trend of parents seeking vaccine exemptions for their children, indicating growing vacc"
+              ],
+              "support": "Statistical data showing an increase in vaccine exemption requests over a specified time period.; Surveys or studies indicating parental attitudes towards vaccines and the reasons for seeking exemptions.",
+              "refute": "Evidence showing a decrease in vaccine exemption requests or stable rates over time.; Data indicating that parents are increasingly supportive of vaccination.",
+              "qualify": "Data showing that the increase in exemption requests is limited to specific regions or demographics.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "Allegations state that the CDC manipulated data linking the MMR vaccine to autism and ordered the destruction of evidence.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Allegations state that the CDC manipulated data linking the MMR vaccine to autism and ordered the destruction of evidence.",
+              "mustMatch": [
+                "Access to whistleblower testimonies and CDC internal documents.",
+                "Independent investigations into CDC practices."
+              ],
+              "rejectIfOnly": [
+                "Statements reiterating the whistleblower's claims without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Allegations state that the CDC manipulated data linking the MMR vaccine to autism and ordered the destruc"
+              ],
+              "support": "Whistleblower testimony corroborated by independent investigations or reports.; Internal CDC documents supporting the claims of data manipulation and evidence destruction.",
+              "refute": "Evidence showing that the CDC followed proper protocols in handling MMR vaccine data.; Independent studies that contradict the allegations of manipulation.",
+              "qualify": "Evidence indicating that while data manipulation occurred, it did not significantly impact the overall findings regarding vaccine safety.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots given to infants.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots given to infants.",
+              "mustMatch": [
+                "Access to CDC safety testing protocols and vaccine package inserts.",
+                "Independent research on aluminum safety in vaccines."
+              ],
+              "rejectIfOnly": [
+                "Statements reiterating the CDC's claims without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots given to "
+              ],
+              "support": "Documentation from the CDC confirming the lack of safety testing for cumulative aluminum exposure.; Independent studies assessing the safety of aluminum in vaccines.",
+              "refute": "Evidence showing that the CDC has conducted safety tests on cumulative aluminum loads in vaccines.; Studies indicating that cumulative aluminum exposure is safe for infants.",
+              "qualify": "Evidence showing that while safety testing may not have been conducted, the individual components of vaccines have been tested for safety.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "There have been no credible studies linking vaccination to chronic disease, according to public health authorities.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "There have been no credible studies linking vaccination to chronic disease, according to public health authorities.",
+              "mustMatch": [
+                "Access to independent studies on vaccination and chronic disease.",
+                "Expertise in epidemiology or public health."
+              ],
+              "rejectIfOnly": [
+                "Statements reiterating public health authorities' claims without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: There have been no credible studies linking vaccination to chronic disease, according to public health au"
+              ],
+              "support": "Independent studies that demonstrate a link between vaccination and chronic disease.; Meta-analyses or systematic reviews that contradict the public health authorities' claims.",
+              "refute": "Evidence showing that no credible studies exist linking vaccination to chronic disease.; Data indicating that vaccination is associated with improved health outcomes.",
+              "qualify": "Evidence showing that while some studies exist, they may not meet the criteria for credibility set by public health authorities.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "Thimerosal, a mercury-based preservative used in vaccines, is classified as toxic hazardous waste by the EPA.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "Thimerosal, a mercury-based preservative used in vaccines, is classified as toxic hazardous waste by the EPA.",
+              "mustMatch": [
+                "Access to EPA classification documents regarding thimerosal.",
+                "Toxicology expertise related to thimerosal."
+              ],
+              "rejectIfOnly": [
+                "Statements reiterating the EPA's classification without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Thimerosal, a mercury-based preservative used in vaccines, is classified as toxic hazardous waste by the "
+              ],
+              "support": "EPA documentation confirming the classification of thimerosal as toxic hazardous waste.; Independent assessments of thimerosal's toxicity.",
+              "refute": "Evidence showing that thimerosal is not classified as toxic hazardous waste by the EPA.; Studies indicating that thimerosal is safe for use in vaccines.",
+              "qualify": "Evidence showing that while thimerosal is classified as hazardous, its use in vaccines may be justified under certain conditions.",
+              "strategy": "official record"
+            },
+            {
+              "claimText": "The claim that ethylmercury in vaccines is not harmful is contradicted by evidence showing it is neurotoxic and can cause developmental issues.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The claim that ethylmercury in vaccines is not harmful is contradicted by evidence showing it is neurotoxic and can cause developmental issues.",
+              "mustMatch": [
+                "Access to toxicology studies on ethylmercury.",
+                "Expertise in neurotoxicology."
+              ],
+              "rejectIfOnly": [
+                "Statements reiterating the claims about ethylmercury without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The claim that ethylmercury in vaccines is not harmful is contradicted by evidence showing it is neurotox"
+              ],
+              "support": "Peer-reviewed studies demonstrating the neurotoxic effects of ethylmercury.; Material Safety Data Sheets indicating the harmful effects of ethylmercury.",
+              "refute": "Evidence showing that ethylmercury is safe and does not cause neurotoxic effects.; Studies indicating that the risks of ethylmercury are overstated.",
+              "qualify": "Evidence showing that while ethylmercury may have neurotoxic effects, the levels used in vaccines are considered safe.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The health department's ad claims that children face more challenges to their immune system while playing outside than from vaccines.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "medium",
+              "disputedProposition": "The health department's ad claims that children face more challenges to their immune system while playing outside than from vaccines.",
+              "mustMatch": [
+                "Access to studies on immune system challenges from environmental exposures.",
+                "Expertise in immunology."
+              ],
+              "rejectIfOnly": [
+                "Statements reiterating the health department's claims without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The health department's ad claims that children face more challenges to their immune system while playing"
+              ],
+              "support": "Research studies comparing immune system challenges from environmental exposures to those from vaccines.; Surveys indicating parental perceptions of immune challenges.",
+              "refute": "Evidence showing that vaccines pose greater challenges to the immune system than environmental exposures.; Studies indicating that outdoor play is beneficial for immune health.",
+              "qualify": "Evidence showing that while outdoor play presents challenges, they are not necessarily greater than those posed by vaccines.",
+              "strategy": "independent primary research, systematic review"
+            }
+          ]
+        }
+      },
+      "Profile R": {
+        "status": "completed",
+        "output": {
+          "selected": [
+            {
+              "claimText": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "mustMatch": [
+                "CDC vaccination statistics",
+                "Population of American school children",
+                "Current vaccination rates",
+                "Measurement of vaccination status in toddlers"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing statistical evidence from the CDC.",
+                "Discussing vaccination rates in a different country or population.",
+                "Providing anecdotal evidence without statistical backing."
+              ],
+              "support": "Evidence showing that CDC vaccination statistics confirm that half of American school children are not fully vaccinated.; Data indicating that at least 1 in 88 toddlers are completely unvaccinated.",
+              "refute": "Evidence showing that less than half of American school children are fully vaccinated.; Data indicating that more than 1 in 88 toddlers are fully vaccinated.",
+              "qualify": "Data showing that the vaccination rates vary significantly by region or demographic.",
+              "strategy": "primary article or study record, underlying results"
+            },
+            {
+              "claimText": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+              "mustMatch": [
+                "Text of the 1986 National Childhood Vaccine Injury Act",
+                "Historical context of vaccine liability in the U.S."
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing the actual text of the Act.",
+                "Discussing vaccine liability in a different context or country."
+              ],
+              "support": "Evidence from the text of the 1986 National Childhood Vaccine Injury Act confirming the removal of liability.; Historical analysis showing the impact of the Act on drug company liability.",
+              "refute": "Evidence showing that drug companies retain some liability for childhood vaccines under the Act.",
+              "qualify": "Evidence indicating that liability may still exist under certain conditions or for specific vaccines.",
+              "strategy": "named primary work, bibliographic record"
+            },
+            {
+              "claimText": "Public health authorities have engaged in censorship to suppress information that challenges the vaccine narrative.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Public health authorities have engaged in censorship to suppress information that challenges the vaccine narrative.",
+              "mustMatch": [
+                "Instances of censorship",
+                "Public health authorities' actions",
+                "Documentation of suppressed information"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing specific examples of censorship.",
+                "Discussing censorship in unrelated contexts."
+              ],
+              "support": "Documented instances of censorship by public health authorities regarding vaccine information.; Analysis showing a pattern of suppression of dissenting views on vaccines.",
+              "refute": "Evidence showing that public health authorities have not engaged in censorship regarding vaccine information.",
+              "qualify": "Evidence indicating that censorship may vary by region or specific public health authorities.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "The CDC manipulated data linking the MMR vaccine to autism and ordered the destruction of evidence.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The CDC manipulated data linking the MMR vaccine to autism and ordered the destruction of evidence.",
+              "mustMatch": [
+                "Whistleblower testimony",
+                "CDC internal documents",
+                "Data linking MMR vaccine to autism"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing corroborating evidence from the whistleblower.",
+                "Discussing unrelated vaccine controversies.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The CDC manipulated data linking the MMR vaccine to autism and ordered the destruction of evidence."
+              ],
+              "support": "Evidence from whistleblower claims corroborating the manipulation of data by the CDC.; Documentation showing orders to destroy evidence related to the MMR vaccine.",
+              "refute": "Evidence showing that the CDC did not manipulate data or order destruction of evidence.",
+              "qualify": "Evidence indicating that the manipulation of data was limited to specific studies or circumstances.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "Vaccines are linked to a rise in chronic health conditions in children, with rates of chronic illness increasing from 12.8% in the 1980s to 54% by 2011.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Vaccines are linked to a rise in chronic health conditions in children, with rates of chronic illness increasing from 12.8% in the 1980s to 54% by 2011.",
+              "mustMatch": [
+                "Chronic health condition statistics",
+                "Vaccination rates over time",
+                "Analysis of health trends in children"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing statistical evidence.",
+                "Discussing chronic health conditions in adults."
+              ],
+              "support": "Statistical evidence showing the rise in chronic health conditions in children over the specified period.; Analysis linking the increase in chronic illnesses to vaccination rates.",
+              "refute": "Evidence showing that chronic health conditions have not increased or are unrelated to vaccines.",
+              "qualify": "Evidence indicating that the rise in chronic conditions may be due to other factors.",
+              "strategy": "primary article or study record, underlying results"
+            },
+            {
+              "claimText": "The CDC's claim that thimerosal in vaccines is not harmful contradicts evidence showing it is neurotoxic and linked to autism.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The CDC's claim that thimerosal in vaccines is not harmful contradicts evidence showing it is neurotoxic and linked to autism.",
+              "mustMatch": [
+                "Studies on thimerosal's effects",
+                "CDC statements on thimerosal",
+                "Link between thimerosal and autism"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing scientific evidence.",
+                "Discussing thimerosal in unrelated contexts."
+              ],
+              "support": "Evidence from studies showing thimerosal's neurotoxicity and its link to autism.; Documentation of the CDC's claims regarding thimerosal.",
+              "refute": "Evidence showing that thimerosal is safe and not linked to autism.",
+              "qualify": "Evidence indicating that the harmful effects of thimerosal may vary by dosage or exposure.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "The CDC has classified thimerosal-containing vaccines as hazardous waste due to their mercury content.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The CDC has classified thimerosal-containing vaccines as hazardous waste due to their mercury content.",
+              "mustMatch": [
+                "CDC classification documents",
+                "Criteria for hazardous waste",
+                "Thimerosal content in vaccines"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing official documentation.",
+                "Discussing hazardous waste in unrelated contexts."
+              ],
+              "support": "Documentation from the CDC confirming the classification of thimerosal-containing vaccines as hazardous waste.; Evidence showing the criteria for hazardous waste classification.",
+              "refute": "Evidence showing that thimerosal-containing vaccines are not classified as hazardous waste.",
+              "qualify": "Evidence indicating that the classification may depend on specific conditions or regulations.",
+              "strategy": "primary article or study record, underlying results"
+            },
+            {
+              "claimText": "Parents who choose not to vaccinate are often highly educated and scientifically literate, including medical professionals.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "medium",
+              "disputedProposition": "Parents who choose not to vaccinate are often highly educated and scientifically literate, including medical professionals.",
+              "mustMatch": [
+                "Demographic studies on vaccine-hesitant parents",
+                "Education levels of parents",
+                "Profession of vaccine-hesitant parents"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing statistical evidence.",
+                "Discussing vaccine hesitancy in unrelated contexts."
+              ],
+              "support": "Survey data showing that a significant proportion of vaccine-hesitant parents are highly educated and scientifically literate.; Evidence indicating that many vaccine-hesitant parents are medical professionals.",
+              "refute": "Evidence showing that vaccine-hesitant parents are not typically highly educated or scientifically literate.",
+              "qualify": "Evidence indicating that the demographic profile may vary by region or community.",
+              "strategy": "primary article or study record, underlying results"
+            }
+          ]
+        }
+      }
+    },
+    "sectionOrder": [
+      "Profile Q",
+      "Profile R",
+      "Profile V",
+      "Profile J"
+    ]
+  },
+  {
+    "subject": "CF1-F03",
+    "repeat": 5,
+    "outputs": {
+      "Profile J": {
+        "status": "failed",
+        "output": null
+      },
+      "Profile V": {
+        "status": "completed",
+        "output": {
+          "selected": [
+            {
+              "claimText": "According to the CDC, half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "mustMatch": [
+                "Access to CDC vaccination data or independent health statistics on vaccination rates among American school children and toddlers."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the CDC's statement without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely u"
+              ],
+              "support": "Independent verification of CDC vaccination statistics showing that half of American school children are not fully vaccinated.; Independent verification of CDC vaccination statistics showing that at least 1 in 88 toddlers are completely unvaccinated.",
+              "refute": "Evidence showing that more than half of American school children are fully vaccinated.; Evidence showing that fewer than 1 in 88 toddlers are completely unvaccinated.",
+              "qualify": "Evidence indicating a different percentage of unvaccinated children or toddlers than reported by the CDC.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The CDC manipulated data linking the MMR vaccine to autism, according to whistleblower William Thompson.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The CDC manipulated data linking the MMR vaccine to autism.",
+              "mustMatch": [
+                "Access to CDC data records or independent analysis of the MMR vaccine data in question."
+              ],
+              "rejectIfOnly": [
+                "Repetition of Thompson's claims without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The CDC manipulated data linking the MMR vaccine to autism."
+              ],
+              "support": "Independent corroboration of William Thompson's claims regarding data manipulation by the CDC.; Documentation or evidence from credible sources confirming the manipulation of MMR vaccine data.",
+              "refute": "Evidence showing that the CDC did not manipulate data linking the MMR vaccine to autism.",
+              "qualify": "Evidence indicating that the manipulation was less extensive than claimed or that the data was not definitively linked to autism.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The health department's ad claims that children face more challenges to their immune system while playing outside than from vaccines.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Children face more challenges to their immune system while playing outside than from vaccines.",
+              "mustMatch": [
+                "Access to studies or data comparing immune challenges from outdoor play and vaccination."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the health department's claim without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Children face more challenges to their immune system while playing outside than from vaccines."
+              ],
+              "support": "Independent studies comparing immune challenges from outdoor play versus vaccination.; Evidence supporting the claim that outdoor play poses more challenges to children's immune systems than vaccines.",
+              "refute": "Evidence showing that vaccines pose more challenges to children's immune systems than outdoor play.",
+              "qualify": "Evidence indicating that the challenges to the immune system are comparable or that the claim is context-dependent.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "There have been no credible studies linking vaccination to chronic disease, according to the health department's ad.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "There have been credible studies linking vaccination to chronic disease.",
+              "mustMatch": [
+                "Access to credible studies or reviews on the relationship between vaccination and chronic disease."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the health department's claim without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: There have been credible studies linking vaccination to chronic disease."
+              ],
+              "support": "Evidence of credible studies that demonstrate a link between vaccination and chronic disease.; Independent reviews or meta-analyses confirming the existence of such studies.",
+              "refute": "Evidence showing that no credible studies exist linking vaccination to chronic disease.",
+              "qualify": "Evidence indicating that any studies linking vaccination to chronic disease are methodologically flawed or inconclusive.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+              "mustMatch": [
+                "Access to the full text of the 1986 National Childhood Vaccine Injury Act and legal interpretations."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the article's statement without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood va"
+              ],
+              "support": "Verification of the text and provisions of the 1986 National Childhood Vaccine Injury Act regarding liability.; Independent legal analysis confirming that the Act removed liability from drug companies.",
+              "refute": "Evidence showing that the Act did not remove all liability from drug companies for childhood vaccines.",
+              "qualify": "Evidence indicating that some liability remains or that the Act has been amended.",
+              "strategy": "named primary work, bibliographic record"
+            },
+            {
+              "claimText": "An analysis of U.S. data showed that infants who received the most vaccines had the worst hospitalization and death rates.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "Infants who received the most vaccines had the worst hospitalization and death rates.",
+              "mustMatch": [
+                "Access to the U.S. data analysis and relevant health statistics."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the analysis without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Infants who received the most vaccines had the worst hospitalization and death rates."
+              ],
+              "support": "Independent verification of the analysis showing a correlation between the number of vaccines and hospitalization/death rates in infants.; Evidence from other studies supporting the claim that more vaccines correlate with worse health outcomes.",
+              "refute": "Evidence showing that infants who received the most vaccines do not have worse hospitalization and death rates.",
+              "qualify": "Evidence indicating that the correlation is weak or that other factors contribute to hospitalization and death rates.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "Thimerosal, a mercury-based preservative used in vaccines, is toxic and has been linked to neurological damage.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "Thimerosal is toxic and has been linked to neurological damage.",
+              "mustMatch": [
+                "Access to toxicology data and studies on thimerosal."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the claim about thimerosal without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: Thimerosal is toxic and has been linked to neurological damage."
+              ],
+              "support": "Independent toxicology reports confirming thimerosal's toxicity and its link to neurological damage.; Evidence from credible studies linking thimerosal exposure to neurological outcomes.",
+              "refute": "Evidence showing that thimerosal is not toxic or does not cause neurological damage.",
+              "qualify": "Evidence indicating that the link between thimerosal and neurological damage is not causal or is context-dependent.",
+              "strategy": "independent primary research, systematic review"
+            },
+            {
+              "claimText": "The CDC's 2000 meeting to discuss thimerosal's risks was held in secret to avoid public scrutiny.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "high",
+              "disputedProposition": "The CDC's 2000 meeting to discuss thimerosal's risks was held in secret to avoid public scrutiny.",
+              "mustMatch": [
+                "Access to meeting records and documentation regarding the CDC's 2000 meeting."
+              ],
+              "rejectIfOnly": [
+                "Repetition of the article's statement without independent verification.",
+                "A source only repeats or reports the statement the article already stipulates, without independent evidence about: The CDC's 2000 meeting to discuss thimerosal's risks was held in secret to avoid public scrutiny."
+              ],
+              "support": "Independent verification of the meeting's details and whether it was held in secret.; Documentation confirming the reasons for the meeting's location and its lack of public access.",
+              "refute": "Evidence showing that the meeting was not held in secret or that it was publicly accessible.",
+              "qualify": "Evidence indicating that the meeting was held under normal circumstances but was mischaracterized.",
+              "strategy": "independent primary research, systematic review"
+            }
+          ]
+        }
+      },
+      "Profile Q": {
+        "status": "failed",
+        "output": null
+      },
+      "Profile R": {
+        "status": "completed",
+        "output": {
+          "selected": [
+            {
+              "claimText": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+              "mustMatch": [
+                "CDC vaccination statistics",
+                "Current vaccination rates among American school children",
+                "Proportion of unvaccinated toddlers in the U.S."
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing CDC data verification.",
+                "Discussing vaccination rates in a different country or region.",
+                "Using outdated vaccination statistics."
+              ],
+              "support": "Evidence shows that at least 50% of American school children are not fully vaccinated according to CDC data.; Data indicates that 1 in 88 toddlers are completely unvaccinated.",
+              "refute": "Evidence shows that less than 50% of American school children are not fully vaccinated according to CDC data.; Data indicates that more than 1 in 88 toddlers are completely vaccinated.",
+              "qualify": "The claim is true only for a specific region or demographic within the United States.",
+              "strategy": "primary article or study record, underlying results"
+            },
+            {
+              "claimText": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines.",
+              "mustMatch": [
+                "Text of the 1986 National Childhood Vaccine Injury Act",
+                "Legal interpretations of the Act regarding liability"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing legal text verification.",
+                "Discussing vaccine liability in a different context or country."
+              ],
+              "support": "Evidence from the text of the 1986 National Childhood Vaccine Injury Act confirms that liability was removed.; Historical analysis shows that drug companies are not liable for vaccine injuries under the 1986 Act.",
+              "refute": "Evidence shows that drug companies retain some liability for childhood vaccines under the 1986 Act.",
+              "qualify": "The claim is true only for specific types of vaccines or under certain conditions.",
+              "strategy": "named primary work, bibliographic record"
+            },
+            {
+              "claimText": "Public health authorities have engaged in censorship to suppress information that challenges the vaccine narrative.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "medium",
+              "disputedProposition": "Public health authorities have engaged in censorship to suppress information that challenges the vaccine narrative.",
+              "mustMatch": [
+                "Instances of censorship by public health authorities",
+                "Documentation of community responses to vaccine information"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing specific examples of censorship.",
+                "Discussing censorship in unrelated contexts or topics."
+              ],
+              "support": "Evidence of specific instances where public health authorities censored information about vaccines.; Documentation of community experiences that illustrate censorship related to vaccine discussions.",
+              "refute": "Evidence shows that public health authorities have not engaged in censorship regarding vaccine information.",
+              "qualify": "Censorship is limited to specific instances or regions rather than a widespread practice.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "The CDC manipulated data linking the MMR vaccine to autism and ordered the destruction of evidence.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The CDC manipulated data linking the MMR vaccine to autism and ordered the destruction of evidence.",
+              "mustMatch": [
+                "Whistleblower accounts from CDC",
+                "Documentation of CDC's internal communications regarding MMR vaccine data"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing specific evidence of manipulation.",
+                "Discussing unrelated vaccine studies or data."
+              ],
+              "support": "Evidence from whistleblower accounts confirming data manipulation by the CDC.; Documentation of orders to destroy evidence related to MMR vaccine studies.",
+              "refute": "Evidence shows that the CDC did not manipulate data or order evidence destruction.",
+              "qualify": "The claim is true only for specific studies or under certain conditions.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "Vaccines are linked to a rise in chronic health conditions in children, with rates of chronic illness increasing from 12.8% in the 1980s to 54% by 2011.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "Vaccines are linked to a rise in chronic health conditions in children, with rates of chronic illness increasing from 12.8% in the 1980s to 54% by 2011.",
+              "mustMatch": [
+                "Chronic illness statistics for U.S. children",
+                "Vaccination rates over the same period"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing specific health statistics verification.",
+                "Discussing chronic illness rates in adults or unrelated populations."
+              ],
+              "support": "Evidence shows that chronic illness rates in children increased from 12.8% in the 1980s to 54% by 2011.; Data correlating vaccine rates with chronic health conditions in children.",
+              "refute": "Evidence shows that chronic illness rates in children did not increase as stated or are unrelated to vaccines.",
+              "qualify": "The claim is true only for specific types of chronic conditions or demographics.",
+              "strategy": "primary article or study record, underlying results"
+            },
+            {
+              "claimText": "The CDC's claim that thimerosal is not harmful is contradicted by evidence showing it is neurotoxic and linked to autism.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The CDC's claim that thimerosal is not harmful is contradicted by evidence showing it is neurotoxic and linked to autism.",
+              "mustMatch": [
+                "Studies on thimerosal's effects",
+                "Material Safety Data Sheets for thimerosal"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing specific evidence of thimerosal's effects.",
+                "Discussing unrelated substances or vaccines."
+              ],
+              "support": "Evidence from studies showing thimerosal's neurotoxicity and its link to autism.; Documentation from Material Safety Data Sheets indicating thimerosal's harmful effects.",
+              "refute": "Evidence shows that thimerosal is not harmful or linked to autism.",
+              "qualify": "The claim is true only for specific populations or under certain conditions.",
+              "strategy": "primary record, independent primary research"
+            },
+            {
+              "claimText": "The CDC has classified thimerosal-containing vaccines as hazardous waste due to their mercury content.",
+              "origin": "model",
+              "articleRole": "pillar",
+              "materiality": "high",
+              "disputedProposition": "The CDC has classified thimerosal-containing vaccines as hazardous waste due to their mercury content.",
+              "mustMatch": [
+                "CDC guidelines on hazardous waste",
+                "Mercury content in thimerosal-containing vaccines"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing specific regulatory documentation.",
+                "Discussing unrelated waste classifications."
+              ],
+              "support": "Evidence from CDC guidelines confirming the classification of thimerosal-containing vaccines as hazardous waste.; Documentation of mercury content in thimerosal and its implications.",
+              "refute": "Evidence shows that thimerosal-containing vaccines are not classified as hazardous waste.",
+              "qualify": "The claim is true only under specific regulatory conditions.",
+              "strategy": "primary article or study record, underlying results"
+            },
+            {
+              "claimText": "Parents who choose not to vaccinate are often highly educated and scientifically literate, including medical professionals.",
+              "origin": "model",
+              "articleRole": "pillar_support",
+              "materiality": "medium",
+              "disputedProposition": "Parents who choose not to vaccinate are often highly educated and scientifically literate, including medical professionals.",
+              "mustMatch": [
+                "Survey data on vaccine-hesitant parents",
+                "Educational background statistics of non-vaccinating parents"
+              ],
+              "rejectIfOnly": [
+                "Restating the claim without providing specific educational data verification.",
+                "Discussing unrelated demographics or populations."
+              ],
+              "support": "Evidence from surveys showing that a significant proportion of vaccine-hesitant parents are highly educated.; Documentation of the educational backgrounds of parents who choose not to vaccinate.",
+              "refute": "Evidence shows that vaccine-hesitant parents are not highly educated or scientifically literate.",
+              "qualify": "The claim is true only for specific demographics or regions.",
+              "strategy": "primary article or study record, underlying results"
+            }
+          ]
+        }
+      }
+    },
+    "sectionOrder": [
+      "Profile V",
+      "Profile R",
+      "Profile Q",
+      "Profile J"
+    ]
+  }
+]

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>CF0 Arm Three v2 — Superblind with stance</title>
+<style>body{font:15px/1.45 system-ui,sans-serif;max-width:1100px;margin:32px;color:#172033}pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:18px;background:#f7faff;border:1px solid #cbd5e1;border-radius:8px;font:13px/1.45 ui-monospace,monospace}h1{margin-bottom:4px}.note{color:#52606d}</style>
+</head><body>
+<h1>CF0 Arm Three v2: Superblind + visible stance</h1>
+<p class="note">Proposal only; not run. It supersedes compact-source-posture v1 without altering or deleting that run.</p>
+<h2>Why v1 selected no opponent claims</h2>
+<p>v1’s compact selection instruction treated opponent claims as one preference among many, while F03 supplies many vivid article-endorsed allegations. Its explicit stance step occurs only after selection, so it cannot cause the model to include an opponent claim it did not select. The model therefore spent all eight slots on the article’s affirmative case. Superblind has stronger claim-importance and non-rewrite instructions, so this version retains that selection machinery and adds only a visible stance decision.</p>
+<h2>System message</h2>
+<pre>You read articles and identify the small set of claims that best represents what the article is trying to establish.
+
+Use only the supplied article. Do not fact-check it, correct it with outside knowledge, search for evidence, or decide whether its claims are true.
+
+Return the article’s theme, its central thesis, and 8–12 claims that a person would need to evaluate in order to judge whether the article’s main argument holds up.
+
+Choose claims for importance to the article, not merely because they are easy to search.
+
+Each claim must:
+
+* be understandable without rereading the article;
+* state one clear proposition;
+* make its falsifiability apparent;
+* preserve important names, organizations, dates, quantities, populations, comparisons, uncertainty, and causal strength;
+* remain within the scope actually asserted by the article;
+* make it reasonably clear what evidence could support or refute it.
+
+Do not combine a proposition with the article’s criticism or rebuttal of that proposition.
+
+When the article presents a claim in order to challenge or rebut it, preserve the original proposition as its own claim. Do not replace it with the article’s denial, logical opposite, or response.
+
+Do not turn:
+
+“Organization X says P, but the article argues Q”
+
+into:
+
+“P is false because Q.”
+
+Keep P and Q separate when both are important enough to evaluate.
+
+Include attributed claims when the identity of the speaker, institution, study, report, or document matters. Preserve who supplies the proposition, but do not reduce a substantive claim to the weaker fact that somebody said it.
+
+Prefer direct, ordinary language. Avoid analytical labels, rhetorical descriptions, and phrases such as:
+
+* “the article claims that”;
+* “the author argues that”;
+* “the narrative suggests”;
+* “this raises questions about.”
+
+State the proposition itself unless the act of saying, publishing, concealing, altering, or reporting something is the proposition being tested.
+
+Include central claims involving:
+
+* major factual results;
+* important causal explanations;
+* quantified or statistical findings;
+* named studies, reports, records, or datasets;
+* material allegations of misconduct, concealment, manipulation, or institutional failure;
+* important opponent claims the article attempts to rebut;
+* consequential qualifications, limitations, exceptions, or subgroup findings;
+* factual links that the article needs in order for its evidence to support its conclusion.
+
+Do not include:
+
+* routine methods;
+* incidental background;
+* decorative examples;
+* repeated paraphrases;
+* broad topic summaries;
+* claims that do not materially affect the thesis;
+* filler added merely to reach the requested count.
+
+For each claim, describe briefly:
+
+1. why the claim matters to the article;
+2. what evidence would materially support it;
+3. what evidence would materially refute or seriously weaken it.
+
+The support and refutation descriptions must test the exact same proposition, population, comparison, period, and level of causal strength.
+
+For each selected proposition P, also state the article’s stance toward P:
+
+* advances: the article presents P as part of its own case;
+* reports: the article presents P without taking a clear position;
+* challenges: the article presents P in order to question, qualify, or test it;
+* rejects: the article presents P in order to deny or rebut it.
+
+This is a judgment about how the article uses P, not about who asserted P and not about whether P is true. A non-author source does not automatically make P an opponent claim. When the article gives “Organization X says P” and then disputes P, preserve P and mark challenges or rejects.
+
+Return valid JSON only. Do not include markdown, commentary, or text outside the JSON.</pre>
+<h2>User message</h2>
+<pre>Read the complete article below.
+
+Identify the article’s theme and central thesis, then return the 8–12 clearest and most important factual claims whose evaluation would most affect whether the thesis should be accepted.
+
+Use fewer than 8 only when the article genuinely contains fewer than 8 material, externally testable claims. Do not pad the result.
+
+If more than 12 good claims are available, prefer:
+
+1. claims essential to the thesis;
+2. claims essential to major branches of the argument;
+3. claims that would seriously weaken the article if false;
+4. important opponent claims the article tries to rebut;
+5. major factual results, causal claims, statistics, named-work claims, allegations, qualifications, and limitations.
+
+Return exactly this structure:
+
+{
+"theme": "The broad issue or dispute the article addresses.",
+"thesis": "The article's specific central conclusion.",
+"claims": [
+{
+"claimText": "One clear, self-contained, externally testable proposition.",
+"sourceUnitIds": ["U0001", "U0002"],
+"assertionSource": "The person, institution, document, study, or article voice that supplies this proposition.",
+"articleStance": "advances | reports | challenges | rejects",
+"whyCentral": "One short sentence explaining why evaluating this claim matters to the thesis.",
+"supportWouldLookLike": "A concrete description of evidence that would materially support this exact proposition.",
+"refutationWouldLookLike": "A concrete description of evidence that would contradict or seriously weaken this exact proposition."
+}
+]
+}
+
+Rules:
+
+* Copy source-unit IDs only from the supplied article.
+* Use only the units needed to support the complete claim.
+* Never invent an assertion source.
+* Never merge an opponent proposition with the article’s answer to it.
+* Never negate an opponent proposition merely because the article rejects it.
+* Never weaken a substantive proposition into “someone said it.”
+* Never strengthen an association into causation.
+* Never remove a number, population, comparison, date, qualification, or attribution that determines what the claim means.
+* Write claims for an intelligent general reader, not for the CF1 software.
+* Do not produce search queries, classifications, score transforms, evidence roles, warrants, named-work IDs, diagnostic fields, or verification questions.
+
+Before returning, silently ask:
+
+* Are these the claims a human reader would say the article actually depends on?
+* Is each claim understandable in one reading?
+* Is each claim one proposition rather than a proposition plus commentary?
+* Did I preserve important opponent claims without rewriting them?
+* Would the proposed supporting and refuting evidence genuinely test the same claim?
+* Did I omit any allegation, statistic, causal claim, named study result, or factual hinge whose failure would materially weaken the article?
+
+TITLE:
+
+&lt;ARTICLE_TITLE&gt;
+
+ARTICLE:
+
+&lt;[U0001] ... [U0002] ...&gt;</pre>
+</body></html>

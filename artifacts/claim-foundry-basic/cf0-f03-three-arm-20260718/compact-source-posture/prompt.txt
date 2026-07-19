@@ -1,0 +1,482 @@
+Identify the article's thesis in one sentence. Then return 8–12 factual claims whose evaluation would most affect whether that thesis holds up. Do not pad the list.
+
+For every claim, decide these things in this order:
+
+1. Proposition: write one atomic proposition P that external evidence could support or refute. Preserve its actual polarity, numbers, population, comparison, time period, and causal strength.
+2. Assertion source: identify the person, institution, document, study, or article voice that supplies P. Use the most specific source named in the article; use article_voice only when the author supplies P; use unknown only when the article does not resolve the source.
+3. Article stance: decide whether the article advances P, reports P without taking a position, challenges P, or rejects P.
+4. Grounding: provide only the source-unit IDs needed to ground the complete P.
+5. Evidence task: state what evidence would support P and what evidence would refute or seriously weaken P. Both must test the exact same P.
+
+Important: an opponent claim remains P even when the article challenges or rejects it. Do not replace P with the article's answer, logical opposite, or a blended sentence. Keep an opponent claim and the article's rebuttal separate when each is materially important.
+
+Choose claims for importance to the article's thesis, not for searchability. Prefer major factual results, material allegations, quantified claims, causal explanations, named-study or record claims, and important opponent claims the article attempts to rebut. Exclude incidental background, decorative examples, repeated paraphrases, and broad topic summaries.
+
+ARTICLE TITLE:
+Public Health’s “Truth” About Vaccines PART 1
+
+SOURCE UNITS:
+[U0001] Public Health’s “Truth” About Vaccines
+PART 1
+by Ana Wolpin | Apr 12, 2026 | General | 33 comments
+
+[U0002] “According to the CDC and public health authorities, parents who choose not to vaccinate their children are typically highly educated. CDC data reflect that half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated. Why would the parents of these children, comprising a large part of the nation’s brain trust, choose not to vaccinate their children?”
+
+[U0003] — Aaron Siri, from the foreword of “Vaccines, Amen: The Religion of Vaccines”
+
+[U0004] ———————————————
+
+[U0005] “What’s the Truth about Vaccines?” asked Jefferson County Public Health (JCPH) in a quarter-page ad in the March 11 Port Townsend Leader. The hand-drawn, whimsical cartoon-style presentation and the ad’s content offered a light-hearted attempt to ease parents’ concerns about vaccinating their children.
+
+[U0006] “This is a JUDGEMENT FREE guide to learn about vaccines,” the ad opens with. “You don’t need to have your mind made up to start reading. BRING YOUR CURIOSITY!”
+
+[U0007] Among the statements made:
+
+[U0008] • “Our kids face more challenges to their immune system while playing outside than they do from vaccines.”
+
+[U0009] • “We are exposed to more aluminum by eating a tomato than from getting vaccines!”
+
+[U0010] • “The type of mercury in vaccines – ethylmercury – is NOT harmful to us.”
+
+[U0011] • “So far, there have been no credible studies that link vaccination to chronic disease.”
+
+[U0012] • “Vaccines are tested more than any other medicine you could give your kid.”
+
+[U0013] The health department’s ad comes at a time when childhood vaccination rates are dropping steadily across the country. Along with reduction in vaccine uptake, there is also a rise in the rate of parents seeking vaccine exemptions for their children.
+
+[U0014] In Part 1 of this article, we will explore the growing awareness causing this shift, share some local history on attempts to open up the conversation about vaccines in our community, and examine some of the statements above that our health department has made to reassure parents that they needn’t worry about common vaccination concerns.
+
+[U0015] Three Distinct Attitudes About Vaccination
+
+[U0016] Aaron Siri , quoted at the top of this article, is managing partner of the highest profile law firm handling vaccine-related cases in the U.S. Over the last decade he has deposed the world’s leading vaccinologists, challenged medical mandates, and won awards for vaccine injury cases. He has prosecuted over a hundred lawsuits against health agencies, successfully suing the FDA to release Pfizer and Moderna’s Covid-19 vaccine licensure documents, winning many cases restoring medical exemptions including for the U.S. military, and forcing transparency when the CDC refused to release hidden V-safe data tracking adverse reactions to the Covid-19 shots.
+
+[U0017] In this pursuit, Siri describes experiencing three categories of people:
+
+[U0018] • Parents who do not vaccinate. Parents who choose to forego vaccines, he says, are not only highly educated, but “often scientifically literate. Many are medical professionals. Leading scientists.” He quotes vaccine promoter Emily Brunson, PhD, who acknowledges: “When you look at hesitancy in the U.S., the group who is most likely to purposefully choose to not vaccinate are highly educated. In speaking with them, these are people who have read the primary literature themselves, and they’re correctly interpreting it.”
+
+[U0019] • Parents who do vaccinate. Almost all “have never really thought much about these products… they just go with the flow,” says Siri. “They often do what the media says good parents are expected to do—trust their doctors.” They are, however, open-minded and able to process new information. He finds that their “views are susceptible to change upon presentation of actual evidence.”
+
+[U0020] • The “Vaccines Amen” crowd. For these believers , the story that vaccines are a modern medical miracle — safe and effective! — is a sacred cow. “This is the group of parents, doctors and public health professionals—a small army of them—who have a fervent belief in vaccines,” says Siri. “When these beliefs are challenged, this crowd gets angry.”
+
+[U0021] Unable to “accept even official government data showing that many of their core beliefs regarding vaccines are false,” these zealots are incurious and entrenched. Their fanaticism is faith-based, akin to religious zealotry.
+
+[U0022] “They regurgitate canned answers they have never researched—essentially mantras,” says Siri. At their most extreme, “for those who refuse to adopt their beliefs, they demand that the refusers be censored, have their rights taken away, and be mandated to be injected.”
+
+[U0023] As this article will show, the claims made in our health department’s ad repeat medical dogma that has persisted for decades with no basis in reality. At best the narrative is a wishful fairy tale. At worst it is dangerous disinformation.
+
+[U0024] As Siri expresses, “I think most pediatricians, doctors and public health authorities mean well. They believe they are engaging in God’s work. And that is often the problem that makes them blind to reality.”
+
+[U0025] Is our health department simply “going with the flow,” unaware that the claims made in their ad are mythology? Or are they so entrenched in their fervent belief in the vaccine narrative that they cannot consider information that disproves the gospel?
+
+[U0026] ‘Vaccines Amen’ Bullies and Gatekeepers in Jefferson County
+
+[U0027] In 2016, a documentary film disclosing a decade-long CDC cover-up created an uproar in the news, sparking a long-overdue national conversation. Senior CDC scientist turned whistleblower William Thompson revealed privately in 2014 that data linking the MMR vaccine (measles/mumps/rubella) to autism had been manipulated by the agency ten years earlier.
+
+[U0028] When top CDC officials learned that their 2004 study results showed a dramatic increase in autism after MMR vaccinations, they’d ordered Thompson and other scientists to destroy all evidence. The agency then had the research team revise the study parameters and manipulate the data to disprove a link. Ultimately, the only way they could eliminate the evident risk was to eliminate from the study the groups of children most likely to regress into autism following their shot. The fraudulent, re-worked study was then released to declare that it had proven MMR vaccines did not cause autism.
+
+[U0029] Believing the order to destroy data was illegal, Thompson secretly saved over 10,000 pages of documents. He would reveal them a decade later, conscience-stricken over the likely damage in ongoing vaccine injury the cover-up was causing.
+
+[U0030] The CDC had conducted the study in response to petitions from over 5,000 parents in vaccine court who had witnessed their children regress into autism from the MMR shot. When the fraudulent “results” were released, those petitions were dismissed with the stroke of a pen. The CDC announced: No more research money will be spent on this question; “the science is settled.”
+
+[U0031] This fraud was the subject of the shocking and controversial movie Vaxxed: From Cover-Up to Catastrophe.
+
+[U0032] Scheduled to premier at the Tribeca Film Festival, Big Pharma pressure forced its cancellation. The effort to suppress the film only gave it more publicity and heightened public interest. Screenings across the country opened a floodgate. A tsunami of parents started speaking out about their own children’s vaccine injuries.
+
+[U0033] Working with the film’s distributor and Rose Theatre owner Rocky Friedman, Annette Huenke (now a PTFP co-editor) set up a screening of Vaxxed in Port Townsend. A January 2017 date was set and Huenke wrote the theater a check as a deposit for the screening. Posters were printed and tickets went on sale, posted on the Rose Theatre’s Facebook page.
+
+[U0034] Within 24 hours of the film being announced, the screening which had been planned over months was canceled.
+
+[U0035] Both the Facebook post announcing the film screening and a comment it had generated were quickly pulled from the page. Owen Rowe, then director of the now-defunct Jefferson Community School and board member of the Food Co-op (he is currently a Port Townsend city councilman), was outraged that the theater would dare to screen that “fraudulent film” which he undoubtably had not seen. Before the post was deleted Huenke was alerted to the angry tirade shaming Friedman on the theater’s Facebook page.
+
+[U0036] In an apologetic exchange that Friedman had with Huenke after canceling the film, he said,
+
+[U0037] “I am very sorry that I caved to this and didn’t stand up to it. It was not pleasant for me or for the business that I’ve created. Actually, it was far worse than the death threat that I received when I was intending to show a movie by Michael Moore a long time ago… Please let me reimburse you for whatever expenses you have incurred – posters or other advertising.”
+
+[U0038] Far worse than a death threat?!
+
+[U0039] Self-appointed community gatekeeper Owen Rowe demonstrated the epitome of the angry zealotry that Siri describes. By threatening Friedman and the Rose Theatre, he’d eliminated the heinous possibility of people being exposed to information that challenged his beliefs — effectively demanding censorship to squelch independent thinking.
+
+[U0040] People Who Do the Research
+
+[U0041] Following that dramatic attack and cancellation, I joined a group of local folks concerned about censorship. We formed a vaccine study group that dove into the vaccination question with a great deal of curiosity. We met every week for the better part of a year to discuss books, films and other materials that were challenging the dominant “vaccines are a modern medical miracle” story.
+
+[U0042] The first shock for anyone just beginning this research was learning about the 1986 National Childhood Vaccine Injury Act.
+
+[U0043] In the 1980s, pharmaceutical companies were losing so much money settling lawsuits for vaccine injury (predominantly from the DPT shot – diphtheria/pertussis/tetanus) that the industry threatened to stop making vaccines unless the government shielded them from damages. Bowing to the pressure, in 1986 Congress removed all liability from drug companies for childhood vaccines they produced. This get-out-of-jail-free card, eliminating industry responsibility for safety, was unprecedented.
+
+[U0044] The 1986 act set the stage for the breathtaking industry capture, government cover-ups and bombardment of “safe and effective” messaging that followed.
+
+[U0045] With vaccine makers now absolved of all medical and legal liability when children die, become chronically ill with vaccine-induced disorders, or are otherwise disabled from vaccine injuries, pharma had a field day. Vaccines became Big Pharma’s most profitable product division almost overnight.
+
+[U0046] Not only did profits skyrocket because pharma was shielded from damages, they were guaranteed sales with zero marketing costs. Each new childhood shot approved was automatically added to the CDC’s Childhood Vaccine Schedule, with the assurance that tens of millions of children would receive them at routine pediatric visits. The CDC partnered with pharma as the primary purchaser, distributor and promoter of billions of dollars of vaccines annually.
+
+[U0047] A more-is-better free-for-all ensued.
+
+[U0048] While children had received just five vaccine doses in three shots in the 1950s and ’60s when I was growing up (none during pregnancy or in the first 12 months of life), by 1986 children were receiving 25 doses/12 shots. In the decades following the 1986 act the childhood schedule exploded to 73 doses/54 shots.
+
+[U0049] New vaccines were developed for illnesses like hepatitis B and rotavirus, for which there was little risk and which effectively had 100% survival rates for healthy American children. Mild illnesses which formerly helped strengthen developing infants’ and children’s immune systems were now vaccinated against, all fodder for pharma’s liability-free cash cow.
+
+[U0050] Pregnant mothers were injected, infants started receiving shots on their first day of life, and the practice of administering multiple shots — as many as ten doses in eight shots at one time (never tested in combination) in a euphemistically labeled “Well Child Visit” — became routine.
+
+[U0051] In my childhood years, autism, peanut allergies, ADHD, asthma, and other issues common among children today were virtually nonexistent. Back in the 1950s and ’60s we had some of the world’s healthiest children. It was a rude awakening, especially for those of us in the Baby Boomer generation, to learn that the chronic illness rate in U.S. children which had been negligible when we were kids had jumped to 12.8% in the 1980s, then to 54% by 2011 .
+
+[U0052] More than one in two American children in the 2011 survey had a diagnosed chronic health condition such as an autoimmune disorder, diabetes or obesity, a neurodevelopmental disorder, or a mood or behavioral disorder. Today the percentage is surely even higher, but updated statistics are not available.
+
+[U0053] During my childhood we had one of the best infant mortality rates in the world. But after embarking on the world’s most aggressive vaccination program, the U.S. had twice as many first-day infant deaths as all 27 EU nations combined . An analysis of two decades of U.S. data (1990-2010) showed that infants who received the most vaccines had the worst hospitalization and death rates. And a 2011 study of data from 34 developed nations found that countries giving the least vaccines had the lowest infant mortality. [ source ]
+
+[U0054] With passage of the 1986 act, febrile seizures after vaccination, SIDS, autism, learning disabilities, food allergies and other chronic illnesses became normalized. Today the percentage of children carrying epipens, needing inhalers, and/or taking Ritalin, amphetamines and antidepressants is staggering.
+
+[U0055] Was the rise in all these chronic diseases and even deaths a direct result of the parallel exploding vaccination program? Did correlation equal causation?
+
+[U0056] Following the release of the film Vaxxed , parents came out of the woodwork wanting to share their stories of vaccine injury. The Vaxxed bus was born. Traveling to every U.S. state on the continent, its dedicated team video-taped thousands of stories of vaccine injury and death. More than 8,000 names were signed on the bus’ exterior of adults and children injured or killed by vaccines.
+
+[U0057] The common themes in stories parents recounted were eerie. Many described rushing their infants or toddlers to the ER with convulsions, 105° fevers, horrifying screams and seizures after their shots, only to be told this is normal… we see this all the time… it has nothing to do with the vaccines . In some cases, their children shut down immediately following the shots, stopped making eye contact, lost verbal communication. Others regressed more slowly into autism.
+
+[U0058] The worst were the SIDS (Sudden Infant Death Syndrome) cases. Some within hours of getting vaccinated, and nearly all within a week of their “Well Baby” shots, would be found dead in their cribs after being put down for a nap. More on that below.
+
+[U0059] The HighWire was also launched around that period, hosted by Del Bigtree who had produced Vaxxed . A weekly podcast “dedicated to investigating our food, our air, our water, our drugs and our vaccines, with the mission of identifying and stopping the spread of man-made disease,” it is the media adjunct to the nonprofit Informed Consent Action Network (ICAN) which is responsible for many of the legal actions described earlier.
+
+[U0060] Along with Vaxxed , other films and videos informed our discussion. Trace Amounts , explored the link between the mercury-based preservative thimerosal and autism. The documentary series The Truth About Vaccines covered a wide range of issues, and continues to provide up-to-date information about news in this field.
+
+[U0061] Several groundbreaking books were also published. Among the most important:
+
+[U0062] Thimerosal: The Evidence Supporting the Immediate Removal of Mercury―a Known Neurotoxin―from Vaccines (2015)
+
+[U0063] Robert F. Kennedy, Jr. and and Dr. Mark Hyman examine the research literature on thimerosal, the mercury-based preservative used in vaccines;
+
+[U0064] Miller’s Review of Critical Vaccine Studies: 400 Important Scientific Papers Summarized for Parents and Researchers (2016)
+
+[U0065] Neil Z. Miller provides a comprehensive and organized compilation of peer-reviewed research on vaccine issues which dispel many of the myths about vaccine safety; and
+
+[U0066] Dissolving Illusions: Disease, Vaccines, and the Forgotten History (2013)
+
+[U0067] Dr. Suzanne Humphries and Roman Bystrianyk shatter traditional medical dogma about vaccines in a detailed inspection of historical data from the 1800s onward. Updated in 2024.
+
+[U0068] Our group learned about the suppressed 1999 study linking thimerosal in vaccines to neurodevelopmental disorders and to the exponentially-increasing autism rates, which as in the MMR/autism study, resulted in the CDC secretly reworking the data to cover up the association. It was a strategy we would see employed whenever findings challenged the “safe and effective” narrative.
+
+[U0069] We became aware of other toxic ingredients in vaccines as well as serious issues regarding safety testing. A further revelation involved suppressed studies comparing vaccinated children to unvaccinated.
+
+[U0070] These, along with more recent developments, will be expanded on below and in Part 2, with the examination of JCPH’s claims.
+
+[U0071] At the same time that decades of fraud, false narratives and industry capture were being exposed, the pharma-medical-industrial complex was aggressively pushing to eliminate all challenges to the vaccine narrative.
+
+[U0072] Pharma-funded politicians were advancing legislation to remove people’s religious and personal medical vaccine exemptions, and to deny children who were out of compliance with the CDC schedule access to public schools. We saw doctors and scientists who raised concerns about vaccine dangers get persecuted with a vengeance by the industry-controlled medical establishment. Any MD challenging the safe and effective narrative — even just for authorizing vaccine exemptions for patients — was attacked, marginalized, and in some cases lost their licenses.
+
+[U0073] By the time our vaccine study group wrapped up our research, over one hundred legislative bills were pending to eradicate vaccination choice in forty states, foreshadowing the Covid insanity to come.
+
+[U0074] Our group considered ways to broaden the conversation locally. We decided:
+
+[U0075] 1) to seek another venue to host a screening of Vaxxed , and
+
+[U0076] 2) to develop a study guide to share our research more broadly.
+
+[U0077] Given the sacred cow nature of the vaccine narrative, and the Rose Theatre experience, we knew there would be resistance.
+
+[U0078] What we got was full-blown censorship.
+
+[U0079] The Next Round of Gatekeeping and Censorship
+
+[U0080] The Uptown Theater was going through renovations and closed during this time period, so there was no possibility of Vaxxed showing there. But in addition to theater runs, viewings of the film were happening in gatherings all over the U.S. through an organization called Gathr. We reached out to local churches in an effort to find an alternative venue.
+
+[U0081] There, too, we were met with refusals. Not even the Unity Church or Quimper Unitarian would allow the film to be shown.
+
+[U0082] Over a period of several months our group developed a vaccine study guide — VACCINATION: Where there is Risk, there must be Choice . The guide summarized basic information being suppressed, providing an overview and starting point for anyone interested in researching the subject for themselves.
+
+[U0083] We created a print version of the guide, and working with the Port Townsend Leader ’s advertising manager, arranged to pay for its inclusion as an insert in the newspaper. We were told that as long as our information was credibly sourced and could be confirmed through Google Scholar, it would be acceptable.
+
+[U0084] Everything in the guide was meticulously documented — including CDC links, National Library of Medicine studies, and vaccine package inserts — all substantiated through Google Scholar. However when Publisher Lloyd Mullen was given a copy, his note of rejection was swift:
+
+[U0085] “Unfortunately, we will not be able to print or insert your flyer in our newspaper.
+
+[U0086] The reason: correlation does not imply causation.”
+
+[U0087] Once again, allowing people to consider varied perspectives and then make up their own minds was not permitted. Mullen, representing democracy’s supposed Fourth Estate, was our community’s ultimate gatekeeper. This censorship was applied even when we submitted letters to the editor about vaccines. Our opinions , if they challenged local health authorities, were not allowed on the OPINION page.
+
+[U0088] Stephen Schumacher (also a PTFP co-editor now) would experience the same censorship several years later regarding the experimental mRNA Covid vaccines. First the Leader refused to print his and other community members’ letters to the editor if they challenged public health’s Covid messaging. Then, when Schumacher attempted to pay for ad space, that, too, was censored — a “business decision” he was told (see Of Covid Testing, “Misinformation” and Censorship ).
+
+[U0089] An online version of our study guide is still posted. It contains even more information than the print guide did, with over 150 links to information and resources — articles, studies, videos and data. Many links, like youtube videos, have since been scrubbed, but current sources are linked throughout this article.
+
+[U0090] While the material covered in our 2017 guide thoroughly debunked the old talking points still being trotted out today by Jefferson County Public Health, nine years later the research is even more damning.
+
+[U0091] The devastating Covid psy-op perpetrated on a trusting public shook up many health professionals, causing them to question what other lies they’d been fed. Once they started digging into the larger vaccine narrative, the depth of betrayal in what they’d been trained to accept as gospel was profound.
+
+[U0092] As John Leake and renowned cardiologist Dr. Peter McCullough explained in their 2025 book “Vaccines Mythology, Ideology, and Reality” :
+
+[U0093] “Prior to 2020, we had never questioned the sacred cow of vaccines. It was only in 2020, when we observed the stupendous chicanery of the COVID-19 rollout, that we began to wonder about the entire vaccine enterprise. Since then we have methodically studied the literature on vaccination…”
+
+[U0094] Investigations by formerly pro-vax doctors, scientists and researchers who had never considered questioning vaccine gospel have generated a whole new wave of exposés. Some of the information shared below is from new voices like these.
+
+[U0095] The health department asked that you BRING YOUR CURIOSITY.
+
+[U0096] We invite them to do likewise.
+
+[U0097] Again quoting Aaron Siri’s forward in Vaccines, Amen :
+
+[U0098] “You are about to learn things you can never unlearn.”
+
+[U0099] Examining Public Health’s “Truths” About Vaccines
+
+[U0100] Let’s now consider the claims in Jefferson County Public Health’s ad. Following each cartoon panel’s question and our health department’s answers are the facts.
+
+[U0101] Immune System Challenges?
+
+[U0102] “I heard that giving too many vaccines at a time can overwhelm my kid’s immune system.”
+It’s natural to be worried about how much our kids can handle. The truth is, a child’s immune system can handle a lot!
+Our kids face more challenges to their immune system while playing outside than they do from vaccines.
+
+[U0103] THE FACTS:
+
+[U0104] “Prior to the introduction of organized vaccination programs, ‘crib death’ was so rare that it was not mentioned in infant mortality statistics… By 1972, SIDS had become the leading cause of post-neonatal mortality (infant deaths occurring between 28 days and 1 year of life) in the United States.”
+
+[U0105] — Neil Z. Miller,
+
+[U0106] “Vaccines and sudden infant death: An analysis of the VAERS database 1990–2019 and review of the medical literature”
+
+[U0107] The death of any child is tragic. The sudden death of a formerly-thriving child is shocking. It was not until mass vaccination that the term SIDS — Sudden Infant Death Syndrome — even existed. SIDS is the most extreme example of how vaccines can sometimes overwhelm a child’s immune system.
+
+[U0108] Does correlation imply causation? Historically, parents had not been finding healthy babies unexpectedly dead in their cribs hours after “playing outside.” But that was the experience of some parents following vaccination.
+
+[U0109] As Neil Z. Miller observes above, following the introduction of national vaccination programs in the U.S., SIDS became the leading cause of infant mortality.
+
+[U0110] Like other dangers associated with vaccination, health authorities sought to explain away this new phenomenon. In his 2021 report “Vaccines and sudden infant death: An analysis of the VAERS database 1990–2019 and review of the medical literature,” Miller explains:
+
+[U0111] “Throughout the 1980s, sudden infant deaths continued to skyrocket. Parental concerns about an apparent link between childhood vaccines and SIDS reached a fever pitch. Many parents were afraid to vaccinate their babies. Authorities sought to reassure parents that vaccines are safe and claimed that sudden unexplained infant deaths (SUID) following vaccines were merely coincidental.”
+
+[U0112] New diagnoses were concocted, and sudden deaths were reclassified, a common strategy used by health authorities to obscure associations with vaccine damage. Even infants who showed extreme distress following injection — screaming, having seizures, collapsing, then dying within hours of their shots — were not classified as vaccine-induced deaths.
+
+[U0113] In a “Back to Sleep” campaign, parents were told that their babies’ sleeping position was the culprit — that they needed to be laid on their backs, not face down. In some cases, parents were subjected to investigations for child abuse, blaming their child’s sudden death on another new phenomenon, Shaken Baby Syndrome . Adverse reactions commonly seen after vaccination — extreme irritability, lethargy, poor feeding, breathing problems, convulsions, vomiting, and pale or bluish skin — were identified as symptoms resulting from parents violently shaking their babies.
+
+[U0114] Miller analyzed 2,605 deaths reported to the Vaccine Adverse Events Reporting System (VAERS) between 1990 and 2019. Of these, 17% of deaths occurred on the day of vaccination and 48 percent within two days. A full 78.3 percent occurred within seven days post-vaccination. All coincidences?
+
+[U0115] So how do impacts from vaccines being injected in children compare to environmental exposures they face when “playing outside”?
+
+[U0116] Humans have evolved for millennia playing in the dirt and being exposed to pathogens in the environment. The immune challenges a child faces in nature are met by a series of complex defenses. Four layers of the immune system come into play: skin, mucous membranes, lymphatic and blood.
+
+[U0117] As described by Thomas Cowan, MD, in “Vaccines, Autoimmunity, and the Changing Nature of Childhood Illness “:
+
+[U0118] “When we are healthy, enzymes in the mouth, acid in the stomach, and microbes in the lower gut will often destroy pathogens. If a pathogen escapes these first lines of digestive defense, then the villi will prevent their access to the bloodstream. If the villi are compromised, we have the physical barrier of the smooth muscular layer of the intestinal wall. In health, these systems function together to screen pathogens from the bloodstream. They are, in essence, guardians of our health.”
+
+[U0119] An intramuscular injection bypasses all these intricate protective mechanisms, sending the needle’s contents directly into the bloodstream. And often across the blood-brain barrier as well.
+
+[U0120] Looking at how vaccines can cause sudden infant death, Miller notes that “several theories regarding the pathogenic mechanism behind these fatal events have been proposed.” They include:
+
+[U0121] • inflammatory cytokines;
+
+[U0122] • toxic adjuvants (such as aluminum) that cross the blood-brain barrier; and
+
+[U0123] • biochemical or synergistic toxicity due to multiple vaccines administered concurrently.
+
+[U0124] This graphic illustrates one of these mechanisms — how toxic adjuvants (in this case aluminum) are transported by macrophages across the blood-brain barrier (BBB).
+
+[U0125] If a single vaccine can cause SIDS in a small percentage of babies, how many children might have damage on a lesser scale from the dozens of shots received in just the first year of life? Typically a “Well Baby Visit” consists of numerous vaccines all administered on the same day.
+
+[U0126] Parents are rightly concerned that multiple shots in one visit compounds the risk. As many as ten doses given in eight shots are now routine in pediatric practices.
+
+[U0127] An example is the six month “Well Baby Visit.” The CDC schedule calls for 6-month-olds to be injected with DTaP (diphtheria/tetanus/pertussis), Hib (haemophilus influenza type B), HepB (hepatitis B), PCV (pneumococcal), IPV (polio), Influenza (seasonal flu), Rotavirus, and COVID-19 vaccines.
+
+[U0128] As shown in this guide, those administering the vaccines are instructed on how to inject multiple shots into every limb.
+
+[U0129] It is true that “a child’s immune system can handle a lot”…
+
+[U0130] …but injecting the toxic load of a vaccine directly into a developing infant’s bloodstream, bypassing the body’s layered natural defenses, cannot even begin to compare to natural processes engaged when “playing outside.”
+
+[U0131] ———————————————
+
+[U0132] Dangerous Chemicals in Vaccines?
+
+[U0133] “Aren’t there DANGEROUS chemicals in vaccines?
+Are they even safe?”
+Let’s take a look at some ingredients that can make folks nervous:
+[1] ALUMINUM
+Aluminum occurs naturally in the air, water and soil.
+We are exposed to more aluminum by eating a tomato than from getting vaccines!
+
+[U0134] THE FACTS / ALUMINUM:
+
+[U0135] “Our calculations show that the levels of aluminum suggested by the currently used limits place infants at risk of acute, repeated, and possibly chronic exposures of toxic levels of aluminum in modern vaccine schedules.”
+
+[U0136] —James Lyons-Weiler and Robert Ricketson,
+
+[U0137] “Reconsideration of the immunotherapeutic pediatric safe dose levels of aluminum”
+
+[U0138] Folks SHOULD be nervous about aluminum being used in vaccines. Just because it “occurs naturally” does not mean a substance is safe. While aluminum is the most abundant metal in the earth’s crust, it is tightly bound with other elements like silica, and not bioavailable. It has no physiological role in the body, and whether ingested, inhaled or injected, isolated aluminum is toxic.
+
+[U0139] Eating or drinking aluminum can be harmful, but both the digestive system and the liver are able to filter it before it reaches the bloodstream, affording some degree of protection. Injecting aluminum through a vaccination bypasses these protections, placing it directly into the bloodstream.
+
+[U0140] Regarding the aluminum in that tomato, according to Physicians for Informed Consent :
+
+[U0141] “The ATSDR [Agency for Toxic Substances and Disease Registry] oral aluminum limit is based on 0.1% of oral aluminum being absorbed into the bloodstream, as the digestive tract blocks nearly all oral aluminum (Fig. 2a). In contrast, aluminum injected intramuscularly bypasses the digestive tract, and 100% of aluminum may be absorbed into the bloodstream over time (i.e.,the proportion of absorbed aluminum is 1,000 times greater).” [ source ]
+
+[U0142] Aluminum is used in many childhood vaccines like HepB as an adjuvant, to provoke an immune response. It is known to cause brain damage at all doses. Aluminum poisoning has been linked to autism, SIDs, seizures, autoimmune issues, Alzheimers, neurological damage, impaired renal function, demyelinating disorders such as MS, and cancer. [ source ]
+
+[U0143] In the mid-1900s, the FDA established a maximum limit of 850 mcg (0.85 mg) of aluminum per vaccine dose. Then, based on a 1997 study of preterm infants receiving intravenous-feeding solutions, a safe level of exposure for injectables was shown to be a small fraction of that 850 mcg. Safety limits were now set for neonates at 4-5 mcg per kilogram of body weight, limited to  25  mcg aluminum per day (by regulation 21 CFR 201.323).
+
+[U0144] All injectable drug products were subject to this new limit… but not vaccines. Vaccines inexplicably remained at the 850 mcg limit.
+
+[U0145] The package insert for the Recombivax HB (HepB) vaccine shows its formulation contains 0.5 mg (500 mcg) of aluminum, with residual formaldehyde:
+
+[U0146] RECOMBIVAX HB® Hepatitis B Vaccine (Recombinant)
+
+[U0147] Suspension for intramuscular injection
+
+[U0148] Initial U.S. Approval: 1983
+
+[U0149] All formulations contain approximately 0.5 mg of aluminum (provided as amorphous aluminum hydroxyphosphate sulfate, previously referred to as aluminum hydroxide) per mL of vaccine. In each formulation, hepatitis B surface antigen is adsorbed onto approximately 0.5 mg of aluminum (provided as amorphous aluminum hydroxyphosphate sulfate) per mL of vaccine. The vaccine contains &lt;15 mcg/mL residual formaldehyde.
+
+[U0150] The other HepB vaccine available for infants, Engerix, contains 250 mcg of aluminum. These vaccines are injected at birth, usually on day one, then again at 2 months and 6 months.
+
+[U0151] Manufacturer label information shows similar aluminum content in other childhood vaccines:
+
+[U0152] DTaP – 330-625 mcg. Administered at 2 months, 4 months, 6 months, 18 months, and 4 years.
+
+[U0153] HiB – 225 mcg. Administered at 2 months, 4 months, 6 months, and 12 months.
+
+[U0154] HPV – 500 mcg. Administered at 9 years, 10 years, 11 years.
+
+[U0155] Current vaccination schedules in which multiple shots are administered in a single visit exceed even the 850 mcg limit. For parents following the CDC schedule, aluminum injected at the 2-, 4-, and 6-month “Well Baby Visits” can exceed 1000 mcg. The CDC has NEVER safety tested this cumulative load received in multiple shots. Physicians for Informed Consent show aluminum content for the childhood vaccines:
+
+[U0156] Why does the 25 mcg limit apply for other injectables but not vaccines?
+
+[U0157] The mid-1900s study that determined the 850 mcg limit may present the answer to that question. The purpose of that study was not to determine safety — it was to find out the amount of aluminum needed to provoke an immune response. A 1947 document related to the manufacture of diphtheria toxoid states, “In all instances, the amount of aluminum used shall be the minimum needed to accomplish the purpose intended.”
+
+[U0158] In “ Reconsideration of the immunotherapeutic pediatric safe dose levels of aluminum,” James Lyons-Weiler and Robert Ricketson note (my emphasis):
+
+[U0159] “FDA regulations require safety testing of constituent ingredients in drugs (21 CFR 610.15). With the exception of extraneous proteins, no component safety testing is required for vaccines or vaccine schedules. The dosing of aluminum in vaccines is based on the production of antibody titers, not safety science .”
+
+[U0160] If an adjuvant does not create an inflammatory response and antibodies are not produced, the vaccine essentially does not work at all. Given that aluminum in vaccines is in the hundreds of micrograms, it would appear that at levels which might be considered safe — 25 mcg or less — the adjuvant is unable to stimulate the production of antibodies.
+
+[U0161] And if antibodies are not produced, a vaccine cannot provide any protection against the disease targeted by the vaccine. It will not “accomplish the purpose intended.”
+
+[U0162] Therefore, the allowable dose “was based on immunological considerations — not on data demonstrating this amount to be non-toxic when injected into children. The limit was never intended to indicate an amount of aluminum that could be considered harmless to children.”
+
+[U0163] At the 4-5 mcg per kilogram of body weight or total 25 mcg per day limit applied in 1997 to other injectables, the aluminum load in even one shot should not be permissible. In The Vaccine-Friendly Plan , pediatrician Paul Thomas discusses the 250 mcg dose of aluminum in a single HepB shot:
+
+[U0164] “If your baby weighs 7 pounds at birth (approximately 3 kilograms), the FDA stipulations suggest that the maximum safe dose for that newborn is 15 micrograms, sixteen times less than what is given in one hepatitis B vaccine. Since infants may not be able to effectively rid their bodies of aluminum, the truth is that no amount of aluminum is safe. By giving infants this shot, according to the FDA’s own calculations, we are literally poisoning them.”
+
+[U0165] ————————————
+
+[U0166] [2] MERCURY
+The type of mercury in vaccines – ethylmercury – is NOT harmful to us. It prevents microbial growth in multi-dose vaccines.
+No childhood vaccines contain mercury.
+
+[U0167] THE FACTS / MERCURY:
+
+[U0168] “[Thimerosal] is toxic… Mutagenic in mammalian cells.“
+
+[U0169] May cause “decreased offspring survival, and offspring nervous system effects including mild to severe mental retardation and motor coordination impairment.”
+
+[U0170] —from the manufacturer’s Material Safety Data Sheet
+
+[U0171] “Comparing toxicity in two forms of mercury is like comparing the benefits of being shot with a .38 caliber bullet rather than a .45 caliber bullet. Most people would prefer Door #3: no bullet at all.”
+
+[U0172] —Gavin de Becker,
+
+[U0173] “Forbidden Facts: Government Deceit & Suppression About Brain Damage from Childhood Vaccines”
+
+[U0174] Entire books have debunked the absurd statement “ethylmercury is NOT harmful to us.”
+
+[U0175] Mercury is the third most toxic element on earth, 500 times more poisonous than lead. Thimerosal is the trade name for the 50% ethylmercury solution used since the 1930s as a preservative in vaccines. Contrary to our health department’s claim, it is highly neurotoxic — dangerous enough to cause “decreased offspring survival” as Eli Lilly was required by law to disclose in its Material Safety Data Sheet for thimerosal.
+
+[U0176] New works have expanded on Robert F. Kennedy, Jr’s 2015 book on thimerosal mentioned earlier, not least the unexpected perspective of internationally recognized criminologist Gavin de Becker, quoted above. More than a review of the scientific literature, his best-seller Forbidden Facts: Government Deceit & Suppression About Brain Damage from Childhood Vaccines , documents how government, industry and academia routinely conspired to create a false narrative and deceive the public.
+
+[U0177] De Becker begins his chapter on mercury with this definition:
+
+[U0178] “A silvery white poisonous metallic element used in batteries and in the preparation of chemical pesticides.”
+
+[U0179] He continues,
+
+[U0180] “…and in vaccines given to children and pregnant women.”
+
+[U0181] Injected ethylmercury has been shown to deposit in the brain and other organs far more readily than the much-publicized methylmercury in fish, which pregnant women are warned to avoid.
+
+[U0182] A 2005 University of Washington study funded by National Institutes of Health compared brain mercury levels from injected ethylmercury (thimerosal) to equal amounts of orally ingested methylmercury. The study demonstrated that while ingested methylmercury generally remains in the bloodstream, injected thimerosal crosses the placenta and blood brain barriers at high levels. This is the exact mechanism Miller described in the SIDS report above, and shown in the illustration regarding aluminum.
+
+[U0183] Once deposited in the brain, thimerosal converts to inorganic mercury and remains trapped there, resulting in neuroinflammation. Autism and other neurological disorders are associated with this accumulated mercury in the brain.
+
+[U0184] Our health department tells us that thimerosal “is NOT harmful to us,” while also assuring us that it’s not in childhood vaccines. If it is so harmless, why would it have been removed from them?
+
+[U0185] That brings us to the seminal study about a possible link between thimerosal and autism mentioned earlier. In 1999 the CDC commissioned epidemiologist Dr. Thomas Verstraeten to do a study to put to rest concerns about thimerosal causing autism. The findings were so alarming—infants exposed to high levels of thimerosal during their first month of life had 7.6 times higher risk of autism diagnosis than their unexposed peers—that a secret emergency meeting was convened.
+
+[U0186] To avoid public scrutiny the June 2000 emergency meeting was not held at the CDC headquarters in Atlanta, but instead at the Simpsonwood Retreat Center in Norcross, Georgia. CDC and other government officials, university experts and pharma reps spent two days discussing the problems raised by this study and strategizing how they would hide the results from the public.
+
+[U0187] “The number of dose related relationships [between mercury and autism] are linear and statistically significant,” said Dr. William Weil from the American Academy of Pediatrics. “You can play with this all you want. They are linear. They are statistically significant.”
+
+[U0188] The attendees were then asked What should we do now?
+
+[U0189] The group identified as consultants “were unanimous in saying that additional research was needed.” An immunologist told the assembled participants that he’d just taken an emergency call in which he’d advised his daughter-in-law who had delivered his first grandchild not to accept any mercury-laced vaccines. Given the risk, his family was not going to get any of those shots.
+
+[U0190] At the end of day two, Dr. John Clements from the WHO’s Expanded Program on Immunization summed up the elephant in the room — any information leaking to the public that could lead to vaccine hesitancy was not permissible:
+
+[U0191] “My mandate as I sit here in this group is to make sure at the end of the day that 100,000,000 are immunized with DTP, Hepatitis B and if possible Hib, this year, next year and for many years to come, and that will have to be with Thimerosal containing vaccines unless a miracle occurs and an alternative is found quickly and is tried and found to be safe. So I leave you with the challenge that I am very concerned that this has gotten this far, and that having got this far, how you present in a concerted voice the information to the ACIP in a way they will be able to handle it and not get exposed to the traps which are out there in public relations.”
+
+[U0192] Given the “sensitivity of information,” sharing information outside that room was “embargoed”. Every page of the study was stamped “DO NOT COPY OR RELEASE” and “CONFIDENTIAL”. The full transcript of the Simpsonwood meeting was later obtained through a FOIA request.
+
+[U0193] Findings from the original Verstraeten Study shown above — “Increased Risk of Developmental Neurological Impairment after High Exposure to Thimerosal-Containing Vaccines in the First Month of Life” — never saw the light of day. Instead the CDC “massaged” the data and in 2003 released a reworked, fraudulent version of the study loudly trumpeting that thimerosal did not cause autism and other neurodevelomental problems. It’s the same playbook that CDC whistleblower William Thompson exposed decades later regarding the CDC’s study of the MMR vaccine and autism.
+
+[U0194] De Becker notes that the CDC, FDA and vaccine-makers came up with a “magnificently creative idea” to explain away “that ethylmercury was somehow not toxic”:
+
+[U0195] “They began to float a new idea: that ethylmercury is way different from other forms of mercury. Sure, it’s mercury — but it’s the gentle, benign, happy-baby mercury that’s not worth worrying about.”
+
+[U0196] The CDC’s cover-up of thimerosal’s toxicity included statements like:
+
+[U0197] “Thimerosal contains ethylmercury, which is cleared from the human body more quickly than methylmercury, and is therefore less likely to cause any harm.”
+
+[U0198] “The human body eliminates thimerosal easily. Thimerosal does not stay in the body a long time so it does not build up and reach harmful levels.”
+
+[U0199] Thimerosal has never been demonstrated to clear the body . As in the 2005 study mentioned above, as well as a more recent 2012 study by Croatian researchers, when thimerosal is injected it clears the bloodstream quicker than the ingested methylmercury in fish because rather than being filtered and excreted, the tiny ethylmercury molecules travel to vital organs and the brain. And while most of ingested methylmercury is excreted in a matter of weeks, injected ethylmercury in thimerosal metabolizes to the deadliest form of mercury known, inorganic mercury, and remains in the brain and organs for decades. As with lead poisoning, mercury loads are cumulative. [ more info ]
+
+[U0200] While the CDC refused to admit publicly that thimerosal in shots is neurotoxic, the US Public Health Service and American Academy of Pediatrics did call for the immediate removal of thimerosal from infant vaccines.
+
+[U0201] The CDC’s mantra “Mercury in Vaccines does NOT Cause Autism” persisted on their website and in other information they disseminated… at the same time announcing that mercury would be removed from childhood vaccines. Vaccine manufacturers were told to quietly phase out thimerosal from the childhood schedule, but stocks of existing thimerosal-preserved vaccines continued to be administered over a two-year period until they were used up.
+
+[U0202] As in the HepB vaccine mentioned previously, the new and improved thimerosal-free formulations typically substituted toxic aluminum for the toxic mercury.
+
+[U0203] While no longer in most infant vaccines, thimerosal has NOT vanished from the childhood schedule as claimed. It is still used in some flu shots and other vaccines. So in addition to fetal exposure in utero from flu and other shots given to pregnant mothers, children following the CDC’s vaccination schedule play the mercury lottery twenty times, getting their flu shots at 6 months, 7 months, one year, then annually every year until they’re 18.
+
+[U0204] RFK Jr’s 2015 compilation of hundreds of peer-reviewed studies erases any doubt that thimerosal is a potent neurotoxin that causes neurological damage, from tics to autism. In de Becker’s more recent research of the scientific literature, newer studies continue to show that exposure to ethylmercury can cause neurological injury, developmental problems, impaired language skills, and autism. The last review he cites is a meta-analysis:
+
+[U0205] “This review found 91 studies that examine the potential relationship between mercury and ASD autism from 1999 to February 2016. Of these studies, the vast majority (74%) suggest that mercury is a risk factor for ASD [Autism Spectrum Disorder], revealing both direct and indirect effects. The preponderance of the evidence indicates that mercury exposure is causal and/or contributory in ASD.”
+
+[U0206] He further notes that studies that denied a risk were nearly always generated by the groups promoting vaccination, rarely by independent researchers.
+
+[U0207] The claim by health agencies that injected ethylmercury is benign becomes even more inconceivable in light of the fact that the EPA classifies the thimerosal in vaccines as toxic hazardous waste . The limit for mercury in drinking water is set at 200 parts per billion per the EPA’s Toxicity Characteristic Leaching Procedure (TCLP). The mercury in multi-dose flu shots preserved with thimerosal, injected directly into the body, is 250 times higher— 50,000 parts per billion.
+
+[U0208] Thimerosal as a Vaccine Preservative , a summary prepared in 2025 for the CDC’s Advisory Committee for Immunization Practices (ACIP), notes that “thimerosal-containing vaccines exceed the TCLP threshold by orders of magnitude and are classified as D009 Hazardous Waste.”
+
+[U0209] PharmEcology’s Disposal Guidelines for the 2025-2026 Flu Season spells out:
+
+[U0210] “[A]ny vaccine waste containing thimerosal as a preservative should be managed as a toxic hazardous waste. As a result, all full or partially used multi-dose vials of the seasonal flu vaccine should be disposed of as federally hazardous waste, waste code D009 for mercury.”
+
+[U0211] Shocking as it sounds, had the mercury-laden childhood vaccines that were phased out from 2000 to 2002 not been injected into babies and children, pharma would have been required to dispose of them as hazardous waste. But Jefferson County Public Health tells us that injecting that same thimerosal into developing infants is perfectly safe.
+
+[U0212] In the UK, Denmark, Austria, Japan, Russia, and all Scandinavian countries, vaccine makers are not permitted to use thimerosal in any childhood vaccines, including flu shots.
+
+[U0213] Criminologist De Becker observes that if the CDC’s patently false statements about thimerosal—the same ones made by our health department—were given under oath, the claimants would be accused of perjury.
+
+[U0214] ————————————
+
+[U0215] Sadly, aluminum and mercury are not the only toxic substances in vaccines. Among other dangerous additives that should “make folks nervous” are:
+
+[U0216] Polysorbate 80. A surfactant (emulsifier) that enables other substances in vaccines like aluminum and mercury to cross the blood-brain barrier. It is linked to infertility, known to cause cancer, and banned from injectables in most of Europe.
+
+[U0217] Phenol/2-Phenoxyethanol. A germicide and potential allergen, used as a preservative. Neurotoxic and may cause lung and liver irritation, hormone disruption, and kidney and nerve damage;
+
+[U0218] Formaldehyde. Another preservative. Commonly used to embalm bodies, it is classified by both the National Toxicology Program and the International Agency for Research on Cancer as a known human carcinogen. It also oxidizes into formic acid, a neurotoxin which can damage both the liver and the kidneys.
+
+[U0219] Our vaccine study group’s 2017 guide provides an overview of the many ingredients disclosed in package inserts as well as undisclosed contaminants found in childhood shots:
+
+[U0220] The DTaP vaccine provides a good example of the toxic soup typically injected in just one shot.
+
+[U0221] From the 16-page package insert of Infanrix, a DTaP vaccine “indicated for active immunization against diphtheria, tetanus, and pertussis as a 5-dose series in infants and children aged 6 weeks through 6 years”:
+
+[U0222] Along with other chemicals, DTaP formulations contain aluminum, formaldehyde and polysorbate 80. The polysorbate 80 helps deliver the aluminum into the brain and other organs; the formaldehyde has the potential to damage the liver and kidneys, as well as cause cancer. Depending on the manufacturer, the DTaP shot may also include bovine extract, monkey kidney tissue (suspected to contain SV-40, a cancer-causing virus), and neomycin sulfate or polymyxin B, both antibiotics.
+
+[U0223] At the core of the vaccine narrative, the notion that a vaccine only contains a small amount of virus, bacteria or other antigen in a neutral solution to mimic natural disease is a fairy tale. In any product except vaccines, injecting toxic metals and chemicals into children and most especially pregnant women and developing babies — at levels far beyond safe limits established by regulatory agencies — would be considered criminal.
+
+[U0224] ———————————————
+
+[U0225] Part 2 will discuss the remaining claims in our health department’s ad. Are there “no credible studies that link vaccination to chronic disease” ? Is it true that “vaccines are tested more than any other medicine you could give your kid” ?
+
+[U0226] We will also share Jefferson County Public Health’s response to questions we sent them about the ad, including a request for sources/evidence to support their claims.
+
+[U0227] Finally, we’ll take a look at the rise in vaccine hesitancy that may have provoked JCPH’s creation of this ad, and at challenges being made to the CDC’s current childhood vaccine schedule. Efforts to rein in pharma’s capture of health agencies, medical groups and the vaccine narrative are causing a pitched battle, and the institutions entrenched in the religion of vaccines are doubling down to maintain their control.

@@ -1,0 +1,44 @@
+[
+  {
+    "arm": "Simple",
+    "claims": 8,
+    "usage": {
+      "prompt_tokens": 10969,
+      "completion_tokens": 1038,
+      "total_tokens": 12007,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "audio_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      }
+    },
+    "promptSha256": "6a5768acf2d50e4938631efc11b97b66e570867cfe8aba12302247fc73fadb39",
+    "review": "simple/review.html"
+  },
+  {
+    "arm": "Superblind",
+    "claims": 8,
+    "usage": {
+      "prompt_tokens": 12937,
+      "completion_tokens": 1142,
+      "total_tokens": 14079,
+      "prompt_tokens_details": {
+        "cached_tokens": 0,
+        "audio_tokens": 0
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 0,
+        "audio_tokens": 0,
+        "accepted_prediction_tokens": 0,
+        "rejected_prediction_tokens": 0
+      }
+    },
+    "promptSha256": "43ee513e0f1462ef0be0cc81b94821f9bd4db4eab410082bdecfbc2e0993aa85",
+    "review": "superblind/review.html"
+  }
+]

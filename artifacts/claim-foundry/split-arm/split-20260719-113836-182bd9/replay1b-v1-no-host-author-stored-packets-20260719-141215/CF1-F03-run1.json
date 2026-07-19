@@ -1,0 +1,4699 @@
+{
+  "fixtureId": "CF1-F03",
+  "repeat": 1,
+  "seed": 3724605090,
+  "status": "completed",
+  "result": {
+    "inventory": {
+      "theme": {
+        "text": "The article critiques public health narratives surrounding vaccines, suggesting they are based on misinformation and lack of transparency.",
+        "sourceUnitIds": [
+          "U0001"
+        ]
+      },
+      "thesis": {
+        "text": "Public health claims about vaccines are misleading and not supported by credible evidence, leading to a dangerous narrative that ignores potential vaccine-related health issues.",
+        "sourceUnitIds": [
+          "U0001"
+        ]
+      },
+      "pillars": [
+        {
+          "label": "Vaccine Safety",
+          "text": "The safety of vaccines and their ingredients, including aluminum and mercury, is questioned.",
+          "importance": "load_bearing",
+          "sourceUnitIds": [
+            "U0241",
+            "U0300"
+          ]
+        },
+        {
+          "label": "Vaccine Efficacy",
+          "text": "The effectiveness of vaccines and the claims made by public health authorities regarding their safety and necessity are disputed.",
+          "importance": "load_bearing",
+          "sourceUnitIds": [
+            "U0002",
+            "U0003"
+          ]
+        },
+        {
+          "label": "Public Health Messaging",
+          "text": "The communication strategies used by public health officials to promote vaccination are critiqued as misleading and potentially harmful.",
+          "importance": "major",
+          "sourceUnitIds": [
+            "U0005",
+            "U0006"
+          ]
+        },
+        {
+          "label": "Censorship and Information Control",
+          "text": "The article discusses instances of censorship regarding vaccine-related information and the suppression of dissenting views.",
+          "importance": "major",
+          "sourceUnitIds": [
+            "U0064",
+            "U0148"
+          ]
+        }
+      ],
+      "thesisHinge": "mixed",
+      "candidateClaims": [
+        {
+          "claimText": "Half of American school children are not fully vaccinated.",
+          "sourceUnitIds": [
+            "U0002"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Efficacy"
+          ],
+          "scope": "population",
+          "evidenceUsefulnessHint": "Vaccination rates from CDC or similar health organizations.",
+          "articleRole": "pillar",
+          "assertionSource": "CDC and public health authorities",
+          "articleUse": "opponent_to_rebut"
+        },
+        {
+          "claimText": "At least 1 in 88 toddlers are completely unvaccinated.",
+          "sourceUnitIds": [
+            "U0002"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Efficacy"
+          ],
+          "scope": "population",
+          "evidenceUsefulnessHint": "Statistics from health surveys or CDC data.",
+          "articleRole": "pillar",
+          "assertionSource": "CDC and public health authorities",
+          "articleUse": "opponent_to_rebut"
+        },
+        {
+          "claimText": "The CDC announced that no more research money would be spent on the question of vaccines causing autism, claiming 'the science is settled.'",
+          "sourceUnitIds": [
+            "U0046"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Public Health Messaging"
+          ],
+          "scope": "policy",
+          "evidenceUsefulnessHint": "Official CDC statements or funding allocations.",
+          "articleRole": "pillar",
+          "assertionSource": "CDC",
+          "articleUse": "reported"
+        },
+        {
+          "claimText": "The health department's ad claims that vaccines are tested more than any other medicine.",
+          "sourceUnitIds": [
+            "U0012"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Public Health Messaging"
+          ],
+          "scope": "policy",
+          "evidenceUsefulnessHint": "Comparative studies on vaccine testing protocols.",
+          "articleRole": "opponent_claim",
+          "assertionSource": "health department",
+          "articleUse": "opponent_to_rebut"
+        },
+        {
+          "claimText": "The health department's ad states that there have been no credible studies linking vaccination to chronic disease.",
+          "sourceUnitIds": [
+            "U0011"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Public Health Messaging"
+          ],
+          "scope": "policy",
+          "evidenceUsefulnessHint": "Research studies on vaccination and chronic disease.",
+          "articleRole": "opponent_claim",
+          "assertionSource": "health department",
+          "articleUse": "opponent_to_rebut"
+        },
+        {
+          "claimText": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+          "sourceUnitIds": [
+            "U0297"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Safety"
+          ],
+          "scope": "ingredient",
+          "evidenceUsefulnessHint": "Toxicological studies on ethylmercury.",
+          "articleRole": "opponent_claim",
+          "assertionSource": "unknown",
+          "articleUse": "opponent_to_rebut"
+        },
+        {
+          "claimText": "Aluminum is used in many childhood vaccines as an adjuvant to provoke an immune response.",
+          "sourceUnitIds": [
+            "U0253"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Safety"
+          ],
+          "scope": "ingredient",
+          "evidenceUsefulnessHint": "Vaccine ingredient lists and studies on aluminum's effects.",
+          "articleRole": "opponent_claim",
+          "assertionSource": "unknown",
+          "articleUse": "reported"
+        },
+        {
+          "claimText": "The CDC has never safety tested the cumulative aluminum load received in multiple shots.",
+          "sourceUnitIds": [
+            "U0279"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Safety"
+          ],
+          "scope": "policy",
+          "evidenceUsefulnessHint": "CDC safety testing protocols and vaccine studies.",
+          "articleRole": "opponent_claim",
+          "assertionSource": "unknown",
+          "articleUse": "reported"
+        },
+        {
+          "claimText": "SIDS became the leading cause of infant mortality following the introduction of national vaccination programs in the U.S.",
+          "sourceUnitIds": [
+            "U0198"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Efficacy"
+          ],
+          "scope": "historical",
+          "evidenceUsefulnessHint": "Infant mortality statistics and SIDS rates over time.",
+          "articleRole": "opponent_claim",
+          "assertionSource": "Neil Z.",
+          "articleUse": "reported"
+        },
+        {
+          "claimText": "The CDC manipulated data to disprove a link between MMR vaccines and autism.",
+          "sourceUnitIds": [
+            "U0041"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Public Health Messaging"
+          ],
+          "scope": "policy",
+          "evidenceUsefulnessHint": "Investigative reports or whistleblower testimonies.",
+          "articleRole": "opponent_claim",
+          "assertionSource": "unknown",
+          "articleUse": "reported"
+        },
+        {
+          "claimText": "Thimerosal is toxic and has been linked to neurological damage.",
+          "sourceUnitIds": [
+            "U0308"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Safety"
+          ],
+          "scope": "ingredient",
+          "evidenceUsefulnessHint": "Toxicological studies on thimerosal.",
+          "articleRole": "opponent_claim",
+          "assertionSource": "unknown",
+          "articleUse": "reported"
+        },
+        {
+          "claimText": "The CDC's claim that thimerosal is not harmful is contradicted by its classification as toxic hazardous waste.",
+          "sourceUnitIds": [
+            "U0367"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Safety"
+          ],
+          "scope": "policy",
+          "evidenceUsefulnessHint": "EPA regulations on hazardous waste and thimerosal.",
+          "articleRole": "opponent_claim",
+          "assertionSource": "unknown",
+          "articleUse": "reported"
+        }
+      ]
+    },
+    "arm": "undefined-replay1b-no-host-author-candidates",
+    "budget": {
+      "call1bCandidateMaximum": 16,
+      "finalPortfolioMinimum": 10,
+      "finalPortfolioMaximum": 12
+    },
+    "selector": {
+      "selectedClaims": [
+        {
+          "claimText": "Half of American school children are not fully vaccinated.",
+          "sourceUnitIds": [
+            "U0002"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Efficacy"
+          ],
+          "scope": "population",
+          "evidenceUsefulnessHint": "Vaccination rates from CDC or similar health organizations.",
+          "groundingSpan": "clustered",
+          "_groundingSpanMetrics": {
+            "groundingSpan": "clustered",
+            "unitSpan": 0,
+            "maxGap": 0,
+            "passageCount": 1,
+            "passages": [
+              {
+                "start": 2,
+                "end": 2
+              }
+            ]
+          }
+        },
+        {
+          "claimText": "At least 1 in 88 toddlers are completely unvaccinated.",
+          "sourceUnitIds": [
+            "U0002"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Efficacy"
+          ],
+          "scope": "population",
+          "evidenceUsefulnessHint": "Statistics from health surveys or CDC data.",
+          "groundingSpan": "clustered",
+          "_groundingSpanMetrics": {
+            "groundingSpan": "clustered",
+            "unitSpan": 0,
+            "maxGap": 0,
+            "passageCount": 1,
+            "passages": [
+              {
+                "start": 2,
+                "end": 2
+              }
+            ]
+          }
+        },
+        {
+          "claimText": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+          "sourceUnitIds": [
+            "U0297"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Safety"
+          ],
+          "scope": "ingredient",
+          "evidenceUsefulnessHint": "Toxicological studies on ethylmercury.",
+          "groundingSpan": "clustered",
+          "_groundingSpanMetrics": {
+            "groundingSpan": "clustered",
+            "unitSpan": 0,
+            "maxGap": 0,
+            "passageCount": 1,
+            "passages": [
+              {
+                "start": 297,
+                "end": 297
+              }
+            ]
+          }
+        },
+        {
+          "claimText": "Aluminum is used in many childhood vaccines as an adjuvant to provoke an immune response.",
+          "sourceUnitIds": [
+            "U0253"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Safety"
+          ],
+          "scope": "ingredient",
+          "evidenceUsefulnessHint": "Vaccine ingredient lists and studies on aluminum's effects.",
+          "groundingSpan": "clustered",
+          "_groundingSpanMetrics": {
+            "groundingSpan": "clustered",
+            "unitSpan": 0,
+            "maxGap": 0,
+            "passageCount": 1,
+            "passages": [
+              {
+                "start": 253,
+                "end": 253
+              }
+            ]
+          }
+        },
+        {
+          "claimText": "The CDC has never safety tested the cumulative aluminum load received in multiple shots.",
+          "sourceUnitIds": [
+            "U0279"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Safety"
+          ],
+          "scope": "policy",
+          "evidenceUsefulnessHint": "CDC safety testing protocols and vaccine studies.",
+          "groundingSpan": "clustered",
+          "_groundingSpanMetrics": {
+            "groundingSpan": "clustered",
+            "unitSpan": 0,
+            "maxGap": 0,
+            "passageCount": 1,
+            "passages": [
+              {
+                "start": 279,
+                "end": 279
+              }
+            ]
+          }
+        },
+        {
+          "claimText": "SIDS became the leading cause of infant mortality following the introduction of national vaccination programs in the U.S.",
+          "sourceUnitIds": [
+            "U0198"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Efficacy"
+          ],
+          "scope": "historical",
+          "evidenceUsefulnessHint": "Infant mortality statistics and SIDS rates over time.",
+          "groundingSpan": "clustered",
+          "_groundingSpanMetrics": {
+            "groundingSpan": "clustered",
+            "unitSpan": 0,
+            "maxGap": 0,
+            "passageCount": 1,
+            "passages": [
+              {
+                "start": 198,
+                "end": 198
+              }
+            ]
+          }
+        },
+        {
+          "claimText": "The CDC manipulated data to disprove a link between MMR vaccines and autism.",
+          "sourceUnitIds": [
+            "U0041"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Public Health Messaging"
+          ],
+          "scope": "policy",
+          "evidenceUsefulnessHint": "Investigative reports or whistleblower testimonies.",
+          "groundingSpan": "clustered",
+          "_groundingSpanMetrics": {
+            "groundingSpan": "clustered",
+            "unitSpan": 0,
+            "maxGap": 0,
+            "passageCount": 1,
+            "passages": [
+              {
+                "start": 41,
+                "end": 41
+              }
+            ]
+          }
+        },
+        {
+          "claimText": "Thimerosal is toxic and has been linked to neurological damage.",
+          "sourceUnitIds": [
+            "U0308"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Safety"
+          ],
+          "scope": "ingredient",
+          "evidenceUsefulnessHint": "Toxicological studies on thimerosal.",
+          "groundingSpan": "clustered",
+          "_groundingSpanMetrics": {
+            "groundingSpan": "clustered",
+            "unitSpan": 0,
+            "maxGap": 0,
+            "passageCount": 1,
+            "passages": [
+              {
+                "start": 308,
+                "end": 308
+              }
+            ]
+          }
+        },
+        {
+          "claimText": "The CDC's claim that thimerosal is not harmful is contradicted by its classification as toxic hazardous waste.",
+          "sourceUnitIds": [
+            "U0367"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Safety"
+          ],
+          "scope": "policy",
+          "evidenceUsefulnessHint": "EPA regulations on hazardous waste and thimerosal.",
+          "groundingSpan": "clustered",
+          "_groundingSpanMetrics": {
+            "groundingSpan": "clustered",
+            "unitSpan": 0,
+            "maxGap": 0,
+            "passageCount": 1,
+            "passages": [
+              {
+                "start": 367,
+                "end": 367
+              }
+            ]
+          }
+        },
+        {
+          "claimText": "The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80.",
+          "sourceUnitIds": [
+            "U0392"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Safety"
+          ],
+          "scope": "ingredient",
+          "evidenceUsefulnessHint": "Vaccine package inserts and ingredient lists.",
+          "groundingSpan": "clustered",
+          "_groundingSpanMetrics": {
+            "groundingSpan": "clustered",
+            "unitSpan": 0,
+            "maxGap": 0,
+            "passageCount": 1,
+            "passages": [
+              {
+                "start": 392,
+                "end": 392
+              }
+            ]
+          }
+        },
+        {
+          "claimText": "The CDC partnered with pharma as the primary purchaser, distributor, and promoter of billions of dollars of vaccines annually.",
+          "sourceUnitIds": [
+            "U0077"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Public Health Messaging"
+          ],
+          "scope": "policy",
+          "evidenceUsefulnessHint": "Financial reports or contracts between CDC and pharmaceutical companies.",
+          "groundingSpan": "clustered",
+          "_groundingSpanMetrics": {
+            "groundingSpan": "clustered",
+            "unitSpan": 0,
+            "maxGap": 0,
+            "passageCount": 1,
+            "passages": [
+              {
+                "start": 77,
+                "end": 77
+              }
+            ]
+          }
+        },
+        {
+          "claimText": "The childhood vaccination schedule has increased from 5 doses in the 1950s to 73 doses by 2016.",
+          "sourceUnitIds": [
+            "U0080"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Efficacy"
+          ],
+          "scope": "historical",
+          "evidenceUsefulnessHint": "Historical vaccination schedules and CDC data.",
+          "groundingSpan": "clustered",
+          "_groundingSpanMetrics": {
+            "groundingSpan": "clustered",
+            "unitSpan": 0,
+            "maxGap": 0,
+            "passageCount": 1,
+            "passages": [
+              {
+                "start": 80,
+                "end": 80
+              }
+            ]
+          }
+        },
+        {
+          "claimText": "The rise in chronic illnesses among children correlates with the increase in vaccination rates.",
+          "sourceUnitIds": [
+            "U0096"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Vaccine Efficacy"
+          ],
+          "scope": "population",
+          "evidenceUsefulnessHint": "Epidemiological studies on chronic illness rates and vaccination.",
+          "groundingSpan": "clustered",
+          "_groundingSpanMetrics": {
+            "groundingSpan": "clustered",
+            "unitSpan": 0,
+            "maxGap": 0,
+            "passageCount": 1,
+            "passages": [
+              {
+                "start": 96,
+                "end": 96
+              }
+            ]
+          }
+        },
+        {
+          "claimText": "The CDC announced that no more research money would be spent on the question of vaccines causing autism, claiming 'the science is settled.'",
+          "sourceUnitIds": [
+            "U0046"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Public Health Messaging"
+          ],
+          "scope": "policy",
+          "evidenceUsefulnessHint": "Official CDC statements or funding allocations.",
+          "groundingSpan": "clustered",
+          "_groundingSpanMetrics": {
+            "groundingSpan": "clustered",
+            "unitSpan": 0,
+            "maxGap": 0,
+            "passageCount": 1,
+            "passages": [
+              {
+                "start": 46,
+                "end": 46
+              }
+            ]
+          }
+        },
+        {
+          "claimText": "The health department's ad claims that vaccines are tested more than any other medicine.",
+          "sourceUnitIds": [
+            "U0012"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Public Health Messaging"
+          ],
+          "scope": "policy",
+          "evidenceUsefulnessHint": "Comparative studies on vaccine testing protocols.",
+          "groundingSpan": "clustered",
+          "_groundingSpanMetrics": {
+            "groundingSpan": "clustered",
+            "unitSpan": 0,
+            "maxGap": 0,
+            "passageCount": 1,
+            "passages": [
+              {
+                "start": 12,
+                "end": 12
+              }
+            ]
+          }
+        },
+        {
+          "claimText": "The health department's ad states that there have been no credible studies linking vaccination to chronic disease.",
+          "sourceUnitIds": [
+            "U0011"
+          ],
+          "materiality": "high",
+          "relatedPillarLabels": [
+            "Public Health Messaging"
+          ],
+          "scope": "policy",
+          "evidenceUsefulnessHint": "Research studies on vaccination and chronic disease.",
+          "groundingSpan": "clustered",
+          "_groundingSpanMetrics": {
+            "groundingSpan": "clustered",
+            "unitSpan": 0,
+            "maxGap": 0,
+            "passageCount": 1,
+            "passages": [
+              {
+                "start": 11,
+                "end": 11
+              }
+            ]
+          }
+        }
+      ],
+      "selected": [
+        {
+          "index": 0,
+          "claimText": "Half of American school children are not fully vaccinated.",
+          "reason": "pillar_coverage",
+          "region": 0
+        },
+        {
+          "index": 1,
+          "claimText": "At least 1 in 88 toddlers are completely unvaccinated.",
+          "reason": "materiality_then_source_order",
+          "region": 0
+        },
+        {
+          "index": 2,
+          "claimText": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+          "reason": "materiality_then_source_order",
+          "region": 2
+        },
+        {
+          "index": 3,
+          "claimText": "Aluminum is used in many childhood vaccines as an adjuvant to provoke an immune response.",
+          "reason": "pillar_coverage",
+          "region": 1
+        },
+        {
+          "index": 4,
+          "claimText": "The CDC has never safety tested the cumulative aluminum load received in multiple shots.",
+          "reason": "source_region_coverage",
+          "region": 2
+        },
+        {
+          "index": 6,
+          "claimText": "SIDS became the leading cause of infant mortality following the introduction of national vaccination programs in the U.S.",
+          "reason": "source_region_coverage",
+          "region": 1
+        },
+        {
+          "index": 7,
+          "claimText": "The CDC manipulated data to disprove a link between MMR vaccines and autism.",
+          "reason": "materiality_then_source_order",
+          "region": 0
+        },
+        {
+          "index": 8,
+          "claimText": "Thimerosal is toxic and has been linked to neurological damage.",
+          "reason": "materiality_then_source_order",
+          "region": 2
+        },
+        {
+          "index": 9,
+          "claimText": "The CDC's claim that thimerosal is not harmful is contradicted by its classification as toxic hazardous waste.",
+          "reason": "materiality_then_source_order",
+          "region": 2
+        },
+        {
+          "index": 11,
+          "claimText": "The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80.",
+          "reason": "materiality_then_source_order",
+          "region": 2
+        },
+        {
+          "index": 12,
+          "claimText": "The CDC partnered with pharma as the primary purchaser, distributor, and promoter of billions of dollars of vaccines annually.",
+          "reason": "materiality_then_source_order",
+          "region": 0
+        },
+        {
+          "index": 13,
+          "claimText": "The childhood vaccination schedule has increased from 5 doses in the 1950s to 73 doses by 2016.",
+          "reason": "materiality_then_source_order",
+          "region": 0
+        },
+        {
+          "index": 14,
+          "claimText": "The rise in chronic illnesses among children correlates with the increase in vaccination rates.",
+          "reason": "materiality_then_source_order",
+          "region": 0
+        },
+        {
+          "index": 15,
+          "claimText": "The CDC announced that no more research money would be spent on the question of vaccines causing autism, claiming 'the science is settled.'",
+          "reason": "materiality_then_source_order",
+          "region": 0
+        },
+        {
+          "index": 17,
+          "claimText": "The health department's ad claims that vaccines are tested more than any other medicine.",
+          "reason": "materiality_then_source_order",
+          "region": 0
+        },
+        {
+          "index": 18,
+          "claimText": "The health department's ad states that there have been no credible studies linking vaccination to chronic disease.",
+          "reason": "pillar_coverage",
+          "region": 0
+        }
+      ],
+      "deferred": [
+        {
+          "index": 5,
+          "claimText": "The sudden death of a formerly-thriving child is shocking and was not common before mass vaccination.",
+          "reason": "call1b_budget"
+        },
+        {
+          "index": 10,
+          "claimText": "Polysorbate 80 is linked to infertility and cancer and is banned from injectables in most of Europe.",
+          "reason": "call1b_budget"
+        },
+        {
+          "index": 16,
+          "claimText": "The CDC's narrative about vaccines being safe and effective is described as a 'wishful fairy tale' by critics.",
+          "reason": "call1b_budget"
+        },
+        {
+          "index": 19,
+          "claimText": "The rise in vaccine hesitancy may have provoked the health department's creation of the ad.",
+          "reason": "call1b_budget"
+        }
+      ],
+      "coverage": {
+        "sourceRegionsRepresented": [
+          0,
+          1,
+          2
+        ],
+        "sourceRegionCount": 3,
+        "candidateCount": 20,
+        "selectedCount": 16,
+        "complete": true
+      }
+    },
+    "finalArticleCoverageRange": {
+      "blockIds": [
+        "B032",
+        "B033"
+      ],
+      "sourceUnitIds": [
+        "U0377",
+        "U0378",
+        "U0379",
+        "U0380",
+        "U0381",
+        "U0382",
+        "U0383",
+        "U0384",
+        "U0385",
+        "U0386",
+        "U0387",
+        "U0388",
+        "U0389",
+        "U0390",
+        "U0391",
+        "U0392",
+        "U0393",
+        "U0394",
+        "U0395",
+        "U0396",
+        "U0397",
+        "U0398",
+        "U0399",
+        "U0400",
+        "U0401",
+        "U0402",
+        "U0403",
+        "U0404"
+      ],
+      "firstUnitId": "U0377",
+      "lastUnitId": "U0404"
+    },
+    "hostSignals": [
+      {
+        "claimText": "Half of American school children are not fully vaccinated.",
+        "origin": "candidate",
+        "candidateId": "CAND01",
+        "contentStance": "contradicts_thesis",
+        "articleDeployment": "reported_neutral",
+        "attributionContextUnitIds": [],
+        "assertionSourceUnitIds": [],
+        "assertionSourceResolution": null,
+        "sourceCandidateStatus": "not_evaluated",
+        "sourceCandidates": [],
+        "mergedCandidateIds": [
+          "CAND01"
+        ],
+        "mergedSourceUnitIds": [],
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "institutional",
+        "scoreTransform": "invert"
+      },
+      {
+        "claimText": "At least 1 in 88 toddlers are completely unvaccinated.",
+        "origin": "candidate",
+        "candidateId": "CAND02",
+        "contentStance": "contradicts_thesis",
+        "articleDeployment": "reported_neutral",
+        "attributionContextUnitIds": [],
+        "assertionSourceUnitIds": [],
+        "assertionSourceResolution": null,
+        "sourceCandidateStatus": "not_evaluated",
+        "sourceCandidates": [],
+        "mergedCandidateIds": [
+          "CAND02"
+        ],
+        "mergedSourceUnitIds": [],
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "institutional",
+        "scoreTransform": "invert"
+      },
+      {
+        "claimText": "The CDC announced that no more research money would be spent on the question of vaccines causing autism, claiming 'the science is settled.'",
+        "origin": "candidate",
+        "candidateId": "CAND14",
+        "contentStance": "supports_thesis",
+        "articleDeployment": "reported_neutral",
+        "attributionContextUnitIds": [],
+        "assertionSourceUnitIds": [],
+        "assertionSourceResolution": null,
+        "sourceCandidateStatus": "not_evaluated",
+        "sourceCandidates": [],
+        "mergedCandidateIds": [
+          "CAND14"
+        ],
+        "mergedSourceUnitIds": [],
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "institutional",
+        "scoreTransform": "normal"
+      },
+      {
+        "claimText": "The health department's ad claims that vaccines are tested more than any other medicine.",
+        "origin": "candidate",
+        "candidateId": "CAND15",
+        "contentStance": "contradicts_thesis",
+        "articleDeployment": "reported_neutral",
+        "attributionContextUnitIds": [],
+        "assertionSourceUnitIds": [],
+        "assertionSourceResolution": null,
+        "sourceCandidateStatus": "not_evaluated",
+        "sourceCandidates": [],
+        "mergedCandidateIds": [
+          "CAND15"
+        ],
+        "mergedSourceUnitIds": [],
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "institutional",
+        "scoreTransform": "invert"
+      },
+      {
+        "claimText": "The health department's ad states that there have been no credible studies linking vaccination to chronic disease.",
+        "origin": "candidate",
+        "candidateId": "CAND16",
+        "contentStance": "contradicts_thesis",
+        "articleDeployment": "reported_neutral",
+        "attributionContextUnitIds": [],
+        "assertionSourceUnitIds": [],
+        "assertionSourceResolution": null,
+        "sourceCandidateStatus": "not_evaluated",
+        "sourceCandidates": [],
+        "mergedCandidateIds": [
+          "CAND16"
+        ],
+        "mergedSourceUnitIds": [],
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "institutional",
+        "scoreTransform": "invert"
+      },
+      {
+        "claimText": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+        "origin": "candidate",
+        "candidateId": "CAND03",
+        "contentStance": "contradicts_thesis",
+        "articleDeployment": "reported_neutral",
+        "attributionContextUnitIds": [],
+        "assertionSourceUnitIds": [],
+        "assertionSourceResolution": null,
+        "sourceCandidateStatus": "not_evaluated",
+        "sourceCandidates": [],
+        "mergedCandidateIds": [
+          "CAND03"
+        ],
+        "mergedSourceUnitIds": [],
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "author_voice",
+        "scoreTransform": "invert"
+      },
+      {
+        "claimText": "Aluminum is used in many childhood vaccines as an adjuvant to provoke an immune response.",
+        "origin": "candidate",
+        "candidateId": "CAND04",
+        "contentStance": "supports_thesis",
+        "articleDeployment": "reported_neutral",
+        "attributionContextUnitIds": [],
+        "assertionSourceUnitIds": [],
+        "assertionSourceResolution": null,
+        "sourceCandidateStatus": "not_evaluated",
+        "sourceCandidates": [],
+        "mergedCandidateIds": [
+          "CAND04"
+        ],
+        "mergedSourceUnitIds": [],
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "author_voice",
+        "scoreTransform": "normal"
+      },
+      {
+        "claimText": "The CDC has never safety tested the cumulative aluminum load received in multiple shots.",
+        "origin": "candidate",
+        "candidateId": "CAND05",
+        "contentStance": "supports_thesis",
+        "articleDeployment": "reported_neutral",
+        "attributionContextUnitIds": [],
+        "assertionSourceUnitIds": [],
+        "assertionSourceResolution": null,
+        "sourceCandidateStatus": "not_evaluated",
+        "sourceCandidates": [],
+        "mergedCandidateIds": [
+          "CAND05"
+        ],
+        "mergedSourceUnitIds": [],
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "author_voice",
+        "scoreTransform": "normal"
+      },
+      {
+        "claimText": "SIDS became the leading cause of infant mortality following the introduction of national vaccination programs in the U.S.",
+        "origin": "candidate",
+        "candidateId": "CAND06",
+        "contentStance": "supports_thesis",
+        "articleDeployment": "reported_neutral",
+        "attributionContextUnitIds": [],
+        "assertionSourceUnitIds": [],
+        "assertionSourceResolution": null,
+        "sourceCandidateStatus": "not_evaluated",
+        "sourceCandidates": [],
+        "mergedCandidateIds": [
+          "CAND06"
+        ],
+        "mergedSourceUnitIds": [],
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "author_voice",
+        "scoreTransform": "normal"
+      },
+      {
+        "claimText": "The CDC manipulated data to disprove a link between MMR vaccines and autism.",
+        "origin": "candidate",
+        "candidateId": "CAND07",
+        "contentStance": "supports_thesis",
+        "articleDeployment": "reported_neutral",
+        "attributionContextUnitIds": [],
+        "assertionSourceUnitIds": [],
+        "assertionSourceResolution": null,
+        "sourceCandidateStatus": "not_evaluated",
+        "sourceCandidates": [],
+        "mergedCandidateIds": [
+          "CAND07"
+        ],
+        "mergedSourceUnitIds": [],
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "author_voice",
+        "scoreTransform": "normal"
+      },
+      {
+        "claimText": "Thimerosal is toxic and has been linked to neurological damage.",
+        "origin": "candidate",
+        "candidateId": "CAND08",
+        "contentStance": "supports_thesis",
+        "articleDeployment": "reported_neutral",
+        "attributionContextUnitIds": [],
+        "assertionSourceUnitIds": [],
+        "assertionSourceResolution": null,
+        "sourceCandidateStatus": "not_evaluated",
+        "sourceCandidates": [],
+        "mergedCandidateIds": [
+          "CAND08"
+        ],
+        "mergedSourceUnitIds": [],
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "author_voice",
+        "scoreTransform": "normal"
+      },
+      {
+        "claimText": "The CDC's claim that thimerosal is not harmful is contradicted by its classification as toxic hazardous waste.",
+        "origin": "candidate",
+        "candidateId": "CAND09",
+        "contentStance": "supports_thesis",
+        "articleDeployment": "reported_neutral",
+        "attributionContextUnitIds": [],
+        "assertionSourceUnitIds": [],
+        "assertionSourceResolution": null,
+        "sourceCandidateStatus": "not_evaluated",
+        "sourceCandidates": [],
+        "mergedCandidateIds": [
+          "CAND09"
+        ],
+        "mergedSourceUnitIds": [],
+        "responseUnitIds": [],
+        "needsSplit": {
+          "split": false,
+          "reason": null
+        },
+        "groundingSpan": "clustered",
+        "assertionSourceClass": "author_voice",
+        "scoreTransform": "normal"
+      }
+    ],
+    "censusDiagnostic": {
+      "status": "available",
+      "packets": [
+        {
+          "censusId": "CEN001",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0002"
+          ],
+          "unitOrder": 1,
+          "unitType": "quotation",
+          "text": "“According to the CDC and public health authorities, parents who choose not to vaccinate their children are typically highly educated. CDC data reflect that half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated. Why would the parents of these children, comprising a large part of the nation’s brain trust, choose not to vaccinate their children?”"
+        },
+        {
+          "censusId": "CEN002",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0005"
+          ],
+          "unitOrder": 4,
+          "unitType": "quotation",
+          "text": "“What’s the Truth about Vaccines?” asked Jefferson County Public Health (JCPH) in a quarter-page ad in the March 11 Port Townsend Leader. The hand-drawn, whimsical cartoon-style presentation and the ad’s content offered a light-hearted attempt to ease parents’ concerns about vaccinating their children."
+        },
+        {
+          "censusId": "CEN003",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0006"
+          ],
+          "unitOrder": 5,
+          "unitType": "quotation",
+          "text": "“This is a JUDGEMENT FREE guide to learn about vaccines,” the ad opens with. “You don’t need to have your mind made up to start reading. BRING YOUR CURIOSITY!”"
+        },
+        {
+          "censusId": "CEN004",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0026"
+          ],
+          "unitOrder": 25,
+          "unitType": "quotation",
+          "text": "“They regurgitate canned answers they have never researched—essentially mantras,” says Siri. At their most extreme, “for those who refuse to adopt their beliefs, they demand that the refusers be censored, have their rights taken away, and be mandated to be injected.”"
+        },
+        {
+          "censusId": "CEN005",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0027"
+          ],
+          "unitOrder": 26,
+          "unitType": "sentence",
+          "text": "As this article will show, the claims made in our health department’s ad repeat medical dogma that has persisted for decades with no basis in reality."
+        },
+        {
+          "censusId": "CEN006",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0033"
+          ],
+          "unitOrder": 32,
+          "unitType": "sentence",
+          "text": "Is our health department simply “going with the flow,” unaware that the claims made in their ad are mythology?"
+        },
+        {
+          "censusId": "CEN007",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0034"
+          ],
+          "unitOrder": 33,
+          "unitType": "sentence",
+          "text": "Or are they so entrenched in their fervent belief in the vaccine narrative that they cannot consider information that disproves the gospel?"
+        },
+        {
+          "censusId": "CEN008",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0053"
+          ],
+          "unitOrder": 52,
+          "unitType": "sentence",
+          "text": "A January 2017 date was set and Huenke wrote the theater a check as a deposit for the screening."
+        },
+        {
+          "censusId": "CEN009",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0059"
+          ],
+          "unitOrder": 58,
+          "unitType": "sentence",
+          "text": "In an apologetic exchange that Friedman had with Huenke after canceling the film, he said,"
+        },
+        {
+          "censusId": "CEN010",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0060"
+          ],
+          "unitOrder": 59,
+          "unitType": "quotation",
+          "text": "“I am very sorry that I caved to this and didn’t stand up to it. It was not pleasant for me or for the business that I’ve created. Actually, it was far worse than the death threat that I received when I was intending to show a movie by Michael Moore a long time ago… Please let me reimburse you for whatever expenses you have incurred – posters or other advertising.”"
+        },
+        {
+          "censusId": "CEN011",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0076"
+          ],
+          "unitOrder": 75,
+          "unitType": "sentence",
+          "text": "Each new childhood shot approved was automatically added to the CDC’s Childhood Vaccine Schedule, with the assurance that tens of millions of children would receive them at routine pediatric visits."
+        },
+        {
+          "censusId": "CEN012",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0095"
+          ],
+          "unitOrder": 94,
+          "unitType": "sentence",
+          "text": "Was the rise in all these chronic diseases and even deaths a direct result of the parallel exploding vaccination program?"
+        },
+        {
+          "censusId": "CEN013",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0096"
+          ],
+          "unitOrder": 95,
+          "unitType": "sentence",
+          "text": "Did correlation equal causation?"
+        },
+        {
+          "censusId": "CEN014",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0102"
+          ],
+          "unitOrder": 101,
+          "unitType": "sentence",
+          "text": "Many described rushing their infants or toddlers to the ER with convulsions, 105° fevers, horrifying screams and seizures after their shots, only to be told this is normal… we see this all the time… it has nothing to do with the vaccines ."
+        },
+        {
+          "censusId": "CEN015",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0130"
+          ],
+          "unitOrder": 129,
+          "unitType": "sentence",
+          "text": "These, along with more recent developments, will be expanded on below and in Part 2, with the examination of JCPH’s claims."
+        },
+        {
+          "censusId": "CEN016",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0135"
+          ],
+          "unitOrder": 134,
+          "unitType": "sentence",
+          "text": "By the time our vaccine study group wrapped up our research, over one hundred legislative bills were pending to eradicate vaccination choice in forty states, foreshadowing the Covid insanity to come."
+        },
+        {
+          "censusId": "CEN017",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0151"
+          ],
+          "unitOrder": 150,
+          "unitType": "sentence",
+          "text": "We were told that as long as our information was credibly sourced and could be confirmed through Google Scholar, it would be acceptable."
+        },
+        {
+          "censusId": "CEN018",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0154"
+          ],
+          "unitOrder": 153,
+          "unitType": "quotation",
+          "text": "“Unfortunately, we will not be able to print or insert your flyer in our newspaper."
+        },
+        {
+          "censusId": "CEN019",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0162"
+          ],
+          "unitOrder": 161,
+          "unitType": "sentence",
+          "text": "Then, when Schumacher attempted to pay for ad space, that, too, was censored — a “business decision” he was told (see Of Covid Testing, “Misinformation” and Censorship )."
+        },
+        {
+          "censusId": "CEN020",
+          "kind": "challenge_signal",
+          "signals": [
+            "challenge_signal"
+          ],
+          "sourceUnitIds": [
+            "U0166"
+          ],
+          "unitOrder": 165,
+          "unitType": "sentence",
+          "text": "While the material covered in our 2017 guide thoroughly debunked the old talking points still being trotted out today by Jefferson County Public Health, nine years later the research is even more damning."
+        },
+        {
+          "censusId": "CEN021",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0170"
+          ],
+          "unitOrder": 169,
+          "unitType": "sentence",
+          "text": "Peter McCullough explained in their 2025 book “Vaccines Mythology, Ideology, and Reality” :"
+        },
+        {
+          "censusId": "CEN022",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0171"
+          ],
+          "unitOrder": 170,
+          "unitType": "quotation",
+          "text": "“Prior to 2020, we had never questioned the sacred cow of vaccines. It was only in 2020, when we observed the stupendous chicanery of the COVID-19 rollout, that we began to wonder about the entire vaccine enterprise. Since then we have methodically studied the literature on vaccination…”"
+        },
+        {
+          "censusId": "CEN023",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0177"
+          ],
+          "unitOrder": 176,
+          "unitType": "quotation",
+          "text": "“You are about to learn things you can never unlearn.”"
+        },
+        {
+          "censusId": "CEN024",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0179"
+          ],
+          "unitOrder": 178,
+          "unitType": "sentence",
+          "text": "Let’s now consider the claims in Jefferson County Public Health’s ad."
+        },
+        {
+          "censusId": "CEN025",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0181"
+          ],
+          "unitOrder": 180,
+          "unitType": "sentence",
+          "text": "Immune System Challenges?"
+        },
+        {
+          "censusId": "CEN026",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0187"
+          ],
+          "unitOrder": 186,
+          "unitType": "quotation",
+          "text": "“Prior to the introduction of organized vaccination programs, ‘crib death’ was so rare that it was not mentioned in infant mortality statistics… By 1972, SIDS had become the leading cause of post-neonatal mortality (infant deaths occurring between 28 days and 1 year of life) in the United States.”"
+        },
+        {
+          "censusId": "CEN027",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0190"
+          ],
+          "unitOrder": 189,
+          "unitType": "quotation",
+          "text": "“Vaccines and sudden infant death: An analysis of the VAERS database 1990–2019 and review of the medical literature”"
+        },
+        {
+          "censusId": "CEN028",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0195"
+          ],
+          "unitOrder": 194,
+          "unitType": "sentence",
+          "text": "Does correlation imply causation?"
+        },
+        {
+          "censusId": "CEN029",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0201"
+          ],
+          "unitOrder": 200,
+          "unitType": "sentence",
+          "text": "In his 2021 report “Vaccines and sudden infant death: An analysis of the VAERS database 1990–2019 and review of the medical literature,” Miller explains:"
+        },
+        {
+          "censusId": "CEN030",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0202"
+          ],
+          "unitOrder": 201,
+          "unitType": "quotation",
+          "text": "“Throughout the 1980s, sudden infant deaths continued to skyrocket. Parental concerns about an apparent link between childhood vaccines and SIDS reached a fever pitch. Many parents were afraid to vaccinate their babies. Authorities sought to reassure parents that vaccines are safe and claimed that sudden unexplained infant deaths (SUID) following vaccines were merely coincidental.”"
+        },
+        {
+          "censusId": "CEN031",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0205"
+          ],
+          "unitOrder": 204,
+          "unitType": "sentence",
+          "text": "In a “Back to Sleep” campaign, parents were told that their babies’ sleeping position was the culprit — that they needed to be laid on their backs, not face down."
+        },
+        {
+          "censusId": "CEN032",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0211"
+          ],
+          "unitOrder": 210,
+          "unitType": "sentence",
+          "text": "All coincidences?"
+        },
+        {
+          "censusId": "CEN033",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0212"
+          ],
+          "unitOrder": 211,
+          "unitType": "sentence",
+          "text": "So how do impacts from vaccines being injected in children compare to environmental exposures they face when “playing outside”?"
+        },
+        {
+          "censusId": "CEN034",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0217"
+          ],
+          "unitOrder": 216,
+          "unitType": "quotation",
+          "text": "“When we are healthy, enzymes in the mouth, acid in the stomach, and microbes in the lower gut will often destroy pathogens. If a pathogen escapes these first lines of digestive defense, then the villi will prevent their access to the bloodstream. If the villi are compromised, we have the physical barrier of the smooth muscular layer of the intestinal wall. In health, these systems function together to screen pathogens from the bloodstream. They are, in essence, guardians of our health.”"
+        },
+        {
+          "censusId": "CEN035",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0220"
+          ],
+          "unitOrder": 219,
+          "unitType": "sentence",
+          "text": "Looking at how vaccines can cause sudden infant death, Miller notes that “several theories regarding the pathogenic mechanism behind these fatal events have been proposed.”"
+        },
+        {
+          "censusId": "CEN036",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0226"
+          ],
+          "unitOrder": 225,
+          "unitType": "sentence",
+          "text": "If a single vaccine can cause SIDS in a small percentage of babies, how many children might have damage on a lesser scale from the dozens of shots received in just the first year of life?"
+        },
+        {
+          "censusId": "CEN037",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0236"
+          ],
+          "unitOrder": 235,
+          "unitType": "sentence",
+          "text": "Dangerous Chemicals in Vaccines?"
+        },
+        {
+          "censusId": "CEN038",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0237"
+          ],
+          "unitOrder": 236,
+          "unitType": "sentence",
+          "text": "“Aren’t there DANGEROUS chemicals in vaccines?"
+        },
+        {
+          "censusId": "CEN039",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0242"
+          ],
+          "unitOrder": 241,
+          "unitType": "quotation",
+          "text": "“Our calculations show that the levels of aluminum suggested by the currently used limits place infants at risk of acute, repeated, and possibly chronic exposures of toxic levels of aluminum in modern vaccine schedules.”"
+        },
+        {
+          "censusId": "CEN040",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0244"
+          ],
+          "unitOrder": 243,
+          "unitType": "quotation",
+          "text": "“Reconsideration of the immunotherapeutic pediatric safe dose levels of aluminum”"
+        },
+        {
+          "censusId": "CEN041",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0251"
+          ],
+          "unitOrder": 250,
+          "unitType": "sentence",
+          "text": "Regarding the aluminum in that tomato, according to Physicians for Informed Consent :"
+        },
+        {
+          "censusId": "CEN042",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0252"
+          ],
+          "unitOrder": 251,
+          "unitType": "quotation",
+          "text": "“The ATSDR [Agency for Toxic Substances and Disease Registry] oral aluminum limit is based on 0.1% of oral aluminum being absorbed into the bloodstream, as the digestive tract blocks nearly all oral aluminum (Fig. 2a). In contrast, aluminum injected intramuscularly bypasses the digestive tract, and 100% of aluminum may be absorbed into the bloodstream over time (i.e.,the proportion of absorbed aluminum is 1,000 times greater).” [ source ]"
+        },
+        {
+          "censusId": "CEN043",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0281"
+          ],
+          "unitOrder": 280,
+          "unitType": "sentence",
+          "text": "Why does the 25 mcg limit apply for other injectables but not vaccines?"
+        },
+        {
+          "censusId": "CEN044",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0284"
+          ],
+          "unitOrder": 283,
+          "unitType": "sentence",
+          "text": "A 1947 document related to the manufacture of diphtheria toxoid states, “In all instances, the amount of aluminum used shall be the minimum needed to accomplish the purpose intended.”"
+        },
+        {
+          "censusId": "CEN045",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0286"
+          ],
+          "unitOrder": 285,
+          "unitType": "quotation",
+          "text": "“FDA regulations require safety testing of constituent ingredients in drugs (21 CFR 610.15). With the exception of extraneous proteins, no component safety testing is required for vaccines or vaccine schedules. The dosing of aluminum in vaccines is based on the production of antibody titers, not safety science .”"
+        },
+        {
+          "censusId": "CEN046",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0295"
+          ],
+          "unitOrder": 294,
+          "unitType": "quotation",
+          "text": "“If your baby weighs 7 pounds at birth (approximately 3 kilograms), the FDA stipulations suggest that the maximum safe dose for that newborn is 15 micrograms, sixteen times less than what is given in one hepatitis B vaccine. Since infants may not be able to effectively rid their bodies of aluminum, the truth is that no amount of aluminum is safe. By giving infants this shot, according to the FDA’s own calculations, we are literally poisoning them.”"
+        },
+        {
+          "censusId": "CEN047",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0301"
+          ],
+          "unitOrder": 300,
+          "unitType": "quotation",
+          "text": "“[Thimerosal] is toxic… Mutagenic in mammalian cells.“"
+        },
+        {
+          "censusId": "CEN048",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0304"
+          ],
+          "unitOrder": 303,
+          "unitType": "quotation",
+          "text": "“Comparing toxicity in two forms of mercury is like comparing the benefits of being shot with a .38 caliber bullet rather than a .45 caliber bullet. Most people would prefer Door #3: no bullet at all.”"
+        },
+        {
+          "censusId": "CEN049",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0306"
+          ],
+          "unitOrder": 305,
+          "unitType": "quotation",
+          "text": "“Forbidden Facts: Government Deceit & Suppression About Brain Damage from Childhood Vaccines”"
+        },
+        {
+          "censusId": "CEN050",
+          "kind": "challenge_signal",
+          "signals": [
+            "challenge_signal"
+          ],
+          "sourceUnitIds": [
+            "U0307"
+          ],
+          "unitOrder": 306,
+          "unitType": "sentence",
+          "text": "Entire books have debunked the absurd statement “ethylmercury is NOT harmful to us.”"
+        },
+        {
+          "censusId": "CEN051",
+          "kind": "challenge_signal",
+          "signals": [
+            "challenge_signal"
+          ],
+          "sourceUnitIds": [
+            "U0310"
+          ],
+          "unitOrder": 309,
+          "unitType": "sentence",
+          "text": "Contrary to our health department’s claim, it is highly neurotoxic — dangerous enough to cause “decreased offspring survival” as Eli Lilly was required by law to disclose in its Material Safety Data Sheet for thimerosal."
+        },
+        {
+          "censusId": "CEN052",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0315"
+          ],
+          "unitOrder": 314,
+          "unitType": "quotation",
+          "text": "“A silvery white poisonous metallic element used in batteries and in the preparation of chemical pesticides.”"
+        },
+        {
+          "censusId": "CEN053",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0317"
+          ],
+          "unitOrder": 316,
+          "unitType": "quotation",
+          "text": "“…and in vaccines given to children and pregnant women.”"
+        },
+        {
+          "censusId": "CEN054",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0318"
+          ],
+          "unitOrder": 317,
+          "unitType": "sentence",
+          "text": "Injected ethylmercury has been shown to deposit in the brain and other organs far more readily than the much-publicized methylmercury in fish, which pregnant women are warned to avoid."
+        },
+        {
+          "censusId": "CEN055",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0325"
+          ],
+          "unitOrder": 324,
+          "unitType": "sentence",
+          "text": "If it is so harmless, why would it have been removed from them?"
+        },
+        {
+          "censusId": "CEN056",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0332"
+          ],
+          "unitOrder": 331,
+          "unitType": "quotation",
+          "text": "“The number of dose related relationships [between mercury and autism] are linear and statistically significant,” said Dr. William Weil from the American Academy of Pediatrics. “You can play with this all you want. They are linear. They are statistically significant.”"
+        },
+        {
+          "censusId": "CEN057",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0333"
+          ],
+          "unitOrder": 332,
+          "unitType": "sentence",
+          "text": "The attendees were then asked What should we do now?"
+        },
+        {
+          "censusId": "CEN058",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0335"
+          ],
+          "unitOrder": 334,
+          "unitType": "sentence",
+          "text": "An immunologist told the assembled participants that he’d just taken an emergency call in which he’d advised his daughter-in-law who had delivered his first grandchild not to accept any mercury-laced vaccines."
+        },
+        {
+          "censusId": "CEN059",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0339"
+          ],
+          "unitOrder": 338,
+          "unitType": "quotation",
+          "text": "“My mandate as I sit here in this group is to make sure at the end of the day that 100,000,000 are immunized with DTP, Hepatitis B and if possible Hib, this year, next year and for many years to come, and that will have to be with Thimerosal containing vaccines unless a miracle occurs and an alternative is found quickly and is tried and found to be safe. So I leave you with the challenge that I am very concerned that this has gotten this far, and that having got this far, how you present in a concerted voice the information to the ACIP in a way they will be able to handle it and not get exposed to the traps which are out there in public relations.”"
+        },
+        {
+          "censusId": "CEN060",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0346"
+          ],
+          "unitOrder": 345,
+          "unitType": "sentence",
+          "text": "De Becker notes that the CDC, FDA and vaccine-makers came up with a “magnificently creative idea” to explain away “that ethylmercury was somehow not toxic”:"
+        }
+      ],
+      "items": [
+        {
+          "censusId": "CEN001",
+          "sourceUnitIds": [
+            "U0002"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“According to the CDC and public health authorities, parents who choose not to vaccinate their children are typically highly educated. CDC data reflect that half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated. Why would the parents of these children, comprising a large part of the nation’s brain trust, choose not to vaccinate their children?”",
+          "assessment": "apparently_covered_by_call1a",
+          "match": {
+            "candidateId": "1A-001",
+            "claimText": "Half of American school children are not fully vaccinated.",
+            "reason": "shares a grounded source unit with the Call 1A candidate"
+          }
+        },
+        {
+          "censusId": "CEN002",
+          "sourceUnitIds": [
+            "U0005"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "snippet": "“What’s the Truth about Vaccines?” asked Jefferson County Public Health (JCPH) in a quarter-page ad in the March 11 Port Townsend Leader. The hand-drawn, whimsical cartoon-style presentation and the ad’s content offered a light-hearted attempt to ease parents’ concerns about vaccinating their children.",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN003",
+          "sourceUnitIds": [
+            "U0006"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“This is a JUDGEMENT FREE guide to learn about vaccines,” the ad opens with. “You don’t need to have your mind made up to start reading. BRING YOUR CURIOSITY!”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN004",
+          "sourceUnitIds": [
+            "U0026"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“They regurgitate canned answers they have never researched—essentially mantras,” says Siri. At their most extreme, “for those who refuse to adopt their beliefs, they demand that the refusers be censored, have their rights taken away, and be mandated to be injected.”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN005",
+          "sourceUnitIds": [
+            "U0027"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "snippet": "As this article will show, the claims made in our health department’s ad repeat medical dogma that has persisted for decades with no basis in reality.",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN006",
+          "sourceUnitIds": [
+            "U0033"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "qa_passage"
+          ],
+          "snippet": "Is our health department simply “going with the flow,” unaware that the claims made in their ad are mythology?",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN007",
+          "sourceUnitIds": [
+            "U0034"
+          ],
+          "trigger": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "snippet": "Or are they so entrenched in their fervent belief in the vaccine narrative that they cannot consider information that disproves the gospel?",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN008",
+          "sourceUnitIds": [
+            "U0053"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "snippet": "A January 2017 date was set and Huenke wrote the theater a check as a deposit for the screening.",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN009",
+          "sourceUnitIds": [
+            "U0059"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "snippet": "In an apologetic exchange that Friedman had with Huenke after canceling the film, he said,",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN010",
+          "sourceUnitIds": [
+            "U0060"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "snippet": "“I am very sorry that I caved to this and didn’t stand up to it. It was not pleasant for me or for the business that I’ve created. Actually, it was far worse than the death threat that I received when I was intending to show a movie by Michael Moore a long time ago… Please let me reimburse you for whatever expenses you have incurred – posters or other advertising.”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN011",
+          "sourceUnitIds": [
+            "U0076"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "snippet": "Each new childhood shot approved was automatically added to the CDC’s Childhood Vaccine Schedule, with the assurance that tens of millions of children would receive them at routine pediatric visits.",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN012",
+          "sourceUnitIds": [
+            "U0095"
+          ],
+          "trigger": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "snippet": "Was the rise in all these chronic diseases and even deaths a direct result of the parallel exploding vaccination program?",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN013",
+          "sourceUnitIds": [
+            "U0096"
+          ],
+          "trigger": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "snippet": "Did correlation equal causation?",
+          "assessment": "apparently_covered_by_call1a",
+          "match": {
+            "candidateId": "1A-015",
+            "claimText": "The rise in chronic illnesses among children correlates with the increase in vaccination rates.",
+            "reason": "shares a grounded source unit with the Call 1A candidate"
+          }
+        },
+        {
+          "censusId": "CEN014",
+          "sourceUnitIds": [
+            "U0102"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "snippet": "Many described rushing their infants or toddlers to the ER with convulsions, 105° fevers, horrifying screams and seizures after their shots, only to be told this is normal… we see this all the time… it has nothing to do with the vaccines .",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN015",
+          "sourceUnitIds": [
+            "U0130"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "snippet": "These, along with more recent developments, will be expanded on below and in Part 2, with the examination of JCPH’s claims.",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN016",
+          "sourceUnitIds": [
+            "U0135"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "snippet": "By the time our vaccine study group wrapped up our research, over one hundred legislative bills were pending to eradicate vaccination choice in forty states, foreshadowing the Covid insanity to come.",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN017",
+          "sourceUnitIds": [
+            "U0151"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "snippet": "We were told that as long as our information was credibly sourced and could be confirmed through Google Scholar, it would be acceptable.",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN018",
+          "sourceUnitIds": [
+            "U0154"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“Unfortunately, we will not be able to print or insert your flyer in our newspaper.",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN019",
+          "sourceUnitIds": [
+            "U0162"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "snippet": "Then, when Schumacher attempted to pay for ad space, that, too, was censored — a “business decision” he was told (see Of Covid Testing, “Misinformation” and Censorship ).",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN020",
+          "sourceUnitIds": [
+            "U0166"
+          ],
+          "trigger": "challenge_signal",
+          "signals": [
+            "challenge_signal"
+          ],
+          "snippet": "While the material covered in our 2017 guide thoroughly debunked the old talking points still being trotted out today by Jefferson County Public Health, nine years later the research is even more damning.",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN021",
+          "sourceUnitIds": [
+            "U0170"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "snippet": "Peter McCullough explained in their 2025 book “Vaccines Mythology, Ideology, and Reality” :",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN022",
+          "sourceUnitIds": [
+            "U0171"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“Prior to 2020, we had never questioned the sacred cow of vaccines. It was only in 2020, when we observed the stupendous chicanery of the COVID-19 rollout, that we began to wonder about the entire vaccine enterprise. Since then we have methodically studied the literature on vaccination…”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN023",
+          "sourceUnitIds": [
+            "U0177"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“You are about to learn things you can never unlearn.”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN024",
+          "sourceUnitIds": [
+            "U0179"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "snippet": "Let’s now consider the claims in Jefferson County Public Health’s ad.",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN025",
+          "sourceUnitIds": [
+            "U0181"
+          ],
+          "trigger": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "snippet": "Immune System Challenges?",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN026",
+          "sourceUnitIds": [
+            "U0187"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "snippet": "“Prior to the introduction of organized vaccination programs, ‘crib death’ was so rare that it was not mentioned in infant mortality statistics… By 1972, SIDS had become the leading cause of post-neonatal mortality (infant deaths occurring between 28 days and 1 year of life) in the United States.”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN027",
+          "sourceUnitIds": [
+            "U0190"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“Vaccines and sudden infant death: An analysis of the VAERS database 1990–2019 and review of the medical literature”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN028",
+          "sourceUnitIds": [
+            "U0195"
+          ],
+          "trigger": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "snippet": "Does correlation imply causation?",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN029",
+          "sourceUnitIds": [
+            "U0201"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "snippet": "In his 2021 report “Vaccines and sudden infant death: An analysis of the VAERS database 1990–2019 and review of the medical literature,” Miller explains:",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN030",
+          "sourceUnitIds": [
+            "U0202"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“Throughout the 1980s, sudden infant deaths continued to skyrocket. Parental concerns about an apparent link between childhood vaccines and SIDS reached a fever pitch. Many parents were afraid to vaccinate their babies. Authorities sought to reassure parents that vaccines are safe and claimed that sudden unexplained infant deaths (SUID) following vaccines were merely coincidental.”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN031",
+          "sourceUnitIds": [
+            "U0205"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "snippet": "In a “Back to Sleep” campaign, parents were told that their babies’ sleeping position was the culprit — that they needed to be laid on their backs, not face down.",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN032",
+          "sourceUnitIds": [
+            "U0211"
+          ],
+          "trigger": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "snippet": "All coincidences?",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN033",
+          "sourceUnitIds": [
+            "U0212"
+          ],
+          "trigger": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "snippet": "So how do impacts from vaccines being injected in children compare to environmental exposures they face when “playing outside”?",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN034",
+          "sourceUnitIds": [
+            "U0217"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“When we are healthy, enzymes in the mouth, acid in the stomach, and microbes in the lower gut will often destroy pathogens. If a pathogen escapes these first lines of digestive defense, then the villi will prevent their access to the bloodstream. If the villi are compromised, we have the physical barrier of the smooth muscular layer of the intestinal wall. In health, these systems function together to screen pathogens from the bloodstream. They are, in essence, guardians of our health.”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN035",
+          "sourceUnitIds": [
+            "U0220"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "snippet": "Looking at how vaccines can cause sudden infant death, Miller notes that “several theories regarding the pathogenic mechanism behind these fatal events have been proposed.”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN036",
+          "sourceUnitIds": [
+            "U0226"
+          ],
+          "trigger": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "snippet": "If a single vaccine can cause SIDS in a small percentage of babies, how many children might have damage on a lesser scale from the dozens of shots received in just the first year of life?",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN037",
+          "sourceUnitIds": [
+            "U0236"
+          ],
+          "trigger": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "snippet": "Dangerous Chemicals in Vaccines?",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN038",
+          "sourceUnitIds": [
+            "U0237"
+          ],
+          "trigger": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "snippet": "“Aren’t there DANGEROUS chemicals in vaccines?",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN039",
+          "sourceUnitIds": [
+            "U0242"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“Our calculations show that the levels of aluminum suggested by the currently used limits place infants at risk of acute, repeated, and possibly chronic exposures of toxic levels of aluminum in modern vaccine schedules.”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN040",
+          "sourceUnitIds": [
+            "U0244"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“Reconsideration of the immunotherapeutic pediatric safe dose levels of aluminum”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN041",
+          "sourceUnitIds": [
+            "U0251"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "snippet": "Regarding the aluminum in that tomato, according to Physicians for Informed Consent :",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN042",
+          "sourceUnitIds": [
+            "U0252"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "snippet": "“The ATSDR [Agency for Toxic Substances and Disease Registry] oral aluminum limit is based on 0.1% of oral aluminum being absorbed into the bloodstream, as the digestive tract blocks nearly all oral aluminum (Fig. 2a). In contrast, aluminum injected intramuscularly bypasses the digestive tract, and 100% of aluminum may be absorbed into the bloodstream over time (i.e.,the proportion of absorbed aluminum is 1,000 times greater).” [ source ]",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN043",
+          "sourceUnitIds": [
+            "U0281"
+          ],
+          "trigger": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "snippet": "Why does the 25 mcg limit apply for other injectables but not vaccines?",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN044",
+          "sourceUnitIds": [
+            "U0284"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "snippet": "A 1947 document related to the manufacture of diphtheria toxoid states, “In all instances, the amount of aluminum used shall be the minimum needed to accomplish the purpose intended.”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN045",
+          "sourceUnitIds": [
+            "U0286"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“FDA regulations require safety testing of constituent ingredients in drugs (21 CFR 610.15). With the exception of extraneous proteins, no component safety testing is required for vaccines or vaccine schedules. The dosing of aluminum in vaccines is based on the production of antibody titers, not safety science .”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN046",
+          "sourceUnitIds": [
+            "U0295"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“If your baby weighs 7 pounds at birth (approximately 3 kilograms), the FDA stipulations suggest that the maximum safe dose for that newborn is 15 micrograms, sixteen times less than what is given in one hepatitis B vaccine. Since infants may not be able to effectively rid their bodies of aluminum, the truth is that no amount of aluminum is safe. By giving infants this shot, according to the FDA’s own calculations, we are literally poisoning them.”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN047",
+          "sourceUnitIds": [
+            "U0301"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“[Thimerosal] is toxic… Mutagenic in mammalian cells.“",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN048",
+          "sourceUnitIds": [
+            "U0304"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“Comparing toxicity in two forms of mercury is like comparing the benefits of being shot with a .38 caliber bullet rather than a .45 caliber bullet. Most people would prefer Door #3: no bullet at all.”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN049",
+          "sourceUnitIds": [
+            "U0306"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "snippet": "“Forbidden Facts: Government Deceit & Suppression About Brain Damage from Childhood Vaccines”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN050",
+          "sourceUnitIds": [
+            "U0307"
+          ],
+          "trigger": "challenge_signal",
+          "signals": [
+            "challenge_signal"
+          ],
+          "snippet": "Entire books have debunked the absurd statement “ethylmercury is NOT harmful to us.”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN051",
+          "sourceUnitIds": [
+            "U0310"
+          ],
+          "trigger": "challenge_signal",
+          "signals": [
+            "challenge_signal"
+          ],
+          "snippet": "Contrary to our health department’s claim, it is highly neurotoxic — dangerous enough to cause “decreased offspring survival” as Eli Lilly was required by law to disclose in its Material Safety Data Sheet for thimerosal.",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN052",
+          "sourceUnitIds": [
+            "U0315"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“A silvery white poisonous metallic element used in batteries and in the preparation of chemical pesticides.”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN053",
+          "sourceUnitIds": [
+            "U0317"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“…and in vaccines given to children and pregnant women.”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN054",
+          "sourceUnitIds": [
+            "U0318"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "snippet": "Injected ethylmercury has been shown to deposit in the brain and other organs far more readily than the much-publicized methylmercury in fish, which pregnant women are warned to avoid.",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN055",
+          "sourceUnitIds": [
+            "U0325"
+          ],
+          "trigger": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "snippet": "If it is so harmless, why would it have been removed from them?",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN056",
+          "sourceUnitIds": [
+            "U0332"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "snippet": "“The number of dose related relationships [between mercury and autism] are linear and statistically significant,” said Dr. William Weil from the American Academy of Pediatrics. “You can play with this all you want. They are linear. They are statistically significant.”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN057",
+          "sourceUnitIds": [
+            "U0333"
+          ],
+          "trigger": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "snippet": "The attendees were then asked What should we do now?",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN058",
+          "sourceUnitIds": [
+            "U0335"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "snippet": "An immunologist told the assembled participants that he’d just taken an emergency call in which he’d advised his daughter-in-law who had delivered his first grandchild not to accept any mercury-laced vaccines.",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN059",
+          "sourceUnitIds": [
+            "U0339"
+          ],
+          "trigger": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "snippet": "“My mandate as I sit here in this group is to make sure at the end of the day that 100,000,000 are immunized with DTP, Hepatitis B and if possible Hib, this year, next year and for many years to come, and that will have to be with Thimerosal containing vaccines unless a miracle occurs and an alternative is found quickly and is tried and found to be safe. So I leave you with the challenge that I am very concerned that this has gotten this far, and that having got this far, how you present in a concerted voice the information to the ACIP in a way they will be able to handle it and not get exposed to the traps which are out there in public relations.”",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        },
+        {
+          "censusId": "CEN060",
+          "sourceUnitIds": [
+            "U0346"
+          ],
+          "trigger": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "snippet": "De Becker notes that the CDC, FDA and vaccine-makers came up with a “magnificently creative idea” to explain away “that ethylmercury was somehow not toxic”:",
+          "assessment": "no_obvious_call1a_match",
+          "match": null
+        }
+      ],
+      "summary": {
+        "totalPackets": 60,
+        "byTrigger": {
+          "block_quotation": 24,
+          "attributed_statement": 20,
+          "qa_passage": 13,
+          "challenge_signal": 3
+        },
+        "apparentMatchCount": 2,
+        "noObviousMatchCount": 58,
+        "notEvaluatedCount": 0
+      }
+    },
+    "diagnostics": {
+      "backfillCount": 0,
+      "blockingErrors": [],
+      "duplicateCollapses": [],
+      "sourceResolutionIssues": [],
+      "selectedCount": 12,
+      "deselectedCount": 4
+    },
+    "droppedFromSelection": [
+      "The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80.",
+      "The CDC partnered with pharma as the primary purchaser, distributor, and promote",
+      "The childhood vaccination schedule has increased from 5 doses in the 1950s to 73",
+      "The rise in chronic illnesses among children correlates with the increase in vac"
+    ],
+    "raw": {
+      "call1a": {
+        "thesisHinge": "mixed",
+        "theme": {
+          "text": "The article critiques public health narratives surrounding vaccines, suggesting they are based on misinformation and lack of transparency.",
+          "sourceUnitIds": [
+            "U0001"
+          ]
+        },
+        "thesis": {
+          "text": "Public health claims about vaccines are misleading and not supported by credible evidence, leading to a dangerous narrative that ignores potential vaccine-related health issues.",
+          "sourceUnitIds": [
+            "U0001"
+          ]
+        },
+        "pillars": [
+          {
+            "label": "Vaccine Safety",
+            "text": "The safety of vaccines and their ingredients, including aluminum and mercury, is questioned.",
+            "importance": "load_bearing",
+            "sourceUnitIds": [
+              "U0241",
+              "U0300"
+            ]
+          },
+          {
+            "label": "Vaccine Efficacy",
+            "text": "The effectiveness of vaccines and the claims made by public health authorities regarding their safety and necessity are disputed.",
+            "importance": "load_bearing",
+            "sourceUnitIds": [
+              "U0002",
+              "U0003"
+            ]
+          },
+          {
+            "label": "Public Health Messaging",
+            "text": "The communication strategies used by public health officials to promote vaccination are critiqued as misleading and potentially harmful.",
+            "importance": "major",
+            "sourceUnitIds": [
+              "U0005",
+              "U0006"
+            ]
+          },
+          {
+            "label": "Censorship and Information Control",
+            "text": "The article discusses instances of censorship regarding vaccine-related information and the suppression of dissenting views.",
+            "importance": "major",
+            "sourceUnitIds": [
+              "U0064",
+              "U0148"
+            ]
+          }
+        ],
+        "candidateClaims": [
+          {
+            "claimText": "Half of American school children are not fully vaccinated.",
+            "sourceUnitIds": [
+              "U0002"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Vaccine Efficacy"
+            ],
+            "scope": "population",
+            "evidenceUsefulnessHint": "Vaccination rates from CDC or similar health organizations.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 2,
+                  "end": 2
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "At least 1 in 88 toddlers are completely unvaccinated.",
+            "sourceUnitIds": [
+              "U0002"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Vaccine Efficacy"
+            ],
+            "scope": "population",
+            "evidenceUsefulnessHint": "Statistics from health surveys or CDC data.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 2,
+                  "end": 2
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+            "sourceUnitIds": [
+              "U0297"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Vaccine Safety"
+            ],
+            "scope": "ingredient",
+            "evidenceUsefulnessHint": "Toxicological studies on ethylmercury.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 297,
+                  "end": 297
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "Aluminum is used in many childhood vaccines as an adjuvant to provoke an immune response.",
+            "sourceUnitIds": [
+              "U0253"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Vaccine Safety"
+            ],
+            "scope": "ingredient",
+            "evidenceUsefulnessHint": "Vaccine ingredient lists and studies on aluminum's effects.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 253,
+                  "end": 253
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "The CDC has never safety tested the cumulative aluminum load received in multiple shots.",
+            "sourceUnitIds": [
+              "U0279"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Vaccine Safety"
+            ],
+            "scope": "policy",
+            "evidenceUsefulnessHint": "CDC safety testing protocols and vaccine studies.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 279,
+                  "end": 279
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "The sudden death of a formerly-thriving child is shocking and was not common before mass vaccination.",
+            "sourceUnitIds": [
+              "U0192"
+            ],
+            "materiality": "medium",
+            "relatedPillarLabels": [
+              "Vaccine Efficacy"
+            ],
+            "scope": "historical",
+            "evidenceUsefulnessHint": "Historical infant mortality data before and after vaccination programs.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 192,
+                  "end": 192
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "SIDS became the leading cause of infant mortality following the introduction of national vaccination programs in the U.S.",
+            "sourceUnitIds": [
+              "U0198"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Vaccine Efficacy"
+            ],
+            "scope": "historical",
+            "evidenceUsefulnessHint": "Infant mortality statistics and SIDS rates over time.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 198,
+                  "end": 198
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "The CDC manipulated data to disprove a link between MMR vaccines and autism.",
+            "sourceUnitIds": [
+              "U0041"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Public Health Messaging"
+            ],
+            "scope": "policy",
+            "evidenceUsefulnessHint": "Investigative reports or whistleblower testimonies.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 41,
+                  "end": 41
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "Thimerosal is toxic and has been linked to neurological damage.",
+            "sourceUnitIds": [
+              "U0308"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Vaccine Safety"
+            ],
+            "scope": "ingredient",
+            "evidenceUsefulnessHint": "Toxicological studies on thimerosal.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 308,
+                  "end": 308
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "The CDC's claim that thimerosal is not harmful is contradicted by its classification as toxic hazardous waste.",
+            "sourceUnitIds": [
+              "U0367"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Vaccine Safety"
+            ],
+            "scope": "policy",
+            "evidenceUsefulnessHint": "EPA regulations on hazardous waste and thimerosal.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 367,
+                  "end": 367
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "Polysorbate 80 is linked to infertility and cancer and is banned from injectables in most of Europe.",
+            "sourceUnitIds": [
+              "U0380"
+            ],
+            "materiality": "medium",
+            "relatedPillarLabels": [
+              "Vaccine Safety"
+            ],
+            "scope": "ingredient",
+            "evidenceUsefulnessHint": "Research studies on polysorbate 80's effects.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 380,
+                  "end": 380
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80.",
+            "sourceUnitIds": [
+              "U0392"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Vaccine Safety"
+            ],
+            "scope": "ingredient",
+            "evidenceUsefulnessHint": "Vaccine package inserts and ingredient lists.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 392,
+                  "end": 392
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "The CDC partnered with pharma as the primary purchaser, distributor, and promoter of billions of dollars of vaccines annually.",
+            "sourceUnitIds": [
+              "U0077"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Public Health Messaging"
+            ],
+            "scope": "policy",
+            "evidenceUsefulnessHint": "Financial reports or contracts between CDC and pharmaceutical companies.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 77,
+                  "end": 77
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "The childhood vaccination schedule has increased from 5 doses in the 1950s to 73 doses by 2016.",
+            "sourceUnitIds": [
+              "U0080"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Vaccine Efficacy"
+            ],
+            "scope": "historical",
+            "evidenceUsefulnessHint": "Historical vaccination schedules and CDC data.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 80,
+                  "end": 80
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "The rise in chronic illnesses among children correlates with the increase in vaccination rates.",
+            "sourceUnitIds": [
+              "U0096"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Vaccine Efficacy"
+            ],
+            "scope": "population",
+            "evidenceUsefulnessHint": "Epidemiological studies on chronic illness rates and vaccination.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 96,
+                  "end": 96
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "The CDC announced that no more research money would be spent on the question of vaccines causing autism, claiming 'the science is settled.'",
+            "sourceUnitIds": [
+              "U0046"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Public Health Messaging"
+            ],
+            "scope": "policy",
+            "evidenceUsefulnessHint": "Official CDC statements or funding allocations.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 46,
+                  "end": 46
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "The CDC's narrative about vaccines being safe and effective is described as a 'wishful fairy tale' by critics.",
+            "sourceUnitIds": [
+              "U0028"
+            ],
+            "materiality": "medium",
+            "relatedPillarLabels": [
+              "Public Health Messaging"
+            ],
+            "scope": "opinion",
+            "evidenceUsefulnessHint": "Critiques or reviews of CDC vaccine policies.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 28,
+                  "end": 28
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "The health department's ad claims that vaccines are tested more than any other medicine.",
+            "sourceUnitIds": [
+              "U0012"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Public Health Messaging"
+            ],
+            "scope": "policy",
+            "evidenceUsefulnessHint": "Comparative studies on vaccine testing protocols.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 12,
+                  "end": 12
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "The health department's ad states that there have been no credible studies linking vaccination to chronic disease.",
+            "sourceUnitIds": [
+              "U0011"
+            ],
+            "materiality": "high",
+            "relatedPillarLabels": [
+              "Public Health Messaging"
+            ],
+            "scope": "policy",
+            "evidenceUsefulnessHint": "Research studies on vaccination and chronic disease.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 11,
+                  "end": 11
+                }
+              ]
+            }
+          },
+          {
+            "claimText": "The rise in vaccine hesitancy may have provoked the health department's creation of the ad.",
+            "sourceUnitIds": [
+              "U0403"
+            ],
+            "materiality": "medium",
+            "relatedPillarLabels": [
+              "Public Health Messaging"
+            ],
+            "scope": "policy",
+            "evidenceUsefulnessHint": "Surveys or studies on vaccine hesitancy trends.",
+            "groundingSpan": "clustered",
+            "_groundingSpanMetrics": {
+              "groundingSpan": "clustered",
+              "unitSpan": 0,
+              "maxGap": 0,
+              "passageCount": 1,
+              "passages": [
+                {
+                  "start": 403,
+                  "end": 403
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "call1b": {
+        "candidateJudgments": [
+          {
+            "candidateId": "CAND01",
+            "assertionSource": "CDC and public health authorities",
+            "contentStance": "contradicts_thesis",
+            "articleDeployment": "reported_neutral",
+            "articleRole": "pillar",
+            "sourceUnitIds": [
+              "U0002"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND02",
+            "assertionSource": "CDC and public health authorities",
+            "contentStance": "contradicts_thesis",
+            "articleDeployment": "reported_neutral",
+            "articleRole": "pillar",
+            "sourceUnitIds": [
+              "U0002"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND03",
+            "assertionSource": "unknown",
+            "contentStance": "contradicts_thesis",
+            "articleDeployment": "reported_neutral",
+            "articleRole": "opponent_claim",
+            "sourceUnitIds": [
+              "U0297"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND04",
+            "assertionSource": "unknown",
+            "contentStance": "supports_thesis",
+            "articleDeployment": "reported_neutral",
+            "articleRole": "opponent_claim",
+            "sourceUnitIds": [
+              "U0253"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND05",
+            "assertionSource": "unknown",
+            "contentStance": "supports_thesis",
+            "articleDeployment": "reported_neutral",
+            "articleRole": "opponent_claim",
+            "sourceUnitIds": [
+              "U0279"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND06",
+            "assertionSource": "Neil Z.",
+            "contentStance": "supports_thesis",
+            "articleDeployment": "reported_neutral",
+            "articleRole": "opponent_claim",
+            "sourceUnitIds": [
+              "U0198"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND07",
+            "assertionSource": "unknown",
+            "contentStance": "supports_thesis",
+            "articleDeployment": "reported_neutral",
+            "articleRole": "opponent_claim",
+            "sourceUnitIds": [
+              "U0041"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND08",
+            "assertionSource": "unknown",
+            "contentStance": "supports_thesis",
+            "articleDeployment": "reported_neutral",
+            "articleRole": "opponent_claim",
+            "sourceUnitIds": [
+              "U0308"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND09",
+            "assertionSource": "unknown",
+            "contentStance": "supports_thesis",
+            "articleDeployment": "reported_neutral",
+            "articleRole": "opponent_claim",
+            "sourceUnitIds": [
+              "U0367"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND10",
+            "assertionSource": "unknown",
+            "contentStance": "supports_thesis",
+            "articleDeployment": "reported_neutral",
+            "articleRole": "opponent_claim",
+            "sourceUnitIds": [
+              "U0392"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND11",
+            "assertionSource": "unknown",
+            "contentStance": "supports_thesis",
+            "articleDeployment": "reported_neutral",
+            "articleRole": "pillar",
+            "sourceUnitIds": [
+              "U0077"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND12",
+            "assertionSource": "unknown",
+            "contentStance": "supports_thesis",
+            "articleDeployment": "reported_neutral",
+            "articleRole": "pillar",
+            "sourceUnitIds": [
+              "U0080"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND13",
+            "assertionSource": "unknown",
+            "contentStance": "supports_thesis",
+            "articleDeployment": "reported_neutral",
+            "articleRole": "pillar",
+            "sourceUnitIds": [
+              "U0096"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND14",
+            "assertionSource": "CDC",
+            "contentStance": "supports_thesis",
+            "articleDeployment": "reported_neutral",
+            "articleRole": "pillar",
+            "sourceUnitIds": [
+              "U0046"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND15",
+            "assertionSource": "health department",
+            "contentStance": "contradicts_thesis",
+            "articleDeployment": "reported_neutral",
+            "articleRole": "opponent_claim",
+            "sourceUnitIds": [
+              "U0012"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          },
+          {
+            "candidateId": "CAND16",
+            "assertionSource": "health department",
+            "contentStance": "contradicts_thesis",
+            "articleDeployment": "reported_neutral",
+            "articleRole": "opponent_claim",
+            "sourceUnitIds": [
+              "U0011"
+            ],
+            "responseUnitIds": [],
+            "needsSplit": {
+              "split": false,
+              "reason": null
+            }
+          }
+        ]
+      },
+      "packets": [
+        {
+          "id": "CAND01",
+          "origin": "candidate",
+          "claimText": "Half of American school children are not fully vaccinated.",
+          "sourceUnitIds": [
+            "U0002"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "“According to the CDC and public health authorities, parents who choose not to vaccinate their children are typically highly educated. CDC data reflect that half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated. Why would the parents of these children, comprising a large part of the nation’s brain trust, choose not to vaccinate their children?”",
+          "attributionLeadIn": null,
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "— Aaron Siri, from the foreword of “Vaccines, Amen: The Religion of Vaccines” ——————————————— “What’s the Truth about Vaccines?” asked Jefferson County Public Health (JCPH) in a quarter-page ad in the March 11 Port Townsend Leader. The hand-drawn, whimsical cartoon-style presentation and the ad’s content offered a light-hearted attempt to ease parents’ concerns about vaccinating their children. “This is a JUDGEMENT FREE guide to learn about vaccines,” the ad opens with. “You don’t need to have your mind made up to start reading. BRING YOUR CURIOSITY!” Among the statements made: • “Our kids fac…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "paragraph_group",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CAND02",
+          "origin": "candidate",
+          "claimText": "At least 1 in 88 toddlers are completely unvaccinated.",
+          "sourceUnitIds": [
+            "U0002"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "“According to the CDC and public health authorities, parents who choose not to vaccinate their children are typically highly educated. CDC data reflect that half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated. Why would the parents of these children, comprising a large part of the nation’s brain trust, choose not to vaccinate their children?”",
+          "attributionLeadIn": null,
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "— Aaron Siri, from the foreword of “Vaccines, Amen: The Religion of Vaccines” ——————————————— “What’s the Truth about Vaccines?” asked Jefferson County Public Health (JCPH) in a quarter-page ad in the March 11 Port Townsend Leader. The hand-drawn, whimsical cartoon-style presentation and the ad’s content offered a light-hearted attempt to ease parents’ concerns about vaccinating their children. “This is a JUDGEMENT FREE guide to learn about vaccines,” the ad opens with. “You don’t need to have your mind made up to start reading. BRING YOUR CURIOSITY!” Among the statements made: • “Our kids fac…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "paragraph_group",
+            "unitTypes": [
+              "quotation"
+            ]
+          }
+        },
+        {
+          "id": "CAND03",
+          "origin": "candidate",
+          "claimText": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+          "sourceUnitIds": [
+            "U0297"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "[2] MERCURY The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+          "attributionLeadIn": "“If your baby weighs 7 pounds at birth (approximately 3 kilograms), the FDA stipulations suggest that the maximum safe dose for that newborn is 15 micrograms, sixteen times less than what is given in one hepatitis B vaccine. Since infants may not be able to effectively rid their bodies of aluminum,…",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "It prevents microbial growth in multi-dose vaccines. No childhood vaccines contain mercury.",
+          "sectionHeading": "Initial U.S. Approval: 1983",
+          "structuralSignals": {
+            "blockType": "paragraph_group",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND04",
+          "origin": "candidate",
+          "claimText": "Aluminum is used in many childhood vaccines as an adjuvant to provoke an immune response.",
+          "sourceUnitIds": [
+            "U0253"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "Aluminum is used in many childhood vaccines like HepB as an adjuvant, to provoke an immune response.",
+          "attributionLeadIn": "“The ATSDR [Agency for Toxic Substances and Disease Registry] oral aluminum limit is based on 0.1% of oral aluminum being absorbed into the bloodstream, as the digestive tract blocks nearly all oral aluminum (Fig. 2a). In contrast, aluminum injected intramuscularly bypasses the digestive tract, and…",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "It is known to cause brain damage at all doses. Aluminum poisoning has been linked to autism, SIDs, seizures, autoimmune issues, Alzheimers, neurological damage, impaired renal function, demyelinating disorders such as MS, and cancer. [ source ] In the mid-1900s, the FDA established a maximum limit of 850 mcg (0.85 mg) of aluminum per vaccine dose. Then, based on a 1997 study of preterm infants receiving intravenous-feeding solutions, a safe level of exposure for injectables was shown to be a small fraction of that 850 mcg. Safety limits were now set for neonates at 4-5 mcg per kilogram of bod…",
+          "sectionHeading": "THE FACTS / ALUMINUM:",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND05",
+          "origin": "candidate",
+          "claimText": "The CDC has never safety tested the cumulative aluminum load received in multiple shots.",
+          "sourceUnitIds": [
+            "U0279"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "The CDC has NEVER safety tested this cumulative load received in multiple shots.",
+          "attributionLeadIn": null,
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "Physicians for Informed Consent show aluminum content for the childhood vaccines: Why does the 25 mcg limit apply for other injectables but not vaccines? The mid-1900s study that determined the 850 mcg limit may present the answer to that question. The purpose of that study was not to determine safety — it was to find out the amount of aluminum needed to provoke an immune response. A 1947 document related to the manufacture of diphtheria toxoid states, “In all instances, the amount of aluminum used shall be the minimum needed to accomplish the purpose intended.” In “ Reconsideration of the imm…",
+          "sectionHeading": "RECOMBIVAX HB® Hepatitis B Vaccine (Recombinant)\n\nSuspension for intramuscular injection\n\nInitial U.S. Approval: 1983",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND06",
+          "origin": "candidate",
+          "claimText": "SIDS became the leading cause of infant mortality following the introduction of national vaccination programs in the U.S.",
+          "sourceUnitIds": [
+            "U0198"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "As Neil Z.",
+          "attributionLeadIn": null,
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "Miller observes above, following the introduction of national vaccination programs in the U.S., SIDS became the leading cause of infant mortality. Like other dangers associated with vaccination, health authorities sought to explain away this new phenomenon. In his 2021 report “Vaccines and sudden infant death: An analysis of the VAERS database 1990–2019 and review of the medical literature,” Miller explains: “Throughout the 1980s, sudden infant deaths continued to skyrocket. Parental concerns about an apparent link between childhood vaccines and SIDS reached a fever pitch. Many parents were af…",
+          "sectionHeading": "THE FACTS:",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND07",
+          "origin": "candidate",
+          "claimText": "The CDC manipulated data to disprove a link between MMR vaccines and autism.",
+          "sourceUnitIds": [
+            "U0041"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "The fraudulent, re-worked study was then released to declare that it had proven MMR vaccines did not cause autism.",
+          "attributionLeadIn": null,
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "Believing the order to destroy data was illegal, Thompson secretly saved over 10,000 pages of documents. He would reveal them a decade later, conscience-stricken over the likely damage in ongoing vaccine injury the cover-up was causing. The CDC had conducted the study in response to petitions from over 5,000 parents in vaccine court who had witnessed their children regress into autism from the MMR shot. When the fraudulent “results” were released, those petitions were dismissed with the stroke of a pen. The CDC announced: No more research money will be spent on this question; “the science is s…",
+          "sectionHeading": "Three Distinct Attitudes About Vaccination",
+          "structuralSignals": {
+            "blockType": "paragraph_group",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND08",
+          "origin": "candidate",
+          "claimText": "Thimerosal is toxic and has been linked to neurological damage.",
+          "sourceUnitIds": [
+            "U0308"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "Mercury is the third most toxic element on earth, 500 times more poisonous than lead.",
+          "attributionLeadIn": "“Forbidden Facts: Government Deceit & Suppression About Brain Damage from Childhood Vaccines”",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "Thimerosal is the trade name for the 50% ethylmercury solution used since the 1930s as a preservative in vaccines. Contrary to our health department’s claim, it is highly neurotoxic — dangerous enough to cause “decreased offspring survival” as Eli Lilly was required by law to disclose in its Material Safety Data Sheet for thimerosal. New works have expanded on Robert F. Kennedy, Jr’s 2015 book on thimerosal mentioned earlier, not least the unexpected perspective of internationally recognized criminologist Gavin de Becker, quoted above. More than a review of the scientific literature, his best-…",
+          "sectionHeading": "THE FACTS / MERCURY:",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND09",
+          "origin": "candidate",
+          "claimText": "The CDC's claim that thimerosal is not harmful is contradicted by its classification as toxic hazardous waste.",
+          "sourceUnitIds": [
+            "U0367"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "The claim by health agencies that injected ethylmercury is benign becomes even more inconceivable in light of the fact that the EPA classifies the thimerosal in vaccines as toxic hazardous waste .",
+          "attributionLeadIn": "He further notes that studies that denied a risk were nearly always generated by the groups promoting vaccination, rarely by independent researchers.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "The limit for mercury in drinking water is set at 200 parts per billion per the EPA’s Toxicity Characteristic Leaching Procedure (TCLP). The mercury in multi-dose flu shots preserved with thimerosal, injected directly into the body, is 250 times higher— 50,000 parts per billion. Thimerosal as a Vaccine Preservative , a summary prepared in 2025 for the CDC’s Advisory Committee for Immunization Practices (ACIP), notes that “thimerosal-containing vaccines exceed the TCLP threshold by orders of magnitude and are classified as D009 Hazardous Waste.” PharmEcology’s Disposal Guidelines for the 2025-2…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "paragraph_group",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND10",
+          "origin": "candidate",
+          "claimText": "The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80.",
+          "sourceUnitIds": [
+            "U0392"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "From the 16-page package insert of Infanrix, a DTaP vaccine “indicated for active immunization against diphtheria, tetanus, and pertussis as a 5-dose series in infants and children aged 6 weeks through 6 years”:",
+          "attributionLeadIn": null,
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "Along with other chemicals, DTaP formulations contain aluminum, formaldehyde and polysorbate 80. The polysorbate 80 helps deliver the aluminum into the brain and other organs; the formaldehyde has the potential to damage the liver and kidneys, as well as cause cancer. Depending on the manufacturer, the DTaP shot may also include bovine extract, monkey kidney tissue (suspected to contain SV-40, a cancer-causing virus), and neomycin sulfate or polymyxin B, both antibiotics. At the core of the vaccine narrative, the notion that a vaccine only contains a small amount of virus, bacteria or other an…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "paragraph_group",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND11",
+          "origin": "candidate",
+          "claimText": "The CDC partnered with pharma as the primary purchaser, distributor, and promoter of billions of dollars of vaccines annually.",
+          "sourceUnitIds": [
+            "U0077"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "The CDC partnered with pharma as the primary purchaser, distributor and promoter of billions of dollars of vaccines annually.",
+          "attributionLeadIn": "Each new childhood shot approved was automatically added to the CDC’s Childhood Vaccine Schedule, with the assurance that tens of millions of children would receive them at routine pediatric visits.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "A more-is-better free-for-all ensued. While children had received just five vaccine doses in three shots in the 1950s and ’60s when I was growing up (none during pregnancy or in the first 12 months of life), by 1986 children were receiving 25 doses/12 shots. In the decades following the 1986 act the childhood schedule exploded to 73 doses/54 shots. New vaccines were developed for illnesses like hepatitis B and rotavirus, for which there was little risk and which effectively had 100% survival rates for healthy American children. Mild illnesses which formerly helped strengthen developing infants…",
+          "sectionHeading": "People Who Do the Research",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND12",
+          "origin": "candidate",
+          "claimText": "The childhood vaccination schedule has increased from 5 doses in the 1950s to 73 doses by 2016.",
+          "sourceUnitIds": [
+            "U0080"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "In the decades following the 1986 act the childhood schedule exploded to 73 doses/54 shots.",
+          "attributionLeadIn": "Each new childhood shot approved was automatically added to the CDC’s Childhood Vaccine Schedule, with the assurance that tens of millions of children would receive them at routine pediatric visits.",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "New vaccines were developed for illnesses like hepatitis B and rotavirus, for which there was little risk and which effectively had 100% survival rates for healthy American children. Mild illnesses which formerly helped strengthen developing infants’ and children’s immune systems were now vaccinated against, all fodder for pharma’s liability-free cash cow. Pregnant mothers were injected, infants started receiving shots on their first day of life, and the practice of administering multiple shots — as many as ten doses in eight shots at one time (never tested in combination) in a euphemistically…",
+          "sectionHeading": "People Who Do the Research",
+          "structuralSignals": {
+            "blockType": "heading_section",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND13",
+          "origin": "candidate",
+          "claimText": "The rise in chronic illnesses among children correlates with the increase in vaccination rates.",
+          "sourceUnitIds": [
+            "U0096"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "Did correlation equal causation?",
+          "attributionLeadIn": null,
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "Following the release of the film Vaxxed , parents came out of the woodwork wanting to share their stories of vaccine injury. The Vaxxed bus was born. Traveling to every U.S. state on the continent, its dedicated team video-taped thousands of stories of vaccine injury and death. More than 8,000 names were signed on the bus’ exterior of adults and children injured or killed by vaccines. The common themes in stories parents recounted were eerie. Many described rushing their infants or toddlers to the ER with convulsions, 105° fevers, horrifying screams and seizures after their shots, only to be…",
+          "sectionHeading": "People Who Do the Research",
+          "structuralSignals": {
+            "blockType": "paragraph_group",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND14",
+          "origin": "candidate",
+          "claimText": "The CDC announced that no more research money would be spent on the question of vaccines causing autism, claiming 'the science is settled.'",
+          "sourceUnitIds": [
+            "U0046"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "The CDC announced: No more research money will be spent on this question; “the science is settled.”",
+          "attributionLeadIn": null,
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "This fraud was the subject of the shocking and controversial movie Vaxxed: From Cover-Up to Catastrophe. Scheduled to premier at the Tribeca Film Festival, Big Pharma pressure forced its cancellation. The effort to suppress the film only gave it more publicity and heightened public interest. Screenings across the country opened a floodgate. A tsunami of parents started speaking out about their own children’s vaccine injuries. Working with the film’s distributor and Rose Theatre owner Rocky Friedman, Annette Huenke (now a PTFP co-editor) set up a screening of Vaxxed in Port Townsend.",
+          "sectionHeading": "Three Distinct Attitudes About Vaccination",
+          "structuralSignals": {
+            "blockType": "paragraph_group",
+            "unitTypes": [
+              "sentence"
+            ]
+          }
+        },
+        {
+          "id": "CAND15",
+          "origin": "candidate",
+          "claimText": "The health department's ad claims that vaccines are tested more than any other medicine.",
+          "sourceUnitIds": [
+            "U0012"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "• “Vaccines are tested more than any other medicine you could give your kid.”",
+          "attributionLeadIn": "“This is a JUDGEMENT FREE guide to learn about vaccines,” the ad opens with. “You don’t need to have your mind made up to start reading. BRING YOUR CURIOSITY!”",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "The health department’s ad comes at a time when childhood vaccination rates are dropping steadily across the country. Along with reduction in vaccine uptake, there is also a rise in the rate of parents seeking vaccine exemptions for their children. In Part 1 of this article, we will explore the growing awareness causing this shift, share some local history on attempts to open up the conversation about vaccines in our community, and examine some of the statements above that our health department has made to reassure parents that they needn’t worry about common vaccination concerns.",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "list",
+            "unitTypes": [
+              "list_item"
+            ]
+          }
+        },
+        {
+          "id": "CAND16",
+          "origin": "candidate",
+          "claimText": "The health department's ad states that there have been no credible studies linking vaccination to chronic disease.",
+          "sourceUnitIds": [
+            "U0011"
+          ],
+          "groundingSpan": "clustered",
+          "claimUnits": "• “So far, there have been no credible studies that link vaccination to chronic disease.”",
+          "attributionLeadIn": "“This is a JUDGEMENT FREE guide to learn about vaccines,” the ad opens with. “You don’t need to have your mind made up to start reading. BRING YOUR CURIOSITY!”",
+          "quoteOrSpeakerBlock": null,
+          "localResponseWindow": "• “Vaccines are tested more than any other medicine you could give your kid.” The health department’s ad comes at a time when childhood vaccination rates are dropping steadily across the country. Along with reduction in vaccine uptake, there is also a rise in the rate of parents seeking vaccine exemptions for their children. In Part 1 of this article, we will explore the growing awareness causing this shift, share some local history on attempts to open up the conversation about vaccines in our community, and examine some of the statements above that our health department has made to reassure p…",
+          "sectionHeading": "",
+          "structuralSignals": {
+            "blockType": "list",
+            "unitTypes": [
+              "list_item"
+            ]
+          }
+        }
+      ],
+      "censusPackets": [
+        {
+          "censusId": "CEN001",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0002"
+          ],
+          "unitOrder": 1,
+          "unitType": "quotation",
+          "text": "“According to the CDC and public health authorities, parents who choose not to vaccinate their children are typically highly educated. CDC data reflect that half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated. Why would the parents of these children, comprising a large part of the nation’s brain trust, choose not to vaccinate their children?”"
+        },
+        {
+          "censusId": "CEN002",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0005"
+          ],
+          "unitOrder": 4,
+          "unitType": "quotation",
+          "text": "“What’s the Truth about Vaccines?” asked Jefferson County Public Health (JCPH) in a quarter-page ad in the March 11 Port Townsend Leader. The hand-drawn, whimsical cartoon-style presentation and the ad’s content offered a light-hearted attempt to ease parents’ concerns about vaccinating their children."
+        },
+        {
+          "censusId": "CEN003",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0006"
+          ],
+          "unitOrder": 5,
+          "unitType": "quotation",
+          "text": "“This is a JUDGEMENT FREE guide to learn about vaccines,” the ad opens with. “You don’t need to have your mind made up to start reading. BRING YOUR CURIOSITY!”"
+        },
+        {
+          "censusId": "CEN004",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0026"
+          ],
+          "unitOrder": 25,
+          "unitType": "quotation",
+          "text": "“They regurgitate canned answers they have never researched—essentially mantras,” says Siri. At their most extreme, “for those who refuse to adopt their beliefs, they demand that the refusers be censored, have their rights taken away, and be mandated to be injected.”"
+        },
+        {
+          "censusId": "CEN005",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0027"
+          ],
+          "unitOrder": 26,
+          "unitType": "sentence",
+          "text": "As this article will show, the claims made in our health department’s ad repeat medical dogma that has persisted for decades with no basis in reality."
+        },
+        {
+          "censusId": "CEN006",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0033"
+          ],
+          "unitOrder": 32,
+          "unitType": "sentence",
+          "text": "Is our health department simply “going with the flow,” unaware that the claims made in their ad are mythology?"
+        },
+        {
+          "censusId": "CEN007",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0034"
+          ],
+          "unitOrder": 33,
+          "unitType": "sentence",
+          "text": "Or are they so entrenched in their fervent belief in the vaccine narrative that they cannot consider information that disproves the gospel?"
+        },
+        {
+          "censusId": "CEN008",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0053"
+          ],
+          "unitOrder": 52,
+          "unitType": "sentence",
+          "text": "A January 2017 date was set and Huenke wrote the theater a check as a deposit for the screening."
+        },
+        {
+          "censusId": "CEN009",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0059"
+          ],
+          "unitOrder": 58,
+          "unitType": "sentence",
+          "text": "In an apologetic exchange that Friedman had with Huenke after canceling the film, he said,"
+        },
+        {
+          "censusId": "CEN010",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0060"
+          ],
+          "unitOrder": 59,
+          "unitType": "quotation",
+          "text": "“I am very sorry that I caved to this and didn’t stand up to it. It was not pleasant for me or for the business that I’ve created. Actually, it was far worse than the death threat that I received when I was intending to show a movie by Michael Moore a long time ago… Please let me reimburse you for whatever expenses you have incurred – posters or other advertising.”"
+        },
+        {
+          "censusId": "CEN011",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0076"
+          ],
+          "unitOrder": 75,
+          "unitType": "sentence",
+          "text": "Each new childhood shot approved was automatically added to the CDC’s Childhood Vaccine Schedule, with the assurance that tens of millions of children would receive them at routine pediatric visits."
+        },
+        {
+          "censusId": "CEN012",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0095"
+          ],
+          "unitOrder": 94,
+          "unitType": "sentence",
+          "text": "Was the rise in all these chronic diseases and even deaths a direct result of the parallel exploding vaccination program?"
+        },
+        {
+          "censusId": "CEN013",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0096"
+          ],
+          "unitOrder": 95,
+          "unitType": "sentence",
+          "text": "Did correlation equal causation?"
+        },
+        {
+          "censusId": "CEN014",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0102"
+          ],
+          "unitOrder": 101,
+          "unitType": "sentence",
+          "text": "Many described rushing their infants or toddlers to the ER with convulsions, 105° fevers, horrifying screams and seizures after their shots, only to be told this is normal… we see this all the time… it has nothing to do with the vaccines ."
+        },
+        {
+          "censusId": "CEN015",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0130"
+          ],
+          "unitOrder": 129,
+          "unitType": "sentence",
+          "text": "These, along with more recent developments, will be expanded on below and in Part 2, with the examination of JCPH’s claims."
+        },
+        {
+          "censusId": "CEN016",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0135"
+          ],
+          "unitOrder": 134,
+          "unitType": "sentence",
+          "text": "By the time our vaccine study group wrapped up our research, over one hundred legislative bills were pending to eradicate vaccination choice in forty states, foreshadowing the Covid insanity to come."
+        },
+        {
+          "censusId": "CEN017",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0151"
+          ],
+          "unitOrder": 150,
+          "unitType": "sentence",
+          "text": "We were told that as long as our information was credibly sourced and could be confirmed through Google Scholar, it would be acceptable."
+        },
+        {
+          "censusId": "CEN018",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0154"
+          ],
+          "unitOrder": 153,
+          "unitType": "quotation",
+          "text": "“Unfortunately, we will not be able to print or insert your flyer in our newspaper."
+        },
+        {
+          "censusId": "CEN019",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0162"
+          ],
+          "unitOrder": 161,
+          "unitType": "sentence",
+          "text": "Then, when Schumacher attempted to pay for ad space, that, too, was censored — a “business decision” he was told (see Of Covid Testing, “Misinformation” and Censorship )."
+        },
+        {
+          "censusId": "CEN020",
+          "kind": "challenge_signal",
+          "signals": [
+            "challenge_signal"
+          ],
+          "sourceUnitIds": [
+            "U0166"
+          ],
+          "unitOrder": 165,
+          "unitType": "sentence",
+          "text": "While the material covered in our 2017 guide thoroughly debunked the old talking points still being trotted out today by Jefferson County Public Health, nine years later the research is even more damning."
+        },
+        {
+          "censusId": "CEN021",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0170"
+          ],
+          "unitOrder": 169,
+          "unitType": "sentence",
+          "text": "Peter McCullough explained in their 2025 book “Vaccines Mythology, Ideology, and Reality” :"
+        },
+        {
+          "censusId": "CEN022",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0171"
+          ],
+          "unitOrder": 170,
+          "unitType": "quotation",
+          "text": "“Prior to 2020, we had never questioned the sacred cow of vaccines. It was only in 2020, when we observed the stupendous chicanery of the COVID-19 rollout, that we began to wonder about the entire vaccine enterprise. Since then we have methodically studied the literature on vaccination…”"
+        },
+        {
+          "censusId": "CEN023",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0177"
+          ],
+          "unitOrder": 176,
+          "unitType": "quotation",
+          "text": "“You are about to learn things you can never unlearn.”"
+        },
+        {
+          "censusId": "CEN024",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0179"
+          ],
+          "unitOrder": 178,
+          "unitType": "sentence",
+          "text": "Let’s now consider the claims in Jefferson County Public Health’s ad."
+        },
+        {
+          "censusId": "CEN025",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0181"
+          ],
+          "unitOrder": 180,
+          "unitType": "sentence",
+          "text": "Immune System Challenges?"
+        },
+        {
+          "censusId": "CEN026",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0187"
+          ],
+          "unitOrder": 186,
+          "unitType": "quotation",
+          "text": "“Prior to the introduction of organized vaccination programs, ‘crib death’ was so rare that it was not mentioned in infant mortality statistics… By 1972, SIDS had become the leading cause of post-neonatal mortality (infant deaths occurring between 28 days and 1 year of life) in the United States.”"
+        },
+        {
+          "censusId": "CEN027",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0190"
+          ],
+          "unitOrder": 189,
+          "unitType": "quotation",
+          "text": "“Vaccines and sudden infant death: An analysis of the VAERS database 1990–2019 and review of the medical literature”"
+        },
+        {
+          "censusId": "CEN028",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0195"
+          ],
+          "unitOrder": 194,
+          "unitType": "sentence",
+          "text": "Does correlation imply causation?"
+        },
+        {
+          "censusId": "CEN029",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0201"
+          ],
+          "unitOrder": 200,
+          "unitType": "sentence",
+          "text": "In his 2021 report “Vaccines and sudden infant death: An analysis of the VAERS database 1990–2019 and review of the medical literature,” Miller explains:"
+        },
+        {
+          "censusId": "CEN030",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0202"
+          ],
+          "unitOrder": 201,
+          "unitType": "quotation",
+          "text": "“Throughout the 1980s, sudden infant deaths continued to skyrocket. Parental concerns about an apparent link between childhood vaccines and SIDS reached a fever pitch. Many parents were afraid to vaccinate their babies. Authorities sought to reassure parents that vaccines are safe and claimed that sudden unexplained infant deaths (SUID) following vaccines were merely coincidental.”"
+        },
+        {
+          "censusId": "CEN031",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0205"
+          ],
+          "unitOrder": 204,
+          "unitType": "sentence",
+          "text": "In a “Back to Sleep” campaign, parents were told that their babies’ sleeping position was the culprit — that they needed to be laid on their backs, not face down."
+        },
+        {
+          "censusId": "CEN032",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0211"
+          ],
+          "unitOrder": 210,
+          "unitType": "sentence",
+          "text": "All coincidences?"
+        },
+        {
+          "censusId": "CEN033",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0212"
+          ],
+          "unitOrder": 211,
+          "unitType": "sentence",
+          "text": "So how do impacts from vaccines being injected in children compare to environmental exposures they face when “playing outside”?"
+        },
+        {
+          "censusId": "CEN034",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0217"
+          ],
+          "unitOrder": 216,
+          "unitType": "quotation",
+          "text": "“When we are healthy, enzymes in the mouth, acid in the stomach, and microbes in the lower gut will often destroy pathogens. If a pathogen escapes these first lines of digestive defense, then the villi will prevent their access to the bloodstream. If the villi are compromised, we have the physical barrier of the smooth muscular layer of the intestinal wall. In health, these systems function together to screen pathogens from the bloodstream. They are, in essence, guardians of our health.”"
+        },
+        {
+          "censusId": "CEN035",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0220"
+          ],
+          "unitOrder": 219,
+          "unitType": "sentence",
+          "text": "Looking at how vaccines can cause sudden infant death, Miller notes that “several theories regarding the pathogenic mechanism behind these fatal events have been proposed.”"
+        },
+        {
+          "censusId": "CEN036",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0226"
+          ],
+          "unitOrder": 225,
+          "unitType": "sentence",
+          "text": "If a single vaccine can cause SIDS in a small percentage of babies, how many children might have damage on a lesser scale from the dozens of shots received in just the first year of life?"
+        },
+        {
+          "censusId": "CEN037",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0236"
+          ],
+          "unitOrder": 235,
+          "unitType": "sentence",
+          "text": "Dangerous Chemicals in Vaccines?"
+        },
+        {
+          "censusId": "CEN038",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0237"
+          ],
+          "unitOrder": 236,
+          "unitType": "sentence",
+          "text": "“Aren’t there DANGEROUS chemicals in vaccines?"
+        },
+        {
+          "censusId": "CEN039",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0242"
+          ],
+          "unitOrder": 241,
+          "unitType": "quotation",
+          "text": "“Our calculations show that the levels of aluminum suggested by the currently used limits place infants at risk of acute, repeated, and possibly chronic exposures of toxic levels of aluminum in modern vaccine schedules.”"
+        },
+        {
+          "censusId": "CEN040",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0244"
+          ],
+          "unitOrder": 243,
+          "unitType": "quotation",
+          "text": "“Reconsideration of the immunotherapeutic pediatric safe dose levels of aluminum”"
+        },
+        {
+          "censusId": "CEN041",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0251"
+          ],
+          "unitOrder": 250,
+          "unitType": "sentence",
+          "text": "Regarding the aluminum in that tomato, according to Physicians for Informed Consent :"
+        },
+        {
+          "censusId": "CEN042",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0252"
+          ],
+          "unitOrder": 251,
+          "unitType": "quotation",
+          "text": "“The ATSDR [Agency for Toxic Substances and Disease Registry] oral aluminum limit is based on 0.1% of oral aluminum being absorbed into the bloodstream, as the digestive tract blocks nearly all oral aluminum (Fig. 2a). In contrast, aluminum injected intramuscularly bypasses the digestive tract, and 100% of aluminum may be absorbed into the bloodstream over time (i.e.,the proportion of absorbed aluminum is 1,000 times greater).” [ source ]"
+        },
+        {
+          "censusId": "CEN043",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0281"
+          ],
+          "unitOrder": 280,
+          "unitType": "sentence",
+          "text": "Why does the 25 mcg limit apply for other injectables but not vaccines?"
+        },
+        {
+          "censusId": "CEN044",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0284"
+          ],
+          "unitOrder": 283,
+          "unitType": "sentence",
+          "text": "A 1947 document related to the manufacture of diphtheria toxoid states, “In all instances, the amount of aluminum used shall be the minimum needed to accomplish the purpose intended.”"
+        },
+        {
+          "censusId": "CEN045",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0286"
+          ],
+          "unitOrder": 285,
+          "unitType": "quotation",
+          "text": "“FDA regulations require safety testing of constituent ingredients in drugs (21 CFR 610.15). With the exception of extraneous proteins, no component safety testing is required for vaccines or vaccine schedules. The dosing of aluminum in vaccines is based on the production of antibody titers, not safety science .”"
+        },
+        {
+          "censusId": "CEN046",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0295"
+          ],
+          "unitOrder": 294,
+          "unitType": "quotation",
+          "text": "“If your baby weighs 7 pounds at birth (approximately 3 kilograms), the FDA stipulations suggest that the maximum safe dose for that newborn is 15 micrograms, sixteen times less than what is given in one hepatitis B vaccine. Since infants may not be able to effectively rid their bodies of aluminum, the truth is that no amount of aluminum is safe. By giving infants this shot, according to the FDA’s own calculations, we are literally poisoning them.”"
+        },
+        {
+          "censusId": "CEN047",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0301"
+          ],
+          "unitOrder": 300,
+          "unitType": "quotation",
+          "text": "“[Thimerosal] is toxic… Mutagenic in mammalian cells.“"
+        },
+        {
+          "censusId": "CEN048",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0304"
+          ],
+          "unitOrder": 303,
+          "unitType": "quotation",
+          "text": "“Comparing toxicity in two forms of mercury is like comparing the benefits of being shot with a .38 caliber bullet rather than a .45 caliber bullet. Most people would prefer Door #3: no bullet at all.”"
+        },
+        {
+          "censusId": "CEN049",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0306"
+          ],
+          "unitOrder": 305,
+          "unitType": "quotation",
+          "text": "“Forbidden Facts: Government Deceit & Suppression About Brain Damage from Childhood Vaccines”"
+        },
+        {
+          "censusId": "CEN050",
+          "kind": "challenge_signal",
+          "signals": [
+            "challenge_signal"
+          ],
+          "sourceUnitIds": [
+            "U0307"
+          ],
+          "unitOrder": 306,
+          "unitType": "sentence",
+          "text": "Entire books have debunked the absurd statement “ethylmercury is NOT harmful to us.”"
+        },
+        {
+          "censusId": "CEN051",
+          "kind": "challenge_signal",
+          "signals": [
+            "challenge_signal"
+          ],
+          "sourceUnitIds": [
+            "U0310"
+          ],
+          "unitOrder": 309,
+          "unitType": "sentence",
+          "text": "Contrary to our health department’s claim, it is highly neurotoxic — dangerous enough to cause “decreased offspring survival” as Eli Lilly was required by law to disclose in its Material Safety Data Sheet for thimerosal."
+        },
+        {
+          "censusId": "CEN052",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0315"
+          ],
+          "unitOrder": 314,
+          "unitType": "quotation",
+          "text": "“A silvery white poisonous metallic element used in batteries and in the preparation of chemical pesticides.”"
+        },
+        {
+          "censusId": "CEN053",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0317"
+          ],
+          "unitOrder": 316,
+          "unitType": "quotation",
+          "text": "“…and in vaccines given to children and pregnant women.”"
+        },
+        {
+          "censusId": "CEN054",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0318"
+          ],
+          "unitOrder": 317,
+          "unitType": "sentence",
+          "text": "Injected ethylmercury has been shown to deposit in the brain and other organs far more readily than the much-publicized methylmercury in fish, which pregnant women are warned to avoid."
+        },
+        {
+          "censusId": "CEN055",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0325"
+          ],
+          "unitOrder": 324,
+          "unitType": "sentence",
+          "text": "If it is so harmless, why would it have been removed from them?"
+        },
+        {
+          "censusId": "CEN056",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0332"
+          ],
+          "unitOrder": 331,
+          "unitType": "quotation",
+          "text": "“The number of dose related relationships [between mercury and autism] are linear and statistically significant,” said Dr. William Weil from the American Academy of Pediatrics. “You can play with this all you want. They are linear. They are statistically significant.”"
+        },
+        {
+          "censusId": "CEN057",
+          "kind": "qa_passage",
+          "signals": [
+            "qa_passage"
+          ],
+          "sourceUnitIds": [
+            "U0333"
+          ],
+          "unitOrder": 332,
+          "unitType": "sentence",
+          "text": "The attendees were then asked What should we do now?"
+        },
+        {
+          "censusId": "CEN058",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement"
+          ],
+          "sourceUnitIds": [
+            "U0335"
+          ],
+          "unitOrder": 334,
+          "unitType": "sentence",
+          "text": "An immunologist told the assembled participants that he’d just taken an emergency call in which he’d advised his daughter-in-law who had delivered his first grandchild not to accept any mercury-laced vaccines."
+        },
+        {
+          "censusId": "CEN059",
+          "kind": "block_quotation",
+          "signals": [
+            "block_quotation"
+          ],
+          "sourceUnitIds": [
+            "U0339"
+          ],
+          "unitOrder": 338,
+          "unitType": "quotation",
+          "text": "“My mandate as I sit here in this group is to make sure at the end of the day that 100,000,000 are immunized with DTP, Hepatitis B and if possible Hib, this year, next year and for many years to come, and that will have to be with Thimerosal containing vaccines unless a miracle occurs and an alternative is found quickly and is tried and found to be safe. So I leave you with the challenge that I am very concerned that this has gotten this far, and that having got this far, how you present in a concerted voice the information to the ACIP in a way they will be able to handle it and not get exposed to the traps which are out there in public relations.”"
+        },
+        {
+          "censusId": "CEN060",
+          "kind": "attributed_statement",
+          "signals": [
+            "attributed_statement",
+            "named_source"
+          ],
+          "sourceUnitIds": [
+            "U0346"
+          ],
+          "unitOrder": 345,
+          "unitType": "sentence",
+          "text": "De Becker notes that the CDC, FDA and vaccine-makers came up with a “magnificently creative idea” to explain away “that ethylmercury was somehow not toxic”:"
+        }
+      ]
+    },
+    "modelCalls": {
+      "call1b": {
+        "request": {
+          "model": "gpt-4o-mini",
+          "temperature": 0,
+          "seed": 3724605090,
+          "maxOutputTokens": 12000,
+          "systemSha256": "38f29607daa66aa8babdab33fbf09a5bcf239e239b488377084fe9afc4e9e42f",
+          "userSha256": "04c4da195caf2ad9ca3243aa25a6ee1d171abb13eb9cf89152605d877c975b46",
+          "schemaSha256": "dd1bb6574c20b5e26d9175303873e416d1bd19e4453e679c5a5a027e5adf7628",
+          "requestSha256": "ec36a3df479b12d241d2d7182606070fdba5f6b99c9de4f32b7e042293c412f8"
+        },
+        "response": {
+          "responseId": "chatcmpl-E3MXNOTJzl3qQnBVg7Y1VnPR1x8cH",
+          "requestId": null,
+          "systemFingerprint": "fp_844ddd95ff",
+          "model": "gpt-4o-mini-2024-07-18",
+          "serviceTier": "default",
+          "created": 1784470325,
+          "returnedSeed": null,
+          "finishReason": "stop",
+          "cachedInputTokens": 5504
+        }
+      }
+    },
+    "usage": {
+      "inputTokens": 5632,
+      "outputTokens": 991,
+      "totalTokens": 6623,
+      "cachedInputTokens": 5504
+    },
+    "attempts": {
+      "call1a": 0,
+      "call1b": 1
+    }
+  },
+  "elapsedMs": null
+}

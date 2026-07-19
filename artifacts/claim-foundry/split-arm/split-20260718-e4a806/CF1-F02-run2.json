@@ -1,0 +1,11 @@
+{
+  "fixtureId": "CF1-F02",
+  "repeat": 2,
+  "seed": 187721485,
+  "status": "failed",
+  "error": {
+    "code": "CF1_MODEL_UNAVAILABLE",
+    "message": "No usable structured model response after 1 attempt"
+  },
+  "elapsedMs": 469
+}

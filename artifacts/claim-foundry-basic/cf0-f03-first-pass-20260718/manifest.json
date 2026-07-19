@@ -1,0 +1,28 @@
+{
+  "experiment": "CF0 basic one-call extraction",
+  "fixture": "CF1-F03",
+  "fixturePath": "/Users/reedko/VeriStrata/veristrata-platform/backend/test/claim-foundry/fixtures/CF1-F03/article.json",
+  "startedAt": "2026-07-18T06:36:37.969Z",
+  "completedAt": "2026-07-18T06:36:52.295Z",
+  "model": "gpt-4o-mini-2024-07-18",
+  "systemFingerprint": "fp_07be26b212",
+  "usage": {
+    "prompt_tokens": 10969,
+    "completion_tokens": 1031,
+    "total_tokens": 12000,
+    "prompt_tokens_details": {
+      "cached_tokens": 0,
+      "audio_tokens": 0
+    },
+    "completion_tokens_details": {
+      "reasoning_tokens": 0,
+      "audio_tokens": 0,
+      "accepted_prediction_tokens": 0,
+      "rejected_prediction_tokens": 0
+    }
+  },
+  "promptSha256": "6a5768acf2d50e4938631efc11b97b66e570867cfe8aba12302247fc73fadb39",
+  "systemPromptSha256": "73a30f7bc0d36929a02e5500ca92a9d7ebb27c1c0ca3bb683883a3a3faa309e9",
+  "schemaSha256": "e58524708f086c4867838d551470671a1a0cab6a6de711c8015d31ba72dded08",
+  "claimCount": 8
+}

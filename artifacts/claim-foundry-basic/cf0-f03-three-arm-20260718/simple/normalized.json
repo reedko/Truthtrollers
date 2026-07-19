@@ -1,0 +1,77 @@
+{
+  "thesis": "The article critiques the claims made by public health authorities regarding vaccines, suggesting they are based on flawed narratives and lack credible evidence.",
+  "claims": [
+    {
+      "proposition": "Half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+      "assertedBy": "CDC and public health authorities",
+      "articleTreatment": "reports",
+      "groundingExcerpt": "CDC data reflect that half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+      "evidenceQuestion": "What percentage of American school children are fully vaccinated?",
+      "supportWouldLookLike": "Data showing that half of American school children are indeed not fully vaccinated.",
+      "refuteWouldLookLike": "Data indicating that a higher percentage of American school children are fully vaccinated."
+    },
+    {
+      "proposition": "Vaccines are tested more than any other medicine you could give your kid.",
+      "assertedBy": "Jefferson County Public Health (JCPH)",
+      "articleTreatment": "reports",
+      "groundingExcerpt": "Vaccines are tested more than any other medicine you could give your kid.",
+      "evidenceQuestion": "How do the testing protocols for vaccines compare to those for other medications?",
+      "supportWouldLookLike": "Evidence showing that vaccines undergo more rigorous testing than other medications.",
+      "refuteWouldLookLike": "Evidence indicating that other medications undergo more extensive testing than vaccines."
+    },
+    {
+      "proposition": "There have been no credible studies that link vaccination to chronic disease.",
+      "assertedBy": "Jefferson County Public Health (JCPH)",
+      "articleTreatment": "reports",
+      "groundingExcerpt": "So far, there have been no credible studies that link vaccination to chronic disease.",
+      "evidenceQuestion": "What credible studies exist that link vaccination to chronic disease?",
+      "supportWouldLookLike": "Studies that demonstrate a link between vaccination and chronic diseases.",
+      "refuteWouldLookLike": "Evidence showing that no credible studies exist linking vaccination to chronic diseases."
+    },
+    {
+      "proposition": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+      "assertedBy": "Jefferson County Public Health (JCPH)",
+      "articleTreatment": "reports",
+      "groundingExcerpt": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+      "evidenceQuestion": "Is ethylmercury harmful to human health?",
+      "supportWouldLookLike": "Evidence showing that ethylmercury is safe for human health.",
+      "refuteWouldLookLike": "Evidence indicating that ethylmercury is harmful to human health."
+    },
+    {
+      "proposition": "Aluminum in vaccines is safe because we are exposed to more aluminum by eating a tomato than from getting vaccines.",
+      "assertedBy": "Jefferson County Public Health (JCPH)",
+      "articleTreatment": "reports",
+      "groundingExcerpt": "We are exposed to more aluminum by eating a tomato than from getting vaccines!",
+      "evidenceQuestion": "How does aluminum exposure from vaccines compare to dietary sources?",
+      "supportWouldLookLike": "Evidence showing that aluminum exposure from vaccines is significantly lower than from dietary sources.",
+      "refuteWouldLookLike": "Evidence indicating that aluminum exposure from vaccines is higher than from dietary sources."
+    },
+    {
+      "proposition": "The childhood vaccination schedule has increased from 5 doses in the 1950s and 60s to 73 doses by 2011.",
+      "assertedBy": "Ana Wolpin",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "by 1986 children were receiving 25 doses/12 shots. In the decades following the 1986 act the childhood schedule exploded to 73 doses/54 shots.",
+      "evidenceQuestion": "What is the current childhood vaccination schedule in the U.S.?",
+      "supportWouldLookLike": "Documentation of the increase in vaccine doses over the decades.",
+      "refuteWouldLookLike": "Evidence showing that the number of vaccine doses has not increased as stated."
+    },
+    {
+      "proposition": "The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after the vaccination program was implemented.",
+      "assertedBy": "Ana Wolpin",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "the U.S. had twice as many first-day infant deaths as all 27 EU nations combined.",
+      "evidenceQuestion": "What are the infant mortality rates in the U.S. compared to EU nations?",
+      "supportWouldLookLike": "Statistics showing that the U.S. has a higher infant mortality rate than EU nations.",
+      "refuteWouldLookLike": "Statistics indicating that the U.S. does not have a higher infant mortality rate than EU nations."
+    },
+    {
+      "proposition": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+      "assertedBy": "Ana Wolpin",
+      "articleTreatment": "advances",
+      "groundingExcerpt": "In 1986 Congress removed all liability from drug companies for childhood vaccines they produced.",
+      "evidenceQuestion": "What are the implications of the 1986 National Childhood Vaccine Injury Act?",
+      "supportWouldLookLike": "Evidence showing that drug companies are not liable for vaccine injuries.",
+      "refuteWouldLookLike": "Evidence indicating that drug companies still hold some liability for vaccine injuries."
+    }
+  ]
+}
