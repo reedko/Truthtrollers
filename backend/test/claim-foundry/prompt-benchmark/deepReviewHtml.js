@@ -28,11 +28,13 @@ margin:0.3rem 0;padding:0.4rem 0.7rem;white-space:pre-wrap;font-size:0.85rem}
 .cluster td{width:${Math.floor(100 / Math.max(profiles.length, 1))}%}
 .muted{color:#777}.ov{background:#fce7f3}.bad{background:#fee2e2;color:#991b1b;font-weight:700}
 </style></head><body>
-<div class="legend"><strong>Blinded review — phase ${phase} (${mode} mode).</strong>
-A <em>Profile</em> is ${mode === "call1" ? "one Call 1 prompt arm" : "one complete prompt arm — a Call 1 prompt + Call 2 prompt pair"} — under a
-seeded opaque label. Producer identities are withheld until scores are locked. Profiles present:
+<div class="legend"><strong>${mode === "split" ? "Review" : "Blinded review"} — phase ${phase} (${mode} mode).</strong>
+A <em>Profile</em> is ${mode === "call1" ? "one Call 1 prompt arm"
+    : mode === "split" ? "one fixture under the contentStance/articleDeployment split arm"
+    : "one complete prompt arm — a Call 1 prompt + Call 2 prompt pair"}${mode === "split" ? "" : " — under a\nseeded opaque label. Producer identities are withheld until scores are locked"}. Profiles present:
 ${profiles.join(", ")}. Field provenance: <span class="tag c1">C1</span>Call 1 (model)
 ${mode === "call1" ? "Call 1 review is pre-host and pre-Call-2."
+    : mode === "split" ? "<span class=\"tag host\">HOST</span>articleUse + scoreTransform are host-derived from the model's contentStance/articleDeployment (1B never emits them)."
     : "<span class=\"tag c2\">C2</span>Call 2 (model) <span class=\"tag host\">HOST</span>deterministic host."}
 Failed runs are results: they carry a failure class and stage.</div>
 <nav><button id="btn-claims" class="active">Claims</button>
@@ -59,6 +61,26 @@ function filtered(){
     && (!S.q || JSON.stringify(r).toLowerCase().includes(S.q.toLowerCase())));
 }
 function detail(r){
+  if (DATA.mode === "split") {
+    return '<div class="detail">'
+    + '<details open><summary>Source text (units '+esc((r.sourceUnitIds||[]).join(", "))+')</summary>'
+    + '<blockquote>'+esc(r.groundingText)+'</blockquote></details>'
+    + '<p><span class="tag c1">C1</span>contentStance: <b>'+esc(r.contentStance)+'</b>'
+    + ' | articleDeployment: <b>'+esc(r.articleDeployment)+'</b>'
+    + ' | articleRole: '+esc(r.articleRole)+'</p>'
+    + '<p><span class="tag host">HOST</span>articleUse: <b>'+esc(r.articleUse)+'</b>'
+    + ' | scoreTransform: <b>'+esc(r.scoreTransform)+'</b>'
+    + ' | assertionSource: '+esc(r.assertionSource)+' <span class=muted>('+esc(r.assertionSourceClass)+')</span>'
+    + ' | materiality: '+esc(r.materiality)+' | groundingSpan: '+esc(r.groundingSpan)
+    + ' | origin: '+esc(r.origin)+'</p>'
+    + '<p>scope: '+esc(r.scope)+' | pillars: '+esc((r.relatedPillarLabels||[]).join(", "))
+    + '<br>evidenceUsefulnessHint: '+esc(r.evidenceUsefulnessHint)+'</p>'
+    + (r.needsSplit && r.needsSplit.split ? '<p class="bad">needsSplit: '+esc(r.needsSplit.reason)+'</p>' : '')
+    + (r.possibleResponseText ? '<details><summary>possibleResponse — distant passage (units '
+      + esc((r.possibleResponseUnitIds||[]).join(", "))+'; feeds articleDeployment only, never contentStance)</summary>'
+      + '<blockquote>'+esc(r.possibleResponseText)+'</blockquote></details>' : '')
+    + '</div>';
+  }
   if (DATA.mode === "call1") {
     const consistency = r.transformConsistent === false
       ? '<b class="bad">CONTRADICTION — effects imply '+esc(r.expectedTransform)+'</b>'
@@ -124,7 +146,13 @@ function detail(r){
   + '<br>host warnings:'+list(r.hostWarnings)+'</p></div>';
 }
 function claimsView(rows){
-  const cols = DATA.mode === "call1" ? [["profile","Profile"],["repeat","Rep"],
+  const cols = DATA.mode === "split" ? [["profile","Fixture"],["repeat","Rep"],
+    ["runStatus","Status"],["claimText","Claim"],["articleRole","Role"],
+    ["contentStance","contentStance [C1]"],["articleDeployment","articleDeployment [C1]"],
+    ["articleUse","articleUse [HOST]"],["scoreTransform","scoreTransform [HOST]"],
+    ["assertionSource","Source"],["assertionSourceClass","class [HOST]"],
+    ["materiality","Mat."],["groundingSpan","Span"],["origin","Origin"]]
+    : DATA.mode === "call1" ? [["profile","Profile"],["repeat","Rep"],
     ["runStatus","Status"],["propositionCore","Proposition P"],["claimText","Final claim"],
     ["articleRole","Role"],
     ["articleUse","Use"],["assertionSource","Source"],["ifSupportedEffect","If supported"],

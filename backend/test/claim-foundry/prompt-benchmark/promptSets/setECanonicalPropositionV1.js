@@ -130,7 +130,7 @@ fixed, assign articleUse, articleRole, effects, and scoreTransformCheck.
 ASSERTION-SOURCE IDENTITY: ARTICLE AUTHORS supplied in ARTICLE IDENTITY are direct
 input identity data, not a fallback. When the article itself supplies P, emit the
 exact matching author name. Never emit generic labels such as "article author",
-"article voice", "analysis", "article analysis", or "CDC statements". When another
+"article voice", "analysis", "article analysis", or "<agency> statements". When another
 person, institution, document, or study supplies P, emit its exact usable name.`;
 
 function buildCall1PromptV4(context) {
@@ -167,7 +167,7 @@ function adaptSourceResponseOutput(output) {
     if (!proposition) throw Object.assign(new Error(`Candidate ${index + 1} omitted sourceProposition`),
       { code: "CF1_AGENT_SEMANTIC_INVALID" });
     if (/^(?:the )?article(?: |_)?(?:author|voice|analysis)$/i.test(source)
-      || /^(?:article )?analysis of /i.test(source) || /^CDC statements$/i.test(source)) {
+      || /^(?:article )?analysis of /i.test(source) || /^[A-Za-z]+ statements$/i.test(source)) {
       throw Object.assign(new Error(`Candidate ${index + 1} used a generic assertion source label`),
         { code: "CF1_AGENT_SEMANTIC_INVALID" });
     }
