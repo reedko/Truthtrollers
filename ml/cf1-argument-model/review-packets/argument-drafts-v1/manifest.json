@@ -1,0 +1,238 @@
+{
+  "schemaVersion": "cf1.argumentDraftReviewManifest.v1",
+  "generatedAt": "2026-07-22T11:11:58.970Z",
+  "sourceDraftVersion": "argumentDraft.v1",
+  "fixtureIds": [
+    "CF1-F01",
+    "CF1-F02",
+    "CF1-F03",
+    "CF1-F04",
+    "CF1-F05",
+    "CF1-F06",
+    "CF1-F07",
+    "CF1-F08",
+    "CF1-F09"
+  ],
+  "totals": {
+    "sourceUnits": 1701,
+    "coverageRows": 940,
+    "argumentUnits": 547,
+    "included": 431,
+    "relations": 186,
+    "consistencyFindings": 53,
+    "flaggedArguments": 261,
+    "opponents": 51,
+    "unknownSources": 5
+  },
+  "fixtures": [
+    {
+      "fixtureId": "CF1-F01",
+      "counts": {
+        "sourceUnits": 305,
+        "coverageRows": 95,
+        "argumentUnits": 64,
+        "included": 45,
+        "relations": 25,
+        "consistencyFindings": 5,
+        "flaggedArguments": 34,
+        "opponents": 3,
+        "unknownSources": 0
+      },
+      "fixtureFlags": [
+        {
+          "code": "generic_evidence_package_review",
+          "label": "All evidence warrants are draft-model templates; adjudicate them before training evidence tasks",
+          "severity": "warn"
+        }
+      ]
+    },
+    {
+      "fixtureId": "CF1-F02",
+      "counts": {
+        "sourceUnits": 78,
+        "coverageRows": 42,
+        "argumentUnits": 36,
+        "included": 33,
+        "relations": 17,
+        "consistencyFindings": 3,
+        "flaggedArguments": 14,
+        "opponents": 1,
+        "unknownSources": 0
+      },
+      "fixtureFlags": [
+        {
+          "code": "portfolio_overinclusive_review",
+          "label": "Portfolio includes 33/36; review selectivity",
+          "severity": "warn"
+        },
+        {
+          "code": "generic_evidence_package_review",
+          "label": "All evidence warrants are draft-model templates; adjudicate them before training evidence tasks",
+          "severity": "warn"
+        }
+      ]
+    },
+    {
+      "fixtureId": "CF1-F03",
+      "counts": {
+        "sourceUnits": 404,
+        "coverageRows": 133,
+        "argumentUnits": 99,
+        "included": 97,
+        "relations": 40,
+        "consistencyFindings": 8,
+        "flaggedArguments": 65,
+        "opponents": 9,
+        "unknownSources": 0
+      },
+      "fixtureFlags": [
+        {
+          "code": "portfolio_overinclusive_review",
+          "label": "Portfolio includes 97/99; review selectivity",
+          "severity": "warn"
+        },
+        {
+          "code": "generic_evidence_package_review",
+          "label": "All evidence warrants are draft-model templates; adjudicate them before training evidence tasks",
+          "severity": "warn"
+        }
+      ]
+    },
+    {
+      "fixtureId": "CF1-F04",
+      "counts": {
+        "sourceUnits": 107,
+        "coverageRows": 51,
+        "argumentUnits": 44,
+        "included": 41,
+        "relations": 22,
+        "consistencyFindings": 4,
+        "flaggedArguments": 19,
+        "opponents": 3,
+        "unknownSources": 0
+      },
+      "fixtureFlags": [
+        {
+          "code": "portfolio_overinclusive_review",
+          "label": "Portfolio includes 41/44; review selectivity",
+          "severity": "warn"
+        },
+        {
+          "code": "generic_evidence_package_review",
+          "label": "All evidence warrants are draft-model templates; adjudicate them before training evidence tasks",
+          "severity": "warn"
+        }
+      ]
+    },
+    {
+      "fixtureId": "CF1-F05",
+      "counts": {
+        "sourceUnits": 259,
+        "coverageRows": 71,
+        "argumentUnits": 52,
+        "included": 52,
+        "relations": 28,
+        "consistencyFindings": 5,
+        "flaggedArguments": 28,
+        "opponents": 18,
+        "unknownSources": 0
+      },
+      "fixtureFlags": [
+        {
+          "code": "portfolio_overinclusive_review",
+          "label": "Portfolio includes 52/52; review selectivity",
+          "severity": "warn"
+        },
+        {
+          "code": "generic_evidence_package_review",
+          "label": "All evidence warrants are draft-model templates; adjudicate them before training evidence tasks",
+          "severity": "warn"
+        }
+      ]
+    },
+    {
+      "fixtureId": "CF1-F06",
+      "counts": {
+        "sourceUnits": 57,
+        "coverageRows": 57,
+        "argumentUnits": 41,
+        "included": 16,
+        "relations": 12,
+        "consistencyFindings": 5,
+        "flaggedArguments": 17,
+        "opponents": 0,
+        "unknownSources": 1
+      },
+      "fixtureFlags": [
+        {
+          "code": "generic_evidence_package_review",
+          "label": "All evidence warrants are draft-model templates; adjudicate them before training evidence tasks",
+          "severity": "warn"
+        }
+      ]
+    },
+    {
+      "fixtureId": "CF1-F07",
+      "counts": {
+        "sourceUnits": 76,
+        "coverageRows": 76,
+        "argumentUnits": 43,
+        "included": 28,
+        "relations": 14,
+        "consistencyFindings": 6,
+        "flaggedArguments": 13,
+        "opponents": 1,
+        "unknownSources": 2
+      },
+      "fixtureFlags": [
+        {
+          "code": "generic_evidence_package_review",
+          "label": "All evidence warrants are draft-model templates; adjudicate them before training evidence tasks",
+          "severity": "warn"
+        }
+      ]
+    },
+    {
+      "fixtureId": "CF1-F08",
+      "counts": {
+        "sourceUnits": 7,
+        "coverageRows": 7,
+        "argumentUnits": 9,
+        "included": 7,
+        "relations": 3,
+        "consistencyFindings": 2,
+        "flaggedArguments": 0,
+        "opponents": 0,
+        "unknownSources": 0
+      },
+      "fixtureFlags": [
+        {
+          "code": "generic_evidence_package_review",
+          "label": "All evidence warrants are draft-model templates; adjudicate them before training evidence tasks",
+          "severity": "warn"
+        }
+      ]
+    },
+    {
+      "fixtureId": "CF1-F09",
+      "counts": {
+        "sourceUnits": 408,
+        "coverageRows": 408,
+        "argumentUnits": 159,
+        "included": 112,
+        "relations": 25,
+        "consistencyFindings": 15,
+        "flaggedArguments": 71,
+        "opponents": 16,
+        "unknownSources": 2
+      },
+      "fixtureFlags": [
+        {
+          "code": "generic_evidence_package_review",
+          "label": "All evidence warrants are draft-model templates; adjudicate them before training evidence tasks",
+          "severity": "warn"
+        }
+      ]
+    }
+  ]
+}

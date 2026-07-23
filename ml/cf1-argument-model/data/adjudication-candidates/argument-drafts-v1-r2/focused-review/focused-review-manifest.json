@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "cf1.focusedReviewManifest.v1",
+  "generatedAt": "2026-07-22T14:47:34.819Z",
+  "candidateDirectory": "data/adjudication-candidates/argument-drafts-v1-r2",
+  "reviewQueueSha256": "1c94125db46b7518ace76298700640ca3a4ba0002974f306b1d3de43f2aa278d",
+  "compilationReportSha256": "7344abe9ab73674db98a0203ee60c2578864a55a31c8897f17a5e9ceec79d67e",
+  "candidateFiles": [
+    {
+      "fixtureId": "CF1-F01",
+      "sha256": "f2abc94afb4c6d9d72a7ad9b3f116c654a013c644a5faeaab065fa42f82c02f3"
+    },
+    {
+      "fixtureId": "CF1-F02",
+      "sha256": "2780b9686ade39f5cee6ef5cb8ef6d8670f682c85db69e6c1f116d501e08bc44"
+    },
+    {
+      "fixtureId": "CF1-F03",
+      "sha256": "942ceab6625f89f5e2857c80481e0f466eb08ac12b3660535ea5d35a83cca5b0"
+    },
+    {
+      "fixtureId": "CF1-F04",
+      "sha256": "09830805a2712abb15b0826f1cc8ed57d14ec530c02737fc42ac56db4729e13c"
+    },
+    {
+      "fixtureId": "CF1-F05",
+      "sha256": "60a2e7aa9c45680f8b270a282c41ccbf72b6a04b353a8165cc7eaf3b564b4b77"
+    },
+    {
+      "fixtureId": "CF1-F06",
+      "sha256": "f4359ee26e3ccbca31df8fbc9301ba972fdbc6388232089d51f44b9c054d6bbc"
+    },
+    {
+      "fixtureId": "CF1-F07",
+      "sha256": "10ec08666329993c56e67ea443fec6b4a15b8928f82de728d482d138cd758182"
+    },
+    {
+      "fixtureId": "CF1-F08",
+      "sha256": "dd83c985eb825ee8351ec5ad84f5441f47f85c41ac41e35d8baf41b01f1cd4c2"
+    },
+    {
+      "fixtureId": "CF1-F09",
+      "sha256": "30a05562308c547864a4a4b84090b2cce05bb6fd2e6b0e48608a50d3d51c4f58"
+    }
+  ],
+  "counts": {
+    "splitChildren": 208,
+    "unresolvedRelations": 55,
+    "unresolvedConsistencyFindings": 14,
+    "unresolvedPassageCoverage": 1,
+    "attributionSpotChecks": 5,
+    "rubricTargets": 112,
+    "prohibitedInterpretations": 53
+  }
+}

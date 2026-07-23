@@ -1,0 +1,154 @@
+{
+  "schemaVersion": "cf1.leaveOneFixtureOutSplits.v1",
+  "generatedAt": "2026-07-23T00:43:47.710Z",
+  "folds": [
+    {
+      "heldOutFixtureId": "CF1-F01",
+      "trainingFixtureIds": [
+        "CF1-F02",
+        "CF1-F03",
+        "CF1-F04",
+        "CF1-F05",
+        "CF1-F06",
+        "CF1-F07",
+        "CF1-F08",
+        "CF1-F09"
+      ],
+      "trainRowCount": 3221,
+      "evaluationRowCount": 471,
+      "evaluationKeyRowCount": 17
+    },
+    {
+      "heldOutFixtureId": "CF1-F02",
+      "trainingFixtureIds": [
+        "CF1-F01",
+        "CF1-F03",
+        "CF1-F04",
+        "CF1-F05",
+        "CF1-F06",
+        "CF1-F07",
+        "CF1-F08",
+        "CF1-F09"
+      ],
+      "trainRowCount": 3472,
+      "evaluationRowCount": 220,
+      "evaluationKeyRowCount": 21
+    },
+    {
+      "heldOutFixtureId": "CF1-F03",
+      "trainingFixtureIds": [
+        "CF1-F01",
+        "CF1-F02",
+        "CF1-F04",
+        "CF1-F05",
+        "CF1-F06",
+        "CF1-F07",
+        "CF1-F08",
+        "CF1-F09"
+      ],
+      "trainRowCount": 3054,
+      "evaluationRowCount": 638,
+      "evaluationKeyRowCount": 20
+    },
+    {
+      "heldOutFixtureId": "CF1-F04",
+      "trainingFixtureIds": [
+        "CF1-F01",
+        "CF1-F02",
+        "CF1-F03",
+        "CF1-F05",
+        "CF1-F06",
+        "CF1-F07",
+        "CF1-F08",
+        "CF1-F09"
+      ],
+      "trainRowCount": 3431,
+      "evaluationRowCount": 261,
+      "evaluationKeyRowCount": 20
+    },
+    {
+      "heldOutFixtureId": "CF1-F05",
+      "trainingFixtureIds": [
+        "CF1-F01",
+        "CF1-F02",
+        "CF1-F03",
+        "CF1-F04",
+        "CF1-F06",
+        "CF1-F07",
+        "CF1-F08",
+        "CF1-F09"
+      ],
+      "trainRowCount": 3346,
+      "evaluationRowCount": 346,
+      "evaluationKeyRowCount": 21
+    },
+    {
+      "heldOutFixtureId": "CF1-F06",
+      "trainingFixtureIds": [
+        "CF1-F01",
+        "CF1-F02",
+        "CF1-F03",
+        "CF1-F04",
+        "CF1-F05",
+        "CF1-F07",
+        "CF1-F08",
+        "CF1-F09"
+      ],
+      "trainRowCount": 3455,
+      "evaluationRowCount": 237,
+      "evaluationKeyRowCount": 19
+    },
+    {
+      "heldOutFixtureId": "CF1-F07",
+      "trainingFixtureIds": [
+        "CF1-F01",
+        "CF1-F02",
+        "CF1-F03",
+        "CF1-F04",
+        "CF1-F05",
+        "CF1-F06",
+        "CF1-F08",
+        "CF1-F09"
+      ],
+      "trainRowCount": 3423,
+      "evaluationRowCount": 269,
+      "evaluationKeyRowCount": 16
+    },
+    {
+      "heldOutFixtureId": "CF1-F08",
+      "trainingFixtureIds": [
+        "CF1-F01",
+        "CF1-F02",
+        "CF1-F03",
+        "CF1-F04",
+        "CF1-F05",
+        "CF1-F06",
+        "CF1-F07",
+        "CF1-F09"
+      ],
+      "trainRowCount": 3648,
+      "evaluationRowCount": 44,
+      "evaluationKeyRowCount": 15
+    },
+    {
+      "heldOutFixtureId": "CF1-F09",
+      "trainingFixtureIds": [
+        "CF1-F01",
+        "CF1-F02",
+        "CF1-F03",
+        "CF1-F04",
+        "CF1-F05",
+        "CF1-F06",
+        "CF1-F07",
+        "CF1-F08"
+      ],
+      "trainRowCount": 2486,
+      "evaluationRowCount": 1206,
+      "evaluationKeyRowCount": 16
+    }
+  ],
+  "adjudicationSource": "assistant_adjudicated",
+  "independentHumanGold": false,
+  "humanReviewRequired": false,
+  "trainingGoldStatus": "user_accepted_gold"
+}

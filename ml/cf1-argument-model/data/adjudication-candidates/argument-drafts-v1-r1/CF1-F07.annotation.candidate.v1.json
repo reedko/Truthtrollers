@@ -1,0 +1,3357 @@
+{
+  "schemaVersion": "cf1.argumentAnnotation.v1",
+  "fixture": {
+    "fixtureId": "CF1-F07",
+    "fixtureRevision": 1,
+    "fixtureClass": "weak_or_absent_thesis",
+    "title": "The 11 biggest unanswered questions about dark matter",
+    "articlePath": "backend/test/claim-foundry/fixtures/CF1-F07/article.json",
+    "evaluatorKeyPath": "backend/test/claim-foundry/prompt-evaluation-keys/CF1-F07.json",
+    "chatDraftPromptPath": "ml/cf1-argument-model/data/annotation-prompts/CF1-F07.chat-prompt.md"
+  },
+  "adjudication": {
+    "status": "draft",
+    "primaryAnnotatorId": null,
+    "independentReviewerId": null,
+    "startedAt": null,
+    "approvedAt": null,
+    "notes": "Compiled from reviewed model draft. Split children, affected relations, consistency findings, rubric coverage, and evidence targets remain subject to focused review.\nAccept. This is a question-led explainer with a weak closing preference, not a sustained argument for one dark-matter model.",
+    "sourceReviewSchemaVersion": "cf1.argumentDraftReviewDecisions.v1",
+    "sourceReviewExportedAt": "2026-07-22T14:01:25.286Z"
+  },
+  "orientation": {
+    "theme": "Eleven unresolved scientific questions about the identity, composition, interactions, detection, and even existence of dark matter.",
+    "thesis": "The article has no strong argumentative thesis; it reports that dark matter is widely inferred from astronomical evidence but remains poorly understood, with numerous competing hypotheses and unresolved anomalies.",
+    "thesisStatus": "weak",
+    "thesisHinge": {
+      "proposition": "Astronomical evidence is best explained by real but unidentified dark matter rather than by modified gravity alone.",
+      "ifSupportedEffectOnThesis": "strengthens",
+      "ifRefutedEffectOnThesis": "weakens"
+    },
+    "basisSourceUnitIds": [
+      "U0001",
+      "U0002",
+      "U0003",
+      "U0004",
+      "U0005",
+      "U0069",
+      "U0073",
+      "U0074",
+      "U0076"
+    ],
+    "notes": "This is a question-led explainer rather than a sustained argument. Most hypotheses are reported neutrally, with a mild closing preference for dark matter’s existence."
+  },
+  "passageCoverage": [
+    {
+      "coverageId": "COV001",
+      "sourceUnitIds": [
+        "U0001"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU001"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV002",
+      "sourceUnitIds": [
+        "U0002"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU002"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV003",
+      "sourceUnitIds": [
+        "U0003"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU003",
+        "AU004"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV004",
+      "sourceUnitIds": [
+        "U0004"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU005"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV005",
+      "sourceUnitIds": [
+        "U0005"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV006",
+      "sourceUnitIds": [
+        "U0006"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV007",
+      "sourceUnitIds": [
+        "U0007"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU005"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV008",
+      "sourceUnitIds": [
+        "U0008"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU006"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV009",
+      "sourceUnitIds": [
+        "U0009"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU006"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV010",
+      "sourceUnitIds": [
+        "U0010"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU007",
+        "AU008"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV011",
+      "sourceUnitIds": [
+        "U0011"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV012",
+      "sourceUnitIds": [
+        "U0012"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV013",
+      "sourceUnitIds": [
+        "U0013"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU009-S01",
+        "AU009-S02"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV014",
+      "sourceUnitIds": [
+        "U0014"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV015",
+      "sourceUnitIds": [
+        "U0015"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU009-S01",
+        "AU009-S02"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV016",
+      "sourceUnitIds": [
+        "U0016"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU010"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV017",
+      "sourceUnitIds": [
+        "U0017"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV018",
+      "sourceUnitIds": [
+        "U0018"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU011"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV019",
+      "sourceUnitIds": [
+        "U0019"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU012"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV020",
+      "sourceUnitIds": [
+        "U0020"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU013"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV021",
+      "sourceUnitIds": [
+        "U0021"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV022",
+      "sourceUnitIds": [
+        "U0022"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV023",
+      "sourceUnitIds": [
+        "U0023"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU014"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV024",
+      "sourceUnitIds": [
+        "U0024"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU015"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV025",
+      "sourceUnitIds": [
+        "U0025"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU016"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV026",
+      "sourceUnitIds": [
+        "U0026"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU017"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV027",
+      "sourceUnitIds": [
+        "U0027"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV028",
+      "sourceUnitIds": [
+        "U0028"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV029",
+      "sourceUnitIds": [
+        "U0029"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV030",
+      "sourceUnitIds": [
+        "U0030"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU018"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV031",
+      "sourceUnitIds": [
+        "U0031"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU018"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV032",
+      "sourceUnitIds": [
+        "U0032"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU019"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV033",
+      "sourceUnitIds": [
+        "U0033"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU019"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV034",
+      "sourceUnitIds": [
+        "U0034"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV035",
+      "sourceUnitIds": [
+        "U0035"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU020"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV036",
+      "sourceUnitIds": [
+        "U0036"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU020",
+        "AU021"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV037",
+      "sourceUnitIds": [
+        "U0037"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU022"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV038",
+      "sourceUnitIds": [
+        "U0038"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU023"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV039",
+      "sourceUnitIds": [
+        "U0039"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV040",
+      "sourceUnitIds": [
+        "U0040"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU024"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV041",
+      "sourceUnitIds": [
+        "U0041"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV042",
+      "sourceUnitIds": [
+        "U0042"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU025",
+        "AU026"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV043",
+      "sourceUnitIds": [
+        "U0043"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU027"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV044",
+      "sourceUnitIds": [
+        "U0044"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU027"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV045",
+      "sourceUnitIds": [
+        "U0045"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV046",
+      "sourceUnitIds": [
+        "U0046"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU028"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV047",
+      "sourceUnitIds": [
+        "U0047"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU029"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV048",
+      "sourceUnitIds": [
+        "U0048"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU029"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV049",
+      "sourceUnitIds": [
+        "U0049"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU030"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV050",
+      "sourceUnitIds": [
+        "U0050"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV051",
+      "sourceUnitIds": [
+        "U0051"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU031"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV052",
+      "sourceUnitIds": [
+        "U0052"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU031"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV053",
+      "sourceUnitIds": [
+        "U0053"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU031"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV054",
+      "sourceUnitIds": [
+        "U0054"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU032-S01",
+        "AU032-S02"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV055",
+      "sourceUnitIds": [
+        "U0055"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV056",
+      "sourceUnitIds": [
+        "U0056"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV057",
+      "sourceUnitIds": [
+        "U0057"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU033"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV058",
+      "sourceUnitIds": [
+        "U0058"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU033"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV059",
+      "sourceUnitIds": [
+        "U0059"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU033"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV060",
+      "sourceUnitIds": [
+        "U0060"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU034-S01",
+        "AU034-S02"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV061",
+      "sourceUnitIds": [
+        "U0061"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU034-S01",
+        "AU034-S02"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV062",
+      "sourceUnitIds": [
+        "U0062"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV063",
+      "sourceUnitIds": [
+        "U0063"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU035"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV064",
+      "sourceUnitIds": [
+        "U0064"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU035"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV065",
+      "sourceUnitIds": [
+        "U0065"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU036"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV066",
+      "sourceUnitIds": [
+        "U0066"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU037"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV067",
+      "sourceUnitIds": [
+        "U0067"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU038"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV068",
+      "sourceUnitIds": [
+        "U0068"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU039"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV069",
+      "sourceUnitIds": [
+        "U0069"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV070",
+      "sourceUnitIds": [
+        "U0070"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU040"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV071",
+      "sourceUnitIds": [
+        "U0071"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU040"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV072",
+      "sourceUnitIds": [
+        "U0072"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU040"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV073",
+      "sourceUnitIds": [
+        "U0073"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU041"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV074",
+      "sourceUnitIds": [
+        "U0074"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU042"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV075",
+      "sourceUnitIds": [
+        "U0075"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU043"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV076",
+      "sourceUnitIds": [
+        "U0076"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU043"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    }
+  ],
+  "argumentUnits": [
+    {
+      "argumentUnitId": "AU001",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0001"
+        ],
+        "verbatimExcerpt": "In the 1930s, a Swiss astronomer named Fritz Zwicky noticed that galaxies in a distant cluster were orbiting one another much faster than they should have been given the amount of visible mass they had."
+      },
+      "canonicalAtomicProposition": "Galaxies in a distant cluster orbited faster than their visible mass appeared able to explain.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Fritz Zwicky",
+        "sourceUnitIds": [
+          "U0001"
+        ],
+        "basis": "The proposition is supplied by Fritz Zwicky in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU002",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0002"
+        ],
+        "verbatimExcerpt": "He proposed than an unseen substance, which he called dark matter, might be tugging gravitationally on these galaxies."
+      },
+      "canonicalAtomicProposition": "Fritz Zwicky proposed that unseen matter gravitationally affected those galaxies.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Fritz Zwicky",
+        "sourceUnitIds": [
+          "U0002"
+        ],
+        "basis": "The proposition is supplied by Fritz Zwicky in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU003",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0003"
+        ],
+        "verbatimExcerpt": "Since then, researchers have confirmed that this mysterious material can be found throughout the cosmos, and that it is six times more abundant than the normal matter that makes up ordinary things like stars and people."
+      },
+      "canonicalAtomicProposition": "Researchers have found evidence attributed to dark matter throughout the cosmos.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0003"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU004",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0003"
+        ],
+        "verbatimExcerpt": "Since then, researchers have confirmed that this mysterious material can be found throughout the cosmos, and that it is six times more abundant than the normal matter that makes up ordinary things like stars and people."
+      },
+      "canonicalAtomicProposition": "Dark matter is approximately six times as abundant as ordinary matter.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0003"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU005",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0004",
+          "U0007"
+        ],
+        "verbatimExcerpt": "Yet despite seeing dark matter throughout the universe, scientists are mostly still scratching their heads over it. First and perhaps most perplexingly, researchers remain unsure about what exactly dark matter is."
+      },
+      "canonicalAtomicProposition": "Scientists remain uncertain about the nature of dark matter.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0004",
+          "U0007"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU006",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0008",
+          "U0009"
+        ],
+        "verbatimExcerpt": "Originally, some scientists conjectured that the missing mass in the universe was made up of small faint stars and black holes, though detailed observations have not turned up nearly enough such objects to account for dark matter's influence, as physicist Don Lincoln of the U.S. Department of Energy's Fermilab previously wrote for Live Science ."
+      },
+      "canonicalAtomicProposition": "Observed faint stars and black holes are insufficient to account for dark matter’s inferred gravitational influence.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Don Lincoln",
+        "sourceUnitIds": [
+          "U0008",
+          "U0009"
+        ],
+        "basis": "The proposition is supplied by Don Lincoln in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU007",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0010"
+        ],
+        "verbatimExcerpt": "The current leading contender for dark matter's mantle is a hypothetical particle called a Weakly Interacting Massive Particle, or WIMP, which would behave sort of like a neutron except would be between 10 and 100 times heavier than a proton, as Lincoln wrote."
+      },
+      "canonicalAtomicProposition": "Weakly interacting massive particles are a leading hypothetical dark-matter candidate.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Don Lincoln",
+        "sourceUnitIds": [
+          "U0010"
+        ],
+        "basis": "The proposition is supplied by Don Lincoln in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU008",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0010"
+        ],
+        "verbatimExcerpt": "The current leading contender for dark matter's mantle is a hypothetical particle called a Weakly Interacting Massive Particle, or WIMP, which would behave sort of like a neutron except would be between 10 and 100 times heavier than a proton, as Lincoln wrote."
+      },
+      "canonicalAtomicProposition": "A WIMP could be between ten and one hundred times more massive than a proton.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Don Lincoln",
+        "sourceUnitIds": [
+          "U0010"
+        ],
+        "basis": "The proposition is supplied by Don Lincoln in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU009-S01",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0013",
+          "U0015"
+        ],
+        "verbatimExcerpt": "If dark matter is made from WIMPs, they should be all around us, invisible and barely detectable. While they wouldn't interact with ordinary matter very much, there is always some slight chance that a dark-matter particle could hit a normal particle like a proton or electron as it travels through space."
+      },
+      "canonicalAtomicProposition": "If dark matter consists of WIMPs, WIMPs should pervade the local environment.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0013",
+          "U0015"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence.\nSplit from AU009; child 1 of 2."
+    },
+    {
+      "argumentUnitId": "AU009-S02",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0013",
+          "U0015"
+        ],
+        "verbatimExcerpt": "If dark matter is made from WIMPs, they should be all around us, invisible and barely detectable. While they wouldn't interact with ordinary matter very much, there is always some slight chance that a dark-matter particle could hit a normal particle like a proton or electron as it travels through space."
+      },
+      "canonicalAtomicProposition": "If dark matter consists of WIMPs, WIMPs should occasionally collide with ordinary particles.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0013",
+          "U0015"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence.\nSplit from AU009; child 2 of 2."
+    },
+    {
+      "argumentUnitId": "AU010",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0016"
+        ],
+        "verbatimExcerpt": "So, researchers have built experiment after experiment to study huge numbers of ordinary particles deep underground, where they are shielded from interfering radiation that could mimic a dark-matter-particle collision."
+      },
+      "canonicalAtomicProposition": "Researchers built underground detectors to search for rare dark-matter collisions while shielding against background radiation.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0016"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU011",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0018"
+        ],
+        "verbatimExcerpt": "After decades of searching, not one of these detectors has made a credible discovery."
+      },
+      "canonicalAtomicProposition": "Decades of direct-detection searches had produced no credible dark-matter discovery.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0018"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU012",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0019"
+        ],
+        "verbatimExcerpt": "Earlier this year, the Chinese PandaX experiment reported the latest WIMP nondetection."
+      },
+      "canonicalAtomicProposition": "The PandaX experiment reported a WIMP nondetection.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "study",
+        "name": "PandaX experiment",
+        "sourceUnitIds": [
+          "U0019"
+        ],
+        "basis": "The proposition is supplied by PandaX experiment in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU013",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0020"
+        ],
+        "verbatimExcerpt": "It seems likely that dark-matter particles are much smaller than WIMPs, or lack the properties that would make them easy to study, physicist Hai-Bo Yu of the University of California, Riverside, told Live Science at the time ."
+      },
+      "canonicalAtomicProposition": "Dark-matter particles may be smaller than WIMPs or may lack properties that make them readily detectable.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Hai-Bo Yu",
+        "sourceUnitIds": [
+          "U0020"
+        ],
+        "basis": "The proposition is supplied by Hai-Bo Yu in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "qualification",
+        "basis": "The article presents this proposition as reported_neutral and uses it as qualification."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU014",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0023"
+        ],
+        "verbatimExcerpt": "So, some researchers have wondered if dark matter, which makes up 85 percent of the matter in the universe, might also be just as complicated."
+      },
+      "canonicalAtomicProposition": "Dark matter constitutes about 85 percent of all matter in the universe.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0023"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU015",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0024"
+        ],
+        "verbatimExcerpt": "\"There is no good reason to assume that all the dark matter in the universe is built out of one type of particle,\" physicist Andrey Katz of Harvard University said to Space.com, Live Science's sister site ."
+      },
+      "canonicalAtomicProposition": "There is no strong reason to assume all dark matter consists of one particle type.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Andrey Katz",
+        "sourceUnitIds": [
+          "U0024"
+        ],
+        "basis": "The proposition is supplied by Andrey Katz in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU016",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0025"
+        ],
+        "verbatimExcerpt": "Dark protons could combine with dark electrons to form dark atoms, producing configurations as diverse and interesting as those found in the visible world, Katz said."
+      },
+      "canonicalAtomicProposition": "Hypothetical dark protons and dark electrons could form dark atoms.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Andrey Katz",
+        "sourceUnitIds": [
+          "U0025"
+        ],
+        "basis": "The proposition is supplied by Andrey Katz in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU017",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0026"
+        ],
+        "verbatimExcerpt": "While such proposals have increasingly been imagined in physics labs, figuring out a way to confirm or deny them has so far eluded scientists."
+      },
+      "canonicalAtomicProposition": "Scientists had not found a way to confirm or exclude multi-particle dark-sector proposals.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0026"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU018",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0030",
+          "U0031"
+        ],
+        "verbatimExcerpt": "Along with additional particles of dark matter, there is the possibility that dark matter experiences forces analogous to those felt by regular matter. Some researchers have searched for \"dark photons,\" which would be like the photons exchanged between normal particles that give rise to the electromagnetic force, except they would be felt only by dark matter particles."
+      },
+      "canonicalAtomicProposition": "Dark matter may experience forces carried by hypothetical dark photons.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0030",
+          "U0031"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU019",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0032",
+          "U0033"
+        ],
+        "verbatimExcerpt": "Physicists in Italy are gearing up to smash a beam of electrons and their antiparticles, known as positrons, into a diamond, as Live Science previously reported . If dark photons do exist, the electron-positron pairs could annihilate and produce one of the strange force-carrying particles, potentially opening a brand-new sector of the universe."
+      },
+      "canonicalAtomicProposition": "An Italian electron-positron experiment could produce detectable dark photons if such particles exist.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0032",
+          "U0033"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU020",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0035",
+          "U0036"
+        ],
+        "verbatimExcerpt": "As physicists increasingly fall out of love with WIMPs, other dark-matter particles are starting to gain favor. One of the leading replacements is a hypothetical particle known as an axion, which would be extremely light, perhaps as little as 10 raised to the 31st power less massive than a proton."
+      },
+      "canonicalAtomicProposition": "Axions have become a leading alternative dark-matter candidate as interest in WIMPs has declined.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0035",
+          "U0036"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU021",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0036"
+        ],
+        "verbatimExcerpt": "One of the leading replacements is a hypothetical particle known as an axion, which would be extremely light, perhaps as little as 10 raised to the 31st power less massive than a proton."
+      },
+      "canonicalAtomicProposition": "A hypothetical axion could be extremely light relative to a proton.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0036"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU022",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0037"
+        ],
+        "verbatimExcerpt": "Axions are now being searched for in a few experiments."
+      },
+      "canonicalAtomicProposition": "Multiple experiments were searching for axions.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0037"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU023",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0038"
+        ],
+        "verbatimExcerpt": "Recent computer simulations have raised the possibility that these axions could form star-like objects, which might produce detectable radiation that would be quite similar to mysterious phenomena known as fast-radio bursts, as Live Science previously reported ."
+      },
+      "canonicalAtomicProposition": "Simulations suggest axions could form star-like objects that emit radiation resembling fast radio bursts.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "study",
+        "name": "computer simulations",
+        "sourceUnitIds": [
+          "U0038"
+        ],
+        "basis": "The proposition is supplied by computer simulations in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU024",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0040"
+        ],
+        "verbatimExcerpt": "Astronomers discovered dark matter through its gravitational interactions with ordinary matter, suggesting that this is its main way of making its presence known in the universe."
+      },
+      "canonicalAtomicProposition": "Dark matter was discovered through its inferred gravitational interactions with ordinary matter.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0040"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU025",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0042"
+        ],
+        "verbatimExcerpt": "According to some theories, dark-matter particles should be their own antiparticles, meaning that two dark-matter particles would annihilate with one another when they meet."
+      },
+      "canonicalAtomicProposition": "Some theories predict that dark-matter particles are their own antiparticles.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0042"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU026",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0042"
+        ],
+        "verbatimExcerpt": "According to some theories, dark-matter particles should be their own antiparticles, meaning that two dark-matter particles would annihilate with one another when they meet."
+      },
+      "canonicalAtomicProposition": "If dark-matter particles are their own antiparticles, pairs of them should annihilate when they meet.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0042"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU027",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0043",
+          "U0044"
+        ],
+        "verbatimExcerpt": "The Alpha Magnetic Spectrometer (AMS) experiment on the International Space Station has been searching for the telltale signs of this annihilation since 2011 and has already detected hundreds of thousands of events. Scientists still aren't sure if these are coming from dark matter, and the signal has yet to help them pin down exactly what dark matter is."
+      },
+      "canonicalAtomicProposition": "The Alpha Magnetic Spectrometer detected many candidate events but had not established that they originated from dark matter.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "study",
+        "name": "Alpha Magnetic Spectrometer experiment",
+        "sourceUnitIds": [
+          "U0043",
+          "U0044"
+        ],
+        "basis": "The proposition is supplied by Alpha Magnetic Spectrometer experiment in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "reported_neutral",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as reported_neutral and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU028",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0046"
+        ],
+        "verbatimExcerpt": "Because it so massively outweighs ordinary matter, dark matter is often said to be the controlling force that organizes large structures such as galaxies and galactic clusters."
+      },
+      "canonicalAtomicProposition": "Dark matter is generally thought to organize large-scale structures such as galaxies and galaxy clusters.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0046"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU029",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0047",
+          "U0048"
+        ],
+        "verbatimExcerpt": "So, it was strange when, earlier this year, astronomers announced that they had found a galaxy named NGC 1052-DF2 that seemed to contain hardly any dark matter at all. \"Dark matter is apparently not a requirement for forming a galaxy,\" Pieter van Dokkum of Yale University told Space.com at the time ."
+      },
+      "canonicalAtomicProposition": "NGC 1052-DF2 was initially reported as a galaxy containing almost no dark matter.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Pieter van Dokkum and colleagues",
+        "sourceUnitIds": [
+          "U0047",
+          "U0048"
+        ],
+        "basis": "The proposition is supplied by Pieter van Dokkum and colleagues in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU030",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0049"
+        ],
+        "verbatimExcerpt": "However, over the summer, a separate team posted an analysis suggesting that van Dokkum's team had mismeasured the distance to the galaxy, meaning its visible matter was much dimmer and lighter than the first findings and that more of its mass was in dark matter than was previously suggested."
+      },
+      "canonicalAtomicProposition": "A separate analysis argued that the distance to NGC 1052-DF2 had been overestimated and that it contained more dark matter than first inferred.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "study",
+        "name": "separate analysis of NGC 1052-DF2",
+        "sourceUnitIds": [
+          "U0049"
+        ],
+        "basis": "The proposition is supplied by separate analysis of NGC 1052-DF2 in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "qualification",
+        "basis": "The article presents this proposition as reported_neutral and uses it as qualification."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept this qualification or limitation as a distinct node with its current scope."
+    },
+    {
+      "argumentUnitId": "AU031",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0051",
+          "U0052",
+          "U0053"
+        ],
+        "verbatimExcerpt": "A long-standing mystery in particle physics are the puzzling results of a European experiment known as DAMA/LIBRA. This detector — located in an underground mine below the Gran Sasso mountain in Italy — has been searching for a periodic oscillation in dark matter particles. This oscillation should arise as the Earth moves in its orbit around the sun while flying through the galactic stream of dark matter surrounding our solar system , sometimes called the dark matter wind."
+      },
+      "canonicalAtomicProposition": "DAMA/LIBRA searches for an annual modulation expected from Earth moving through a galactic dark-matter stream.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "study",
+        "name": "DAMA/LIBRA experiment",
+        "sourceUnitIds": [
+          "U0051",
+          "U0052",
+          "U0053"
+        ],
+        "basis": "The proposition is supplied by DAMA/LIBRA experiment in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU032-S01",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0054"
+        ],
+        "verbatimExcerpt": "Since 1997, DAMA/LIBRA has claimed to see exactly this signal , though no other experiment has seen anything like this."
+      },
+      "canonicalAtomicProposition": "DAMA/LIBRA has claimed an annual modulation signal since 1997.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "study",
+        "name": "DAMA/LIBRA experiment",
+        "sourceUnitIds": [
+          "U0054"
+        ],
+        "basis": "The proposition is supplied by DAMA/LIBRA experiment in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as reported_neutral and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication.\nSplit from AU032; child 1 of 2."
+    },
+    {
+      "argumentUnitId": "AU032-S02",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0054"
+        ],
+        "verbatimExcerpt": "Since 1997, DAMA/LIBRA has claimed to see exactly this signal , though no other experiment has seen anything like this."
+      },
+      "canonicalAtomicProposition": "No other experiment has observed a comparable annual modulation signal.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "study",
+        "name": "DAMA/LIBRA experiment",
+        "sourceUnitIds": [
+          "U0054"
+        ],
+        "basis": "The proposition is supplied by DAMA/LIBRA experiment in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as reported_neutral and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication.\nSplit from AU032; child 2 of 2."
+    },
+    {
+      "argumentUnitId": "AU033",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0057",
+          "U0058",
+          "U0059"
+        ],
+        "verbatimExcerpt": "Radiation with a wavelength of 21 centimeters was emitted by stars in the universe's infancy, just 180 million years after the Big Bang. It was then absorbed by cold hydrogen that was around at the same time. When this radiation was detected in February of this year, its signature suggested that the hydrogen was much colder than scientists had predicted."
+      },
+      "canonicalAtomicProposition": "A 21-centimeter cosmic signal indicated hydrogen colder than scientists had predicted.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "study",
+        "name": "21-centimeter radiation observation",
+        "sourceUnitIds": [
+          "U0057",
+          "U0058",
+          "U0059"
+        ],
+        "basis": "The proposition is supplied by 21-centimeter radiation observation in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU034-S01",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0060",
+          "U0061"
+        ],
+        "verbatimExcerpt": "Astrophysicist Julian Muñoz of Harvard University hypothesized that dark matter with an electrical charge could have drawn heat away from the all-pervasive hydrogen, sort of like ice cubes floating in lemonade, as he told Live Science at the time . But the conjecture has yet to be confirmed."
+      },
+      "canonicalAtomicProposition": "Julian Muñoz hypothesized that electrically charged dark matter drew heat from early-universe hydrogen.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Julian Muñoz",
+        "sourceUnitIds": [
+          "U0060",
+          "U0061"
+        ],
+        "basis": "The proposition is supplied by Julian Muñoz in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "qualification",
+        "basis": "The article presents this proposition as reported_neutral and uses it as qualification."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication.\nSplit from AU034; child 1 of 2."
+    },
+    {
+      "argumentUnitId": "AU034-S02",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0060",
+          "U0061"
+        ],
+        "verbatimExcerpt": "Astrophysicist Julian Muñoz of Harvard University hypothesized that dark matter with an electrical charge could have drawn heat away from the all-pervasive hydrogen, sort of like ice cubes floating in lemonade, as he told Live Science at the time . But the conjecture has yet to be confirmed."
+      },
+      "canonicalAtomicProposition": "The charged-dark-matter explanation remained unconfirmed.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Julian Muñoz",
+        "sourceUnitIds": [
+          "U0060",
+          "U0061"
+        ],
+        "basis": "The proposition is supplied by Julian Muñoz in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "qualification",
+        "basis": "The article presents this proposition as reported_neutral and uses it as qualification."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication.\nSplit from AU034; child 2 of 2."
+    },
+    {
+      "argumentUnitId": "AU035",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0063",
+          "U0064"
+        ],
+        "verbatimExcerpt": "Neutrons are regular matter particles with a limited lifetime. After around 14.5 minutes, a lone neutron unmoored from an atom will decay into a proton, an electron and a neutrino."
+      },
+      "canonicalAtomicProposition": "A free neutron decays after approximately 14.5 minutes into a proton, electron, and neutrino.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0063",
+          "U0064"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU036",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0065"
+        ],
+        "verbatimExcerpt": "But two different experimental setups give slightly different lifetimes for this decay, with the discrepancy between them about 9 seconds, according to experiments cited in a July study in the journal Physical Review Letters ."
+      },
+      "canonicalAtomicProposition": "Two neutron-lifetime experimental methods differed by approximately nine seconds.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "study",
+        "name": "neutron lifetime experiments",
+        "sourceUnitIds": [
+          "U0065"
+        ],
+        "basis": "The proposition is supplied by neutron lifetime experiments in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU037",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0066"
+        ],
+        "verbatimExcerpt": "Earlier this year, physicists suggested that if 1 percent of the time, some neutrons were decaying into dark-matter particles, it could account for this anomaly."
+      },
+      "canonicalAtomicProposition": "A hypothesis proposed that one percent of neutron decays produce dark-matter particles and thereby explain the lifetime discrepancy.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "unknown",
+        "name": "physicists proposing dark neutron decay",
+        "sourceUnitIds": [
+          "U0066"
+        ],
+        "basis": "The proposition is supplied by physicists proposing dark neutron decay in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU038",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0067"
+        ],
+        "verbatimExcerpt": "Christopher Morris from the Los Alamos National Laboratory, in New Mexico, and his team monitored neutrons for a signal that could be dark matter but were unable to detect anything."
+      },
+      "canonicalAtomicProposition": "Christopher Morris’s team did not detect the predicted dark-matter signal from neutron decay.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Christopher Morris and colleagues",
+        "sourceUnitIds": [
+          "U0067"
+        ],
+        "basis": "The proposition is supplied by Christopher Morris and colleagues in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as reported_neutral and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU039",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0068"
+        ],
+        "verbatimExcerpt": "They suggested that other decay scenarios might still be possible, according to the study."
+      },
+      "canonicalAtomicProposition": "Other neutron-to-dark-matter decay scenarios remained possible after the nondetection.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Christopher Morris and colleagues",
+        "sourceUnitIds": [
+          "U0068"
+        ],
+        "basis": "The proposition is supplied by Christopher Morris and colleagues in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "qualification",
+        "basis": "The article presents this proposition as reported_neutral and uses it as qualification."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept this qualification or limitation as a distinct node with its current scope."
+    },
+    {
+      "argumentUnitId": "AU040",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0070",
+          "U0071",
+          "U0072"
+        ],
+        "verbatimExcerpt": "Given the difficulties that scientists have faced trying to detect and explain dark matter, a reasonable questioner might wonder if they're going about it all wrong. For many years, a vocal minority of physicists have pushed the idea that perhaps our theories of gravity are simply incorrect, and that the fundamental force works differently on large scales than we expect. Often known as \"modified Newtonian dynamics,\" or MOND models, these suggestions posit that there is no dark matter and the ultrafast speeds at which stars and galaxies are seen to rotate around one another is a consequence of gravity behaving in surprising ways."
+      },
+      "canonicalAtomicProposition": "Modified Newtonian dynamics proposes that large-scale gravitational behavior, rather than dark matter, explains anomalous galactic motion.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "unknown",
+        "name": "MOND proponents",
+        "sourceUnitIds": [
+          "U0070",
+          "U0071",
+          "U0072"
+        ],
+        "basis": "The proposition is supplied by MOND proponents in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "contradicts_thesis",
+        "deployment": "opponent_to_rebut",
+        "role": "opponent_claim",
+        "basis": "The article presents this proposition as opponent_to_rebut and uses it as opponent_claim."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the grounded opponent proposition and preserve its source and original polarity; do not convert it into the article’s preferred conclusion."
+    },
+    {
+      "argumentUnitId": "AU041",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0073"
+        ],
+        "verbatimExcerpt": "\"Dark matter is still an unconfirmed model,\" wrote physicist Don Lincoln in an explainer for Live Science ."
+      },
+      "canonicalAtomicProposition": "Dark matter remains an unconfirmed model.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Don Lincoln",
+        "sourceUnitIds": [
+          "U0073"
+        ],
+        "basis": "The proposition is supplied by Don Lincoln in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "contradicts_thesis",
+        "deployment": "qualified",
+        "role": "qualification",
+        "basis": "The article presents this proposition as qualified and uses it as qualification."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept this qualification or limitation as a distinct node with its current scope."
+    },
+    {
+      "argumentUnitId": "AU042",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0074"
+        ],
+        "verbatimExcerpt": "Yet the detractors have yet to convince the larger field of their ideas."
+      },
+      "canonicalAtomicProposition": "Modified-gravity proponents had not persuaded the larger physics community.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0074"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "rebuttal",
+        "basis": "The article presents this proposition as endorsed and uses it as rebuttal."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU043",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0075",
+          "U0076"
+        ],
+        "verbatimExcerpt": "And the latest evidence? It also suggests that dark matter is real ."
+      },
+      "canonicalAtomicProposition": "The latest evidence discussed by the article supports the existence of dark matter.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0075",
+          "U0076"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    }
+  ],
+  "relations": [
+    {
+      "relationId": "REL001",
+      "fromArgumentUnitId": "AU002",
+      "type": "elaborates",
+      "toArgumentUnitId": "AU001",
+      "sourceUnitIds": [
+        "U0001",
+        "U0002"
+      ],
+      "basis": "Zwicky’s unseen-matter proposal explains the anomalous galaxy motions."
+    },
+    {
+      "relationId": "REL002",
+      "fromArgumentUnitId": "AU006",
+      "type": "rebuts",
+      "toArgumentUnitId": "AU007",
+      "sourceUnitIds": [
+        "U0008",
+        "U0009",
+        "U0010"
+      ],
+      "basis": "The failure of ordinary faint objects to supply enough mass motivates particle hypotheses."
+    },
+    {
+      "relationId": "REL003",
+      "fromArgumentUnitId": "AU011",
+      "type": "qualifies",
+      "toArgumentUnitId": "AU007",
+      "sourceUnitIds": [
+        "U0018"
+      ],
+      "basis": "Persistent nondetection weakens confidence in standard WIMP models without excluding dark matter generally."
+    },
+    {
+      "relationId": "REL004",
+      "fromArgumentUnitId": "AU013",
+      "type": "qualifies",
+      "toArgumentUnitId": "AU011",
+      "sourceUnitIds": [
+        "U0020"
+      ],
+      "basis": "Smaller or differently interacting particles are offered as an explanation for WIMP nondetections."
+    },
+    {
+      "relationId": "REL005",
+      "fromArgumentUnitId": "AU017",
+      "type": "supports",
+      "toArgumentUnitId": "AU005",
+      "sourceUnitIds": [
+        "U0026"
+      ],
+      "basis": "Failure to test multi-particle proposals supports the article’s claim that dark matter remains poorly understood."
+    },
+    {
+      "relationId": "REL006",
+      "fromArgumentUnitId": "AU027",
+      "type": "supports",
+      "toArgumentUnitId": "AU005",
+      "sourceUnitIds": [
+        "U0043",
+        "U0044"
+      ],
+      "basis": "The ambiguous AMS events exemplify unresolved properties and detection."
+    },
+    {
+      "relationId": "REL007",
+      "fromArgumentUnitId": "AU030",
+      "type": "qualifies",
+      "toArgumentUnitId": "AU029",
+      "sourceUnitIds": [
+        "U0049"
+      ],
+      "basis": "The later distance analysis challenges the initial claim of a nearly dark-matter-free galaxy."
+    },
+    {
+      "relationId": "REL010",
+      "fromArgumentUnitId": "AU038",
+      "type": "rebuts",
+      "toArgumentUnitId": "AU037",
+      "sourceUnitIds": [
+        "U0067"
+      ],
+      "basis": "The nondetection weighs against the specific neutron-decay signal searched for."
+    },
+    {
+      "relationId": "REL011",
+      "fromArgumentUnitId": "AU039",
+      "type": "qualifies",
+      "toArgumentUnitId": "AU038",
+      "sourceUnitIds": [
+        "U0068"
+      ],
+      "basis": "Alternative decay scenarios remain possible despite the failed search."
+    },
+    {
+      "relationId": "REL012",
+      "fromArgumentUnitId": "AU040",
+      "type": "rebuts",
+      "toArgumentUnitId": "AU043",
+      "sourceUnitIds": [
+        "U0070",
+        "U0071",
+        "U0072"
+      ],
+      "basis": "MOND provides an alternative to the article’s closing inference that dark matter is real."
+    },
+    {
+      "relationId": "REL013",
+      "fromArgumentUnitId": "AU042",
+      "type": "rebuts",
+      "toArgumentUnitId": "AU040",
+      "sourceUnitIds": [
+        "U0074"
+      ],
+      "basis": "Lack of acceptance by the larger field is used to diminish the MOND alternative."
+    },
+    {
+      "relationId": "REL014",
+      "fromArgumentUnitId": "AU043",
+      "type": "supports",
+      "toArgumentUnitId": "AU003",
+      "sourceUnitIds": [
+        "U0075",
+        "U0076"
+      ],
+      "basis": "The closing evidence claim supports the article’s mild preference for dark matter’s existence."
+    }
+  ],
+  "consistencyFindings": [
+    {
+      "findingId": "CON001",
+      "argumentUnitIds": [
+        "AU003",
+        "AU005"
+      ],
+      "type": "not_contradiction",
+      "basis": "The article can report widespread gravitational evidence for dark matter while also saying its physical nature is unknown."
+    },
+    {
+      "findingId": "CON002",
+      "argumentUnitIds": [
+        "AU007",
+        "AU011"
+      ],
+      "type": "tension",
+      "basis": "WIMPs are described as a leading candidate, yet decades of direct detection have produced no credible discovery."
+    },
+    {
+      "findingId": "CON003",
+      "argumentUnitIds": [
+        "AU029",
+        "AU030"
+      ],
+      "type": "qualification",
+      "basis": "The initial inference that NGC 1052-DF2 lacked dark matter is explicitly challenged by a later distance analysis."
+    },
+    {
+      "findingId": "CON005",
+      "argumentUnitIds": [
+        "AU037",
+        "AU038",
+        "AU039"
+      ],
+      "type": "qualification",
+      "basis": "A specific neutron-decay search failed, while the authors retained other possible decay scenarios."
+    },
+    {
+      "findingId": "CON006",
+      "argumentUnitIds": [
+        "AU040",
+        "AU041",
+        "AU042",
+        "AU043"
+      ],
+      "type": "tension",
+      "basis": "The article acknowledges that dark matter is unconfirmed and reports a modified-gravity alternative, but closes by favoring dark matter as real."
+    }
+  ],
+  "rubricCoverage": {
+    "targets": [
+      {
+        "targetId": "cf1-f07-concept-01",
+        "category": "required_concept",
+        "description": "The article is organized as a survey of unresolved dark-matter questions rather than an argument for one answer.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f07-concept-02",
+        "category": "required_concept",
+        "description": "Its stable theme is uncertainty about dark matter's identity, detection, composition, interactions, distribution, and existence.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f07-concept-03",
+        "category": "required_concept",
+        "description": "WIMPs, axions, dark photons, charged dark matter, neutron decay, and modified gravity are presented as candidates or hypotheses, not conclusions.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f07-concept-04",
+        "category": "required_concept",
+        "description": "Conflicting experimental results and nondetections remain attached to their individual experiments and limitations.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f07-region-01",
+        "category": "required_source_region",
+        "description": "survey framing",
+        "excerpt": "Here are the 11 biggest unanswered questions about dark matter",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f07-region-02",
+        "category": "required_source_region",
+        "description": "WIMP uncertainty",
+        "excerpt": "After decades of searching, not one of these detectors has made a credible discovery",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f07-region-03",
+        "category": "required_source_region",
+        "description": "multi-particle hypothesis",
+        "excerpt": "There is no good reason to assume that all the dark matter in the universe is built out of one type of particle",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f07-region-04",
+        "category": "required_source_region",
+        "description": "galaxy dispute",
+        "excerpt": "a separate team posted an analysis suggesting that van Dokkum's team had mismeasured the distance",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f07-region-05",
+        "category": "required_source_region",
+        "description": "DAMA disagreement",
+        "excerpt": "no other experiment has seen anything like this",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f07-region-06",
+        "category": "required_source_region",
+        "description": "existence uncertainty",
+        "excerpt": "Dark matter is still an unconfirmed model",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      }
+    ],
+    "prohibitedInterpretations": [
+      {
+        "prohibitionId": "cf1-f07-prohibited-01",
+        "description": "The article concludes that WIMPs, axions, dark photons, or any other candidate constitute dark matter.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f07-prohibited-02",
+        "description": "The eleven questions are inflated into eleven theme pillars or eleven selected claims by default.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f07-prohibited-03",
+        "description": "A reported hypothesis is converted into the author's endorsed thesis.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f07-prohibited-04",
+        "description": "DAMA/LIBRA's claimed signal is presented as independently replicated detection.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f07-prohibited-05",
+        "description": "The NGC 1052-DF2 disagreement is resolved by silently choosing one team's analysis.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f07-prohibited-06",
+        "description": "The article's final observation that evidence favors dark matter is expanded into a claim that its nature has been established.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      }
+    ],
+    "inheritedReviewNotes": [
+      "Theme confidence may be high, but thesis confidence should be low or thesis should be absent; topic coherence is not an argumentative conclusion.",
+      "A valid package may select only a few evidence-ready claims and should not pad the result to represent every question."
+    ]
+  },
+  "compilation": {
+    "schemaVersion": "cf1.adjudicationCompilation.v1",
+    "generatedAt": "2026-07-22T14:42:08.868Z",
+    "sourceDraftSchemaVersion": "cf1.argumentDraft.v1",
+    "sourceDraftSha256": "a7b58dc172d1fe2f8c13f26dc80d90441ba5aef9c8dddd81908d9c3aecb8b341",
+    "sourceFormSha256": "2947ce8b09c56d7bb559db6033fd2eb9bea58f90d0128df797ec83a1306f1f2c",
+    "reviewSha256": "8f61246c67cb5d1d02d61ea6e0acb87d5f66a6905aea6d89a16f08e2f656d7ef",
+    "evidenceTargetsApproved": false,
+    "lineageByArgumentUnitId": {
+      "AU001": {
+        "sourceArgumentUnitId": "AU001",
+        "reviewDecisionKey": "CF1-F07:argument:AU001",
+        "operation": "edit"
+      },
+      "AU002": {
+        "sourceArgumentUnitId": "AU002",
+        "reviewDecisionKey": "CF1-F07:argument:AU002",
+        "operation": "edit"
+      },
+      "AU003": {
+        "sourceArgumentUnitId": "AU003",
+        "reviewDecisionKey": "CF1-F07:argument:AU003",
+        "operation": "edit"
+      },
+      "AU004": {
+        "sourceArgumentUnitId": "AU004",
+        "reviewDecisionKey": "CF1-F07:argument:AU004",
+        "operation": "edit"
+      },
+      "AU005": {
+        "sourceArgumentUnitId": "AU005",
+        "reviewDecisionKey": "CF1-F07:argument:AU005",
+        "operation": "accept"
+      },
+      "AU006": {
+        "sourceArgumentUnitId": "AU006",
+        "reviewDecisionKey": "CF1-F07:argument:AU006",
+        "operation": "edit"
+      },
+      "AU007": {
+        "sourceArgumentUnitId": "AU007",
+        "reviewDecisionKey": "CF1-F07:argument:AU007",
+        "operation": "edit"
+      },
+      "AU008": {
+        "sourceArgumentUnitId": "AU008",
+        "reviewDecisionKey": "CF1-F07:argument:AU008",
+        "operation": "accept"
+      },
+      "AU009-S01": {
+        "sourceArgumentUnitId": "AU009",
+        "reviewDecisionKey": "CF1-F07:argument:AU009",
+        "operation": "split",
+        "childOrdinal": 1,
+        "childCount": 2
+      },
+      "AU009-S02": {
+        "sourceArgumentUnitId": "AU009",
+        "reviewDecisionKey": "CF1-F07:argument:AU009",
+        "operation": "split",
+        "childOrdinal": 2,
+        "childCount": 2
+      },
+      "AU010": {
+        "sourceArgumentUnitId": "AU010",
+        "reviewDecisionKey": "CF1-F07:argument:AU010",
+        "operation": "accept"
+      },
+      "AU011": {
+        "sourceArgumentUnitId": "AU011",
+        "reviewDecisionKey": "CF1-F07:argument:AU011",
+        "operation": "accept"
+      },
+      "AU012": {
+        "sourceArgumentUnitId": "AU012",
+        "reviewDecisionKey": "CF1-F07:argument:AU012",
+        "operation": "accept"
+      },
+      "AU013": {
+        "sourceArgumentUnitId": "AU013",
+        "reviewDecisionKey": "CF1-F07:argument:AU013",
+        "operation": "edit"
+      },
+      "AU014": {
+        "sourceArgumentUnitId": "AU014",
+        "reviewDecisionKey": "CF1-F07:argument:AU014",
+        "operation": "edit"
+      },
+      "AU015": {
+        "sourceArgumentUnitId": "AU015",
+        "reviewDecisionKey": "CF1-F07:argument:AU015",
+        "operation": "accept"
+      },
+      "AU016": {
+        "sourceArgumentUnitId": "AU016",
+        "reviewDecisionKey": "CF1-F07:argument:AU016",
+        "operation": "accept"
+      },
+      "AU017": {
+        "sourceArgumentUnitId": "AU017",
+        "reviewDecisionKey": "CF1-F07:argument:AU017",
+        "operation": "accept"
+      },
+      "AU018": {
+        "sourceArgumentUnitId": "AU018",
+        "reviewDecisionKey": "CF1-F07:argument:AU018",
+        "operation": "accept"
+      },
+      "AU019": {
+        "sourceArgumentUnitId": "AU019",
+        "reviewDecisionKey": "CF1-F07:argument:AU019",
+        "operation": "accept"
+      },
+      "AU020": {
+        "sourceArgumentUnitId": "AU020",
+        "reviewDecisionKey": "CF1-F07:argument:AU020",
+        "operation": "accept"
+      },
+      "AU021": {
+        "sourceArgumentUnitId": "AU021",
+        "reviewDecisionKey": "CF1-F07:argument:AU021",
+        "operation": "accept"
+      },
+      "AU022": {
+        "sourceArgumentUnitId": "AU022",
+        "reviewDecisionKey": "CF1-F07:argument:AU022",
+        "operation": "accept"
+      },
+      "AU023": {
+        "sourceArgumentUnitId": "AU023",
+        "reviewDecisionKey": "CF1-F07:argument:AU023",
+        "operation": "accept"
+      },
+      "AU024": {
+        "sourceArgumentUnitId": "AU024",
+        "reviewDecisionKey": "CF1-F07:argument:AU024",
+        "operation": "edit"
+      },
+      "AU025": {
+        "sourceArgumentUnitId": "AU025",
+        "reviewDecisionKey": "CF1-F07:argument:AU025",
+        "operation": "accept"
+      },
+      "AU026": {
+        "sourceArgumentUnitId": "AU026",
+        "reviewDecisionKey": "CF1-F07:argument:AU026",
+        "operation": "accept"
+      },
+      "AU027": {
+        "sourceArgumentUnitId": "AU027",
+        "reviewDecisionKey": "CF1-F07:argument:AU027",
+        "operation": "accept"
+      },
+      "AU028": {
+        "sourceArgumentUnitId": "AU028",
+        "reviewDecisionKey": "CF1-F07:argument:AU028",
+        "operation": "accept"
+      },
+      "AU029": {
+        "sourceArgumentUnitId": "AU029",
+        "reviewDecisionKey": "CF1-F07:argument:AU029",
+        "operation": "edit"
+      },
+      "AU030": {
+        "sourceArgumentUnitId": "AU030",
+        "reviewDecisionKey": "CF1-F07:argument:AU030",
+        "operation": "accept"
+      },
+      "AU031": {
+        "sourceArgumentUnitId": "AU031",
+        "reviewDecisionKey": "CF1-F07:argument:AU031",
+        "operation": "accept"
+      },
+      "AU032-S01": {
+        "sourceArgumentUnitId": "AU032",
+        "reviewDecisionKey": "CF1-F07:argument:AU032",
+        "operation": "split",
+        "childOrdinal": 1,
+        "childCount": 2
+      },
+      "AU032-S02": {
+        "sourceArgumentUnitId": "AU032",
+        "reviewDecisionKey": "CF1-F07:argument:AU032",
+        "operation": "split",
+        "childOrdinal": 2,
+        "childCount": 2
+      },
+      "AU033": {
+        "sourceArgumentUnitId": "AU033",
+        "reviewDecisionKey": "CF1-F07:argument:AU033",
+        "operation": "edit"
+      },
+      "AU034-S01": {
+        "sourceArgumentUnitId": "AU034",
+        "reviewDecisionKey": "CF1-F07:argument:AU034",
+        "operation": "split",
+        "childOrdinal": 1,
+        "childCount": 2
+      },
+      "AU034-S02": {
+        "sourceArgumentUnitId": "AU034",
+        "reviewDecisionKey": "CF1-F07:argument:AU034",
+        "operation": "split",
+        "childOrdinal": 2,
+        "childCount": 2
+      },
+      "AU035": {
+        "sourceArgumentUnitId": "AU035",
+        "reviewDecisionKey": "CF1-F07:argument:AU035",
+        "operation": "accept"
+      },
+      "AU036": {
+        "sourceArgumentUnitId": "AU036",
+        "reviewDecisionKey": "CF1-F07:argument:AU036",
+        "operation": "edit"
+      },
+      "AU037": {
+        "sourceArgumentUnitId": "AU037",
+        "reviewDecisionKey": "CF1-F07:argument:AU037",
+        "operation": "edit"
+      },
+      "AU038": {
+        "sourceArgumentUnitId": "AU038",
+        "reviewDecisionKey": "CF1-F07:argument:AU038",
+        "operation": "edit"
+      },
+      "AU039": {
+        "sourceArgumentUnitId": "AU039",
+        "reviewDecisionKey": "CF1-F07:argument:AU039",
+        "operation": "accept"
+      },
+      "AU040": {
+        "sourceArgumentUnitId": "AU040",
+        "reviewDecisionKey": "CF1-F07:argument:AU040",
+        "operation": "accept"
+      },
+      "AU041": {
+        "sourceArgumentUnitId": "AU041",
+        "reviewDecisionKey": "CF1-F07:argument:AU041",
+        "operation": "accept"
+      },
+      "AU042": {
+        "sourceArgumentUnitId": "AU042",
+        "reviewDecisionKey": "CF1-F07:argument:AU042",
+        "operation": "edit"
+      },
+      "AU043": {
+        "sourceArgumentUnitId": "AU043",
+        "reviewDecisionKey": "CF1-F07:argument:AU043",
+        "operation": "accept"
+      }
+    },
+    "sourceArgumentReplacementMap": {
+      "AU001": [
+        "AU001"
+      ],
+      "AU002": [
+        "AU002"
+      ],
+      "AU003": [
+        "AU003"
+      ],
+      "AU004": [
+        "AU004"
+      ],
+      "AU005": [
+        "AU005"
+      ],
+      "AU006": [
+        "AU006"
+      ],
+      "AU007": [
+        "AU007"
+      ],
+      "AU008": [
+        "AU008"
+      ],
+      "AU009": [
+        "AU009-S01",
+        "AU009-S02"
+      ],
+      "AU010": [
+        "AU010"
+      ],
+      "AU011": [
+        "AU011"
+      ],
+      "AU012": [
+        "AU012"
+      ],
+      "AU013": [
+        "AU013"
+      ],
+      "AU014": [
+        "AU014"
+      ],
+      "AU015": [
+        "AU015"
+      ],
+      "AU016": [
+        "AU016"
+      ],
+      "AU017": [
+        "AU017"
+      ],
+      "AU018": [
+        "AU018"
+      ],
+      "AU019": [
+        "AU019"
+      ],
+      "AU020": [
+        "AU020"
+      ],
+      "AU021": [
+        "AU021"
+      ],
+      "AU022": [
+        "AU022"
+      ],
+      "AU023": [
+        "AU023"
+      ],
+      "AU024": [
+        "AU024"
+      ],
+      "AU025": [
+        "AU025"
+      ],
+      "AU026": [
+        "AU026"
+      ],
+      "AU027": [
+        "AU027"
+      ],
+      "AU028": [
+        "AU028"
+      ],
+      "AU029": [
+        "AU029"
+      ],
+      "AU030": [
+        "AU030"
+      ],
+      "AU031": [
+        "AU031"
+      ],
+      "AU032": [
+        "AU032-S01",
+        "AU032-S02"
+      ],
+      "AU033": [
+        "AU033"
+      ],
+      "AU034": [
+        "AU034-S01",
+        "AU034-S02"
+      ],
+      "AU035": [
+        "AU035"
+      ],
+      "AU036": [
+        "AU036"
+      ],
+      "AU037": [
+        "AU037"
+      ],
+      "AU038": [
+        "AU038"
+      ],
+      "AU039": [
+        "AU039"
+      ],
+      "AU040": [
+        "AU040"
+      ],
+      "AU041": [
+        "AU041"
+      ],
+      "AU042": [
+        "AU042"
+      ],
+      "AU043": [
+        "AU043"
+      ]
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "cf1.adjudicationCompilationReport.v1",
+  "generatedAt": "2026-07-22T14:44:27.166Z",
+  "decisionsPath": "data/annotation-prompts/CF1-argument-drafts-v1-review-decisions-normalized.json",
+  "decisionsSha256": "8f61246c67cb5d1d02d61ea6e0acb87d5f66a6905aea6d89a16f08e2f656d7ef",
+  "resolutionsPath": "data/adjudication-resolutions/CF1-adjudication-resolutions-v1.json",
+  "resolutionsSha256": "16ede7b6af20d3818ce884de0bd14ca6f1383c3fcd04f3426c1c8ad92b2defea",
+  "summary": {
+    "blockerCount": 0,
+    "warningCount": 2,
+    "fixtureCount": 9,
+    "argumentUnitCount": 666,
+    "safeRelationCount": 131,
+    "safeConsistencyFindingCount": 39,
+    "splitChildReviewCount": 208,
+    "unresolvedRelationCount": 55,
+    "unresolvedConsistencyFindingCount": 14,
+    "unresolvedCoverageCount": 1,
+    "attributionSpotCheckCount": 5,
+    "excludedTrainingTasks": [
+      "evidence_target",
+      "warrant"
+    ]
+  },
+  "blockers": [],
+  "warnings": [
+    {
+      "code": "suggestion_state_conflict",
+      "key": "CF1-F02:argument:AU015",
+      "message": "Both assistantSuggestionApplied and assistantSuggestionDismissed are set."
+    },
+    {
+      "code": "suggestion_state_conflict",
+      "key": "CF1-F03:argument:AU014",
+      "message": "Both assistantSuggestionApplied and assistantSuggestionDismissed are set."
+    }
+  ]
+}

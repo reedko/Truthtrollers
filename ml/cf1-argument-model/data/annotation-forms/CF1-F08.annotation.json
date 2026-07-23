@@ -1,0 +1,188 @@
+{
+  "schemaVersion": "cf1.argumentAnnotation.v1",
+  "fixture": {
+    "fixtureId": "CF1-F08",
+    "fixtureRevision": 1,
+    "fixtureClass": "short_factual_report",
+    "title": "Magnitude 6.2 earthquake shakes part of northern Japan",
+    "articlePath": "backend/test/claim-foundry/fixtures/CF1-F08/article.json",
+    "evaluatorKeyPath": "backend/test/claim-foundry/prompt-evaluation-keys/CF1-F08.json",
+    "chatDraftPromptPath": "ml/cf1-argument-model/data/annotation-prompts/CF1-F08.chat-prompt.md"
+  },
+  "adjudication": {
+    "status": "draft",
+    "primaryAnnotatorId": null,
+    "independentReviewerId": null,
+    "startedAt": null,
+    "approvedAt": null,
+    "notes": ""
+  },
+  "orientation": {
+    "theme": null,
+    "thesis": null,
+    "thesisStatus": null,
+    "thesisHinge": {
+      "proposition": null,
+      "ifSupportedEffectOnThesis": null,
+      "ifRefutedEffectOnThesis": null
+    },
+    "basisSourceUnitIds": [],
+    "notes": ""
+  },
+  "passageCoverage": [],
+  "argumentUnits": [],
+  "relations": [],
+  "consistencyFindings": [],
+  "rubricCoverage": {
+    "targets": [
+      {
+        "targetId": "cf1-f08-concept-01",
+        "category": "required_concept",
+        "description": "A moderate earthquake occurred in northern Japan early Monday without reported damage or casualties.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f08-concept-02",
+        "category": "required_concept",
+        "description": "The report distinguishes the headline magnitude from the U.S. Geological Survey measurement rather than forcing one value.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f08-concept-03",
+        "category": "required_concept",
+        "description": "Location and depth are attributed to the U.S. Geological Survey.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f08-concept-04",
+        "category": "required_concept",
+        "description": "No tsunami advisory was issued, and the event was outside the area covered by an existing megaquake advisory.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f08-region-01",
+        "category": "required_source_region",
+        "description": "event and immediate outcome",
+        "excerpt": "A magnitude 6.2 earthquake shook part of northern Japan early Monday, but there was no damage or casualties",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f08-region-02",
+        "category": "required_source_region",
+        "description": "tsunami status",
+        "excerpt": "No tsunami advisory was issued by the Japan Meteorological Agency",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f08-region-03",
+        "category": "required_source_region",
+        "description": "location and depth",
+        "excerpt": "18 kilometers (11 miles) west of the small town of Sarabetsu",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f08-region-04",
+        "category": "required_source_region",
+        "description": "USGS magnitude",
+        "excerpt": "It measured the quake’s strength at 6.1 magnitude",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f08-region-05",
+        "category": "required_source_region",
+        "description": "advisory scope",
+        "excerpt": "Monday’s quake was outside of the area subject to a megaquake advisory",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      }
+    ],
+    "prohibitedInterpretations": [
+      {
+        "prohibitionId": "cf1-f08-prohibited-01",
+        "description": "The report is padded into a developed argument with invented theme pillars.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f08-prohibited-02",
+        "description": "The 6.2 and 6.1 magnitude values are silently merged or one is discarded without attribution.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f08-prohibited-03",
+        "description": "Absence of reported damage or casualties is rewritten as proof that no effects could later be discovered.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f08-prohibited-04",
+        "description": "No tsunami advisory is rewritten as a claim that a tsunami was physically impossible.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f08-prohibited-05",
+        "description": "The prior 7.7 offshore earthquake is treated as the same event as Monday’s inland earthquake.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f08-prohibited-06",
+        "description": "The contextual megaquake advisory is presented as applying to Monday’s quake.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      }
+    ],
+    "inheritedReviewNotes": [
+      "A proportionate package should contain only a few selected factual claims and no manufactured argumentative structure.",
+      "Preserve actor, time, place, distance, depth, magnitude, and agency attribution qualifiers."
+    ]
+  },
+  "finalChecks": {
+    "completeArticleReviewed": false,
+    "everyArgumentUnitGrounded": false,
+    "everyPropositionAtomic": false,
+    "attributionReviewedIndependentlyOfStance": false,
+    "opponentPolarityPreserved": false,
+    "relationsReviewed": false,
+    "evidenceTargetsReviewed": false,
+    "rubricCoverageReviewed": false,
+    "keyDisagreementsResolvedOrFlagged": false
+  }
+}

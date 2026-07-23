@@ -1,0 +1,3066 @@
+{
+  "schemaVersion": "cf1.argumentAnnotation.v1",
+  "fixture": {
+    "fixtureId": "CF1-F06",
+    "fixtureRevision": 1,
+    "fixtureClass": "internal_contradiction",
+    "title": "Obituary: Great Barrier Reef (25 Million BC-...)",
+    "articlePath": "backend/test/claim-foundry/fixtures/CF1-F06/article.json",
+    "evaluatorKeyPath": "backend/test/claim-foundry/prompt-evaluation-keys/CF1-F06.json",
+    "chatDraftPromptPath": "ml/cf1-argument-model/data/annotation-prompts/CF1-F06.chat-prompt.md"
+  },
+  "adjudication": {
+    "status": "draft",
+    "primaryAnnotatorId": null,
+    "independentReviewerId": null,
+    "startedAt": null,
+    "approvedAt": null,
+    "notes": "Compiled from reviewed model draft. Split children, affected relations, consistency findings, rubric coverage, and evidence targets remain subject to focused review.\nAccept with the internal contradiction left visible: categorical whole-reef death is not silently narrowed to severe partial coral mortality.",
+    "sourceReviewSchemaVersion": "cf1.argumentDraftReviewDecisions.v1",
+    "sourceReviewExportedAt": "2026-07-22T14:01:25.286Z"
+  },
+  "orientation": {
+    "theme": "The Great Barrier Reef’s ecological history, climate-driven deterioration, and asserted death after repeated bleaching and acidification.",
+    "thesis": "The article presents the Great Barrier Reef as having died because climate change caused escalating bleaching and acidification that conservation measures and political institutions failed to stop.",
+    "thesisStatus": "clear",
+    "thesisHinge": {
+      "proposition": "Climate-driven warming and acidification caused irreversible reef-wide collapse amounting to the death of the Great Barrier Reef.",
+      "ifSupportedEffectOnThesis": "strengthens",
+      "ifRefutedEffectOnThesis": "weakens"
+    },
+    "basisSourceUnitIds": [
+      "U0001",
+      "U0030",
+      "U0036",
+      "U0040",
+      "U0042",
+      "U0043",
+      "U0047",
+      "U0055"
+    ],
+    "notes": "The obituary frame makes a categorical whole-reef death assertion. The article also gives narrower evidence that up to 50 percent of coral in the warmer northern region died and refers to continuing Aboriginal use and surviving remnants. Those claims are preserved separately so the fixture’s material internal tension is visible."
+  },
+  "passageCoverage": [
+    {
+      "coverageId": "COV001",
+      "sourceUnitIds": [
+        "U0001"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU001"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV002",
+      "sourceUnitIds": [
+        "U0002"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU002"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV003",
+      "sourceUnitIds": [
+        "U0003"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU003",
+        "AU004"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV004",
+      "sourceUnitIds": [
+        "U0004"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU005"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV005",
+      "sourceUnitIds": [
+        "U0005"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU006",
+        "AU007"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV006",
+      "sourceUnitIds": [
+        "U0006"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU008"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV007",
+      "sourceUnitIds": [
+        "U0007"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU009",
+        "AU010"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV008",
+      "sourceUnitIds": [
+        "U0008"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU011-S01",
+        "AU011-S02"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV009",
+      "sourceUnitIds": [
+        "U0009"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU011-S01",
+        "AU011-S02"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV010",
+      "sourceUnitIds": [
+        "U0010"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU012"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV011",
+      "sourceUnitIds": [
+        "U0011"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU013"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV012",
+      "sourceUnitIds": [
+        "U0012"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU014"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV013",
+      "sourceUnitIds": [
+        "U0013"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV014",
+      "sourceUnitIds": [
+        "U0014"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV015",
+      "sourceUnitIds": [
+        "U0015"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV016",
+      "sourceUnitIds": [
+        "U0016"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU015"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV017",
+      "sourceUnitIds": [
+        "U0017"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU016"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV018",
+      "sourceUnitIds": [
+        "U0018"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU016"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV019",
+      "sourceUnitIds": [
+        "U0019"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU017"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV020",
+      "sourceUnitIds": [
+        "U0020"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU016"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV021",
+      "sourceUnitIds": [
+        "U0021"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU018-S01",
+        "AU018-S02"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV022",
+      "sourceUnitIds": [
+        "U0022"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV023",
+      "sourceUnitIds": [
+        "U0023"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV024",
+      "sourceUnitIds": [
+        "U0024"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU018-S01",
+        "AU018-S02"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV025",
+      "sourceUnitIds": [
+        "U0025"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV026",
+      "sourceUnitIds": [
+        "U0026"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV027",
+      "sourceUnitIds": [
+        "U0027"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU019",
+        "AU020",
+        "AU021"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV028",
+      "sourceUnitIds": [
+        "U0028"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU022"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV029",
+      "sourceUnitIds": [
+        "U0029"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU022"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV030",
+      "sourceUnitIds": [
+        "U0030"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU023"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV031",
+      "sourceUnitIds": [
+        "U0031"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU024"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV032",
+      "sourceUnitIds": [
+        "U0032"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU024"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV033",
+      "sourceUnitIds": [
+        "U0033"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU025"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV034",
+      "sourceUnitIds": [
+        "U0034"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU025"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV035",
+      "sourceUnitIds": [
+        "U0035"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU026"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV036",
+      "sourceUnitIds": [
+        "U0036"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU027",
+        "AU028"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV037",
+      "sourceUnitIds": [
+        "U0037"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU029"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV038",
+      "sourceUnitIds": [
+        "U0038"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU029"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV039",
+      "sourceUnitIds": [
+        "U0039"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU030"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV040",
+      "sourceUnitIds": [
+        "U0040"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU030"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV041",
+      "sourceUnitIds": [
+        "U0041"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU031"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV042",
+      "sourceUnitIds": [
+        "U0042"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU031"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV043",
+      "sourceUnitIds": [
+        "U0043"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU032"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV044",
+      "sourceUnitIds": [
+        "U0044"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU033"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV045",
+      "sourceUnitIds": [
+        "U0045"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU034"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV046",
+      "sourceUnitIds": [
+        "U0046"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    },
+    {
+      "coverageId": "COV047",
+      "sourceUnitIds": [
+        "U0047"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU035-S01",
+        "AU035-S02"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV048",
+      "sourceUnitIds": [
+        "U0048"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU036"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV049",
+      "sourceUnitIds": [
+        "U0049"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU037"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV050",
+      "sourceUnitIds": [
+        "U0050"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU037"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV051",
+      "sourceUnitIds": [
+        "U0051"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU037"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV052",
+      "sourceUnitIds": [
+        "U0052"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU038"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV053",
+      "sourceUnitIds": [
+        "U0053"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU039"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV054",
+      "sourceUnitIds": [
+        "U0054"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU039"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV055",
+      "sourceUnitIds": [
+        "U0055"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU040"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV056",
+      "sourceUnitIds": [
+        "U0056"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU041"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV057",
+      "sourceUnitIds": [
+        "U0057"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "This unit is heading, transition, rhetoric, descriptive context, or other material not independently extracted as an externally testable assertion."
+    }
+  ],
+  "argumentUnits": [
+    {
+      "argumentUnitId": "AU001",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0001"
+        ],
+        "verbatimExcerpt": "The Great Barrier Reef of Australia passed away in … after a long illness."
+      },
+      "canonicalAtomicProposition": "The Great Barrier Reef has died.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0001"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU002",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0002"
+        ],
+        "verbatimExcerpt": "It was 25 million years old."
+      },
+      "canonicalAtomicProposition": "The Great Barrier Reef was approximately 25 million years old.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0002"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU003",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0003"
+        ],
+        "verbatimExcerpt": "For most of its life, the reef was the world’s largest living structure, and the only one visible from space."
+      },
+      "canonicalAtomicProposition": "For most of its existence, the Great Barrier Reef was the world’s largest living structure.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0003"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU004",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0003"
+        ],
+        "verbatimExcerpt": "For most of its life, the reef was the world’s largest living structure, and the only one visible from space."
+      },
+      "canonicalAtomicProposition": "The Great Barrier Reef was the only living structure visible from space.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0003"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU005",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0004"
+        ],
+        "verbatimExcerpt": "It was 1,400 miles long, with 2,900 individual reefs and 1,050 islands."
+      },
+      "canonicalAtomicProposition": "The Great Barrier Reef extended about 1,400 miles and included about 2,900 reefs and 1,050 islands.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0004"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU006",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0005"
+        ],
+        "verbatimExcerpt": "In total area, it was larger than the United Kingdom, and it contained more biodiversity than all of Europe combined."
+      },
+      "canonicalAtomicProposition": "The Great Barrier Reef covered a larger area than the United Kingdom.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0005"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU007",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0005"
+        ],
+        "verbatimExcerpt": "In total area, it was larger than the United Kingdom, and it contained more biodiversity than all of Europe combined."
+      },
+      "canonicalAtomicProposition": "The Great Barrier Reef contained more biodiversity than all of Europe combined.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0005"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU008",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0006"
+        ],
+        "verbatimExcerpt": "It harbored 1,625 species of fish, 3,000 species of mollusk, 450 species of coral, 220 species of birds, and 30 species of whales and dolphins."
+      },
+      "canonicalAtomicProposition": "The Great Barrier Reef harbored 1,625 fish species, 3,000 mollusk species, 450 coral species, 220 bird species, and 30 whale and dolphin species.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0006"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU009",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0007"
+        ],
+        "verbatimExcerpt": "Among its many other achievements, the reef was home to one of the world’s largest populations of dugong and the largest breeding ground of green turtles."
+      },
+      "canonicalAtomicProposition": "The Great Barrier Reef supported one of the world’s largest dugong populations.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0007"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU010",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0007"
+        ],
+        "verbatimExcerpt": "Among its many other achievements, the reef was home to one of the world’s largest populations of dugong and the largest breeding ground of green turtles."
+      },
+      "canonicalAtomicProposition": "The Great Barrier Reef was the largest breeding ground for green turtles.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0007"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU011-S01",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0008",
+          "U0009"
+        ],
+        "verbatimExcerpt": "The reef was born on the eastern coast of the continent of Australia during the Miocene epoch. Its first 24.99 million years were seemingly happy ones, marked by overall growth."
+      },
+      "canonicalAtomicProposition": "The Great Barrier Reef began forming during the Miocene.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0008",
+          "U0009"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication.\nSplit from AU011; child 1 of 2."
+    },
+    {
+      "argumentUnitId": "AU011-S02",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0008",
+          "U0009"
+        ],
+        "verbatimExcerpt": "The reef was born on the eastern coast of the continent of Australia during the Miocene epoch. Its first 24.99 million years were seemingly happy ones, marked by overall growth."
+      },
+      "canonicalAtomicProposition": "The Great Barrier Reef underwent overall growth for nearly 25 million years.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0008",
+          "U0009"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication.\nSplit from AU011; child 2 of 2."
+    },
+    {
+      "argumentUnitId": "AU012",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0010"
+        ],
+        "verbatimExcerpt": "It was formed by corals, which are tiny anemone-like animals that secrete shell to form colonies of millions of individuals."
+      },
+      "canonicalAtomicProposition": "Coral colonies form reef structures by secreting hard skeleton material.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0010"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU013",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0011"
+        ],
+        "verbatimExcerpt": "Its complex, sheltered structure came to comprise the most important habitat in the ocean."
+      },
+      "canonicalAtomicProposition": "The reef’s sheltered structure constituted the ocean’s most important habitat.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0011"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU014",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0012"
+        ],
+        "verbatimExcerpt": "As sea levels rose and fell through the ages, the reef built itself into a vast labyrinth of shallow-water reefs and atolls extending 140 miles off the Australian coast and ending in an outer wall that plunged half a mile into the abyss."
+      },
+      "canonicalAtomicProposition": "Changing sea levels helped the reef develop into a shallow-water system extending about 140 miles offshore.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0012"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU015",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0016"
+        ],
+        "verbatimExcerpt": "The surrounding ecological community wouldn’t have existed without it."
+      },
+      "canonicalAtomicProposition": "The surrounding ecological community depended on the Great Barrier Reef.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0016"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU016",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0017",
+          "U0018",
+          "U0020"
+        ],
+        "verbatimExcerpt": "Its generous spirit was immediately evident 60,000 years ago, when the first humans reached Australia from Asia during a time of much lower sea levels. At that time, the upper portions of the reef comprised limestone cliffs and innumerable caves lining a resource-rich coast. Aboriginal clans hunted and fished its waters and cays for millennia, and continued to do so right up to its demise."
+      },
+      "canonicalAtomicProposition": "Aboriginal communities used the reef’s coastal resources for millennia and continued doing so until the article’s asserted demise.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0017",
+          "U0018",
+          "U0020"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU017",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0019"
+        ],
+        "verbatimExcerpt": "Charlie Veron, longtime chief scientist for the Australian Institute of Marine Science and the Great Barrier Reef’s most passionate champion (he personally discovered 20 percent of the world’s coral species), called the reef in that era a “Stone Age Utopia.”"
+      },
+      "canonicalAtomicProposition": "Charlie Veron described the ancient reef coast as a “Stone Age Utopia.”",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Charlie Veron",
+        "sourceUnitIds": [
+          "U0019"
+        ],
+        "basis": "The proposition is supplied by Charlie Veron in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU018-S01",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0021",
+          "U0024"
+        ],
+        "verbatimExcerpt": "Worldwide fame touched the reef in 1770, when Captain James Cook became the first European to navigate its deadly maze. Cook’s ship foundered on one of those shoals and was nearly sunk, but after several months Cook escaped the reef."
+      },
+      "canonicalAtomicProposition": "James Cook became the first European to navigate the Great Barrier Reef in 1770.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0021",
+          "U0024"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication.\nSplit from AU018; child 1 of 2."
+    },
+    {
+      "argumentUnitId": "AU018-S02",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0021",
+          "U0024"
+        ],
+        "verbatimExcerpt": "Worldwide fame touched the reef in 1770, when Captain James Cook became the first European to navigate its deadly maze. Cook’s ship foundered on one of those shoals and was nearly sunk, but after several months Cook escaped the reef."
+      },
+      "canonicalAtomicProposition": "Cook's ship nearly sank after striking a reef shoal.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0021",
+          "U0024"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication.\nSplit from AU018; child 2 of 2."
+    },
+    {
+      "argumentUnitId": "AU019",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0027"
+        ],
+        "verbatimExcerpt": "Yet that didn’t stop the Queensland government from attempting to lease nearly the entire reef to oil and mining companies in the 1960s—a move that gave birth to Australia’s first conservation movement and a decade-long “Save the Reef” campaign that culminated in the 1975 creation of Great Barrier Reef Marine Park, which restricted fishing, shipping, and development in the reef and seemed to ensure its survival."
+      },
+      "canonicalAtomicProposition": "Queensland attempted to lease nearly the entire reef to oil and mining companies in the 1960s.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0027"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU020",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0027"
+        ],
+        "verbatimExcerpt": "Yet that didn’t stop the Queensland government from attempting to lease nearly the entire reef to oil and mining companies in the 1960s—a move that gave birth to Australia’s first conservation movement and a decade-long “Save the Reef” campaign that culminated in the 1975 creation of Great Barrier Reef Marine Park, which restricted fishing, shipping, and development in the reef and seemed to ensure its survival."
+      },
+      "canonicalAtomicProposition": "The campaign against industrial leasing contributed to creation of the Great Barrier Reef Marine Park in 1975.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0027"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU021",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0027"
+        ],
+        "verbatimExcerpt": "Yet that didn’t stop the Queensland government from attempting to lease nearly the entire reef to oil and mining companies in the 1960s—a move that gave birth to Australia’s first conservation movement and a decade-long “Save the Reef” campaign that culminated in the 1975 creation of Great Barrier Reef Marine Park, which restricted fishing, shipping, and development in the reef and seemed to ensure its survival."
+      },
+      "canonicalAtomicProposition": "The Great Barrier Reef Marine Park restricted fishing, shipping, and development.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0027"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU022",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0028",
+          "U0029"
+        ],
+        "verbatimExcerpt": "In his 2008 book, A Reef in Time , Veron wrote that back then he might have ended his book about the reef with “a heartwarming bromide: ‘And now we can rest assured that future generations will treasure this great wilderness area for all time.’” But, he continued: “Today, as we are coming to grips with the influence that humans are having on the world’s environments, it will come as no surprise that I am unable to write anything remotely like that ending.”"
+      },
+      "canonicalAtomicProposition": "By 2008, Charlie Veron believed human environmental influence made confidence in the reef’s indefinite survival untenable.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Charlie Veron",
+        "sourceUnitIds": [
+          "U0028",
+          "U0029"
+        ],
+        "basis": "The proposition is supplied by Charlie Veron in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU023",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0030"
+        ],
+        "verbatimExcerpt": "In 1981, the same year that UNESCO designated the reef a World Heritage Site and called it “the most impressive marine area in the world,” it experienced its first mass-bleaching incident."
+      },
+      "canonicalAtomicProposition": "The Great Barrier Reef experienced its first mass-bleaching event in 1981.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0030"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU024",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0031",
+          "U0032"
+        ],
+        "verbatimExcerpt": "Corals derive their astonishing colors, and much of their nourishment, from symbiotic algae that live on their surfaces. The algae photosynthesize and make sugars, which the corals feed on."
+      },
+      "canonicalAtomicProposition": "Symbiotic algae supply coral with color and a substantial portion of its nourishment through photosynthesis.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0031",
+          "U0032"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU025",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0033",
+          "U0034"
+        ],
+        "verbatimExcerpt": "But when temperatures rise too high, the algae produce too much oxygen, which is toxic in high concentrations, and the corals must eject their algae to survive. Without the algae, the corals turn bone white and begin to starve."
+      },
+      "canonicalAtomicProposition": "Excessive water temperature causes coral to expel symbiotic algae, leaving the coral bleached and nutritionally deprived.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0033",
+          "U0034"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU026",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0035"
+        ],
+        "verbatimExcerpt": "If water temperatures soon return to normal, the corals can recruit new algae and recover, but if not, they will die in months."
+      },
+      "canonicalAtomicProposition": "Bleached coral can recover if temperatures normalize soon enough, but prolonged bleaching can kill it within months.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0035"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "qualification",
+        "basis": "The article presents this proposition as endorsed and uses it as qualification."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept this qualification or limitation as a distinct node with its current scope."
+    },
+    {
+      "argumentUnitId": "AU027",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0036"
+        ],
+        "verbatimExcerpt": "In 1981, water temperatures soared, two-thirds of the coral in the inner portions of the reef bleached, and scientists began to suspect that climate change threatened coral reefs in ways that no marine park could prevent."
+      },
+      "canonicalAtomicProposition": "During the 1981 event, approximately two-thirds of coral in the reef’s inner portions bleached.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0036"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU028",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0036"
+        ],
+        "verbatimExcerpt": "In 1981, water temperatures soared, two-thirds of the coral in the inner portions of the reef bleached, and scientists began to suspect that climate change threatened coral reefs in ways that no marine park could prevent."
+      },
+      "canonicalAtomicProposition": "The 1981 bleaching led scientists to suspect that climate change threatened reefs in ways marine-park protections could not prevent.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "unknown",
+        "name": "scientists",
+        "sourceUnitIds": [
+          "U0036"
+        ],
+        "basis": "The proposition is supplied by scientists in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU029",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0037",
+          "U0038"
+        ],
+        "verbatimExcerpt": "By the turn of the millennium, mass bleachings were common. The winter of 1997–98 brought the next big one, followed by an even more severe one in 2001–02, and another whopper in 2005–06."
+      },
+      "canonicalAtomicProposition": "Mass-bleaching events became common by 2000, with major events in 1997–98, 2001–02, and 2005–06.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0037",
+          "U0038"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU030",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0039",
+          "U0040"
+        ],
+        "verbatimExcerpt": "By then, it was apparent that warming water was not the only threat brought by climate change. As the oceans absorbed more carbon from the atmosphere, they became more acidic, and that acid was beginning to dissolve the living reef itself."
+      },
+      "canonicalAtomicProposition": "Ocean absorption of atmospheric carbon increased acidity that began dissolving the living reef.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0039",
+          "U0040"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU031",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0041",
+          "U0042"
+        ],
+        "verbatimExcerpt": "Concerned for the reef’s health, a number of friends attempted interventions—none more poignant than Veron’s famed 2009 speech to London’s 350-year-old Royal Society titled “Is the Great Barrier Reef on Death Row?” Veron quickly answered his own question in the affirmative: “This is not a fun talk to give, but I’ve never given a more important talk in my life,” he told the premier gathering of scientists, accurately predicting that atmospheric carbon dioxide concentrations of 450 parts per million (which the world reached in 2025) would bring about the demise of the reef."
+      },
+      "canonicalAtomicProposition": "Charlie Veron predicted that atmospheric carbon dioxide at 450 parts per million would bring about the reef’s demise.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Charlie Veron",
+        "sourceUnitIds": [
+          "U0041",
+          "U0042"
+        ],
+        "basis": "The proposition is supplied by Charlie Veron in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU032",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0043"
+        ],
+        "verbatimExcerpt": "No one knows if a serious effort could have saved the reef, but it is clear that no such effort was made."
+      },
+      "canonicalAtomicProposition": "No serious effort was made to save the Great Barrier Reef.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0043"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU033",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0044"
+        ],
+        "verbatimExcerpt": "On the contrary, attempts to call attention to the reef’s plight were thwarted by the government of Australia itself, which in 2016, shortly after approving the largest coal mine in its history, successfully pressured the United Nations to remove a chapter about the reef from a report on the impact of climate change on World Heritage sites."
+      },
+      "canonicalAtomicProposition": "In 2016 Australia successfully pressured the United Nations to remove a reef-related chapter from a climate-impact report.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0044"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU034",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0045"
+        ],
+        "verbatimExcerpt": "Australia’s Department of the Environment explained the move by saying, “experience had shown that negative comments about the status of World Heritage-listed properties impacted on tourism.”"
+      },
+      "canonicalAtomicProposition": "Australia’s Department of the Environment said negative descriptions of World Heritage sites harmed tourism.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "institution",
+        "name": "Australia’s Department of the Environment",
+        "sourceUnitIds": [
+          "U0045"
+        ],
+        "basis": "The proposition is supplied by Australia’s Department of the Environment in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU035-S01",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0047"
+        ],
+        "verbatimExcerpt": "By then, the reef was in the midst of the most catastrophic bleaching event in its history, from which it would never recover."
+      },
+      "canonicalAtomicProposition": "The 2016 bleaching event was the most catastrophic in the reef’s recorded history.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0047"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication.\nSplit from AU035; child 1 of 2."
+    },
+    {
+      "argumentUnitId": "AU035-S02",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0047"
+        ],
+        "verbatimExcerpt": "By then, the reef was in the midst of the most catastrophic bleaching event in its history, from which it would never recover."
+      },
+      "canonicalAtomicProposition": "The article asserts that the Great Barrier Reef would never recover from the 2016 bleaching event.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0047"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication.\nSplit from AU035; child 2 of 2."
+    },
+    {
+      "argumentUnitId": "AU036",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0048"
+        ],
+        "verbatimExcerpt": "As much as 50 percent of the coral in the warmer, northern part of the reef died."
+      },
+      "canonicalAtomicProposition": "As much as 50 percent of coral in the warmer northern part of the reef died during the catastrophic bleaching event.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0048"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU037",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0049",
+          "U0050",
+          "U0051"
+        ],
+        "verbatimExcerpt": "“The whole northern section is trashed,” Veron told Australia’s Saturday Paper . “It looks like a war zone. It’s heartbreaking.”"
+      },
+      "canonicalAtomicProposition": "Charlie Veron characterized the whole northern section as trashed and resembling a war zone.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Charlie Veron",
+        "sourceUnitIds": [
+          "U0049",
+          "U0050",
+          "U0051"
+        ],
+        "basis": "The proposition is supplied by Charlie Veron in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU038",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0052"
+        ],
+        "verbatimExcerpt": "With no force on earth capable of preventing the oceans from continuing to warm and acidify for centuries to come, Veron had no illusions about the future."
+      },
+      "canonicalAtomicProposition": "No force on Earth could prevent continued ocean warming and acidification for centuries.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0052"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU039",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0053",
+          "U0054"
+        ],
+        "verbatimExcerpt": "“I used to have the best job in the world. Now it’s turned sour… I’m 71 years old now, and I think I may outlive the reef.”"
+      },
+      "canonicalAtomicProposition": "Charlie Veron expected that he might outlive the Great Barrier Reef.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Charlie Veron",
+        "sourceUnitIds": [
+          "U0053",
+          "U0054"
+        ],
+        "basis": "The proposition is supplied by Charlie Veron in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU040",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0055"
+        ],
+        "verbatimExcerpt": "The Great Barrier Reef was predeceased by the South Pacific’s Coral Triangle, the Florida Reef off the Florida Keys, and most other coral reefs on earth."
+      },
+      "canonicalAtomicProposition": "The South Pacific Coral Triangle, the Florida Reef, and most other coral reefs had already died before the Great Barrier Reef.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0055"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The article presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU041",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0056"
+        ],
+        "verbatimExcerpt": "It is survived by the remnants of the Belize Barrier Reef and some deepwater corals."
+      },
+      "canonicalAtomicProposition": "Remnants of the Belize Barrier Reef and some deep-water corals survived.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "article voice",
+        "sourceUnitIds": [
+          "U0056"
+        ],
+        "basis": "The proposition is supplied by article voice in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "contradicts_thesis",
+        "deployment": "qualified",
+        "role": "qualification",
+        "basis": "The article presents this proposition as qualified and uses it as qualification."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "This is not direct evidence that the Great Barrier Reef survived, but it narrows the obituary’s claim about global reef loss.\nAdjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    }
+  ],
+  "relations": [
+    {
+      "relationId": "REL001",
+      "fromArgumentUnitId": "AU025",
+      "type": "provides_evidence_for",
+      "toArgumentUnitId": "AU001",
+      "sourceUnitIds": [
+        "U0033",
+        "U0034"
+      ],
+      "basis": "The bleaching mechanism is offered as a causal pathway for the asserted reef death."
+    },
+    {
+      "relationId": "REL002",
+      "fromArgumentUnitId": "AU026",
+      "type": "qualifies",
+      "toArgumentUnitId": "AU025",
+      "sourceUnitIds": [
+        "U0035"
+      ],
+      "basis": "Bleaching is potentially reversible if temperatures normalize, qualifying a simple bleaching-equals-death inference."
+    },
+    {
+      "relationId": "REL003",
+      "fromArgumentUnitId": "AU027",
+      "type": "provides_evidence_for",
+      "toArgumentUnitId": "AU001",
+      "sourceUnitIds": [
+        "U0036"
+      ],
+      "basis": "The 1981 bleaching supplies historical evidence for the decline narrative."
+    },
+    {
+      "relationId": "REL004",
+      "fromArgumentUnitId": "AU029",
+      "type": "provides_evidence_for",
+      "toArgumentUnitId": "AU001",
+      "sourceUnitIds": [
+        "U0037",
+        "U0038"
+      ],
+      "basis": "Repeated mass bleaching supports the claimed long illness and collapse."
+    },
+    {
+      "relationId": "REL005",
+      "fromArgumentUnitId": "AU030",
+      "type": "provides_evidence_for",
+      "toArgumentUnitId": "AU001",
+      "sourceUnitIds": [
+        "U0039",
+        "U0040"
+      ],
+      "basis": "Acidification is presented as an additional causal mechanism."
+    },
+    {
+      "relationId": "REL006",
+      "fromArgumentUnitId": "AU031",
+      "type": "supports",
+      "toArgumentUnitId": "AU001",
+      "sourceUnitIds": [
+        "U0041",
+        "U0042"
+      ],
+      "basis": "Veron’s prediction is used to support the demise framing."
+    },
+    {
+      "relationId": "REL007",
+      "fromArgumentUnitId": "AU033",
+      "type": "provides_evidence_for",
+      "toArgumentUnitId": "AU032",
+      "sourceUnitIds": [
+        "U0044"
+      ],
+      "basis": "Government suppression is evidence for the asserted lack of serious rescue effort."
+    },
+    {
+      "relationId": "REL010",
+      "fromArgumentUnitId": "AU036",
+      "type": "contradicts",
+      "toArgumentUnitId": "AU001",
+      "sourceUnitIds": [
+        "U0048"
+      ],
+      "basis": "The article’s quantified claim that no more than about half of coral in the warmer northern region died conflicts with its unqualified whole-reef obituary assertion when presented as the event’s decisive mortality evidence."
+    },
+    {
+      "relationId": "REL011",
+      "fromArgumentUnitId": "AU016",
+      "type": "contradicts",
+      "toArgumentUnitId": "AU001",
+      "sourceUnitIds": [
+        "U0020"
+      ],
+      "basis": "Continued Aboriginal use through the stated demise implies ongoing physical/ecological presence, creating tension with literal total death."
+    },
+    {
+      "relationId": "REL012",
+      "fromArgumentUnitId": "AU041",
+      "type": "qualifies",
+      "toArgumentUnitId": "AU040",
+      "sourceUnitIds": [
+        "U0055",
+        "U0056"
+      ],
+      "basis": "The article acknowledges surviving reef remnants and deep-water corals while narrating widespread reef death."
+    }
+  ],
+  "consistencyFindings": [
+    {
+      "findingId": "CON001",
+      "argumentUnitIds": [
+        "AU001",
+        "AU036"
+      ],
+      "type": "contradiction",
+      "basis": "The article categorically declares the Great Barrier Reef dead while reporting that as much as 50 percent of coral in the warmer northern region died; the latter is a materially narrower partial-mortality claim and does not establish total reef death."
+    },
+    {
+      "findingId": "CON002",
+      "argumentUnitIds": [
+        "AU001",
+        "AU016"
+      ],
+      "type": "tension",
+      "basis": "The categorical obituary frame sits uneasily with the statement that Aboriginal communities continued to use the reef right up to its asserted demise, suggesting a functioning place rather than literal nonexistence."
+    },
+    {
+      "findingId": "CON003",
+      "argumentUnitIds": [
+        "AU025",
+        "AU026"
+      ],
+      "type": "qualification",
+      "basis": "Bleaching can lead to death, but the article explicitly states that coral can recover if temperatures return to normal soon enough."
+    },
+    {
+      "findingId": "CON005",
+      "argumentUnitIds": [
+        "AU001",
+        "AU041"
+      ],
+      "type": "qualification",
+      "basis": "The survival of other reef remnants does not directly disprove the Great Barrier Reef claim, but it qualifies the broader obituary language about worldwide reef death."
+    }
+  ],
+  "rubricCoverage": {
+    "targets": [
+      {
+        "targetId": "cf1-f06-concept-01",
+        "category": "required_concept",
+        "description": "The article uses an obituary frame to assert that the Great Barrier Reef has died in its entirety.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f06-concept-02",
+        "category": "required_concept",
+        "description": "Its concrete account instead reports severe but geographically bounded and partial coral mortality, including up to 50 percent in the warmer northern region.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f06-concept-03",
+        "category": "required_concept",
+        "description": "The article attributes historical observations, forecasts, and policy statements to their respective speakers and institutions.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f06-concept-04",
+        "category": "required_concept",
+        "description": "Bleaching, coral death, diminished recovery prospects, and death of the entire reef must remain distinct concepts.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f06-pillar-01",
+        "category": "required_pillar",
+        "description": "The reef's ecological scale and historical importance",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f06-pillar-02",
+        "category": "required_pillar",
+        "description": "Repeated bleaching and ocean acidification associated with climate change",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f06-pillar-03",
+        "category": "required_pillar",
+        "description": "Conservation efforts and alleged governmental obstruction",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f06-pillar-04",
+        "category": "required_pillar",
+        "description": "The obituary's whole-reef death claim versus its partial-loss evidence",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f06-region-01",
+        "category": "required_source_region",
+        "description": "whole-reef death assertion",
+        "excerpt": "The Great Barrier Reef of Australia passed away",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f06-region-02",
+        "category": "required_source_region",
+        "description": "bleaching recovery qualification",
+        "excerpt": "If water temperatures soon return to normal, the corals can recruit new algae and recover",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f06-region-03",
+        "category": "required_source_region",
+        "description": "bounded mortality evidence",
+        "excerpt": "As much as 50 percent of the coral in the warmer, northern part of the reef died",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f06-region-04",
+        "category": "required_source_region",
+        "description": "future-oriented expert statement",
+        "excerpt": "I think I may outlive the reef",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f06-region-05",
+        "category": "required_source_region",
+        "description": "government attribution",
+        "excerpt": "negative comments about the status of World Heritage-listed properties impacted on tourism",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      }
+    ],
+    "prohibitedInterpretations": [
+      {
+        "prohibitionId": "cf1-f06-prohibited-01",
+        "description": "Every use of death language is treated as literal without recognizing the sustained obituary metaphor.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f06-prohibited-02",
+        "description": "Bleached coral is automatically classified as dead coral.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f06-prohibited-03",
+        "description": "Possible recovery after temperatures normalize is treated as proof that the 2016 bleaching event caused no mortality.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f06-prohibited-04",
+        "description": "The death of up to half the coral in one region is silently expanded to measured death of the entire reef.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f06-prohibited-05",
+        "description": "Veron's prediction that he may outlive the reef is treated as confirmation that the reef had already died.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f06-prohibited-06",
+        "description": "Quoted government reasoning is presented as the author's own justification for suppressing the report.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      }
+    ],
+    "inheritedReviewNotes": [
+      "The required consistency finding is the mismatch between the literal whole-reef obituary claim and the article's own geographically bounded partial-mortality evidence.",
+      "The finding should describe an internal evidentiary conflict, not decide the reef's true external status. Ordinary bleaching and recovery qualifications are deliberate negative controls."
+    ]
+  },
+  "compilation": {
+    "schemaVersion": "cf1.adjudicationCompilation.v1",
+    "generatedAt": "2026-07-22T14:42:08.868Z",
+    "sourceDraftSchemaVersion": "cf1.argumentDraft.v1",
+    "sourceDraftSha256": "ad324ee8d0997991d634dbf7f9b3501c93eb14e93281744e7742929b1e26e61a",
+    "sourceFormSha256": "767b58ad373167143fdacc83f13b3b8539f32d4a2749b50f76125258389c932c",
+    "reviewSha256": "8f61246c67cb5d1d02d61ea6e0acb87d5f66a6905aea6d89a16f08e2f656d7ef",
+    "evidenceTargetsApproved": false,
+    "lineageByArgumentUnitId": {
+      "AU001": {
+        "sourceArgumentUnitId": "AU001",
+        "reviewDecisionKey": "CF1-F06:argument:AU001",
+        "operation": "accept"
+      },
+      "AU002": {
+        "sourceArgumentUnitId": "AU002",
+        "reviewDecisionKey": "CF1-F06:argument:AU002",
+        "operation": "accept"
+      },
+      "AU003": {
+        "sourceArgumentUnitId": "AU003",
+        "reviewDecisionKey": "CF1-F06:argument:AU003",
+        "operation": "accept"
+      },
+      "AU004": {
+        "sourceArgumentUnitId": "AU004",
+        "reviewDecisionKey": "CF1-F06:argument:AU004",
+        "operation": "accept"
+      },
+      "AU005": {
+        "sourceArgumentUnitId": "AU005",
+        "reviewDecisionKey": "CF1-F06:argument:AU005",
+        "operation": "accept"
+      },
+      "AU006": {
+        "sourceArgumentUnitId": "AU006",
+        "reviewDecisionKey": "CF1-F06:argument:AU006",
+        "operation": "accept"
+      },
+      "AU007": {
+        "sourceArgumentUnitId": "AU007",
+        "reviewDecisionKey": "CF1-F06:argument:AU007",
+        "operation": "accept"
+      },
+      "AU008": {
+        "sourceArgumentUnitId": "AU008",
+        "reviewDecisionKey": "CF1-F06:argument:AU008",
+        "operation": "accept"
+      },
+      "AU009": {
+        "sourceArgumentUnitId": "AU009",
+        "reviewDecisionKey": "CF1-F06:argument:AU009",
+        "operation": "accept"
+      },
+      "AU010": {
+        "sourceArgumentUnitId": "AU010",
+        "reviewDecisionKey": "CF1-F06:argument:AU010",
+        "operation": "accept"
+      },
+      "AU011-S01": {
+        "sourceArgumentUnitId": "AU011",
+        "reviewDecisionKey": "CF1-F06:argument:AU011",
+        "operation": "split",
+        "childOrdinal": 1,
+        "childCount": 2
+      },
+      "AU011-S02": {
+        "sourceArgumentUnitId": "AU011",
+        "reviewDecisionKey": "CF1-F06:argument:AU011",
+        "operation": "split",
+        "childOrdinal": 2,
+        "childCount": 2
+      },
+      "AU012": {
+        "sourceArgumentUnitId": "AU012",
+        "reviewDecisionKey": "CF1-F06:argument:AU012",
+        "operation": "accept"
+      },
+      "AU013": {
+        "sourceArgumentUnitId": "AU013",
+        "reviewDecisionKey": "CF1-F06:argument:AU013",
+        "operation": "accept"
+      },
+      "AU014": {
+        "sourceArgumentUnitId": "AU014",
+        "reviewDecisionKey": "CF1-F06:argument:AU014",
+        "operation": "accept"
+      },
+      "AU015": {
+        "sourceArgumentUnitId": "AU015",
+        "reviewDecisionKey": "CF1-F06:argument:AU015",
+        "operation": "accept"
+      },
+      "AU016": {
+        "sourceArgumentUnitId": "AU016",
+        "reviewDecisionKey": "CF1-F06:argument:AU016",
+        "operation": "accept"
+      },
+      "AU017": {
+        "sourceArgumentUnitId": "AU017",
+        "reviewDecisionKey": "CF1-F06:argument:AU017",
+        "operation": "accept"
+      },
+      "AU018-S01": {
+        "sourceArgumentUnitId": "AU018",
+        "reviewDecisionKey": "CF1-F06:argument:AU018",
+        "operation": "split",
+        "childOrdinal": 1,
+        "childCount": 2
+      },
+      "AU018-S02": {
+        "sourceArgumentUnitId": "AU018",
+        "reviewDecisionKey": "CF1-F06:argument:AU018",
+        "operation": "split",
+        "childOrdinal": 2,
+        "childCount": 2
+      },
+      "AU019": {
+        "sourceArgumentUnitId": "AU019",
+        "reviewDecisionKey": "CF1-F06:argument:AU019",
+        "operation": "accept"
+      },
+      "AU020": {
+        "sourceArgumentUnitId": "AU020",
+        "reviewDecisionKey": "CF1-F06:argument:AU020",
+        "operation": "accept"
+      },
+      "AU021": {
+        "sourceArgumentUnitId": "AU021",
+        "reviewDecisionKey": "CF1-F06:argument:AU021",
+        "operation": "accept"
+      },
+      "AU022": {
+        "sourceArgumentUnitId": "AU022",
+        "reviewDecisionKey": "CF1-F06:argument:AU022",
+        "operation": "accept"
+      },
+      "AU023": {
+        "sourceArgumentUnitId": "AU023",
+        "reviewDecisionKey": "CF1-F06:argument:AU023",
+        "operation": "accept"
+      },
+      "AU024": {
+        "sourceArgumentUnitId": "AU024",
+        "reviewDecisionKey": "CF1-F06:argument:AU024",
+        "operation": "accept"
+      },
+      "AU025": {
+        "sourceArgumentUnitId": "AU025",
+        "reviewDecisionKey": "CF1-F06:argument:AU025",
+        "operation": "accept"
+      },
+      "AU026": {
+        "sourceArgumentUnitId": "AU026",
+        "reviewDecisionKey": "CF1-F06:argument:AU026",
+        "operation": "accept"
+      },
+      "AU027": {
+        "sourceArgumentUnitId": "AU027",
+        "reviewDecisionKey": "CF1-F06:argument:AU027",
+        "operation": "edit"
+      },
+      "AU028": {
+        "sourceArgumentUnitId": "AU028",
+        "reviewDecisionKey": "CF1-F06:argument:AU028",
+        "operation": "edit"
+      },
+      "AU029": {
+        "sourceArgumentUnitId": "AU029",
+        "reviewDecisionKey": "CF1-F06:argument:AU029",
+        "operation": "accept"
+      },
+      "AU030": {
+        "sourceArgumentUnitId": "AU030",
+        "reviewDecisionKey": "CF1-F06:argument:AU030",
+        "operation": "accept"
+      },
+      "AU031": {
+        "sourceArgumentUnitId": "AU031",
+        "reviewDecisionKey": "CF1-F06:argument:AU031",
+        "operation": "edit"
+      },
+      "AU032": {
+        "sourceArgumentUnitId": "AU032",
+        "reviewDecisionKey": "CF1-F06:argument:AU032",
+        "operation": "accept"
+      },
+      "AU033": {
+        "sourceArgumentUnitId": "AU033",
+        "reviewDecisionKey": "CF1-F06:argument:AU033",
+        "operation": "accept"
+      },
+      "AU034": {
+        "sourceArgumentUnitId": "AU034",
+        "reviewDecisionKey": "CF1-F06:argument:AU034",
+        "operation": "accept"
+      },
+      "AU035-S01": {
+        "sourceArgumentUnitId": "AU035",
+        "reviewDecisionKey": "CF1-F06:argument:AU035",
+        "operation": "split",
+        "childOrdinal": 1,
+        "childCount": 2
+      },
+      "AU035-S02": {
+        "sourceArgumentUnitId": "AU035",
+        "reviewDecisionKey": "CF1-F06:argument:AU035",
+        "operation": "split",
+        "childOrdinal": 2,
+        "childCount": 2
+      },
+      "AU036": {
+        "sourceArgumentUnitId": "AU036",
+        "reviewDecisionKey": "CF1-F06:argument:AU036",
+        "operation": "accept"
+      },
+      "AU037": {
+        "sourceArgumentUnitId": "AU037",
+        "reviewDecisionKey": "CF1-F06:argument:AU037",
+        "operation": "accept"
+      },
+      "AU038": {
+        "sourceArgumentUnitId": "AU038",
+        "reviewDecisionKey": "CF1-F06:argument:AU038",
+        "operation": "accept"
+      },
+      "AU039": {
+        "sourceArgumentUnitId": "AU039",
+        "reviewDecisionKey": "CF1-F06:argument:AU039",
+        "operation": "accept"
+      },
+      "AU040": {
+        "sourceArgumentUnitId": "AU040",
+        "reviewDecisionKey": "CF1-F06:argument:AU040",
+        "operation": "accept"
+      },
+      "AU041": {
+        "sourceArgumentUnitId": "AU041",
+        "reviewDecisionKey": "CF1-F06:argument:AU041",
+        "operation": "edit"
+      }
+    },
+    "sourceArgumentReplacementMap": {
+      "AU001": [
+        "AU001"
+      ],
+      "AU002": [
+        "AU002"
+      ],
+      "AU003": [
+        "AU003"
+      ],
+      "AU004": [
+        "AU004"
+      ],
+      "AU005": [
+        "AU005"
+      ],
+      "AU006": [
+        "AU006"
+      ],
+      "AU007": [
+        "AU007"
+      ],
+      "AU008": [
+        "AU008"
+      ],
+      "AU009": [
+        "AU009"
+      ],
+      "AU010": [
+        "AU010"
+      ],
+      "AU011": [
+        "AU011-S01",
+        "AU011-S02"
+      ],
+      "AU012": [
+        "AU012"
+      ],
+      "AU013": [
+        "AU013"
+      ],
+      "AU014": [
+        "AU014"
+      ],
+      "AU015": [
+        "AU015"
+      ],
+      "AU016": [
+        "AU016"
+      ],
+      "AU017": [
+        "AU017"
+      ],
+      "AU018": [
+        "AU018-S01",
+        "AU018-S02"
+      ],
+      "AU019": [
+        "AU019"
+      ],
+      "AU020": [
+        "AU020"
+      ],
+      "AU021": [
+        "AU021"
+      ],
+      "AU022": [
+        "AU022"
+      ],
+      "AU023": [
+        "AU023"
+      ],
+      "AU024": [
+        "AU024"
+      ],
+      "AU025": [
+        "AU025"
+      ],
+      "AU026": [
+        "AU026"
+      ],
+      "AU027": [
+        "AU027"
+      ],
+      "AU028": [
+        "AU028"
+      ],
+      "AU029": [
+        "AU029"
+      ],
+      "AU030": [
+        "AU030"
+      ],
+      "AU031": [
+        "AU031"
+      ],
+      "AU032": [
+        "AU032"
+      ],
+      "AU033": [
+        "AU033"
+      ],
+      "AU034": [
+        "AU034"
+      ],
+      "AU035": [
+        "AU035-S01",
+        "AU035-S02"
+      ],
+      "AU036": [
+        "AU036"
+      ],
+      "AU037": [
+        "AU037"
+      ],
+      "AU038": [
+        "AU038"
+      ],
+      "AU039": [
+        "AU039"
+      ],
+      "AU040": [
+        "AU040"
+      ],
+      "AU041": [
+        "AU041"
+      ]
+    }
+  }
+}

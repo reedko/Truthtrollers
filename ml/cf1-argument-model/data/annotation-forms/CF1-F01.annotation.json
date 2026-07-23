@@ -1,0 +1,211 @@
+{
+  "schemaVersion": "cf1.argumentAnnotation.v1",
+  "fixture": {
+    "fixtureId": "CF1-F01",
+    "fixtureRevision": 2,
+    "fixtureClass": "straightforward_argument",
+    "title": "Age at First Measles-Mumps-Rubella Vaccination in Children With Autism and School-Matched Control Subjects: A Population-Based Study in Metropolitan Atlanta",
+    "articlePath": "backend/test/claim-foundry/fixtures/CF1-F01/article.json",
+    "evaluatorKeyPath": "backend/test/claim-foundry/prompt-evaluation-keys/CF1-F01.json",
+    "chatDraftPromptPath": "ml/cf1-argument-model/data/annotation-prompts/CF1-F01.chat-prompt.md"
+  },
+  "adjudication": {
+    "status": "draft",
+    "primaryAnnotatorId": null,
+    "independentReviewerId": null,
+    "startedAt": null,
+    "approvedAt": null,
+    "notes": ""
+  },
+  "orientation": {
+    "theme": null,
+    "thesis": null,
+    "thesisStatus": null,
+    "thesisHinge": {
+      "proposition": null,
+      "ifSupportedEffectOnThesis": null,
+      "ifRefutedEffectOnThesis": null
+    },
+    "basisSourceUnitIds": [],
+    "notes": ""
+  },
+  "passageCoverage": [],
+  "argumentUnits": [],
+  "relations": [],
+  "consistencyFindings": [],
+  "rubricCoverage": {
+    "targets": [
+      {
+        "targetId": "cf1-f01-concept-01",
+        "category": "required_concept",
+        "description": "The study compares age at first MMR vaccination in children with autism and school-matched controls.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f01-concept-02",
+        "category": "required_concept",
+        "description": "Vaccination before 18 months or before 24 months was not associated with autism case status in the overall sample or evaluated subgroups.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f01-concept-03",
+        "category": "required_concept",
+        "description": "Vaccination before 36 months was more common among cases in the total sample, but the authors attribute this likely to immunization requirements for early-intervention enrollment.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f01-concept-04",
+        "category": "required_concept",
+        "description": "The birth-certificate subsample estimate for vaccination before 36 months was lower and its confidence interval included no association.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f01-pillar-01",
+        "category": "required_pillar",
+        "description": "Population-based case-control design and school matching",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f01-pillar-02",
+        "category": "required_pillar",
+        "description": "Results at the prespecified 18-, 24-, and 36-month cutoffs",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f01-pillar-03",
+        "category": "required_pillar",
+        "description": "Regression and other clinical subgroup results",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f01-pillar-04",
+        "category": "required_pillar",
+        "description": "Study limitations and the authors' explanation of the 36-month finding",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f01-region-01",
+        "category": "required_source_region",
+        "description": "study objective",
+        "excerpt": "To compare ages at first measles-mumps-rubella (MMR) vaccination",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f01-region-02",
+        "category": "required_source_region",
+        "description": "primary negative result",
+        "excerpt": "similar proportions of case and control children had been vaccinated before 18 months or before 24 months of age.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f01-region-03",
+        "category": "required_source_region",
+        "description": "36-month result",
+        "excerpt": "more case children (93%) than control children (91%) were vaccinated before 36 months",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f01-region-04",
+        "category": "required_source_region",
+        "description": "authors' explanation",
+        "excerpt": "be an artifact of immunization requirements for preschool special education attendance in case children.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      }
+    ],
+    "prohibitedInterpretations": [
+      {
+        "prohibitionId": "cf1-f01-prohibited-01",
+        "description": "The study found that MMR vaccination causes autism.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f01-prohibited-02",
+        "description": "The study found no difference at any vaccination-age cutoff.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f01-prohibited-03",
+        "description": "The 36-month association is presented without the authors' selection explanation and birth-certificate analysis.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f01-prohibited-04",
+        "description": "The study tested whether thimerosal exposure causes autism.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f01-prohibited-05",
+        "description": "The study directly measured a precise date of autism onset.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      }
+    ],
+    "inheritedReviewNotes": [
+      "Preserve the distinction between an observed association and the authors' causal interpretation.",
+      "Do not turn cited background studies into findings of this study."
+    ]
+  },
+  "finalChecks": {
+    "completeArticleReviewed": false,
+    "everyArgumentUnitGrounded": false,
+    "everyPropositionAtomic": false,
+    "attributionReviewedIndependentlyOfStance": false,
+    "opponentPolarityPreserved": false,
+    "relationsReviewed": false,
+    "evidenceTargetsReviewed": false,
+    "rubricCoverageReviewed": false,
+    "keyDisagreementsResolvedOrFlagged": false
+  }
+}

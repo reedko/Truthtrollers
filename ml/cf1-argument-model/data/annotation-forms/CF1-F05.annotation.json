@@ -1,0 +1,249 @@
+{
+  "schemaVersion": "cf1.argumentAnnotation.v1",
+  "fixture": {
+    "fixtureId": "CF1-F05",
+    "fixtureRevision": 1,
+    "fixtureClass": "multiple_named_studies",
+    "title": "The myth of the magically powerful placebo returns",
+    "articlePath": "backend/test/claim-foundry/fixtures/CF1-F05/article.json",
+    "evaluatorKeyPath": "backend/test/claim-foundry/prompt-evaluation-keys/CF1-F05.json",
+    "chatDraftPromptPath": "ml/cf1-argument-model/data/annotation-prompts/CF1-F05.chat-prompt.md"
+  },
+  "adjudication": {
+    "status": "draft",
+    "primaryAnnotatorId": null,
+    "independentReviewerId": null,
+    "startedAt": null,
+    "approvedAt": null,
+    "notes": ""
+  },
+  "orientation": {
+    "theme": null,
+    "thesis": null,
+    "thesisStatus": null,
+    "thesisHinge": {
+      "proposition": null,
+      "ifSupportedEffectOnThesis": null,
+      "ifRefutedEffectOnThesis": null
+    },
+    "basisSourceUnitIds": [],
+    "notes": ""
+  },
+  "passageCoverage": [],
+  "argumentUnits": [],
+  "relations": [],
+  "consistencyFindings": [],
+  "rubricCoverage": {
+    "targets": [
+      {
+        "targetId": "cf1-f05-concept-01",
+        "category": "required_concept",
+        "description": "The author disputes the claim that placebo treatments activate a powerful general healing mechanism.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f05-concept-02",
+        "category": "required_concept",
+        "description": "The article distinguishes subjective patient-reported outcomes from objective outcomes such as survival and tumor shrinkage.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f05-concept-03",
+        "category": "required_concept",
+        "description": "Named reviews and reanalyses attribute apparent placebo benefits to small subjective effects, biased reporting, natural history, regression to the mean, and trial artifacts.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f05-concept-04",
+        "category": "required_concept",
+        "description": "Open-label placebo, veterinary, and health-governor examples are assessed separately rather than blended into one body of evidence.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f05-pillar-01",
+        "category": "required_pillar",
+        "description": "Systematic reviews find little general clinically important placebo effect",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f05-pillar-02",
+        "category": "required_pillar",
+        "description": "Classic placebo estimates are weakened by reanalysis of study design and natural-history effects",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f05-pillar-03",
+        "category": "required_pillar",
+        "description": "Open-label placebo trials retain expectancy-producing scripts and other methodological problems",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f05-pillar-04",
+        "category": "required_pillar",
+        "description": "Veterinary placebo findings demonstrate observer or caregiver reporting effects rather than confirmed animal improvement",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f05-pillar-05",
+        "category": "required_pillar",
+        "description": "The proposed biological health governor is presented as speculative rather than established",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f05-region-01",
+        "category": "required_source_region",
+        "description": "2001 review",
+        "excerpt": "Is the Placebo Powerless?",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f05-region-02",
+        "category": "required_source_region",
+        "description": "2010 Cochrane review",
+        "excerpt": "Placebo interventions for all clinical conditions",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f05-region-03",
+        "category": "required_source_region",
+        "description": "1997 reanalysis",
+        "excerpt": "The Powerful Placebo Effect: Fact or Fiction?",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f05-region-04",
+        "category": "required_source_region",
+        "description": "open-label low-back-pain trial",
+        "excerpt": "open-label placebo trial for chronic low back pain",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f05-region-05",
+        "category": "required_source_region",
+        "description": "veterinary osteoarthritis study",
+        "excerpt": "owners reported improvement roughly 57% of the time",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f05-region-06",
+        "category": "required_source_region",
+        "description": "health-governor commentary",
+        "excerpt": "health governor",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      }
+    ],
+    "prohibitedInterpretations": [
+      {
+        "prohibitionId": "cf1-f05-prohibited-01",
+        "description": "Findings from different reviews, trials, diseases, species, or outcome types are merged into one study.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f05-prohibited-02",
+        "description": "Small changes in subjective pain or nausea are converted into objective biological healing.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f05-prohibited-03",
+        "description": "Open-label placebo trials are described as entirely free of expectancy cues or deception concerns.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f05-prohibited-04",
+        "description": "Owner-reported improvement in dogs is treated as medically confirmed improvement in the animals.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f05-prohibited-05",
+        "description": "The health-governor hypothesis is presented as an empirically established mechanism.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f05-prohibited-06",
+        "description": "The author claims that contextual care and patient perception can never affect reported symptoms.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      }
+    ],
+    "inheritedReviewNotes": [
+      "Keep the identity, date, population, endpoint, and limitation of each named work attached to that work.",
+      "The article quotes claims it criticizes; preserve the distinction between Phil Starks, cited researchers, study participants, and David Gorski's conclusions."
+    ]
+  },
+  "finalChecks": {
+    "completeArticleReviewed": false,
+    "everyArgumentUnitGrounded": false,
+    "everyPropositionAtomic": false,
+    "attributionReviewedIndependentlyOfStance": false,
+    "opponentPolarityPreserved": false,
+    "relationsReviewed": false,
+    "evidenceTargetsReviewed": false,
+    "rubricCoverageReviewed": false,
+    "keyDisagreementsResolvedOrFlagged": false
+  }
+}

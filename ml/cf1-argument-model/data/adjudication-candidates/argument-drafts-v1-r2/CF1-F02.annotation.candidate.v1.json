@@ -1,0 +1,2945 @@
+{
+  "schemaVersion": "cf1.argumentAnnotation.v1",
+  "fixture": {
+    "fixtureId": "CF1-F02",
+    "fixtureRevision": 2,
+    "fixtureClass": "rebuttal_article",
+    "title": "‘Deceptively Toxic’: How Regulators, Chemical Companies Get Away With Calling Glyphosate ‘Safe’",
+    "articlePath": "backend/test/claim-foundry/fixtures/CF1-F02/article.json",
+    "evaluatorKeyPath": "backend/test/claim-foundry/prompt-evaluation-keys/CF1-F02.json",
+    "chatDraftPromptPath": "ml/cf1-argument-model/data/annotation-prompts/CF1-F02.chat-prompt.md"
+  },
+  "adjudication": {
+    "status": "draft",
+    "primaryAnnotatorId": null,
+    "independentReviewerId": null,
+    "startedAt": null,
+    "approvedAt": null,
+    "notes": "Compiled from reviewed model draft. Split children, affected relations, consistency findings, rubric coverage, and evidence targets remain subject to focused review.\nAccept. Preserve the article as a favorable report of Antoniou’s argument and keep the industry biological-pathway premise separate from the microbiome rebuttal.",
+    "sourceReviewSchemaVersion": "cf1.argumentDraftReviewDecisions.v1",
+    "sourceReviewExportedAt": "2026-07-22T14:01:25.286Z"
+  },
+  "orientation": {
+    "theme": "Whether glyphosate's regulatory safety status reflects sound science or an industry-shaped system that ignores complete formulations, mixtures, microbiome effects, and low-dose chronic harms.",
+    "thesis": "The article endorses Michael Antoniou's argument that glyphosate is deceptively toxic and remains accepted as safe because regulators rely on industry-influenced, incomplete testing that understates real-world exposure and harm.",
+    "thesisStatus": "clear",
+    "thesisHinge": {
+      "proposition": "Regulatory conclusions of glyphosate safety depend on incomplete and industry-influenced evidence that fails to represent actual exposures and low-dose chronic effects.",
+      "ifSupportedEffectOnThesis": "strengthens",
+      "ifRefutedEffectOnThesis": "weakens"
+    },
+    "basisSourceUnitIds": [
+      "U0001",
+      "U0004",
+      "U0007",
+      "U0028",
+      "U0040",
+      "U0053",
+      "U0069",
+      "U0070"
+    ],
+    "notes": "The article is a strongly favorable report of Antoniou's position. The industry plant-pathway argument is preserved as an opponent proposition and linked to the microbiome rebuttal."
+  },
+  "passageCoverage": [
+    {
+      "coverageId": "COV001",
+      "sourceUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003",
+        "U0004",
+        "U0005"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU001"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV002",
+      "sourceUnitIds": [
+        "U0006"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "These units contain headings, bibliographic matter, transitions, procedural detail, table fragments, or other context not independently extracted as a material externally testable assertion."
+    },
+    {
+      "coverageId": "COV003",
+      "sourceUnitIds": [
+        "U0007"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU002"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV004",
+      "sourceUnitIds": [
+        "U0008"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU003"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV005",
+      "sourceUnitIds": [
+        "U0009"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU004"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV006",
+      "sourceUnitIds": [
+        "U0010"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU005"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV007",
+      "sourceUnitIds": [
+        "U0011"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU006"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV008",
+      "sourceUnitIds": [
+        "U0012",
+        "U0013",
+        "U0014"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU007"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV009",
+      "sourceUnitIds": [
+        "U0015",
+        "U0016",
+        "U0017"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU008"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV010",
+      "sourceUnitIds": [
+        "U0018"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "These units contain headings, bibliographic matter, transitions, procedural detail, table fragments, or other context not independently extracted as a material externally testable assertion."
+    },
+    {
+      "coverageId": "COV011",
+      "sourceUnitIds": [
+        "U0019"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU009-S01",
+        "AU009-S02"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV012",
+      "sourceUnitIds": [
+        "U0020"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU009-S01",
+        "AU009-S02",
+        "AU010"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV013",
+      "sourceUnitIds": [
+        "U0021"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU009-S01",
+        "AU009-S02"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV014",
+      "sourceUnitIds": [
+        "U0022"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "These units contain headings, bibliographic matter, transitions, procedural detail, table fragments, or other context not independently extracted as a material externally testable assertion."
+    },
+    {
+      "coverageId": "COV015",
+      "sourceUnitIds": [
+        "U0023",
+        "U0024"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU011"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV016",
+      "sourceUnitIds": [
+        "U0025"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU012"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV017",
+      "sourceUnitIds": [
+        "U0026",
+        "U0027"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "These units contain headings, bibliographic matter, transitions, procedural detail, table fragments, or other context not independently extracted as a material externally testable assertion."
+    },
+    {
+      "coverageId": "COV018",
+      "sourceUnitIds": [
+        "U0028",
+        "U0029",
+        "U0030"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU013-S01",
+        "AU013-S02"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV019",
+      "sourceUnitIds": [
+        "U0031",
+        "U0032",
+        "U0033"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU014"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV020",
+      "sourceUnitIds": [
+        "U0034",
+        "U0035"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU015"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV021",
+      "sourceUnitIds": [
+        "U0036",
+        "U0037",
+        "U0038",
+        "U0039"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU016"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV022",
+      "sourceUnitIds": [
+        "U0040"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "These units contain headings, bibliographic matter, transitions, procedural detail, table fragments, or other context not independently extracted as a material externally testable assertion."
+    },
+    {
+      "coverageId": "COV023",
+      "sourceUnitIds": [
+        "U0041",
+        "U0042",
+        "U0043"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU017"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV024",
+      "sourceUnitIds": [
+        "U0044"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU018"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV025",
+      "sourceUnitIds": [
+        "U0045",
+        "U0046",
+        "U0047"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU019"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV026",
+      "sourceUnitIds": [
+        "U0048",
+        "U0049",
+        "U0050",
+        "U0051",
+        "U0052"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU020"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV027",
+      "sourceUnitIds": [
+        "U0053",
+        "U0054"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU021"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV028",
+      "sourceUnitIds": [
+        "U0055",
+        "U0056"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU022"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV029",
+      "sourceUnitIds": [
+        "U0057"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU023",
+        "AU024-S01",
+        "AU024-S02"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV030",
+      "sourceUnitIds": [
+        "U0058"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU025"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV031",
+      "sourceUnitIds": [
+        "U0059"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "These units contain headings, bibliographic matter, transitions, procedural detail, table fragments, or other context not independently extracted as a material externally testable assertion."
+    },
+    {
+      "coverageId": "COV032",
+      "sourceUnitIds": [
+        "U0060",
+        "U0061"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU026",
+        "AU027"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV033",
+      "sourceUnitIds": [
+        "U0062"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU027",
+        "AU028"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV034",
+      "sourceUnitIds": [
+        "U0063"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "These units contain headings, bibliographic matter, transitions, procedural detail, table fragments, or other context not independently extracted as a material externally testable assertion."
+    },
+    {
+      "coverageId": "COV035",
+      "sourceUnitIds": [
+        "U0064"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU029"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV036",
+      "sourceUnitIds": [
+        "U0065"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU030-S01",
+        "AU030-S02",
+        "AU031"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV037",
+      "sourceUnitIds": [
+        "U0066",
+        "U0067"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU032"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV038",
+      "sourceUnitIds": [
+        "U0068"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "These units contain headings, bibliographic matter, transitions, procedural detail, table fragments, or other context not independently extracted as a material externally testable assertion."
+    },
+    {
+      "coverageId": "COV039",
+      "sourceUnitIds": [
+        "U0069",
+        "U0070",
+        "U0071"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU033-S01",
+        "AU033-S02"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV040",
+      "sourceUnitIds": [
+        "U0072"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU033-S01",
+        "AU033-S02",
+        "AU034"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV041",
+      "sourceUnitIds": [
+        "U0073",
+        "U0074"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU035"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV042",
+      "sourceUnitIds": [
+        "U0075",
+        "U0076",
+        "U0077",
+        "U0078"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU036"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    }
+  ],
+  "argumentUnits": [
+    {
+      "argumentUnitId": "AU001",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0001",
+          "U0002",
+          "U0003",
+          "U0004",
+          "U0005"
+        ],
+        "verbatimExcerpt": "Glyphosate has remained one of the world’s most widely used herbicides not because the science supports its safety, but because industry has shaped nearly every step of the regulatory process, molecular geneticist and toxicologist Michael Antoniou, Ph.D. , said this week. In an interview on “ The Corbett Report ,” Antoniou outlined what he sees as the biggest failures that have kept the “deceptively toxic” herbicide on the market despite a growing body of independent research linking it to serious health risks. Antoniou, professor emeritus at King’s College London, spent more than a decade leading pesticides research and building a group he described as “a world leader in glyphosate herbicide toxicology.” He said industry’s influence extends from the studies regulators rely on and the products they test to the exposure limits they consider safe. “That is not science,” he said. “That is really an act of deception.”"
+      },
+      "canonicalAtomicProposition": "Glyphosate remains widely used because industry has shaped the regulatory process rather than because safety science supports it.",
+      "scopeQualifiers": [
+        "Antoniou's assessment of global glyphosate regulation"
+      ],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0001",
+          "U0002",
+          "U0003",
+          "U0004",
+          "U0005"
+        ],
+        "basis": "The named or narrative supplier is identified in U0001, U0002, U0003, U0004, U0005."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU002",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0007"
+        ],
+        "verbatimExcerpt": "One of the biggest flaws in glyphosate regulation is that agencies largely assess glyphosate by itself, in isolation — instead of testing the commercial products people are actually exposed to, Antoniou said."
+      },
+      "canonicalAtomicProposition": "Regulatory agencies largely assess glyphosate alone rather than the complete commercial formulations to which people are exposed.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0007"
+        ],
+        "basis": "The named or narrative supplier is identified in U0007."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU003",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0008"
+        ],
+        "verbatimExcerpt": "Glyphosate alone can’t kill plants, he explained."
+      },
+      "canonicalAtomicProposition": "Glyphosate alone cannot kill plants.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0008"
+        ],
+        "basis": "The named or narrative supplier is identified in U0008."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU004",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0009"
+        ],
+        "verbatimExcerpt": "Manufacturers add chemicals known as co-formulants that “basically punch holes in the plant cell walls,” so glyphosate can enter and destroy the plant."
+      },
+      "canonicalAtomicProposition": "Co-formulants enable glyphosate to enter plant cells and destroy the plant.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0009"
+        ],
+        "basis": "The named or narrative supplier is identified in U0009."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU005",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0010"
+        ],
+        "verbatimExcerpt": "Those additional ingredients make the products “far more toxic” than glyphosate on its own, Antoniou said."
+      },
+      "canonicalAtomicProposition": "Commercial glyphosate formulations are more toxic than glyphosate alone.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0010"
+        ],
+        "basis": "The named or narrative supplier is identified in U0010."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU006",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0011"
+        ],
+        "verbatimExcerpt": "Citing research by French scientist Robin Mesnage, Ph.D. , Antoniou said commercial formulations can be “up to a thousand times more toxic than glyphosate alone.”"
+      },
+      "canonicalAtomicProposition": "Some commercial glyphosate formulations can be up to one thousand times more toxic than glyphosate alone.",
+      "scopeQualifiers": [
+        "some commercial formulations",
+        "reported upper-bound comparison"
+      ],
+      "assertionSource": {
+        "kind": "study",
+        "name": "Robin Mesnage research cited by Michael Antoniou",
+        "sourceUnitIds": [
+          "U0011"
+        ],
+        "basis": "The named or narrative supplier is identified in U0011."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU007",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0012",
+          "U0013",
+          "U0014"
+        ],
+        "verbatimExcerpt": "Yet regulators don’t require long-term toxicity testing of those complete formulations. Instead, “they pass regulations based on tests on glyphosate alone,” Antoniou said. He called that approach “a massive act of negligence on behalf of the regulators anywhere in the world.”"
+      },
+      "canonicalAtomicProposition": "Regulators do not require long-term toxicity testing of complete commercial glyphosate formulations.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0012",
+          "U0013",
+          "U0014"
+        ],
+        "basis": "The named or narrative supplier is identified in U0012, U0013, U0014."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU008",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0015",
+          "U0016",
+          "U0017"
+        ],
+        "verbatimExcerpt": "He stressed that people are never exposed to pure glyphosate. “When an applicator goes around spraying and they’re breathing it, they’re getting contact on their skin. It’s the whole formulation,” Antoniou said. The same formulations also end up in the food supply. Evaluating only glyphosate means “the regulator isn’t doing their job properly” and is “putting public health at risk,” he said."
+      },
+      "canonicalAtomicProposition": "People are exposed to complete glyphosate formulations rather than pure glyphosate.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0015",
+          "U0016",
+          "U0017"
+        ],
+        "basis": "The named or narrative supplier is identified in U0015, U0016, U0017."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU009-S01",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0019",
+          "U0020",
+          "U0021"
+        ],
+        "verbatimExcerpt": "The problem is compounded because manufacturers don’t disclose co-formulants on the labels of products such as Roundup , Antoniou said. Instead, the additional ingredients are simply listed as “inert” because they aren’t considered the active herbicide, even though evidence suggests some are highly toxic in their own right. “An industry hides behind confidentiality clauses,” and regulators don’t require full public disclosure, he said."
+      },
+      "canonicalAtomicProposition": "Manufacturers do not publicly disclose the identities of glyphosate-product co-formulants.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0019",
+          "U0020",
+          "U0021"
+        ],
+        "basis": "The named or narrative supplier is identified in U0019, U0020, U0021."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence.\nSplit from AU009; child 1 of 2."
+    },
+    {
+      "argumentUnitId": "AU009-S02",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0019",
+          "U0020",
+          "U0021"
+        ],
+        "verbatimExcerpt": "The problem is compounded because manufacturers don’t disclose co-formulants on the labels of products such as Roundup , Antoniou said. Instead, the additional ingredients are simply listed as “inert” because they aren’t considered the active herbicide, even though evidence suggests some are highly toxic in their own right. “An industry hides behind confidentiality clauses,” and regulators don’t require full public disclosure, he said."
+      },
+      "canonicalAtomicProposition": "Glyphosate-product labels classify co-formulants as inert ingredients.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0019",
+          "U0020",
+          "U0021"
+        ],
+        "basis": "The named or narrative supplier is identified in U0019, U0020, U0021."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence.\nSplit from AU009; child 2 of 2."
+    },
+    {
+      "argumentUnitId": "AU010",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0020"
+        ],
+        "verbatimExcerpt": "Instead, the additional ingredients are simply listed as “inert” because they aren’t considered the active herbicide, even though evidence suggests some are highly toxic in their own right."
+      },
+      "canonicalAtomicProposition": "Some glyphosate-product co-formulants are highly toxic in their own right.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0020"
+        ],
+        "basis": "The named or narrative supplier is identified in U0020."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU011",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0023",
+          "U0024"
+        ],
+        "verbatimExcerpt": "His laboratory did exactly that. “The only way we could find out” what the products contained was by conducting independent chemical analyses, he said."
+      },
+      "canonicalAtomicProposition": "Antoniou's laboratory had to perform independent chemical analyses to determine what commercial glyphosate products contained.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0023",
+          "U0024"
+        ],
+        "basis": "The named or narrative supplier is identified in U0023, U0024."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU012",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0025"
+        ],
+        "verbatimExcerpt": "If regulators evaluated the complete formulations instead of glyphosate alone, Antoniou said allowable exposure limits “would have to be drastically reduced,” and uses in homes, parks and other urban areas would likely be banned."
+      },
+      "canonicalAtomicProposition": "Testing complete glyphosate formulations would likely require substantially lower exposure limits and bans on some urban uses.",
+      "scopeQualifiers": [
+        "counterfactual regulatory consequence",
+        "Antoniou's prediction"
+      ],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0025"
+        ],
+        "basis": "The named or narrative supplier is identified in U0025."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU013-S01",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0028",
+          "U0029",
+          "U0030"
+        ],
+        "verbatimExcerpt": "Testing only glyphosate is just one example of how industry has shaped regulation, according to Antoniou. He said regulatory agencies around the world rely heavily on industry-sponsored research when deciding whether glyphosate is safe. Because regulators often use the same industry data, they reach similar conclusions and cite one another as supporting evidence."
+      },
+      "canonicalAtomicProposition": "Glyphosate regulators rely heavily on industry-sponsored research.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0028",
+          "U0029",
+          "U0030"
+        ],
+        "basis": "The named or narrative supplier is identified in U0028, U0029, U0030."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication.\nSplit from AU013; child 1 of 2."
+    },
+    {
+      "argumentUnitId": "AU013-S02",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0028",
+          "U0029",
+          "U0030"
+        ],
+        "verbatimExcerpt": "Testing only glyphosate is just one example of how industry has shaped regulation, according to Antoniou. He said regulatory agencies around the world rely heavily on industry-sponsored research when deciding whether glyphosate is safe. Because regulators often use the same industry data, they reach similar conclusions and cite one another as supporting evidence."
+      },
+      "canonicalAtomicProposition": "Regulatory agencies often reuse the same industry data and cite one another as support.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0028",
+          "U0029",
+          "U0030"
+        ],
+        "basis": "The named or narrative supplier is identified in U0028, U0029, U0030."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication.\nSplit from AU013; child 2 of 2."
+    },
+    {
+      "argumentUnitId": "AU014",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0031",
+          "U0032",
+          "U0033"
+        ],
+        "verbatimExcerpt": "Antoniou pointed to a widely cited 2000 study in Regulatory Toxicology and Pharmacology that concluded glyphosate posed no significant safety concerns. Regulatory agencies relied on that paper for years. Earlier this year, however, the paper was retracted after evidence showed its authors had undisclosed conflicts of interest."
+      },
+      "canonicalAtomicProposition": "A widely cited 2000 glyphosate-safety paper was retracted after undisclosed conflicts of interest were identified.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "document",
+        "name": "2000 Regulatory Toxicology and Pharmacology paper",
+        "sourceUnitIds": [
+          "U0031",
+          "U0032",
+          "U0033"
+        ],
+        "basis": "The named or narrative supplier is identified in U0031, U0032, U0033."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU015",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0034",
+          "U0035"
+        ],
+        "verbatimExcerpt": "Even more troubling, Antoniou said, “they had solid evidence that actually this paper wasn’t even written by the authors. It was ghostwritten by Monsanto .”"
+      },
+      "canonicalAtomicProposition": "The retracted 2000 glyphosate-safety paper was ghostwritten by Monsanto.",
+      "scopeQualifiers": [
+        "Antoniou's allegation"
+      ],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0034",
+          "U0035"
+        ],
+        "basis": "The named or narrative supplier is identified in U0034, U0035."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU016",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0036",
+          "U0037",
+          "U0038",
+          "U0039"
+        ],
+        "verbatimExcerpt": "According to Antoniou, the influence extends well beyond a single paper. “Regulatory agencies rely on laboratory animal toxicity studies to set their so-called safe exposure limits,” he said. However, “the criteria by which a given animal toxicity study is eligible to be considered … were set by industry.” As a result, independent studies often receive “little or no attention,” even when they “clearly have no conflicts of interest,” Antoniou said. “That’s how influential industry has been,” he said."
+      },
+      "canonicalAtomicProposition": "Industry-established eligibility criteria cause regulators to discount independent animal-toxicity studies.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0036",
+          "U0037",
+          "U0038",
+          "U0039"
+        ],
+        "basis": "The named or narrative supplier is identified in U0036, U0037, U0038, U0039."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": ""
+    },
+    {
+      "argumentUnitId": "AU017",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0041",
+          "U0042",
+          "U0043"
+        ],
+        "verbatimExcerpt": "Even if regulators relied on stronger science, they would still be evaluating glyphosate under conditions that don’t match the real world, Antoniou said. Safety assessments typically examine one pesticide at a time. “But you and I, we’re all exposed to cocktails of pesticides on a daily basis,” he said. “Tens of different pesticides we can be exposed to on a daily basis through our food supply. Does the regulator take that into account? Not at all.”"
+      },
+      "canonicalAtomicProposition": "Pesticide safety assessments typically evaluate one pesticide at a time even though people are exposed to mixtures of many pesticides.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0041",
+          "U0042",
+          "U0043"
+        ],
+        "basis": "The named or narrative supplier is identified in U0041, U0042, U0043."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU018",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0044"
+        ],
+        "verbatimExcerpt": "That gap has become even more important as weeds have become resistant to glyphosate, and farmers increasingly spray chemical cocktails , including glyphosate, 2,4-D and dicamba , he said."
+      },
+      "canonicalAtomicProposition": "Glyphosate-resistant weeds have increased farmers' use of pesticide mixtures containing glyphosate, 2,4-D, and dicamba.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0044"
+        ],
+        "basis": "The named or narrative supplier is identified in U0044."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU019",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0045",
+          "U0046",
+          "U0047"
+        ],
+        "verbatimExcerpt": "In one rat study, Antoniou’s team examined that combination at currently accepted exposure levels. “I mean, it was shockingly bad,” he said, describing severe damage to the animals’ gut structure and function. “This is another reason why our regulators … are letting us down,” Antoniou said. “They’re not protecting us properly.”"
+      },
+      "canonicalAtomicProposition": "A rat study of glyphosate, 2,4-D, and dicamba at accepted exposure levels found severe damage to gut structure and function.",
+      "scopeQualifiers": [
+        "rats",
+        "combination exposure",
+        "accepted exposure levels"
+      ],
+      "assertionSource": {
+        "kind": "study",
+        "name": "Antoniou team rat-mixture study",
+        "sourceUnitIds": [
+          "U0045",
+          "U0046",
+          "U0047"
+        ],
+        "basis": "The named or narrative supplier is identified in U0045, U0046, U0047."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU020",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0048",
+          "U0049",
+          "U0050",
+          "U0051",
+          "U0052"
+        ],
+        "verbatimExcerpt": "He also criticized the growing use of glyphosate as a pre-harvest drying agent. “And here, for me, is the most ridiculous and unbelievable use of glyphosate herbicide that has become popular in the last 20 years or so,” he said. Manufacturers encourage farmers to spray wheat , barley, oats , rye and other crops just days before harvest so the grain dries more uniformly and can be harvested sooner. The result is that glyphosate residues “are going straight into the humans’ food supply,” he said. “And if the glyphosate is there, so are the co-formulants.”"
+      },
+      "canonicalAtomicProposition": "Pre-harvest application of glyphosate places residues of glyphosate and co-formulants directly into the human food supply.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0048",
+          "U0049",
+          "U0050",
+          "U0051",
+          "U0052"
+        ],
+        "basis": "The named or narrative supplier is identified in U0048, U0049, U0050, U0051, U0052."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU021",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0053",
+          "U0054"
+        ],
+        "verbatimExcerpt": "Regulators’ safety claims ‘clearly ignored’ critical piece of biology According to Antoniou, industry has long defended glyphosate by arguing that it targets a biological pathway found in plants but not in humans."
+      },
+      "canonicalAtomicProposition": "Glyphosate is safe for humans because it targets a biological pathway found in plants but not in humans.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "institution",
+        "name": "glyphosate industry",
+        "sourceUnitIds": [
+          "U0053",
+          "U0054"
+        ],
+        "basis": "U0054 explicitly attributes this safety argument to industry."
+      },
+      "articleTreatment": {
+        "contentStance": "contradicts_thesis",
+        "deployment": "opponent_to_rebut",
+        "role": "opponent_claim",
+        "basis": "Preserve the opponent proposition in its original polarity. The article introduces it as a position to answer; the separate rebuttal remains its own argument unit."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Preserve the opponent proposition in its original polarity. The article introduces it as a position to answer; the separate rebuttal remains its own argument unit."
+    },
+    {
+      "argumentUnitId": "AU022",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0055",
+          "U0056"
+        ],
+        "verbatimExcerpt": "But that argument overlooks a critical piece of biology, he said. The same pathway exists in many bacteria and fungi, including microorganisms that make up the human gut microbiome ."
+      },
+      "canonicalAtomicProposition": "The biological pathway targeted by glyphosate exists in bacteria and fungi within the human gut microbiome.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0055",
+          "U0056"
+        ],
+        "basis": "The named or narrative supplier is identified in U0055, U0056."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "rebuttal",
+        "basis": "The article presents this proposition as Antoniou's direct answer to the industry pathway argument."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept this as a separate rebuttal node rather than merging it into the opponent proposition."
+    },
+    {
+      "argumentUnitId": "AU023",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0057"
+        ],
+        "verbatimExcerpt": "Research from Antoniou’s laboratory and others shows glyphosate can disrupt those microbial communities, contributing to gut imbalance and “the onset or the occurrence of leaky gut.”"
+      },
+      "canonicalAtomicProposition": "Glyphosate can disrupt human-gut microbial communities.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "study",
+        "name": "Antoniou laboratory and other research",
+        "sourceUnitIds": [
+          "U0057"
+        ],
+        "basis": "The named or narrative supplier is identified in U0057."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU024-S01",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0057"
+        ],
+        "verbatimExcerpt": "Research from Antoniou’s laboratory and others shows glyphosate can disrupt those microbial communities, contributing to gut imbalance and “the onset or the occurrence of leaky gut.”"
+      },
+      "canonicalAtomicProposition": "Glyphosate-related disruption of gut microbial communities can contribute to gut imbalance.",
+      "scopeQualifiers": [
+        "mechanistic contribution rather than demonstrated universal outcome"
+      ],
+      "assertionSource": {
+        "kind": "study",
+        "name": "Antoniou laboratory and other research",
+        "sourceUnitIds": [
+          "U0057"
+        ],
+        "basis": "The named or narrative supplier is identified in U0057."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence.\nSplit from AU024; child 1 of 2."
+    },
+    {
+      "argumentUnitId": "AU024-S02",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0057"
+        ],
+        "verbatimExcerpt": "Research from Antoniou’s laboratory and others shows glyphosate can disrupt those microbial communities, contributing to gut imbalance and “the onset or the occurrence of leaky gut.”"
+      },
+      "canonicalAtomicProposition": "Glyphosate-related disruption of gut microbial communities can contribute to leaky gut.",
+      "scopeQualifiers": [
+        "mechanistic contribution rather than demonstrated universal outcome"
+      ],
+      "assertionSource": {
+        "kind": "study",
+        "name": "Antoniou laboratory and other research",
+        "sourceUnitIds": [
+          "U0057"
+        ],
+        "basis": "The named or narrative supplier is identified in U0057."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence.\nSplit from AU024; child 2 of 2."
+    },
+    {
+      "argumentUnitId": "AU025",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0058"
+        ],
+        "verbatimExcerpt": "The gut microbiome plays a vital role in digestion, immune function, cardiovascular health and nervous system signaling, Antoniou said."
+      },
+      "canonicalAtomicProposition": "The gut microbiome contributes to digestion, immune function, cardiovascular health, and nervous-system signaling.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0058"
+        ],
+        "basis": "The named or narrative supplier is identified in U0058."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU026",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0060",
+          "U0061"
+        ],
+        "verbatimExcerpt": "Evidence from independent researchers also shows harmful effects can occur at doses regulators continue to describe as “absolutely safe,” Antoniou said. His laboratory has reported DNA damage and nonalcoholic fatty liver disease in animals exposed to extremely low concentrations of commercial glyphosate formulations."
+      },
+      "canonicalAtomicProposition": "Extremely low concentrations of commercial glyphosate formulations caused DNA damage in animals in Antoniou laboratory studies.",
+      "scopeQualifiers": [
+        "animal studies",
+        "commercial formulations"
+      ],
+      "assertionSource": {
+        "kind": "study",
+        "name": "Antoniou laboratory studies",
+        "sourceUnitIds": [
+          "U0060",
+          "U0061"
+        ],
+        "basis": "The named or narrative supplier is identified in U0060, U0061."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU027",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0060",
+          "U0061",
+          "U0062"
+        ],
+        "verbatimExcerpt": "Evidence from independent researchers also shows harmful effects can occur at doses regulators continue to describe as “absolutely safe,” Antoniou said. His laboratory has reported DNA damage and nonalcoholic fatty liver disease in animals exposed to extremely low concentrations of commercial glyphosate formulations. In one study, animals developed liver disease after long-term exposure to glyphosate concentrations “125,000 times below the European Union safety limit and 250,000 times below the U.S. safety limit.”"
+      },
+      "canonicalAtomicProposition": "Long-term exposure to very low concentrations of commercial glyphosate formulations caused nonalcoholic fatty liver disease in animals.",
+      "scopeQualifiers": [
+        "animal study",
+        "long-term exposure"
+      ],
+      "assertionSource": {
+        "kind": "study",
+        "name": "Antoniou laboratory study",
+        "sourceUnitIds": [
+          "U0060",
+          "U0061",
+          "U0062"
+        ],
+        "basis": "The named or narrative supplier is identified in U0060, U0061, U0062."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU028",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0062"
+        ],
+        "verbatimExcerpt": "In one study, animals developed liver disease after long-term exposure to glyphosate concentrations “125,000 times below the European Union safety limit and 250,000 times below the U.S. safety limit.”"
+      },
+      "canonicalAtomicProposition": "The animal liver-disease exposure concentration was 125,000 times below the European Union limit and 250,000 times below the United States limit.",
+      "scopeQualifiers": [
+        "reported comparison of experimental concentration with regulatory limits"
+      ],
+      "assertionSource": {
+        "kind": "study",
+        "name": "Antoniou laboratory study",
+        "sourceUnitIds": [
+          "U0062"
+        ],
+        "basis": "The named or narrative supplier is identified in U0062."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU029",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0064"
+        ],
+        "verbatimExcerpt": "He also pointed to a June 2025 study in which rats exposed from fetal development through adulthood developed cancers, particularly leukemia, even at the currently accepted daily intake."
+      },
+      "canonicalAtomicProposition": "A June 2025 rat study found cancers, particularly leukemia, after glyphosate exposure from fetal development through adulthood at the accepted daily intake.",
+      "scopeQualifiers": [
+        "rats",
+        "lifetime exposure",
+        "accepted daily intake"
+      ],
+      "assertionSource": {
+        "kind": "study",
+        "name": "June 2025 lifetime rat study",
+        "sourceUnitIds": [
+          "U0064"
+        ],
+        "basis": "The named or narrative supplier is identified in U0064."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU030-S01",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0065"
+        ],
+        "verbatimExcerpt": "“What this study tells us is clearly … first of all, glyphosate and glyphosate herbicides are definitely carcinogenic,” Antoniou said. “And also, clearly, the current acceptable daily intake … is clearly inaccurate or wrong.”"
+      },
+      "canonicalAtomicProposition": "Glyphosate is carcinogenic, according to Antoniou.",
+      "scopeQualifiers": [
+        "Antoniou's interpretation of the cited rat study"
+      ],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0065"
+        ],
+        "basis": "The named or narrative supplier is identified in U0065."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication.\nSplit from AU030; child 1 of 2."
+    },
+    {
+      "argumentUnitId": "AU030-S02",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0065"
+        ],
+        "verbatimExcerpt": "“What this study tells us is clearly … first of all, glyphosate and glyphosate herbicides are definitely carcinogenic,” Antoniou said. “And also, clearly, the current acceptable daily intake … is clearly inaccurate or wrong.”"
+      },
+      "canonicalAtomicProposition": "Commercial glyphosate herbicides are carcinogenic, according to Antoniou.",
+      "scopeQualifiers": [
+        "Antoniou's interpretation of the cited rat study"
+      ],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0065"
+        ],
+        "basis": "The named or narrative supplier is identified in U0065."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication.\nSplit from AU030; child 2 of 2."
+    },
+    {
+      "argumentUnitId": "AU031",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0065"
+        ],
+        "verbatimExcerpt": "“What this study tells us is clearly … first of all, glyphosate and glyphosate herbicides are definitely carcinogenic,” Antoniou said. “And also, clearly, the current acceptable daily intake … is clearly inaccurate or wrong.”"
+      },
+      "canonicalAtomicProposition": "The current acceptable daily intake for glyphosate is inaccurate or unsafe.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0065"
+        ],
+        "basis": "The named or narrative supplier is identified in U0065."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU032",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0066",
+          "U0067"
+        ],
+        "verbatimExcerpt": "According to Antoniou, one reason glyphosate’s risks have been underestimated is that its effects often take years to appear. “The effects can take time to manifest,” he said. As a result, “you’ll have trouble linking the two, the disease and the exposure. … They lull you into … a false sense of security,” he said."
+      },
+      "canonicalAtomicProposition": "Long latency between glyphosate exposure and disease can obscure associations between exposure and later disease.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0066",
+          "U0067"
+        ],
+        "basis": "The named or narrative supplier is identified in U0066, U0067."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "qualification",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as qualification."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU033-S01",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0069",
+          "U0070",
+          "U0071",
+          "U0072"
+        ],
+        "verbatimExcerpt": "After reviewing thousands of published studies, Antoniou said the evidence leaves little doubt that regulators need to rethink glyphosate safety. “Regulators need to completely reassess their position,” Antoniou said. “They’ve relied so heavily on industry data, which has now been questioned as to its validity.” Existing safety limits are nowhere near protective enough, he said. “We cannot set an acceptable daily safe intake limit,” he said. “If I was to make an educated guess right now, I would say it would probably be in the order of about a thousand times lower than where we are at the moment.”"
+      },
+      "canonicalAtomicProposition": "Existing glyphosate exposure limits are not sufficiently protective, according to Antoniou.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0069",
+          "U0070",
+          "U0071",
+          "U0072"
+        ],
+        "basis": "The named or narrative supplier is identified in U0069, U0070, U0071, U0072."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence.\nSplit from AU033; child 1 of 2."
+    },
+    {
+      "argumentUnitId": "AU033-S02",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0069",
+          "U0070",
+          "U0071",
+          "U0072"
+        ],
+        "verbatimExcerpt": "After reviewing thousands of published studies, Antoniou said the evidence leaves little doubt that regulators need to rethink glyphosate safety. “Regulators need to completely reassess their position,” Antoniou said. “They’ve relied so heavily on industry data, which has now been questioned as to its validity.” Existing safety limits are nowhere near protective enough, he said. “We cannot set an acceptable daily safe intake limit,” he said. “If I was to make an educated guess right now, I would say it would probably be in the order of about a thousand times lower than where we are at the moment.”"
+      },
+      "canonicalAtomicProposition": "Regulators should completely reassess glyphosate safety, according to Antoniou.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0069",
+          "U0070",
+          "U0071",
+          "U0072"
+        ],
+        "basis": "The named or narrative supplier is identified in U0069, U0070, U0071, U0072."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence.\nSplit from AU033; child 2 of 2."
+    },
+    {
+      "argumentUnitId": "AU034",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0072"
+        ],
+        "verbatimExcerpt": "“We cannot set an acceptable daily safe intake limit,” he said. “If I was to make an educated guess right now, I would say it would probably be in the order of about a thousand times lower than where we are at the moment.”"
+      },
+      "canonicalAtomicProposition": "A protective glyphosate exposure limit may need to be approximately one thousand times lower than the current limit.",
+      "scopeQualifiers": [
+        "educated estimate",
+        "approximately"
+      ],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0072"
+        ],
+        "basis": "The named or narrative supplier is identified in U0072."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU035",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0073",
+          "U0074"
+        ],
+        "verbatimExcerpt": "Antoniou also rejected the idea that farmers cannot transition off of glyphosate . “There are alternatives,” he said. “All it takes is the political will to support these initiatives, to really move towards a sustainable, robust and safe agricultural system.”"
+      },
+      "canonicalAtomicProposition": "Farmers can transition away from glyphosate if political support is provided for alternatives.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0073",
+          "U0074"
+        ],
+        "basis": "The named or narrative supplier is identified in U0073, U0074."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU036",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0075",
+          "U0076",
+          "U0077",
+          "U0078"
+        ],
+        "verbatimExcerpt": "Looking back at glyphosate’s history, Antoniou said the herbicide “was always touted by industry as the safest-ever pesticide of any sort ever invented. … If the … so-called safest pesticide … is this bad, deceptively toxic, what about all the rest?” he asked. “It really paints a very dark picture for pesticides in general.”"
+      },
+      "canonicalAtomicProposition": "If glyphosate is seriously toxic despite being promoted as the safest pesticide, other pesticides may also pose underrecognized risks.",
+      "scopeQualifiers": [
+        "inference about pesticides generally"
+      ],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Michael Antoniou",
+        "sourceUnitIds": [
+          "U0075",
+          "U0076",
+          "U0077",
+          "U0078"
+        ],
+        "basis": "The named or narrative supplier is identified in U0075, U0076, U0077, U0078."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "qualification",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as qualification."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    }
+  ],
+  "relations": [
+    {
+      "relationId": "REL001",
+      "fromArgumentUnitId": "AU004",
+      "type": "supports",
+      "toArgumentUnitId": "AU003",
+      "sourceUnitIds": [
+        "U0008",
+        "U0009",
+        "U0010"
+      ],
+      "basis": "Co-formulants explain why commercial products can kill plants even though glyphosate alone cannot."
+    },
+    {
+      "relationId": "REL002",
+      "fromArgumentUnitId": "AU006",
+      "type": "provides_evidence_for",
+      "toArgumentUnitId": "AU005",
+      "sourceUnitIds": [
+        "U0010",
+        "U0011"
+      ],
+      "basis": "The reported thousand-fold comparison supplies quantitative support for the formulation-toxicity claim."
+    },
+    {
+      "relationId": "REL003",
+      "fromArgumentUnitId": "AU008",
+      "type": "supports",
+      "toArgumentUnitId": "AU002",
+      "sourceUnitIds": [
+        "U0015",
+        "U0016",
+        "U0017"
+      ],
+      "basis": "Actual exposure to complete formulations makes glyphosate-only testing an incomplete proxy."
+    },
+    {
+      "relationId": "REL007",
+      "fromArgumentUnitId": "AU019",
+      "type": "provides_evidence_for",
+      "toArgumentUnitId": "AU017",
+      "sourceUnitIds": [
+        "U0041",
+        "U0042",
+        "U0043",
+        "U0044",
+        "U0045",
+        "U0046",
+        "U0047"
+      ],
+      "basis": "The mixture study is offered as evidence that single-pesticide assessments miss real-world harms."
+    },
+    {
+      "relationId": "REL008",
+      "fromArgumentUnitId": "AU022",
+      "type": "rebuts",
+      "toArgumentUnitId": "AU021",
+      "sourceUnitIds": [
+        "U0053",
+        "U0054",
+        "U0055",
+        "U0056",
+        "U0057"
+      ],
+      "basis": "The microbiome pathway directly answers the claim that the targeted pathway is absent from humans."
+    },
+    {
+      "relationId": "REL009",
+      "fromArgumentUnitId": "AU023",
+      "type": "supports",
+      "toArgumentUnitId": "AU022",
+      "sourceUnitIds": [
+        "U0056",
+        "U0057"
+      ],
+      "basis": "Observed microbiome disruption is used to show biological relevance of the shared pathway."
+    },
+    {
+      "relationId": "REL011",
+      "fromArgumentUnitId": "AU026",
+      "type": "provides_evidence_for",
+      "toArgumentUnitId": "AU031",
+      "sourceUnitIds": [
+        "U0060",
+        "U0061",
+        "U0062"
+      ],
+      "basis": "Low-dose DNA damage is used against the adequacy of current safety limits."
+    },
+    {
+      "relationId": "REL012",
+      "fromArgumentUnitId": "AU027",
+      "type": "provides_evidence_for",
+      "toArgumentUnitId": "AU031",
+      "sourceUnitIds": [
+        "U0060",
+        "U0061",
+        "U0062",
+        "U0063"
+      ],
+      "basis": "Low-dose liver disease is used against the adequacy of current safety limits."
+    },
+    {
+      "relationId": "REL014",
+      "fromArgumentUnitId": "AU029",
+      "type": "provides_evidence_for",
+      "toArgumentUnitId": "AU031",
+      "sourceUnitIds": [
+        "U0064",
+        "U0065"
+      ],
+      "basis": "Cancer at the accepted intake is used to argue that the accepted intake is unsafe."
+    },
+    {
+      "relationId": "REL015",
+      "fromArgumentUnitId": "AU032",
+      "type": "qualifies",
+      "toArgumentUnitId": "AU026",
+      "sourceUnitIds": [
+        "U0066",
+        "U0067"
+      ],
+      "basis": "Latency is offered as a reason harms may be difficult to link to exposure rather than absent."
+    },
+    {
+      "relationId": "REL017",
+      "fromArgumentUnitId": "AU036",
+      "type": "elaborates",
+      "toArgumentUnitId": "AU001",
+      "sourceUnitIds": [
+        "U0075",
+        "U0076",
+        "U0077",
+        "U0078"
+      ],
+      "basis": "The glyphosate case is generalized into a broader concern about pesticide regulation."
+    }
+  ],
+  "consistencyFindings": [
+    {
+      "findingId": "CON001",
+      "argumentUnitIds": [
+        "AU003",
+        "AU005"
+      ],
+      "type": "not_contradiction",
+      "basis": "The article distinguishes pure glyphosate's plant-killing capacity from the greater toxicity of complete formulations; it does not say pure glyphosate is harmless."
+    },
+    {
+      "findingId": "CON002",
+      "argumentUnitIds": [
+        "AU021",
+        "AU022"
+      ],
+      "type": "tension",
+      "basis": "These are intentionally opposed propositions: the industry says the pathway is absent in humans, while Antoniou answers that it exists in human-associated microorganisms."
+    }
+  ],
+  "rubricCoverage": {
+    "targets": [
+      {
+        "targetId": "cf1-f02-concept-01",
+        "category": "required_concept",
+        "description": "The article reports Michael Antoniou's argument that regulatory conclusions of glyphosate safety rest on inadequate and industry-shaped testing.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f02-concept-02",
+        "category": "required_concept",
+        "description": "The opposing position includes regulatory reliance on glyphosate-only tests, industry-sponsored studies, accepted exposure limits, and the claim that the targeted plant pathway is absent in humans.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f02-concept-03",
+        "category": "required_concept",
+        "description": "The rebuttal distinguishes pure glyphosate from more toxic commercial formulations while still alleging harms from glyphosate itself.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f02-concept-04",
+        "category": "required_concept",
+        "description": "The article uses formulation, mixture, microbiome, low-dose animal, and carcinogenicity evidence to dispute the safety conclusion.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f02-pillar-01",
+        "category": "required_pillar",
+        "description": "Regulators test isolated glyphosate rather than complete products encountered in practice",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f02-pillar-02",
+        "category": "required_pillar",
+        "description": "Industry-sponsored evidence and eligibility rules shape regulatory safety assessments",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f02-pillar-03",
+        "category": "required_pillar",
+        "description": "Single-pesticide testing does not represent real-world chemical mixtures",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f02-pillar-04",
+        "category": "required_pillar",
+        "description": "The plant-pathway safety argument overlooks effects on the human microbiome",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f02-pillar-05",
+        "category": "required_pillar",
+        "description": "Independent low-dose and lifetime animal findings are presented as inconsistent with current safety limits",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f02-region-01",
+        "category": "required_source_region",
+        "description": "formulation distinction",
+        "excerpt": "products “far more toxic” than glyphosate on its own",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f02-region-02",
+        "category": "required_source_region",
+        "description": "industry evidence criticism",
+        "excerpt": "regulatory agencies around the world rely heavily on industry-sponsored research",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f02-region-03",
+        "category": "required_source_region",
+        "description": "opposing biological premise",
+        "excerpt": "targets a biological pathway found in plants but not in humans",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f02-region-04",
+        "category": "required_source_region",
+        "description": "microbiome rebuttal",
+        "excerpt": "The same pathway exists in many bacteria and fungi, including microorganisms that make up the human gut microbiome",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f02-region-05",
+        "category": "required_source_region",
+        "description": "carcinogenicity conclusion",
+        "excerpt": "glyphosate and glyphosate herbicides are definitely carcinogenic",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f02-region-06",
+        "category": "required_source_region",
+        "description": "policy conclusion",
+        "excerpt": "We cannot set an acceptable daily safe intake limit",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      }
+    ],
+    "prohibitedInterpretations": [
+      {
+        "prohibitionId": "cf1-f02-prohibited-01",
+        "description": "The article says pure glyphosate is harmless or non-toxic.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f02-prohibited-02",
+        "description": "Greater toxicity of commercial formulations is treated as inconsistent with alleged toxicity of glyphosate itself.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f02-prohibited-03",
+        "description": "Regulatory and industry safety positions are presented as the article author's conclusion.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f02-prohibited-04",
+        "description": "Antoniou's allegations and interpretations are converted into unattributed scientific consensus.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f02-prohibited-05",
+        "description": "Animal findings are silently rewritten as demonstrated human clinical outcomes.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f02-prohibited-06",
+        "description": "Temporal association, toxicity, and carcinogenicity are collapsed into interchangeable claims.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      }
+    ],
+    "inheritedReviewNotes": [
+      "Preserve nested attribution: Jill Erzen reports an interview in which Michael Antoniou describes studies, industry positions, and regulatory practices.",
+      "The pure-compound versus commercial-formulation distinction is an intentional qualification, not an internal contradiction."
+    ]
+  },
+  "compilation": {
+    "schemaVersion": "cf1.adjudicationCompilation.v1",
+    "generatedAt": "2026-07-22T14:44:26.830Z",
+    "sourceDraftSchemaVersion": "cf1.argumentDraft.v1",
+    "sourceDraftSha256": "fae8c7a152016c006e17efc649833b04fe758b763a311b521d469671135119ce",
+    "sourceFormSha256": "03e0e4811c7ef78153f6d0b0cffb142859a41d8cbbc02ed8bc5babdc00827e40",
+    "reviewSha256": "8f61246c67cb5d1d02d61ea6e0acb87d5f66a6905aea6d89a16f08e2f656d7ef",
+    "evidenceTargetsApproved": false,
+    "lineageByArgumentUnitId": {
+      "AU001": {
+        "sourceArgumentUnitId": "AU001",
+        "reviewDecisionKey": "CF1-F02:argument:AU001",
+        "operation": "accept"
+      },
+      "AU002": {
+        "sourceArgumentUnitId": "AU002",
+        "reviewDecisionKey": "CF1-F02:argument:AU002",
+        "operation": "accept"
+      },
+      "AU003": {
+        "sourceArgumentUnitId": "AU003",
+        "reviewDecisionKey": "CF1-F02:argument:AU003",
+        "operation": "accept"
+      },
+      "AU004": {
+        "sourceArgumentUnitId": "AU004",
+        "reviewDecisionKey": "CF1-F02:argument:AU004",
+        "operation": "edit"
+      },
+      "AU005": {
+        "sourceArgumentUnitId": "AU005",
+        "reviewDecisionKey": "CF1-F02:argument:AU005",
+        "operation": "accept"
+      },
+      "AU006": {
+        "sourceArgumentUnitId": "AU006",
+        "reviewDecisionKey": "CF1-F02:argument:AU006",
+        "operation": "edit"
+      },
+      "AU007": {
+        "sourceArgumentUnitId": "AU007",
+        "reviewDecisionKey": "CF1-F02:argument:AU007",
+        "operation": "accept"
+      },
+      "AU008": {
+        "sourceArgumentUnitId": "AU008",
+        "reviewDecisionKey": "CF1-F02:argument:AU008",
+        "operation": "edit"
+      },
+      "AU009-S01": {
+        "sourceArgumentUnitId": "AU009",
+        "reviewDecisionKey": "CF1-F02:argument:AU009",
+        "operation": "split",
+        "childOrdinal": 1,
+        "childCount": 2
+      },
+      "AU009-S02": {
+        "sourceArgumentUnitId": "AU009",
+        "reviewDecisionKey": "CF1-F02:argument:AU009",
+        "operation": "split",
+        "childOrdinal": 2,
+        "childCount": 2
+      },
+      "AU010": {
+        "sourceArgumentUnitId": "AU010",
+        "reviewDecisionKey": "CF1-F02:argument:AU010",
+        "operation": "edit"
+      },
+      "AU011": {
+        "sourceArgumentUnitId": "AU011",
+        "reviewDecisionKey": "CF1-F02:argument:AU011",
+        "operation": "accept"
+      },
+      "AU012": {
+        "sourceArgumentUnitId": "AU012",
+        "reviewDecisionKey": "CF1-F02:argument:AU012",
+        "operation": "edit"
+      },
+      "AU013-S01": {
+        "sourceArgumentUnitId": "AU013",
+        "reviewDecisionKey": "CF1-F02:argument:AU013",
+        "operation": "split",
+        "childOrdinal": 1,
+        "childCount": 2
+      },
+      "AU013-S02": {
+        "sourceArgumentUnitId": "AU013",
+        "reviewDecisionKey": "CF1-F02:argument:AU013",
+        "operation": "split",
+        "childOrdinal": 2,
+        "childCount": 2
+      },
+      "AU014": {
+        "sourceArgumentUnitId": "AU014",
+        "reviewDecisionKey": "CF1-F02:argument:AU014",
+        "operation": "edit"
+      },
+      "AU015": {
+        "sourceArgumentUnitId": "AU015",
+        "reviewDecisionKey": "CF1-F02:argument:AU015",
+        "operation": "accept"
+      },
+      "AU016": {
+        "sourceArgumentUnitId": "AU016",
+        "reviewDecisionKey": "CF1-F02:argument:AU016",
+        "operation": "accept"
+      },
+      "AU017": {
+        "sourceArgumentUnitId": "AU017",
+        "reviewDecisionKey": "CF1-F02:argument:AU017",
+        "operation": "accept"
+      },
+      "AU018": {
+        "sourceArgumentUnitId": "AU018",
+        "reviewDecisionKey": "CF1-F02:argument:AU018",
+        "operation": "edit"
+      },
+      "AU019": {
+        "sourceArgumentUnitId": "AU019",
+        "reviewDecisionKey": "CF1-F02:argument:AU019",
+        "operation": "edit"
+      },
+      "AU020": {
+        "sourceArgumentUnitId": "AU020",
+        "reviewDecisionKey": "CF1-F02:argument:AU020",
+        "operation": "edit"
+      },
+      "AU021": {
+        "sourceArgumentUnitId": "AU021",
+        "reviewDecisionKey": "CF1-F02:argument:AU021",
+        "operation": "edit"
+      },
+      "AU022": {
+        "sourceArgumentUnitId": "AU022",
+        "reviewDecisionKey": "CF1-F02:argument:AU022",
+        "operation": "accept"
+      },
+      "AU023": {
+        "sourceArgumentUnitId": "AU023",
+        "reviewDecisionKey": "CF1-F02:argument:AU023",
+        "operation": "accept"
+      },
+      "AU024-S01": {
+        "sourceArgumentUnitId": "AU024",
+        "reviewDecisionKey": "CF1-F02:argument:AU024",
+        "operation": "split",
+        "childOrdinal": 1,
+        "childCount": 2
+      },
+      "AU024-S02": {
+        "sourceArgumentUnitId": "AU024",
+        "reviewDecisionKey": "CF1-F02:argument:AU024",
+        "operation": "split",
+        "childOrdinal": 2,
+        "childCount": 2
+      },
+      "AU025": {
+        "sourceArgumentUnitId": "AU025",
+        "reviewDecisionKey": "CF1-F02:argument:AU025",
+        "operation": "accept"
+      },
+      "AU026": {
+        "sourceArgumentUnitId": "AU026",
+        "reviewDecisionKey": "CF1-F02:argument:AU026",
+        "operation": "edit"
+      },
+      "AU027": {
+        "sourceArgumentUnitId": "AU027",
+        "reviewDecisionKey": "CF1-F02:argument:AU027",
+        "operation": "edit"
+      },
+      "AU028": {
+        "sourceArgumentUnitId": "AU028",
+        "reviewDecisionKey": "CF1-F02:argument:AU028",
+        "operation": "edit"
+      },
+      "AU029": {
+        "sourceArgumentUnitId": "AU029",
+        "reviewDecisionKey": "CF1-F02:argument:AU029",
+        "operation": "accept"
+      },
+      "AU030-S01": {
+        "sourceArgumentUnitId": "AU030",
+        "reviewDecisionKey": "CF1-F02:argument:AU030",
+        "operation": "split",
+        "childOrdinal": 1,
+        "childCount": 2
+      },
+      "AU030-S02": {
+        "sourceArgumentUnitId": "AU030",
+        "reviewDecisionKey": "CF1-F02:argument:AU030",
+        "operation": "split",
+        "childOrdinal": 2,
+        "childCount": 2
+      },
+      "AU031": {
+        "sourceArgumentUnitId": "AU031",
+        "reviewDecisionKey": "CF1-F02:argument:AU031",
+        "operation": "accept"
+      },
+      "AU032": {
+        "sourceArgumentUnitId": "AU032",
+        "reviewDecisionKey": "CF1-F02:argument:AU032",
+        "operation": "edit"
+      },
+      "AU033-S01": {
+        "sourceArgumentUnitId": "AU033",
+        "reviewDecisionKey": "CF1-F02:argument:AU033",
+        "operation": "split",
+        "childOrdinal": 1,
+        "childCount": 2
+      },
+      "AU033-S02": {
+        "sourceArgumentUnitId": "AU033",
+        "reviewDecisionKey": "CF1-F02:argument:AU033",
+        "operation": "split",
+        "childOrdinal": 2,
+        "childCount": 2
+      },
+      "AU034": {
+        "sourceArgumentUnitId": "AU034",
+        "reviewDecisionKey": "CF1-F02:argument:AU034",
+        "operation": "edit"
+      },
+      "AU035": {
+        "sourceArgumentUnitId": "AU035",
+        "reviewDecisionKey": "CF1-F02:argument:AU035",
+        "operation": "edit"
+      },
+      "AU036": {
+        "sourceArgumentUnitId": "AU036",
+        "reviewDecisionKey": "CF1-F02:argument:AU036",
+        "operation": "edit"
+      }
+    },
+    "sourceArgumentReplacementMap": {
+      "AU001": [
+        "AU001"
+      ],
+      "AU002": [
+        "AU002"
+      ],
+      "AU003": [
+        "AU003"
+      ],
+      "AU004": [
+        "AU004"
+      ],
+      "AU005": [
+        "AU005"
+      ],
+      "AU006": [
+        "AU006"
+      ],
+      "AU007": [
+        "AU007"
+      ],
+      "AU008": [
+        "AU008"
+      ],
+      "AU009": [
+        "AU009-S01",
+        "AU009-S02"
+      ],
+      "AU010": [
+        "AU010"
+      ],
+      "AU011": [
+        "AU011"
+      ],
+      "AU012": [
+        "AU012"
+      ],
+      "AU013": [
+        "AU013-S01",
+        "AU013-S02"
+      ],
+      "AU014": [
+        "AU014"
+      ],
+      "AU015": [
+        "AU015"
+      ],
+      "AU016": [
+        "AU016"
+      ],
+      "AU017": [
+        "AU017"
+      ],
+      "AU018": [
+        "AU018"
+      ],
+      "AU019": [
+        "AU019"
+      ],
+      "AU020": [
+        "AU020"
+      ],
+      "AU021": [
+        "AU021"
+      ],
+      "AU022": [
+        "AU022"
+      ],
+      "AU023": [
+        "AU023"
+      ],
+      "AU024": [
+        "AU024-S01",
+        "AU024-S02"
+      ],
+      "AU025": [
+        "AU025"
+      ],
+      "AU026": [
+        "AU026"
+      ],
+      "AU027": [
+        "AU027"
+      ],
+      "AU028": [
+        "AU028"
+      ],
+      "AU029": [
+        "AU029"
+      ],
+      "AU030": [
+        "AU030-S01",
+        "AU030-S02"
+      ],
+      "AU031": [
+        "AU031"
+      ],
+      "AU032": [
+        "AU032"
+      ],
+      "AU033": [
+        "AU033-S01",
+        "AU033-S02"
+      ],
+      "AU034": [
+        "AU034"
+      ],
+      "AU035": [
+        "AU035"
+      ],
+      "AU036": [
+        "AU036"
+      ]
+    }
+  }
+}

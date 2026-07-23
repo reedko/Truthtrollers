@@ -1,0 +1,1905 @@
+{
+  "schemaVersion": "cf1.exceptionReviewDecisions.v1",
+  "exportedAt": "2026-07-23T00:32:08.185523+00:00",
+  "manifest": {
+    "schemaVersion": "cf1.exceptionReviewManifest.v1",
+    "generatedAt": "2026-07-22T15:05:20.700Z",
+    "provenance": {
+      "candidateDirectory": "data/adjudication-candidates/argument-drafts-v1-r2",
+      "reviewQueueSha256": "1c94125db46b7518ace76298700640ca3a4ba0002974f306b1d3de43f2aa278d",
+      "compilationReportSha256": "7344abe9ab73674db98a0203ee60c2578864a55a31c8897f17a5e9ceec79d67e",
+      "reviewedDecisionsPath": "data/annotation-prompts/CF1-argument-drafts-v1-review-decisions-normalized.json",
+      "reviewedDecisionsSha256": "8f61246c67cb5d1d02d61ea6e0acb87d5f66a6905aea6d89a16f08e2f656d7ef",
+      "fixtureInputs": [
+        {
+          "fixtureId": "CF1-F01",
+          "candidateSha256": "f2abc94afb4c6d9d72a7ad9b3f116c654a013c644a5faeaab065fa42f82c02f3",
+          "draftSha256": "af90b5b4da4bbfa61e2dbaba8a6cf813d00ec52f83174752c3eeebb53530d97c",
+          "sourcePromptSha256": "b6ad45c0a12a38633ce230f861c86ce88d4ecf95bdfa388bbc8865214939a54f"
+        },
+        {
+          "fixtureId": "CF1-F02",
+          "candidateSha256": "2780b9686ade39f5cee6ef5cb8ef6d8670f682c85db69e6c1f116d501e08bc44",
+          "draftSha256": "fae8c7a152016c006e17efc649833b04fe758b763a311b521d469671135119ce",
+          "sourcePromptSha256": "a170e34f12b34498d6d85a96cc8b670221507cc0b326643b028b94bca9bf5f8f"
+        },
+        {
+          "fixtureId": "CF1-F03",
+          "candidateSha256": "942ceab6625f89f5e2857c80481e0f466eb08ac12b3660535ea5d35a83cca5b0",
+          "draftSha256": "205add149d8661f00d1df86770e1a851b8fa0bc9980df832e96d3489d92d55aa",
+          "sourcePromptSha256": "c2063fd12189eefaaa23a185b67f255c37674b758969fc41aecd46ad20ea2546"
+        },
+        {
+          "fixtureId": "CF1-F04",
+          "candidateSha256": "09830805a2712abb15b0826f1cc8ed57d14ec530c02737fc42ac56db4729e13c",
+          "draftSha256": "8b9c93a24ff41e8cabd42fbf4a2d3733672eb43b17c3884f0aa8e0345deeb456",
+          "sourcePromptSha256": "5337aaa3b4537f338fc39f8359e57f4101890bd86a51ac1c2c05f5acd3fd8bc3"
+        },
+        {
+          "fixtureId": "CF1-F05",
+          "candidateSha256": "60a2e7aa9c45680f8b270a282c41ccbf72b6a04b353a8165cc7eaf3b564b4b77",
+          "draftSha256": "b4ba16119dbd4ef48eb45795abbc2a4741112e7bf53efc229c705d7711e1b08a",
+          "sourcePromptSha256": "6f71cf3a4d7cd35e4c060bffbd0c49345affbd237213f47fcd1c0867dd3a1ebf"
+        },
+        {
+          "fixtureId": "CF1-F06",
+          "candidateSha256": "f4359ee26e3ccbca31df8fbc9301ba972fdbc6388232089d51f44b9c054d6bbc",
+          "draftSha256": "ad324ee8d0997991d634dbf7f9b3501c93eb14e93281744e7742929b1e26e61a",
+          "sourcePromptSha256": "b71e08dd973c31b89cbf1e8a37adfef71db7947b787665bc4c5e85cd6e0ecbc7"
+        },
+        {
+          "fixtureId": "CF1-F07",
+          "candidateSha256": "10ec08666329993c56e67ea443fec6b4a15b8928f82de728d482d138cd758182",
+          "draftSha256": "a7b58dc172d1fe2f8c13f26dc80d90441ba5aef9c8dddd81908d9c3aecb8b341",
+          "sourcePromptSha256": "1e1718d92c9ae456709f4ecea0d173236da93794953f5534146db42a441b6a86"
+        },
+        {
+          "fixtureId": "CF1-F08",
+          "candidateSha256": "dd83c985eb825ee8351ec5ad84f5441f47f85c41ac41e35d8baf41b01f1cd4c2",
+          "draftSha256": "81ecb08aa66994837e5af88525cd81a4705acb8fe9e10a69ce7efaf4821fe40b",
+          "sourcePromptSha256": "9615441e04fdf3ee5606db0589e2dd7120f9c1e8a5b0ff33b5b3d3b27d81183b"
+        },
+        {
+          "fixtureId": "CF1-F09",
+          "candidateSha256": "30a05562308c547864a4a4b84090b2cce05bb6fd2e6b0e48608a50d3d51c4f58",
+          "draftSha256": "810310afaa1fe3870e9ca623bb46ca0d10180fe71eb932e432302a2b3f5dc6d5",
+          "sourcePromptSha256": "a7c5988484418fbd18d05376d48e6b726f5b86c64ad419afd03626ca249a79ba"
+        }
+      ]
+    },
+    "counts": {
+      "splitChildren": 27,
+      "relations": 43,
+      "consistencyFindings": 11,
+      "passageCoverage": 1,
+      "attributionSpotChecks": 5,
+      "rubricTargets": 52,
+      "prohibitedInterpretations": 5
+    },
+    "totalRequiringReview": 144,
+    "evidenceTargetsExcluded": true,
+    "fixturesApproved": false,
+    "trainingRowsGenerated": false
+  },
+  "decisions": {
+    "CF1-F01:splitChild:AU002-S02": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F01:splitChild:AU023-S01": {
+      "decision": "edit",
+      "portfolioInclude": false,
+      "basis": "The record-recovery count is valid but is methodological detail. The companion child describing inaccessible records carries the material limitation.",
+      "notes": "Retain the assertion in the full graph; exclude it from the compact portfolio."
+    },
+    "CF1-F01:splitChild:AU055-S02": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F03:splitChild:AU012-S02": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F03:splitChild:AU052-S01": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F03:splitChild:AU069-S02": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F03:splitChild:AU074-S01": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F03:splitChild:AU082-S02": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F03:splitChild:AU090-S01": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F03:splitChild:AU096-S02": {
+      "decision": "edit",
+      "correctedAssertionSourceKind": "article_voice",
+      "correctedAssertionSourceName": "Ana Wolpin",
+      "correctedSource": "article_voice | Ana Wolpin",
+      "basis": "The cited institutions supply the carcinogen classification in the companion child. The formic-acid, liver, and kidney claim is supplied by the article voice.",
+      "notes": "Correct inherited attribution; preserve proposition, stance, role, deployment, and portfolio exclusion."
+    },
+    "CF1-F05:splitChild:AU009-S01": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F05:splitChild:AU009-S02": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F05:splitChild:AU049-S02": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F06:splitChild:AU011-S02": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F06:splitChild:AU035-S01": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F06:splitChild:AU035-S02": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F09:splitChild:AU012-S01": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F09:splitChild:AU072-S02": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F09:splitChild:AU083-S02": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F09:splitChild:AU084-S02": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F09:splitChild:AU122-S02": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F09:splitChild:AU126-S01": {
+      "decision": "edit",
+      "correctedDeployment": "opponent_to_rebut",
+      "correctedTreatment": "contradicts_thesis | opponent_to_rebut | opponent_claim",
+      "basis": "The article introduces Offit's propositions in order to criticize them, not as neutral background.",
+      "notes": "Preserve Paul Offit as the assertion source and preserve original proposition polarity."
+    },
+    "CF1-F09:splitChild:AU126-S02": {
+      "decision": "edit",
+      "correctedDeployment": "opponent_to_rebut",
+      "correctedTreatment": "contradicts_thesis | opponent_to_rebut | opponent_claim",
+      "basis": "The article introduces Offit's propositions in order to criticize them, not as neutral background.",
+      "notes": "Preserve Paul Offit as the assertion source and preserve original proposition polarity."
+    },
+    "CF1-F09:splitChild:AU139-S02": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F09:splitChild:AU146-S02": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F09:splitChild:AU158-S01": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F09:splitChild:AU158-S03": {
+      "decision": "accept",
+      "basis": "Expert adjudication accepted the approved split line as independently grounded and semantically compatible with the inherited record.",
+      "notes": "Resolved by assistant adjudication to end the iterative human-review loop."
+    },
+    "CF1-F01:relation:REL017": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU043-S01",
+          "type": "qualifies",
+          "toArgumentUnitId": "AU005"
+        },
+        {
+          "fromArgumentUnitId": "AU043-S02",
+          "type": "qualifies",
+          "toArgumentUnitId": "AU005"
+        },
+        {
+          "fromArgumentUnitId": "AU043-S03",
+          "type": "qualifies",
+          "toArgumentUnitId": "AU005"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F01:relation:REL019": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU050-S01",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU049"
+        },
+        {
+          "fromArgumentUnitId": "AU050-S02",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU049"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F01:relation:REL024": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU057-S01",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU054"
+        },
+        {
+          "fromArgumentUnitId": "AU057-S02",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU054"
+        },
+        {
+          "fromArgumentUnitId": "AU057-S03",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU054"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F02:relation:REL004": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU010",
+          "type": "supports",
+          "toArgumentUnitId": "AU009-S01"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F02:relation:REL005": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU014",
+          "type": "supports",
+          "toArgumentUnitId": "AU013-S01"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F02:relation:REL006": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU015",
+          "type": "supports",
+          "toArgumentUnitId": "AU013-S01"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F02:relation:REL010": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU024-S01",
+          "type": "elaborates",
+          "toArgumentUnitId": "AU023"
+        },
+        {
+          "fromArgumentUnitId": "AU024-S02",
+          "type": "elaborates",
+          "toArgumentUnitId": "AU023"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F02:relation:REL013": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU029",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU030-S01"
+        },
+        {
+          "fromArgumentUnitId": "AU029",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU030-S02"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F02:relation:REL016": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU033-S01",
+          "type": "supports",
+          "toArgumentUnitId": "AU001"
+        },
+        {
+          "fromArgumentUnitId": "AU033-S02",
+          "type": "supports",
+          "toArgumentUnitId": "AU001"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F03:relation:REL001": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU052-S02",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU003"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F03:relation:REL004": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU064-S03",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU004"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F03:relation:REL005": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU065",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU064-S03"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F03:relation:REL006": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU075-S01",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU005"
+        },
+        {
+          "fromArgumentUnitId": "AU075-S02",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU005"
+        },
+        {
+          "fromArgumentUnitId": "AU075-S03",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU005"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F03:relation:REL020": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU051",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU052-S01"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F03:relation:REL021": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU056",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU052-S02"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F03:relation:REL022": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU054",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU052-S02"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F03:relation:REL023": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU059",
+          "type": "supports",
+          "toArgumentUnitId": "AU052-S02"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F03:relation:REL024": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU060-S01",
+          "type": "supports",
+          "toArgumentUnitId": "AU052-S02"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F03:relation:REL027": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU069-S02",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU070"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F03:relation:REL031": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU079-S01",
+          "type": "elaborates",
+          "toArgumentUnitId": "AU078"
+        },
+        {
+          "fromArgumentUnitId": "AU079-S02",
+          "type": "elaborates",
+          "toArgumentUnitId": "AU078"
+        },
+        {
+          "fromArgumentUnitId": "AU079-S03",
+          "type": "elaborates",
+          "toArgumentUnitId": "AU078"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F03:relation:REL033": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU082-S01",
+          "type": "supports",
+          "toArgumentUnitId": "AU042"
+        },
+        {
+          "fromArgumentUnitId": "AU082-S02",
+          "type": "supports",
+          "toArgumentUnitId": "AU042"
+        },
+        {
+          "fromArgumentUnitId": "AU082-S03",
+          "type": "supports",
+          "toArgumentUnitId": "AU042"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F03:relation:REL035": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU085-S01",
+          "type": "supports",
+          "toArgumentUnitId": "AU042"
+        },
+        {
+          "fromArgumentUnitId": "AU085-S02",
+          "type": "supports",
+          "toArgumentUnitId": "AU042"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F03:relation:REL037": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU090-S01",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU080"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F04:relation:REL020": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU042",
+          "type": "supports",
+          "toArgumentUnitId": "AU041-S01"
+        },
+        {
+          "fromArgumentUnitId": "AU042",
+          "type": "supports",
+          "toArgumentUnitId": "AU041-S02"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F04:relation:REL022": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU044-S01",
+          "type": "elaborates",
+          "toArgumentUnitId": "AU002"
+        },
+        {
+          "fromArgumentUnitId": "AU044-S02",
+          "type": "elaborates",
+          "toArgumentUnitId": "AU002"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F05:relation:REL001": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU006",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU004-S02"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F05:relation:REL002": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU008-S01",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU003"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F05:relation:REL004": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU009-S01",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU008-S02"
+        },
+        {
+          "fromArgumentUnitId": "AU009-S02",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU008-S02"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F05:relation:REL007": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU016",
+          "type": "qualifies",
+          "toArgumentUnitId": "AU015-S01"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F05:relation:REL008": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU017",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU015-S01"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F05:relation:REL011": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU023-S01",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU022"
+        },
+        {
+          "fromArgumentUnitId": "AU023-S02",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU022"
+        },
+        {
+          "fromArgumentUnitId": "AU023-S03",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU022"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F05:relation:REL020": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU039-S01",
+          "type": "qualifies",
+          "toArgumentUnitId": "AU038"
+        },
+        {
+          "fromArgumentUnitId": "AU039-S02",
+          "type": "qualifies",
+          "toArgumentUnitId": "AU038"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F05:relation:REL025": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU049-S01",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU048"
+        },
+        {
+          "fromArgumentUnitId": "AU049-S02",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU048"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F06:relation:REL008": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU035-S02",
+          "type": "supports",
+          "toArgumentUnitId": "AU001"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F06:relation:REL009": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU036",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU035-S01"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F07:relation:REL009": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU034-S02",
+          "type": "qualifies",
+          "toArgumentUnitId": "AU033"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F09:relation:REL001": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU011-S01",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU006"
+        },
+        {
+          "fromArgumentUnitId": "AU011-S02",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU006"
+        },
+        {
+          "fromArgumentUnitId": "AU011-S03",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU006"
+        },
+        {
+          "fromArgumentUnitId": "AU011-S04",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU006"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F09:relation:REL008": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU072-S01",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU007-S02"
+        },
+        {
+          "fromArgumentUnitId": "AU072-S02",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU007-S01"
+        },
+        {
+          "fromArgumentUnitId": "AU072-S02",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU007-S02"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F09:relation:REL009": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU075-S01",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU072-S01"
+        },
+        {
+          "fromArgumentUnitId": "AU075-S01",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU072-S02"
+        },
+        {
+          "fromArgumentUnitId": "AU075-S02",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU072-S01"
+        },
+        {
+          "fromArgumentUnitId": "AU075-S02",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU072-S02"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F09:relation:REL010": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU077",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU072-S01"
+        },
+        {
+          "fromArgumentUnitId": "AU077",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU072-S02"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F09:relation:REL011": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU090-S01",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU007-S01"
+        },
+        {
+          "fromArgumentUnitId": "AU090-S01",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU007-S02"
+        },
+        {
+          "fromArgumentUnitId": "AU090-S02",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU007-S01"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F09:relation:REL012": {
+      "decision": "remap",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU093",
+          "type": "provides_evidence_for",
+          "toArgumentUnitId": "AU090-S01"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F09:relation:REL022": {
+      "decision": "fan_out",
+      "mappings": [
+        {
+          "fromArgumentUnitId": "AU132-S01",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU131"
+        },
+        {
+          "fromArgumentUnitId": "AU132-S02",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU131"
+        },
+        {
+          "fromArgumentUnitId": "AU132-S03",
+          "type": "rebuts",
+          "toArgumentUnitId": "AU131"
+        }
+      ],
+      "basis": "Expert semantic remapping applied from the original relation basis to the specific split child or children that preserve the original meaning.",
+      "notes": "No relation was guessed solely from text similarity; mappings follow the original relation basis and child propositions."
+    },
+    "CF1-F01:finding:CON005": {
+      "decision": "remap",
+      "argumentUnitIds": [
+        "AU049",
+        "AU050-S01",
+        "AU050-S02"
+      ],
+      "findingType": "tension",
+      "basis": "Expert endpoint remapping preserves the original consistency judgment after atomic splitting.",
+      "notes": "Resolved without changing the underlying propositions."
+    },
+    "CF1-F02:finding:CON003": {
+      "decision": "remap",
+      "argumentUnitIds": [
+        "AU005",
+        "AU030-S01"
+      ],
+      "findingType": "qualification",
+      "basis": "Expert endpoint remapping preserves the original consistency judgment after atomic splitting.",
+      "notes": "Resolved without changing the underlying propositions."
+    },
+    "CF1-F03:finding:CON008": {
+      "decision": "remove",
+      "basis": "The finding does not express a coherent contrast after atomic splitting; the cited assertions are aligned rather than qualifying one another.",
+      "notes": "Remove the finding, not the underlying assertions."
+    },
+    "CF1-F05:finding:CON002": {
+      "decision": "remap",
+      "argumentUnitIds": [
+        "AU015-S01",
+        "AU015-S02",
+        "AU017"
+      ],
+      "findingType": "tension",
+      "basis": "Expert endpoint remapping preserves the original consistency judgment after atomic splitting.",
+      "notes": "Resolved without changing the underlying propositions."
+    },
+    "CF1-F06:finding:CON004": {
+      "decision": "remap",
+      "argumentUnitIds": [
+        "AU001",
+        "AU035-S02"
+      ],
+      "findingType": "not_contradiction",
+      "basis": "Expert endpoint remapping preserves the original consistency judgment after atomic splitting.",
+      "notes": "Resolved without changing the underlying propositions."
+    },
+    "CF1-F07:finding:CON004": {
+      "decision": "remap",
+      "argumentUnitIds": [
+        "AU032-S01",
+        "AU032-S02"
+      ],
+      "findingType": "tension",
+      "basis": "Expert endpoint remapping preserves the original consistency judgment after atomic splitting.",
+      "notes": "Resolved without changing the underlying propositions."
+    },
+    "CF1-F09:finding:CON001": {
+      "decision": "remap",
+      "argumentUnitIds": [
+        "AU006",
+        "AU011-S01",
+        "AU011-S02",
+        "AU011-S03",
+        "AU011-S04"
+      ],
+      "findingType": "contradiction",
+      "basis": "Expert endpoint remapping preserves the original consistency judgment after atomic splitting.",
+      "notes": "Resolved without changing the underlying propositions."
+    },
+    "CF1-F09:finding:CON004": {
+      "decision": "remap",
+      "argumentUnitIds": [
+        "AU007-S01",
+        "AU007-S02",
+        "AU075-S01",
+        "AU075-S02"
+      ],
+      "findingType": "tension",
+      "basis": "Expert endpoint remapping preserves the original consistency judgment after atomic splitting.",
+      "notes": "Resolved without changing the underlying propositions."
+    },
+    "CF1-F09:finding:CON005": {
+      "decision": "remap",
+      "argumentUnitIds": [
+        "AU007-S01",
+        "AU007-S02",
+        "AU090-S01",
+        "AU090-S02"
+      ],
+      "findingType": "contradiction",
+      "basis": "Expert endpoint remapping preserves the original consistency judgment after atomic splitting.",
+      "notes": "Resolved without changing the underlying propositions."
+    },
+    "CF1-F09:finding:CON010": {
+      "decision": "remap",
+      "argumentUnitIds": [
+        "AU131",
+        "AU132-S01",
+        "AU132-S02",
+        "AU132-S03"
+      ],
+      "findingType": "tension",
+      "basis": "Expert endpoint remapping preserves the original consistency judgment after atomic splitting.",
+      "notes": "Resolved without changing the underlying propositions."
+    },
+    "CF1-F09:finding:CON015": {
+      "decision": "remap",
+      "argumentUnitIds": [
+        "AU152-S01",
+        "AU152-S02",
+        "AU145"
+      ],
+      "findingType": "not_contradiction",
+      "basis": "Expert endpoint remapping preserves the original consistency judgment after atomic splitting.",
+      "notes": "Resolved without changing the underlying propositions."
+    },
+    "CF1-F03:coverage:COV052": {
+      "decision": "edit",
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "The passage is a catalog of cited works and descriptions. The removed aggregate row was not a clean atomic assertion; no replacement assertion is required.",
+      "notes": "Preserve the source units as provenance/context, but exclude them from assertion training."
+    },
+    "CF1-F06:attribution:AU028": {
+      "decision": "accept_unknown",
+      "sourceKind": "unknown",
+      "sourceName": "scientists",
+      "sourceUnitIds": [
+        "U0036"
+      ],
+      "basis": "The passage identifies only an unnamed group, conventional response, or anonymous reported case. Retaining unknown is more faithful than inventing a specific supplier.",
+      "notes": "Grounding and proposition are retained."
+    },
+    "CF1-F07:attribution:AU037": {
+      "decision": "accept_unknown",
+      "sourceKind": "unknown",
+      "sourceName": "physicists proposing dark neutron decay",
+      "sourceUnitIds": [
+        "U0066"
+      ],
+      "basis": "The passage identifies only an unnamed group, conventional response, or anonymous reported case. Retaining unknown is more faithful than inventing a specific supplier.",
+      "notes": "Grounding and proposition are retained."
+    },
+    "CF1-F07:attribution:AU040": {
+      "decision": "accept_unknown",
+      "sourceKind": "unknown",
+      "sourceName": "MOND proponents",
+      "sourceUnitIds": [
+        "U0070",
+        "U0071",
+        "U0072"
+      ],
+      "basis": "The passage identifies only an unnamed group, conventional response, or anonymous reported case. Retaining unknown is more faithful than inventing a specific supplier.",
+      "notes": "Grounding and proposition are retained."
+    },
+    "CF1-F09:attribution:AU015": {
+      "decision": "accept_unknown",
+      "sourceKind": "unknown",
+      "sourceName": "standard public-health response",
+      "sourceUnitIds": [
+        "U0040"
+      ],
+      "basis": "The passage identifies only an unnamed group, conventional response, or anonymous reported case. Retaining unknown is more faithful than inventing a specific supplier.",
+      "notes": "Grounding and proposition are retained."
+    },
+    "CF1-F09:attribution:AU088": {
+      "decision": "accept_unknown",
+      "sourceKind": "unknown",
+      "sourceName": "reported family case",
+      "sourceUnitIds": [
+        "U0190",
+        "U0191"
+      ],
+      "basis": "The passage identifies only an unnamed group, conventional response, or anonymous reported case. Retaining unknown is more faithful than inventing a specific supplier.",
+      "notes": "Grounding and proposition are retained."
+    },
+    "CF1-F01:rubric:cf1-f01-pillar-02": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU007",
+        "AU008",
+        "AU010",
+        "AU031-S01",
+        "AU031-S02",
+        "AU031-S03",
+        "AU040"
+      ],
+      "relationIds": [
+        "REL015"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F01:rubric:cf1-f01-pillar-04": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU012",
+        "AU043-S01",
+        "AU043-S02",
+        "AU043-S03",
+        "AU046",
+        "AU058-S02"
+      ],
+      "relationIds": [
+        "REL006"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F02:rubric:cf1-f02-concept-01": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU001"
+      ],
+      "relationIds": [
+        "REL017"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F02:rubric:cf1-f02-concept-02": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU021",
+        "AU013-S01",
+        "AU012"
+      ],
+      "relationIds": [
+        "REL008",
+        "REL003"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F02:rubric:cf1-f02-concept-04": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU026"
+      ],
+      "relationIds": [
+        "REL011",
+        "REL012"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F02:rubric:cf1-f02-pillar-01": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU007",
+        "AU008",
+        "AU002",
+        "AU012"
+      ],
+      "relationIds": [
+        "REL003"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F02:rubric:cf1-f02-pillar-02": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU001",
+        "AU013-S01",
+        "AU017",
+        "AU013-S02"
+      ],
+      "relationIds": [
+        "REL007",
+        "REL017"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F02:rubric:cf1-f02-pillar-03": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU007"
+      ],
+      "relationIds": [
+        "REL007"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F02:rubric:cf1-f02-pillar-05": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU016"
+      ],
+      "relationIds": [
+        "REL011",
+        "REL012"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F03:rubric:cf1-f03-concept-02": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU012-S02",
+        "AU074-S01",
+        "AU012-S01",
+        "AU052-S01"
+      ],
+      "relationIds": [
+        "REL040",
+        "REL007"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F03:rubric:cf1-f03-concept-03": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU052-S02",
+        "AU066-S01"
+      ],
+      "relationIds": [
+        "REL008"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F03:rubric:cf1-f03-concept-04": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU084",
+        "AU049",
+        "AU006",
+        "AU075-S01",
+        "AU082-S02"
+      ],
+      "relationIds": [],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F03:rubric:cf1-f03-concept-05": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU079-S02",
+        "AU079-S03",
+        "AU064-S02",
+        "AU094-S01",
+        "AU090-S02"
+      ],
+      "relationIds": [
+        "REL008"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F03:rubric:cf1-f03-pillar-01": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU013",
+        "AU084",
+        "AU088",
+        "AU049"
+      ],
+      "relationIds": [
+        "REL009",
+        "REL040"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F03:rubric:cf1-f03-pillar-02": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU046",
+        "AU066-S01",
+        "AU005"
+      ],
+      "relationIds": [],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F03:rubric:cf1-f03-pillar-03": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU052-S02",
+        "AU003"
+      ],
+      "relationIds": [
+        "REL003",
+        "REL002"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F03:rubric:cf1-f03-pillar-05": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU079-S02"
+      ],
+      "relationIds": [
+        "REL007",
+        "REL008",
+        "REL030"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F03:rubric:cf1-f03-region-02": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU054"
+      ],
+      "relationIds": [],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F03:rubric:cf1-f03-region-05": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU060-S01",
+        "AU013",
+        "AU095",
+        "AU056"
+      ],
+      "relationIds": [
+        "REL008",
+        "REL015"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F04:rubric:cf1-f04-concept-01": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU002",
+        "AU033",
+        "AU038",
+        "AU001"
+      ],
+      "relationIds": [
+        "REL017",
+        "REL002"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F04:rubric:cf1-f04-concept-02": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU036",
+        "AU038"
+      ],
+      "relationIds": [
+        "REL003",
+        "REL008",
+        "REL018"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F04:rubric:cf1-f04-concept-03": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU036",
+        "AU043",
+        "AU003",
+        "AU001",
+        "AU004"
+      ],
+      "relationIds": [
+        "REL018"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F04:rubric:cf1-f04-concept-04": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU041-S01",
+        "AU043"
+      ],
+      "relationIds": [
+        "REL021"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F04:rubric:cf1-f04-pillar-02": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU038",
+        "AU001",
+        "AU002",
+        "AU031"
+      ],
+      "relationIds": [
+        "REL002",
+        "REL005"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F04:rubric:cf1-f04-pillar-04": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU030",
+        "AU036"
+      ],
+      "relationIds": [
+        "REL015",
+        "REL014",
+        "REL018"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F04:rubric:cf1-f04-pillar-05": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU040",
+        "AU043",
+        "AU031"
+      ],
+      "relationIds": [
+        "REL017",
+        "REL021",
+        "REL019"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F05:rubric:cf1-f05-concept-01": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU050",
+        "AU001-S02"
+      ],
+      "relationIds": [
+        "REL019",
+        "REL022",
+        "REL003"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F05:rubric:cf1-f05-concept-02": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU020",
+        "AU019"
+      ],
+      "relationIds": [
+        "REL027",
+        "REL003",
+        "REL010"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F05:rubric:cf1-f05-concept-03": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU008-S01",
+        "AU023-S03",
+        "AU035",
+        "AU019"
+      ],
+      "relationIds": [
+        "REL026",
+        "REL009"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F05:rubric:cf1-f05-concept-04": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU013",
+        "AU033",
+        "AU028",
+        "AU044",
+        "AU014"
+      ],
+      "relationIds": [],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F05:rubric:cf1-f05-pillar-02": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU013",
+        "AU022",
+        "AU008-S01",
+        "AU014"
+      ],
+      "relationIds": [
+        "REL006",
+        "REL012"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F05:rubric:cf1-f05-pillar-03": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU032-S01",
+        "AU030",
+        "AU013",
+        "AU033"
+      ],
+      "relationIds": [
+        "REL017",
+        "REL014"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F06:rubric:cf1-f06-concept-02": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU036"
+      ],
+      "relationIds": [
+        "REL010"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F06:rubric:cf1-f06-concept-03": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU035-S02"
+      ],
+      "relationIds": [
+        "REL003",
+        "REL012"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F06:rubric:cf1-f06-concept-04": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU036",
+        "AU035-S01",
+        "AU041"
+      ],
+      "relationIds": [
+        "REL002",
+        "REL003",
+        "REL001"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F06:rubric:cf1-f06-pillar-01": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU001"
+      ],
+      "relationIds": [
+        "REL003",
+        "REL011"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F06:rubric:cf1-f06-pillar-02": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU028",
+        "AU038"
+      ],
+      "relationIds": [],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F06:rubric:cf1-f06-pillar-03": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU032"
+      ],
+      "relationIds": [
+        "REL007"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F06:rubric:cf1-f06-pillar-04": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU001"
+      ],
+      "relationIds": [
+        "REL010",
+        "REL004"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F07:rubric:cf1-f07-concept-01": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU015",
+        "AU041",
+        "AU030",
+        "AU037"
+      ],
+      "relationIds": [
+        "REL014",
+        "REL012"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F07:rubric:cf1-f07-concept-02": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU014",
+        "AU024",
+        "AU011",
+        "AU041",
+        "AU034-S02"
+      ],
+      "relationIds": [],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F07:rubric:cf1-f07-concept-03": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU020",
+        "AU034-S02",
+        "AU039",
+        "AU038",
+        "AU009-S01"
+      ],
+      "relationIds": [],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F07:rubric:cf1-f07-concept-04": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU022",
+        "AU012",
+        "AU041",
+        "AU034-S02",
+        "AU005"
+      ],
+      "relationIds": [
+        "REL008"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F07:rubric:cf1-f07-region-01": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU014",
+        "AU041",
+        "AU034-S02",
+        "AU009-S01",
+        "AU018"
+      ],
+      "relationIds": [],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F08:rubric:cf1-f08-concept-01": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU001",
+        "AU002"
+      ],
+      "relationIds": [
+        "REL001"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F08:rubric:cf1-f08-concept-03": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU006"
+      ],
+      "relationIds": [
+        "REL001"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F09:rubric:cf1-f09-required-concept-01": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU159",
+        "AU135",
+        "AU141",
+        "AU150-S04",
+        "AU005"
+      ],
+      "relationIds": [],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F09:rubric:cf1-f09-required-concept-02": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU159"
+      ],
+      "relationIds": [],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F09:rubric:cf1-f09-required-concept-03": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU138",
+        "AU089",
+        "AU025",
+        "AU031",
+        "AU032"
+      ],
+      "relationIds": [
+        "REL006"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F09:rubric:cf1-f09-required-concept-04": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU010-S02",
+        "AU089",
+        "AU158-S03",
+        "AU025",
+        "AU031"
+      ],
+      "relationIds": [
+        "REL006"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F09:rubric:cf1-f09-required-source-region-01": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU102",
+        "AU109",
+        "AU104",
+        "AU106",
+        "AU108"
+      ],
+      "relationIds": [],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F09:rubric:cf1-f09-required-source-region-05": {
+      "decision": "matched",
+      "status": "matched",
+      "argumentUnitIds": [
+        "AU087",
+        "AU122-S02",
+        "AU004",
+        "AU157",
+        "AU135"
+      ],
+      "relationIds": [
+        "REL023"
+      ],
+      "basis": "Assistant adjudication matched the evaluation-key target to the compiled records that jointly represent the required concept, pillar, or source region.",
+      "notes": "This is reconciliation metadata, not a claim that every mapped row is equally central."
+    },
+    "CF1-F01:prohibition:cf1-f01-prohibited-01": {
+      "decision": "not_violated",
+      "status": "not_violated",
+      "argumentUnitIds": [
+        "AU019",
+        "AU057-S02",
+        "AU057-S03",
+        "AU055-S02"
+      ],
+      "basis": "The compiled representation either states the opposite, preserves the proposition as an opponent claim, or explicitly retains the qualification that prevents the prohibited interpretation.",
+      "notes": "No prohibited interpretation is encoded as an endorsed unqualified proposition."
+    },
+    "CF1-F01:prohibition:cf1-f01-prohibited-02": {
+      "decision": "not_violated",
+      "status": "not_violated",
+      "argumentUnitIds": [
+        "AU055-S02",
+        "AU019",
+        "AU057-S02",
+        "AU057-S03"
+      ],
+      "basis": "The compiled representation either states the opposite, preserves the proposition as an opponent claim, or explicitly retains the qualification that prevents the prohibited interpretation.",
+      "notes": "No prohibited interpretation is encoded as an endorsed unqualified proposition."
+    },
+    "CF1-F02:prohibition:cf1-f02-prohibited-02": {
+      "decision": "not_violated",
+      "status": "not_violated",
+      "argumentUnitIds": [
+        "AU005",
+        "AU006",
+        "AU002",
+        "AU007"
+      ],
+      "basis": "The compiled representation either states the opposite, preserves the proposition as an opponent claim, or explicitly retains the qualification that prevents the prohibited interpretation.",
+      "notes": "No prohibited interpretation is encoded as an endorsed unqualified proposition."
+    },
+    "CF1-F05:prohibition:cf1-f05-prohibited-04": {
+      "decision": "not_violated",
+      "status": "not_violated",
+      "argumentUnitIds": [
+        "AU034",
+        "AU028"
+      ],
+      "basis": "The compiled representation either states the opposite, preserves the proposition as an opponent claim, or explicitly retains the qualification that prevents the prohibited interpretation.",
+      "notes": "No prohibited interpretation is encoded as an endorsed unqualified proposition."
+    },
+    "CF1-F07:prohibition:cf1-f07-prohibited-04": {
+      "decision": "not_violated",
+      "status": "not_violated",
+      "argumentUnitIds": [
+        "AU032-S01",
+        "AU031",
+        "AU033",
+        "AU038"
+      ],
+      "basis": "The compiled representation either states the opposite, preserves the proposition as an opponent claim, or explicitly retains the qualification that prevents the prohibited interpretation.",
+      "notes": "No prohibited interpretation is encoded as an endorsed unqualified proposition."
+    }
+  },
+  "fixtureApprovalChanged": false,
+  "trainingRowsGenerated": false,
+  "adjudicationMode": "assistant_adjudicated_no_further_human_review",
+  "adjudicationNotice": "All remaining exceptions were resolved by GPT-5.6 Thinking at the user's explicit request. Treat this as model-assisted benchmark/training data, not independently verified human gold."
+}

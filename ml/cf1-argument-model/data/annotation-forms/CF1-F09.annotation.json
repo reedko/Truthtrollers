@@ -1,0 +1,195 @@
+{
+  "schemaVersion": "cf1.argumentAnnotation.v1",
+  "fixture": {
+    "fixtureId": "CF1-F09",
+    "fixtureRevision": 1,
+    "fixtureClass": "long_rebuttal_with_multiple_named_works",
+    "title": "Public Health’s “Truth” About Vaccines PART 2",
+    "articlePath": "backend/test/claim-foundry/fixtures/CF1-F09/article.json",
+    "evaluatorKeyPath": "backend/test/claim-foundry/fixtures/CF1-F09/expectations.proposed.json",
+    "chatDraftPromptPath": "ml/cf1-argument-model/data/annotation-prompts/CF1-F09.chat-prompt.md"
+  },
+  "adjudication": {
+    "status": "draft",
+    "primaryAnnotatorId": null,
+    "independentReviewerId": null,
+    "startedAt": null,
+    "approvedAt": null,
+    "notes": ""
+  },
+  "orientation": {
+    "theme": null,
+    "thesis": null,
+    "thesisStatus": null,
+    "thesisHinge": {
+      "proposition": null,
+      "ifSupportedEffectOnThesis": null,
+      "ifRefutedEffectOnThesis": null
+    },
+    "basisSourceUnitIds": [],
+    "notes": ""
+  },
+  "passageCoverage": [],
+  "argumentUnits": [],
+  "relations": [],
+  "consistencyFindings": [],
+  "rubricCoverage": {
+    "targets": [
+      {
+        "targetId": "cf1-f09-required-concept-01",
+        "category": "required_concept",
+        "description": "Distinguish public-health statements quoted for rebuttal from propositions the article itself endorses.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f09-required-concept-02",
+        "category": "required_concept",
+        "description": "Preserve who supplies each assertion across the author, Jefferson County Public Health, quoted speakers, named studies, institutions, and legal parties.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f09-required-concept-03",
+        "category": "required_concept",
+        "description": "Represent the article's major argumentative sections without treating every reported number, quotation, or contextual detail as equally central.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f09-required-concept-04",
+        "category": "required_concept",
+        "description": "Retain useful named-work and source-identity hints while preserving whether a statement is an allegation, reported finding, quotation, or author conclusion.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f09-required-source-region-01",
+        "category": "required_source_region",
+        "description": "article purpose and response frame",
+        "excerpt": "This article will share JCPH’s response to questions we sent them about their cartoon, including a request for sources/evidence to support their claims.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f09-required-source-region-02",
+        "category": "required_source_region",
+        "description": "quoted positions under rebuttal",
+        "excerpt": "So far, there have been no credible studies that link vaccination to chronic disease.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f09-required-source-region-03",
+        "category": "required_source_region",
+        "description": "second quoted position under rebuttal",
+        "excerpt": "Vaccines are tested more than any other medicine you could give your kid.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f09-required-source-region-04",
+        "category": "required_source_region",
+        "description": "local uptake reporting",
+        "excerpt": "the HepB vaccine dose given at birth shows 72.8% uptake in 2022, declining to 53% in 2025",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f09-required-source-region-05",
+        "category": "required_source_region",
+        "description": "national legal-policy section",
+        "excerpt": "On a national level, the stakes are far higher. The struggle to maintain control of the vaccine narrative has expanded from the kind of censorship and dismissal we are subject to locally to an intense legal battle in federal court.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      }
+    ],
+    "prohibitedInterpretations": [
+      {
+        "prohibitionId": "cf1-f09-prohibited-01",
+        "description": "Statements attributed to JCPH or other opponents are presented as positions endorsed by the article.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f09-prohibited-02",
+        "description": "The article's allegations, quoted allegations, or descriptions of lawsuits are rewritten as independently established facts.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f09-prohibited-03",
+        "description": "Distinct studies, books, reports, datasets, speakers, and legal proceedings are merged into one unnamed source.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f09-prohibited-04",
+        "description": "Rhetorical questions are silently converted into affirmative factual assertions.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f09-prohibited-05",
+        "description": "Claims visible only inside excluded images or charts are invented from surrounding prose.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f09-prohibited-06",
+        "description": "Material from Part 1 is treated as directly observed source text rather than a summary or cross-reference supplied by this article.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f09-prohibited-07",
+        "description": "A fixed claim list or fixed pillar wording is imposed as an answer key before CF1 reads the article.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      }
+    ],
+    "inheritedReviewNotes": [
+      "This is primarily a stance, attribution, named-work, and portfolio-selection stress fixture; it is not a truth-label fixture.",
+      "No predetermined selected-claim list or pillar labels are required. Review whether the resulting portfolio represents the article's own argument and preserves opponent-versus-endorsed polarity.",
+      "The normalized fixture retains visible captions and link text but does not OCR image-only text or preserve link URLs in article.text."
+    ]
+  },
+  "finalChecks": {
+    "completeArticleReviewed": false,
+    "everyArgumentUnitGrounded": false,
+    "everyPropositionAtomic": false,
+    "attributionReviewedIndependentlyOfStance": false,
+    "opponentPolarityPreserved": false,
+    "relationsReviewed": false,
+    "evidenceTargetsReviewed": false,
+    "rubricCoverageReviewed": false,
+    "keyDisagreementsResolvedOrFlagged": false
+  }
+}

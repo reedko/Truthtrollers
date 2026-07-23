@@ -1,0 +1,155 @@
+{
+  "schemaVersion": "cf1.finalDatasetCompilationReport.v1",
+  "generatedAt": "2026-07-23T00:43:47.710Z",
+  "result": "complete",
+  "fixtureCount": 9,
+  "argumentCount": 666,
+  "relationCount": 221,
+  "consistencyFindingCount": 52,
+  "focusedDecisionCount": 448,
+  "remainingReviewCount": 0,
+  "trainingRows": {
+    "total": 3692,
+    "byTask": {
+      "orient": 9,
+      "detect_assertions": 940,
+      "extract_assertions": 524,
+      "attribute": 666,
+      "deploy": 666,
+      "select": 666,
+      "relate": 221
+    },
+    "byFixture": {
+      "CF1-F01": {
+        "orient": 1,
+        "detect_assertions": 95,
+        "extract_assertions": 60,
+        "attribute": 95,
+        "deploy": 95,
+        "select": 95,
+        "relate": 30
+      },
+      "CF1-F02": {
+        "orient": 1,
+        "detect_assertions": 42,
+        "extract_assertions": 34,
+        "attribute": 41,
+        "deploy": 41,
+        "select": 41,
+        "relate": 20
+      },
+      "CF1-F03": {
+        "orient": 1,
+        "detect_assertions": 133,
+        "extract_assertions": 97,
+        "attribute": 120,
+        "deploy": 120,
+        "select": 120,
+        "relate": 47
+      },
+      "CF1-F04": {
+        "orient": 1,
+        "detect_assertions": 51,
+        "extract_assertions": 44,
+        "attribute": 47,
+        "deploy": 47,
+        "select": 47,
+        "relate": 24
+      },
+      "CF1-F05": {
+        "orient": 1,
+        "detect_assertions": 71,
+        "extract_assertions": 52,
+        "attribute": 63,
+        "deploy": 63,
+        "select": 63,
+        "relate": 33
+      },
+      "CF1-F06": {
+        "orient": 1,
+        "detect_assertions": 57,
+        "extract_assertions": 35,
+        "attribute": 44,
+        "deploy": 44,
+        "select": 44,
+        "relate": 12
+      },
+      "CF1-F07": {
+        "orient": 1,
+        "detect_assertions": 76,
+        "extract_assertions": 40,
+        "attribute": 46,
+        "deploy": 46,
+        "select": 46,
+        "relate": 14
+      },
+      "CF1-F08": {
+        "orient": 1,
+        "detect_assertions": 7,
+        "extract_assertions": 6,
+        "attribute": 9,
+        "deploy": 9,
+        "select": 9,
+        "relate": 3
+      },
+      "CF1-F09": {
+        "orient": 1,
+        "detect_assertions": 408,
+        "extract_assertions": 156,
+        "attribute": 201,
+        "deploy": 201,
+        "select": 201,
+        "relate": 38
+      }
+    }
+  },
+  "evaluationRows": {
+    "total": 165,
+    "byTask": {
+      "evaluation_key_target": 112,
+      "prohibited_interpretation": 53
+    },
+    "byFixture": {
+      "CF1-F01": {
+        "evaluation_key_target": 12,
+        "prohibited_interpretation": 5
+      },
+      "CF1-F02": {
+        "evaluation_key_target": 15,
+        "prohibited_interpretation": 6
+      },
+      "CF1-F03": {
+        "evaluation_key_target": 15,
+        "prohibited_interpretation": 5
+      },
+      "CF1-F04": {
+        "evaluation_key_target": 14,
+        "prohibited_interpretation": 6
+      },
+      "CF1-F05": {
+        "evaluation_key_target": 15,
+        "prohibited_interpretation": 6
+      },
+      "CF1-F06": {
+        "evaluation_key_target": 13,
+        "prohibited_interpretation": 6
+      },
+      "CF1-F07": {
+        "evaluation_key_target": 10,
+        "prohibited_interpretation": 6
+      },
+      "CF1-F08": {
+        "evaluation_key_target": 9,
+        "prohibited_interpretation": 6
+      },
+      "CF1-F09": {
+        "evaluation_key_target": 9,
+        "prohibited_interpretation": 7
+      }
+    }
+  },
+  "adjudicationSource": "assistant_adjudicated",
+  "independentHumanGold": false,
+  "humanReviewRequired": false,
+  "trainingGoldStatus": "user_accepted_gold"
+}

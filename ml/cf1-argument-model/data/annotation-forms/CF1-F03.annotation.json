@@ -1,0 +1,243 @@
+{
+  "schemaVersion": "cf1.argumentAnnotation.v1",
+  "fixture": {
+    "fixtureId": "CF1-F03",
+    "fixtureRevision": 1,
+    "fixtureClass": "long_article",
+    "title": "Public Health’s “Truth” About Vaccines PART 1",
+    "articlePath": "backend/test/claim-foundry/fixtures/CF1-F03/article.json",
+    "evaluatorKeyPath": "backend/test/claim-foundry/prompt-evaluation-keys/CF1-F03.json",
+    "chatDraftPromptPath": "ml/cf1-argument-model/data/annotation-prompts/CF1-F03.chat-prompt.md"
+  },
+  "adjudication": {
+    "status": "draft",
+    "primaryAnnotatorId": null,
+    "independentReviewerId": null,
+    "startedAt": null,
+    "approvedAt": null,
+    "notes": ""
+  },
+  "orientation": {
+    "theme": null,
+    "thesis": null,
+    "thesisStatus": null,
+    "thesisHinge": {
+      "proposition": null,
+      "ifSupportedEffectOnThesis": null,
+      "ifRefutedEffectOnThesis": null
+    },
+    "basisSourceUnitIds": [],
+    "notes": ""
+  },
+  "passageCoverage": [],
+  "argumentUnits": [],
+  "relations": [],
+  "consistencyFindings": [],
+  "rubricCoverage": {
+    "targets": [
+      {
+        "targetId": "cf1-f03-concept-01",
+        "category": "required_concept",
+        "description": "The author presents claims from a Jefferson County Public Health vaccine advertisement and argues that those assurances are false or misleading.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f03-concept-02",
+        "category": "required_concept",
+        "description": "The article's own position is skeptical of vaccine safety institutions and alleges censorship, regulatory capture, and suppression of contrary evidence.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f03-concept-03",
+        "category": "required_concept",
+        "description": "Part 1 specifically rebuts claims concerning immune-system burden, aluminum, mercury, and other vaccine ingredients.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f03-concept-04",
+        "category": "required_concept",
+        "description": "Statements from the health department, quoted writers, studies, regulators, manufacturers, and meeting participants have distinct speakers and evidentiary roles.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f03-concept-05",
+        "category": "required_concept",
+        "description": "Material claims and rebuttals remain distributed across the article's opening history, middle SIDS and aluminum sections, and late mercury and ingredient sections.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f03-pillar-01",
+        "category": "required_pillar",
+        "description": "The public-health advertisement's assurances and the author's opposing thesis",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f03-pillar-02",
+        "category": "required_pillar",
+        "description": "The author's historical account of vaccine controversy and local censorship",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f03-pillar-03",
+        "category": "required_pillar",
+        "description": "The asserted relationship between vaccination and SIDS or immune-system burden",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f03-pillar-04",
+        "category": "required_pillar",
+        "description": "The author's aluminum-dose and safety-testing argument",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f03-pillar-05",
+        "category": "required_pillar",
+        "description": "The author's thimerosal, mercury, neurotoxicity, and institutional-concealment argument",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f03-region-01",
+        "category": "required_source_region",
+        "description": "authorial thesis",
+        "excerpt": "the claims made in our health department’s ad repeat medical dogma",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f03-region-02",
+        "category": "required_source_region",
+        "description": "rebuttal transition",
+        "excerpt": "Following each cartoon panel’s question and our health department’s answers are the facts.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f03-region-03",
+        "category": "required_source_region",
+        "description": "opponent aluminum claim",
+        "excerpt": "We are exposed to more aluminum by eating a tomato than from getting vaccines!",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f03-region-04",
+        "category": "required_source_region",
+        "description": "opponent mercury claim",
+        "excerpt": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f03-region-05",
+        "category": "required_source_region",
+        "description": "part-one boundary",
+        "excerpt": "Part 2 will discuss the remaining claims in our health department’s ad.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      }
+    ],
+    "prohibitedInterpretations": [
+      {
+        "prohibitionId": "cf1-f03-prohibited-01",
+        "description": "The public-health advertisement's claims are presented as the author's conclusions.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f03-prohibited-02",
+        "description": "Every quotation or linked-study description is presented as an unqualified assertion by the author.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f03-prohibited-03",
+        "description": "The author is neutral between the health department and its critics.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f03-prohibited-04",
+        "description": "The article itself proves the external truth of every medical or institutional allegation it reports.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f03-prohibited-05",
+        "description": "Topics explicitly deferred to Part 2 are treated as fully argued conclusions of Part 1.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      }
+    ],
+    "inheritedReviewNotes": [
+      "This fixture evaluates faithful extraction and stance, not medical correctness.",
+      "Strong rhetoric should not erase speaker attribution or the distinction between allegation and independently demonstrated fact.",
+      "The long-path synthesis must retain late mercury and other-ingredient claims rather than over-weighting the opening vaccine-history narrative."
+    ]
+  },
+  "finalChecks": {
+    "completeArticleReviewed": false,
+    "everyArgumentUnitGrounded": false,
+    "everyPropositionAtomic": false,
+    "attributionReviewedIndependentlyOfStance": false,
+    "opponentPolarityPreserved": false,
+    "relationsReviewed": false,
+    "evidenceTargetsReviewed": false,
+    "rubricCoverageReviewed": false,
+    "keyDisagreementsResolvedOrFlagged": false
+  }
+}

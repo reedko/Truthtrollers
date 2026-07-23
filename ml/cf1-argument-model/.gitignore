@@ -1,0 +1,24 @@
+# Runtime and training outputs. Rebuild these from tracked configs and datasets.
+work/
+
+# Python caches.
+**/__pycache__/
+*.pyc
+
+# Local editor and OS state.
+.DS_Store
+**/.DS_Store
+data/annotation-prompts/.obsidian/
+
+# Generated human-review renderings. Their JSON sources and manifests are tracked.
+data/annotation-prompts/*.html
+data/annotation-prompts/*.mhtml
+data/adjudication-candidates/**/focused-review/*.html
+data/adjudication-candidates/**/exception-review/*.html
+review-packets/*/review.html
+
+# Third-party source archives are locally supplied and license-restricted.
+# Track our mappings, compilers, verification reports, and derived private-work
+# instructions—not redistributed copies of the source datasets.
+data/annotation-prompts/stupidity/*.zip
+data/annotation-prompts/stupidity/*.pdf

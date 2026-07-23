@@ -1,0 +1,238 @@
+{
+  "schemaVersion": "cf1.argumentAnnotation.v1",
+  "fixture": {
+    "fixtureId": "CF1-F04",
+    "fixtureRevision": 1,
+    "fixtureClass": "heavy_quotation_attribution",
+    "title": "Russia and America Are Rediscovering the Limits of Nuclear Weapons",
+    "articlePath": "backend/test/claim-foundry/fixtures/CF1-F04/article.json",
+    "evaluatorKeyPath": "backend/test/claim-foundry/prompt-evaluation-keys/CF1-F04.json",
+    "chatDraftPromptPath": "ml/cf1-argument-model/data/annotation-prompts/CF1-F04.chat-prompt.md"
+  },
+  "adjudication": {
+    "status": "draft",
+    "primaryAnnotatorId": null,
+    "independentReviewerId": null,
+    "startedAt": null,
+    "approvedAt": null,
+    "notes": ""
+  },
+  "orientation": {
+    "theme": null,
+    "thesis": null,
+    "thesisStatus": null,
+    "thesisHinge": {
+      "proposition": null,
+      "ifSupportedEffectOnThesis": null,
+      "ifRefutedEffectOnThesis": null
+    },
+    "basisSourceUnitIds": [],
+    "notes": ""
+  },
+  "passageCoverage": [],
+  "argumentUnits": [],
+  "relations": [],
+  "consistencyFindings": [],
+  "rubricCoverage": {
+    "targets": [
+      {
+        "targetId": "cf1-f04-concept-01",
+        "category": "required_concept",
+        "description": "The author's thesis is that nuclear weapons deter major-power nuclear war but provide little useful coercive leverage or path to victory in regional conventional wars.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-concept-02",
+        "category": "required_concept",
+        "description": "Historical examples from Korea, Vietnam, Iraq, Ukraine, and Iran are used to distinguish deterrence from usable battlefield or diplomatic power.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-concept-03",
+        "category": "required_concept",
+        "description": "The article attributes nuclear statements and policies to distinct historical leaders, current leaders, officials, doctrines, and commentators.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-concept-04",
+        "category": "required_concept",
+        "description": "The author's policy conclusion favors conventional capability, abandoning broad Cold War nuclear options, considering no-first-use, and reassessing nuclear spending.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-pillar-01",
+        "category": "required_pillar",
+        "description": "Strategic deterrence can restrain nuclear-armed great powers",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-pillar-02",
+        "category": "required_pillar",
+        "description": "Historical attempts to find regional uses for nuclear weapons repeatedly reached military or escalatory dead ends",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-pillar-03",
+        "category": "required_pillar",
+        "description": "Russian nuclear threats have not delivered victory or meaningful leverage in Ukraine",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-pillar-04",
+        "category": "required_pillar",
+        "description": "American nuclear implications have not compelled Iran",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-pillar-05",
+        "category": "required_pillar",
+        "description": "United States strategy should emphasize conventional power and narrower nuclear doctrine",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-region-01",
+        "category": "required_source_region",
+        "description": "Kissinger attribution",
+        "excerpt": "Henry Kissinger often said that nuclear arms are “weapons in search of a doctrine.”",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-region-02",
+        "category": "required_source_region",
+        "description": "author thesis",
+        "excerpt": "The answer, as it turns out, is: nothing.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-region-03",
+        "category": "required_source_region",
+        "description": "Russian doctrine attribution",
+        "excerpt": "Russian nuclear doctrine states that the Russian Federation would use nuclear arms only in response to “critical” threats",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-region-04",
+        "category": "required_source_region",
+        "description": "Trump quotation",
+        "excerpt": "a “whole civilization will die tonight, never to be brought back again.”",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-region-05",
+        "category": "required_source_region",
+        "description": "policy conclusion",
+        "excerpt": "First, nuclear weapons cannot replace conventional power.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      }
+    ],
+    "prohibitedInterpretations": [
+      {
+        "prohibitionId": "cf1-f04-prohibited-01",
+        "description": "Henry Kissinger's formulation is presented as original wording by Tom Nichols.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f04-prohibited-02",
+        "description": "Quoted Russian doctrine is treated as proof of Russia's actual intentions or conduct.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f04-prohibited-03",
+        "description": "Trump's quoted threats are presented as the author's policy recommendation.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f04-prohibited-04",
+        "description": "The article argues that nuclear deterrence has no value under any circumstances.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f04-prohibited-05",
+        "description": "Historical nuclear proposals are presented as attacks that actually occurred.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f04-prohibited-06",
+        "description": "The author claims that every conventional defeat could be reversed through nuclear escalation.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      }
+    ],
+    "inheritedReviewNotes": [
+      "Distinguish direct quotations, paraphrased historical proposals, formal doctrine, and the author's inference about their effectiveness.",
+      "Rhetorical characterizations of leaders and wars should not be silently converted into neutral consensus descriptions."
+    ]
+  },
+  "finalChecks": {
+    "completeArticleReviewed": false,
+    "everyArgumentUnitGrounded": false,
+    "everyPropositionAtomic": false,
+    "attributionReviewedIndependentlyOfStance": false,
+    "opponentPolarityPreserved": false,
+    "relationsReviewed": false,
+    "evidenceTargetsReviewed": false,
+    "rubricCoverageReviewed": false,
+    "keyDisagreementsResolvedOrFlagged": false
+  }
+}

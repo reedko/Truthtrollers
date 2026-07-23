@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "cf1.finalDatasetValidationReport.v1",
+  "generatedAt": "2026-07-23T00:43:47.710Z",
+  "valid": true,
+  "errorCount": 0,
+  "errors": [],
+  "checks": {
+    "authorityHashes": "passed",
+    "decisionCoverage448": "passed",
+    "schemaAndEnums": "passed",
+    "argumentReferences": "passed",
+    "relationReferences": "passed",
+    "consistencyReferences": "passed",
+    "rubricReferences": "passed",
+    "duplicateIds": "passed",
+    "lineage": "passed",
+    "evidenceTargetsExcluded": "passed",
+    "trainingRowIds": "passed",
+    "articleHeldOutSplits": "passed"
+  },
+  "adjudicationSource": "assistant_adjudicated",
+  "independentHumanGold": false,
+  "humanReviewRequired": false,
+  "trainingGoldStatus": "user_accepted_gold"
+}

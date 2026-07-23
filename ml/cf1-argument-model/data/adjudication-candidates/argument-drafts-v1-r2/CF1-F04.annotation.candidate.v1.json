@@ -1,0 +1,3480 @@
+{
+  "schemaVersion": "cf1.argumentAnnotation.v1",
+  "fixture": {
+    "fixtureId": "CF1-F04",
+    "fixtureRevision": 1,
+    "fixtureClass": "heavy_quotation_attribution",
+    "title": "Russia and America Are Rediscovering the Limits of Nuclear Weapons",
+    "articlePath": "backend/test/claim-foundry/fixtures/CF1-F04/article.json",
+    "evaluatorKeyPath": "backend/test/claim-foundry/prompt-evaluation-keys/CF1-F04.json",
+    "chatDraftPromptPath": "ml/cf1-argument-model/data/annotation-prompts/CF1-F04.chat-prompt.md"
+  },
+  "adjudication": {
+    "status": "draft",
+    "primaryAnnotatorId": null,
+    "independentReviewerId": null,
+    "startedAt": null,
+    "approvedAt": null,
+    "notes": "Compiled from reviewed model draft. Split children, affected relations, consistency findings, rubric coverage, and evidence targets remain subject to focused review.\nAccept. Preserve the crucial qualification that the article endorses strategic deterrence while denying useful regional-war leverage.",
+    "sourceReviewSchemaVersion": "cf1.argumentDraftReviewDecisions.v1",
+    "sourceReviewExportedAt": "2026-07-22T14:01:25.286Z"
+  },
+  "orientation": {
+    "theme": "The limited strategic utility of nuclear weapons outside great-power deterrence and the need to reform United States nuclear policy in light of current regional wars.",
+    "thesis": "Nuclear weapons can deter direct war among great powers but cannot deliver victory or credible leverage in regional conflicts, as Russia and the United States are rediscovering in Ukraine and Iran; the United States should therefore emphasize conventional power, adopt no first use, and cancel unnecessary nuclear programs.",
+    "thesisStatus": "clear",
+    "thesisHinge": {
+      "proposition": "Nuclear arsenals have failed to create useful military or coercive options for Russia and the United States in their current regional wars.",
+      "ifSupportedEffectOnThesis": "strengthens",
+      "ifRefutedEffectOnThesis": "weakens"
+    },
+    "basisSourceUnitIds": [
+      "U0002",
+      "U0003",
+      "U0005",
+      "U0006",
+      "U0011",
+      "U0012",
+      "U0051",
+      "U0061",
+      "U0073",
+      "U0081",
+      "U0083",
+      "U0093",
+      "U0096",
+      "U0101",
+      "U0106"
+    ],
+    "notes": "The article's apparent absolute claim that nuclear weapons buy 'nothing' is qualified by its explicit endorsement of strategic deterrence. Heavy quotation is separated from article endorsement."
+  },
+  "passageCoverage": [
+    {
+      "coverageId": "COV001",
+      "sourceUnitIds": [
+        "U0001"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU001"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV002",
+      "sourceUnitIds": [
+        "U0002",
+        "U0003"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU002"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV003",
+      "sourceUnitIds": [
+        "U0004",
+        "U0005",
+        "U0006"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU003"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV004",
+      "sourceUnitIds": [
+        "U0007",
+        "U0008",
+        "U0009",
+        "U0010"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU004"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV005",
+      "sourceUnitIds": [
+        "U0011"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU005"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV006",
+      "sourceUnitIds": [
+        "U0012",
+        "U0013"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU006"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV007",
+      "sourceUnitIds": [
+        "U0014",
+        "U0015"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU007"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV008",
+      "sourceUnitIds": [
+        "U0016"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU007",
+        "AU008"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV009",
+      "sourceUnitIds": [
+        "U0017",
+        "U0018"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU009"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV010",
+      "sourceUnitIds": [
+        "U0019",
+        "U0020",
+        "U0021",
+        "U0022",
+        "U0023"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU010"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV011",
+      "sourceUnitIds": [
+        "U0024"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU011"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV012",
+      "sourceUnitIds": [
+        "U0025",
+        "U0026"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "These units contain headings, bibliographic matter, transitions, procedural detail, table fragments, or other context not independently extracted as a material externally testable assertion."
+    },
+    {
+      "coverageId": "COV013",
+      "sourceUnitIds": [
+        "U0027",
+        "U0028",
+        "U0029"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU012"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV014",
+      "sourceUnitIds": [
+        "U0030",
+        "U0031",
+        "U0032",
+        "U0033"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU013"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV015",
+      "sourceUnitIds": [
+        "U0034",
+        "U0035",
+        "U0036",
+        "U0037"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU014"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV016",
+      "sourceUnitIds": [
+        "U0038",
+        "U0039"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU015"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV017",
+      "sourceUnitIds": [
+        "U0040",
+        "U0041",
+        "U0042",
+        "U0043"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU016"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV018",
+      "sourceUnitIds": [
+        "U0044"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "These units contain headings, bibliographic matter, transitions, procedural detail, table fragments, or other context not independently extracted as a material externally testable assertion."
+    },
+    {
+      "coverageId": "COV019",
+      "sourceUnitIds": [
+        "U0045",
+        "U0046"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU017"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV020",
+      "sourceUnitIds": [
+        "U0047",
+        "U0048"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU018"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV021",
+      "sourceUnitIds": [
+        "U0049",
+        "U0050",
+        "U0051",
+        "U0052"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU019"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV022",
+      "sourceUnitIds": [
+        "U0053"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU020"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV023",
+      "sourceUnitIds": [
+        "U0054"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU021"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV024",
+      "sourceUnitIds": [
+        "U0055"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU022"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV025",
+      "sourceUnitIds": [
+        "U0056",
+        "U0057",
+        "U0058",
+        "U0059",
+        "U0060"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU023"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV026",
+      "sourceUnitIds": [
+        "U0061",
+        "U0062"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU024"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV027",
+      "sourceUnitIds": [
+        "U0063",
+        "U0064",
+        "U0065"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "These units contain headings, bibliographic matter, transitions, procedural detail, table fragments, or other context not independently extracted as a material externally testable assertion."
+    },
+    {
+      "coverageId": "COV028",
+      "sourceUnitIds": [
+        "U0066",
+        "U0067"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU025"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV029",
+      "sourceUnitIds": [
+        "U0068",
+        "U0069"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU026"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV030",
+      "sourceUnitIds": [
+        "U0070"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU027"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV031",
+      "sourceUnitIds": [
+        "U0071",
+        "U0072",
+        "U0073"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU028"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV032",
+      "sourceUnitIds": [
+        "U0074",
+        "U0075"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU029"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV033",
+      "sourceUnitIds": [
+        "U0076"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "These units contain headings, bibliographic matter, transitions, procedural detail, table fragments, or other context not independently extracted as a material externally testable assertion."
+    },
+    {
+      "coverageId": "COV034",
+      "sourceUnitIds": [
+        "U0077",
+        "U0078"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU030"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV035",
+      "sourceUnitIds": [
+        "U0079",
+        "U0080"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU031",
+        "AU032"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV036",
+      "sourceUnitIds": [
+        "U0081"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU031"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV037",
+      "sourceUnitIds": [
+        "U0082"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "These units contain headings, bibliographic matter, transitions, procedural detail, table fragments, or other context not independently extracted as a material externally testable assertion."
+    },
+    {
+      "coverageId": "COV038",
+      "sourceUnitIds": [
+        "U0083"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU033"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV039",
+      "sourceUnitIds": [
+        "U0084"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU034"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV040",
+      "sourceUnitIds": [
+        "U0085"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU035"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV041",
+      "sourceUnitIds": [
+        "U0086",
+        "U0087",
+        "U0088"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU036"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV042",
+      "sourceUnitIds": [
+        "U0089",
+        "U0090"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU037-S01",
+        "AU037-S02"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV043",
+      "sourceUnitIds": [
+        "U0091",
+        "U0092"
+      ],
+      "classification": "no_material_assertion",
+      "argumentUnitIds": [],
+      "basis": "These units contain headings, bibliographic matter, transitions, procedural detail, table fragments, or other context not independently extracted as a material externally testable assertion."
+    },
+    {
+      "coverageId": "COV044",
+      "sourceUnitIds": [
+        "U0093"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU038"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV045",
+      "sourceUnitIds": [
+        "U0094"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU039"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV046",
+      "sourceUnitIds": [
+        "U0095"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU040"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV047",
+      "sourceUnitIds": [
+        "U0096",
+        "U0097"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU041-S01",
+        "AU041-S02"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV048",
+      "sourceUnitIds": [
+        "U0098"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU041-S01",
+        "AU041-S02",
+        "AU042"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV049",
+      "sourceUnitIds": [
+        "U0099",
+        "U0100"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU041-S01",
+        "AU041-S02"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV050",
+      "sourceUnitIds": [
+        "U0101"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU043"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV051",
+      "sourceUnitIds": [
+        "U0102",
+        "U0103",
+        "U0104",
+        "U0105",
+        "U0106",
+        "U0107"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU044-S01",
+        "AU044-S02"
+      ],
+      "basis": "These units ground the listed material assertion(s)."
+    }
+  ],
+  "argumentUnits": [
+    {
+      "argumentUnitId": "AU001",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0001"
+        ],
+        "verbatimExcerpt": "Henry Kissinger often said that nuclear arms are “weapons in search of a doctrine.”"
+      },
+      "canonicalAtomicProposition": "Nuclear weapons are weapons in search of a doctrine.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Henry Kissinger",
+        "sourceUnitIds": [
+          "U0001"
+        ],
+        "basis": "The named or narrative supplier is identified in U0001."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The surrounding article context presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU002",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0002",
+          "U0003"
+        ],
+        "verbatimExcerpt": "After the Cold War, some strategists have tried to figure out what, exactly, these weapons could buy them beyond deterrence. The answer, as it turns out, is: nothing."
+      },
+      "canonicalAtomicProposition": "Nuclear weapons provide no useful military benefit beyond deterrence.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0002",
+          "U0003"
+        ],
+        "basis": "The named or narrative supplier is identified in U0002, U0003."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU003",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0004",
+          "U0005",
+          "U0006"
+        ],
+        "verbatimExcerpt": "Two wars taking place right now are cases in point. The ongoing American attacks on Iran and Russia’s desperate campaign of atrocities in Ukraine have produced dramatic footage of two major powers taking on middleweight military opponents, inflicting grievous damage, and yet failing to achieve their goals. Among other painful lessons, the Americans and the Russians are learning, again, that their impressive array of nuclear weapons does not offer them a victorious path out of such conflicts."
+      },
+      "canonicalAtomicProposition": "The United States and Russia have failed to achieve their goals in current regional wars despite possessing large nuclear arsenals.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0004",
+          "U0005",
+          "U0006"
+        ],
+        "basis": "The named or narrative supplier is identified in U0004, U0005, U0006."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU004",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0007",
+          "U0008",
+          "U0009",
+          "U0010"
+        ],
+        "verbatimExcerpt": "Americans since the end of the Cold War haven’t bothered to think much about nuclear weapons. Last spring, the Trump administration decided to default to its 2018 Nuclear Posture Review, a report that is supposed to explain U.S. nuclear-weapons policy to Congress and the American people, rather than issue an update. But a lot has changed in almost 10 years, including the eruption of two sizable wars. Moreover, the United States is in the process of spending nearly $1 trillion on modernizing its nuclear arms without anyone spelling out what the Pentagon would do with them."
+      },
+      "canonicalAtomicProposition": "The United States is spending nearly one trillion dollars modernizing nuclear arms without a current public explanation of their intended use.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0007",
+          "U0008",
+          "U0009",
+          "U0010"
+        ],
+        "basis": "The named or narrative supplier is identified in U0007, U0008, U0009, U0010."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU005",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0011"
+        ],
+        "verbatimExcerpt": "The Cold War showed that strategic deterrence works to keep the peace among the nuclear-armed powers."
+      },
+      "canonicalAtomicProposition": "Strategic nuclear deterrence helps prevent war among nuclear-armed powers.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0011"
+        ],
+        "basis": "The named or narrative supplier is identified in U0011."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU006",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0012",
+          "U0013"
+        ],
+        "verbatimExcerpt": "It also showed that these arms have almost no use in regional conflicts. With two nuclear superpowers embroiled in two such wars, revisiting America’s 20th-century experiences and learning from them is crucial."
+      },
+      "canonicalAtomicProposition": "Nuclear arms have almost no utility in regional conflicts.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0012",
+          "U0013"
+        ],
+        "basis": "The named or narrative supplier is identified in U0012, U0013."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU007",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0014",
+          "U0015",
+          "U0016"
+        ],
+        "verbatimExcerpt": "The strategic nuclear standoff between the United States and the Soviet Union kept the Cold War from going hot. The Soviets and the Americans were perfectly willing to cause trouble for each other and even fight through proxies in various parts of the world, but neither side wanted events to escalate out of control and lead to complete annihilation. Even now the central mission of America’s nuclear arsenal, as the Trump administration said in 2018, is “to deter potential adversaries from nuclear attack of any scale” against the United States."
+      },
+      "canonicalAtomicProposition": "The strategic nuclear standoff between the United States and Soviet Union prevented the Cold War from becoming a direct war.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0014",
+          "U0015",
+          "U0016"
+        ],
+        "basis": "The named or narrative supplier is identified in U0014, U0015, U0016."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU008",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0016"
+        ],
+        "verbatimExcerpt": "Even now the central mission of America’s nuclear arsenal, as the Trump administration said in 2018, is “to deter potential adversaries from nuclear attack of any scale” against the United States."
+      },
+      "canonicalAtomicProposition": "The central mission of the United States nuclear arsenal is to deter nuclear attacks against the United States.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "document",
+        "name": "2018 Nuclear Posture Review",
+        "sourceUnitIds": [
+          "U0016"
+        ],
+        "basis": "The named or narrative supplier is identified in U0016."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The surrounding article context presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU009",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0017",
+          "U0018"
+        ],
+        "verbatimExcerpt": "Unfortunately, the Trump administration wants to leave the door open to bringing nuclear weapons into any number of scenarios. Here, the president and his team have apparently failed to learn from history."
+      },
+      "canonicalAtomicProposition": "The Trump administration seeks to preserve possible nuclear use in a broad range of scenarios.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0017",
+          "U0018"
+        ],
+        "basis": "The named or narrative supplier is identified in U0017, U0018."
+      },
+      "articleTreatment": {
+        "contentStance": "contradicts_thesis",
+        "deployment": "opponent_to_rebut",
+        "role": "opponent_claim",
+        "basis": "The surrounding article context presents this proposition as opponent_to_rebut and uses it as opponent_claim."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU010",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0019",
+          "U0020",
+          "U0021",
+          "U0022",
+          "U0023"
+        ],
+        "verbatimExcerpt": "During the Cold War, the Americans were outnumbered by Soviet and Chinese forces. Unable to deploy forces around the globe to meet every possible instance of Communist aggression, U.S. strategists tried to figure out how nuclear weapons could be used in regional conflicts far from home. Over and over, they ran into dead ends. In Korea, the U.S. military presented both Harry Truman and Dwight Eisenhower with plans to strike targets in East Asia, including China. Both presidents backed away from the idea, not least because of the obvious escalatory dangers of triggering war with the Soviet Union."
+      },
+      "canonicalAtomicProposition": "Harry Truman and Dwight Eisenhower rejected nuclear-strike plans in East Asia partly because of escalation risks with the Soviet Union.",
+      "scopeQualifiers": [
+        "Korean War-era planning"
+      ],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0019",
+          "U0020",
+          "U0021",
+          "U0022",
+          "U0023"
+        ],
+        "basis": "The named or narrative supplier is identified in U0019, U0020, U0021, U0022, U0023."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU011",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0024"
+        ],
+        "verbatimExcerpt": "In Vietnam, Senator Barry Goldwater famously suggested using nuclear weapons to defoliate Vietnam’s jungles and expose enemy supply lines, an irresponsible idea that contributed to Goldwater’s defeat."
+      },
+      "canonicalAtomicProposition": "Barry Goldwater proposed using nuclear weapons to defoliate Vietnam's jungles and expose supply lines.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Barry Goldwater",
+        "sourceUnitIds": [
+          "U0024"
+        ],
+        "basis": "The named or narrative supplier is identified in U0024."
+      },
+      "articleTreatment": {
+        "contentStance": "contradicts_thesis",
+        "deployment": "opponent_to_rebut",
+        "role": "opponent_claim",
+        "basis": "The surrounding article context presents this proposition as opponent_to_rebut and uses it as opponent_claim."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept the grounded opponent proposition and preserve its source and original polarity; do not convert it into the article’s preferred conclusion."
+    },
+    {
+      "argumentUnitId": "AU012",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0027",
+          "U0028",
+          "U0029"
+        ],
+        "verbatimExcerpt": "During the siege of Khe Sanh, the U.S. Army developed a plan, without Johnson’s knowledge, for using nuclear weapons as a last resort should American forces face being overrun. When informed of its existence, Johnson was enraged and ordered the whole business terminated."
+      },
+      "canonicalAtomicProposition": "Lyndon Johnson terminated a secret Army plan to use nuclear weapons at Khe Sanh if American forces were overrun.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0027",
+          "U0028",
+          "U0029"
+        ],
+        "basis": "The named or narrative supplier is identified in U0027, U0028, U0029."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU013",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0030",
+          "U0031",
+          "U0032",
+          "U0033"
+        ],
+        "verbatimExcerpt": "Richard Nixon, during his first year in office, asked for plans to use nuclear arms against North Korea after becoming fed up with Pyongyang’s provocations, including an April 1969 downing of a U.S. reconnaissance plane. Nixon was given various options, including precise strikes on military targets with nuclear bombs much smaller than those dropped on Japan in 1945. Once again, however, American planners could not figure out how to defang North Korea without causing ghastly destruction and risking escalation in an unstable part of the world. Nixon shelved the plan."
+      },
+      "canonicalAtomicProposition": "Richard Nixon shelved nuclear-strike options against North Korea because planners could not avoid massive destruction and escalation.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0030",
+          "U0031",
+          "U0032",
+          "U0033"
+        ],
+        "basis": "The named or narrative supplier is identified in U0030, U0031, U0032, U0033."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU014",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0034",
+          "U0035",
+          "U0036",
+          "U0037"
+        ],
+        "verbatimExcerpt": "At the end of the Cold War, the United States tried to dislodge Iraq from Kuwait, a conflict that could have entailed enemy chemical strikes on American and allied forces. American leaders never seriously contemplated the use of nuclear weapons. General George Lee Butler, the head of the U.S. Strategic Air Command at the time, later said that U.S. ofﬁcials ruled out the nuclear option because their own studies had already told them that ‘‘a nuclear campaign against Iraq was militarily useless and politically preposterous.’’"
+      },
+      "canonicalAtomicProposition": "United States studies concluded that a nuclear campaign against Iraq would be militarily useless and politically preposterous.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "General George Lee Butler",
+        "sourceUnitIds": [
+          "U0034",
+          "U0035",
+          "U0036",
+          "U0037"
+        ],
+        "basis": "The named or narrative supplier is identified in U0034, U0035, U0036, U0037."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU015",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0038",
+          "U0039"
+        ],
+        "verbatimExcerpt": "Today, strategists might argue that the ability to influence new types of conflicts with nuclear threats, or the actual use of nuclear weapons, is no longer limited by outdated Cold War concerns about escalation. The current undersecretary of defense for policy, Elbridge Colby, wrote in 2013 that the United States should keep the option open to respond to a major cyberattack with thermonuclear weapons."
+      },
+      "canonicalAtomicProposition": "The United States should retain the option to answer a major cyberattack with thermonuclear weapons.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "person",
+        "name": "Elbridge Colby",
+        "sourceUnitIds": [
+          "U0038",
+          "U0039"
+        ],
+        "basis": "The named or narrative supplier is identified in U0038, U0039."
+      },
+      "articleTreatment": {
+        "contentStance": "contradicts_thesis",
+        "deployment": "opponent_to_rebut",
+        "role": "opponent_claim",
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence. Preserve the opponent proposition in its original polarity. The article introduces it as a position to answer; the separate rebuttal remains its own argument unit."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence. Preserve the opponent proposition in its original polarity. The article introduces it as a position to answer; the separate rebuttal remains its own argument unit."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence. Preserve the opponent proposition in its original polarity. The article introduces it as a position to answer; the separate rebuttal remains its own argument unit."
+    },
+    {
+      "argumentUnitId": "AU016",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0040",
+          "U0041",
+          "U0042",
+          "U0043"
+        ],
+        "verbatimExcerpt": "But although the Cold War is over, the problems of using nuclear weapons against non-nuclear opponents all remain. Threatening to use nuclear weapons is easy. Soviet and American leaders did it all the time during the Cold War. But figuring out where and how to use one is just as difficult today as it was 50 years ago."
+      },
+      "canonicalAtomicProposition": "The practical problems of using nuclear weapons against non-nuclear opponents remain as severe as they were during the Cold War.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0040",
+          "U0041",
+          "U0042",
+          "U0043"
+        ],
+        "basis": "The named or narrative supplier is identified in U0040, U0041, U0042, U0043."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "rebuttal",
+        "basis": "The surrounding article context presents this proposition as rebutted and uses it as rebuttal."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU017",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0045",
+          "U0046"
+        ],
+        "verbatimExcerpt": "When Russian President Vladimir Putin launched his war against Ukraine in the winter of 2022, he made a show of ordering his defense minister to put Russia’s strategic nuclear forces on a “special regime of combat duty.” These words had no real military meaning: No signs emerged of an elevated state of Russian nuclear readiness."
+      },
+      "canonicalAtomicProposition": "Vladimir Putin's 2022 order placing Russian strategic forces on a special combat-duty regime did not produce an observable increase in nuclear readiness.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0045",
+          "U0046"
+        ],
+        "basis": "The named or narrative supplier is identified in U0045, U0046."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU018",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0047",
+          "U0048"
+        ],
+        "verbatimExcerpt": "Putin believed that a Russian attack against Ukraine would collapse the government in Kyiv in a matter of days, but the war quickly revealed how much the corrupt and incompetent Russian military had decayed over the past decade, and how much the Ukrainian armed forces had improved in the same period. Putin’s World War II blitz degenerated into World War I trench warfare."
+      },
+      "canonicalAtomicProposition": "Russia's expectation of a rapid collapse of Ukraine failed as Russia's invasion became prolonged trench warfare.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0047",
+          "U0048"
+        ],
+        "basis": "The named or narrative supplier is identified in U0047, U0048."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU019",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0049",
+          "U0050",
+          "U0051",
+          "U0052"
+        ],
+        "verbatimExcerpt": "As the magnitude of the Russian failure became apparent inside the Kremlin, U.S. officials worried that Putin might resort to the use of battlefield nuclear weapons. Russian nuclear doctrine states that the Russian Federation would use nuclear arms only in response to “critical” threats to its sovereignty and “territorial integrity,” but Putin has been cagily flexible about what any of that really means, and he has left it to surrogates on television and in his government to make explicit threats against Ukraine and the West. Russia has no real nuclear options in the Ukrainian slog. Even Putin likely realizes that the costs would be enormous and the gains negligible."
+      },
+      "canonicalAtomicProposition": "Russia has no useful nuclear option in Ukraine because the likely costs are enormous and the military gains negligible.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0049",
+          "U0050",
+          "U0051",
+          "U0052"
+        ],
+        "basis": "The named or narrative supplier is identified in U0049, U0050, U0051, U0052."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU020",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0053"
+        ],
+        "verbatimExcerpt": "For one thing, the wind blows from Ukraine into Russia, and he would risk poisoning his own people, a problem that could lead to a revolt among terrified Russians."
+      },
+      "canonicalAtomicProposition": "Russian nuclear use in Ukraine could expose Russian civilians to radioactive fallout and provoke domestic revolt.",
+      "scopeQualifiers": [
+        "predicted consequence"
+      ],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0053"
+        ],
+        "basis": "The named or narrative supplier is identified in U0053."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU021",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0054"
+        ],
+        "verbatimExcerpt": "The United States—at least under the previous Biden administration—has warned that such an act would provoke a massive military response."
+      },
+      "canonicalAtomicProposition": "The Biden administration warned that Russian nuclear use in Ukraine would provoke a massive military response.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "institution",
+        "name": "Biden administration",
+        "sourceUnitIds": [
+          "U0054"
+        ],
+        "basis": "The named or narrative supplier is identified in U0054."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "reported_neutral",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as reported_neutral and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU022",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0055"
+        ],
+        "verbatimExcerpt": "And Russia friend China has warned Putin that nuclear use would be the end of any support, which would make Russia even more of a pariah state than it already is."
+      },
+      "canonicalAtomicProposition": "China warned Russia that nuclear use would end Chinese support.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "institution",
+        "name": "China",
+        "sourceUnitIds": [
+          "U0055"
+        ],
+        "basis": "The named or narrative supplier is identified in U0055."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "reported_neutral",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as reported_neutral and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU023",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0056",
+          "U0057",
+          "U0058",
+          "U0059",
+          "U0060"
+        ],
+        "verbatimExcerpt": "In 2023, Russia tried playing a different game when the Kremlin confirmed that it was moving nuclear weapons into Belarus, placing them outside Russia for the first time since the end of the Cold War. Putin apparently thinks that bringing these weapons close to an active war zone might increase the sense of risk in foreign capitals. The only person whose thinking seems to have changed, however, is Alexander Lukashenko, the dictator of Belarus. Last week, he announced that Belarus would not take part in any operations against Ukraine. The warheads remain in his country, but in storage and of little use to anyone."
+      },
+      "canonicalAtomicProposition": "Russia's placement of nuclear weapons in Belarus has not produced operational leverage in the Ukraine war.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0056",
+          "U0057",
+          "U0058",
+          "U0059",
+          "U0060"
+        ],
+        "basis": "The named or narrative supplier is identified in U0056, U0057, U0058, U0059, U0060."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU024",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0061",
+          "U0062"
+        ],
+        "verbatimExcerpt": "Putin’s various nuclear manipulations have bought him nothing. The war is now in its fourth year; Russian forces, bogged down at the front, are taking immense losses, and Ukraine is striking targets deep inside Russia, including the capital itself."
+      },
+      "canonicalAtomicProposition": "Putin's nuclear threats and deployments have produced no meaningful strategic gain.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0061",
+          "U0062"
+        ],
+        "basis": "The named or narrative supplier is identified in U0061, U0062."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU025",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0066",
+          "U0067"
+        ],
+        "verbatimExcerpt": "A few thousand miles south of Moscow, the Iranians are inflicting a similar humiliation on the nuclear-armed Americans. Trump has issued multiple threats that could be taken to imply the use of nuclear weapons, and like Putin, he has learned that such threats generate few results but plenty of opprobrium."
+      },
+      "canonicalAtomicProposition": "Donald Trump's nuclear-tinged threats against Iran have produced little strategic effect and substantial condemnation.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0066",
+          "U0067"
+        ],
+        "basis": "The named or narrative supplier is identified in U0066, U0067."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU026",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0068",
+          "U0069"
+        ],
+        "verbatimExcerpt": "On April 7, Trump issued the genocidal threat that if Iran did not accede to various American demands, including opening the Strait of Hormuz, a “whole civilization will die tonight, never to be brought back again.” Only nuclear weapons can end a nation in one night, but the Iranians were unmoved; Trump’s unhinged statement instead brought global condemnation, including from Leo XIV, the first American pope."
+      },
+      "canonicalAtomicProposition": "Iran did not yield after Trump threatened that an entire civilization could die in one night.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0068",
+          "U0069"
+        ],
+        "basis": "The named or narrative supplier is identified in U0068, U0069."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU027",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0070"
+        ],
+        "verbatimExcerpt": "Trump reversed course within a day by claiming, baselessly, that Iran had presented “a workable basis on which to negotiate.”"
+      },
+      "canonicalAtomicProposition": "Trump claimed without basis that Iran had offered a workable basis for negotiations after the April threat.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0070"
+        ],
+        "basis": "The named or narrative supplier is identified in U0070."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "context",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU028",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0071",
+          "U0072",
+          "U0073"
+        ],
+        "verbatimExcerpt": "In May, he tried again: “If there’s no cease-fire,” he said, “you’re just going to have to look at one big glow coming out of Iran.” Again, the world reacted, but Iran did not. Trump’s threats of total destruction mean nothing, and even the enemy seems to know it."
+      },
+      "canonicalAtomicProposition": "Iran did not yield after Trump's later threat of a large glow coming from Iran.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0071",
+          "U0072",
+          "U0073"
+        ],
+        "basis": "The named or narrative supplier is identified in U0071, U0072, U0073."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU029",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0074",
+          "U0075"
+        ],
+        "verbatimExcerpt": "Indeed, his threats tend to come just as he’s about to capitulate, rather than escalate, so perhaps he uses them as a way of covering his retreats. Much like Putin, Trump refers to nuclear weapons but then does nothing to indicate that they are coming into play."
+      },
+      "canonicalAtomicProposition": "Trump's nuclear threats tend to accompany retreats rather than escalation.",
+      "scopeQualifiers": [
+        "author's pattern inference"
+      ],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0074",
+          "U0075"
+        ],
+        "basis": "The named or narrative supplier is identified in U0074, U0075."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "qualification",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as qualification."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU030",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0077",
+          "U0078"
+        ],
+        "verbatimExcerpt": "Even if Trump were serious, however, he would face the same problem his predecessors faced in Asia and Putin faces in Ukraine: The political and economic costs of using a nuclear weapon would far outweigh any possible gains; it could generate an enormous number of casualties and bring radioactive fallout to friendly nations. American nuclear use would almost certainly rally the region—and much of the world, including NATO—against the United States."
+      },
+      "canonicalAtomicProposition": "The political, economic, humanitarian, and alliance costs of American nuclear use against Iran would outweigh any possible gain.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0077",
+          "U0078"
+        ],
+        "basis": "The named or narrative supplier is identified in U0077, U0078."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU031",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0079",
+          "U0080",
+          "U0081"
+        ],
+        "verbatimExcerpt": "Both Iran and Ukraine are outnumbered and outgunned by every measure of military strength, and yet the U.S. and Russia are facing historic defeats. Great empires have learned over and over that conventional wars are easy to lose for many reasons, including the mismatch between the ease of inflicting damage and the difficulty of holding territory, a problem that has frustrated U.S. planners across multiple conflicts. Nuclear weapons in these regional wars have been useless."
+      },
+      "canonicalAtomicProposition": "Nuclear weapons have been useless in the regional wars involving the United States and Russia.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0079",
+          "U0080",
+          "U0081"
+        ],
+        "basis": "The named or narrative supplier is identified in U0079, U0080, U0081."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU032",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0079",
+          "U0080"
+        ],
+        "verbatimExcerpt": "Both Iran and Ukraine are outnumbered and outgunned by every measure of military strength, and yet the U.S. and Russia are facing historic defeats. Great empires have learned over and over that conventional wars are easy to lose for many reasons, including the mismatch between the ease of inflicting damage and the difficulty of holding territory, a problem that has frustrated U.S. planners across multiple conflicts."
+      },
+      "canonicalAtomicProposition": "The United States and Russia are facing historic defeats against conventionally weaker opponents.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0079",
+          "U0080"
+        ],
+        "basis": "The named or narrative supplier is identified in U0079, U0080."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU033",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0083"
+        ],
+        "verbatimExcerpt": "Strategic nuclear weapons will continue to be the silent guardians of a global peace among the great powers, at least until the world can think of something better."
+      },
+      "canonicalAtomicProposition": "Strategic nuclear weapons continue to deter direct great-power war.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0083"
+        ],
+        "basis": "The named or narrative supplier is identified in U0083."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU034",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0084"
+        ],
+        "verbatimExcerpt": "But neither the United States nor other nations need a full panoply of nuclear options for every military eventuality."
+      },
+      "canonicalAtomicProposition": "States do not need a full range of nuclear options for every military contingency.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0084"
+        ],
+        "basis": "The named or narrative supplier is identified in U0084."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU035",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0085"
+        ],
+        "verbatimExcerpt": "The Trump administration says that the United States would consider the employment of nuclear weapons only “in extreme circumstances to defend the vital interests of the United States, its allies, and partners.”"
+      },
+      "canonicalAtomicProposition": "The United States would consider nuclear use only in extreme circumstances involving vital interests.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "institution",
+        "name": "Trump administration",
+        "sourceUnitIds": [
+          "U0085"
+        ],
+        "basis": "The named or narrative supplier is identified in U0085."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The surrounding article context presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU036",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0086",
+          "U0087",
+          "U0088"
+        ],
+        "verbatimExcerpt": "But what is an extreme circumstance? The United States is losing a war to Iran, which might seem “extreme,” but a U.S. defeat in the Gulf does not threaten the existence of the United States. A gigantic Russian army is making war in the middle of Europe—the kind of nightmare NATO was created to forestall—but the United States is working to defeat Russia without the direct involvement of U.S. or other NATO forces."
+      },
+      "canonicalAtomicProposition": "Current wars in Iran and Ukraine do not create existential circumstances that justify United States nuclear use.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0086",
+          "U0087",
+          "U0088"
+        ],
+        "basis": "The named or narrative supplier is identified in U0086, U0087, U0088."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "rebuttal",
+        "basis": "The surrounding article context presents this proposition as rebutted and uses it as rebuttal."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU037-S01",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0089",
+          "U0090"
+        ],
+        "verbatimExcerpt": "And yet, the Trump administration wants to return to Cold War thinking: It withdrew from the 1987 treaty on intermediate nuclear forces and wants to place a new, nuclear-armed cruise missile on submarines. Trump also wants his new “Trump class” battleships (assuming they ever get built) to have nuclear weapons on them, a senseless move that would return nuclear arms to America’s surface ships for the first time since the early 1990s."
+      },
+      "canonicalAtomicProposition": "The Trump administration supports deployment of a new nuclear-armed submarine cruise missile.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0089",
+          "U0090"
+        ],
+        "basis": "The named or narrative supplier is identified in U0089, U0090."
+      },
+      "articleTreatment": {
+        "contentStance": "contradicts_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence.\nSplit from AU037; child 1 of 2."
+    },
+    {
+      "argumentUnitId": "AU037-S02",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0089",
+          "U0090"
+        ],
+        "verbatimExcerpt": "And yet, the Trump administration wants to return to Cold War thinking: It withdrew from the 1987 treaty on intermediate nuclear forces and wants to place a new, nuclear-armed cruise missile on submarines. Trump also wants his new “Trump class” battleships (assuming they ever get built) to have nuclear weapons on them, a senseless move that would return nuclear arms to America’s surface ships for the first time since the early 1990s."
+      },
+      "canonicalAtomicProposition": "Trump proposed placing nuclear weapons on a new class of surface battleships.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0089",
+          "U0090"
+        ],
+        "basis": "The named or narrative supplier is identified in U0089, U0090."
+      },
+      "articleTreatment": {
+        "contentStance": "contradicts_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence.\nSplit from AU037; child 2 of 2."
+    },
+    {
+      "argumentUnitId": "AU038",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0093"
+        ],
+        "verbatimExcerpt": "First, nuclear weapons cannot replace conventional power."
+      },
+      "canonicalAtomicProposition": "Nuclear weapons cannot substitute for conventional military power.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0093"
+        ],
+        "basis": "The named or narrative supplier is identified in U0093."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU039",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0094"
+        ],
+        "verbatimExcerpt": "China knows that the United States has nuclear weapons; what the leaders in Beijing need to see in the Pacific are ships, aircraft, personnel, and the will to defend our allies, not more nuclear warheads."
+      },
+      "canonicalAtomicProposition": "Deterring China in the Pacific requires visible conventional forces and political resolve rather than additional nuclear warheads.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0094"
+        ],
+        "basis": "The named or narrative supplier is identified in U0094."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU040",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0095"
+        ],
+        "verbatimExcerpt": "The Iran war has depleted stocks of conventional U.S. attack munitions, not nuclear bombs."
+      },
+      "canonicalAtomicProposition": "The Iran war has depleted United States conventional attack munitions rather than nuclear weapons.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0095"
+        ],
+        "basis": "The named or narrative supplier is identified in U0095."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU041-S01",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0096",
+          "U0097",
+          "U0098",
+          "U0099",
+          "U0100"
+        ],
+        "verbatimExcerpt": "Second, the United States must wrench itself out of its Cold War mindset. For example, the U.S. maintains a policy of reserving the right to use nuclear weapons first, leftover from the days when NATO was sure to be overrun by Soviet tanks in Europe in the first weeks of a conflict in Europe. Today, the situation is reversed: Russia would lose a conventional war with NATO, and quickly. Nothing is gained from holding on to a strategy from a half century ago that requires the U.S., even now, to keep a stockpile of tactical nuclear weapons in Europe. (Nor should the United States deploy more nuclear weapons in the Pacific region.)"
+      },
+      "canonicalAtomicProposition": "The United States no longer gains strategic benefit from retaining a broad nuclear first-use policy.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0096",
+          "U0097",
+          "U0098",
+          "U0099",
+          "U0100"
+        ],
+        "basis": "The named or narrative supplier is identified in U0096, U0097, U0098, U0099, U0100."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication.\nSplit from AU041; child 1 of 2."
+    },
+    {
+      "argumentUnitId": "AU041-S02",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0096",
+          "U0097",
+          "U0098",
+          "U0099",
+          "U0100"
+        ],
+        "verbatimExcerpt": "Second, the United States must wrench itself out of its Cold War mindset. For example, the U.S. maintains a policy of reserving the right to use nuclear weapons first, leftover from the days when NATO was sure to be overrun by Soviet tanks in Europe in the first weeks of a conflict in Europe. Today, the situation is reversed: Russia would lose a conventional war with NATO, and quickly. Nothing is gained from holding on to a strategy from a half century ago that requires the U.S., even now, to keep a stockpile of tactical nuclear weapons in Europe. (Nor should the United States deploy more nuclear weapons in the Pacific region.)"
+      },
+      "canonicalAtomicProposition": "The United States no longer gains strategic benefit from keeping tactical nuclear weapons in Europe.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0096",
+          "U0097",
+          "U0098",
+          "U0099",
+          "U0100"
+        ],
+        "basis": "The named or narrative supplier is identified in U0096, U0097, U0098, U0099, U0100."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication.\nSplit from AU041; child 2 of 2."
+    },
+    {
+      "argumentUnitId": "AU042",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0098"
+        ],
+        "verbatimExcerpt": "Today, the situation is reversed: Russia would lose a conventional war with NATO, and quickly."
+      },
+      "canonicalAtomicProposition": "Russia would quickly lose a conventional war with NATO.",
+      "scopeQualifiers": [
+        "author's prediction"
+      ],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0098"
+        ],
+        "basis": "The named or narrative supplier is identified in U0098."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar_support",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+    },
+    {
+      "argumentUnitId": "AU043",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0101"
+        ],
+        "verbatimExcerpt": "At the least, a policy declaration of “no first use” would help to ground American strategy in the new realities of the 21st century."
+      },
+      "canonicalAtomicProposition": "A United States no-first-use declaration would better align nuclear strategy with current strategic realities.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0101"
+        ],
+        "basis": "The named or narrative supplier is identified in U0101."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article's thesis or a necessary linked opponent/rebuttal/qualification."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU044-S01",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0102",
+          "U0103",
+          "U0104",
+          "U0105",
+          "U0106",
+          "U0107"
+        ],
+        "verbatimExcerpt": "Finally, the United States needs a complete overhaul of its defense strategy. Trump has treated the entire world, including U.S. allies, as potentially hostile. His reckless and paranoid approach to security has left the United States less safe and the world less stable. The next administration will have to pick up the pieces. In the meantime, a new Congress can start examining some of the Pentagon’s requests that involve nuclear weapons—and start canceling them. One Cold War nuclear spending spree was enough."
+      },
+      "canonicalAtomicProposition": "The United States should overhaul its defense strategy.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0102",
+          "U0103",
+          "U0104",
+          "U0105",
+          "U0106",
+          "U0107"
+        ],
+        "basis": "The named or narrative supplier is identified in U0102, U0103, U0104, U0105, U0106, U0107."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence.\nSplit from AU044; child 1 of 2."
+    },
+    {
+      "argumentUnitId": "AU044-S02",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0102",
+          "U0103",
+          "U0104",
+          "U0105",
+          "U0106",
+          "U0107"
+        ],
+        "verbatimExcerpt": "Finally, the United States needs a complete overhaul of its defense strategy. Trump has treated the entire world, including U.S. allies, as potentially hostile. His reckless and paranoid approach to security has left the United States less safe and the world less stable. The next administration will have to pick up the pieces. In the meantime, a new Congress can start examining some of the Pentagon’s requests that involve nuclear weapons—and start canceling them. One Cold War nuclear spending spree was enough."
+      },
+      "canonicalAtomicProposition": "Congress should cancel unnecessary Pentagon nuclear programs.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "article_voice",
+        "name": "Tom Nichols",
+        "sourceUnitIds": [
+          "U0102",
+          "U0103",
+          "U0104",
+          "U0105",
+          "U0106",
+          "U0107"
+        ],
+        "basis": "The named or narrative supplier is identified in U0102, U0103, U0104, U0105, U0106, U0107."
+      },
+      "articleTreatment": {
+        "contentStance": "supports_thesis",
+        "deployment": "endorsed",
+        "role": "pillar",
+        "basis": "The surrounding article context presents this proposition as endorsed and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence."
+      },
+      "notes": "Adjudication: The displayed proposition combines independently testable content. Create separate child records, preserve the original grounding on each relevant child, and remap relations after adjudication. Retain this in the full assertion graph, but exclude it from the compact selected-claim portfolio because it is supporting detail, context, or duplicative evidence.\nSplit from AU044; child 2 of 2."
+    }
+  ],
+  "relations": [
+    {
+      "relationId": "REL001",
+      "fromArgumentUnitId": "AU005",
+      "type": "qualifies",
+      "toArgumentUnitId": "AU002",
+      "sourceUnitIds": [
+        "U0002",
+        "U0003",
+        "U0004",
+        "U0005",
+        "U0006",
+        "U0007",
+        "U0008",
+        "U0009",
+        "U0010",
+        "U0011",
+        "U0012",
+        "U0013"
+      ],
+      "basis": "The article limits its broad no-benefit claim by preserving strategic deterrence as a valuable function."
+    },
+    {
+      "relationId": "REL002",
+      "fromArgumentUnitId": "AU006",
+      "type": "supports",
+      "toArgumentUnitId": "AU002",
+      "sourceUnitIds": [
+        "U0011",
+        "U0012",
+        "U0013"
+      ],
+      "basis": "Regional uselessness supplies the principal limitation on nuclear utility beyond deterrence."
+    },
+    {
+      "relationId": "REL003",
+      "fromArgumentUnitId": "AU007",
+      "type": "provides_evidence_for",
+      "toArgumentUnitId": "AU005",
+      "sourceUnitIds": [
+        "U0014",
+        "U0015",
+        "U0016"
+      ],
+      "basis": "Cold War non-escalation is offered as historical evidence for strategic deterrence."
+    },
+    {
+      "relationId": "REL004",
+      "fromArgumentUnitId": "AU010",
+      "type": "provides_evidence_for",
+      "toArgumentUnitId": "AU006",
+      "sourceUnitIds": [
+        "U0019",
+        "U0020",
+        "U0021",
+        "U0022",
+        "U0023"
+      ],
+      "basis": "The Korea decisions exemplify the unusability of nuclear weapons in regional war."
+    },
+    {
+      "relationId": "REL005",
+      "fromArgumentUnitId": "AU013",
+      "type": "provides_evidence_for",
+      "toArgumentUnitId": "AU006",
+      "sourceUnitIds": [
+        "U0030",
+        "U0031",
+        "U0032",
+        "U0033"
+      ],
+      "basis": "The North Korea planning episode exemplifies destructive and escalatory dead ends."
+    },
+    {
+      "relationId": "REL006",
+      "fromArgumentUnitId": "AU014",
+      "type": "provides_evidence_for",
+      "toArgumentUnitId": "AU006",
+      "sourceUnitIds": [
+        "U0034",
+        "U0035",
+        "U0036",
+        "U0037"
+      ],
+      "basis": "The Iraq assessment directly characterizes regional nuclear use as useless."
+    },
+    {
+      "relationId": "REL007",
+      "fromArgumentUnitId": "AU016",
+      "type": "rebuts",
+      "toArgumentUnitId": "AU015",
+      "sourceUnitIds": [
+        "U0038",
+        "U0039",
+        "U0040",
+        "U0041",
+        "U0042",
+        "U0043"
+      ],
+      "basis": "The article answers the cyber-retaliation proposal by asserting that the old practical constraints remain."
+    },
+    {
+      "relationId": "REL008",
+      "fromArgumentUnitId": "AU019",
+      "type": "supports",
+      "toArgumentUnitId": "AU024",
+      "sourceUnitIds": [
+        "U0049",
+        "U0050",
+        "U0051",
+        "U0052",
+        "U0053",
+        "U0054",
+        "U0055",
+        "U0056",
+        "U0057",
+        "U0058",
+        "U0059",
+        "U0060",
+        "U0061",
+        "U0062"
+      ],
+      "basis": "The lack of a useful battlefield option explains why Russian nuclear manipulation has yielded nothing."
+    },
+    {
+      "relationId": "REL009",
+      "fromArgumentUnitId": "AU020",
+      "type": "supports",
+      "toArgumentUnitId": "AU019",
+      "sourceUnitIds": [
+        "U0051",
+        "U0052",
+        "U0053"
+      ],
+      "basis": "Fallout and domestic risk are one cost that makes Russian use unattractive."
+    },
+    {
+      "relationId": "REL010",
+      "fromArgumentUnitId": "AU021",
+      "type": "supports",
+      "toArgumentUnitId": "AU019",
+      "sourceUnitIds": [
+        "U0054"
+      ],
+      "basis": "The threatened military response raises the expected cost of Russian nuclear use."
+    },
+    {
+      "relationId": "REL011",
+      "fromArgumentUnitId": "AU022",
+      "type": "supports",
+      "toArgumentUnitId": "AU019",
+      "sourceUnitIds": [
+        "U0055"
+      ],
+      "basis": "The threatened loss of Chinese support raises the expected political cost."
+    },
+    {
+      "relationId": "REL012",
+      "fromArgumentUnitId": "AU023",
+      "type": "provides_evidence_for",
+      "toArgumentUnitId": "AU024",
+      "sourceUnitIds": [
+        "U0056",
+        "U0057",
+        "U0058",
+        "U0059",
+        "U0060",
+        "U0061",
+        "U0062"
+      ],
+      "basis": "The Belarus deployment is presented as another manipulation that created no leverage."
+    },
+    {
+      "relationId": "REL013",
+      "fromArgumentUnitId": "AU026",
+      "type": "provides_evidence_for",
+      "toArgumentUnitId": "AU025",
+      "sourceUnitIds": [
+        "U0068",
+        "U0069",
+        "U0070"
+      ],
+      "basis": "Iran's noncompliance and global condemnation demonstrate the first threat's failure."
+    },
+    {
+      "relationId": "REL014",
+      "fromArgumentUnitId": "AU028",
+      "type": "provides_evidence_for",
+      "toArgumentUnitId": "AU025",
+      "sourceUnitIds": [
+        "U0071",
+        "U0072",
+        "U0073"
+      ],
+      "basis": "Iran's continued resistance demonstrates the later threat's failure."
+    },
+    {
+      "relationId": "REL015",
+      "fromArgumentUnitId": "AU030",
+      "type": "supports",
+      "toArgumentUnitId": "AU031",
+      "sourceUnitIds": [
+        "U0077",
+        "U0078",
+        "U0079",
+        "U0080",
+        "U0081"
+      ],
+      "basis": "The overwhelming downside of nuclear use explains its uselessness in the Iran conflict."
+    },
+    {
+      "relationId": "REL016",
+      "fromArgumentUnitId": "AU031",
+      "type": "supports",
+      "toArgumentUnitId": "AU003",
+      "sourceUnitIds": [
+        "U0079",
+        "U0080",
+        "U0081"
+      ],
+      "basis": "The two current wars are the article's principal evidence that arsenals do not secure victory."
+    },
+    {
+      "relationId": "REL017",
+      "fromArgumentUnitId": "AU033",
+      "type": "qualifies",
+      "toArgumentUnitId": "AU031",
+      "sourceUnitIds": [
+        "U0081",
+        "U0082",
+        "U0083",
+        "U0084"
+      ],
+      "basis": "The article distinguishes useless regional employment from useful great-power deterrence."
+    },
+    {
+      "relationId": "REL018",
+      "fromArgumentUnitId": "AU036",
+      "type": "rebuts",
+      "toArgumentUnitId": "AU035",
+      "sourceUnitIds": [
+        "U0085",
+        "U0086",
+        "U0087",
+        "U0088"
+      ],
+      "basis": "The article argues that current losses do not meet a defensible existential meaning of extreme circumstances."
+    },
+    {
+      "relationId": "REL019",
+      "fromArgumentUnitId": "AU038",
+      "type": "supports",
+      "toArgumentUnitId": "AU034",
+      "sourceUnitIds": [
+        "U0093",
+        "U0094",
+        "U0095"
+      ],
+      "basis": "If nuclear weapons cannot replace conventional power, broad nuclear options are unnecessary."
+    }
+  ],
+  "consistencyFindings": [
+    {
+      "findingId": "CON001",
+      "argumentUnitIds": [
+        "AU002",
+        "AU005"
+      ],
+      "type": "qualification",
+      "basis": "The opening 'nothing beyond deterrence' formulation is narrowed by the article's continuing endorsement of strategic deterrence."
+    },
+    {
+      "findingId": "CON002",
+      "argumentUnitIds": [
+        "AU006",
+        "AU033"
+      ],
+      "type": "not_contradiction",
+      "basis": "Regional-war uselessness and great-power deterrent value concern different functions and scopes."
+    },
+    {
+      "findingId": "CON003",
+      "argumentUnitIds": [
+        "AU009",
+        "AU034"
+      ],
+      "type": "tension",
+      "basis": "The administration's desire for broad nuclear options conflicts with the author's conclusion that such a panoply is unnecessary."
+    },
+    {
+      "findingId": "CON004",
+      "argumentUnitIds": [
+        "AU035",
+        "AU036"
+      ],
+      "type": "qualification",
+      "basis": "The administration's stated extreme-circumstances policy is challenged by the author's narrower interpretation of what should count as extreme."
+    }
+  ],
+  "rubricCoverage": {
+    "targets": [
+      {
+        "targetId": "cf1-f04-concept-01",
+        "category": "required_concept",
+        "description": "The author's thesis is that nuclear weapons deter major-power nuclear war but provide little useful coercive leverage or path to victory in regional conventional wars.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-concept-02",
+        "category": "required_concept",
+        "description": "Historical examples from Korea, Vietnam, Iraq, Ukraine, and Iran are used to distinguish deterrence from usable battlefield or diplomatic power.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-concept-03",
+        "category": "required_concept",
+        "description": "The article attributes nuclear statements and policies to distinct historical leaders, current leaders, officials, doctrines, and commentators.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-concept-04",
+        "category": "required_concept",
+        "description": "The author's policy conclusion favors conventional capability, abandoning broad Cold War nuclear options, considering no-first-use, and reassessing nuclear spending.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-pillar-01",
+        "category": "required_pillar",
+        "description": "Strategic deterrence can restrain nuclear-armed great powers",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-pillar-02",
+        "category": "required_pillar",
+        "description": "Historical attempts to find regional uses for nuclear weapons repeatedly reached military or escalatory dead ends",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-pillar-03",
+        "category": "required_pillar",
+        "description": "Russian nuclear threats have not delivered victory or meaningful leverage in Ukraine",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-pillar-04",
+        "category": "required_pillar",
+        "description": "American nuclear implications have not compelled Iran",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-pillar-05",
+        "category": "required_pillar",
+        "description": "United States strategy should emphasize conventional power and narrower nuclear doctrine",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-region-01",
+        "category": "required_source_region",
+        "description": "Kissinger attribution",
+        "excerpt": "Henry Kissinger often said that nuclear arms are “weapons in search of a doctrine.”",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-region-02",
+        "category": "required_source_region",
+        "description": "author thesis",
+        "excerpt": "The answer, as it turns out, is: nothing.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-region-03",
+        "category": "required_source_region",
+        "description": "Russian doctrine attribution",
+        "excerpt": "Russian nuclear doctrine states that the Russian Federation would use nuclear arms only in response to “critical” threats",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-region-04",
+        "category": "required_source_region",
+        "description": "Trump quotation",
+        "excerpt": "a “whole civilization will die tonight, never to be brought back again.”",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f04-region-05",
+        "category": "required_source_region",
+        "description": "policy conclusion",
+        "excerpt": "First, nuclear weapons cannot replace conventional power.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      }
+    ],
+    "prohibitedInterpretations": [
+      {
+        "prohibitionId": "cf1-f04-prohibited-01",
+        "description": "Henry Kissinger's formulation is presented as original wording by Tom Nichols.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f04-prohibited-02",
+        "description": "Quoted Russian doctrine is treated as proof of Russia's actual intentions or conduct.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f04-prohibited-03",
+        "description": "Trump's quoted threats are presented as the author's policy recommendation.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f04-prohibited-04",
+        "description": "The article argues that nuclear deterrence has no value under any circumstances.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f04-prohibited-05",
+        "description": "Historical nuclear proposals are presented as attacks that actually occurred.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f04-prohibited-06",
+        "description": "The author claims that every conventional defeat could be reversed through nuclear escalation.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      }
+    ],
+    "inheritedReviewNotes": [
+      "Distinguish direct quotations, paraphrased historical proposals, formal doctrine, and the author's inference about their effectiveness.",
+      "Rhetorical characterizations of leaders and wars should not be silently converted into neutral consensus descriptions."
+    ]
+  },
+  "compilation": {
+    "schemaVersion": "cf1.adjudicationCompilation.v1",
+    "generatedAt": "2026-07-22T14:44:26.830Z",
+    "sourceDraftSchemaVersion": "cf1.argumentDraft.v1",
+    "sourceDraftSha256": "8b9c93a24ff41e8cabd42fbf4a2d3733672eb43b17c3884f0aa8e0345deeb456",
+    "sourceFormSha256": "03439d3430adf39cedda1ae9854bd0d9cc9767e826ef9119bdd0a174eadd1441",
+    "reviewSha256": "8f61246c67cb5d1d02d61ea6e0acb87d5f66a6905aea6d89a16f08e2f656d7ef",
+    "evidenceTargetsApproved": false,
+    "lineageByArgumentUnitId": {
+      "AU001": {
+        "sourceArgumentUnitId": "AU001",
+        "reviewDecisionKey": "CF1-F04:argument:AU001",
+        "operation": "accept"
+      },
+      "AU002": {
+        "sourceArgumentUnitId": "AU002",
+        "reviewDecisionKey": "CF1-F04:argument:AU002",
+        "operation": "accept"
+      },
+      "AU003": {
+        "sourceArgumentUnitId": "AU003",
+        "reviewDecisionKey": "CF1-F04:argument:AU003",
+        "operation": "edit"
+      },
+      "AU004": {
+        "sourceArgumentUnitId": "AU004",
+        "reviewDecisionKey": "CF1-F04:argument:AU004",
+        "operation": "edit"
+      },
+      "AU005": {
+        "sourceArgumentUnitId": "AU005",
+        "reviewDecisionKey": "CF1-F04:argument:AU005",
+        "operation": "accept"
+      },
+      "AU006": {
+        "sourceArgumentUnitId": "AU006",
+        "reviewDecisionKey": "CF1-F04:argument:AU006",
+        "operation": "accept"
+      },
+      "AU007": {
+        "sourceArgumentUnitId": "AU007",
+        "reviewDecisionKey": "CF1-F04:argument:AU007",
+        "operation": "edit"
+      },
+      "AU008": {
+        "sourceArgumentUnitId": "AU008",
+        "reviewDecisionKey": "CF1-F04:argument:AU008",
+        "operation": "edit"
+      },
+      "AU009": {
+        "sourceArgumentUnitId": "AU009",
+        "reviewDecisionKey": "CF1-F04:argument:AU009",
+        "operation": "edit"
+      },
+      "AU010": {
+        "sourceArgumentUnitId": "AU010",
+        "reviewDecisionKey": "CF1-F04:argument:AU010",
+        "operation": "edit"
+      },
+      "AU011": {
+        "sourceArgumentUnitId": "AU011",
+        "reviewDecisionKey": "CF1-F04:argument:AU011",
+        "operation": "accept"
+      },
+      "AU012": {
+        "sourceArgumentUnitId": "AU012",
+        "reviewDecisionKey": "CF1-F04:argument:AU012",
+        "operation": "edit"
+      },
+      "AU013": {
+        "sourceArgumentUnitId": "AU013",
+        "reviewDecisionKey": "CF1-F04:argument:AU013",
+        "operation": "edit"
+      },
+      "AU014": {
+        "sourceArgumentUnitId": "AU014",
+        "reviewDecisionKey": "CF1-F04:argument:AU014",
+        "operation": "accept"
+      },
+      "AU015": {
+        "sourceArgumentUnitId": "AU015",
+        "reviewDecisionKey": "CF1-F04:argument:AU015",
+        "operation": "edit"
+      },
+      "AU016": {
+        "sourceArgumentUnitId": "AU016",
+        "reviewDecisionKey": "CF1-F04:argument:AU016",
+        "operation": "edit"
+      },
+      "AU017": {
+        "sourceArgumentUnitId": "AU017",
+        "reviewDecisionKey": "CF1-F04:argument:AU017",
+        "operation": "edit"
+      },
+      "AU018": {
+        "sourceArgumentUnitId": "AU018",
+        "reviewDecisionKey": "CF1-F04:argument:AU018",
+        "operation": "edit"
+      },
+      "AU019": {
+        "sourceArgumentUnitId": "AU019",
+        "reviewDecisionKey": "CF1-F04:argument:AU019",
+        "operation": "accept"
+      },
+      "AU020": {
+        "sourceArgumentUnitId": "AU020",
+        "reviewDecisionKey": "CF1-F04:argument:AU020",
+        "operation": "edit"
+      },
+      "AU021": {
+        "sourceArgumentUnitId": "AU021",
+        "reviewDecisionKey": "CF1-F04:argument:AU021",
+        "operation": "edit"
+      },
+      "AU022": {
+        "sourceArgumentUnitId": "AU022",
+        "reviewDecisionKey": "CF1-F04:argument:AU022",
+        "operation": "edit"
+      },
+      "AU023": {
+        "sourceArgumentUnitId": "AU023",
+        "reviewDecisionKey": "CF1-F04:argument:AU023",
+        "operation": "edit"
+      },
+      "AU024": {
+        "sourceArgumentUnitId": "AU024",
+        "reviewDecisionKey": "CF1-F04:argument:AU024",
+        "operation": "accept"
+      },
+      "AU025": {
+        "sourceArgumentUnitId": "AU025",
+        "reviewDecisionKey": "CF1-F04:argument:AU025",
+        "operation": "accept"
+      },
+      "AU026": {
+        "sourceArgumentUnitId": "AU026",
+        "reviewDecisionKey": "CF1-F04:argument:AU026",
+        "operation": "edit"
+      },
+      "AU027": {
+        "sourceArgumentUnitId": "AU027",
+        "reviewDecisionKey": "CF1-F04:argument:AU027",
+        "operation": "accept"
+      },
+      "AU028": {
+        "sourceArgumentUnitId": "AU028",
+        "reviewDecisionKey": "CF1-F04:argument:AU028",
+        "operation": "edit"
+      },
+      "AU029": {
+        "sourceArgumentUnitId": "AU029",
+        "reviewDecisionKey": "CF1-F04:argument:AU029",
+        "operation": "edit"
+      },
+      "AU030": {
+        "sourceArgumentUnitId": "AU030",
+        "reviewDecisionKey": "CF1-F04:argument:AU030",
+        "operation": "accept"
+      },
+      "AU031": {
+        "sourceArgumentUnitId": "AU031",
+        "reviewDecisionKey": "CF1-F04:argument:AU031",
+        "operation": "edit"
+      },
+      "AU032": {
+        "sourceArgumentUnitId": "AU032",
+        "reviewDecisionKey": "CF1-F04:argument:AU032",
+        "operation": "edit"
+      },
+      "AU033": {
+        "sourceArgumentUnitId": "AU033",
+        "reviewDecisionKey": "CF1-F04:argument:AU033",
+        "operation": "edit"
+      },
+      "AU034": {
+        "sourceArgumentUnitId": "AU034",
+        "reviewDecisionKey": "CF1-F04:argument:AU034",
+        "operation": "edit"
+      },
+      "AU035": {
+        "sourceArgumentUnitId": "AU035",
+        "reviewDecisionKey": "CF1-F04:argument:AU035",
+        "operation": "edit"
+      },
+      "AU036": {
+        "sourceArgumentUnitId": "AU036",
+        "reviewDecisionKey": "CF1-F04:argument:AU036",
+        "operation": "edit"
+      },
+      "AU037-S01": {
+        "sourceArgumentUnitId": "AU037",
+        "reviewDecisionKey": "CF1-F04:argument:AU037",
+        "operation": "split",
+        "childOrdinal": 1,
+        "childCount": 2
+      },
+      "AU037-S02": {
+        "sourceArgumentUnitId": "AU037",
+        "reviewDecisionKey": "CF1-F04:argument:AU037",
+        "operation": "split",
+        "childOrdinal": 2,
+        "childCount": 2
+      },
+      "AU038": {
+        "sourceArgumentUnitId": "AU038",
+        "reviewDecisionKey": "CF1-F04:argument:AU038",
+        "operation": "accept"
+      },
+      "AU039": {
+        "sourceArgumentUnitId": "AU039",
+        "reviewDecisionKey": "CF1-F04:argument:AU039",
+        "operation": "edit"
+      },
+      "AU040": {
+        "sourceArgumentUnitId": "AU040",
+        "reviewDecisionKey": "CF1-F04:argument:AU040",
+        "operation": "edit"
+      },
+      "AU041-S01": {
+        "sourceArgumentUnitId": "AU041",
+        "reviewDecisionKey": "CF1-F04:argument:AU041",
+        "operation": "split",
+        "childOrdinal": 1,
+        "childCount": 2
+      },
+      "AU041-S02": {
+        "sourceArgumentUnitId": "AU041",
+        "reviewDecisionKey": "CF1-F04:argument:AU041",
+        "operation": "split",
+        "childOrdinal": 2,
+        "childCount": 2
+      },
+      "AU042": {
+        "sourceArgumentUnitId": "AU042",
+        "reviewDecisionKey": "CF1-F04:argument:AU042",
+        "operation": "edit"
+      },
+      "AU043": {
+        "sourceArgumentUnitId": "AU043",
+        "reviewDecisionKey": "CF1-F04:argument:AU043",
+        "operation": "accept"
+      },
+      "AU044-S01": {
+        "sourceArgumentUnitId": "AU044",
+        "reviewDecisionKey": "CF1-F04:argument:AU044",
+        "operation": "split",
+        "childOrdinal": 1,
+        "childCount": 2
+      },
+      "AU044-S02": {
+        "sourceArgumentUnitId": "AU044",
+        "reviewDecisionKey": "CF1-F04:argument:AU044",
+        "operation": "split",
+        "childOrdinal": 2,
+        "childCount": 2
+      }
+    },
+    "sourceArgumentReplacementMap": {
+      "AU001": [
+        "AU001"
+      ],
+      "AU002": [
+        "AU002"
+      ],
+      "AU003": [
+        "AU003"
+      ],
+      "AU004": [
+        "AU004"
+      ],
+      "AU005": [
+        "AU005"
+      ],
+      "AU006": [
+        "AU006"
+      ],
+      "AU007": [
+        "AU007"
+      ],
+      "AU008": [
+        "AU008"
+      ],
+      "AU009": [
+        "AU009"
+      ],
+      "AU010": [
+        "AU010"
+      ],
+      "AU011": [
+        "AU011"
+      ],
+      "AU012": [
+        "AU012"
+      ],
+      "AU013": [
+        "AU013"
+      ],
+      "AU014": [
+        "AU014"
+      ],
+      "AU015": [
+        "AU015"
+      ],
+      "AU016": [
+        "AU016"
+      ],
+      "AU017": [
+        "AU017"
+      ],
+      "AU018": [
+        "AU018"
+      ],
+      "AU019": [
+        "AU019"
+      ],
+      "AU020": [
+        "AU020"
+      ],
+      "AU021": [
+        "AU021"
+      ],
+      "AU022": [
+        "AU022"
+      ],
+      "AU023": [
+        "AU023"
+      ],
+      "AU024": [
+        "AU024"
+      ],
+      "AU025": [
+        "AU025"
+      ],
+      "AU026": [
+        "AU026"
+      ],
+      "AU027": [
+        "AU027"
+      ],
+      "AU028": [
+        "AU028"
+      ],
+      "AU029": [
+        "AU029"
+      ],
+      "AU030": [
+        "AU030"
+      ],
+      "AU031": [
+        "AU031"
+      ],
+      "AU032": [
+        "AU032"
+      ],
+      "AU033": [
+        "AU033"
+      ],
+      "AU034": [
+        "AU034"
+      ],
+      "AU035": [
+        "AU035"
+      ],
+      "AU036": [
+        "AU036"
+      ],
+      "AU037": [
+        "AU037-S01",
+        "AU037-S02"
+      ],
+      "AU038": [
+        "AU038"
+      ],
+      "AU039": [
+        "AU039"
+      ],
+      "AU040": [
+        "AU040"
+      ],
+      "AU041": [
+        "AU041-S01",
+        "AU041-S02"
+      ],
+      "AU042": [
+        "AU042"
+      ],
+      "AU043": [
+        "AU043"
+      ],
+      "AU044": [
+        "AU044-S01",
+        "AU044-S02"
+      ]
+    }
+  }
+}

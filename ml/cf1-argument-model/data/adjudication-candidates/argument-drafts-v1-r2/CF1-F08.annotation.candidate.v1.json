@@ -1,0 +1,749 @@
+{
+  "schemaVersion": "cf1.argumentAnnotation.v1",
+  "fixture": {
+    "fixtureId": "CF1-F08",
+    "fixtureRevision": 1,
+    "fixtureClass": "short_factual_report",
+    "title": "Magnitude 6.2 earthquake shakes part of northern Japan",
+    "articlePath": "backend/test/claim-foundry/fixtures/CF1-F08/article.json",
+    "evaluatorKeyPath": "backend/test/claim-foundry/prompt-evaluation-keys/CF1-F08.json",
+    "chatDraftPromptPath": "ml/cf1-argument-model/data/annotation-prompts/CF1-F08.chat-prompt.md"
+  },
+  "adjudication": {
+    "status": "draft",
+    "primaryAnnotatorId": null,
+    "independentReviewerId": null,
+    "startedAt": null,
+    "approvedAt": null,
+    "notes": "Compiled from reviewed model draft. Split children, affected relations, consistency findings, rubric coverage, and evidence targets remain subject to focused review.\nAccept. This is a neutral factual report with no argumentative thesis; preserve the 6.2/6.1 source difference.",
+    "sourceReviewSchemaVersion": "cf1.argumentDraftReviewDecisions.v1",
+    "sourceReviewExportedAt": "2026-07-22T14:01:25.286Z"
+  },
+  "orientation": {
+    "theme": "A magnitude-6-class earthquake in Hokkaido, its measured location and depth, and official confirmation that it caused no damage, casualties, tsunami advisory, or change to an existing megaquake-awareness period.",
+    "thesis": "No argumentative thesis is present; the report neutrally states that a moderate earthquake struck northern Japan without reported damage or casualties and was outside the area covered by a recent megaquake advisory.",
+    "thesisStatus": "absent",
+    "thesisHinge": {
+      "proposition": "The earthquake caused no damage or casualties and did not alter the existing megaquake advisory arrangements.",
+      "ifSupportedEffectOnThesis": "neutral",
+      "ifRefutedEffectOnThesis": "neutral"
+    },
+    "basisSourceUnitIds": [
+      "U0001",
+      "U0002",
+      "U0003",
+      "U0004",
+      "U0005",
+      "U0007"
+    ],
+    "notes": "This is a compact factual report. The AP/JMA magnitude 6.2 description and USGS magnitude 6.1 measurement are preserved as a measurement difference, not forced into a contradiction."
+  },
+  "passageCoverage": [
+    {
+      "coverageId": "COV001",
+      "sourceUnitIds": [
+        "U0001"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU001",
+        "AU002",
+        "AU003"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV002",
+      "sourceUnitIds": [
+        "U0002"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU004"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV003",
+      "sourceUnitIds": [
+        "U0003"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU005"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV004",
+      "sourceUnitIds": [
+        "U0004"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU005"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV005",
+      "sourceUnitIds": [
+        "U0005"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU006"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV006",
+      "sourceUnitIds": [
+        "U0006"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU007"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    },
+    {
+      "coverageId": "COV007",
+      "sourceUnitIds": [
+        "U0007"
+      ],
+      "classification": "material_assertion_present",
+      "argumentUnitIds": [
+        "AU008",
+        "AU009"
+      ],
+      "basis": "This source unit grounds the listed material assertion(s)."
+    }
+  ],
+  "argumentUnits": [
+    {
+      "argumentUnitId": "AU001",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0001"
+        ],
+        "verbatimExcerpt": "TOKYO (AP) — A magnitude 6.2 earthquake shook part of northern Japan early Monday, but there was no damage or casualties."
+      },
+      "canonicalAtomicProposition": "A magnitude 6.2 earthquake struck part of northern Japan early Monday.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "institution",
+        "name": "Associated Press report",
+        "sourceUnitIds": [
+          "U0001"
+        ],
+        "basis": "The proposition is supplied by Associated Press report in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "pillar",
+        "basis": "The article presents this proposition as reported_neutral and uses it as pillar."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU002",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0001"
+        ],
+        "verbatimExcerpt": "TOKYO (AP) — A magnitude 6.2 earthquake shook part of northern Japan early Monday, but there was no damage or casualties."
+      },
+      "canonicalAtomicProposition": "No damage was reported from the earthquake.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "institution",
+        "name": "Associated Press report",
+        "sourceUnitIds": [
+          "U0001"
+        ],
+        "basis": "The proposition is supplied by Associated Press report in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as reported_neutral and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU003",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0001"
+        ],
+        "verbatimExcerpt": "TOKYO (AP) — A magnitude 6.2 earthquake shook part of northern Japan early Monday, but there was no damage or casualties."
+      },
+      "canonicalAtomicProposition": "No casualties were reported from the earthquake.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "institution",
+        "name": "Associated Press report",
+        "sourceUnitIds": [
+          "U0001"
+        ],
+        "basis": "The proposition is supplied by Associated Press report in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as reported_neutral and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU004",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0002"
+        ],
+        "verbatimExcerpt": "No tsunami advisory was issued by the Japan Meteorological Agency."
+      },
+      "canonicalAtomicProposition": "The Japan Meteorological Agency issued no tsunami advisory for the earthquake.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "institution",
+        "name": "Japan Meteorological Agency",
+        "sourceUnitIds": [
+          "U0002"
+        ],
+        "basis": "The proposition is supplied by Japan Meteorological Agency in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as reported_neutral and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU005",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0003",
+          "U0004"
+        ],
+        "verbatimExcerpt": "The inland quake struck 18 kilometers (11 miles) west of the small town of Sarabetsu on Japan’s northernmost main island of Hokkaido at a depth of 81 kilometers (50 miles), according to the U.S. Geological Survey."
+      },
+      "canonicalAtomicProposition": "The earthquake occurred about 18 kilometers west of Sarabetsu, Hokkaido, at a depth of about 81 kilometers.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "institution",
+        "name": "U.S. Geological Survey",
+        "sourceUnitIds": [
+          "U0003",
+          "U0004"
+        ],
+        "basis": "The proposition is supplied by U.S. Geological Survey in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as reported_neutral and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU006",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0005"
+        ],
+        "verbatimExcerpt": "It measured the quake’s strength at 6.1 magnitude."
+      },
+      "canonicalAtomicProposition": "The U.S. Geological Survey measured the earthquake at magnitude 6.1.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "institution",
+        "name": "U.S. Geological Survey",
+        "sourceUnitIds": [
+          "U0005"
+        ],
+        "basis": "The proposition is supplied by U.S. Geological Survey in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "qualification",
+        "basis": "The article presents this proposition as reported_neutral and uses it as qualification."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept this qualification or limitation as a distinct node with its current scope."
+    },
+    {
+      "argumentUnitId": "AU007",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0006"
+        ],
+        "verbatimExcerpt": "A week ago, a 7.7 magnitude offshore earthquake prompted Japan to issue an advisory of a slightly higher risk of a possible megaquake for the nation’s northeastern coastal areas."
+      },
+      "canonicalAtomicProposition": "One week earlier, a magnitude 7.7 offshore earthquake prompted an advisory about a slightly increased risk of a possible megaquake in northeastern coastal Japan.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "institution",
+        "name": "Associated Press report",
+        "sourceUnitIds": [
+          "U0006"
+        ],
+        "basis": "The proposition is supplied by Associated Press report in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    },
+    {
+      "argumentUnitId": "AU008",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0007"
+        ],
+        "verbatimExcerpt": "The JMA said Monday’s quake was outside of the area subject to a megaquake advisory and that the special awareness week is set to end as planned."
+      },
+      "canonicalAtomicProposition": "The Japan Meteorological Agency said Monday’s earthquake was outside the area covered by the megaquake advisory.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "institution",
+        "name": "Japan Meteorological Agency",
+        "sourceUnitIds": [
+          "U0007"
+        ],
+        "basis": "The proposition is supplied by Japan Meteorological Agency in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "pillar_support",
+        "basis": "The article presents this proposition as reported_neutral and uses it as pillar_support."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": true,
+        "basis": "Central to the article’s thesis or a necessary linked opponent, rebuttal, qualification, or contradiction."
+      },
+      "notes": "Adjudication: Accept the source-grounded substantive assertion and its current article treatment."
+    },
+    {
+      "argumentUnitId": "AU009",
+      "grounding": {
+        "sourceUnitIds": [
+          "U0007"
+        ],
+        "verbatimExcerpt": "The JMA said Monday’s quake was outside of the area subject to a megaquake advisory and that the special awareness week is set to end as planned."
+      },
+      "canonicalAtomicProposition": "The Japan Meteorological Agency said the special awareness week would end as planned.",
+      "scopeQualifiers": [],
+      "assertionSource": {
+        "kind": "institution",
+        "name": "Japan Meteorological Agency",
+        "sourceUnitIds": [
+          "U0007"
+        ],
+        "basis": "The proposition is supplied by Japan Meteorological Agency in the cited source unit(s)."
+      },
+      "articleTreatment": {
+        "contentStance": "neutral",
+        "deployment": "reported_neutral",
+        "role": "context",
+        "basis": "The article presents this proposition as reported_neutral and uses it as context."
+      },
+      "evidenceTarget": {
+        "disputedProposition": "",
+        "verificationQuestion": "",
+        "supportWouldRequire": [],
+        "refuteWouldRequire": [],
+        "qualifyWouldRequire": [],
+        "warrant": ""
+      },
+      "portfolio": {
+        "include": false,
+        "basis": "Material context or supporting detail retained for completeness but not necessary in a compact evaluation portfolio."
+      },
+      "notes": "Adjudication: Accept as source-grounded context. It remains outside the compact portfolio unless specifically selected."
+    }
+  ],
+  "relations": [
+    {
+      "relationId": "REL001",
+      "fromArgumentUnitId": "AU006",
+      "type": "qualifies",
+      "toArgumentUnitId": "AU001",
+      "sourceUnitIds": [
+        "U0001",
+        "U0005"
+      ],
+      "basis": "USGS reports a slightly different magnitude measurement from the headline value."
+    },
+    {
+      "relationId": "REL002",
+      "fromArgumentUnitId": "AU008",
+      "type": "qualifies",
+      "toArgumentUnitId": "AU007",
+      "sourceUnitIds": [
+        "U0006",
+        "U0007"
+      ],
+      "basis": "The current quake is distinguished from the earlier event and advisory area."
+    },
+    {
+      "relationId": "REL003",
+      "fromArgumentUnitId": "AU009",
+      "type": "elaborates",
+      "toArgumentUnitId": "AU008",
+      "sourceUnitIds": [
+        "U0007"
+      ],
+      "basis": "The unchanged end date follows the agency’s assessment that the quake was outside the advisory area."
+    }
+  ],
+  "consistencyFindings": [
+    {
+      "findingId": "CON001",
+      "argumentUnitIds": [
+        "AU001",
+        "AU006"
+      ],
+      "type": "not_contradiction",
+      "basis": "Magnitude 6.2 and magnitude 6.1 are measurements or report conventions from different sources and can coexist without a material contradiction."
+    },
+    {
+      "findingId": "CON002",
+      "argumentUnitIds": [
+        "AU007",
+        "AU008"
+      ],
+      "type": "not_contradiction",
+      "basis": "The prior offshore quake prompted the advisory; the later inland quake was reported outside the advisory area."
+    }
+  ],
+  "rubricCoverage": {
+    "targets": [
+      {
+        "targetId": "cf1-f08-concept-01",
+        "category": "required_concept",
+        "description": "A moderate earthquake occurred in northern Japan early Monday without reported damage or casualties.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f08-concept-02",
+        "category": "required_concept",
+        "description": "The report distinguishes the headline magnitude from the U.S. Geological Survey measurement rather than forcing one value.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f08-concept-03",
+        "category": "required_concept",
+        "description": "Location and depth are attributed to the U.S. Geological Survey.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f08-concept-04",
+        "category": "required_concept",
+        "description": "No tsunami advisory was issued, and the event was outside the area covered by an existing megaquake advisory.",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f08-region-01",
+        "category": "required_source_region",
+        "description": "event and immediate outcome",
+        "excerpt": "A magnitude 6.2 earthquake shook part of northern Japan early Monday, but there was no damage or casualties",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f08-region-02",
+        "category": "required_source_region",
+        "description": "tsunami status",
+        "excerpt": "No tsunami advisory was issued by the Japan Meteorological Agency",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f08-region-03",
+        "category": "required_source_region",
+        "description": "location and depth",
+        "excerpt": "18 kilometers (11 miles) west of the small town of Sarabetsu",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f08-region-04",
+        "category": "required_source_region",
+        "description": "USGS magnitude",
+        "excerpt": "It measured the quake’s strength at 6.1 magnitude",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      },
+      {
+        "targetId": "cf1-f08-region-05",
+        "category": "required_source_region",
+        "description": "advisory scope",
+        "excerpt": "Monday’s quake was outside of the area subject to a megaquake advisory",
+        "required": true,
+        "adjudicatorStatus": "unreviewed",
+        "argumentUnitIds": [],
+        "relationIds": [],
+        "notes": ""
+      }
+    ],
+    "prohibitedInterpretations": [
+      {
+        "prohibitionId": "cf1-f08-prohibited-01",
+        "description": "The report is padded into a developed argument with invented theme pillars.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f08-prohibited-02",
+        "description": "The 6.2 and 6.1 magnitude values are silently merged or one is discarded without attribution.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f08-prohibited-03",
+        "description": "Absence of reported damage or casualties is rewritten as proof that no effects could later be discovered.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f08-prohibited-04",
+        "description": "No tsunami advisory is rewritten as a claim that a tsunami was physically impossible.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f08-prohibited-05",
+        "description": "The prior 7.7 offshore earthquake is treated as the same event as Monday’s inland earthquake.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      },
+      {
+        "prohibitionId": "cf1-f08-prohibited-06",
+        "description": "The contextual megaquake advisory is presented as applying to Monday’s quake.",
+        "adjudicatorStatus": "unreviewed",
+        "notes": ""
+      }
+    ],
+    "inheritedReviewNotes": [
+      "A proportionate package should contain only a few selected factual claims and no manufactured argumentative structure.",
+      "Preserve actor, time, place, distance, depth, magnitude, and agency attribution qualifiers."
+    ]
+  },
+  "compilation": {
+    "schemaVersion": "cf1.adjudicationCompilation.v1",
+    "generatedAt": "2026-07-22T14:44:26.830Z",
+    "sourceDraftSchemaVersion": "cf1.argumentDraft.v1",
+    "sourceDraftSha256": "81ecb08aa66994837e5af88525cd81a4705acb8fe9e10a69ce7efaf4821fe40b",
+    "sourceFormSha256": "346500ddc32e894d12f96cbf8be92a1393882f96f87c9d9768e48a61b94bb139",
+    "reviewSha256": "8f61246c67cb5d1d02d61ea6e0acb87d5f66a6905aea6d89a16f08e2f656d7ef",
+    "evidenceTargetsApproved": false,
+    "lineageByArgumentUnitId": {
+      "AU001": {
+        "sourceArgumentUnitId": "AU001",
+        "reviewDecisionKey": "CF1-F08:argument:AU001",
+        "operation": "accept"
+      },
+      "AU002": {
+        "sourceArgumentUnitId": "AU002",
+        "reviewDecisionKey": "CF1-F08:argument:AU002",
+        "operation": "accept"
+      },
+      "AU003": {
+        "sourceArgumentUnitId": "AU003",
+        "reviewDecisionKey": "CF1-F08:argument:AU003",
+        "operation": "accept"
+      },
+      "AU004": {
+        "sourceArgumentUnitId": "AU004",
+        "reviewDecisionKey": "CF1-F08:argument:AU004",
+        "operation": "accept"
+      },
+      "AU005": {
+        "sourceArgumentUnitId": "AU005",
+        "reviewDecisionKey": "CF1-F08:argument:AU005",
+        "operation": "accept"
+      },
+      "AU006": {
+        "sourceArgumentUnitId": "AU006",
+        "reviewDecisionKey": "CF1-F08:argument:AU006",
+        "operation": "accept"
+      },
+      "AU007": {
+        "sourceArgumentUnitId": "AU007",
+        "reviewDecisionKey": "CF1-F08:argument:AU007",
+        "operation": "accept"
+      },
+      "AU008": {
+        "sourceArgumentUnitId": "AU008",
+        "reviewDecisionKey": "CF1-F08:argument:AU008",
+        "operation": "accept"
+      },
+      "AU009": {
+        "sourceArgumentUnitId": "AU009",
+        "reviewDecisionKey": "CF1-F08:argument:AU009",
+        "operation": "accept"
+      }
+    },
+    "sourceArgumentReplacementMap": {
+      "AU001": [
+        "AU001"
+      ],
+      "AU002": [
+        "AU002"
+      ],
+      "AU003": [
+        "AU003"
+      ],
+      "AU004": [
+        "AU004"
+      ],
+      "AU005": [
+        "AU005"
+      ],
+      "AU006": [
+        "AU006"
+      ],
+      "AU007": [
+        "AU007"
+      ],
+      "AU008": [
+        "AU008"
+      ],
+      "AU009": [
+        "AU009"
+      ]
+    }
+  }
+}

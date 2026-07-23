@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "cf1.adjudicationResolutions.v1",
+  "resolutions": {
+    "CF1-F03:argument:AU013": {
+      "decision": "accept",
+      "notes": "Explicit adjudicator resolution: retain AU013 as the article's thesis-level characterization of Jefferson County Public Health's claims. The prior remove decision conflicted with the reviewer note. Preserve the existing assertion and portfolio status unless changed in a later focused review."
+    }
+  }
+}
