@@ -57,8 +57,9 @@ export function renderCf2Html(result) {
       <td>${escapeHtml(assertion.articleTreatment)}</td>
       <td>${escapeHtml(effectLabel(assertion.effectIfTrue))}</td>
       <td>${escapeHtml(assertion.scoreTransform)}</td>
+      <td>${escapeHtml(assertion.selectionBasis ?? "thesis_effect")}</td>
     </tr>
-    <tr><td></td><td colspan="8"><details>
+    <tr><td></td><td colspan="9"><details>
       <summary>Raw candidate, grounding, and local context</summary>
       <p><strong>Call A:</strong> ${escapeHtml(assertion.rawAssertion)}</p>
       <p><strong>Surface assertion:</strong> ${escapeHtml(assertion.surfaceAssertion ?? assertion.rawAssertion)}</p>
@@ -156,7 +157,7 @@ export function renderCf2Html(result) {
   <h2>Final assertions</h2>
   <table><thead><tr><th>ID</th><th>Assertion</th><th>Call B source</th>
   <th>Recovered supplier</th><th>Evidence anchors</th><th>Article treatment</th>
-  <th>Thesis effect</th><th>Host transform</th></tr></thead>
+  <th>Thesis effect</th><th>Host transform</th><th>Selection basis</th></tr></thead>
   <tbody>${rows}</tbody></table>
   ${call("Call A · discovery", result.calls.callA)}
   ${call("Call B · finalization", result.calls.callB)}
@@ -172,7 +173,8 @@ export function writeCf2Artifacts(result, outDir) {
     "layerTargetAudit", "callBSourceName", "callBSourceKind",
     "sourceName", "sourceKind", "sourceNameOrigin", "attributionBasis", "evidenceAnchors",
     "evidenceAnchorAudit",
-    "articleTreatment", "effectIfTrue", "scoreTransform", "groundingUnitIds",
+    "articleTreatment", "effectIfTrue", "scoreTransform", "selectionBasis",
+    "groundingUnitIds",
     "groundingAudit", "sourceUnitIds", "rawAssertion",
   ];
   const csv = [

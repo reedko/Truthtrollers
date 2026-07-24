@@ -26,6 +26,7 @@ const callCModel = option("--call-c-model", "gpt-4.1-mini");
 const candidateMaximum = Number(option("--candidate-maximum", "18"));
 const portfolioMaximum = Number(option("--portfolio-maximum", "12"));
 const candidateFailureMode = option("--candidate-failure-mode", "strict");
+const selectionPolicy = option("--selection-policy", "effect_only");
 const timeoutMs = Number(option("--timeout-ms", "180000"));
 const replayCallAPath = option("--replay-call-a", null);
 const replayCallBPath = option("--replay-call-b", null);
@@ -96,7 +97,8 @@ mkdirSync(outDir, { recursive: true });
 console.log(`CF2 V6 ${fixture}: ${callAModel} Chat → ${callBModel} decomposition`
   + ` → ${callCModel} evidence anchors`
   + ` · candidate max ${candidateMaximum} / portfolio max ${portfolioMaximum}`
-  + ` · candidate failures ${candidateFailureMode}`);
+  + ` · candidate failures ${candidateFailureMode}`
+  + ` · selection ${selectionPolicy}`);
 const result = await runCf2V6({
   rawArticle,
   callARunner,
@@ -108,6 +110,7 @@ const result = await runCf2V6({
   candidateMaximum,
   portfolioMaximum,
   candidateFailureMode,
+  selectionPolicy,
   timeoutMs,
   seed,
   onProgress: (event) => {

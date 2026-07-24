@@ -90,6 +90,16 @@ node backend/experiments/cf2/v6/run.mjs \
 See `C30_FINDINGS_2026-07-24.md` for the F01/F02/F03 results. Default V6 remains
 C18/P12 with strict candidate validation.
 
+The optional host-only treatment fallback is enabled with:
+
+```bash
+--selection-policy treatment_fallback
+```
+
+It always admits challenged assertions, then uses adopted `no_effect` assertions
+only to fill an otherwise underfull portfolio. It never changes the model's
+effect label and never rescues `reported + no_effect`.
+
 ## Run
 
 ```bash

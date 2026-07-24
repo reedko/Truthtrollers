@@ -208,6 +208,59 @@ export function selectCf2Portfolio(assertions, sourceUnits, maximum = 12) {
   return assertions.filter((assertion) => selectedIds.has(assertion.candidateId));
 }
 
+export function selectCf2PortfolioWithTreatmentFallback(
+  assertions,
+  sourceUnits,
+  maximum = 12,
+) {
+  const primary = assertions.filter((assertion) =>
+    assertion.effectIfTrue !== "no_effect"
+    || assertion.articleTreatment === "challenged");
+  const opponent = primary.filter((assertion) =>
+    assertion.articleTreatment === "challenged"
+    || assertion.effectIfTrue === "weakens");
+  const other = primary.filter((assertion) =>
+    assertion.articleTreatment !== "challenged"
+    && assertion.effectIfTrue !== "weakens");
+  const selectedOpponent = balancedTake(opponent, maximum, sourceUnits);
+  const selectedOther = balancedTake(
+    other,
+    maximum - selectedOpponent.length,
+    sourceUnits,
+  );
+  const selectedPrimary = [...selectedOpponent, ...selectedOther];
+  const selectedIds = new Set(selectedPrimary
+    .map((assertion) => assertion.candidateId));
+  const fallbackPool = assertions.filter((assertion) =>
+    !selectedIds.has(assertion.candidateId)
+    && assertion.effectIfTrue === "no_effect"
+    && assertion.articleTreatment === "adopted");
+  const selectedFallback = balancedTake(
+    fallbackPool,
+    maximum - selectedIds.size,
+    sourceUnits,
+  );
+  for (const assertion of selectedFallback) {
+    selectedIds.add(assertion.candidateId);
+  }
+  const fallbackIds = new Set(selectedFallback
+    .map((assertion) => assertion.candidateId));
+  return assertions
+    .filter((assertion) => selectedIds.has(assertion.candidateId))
+    .map((assertion) => {
+      let selectionBasis = "thesis_effect";
+      if (fallbackIds.has(assertion.candidateId)) {
+        selectionBasis = "adopted_underfill_fallback";
+      } else if (assertion.effectIfTrue === "no_effect"
+        && assertion.articleTreatment === "challenged") {
+        selectionBasis = "challenged_override_no_effect";
+      } else if (assertion.articleTreatment === "challenged") {
+        selectionBasis = "thesis_effect_and_challenged";
+      }
+      return { ...assertion, selectionBasis };
+    });
+}
+
 function callMetadata(prompt, result, requestedModel) {
   const raw = result.rawResponse ?? {};
   return {

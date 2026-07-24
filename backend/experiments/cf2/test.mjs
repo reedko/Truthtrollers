@@ -17,6 +17,7 @@ import {
   normalizeFinalization,
   runCf2,
   selectCf2Portfolio,
+  selectCf2PortfolioWithTreatmentFallback,
   transformForEffect,
 } from "./pipeline.js";
 import { repairDiscoveryGrounding } from "./grounding.js";
@@ -220,6 +221,35 @@ test("CF2 host preserves challenged judgments and balances remaining portfolio",
   const selected = selectCf2Portfolio(assertions, sourceUnits, 4);
   assert.deepEqual(selected.map((assertion) => assertion.candidateId),
     ["C01", "C02", "C03", "C04"]);
+});
+
+test("CF2 treatment fallback rescues challenged claims and adopted underfill only", () => {
+  const sourceUnits = Array.from({ length: 8 }, (_, index) => ({
+    unitId: `U${String(index + 1).padStart(4, "0")}`,
+    text: `Unit ${index + 1}`,
+  }));
+  const assertions = [
+    { candidateId: "C01", articleTreatment: "challenged", effectIfTrue: "no_effect",
+      groundingUnitIds: ["U0001"] },
+    { candidateId: "C02", articleTreatment: "adopted", effectIfTrue: "strengthens",
+      groundingUnitIds: ["U0003"] },
+    { candidateId: "C03", articleTreatment: "adopted", effectIfTrue: "no_effect",
+      groundingUnitIds: ["U0005"] },
+    { candidateId: "C04", articleTreatment: "reported", effectIfTrue: "no_effect",
+      groundingUnitIds: ["U0007"] },
+  ];
+  const selected = selectCf2PortfolioWithTreatmentFallback(
+    assertions,
+    sourceUnits,
+    4,
+  );
+  assert.deepEqual(selected.map((assertion) => assertion.candidateId),
+    ["C01", "C02", "C03"]);
+  assert.deepEqual(selected.map((assertion) => assertion.selectionBasis), [
+    "challenged_override_no_effect",
+    "thesis_effect",
+    "adopted_underfill_fallback",
+  ]);
 });
 
 test("CF2 attribution packets expand context and separate supplier from evidence anchors", () => {

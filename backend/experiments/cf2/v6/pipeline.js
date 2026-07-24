@@ -8,6 +8,7 @@ import {
   normalizeDiscovery,
   prepareCf2Article,
   selectCf2Portfolio,
+  selectCf2PortfolioWithTreatmentFallback,
   transformForEffect,
 } from "../pipeline.js";
 import {
@@ -442,6 +443,7 @@ export async function runCf2V6({
   candidateMaximum = 18,
   portfolioMaximum = 12,
   candidateFailureMode = "strict",
+  selectionPolicy = "effect_only",
   timeoutMs = 180_000,
   seed = undefined,
   clock = () => new Date(),
@@ -545,11 +547,17 @@ export async function runCf2V6({
       rawOutput: callBResult.output,
     },
   });
-  const selectedAssertions = selectCf2Portfolio(
-    candidateJudgments,
-    sourceUnits,
-    portfolioMaximum,
-  );
+  const selectedAssertions = selectionPolicy === "treatment_fallback"
+    ? selectCf2PortfolioWithTreatmentFallback(
+      candidateJudgments,
+      sourceUnits,
+      portfolioMaximum,
+    )
+    : selectCf2Portfolio(
+      candidateJudgments,
+      sourceUnits,
+      portfolioMaximum,
+    );
   const attributionPackets = buildAttributionPackets(
     selectedAssertions,
     candidates,
@@ -621,6 +629,7 @@ export async function runCf2V6({
       portfolioMaximum,
       articleLengthDependent: false,
       candidateFailureMode,
+      selectionPolicy,
     },
     candidates,
     candidateJudgments,

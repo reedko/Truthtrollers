@@ -76,6 +76,8 @@ const summaryRows = runs.map((run) => {
 
 const runSections = runs.map((run) => {
   const selectedIds = new Set(run.result.assertions.map((row) => row.candidateId));
+  const selectedById = new Map(run.result.assertions
+    .map((row) => [row.candidateId, row]));
   const rows = run.result.candidateJudgments.map((row) => `<tr class="${rowClass(row)}">
     <td>${selectedIds.has(row.candidateId) ? "✓" : ""}</td>
     <td>${escapeHtml(row.candidateId)}</td>
@@ -84,6 +86,7 @@ const runSections = runs.map((run) => {
     <td>${escapeHtml(row.sourceNameOrigin || "none")}</td>
     <td>${escapeHtml(row.articleTreatment)}</td>
     <td>${escapeHtml(row.effectIfTrue)}</td>
+    <td>${escapeHtml(selectedById.get(row.candidateId)?.selectionBasis ?? "")}</td>
     <td>${escapeHtml(row.groundingUnitIds.join(", "))}</td>
   </tr>`).join("\n");
   return `<section>
@@ -94,7 +97,7 @@ const runSections = runs.map((run) => {
     <details open><summary>All Call B judgments; ✓ means selected</summary>
       <table><thead><tr><th>Selected</th><th>ID</th><th>Assertion</th>
       <th>Source</th><th>Name origin</th><th>Treatment</th><th>If true</th>
-      <th>Grounding</th></tr></thead><tbody>${rows}</tbody></table>
+      <th>Selection basis</th><th>Grounding</th></tr></thead><tbody>${rows}</tbody></table>
     </details>
     <details><summary>Prompt and response provenance</summary>
       <pre>${escapeHtml(JSON.stringify({
