@@ -6,7 +6,9 @@ const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character
 })[character]);
 
 const csvCell = (value) => {
-  const string = Array.isArray(value) ? value.join(" | ") : String(value ?? "");
+  const string = Array.isArray(value)
+    ? value.map((item) => typeof item === "object" ? JSON.stringify(item) : item).join(" | ")
+    : String(value ?? "");
   return `"${string.replaceAll('"', '""')}"`;
 };
 
@@ -18,6 +20,17 @@ function sourceLabel(assertion) {
     return `${assertion.sourceName} (${kind})`;
   }
   return "Unknown";
+}
+
+function callBSourceLabel(assertion) {
+  if (!assertion.callBSourceName) return "Unknown";
+  return `${assertion.callBSourceName} (${assertion.callBSourceKind})`;
+}
+
+function evidenceAnchorLabel(assertion) {
+  if (!assertion.evidenceAnchors?.length) return "None";
+  return assertion.evidenceAnchors
+    .map((anchor) => `${anchor.name} (${anchor.kind})`).join("; ");
 }
 
 function effectLabel(value) {
@@ -32,21 +45,34 @@ export function renderCf2Html(result) {
       : assertion.effectIfTrue === "strengthens" ? "strengthens" : "neutral";
     const context = result.candidates.find((candidate) =>
       candidate.candidateId === assertion.candidateId)?.contextUnits ?? [];
+    const attributionPacket = result.attributionPackets.find((packet) =>
+      packet.candidateId === assertion.candidateId);
     return `<tr class="${className}">
       <td>${escapeHtml(assertion.candidateId)}</td>
       <td><strong>${escapeHtml(assertion.assertionText)}</strong></td>
+      <td>${escapeHtml(callBSourceLabel(assertion))}</td>
       <td>${escapeHtml(sourceLabel(assertion))}</td>
+      <td>${escapeHtml(evidenceAnchorLabel(assertion))}</td>
       <td>${escapeHtml(assertion.articleTreatment)}</td>
       <td>${escapeHtml(effectLabel(assertion.effectIfTrue))}</td>
       <td>${escapeHtml(assertion.scoreTransform)}</td>
     </tr>
-    <tr><td></td><td colspan="5"><details>
+    <tr><td></td><td colspan="8"><details>
       <summary>Raw candidate, grounding, and local context</summary>
       <p><strong>Call A:</strong> ${escapeHtml(assertion.rawAssertion)}</p>
       <p><strong>Assertion grounding:</strong> ${escapeHtml(assertion.groundingUnitIds.join(", "))}</p>
       <p><strong>Source grounding:</strong> ${escapeHtml(assertion.sourceUnitIds.join(", ") || "None")}</p>
       <p><strong>Source-name origin:</strong> ${escapeHtml(assertion.sourceNameOrigin || "None")}</p>
+      <p><strong>Attribution basis:</strong> ${escapeHtml(assertion.attributionBasis || "None")}</p>
+      <p><strong>Evidence anchors:</strong> ${escapeHtml(JSON.stringify(assertion.evidenceAnchors ?? []))}</p>
       <pre>${escapeHtml(context.map((unit) => `[${unit.unitId}] ${unit.text}`).join("\n"))}</pre>
+      <details><summary>Call C expanded attribution packet</summary>
+        <p><strong>Host-found candidates:</strong></p>
+        <pre>${escapeHtml(JSON.stringify(attributionPacket?.sourceCandidates ?? [], null, 2))}</pre>
+        <p><strong>Expanded occurrence context:</strong></p>
+        <pre>${escapeHtml((attributionPacket?.contextUnits ?? [])
+          .map((unit) => `[${unit.unitId}] ${unit.text}`).join("\n"))}</pre>
+      </details>
     </details></td></tr>`;
   }).join("\n");
   const call = (name, value) => `<section><h2>${name}</h2>
@@ -69,6 +95,21 @@ export function renderCf2Html(result) {
         schemaSha256: value.schemaSha256,
       }, null, 2))}</pre>
     </details></section>`;
+  const callRows = [
+    ["Call A", result.calls.callA, result.article.sourceUnitCount, result.candidates.length],
+    ["Call B", result.calls.callB, result.candidates.length, result.candidateJudgments.length],
+    ["Call C", result.calls.callC, result.assertions.length, result.recoveredAttributions.length],
+  ].map(([label, value, inputs, outputs]) => {
+    const usage = value.usage ?? {};
+    return `<tr><td>${label}</td><td>${escapeHtml(value.returnedModel)}</td>
+      <td>${inputs}</td><td>${outputs}</td><td>${(value.elapsedMs / 1000).toFixed(1)}s</td>
+      <td>${escapeHtml(usage.inputTokens ?? usage.input_tokens ?? "unknown")}</td>
+      <td>${escapeHtml(usage.outputTokens ?? usage.output_tokens ?? "unknown")}</td>
+      <td>${escapeHtml(usage.cachedInputTokens ?? usage.cached_input_tokens ?? 0)}</td>
+      <td>${escapeHtml(usage.totalTokens ?? usage.total_tokens ?? "unknown")}</td></tr>`;
+  }).join("\n");
+  const totalTokens = Object.values(result.calls).reduce((sum, value) =>
+    sum + (value.usage?.totalTokens ?? value.usage?.total_tokens ?? 0), 0);
   return `<!doctype html><html><head><meta charset="utf-8">
   <title>CF2 minimal fact-check docket</title>
   <style>
@@ -83,13 +124,22 @@ export function renderCf2Html(result) {
   Thesis: ${escapeHtml(result.thesisAssertion)}<br>
   ${result.candidates.length} Call A candidates → ${result.candidateJudgments.length} Call B judgments
   → ${result.assertions.length} host-selected assertions
-  · ${(result.elapsedMs / 1000).toFixed(1)}s</div>
+  → ${result.recoveredAttributions.length} Call C attributions<br>
+  ${Object.keys(result.calls).length} calls · ${(result.elapsedMs / 1000).toFixed(1)}s
+  · ${totalTokens.toLocaleString()} total tokens</div>
+  <h2>Call measurements</h2>
+  <table><thead><tr><th>Call</th><th>Model</th><th>Input work items</th>
+  <th>Output work items</th><th>Time</th><th>Input tokens</th><th>Output tokens</th>
+  <th>Cached input tokens</th><th>Total tokens</th></tr></thead>
+  <tbody>${callRows}</tbody></table>
   <h2>Final assertions</h2>
-  <table><thead><tr><th>ID</th><th>Assertion</th><th>Assertion source</th>
-  <th>Article treatment</th><th>Thesis effect</th><th>Host transform</th></tr></thead>
+  <table><thead><tr><th>ID</th><th>Assertion</th><th>Call B source</th>
+  <th>Recovered supplier</th><th>Evidence anchors</th><th>Article treatment</th>
+  <th>Thesis effect</th><th>Host transform</th></tr></thead>
   <tbody>${rows}</tbody></table>
   ${call("Call A · discovery", result.calls.callA)}
   ${call("Call B · finalization", result.calls.callB)}
+  ${call("Call C · attribution recovery", result.calls.callC)}
   </body></html>`;
 }
 
@@ -97,8 +147,10 @@ export function writeCf2Artifacts(result, outDir) {
   mkdirSync(outDir, { recursive: true });
   writeFileSync(path.join(outDir, "result.json"), `${JSON.stringify(result, null, 2)}\n`);
   const columns = [
-    "candidateId", "assertionText", "sourceName", "sourceKind", "sourceNameOrigin", "articleTreatment",
-    "effectIfTrue", "scoreTransform", "groundingUnitIds", "sourceUnitIds", "rawAssertion",
+    "candidateId", "assertionText", "callBSourceName", "callBSourceKind",
+    "sourceName", "sourceKind", "sourceNameOrigin", "attributionBasis", "evidenceAnchors",
+    "articleTreatment", "effectIfTrue", "scoreTransform", "groundingUnitIds",
+    "sourceUnitIds", "rawAssertion",
   ];
   const csv = [
     columns.join(","),

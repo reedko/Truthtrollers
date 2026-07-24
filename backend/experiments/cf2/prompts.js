@@ -1,4 +1,8 @@
-import { CF2_DISCOVERY_SCHEMA_V1, cf2FinalizationSchema } from "./schemas.js";
+import {
+  CF2_DISCOVERY_SCHEMA_V1,
+  cf2AttributionSchema,
+  cf2FinalizationSchema,
+} from "./schemas.js";
 
 function metadata(article = {}) {
   return [
@@ -117,5 +121,52 @@ ${metadata(article)}
 CANDIDATES AND LOCAL CONTEXT
 ${candidates.map(candidatePacket).join("\n\n")}`,
     responseSchema: cf2FinalizationSchema(candidateIds),
+  };
+}
+
+function attributionPacket(packet) {
+  return `ASSERTION ${packet.candidateId}
+Frozen assertion: ${packet.assertionText}
+Original source-preserving candidate: ${packet.rawAssertion}
+Call B source judgment: ${JSON.stringify(packet.callBSource)}
+Host-found source candidates: ${JSON.stringify(packet.sourceCandidates)}
+Relevant article units:
+${packet.contextUnits.map((unit) => `[${unit.unitId}] ${unit.text}`).join("\n")}`;
+}
+
+export function buildCf2AttributionPrompt({ article, packets }) {
+  const candidateIds = packets.map((packet) => packet.candidateId);
+  return {
+    system: `You resolve attribution for frozen factual assertions.
+
+Use only the supplied article excerpts and source candidates. Do not fact-check,
+rewrite, select, rank, or judge the assertions. Separate who supplies the complete
+proposition from studies, documents, datasets, or records merely cited as evidence.`,
+    user: `Return one attribution for every supplied assertion, in assertion-ID order.
+
+assertionSupplier:
+- Choose the person, institution, study, or document that supplies the complete frozen
+  proposition in the article.
+- Use article_voice only when the article's own narrative voice supplies the complete
+  proposition and no external source does.
+- Use unknown only when the supplied excerpts genuinely do not resolve the supplier.
+- A study, document, dataset, institution, or person cited as evidence is not
+  automatically the assertion supplier.
+
+evidenceAnchors:
+- Separately list named studies, documents, datasets, regulations, or other identifiable
+  works that the excerpts connect to the assertion and that could anchor evidence search.
+- Do not list the article byline merely because it is the assertion supplier.
+- Return an empty array when no named evidence anchor is present.
+
+Names and unit IDs must be grounded in the supplied packet. Host-found candidates are
+possibilities, not authoritative answers.
+
+ARTICLE BYLINE
+${(article.authors ?? []).join(", ") || "Not supplied"}
+
+ASSERTION PACKETS
+${packets.map(attributionPacket).join("\n\n")}`,
+    responseSchema: cf2AttributionSchema(candidateIds),
   };
 }

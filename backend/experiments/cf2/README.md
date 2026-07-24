@@ -14,18 +14,27 @@ Call B: thesis + candidates + deterministic local context
   -> one clean fact-check assertion and judgment per candidate
   -> article treatment
   -> effect if true
-  -> assertion source
+  -> preliminary assertion source
 
 Host
   -> validates lineage and uniqueness
   -> derives scoreTransform mechanically
   -> retains challenged or thesis-weakening assertions
   -> fills the remaining 12-item portfolio across article position
+  -> gathers repeated occurrences, wider context, byline, and named source candidates
+
+Call C: selected frozen assertions + attribution packets
+  -> assertion supplier
+  -> separately named evidence anchors
+
+Host
+  -> validates that names and unit IDs exist in each supplied packet
+  -> cannot change assertion, stance, treatment, transform, or selection
   -> writes result.json, claims.csv, and report.html
 ```
 
 Call A uses GPT-4o-mini Chat Completions by default. Call B uses GPT-4.1-mini
-Responses by default.
+Responses by default. Call C uses GPT-4.1-mini Responses by default.
 
 ## Deliberately absent
 
@@ -41,8 +50,8 @@ exact duplicates, attach local context, assign stable candidate IDs, and derive 
 transform from `effectIfTrue`. If the model explicitly chooses `article_voice`,
 the host may copy the already-supplied byline into an empty source-name slot.
 
-The host may not invent assertions, infer a source, infer stance from keywords,
-rewrite propositions, or create semantic backfills.
+The host may not invent assertions, choose the final attribution supplier, infer
+stance from keywords, rewrite propositions, or create semantic backfills.
 
 ## Run
 
@@ -57,6 +66,7 @@ Useful options:
 ```text
 --call-a-model gpt-4o-mini
 --call-b-model gpt-4.1-mini
+--call-c-model gpt-4.1-mini
 --timeout-ms 180000
 --seed 3724605090
 --out artifacts/claim-foundry/cf2/my-run

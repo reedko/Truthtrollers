@@ -1,7 +1,16 @@
 import { createHash } from "node:crypto";
 import { validateArticleInput } from "../../src/claim-foundry/validateArticleInput.js";
 import { articleDocumentFromText } from "../../src/claim-foundry/article-document/index.js";
-import { buildCf2DiscoveryPrompt, buildCf2FinalizationPrompt } from "./prompts.js";
+import {
+  applyRecoveredAttributions,
+  buildAttributionPackets,
+  normalizeAttributions,
+} from "./attribution.js";
+import {
+  buildCf2AttributionPrompt,
+  buildCf2DiscoveryPrompt,
+  buildCf2FinalizationPrompt,
+} from "./prompts.js";
 
 const normalized = (value) => String(value ?? "").trim().replace(/\s+/g, " ");
 const normalizedKey = (value) => normalized(value).toLocaleLowerCase();
@@ -214,8 +223,10 @@ export async function runCf2({
   rawArticle,
   callARunner,
   callBRunner,
+  callCRunner = callBRunner,
   callAModel = "gpt-4o-mini",
   callBModel = "gpt-4.1-mini",
+  callCModel = "gpt-4.1-mini",
   timeoutMs = 180_000,
   seed = undefined,
   clock = () => new Date(),
@@ -238,6 +249,7 @@ export async function runCf2({
   const discovery = normalizeDiscovery(callAResult.output, sourceUnits);
   onProgress({
     stage: "call_a_completed",
+    workItems: discovery.candidates.length,
     discovery,
     call: {
       ...callMetadata(callAPrompt, callAResult, callAModel),
@@ -264,6 +276,7 @@ export async function runCf2({
   const callBFinished = clock();
   onProgress({
     stage: "call_b_completed",
+    workItems: callBResult.output?.assertions?.length ?? null,
     call: {
       ...callMetadata(callBPrompt, callBResult, callBModel),
       elapsedMs: callBFinished.getTime() - callBStarted.getTime(),
@@ -273,10 +286,43 @@ export async function runCf2({
   const candidateJudgments = normalizeFinalization(callBResult.output, candidates, sourceUnits, {
     articleAuthors: article.authors ?? [],
   });
-  const assertions = selectCf2Portfolio(candidateJudgments, sourceUnits);
+  const selectedAssertions = selectCf2Portfolio(candidateJudgments, sourceUnits);
+  const attributionPackets = buildAttributionPackets(
+    selectedAssertions,
+    candidates,
+    sourceUnits,
+    article,
+  );
+  const callCPrompt = buildCf2AttributionPrompt({ article, packets: attributionPackets });
+  const callCStarted = clock();
+  const callCResult = await callCRunner.invokeStructured({
+    ...callCPrompt,
+    model: callCModel,
+    reasoningEffort: "none",
+    timeoutMs,
+    maximumAttempts: 1,
+    maxOutputTokens: 5_000,
+    store: false,
+  });
+  const callCFinished = clock();
+  onProgress({
+    stage: "call_c_completed",
+    workItems: callCResult.output?.attributions?.length ?? null,
+    call: {
+      ...callMetadata(callCPrompt, callCResult, callCModel),
+      elapsedMs: callCFinished.getTime() - callCStarted.getTime(),
+      rawOutput: callCResult.output,
+    },
+  });
+  const recoveredAttributions = normalizeAttributions(
+    callCResult.output,
+    attributionPackets,
+    article,
+  );
+  const assertions = applyRecoveredAttributions(selectedAssertions, recoveredAttributions);
   const finishedAt = clock();
   return {
-    architecture: "CF2_MINIMAL_FACT_DOCKET_V2",
+    architecture: "CF2_MINIMAL_FACT_DOCKET_V3_ATTRIBUTION_RECOVERY",
     article: {
       title: article.title,
       authors: article.authors ?? [],
@@ -288,6 +334,8 @@ export async function runCf2({
     thesisAssertion: discovery.thesisAssertion,
     candidates,
     candidateJudgments,
+    attributionPackets,
+    recoveredAttributions,
     assertions,
     calls: {
       callA: {
@@ -301,6 +349,12 @@ export async function runCf2({
         elapsedMs: callBFinished.getTime() - callBStarted.getTime(),
         prompt: callBPrompt,
         rawOutput: callBResult.output,
+      },
+      callC: {
+        ...callMetadata(callCPrompt, callCResult, callCModel),
+        elapsedMs: callCFinished.getTime() - callCStarted.getTime(),
+        prompt: callCPrompt,
+        rawOutput: callCResult.output,
       },
     },
     elapsedMs: finishedAt.getTime() - startedAt.getTime(),

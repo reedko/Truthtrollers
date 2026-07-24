@@ -25,6 +25,7 @@ const fixturePath = path.join(backend, "test/claim-foundry/fixtures", fixture, "
 const raw = JSON.parse(readFileSync(fixturePath, "utf8"));
 const callAModel = option("--call-a-model", "gpt-4o-mini");
 const callBModel = option("--call-b-model", "gpt-4.1-mini");
+const callCModel = option("--call-c-model", "gpt-4.1-mini");
 const timeoutMs = Number(option("--timeout-ms", "180000"));
 const seedValue = option("--seed", null);
 const seed = seedValue === null ? undefined : Number(seedValue);
@@ -43,24 +44,37 @@ const callARunner = createCf1ModelRunner({
 const callBRunner = createCf1ModelRunner({
   transport: createOpenAiResponsesCf1Transport(),
 });
+const callCRunner = createCf1ModelRunner({
+  transport: createOpenAiResponsesCf1Transport(),
+});
 
-console.log(`CF2 ${fixture}: ${callAModel} Chat → ${callBModel} Responses`);
+console.log(`CF2 ${fixture}: ${callAModel} Chat → ${callBModel} Responses → ${callCModel} attribution`);
 mkdirSync(outDir, { recursive: true });
 const progress = [];
 const result = await runCf2({
   rawArticle: raw.article ?? raw,
   callARunner,
   callBRunner,
+  callCRunner,
   callAModel,
   callBModel,
+  callCModel,
   timeoutMs,
   seed,
   onProgress(event) {
     progress.push(event);
     writeFileSync(path.join(outDir, "progress.json"), `${JSON.stringify(progress, null, 2)}\n`);
-    console.log(`${event.stage} · ${(event.call.elapsedMs / 1000).toFixed(1)}s`);
+    const usage = event.call.usage ?? {};
+    console.log(`${event.stage} · ${(event.call.elapsedMs / 1000).toFixed(1)}s`
+      + ` · ${event.workItems ?? "?"} outputs`
+      + ` · ${usage.inputTokens ?? "?"} in / ${usage.outputTokens ?? "?"} out`
+      + ` / ${usage.cachedInputTokens ?? 0} cached / ${usage.totalTokens ?? "?"} total`);
   },
 });
 writeCf2Artifacts(result, outDir);
-console.log(`${result.candidates.length} candidates → ${result.assertions.length} assertions`);
-console.log(`${(result.elapsedMs / 1000).toFixed(1)}s · ${outDir}`);
+const totalTokens = Object.values(result.calls)
+  .reduce((sum, call) => sum + (call.usage?.totalTokens ?? 0), 0);
+console.log(`${result.candidates.length} candidates → ${result.candidateJudgments.length} judgments`
+  + ` → ${result.assertions.length} assertions → ${result.recoveredAttributions.length} attributions`);
+console.log(`${Object.keys(result.calls).length} calls · ${(result.elapsedMs / 1000).toFixed(1)}s`
+  + ` · ${totalTokens} tokens · ${outDir}`);

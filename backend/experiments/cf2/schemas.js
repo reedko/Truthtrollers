@@ -91,3 +91,95 @@ export function cf2FinalizationSchema(candidateIds = []) {
     },
   };
 }
+
+export const CF2_ATTRIBUTION_SOURCE_KINDS = Object.freeze([
+  "person",
+  "institution",
+  "study",
+  "document",
+  "article_voice",
+  "unknown",
+]);
+
+export function cf2AttributionSchema(candidateIds = []) {
+  return {
+    name: "cf2_attribution_recovery_v1",
+    strict: true,
+    schema: {
+      type: "object",
+      additionalProperties: false,
+      required: ["attributions"],
+      properties: {
+        attributions: {
+          type: "array",
+          maxItems: 12,
+          items: {
+            type: "object",
+            additionalProperties: false,
+            required: [
+              "candidateId",
+              "supplierName",
+              "supplierKind",
+              "supplierUnitIds",
+              "supplierBasis",
+              "evidenceAnchors",
+            ],
+            properties: {
+              candidateId: { type: "string", enum: candidateIds },
+              supplierName: { type: ["string", "null"], maxLength: 300 },
+              supplierKind: {
+                type: "string",
+                enum: [...CF2_ATTRIBUTION_SOURCE_KINDS],
+              },
+              supplierUnitIds: {
+                type: "array",
+                maxItems: 12,
+                items: { type: "string", pattern: "^U[0-9]{4,}$" },
+              },
+              supplierBasis: {
+                type: "string",
+                enum: [
+                  "direct_attribution",
+                  "quotation_speaker",
+                  "document_statement",
+                  "article_voice",
+                  "unresolved",
+                ],
+              },
+              evidenceAnchors: {
+                type: "array",
+                maxItems: 6,
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["name", "kind", "unitIds"],
+                  properties: {
+                    name: { type: "string", minLength: 1, maxLength: 300 },
+                    kind: {
+                      type: "string",
+                      enum: [
+                        "person",
+                        "institution",
+                        "study",
+                        "document",
+                        "dataset",
+                        "regulation",
+                        "other",
+                      ],
+                    },
+                    unitIds: {
+                      type: "array",
+                      minItems: 1,
+                      maxItems: 12,
+                      items: { type: "string", pattern: "^U[0-9]{4,}$" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+}

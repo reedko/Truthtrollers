@@ -1,6 +1,15 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildCf2DiscoveryPrompt, buildCf2FinalizationPrompt } from "./prompts.js";
+import {
+  applyRecoveredAttributions,
+  buildAttributionPackets,
+  normalizeAttributions,
+} from "./attribution.js";
+import {
+  buildCf2AttributionPrompt,
+  buildCf2DiscoveryPrompt,
+  buildCf2FinalizationPrompt,
+} from "./prompts.js";
 import {
   attachLocalContext,
   normalizeDiscovery,
@@ -171,7 +180,62 @@ test("CF2 host preserves challenged judgments and balances remaining portfolio",
     ["C01", "C02", "C03", "C04"]);
 });
 
-test("CF2 pipeline makes exactly two injected calls and renders review details", async () => {
+test("CF2 attribution packets expand context and separate supplier from evidence anchors", () => {
+  const sourceUnits = Array.from({ length: 10 }, (_, index) => ({
+    unitId: `U${String(index + 1).padStart(4, "0")}`,
+    text: index === 0
+      ? "Institution A commissioned Study Alpha."
+      : index === 1
+        ? "Study Alpha reported fewer events."
+        : index === 5
+          ? "The treatment produces fewer events."
+          : `Context ${index + 1}.`,
+  }));
+  const candidates = [{
+    candidateId: "C01",
+    rawAssertion: "Institution A says the treatment produces fewer events.",
+    groundingUnitIds: ["U0006"],
+  }];
+  const assertions = [{
+    candidateId: "C01",
+    assertionText: "The treatment produces fewer events.",
+    groundingUnitIds: ["U0006"],
+    sourceName: "Institution A",
+    sourceKind: "institution",
+    sourceUnitIds: ["U0001"],
+    sourceNameOrigin: "model",
+    articleTreatment: "adopted",
+    effectIfTrue: "strengthens",
+    scoreTransform: "normal",
+  }];
+  const [packet] = buildAttributionPackets(assertions, candidates, sourceUnits, article);
+  assert.ok(packet.contextUnits.some((unit) => unit.unitId === "U0001"));
+  assert.ok(packet.sourceCandidates.some((candidate) =>
+    candidate.nameHint.includes("Institution A")));
+  const prompt = buildCf2AttributionPrompt({ article, packets: [packet] });
+  assert.doesNotMatch(prompt.user, /thesisAssertion|effectIfTrue|articleTreatment|scoreTransform/);
+  const recovered = normalizeAttributions({
+    attributions: [{
+      candidateId: "C01",
+      supplierName: "Institution A",
+      supplierKind: "institution",
+      supplierUnitIds: ["U0001"],
+      supplierBasis: "direct_attribution",
+      evidenceAnchors: [{
+        name: "Study Alpha",
+        kind: "study",
+        unitIds: ["U0001", "U0002"],
+      }],
+    }],
+  }, [packet], article);
+  const [merged] = applyRecoveredAttributions(assertions, recovered);
+  assert.equal(merged.sourceName, "Institution A");
+  assert.equal(merged.callBSourceName, "Institution A");
+  assert.equal(merged.evidenceAnchors[0].name, "Study Alpha");
+  assert.equal(merged.effectIfTrue, "strengthens");
+});
+
+test("CF2 pipeline makes exactly three injected calls and renders review details", async () => {
   const requests = [];
   const progress = [];
   const runner = (output) => ({
@@ -202,16 +266,28 @@ test("CF2 pipeline makes exactly two injected calls and renders review details",
         sourceUnitIds: ["U0001"],
       }],
     }),
+    callCRunner: runner({
+      attributions: [{
+        candidateId: "C01",
+        supplierName: "Institution A",
+        supplierKind: "institution",
+        supplierUnitIds: ["U0001"],
+        supplierBasis: "direct_attribution",
+        evidenceAnchors: [],
+      }],
+    }),
     clock: (() => {
       let time = 0;
       return () => new Date(time += 100);
     })(),
     onProgress: (event) => progress.push(event.stage),
   });
-  assert.equal(requests.length, 2);
-  assert.deepEqual(progress, ["call_a_completed", "call_b_completed"]);
+  assert.equal(requests.length, 3);
+  assert.deepEqual(progress, ["call_a_completed", "call_b_completed", "call_c_completed"]);
   assert.equal(result.assertions.length, 1);
+  assert.equal(result.assertions[0].sourceName, "Institution A");
   const html = renderCf2Html(result);
   assert.match(html, /If true: weakens article/);
+  assert.match(html, /Call C · attribution recovery/);
   assert.match(html, /Raw candidate, grounding, and local context/);
 });
