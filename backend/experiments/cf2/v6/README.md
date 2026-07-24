@@ -92,3 +92,14 @@ node backend/experiments/cf2/v6/run.mjs \
   --replay-call-b path/to/progress.json \
   --out artifacts/claim-foundry/cf2/my-v6-replay
 ```
+
+Run Call A alone when measuring discovery recall without paying for Calls B/C:
+
+```bash
+node backend/experiments/cf2/v6/run-call-a.mjs \
+  --fixture CF1-F03 \
+  --model gpt-4o-mini \
+  --repeats 2 \
+  --seed 3724605090 \
+  --out artifacts/claim-foundry/cf2/my-call-a-comparison
+```
