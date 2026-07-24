@@ -63,25 +63,36 @@ export const CF3_ARGUMENT_SCHEMA_V2 = Object.freeze({
         items: {
           type: "object",
           additionalProperties: false,
-          required: ["assertionId", "testableAssertion", "thesisEffect", "articleTreatment", "assertionSource", "argumentBranchId"],
+          required: ["assertionId", "testableAssertion", "thesisEffect", "articleTreatment", "assertionSource", "argumentBranchId", "citedWorks"],
           properties: {
             assertionId: { type: "string" },
             testableAssertion: { type: "string" },
             thesisEffect: { type: "string", enum: ["strengthens", "weakens", "no_effect"] },
             articleTreatment: { type: "string", enum: ["adopted", "challenged", "reported"] },
-            // sourceUnitIds dropped: host fills it deterministically from the grounding
-            // join. citedWorks dropped: host-derived from the ArticleDocument citation
-            // structure (empty on plaintext inputs; populated on HTML).
             assertionSource: {
               type: "object",
               additionalProperties: false,
-              required: ["name", "kind"],
+              required: ["name", "kind", "sourceUnitIds"],
               properties: {
                 name: { type: "string" },
                 kind: { type: "string", enum: ["article_voice", "person", "institution", "study", "document", "unknown"] },
+                sourceUnitIds: { type: "array", items: { type: "string" } },
               },
             },
             argumentBranchId: { type: "string" },
+            citedWorks: {
+              type: "array",
+              items: {
+                type: "object",
+                additionalProperties: false,
+                required: ["name", "type", "sourceUnitIds"],
+                properties: {
+                  name: { type: "string" },
+                  type: { type: "string", enum: ["study", "dataset", "report", "law", "document", "researcher"] },
+                  sourceUnitIds: { type: "array", items: { type: "string" } },
+                },
+              },
+            },
           },
         },
       },

@@ -11,6 +11,7 @@ import {
   CF3_THESIS_EFFECTS,
   CF3_ARTICLE_TREATMENTS,
   CF3_SOURCE_KINDS,
+  CF3_CITED_WORK_TYPES,
 } from "./schemas.js";
 import { buildCf3DiscoveryPrompt, buildCf3ArgumentPrompt } from "./prompts.js";
 
@@ -244,6 +245,12 @@ export function normalizeArgument(output, inventory, sourceUnits, portfolioSize)
     if (!CF3_SOURCE_KINDS.includes(source.kind)) {
       fail("CF3_INVALID_ENUM", `${raw.assertionId} assertionSource.kind ${source.kind}`);
     }
+    const citedWorks = Array.isArray(raw.citedWorks) ? raw.citedWorks : [];
+    for (const work of citedWorks) {
+      if (!CF3_CITED_WORK_TYPES.includes(work?.type)) {
+        fail("CF3_INVALID_ENUM", `${raw.assertionId} citedWorks.type ${work?.type}`);
+      }
+    }
     const finalText = normalized(raw.testableAssertion);
     if (!finalText) fail("CF3_INVALID_ASSERTION", `${raw.assertionId} has empty testableAssertion`);
 
@@ -302,12 +309,14 @@ export function normalizeArgument(output, inventory, sourceUnits, portfolioSize)
       assertionSource: {
         name: sourceName,
         kind: source.kind,
-        // Host-filled from the grounding join; the model no longer emits sourceUnitIds.
-        sourceUnitIds: inventoryItem.groundingUnitIds,
+        sourceUnitIds: Array.isArray(source.sourceUnitIds) ? source.sourceUnitIds : [],
       },
       argumentBranchId: normalized(raw.argumentBranchId),
-      // Host-derived from the ArticleDocument citation structure; empty on plaintext.
-      citedWorks: [],
+      citedWorks: citedWorks.map((work) => ({
+        name: normalized(work.name),
+        type: work.type,
+        sourceUnitIds: Array.isArray(work.sourceUnitIds) ? work.sourceUnitIds : [],
+      })),
       scoreTransform: deriveScoreTransform(articleTreatment, thesisEffect),
       // Host join: grounding comes from the inventory by ID; the model does not re-emit it.
       groundingUnitIds: inventoryItem.groundingUnitIds,

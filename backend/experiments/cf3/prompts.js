@@ -111,6 +111,9 @@ than guess.
 
 argumentBranchId — the distinct part of the argument this assertion belongs to.
 
+citedWorks — studies, documents, laws, or researchers the article ties to this
+assertion, if any.
+
 4. argumentBranches — for each branch ID used, the factual question it represents.`;
   return { system: ARGUMENT_SYSTEM, user, responseSchema: CF3_ARGUMENT_SCHEMA_V2 };
 }
