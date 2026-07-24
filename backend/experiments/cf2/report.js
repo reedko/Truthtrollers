@@ -8,7 +8,7 @@ const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character
 const csvCell = (value) => {
   const string = Array.isArray(value)
     ? value.map((item) => typeof item === "object" ? JSON.stringify(item) : item).join(" | ")
-    : String(value ?? "");
+    : value && typeof value === "object" ? JSON.stringify(value) : String(value ?? "");
   return `"${string.replaceAll('"', '""')}"`;
 };
 
@@ -61,6 +61,7 @@ export function renderCf2Html(result) {
       <summary>Raw candidate, grounding, and local context</summary>
       <p><strong>Call A:</strong> ${escapeHtml(assertion.rawAssertion)}</p>
       <p><strong>Assertion grounding:</strong> ${escapeHtml(assertion.groundingUnitIds.join(", "))}</p>
+      <p><strong>Grounding audit:</strong> ${escapeHtml(JSON.stringify(assertion.groundingAudit ?? null))}</p>
       <p><strong>Source grounding:</strong> ${escapeHtml(assertion.sourceUnitIds.join(", ") || "None")}</p>
       <p><strong>Source-name origin:</strong> ${escapeHtml(assertion.sourceNameOrigin || "None")}</p>
       <p><strong>Attribution basis:</strong> ${escapeHtml(assertion.attributionBasis || "None")}</p>
@@ -150,7 +151,7 @@ export function writeCf2Artifacts(result, outDir) {
     "candidateId", "assertionText", "callBSourceName", "callBSourceKind",
     "sourceName", "sourceKind", "sourceNameOrigin", "attributionBasis", "evidenceAnchors",
     "articleTreatment", "effectIfTrue", "scoreTransform", "groundingUnitIds",
-    "sourceUnitIds", "rawAssertion",
+    "groundingAudit", "sourceUnitIds", "rawAssertion",
   ];
   const csv = [
     columns.join(","),

@@ -29,6 +29,8 @@ Call C: selected frozen assertions + attribution packets
 
 Host
   -> validates that names and unit IDs exist in each supplied packet
+  -> resolves an explicit list owner when an assertion is structurally nested under
+     a named advertisement or other owned assertion list
   -> cannot change assertion, stance, treatment, transform, or selection
   -> writes result.json, claims.csv, and report.html
 ```
@@ -49,9 +51,13 @@ The host may validate identifiers, reject malformed output, remove normalized
 exact duplicates, attach local context, assign stable candidate IDs, and derive a
 transform from `effectIfTrue`. If the model explicitly chooses `article_voice`,
 the host may copy the already-supplied byline into an empty source-name slot.
+When a source unit explicitly names the owner of a following assertion list, the
+host may carry that owner onto assertions structurally contained in that list.
+This resolution is recorded as `host_structural_list_owner`.
 
-The host may not invent assertions, choose the final attribution supplier, infer
-stance from keywords, rewrite propositions, or create semantic backfills.
+Outside that explicit structural-list case, the host may not invent assertions,
+choose the final attribution supplier, infer stance from keywords, rewrite
+propositions, or create semantic backfills.
 
 ## Run
 

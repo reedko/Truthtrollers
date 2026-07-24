@@ -30,6 +30,7 @@ function addCandidate(map, name, unitId, basis, candidateKind = "named_text_span
   const clean = normalized(name).replace(/^[“"'—–-]+|[”"',.:;!?—–-]+$/g, "");
   const key = normalizedKey(clean);
   if (clean.length < 2 || clean.length > 160 || GENERIC_NAMES.has(key)) return;
+  if (candidateKind === "named_text_span" && !clean.includes(" ")) return;
   const current = map.get(key) ?? {
     nameHint: clean,
     candidateKind,
@@ -46,7 +47,7 @@ function extractNamedCandidates(contextUnits, articleAuthors, callBSource) {
   for (const author of articleAuthors ?? []) {
     addCandidate(candidates, author, null, "article byline", "article_voice");
   }
-  if (callBSource?.name) {
+  if (callBSource?.name && callBSource.kind !== "unknown") {
     for (const unitId of callBSource.unitIds ?? []) {
       addCandidate(candidates, callBSource.name, unitId,
         "Call B source judgment", callBSource.kind);
@@ -67,6 +68,47 @@ function extractNamedCandidates(contextUnits, articleAuthors, callBSource) {
     }
   }
   return [...candidates.values()].slice(0, 40);
+}
+
+function structuralListOwner(anchors, sourceUnits) {
+  const candidates = new Map();
+  const contextIndexes = new Set();
+  const listAnchors = anchors.filter((anchor) => {
+    const text = sourceUnits[anchor]?.text ?? "";
+    const nearby = sourceUnits.slice(Math.max(0, anchor - 2), anchor + 2)
+      .map((unit) => unit.text).join(" ");
+    return /^\s*[•*-]\s*/u.test(text)
+      || /\b(?:among|following)\s+(?:the\s+)?statements?\b/i.test(nearby);
+  });
+  for (const anchor of listAnchors) {
+    for (let index = anchor - 1; index >= Math.max(0, anchor - 10); index -= 1) {
+      const text = sourceUnits[index]?.text ?? "";
+      if (!/\b(?:ad|advertisement)\b/i.test(text)) continue;
+      const parenthetical = /\b([A-Z][\p{L}&.’'-]*(?:\s+[A-Z][\p{L}&.’'-]*){1,7})\s*\(([A-Z][A-Z0-9]{1,9})\)/gu;
+      const possessive = /\b([A-Z][\p{L}&.’'-]*(?:\s+[A-Z][\p{L}&.’'-]*){1,7})[’']s\s+(?:ad|advertisement)\b/gu;
+      let found = false;
+      for (const match of text.matchAll(parenthetical)) {
+        addCandidate(candidates, match[1], sourceUnits[index].unitId,
+          `explicit owner of following list in ${sourceUnits[index].unitId}`,
+          "structural_list_owner");
+        found = true;
+      }
+      for (const match of text.matchAll(possessive)) {
+        addCandidate(candidates, match[1], sourceUnits[index].unitId,
+          `explicit owner of following list in ${sourceUnits[index].unitId}`,
+          "structural_list_owner");
+        found = true;
+      }
+      if (found) {
+        contextIndexes.add(index);
+        break;
+      }
+    }
+  }
+  return {
+    candidates: [...candidates.values()],
+    contextIndexes: [...contextIndexes],
+  };
 }
 
 function occurrenceIndexes(assertion, rawAssertion, groundingUnitIds, sourceUnits) {
@@ -112,13 +154,40 @@ export function buildAttributionPackets(assertions, candidates, sourceUnits, art
       assertion.groundingUnitIds,
       sourceUnits,
     );
-    const contextUnits = expandIndexes(anchors, sourceUnits.length)
+    const structural = structuralListOwner(anchors, sourceUnits);
+    const contextUnits = [...new Set([
+      ...expandIndexes(anchors, sourceUnits.length),
+      ...structural.contextIndexes,
+    ])].sort((left, right) => left - right)
       .map((index) => sourceUnits[index]);
     const callBSource = {
       name: assertion.sourceName,
       kind: assertion.sourceKind,
       unitIds: assertion.sourceUnitIds,
     };
+    const sourceCandidates = extractNamedCandidates(
+      contextUnits,
+      article.authors ?? [],
+      callBSource,
+    );
+    for (const structuralCandidate of structural.candidates) {
+      const existing = sourceCandidates.find((sourceCandidate) =>
+        normalizedKey(sourceCandidate.nameHint)
+          === normalizedKey(structuralCandidate.nameHint));
+      if (existing) {
+        existing.candidateKind = "structural_list_owner";
+        existing.unitIds = [...new Set([
+          ...existing.unitIds,
+          ...structuralCandidate.unitIds,
+        ])];
+        existing.bases = [...new Set([
+          ...existing.bases,
+          ...structuralCandidate.bases,
+        ])];
+      } else {
+        sourceCandidates.unshift(structuralCandidate);
+      }
+    }
     return {
       candidateId: assertion.candidateId,
       assertionText: assertion.assertionText,
@@ -126,11 +195,7 @@ export function buildAttributionPackets(assertions, candidates, sourceUnits, art
       groundingUnitIds: assertion.groundingUnitIds,
       callBSource,
       contextUnits,
-      sourceCandidates: extractNamedCandidates(
-        contextUnits,
-        article.authors ?? [],
-        callBSource,
-      ),
+      sourceCandidates,
     };
   });
 }
@@ -185,11 +250,22 @@ export function normalizeAttributions(output, packets, article) {
       });
     }
     const allowedIds = new Set(packet.contextUnits.map((unit) => unit.unitId));
-    let supplierName = raw.supplierName === null ? null : normalized(raw.supplierName);
-    let supplierNameOrigin = supplierName ? "call_c_model" : null;
+    const structuralCandidates = packet.sourceCandidates.filter((candidate) =>
+      candidate.candidateKind === "structural_list_owner");
+    const structuralCandidate = structuralCandidates.length === 1
+      ? structuralCandidates[0]
+      : null;
+    let supplierName = structuralCandidate?.nameHint
+      ?? (raw.supplierName === null ? null : normalized(raw.supplierName));
+    let supplierKind = structuralCandidate ? "institution" : raw.supplierKind;
+    let supplierBasis = structuralCandidate ? "direct_attribution" : raw.supplierBasis;
+    let supplierNameOrigin = structuralCandidate
+      ? "host_structural_list_owner"
+      : (supplierName ? "call_c_model" : null);
     if (raw.supplierKind === "unknown"
+      && !structuralCandidate
       && /^(?:unknown|unresolved|unclear)$/i.test(supplierName ?? "")) supplierName = null;
-    if (raw.supplierKind === "article_voice" && !supplierName
+    if (supplierKind === "article_voice" && !supplierName
       && (article.authors ?? []).length > 0) {
       supplierName = article.authors.map(normalized).filter(Boolean).join(", ");
       supplierNameOrigin = "host_materialized_byline_after_call_c";
@@ -200,7 +276,7 @@ export function normalizeAttributions(output, packets, article) {
       });
     }
     const supplierUnitIds = validatePacketUnitIds(
-      raw.supplierUnitIds,
+      structuralCandidate?.unitIds ?? raw.supplierUnitIds,
       allowedIds,
       `${raw.candidateId} supplier`,
       { allowEmpty: true },
@@ -227,9 +303,9 @@ export function normalizeAttributions(output, packets, article) {
     attributions.push({
       candidateId: raw.candidateId,
       supplierName,
-      supplierKind: raw.supplierKind,
+      supplierKind,
       supplierUnitIds,
-      supplierBasis: raw.supplierBasis,
+      supplierBasis,
       supplierNameOrigin,
       evidenceAnchors,
     });

@@ -8,6 +8,7 @@ import {
 import {
   buildCf2AttributionPrompt,
   buildCf2DiscoveryPrompt,
+  buildCf2DiscoveryPromptAssertionOnly,
   buildCf2FinalizationPrompt,
 } from "./prompts.js";
 import {
@@ -18,6 +19,7 @@ import {
   selectCf2Portfolio,
   transformForEffect,
 } from "./pipeline.js";
+import { repairDiscoveryGrounding } from "./grounding.js";
 import { renderCf2Html } from "./report.js";
 
 const article = {
@@ -44,6 +46,46 @@ test("CF2 discovery prompt is minimal and fixture-neutral", () => {
   assert.deepEqual(prompt.responseSchema.schema.required, ["thesisAssertion", "candidates"]);
   assert.deepEqual(prompt.responseSchema.schema.properties.candidates.items.required,
     ["rawAssertion", "groundingUnitIds"]);
+});
+
+test("CF2 discovery uses assertion-only terminology without changing schema", () => {
+  const baseline = buildCf2DiscoveryPrompt({ article, sourceUnits: units });
+  const assertionOnly = buildCf2DiscoveryPromptAssertionOnly({
+    article,
+    sourceUnits: units,
+  });
+  assert.doesNotMatch(`${assertionOnly.system}\n${assertionOnly.user}`, /\bpropositions?\b/i);
+  assert.match(assertionOnly.user, /candidate assertions/i);
+  assert.deepEqual(assertionOnly.responseSchema, baseline.responseSchema);
+});
+
+test("CF2 deterministically repairs only high-confidence grounding mismatches", () => {
+  const sourceUnits = [
+    { unitId: "U0001", text: "Unrelated material about a different study." },
+    { unitId: "U0002", text: "There have been no credible studies linking vaccination to chronic disease." },
+    { unitId: "U0003", text: "Vaccines are tested more than any other medicine." },
+  ];
+  const repaired = repairDiscoveryGrounding({
+    thesisAssertion: "Thesis",
+    candidates: [
+      {
+        candidateId: "C01",
+        rawAssertion: "There have been no credible studies linking vaccination to chronic disease.",
+        groundingUnitIds: ["U0001"],
+      },
+      {
+        candidateId: "C02",
+        rawAssertion: "Vaccines are tested more than any other medicine.",
+        groundingUnitIds: ["U0001"],
+      },
+    ],
+  }, sourceUnits);
+  assert.deepEqual(repaired.candidates[0].groundingUnitIds, ["U0002"]);
+  assert.deepEqual(repaired.candidates[1].groundingUnitIds, ["U0003"]);
+  assert.equal(repaired.candidates[0].groundingAudit.status,
+    "repaired_high_confidence_overlap");
+  assert.deepEqual(repaired.candidates[0].groundingAudit.originalGroundingUnitIds,
+    ["U0001"]);
 });
 
 test("CF2 host assigns IDs, removes exact duplicates, and validates grounding", () => {
@@ -233,6 +275,58 @@ test("CF2 attribution packets expand context and separate supplier from evidence
   assert.equal(merged.callBSourceName, "Institution A");
   assert.equal(merged.evidenceAnchors[0].name, "Study Alpha");
   assert.equal(merged.effectIfTrue, "strengthens");
+});
+
+test("CF2 structurally attributes bullet assertions to an explicitly named list owner", () => {
+  const sourceUnits = [
+    {
+      unitId: "U0001",
+      text: "“What’s the Truth?” asked Jefferson County Public Health (JCPH) in a quarter-page ad.",
+    },
+    { unitId: "U0002", text: "Among the statements made:" },
+    {
+      unitId: "U0003",
+      text: "• “Vaccines are tested more than any other medicine.”",
+    },
+  ];
+  const candidates = [{
+    candidateId: "C01",
+    rawAssertion: "Vaccines are tested more than any other medicine according to public health claims.",
+    groundingUnitIds: ["U0003"],
+  }];
+  const assertions = [{
+    candidateId: "C01",
+    assertionText: "Vaccines are tested more than any other medicine.",
+    groundingUnitIds: ["U0003"],
+    sourceName: "public health claims",
+    sourceKind: "unknown",
+    sourceUnitIds: ["U0003"],
+    sourceNameOrigin: "model",
+    articleTreatment: "challenged",
+    effectIfTrue: "weakens",
+    scoreTransform: "invert",
+  }];
+  const [packet] = buildAttributionPackets(assertions, candidates, sourceUnits, article);
+  assert.ok(packet.contextUnits.some((unit) => unit.unitId === "U0001"));
+  assert.ok(packet.sourceCandidates.some((candidate) =>
+    candidate.nameHint === "Jefferson County Public Health"
+      && candidate.candidateKind === "structural_list_owner"));
+  assert.ok(!packet.sourceCandidates.some((candidate) =>
+    candidate.nameHint === "public health claims"));
+  const [recovered] = normalizeAttributions({
+    attributions: [{
+      candidateId: "C01",
+      supplierName: null,
+      supplierKind: "unknown",
+      supplierUnitIds: [],
+      supplierBasis: "unresolved",
+      evidenceAnchors: [],
+    }],
+  }, [packet], article);
+  assert.equal(recovered.supplierName, "Jefferson County Public Health");
+  assert.equal(recovered.supplierKind, "institution");
+  assert.deepEqual(recovered.supplierUnitIds, ["U0001"]);
+  assert.equal(recovered.supplierNameOrigin, "host_structural_list_owner");
 });
 
 test("CF2 pipeline makes exactly three injected calls and renders review details", async () => {

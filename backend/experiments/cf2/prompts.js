@@ -22,6 +22,48 @@ export function buildCf2DiscoveryPrompt({ article, sourceUnits }) {
     system: `You build a fact-check docket from an article.
 
 Use only the supplied article. Do not fact-check it and do not use outside knowledge.
+Return the article's assertions in their original polarity. If the article introduces an
+assertion in order to challenge it, preserve the assertion as its original source
+asserted it, not as the article's rebuttal.`,
+    user: `Read the complete article before choosing the docket.
+
+State the article's central position as one concise thesisAssertion.
+
+Then return a broad but compact set of no more than 18 candidate assertions that an
+external fact-checker could verify or dispute. Do not fill a quota.
+
+For each candidate assertion:
+- rawAssertion must contain one independently testable factual assertion: one subject
+  and one predicate. Do not join separate assertions with "and", "but", or a semicolon.
+- Preserve specific names, institutions, studies, documents, dates, numbers, populations,
+  comparisons, and allegation strength.
+- Preserve a reporting frame in rawAssertion when it identifies who supplied the
+  assertion. A later call will separate source from substance.
+- groundingUnitIds must independently support the assertion. For an attributed
+  assertion, include the local unit that identifies its supplier.
+
+Exclude the thesis itself, generic argument summaries, article or section descriptions,
+biographies, presentation details, navigation, rhetorical questions, and incidental
+background. Do not classify source, stance, article role, materiality, or evidence needs.
+
+ARTICLE METADATA
+${metadata(article)}
+
+ARTICLE WITH SOURCE UNITS
+${serializeCf2Article(sourceUnits)}`,
+    responseSchema: CF2_DISCOVERY_SCHEMA_V1,
+  };
+}
+
+export function buildCf2DiscoveryPromptAssertionOnly(args) {
+  return buildCf2DiscoveryPrompt(args);
+}
+
+export function buildCf2DiscoveryPromptMixedTerminologyLegacy({ article, sourceUnits }) {
+  return {
+    system: `You build a fact-check docket from an article.
+
+Use only the supplied article. Do not fact-check it and do not use outside knowledge.
 Return the article's assertions in their original polarity. If the article introduces a
 proposition in order to challenge it, preserve the proposition as its original source
 asserted it, not as the article's rebuttal.`,

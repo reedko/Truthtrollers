@@ -11,6 +11,7 @@ import {
   buildCf2DiscoveryPrompt,
   buildCf2FinalizationPrompt,
 } from "./prompts.js";
+import { repairDiscoveryGrounding } from "./grounding.js";
 
 const normalized = (value) => String(value ?? "").trim().replace(/\s+/g, " ");
 const normalizedKey = (value) => normalized(value).toLocaleLowerCase();
@@ -153,6 +154,7 @@ export function normalizeFinalization(output, candidates, sourceUnits, {
       sourceNameOrigin,
       scoreTransform: transformForEffect(raw.effectIfTrue),
       rawAssertion: candidate.rawAssertion,
+      groundingAudit: candidate.groundingAudit ?? null,
     });
   }
   if (seenCandidates.size !== candidates.length) {
@@ -246,7 +248,8 @@ export async function runCf2({
     maxOutputTokens: 5_000,
   });
   const callAFinished = clock();
-  const discovery = normalizeDiscovery(callAResult.output, sourceUnits);
+  const rawDiscovery = normalizeDiscovery(callAResult.output, sourceUnits);
+  const discovery = repairDiscoveryGrounding(rawDiscovery, sourceUnits);
   onProgress({
     stage: "call_a_completed",
     workItems: discovery.candidates.length,
@@ -322,7 +325,7 @@ export async function runCf2({
   const assertions = applyRecoveredAttributions(selectedAssertions, recoveredAttributions);
   const finishedAt = clock();
   return {
-    architecture: "CF2_MINIMAL_FACT_DOCKET_V3_ATTRIBUTION_RECOVERY",
+    architecture: "CF2_MINIMAL_FACT_DOCKET_V5_STRUCTURAL_ATTRIBUTION",
     article: {
       title: article.title,
       authors: article.authors ?? [],
