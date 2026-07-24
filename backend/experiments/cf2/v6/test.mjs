@@ -1,0 +1,245 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { buildCf2DiscoveryPrompt } from "../prompts.js";
+import { buildCf2V6DiscoveryPrompt } from "./prompts.js";
+import { detectAttributionCues } from "./cues.js";
+import {
+  lockStructuralSources,
+  normalizeEvidenceAnchors,
+  normalizeV6Decomposition,
+} from "./pipeline.js";
+
+const article = {
+  title: "Test",
+  text: "Text",
+  authors: ["Ana Wolpin"],
+};
+const units = [
+  {
+    unitId: "U0001",
+    text: "Senior CDC scientist William Thompson revealed that the CDC manipulated data linking the MMR vaccine to autism.",
+  },
+  {
+    unitId: "U0002",
+    text: "The article states that the vaccination schedule expanded.",
+  },
+];
+
+test("CF2 V6 preserves the protected V5 Call A prompt exactly", () => {
+  const v5 = buildCf2DiscoveryPrompt({ article, sourceUnits: units });
+  const v6 = buildCf2V6DiscoveryPrompt({ article, sourceUnits: units });
+  assert.deepEqual(v6, v5);
+});
+
+test("CF2 V6 detects explicit reporting syntax without deciding its semantics", () => {
+  const [cue] = detectAttributionCues({
+    rawAssertion: "William Thompson revealed privately in 2014 that data had been manipulated by the CDC.",
+    contextUnits: [units[0]],
+  });
+  assert.equal(cue.supplierText, "William Thompson");
+  assert.equal(cue.operator, "revealed");
+  assert.equal(cue.embeddedContent, "data had been manipulated by the CDC");
+  assert.deepEqual(cue.sourceUnitIds, ["U0001"]);
+  const [accordingCue] = detectAttributionCues({
+    rawAssertion: "According to the CDC, vaccination rates declined.",
+    contextUnits: [{
+      unitId: "U0003",
+      text: "According to the CDC, vaccination rates declined.",
+    }],
+  });
+  assert.equal(accordingCue.supplierText, "the CDC");
+  assert.equal(accordingCue.operator, "according_to");
+  assert.equal(accordingCue.embeddedContent, "vaccination rates declined");
+});
+
+test("CF2 V6 derives the substantive assertion and supplier from the final layer", () => {
+  const candidates = [{
+    candidateId: "C01",
+    rawAssertion: "William Thompson revealed that the CDC manipulated data linking the MMR vaccine to autism.",
+    groundingUnitIds: ["U0001"],
+  }];
+  const [assertion] = normalizeV6Decomposition({
+    assertions: [{
+      candidateId: "C01",
+      attributionLayers: [{
+        supplierName: "William Thompson",
+        supplierKind: "person",
+        operator: "revealed",
+        assertedContent: "The CDC manipulated data linking the MMR vaccine to autism.",
+        sourceUnitIds: ["U0001"],
+      }],
+      substantiveAssertion: "The CDC manipulated data linking the MMR vaccine to autism.",
+      groundingUnitIds: ["U0001"],
+      articleTreatment: "adopted",
+      effectIfTrue: "strengthens",
+    }],
+  }, candidates, units, article);
+  assert.equal(assertion.assertionText,
+    "The CDC manipulated data linking the MMR vaccine to autism.");
+  assert.equal(assertion.sourceName, "William Thompson");
+  assert.equal(assertion.sourceKind, "person");
+  assert.equal(assertion.sourceNameOrigin, "call_b_attribution_layer");
+  assert.equal(assertion.scoreTransform, "normal");
+});
+
+test("CF2 V6 rejects a missing or retained reporting frame", () => {
+  const candidates = [{
+    candidateId: "C01",
+    rawAssertion: "William Thompson revealed that the CDC manipulated data.",
+    groundingUnitIds: ["U0001"],
+  }];
+  assert.throws(() => normalizeV6Decomposition({
+    assertions: [{
+      candidateId: "C01",
+      attributionLayers: [],
+      substantiveAssertion: "William Thompson revealed that the CDC manipulated data.",
+      groundingUnitIds: ["U0001"],
+      articleTreatment: "adopted",
+      effectIfTrue: "strengthens",
+    }],
+  }, candidates, units, article), { code: "CF2_V6_ATTRIBUTION_LAYER_MISSING" });
+  assert.throws(() => normalizeV6Decomposition({
+    assertions: [{
+      candidateId: "C01",
+      attributionLayers: [{
+        supplierName: "William Thompson",
+        supplierKind: "person",
+        operator: "revealed",
+        assertedContent: "William Thompson revealed that the CDC manipulated data.",
+        sourceUnitIds: ["U0001"],
+      }],
+      substantiveAssertion: "William Thompson revealed that the CDC manipulated data.",
+      groundingUnitIds: ["U0001"],
+      articleTreatment: "adopted",
+      effectIfTrue: "strengthens",
+    }],
+  }, candidates, units, article), { code: "CF2_V6_REPORTING_FRAME_RETAINED" });
+});
+
+test("CF2 V6 rejects an attribution operator invented by the model", () => {
+  const candidates = [{
+    candidateId: "C01",
+    rawAssertion: "The CDC ordered scientists to destroy evidence.",
+    groundingUnitIds: ["U0001"],
+  }];
+  assert.throws(() => normalizeV6Decomposition({
+    assertions: [{
+      candidateId: "C01",
+      attributionLayers: [{
+        supplierName: "CDC",
+        supplierKind: "institution",
+        operator: "announced",
+        assertedContent: "The CDC ordered scientists to destroy evidence.",
+        sourceUnitIds: ["U0001"],
+      }],
+      substantiveAssertion: "The CDC ordered scientists to destroy evidence.",
+      groundingUnitIds: ["U0001"],
+      articleTreatment: "adopted",
+      effectIfTrue: "strengthens",
+    }],
+  }, candidates, units, article), { code: "CF2_V6_UNGROUNDED_OPERATOR" });
+});
+
+test("CF2 V6 rejects unresolved anaphora in the substantive assertion", () => {
+  const candidates = [{
+    candidateId: "C01",
+    rawAssertion: "The study declared that it had proven the treatment was safe.",
+    groundingUnitIds: ["U0003"],
+  }];
+  const sourceUnits = [{
+    unitId: "U0003",
+    text: "The study declared that it had proven the treatment was safe.",
+  }];
+  assert.throws(() => normalizeV6Decomposition({
+    assertions: [{
+      candidateId: "C01",
+      attributionLayers: [{
+        supplierName: "The study",
+        supplierKind: "study",
+        operator: "declared",
+        assertedContent: "it had proven the treatment was safe",
+        sourceUnitIds: ["U0003"],
+      }],
+      substantiveAssertion: "it had proven the treatment was safe",
+      groundingUnitIds: ["U0003"],
+      articleTreatment: "challenged",
+      effectIfTrue: "weakens",
+    }],
+  }, candidates, sourceUnits, article), { code: "CF2_V6_UNRESOLVED_ANAPHORA" });
+});
+
+test("CF2 V6 assigns article voice only when no explicit attribution layer exists", () => {
+  const candidates = [{
+    candidateId: "C01",
+    rawAssertion: "The vaccination schedule expanded.",
+    groundingUnitIds: ["U0002"],
+  }];
+  const [assertion] = normalizeV6Decomposition({
+    assertions: [{
+      candidateId: "C01",
+      attributionLayers: [],
+      substantiveAssertion: "The vaccination schedule expanded.",
+      groundingUnitIds: ["U0002"],
+      articleTreatment: "adopted",
+      effectIfTrue: "strengthens",
+    }],
+  }, candidates, units, article);
+  assert.equal(assertion.sourceName, "Ana Wolpin");
+  assert.equal(assertion.sourceKind, "article_voice");
+  assert.equal(assertion.sourceNameOrigin, "host_article_voice_no_explicit_layer");
+});
+
+test("CF2 V6 structural list ownership overrides only the locked list assertion", () => {
+  const assertions = [{
+    candidateId: "C01",
+    sourceName: "Ana Wolpin",
+    sourceKind: "article_voice",
+    sourceUnitIds: ["U0002"],
+    sourceNameOrigin: "host_article_voice_no_explicit_layer",
+    attributionBasis: "article_voice",
+  }];
+  const packets = [{
+    candidateId: "C01",
+    sourceCandidates: [{
+      nameHint: "Jefferson County Public Health",
+      candidateKind: "structural_list_owner",
+      unitIds: ["U0001"],
+      bases: ["explicit owner"],
+    }],
+  }];
+  const [locked] = lockStructuralSources(assertions, packets);
+  assert.equal(locked.sourceName, "Jefferson County Public Health");
+  assert.equal(locked.sourceKind, "institution");
+  assert.equal(locked.sourceNameOrigin, "host_structural_list_owner");
+  assert.equal(locked.callBSourceName, "Ana Wolpin");
+});
+
+test("CF2 V6 discards an ungrounded optional evidence anchor without blocking", () => {
+  const assertions = [{
+    candidateId: "C01",
+    sourceName: "Ana Wolpin",
+    sourceKind: "article_voice",
+    sourceUnitIds: ["U0002"],
+    sourceNameOrigin: "host_article_voice_no_explicit_layer",
+    attributionBasis: "article_voice",
+  }];
+  const packets = [{
+    candidateId: "C01",
+    contextUnits: [units[1]],
+    sourceCandidates: [],
+  }];
+  const [normalized] = normalizeEvidenceAnchors({
+    attributions: [{
+      candidateId: "C01",
+      evidenceAnchors: [{
+        name: "Invented Study",
+        kind: "study",
+        unitIds: ["U0002"],
+      }],
+    }],
+  }, assertions, packets, article);
+  assert.deepEqual(normalized.evidenceAnchors, []);
+  assert.equal(normalized.evidenceAnchorAudit.returned, 1);
+  assert.equal(normalized.evidenceAnchorAudit.accepted, 0);
+  assert.equal(normalized.evidenceAnchorAudit.discarded.length, 1);
+});

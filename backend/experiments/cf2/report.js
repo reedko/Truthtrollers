@@ -60,12 +60,16 @@ export function renderCf2Html(result) {
     <tr><td></td><td colspan="8"><details>
       <summary>Raw candidate, grounding, and local context</summary>
       <p><strong>Call A:</strong> ${escapeHtml(assertion.rawAssertion)}</p>
+      <p><strong>Surface assertion:</strong> ${escapeHtml(assertion.surfaceAssertion ?? assertion.rawAssertion)}</p>
+      <p><strong>Attribution layers:</strong> ${escapeHtml(JSON.stringify(assertion.attributionLayers ?? []))}</p>
+      <p><strong>Layer-target audit:</strong> ${escapeHtml(JSON.stringify(assertion.layerTargetAudit ?? null))}</p>
       <p><strong>Assertion grounding:</strong> ${escapeHtml(assertion.groundingUnitIds.join(", "))}</p>
       <p><strong>Grounding audit:</strong> ${escapeHtml(JSON.stringify(assertion.groundingAudit ?? null))}</p>
       <p><strong>Source grounding:</strong> ${escapeHtml(assertion.sourceUnitIds.join(", ") || "None")}</p>
       <p><strong>Source-name origin:</strong> ${escapeHtml(assertion.sourceNameOrigin || "None")}</p>
       <p><strong>Attribution basis:</strong> ${escapeHtml(assertion.attributionBasis || "None")}</p>
       <p><strong>Evidence anchors:</strong> ${escapeHtml(JSON.stringify(assertion.evidenceAnchors ?? []))}</p>
+      <p><strong>Evidence-anchor audit:</strong> ${escapeHtml(JSON.stringify(assertion.evidenceAnchorAudit ?? null))}</p>
       <pre>${escapeHtml(context.map((unit) => `[${unit.unitId}] ${unit.text}`).join("\n"))}</pre>
       <details><summary>Call C expanded attribution packet</summary>
         <p><strong>Host-found candidates:</strong></p>
@@ -148,8 +152,10 @@ export function writeCf2Artifacts(result, outDir) {
   mkdirSync(outDir, { recursive: true });
   writeFileSync(path.join(outDir, "result.json"), `${JSON.stringify(result, null, 2)}\n`);
   const columns = [
-    "candidateId", "assertionText", "callBSourceName", "callBSourceKind",
+    "candidateId", "surfaceAssertion", "assertionText", "attributionLayers",
+    "layerTargetAudit", "callBSourceName", "callBSourceKind",
     "sourceName", "sourceKind", "sourceNameOrigin", "attributionBasis", "evidenceAnchors",
+    "evidenceAnchorAudit",
     "articleTreatment", "effectIfTrue", "scoreTransform", "groundingUnitIds",
     "groundingAudit", "sourceUnitIds", "rawAssertion",
   ];

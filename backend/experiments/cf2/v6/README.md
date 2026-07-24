@@ -1,0 +1,94 @@
+# CF2 V6 — bounded attribution recursion
+
+V6 is an isolated downstream experiment built on the protected CF2 V5 Call A.
+It does not replace V5 as the best current checkpoint.
+
+## Causal hypothesis
+
+A source-preserving sentence may contain both:
+
+- an attribution event, such as `William Thompson revealed P`; and
+- the substantive fact-check proposition `P`.
+
+Flattening those into one `assertionText` causes the assertion target and source
+to change together. V6 preserves an ordered, bounded attribution path and derives
+the final assertion/source pair from its innermost valid layer.
+
+## Architecture
+
+1. Call A is byte-for-byte the existing V5 discovery prompt and schema.
+2. The host detects only literal attribution syntax such as:
+   - `According to X, P`;
+   - `X revealed ... that P`;
+   - `Document D declared that P`.
+3. Call B returns zero to four ordered attribution layers and one standalone
+   substantive assertion.
+4. The host:
+   - rejects an omitted literal attribution cue;
+   - rejects an invented, ungrounded reporting operator;
+   - rejects retained reporting frames and unresolved anaphora;
+   - derives the source from the innermost layer;
+   - derives `scoreTransform` from `effectIfTrue`;
+   - retains V5's structural list-owner rule.
+5. Call C cannot change the supplier. It only proposes optional evidence anchors.
+   Ungrounded optional anchors are discarded rather than blocking the docket.
+
+## Results on F03
+
+### Replay using the protected V5 Call A inventory
+
+Artifact:
+`artifacts/claim-foundry/cf2/cf1-f03-v6-replay-ab-bounded-recursion-20260724`
+
+This replay simultaneously produced:
+
+- the three JCPH opponent assertions with `weakens -> invert`;
+- `data linking the MMR vaccine to autism had been manipulated by the CDC`
+  sourced to William Thompson;
+- `MMR vaccines did not cause autism` sourced to the CDC-released study and
+  assigned `weakens -> invert`;
+- locked suppliers that Call C could not overwrite.
+
+### Genuine live end-to-end run
+
+Artifact:
+`artifacts/claim-foundry/cf2/cf1-f03-v6-bounded-recursion-live-20260724`
+
+- 18 candidates;
+- 12 selected assertions;
+- 3 calls;
+- 28.3 seconds;
+- 30,022 tokens;
+- all three JCPH opponents retained with correct source and transform;
+- prefix `According to CDC, P` was correctly decomposed.
+
+The fresh Call A did not emit the Thompson or fraudulent-study candidates, so V6
+could not recover them. This confirms that V6 repairs representation after
+discovery but does not repair discovery recall.
+
+## Known failures
+
+- `articleTreatment` collapsed to `reported` in the tested V6 outputs.
+- Suffix attribution such as `P, according to X` is not yet a mandatory cue.
+- Passive wording such as `P is claimed to be Q` can remain contaminated.
+- Compound assertions from Call A remain compound.
+- Call A candidate recall still varies despite unchanged prompt, schema, and seed.
+
+## Run
+
+```bash
+node backend/experiments/cf2/v6/run.mjs \
+  --fixture CF1-F03 \
+  --seed 3724605090 \
+  --out artifacts/claim-foundry/cf2/my-v6-run
+```
+
+Replay saved Calls A or B during downstream debugging:
+
+```bash
+node backend/experiments/cf2/v6/run.mjs \
+  --fixture CF1-F03 \
+  --replay-call-a path/to/result.json \
+  --replay-call-b path/to/progress.json \
+  --out artifacts/claim-foundry/cf2/my-v6-replay
+```

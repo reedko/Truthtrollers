@@ -3,6 +3,21 @@
 CF2 is an isolated benchmark architecture. It does not modify or participate in
 CF1, production claim extraction, the evidence engine, or CF3.
 
+> **PROTECTED BEST CURRENT CHECKPOINT — CF2 V5**
+>
+> Commit: `a08e2d5d`
+> F03 artifact:
+> `artifacts/claim-foundry/cf2/cf1-f03-v5-structural-attribution-20260724`
+> Call A prompt SHA-256:
+> `2a9d71acfc2e020d947abab41bf1a78dae475f03df00c3b0436719b2c70a1ec3`
+>
+> V5 is the strongest combined checkpoint from the 2026-07-24 session, not a
+> solved architecture. Preserve it while testing later CF2 versions. See
+> `BEST_CURRENT_CHECKPOINT.md`.
+
+CF2 V6 is an isolated bounded-attribution-recursion experiment. It preserves the
+V5 Call A contract and is documented in `v6/README.md`.
+
 ## Architecture
 
 ```text
