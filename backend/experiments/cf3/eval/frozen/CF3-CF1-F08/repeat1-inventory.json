@@ -1,0 +1,73 @@
+{
+  "fixture": "CF1-F08",
+  "article": {
+    "title": "Magnitude 6.2 earthquake shakes part of northern Japan",
+    "contentHash": "6313f3ddf83e15b32964adcd2b1f3d16c8b1e0d8e46524480168ba4c1fa872ec"
+  },
+  "inventory": [
+    {
+      "assertionId": "A001",
+      "assertionText": "A magnitude 6.2 earthquake shook part of northern Japan early Monday.",
+      "groundingUnitIds": [
+        "U0001"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A002",
+      "assertionText": "There was no damage or casualties.",
+      "groundingUnitIds": [
+        "U0001"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A003",
+      "assertionText": "No tsunami advisory was issued by the Japan Meteorological Agency.",
+      "groundingUnitIds": [
+        "U0002"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A004",
+      "assertionText": "The inland quake struck 18 kilometers (11 miles) west of the small town of Sarabetsu on Japan’s northernmost main island of Hokkaido at a depth of 81 kilometers (50 miles), according to the U.S. Geological Survey.",
+      "groundingUnitIds": [
+        "U0003"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A005",
+      "assertionText": "It measured the quake’s strength at 6.1 magnitude.",
+      "groundingUnitIds": [
+        "U0005"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A006",
+      "assertionText": "A week ago, a 7.7 magnitude offshore earthquake prompted Japan to issue an advisory of a slightly higher risk of a possible megaquake for the nation’s northeastern coastal areas.",
+      "groundingUnitIds": [
+        "U0006"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A007",
+      "assertionText": "The JMA said Monday’s quake was outside of the area subject to a megaquake advisory.",
+      "groundingUnitIds": [
+        "U0007"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A008",
+      "assertionText": "The special awareness week is set to end as planned.",
+      "groundingUnitIds": [
+        "U0007"
+      ],
+      "challenged": false
+    }
+  ]
+}

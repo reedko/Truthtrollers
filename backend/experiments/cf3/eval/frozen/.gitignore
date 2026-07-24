@@ -1,0 +1,4 @@
+# Keep the frozen candidate inventories (the reusable deliverable); ignore the bulky,
+# regenerable selection runs and full CF2 outputs (embedded prompts).
+CF3-*/labeled/
+CF2-CF1-*/

@@ -1,0 +1,229 @@
+{
+  "fixture": "CF1-F01",
+  "system": "CF2",
+  "article": {
+    "title": "Age at First Measles-Mumps-Rubella Vaccination in Children With Autism and School-Matched Control Subjects: A Population-Based Study in Metropolitan Atlanta",
+    "contentHash": "3b1605c4e295ee9c50b20f905bf038ba1fd41a6c277c77e74f5c0d4e38739c2c",
+    "sourceUnitCount": 305
+  },
+  "candidates": [
+    {
+      "candidateId": "C01",
+      "rawAssertion": "Most case (70.5%) and control children (67.5%) were vaccinated between 12 and 17 months of age.",
+      "groundingUnitIds": [
+        "U0012",
+        "U0122"
+      ]
+    },
+    {
+      "candidateId": "C02",
+      "rawAssertion": "More case (93.4%) than control children (90.6%) were vaccinated before 36 months.",
+      "groundingUnitIds": [
+        "U0015"
+      ]
+    },
+    {
+      "candidateId": "C03",
+      "rawAssertion": "The association between vaccination before 36 months and autism was strongest in the 3- to 5-year age group.",
+      "groundingUnitIds": [
+        "U0016"
+      ]
+    },
+    {
+      "candidateId": "C04",
+      "rawAssertion": "The Institute of Medicine reviewed the MMR-autism hypothesis and rejected a causal association at the population level.",
+      "groundingUnitIds": [
+        "U0036"
+      ]
+    },
+    {
+      "candidateId": "C05",
+      "rawAssertion": "In 1996, the Metropolitan Atlanta Developmental Disabilities Surveillance Program identified 987 children 3 to 10 years of age with autism, for a prevalence of 3.4 per 1000 children.",
+      "groundingUnitIds": [
+        "U0039"
+      ]
+    },
+    {
+      "candidateId": "C06",
+      "rawAssertion": "The study included 624 case children and 1824 control children.",
+      "groundingUnitIds": [
+        "U0057"
+      ]
+    },
+    {
+      "candidateId": "C07",
+      "rawAssertion": "The study was approved by the Centers for Disease Control and Prevention’s institutional review board.",
+      "groundingUnitIds": [
+        "U0041"
+      ]
+    },
+    {
+      "candidateId": "C08",
+      "rawAssertion": "The MADDSP data files were reviewed by a developmental pediatrician to identify subgroups of children with potentially different susceptibilities to development of autism from an environmental exposure.",
+      "groundingUnitIds": [
+        "U0058"
+      ]
+    },
+    {
+      "candidateId": "C09",
+      "rawAssertion": "Children without any indication of developmental delay before 12 months of age were grouped into a single category.",
+      "groundingUnitIds": [
+        "U0060"
+      ]
+    },
+    {
+      "candidateId": "C10",
+      "rawAssertion": "The overall distributions of ages at first MMR vaccination were similar (P = .22) for case and control children.",
+      "groundingUnitIds": [
+        "U0121"
+      ]
+    },
+    {
+      "candidateId": "C11",
+      "rawAssertion": "Vaccination before 18 months or 24 months of age was not associated with case status, either overall or in the different gender or age subgroups.",
+      "groundingUnitIds": [
+        "U0123"
+      ]
+    },
+    {
+      "candidateId": "C12",
+      "rawAssertion": "The odds ratio for case children vaccinated before 36 months was 1.49 (95% CI: 1.04 –2.14).",
+      "groundingUnitIds": [
+        "U0124"
+      ]
+    },
+    {
+      "candidateId": "C13",
+      "rawAssertion": "The proportion of case children with regression was lower than reported in other studies.",
+      "groundingUnitIds": [
+        "U0290"
+      ]
+    },
+    {
+      "candidateId": "C14",
+      "rawAssertion": "The routinely recommended infant vaccines that used to contain thimerosal were diphtheria-tetanus-pertussis, hepatitis B, and Haemophilus influenzae type b.",
+      "groundingUnitIds": [
+        "U0295"
+      ]
+    },
+    {
+      "candidateId": "C15",
+      "rawAssertion": "MMR vaccine has never contained thimerosal.",
+      "groundingUnitIds": [
+        "U0297"
+      ]
+    },
+    {
+      "candidateId": "C16",
+      "rawAssertion": "The Individuals with Disabilities Education Act mandated the provision of special education programs for children with autism beginning at approximately 36 months of age.",
+      "groundingUnitIds": [
+        "U0263"
+      ]
+    },
+    {
+      "candidateId": "C17",
+      "rawAssertion": "The study found that the age at time of first MMR administration was similar among case and control children.",
+      "groundingUnitIds": [
+        "U0302"
+      ]
+    },
+    {
+      "candidateId": "C18",
+      "rawAssertion": "A majority of case children who were vaccinated after 36 months of age had indications of developmental problems before 36 months of age.",
+      "groundingUnitIds": [
+        "U0304"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "candidateId": "C01",
+      "assertionText": "Most case (70.5%) and control children (67.5%) were vaccinated between 12 and 17 months of age.",
+      "groundingUnitIds": [
+        "U0012",
+        "U0122"
+      ],
+      "articleTreatment": "adopted",
+      "effectIfTrue": "strengthens",
+      "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+      "sourceKind": "article_voice"
+    },
+    {
+      "candidateId": "C02",
+      "assertionText": "More case (93.4%) than control children (90.6%) were vaccinated before 36 months.",
+      "groundingUnitIds": [
+        "U0015"
+      ],
+      "articleTreatment": "adopted",
+      "effectIfTrue": "weakens",
+      "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+      "sourceKind": "article_voice"
+    },
+    {
+      "candidateId": "C03",
+      "assertionText": "The association between vaccination before 36 months and autism was strongest in the 3- to 5-year age group.",
+      "groundingUnitIds": [
+        "U0016"
+      ],
+      "articleTreatment": "adopted",
+      "effectIfTrue": "weakens",
+      "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+      "sourceKind": "article_voice"
+    },
+    {
+      "candidateId": "C04",
+      "assertionText": "The Institute of Medicine reviewed the MMR-autism hypothesis and rejected a causal association at the population level.",
+      "groundingUnitIds": [
+        "U0036"
+      ],
+      "articleTreatment": "reported",
+      "effectIfTrue": "strengthens",
+      "sourceName": "Institute of Medicine",
+      "sourceKind": "institution"
+    },
+    {
+      "candidateId": "C10",
+      "assertionText": "The overall distributions of ages at first MMR vaccination were similar (P = .22) for case and control children.",
+      "groundingUnitIds": [
+        "U0121"
+      ],
+      "articleTreatment": "adopted",
+      "effectIfTrue": "strengthens",
+      "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+      "sourceKind": "article_voice"
+    },
+    {
+      "candidateId": "C11",
+      "assertionText": "Vaccination before 18 months or 24 months of age was not associated with case status, either overall or in the different gender or age subgroups.",
+      "groundingUnitIds": [
+        "U0123"
+      ],
+      "articleTreatment": "adopted",
+      "effectIfTrue": "strengthens",
+      "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+      "sourceKind": "article_voice"
+    },
+    {
+      "candidateId": "C12",
+      "assertionText": "The odds ratio for case children vaccinated before 36 months was 1.49 (95% CI: 1.04–2.14).",
+      "groundingUnitIds": [
+        "U0124"
+      ],
+      "articleTreatment": "adopted",
+      "effectIfTrue": "weakens",
+      "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+      "sourceKind": "article_voice"
+    },
+    {
+      "candidateId": "C17",
+      "assertionText": "The study found that the age at time of first MMR administration was similar among case and control children.",
+      "groundingUnitIds": [
+        "U0302"
+      ],
+      "articleTreatment": "adopted",
+      "effectIfTrue": "strengthens",
+      "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+      "sourceKind": "article_voice"
+    }
+  ]
+}

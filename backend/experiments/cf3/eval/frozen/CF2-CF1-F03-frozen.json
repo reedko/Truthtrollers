@@ -1,0 +1,275 @@
+{
+  "fixture": "CF1-F03",
+  "system": "CF2",
+  "article": {
+    "title": "Public Health’s “Truth” About Vaccines PART 1",
+    "contentHash": "35f3f6a5b39d2a4170efe2dd9796e01542dda8bab391a58cd7e21fbc7bdc381a",
+    "sourceUnitCount": 404
+  },
+  "candidates": [
+    {
+      "candidateId": "C01",
+      "rawAssertion": "According to the CDC, half of American school children are not fully vaccinated.",
+      "groundingUnitIds": [
+        "U0002"
+      ]
+    },
+    {
+      "candidateId": "C02",
+      "rawAssertion": "At least 1 in 88 toddlers are completely unvaccinated, according to CDC data.",
+      "groundingUnitIds": [
+        "U0002"
+      ]
+    },
+    {
+      "candidateId": "C03",
+      "rawAssertion": "The type of mercury in vaccines, ethylmercury, is claimed to be not harmful to us according to public health authorities.",
+      "groundingUnitIds": [
+        "U0297"
+      ]
+    },
+    {
+      "candidateId": "C04",
+      "rawAssertion": "There have been no credible studies that link vaccination to chronic disease, according to public health authorities.",
+      "groundingUnitIds": [
+        "U0011",
+        "U0400"
+      ]
+    },
+    {
+      "candidateId": "C05",
+      "rawAssertion": "Vaccines are tested more than any other medicine you could give your kid, according to public health authorities.",
+      "groundingUnitIds": [
+        "U0012",
+        "U0401"
+      ]
+    },
+    {
+      "candidateId": "C06",
+      "rawAssertion": "In 2016, a documentary film disclosed a decade-long CDC cover-up regarding the MMR vaccine and autism.",
+      "groundingUnitIds": [
+        "U0036"
+      ]
+    },
+    {
+      "candidateId": "C07",
+      "rawAssertion": "William Thompson, a senior CDC scientist, revealed that data linking the MMR vaccine to autism had been manipulated by the CDC.",
+      "groundingUnitIds": [
+        "U0037"
+      ]
+    },
+    {
+      "candidateId": "C08",
+      "rawAssertion": "The CDC ordered William Thompson and other scientists to destroy evidence linking the MMR vaccine to autism.",
+      "groundingUnitIds": [
+        "U0038"
+      ]
+    },
+    {
+      "candidateId": "C09",
+      "rawAssertion": "The fraudulent study released by the CDC declared that it had proven MMR vaccines did not cause autism.",
+      "groundingUnitIds": [
+        "U0041"
+      ]
+    },
+    {
+      "candidateId": "C10",
+      "rawAssertion": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+      "groundingUnitIds": [
+        "U0068"
+      ]
+    },
+    {
+      "candidateId": "C11",
+      "rawAssertion": "The childhood vaccination schedule exploded from 25 doses in 1986 to 73 doses by 2011.",
+      "groundingUnitIds": [
+        "U0080"
+      ]
+    },
+    {
+      "candidateId": "C12",
+      "rawAssertion": "In the 1980s, the chronic illness rate in U.S. children jumped to 12.8%, then to 54% by 2011.",
+      "groundingUnitIds": [
+        "U0086"
+      ]
+    },
+    {
+      "candidateId": "C13",
+      "rawAssertion": "The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after implementing an aggressive vaccination program.",
+      "groundingUnitIds": [
+        "U0090"
+      ]
+    },
+    {
+      "candidateId": "C14",
+      "rawAssertion": "An analysis of U.S. data showed that infants who received the most vaccines had the worst hospitalization and death rates.",
+      "groundingUnitIds": [
+        "U0091"
+      ]
+    },
+    {
+      "candidateId": "C15",
+      "rawAssertion": "A 2011 study found that countries giving the least vaccines had the lowest infant mortality rates.",
+      "groundingUnitIds": [
+        "U0092"
+      ]
+    },
+    {
+      "candidateId": "C16",
+      "rawAssertion": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+      "groundingUnitIds": [
+        "U0279"
+      ]
+    },
+    {
+      "candidateId": "C17",
+      "rawAssertion": "Thimerosal, a mercury-based preservative, has been linked to neurological damage and is still used in some flu shots.",
+      "groundingUnitIds": [
+        "U0360"
+      ]
+    },
+    {
+      "candidateId": "C18",
+      "rawAssertion": "The mercury in multi-dose flu shots preserved with thimerosal is 250 times higher than the limit for mercury in drinking water set by the EPA.",
+      "groundingUnitIds": [
+        "U0369"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "candidateId": "C01",
+      "assertionText": "CDC data reflect that half of American school children are not fully vaccinated.",
+      "groundingUnitIds": [
+        "U0002"
+      ],
+      "articleTreatment": "reported",
+      "effectIfTrue": "strengthens",
+      "sourceName": "Ana Wolpin",
+      "sourceKind": "article_voice"
+    },
+    {
+      "candidateId": "C02",
+      "assertionText": "At least 1 in 88 toddlers are completely unvaccinated.",
+      "groundingUnitIds": [
+        "U0002"
+      ],
+      "articleTreatment": "reported",
+      "effectIfTrue": "strengthens",
+      "sourceName": "Ana Wolpin",
+      "sourceKind": "article_voice"
+    },
+    {
+      "candidateId": "C03",
+      "assertionText": "The type of mercury in vaccines, ethylmercury, is not harmful to us.",
+      "groundingUnitIds": [
+        "U0297"
+      ],
+      "articleTreatment": "reported",
+      "effectIfTrue": "weakens",
+      "sourceName": "Jefferson County Public Health",
+      "sourceKind": "institution"
+    },
+    {
+      "candidateId": "C04",
+      "assertionText": "There have been no credible studies that link vaccination to chronic disease.",
+      "groundingUnitIds": [
+        "U0011",
+        "U0400"
+      ],
+      "articleTreatment": "reported",
+      "effectIfTrue": "weakens",
+      "sourceName": "Jefferson County Public Health",
+      "sourceKind": "institution"
+    },
+    {
+      "candidateId": "C05",
+      "assertionText": "Vaccines are tested more than any other medicine you could give your kid.",
+      "groundingUnitIds": [
+        "U0012",
+        "U0401"
+      ],
+      "articleTreatment": "reported",
+      "effectIfTrue": "weakens",
+      "sourceName": "Jefferson County Public Health",
+      "sourceKind": "institution"
+    },
+    {
+      "candidateId": "C06",
+      "assertionText": "In 2016, a documentary film disclosed a decade-long CDC cover-up regarding the MMR vaccine and autism.",
+      "groundingUnitIds": [
+        "U0036"
+      ],
+      "articleTreatment": "reported",
+      "effectIfTrue": "strengthens",
+      "sourceName": "Ana Wolpin",
+      "sourceKind": "article_voice"
+    },
+    {
+      "candidateId": "C07",
+      "assertionText": "William Thompson, a senior CDC scientist, revealed that data linking the MMR vaccine to autism had been manipulated by the CDC.",
+      "groundingUnitIds": [
+        "U0037"
+      ],
+      "articleTreatment": "reported",
+      "effectIfTrue": "strengthens",
+      "sourceName": "William Thompson",
+      "sourceKind": "person"
+    },
+    {
+      "candidateId": "C08",
+      "assertionText": "The CDC ordered William Thompson and other scientists to destroy evidence linking the MMR vaccine to autism.",
+      "groundingUnitIds": [
+        "U0038"
+      ],
+      "articleTreatment": "reported",
+      "effectIfTrue": "strengthens",
+      "sourceName": "William Thompson",
+      "sourceKind": "person"
+    },
+    {
+      "candidateId": "C09",
+      "assertionText": "The fraudulent study released by the CDC declared that it had proven MMR vaccines did not cause autism.",
+      "groundingUnitIds": [
+        "U0041"
+      ],
+      "articleTreatment": "reported",
+      "effectIfTrue": "strengthens",
+      "sourceName": "Ana Wolpin",
+      "sourceKind": "article_voice"
+    },
+    {
+      "candidateId": "C16",
+      "assertionText": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+      "groundingUnitIds": [
+        "U0279"
+      ],
+      "articleTreatment": "reported",
+      "effectIfTrue": "strengthens",
+      "sourceName": "Ana Wolpin",
+      "sourceKind": "article_voice"
+    },
+    {
+      "candidateId": "C17",
+      "assertionText": "Thimerosal, a mercury-based preservative, has been linked to neurological damage and is still used in some flu shots.",
+      "groundingUnitIds": [
+        "U0360"
+      ],
+      "articleTreatment": "reported",
+      "effectIfTrue": "strengthens",
+      "sourceName": "Ana Wolpin",
+      "sourceKind": "article_voice"
+    },
+    {
+      "candidateId": "C18",
+      "assertionText": "The mercury in multi-dose flu shots preserved with thimerosal is 250 times higher than the limit for mercury in drinking water set by the EPA.",
+      "groundingUnitIds": [
+        "U0369"
+      ],
+      "articleTreatment": "reported",
+      "effectIfTrue": "strengthens",
+      "sourceName": "Ana Wolpin",
+      "sourceKind": "article_voice"
+    }
+  ]
+}

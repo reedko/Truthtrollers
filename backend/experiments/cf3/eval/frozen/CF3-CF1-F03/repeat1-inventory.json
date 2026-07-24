@@ -1,0 +1,946 @@
+{
+  "fixture": "CF1-F03",
+  "article": {
+    "title": "Public Health’s “Truth” About Vaccines PART 1",
+    "contentHash": "35f3f6a5b39d2a4170efe2dd9796e01542dda8bab391a58cd7e21fbc7bdc381a"
+  },
+  "inventory": [
+    {
+      "assertionId": "A001",
+      "assertionText": "“So far, there have been no credible studies that link vaccination to chronic disease.”",
+      "groundingUnitIds": [
+        "U0011"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A002",
+      "assertionText": "“Vaccines are tested more than any other medicine you could give your kid.”",
+      "groundingUnitIds": [
+        "U0012"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A003",
+      "assertionText": "“The type of mercury in vaccines – ethylmercury – is NOT harmful to us.”",
+      "groundingUnitIds": [
+        "U0010"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A004",
+      "assertionText": "“Our kids face more challenges to their immune system while playing outside than they do from vaccines.”",
+      "groundingUnitIds": [
+        "U0008"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A005",
+      "assertionText": "“We are exposed to more aluminum by eating a tomato than from getting vaccines!”",
+      "groundingUnitIds": [
+        "U0009"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A006",
+      "assertionText": "“When you look at hesitancy in the U.S., the group who is most likely to purposefully choose to not vaccinate are highly educated.”",
+      "groundingUnitIds": [
+        "U0021"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A007",
+      "assertionText": "“They believe they are engaging in God’s work.”",
+      "groundingUnitIds": [
+        "U0031"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A008",
+      "assertionText": "“the science is settled.”",
+      "groundingUnitIds": [
+        "U0046"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A009",
+      "assertionText": "“the CDC had conducted the study in response to petitions from over 5,000 parents in vaccine court who had witnessed their children regress into autism from the MMR shot.”",
+      "groundingUnitIds": [
+        "U0044"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A010",
+      "assertionText": "“the 1986 act set the stage for the breathtaking industry capture, government cover-ups and bombardment of “safe and effective” messaging that followed.”",
+      "groundingUnitIds": [
+        "U0072"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A011",
+      "assertionText": "“With vaccine makers now absolved of all medical and legal liability when children die, become chronically ill with vaccine-induced disorders, or are otherwise disabled from vaccine injuries, pharma had a field day.”",
+      "groundingUnitIds": [
+        "U0073"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A012",
+      "assertionText": "“In the decades following the 1986 act the childhood schedule exploded to 73 doses/54 shots.”",
+      "groundingUnitIds": [
+        "U0080"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A013",
+      "assertionText": "“the U.S. had twice as many first-day infant deaths as all 27 EU nations combined.”",
+      "groundingUnitIds": [
+        "U0090"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A014",
+      "assertionText": "“an analysis of two decades of U.S. data (1990-2010) showed that infants who received the most vaccines had the worst hospitalization and death rates.”",
+      "groundingUnitIds": [
+        "U0091"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A015",
+      "assertionText": "“a 2011 study of data from 34 developed nations found that countries giving the least vaccines had the lowest infant mortality.”",
+      "groundingUnitIds": [
+        "U0092"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A016",
+      "assertionText": "“the chronic illness rate in U.S. children which had been negligible when we were kids had jumped to 12.8% in the 1980s, then to 54% by 2011.”",
+      "groundingUnitIds": [
+        "U0086"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A017",
+      "assertionText": "“More than one in two American children in the 2011 survey had a diagnosed chronic health condition such as an autoimmune disorder, diabetes or obesity, a neurodevelopmental disorder, or a mood or behavioral disorder.”",
+      "groundingUnitIds": [
+        "U0087"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A018",
+      "assertionText": "“the percentage of children carrying epipens, needing inhalers, and/or taking Ritalin, amphetamines and antidepressants is staggering.”",
+      "groundingUnitIds": [
+        "U0094"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A019",
+      "assertionText": "“the Vaxxed bus was born.”",
+      "groundingUnitIds": [
+        "U0098"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A020",
+      "assertionText": "“More than 8,000 names were signed on the bus’ exterior of adults and children injured or killed by vaccines.”",
+      "groundingUnitIds": [
+        "U0100"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A021",
+      "assertionText": "CDC data reflect that half of American school children are not fully vaccinated, and at least 1 in 88 toddlers are completely unvaccinated.",
+      "groundingUnitIds": [
+        "U0002"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A022",
+      "assertionText": "In 2016, a documentary film disclosing a decade-long CDC cover-up created an uproar in the news, sparking a long-overdue national conversation.",
+      "groundingUnitIds": [
+        "U0036"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A023",
+      "assertionText": "Senior CDC scientist turned whistleblower William Thompson revealed privately in 2014 that data linking the MMR vaccine (measles/mumps/rubella) to autism had been manipulated by the agency ten years earlier.",
+      "groundingUnitIds": [
+        "U0037"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A024",
+      "assertionText": "Thompson secretly saved over 10,000 pages of documents.",
+      "groundingUnitIds": [
+        "U0042"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A025",
+      "assertionText": "The fraudulent, re-worked study was then released to declare that it had proven MMR vaccines did not cause autism.",
+      "groundingUnitIds": [
+        "U0041"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A026",
+      "assertionText": "The 1986 National Childhood Vaccine Injury Act was passed.",
+      "groundingUnitIds": [
+        "U0068"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A027",
+      "assertionText": "In the 1980s, pharmaceutical companies were losing so much money settling lawsuits for vaccine injury that the industry threatened to stop making vaccines unless the government shielded them from damages.",
+      "groundingUnitIds": [
+        "U0069"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A028",
+      "assertionText": "The 1986 act removed all liability from drug companies for childhood vaccines they produced.",
+      "groundingUnitIds": [
+        "U0070"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A029",
+      "assertionText": "Vaccines became Big Pharma’s most profitable product division almost overnight.",
+      "groundingUnitIds": [
+        "U0074"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A030",
+      "assertionText": "By 1986 children were receiving 25 doses/12 shots.",
+      "groundingUnitIds": [
+        "U0080"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A031",
+      "assertionText": "In my childhood years, autism, peanut allergies, ADHD, asthma, and other issues common among children today were virtually nonexistent.",
+      "groundingUnitIds": [
+        "U0084"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A032",
+      "assertionText": "During my childhood we had one of the best infant mortality rates in the world.",
+      "groundingUnitIds": [
+        "U0090"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A033",
+      "assertionText": "Following the release of the film Vaxxed, parents came out of the woodwork wanting to share their stories of vaccine injury.",
+      "groundingUnitIds": [
+        "U0097"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A034",
+      "assertionText": "The truth is, a child’s immune system can handle a lot!",
+      "groundingUnitIds": [
+        "U0184"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A035",
+      "assertionText": "Our kids face more challenges to their immune system while playing outside than they do from vaccines.",
+      "groundingUnitIds": [
+        "U0185"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A036",
+      "assertionText": "SIDS is the most extreme example of how vaccines can sometimes overwhelm a child’s immune system.",
+      "groundingUnitIds": [
+        "U0194"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A037",
+      "assertionText": "Authorities sought to reassure parents that vaccines are safe and claimed that sudden unexplained infant deaths (SUID) following vaccines were merely coincidental.",
+      "groundingUnitIds": [
+        "U0202"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A038",
+      "assertionText": "In a “Back to Sleep” campaign, parents were told that their babies’ sleeping position was the culprit — that they needed to be laid on their backs, not face down.",
+      "groundingUnitIds": [
+        "U0205"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A039",
+      "assertionText": "Adverse reactions commonly seen after vaccination — extreme irritability, lethargy, poor feeding, breathing problems, convulsions, vomiting, and pale or bluish skin — were identified as symptoms resulting from parents violently shaking their babies.",
+      "groundingUnitIds": [
+        "U0207"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A040",
+      "assertionText": "And a 2011 study of data from 34 developed nations found that countries giving the least vaccines had the lowest infant mortality.",
+      "groundingUnitIds": [
+        "U0092"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A041",
+      "assertionText": "Today the percentage of children carrying epipens, needing inhalers, and/or taking Ritalin, amphetamines and antidepressants is staggering.",
+      "groundingUnitIds": [
+        "U0094"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A042",
+      "assertionText": "More than 8,000 names were signed on the bus’ exterior of adults and children injured or killed by vaccines.",
+      "groundingUnitIds": [
+        "U0100"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A043",
+      "assertionText": "Many described rushing their infants or toddlers to the ER with convulsions, 105° fevers, horrifying screams and seizures after their shots, only to be told this is normal… we see this all the time… it has nothing to do with the vaccines.",
+      "groundingUnitIds": [
+        "U0102"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A044",
+      "assertionText": "In some cases, their children shut down immediately following the shots, stopped making eye contact, lost verbal communication.",
+      "groundingUnitIds": [
+        "U0103"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A045",
+      "assertionText": "Others regressed more slowly into autism.",
+      "groundingUnitIds": [
+        "U0104"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A046",
+      "assertionText": "The worst were the SIDS (Sudden Infant Death Syndrome) cases.",
+      "groundingUnitIds": [
+        "U0105"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A047",
+      "assertionText": "Some within hours of getting vaccinated, and nearly all within a week of their “Well Baby” shots, would be found dead in their cribs after being put down for a nap.",
+      "groundingUnitIds": [
+        "U0106"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A048",
+      "assertionText": "Our group learned about the suppressed 1999 study linking thimerosal in vaccines to neurodevelopmental disorders and to the exponentially-increasing autism rates, which as in the MMR/autism study, resulted in the CDC secretly reworking the data to cover up the association.",
+      "groundingUnitIds": [
+        "U0126"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A049",
+      "assertionText": "Pharma-funded politicians were advancing legislation to remove people’s religious and personal medical vaccine exemptions, and to deny children who were out of compliance with the CDC schedule access to public schools.",
+      "groundingUnitIds": [
+        "U0132"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A050",
+      "assertionText": "By the time our vaccine study group wrapped up our research, over one hundred legislative bills were pending to eradicate vaccination choice in forty states, foreshadowing the Covid insanity to come.",
+      "groundingUnitIds": [
+        "U0135"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A051",
+      "assertionText": "Everything in the guide was meticulously documented — including CDC links, National Library of Medicine studies, and vaccine package inserts — all substantiated through Google Scholar.",
+      "groundingUnitIds": [
+        "U0152"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A052",
+      "assertionText": "Miller analyzed 2,605 deaths reported to the Vaccine Adverse Events Reporting System (VAERS) between 1990 and 2019.",
+      "groundingUnitIds": [
+        "U0208"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A053",
+      "assertionText": "Of these, 17% of deaths occurred on the day of vaccination and 48 percent within two days.",
+      "groundingUnitIds": [
+        "U0209"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A054",
+      "assertionText": "A full 78.3 percent occurred within seven days post-vaccination.",
+      "groundingUnitIds": [
+        "U0210"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A055",
+      "assertionText": "It was not until mass vaccination that the term SIDS — Sudden Infant Death Syndrome — even existed.",
+      "groundingUnitIds": [
+        "U0193"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A056",
+      "assertionText": "Historically, parents had not been finding healthy babies unexpectedly dead in their cribs hours after “playing outside.”",
+      "groundingUnitIds": [
+        "U0196"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A057",
+      "assertionText": "But that was the experience of some parents following vaccination.",
+      "groundingUnitIds": [
+        "U0197"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A058",
+      "assertionText": "Following the introduction of national vaccination programs in the U.S., SIDS became the leading cause of infant mortality.",
+      "groundingUnitIds": [
+        "U0199"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A059",
+      "assertionText": "Throughout the 1980s, sudden infant deaths continued to skyrocket.",
+      "groundingUnitIds": [
+        "U0202"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A060",
+      "assertionText": "Many parents were afraid to vaccinate their babies.",
+      "groundingUnitIds": [
+        "U0202"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A061",
+      "assertionText": "Humans have evolved for millennia playing in the dirt and being exposed to pathogens in the environment.",
+      "groundingUnitIds": [
+        "U0213"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A062",
+      "assertionText": "The immune challenges a child faces in nature are met by a series of complex defenses.",
+      "groundingUnitIds": [
+        "U0214"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A063",
+      "assertionText": "Four layers of the immune system come into play: skin, mucous membranes, lymphatic and blood.",
+      "groundingUnitIds": [
+        "U0215"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A064",
+      "assertionText": "An intramuscular injection bypasses all these intricate protective mechanisms, sending the needle’s contents directly into the bloodstream.",
+      "groundingUnitIds": [
+        "U0218"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A065",
+      "assertionText": "If a single vaccine can cause SIDS in a small percentage of babies, how many children might have damage on a lesser scale from the dozens of shots received in just the first year of life?",
+      "groundingUnitIds": [
+        "U0226"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A066",
+      "assertionText": "Typically a “Well Baby Visit” consists of numerous vaccines all administered on the same day.",
+      "groundingUnitIds": [
+        "U0227"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A067",
+      "assertionText": "As many as ten doses given in eight shots are now routine in pediatric practices.",
+      "groundingUnitIds": [
+        "U0229"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A068",
+      "assertionText": "The CDC schedule calls for 6-month-olds to be injected with DTaP (diphtheria/tetanus/pertussis), Hib (haemophilus influenza type B), HepB (hepatitis B), PCV (pneumococcal), IPV (polio), Influenza (seasonal flu), Rotavirus, and COVID-19 vaccines.",
+      "groundingUnitIds": [
+        "U0231"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A069",
+      "assertionText": "It is true that “a child’s immune system can handle a lot.”",
+      "groundingUnitIds": [
+        "U0233"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A070",
+      "assertionText": "Injecting the toxic load of a vaccine directly into a developing infant’s bloodstream, bypassing the body’s layered natural defenses, cannot even begin to compare to natural processes engaged when “playing outside.”",
+      "groundingUnitIds": [
+        "U0234"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A071",
+      "assertionText": "Our calculations show that the levels of aluminum suggested by the currently used limits place infants at risk of acute, repeated, and possibly chronic exposures of toxic levels of aluminum in modern vaccine schedules.",
+      "groundingUnitIds": [
+        "U0242"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A072",
+      "assertionText": "Folks SHOULD be nervous about aluminum being used in vaccines.",
+      "groundingUnitIds": [
+        "U0245"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A073",
+      "assertionText": "It has no physiological role in the body, and whether ingested, inhaled or injected, isolated aluminum is toxic.",
+      "groundingUnitIds": [
+        "U0248"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A074",
+      "assertionText": "Injecting aluminum through a vaccination bypasses these protections, placing it directly into the bloodstream.",
+      "groundingUnitIds": [
+        "U0250"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A075",
+      "assertionText": "Aluminum is used in many childhood vaccines like HepB as an adjuvant, to provoke an immune response.",
+      "groundingUnitIds": [
+        "U0253"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A076",
+      "assertionText": "It is known to cause brain damage at all doses.",
+      "groundingUnitIds": [
+        "U0254"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A077",
+      "assertionText": "Aluminum poisoning has been linked to autism, SIDs, seizures, autoimmune issues, Alzheimers, neurological damage, impaired renal function, demyelinating disorders such as MS, and cancer.",
+      "groundingUnitIds": [
+        "U0255"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A078",
+      "assertionText": "In the mid-1900s, the FDA established a maximum limit of 850 mcg (0.85 mg) of aluminum per vaccine dose.",
+      "groundingUnitIds": [
+        "U0256"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A079",
+      "assertionText": "The package insert for the Recombivax HB (HepB) vaccine shows its formulation contains 0.5 mg (500 mcg) of aluminum, with residual formaldehyde.",
+      "groundingUnitIds": [
+        "U0261"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A080",
+      "assertionText": "Vaccines inexplicably remained at the 850 mcg limit.",
+      "groundingUnitIds": [
+        "U0260"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A081",
+      "assertionText": "Current vaccination schedules in which multiple shots are administered in a single visit exceed even the 850 mcg limit.",
+      "groundingUnitIds": [
+        "U0277"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A082",
+      "assertionText": "For parents following the CDC schedule, aluminum injected at the 2-, 4-, and 6-month “Well Baby Visits” can exceed 1000 mcg.",
+      "groundingUnitIds": [
+        "U0278"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A083",
+      "assertionText": "The CDC has NEVER safety tested this cumulative load received in multiple shots.",
+      "groundingUnitIds": [
+        "U0279"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A084",
+      "assertionText": "The limit was never intended to indicate an amount of aluminum that could be considered harmless to children.",
+      "groundingUnitIds": [
+        "U0291"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A085",
+      "assertionText": "At the 4-5 mcg per kilogram of body weight or total 25 mcg per day limit applied in 1997 to other injectables, the aluminum load in even one shot should not be permissible.",
+      "groundingUnitIds": [
+        "U0293"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A086",
+      "assertionText": "By giving infants this shot, according to the FDA’s own calculations, we are literally poisoning them.",
+      "groundingUnitIds": [
+        "U0295"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A087",
+      "assertionText": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+      "groundingUnitIds": [
+        "U0297"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A088",
+      "assertionText": "No childhood vaccines contain mercury.",
+      "groundingUnitIds": [
+        "U0300",
+        "U0299"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A089",
+      "assertionText": "Mercury is the third most toxic element on earth, 500 times more poisonous than lead.",
+      "groundingUnitIds": [
+        "U0308"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A090",
+      "assertionText": "Thimerosal is the trade name for the 50% ethylmercury solution used since the 1930s as a preservative in vaccines.",
+      "groundingUnitIds": [
+        "U0309"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A091",
+      "assertionText": "It is highly neurotoxic — dangerous enough to cause “decreased offspring survival” as Eli Lilly was required by law to disclose in its Material Safety Data Sheet for thimerosal.",
+      "groundingUnitIds": [
+        "U0310"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A092",
+      "assertionText": "Thimerosal contains ethylmercury, which is cleared from the human body more quickly than methylmercury, and is therefore less likely to cause any harm.",
+      "groundingUnitIds": [
+        "U0348"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A093",
+      "assertionText": "The human body eliminates thimerosal easily. Thimerosal does not stay in the body a long time so it does not build up and reach harmful levels.",
+      "groundingUnitIds": [
+        "U0350"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A094",
+      "assertionText": "Mercury in Vaccines does NOT Cause Autism.",
+      "groundingUnitIds": [
+        "U0356"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A095",
+      "assertionText": "Thimerosal has never been demonstrated to clear the body.",
+      "groundingUnitIds": [
+        "U0351"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A096",
+      "assertionText": "Thimerosal is NOT harmful to us.",
+      "groundingUnitIds": [
+        "U0324"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A097",
+      "assertionText": "In The Vaccine-Friendly Plan, pediatrician Paul Thomas discusses the 250 mcg dose of aluminum in a single HepB shot:",
+      "groundingUnitIds": [
+        "U0294"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A098",
+      "assertionText": "If your baby weighs 7 pounds at birth (approximately 3 kilograms), the FDA stipulations suggest that the maximum safe dose for that newborn is 15 micrograms, sixteen times less than what is given in one hepatitis B vaccine.",
+      "groundingUnitIds": [
+        "U0295"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A099",
+      "assertionText": "Since infants may not be able to effectively rid their bodies of aluminum, the truth is that no amount of aluminum is safe.",
+      "groundingUnitIds": [
+        "U0295"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A100",
+      "assertionText": "[Thimerosal] is toxic… Mutagenic in mammalian cells.",
+      "groundingUnitIds": [
+        "U0301"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A101",
+      "assertionText": "May cause “decreased offspring survival, and offspring nervous system effects including mild to severe mental retardation and motor coordination impairment.”",
+      "groundingUnitIds": [
+        "U0302"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A102",
+      "assertionText": "Injected ethylmercury has been shown to deposit in the brain and other organs far more readily than the much-publicized methylmercury in fish, which pregnant women are warned to avoid.",
+      "groundingUnitIds": [
+        "U0318"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A103",
+      "assertionText": "A 2005 University of Washington study funded by National Institutes of Health compared brain mercury levels from injected ethylmercury (thimerosal) to equal amounts of orally ingested methylmercury.",
+      "groundingUnitIds": [
+        "U0319"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A104",
+      "assertionText": "The study demonstrated that while ingested methylmercury generally remains in the bloodstream, injected thimerosal crosses the placenta and blood brain barriers at high levels.",
+      "groundingUnitIds": [
+        "U0320"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A105",
+      "assertionText": "Once deposited in the brain, thimerosal converts to inorganic mercury and remains trapped there, resulting in neuroinflammation.",
+      "groundingUnitIds": [
+        "U0322"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A106",
+      "assertionText": "Autism and other neurological disorders are associated with this accumulated mercury in the brain.",
+      "groundingUnitIds": [
+        "U0323"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A107",
+      "assertionText": "The findings were so alarming—infants exposed to high levels of thimerosal during their first month of life had 7.6 times higher risk of autism diagnosis than their unexposed peers—that a secret emergency meeting was convened.",
+      "groundingUnitIds": [
+        "U0329"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A108",
+      "assertionText": "The number of dose related relationships [between mercury and autism] are linear and statistically significant.",
+      "groundingUnitIds": [
+        "U0332"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A109",
+      "assertionText": "Thimerosal-containing vaccines exceed the TCLP threshold by orders of magnitude and are classified as D009 Hazardous Waste.",
+      "groundingUnitIds": [
+        "U0370"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A110",
+      "assertionText": "Injecting that same thimerosal into developing infants is perfectly safe.",
+      "groundingUnitIds": [
+        "U0374"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A111",
+      "assertionText": "In the UK, Denmark, Austria, Japan, Russia, and all Scandinavian countries, vaccine makers are not permitted to use thimerosal in any childhood vaccines, including flu shots.",
+      "groundingUnitIds": [
+        "U0375"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A112",
+      "assertionText": "The EPA classifies the thimerosal in vaccines as toxic hazardous waste.",
+      "groundingUnitIds": [
+        "U0367"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A113",
+      "assertionText": "The limit for mercury in drinking water is set at 200 parts per billion per the EPA’s Toxicity Characteristic Leaching Procedure (TCLP).",
+      "groundingUnitIds": [
+        "U0368"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A114",
+      "assertionText": "The mercury in multi-dose flu shots preserved with thimerosal, injected directly into the body, is 250 times higher— 50,000 parts per billion.",
+      "groundingUnitIds": [
+        "U0369"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A115",
+      "assertionText": "Polysorbate 80 is linked to infertility, known to cause cancer, and banned from injectables in most of Europe.",
+      "groundingUnitIds": [
+        "U0382"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A116",
+      "assertionText": "Formaldehyde is classified by both the National Toxicology Program and the International Agency for Research on Cancer as a known human carcinogen.",
+      "groundingUnitIds": [
+        "U0388"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A117",
+      "assertionText": "Injecting toxic metals and chemicals into children and most especially pregnant women and developing babies — at levels far beyond safe limits established by regulatory agencies — would be considered criminal.",
+      "groundingUnitIds": [
+        "U0397"
+      ],
+      "challenged": false
+    }
+  ]
+}

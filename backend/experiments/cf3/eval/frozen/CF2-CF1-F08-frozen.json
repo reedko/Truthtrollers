@@ -1,0 +1,105 @@
+{
+  "fixture": "CF1-F08",
+  "system": "CF2",
+  "article": {
+    "title": "Magnitude 6.2 earthquake shakes part of northern Japan",
+    "contentHash": "6313f3ddf83e15b32964adcd2b1f3d16c8b1e0d8e46524480168ba4c1fa872ec",
+    "sourceUnitCount": 7
+  },
+  "candidates": [
+    {
+      "candidateId": "C01",
+      "rawAssertion": "A magnitude 6.2 earthquake shook part of northern Japan early Monday.",
+      "groundingUnitIds": [
+        "U0001"
+      ]
+    },
+    {
+      "candidateId": "C02",
+      "rawAssertion": "There was no damage or casualties reported from the earthquake in northern Japan.",
+      "groundingUnitIds": [
+        "U0001"
+      ]
+    },
+    {
+      "candidateId": "C03",
+      "rawAssertion": "No tsunami advisory was issued by the Japan Meteorological Agency following the earthquake.",
+      "groundingUnitIds": [
+        "U0002"
+      ]
+    },
+    {
+      "candidateId": "C04",
+      "rawAssertion": "The earthquake struck 18 kilometers (11 miles) west of the small town of Sarabetsu on Hokkaido.",
+      "groundingUnitIds": [
+        "U0003"
+      ]
+    },
+    {
+      "candidateId": "C05",
+      "rawAssertion": "The earthquake occurred at a depth of 81 kilometers (50 miles).",
+      "groundingUnitIds": [
+        "U0003"
+      ]
+    },
+    {
+      "candidateId": "C06",
+      "rawAssertion": "The U.S. Geological Survey measured the quake’s strength at 6.1 magnitude.",
+      "groundingUnitIds": [
+        "U0005"
+      ]
+    },
+    {
+      "candidateId": "C07",
+      "rawAssertion": "A week prior to the earthquake, a 7.7 magnitude offshore earthquake prompted an advisory for a possible megaquake.",
+      "groundingUnitIds": [
+        "U0006"
+      ]
+    },
+    {
+      "candidateId": "C08",
+      "rawAssertion": "Japan issued an advisory of a slightly higher risk of a possible megaquake for the northeastern coastal areas.",
+      "groundingUnitIds": [
+        "U0006"
+      ]
+    },
+    {
+      "candidateId": "C09",
+      "rawAssertion": "The Japan Meteorological Agency stated that Monday’s quake was outside of the area subject to a megaquake advisory.",
+      "groundingUnitIds": [
+        "U0007"
+      ]
+    },
+    {
+      "candidateId": "C10",
+      "rawAssertion": "The special awareness week regarding megaquakes is set to end as planned according to the JMA.",
+      "groundingUnitIds": [
+        "U0007"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "candidateId": "C01",
+      "assertionText": "A magnitude 6.2 earthquake shook part of northern Japan early Monday.",
+      "groundingUnitIds": [
+        "U0001"
+      ],
+      "articleTreatment": "adopted",
+      "effectIfTrue": "strengthens",
+      "sourceName": "The Associated Press",
+      "sourceKind": "article_voice"
+    },
+    {
+      "candidateId": "C02",
+      "assertionText": "There was no damage or casualties reported from the earthquake in northern Japan.",
+      "groundingUnitIds": [
+        "U0001"
+      ],
+      "articleTreatment": "adopted",
+      "effectIfTrue": "strengthens",
+      "sourceName": "The Associated Press",
+      "sourceKind": "article_voice"
+    }
+  ]
+}

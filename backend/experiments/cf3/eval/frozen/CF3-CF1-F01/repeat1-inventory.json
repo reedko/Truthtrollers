@@ -1,0 +1,769 @@
+{
+  "fixture": "CF1-F01",
+  "article": {
+    "title": "Age at First Measles-Mumps-Rubella Vaccination in Children With Autism and School-Matched Control Subjects: A Population-Based Study in Metropolitan Atlanta",
+    "contentHash": "3b1605c4e295ee9c50b20f905bf038ba1fd41a6c277c77e74f5c0d4e38739c2c"
+  },
+  "inventory": [
+    {
+      "assertionId": "A001",
+      "assertionText": "Several epidemiologic studies have not found an association between MMR vaccination and autism.",
+      "groundingUnitIds": [
+        "U0036"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A002",
+      "assertionText": "The Institute of Medicine (IOM) reviewed the MMR-autism hypothesis and rejected a causal association at the population level but encouraged additional studies to evaluate more fully the possibility that there are subgroups of children who might be at increased risk of autism from MMR vaccination.",
+      "groundingUnitIds": [
+        "U0036"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A003",
+      "assertionText": "To compare ages at first measles-mumps-rubella (MMR) vaccination between children with autism and children who did not have autism in the total population and in selected subgroups, including children with regression in development.",
+      "groundingUnitIds": [
+        "U0004"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A004",
+      "assertionText": "A case-control study was conducted in metropolitan Atlanta.",
+      "groundingUnitIds": [
+        "U0005"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A005",
+      "assertionText": "Case children (N = 624) were identified from multiple sources and matched to control children (N = 1824) on age, gender, and school.",
+      "groundingUnitIds": [
+        "U0007"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A006",
+      "assertionText": "Vaccination data were abstracted from immunization forms required for school entry.",
+      "groundingUnitIds": [
+        "U0008"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A007",
+      "assertionText": "Records of children who were born in Georgia were linked to Georgia birth certificates for information on maternal and birth factors.",
+      "groundingUnitIds": [
+        "U0009"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A008",
+      "assertionText": "Conditional logistic regression was used to estimate odds ratios (ORs).",
+      "groundingUnitIds": [
+        "U0010"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A009",
+      "assertionText": "The overall distribution of ages at MMR vaccination among children with autism was similar to that of matched control children; most case (70.5%) and control children (67.5%) were vaccinated between 12 and 17 months of age.",
+      "groundingUnitIds": [
+        "U0012"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A010",
+      "assertionText": "Similar proportions of case and control children had been vaccinated before 18 or before 24 months.",
+      "groundingUnitIds": [
+        "U0013"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A011",
+      "assertionText": "No significant associations for either of these age cutoffs were found for specific case subgroups, including those with evidence of developmental regression.",
+      "groundingUnitIds": [
+        "U0014"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A012",
+      "assertionText": "More case (93.4%) than control children (90.6%) were vaccinated before 36 months (OR: 1.49; 95% confidence interval: 1.04 –2.14 in the total sample; OR: 1.23; 95% confidence interval: 0.64 –2.36 in the birth certificate sample).",
+      "groundingUnitIds": [
+        "U0015"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A013",
+      "assertionText": "This association was strongest in the 3- to 5-year age group.",
+      "groundingUnitIds": [
+        "U0016"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A014",
+      "assertionText": "Vaccination before 36 months was more common among case children than control children, especially among children 3 to 5 years of age, likely reflecting immunization requirements for enrollment in early intervention programs.",
+      "groundingUnitIds": [
+        "U0019"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A015",
+      "assertionText": "In 1996, the first year in which autism was included, MADDSP identified 987 children 3 to 10 years of age with autism, for a prevalence of 3.4 per 1000 children.",
+      "groundingUnitIds": [
+        "U0039"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A016",
+      "assertionText": "Clinical psychologists with expertise in the diagnosis of autism reviewed the abstracted records according to a standardized coding scheme to determine the presence of behavioral characteristics consistent with the Diagnostic and Statistical Manual of Mental Disorders, 4th edition (DSM-IV) criteria for autism spectrum disorders (ASDs).",
+      "groundingUnitIds": [
+        "U0040"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A017",
+      "assertionText": "The study was approved by the Centers for Disease Control and Prevention’s institutional review board.",
+      "groundingUnitIds": [
+        "U0041"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A018",
+      "assertionText": "Because the activity was considered public health surveillance, parental consent was not required.",
+      "groundingUnitIds": [
+        "U0042"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A019",
+      "assertionText": "Instead, permission to access records was obtained from each data source.",
+      "groundingUnitIds": [
+        "U0043"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A020",
+      "assertionText": "After all exclusions, 624 case and 1824 control children remained in the study.",
+      "groundingUnitIds": [
+        "U0057"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A021",
+      "assertionText": "We also attempted to examine information on family history of autism spectrum conditions or other developmental disabilities, but this information was incomplete in the records and not useful for analysis.",
+      "groundingUnitIds": [
+        "U0065"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A022",
+      "assertionText": "Trained abstractors collected vaccination histories for both case and control children from the standardized state immunization forms that are required for all children who attend school and early intervention programs in Georgia.",
+      "groundingUnitIds": [
+        "U0066"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A023",
+      "assertionText": "During the period in which children in our study would have enrolled in school, Georgia law required at least 1 dose of measles, mumps, and rubella vaccines, usually administered at 15 months of age as the combined MMR vaccine.",
+      "groundingUnitIds": [
+        "U0068"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A024",
+      "assertionText": "Vaccination was also required for enrollment in preschool special education programs for 3- to 5-year-old children with disabilities.",
+      "groundingUnitIds": [
+        "U0069"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A025",
+      "assertionText": "We matched 355 (56%) case and 1020 (56%) control children to Georgia state birth certificate records, which allowed us to obtain additional information, such as each child’s birth weight and gestational age and the mother’s parity, age, race, and education.",
+      "groundingUnitIds": [
+        "U0073"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A026",
+      "assertionText": "The assumption implicit in this exposure comparison is that if the MMR vaccine increases the risk of autism, which usually develops before 24 months of age, then children who are vaccinated at younger ages would have a higher risk of developing autism.",
+      "groundingUnitIds": [
+        "U0078"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A027",
+      "assertionText": "We used conditional logistic regression models to estimate the odds ratios (ORs) for the association between autism and age at MMR vaccination dichotomized according to the 3 prespecified age cutoffs (18 months, 24 months, and 36 months).",
+      "groundingUnitIds": [
+        "U0085"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A028",
+      "assertionText": "For children with autism, additional developmental disability–related information was obtained from MADDSP data files.",
+      "groundingUnitIds": [
+        "U0070"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A029",
+      "assertionText": "This included information on the presence of other developmental disabilities, epilepsy, and IQ level (for categorization of MR).",
+      "groundingUnitIds": [
+        "U0071"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A030",
+      "assertionText": "In addition, we identified major birth defects among the case children by matching with Centers for Disease Control and Prevention’s Metropolitan Atlanta Congenital Defects Program, a population-based surveillance program of major birth defects that covers the same geographic area.",
+      "groundingUnitIds": [
+        "U0072"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A031",
+      "assertionText": "For all case and control children, we obtained demographic information, including date of birth, gender, race, and birth state, from the birth certificate or registration form that is kept in each child’s permanent school record.",
+      "groundingUnitIds": [
+        "U0072"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A032",
+      "assertionText": "Determining exposure– disease associations requires knowledge of dates of exposure and onset of illness.",
+      "groundingUnitIds": [
+        "U0074"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A033",
+      "assertionText": "Autism, however, usually does not have a well-demarcated date of onset.",
+      "groundingUnitIds": [
+        "U0075"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A034",
+      "assertionText": "Other studies have tried to address the possible relationship to MMR vaccination by examining the temporal relationship between vaccination and onset of initial parental concern, date of first diagnosis of autism, or onset of regression (if present).",
+      "groundingUnitIds": [
+        "U0076"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A035",
+      "assertionText": "We had incomplete information on these events, so we compared the distribution of ages at first MMR vaccination between case and control children.",
+      "groundingUnitIds": [
+        "U0077"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A036",
+      "assertionText": "The age at exposure was examined in a number of ways.",
+      "groundingUnitIds": [
+        "U0079"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A037",
+      "assertionText": "First, we compared the overall distributions of age at vaccination.",
+      "groundingUnitIds": [
+        "U0080"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A038",
+      "assertionText": "We then analyzed associations using 3 specific age cutoffs: 1) ⬍18 months of age, as an indicator of “on-time” vaccination according to the recommended vaccination schedule for MMR vaccine; 2) ⬍24 months of age, the age by which atypical development has become apparent in most children with autism; and 3) ⬍36 months of age, the age by which autistic characteristics must have developed to meet DSM-IV criteria for autism.",
+      "groundingUnitIds": [
+        "U0081"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A039",
+      "assertionText": "We used the ␹2 statistic for categorical comparisons of the characteristics of case and control children.",
+      "groundingUnitIds": [
+        "U0082"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A040",
+      "assertionText": "We compared the overall distributions of ages at first MMR vaccination using a likelihood ratio test in a conditional logistic regression model stratified by matched sets in which age at vaccination was included as a categorical variable with 5 age categories.",
+      "groundingUnitIds": [
+        "U0084"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A041",
+      "assertionText": "We also used conditional logistic regression models to estimate the odds ratios (ORs) for the association between autism and age at MMR vaccination dichotomized according to the 3 prespecified age cutoffs (18 months, 24 months, and 36 months).",
+      "groundingUnitIds": [
+        "U0085"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A042",
+      "assertionText": "In the subgroup of children that we matched to birth certificate files, we were able to adjust for additional factors.",
+      "groundingUnitIds": [
+        "U0086"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A043",
+      "assertionText": "Potential confounding variables were evaluated individually for their association with autism case status.",
+      "groundingUnitIds": [
+        "U0087"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A044",
+      "assertionText": "Those with a P ⬍ .20 were included as covariables in conditional logistic regression models to estimate adjusted ORs.",
+      "groundingUnitIds": [
+        "U0088"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A045",
+      "assertionText": "In analyses stratified by birth or maternal characteristics, we were not able to maintain the matched sets in the analysis.",
+      "groundingUnitIds": [
+        "U0089"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A046",
+      "assertionText": "However, we did include the matching factors (age, gender, and school) as covariables in the regression models.",
+      "groundingUnitIds": [
+        "U0089"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A047",
+      "assertionText": "The 624 case children included in the analysis and the 363 excluded case children were similar with respect to age and gender.",
+      "groundingUnitIds": [
+        "U0092"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A048",
+      "assertionText": "Although a somewhat larger proportion of included (60%) than excluded (56%) case children had evidence of MR, this difference was not statistically significant.",
+      "groundingUnitIds": [
+        "U0093"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A049",
+      "assertionText": "Among the 624 case children, 378 had MR, 31 had cerebral palsy, 8 had visual impairment, 7 had hearing loss, 49 had epilepsy, and 31 had congenital malformations.",
+      "groundingUnitIds": [
+        "U0095"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A050",
+      "assertionText": "A total of 234 cases were identified with at least 1 preexisting condition (eg, congenital malformation, metabolic disorder, fetal alcohol syndrome, intraventricular hemorrhage) or indications of developmental delay before 1 year of age.",
+      "groundingUnitIds": [
+        "U0096"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A051",
+      "assertionText": "On the basis of record review, we identified 80 case children with evidence of regression or plateau in developmental milestones after 12 months of age.",
+      "groundingUnitIds": [
+        "U0097"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A052",
+      "assertionText": "In the total sample, case and control children were matched appropriately on age and gender, with a preponderance of boys in both groups.",
+      "groundingUnitIds": [
+        "U0098"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A053",
+      "assertionText": "The racial distributions were also fairly similar, although a larger proportion of control (10%) than case (6%) children were classified as “other” race and both groups had an appreciable number for which race information was missing.",
+      "groundingUnitIds": [
+        "U0099"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A054",
+      "assertionText": "The similarities in age and gender were also observed in the 355 case and 1020 control children who were matched to the Georgia birth certificate files.",
+      "groundingUnitIds": [
+        "U0104"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A055",
+      "assertionText": "In this subsample, the racial distributions of case and control children were the same and no children had missing race data.",
+      "groundingUnitIds": [
+        "U0105"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A056",
+      "assertionText": "Using data that were available only in the birth certificate files, we did find several differences between case and control children.",
+      "groundingUnitIds": [
+        "U0106"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A057",
+      "assertionText": "Compared with control children, case children were significantly (P ⬍ .05) more likely to have had a low birth weight and to have been the product of a multiple-birth pregnancy.",
+      "groundingUnitIds": [
+        "U0107"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A058",
+      "assertionText": "At the time of delivery, mothers of case children tended to be older and to have had higher levels of education.",
+      "groundingUnitIds": [
+        "U0108"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A059",
+      "assertionText": "The overall distributions of ages at first MMR vaccination were similar (P ⫽ .22) for case and control children.",
+      "groundingUnitIds": [
+        "U0121"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A060",
+      "assertionText": "Most case (70.5%) and control (67.5%) children were vaccinated between 12 and 17 months of age.",
+      "groundingUnitIds": [
+        "U0122"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A061",
+      "assertionText": "When we performed the analyses dichotomizing age at vaccination, we found that vaccination before 18 months or 24 months of age was not associated with case status, either overall or in the different gender or age subgroups.",
+      "groundingUnitIds": [
+        "U0123"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A062",
+      "assertionText": "Using a 36-month cutoff, more case children (93%) than control children (91%) were vaccinated before 36 months of age (OR: 1.49; 95% confidence interval [CI]: 1.04 –2.14); the association was strongest in children 3-to-5 years of age (OR: 2.34; 95% CI: 0.99 –5.54).",
+      "groundingUnitIds": [
+        "U0124"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A063",
+      "assertionText": "Although the OR was higher among boys than among girls, the gender-specific ORs were not significantly different (likelihood ratio test P-value ⫽ 0.27 for the interaction of gender and age at vaccination ⬍36 months).",
+      "groundingUnitIds": [
+        "U0125"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A064",
+      "assertionText": "In the analyses using the birth certificate subsample, we were able to adjust for potential confounding variables.",
+      "groundingUnitIds": [
+        "U0126"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A065",
+      "assertionText": "All of the ORs were lower than those in the total sample, except those for the 3- to 5-year age group vaccinated before 24 months or before 36 months.",
+      "groundingUnitIds": [
+        "U0127"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A066",
+      "assertionText": "However, because of the smaller size of the birth certificate sample, the 95% CIs for all age categories were wider and included 1.0.",
+      "groundingUnitIds": [
+        "U0128"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A067",
+      "assertionText": "Although the birth certificate sample results in Table 3 were adjusted for maternal and birth characteristics, the ORs were not different from unadjusted results for the birth certificate sample, indicating that there was little to no confounding effect by these factors.",
+      "groundingUnitIds": [
+        "U0129"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A068",
+      "assertionText": "When we performed analyses within the nonmutually exclusive clinical subgroups of case children, we found no associations with vaccination before 18 months or 24 months of age among cases without preexisting conditions before 1 year of age, case children with regression or plateau, and case children with and without MR.",
+      "groundingUnitIds": [
+        "U0131"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A069",
+      "assertionText": "Using a 36-month age cutoff, the ORs in all subgroups of case children were above 1.0, but only the OR among case children without MR had a CI that excluded 1.0.",
+      "groundingUnitIds": [
+        "U0132"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A070",
+      "assertionText": "None of the adjusted results using the birth certificate sample was statistically significant.",
+      "groundingUnitIds": [
+        "U0133"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A071",
+      "assertionText": "In the birth certificate sample, however, only 3 case children without men-",
+      "groundingUnitIds": [
+        "U0134"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A072",
+      "assertionText": "In this population-based study in a large US metropolitan area, we found that the overall distribution of ages at first MMR vaccination among children",
+      "groundingUnitIds": [
+        "U0197"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A073",
+      "assertionText": "For vaccination before 18 months or 24 months of age, all of the ORs according to different categories of race, birth",
+      "groundingUnitIds": [
+        "U0196"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A074",
+      "assertionText": "The number of cases (N ⫽ 311) is less than the number of cases with birth certificate data because some cases had no matched controls with birth certificate data.",
+      "groundingUnitIds": [
+        "U0216"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A075",
+      "assertionText": "Associations Between Age at First MMR Vaccination and Autism Case Status According to Race, Birth Weight, and Maternal Characteristics in the Birth Certificate Sample",
+      "groundingUnitIds": [
+        "U0236"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A076",
+      "assertionText": "A number of other epidemiologic studies have failed to find an association between MMR vaccination and autism.",
+      "groundingUnitIds": [
+        "U0281"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A077",
+      "assertionText": "The IOM committee, however, did recommend additional studies to evaluate potential high-risk subgroups of children.",
+      "groundingUnitIds": [
+        "U0284"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A078",
+      "assertionText": "We were not able to evaluate the syndrome because we lacked information on gastrointestinal symptoms, but we did not find an association between age at vaccination, most notably by 18 months or 24 months, and autistic regression.",
+      "groundingUnitIds": [
+        "U0289"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A079",
+      "assertionText": "Analyses by other investigators have found no support for a new variant of autism or for the association of the MMR vaccination with regressive autism or gastrointestinal disorders.",
+      "groundingUnitIds": [
+        "U0291"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A080",
+      "assertionText": "In the present study, we were not able to evaluate the potential association between thimerosal exposure and autism.",
+      "groundingUnitIds": [
+        "U0294"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A081",
+      "assertionText": "MMR vaccine has never contained thimerosal.",
+      "groundingUnitIds": [
+        "U0297"
+      ],
+      "challenged": true
+    },
+    {
+      "assertionId": "A082",
+      "assertionText": "Our hypothesis was that earlier age at vaccination, ie, before a possible critical time window for autism development, might be associated with an increased risk for autism.",
+      "groundingUnitIds": [
+        "U0249"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A083",
+      "assertionText": "When we analyzed associations according to different age cutoffs, we found that similar proportions of case and control children had been vaccinated before 18 months or before 24 months of age.",
+      "groundingUnitIds": [
+        "U0250"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A084",
+      "assertionText": "Vaccination before 36 months of age was more common among case children than control children, although only a small proportion of children in either group received their first MMR vaccination after 36 months of age.",
+      "groundingUnitIds": [
+        "U0252"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A085",
+      "assertionText": "Determining onset of autism, however, is difficult even under the best of circumstances.",
+      "groundingUnitIds": [
+        "U0254"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A086",
+      "assertionText": "In most instances, brain abnormalities associated with autism probably occur prenatally, but parents might not become aware of their children’s problems until later in life, when communication delays and characteristic behaviors become apparent.",
+      "groundingUnitIds": [
+        "U0255"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A087",
+      "assertionText": "Parental concerns about development or the first indications of atypical development usually occur before 24 months of age in children with autism, and developmental regression, if it occurs, usually is noted between 12 and 24 months of age.",
+      "groundingUnitIds": [
+        "U0258"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A088",
+      "assertionText": "To meet DSM-IV criteria for autism, some manifestation of atypical development must be apparent before 36 months of age.",
+      "groundingUnitIds": [
+        "U0259"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A089",
+      "assertionText": "Of the 41 case children who were vaccinated after 36 months of age in our study, 32 (78%) had documented delays in development before 36 months of age.",
+      "groundingUnitIds": [
+        "U0260"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A090",
+      "assertionText": "The only exception was that case children without MR were more likely to have been vaccinated before 36 months of age than their matched control children.",
+      "groundingUnitIds": [
+        "U0293"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A091",
+      "assertionText": "Single-antigen measles vaccine has been hypothesized to be safer than MMR, but we had too few children who received measles vaccine alone to be able to evaluate this possibility.",
+      "groundingUnitIds": [
+        "U0298"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A092",
+      "assertionText": "From a large population-based case-control study that included a well-defined case group and a comparison group of children selected from the same community, we found that, overall, the age at time of first MMR administration was similar among case and control children.",
+      "groundingUnitIds": [
+        "U0301"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A093",
+      "assertionText": "Case children, especially those 3 to 5 years of age, were more likely than control children to have been vaccinated before 36 months of age.",
+      "groundingUnitIds": [
+        "U0303"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A094",
+      "assertionText": "A majority of case children who were vaccinated after 36 months of age, however, had indications of developmental problems before 36 months of age.",
+      "groundingUnitIds": [
+        "U0304"
+      ],
+      "challenged": false
+    },
+    {
+      "assertionId": "A095",
+      "assertionText": "The difference in vaccination coverage by 36 months of age between case and control children is likely to be an artifact of immunization requirements for preschool special education attendance in case children.",
+      "groundingUnitIds": [
+        "U0305"
+      ],
+      "challenged": false
+    }
+  ]
+}
