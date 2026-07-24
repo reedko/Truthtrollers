@@ -255,10 +255,17 @@ test("CF3 argument prompt orders stance before source and injects portfolio size
   });
   assert.match(prompt.user, /Select exactly 12 assertions/);
   // Stance-before-source (§8.4) is carried by schema property order, not prose.
-  const props = Object.keys(prompt.responseSchema.schema.properties
-    .selectedAssertions.items.properties);
+  const items = prompt.responseSchema.schema.properties.selectedAssertions.items;
+  const props = Object.keys(items.properties);
   assert.ok(props.indexOf("thesisEffect") < props.indexOf("assertionSource"));
   assert.ok(props.indexOf("articleTreatment") < props.indexOf("assertionSource"));
+  // §6.2 property order is load-bearing (not just JSON validity):
+  assert.equal(props[props.length - 1], "citedWorks"); // citedWorks is the last property
+  assert.deepEqual(Object.keys(items.properties.assertionSource.properties),
+    ["name", "kind", "sourceUnitIds"]); // sourceUnitIds after name and kind
+  assert.deepEqual(Object.keys(items.properties.citedWorks.items.properties),
+    ["name", "type", "sourceUnitIds"]);
+  assert.match(prompt.user, /citedWorks — studies, documents/); // prose line present
   assert.doesNotMatch(prompt.user, /\b(?:pillar|materiality|centrality|confidence)\b/i);
 });
 
