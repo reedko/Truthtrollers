@@ -269,6 +269,19 @@ test("CF3 argument prompt orders stance before source and injects portfolio size
   assert.doesNotMatch(prompt.user, /\b(?:pillar|materiality|centrality|confidence)\b/i);
 });
 
+test("CF3 selectionMode toggles the selection instruction (balanced vs crux)", () => {
+  const args = { article: { title: "T", authors: ["A"] }, sourceUnits: units, inventory, portfolioSize: 12 };
+  const balanced = buildCf3ArgumentPrompt({ ...args, selectionMode: "balanced" });
+  const crux = buildCf3ArgumentPrompt({ ...args, selectionMode: "crux" });
+  assert.match(balanced.user, /most complete and balanced basis/);
+  assert.doesNotMatch(balanced.user, /whose\s+falsity would most damage/);
+  assert.match(crux.user, /First include the\s+few assertions the article's central position most depends on/);
+  assert.match(crux.user, /whose\s+falsity would most damage its argument/);
+  // unknown mode falls back to balanced
+  assert.equal(buildCf3ArgumentPrompt({ ...args, selectionMode: "nope" }).user,
+    balanced.user);
+});
+
 test("CF3 pipeline makes 4 discovery calls plus 1 argument call and renders", async () => {
   const requests = [];
   const discoveryRunner = {

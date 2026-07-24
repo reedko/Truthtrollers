@@ -388,6 +388,7 @@ export async function runCf3({
   argumentModel = "gpt-4.1-mini",
   argumentReasoningEffort = "none",
   argumentMaxOutputTokens = 4_000,
+  selectionMode = "balanced",
   portfolioSize = CF3_DEFAULT_PORTFOLIO_SIZE,
   chunkCount = CF3_DEFAULT_CHUNK_COUNT,
   chunkOverlap = CF3_DEFAULT_CHUNK_OVERLAP,
@@ -424,7 +425,7 @@ export async function runCf3({
   }
 
   // One batch argument call: full article + complete inventory.
-  const argumentPrompt = buildCf3ArgumentPrompt({ article, sourceUnits, inventory, portfolioSize });
+  const argumentPrompt = buildCf3ArgumentPrompt({ article, sourceUnits, inventory, portfolioSize, selectionMode });
   const argumentStarted = clock();
   const argumentResult = await argumentRunner.invokeStructured({
     ...argumentPrompt,

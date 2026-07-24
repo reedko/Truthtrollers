@@ -26,6 +26,7 @@ const discoveryModel = option("--discovery-model", "gpt-4o-mini");
 const argumentModel = option("--argument-model", "gpt-4.1-mini");
 const argumentReasoningEffort = option("--argument-effort", "none");
 const argumentMaxOutputTokens = Number(option("--argument-max-tokens", "4000"));
+const selectionMode = option("--selection-mode", "balanced");
 const portfolioSize = Number(option("--portfolio-size", String(CF3_DEFAULT_PORTFOLIO_SIZE)));
 const chunkCount = Number(option("--chunks", "4"));
 const timeoutMs = Number(option("--timeout-ms", "180000"));
@@ -57,6 +58,7 @@ const result = await runCf3({
   argumentModel,
   argumentReasoningEffort,
   argumentMaxOutputTokens,
+  selectionMode,
   portfolioSize,
   chunkCount,
   timeoutMs,

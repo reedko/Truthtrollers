@@ -64,7 +64,22 @@ export function serializeInventory(inventory = []) {
   );
 }
 
-export function buildCf3ArgumentPrompt({ article, sourceUnits, inventory, portfolioSize }) {
+// selectionMode: "balanced" (default) or "crux" (Option A — dependency-first, then balance).
+const SELECTION_INSTRUCTION = {
+  balanced: (n) => `2. selectedAssertionIds — exactly ${n} inventory IDs that together
+give a fact-checker the most complete and balanced basis for evaluating the
+article's argument, including assertions the article disputes when its case
+depends on defeating them.`,
+  crux: (n) => `2. selectedAssertionIds — exactly ${n} inventory IDs. First include the
+few assertions the article's central position most depends on — the ones whose
+falsity would most damage its argument, whoever states them and however they are
+framed. Then fill the remaining slots for the most complete and balanced basis
+across the argument, including assertions the article disputes when its case
+depends on defeating them.`,
+};
+
+export function buildCf3ArgumentPrompt({ article, sourceUnits, inventory, portfolioSize, selectionMode = "balanced" }) {
+  const selectionInstruction = (SELECTION_INSTRUCTION[selectionMode] ?? SELECTION_INSTRUCTION.balanced)(portfolioSize);
   const user = `ARTICLE METADATA
 
 ${articleMetadata(article)}
@@ -85,10 +100,7 @@ TASK
 
 1. stanceAnchor — the article's central position, as one assertion.
 
-2. selectedAssertionIds — exactly ${portfolioSize} inventory IDs that together
-give a fact-checker the most complete and balanced basis for evaluating the
-article's argument, including assertions the article disputes when its case
-depends on defeating them.
+${selectionInstruction}
 
 3. For each selected assertion:
 

@@ -46,7 +46,8 @@ mkdirSync(outDir, { recursive: true });
 
 console.log(`Run B · ${fixture} · frozen inventory ${inventory.length} (${inventory.filter((x) => x.challenged).length} challenged)`
   + ` · ${repeats} repeats · ${argumentModel}`);
-const prompt = buildCf3ArgumentPrompt({ article, sourceUnits, inventory, portfolioSize });
+const selectionMode = option("--selection-mode", "balanced");
+const prompt = buildCf3ArgumentPrompt({ article, sourceUnits, inventory, portfolioSize, selectionMode });
 for (let r = 1; r <= repeats; r += 1) {
   const res = await runner.invokeStructured({
     ...prompt, model: argumentModel, reasoningEffort: "none", timeoutMs,
