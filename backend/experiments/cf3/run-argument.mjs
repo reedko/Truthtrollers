@@ -49,11 +49,18 @@ console.log(`Run B · ${fixture} · frozen inventory ${inventory.length} (${inve
 const selectionMode = option("--selection-mode", "balanced");
 const prompt = buildCf3ArgumentPrompt({ article, sourceUnits, inventory, portfolioSize, selectionMode });
 for (let r = 1; r <= repeats; r += 1) {
-  const res = await runner.invokeStructured({
-    ...prompt, model: argumentModel, reasoningEffort: "none", timeoutMs,
-    maximumAttempts: 1, maxOutputTokens: 4000, store: false,
-  });
-  const mapped = normalizeArgument(res.output, inventory, sourceUnits, portfolioSize);
+  let res; let mapped;
+  try {
+    res = await runner.invokeStructured({
+      ...prompt, model: argumentModel, reasoningEffort: "none", timeoutMs,
+      maximumAttempts: 1, maxOutputTokens: 4000, store: false,
+    });
+    mapped = normalizeArgument(res.output, inventory, sourceUnits, portfolioSize);
+  } catch (error) {
+    // One bad completion (wrong count/enum/incomplete) must not abort the batch.
+    console.log(`  repeat ${r}: FAILED ${error.code ?? error.message}`);
+    continue;
+  }
   const at = {}; mapped.assertions.forEach((a) => { at[a.articleTreatment] = (at[a.articleTreatment] || 0) + 1; });
   const codes = {}; mapped.findings.forEach((f) => { codes[f.code] = (codes[f.code] || 0) + 1; });
   writeCf3Artifacts({
