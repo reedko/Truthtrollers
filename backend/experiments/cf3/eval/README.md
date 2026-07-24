@@ -58,4 +58,8 @@ node backend/experiments/cf3/eval/review.mjs <result.json> --system CF3 --fixtur
 - **CF3 discovery finds ~5–6× more candidates** than CF2 (overcomplete inventory by design).
 - **CF3 selection front-loads and wastes that breadth** — F01 selected 7/0/0/5 despite 38
   candidates in Q2; F03 selected 9/1/1/1. CF2's thinner inventory distributes more evenly.
-- **Both systems collapse on F08** (CF3 discovery: 8 candidates; CF2: 10 → 2 selected).
+- **F08 is a control, not a failure.** It is a 131-word earthquake news brief with ~8 plain
+  facts, no argument/attribution/stance. Both systems extract it cleanly (8 candidates =
+  complete). It cannot discriminate the systems — every failure mode needs an argumentative
+  article. Only difference of note: CF2 under-selected hard (2 of 10) vs CF3 (5 of 8).
+  **Judge the systems on F03/F01, not F08.**
