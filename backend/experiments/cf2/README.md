@@ -70,3 +70,16 @@ because that API/model combination does not provide deterministic sampling.
 ```bash
 node --test backend/experiments/cf2/test.mjs
 ```
+
+## Compare completed runs
+
+```bash
+node backend/experiments/cf2/compare.mjs \
+  --out artifacts/claim-foundry/cf2/my-comparison \
+  artifacts/claim-foundry/cf2/run-1/result.json \
+  artifacts/claim-foundry/cf2/run-2/result.json
+```
+
+The comparison report distinguishes named external suppliers, article-voice
+attributions, and unresolved sources. These are coverage categories only; a named
+source can still be supporting evidence rather than the actual assertion supplier.
