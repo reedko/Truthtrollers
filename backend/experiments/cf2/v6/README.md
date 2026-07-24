@@ -33,6 +33,20 @@ the final assertion/source pair from its innermost valid layer.
 5. Call C cannot change the supplier. It only proposes optional evidence anchors.
    Ungrounded optional anchors are discarded rather than blocking the docket.
 
+Before Call B, the host also handles one narrow current-work ambiguity:
+
+- `we/our study/this study found P` is reduced to `P` and sourced to the
+  article byline when the cited grounding independently supports `P`;
+- an ungrounded Call A prefix such as `the study found P` receives the same
+  repair only when the cited grounding independently states `P`;
+- a genuinely grounded `the study found P` is preserved so Call B can resolve
+  its external-study antecedent;
+- weak or ambiguous grounding is left unchanged and remains eligible for
+  quarantine.
+
+The untouched Call A surface, normalized Call B input, and repair decision are
+all preserved in the report audit.
+
 ## Results on F03
 
 ### Replay using the protected V5 Call A inventory

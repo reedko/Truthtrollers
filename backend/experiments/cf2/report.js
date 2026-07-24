@@ -61,8 +61,9 @@ export function renderCf2Html(result) {
     </tr>
     <tr><td></td><td colspan="9"><details>
       <summary>Raw candidate, grounding, and local context</summary>
-      <p><strong>Call A:</strong> ${escapeHtml(assertion.rawAssertion)}</p>
-      <p><strong>Surface assertion:</strong> ${escapeHtml(assertion.surfaceAssertion ?? assertion.rawAssertion)}</p>
+      <p><strong>Call A surface:</strong> ${escapeHtml(assertion.surfaceAssertion ?? assertion.rawAssertion)}</p>
+      <p><strong>Call B input after host frame normalization:</strong> ${escapeHtml(assertion.rawAssertion)}</p>
+      <p><strong>Current-work frame audit:</strong> ${escapeHtml(JSON.stringify(assertion.currentWorkFrameAudit ?? null))}</p>
       <p><strong>Attribution layers:</strong> ${escapeHtml(JSON.stringify(assertion.attributionLayers ?? []))}</p>
       <p><strong>Layer-target audit:</strong> ${escapeHtml(JSON.stringify(assertion.layerTargetAudit ?? null))}</p>
       <p><strong>Assertion grounding:</strong> ${escapeHtml(assertion.groundingUnitIds.join(", "))}</p>
@@ -169,7 +170,8 @@ export function writeCf2Artifacts(result, outDir) {
   mkdirSync(outDir, { recursive: true });
   writeFileSync(path.join(outDir, "result.json"), `${JSON.stringify(result, null, 2)}\n`);
   const columns = [
-    "candidateId", "surfaceAssertion", "assertionText", "attributionLayers",
+    "candidateId", "surfaceAssertion", "currentWorkFrameAudit",
+    "assertionText", "attributionLayers",
     "layerTargetAudit", "callBSourceName", "callBSourceKind",
     "sourceName", "sourceKind", "sourceNameOrigin", "attributionBasis", "evidenceAnchors",
     "evidenceAnchorAudit",

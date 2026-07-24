@@ -17,6 +17,7 @@ import {
   buildCf2V6EvidenceAnchorPrompt,
 } from "./prompts.js";
 import { attachAttributionCues } from "./cues.js";
+import { resolveCurrentWorkFrames } from "./currentWorkFrames.js";
 
 const normalized = (value) => String(value ?? "").trim().replace(/\s+/g, " ");
 const normalizedKey = (value) => normalized(value).toLocaleLowerCase()
@@ -216,9 +217,10 @@ export function normalizeV6Decomposition(
     const sourceUnitIds = finalLayer?.sourceUnitIds ?? groundingUnitIds;
     assertions.push({
       candidateId: candidate.candidateId,
-      surfaceAssertion: candidate.rawAssertion,
+      surfaceAssertion: candidate.surfaceAssertion ?? candidate.rawAssertion,
       attributionLayers: layers,
       layerTargetAudit,
+      currentWorkFrameAudit: candidate.currentWorkFrameAudit ?? null,
       assertionText: substantiveAssertion,
       groundingUnitIds,
       articleTreatment: raw.articleTreatment,
@@ -482,9 +484,10 @@ export async function runCf2V6({
       rawOutput: callAResult.output,
     },
   });
-  const candidates = attachAttributionCues(
+  const candidates = attachAttributionCues(resolveCurrentWorkFrames(
     attachLocalContext(discovery.candidates, sourceUnits),
-  );
+    article,
+  ));
   const callBPrompt = buildCf2V6DecompositionPrompt({
     article,
     thesisAssertion: discovery.thesisAssertion,

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { buildCf2DiscoveryPrompt } from "../prompts.js";
 import { buildCf2V6DiscoveryPrompt } from "./prompts.js";
 import { detectAttributionCues } from "./cues.js";
+import { resolveCurrentWorkFrames } from "./currentWorkFrames.js";
 import {
   lockStructuralSources,
   normalizeEvidenceAnchors,
@@ -90,6 +91,87 @@ test("CF2 V6 detects explicit reporting syntax without deciding its semantics", 
   assert.equal(accordingCue.supplierText, "the CDC");
   assert.equal(accordingCue.operator, "according_to");
   assert.equal(accordingCue.embeddedContent, "vaccination rates declined");
+});
+
+test("CF2 V6 removes only an ungrounded generic current-study frame", () => {
+  const original = "The study found that vaccination rates were similar.";
+  const [resolved] = resolveCurrentWorkFrames([{
+    candidateId: "C01",
+    rawAssertion: original,
+    groundingUnitIds: ["U0001"],
+    contextUnits: [{
+      unitId: "U0001",
+      text: "Vaccination rates were similar in case and control children.",
+    }],
+  }], article);
+  assert.equal(resolved.rawAssertion, "vaccination rates were similar.");
+  assert.equal(resolved.surfaceAssertion, original);
+  assert.equal(
+    resolved.currentWorkFrameAudit.status,
+    "host_removed_ungrounded_current_work_frame",
+  );
+  assert.equal(resolved.currentWorkFrameAudit.sourceKind, "article_voice");
+});
+
+test("CF2 V6 preserves a grounded external-study frame for antecedent resolution", () => {
+  const original = "The study found that relative risk was 0.92.";
+  const [resolved] = resolveCurrentWorkFrames([{
+    candidateId: "C01",
+    rawAssertion: original,
+    groundingUnitIds: ["U0002"],
+    contextUnits: [
+      {
+        unitId: "U0001",
+        text: "A retrospective cohort study from Denmark included half a million children.",
+      },
+      {
+        unitId: "U0002",
+        text: "The study found that relative risk was 0.92.",
+      },
+    ],
+  }], article);
+  assert.equal(resolved.rawAssertion, original);
+  assert.equal(
+    resolved.currentWorkFrameAudit.status,
+    "grounded_study_frame_preserved",
+  );
+});
+
+test("CF2 V6 resolves an explicit current-work frame to the article byline", () => {
+  const original = "We found that vaccination rates were similar.";
+  const [resolved] = resolveCurrentWorkFrames([{
+    candidateId: "C01",
+    rawAssertion: original,
+    groundingUnitIds: ["U0001"],
+    contextUnits: [{
+      unitId: "U0001",
+      text: "We found that vaccination rates were similar.",
+    }],
+  }], article);
+  assert.equal(resolved.rawAssertion, "vaccination rates were similar.");
+  assert.equal(
+    resolved.currentWorkFrameAudit.status,
+    "host_removed_grounded_current_work_frame",
+  );
+  assert.equal(resolved.currentWorkFrameAudit.sourceName, "Ana Wolpin");
+});
+
+test("CF2 V6 does not strip an ungrounded frame when the proposition lacks support", () => {
+  const original = "The study found that vaccination caused every reported illness.";
+  const [resolved] = resolveCurrentWorkFrames([{
+    candidateId: "C01",
+    rawAssertion: original,
+    groundingUnitIds: ["U0001"],
+    contextUnits: [{
+      unitId: "U0001",
+      text: "Vaccination rates were similar in case and control children.",
+    }],
+  }], article);
+  assert.equal(resolved.rawAssertion, original);
+  assert.equal(
+    resolved.currentWorkFrameAudit.status,
+    "ungrounded_study_frame_not_repaired",
+  );
 });
 
 test("CF2 V6 derives the substantive assertion and supplier from the final layer", () => {
