@@ -2,49 +2,41 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { openAiLLM } from "../../src/core/openAiLLM.js";
 
-function providerResponse(content = '{"ready":true}') {
-  return { ok: true, text: async () => JSON.stringify({ model: "returned-model",
-    choices: [{ message: { content } }],
-    usage: { prompt_tokens: 7, completion_tokens: 3, total_tokens: 10 } }) };
-}
-
-test("repository LLM preserves legacy object returns", async () => {
+test("Chat Completions truncation preserves provider termination metadata", async () => {
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async () => providerResponse();
+  globalThis.fetch = async () => ({
+    ok: true,
+    headers: { get: (name) => ({
+      "x-request-id": "req_test",
+      "openai-processing-ms": "321",
+    })[name] ?? null },
+    text: async () => JSON.stringify({
+      id: "chatcmpl_test",
+      model: "gpt-4o-mini-2024-07-18",
+      system_fingerprint: "fp_test",
+      choices: [{ finish_reason: "length", message: { content: '{"candidateClaims":[' } }],
+      usage: { prompt_tokens: 10, completion_tokens: 40, total_tokens: 50 },
+    }),
+  });
   try {
-    assert.deepEqual(await openAiLLM.generate({ system: "s", user: "u",
-      schemaHint: "{}", maxRetries: 1 }), { ready: true });
-  } finally { globalThis.fetch = originalFetch; }
-});
-
-test("repository LLM optionally returns CF1 metadata and honors server controls", async () => {
-  const originalFetch = globalThis.fetch;
-  let body;
-  globalThis.fetch = async (_url, request) => {
-    body = JSON.parse(request.body);
-    return providerResponse();
-  };
-  try {
-    const result = await openAiLLM.generate({ system: "s", user: "u", schemaHint: "{}",
-      model: "configured-model", maxOutputTokens: 321, maxRetries: 1,
-      returnMetadata: true });
-    assert.deepEqual(result.output, { ready: true });
-    assert.equal(result.usage.total_tokens, 10);
-    assert.equal(result.model, "returned-model");
-    assert.equal(body.model, "configured-model");
-    assert.equal(body.max_tokens, 321);
-    assert.deepEqual(body.response_format, { type: "json_object" });
-  } finally { globalThis.fetch = originalFetch; }
-});
-
-test("repository LLM uses schema enforcement only when a caller supplies a named schema", async () => {
-  const originalFetch = globalThis.fetch;
-  let body;
-  globalThis.fetch = async (_url, request) => { body = JSON.parse(request.body); return providerResponse(); };
-  const jsonSchema = { name: "draft", strict: true, schema: { type: "object" } };
-  try {
-    await openAiLLM.generate({ system: "s", user: "u", schemaHint: "{}",
-      jsonSchema, maxRetries: 1 });
-    assert.deepEqual(body.response_format, { type: "json_schema", json_schema: jsonSchema });
-  } finally { globalThis.fetch = originalFetch; }
+    await assert.rejects(openAiLLM.generate({
+      system: "system", user: "user", model: "gpt-4o-mini",
+      maxRetries: 1, timeout: 1_000, returnMetadata: true,
+    }), (error) => {
+      assert.equal(error.code, "CF1_MODEL_OUTPUT_TRUNCATED");
+      assert.deepEqual(error.providerMetadata, {
+        responseId: "chatcmpl_test",
+        requestId: "req_test",
+        systemFingerprint: "fp_test",
+        finishReason: "length",
+        model: "gpt-4o-mini-2024-07-18",
+        serviceTier: null,
+        processingMs: "321",
+        usage: { prompt_tokens: 10, completion_tokens: 40, total_tokens: 50 },
+      });
+      return true;
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

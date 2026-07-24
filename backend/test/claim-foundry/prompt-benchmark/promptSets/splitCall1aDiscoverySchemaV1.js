@@ -17,8 +17,10 @@ export const EXCLUDED_FROM_1A = Object.freeze([
 function deriveDiscoverySchema() {
   const schema = structuredClone(CF1_SEMANTIC_INVENTORY_SCHEMA);
   schema.name = "cf1_semantic_inventory_split_discovery_v1";
-  // Call 1A is a recall inventory. The deterministic selector, not the model
-  // schema, owns the later Call 1B and final-portfolio ceilings.
+  // Call 1A is an unbounded recall inventory. The deterministic selector, not
+  // the model schema, owns the later Call 1B and final-portfolio ceilings. The
+  // streamed transport guards exact repetition loops and the request retains an
+  // output-token limit.
   delete schema.schema.properties.candidateClaims.minItems;
   delete schema.schema.properties.candidateClaims.maxItems;
   const claim = schema.schema.properties.candidateClaims.items;

@@ -39,33 +39,21 @@ export class ArticleSectioning {
       "SECTION",
     ];
 
-    this.topicShiftCues = [
+    this.topicShiftCues = options.topicShiftCues ?? [
       "That brings us to",
       "Which brings us",
       "Now",
       "The next claim",
-      "Our health department",
       "Regarding",
-      "In 1999",
-      "In 2005",
-      "The 1986",
       "Findings from",
       "Given the",
       "Instead",
     ];
 
-    this.namedClusters = [
-      "CDC",
-      "FDA",
-      "WHO",
-      "National Childhood Vaccine Injury Act",
-      "Verstraeten",
-      "Simpsonwood",
-      "aluminum",
-      "thimerosal",
-      "VAERS",
-      "SIDS",
-    ];
+    // Domain names must be supplied by a caller from the current article or a
+    // generic configuration. Hard-coded fixture vocabulary silently changes
+    // section boundaries and can leak into downstream model context.
+    this.namedClusters = options.namedClusters ?? [];
   }
 
   /**

@@ -130,56 +130,15 @@ function generateFringeQueries(claimText, claimType = null) {
     `${claimText} conspiracy`,
   ];
 
-  // Claim-type specific fringe queries
-  const typeSpecificQueries = {
-    antisemitism: [
-      `site:gab.com ${claimText}`,
-      `site:bitchute.com ${claimText}`,
-      `"antisemitism myth" ${claimText}`,
-      `"Jewish victimhood" ${claimText}`,
-    ],
-    vaccines: [
-      `site:naturalnews.com ${claimText}`,
-      `site:childrenshealthdefense.org ${claimText}`,
-      `"vaccine dangers" ${claimText}`,
-      `"big pharma coverup" ${claimText}`,
-    ],
-    climate: [
-      `site:wattsupwiththat.com ${claimText}`,
-      `site:climatedepot.com ${claimText}`,
-      `"climate hoax" ${claimText}`,
-      `"global warming fraud" ${claimText}`,
-    ],
-    election: [
-      `site:thegatewaypundit.com ${claimText}`,
-      `"election fraud" ${claimText}`,
-      `"rigged election" ${claimText}`,
-    ],
-    covid: [
-      `site:naturalnews.com ${claimText}`,
-      `site:theepochtimes.com ${claimText}`,
-      `"covid hoax" ${claimText}`,
-      `"plandemic" ${claimText}`,
-    ],
-  };
-
-  const specific = typeSpecificQueries[claimType] || [];
-  return [...baseQueries, ...specific];
+  void claimType;
+  return baseQueries;
 }
 
 /**
  * Detect claim type from text (simple keyword matching)
  */
 function detectClaimType(claimText) {
-  const text = claimText.toLowerCase();
-
-  if (text.match(/antisemit|jewish|jew|israel|zion/)) return 'antisemitism';
-  if (text.match(/vaccine|vax|immuniz/)) return 'vaccines';
-  if (text.match(/climate|global warming|carbon|emissions/)) return 'climate';
-  if (text.match(/election|vote|ballot|fraud/)) return 'election';
-  if (text.match(/covid|coronavirus|pandemic/)) return 'covid';
-  if (text.match(/pesticide|herbicide|glyphosate/)) return 'pesticides';
-
+  void claimText;
   return null;
 }
 

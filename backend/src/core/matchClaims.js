@@ -22,7 +22,7 @@ const MISCONDUCT_CONTRACT = `MISCONDUCT / ATTRIBUTION CONTRACT:
 - If the task claim contains an attribution wrapper such as "X revealed that Y", evaluate the core assertion Y while using X only as context.
 - For claims alleging fraud, cover-up, suppression, destruction of evidence, data manipulation, or institutional misconduct, support requires the reference claim to address that specific misconduct.
 - A reference claim saying data was "omitted", "excluded", "not reported", or "re-analyzed" does not support a task claim saying evidence was destroyed or that scientists were ordered to destroy it.
-- A reference claim saying "MMR does not cause autism" does not by itself refute an alleged order to destroy evidence; it may be nuance unless it addresses the alleged order, destruction, concealment, or cover-up.
+- Evidence about the broader subject matter does not by itself support or refute a distinct allegation about how records or evidence were handled; it must address the alleged conduct.
 - Do not infer stronger misconduct than the reference actually states.`;
 
 function normalizeStance(rawStance) {
@@ -100,35 +100,6 @@ function normalizeBearingMatch(match) {
     causalStrength: allowedCausal.has(causalRaw) ? causalRaw : "unclear",
     bearingReason: String(match?.bearingReason || match?.bearing_reason || "").trim().slice(0, 500),
   };
-}
-
-function comparativeRiskOverride(taskClaimText, referenceClaimText, rationale) {
-  const task = String(taskClaimText || "").toLowerCase();
-  const ref = `${referenceClaimText || ""} ${rationale || ""}`.toLowerCase();
-
-  const taskMentionsVaccineRiskGreater =
-    /\b(vaccine|vaccination|shot|jab|covid shot|covid vaccine)s?\b/.test(task) &&
-    /\b(virus|infection|covid[- ]?19 infection|disease)\b/.test(task) &&
-    /\b(outweigh|greater than|higher than|more than|exceed|worse than)\b/.test(task) &&
-    /\b(risk|risks|myocarditis|pericarditis|harm|harms|adverse)\b/.test(task);
-
-  const referenceSaysInfectionRiskGreater =
-    /\b(virus|infection|covid[- ]?19 infection|disease)\b/.test(ref) &&
-    /\b(vaccine|vaccination|shot|jab|covid shot|covid vaccine)s?\b/.test(ref) &&
-    (
-      /\b(infection|virus|disease|covid[- ]?19 infection)\b.{0,80}\b(higher|greater|more|increased)\b.{0,80}\b(risk|myocarditis|pericarditis|harm)/.test(ref) ||
-      /\b(risk|myocarditis|pericarditis|harm)\b.{0,80}\b(higher|greater|more|increased)\b.{0,80}\b(after|from|following)\b.{0,40}\b(infection|virus|disease)\b/.test(ref) ||
-      /\b(vaccine|vaccination|shot|jab)\b.{0,80}\b(lower|smaller|less|reduced|quite small)\b.{0,80}\b(compared to|than|versus|vs\.?)\b.{0,80}\b(infection|virus|disease)\b/.test(ref)
-    );
-
-  if (taskMentionsVaccineRiskGreater && referenceSaysInfectionRiskGreater) {
-    return {
-      stance: "refute",
-      reason: "comparative-risk inversion: task says vaccine risk exceeds infection risk, while reference says infection risk exceeds vaccine risk",
-    };
-  }
-
-  return null;
 }
 
 /**
@@ -213,10 +184,7 @@ For each reference claim, determine:
    - Negative: refutes the task claim
    - Magnitude: strength of support/refutation
 
-Example:
-Task claim: "The risks of myocarditis from Covid shots outweigh the risk from the virus."
-Reference claim: "COVID-19 infection poses a higher myocarditis risk than vaccination."
-Correct stance: refute. The reference says the opposite of the task claim.
+For comparative claims, explicitly preserve the two compared entities and their direction. Reversing A > B to B > A is a refutation.
 
 Return ONLY matches where the reference claim meaningfully addresses a task claim.`;
 
@@ -365,7 +333,7 @@ If no reference claims address any task claims, return empty array [].`;
           evidenceText: `${referenceClaim.text || ""} ${match.rationale || ""}`,
           proposedStance,
         });
-        const override = quantitativeOverride || comparativeRiskOverride(taskClaim.text, referenceClaim.text, match.rationale);
+        const override = quantitativeOverride;
         const normalizedStance = override?.stance || proposedStance;
         const relationship = relationshipFromStance(normalizedStance);
         const supportLevel = normalizeSupportLevel(match.supportLevel, normalizedStance, confidence);

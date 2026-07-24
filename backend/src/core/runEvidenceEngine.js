@@ -377,37 +377,6 @@ export function buildSearchTargets(claim) {
 
   const attributionPattern = /\b(said|says|claimed|claims|alleged|alleges|reported|reports|according to|revealed|stated|wrote|testified)\b/i;
   const hasAttribution = attributionPattern.test(originalText) || attributionPattern.test(source);
-  const combinedText = `${source} ${originalText}`.toLowerCase();
-  const isCdcMmrAutismClaim =
-    /\bcdc\b|centers for disease control/.test(combinedText) &&
-    /\bmmr\b|measles/.test(combinedText) &&
-    /autism/.test(combinedText);
-  const allegesManipulatedData =
-    /manipulat|omit|omitted|exclude|excluded|data/.test(combinedText);
-  const allegesDestroyedData =
-    /destroy|destroyed|shred|shredded|discard|discarded/.test(combinedText);
-
-  if (isCdcMmrAutismClaim && allegesManipulatedData) {
-    add(
-      "CDC MMR autism DeStefano 2004 data manipulation omitted data",
-      "object_claim",
-      "refute",
-    );
-    add(
-      "DeStefano 2004 MMR autism study data available Thompson Hooker",
-      "study_or_event_identity",
-      "refute",
-    );
-  }
-
-  if (isCdcMmrAutismClaim && allegesDestroyedData) {
-    add(
-      "CDC MMR autism study raw data destroyed available DeStefano Thompson",
-      "object_claim",
-      "refute",
-    );
-  }
-
   if (hasAttribution) {
     const parts = source.split(attributionPattern).map((part) => part.trim()).filter(Boolean);
     const beforeVerb = parts[0] || "";

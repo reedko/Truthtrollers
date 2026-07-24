@@ -15,8 +15,7 @@ export class DeterministicClaimClustering {
 
     // Patterns to avoid - too generic
     this.forbiddenAnchors = new Set([
-      "article", "claim", "claims", "vaccine", "vaccines", "vaccination",
-      "public health", "health", "children", "parents", "data", "study",
+      "article", "claim", "claims", "health", "children", "parents", "data", "study",
     ]);
 
     // Anchor extraction patterns
@@ -33,8 +32,8 @@ export class DeterministicClaimClustering {
       percentages: /\d+\s*%/g,
       // Action words
       actionWords: /\b(manipulat|destroy|destro|omit|omitted|exclud|exclud|conceal|suppress|rework|rework|massage|commission|announc|reveal|allege|depod|shield|mandat)\w*\b/gi,
-      // Substances/products
-      substances: /\b(aluminum|thimerosal|mercury|formaldehyde|polysorbate|MMR|DTaP|VAERS|SIDS)\b/gi,
+      // Product or substance names should be captured by capitalized phrases,
+      // acronyms, or caller-provided metadata rather than a fixture vocabulary.
     };
   }
 
@@ -158,10 +157,6 @@ export class DeterministicClaimClustering {
     // Extract action words
     const actions = fullText.match(this.anchorPatterns.actionWords) || [];
     actions.forEach(a => anchors.add(a.trim().toLowerCase()));
-
-    // Extract substances
-    const substances = fullText.match(this.anchorPatterns.substances) || [];
-    substances.forEach(s => anchors.add(s.trim()));
 
     return Array.from(anchors);
   }

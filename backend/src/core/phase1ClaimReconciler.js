@@ -18,12 +18,11 @@
  */
 
 const MESSAGING_SPEAKER_RE =
-  /public health|public-health|messaging|\bad\b|advertisement|cdc|health department|official|authorities|slogan|campaign|jcph/i;
+  /messaging|\bad\b|advertisement|official statement|press release|slogan|campaign/i;
 
-// Well-known public-health reassurance slogans in this problem domain. Used as
-// a supporting signal that a duplicate group is opponent/slogan material.
-const SLOGAN_TEXT_RE =
-  /more aluminum by eating a tomato|ethylmercury[^.!?]*not harmful|no credible studies[^.!?]*(link|chronic)|tested more than any other medicine|safe and effective|vaccines are safe/i;
+// Generic quoted or slogan-like language can support duplicate reconciliation,
+// but no topic- or fixture-specific phrase is allowed to determine posture.
+const SLOGAN_TEXT_RE = /\b(?:slogan|tagline|motto|assurance|reassurance)\b/i;
 
 /**
  * Normalize claim text for duplicate detection:

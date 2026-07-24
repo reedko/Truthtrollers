@@ -14,6 +14,7 @@ export function buildModelCallProvenance({ prompt = {}, response = {}, request =
     user: prompt.user ?? "",
     responseSchema,
     ...(request.apiMode ? { apiMode: request.apiMode } : {}),
+    ...(typeof request.stream === "boolean" ? { stream: request.stream } : {}),
     ...(request.reasoningEffort ? { reasoningEffort: request.reasoningEffort } : {}),
     ...(typeof request.store === "boolean" ? { store: request.store } : {}),
   };
@@ -24,6 +25,7 @@ export function buildModelCallProvenance({ prompt = {}, response = {}, request =
       seed: requestIdentity.seed,
       maxOutputTokens: requestIdentity.maxOutputTokens,
       apiMode: requestIdentity.apiMode ?? "chat",
+      stream: requestIdentity.stream ?? false,
       reasoningEffort: requestIdentity.reasoningEffort ?? null,
       store: requestIdentity.store ?? null,
       systemSha256: sha256(requestIdentity.system),
@@ -42,6 +44,7 @@ export function buildModelCallProvenance({ prompt = {}, response = {}, request =
       finishReason: raw.choices?.[0]?.finish_reason
         ?? raw.incomplete_details?.reason ?? raw.status ?? null,
       cachedInputTokens: response.usage?.cachedInputTokens ?? null,
+      streamingDiagnostics: raw.streamingDiagnostics ?? null,
     },
   };
 }

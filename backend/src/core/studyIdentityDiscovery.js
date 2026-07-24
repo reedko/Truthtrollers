@@ -8,9 +8,8 @@ const unique = (values, limit = 20) => [...new Set((values || []).map((value) =>
 const studySearchClues = (context = {}) => (context.studyClues || [])
   .filter((clue) => !/referenced study\/document identity unresolved/i.test(clue));
 const GENERIC_IDENTITY_TOKENS = new Set([
-  "adverse", "analysis", "autism", "data", "deaths", "events", "evidence", "health",
-  "journal", "measles", "mumps", "paper", "public", "research", "rubella", "safety",
-  "study", "system", "vaccine", "vaccines",
+  "adverse", "analysis", "data", "deaths", "events", "evidence", "health",
+  "journal", "paper", "public", "research", "safety", "study", "system",
 ]);
 const SECONDARY_STUDY_TITLE_RE = /\b(?:systematic review|meta-analysis|review|an update of|update of|scientific evidence)\b/i;
 
@@ -148,7 +147,7 @@ function classifyStudyCandidate(identity = {}) {
   const official = /(?:^|\.)gov$/.test(hostname) || /\.gov\//.test(url);
   const academicProvider = ["pubmed", "openalex", "crossref", "semantic_scholar"].includes(provider);
   const scholarly = Boolean(identity.identifier || academicProvider || /doi\.org|pubmed\.ncbi|pmc\.ncbi|link\.springer|sciencedirect|wiley|tandfonline/.test(url));
-  const studyLanguage = /\b(?:study|trial|analysis|research|dataset|vaccination timing|population-based)\b/.test(combined);
+  const studyLanguage = /\b(?:study|trial|analysis|research|dataset|population-based)\b/.test(combined);
   const attributionDocument = /\b(?:statement|testimony|affidavit|declaration|transcript)\b/.test(combined);
 
   if (reanalysis && scholarly) return { role: "reanalysis", primaryEligible: false, retainEligible: true, reason: "scholarly_reanalysis" };
@@ -376,7 +375,7 @@ export function buildBibliographicResolutionQueries(resolution = {}, context = {
   const people = context.speakerEntities || [];
   const population = (context.populations || [])[0];
   const title = clean(seed?.title, 500)
-    .replace(/\bCDC Statement\s*:?\s*/i, "")
+    .replace(/\b(?:agency|institution) statement\s*:?\s*/i, "")
     .replace(/\|.*$/, "")
     .trim();
   const topicTerms = unique(tokenizeBearingText(`${context.objectClaimText || ""} ${title}`).filter((term) => term.length > 3), 7);

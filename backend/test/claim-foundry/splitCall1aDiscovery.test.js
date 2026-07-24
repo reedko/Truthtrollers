@@ -10,6 +10,12 @@ import { buildSplitCall1aAttributionPrompt }
   from "../claim-foundry/prompt-benchmark/promptSets/splitCall1aDiscoveryPromptAttributionV3.js";
 import { CF1_SPLIT_CALL1A_ATTRIBUTION_SCHEMA }
   from "../claim-foundry/prompt-benchmark/promptSets/splitCall1aDiscoverySchemaAttributionV2.js";
+import { CF1_SPLIT_CALL1A_ATOMICITY_TRACE_SCHEMA }
+  from "../claim-foundry/prompt-benchmark/promptSets/splitCall1aDiscoverySchemaAtomicityV1.js";
+import { buildSplitCall1aAtomicityPrompt }
+  from "../claim-foundry/prompt-benchmark/promptSets/splitCall1aDiscoveryPromptAtomicityV1.js";
+import { buildSplitCall1aClaimLanguagePrompt }
+  from "../claim-foundry/prompt-benchmark/promptSets/splitCall1aDiscoveryPromptClaimLanguageV3.js";
 import { prepareArticle } from "../claim-foundry/prompt-benchmark/generationRun.js";
 import { readFileSync } from "node:fs";
 
@@ -56,7 +62,7 @@ test("orientation fields (theme/thesis/pillars/thesisHinge) pass through unchang
   }
 });
 
-test("1A prompt and schema impose no numerical discovery floor or ceiling", () => {
+test("1A has no schema candidate count constraints and no prompt count", () => {
   const prompt = buildSplitCall1aPrompt({ article: { title: "x", text: "x".repeat(6_000) },
     structuralBlocks: [], sourceUnits: [] });
   const claims = prompt.responseSchema.schema.properties.candidateClaims;
@@ -96,7 +102,39 @@ test("1A prompt builds on a real fixture and carries no posture/source instructi
   assert.equal(prompt.responseSchema.name, "cf1_semantic_inventory_split_discovery_v1");
 });
 
-test("attribution V3 adds only provenance units and preserves uncapped discovery", () => {
+test("atomicity trace arm changes only the response schema", () => {
+  const context = { article: { title: "x", text: "x" }, structuralBlocks: [], sourceUnits: [] };
+  const baseline = buildSplitCall1aPrompt(context);
+  const trace = buildSplitCall1aAtomicityPrompt(context);
+  assert.equal(trace.system, baseline.system);
+  assert.equal(trace.user, baseline.user);
+  assert.equal(trace.responseSchema.name,
+    "cf1_semantic_inventory_split_discovery_atomicity_trace_v1");
+  const traceClaim = trace.responseSchema.schema.properties.candidateClaims.items;
+  assert.equal(Object.keys(traceClaim.properties)[0], "atomicityBasis");
+  assert.equal(Object.keys(traceClaim.properties)[1], "claimText");
+  assert.equal(traceClaim.required[0], "atomicityBasis");
+  assert.deepEqual(Object.fromEntries(Object.entries(traceClaim.properties)
+    .filter(([field]) => field !== "atomicityBasis")), splitClaim.properties);
+  assert.equal(trace.responseSchema.schema.properties.candidateClaims.minItems, undefined);
+  assert.equal(trace.responseSchema.schema.properties.candidateClaims.maxItems, undefined);
+  assert.equal(CF1_SPLIT_CALL1A_ATOMICITY_TRACE_SCHEMA.strict, true);
+});
+
+test("Simple V3 changes only prose and uses claim terminology consistently", () => {
+  const context = { article: { title: "x", text: "x" }, structuralBlocks: [], sourceUnits: [] };
+  const baseline = buildSplitCall1aPrompt(context);
+  const prompt = buildSplitCall1aClaimLanguagePrompt(context);
+  assert.deepEqual(prompt.responseSchema, baseline.responseSchema);
+  const instructions = `${prompt.system}\n${prompt.user.split("STRUCTURED ARTICLE:")[0]}`;
+  assert.doesNotMatch(instructions, /\bproposition(?:s)?\b/i);
+  assert.match(instructions, /one primary subject and one independently testable predicate or relationship/i);
+  assert.match(instructions, /additional event, outcome, statistic, classification, effect, or article response/i);
+  assert.match(instructions, /write claimText as one atomic, evidence-testable factual claim/i);
+  assert.doesNotMatch(instructions, /complete, concise|split chained|combine distant/i);
+});
+
+test("attribution V3 adds only provenance units and preserves the unbounded candidate array", () => {
   const claim = CF1_SPLIT_CALL1A_ATTRIBUTION_SCHEMA.schema.properties.candidateClaims.items;
   const baselineFields = Object.keys(splitClaim.properties).sort();
   assert.deepEqual(Object.keys(claim.properties).filter((field) => field !== "attributionContextUnitIds").sort(),

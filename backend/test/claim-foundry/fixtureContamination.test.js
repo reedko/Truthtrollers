@@ -45,6 +45,27 @@ const PRODUCTION_ROOTS = [
   // same way (coder plan §5.1).
   fileURLToPath(new URL("./prompt-benchmark/promptSets/", import.meta.url)),
 ];
+// Legacy/core prompt and query modules sit outside the newer CF1/ER1 trees.
+// They are nevertheless executable model/search inputs and must be covered by
+// the same fixture-contamination guard.
+const LEGACY_PROMPT_QUERY_FILES = [
+  "atomicVisibleClaimsExtractor.js",
+  "runEvidenceEngine.js",
+  "phase1ClaimReconciler.js",
+  "articleSectioning.js",
+  "deterministicClaimClustering.js",
+  "matchClaims.js",
+  "assessClaimRelevance.js",
+  "evidenceEngine.js",
+  "identityBearing.js",
+  "studyIdentityDiscovery.js",
+  "evidenceCandidateSelector.js",
+  "evidencePurposeLanes.js",
+  "postScrapeTargetFit.js",
+].map((name) => fileURLToPath(new URL(`../../src/core/${name}`, import.meta.url)));
+LEGACY_PROMPT_QUERY_FILES.push(
+  fileURLToPath(new URL("../../src/utils/extractQuote.js", import.meta.url)),
+);
 const SRC_ROOT = fileURLToPath(new URL("../../src/", import.meta.url));
 
 async function productionFiles(root) {
@@ -54,7 +75,10 @@ async function productionFiles(root) {
 }
 
 test("no fixture entity appears anywhere in CF1 or ER1 production sources", async () => {
-  const files = (await Promise.all(PRODUCTION_ROOTS.map(productionFiles))).flat();
+  const files = [
+    ...(await Promise.all(PRODUCTION_ROOTS.map(productionFiles))).flat(),
+    ...LEGACY_PROMPT_QUERY_FILES,
+  ];
   assert.ok(files.length > 40, `Expected CF1+ER1 production tree, found ${files.length} files`);
   const violations = [];
   for (const file of files) {

@@ -116,7 +116,7 @@ function looksLikeGenericDataPortal(candidate, matchedAnchors = []) {
     return true;
   }
   const distinctiveAnchors = matchedAnchors.filter((token) =>
-    !["data", "linking", "study", "vaccine", "autism"].includes(token)
+    !["data", "linking", "study"].includes(token)
   );
   return distinctiveAnchors.length < 2 &&
     /\b(?:data\.gov home|data catalog|open data portal|dataset search)\b/.test(`${title} ${url}`);

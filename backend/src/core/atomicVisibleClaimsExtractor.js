@@ -253,7 +253,7 @@ Do NOT extract:
 - Transitions or article previews
 - Rhetorical framing
 - Repeated restatements of earlier claims
-- Vague topic claims or summaries ("The article discusses vaccine safety")
+- Vague topic claims or summaries ("The article discusses the subject")
 - Descriptive setup unless it bears on the argument
 - Attribution-only claims, unless the speaker/source identity matters or there is an embedded substantive claim
 - Final editorial conclusions, broad topic labels, evidence, verdicts, or scoring
@@ -263,42 +263,28 @@ Extract fewer if the section has fewer argument-bearing claims. Quality over cov
 
 ARTICLE STANCE RULES:
 - The user message begins with an ARTICLE TITLE and ARTICLE FRAME HINT describing the article's overall rhetorical posture. Use them to decide articleUse — the section alone is often misleading.
-- When a section contains a public-health assurance, advertisement claim, official reassurance, or safety slogan that the article is examining critically, classify it as articleUse: used_as_opponent_claim with likelyScoreTransform: invert. Use review if unsure.
-- Do NOT mark such claims endorsed_by_article merely because they appear in the section. A quoted section heading stating an official position is usually an opponent claim, not the article's own view.
-- Claims the article presents as its OWN evidence or allegation remain endorsed_by_article with likelyScoreTransform: normal (e.g., the article alleging a law removed liability from drug companies, a whistleblower revealed data manipulation, or injected aluminum bypasses digestive protections).
+- Determine posture from how the article deploys the proposition, never from the identity or type of its source. A statement by an institution, expert, critic, advertiser, study, or the article author may be endorsed, rejected, reported neutrally, or left unclear.
+- When the article presents a proposition mainly to criticize or refute it, classify it as articleUse: used_as_opponent_claim with likelyScoreTransform: invert.
+- Claims the article advances as its own evidence or allegation remain endorsed_by_article with likelyScoreTransform: normal.
 - review is allowed: use it whenever the section plus the frame hint is still insufficient to decide.
 
 ATTRIBUTION/SUBSTANCE RULES:
 - NEVER rewrite visibleClaimText to add attribution. Keep it close to the article's explicit text. Attribution lives in the metadata fields.
-- If the sentence explicitly says "X says Y" ("the ad says Y", "the CDC claims Y", "the study claims Y", etc.):
+- If the sentence explicitly says "X says Y":
   - Set claimForm to attributed_assertion or quoted_claim.
   - Put Y in embeddedSubstantiveClaim.
   - Set speakerOrSource to identify X.
   - Set needsAttributionTarget true if verifying that X said Y may matter.
   - Set needsSubstantiveTarget true if Y is the article-relevant proposition.
-- QUOTED SLOGANS WITH IMPLIED SOURCES: if a claim appears as a quoted slogan, section heading, ad/public-health reassurance, CDC reassurance, or official messaging claim that the article is examining critically — even when the sentence is a bare assertion with no "X says" — the attribution still belongs in metadata:
+- QUOTED OR BARE ASSERTIONS WITH A LOCALLY IDENTIFIED SOURCE: when surrounding text explicitly identifies who supplied a quotation or bare assertion, keep that source in metadata even if the sentence itself contains no attribution wrapper:
   - Keep visibleClaimText as the article's explicit text; do NOT rewrite it as "X claims Y".
   - Set claimForm to quoted_claim (or attributed_assertion).
-  - Set articleUse to used_as_opponent_claim.
-  - Set speakerOrSource to the implied source, e.g. "public health messaging", "JCPH ad", "CDC/public health authorities", "official vaccine-safety messaging".
+  - Set speakerOrSource to the exact locally identified person, institution, document, study, or article voice. Do not invent a generic source category.
   - Set embeddedSubstantiveClaim to the underlying proposition Y.
   - Set needsAttributionTarget true if verifying the source/speaker matters.
   - Set needsSubstantiveTarget true.
-  - Set likelyScoreTransform to invert.
-- EXAMPLE (quoted slogan, correct output):
-  Source sentence: "The type of mercury in vaccines – ethylmercury – is NOT harmful to us."
-  {
-    "visibleClaimText": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
-    "claimForm": "quoted_claim",
-    "articleUse": "used_as_opponent_claim",
-    "speakerOrSource": "public health messaging",
-    "embeddedSubstantiveClaim": "The type of mercury in vaccines, ethylmercury, is not harmful to humans.",
-    "targetHints": { "needsAttributionTarget": true, "needsSubstantiveTarget": true, "likelyScoreTransform": "invert" }
-  }
-  The same pattern applies to slogans like:
-  - "So far, there have been no credible studies that link vaccination to chronic disease." → embeddedSubstantiveClaim: "There are no credible studies linking vaccination to chronic disease."
-  - "Vaccines are tested more than any other medicine you could give your kid." → embeddedSubstantiveClaim: "Vaccines are tested more than any other medicine given to children."
-- Direct claims the article asserts as its OWN (e.g., "Aluminum can cross the blood-brain barrier") are NOT attribution-wrapped: use direct_assertion (or causal/statistical/etc.) and leave embeddedSubstantiveClaim empty.
+  - Determine articleUse and likelyScoreTransform independently from the source identity using the article's deployment of Y.
+- Direct claims the article asserts in its own voice are NOT attribution-wrapped: use direct_assertion (or causal/statistical/etc.) and leave embeddedSubstantiveClaim empty.
 
 SCORE TRANSFORM HINT (targetHints.likelyScoreTransform):
 - normal: evidence supporting the object/substantive claim would STRENGTHEN the article's argument.

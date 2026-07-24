@@ -22,35 +22,6 @@ function normalizeStance(rawStance) {
   return "insufficient";
 }
 
-function comparativeRiskOverride(taskClaimText, referenceClaimText, rationale) {
-  const task = String(taskClaimText || "").toLowerCase();
-  const ref = `${referenceClaimText || ""} ${rationale || ""}`.toLowerCase();
-
-  const taskMentionsVaccineRiskGreater =
-    /\b(vaccine|vaccination|shot|jab|covid shot|covid vaccine)s?\b/.test(task) &&
-    /\b(virus|infection|covid[- ]?19 infection|disease)\b/.test(task) &&
-    /\b(outweigh|greater than|higher than|more than|exceed|worse than)\b/.test(task) &&
-    /\b(risk|risks|myocarditis|pericarditis|harm|harms|adverse)\b/.test(task);
-
-  const referenceSaysInfectionRiskGreater =
-    /\b(virus|infection|covid[- ]?19 infection|disease)\b/.test(ref) &&
-    /\b(vaccine|vaccination|shot|jab|covid shot|covid vaccine)s?\b/.test(ref) &&
-    (
-      /\b(infection|virus|disease|covid[- ]?19 infection)\b.{0,80}\b(higher|greater|more|increased)\b.{0,80}\b(risk|myocarditis|pericarditis|harm)/.test(ref) ||
-      /\b(risk|myocarditis|pericarditis|harm)\b.{0,80}\b(higher|greater|more|increased)\b.{0,80}\b(after|from|following)\b.{0,40}\b(infection|virus|disease)\b/.test(ref) ||
-      /\b(vaccine|vaccination|shot|jab)\b.{0,80}\b(lower|smaller|less|reduced|quite small)\b.{0,80}\b(compared to|than|versus|vs\.?)\b.{0,80}\b(infection|virus|disease)\b/.test(ref)
-    );
-
-  if (taskMentionsVaccineRiskGreater && referenceSaysInfectionRiskGreater) {
-    return {
-      stance: "refute",
-      reason: "comparative-risk inversion: task says vaccine risk exceeds infection risk, while reference says infection risk exceeds vaccine risk",
-    };
-  }
-
-  return null;
-}
-
 /**
  * Assess whether a reference claim supports/refutes/nuances a task claim
  * @param {Object} params
@@ -81,10 +52,7 @@ Guidelines:
 
 Comparison rule:
 If the task claim says A is greater than B and the reference says B is greater than A, the correct stance is "refute".
-Example:
-Task claim: "The risks of myocarditis from Covid shots outweigh the risk from the virus."
-Reference claim: "COVID-19 infection poses a higher myocarditis risk than vaccination."
-Correct stance: "refute" because the reference says the opposite of the task claim.
+Preserve the compared entities and their direction; do not substitute source credibility for this comparison.
 
 - confidence: 0-1 (how certain you are of the stance)
 - quality: 0-1.2 (how strong/useful the reference claim is as evidence)
@@ -161,11 +129,7 @@ Do not label a reference "support" merely because the reference itself is credib
       throw new Error("Invalid assessment format from AI");
     }
 
-    const override = comparativeRiskOverride(taskClaimText, referenceClaimText, assessment.rationale);
-    assessment.stance = override?.stance || normalizeStance(assessment.stance);
-    if (override) {
-      assessment.rationale = `${assessment.rationale || ""} [Stance corrected: ${override.reason}.]`.trim();
-    }
+    assessment.stance = normalizeStance(assessment.stance);
 
     // Calculate support_level using stance multiplier
     const stanceMultiplier = {

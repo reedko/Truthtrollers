@@ -79,10 +79,9 @@ function dedupe(arr, keyFn) {
 }
 
 const STUDY_REFINEMENT_STOPWORDS = new Set([
-  "about", "after", "agency", "autism", "before", "behind", "candidate", "claims",
+  "about", "after", "agency", "before", "behind", "candidate", "claims",
   "data", "document", "evidence", "facts", "hidden", "journal", "linked", "linking",
-  "measles", "mumps", "paper", "questioned", "research", "rubella", "study", "that",
-  "their", "timing", "vaccination", "vaccinations", "vaccine", "vaccines", "with",
+  "paper", "questioned", "research", "study", "that", "their", "timing", "with",
 ]);
 
 function candidateText(candidate = {}) {
@@ -601,35 +600,10 @@ export class EvidenceEngine {
       { query: `${claim.text} conspiracy theory`, intent: 'refute-fringe' },
     ];
 
-    // Claim-type specific fringe sites and keywords
-    const typeSpecificQueries = {
-      antisemitism: [
-        { query: `site:gab.com ${claim.text}`, intent: 'refute-fringe' },
-        { query: `site:bitchute.com ${claim.text}`, intent: 'refute-fringe' },
-        { query: `"antisemitism myth" ${claim.text}`, intent: 'refute-fringe' },
-      ],
-      vaccines: [
-        { query: `site:naturalnews.com ${claim.text}`, intent: 'refute-fringe' },
-        { query: `site:childrenshealthdefense.org ${claim.text}`, intent: 'refute-fringe' },
-        { query: `"vaccine dangers coverup" ${claim.text}`, intent: 'refute-fringe' },
-      ],
-      climate: [
-        { query: `site:wattsupwiththat.com ${claim.text}`, intent: 'refute-fringe' },
-        { query: `"climate hoax" ${claim.text}`, intent: 'refute-fringe' },
-      ],
-      covid: [
-        { query: `site:naturalnews.com ${claim.text}`, intent: 'refute-fringe' },
-        { query: `"covid hoax" ${claim.text}`, intent: 'refute-fringe' },
-        { query: `"plandemic" ${claim.text}`, intent: 'refute-fringe' },
-      ],
-      pesticides: [
-        { query: `site:naturalnews.com ${claim.text}`, intent: 'refute-fringe' },
-        { query: `"pesticide safety" ${claim.text}`, intent: 'refute-fringe' },
-      ],
-    };
-
-    const specific = typeSpecificQueries[claimType] || [];
-    const allQueries = [...baseQueries, ...specific];
+    // Topic-specific sites and answer-shaped vocabulary bias retrieval and can
+    // leak benchmark fixtures into later model calls. Use only the claim text
+    // plus generic challenge terms here.
+    const allQueries = baseQueries;
 
     const fringeQueries = allQueries.slice(0, n).map(q => ({
       claimId: claim.id,
@@ -653,15 +627,7 @@ export class EvidenceEngine {
    * Detect claim type from text (simple keyword matching)
    */
   detectClaimType(claimText) {
-    const text = claimText.toLowerCase();
-
-    if (text.match(/antisemit|jewish|jew|israel|zion/)) return 'antisemitism';
-    if (text.match(/vaccine|vax|immuniz/)) return 'vaccines';
-    if (text.match(/climate|global warming|carbon|emissions/)) return 'climate';
-    if (text.match(/election|vote|ballot|fraud/)) return 'election';
-    if (text.match(/covid|coronavirus|pandemic/)) return 'covid';
-    if (text.match(/pesticide|herbicide|glyphosate/)) return 'pesticides';
-
+    void claimText;
     return null;
   }
 

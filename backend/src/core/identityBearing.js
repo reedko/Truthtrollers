@@ -5,12 +5,10 @@ const STOP = new Set([
   "about", "after", "among", "article", "children", "data", "first", "from", "into",
   "journal", "paper", "research", "study", "the", "their", "using", "with",
 ]);
-const GENERIC_STUDY_TOPIC = new Set(["vaccine", "autism", "measles", "mumps", "rubella"]);
+const GENERIC_STUDY_TOPIC = new Set(["analysis", "data", "paper", "research", "study"]);
 
 const clean = (value, max = 1000) => String(value ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 function normalizedToken(token) {
-  if (/^vaccin/.test(token)) return "vaccine";
-  if (/^autis/.test(token)) return "autism";
   if (/^manipulat/.test(token)) return "manipulate";
   if (/^omit/.test(token)) return "omit";
   return token;
@@ -19,12 +17,6 @@ function normalizedToken(token) {
 const tokens = (value) => {
   const result = new Set();
   for (const raw of clean(value).toLowerCase().match(/[a-z0-9]+/g) || []) {
-    if (raw === "mmr") {
-      result.add("measles");
-      result.add("mumps");
-      result.add("rubella");
-      continue;
-    }
     const token = normalizedToken(raw);
     if (token.length >= 4 && !STOP.has(token)) result.add(token);
   }

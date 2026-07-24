@@ -1,14 +1,15 @@
 import { Cf1Error } from "./errors.js";
 
 function normalizeUsage(usage = {}) {
-  const inputTokens = Number(usage.input_tokens ?? usage.prompt_tokens ?? 0) || 0;
-  const outputTokens = Number(usage.output_tokens ?? usage.completion_tokens ?? 0) || 0;
+  const safeUsage = usage ?? {};
+  const inputTokens = Number(safeUsage.input_tokens ?? safeUsage.prompt_tokens ?? 0) || 0;
+  const outputTokens = Number(safeUsage.output_tokens ?? safeUsage.completion_tokens ?? 0) || 0;
   return {
     inputTokens,
     outputTokens,
-    totalTokens: Number(usage.total_tokens ?? inputTokens + outputTokens) || 0,
-    cachedInputTokens: Number(usage.input_tokens_details?.cached_tokens
-      ?? usage.prompt_tokens_details?.cached_tokens ?? 0) || 0,
+    totalTokens: Number(safeUsage.total_tokens ?? inputTokens + outputTokens) || 0,
+    cachedInputTokens: Number(safeUsage.input_tokens_details?.cached_tokens
+      ?? safeUsage.prompt_tokens_details?.cached_tokens ?? 0) || 0,
   };
 }
 

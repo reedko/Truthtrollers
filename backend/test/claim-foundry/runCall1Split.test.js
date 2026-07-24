@@ -73,6 +73,8 @@ test("runs 1A then 1B and emits a merged cf1_semantic_inventory_v1 even with no 
   assert.equal(result.modelCalls.call1a.response.responseId, "chatcmpl-1a");
   assert.equal(result.modelCalls.call1b.response.responseId, "chatcmpl-1b");
   assert.equal(result.modelCalls.call1b.response.systemFingerprint, "fp_test");
+  assert.equal(result.modelCalls.call1a.request.stream, false);
+  assert.equal(result.modelCalls.call1b.request.stream, false);
   assert.equal(result.modelCalls.call1b.request.seed, 42);
   assert.match(result.modelCalls.call1b.request.requestSha256, /^[a-f0-9]{64}$/);
   assert.match(result.modelCalls.call1b.request.schemaSha256, /^[a-f0-9]{64}$/);
@@ -104,4 +106,67 @@ test("can pin different models for 1A and 1B", async () => {
       temperature: 0 } });
 
   assert.deepEqual(runner.calls.map((c) => c.model), ["model-for-1a", "model-for-1b"]);
+});
+
+test("census is diagnostic-only even if a legacy recovery option and runner are supplied", async () => {
+  const raw = JSON.parse(readFileSync(new URL("./fixtures/CF1-F02/article.json", import.meta.url)));
+  const { article, structuralBlocks, articleDocument } = prepareArticle(raw.article ?? raw);
+  const unitId = articleDocument.sourceUnits.find((unit) => unit.type === "quotation").unitId;
+  const inventory1a = { theme: { text: "Theme", sourceUnitIds: [unitId] },
+    thesis: { text: "Thesis", sourceUnitIds: [unitId] }, thesisHinge: "substance",
+    pillars: [{ label: "Pillar", text: "Pillar text", importance: "load_bearing",
+      sourceUnitIds: [unitId] }],
+    candidateClaims: [{ claimText: "A testable claim from one passage.", sourceUnitIds: [unitId],
+      materiality: "high", relatedPillarLabels: ["Pillar"], scope: "general",
+      evidenceUsefulnessHint: "Evidence testing the claim." }] };
+  const call1b = { candidateJudgments: [{ candidateId: "CAND01", assertionSource: "unknown",
+    assertionSourceUnitIds: [], assertionSourceResolution: "no_candidate_found",
+    contentStance: "neutral", articleDeployment: "reported_neutral", articleRole: "qualification",
+    sourceUnitIds: [unitId], responseUnitIds: [], needsSplit: { split: false, reason: null } }] };
+  const runner = stubRunner({ inventory1a, call1b });
+  const recoveryRunner = { invokeStructured() { throw new Error("recovery transport failed"); } };
+  const result = await runCall1Split({ article, structuralBlocks,
+    sourceUnits: articleDocument.sourceUnits, modelRunner: runner,
+    modelRunners: { censusRecovery: recoveryRunner },
+    options: { arm: "attribution-host-v4", model: "gpt-test", censusRecovery: true } });
+  assert.equal(result.censusRecovery.status, "disabled");
+  assert.equal(result.inventory.candidateClaims.length, 1);
+  assert.deepEqual(runner.calls.map((call) => call.stage),
+    ["semantic_inventory_1a", "source_posture_1b"]);
+});
+
+test("atomic repair replaces one flagged claim before selection and 1B", async () => {
+  const raw = JSON.parse(readFileSync(new URL("./fixtures/CF1-F02/article.json", import.meta.url)));
+  const { article, structuralBlocks, articleDocument } = prepareArticle(raw.article ?? raw);
+  const unitId = "U0010";
+  const originalText = "Additional ingredients make commercial products more toxic than glyphosate alone and contaminate food.";
+  const repairedText = "Additional ingredients make commercial products more toxic than glyphosate alone.";
+  const inventory1a = { theme: { text: "Theme", sourceUnitIds: [unitId] },
+    thesis: { text: "Thesis", sourceUnitIds: [unitId] }, thesisHinge: "substance",
+    pillars: [{ label: "Toxicity", text: "Toxicity", importance: "load_bearing",
+      sourceUnitIds: [unitId] }],
+    candidateClaims: [{ claimText: originalText, sourceUnitIds: [unitId],
+      materiality: "high", relatedPillarLabels: ["Toxicity"], scope: "products",
+      evidenceUsefulnessHint: "Compare toxicity." }] };
+  const call1b = { candidateJudgments: [{ candidateId: "CAND01", assertionSource: "Michael Antoniou",
+    assertionSourceUnitIds: [unitId], assertionSourceResolution: "resolved_from_context",
+    contentStance: "supports_thesis", articleDeployment: "endorsed", articleRole: "pillar",
+    sourceUnitIds: [unitId], responseUnitIds: [], needsSplit: { split: false, reason: null } }] };
+  const runner = stubRunner({ inventory1a, call1b });
+  const atomicRunner = { invokeStructured(request) {
+    assert.equal(request.usageContext.stage, "semantic_inventory_1a_atomic_repair");
+    return Promise.resolve({ output: { candidateRepairs: [{ repairId: "1A-001",
+      action: "replace_with_first_atomic_assertion", claimText: repairedText,
+      sourceUnitIds: [unitId], evidenceUsefulnessHint: "Compare product toxicity." }] },
+    usage: { totalTokens: 5 }, attempts: 1, rawResponse: {} });
+  } };
+  const result = await runCall1Split({ article, structuralBlocks,
+    sourceUnits: articleDocument.sourceUnits, modelRunner: runner,
+    modelRunners: { atomicRepair: atomicRunner },
+    options: { arm: "attribution-host-v4", model: "gpt-test", atomicRepair: true } });
+  assert.equal(result.atomicRepair.status, "available");
+  assert.equal(result.atomicRepair.application.summary.replaced, 1);
+  assert.equal(result.selector.selectedClaims[0].claimText, repairedText);
+  assert.equal(result.inventory.candidateClaims[0].claimText, repairedText);
+  assert.equal(result.usage.totalTokens, 25);
 });

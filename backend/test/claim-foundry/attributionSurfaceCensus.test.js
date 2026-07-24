@@ -70,12 +70,15 @@ test("is independent of Call 1A: candidate list cannot influence output", () => 
   assert.deepEqual(collectAttributionSurface({ sourceUnits: [] }), []);
 });
 
-test("F02 smoke: recovers every block quotation as an attribution surface", () => {
+test("F02 smoke: scans every block quotation as one or more attribution fragments", () => {
   const raw = JSON.parse(readFileSync(new URL("./fixtures/CF1-F02/article.json", import.meta.url)));
   const { articleDocument } = prepareArticle(raw.article ?? raw);
   const items = collectAttributionSurface({ sourceUnits: articleDocument.sourceUnits });
   const quoteUnits = articleDocument.sourceUnits.filter((u) => u.type === "quotation").length;
-  const censusQuotes = items.filter((i) => i.kind === "block_quotation").length;
-  assert.equal(censusQuotes, quoteUnits);
-  assert.ok(items.length > quoteUnits, "should also surface prose attributed statements");
+  const censusQuoteUnitIds = new Set(items.filter((i) => i.kind === "block_quotation")
+    .flatMap((i) => i.sourceUnitIds));
+  const quoteUnitIds = new Set(articleDocument.sourceUnits
+    .filter((u) => u.type === "quotation").map((u) => u.unitId));
+  assert.deepEqual(censusQuoteUnitIds, quoteUnitIds);
+  assert.ok(items.length > quoteUnits, "should split multi-sentence quotations and surface prose attribution");
 });

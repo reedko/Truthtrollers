@@ -42,6 +42,8 @@ function claimDetail({ claim, signal = {}, judgment = {}, packet = {}, discovery
   return `<details class="claim-detail"><summary>${clip(claim.claimText, 240)}</summary>
     <div class="claim-grid">
       <div><h4><span class="tag c1a">1A</span> proposition and grounding</h4>
+        <strong>atomicity basis:</strong> ${esc(discovery.atomicityBasis ?? claim.atomicityBasis ?? "not recorded")}<br>
+        <strong>atomic repair:</strong> ${esc(discovery._atomicityRepair?.status ?? "not flagged")}${discovery._atomicityRepair?.originalClaimText ? ` · originally: ${esc(discovery._atomicityRepair.originalClaimText)}` : ""}<br>
         <strong>claimText:</strong> ${esc(claim.claimText)}<br>
         <strong>source units:</strong> ${esc((claim.sourceUnitIds ?? []).join(", ") || "none")}<br>
         <strong>grounding text:</strong><blockquote>${clip(recordsText(packet.claimUnits), 1200)}</blockquote>
@@ -88,6 +90,7 @@ function runSection(run) {
   }
   const inv = result.inventory ?? {};
   const raw1a = result.raw?.call1a ?? {};
+  const combined1a = result.raw?.call1aWithRecovery ?? raw1a;
   const raw1b = result.raw?.call1b ?? {};
   const signalsByText = new Map((result.hostSignals ?? []).map((s) => [s.claimText, s]));
   const selector = result.selector ?? {};
@@ -111,17 +114,39 @@ function runSection(run) {
     c._occurrenceDerived
       ? `<span class="tag host">HOST occurrence</span> from raw candidate ${esc(c._occurrenceDerived.fromCandidateIndex + 1)}`
       : `<span class="tag c1a">1A model</span>`,
-    clip(c.claimText, 220), esc((c.sourceUnitIds ?? []).join(", ")),
+    clip(c.atomicityBasis ?? "not recorded", 220), clip(c.claimText, 220), esc((c.sourceUnitIds ?? []).join(", ")),
     esc((c.attributionContextUnitIds ?? []).join(", ") || "none"), spanTag(gsOf(c)), esc(c.materiality)]);
 
   const census = result.censusDiagnostic ?? { status: "unavailable", summary: {}, items: [] };
   const censusRows = (census.items ?? []).map((item) => [
-    esc(item.censusId), esc((item.sourceUnitIds ?? []).join(", ")),
+    esc(item.censusId), esc(item.semanticChunkId ?? "—"), esc((item.sourceUnitIds ?? []).join(", ")),
     esc(item.trigger), esc((item.signals ?? []).join(", ")), clip(item.snippet, 260),
     item.match
       ? `<span class="ok">Apparently covered by Call 1A</span><br><span class="muted">${esc(item.match.candidateId)}: ${clip(item.match.claimText, 180)}</span>`
-      : `<span class="bad">No obvious Call 1A match</span>`,
-    item.match ? esc(item.match.reason) : "No shared grounded source unit with a Call 1A candidate",
+      : item.assessment === "probably_not_a_standalone_claim"
+        ? `<span class="muted">Probably not a standalone claim</span>`
+        : `<span class="bad">No obvious Call 1A match</span>`,
+    item.match ? esc(item.match.reason)
+      : item.assessment === "probably_not_a_standalone_claim"
+        ? "Deterministic signals do not justify sending this passage to recovery"
+        : "No sufficiently similar Call 1A claim grounded in this passage",
+  ]);
+  const recovery = result.censusRecovery ?? { status: "disabled" };
+  const acceptedRecovery = new Set((recovery.merge?.accepted ?? []).map((claim) => claim.claimText));
+  const rejectedRecovery = new Map((recovery.merge?.rejected ?? [])
+    .map((entry) => [entry.claimText, entry.reason]));
+  const recoveryRows = (recovery.output?.candidateClaims ?? []).map((claim) => [
+    acceptedRecovery.has(claim.claimText) ? `<span class="ok">accepted</span>`
+      : `<span class="bad">rejected: ${esc(rejectedRecovery.get(claim.claimText) ?? "not merged")}</span>`,
+    esc((claim.censusIds ?? []).join(", ")), clip(claim.claimText, 260),
+    esc((claim.sourceUnitIds ?? []).join(", ")), esc(claim.materiality),
+    esc((claim.relatedPillarLabels ?? []).join(", ") || "none"),
+  ]);
+  const atomicRepair = result.atomicRepair ?? { status: "disabled" };
+  const atomicRows = (atomicRepair.application?.diagnostics ?? []).map((item) => [
+    esc(item.repairId), esc(item.action), clip(item.originalClaimText ?? item.claimText, 260),
+    item.originalClaimText ? clip(item.claimText, 260) : "—",
+    esc((item.sourceUnitIds ?? []).join(", ") || "—"), esc(item.reason ?? "—"),
   ]);
 
   const judgmentRows = (raw1b.candidateJudgments ?? []).map((j) => [
@@ -185,10 +210,28 @@ function runSection(run) {
     <details open><summary><span class="tag host">PROVENANCE</span> model-call identity (${modelCallRows.length})</summary>
       ${table(["stage", "model", "seed", "temperature", "request SHA-256", "system SHA-256", "user SHA-256", "schema SHA-256", "OpenAI response ID", "system fingerprint", "service tier", "cached input"], modelCallRows)}</details>
     <details open><summary><span class="tag c1a">1A</span> discovery — canonical propositions (${discoveryRows.length})</summary>
-      ${table(["origin", "claimText", "sourceUnitIds", "attributionContextUnitIds", "groundingSpan", "materiality"], discoveryRows)}</details>
-    <details open><summary><span class="tag host">HOST</span> pre-1B deterministic selection (${(selector.selected ?? []).length}/${discoveryRows.length})</summary>
+      ${table(["origin", "atomicityBasis", "claimText", "sourceUnitIds", "attributionContextUnitIds", "groundingSpan", "materiality"], discoveryRows)}</details>
+    <details open><summary><span class="tag host">HOST</span> pre-1B deterministic selection (${(selector.selected ?? []).length}/${combined1a.candidateClaims?.length ?? discoveryRows.length})</summary>
       ${table(["index", "claimText", "reason", "source region"], (selector.selected ?? []).map((s) => [esc(s.index), clip(s.claimText, 220), esc(s.reason), esc(s.region)]))}
       <p class="muted">deferred: ${(selector.deferred ?? []).map((s) => `${esc(s.index)} (${esc(s.reason)})`).join(", ") || "none"}</p></details>
+    <details open><summary><span class="tag c1a">RECOVERY</span> census recovery — ${esc(recovery.status)} (${esc(recovery.merge?.summary?.acceptedRecoveryClaims ?? 0)} accepted)</summary>
+      <div class="diag">This is a separate optional experiment. It does not alter the primary 1A prompt. Failure is nonblocking.
+        · eligible unmatched ${esc(recovery.packetSelection?.summary?.eligibleUnmatchedPackets ?? "—")}
+        · sent ${esc(recovery.packetSelection?.summary?.selectedPackets ?? 0)} passages from ${esc(recovery.packetSelection?.summary?.selectedSemanticChunks ?? 0)} chunks
+        · model returned ${esc(recovery.merge?.summary?.modelRecoveryClaims ?? recovery.output?.candidateClaims?.length ?? 0)}
+        · accepted ${esc(recovery.merge?.summary?.acceptedRecoveryClaims ?? 0)}
+        · rejected ${esc(recovery.merge?.summary?.rejectedRecoveryClaims ?? 0)}
+        ${recovery.error ? `· <span class="bad">${esc(recovery.error)}</span>` : ""}</div>
+      ${table(["merge result", "census IDs", "recovered claim", "source units", "materiality", "pillars"], recoveryRows)}</details>
+    <details open><summary><span class="tag c1a">ATOMIC REPAIR</span> ${esc(atomicRepair.status)} (${esc(atomicRepair.application?.summary?.replaced ?? 0)} replaced, ${esc(atomicRepair.application?.summary?.dropped ?? 0)} dropped)</summary>
+      <div class="diag">Separate optional repair after primary 1A and before selection. Census packets are not inputs.
+        · flagged ${esc(atomicRepair.packetBuild?.summary?.flaggedClaims ?? 0)}
+        · kept ${esc(atomicRepair.application?.summary?.kept ?? 0)}
+        · replaced ${esc(atomicRepair.application?.summary?.replaced ?? 0)}
+        · dropped ${esc(atomicRepair.application?.summary?.dropped ?? 0)}
+        · unresolved/fallback ${esc(atomicRepair.application?.summary?.unresolved ?? 0)}
+        ${atomicRepair.error ? `· <span class="bad">${esc(atomicRepair.error)}</span>` : ""}</div>
+      ${table(["repair ID", "action", "original claim", "replacement", "source units", "reason"], atomicRows)}</details>
     <details><summary><span class="tag c1b">1B</span> source / posture judgments (${judgmentRows.length})</summary>
       ${table(["candidateId", "assertionSource", "source basis", "source resolution", "contentStance", "articleDeployment", "articleRole", "needsSplit"], judgmentRows)}</details>
     <details open><summary><span class="tag host">HOST</span> merged inventory — selected claims (${finalRows.length})</summary>
@@ -196,9 +239,9 @@ function runSection(run) {
     <details open><summary><span class="tag host">HOST</span> Census Diagnostic: Potentially Missed Attributed or Opponent Claims (${esc(census.summary?.totalPackets ?? 0)})</summary>
       <p class="muted">The census is an experimental diagnostic. It identifies passages that may contain attributed, quoted, or opponent assertions and allows reviewers to compare them with the claims independently extracted by Call 1A. Census findings do not affect the CF1 result and do not block the pipeline.</p>
       <div class="diag">${census.status === "available"
-        ? `total ${esc(census.summary?.totalPackets ?? 0)} · by trigger: ${esc(Object.entries(census.summary?.byTrigger ?? {}).map(([kind, count]) => `${kind} ${count}`).join(", ") || "none")} · <span class="ok">apparently covered ${esc(census.summary?.apparentMatchCount ?? 0)}</span> · <span class="bad">no obvious match ${esc(census.summary?.noObviousMatchCount ?? 0)}</span> · not evaluated ${esc(census.summary?.notEvaluatedCount ?? 0)}`
+        ? `scanned ${esc(census.summary?.semanticChunksScanned ?? "?")} semantic chunks · chunks with packets ${esc(census.summary?.semanticChunksWithPackets ?? "?")} · total ${esc(census.summary?.totalPackets ?? 0)} · recovery-eligible ${esc(census.summary?.recoveryEligiblePackets ?? "?")} · by trigger: ${esc(Object.entries(census.summary?.byTrigger ?? {}).map(([kind, count]) => `${kind} ${count}`).join(", ") || "none")} · <span class="ok">apparently covered ${esc(census.summary?.apparentMatchCount ?? 0)}</span> · <span class="bad">no obvious match ${esc(census.summary?.noObviousMatchCount ?? 0)}</span> · probably not standalone ${esc(census.summary?.probablyNotStandaloneCount ?? 0)} · not evaluated ${esc(census.summary?.notEvaluatedCount ?? 0)}`
         : `<span class="bad">Not evaluated: ${esc(census.error ?? "diagnostic unavailable")}</span>`}</div>
-      ${table(["census ID", "source unit", "trigger", "signals", "source snippet", "Call 1A comparison", "diagnostic note"], censusRows)}</details>
+      ${table(["census ID", "semantic chunk", "source unit", "trigger", "signals", "source snippet", "Call 1A comparison", "diagnostic note"], censusRows)}</details>
   </section>`;
 }
 

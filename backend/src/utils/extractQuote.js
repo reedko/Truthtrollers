@@ -125,8 +125,8 @@ export function applyEvaluationTargetGuard(evaluationTarget, quote) {
   const subject = evaluationTarget.subjectEntity || evaluationTarget.subject_entity || "";
   const evidenceText = `${quote.quote || ""} ${quote.summary || ""}`;
   // Actor identity must be present in the evidence itself. An LLM-generated
-  // summary such as "Wakefield, rather than the CDC" must not manufacture a
-  // CDC match that the quoted source assertion does not contain.
+  // summary naming a different person or institution must not manufacture a
+  // source match that the quoted assertion does not contain.
   const subjectPresent = !subject || containsEntity(quote.quote || "", subject);
 
   if (["attribution", "substantive"].includes(targetType) && subject && !subjectPresent) {
@@ -281,7 +281,7 @@ function buildTargetBearingContext(target) {
       `\nATTRIBUTION BEARING RULES (STRICT):`,
       `• Evidence bears ONLY if it addresses whether ${subjectEntity || "the named person"} actually made this specific statement or allegation.`,
       `• Evidence about whether the underlying assertion is true does NOT bear on this attribution target.`,
-      `• "CDC did/did not manipulate data" is NOT bearing here — that addresses the object claim, not whether ${subjectEntity || "the speaker"} made the allegation.`,
+      `• Evidence about whether the underlying event occurred is NOT bearing here — that addresses the object claim, not whether ${subjectEntity || "the speaker"} made the allegation.`,
       `• Do not let substantive or topical evidence count as attribution evidence.`,
     );
   } else if (targetType === "substantive") {
@@ -412,7 +412,7 @@ ATOMIC ASSERTION RULES:
 ${attributionRule}
 • If CLAIM alleges misconduct such as "ordered scientists to destroy evidence", "destroyed evidence", "fraud", "cover-up", or "data manipulation", support requires a quote directly addressing that misconduct.
 • A quote saying data was "omitted", "excluded", "not reported", or "re-analyzed" does NOT support a claim that evidence was destroyed or that scientists were ordered to destroy it.
-• A quote saying "MMR does not cause autism" or "no link was found" does NOT by itself refute that someone ordered evidence destroyed; mark it nuance unless it also addresses the alleged order/destruction/cover-up.
+• Evidence about the broader subject matter does NOT by itself refute a distinct allegation that someone ordered evidence destroyed; mark it nuance unless it also addresses the alleged order, destruction, or concealment.
 • For destruction/order allegations, use refute only when the source says the alleged destruction/order did not happen, was unsupported, was false/misleading, or contradicts the alleged misconduct.
 • Do not infer support from implication. The quote must bear on the specific assertion.
 

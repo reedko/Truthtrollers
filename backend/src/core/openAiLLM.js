@@ -190,6 +190,7 @@ export const openAiLLM = {
 
         let parsed;
         let providerResponse;
+        let providerMetadata;
         try {
           const json = JSON.parse(text);
           providerResponse = json;
@@ -198,22 +199,45 @@ export const openAiLLM = {
           recordOpenAiUsage(json.usage, json.model || model);
           const content = json.choices?.[0]?.message?.content ?? "{}";
           const finishReason = json.choices?.[0]?.finish_reason;
+          providerMetadata = {
+            responseId: json.id ?? null,
+            requestId: resp.headers?.get?.("x-request-id") ?? null,
+            systemFingerprint: json.system_fingerprint ?? null,
+            finishReason: finishReason ?? null,
+            model: json.model || model,
+            serviceTier: json.service_tier ?? null,
+            processingMs: resp.headers?.get?.("openai-processing-ms") ?? null,
+            usage: json.usage ?? null,
+          };
           if (finishReason === "length") {
             const truncated = new Error("OpenAI structured output hit its token limit");
             truncated.code = "CF1_MODEL_OUTPUT_TRUNCATED";
+            truncated.usage = json.usage;
+            truncated.model = json.model || model;
+            truncated.providerMetadata = providerMetadata;
             throw truncated;
           }
           if (content.length - content.trimEnd().length > 1_024) {
             const whitespace = new Error("OpenAI structured output ended with excessive whitespace");
             whitespace.code = "CF1_MODEL_EXCESSIVE_WHITESPACE";
+            whitespace.usage = json.usage;
+            whitespace.model = json.model || model;
+            whitespace.providerMetadata = providerMetadata;
             throw whitespace;
           }
           parsed = JSON.parse(content);
         } catch (e) {
+          // Preserve recognized provider termination signals. Wrapping these as
+          // generic JSON errors hides the only reliable explanation supplied by
+          // non-streaming Chat Completions.
+          if (e.code === "CF1_MODEL_OUTPUT_TRUNCATED"
+            || e.code === "CF1_MODEL_EXCESSIVE_WHITESPACE") throw e;
           logger.error("[openAiLLM] failed to parse JSON-mode response:", text);
           const parseError = new Error("Failed to parse JSON from OpenAI: " + e.message);
+          parseError.code = "CF1_MALFORMED_MODEL_JSON";
           parseError.usage = providerResponse?.usage;
           parseError.model = providerResponse?.model || model;
+          parseError.providerMetadata = providerMetadata ?? null;
           throw parseError;
         }
 

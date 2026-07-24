@@ -169,7 +169,8 @@ export function evaluateTargetFit({ claim = {}, target = {}, evidence = {} }) {
     compatibilityLabel = TARGET_FIT_LABELS.DIRECT_SUBSTANTIVE;
     directSubstantive = true;
   } else if (NO_LINK_RE.test(text)) {
-    // (5) broad "no MMR/autism link" is not a refutation of the specific
+    // (5) a broad topical conclusion is not a refutation of a distinct,
+    // specific alleged act.
     // data-handling misconduct unless it addresses the disputed study/data.
     compatibilityLabel = TARGET_FIT_LABELS.BACKGROUND_CAUSAL;
   } else if (roleName === "official_response_candidate") {

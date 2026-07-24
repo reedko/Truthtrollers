@@ -140,7 +140,8 @@ export function isInstructionLikeQuery(text) {
 }
 
 // Malformed "glue" queries produced by old deterministic templates, e.g.
-// "response William Thompson mmr cdc data statement" — a bare connector word
+// A query made only of connector words and broad topic terms is not a usable
+// response query.
 // pasted onto anchors with no evidentiary structure.
 const GLUE_PREFIX_RE = /^\s*(?:response|reaction|statement|transcript|methodology subgroup protocol)\s+/i;
 
