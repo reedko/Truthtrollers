@@ -49,14 +49,15 @@ function validateUnitIds(ids, unitsById, path, { allowEmpty = false } = {}) {
   return unique;
 }
 
-export function normalizeDiscovery(output, sourceUnits) {
+export function normalizeDiscovery(output, sourceUnits, maximum = 18) {
   if (!output || typeof output !== "object" || Array.isArray(output)) {
     fail("CF2_INVALID_DISCOVERY", "Call A output must be an object");
   }
   const thesisAssertion = normalized(output.thesisAssertion);
   if (!thesisAssertion) fail("CF2_INVALID_THESIS", "Call A omitted thesisAssertion");
-  if (!Array.isArray(output.candidates) || output.candidates.length > 18) {
-    fail("CF2_INVALID_DISCOVERY", "Call A candidates must be an array of at most 18");
+  if (!Array.isArray(output.candidates) || output.candidates.length > maximum) {
+    fail("CF2_INVALID_DISCOVERY",
+      `Call A candidates must be an array of at most ${maximum}`);
   }
   const unitsById = new Map(sourceUnits.map((unit) => [unit.unitId, unit]));
   const seen = new Set();

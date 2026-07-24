@@ -93,11 +93,17 @@ function operatorIsGrounded(layer, unitsById) {
     pattern.test(unitsById.get(unitId)?.text ?? ""));
 }
 
-export function normalizeV6Decomposition(output, candidates, sourceUnits, article) {
+export function normalizeV6Decomposition(
+  output,
+  candidates,
+  sourceUnits,
+  article,
+  candidateMaximum = 18,
+) {
   if (!output || typeof output !== "object" || !Array.isArray(output.assertions)
-    || output.assertions.length > 18) {
+    || output.assertions.length > candidateMaximum) {
     fail("CF2_V6_INVALID_DECOMPOSITION",
-      "Call B assertions must be an array of at most 18");
+      `Call B assertions must be an array of at most ${candidateMaximum}`);
   }
   const candidatesById = new Map(candidates
     .map((candidate) => [candidate.candidateId, candidate]));
@@ -239,6 +245,83 @@ export function normalizeV6Decomposition(output, candidates, sourceUnits, articl
   return assertions;
 }
 
+export function normalizeV6DecompositionWithQuarantine(
+  output,
+  candidates,
+  sourceUnits,
+  article,
+  candidateMaximum = 18,
+) {
+  if (!output || typeof output !== "object" || !Array.isArray(output.assertions)
+    || output.assertions.length > candidateMaximum) {
+    fail("CF2_V6_INVALID_DECOMPOSITION",
+      `Call B assertions must be an array of at most ${candidateMaximum}`);
+  }
+  const candidatesById = new Map(candidates
+    .map((candidate) => [candidate.candidateId, candidate]));
+  const rawById = new Map();
+  const rejections = [];
+  for (const raw of output.assertions) {
+    const candidateId = raw?.candidateId ?? null;
+    if (!candidatesById.has(candidateId) || rawById.has(candidateId)) {
+      rejections.push({
+        candidateId,
+        code: "CF2_V6_INVALID_CANDIDATE",
+        message: `Call B returned invalid or duplicate ${candidateId}`,
+        rawOutput: raw,
+      });
+      continue;
+    }
+    rawById.set(candidateId, raw);
+  }
+  const assertions = [];
+  const seenAssertions = new Set();
+  for (const candidate of candidates) {
+    const raw = rawById.get(candidate.candidateId);
+    if (!raw) {
+      rejections.push({
+        candidateId: candidate.candidateId,
+        code: "CF2_V6_MISSING_CANDIDATE",
+        message: `Call B omitted ${candidate.candidateId}`,
+        rawAssertion: candidate.rawAssertion,
+        rawOutput: null,
+      });
+      continue;
+    }
+    try {
+      const [assertion] = normalizeV6Decomposition(
+        { assertions: [raw] },
+        [candidate],
+        sourceUnits,
+        article,
+        1,
+      );
+      const key = normalizedKey(assertion.assertionText);
+      if (seenAssertions.has(key)) {
+        rejections.push({
+          candidateId: candidate.candidateId,
+          code: "CF2_V6_DUPLICATE_SUBSTANTIVE_ASSERTION",
+          message: `${candidate.candidateId} duplicates an accepted assertion`,
+          rawAssertion: candidate.rawAssertion,
+          rawOutput: raw,
+        });
+        continue;
+      }
+      seenAssertions.add(key);
+      assertions.push(assertion);
+    } catch (error) {
+      rejections.push({
+        candidateId: candidate.candidateId,
+        code: error.code ?? "CF2_V6_INVALID_CANDIDATE_JUDGMENT",
+        message: error.message,
+        rawAssertion: candidate.rawAssertion,
+        rawOutput: raw,
+      });
+    }
+  }
+  return { assertions, rejections };
+}
+
 export function lockStructuralSources(assertions, packets) {
   const packetsById = new Map(packets.map((packet) =>
     [packet.candidateId, packet]));
@@ -356,6 +439,9 @@ export async function runCf2V6({
   callAModel = "gpt-4o-mini",
   callBModel = "gpt-4.1-mini",
   callCModel = "gpt-4.1-mini",
+  candidateMaximum = 18,
+  portfolioMaximum = 12,
+  candidateFailureMode = "strict",
   timeoutMs = 180_000,
   seed = undefined,
   clock = () => new Date(),
@@ -363,7 +449,11 @@ export async function runCf2V6({
 }) {
   const startedAt = clock();
   const { article, sourceUnits } = prepareCf2Article(rawArticle);
-  const callAPrompt = buildCf2V6DiscoveryPrompt({ article, sourceUnits });
+  const callAPrompt = buildCf2V6DiscoveryPrompt({
+    article,
+    sourceUnits,
+    candidateMaximum,
+  });
   const callAStarted = clock();
   const callAResult = await callARunner.invokeStructured({
     ...callAPrompt,
@@ -375,7 +465,11 @@ export async function runCf2V6({
     maxOutputTokens: 5_000,
   });
   const callAFinished = clock();
-  const rawDiscovery = normalizeDiscovery(callAResult.output, sourceUnits);
+  const rawDiscovery = normalizeDiscovery(
+    callAResult.output,
+    sourceUnits,
+    candidateMaximum,
+  );
   const discovery = repairDiscoveryGrounding(rawDiscovery, sourceUnits);
   onProgress({
     stage: "call_a_completed",
@@ -383,6 +477,7 @@ export async function runCf2V6({
     call: {
       ...callMetadata(callAPrompt, callAResult, callAModel),
       elapsedMs: callAFinished.getTime() - callAStarted.getTime(),
+      rawOutput: callAResult.output,
     },
   });
   const candidates = attachAttributionCues(
@@ -392,6 +487,7 @@ export async function runCf2V6({
     article,
     thesisAssertion: discovery.thesisAssertion,
     candidates,
+    candidateMaximum,
   });
   const callBStarted = clock();
   const callBResult = await callBRunner.invokeStructured({
@@ -400,18 +496,32 @@ export async function runCf2V6({
     reasoningEffort: "none",
     timeoutMs,
     maximumAttempts: 1,
-    maxOutputTokens: 6_000,
+    maxOutputTokens: 6_000 + Math.max(0, candidateMaximum - 18) * 200,
     store: false,
   });
   const callBFinished = clock();
   let candidateJudgments;
+  let candidateRejections = [];
   try {
-    candidateJudgments = normalizeV6Decomposition(
-      callBResult.output,
-      candidates,
-      sourceUnits,
-      article,
-    );
+    if (candidateFailureMode === "quarantine") {
+      const normalizedResult = normalizeV6DecompositionWithQuarantine(
+        callBResult.output,
+        candidates,
+        sourceUnits,
+        article,
+        candidateMaximum,
+      );
+      candidateJudgments = normalizedResult.assertions;
+      candidateRejections = normalizedResult.rejections;
+    } else {
+      candidateJudgments = normalizeV6Decomposition(
+        callBResult.output,
+        candidates,
+        sourceUnits,
+        article,
+        candidateMaximum,
+      );
+    }
   } catch (error) {
     onProgress({
       stage: "call_b_invalid",
@@ -428,13 +538,18 @@ export async function runCf2V6({
   onProgress({
     stage: "call_b_completed",
     workItems: candidateJudgments.length,
+    rejections: candidateRejections,
     call: {
       ...callMetadata(callBPrompt, callBResult, callBModel),
       elapsedMs: callBFinished.getTime() - callBStarted.getTime(),
       rawOutput: callBResult.output,
     },
   });
-  const selectedAssertions = selectCf2Portfolio(candidateJudgments, sourceUnits);
+  const selectedAssertions = selectCf2Portfolio(
+    candidateJudgments,
+    sourceUnits,
+    portfolioMaximum,
+  );
   const attributionPackets = buildAttributionPackets(
     selectedAssertions,
     candidates,
@@ -482,7 +597,10 @@ export async function runCf2V6({
   });
   const finishedAt = clock();
   return {
-    architecture: "CF2_V6_BOUNDED_ATTRIBUTION_RECURSION",
+    architecture: candidateMaximum === 18 && portfolioMaximum === 12
+      ? "CF2_V6_BOUNDED_ATTRIBUTION_RECURSION"
+      : `CF2_V6_BOUNDED_ATTRIBUTION_RECURSION_C${candidateMaximum}`
+        + `_P${portfolioMaximum}`,
     protectedBaseline: {
       architecture: "CF2_MINIMAL_FACT_DOCKET_V5_STRUCTURAL_ATTRIBUTION",
       commit: "a08e2d5d",
@@ -498,8 +616,15 @@ export async function runCf2V6({
       sourceUnitCount: sourceUnits.length,
     },
     thesisAssertion: discovery.thesisAssertion,
+    budgets: {
+      candidateMaximum,
+      portfolioMaximum,
+      articleLengthDependent: false,
+      candidateFailureMode,
+    },
     candidates,
     candidateJudgments,
+    candidateRejections,
     attributionPackets,
     recoveredAttributions,
     assertions,

@@ -23,6 +23,9 @@ const seed = Number(option("--seed", "3724605090"));
 const callAModel = option("--call-a-model", "gpt-4o-mini");
 const callBModel = option("--call-b-model", "gpt-4.1-mini");
 const callCModel = option("--call-c-model", "gpt-4.1-mini");
+const candidateMaximum = Number(option("--candidate-maximum", "18"));
+const portfolioMaximum = Number(option("--portfolio-maximum", "12"));
+const candidateFailureMode = option("--candidate-failure-mode", "strict");
 const timeoutMs = Number(option("--timeout-ms", "180000"));
 const replayCallAPath = option("--replay-call-a", null);
 const replayCallBPath = option("--replay-call-b", null);
@@ -91,7 +94,9 @@ const progress = [];
 mkdirSync(outDir, { recursive: true });
 
 console.log(`CF2 V6 ${fixture}: ${callAModel} Chat → ${callBModel} decomposition`
-  + ` → ${callCModel} evidence anchors`);
+  + ` → ${callCModel} evidence anchors`
+  + ` · candidate max ${candidateMaximum} / portfolio max ${portfolioMaximum}`
+  + ` · candidate failures ${candidateFailureMode}`);
 const result = await runCf2V6({
   rawArticle,
   callARunner,
@@ -100,6 +105,9 @@ const result = await runCf2V6({
   callAModel,
   callBModel,
   callCModel,
+  candidateMaximum,
+  portfolioMaximum,
+  candidateFailureMode,
   timeoutMs,
   seed,
   onProgress: (event) => {
@@ -109,6 +117,7 @@ const result = await runCf2V6({
     const usage = event.call?.usage ?? {};
     console.log(`${event.stage} · ${(event.call.elapsedMs / 1000).toFixed(1)}s`
       + ` · ${event.workItems} outputs`
+      + `${event.rejections?.length ? ` / ${event.rejections.length} quarantined` : ""}`
       + ` · ${usage.inputTokens ?? "?"} in / ${usage.outputTokens ?? "?"} out`
       + ` / ${usage.cachedInputTokens ?? 0} cached`
       + ` / ${usage.totalTokens ?? "?"} total`);

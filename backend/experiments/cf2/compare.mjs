@@ -63,6 +63,7 @@ const summaryRows = runs.map((run) => {
     <td><a href="${escapeHtml(report)}">${run.id}</a></td>
     <td>${escapeHtml(run.result.article.title)}</td>
     <td>${run.result.candidates.length} / ${run.judgments.total} / ${run.selected.total}</td>
+    <td>${run.result.candidateRejections?.length ?? 0}</td>
     <td>${run.selected.externalNamed}</td>
     <td>${run.selected.articleVoice}</td>
     <td>${run.selected.unresolved}</td>
@@ -117,7 +118,7 @@ const runSections = runs.map((run) => {
 }).join("\n");
 
 const html = `<!doctype html><html><head><meta charset="utf-8">
-<title>CF2 attribution comparison</title>
+<title>CF2 benchmark comparison</title>
 <style>
 body{font:14px system-ui;margin:24px;color:#17202a;max-width:1800px}
 table{border-collapse:collapse;width:100%;margin:12px 0 24px}
@@ -129,13 +130,13 @@ section{border-top:3px solid #435b71;margin-top:32px;padding-top:12px}
 pre{white-space:pre-wrap;background:#f4f6f7;padding:12px}
 .legend span{display:inline-block;padding:5px 10px;margin-right:8px;border:1px solid #ccd3d8}
 </style></head><body>
-<h1>CF2 V2 · Attribution comparison</h1>
+<h1>CF2 · Benchmark comparison</h1>
 <p>Green: named external source. Amber: article voice/byline. Red: unresolved source.
 These are coverage labels, not determinations that the attribution is semantically correct.</p>
 <p class="legend"><span class="external">External named</span>
 <span class="article-voice">Article voice</span><span class="unresolved">Unresolved</span></p>
 <table><thead><tr><th>Run</th><th>Fixture</th><th>Candidates / judgments / selected</th>
-<th>External named</th><th>Article voice</th><th>Unresolved</th>
+<th>Quarantined</th><th>External named</th><th>Article voice</th><th>Unresolved</th>
 <th>Weakens</th><th>Challenged</th><th>Time</th><th>Tokens</th></tr></thead>
 <tbody>${summaryRows}</tbody></table>
 ${runSections}
@@ -151,6 +152,7 @@ writeFileSync(path.join(outDir, "summary.json"), `${JSON.stringify(runs.map((run
   candidates: run.result.candidates.length,
   judgments: run.judgments,
   selected: run.selected,
+  quarantined: run.result.candidateRejections?.length ?? 0,
   elapsedMs: run.result.elapsedMs,
 })), null, 2)}\n`);
 console.log(path.join(outDir, "report.html"));

@@ -4,7 +4,25 @@ import {
   cf2V6EvidenceAnchorSchema,
 } from "./schemas.js";
 
-export { buildCf2DiscoveryPrompt as buildCf2V6DiscoveryPrompt };
+export function buildCf2V6DiscoveryPrompt({
+  article,
+  sourceUnits,
+  candidateMaximum = 18,
+}) {
+  const baseline = buildCf2DiscoveryPrompt({ article, sourceUnits });
+  if (candidateMaximum === 18) return baseline;
+  const responseSchema = structuredClone(baseline.responseSchema);
+  responseSchema.name = `cf2_fact_docket_discovery_v1_c${candidateMaximum}`;
+  responseSchema.schema.properties.candidates.maxItems = candidateMaximum;
+  return {
+    ...baseline,
+    user: baseline.user.replace(
+      "no more than 18 candidate assertions",
+      `no more than ${candidateMaximum} candidate assertions`,
+    ),
+    responseSchema,
+  };
+}
 
 const metadata = (article) => [
   `Title: ${article.title}`,
@@ -26,6 +44,7 @@ export function buildCf2V6DecompositionPrompt({
   article,
   thesisAssertion,
   candidates,
+  candidateMaximum = 18,
 }) {
   const candidateIds = candidates.map((candidate) => candidate.candidateId);
   return {
@@ -112,7 +131,7 @@ ${metadata(article)}
 
 CANDIDATES
 ${candidates.map(candidatePacket).join("\n\n")}`,
-    responseSchema: cf2V6DecompositionSchema(candidateIds),
+    responseSchema: cf2V6DecompositionSchema(candidateIds, candidateMaximum),
   };
 }
 

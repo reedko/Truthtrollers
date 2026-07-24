@@ -48,7 +48,7 @@ const evidenceAnchor = {
   },
 };
 
-export function cf2V6DecompositionSchema(candidateIds = []) {
+export function cf2V6DecompositionSchema(candidateIds = [], candidateMaximum = 18) {
   return {
     name: "cf2_v6_bounded_attribution_decomposition",
     strict: true,
@@ -59,7 +59,7 @@ export function cf2V6DecompositionSchema(candidateIds = []) {
       properties: {
         assertions: {
           type: "array",
-          maxItems: 18,
+          maxItems: candidateMaximum,
           items: {
             type: "object",
             additionalProperties: false,

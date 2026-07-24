@@ -40,6 +40,7 @@ function effectLabel(value) {
 }
 
 export function renderCf2Html(result) {
+  const candidateRejections = result.candidateRejections ?? [];
   const rows = result.assertions.map((assertion) => {
     const className = assertion.effectIfTrue === "weakens" ? "weakens"
       : assertion.effectIfTrue === "strengthens" ? "strengthens" : "neutral";
@@ -115,6 +116,19 @@ export function renderCf2Html(result) {
   }).join("\n");
   const totalTokens = Object.values(result.calls).reduce((sum, value) =>
     sum + (value.usage?.totalTokens ?? value.usage?.total_tokens ?? 0), 0);
+  const rejectionRows = candidateRejections.map((rejection) => `<tr>
+    <td>${escapeHtml(rejection.candidateId ?? "Unknown")}</td>
+    <td>${escapeHtml(rejection.code)}</td>
+    <td>${escapeHtml(rejection.message)}</td>
+    <td>${escapeHtml(rejection.rawAssertion ?? "")}</td>
+  </tr>`).join("\n");
+  const rejectionSection = candidateRejections.length > 0
+    ? `<h2>Quarantined Call B candidate judgments</h2>
+      <p>These candidate-level failures were excluded before portfolio selection.
+      They did not invalidate otherwise usable judgments from the same batch.</p>
+      <table><thead><tr><th>ID</th><th>Code</th><th>Reason</th><th>Call A assertion</th>
+      </tr></thead><tbody>${rejectionRows}</tbody></table>`
+    : "";
   return `<!doctype html><html><head><meta charset="utf-8">
   <title>CF2 minimal fact-check docket</title>
   <style>
@@ -128,6 +142,7 @@ export function renderCf2Html(result) {
   <div class="meta"><strong>${escapeHtml(result.article.title)}</strong><br>
   Thesis: ${escapeHtml(result.thesisAssertion)}<br>
   ${result.candidates.length} Call A candidates → ${result.candidateJudgments.length} Call B judgments
+  ${candidateRejections.length ? `(${candidateRejections.length} quarantined)` : ""}
   → ${result.assertions.length} host-selected assertions
   → ${result.recoveredAttributions.length} Call C attributions<br>
   ${Object.keys(result.calls).length} calls · ${(result.elapsedMs / 1000).toFixed(1)}s
@@ -137,6 +152,7 @@ export function renderCf2Html(result) {
   <th>Output work items</th><th>Time</th><th>Input tokens</th><th>Output tokens</th>
   <th>Cached input tokens</th><th>Total tokens</th></tr></thead>
   <tbody>${callRows}</tbody></table>
+  ${rejectionSection}
   <h2>Final assertions</h2>
   <table><thead><tr><th>ID</th><th>Assertion</th><th>Call B source</th>
   <th>Recovered supplier</th><th>Evidence anchors</th><th>Article treatment</th>

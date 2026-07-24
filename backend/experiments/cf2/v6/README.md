@@ -74,6 +74,22 @@ discovery but does not repair discovery recall.
 - Compound assertions from Call A remain compound.
 - Call A candidate recall still varies despite unchanged prompt, schema, and seed.
 
+## C30 capacity ablation
+
+The candidate ceiling can be changed without altering default V6:
+
+```bash
+node backend/experiments/cf2/v6/run.mjs \
+  --fixture CF1-F03 \
+  --candidate-maximum 30 \
+  --portfolio-maximum 12 \
+  --candidate-failure-mode quarantine \
+  --out artifacts/claim-foundry/cf2/my-v6-c30-run
+```
+
+See `C30_FINDINGS_2026-07-24.md` for the F01/F02/F03 results. Default V6 remains
+C18/P12 with strict candidate validation.
+
 ## Run
 
 ```bash

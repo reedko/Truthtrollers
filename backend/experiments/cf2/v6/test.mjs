@@ -7,6 +7,7 @@ import {
   lockStructuralSources,
   normalizeEvidenceAnchors,
   normalizeV6Decomposition,
+  normalizeV6DecompositionWithQuarantine,
 } from "./pipeline.js";
 
 const article = {
@@ -29,6 +30,45 @@ test("CF2 V6 preserves the protected V5 Call A prompt exactly", () => {
   const v5 = buildCf2DiscoveryPrompt({ article, sourceUnits: units });
   const v6 = buildCf2V6DiscoveryPrompt({ article, sourceUnits: units });
   assert.deepEqual(v6, v5);
+});
+
+test("CF2 V6 candidate-cap ablation changes only the requested capacity", () => {
+  const baseline = buildCf2V6DiscoveryPrompt({ article, sourceUnits: units });
+  const cap30 = buildCf2V6DiscoveryPrompt({
+    article,
+    sourceUnits: units,
+    candidateMaximum: 30,
+  });
+  assert.equal(
+    baseline.responseSchema.schema.properties.candidates.maxItems,
+    18,
+  );
+  assert.equal(cap30.responseSchema.schema.properties.candidates.maxItems, 30);
+  assert.match(cap30.user, /no more than 30 candidate assertions/);
+  assert.equal(
+    cap30.user.replace(
+      "no more than 30 candidate assertions",
+      "no more than 18 candidate assertions",
+    ),
+    baseline.user,
+  );
+  assert.deepEqual(
+    {
+      ...cap30.responseSchema,
+      name: baseline.responseSchema.name,
+      schema: {
+        ...cap30.responseSchema.schema,
+        properties: {
+          ...cap30.responseSchema.schema.properties,
+          candidates: {
+            ...cap30.responseSchema.schema.properties.candidates,
+            maxItems: 18,
+          },
+        },
+      },
+    },
+    baseline.responseSchema,
+  );
 });
 
 test("CF2 V6 detects explicit reporting syntax without deciding its semantics", () => {
@@ -114,6 +154,45 @@ test("CF2 V6 rejects a missing or retained reporting frame", () => {
       effectIfTrue: "strengthens",
     }],
   }, candidates, units, article), { code: "CF2_V6_REPORTING_FRAME_RETAINED" });
+});
+
+test("CF2 V6 C30 can quarantine one invalid candidate without losing the batch", () => {
+  const candidates = [
+    {
+      candidateId: "C01",
+      rawAssertion: "William Thompson revealed that the CDC manipulated data.",
+      groundingUnitIds: ["U0001"],
+    },
+    {
+      candidateId: "C02",
+      rawAssertion: "The vaccination schedule expanded.",
+      groundingUnitIds: ["U0002"],
+    },
+  ];
+  const result = normalizeV6DecompositionWithQuarantine({
+    assertions: [
+      {
+        candidateId: "C01",
+        attributionLayers: [],
+        substantiveAssertion: "The CDC manipulated data.",
+        groundingUnitIds: ["U0001"],
+        articleTreatment: "adopted",
+        effectIfTrue: "strengthens",
+      },
+      {
+        candidateId: "C02",
+        attributionLayers: [],
+        substantiveAssertion: "The vaccination schedule expanded.",
+        groundingUnitIds: ["U0002"],
+        articleTreatment: "adopted",
+        effectIfTrue: "strengthens",
+      },
+    ],
+  }, candidates, units, article, 30);
+  assert.deepEqual(result.assertions.map((item) => item.candidateId), ["C02"]);
+  assert.equal(result.rejections.length, 1);
+  assert.equal(result.rejections[0].candidateId, "C01");
+  assert.equal(result.rejections[0].code, "CF2_V6_ATTRIBUTION_LAYER_MISSING");
 });
 
 test("CF2 V6 rejects an attribution operator invented by the model", () => {
