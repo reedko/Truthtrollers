@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "cf4.goldSeal.v2",
+  "sealedAt": "2026-07-24T22:15:36.330Z",
+  "keys": [
+    {
+      "fixtureId": "CF1-F02",
+      "path": "/Users/reedko/VeriStrata/veristrata-platform/backend/experiments/cf4/gold/CF1-F02.gold.json",
+      "assertions": 12,
+      "sha256": "3ed6a865556a13fb36c84f34a07743a95f521f69248cce27b017ac9d65d7b860"
+    },
+    {
+      "fixtureId": "CF1-F03",
+      "path": "/Users/reedko/VeriStrata/veristrata-platform/backend/experiments/cf4/gold/CF1-F03.gold.json",
+      "assertions": 12,
+      "sha256": "377f55645fb61de522dafb1ec028c9a7ef92f06b9c73813f6be1365dba8dcd9c"
+    },
+    {
+      "fixtureId": "CF1-F06",
+      "path": "/Users/reedko/VeriStrata/veristrata-platform/backend/experiments/cf4/gold/CF1-F06.gold.json",
+      "assertions": 12,
+      "sha256": "c3b4512d1767c3c085615147fb9f681a17976e9b8f51455f22595478ed8e0f2e"
+    }
+  ]
+}

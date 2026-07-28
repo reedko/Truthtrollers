@@ -1,0 +1,604 @@
+{
+  "schemaVersion": "cf2.articlePositionMapReview.v1",
+  "fixtureId": "CF1-F01",
+  "freezeId": "cf2-v7-ab-f01-f03-f08-20260724",
+  "frozenInventorySha256": "7d23ad3f81b2e0f8a8e30aa9feb7c150d2dc9c9fbbefebcdcbee77c7cdec4acc",
+  "instructions": "Define atomic article positions or central factual payloads from the frozen article. Then review treatment, target-specific effect, relevance, and selection independently for every candidate.",
+  "observedPositionMap": {
+    "source": "CF2 V7 legacy single atomic thesis",
+    "articleMode": null,
+    "positions": [
+      {
+        "positionId": "LEGACY_SINGLE_THESIS",
+        "coreQuestion": null,
+        "articlePosition": "In a large population-based study, the overall age at first measles-mumps-rubella vaccination was similar between children with autism and school-matched control children.",
+        "positionUnitIds": [],
+        "importance": "unresolved"
+      }
+    ]
+  },
+  "review": {
+    "status": "unreviewed",
+    "mapQuality": {
+      "coverage": "not_reviewed",
+      "atomicity": "not_reviewed",
+      "direction": "not_reviewed",
+      "genreFit": "not_reviewed"
+    },
+    "correctedArticleMode": "unreviewed",
+    "correctedPositions": [],
+    "notes": ""
+  },
+  "candidateReviews": [
+    {
+      "candidateId": "C01",
+      "observed": {
+        "articleTreatment": "adopted",
+        "legacyEffectIfTrue": "strengthens",
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C02",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C03",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C04",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C05",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C06",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C07",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C08",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C09",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C10",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C11",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C12",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C13",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C14",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "strengthens",
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C15",
+      "observed": {
+        "articleTreatment": null,
+        "legacyEffectIfTrue": null,
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": true,
+        "rejectionCode": "CF2_V6_ATTRIBUTION_LAYER_MISSING"
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C16",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C17",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C18",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C19",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C20",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C21",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C22",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C23",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C24",
+      "observed": {
+        "articleTreatment": null,
+        "legacyEffectIfTrue": null,
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": true,
+        "rejectionCode": "CF2_V6_ATTRIBUTION_LAYER_MISSING"
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C25",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C26",
+      "observed": {
+        "articleTreatment": "adopted",
+        "legacyEffectIfTrue": "strengthens",
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C27",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C28",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C29",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C30",
+      "observed": {
+        "articleTreatment": "reported",
+        "legacyEffectIfTrue": "no_effect",
+        "selected": false,
+        "selectionBasis": null,
+        "rejected": false,
+        "rejectionCode": null
+      },
+      "review": {
+        "status": "unreviewed",
+        "articleTreatmentGold": "not_reviewed",
+        "targetRelationsGold": [],
+        "relevanceGold": "not_reviewed",
+        "selectionGold": null,
+        "notes": ""
+      }
+    }
+  ]
+}

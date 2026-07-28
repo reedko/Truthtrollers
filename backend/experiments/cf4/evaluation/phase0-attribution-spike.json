@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "cf4.phase0Evaluation.v1",
+  "fixtureId": "CF1-F03",
+  "articlePath": "backend/test/claim-foundry/fixtures/CF1-F03/article.json",
+  "inventoryPath": "backend/experiments/cf3/eval/frozen/CF3-CF1-F03/labeled/repeat1/result.json",
+  "targetUnitIds": ["U0036", "U0037", "U0038", "U0039", "U0040", "U0041", "U0042"],
+  "requiredReceipt": {
+    "itemId": "U0037",
+    "sourceName": "William Thompson",
+    "sourceKind": "person",
+    "contentPatterns": ["CDC", "manipulat"],
+    "resolvedMention": "the agency",
+    "expectedAntecedent": "CDC"
+  }
+}

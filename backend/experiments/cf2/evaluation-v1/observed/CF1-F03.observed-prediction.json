@@ -1,0 +1,1197 @@
+{
+  "schemaVersion": "cf2.frozenObservedPrediction.v1",
+  "fixtureId": "CF1-F03",
+  "freezeId": "cf2-v7-ab-f01-f03-f08-20260724",
+  "frozenInventorySha256": "5b410b647378ee7e0e439b8febc65d5107caa51981eda88e57bd408bd2524435",
+  "articlePositions": [
+    {
+      "positionId": "LEGACY_SINGLE_THESIS",
+      "coreQuestion": null,
+      "articlePosition": "The article argues that public health narratives about vaccines are based on falsehoods and that there is significant evidence of harm associated with vaccination, which is being suppressed by health authorities.",
+      "positionUnitIds": []
+    }
+  ],
+  "candidateOutputs": [
+    {
+      "candidateId": "C01",
+      "discourseTuple": {
+        "surfaceStatement": "According to the CDC data, half of American school children are not fully vaccinated.",
+        "surfaceUnitIds": [
+          "U0002"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [
+          {
+            "supplierName": "CDC data",
+            "supplierKind": "institution",
+            "operator": "according_to",
+            "assertedContent": "half of American school children are not fully vaccinated",
+            "sourceUnitIds": [
+              "U0002"
+            ]
+          }
+        ],
+        "substantiveAssertion": "Half of American school children are not fully vaccinated.",
+        "substantiveGroundingUnitIds": [
+          "U0002"
+        ],
+        "contentSupplier": {
+          "name": "CDC data",
+          "kind": "institution",
+          "unitIds": [
+            "U0002"
+          ],
+          "origin": "call_b_attribution_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "no_effect"
+        }
+      ],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    },
+    {
+      "candidateId": "C02",
+      "discourseTuple": {
+        "surfaceStatement": "At least 1 in 88 toddlers are completely unvaccinated.",
+        "surfaceUnitIds": [
+          "U0002"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "At least 1 in 88 toddlers are completely unvaccinated.",
+        "substantiveGroundingUnitIds": [
+          "U0002"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0002"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "no_effect"
+        }
+      ],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    },
+    {
+      "candidateId": "C03",
+      "discourseTuple": {
+        "surfaceStatement": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+        "surfaceUnitIds": [
+          "U0297"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+        "substantiveGroundingUnitIds": [
+          "U0297"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0297"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "weakens"
+        }
+      ],
+      "relevance": null,
+      "selected": true,
+      "selectionBasis": "thesis_effect"
+    },
+    {
+      "candidateId": "C04",
+      "discourseTuple": {
+        "surfaceStatement": "There have been no credible studies that link vaccination to chronic disease.",
+        "surfaceUnitIds": [
+          "U0011"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "There have been no credible studies that link vaccination to chronic disease.",
+        "substantiveGroundingUnitIds": [
+          "U0011"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0011"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "weakens"
+        }
+      ],
+      "relevance": null,
+      "selected": true,
+      "selectionBasis": "thesis_effect"
+    },
+    {
+      "candidateId": "C05",
+      "discourseTuple": {
+        "surfaceStatement": "Vaccines are tested more than any other medicine you could give your kid.",
+        "surfaceUnitIds": [
+          "U0012"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "Vaccines are tested more than any other medicine you could give your kid.",
+        "substantiveGroundingUnitIds": [
+          "U0012"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0012"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "weakens"
+        }
+      ],
+      "relevance": null,
+      "selected": true,
+      "selectionBasis": "thesis_effect"
+    },
+    {
+      "candidateId": "C06",
+      "discourseTuple": {
+        "surfaceStatement": "In 2016, a documentary film disclosing a decade-long CDC cover-up created an uproar in the news.",
+        "surfaceUnitIds": [
+          "U0036"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "In 2016, a documentary film disclosing a decade-long CDC cover-up created an uproar in the news.",
+        "substantiveGroundingUnitIds": [
+          "U0036"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0036"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": true,
+      "selectionBasis": "thesis_effect"
+    },
+    {
+      "candidateId": "C07",
+      "discourseTuple": {
+        "surfaceStatement": "William Thompson revealed privately in 2014 that data linking the MMR vaccine to autism had been manipulated by the CDC.",
+        "surfaceUnitIds": [
+          "U0037"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [
+          {
+            "supplierName": "William Thompson",
+            "supplierKind": "person",
+            "operator": "revealed",
+            "assertedContent": "data linking the MMR vaccine to autism had been manipulated by the CDC",
+            "sourceUnitIds": [
+              "U0037"
+            ]
+          }
+        ],
+        "substantiveAssertion": "Data linking the MMR vaccine to autism had been manipulated by the CDC.",
+        "substantiveGroundingUnitIds": [
+          "U0037"
+        ],
+        "contentSupplier": {
+          "name": "William Thompson",
+          "kind": "person",
+          "unitIds": [
+            "U0037"
+          ],
+          "origin": "call_b_attribution_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": true,
+      "selectionBasis": "thesis_effect"
+    },
+    {
+      "candidateId": "C08",
+      "discourseTuple": {
+        "surfaceStatement": "The CDC ordered Thompson and other scientists to destroy all evidence of a link between MMR vaccinations and autism.",
+        "surfaceUnitIds": [
+          "U0038"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The CDC ordered Thompson and other scientists to destroy all evidence of a link between MMR vaccinations and autism.",
+        "substantiveGroundingUnitIds": [
+          "U0038"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0038"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": true,
+      "selectionBasis": "thesis_effect"
+    },
+    {
+      "candidateId": "C09",
+      "discourseTuple": {
+        "surfaceStatement": "The fraudulent study released by the CDC declared that it had proven MMR vaccines did not cause autism.",
+        "surfaceUnitIds": [
+          "U0041"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [
+          {
+            "supplierName": "The fraudulent study released by the CDC",
+            "supplierKind": "document",
+            "operator": "declared",
+            "assertedContent": "it had proven MMR vaccines did not cause autism",
+            "sourceUnitIds": [
+              "U0041"
+            ]
+          }
+        ],
+        "substantiveAssertion": "The fraudulent study released by the CDC had proven MMR vaccines did not cause autism.",
+        "substantiveGroundingUnitIds": [
+          "U0041"
+        ],
+        "contentSupplier": null,
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": null,
+      "targetEffects": [],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    },
+    {
+      "candidateId": "C10",
+      "discourseTuple": {
+        "surfaceStatement": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+        "surfaceUnitIds": [
+          "U0068"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+        "substantiveGroundingUnitIds": [
+          "U0068"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0068"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    },
+    {
+      "candidateId": "C11",
+      "discourseTuple": {
+        "surfaceStatement": "By 1986, children were receiving 25 doses of vaccines in 12 shots.",
+        "surfaceUnitIds": [
+          "U0080"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "By 1986, children were receiving 25 doses of vaccines in 12 shots.",
+        "substantiveGroundingUnitIds": [
+          "U0080"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0080"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    },
+    {
+      "candidateId": "C12",
+      "discourseTuple": {
+        "surfaceStatement": "The childhood vaccination schedule exploded to 73 doses in 54 shots after 1986.",
+        "surfaceUnitIds": [
+          "U0080"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The childhood vaccination schedule exploded to 73 doses in 54 shots after 1986.",
+        "substantiveGroundingUnitIds": [
+          "U0080"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0080"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    },
+    {
+      "candidateId": "C13",
+      "discourseTuple": {
+        "surfaceStatement": "The chronic illness rate in U.S. children jumped to 54% by 2011.",
+        "surfaceUnitIds": [
+          "U0086"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The chronic illness rate in U.S. children jumped to 54% by 2011.",
+        "substantiveGroundingUnitIds": [
+          "U0086"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0086"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    },
+    {
+      "candidateId": "C14",
+      "discourseTuple": {
+        "surfaceStatement": "The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after embarking on an aggressive vaccination program.",
+        "surfaceUnitIds": [
+          "U0090"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after embarking on an aggressive vaccination program.",
+        "substantiveGroundingUnitIds": [
+          "U0090"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0090"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    },
+    {
+      "candidateId": "C15",
+      "discourseTuple": {
+        "surfaceStatement": "An analysis of U.S. data from 1990-2010 showed that infants who received the most vaccines had the worst hospitalization and death rates.",
+        "surfaceUnitIds": [
+          "U0091"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [
+          {
+            "supplierName": "An analysis of U.S. data from 1990-2010",
+            "supplierKind": "study",
+            "operator": "showed",
+            "assertedContent": "infants who received the most vaccines had the worst hospitalization and death rates",
+            "sourceUnitIds": [
+              "U0091"
+            ]
+          }
+        ],
+        "substantiveAssertion": "Infants who received the most vaccines had the worst hospitalization and death rates.",
+        "substantiveGroundingUnitIds": [
+          "U0091"
+        ],
+        "contentSupplier": {
+          "name": "An analysis of U.S. data from 1990-2010",
+          "kind": "study",
+          "unitIds": [
+            "U0091"
+          ],
+          "origin": "call_b_attribution_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    },
+    {
+      "candidateId": "C16",
+      "discourseTuple": {
+        "surfaceStatement": "A 2011 study of 34 developed nations found that countries giving the least vaccines had the lowest infant mortality.",
+        "surfaceUnitIds": [
+          "U0092"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [
+          {
+            "supplierName": "A 2011 study of 34 developed nations",
+            "supplierKind": "study",
+            "operator": "found",
+            "assertedContent": "countries giving the least vaccines had the lowest infant mortality",
+            "sourceUnitIds": [
+              "U0092"
+            ]
+          }
+        ],
+        "substantiveAssertion": "Countries giving the least vaccines had the lowest infant mortality.",
+        "substantiveGroundingUnitIds": [
+          "U0092"
+        ],
+        "contentSupplier": {
+          "name": "A 2011 study of 34 developed nations",
+          "kind": "study",
+          "unitIds": [
+            "U0092"
+          ],
+          "origin": "call_b_attribution_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    },
+    {
+      "candidateId": "C17",
+      "discourseTuple": {
+        "surfaceStatement": "The percentage of children carrying epipens, needing inhalers, and/or taking Ritalin, amphetamines, and antidepressants is staggering today.",
+        "surfaceUnitIds": [
+          "U0094"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The percentage of children carrying epipens, needing inhalers, and/or taking Ritalin, amphetamines, and antidepressants is staggering today.",
+        "substantiveGroundingUnitIds": [
+          "U0094"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0094"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    },
+    {
+      "candidateId": "C18",
+      "discourseTuple": {
+        "surfaceStatement": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+        "surfaceUnitIds": [
+          "U0279"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+        "substantiveGroundingUnitIds": [
+          "U0279"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0279"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": true,
+      "selectionBasis": "thesis_effect"
+    },
+    {
+      "candidateId": "C19",
+      "discourseTuple": {
+        "surfaceStatement": "The aluminum content in childhood vaccines can exceed 1000 mcg for parents following the CDC schedule.",
+        "surfaceUnitIds": [
+          "U0278"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The aluminum content in childhood vaccines can exceed 1000 mcg for parents following the CDC schedule.",
+        "substantiveGroundingUnitIds": [
+          "U0278"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0278"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": true,
+      "selectionBasis": "thesis_effect"
+    },
+    {
+      "candidateId": "C20",
+      "discourseTuple": {
+        "surfaceStatement": "Thimerosal is toxic and may cause decreased offspring survival and nervous system effects.",
+        "surfaceUnitIds": [
+          "U0301"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "Thimerosal is toxic and may cause decreased offspring survival and nervous system effects.",
+        "substantiveGroundingUnitIds": [
+          "U0301"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0301"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": true,
+      "selectionBasis": "thesis_effect"
+    },
+    {
+      "candidateId": "C21",
+      "discourseTuple": {
+        "surfaceStatement": "Thimerosal has been shown to deposit in the brain and other organs more readily than methylmercury.",
+        "surfaceUnitIds": [
+          "U0320"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "Thimerosal has been shown to deposit in the brain and other organs more readily than methylmercury.",
+        "substantiveGroundingUnitIds": [
+          "U0320"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0320"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": true,
+      "selectionBasis": "thesis_effect"
+    },
+    {
+      "candidateId": "C22",
+      "discourseTuple": {
+        "surfaceStatement": "The CDC's 2000 meeting to discuss thimerosal's link to autism was held at the Simpsonwood Retreat Center to avoid public scrutiny.",
+        "surfaceUnitIds": [
+          "U0330"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The CDC's 2000 meeting to discuss thimerosal's link to autism was held at the Simpsonwood Retreat Center to avoid public scrutiny.",
+        "substantiveGroundingUnitIds": [
+          "U0330"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0330"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": true,
+      "selectionBasis": "thesis_effect"
+    },
+    {
+      "candidateId": "C23",
+      "discourseTuple": {
+        "surfaceStatement": "The CDC massaged the data from the Verstraeten Study to falsely claim that thimerosal did not cause autism.",
+        "surfaceUnitIds": [
+          "U0344"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The CDC massaged the data from the Verstraeten Study to falsely claim that thimerosal did not cause autism.",
+        "substantiveGroundingUnitIds": [
+          "U0344"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0344"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": true,
+      "selectionBasis": "thesis_effect"
+    },
+    {
+      "candidateId": "C24",
+      "discourseTuple": {
+        "surfaceStatement": "Thimerosal is still used in some flu shots and other vaccines today.",
+        "surfaceUnitIds": [
+          "U0360"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "Thimerosal is still used in some flu shots and other vaccines today.",
+        "substantiveGroundingUnitIds": [
+          "U0360"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0360"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    },
+    {
+      "candidateId": "C25",
+      "discourseTuple": {
+        "surfaceStatement": "The mercury in multi-dose flu shots preserved with thimerosal is 250 times higher than the limit for mercury in drinking water set by the EPA.",
+        "surfaceUnitIds": [
+          "U0369"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The mercury in multi-dose flu shots preserved with thimerosal is 250 times higher than the limit for mercury in drinking water set by the EPA.",
+        "substantiveGroundingUnitIds": [
+          "U0369"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0369"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    },
+    {
+      "candidateId": "C26",
+      "discourseTuple": {
+        "surfaceStatement": "The CDC classifies thimerosal-containing vaccines as toxic hazardous waste.",
+        "surfaceUnitIds": [
+          "U0367",
+          "U0370"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The CDC classifies thimerosal-containing vaccines as toxic hazardous waste.",
+        "substantiveGroundingUnitIds": [
+          "U0367",
+          "U0370"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0367",
+            "U0370"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    },
+    {
+      "candidateId": "C27",
+      "discourseTuple": {
+        "surfaceStatement": "Polysorbate 80 is linked to infertility and is banned from injectables in most of Europe.",
+        "surfaceUnitIds": [
+          "U0382"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "Polysorbate 80 is linked to infertility and is banned from injectables in most of Europe.",
+        "substantiveGroundingUnitIds": [
+          "U0382"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0382"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    },
+    {
+      "candidateId": "C28",
+      "discourseTuple": {
+        "surfaceStatement": "Formaldehyde is classified as a known human carcinogen by the National Toxicology Program.",
+        "surfaceUnitIds": [
+          "U0388"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "Formaldehyde is classified as a known human carcinogen by the National Toxicology Program.",
+        "substantiveGroundingUnitIds": [
+          "U0388"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0388"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    },
+    {
+      "candidateId": "C29",
+      "discourseTuple": {
+        "surfaceStatement": "The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80 among other chemicals.",
+        "surfaceUnitIds": [
+          "U0392"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80 among other chemicals.",
+        "substantiveGroundingUnitIds": [
+          "U0392"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0392"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    },
+    {
+      "candidateId": "C30",
+      "discourseTuple": {
+        "surfaceStatement": "Injecting toxic metals and chemicals into children would be considered criminal in any product except vaccines.",
+        "surfaceUnitIds": [
+          "U0397"
+        ],
+        "reportingVoice": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "Injecting toxic metals and chemicals into children would be considered criminal in any product except vaccines.",
+        "substantiveGroundingUnitIds": [
+          "U0397"
+        ],
+        "contentSupplier": {
+          "name": "Ana Wolpin",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0397"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "articleTreatment": "reported",
+      "targetEffects": [
+        {
+          "positionId": "LEGACY_SINGLE_THESIS",
+          "effectIfTrue": "strengthens"
+        }
+      ],
+      "relevance": null,
+      "selected": false,
+      "selectionBasis": null
+    }
+  ]
+}

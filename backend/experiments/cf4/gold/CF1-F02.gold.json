@@ -1,0 +1,192 @@
+{
+  "schemaVersion": "cf4.sealedGold.v2",
+  "fixtureId": "CF1-F02",
+  "construction": "Blind article-only fact-checking judgment; no CF3 or CF4 run output consulted. Existing judgments reformatted to separate attribution.",
+  "assertions": [
+    {
+      "goldId": "G01",
+      "testableAssertion": "Commercial glyphosate formulations can be up to 1,000 times more toxic than glyphosate alone.",
+      "expectedSource": {
+        "name": "Michael Antoniou",
+        "kind": "person"
+      },
+      "groundingUnitIds": [
+        "U0010",
+        "U0011"
+      ],
+      "crux": true,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G02",
+      "testableAssertion": "Regulators do not require long-term toxicity testing of complete commercial glyphosate formulations.",
+      "expectedSource": {
+        "name": "Michael Antoniou",
+        "kind": "person"
+      },
+      "groundingUnitIds": [
+        "U0012",
+        "U0013"
+      ],
+      "crux": true,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G03",
+      "testableAssertion": "People are exposed to whole glyphosate formulations rather than pure glyphosate.",
+      "expectedSource": {
+        "name": "Michael Antoniou",
+        "kind": "person"
+      },
+      "groundingUnitIds": [
+        "U0015",
+        "U0016"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G04",
+      "testableAssertion": "Manufacturers do not disclose Roundup co-formulants and instead label them inert.",
+      "expectedSource": {
+        "name": "Michael Antoniou",
+        "kind": "person"
+      },
+      "groundingUnitIds": [
+        "U0019",
+        "U0020"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G05",
+      "testableAssertion": "Regulators rely heavily on industry-sponsored glyphosate research.",
+      "expectedSource": {
+        "name": "Michael Antoniou",
+        "kind": "person"
+      },
+      "groundingUnitIds": [
+        "U0029",
+        "U0030"
+      ],
+      "crux": true,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G06",
+      "testableAssertion": "A widely cited 2000 glyphosate-safety paper was retracted for undisclosed conflicts and was allegedly ghostwritten by Monsanto.",
+      "expectedSource": {
+        "name": "Michael Antoniou",
+        "kind": "person"
+      },
+      "groundingUnitIds": [
+        "U0031",
+        "U0033",
+        "U0034",
+        "U0035"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G07",
+      "testableAssertion": "Regulatory eligibility criteria for animal toxicity studies were set by industry, causing independent studies to receive little attention.",
+      "expectedSource": {
+        "name": "Michael Antoniou",
+        "kind": "person"
+      },
+      "groundingUnitIds": [
+        "U0037",
+        "U0038"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G08",
+      "testableAssertion": "Rats exposed to glyphosate, 2,4-D and dicamba at accepted exposure levels developed severe gut damage.",
+      "expectedSource": {
+        "name": "Michael Antoniou",
+        "kind": "person"
+      },
+      "groundingUnitIds": [
+        "U0044",
+        "U0045",
+        "U0046"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G09",
+      "testableAssertion": "Glyphosate is safe because its target pathway exists in plants but not humans.",
+      "expectedSource": {
+        "name": "glyphosate industry",
+        "kind": "institution"
+      },
+      "groundingUnitIds": [
+        "U0054"
+      ],
+      "crux": false,
+      "mustAppearOpponent": true
+    },
+    {
+      "goldId": "G10",
+      "testableAssertion": "Glyphosate can disrupt human gut microbial communities and contribute to leaky gut.",
+      "expectedSource": {
+        "name": "Michael Antoniou",
+        "kind": "person"
+      },
+      "groundingUnitIds": [
+        "U0056",
+        "U0057"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G11",
+      "testableAssertion": "Animals developed liver disease at glyphosate concentrations 125,000 times below the EU limit and 250,000 times below the US limit.",
+      "expectedSource": {
+        "name": "Michael Antoniou's laboratory",
+        "kind": "study"
+      },
+      "groundingUnitIds": [
+        "U0061",
+        "U0062"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G12",
+      "testableAssertion": "Rats exposed at the currently accepted daily glyphosate intake developed cancers.",
+      "expectedSource": {
+        "name": "June 2025 rat study",
+        "kind": "study"
+      },
+      "groundingUnitIds": [
+        "U0064",
+        "U0065"
+      ],
+      "crux": true,
+      "mustAppearOpponent": false
+    }
+  ],
+  "justifiedOmissions": [
+    {
+      "unitIds": [
+        "U0003"
+      ],
+      "reason": "Biographical credential, not part of the central safety case."
+    },
+    {
+      "unitIds": [
+        "U0073",
+        "U0074"
+      ],
+      "reason": "Policy feasibility claim is secondary to the toxicology case."
+    }
+  ]
+}

@@ -1,0 +1,1258 @@
+{
+  "schemaVersion": "cf2.discourseTupleReview.v1",
+  "fixtureId": "CF1-F01",
+  "freezeId": "cf2-v7-ab-f01-f03-f08-20260724",
+  "frozenInventorySha256": "7d23ad3f81b2e0f8a8e30aa9feb7c150d2dc9c9fbbefebcdcbee77c7cdec4acc",
+  "instructions": "Review the observed tuple field by field. Correct the tuple only from the frozen article units. Do not use outside evidence or the sealed evaluation key as assertion text.",
+  "items": [
+    {
+      "candidateId": "C01",
+      "observed": {
+        "surfaceStatement": "The overall distribution of ages at MMR vaccination among children with autism was similar to that of matched control children.",
+        "surfaceUnitIds": [
+          "U0011",
+          "U0121"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The overall distribution of ages at MMR vaccination among children with autism was similar to that of matched control children.",
+        "substantiveGroundingUnitIds": [
+          "U0011",
+          "U0121"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0011",
+            "U0121"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C02",
+      "observed": {
+        "surfaceStatement": "Most case (70.5%) and control children (67.5%) were vaccinated between 12 and 17 months of age.",
+        "surfaceUnitIds": [
+          "U0012"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "Most case (70.5%) and control children (67.5%) were vaccinated between 12 and 17 months of age.",
+        "substantiveGroundingUnitIds": [
+          "U0012"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0012"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C03",
+      "observed": {
+        "surfaceStatement": "No significant associations for vaccination before 18 or before 24 months were found for specific case subgroups, including those with evidence of developmental regression.",
+        "surfaceUnitIds": [
+          "U0014"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "No significant associations for vaccination before 18 or before 24 months were found for specific case subgroups, including those with evidence of developmental regression.",
+        "substantiveGroundingUnitIds": [
+          "U0014"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0014"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C04",
+      "observed": {
+        "surfaceStatement": "More case (93.4%) than control children (90.6%) were vaccinated before 36 months.",
+        "surfaceUnitIds": [
+          "U0015"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "More case (93.4%) than control children (90.6%) were vaccinated before 36 months.",
+        "substantiveGroundingUnitIds": [
+          "U0015"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0015"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C05",
+      "observed": {
+        "surfaceStatement": "The association of vaccination before 36 months was strongest in the 3- to 5-year age group.",
+        "surfaceUnitIds": [
+          "U0016"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The association of vaccination before 36 months was strongest in the 3- to 5-year age group.",
+        "substantiveGroundingUnitIds": [
+          "U0016"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0016"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C06",
+      "observed": {
+        "surfaceStatement": "The study included 624 case children and 1824 control children.",
+        "surfaceUnitIds": [
+          "U0057"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The study included 624 case children and 1824 control children.",
+        "substantiveGroundingUnitIds": [
+          "U0057"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0057"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C07",
+      "observed": {
+        "surfaceStatement": "Children with autism were identified from the Metropolitan Atlanta Developmental Disabilities Surveillance Program (MADDSP).",
+        "surfaceUnitIds": [
+          "U0039"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "Children with autism were identified from the Metropolitan Atlanta Developmental Disabilities Surveillance Program (MADDSP).",
+        "substantiveGroundingUnitIds": [
+          "U0039"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0039"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C08",
+      "observed": {
+        "surfaceStatement": "In 1996, MADDSP identified 987 children 3 to 10 years of age with autism, for a prevalence of 3.4 per 1000 children.",
+        "surfaceUnitIds": [
+          "U0039"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "In 1996, MADDSP identified 987 children 3 to 10 years of age with autism, for a prevalence of 3.4 per 1000 children.",
+        "substantiveGroundingUnitIds": [
+          "U0039"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0039"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C09",
+      "observed": {
+        "surfaceStatement": "The study was approved by the Centers for Disease Control and Prevention’s institutional review board.",
+        "surfaceUnitIds": [
+          "U0041"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The study was approved by the Centers for Disease Control and Prevention’s institutional review board.",
+        "substantiveGroundingUnitIds": [
+          "U0041"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0041"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C10",
+      "observed": {
+        "surfaceStatement": "Vaccination data were abstracted from immunization forms required for school entry.",
+        "surfaceUnitIds": [
+          "U0008"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "Vaccination data were abstracted from immunization forms required for school entry.",
+        "substantiveGroundingUnitIds": [
+          "U0008"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0008"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C11",
+      "observed": {
+        "surfaceStatement": "Georgia law required at least 1 dose of measles, mumps, and rubella vaccines for school enrollment.",
+        "surfaceUnitIds": [
+          "U0068"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "Georgia law required at least 1 dose of measles, mumps, and rubella vaccines for school enrollment.",
+        "substantiveGroundingUnitIds": [
+          "U0068"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0068"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C12",
+      "observed": {
+        "surfaceStatement": "The first dose of MMR vaccine is usually administered at 15 months of age.",
+        "surfaceUnitIds": [
+          "U0068"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The first dose of MMR vaccine is usually administered at 15 months of age.",
+        "substantiveGroundingUnitIds": [
+          "U0068"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0068"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C13",
+      "observed": {
+        "surfaceStatement": "The Individuals with Disabilities Education Act mandated the provision of special education programs for children with autism beginning at approximately 36 months of age.",
+        "surfaceUnitIds": [
+          "U0263"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The Individuals with Disabilities Education Act mandated the provision of special education programs for children with autism beginning at approximately 36 months of age.",
+        "substantiveGroundingUnitIds": [
+          "U0263"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0263"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C14",
+      "observed": {
+        "surfaceStatement": "The Institute of Medicine reviewed the MMR-autism hypothesis and rejected a causal association at the population level.",
+        "surfaceUnitIds": [
+          "U0036"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The Institute of Medicine reviewed the MMR-autism hypothesis and rejected a causal association at the population level.",
+        "substantiveGroundingUnitIds": [
+          "U0036"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0036"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C15",
+      "observed": {
+        "surfaceStatement": "A recent retrospective cohort study from Denmark found the relative risk associated with MMR was 0.92 for autistic disorder and 0.83 for other ASDs.",
+        "surfaceUnitIds": [
+          "U0281"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "A recent retrospective cohort study from Denmark found the relative risk associated with MMR was 0.92 for autistic disorder and 0.83 for other ASDs.",
+        "substantiveGroundingUnitIds": [
+          "U0281"
+        ],
+        "contentSupplier": null,
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C16",
+      "observed": {
+        "surfaceStatement": "The IOM committee recommended additional studies to evaluate potential high-risk subgroups of children.",
+        "surfaceUnitIds": [
+          "U0284"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The IOM committee recommended additional studies to evaluate potential high-risk subgroups of children.",
+        "substantiveGroundingUnitIds": [
+          "U0284"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0284"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C17",
+      "observed": {
+        "surfaceStatement": "The study found that case children without MR were more likely to have been vaccinated before 36 months of age than their matched control children.",
+        "surfaceUnitIds": [
+          "U0293"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "Case children without MR were more likely to have been vaccinated before 36 months of age than their matched control children.",
+        "substantiveGroundingUnitIds": [
+          "U0293"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0293"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C18",
+      "observed": {
+        "surfaceStatement": "MMR vaccine has never contained thimerosal.",
+        "surfaceUnitIds": [
+          "U0297"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "MMR vaccine has never contained thimerosal.",
+        "substantiveGroundingUnitIds": [
+          "U0297"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0297"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C19",
+      "observed": {
+        "surfaceStatement": "The routinely recommended infant vaccines that used to contain thimerosal were diphtheria-tetanus-pertussis, hepatitis B, and Haemophilus influenzae type b.",
+        "surfaceUnitIds": [
+          "U0295"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The routinely recommended infant vaccines that used to contain thimerosal were diphtheria-tetanus-pertussis, hepatitis B, and Haemophilus influenzae type b.",
+        "substantiveGroundingUnitIds": [
+          "U0295"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0295"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C20",
+      "observed": {
+        "surfaceStatement": "The study found a lower proportion of cases with regression than has been reported in other studies.",
+        "surfaceUnitIds": [
+          "U0290"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The study found a lower proportion of cases with regression than has been reported in other studies.",
+        "substantiveGroundingUnitIds": [
+          "U0290"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0290"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C21",
+      "observed": {
+        "surfaceStatement": "The study relied on abstracted information rather than interviews with parents, which may have led to underestimation of regression cases.",
+        "surfaceUnitIds": [
+          "U0290"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The study relied on abstracted information rather than interviews with parents, which may have led to underestimation of regression cases.",
+        "substantiveGroundingUnitIds": [
+          "U0290"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0290"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C22",
+      "observed": {
+        "surfaceStatement": "The study did not evaluate associations with the second dose of MMR vaccine because it is usually administered between 4 and 6 years of age.",
+        "surfaceUnitIds": [
+          "U0300"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The study did not evaluate associations with the second dose of MMR vaccine because it is usually administered between 4 and 6 years of age.",
+        "substantiveGroundingUnitIds": [
+          "U0300"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0300"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C23",
+      "observed": {
+        "surfaceStatement": "The study included a detailed review of case records by a panel of autism experts to confirm the case definition for autism according to DSM IV criteria.",
+        "surfaceUnitIds": [
+          "U0266"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The study included a detailed review of case records by a panel of autism experts to confirm the case definition for autism according to DSM IV criteria.",
+        "substantiveGroundingUnitIds": [
+          "U0266"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0266"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C24",
+      "observed": {
+        "surfaceStatement": "The study found that the differences between the total sample and the birth certificate sample could represent random fluctuation or a possible bias related to being born outside Georgia.",
+        "surfaceUnitIds": [
+          "U0279"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The study found that the differences between the total sample and the birth certificate sample could represent random fluctuation or a possible bias related to being born outside Georgia.",
+        "substantiveGroundingUnitIds": [
+          "U0279"
+        ],
+        "contentSupplier": null,
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C25",
+      "observed": {
+        "surfaceStatement": "The study was conducted in metropolitan Atlanta from 1999 through 2001.",
+        "surfaceUnitIds": [
+          "U0272"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The study was conducted in metropolitan Atlanta from 1999 through 2001.",
+        "substantiveGroundingUnitIds": [
+          "U0272"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0272"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C26",
+      "observed": {
+        "surfaceStatement": "The study found that the overall age at time of first MMR administration was similar among case and control children.",
+        "surfaceUnitIds": [
+          "U0302"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The overall age at time of first MMR administration was similar among case and control children.",
+        "substantiveGroundingUnitIds": [
+          "U0302"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0302"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C27",
+      "observed": {
+        "surfaceStatement": "The difference in vaccination coverage by 36 months of age between case and control children is likely to be an artifact of immunization requirements for preschool special education attendance in case children.",
+        "surfaceUnitIds": [
+          "U0305"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The difference in vaccination coverage by 36 months of age between case and control children is likely to be an artifact of immunization requirements for preschool special education attendance in case children.",
+        "substantiveGroundingUnitIds": [
+          "U0305"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0305"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C28",
+      "observed": {
+        "surfaceStatement": "The study found that children who were vaccinated after 36 months of age had documented delays in development before 36 months of age.",
+        "surfaceUnitIds": [
+          "U0304"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "Children who were vaccinated after 36 months of age had documented delays in development before 36 months of age.",
+        "substantiveGroundingUnitIds": [
+          "U0304"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0304"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C29",
+      "observed": {
+        "surfaceStatement": "The study found that similar proportions of case and control children had been vaccinated before 18 months or before 24 months of age.",
+        "surfaceUnitIds": [
+          "U0250"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "Similar proportions of case and control children had been vaccinated before 18 months or before 24 months of age.",
+        "substantiveGroundingUnitIds": [
+          "U0250"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0250"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C30",
+      "observed": {
+        "surfaceStatement": "The study lacked an unvaccinated comparison group and had incomplete information for determining date of onset of autism.",
+        "surfaceUnitIds": [
+          "U0253"
+        ],
+        "reportingVoice": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The study lacked an unvaccinated comparison group and had incomplete information for determining date of onset of autism.",
+        "substantiveGroundingUnitIds": [
+          "U0253"
+        ],
+        "contentSupplier": {
+          "name": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0253"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    }
+  ]
+}

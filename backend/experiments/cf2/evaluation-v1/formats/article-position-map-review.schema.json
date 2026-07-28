@@ -1,0 +1,310 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://veristrata.local/schemas/cf2.articlePositionMapReview.v1.json",
+  "title": "CF2 article-position-map review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "fixtureId",
+    "freezeId",
+    "frozenInventorySha256",
+    "instructions",
+    "observedPositionMap",
+    "review",
+    "candidateReviews"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "cf2.articlePositionMapReview.v1"
+    },
+    "fixtureId": {
+      "type": "string",
+      "pattern": "^CF1-F[0-9]{2}$"
+    },
+    "freezeId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "frozenInventorySha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "instructions": {
+      "type": "string"
+    },
+    "observedPositionMap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "articleMode",
+        "positions"
+      ],
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "articleMode": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "positions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "positionId",
+              "coreQuestion",
+              "articlePosition",
+              "positionUnitIds",
+              "importance"
+            ],
+            "properties": {
+              "positionId": {
+                "type": "string"
+              },
+              "coreQuestion": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "articlePosition": {
+                "type": "string"
+              },
+              "positionUnitIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^U[0-9]{4,}$"
+                }
+              },
+              "importance": {
+                "enum": [
+                  "major",
+                  "supporting",
+                  "unresolved"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "mapQuality",
+        "correctedArticleMode",
+        "correctedPositions",
+        "notes"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "unreviewed",
+            "reviewed"
+          ]
+        },
+        "mapQuality": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "coverage",
+            "atomicity",
+            "direction",
+            "genreFit"
+          ],
+          "properties": {
+            "coverage": {
+              "enum": [
+                "not_reviewed",
+                "pass",
+                "partial",
+                "fail"
+              ]
+            },
+            "atomicity": {
+              "enum": [
+                "not_reviewed",
+                "pass",
+                "partial",
+                "fail"
+              ]
+            },
+            "direction": {
+              "enum": [
+                "not_reviewed",
+                "pass",
+                "partial",
+                "fail"
+              ]
+            },
+            "genreFit": {
+              "enum": [
+                "not_reviewed",
+                "pass",
+                "partial",
+                "fail"
+              ]
+            }
+          }
+        },
+        "correctedArticleMode": {
+          "enum": [
+            "unreviewed",
+            "argument",
+            "primary_study",
+            "straight_news",
+            "explanatory",
+            "hybrid"
+          ]
+        },
+        "correctedPositions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "positionId",
+              "coreQuestion",
+              "articlePosition",
+              "positionUnitIds",
+              "importance"
+            ],
+            "properties": {
+              "positionId": {
+                "type": "string",
+                "pattern": "^POS[0-9]{2,}$"
+              },
+              "coreQuestion": {
+                "type": "string",
+                "minLength": 1
+              },
+              "articlePosition": {
+                "type": "string",
+                "minLength": 1
+              },
+              "positionUnitIds": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "pattern": "^U[0-9]{4,}$"
+                }
+              },
+              "importance": {
+                "enum": [
+                  "major",
+                  "supporting"
+                ]
+              }
+            }
+          }
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "candidateReviews": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidateId",
+          "observed",
+          "review"
+        ],
+        "properties": {
+          "candidateId": {
+            "type": "string",
+            "pattern": "^C[0-9]{2,}$"
+          },
+          "observed": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "review": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "status",
+              "articleTreatmentGold",
+              "targetRelationsGold",
+              "relevanceGold",
+              "selectionGold",
+              "notes"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "unreviewed",
+                  "reviewed"
+                ]
+              },
+              "articleTreatmentGold": {
+                "enum": [
+                  "not_reviewed",
+                  "adopted",
+                  "challenged",
+                  "reported"
+                ]
+              },
+              "targetRelationsGold": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "positionId",
+                    "effectIfTrue"
+                  ],
+                  "properties": {
+                    "positionId": {
+                      "type": "string",
+                      "pattern": "^POS[0-9]{2,}$"
+                    },
+                    "effectIfTrue": {
+                      "enum": [
+                        "strengthens",
+                        "weakens",
+                        "no_effect"
+                      ]
+                    }
+                  }
+                }
+              },
+              "relevanceGold": {
+                "enum": [
+                  "not_reviewed",
+                  "essential",
+                  "supporting",
+                  "contextual",
+                  "incidental",
+                  "exclude"
+                ]
+              },
+              "selectionGold": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "notes": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

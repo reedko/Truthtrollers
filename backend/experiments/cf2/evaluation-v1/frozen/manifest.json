@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "cf2.frozenEvaluationManifest.v1",
+  "freezeId": "cf2-v7-ab-f01-f03-f08-20260724",
+  "frozenAt": "2026-07-24",
+  "sourceSuitePath": "artifacts/claim-foundry/cf2/v7-ab-f01-f08-r1-20260724",
+  "purpose": "Frozen evaluation of discourse tuples, article position maps, treatment, target-specific effect, relevance, and selection.",
+  "fixtures": [
+    {
+      "fixtureId": "CF1-F01",
+      "sourceResultPath": "artifacts/claim-foundry/cf2/v7-ab-f01-f08-r1-20260724/CF1-F01/result.json",
+      "sourceResultSha256": "5939302b66935917273dbeffefab93645f8ba0e9e8fdb4bae8e11be784413a75",
+      "inventoryPath": "frozen/CF1-F01.inventory.json",
+      "inventorySha256": "7d23ad3f81b2e0f8a8e30aa9feb7c150d2dc9c9fbbefebcdcbee77c7cdec4acc",
+      "tracePath": "traces/CF1-F01.trace.json",
+      "traceSha256": "42228f74abc10a5b51ba883f4f0d1071cc23b987fa921a6c06e7febe0666a578",
+      "discourseTupleReviewPath": "reviews/CF1-F01.discourse-tuples.review.json",
+      "articlePositionMapReviewPath": "reviews/CF1-F01.article-position-map.review.json",
+      "observedPredictionPath": "observed/CF1-F01.observed-prediction.json",
+      "observedPredictionSha256": "1b0dba7525321c5a073a11336960eba17ebef996e1dff3ad2e4ef45d3281d3ef",
+      "candidateCount": 30,
+      "validJudgmentCount": 28,
+      "quarantineCount": 2,
+      "selectedCount": 3
+    },
+    {
+      "fixtureId": "CF1-F03",
+      "sourceResultPath": "artifacts/claim-foundry/cf2/v7-ab-f01-f08-r1-20260724/CF1-F03/result.json",
+      "sourceResultSha256": "42eb92d89a6f61080852dbba21d6666946354124d4e3f89b56d5033c0a50da3c",
+      "inventoryPath": "frozen/CF1-F03.inventory.json",
+      "inventorySha256": "5b410b647378ee7e0e439b8febc65d5107caa51981eda88e57bd408bd2524435",
+      "tracePath": "traces/CF1-F03.trace.json",
+      "traceSha256": "582870e3a6fb4c75f5a319f3b53c4de86b3b0a072befa1e2c1520e027e6ee1b7",
+      "discourseTupleReviewPath": "reviews/CF1-F03.discourse-tuples.review.json",
+      "articlePositionMapReviewPath": "reviews/CF1-F03.article-position-map.review.json",
+      "observedPredictionPath": "observed/CF1-F03.observed-prediction.json",
+      "observedPredictionSha256": "9bdab25ef934dead1addb8a09c9d5eaf7adb1ae4ff3d4b7d2c1ca24726d0eae6",
+      "candidateCount": 30,
+      "validJudgmentCount": 29,
+      "quarantineCount": 1,
+      "selectedCount": 12
+    },
+    {
+      "fixtureId": "CF1-F08",
+      "sourceResultPath": "artifacts/claim-foundry/cf2/v7-ab-f01-f08-r1-20260724/CF1-F08/result.json",
+      "sourceResultSha256": "4c8fdf791b620780049283c6879782cf5f4450e5c09a5232b512c1f59b4e158d",
+      "inventoryPath": "frozen/CF1-F08.inventory.json",
+      "inventorySha256": "0e7fbba1da3498da96b7812977f6ba18e93ed415ca9dc0dc86dec466a97a42bc",
+      "tracePath": "traces/CF1-F08.trace.json",
+      "traceSha256": "eb898d45931e217abfea9cfcbf76fa7c2e90ff0696ce62c8b4f291247b80a4a8",
+      "discourseTupleReviewPath": "reviews/CF1-F08.discourse-tuples.review.json",
+      "articlePositionMapReviewPath": "reviews/CF1-F08.article-position-map.review.json",
+      "observedPredictionPath": "observed/CF1-F08.observed-prediction.json",
+      "observedPredictionSha256": "d16c70068d49b571343f0641e9da2d97087c0748a6d71ca06c55204b9c72672a",
+      "candidateCount": 30,
+      "validJudgmentCount": 27,
+      "quarantineCount": 3,
+      "selectedCount": 2
+    }
+  ]
+}

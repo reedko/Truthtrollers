@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "cf2.separateEvaluationScores.v1",
+  "fixtureId": "CF1-F08",
+  "freezeId": "cf2-v7-ab-f01-f03-f08-20260724",
+  "dimensions": {
+    "tupleCorrectness": {
+      "reviewed": 0,
+      "fullyCorrect": 0,
+      "partiallyCorrect": 0,
+      "incorrect": 0,
+      "meanCredit": null,
+      "fields": {
+        "surface": {
+          "reviewed": 0,
+          "correct": 0,
+          "accuracy": null
+        },
+        "layerStructure": {
+          "reviewed": 0,
+          "correct": 0,
+          "accuracy": null
+        },
+        "substantiveAssertion": {
+          "reviewed": 0,
+          "correct": 0,
+          "accuracy": null
+        },
+        "grounding": {
+          "reviewed": 0,
+          "correct": 0,
+          "accuracy": null
+        },
+        "contentSupplier": {
+          "reviewed": 0,
+          "correct": 0,
+          "accuracy": null
+        },
+        "verificationTarget": {
+          "reviewed": 0,
+          "correct": 0,
+          "accuracy": null
+        }
+      }
+    },
+    "positionMapQuality": {
+      "coverage": {
+        "verdict": "not_reviewed",
+        "credit": null
+      },
+      "atomicity": {
+        "verdict": "not_reviewed",
+        "credit": null
+      },
+      "direction": {
+        "verdict": "not_reviewed",
+        "credit": null
+      },
+      "genreFit": {
+        "verdict": "not_reviewed",
+        "credit": null
+      }
+    },
+    "articleTreatment": {
+      "goldCount": 0,
+      "predictionCount": 0,
+      "predictionCoverage": null,
+      "correct": 0,
+      "accuracyWhenPredicted": null,
+      "strictAccuracy": null
+    },
+    "targetSpecificEffect": {
+      "goldCount": 0,
+      "predictionCount": 0,
+      "predictionCoverage": null,
+      "correct": 0,
+      "accuracyWhenPredicted": null,
+      "strictAccuracy": null
+    },
+    "relevance": {
+      "goldCount": 0,
+      "predictionCount": 0,
+      "predictionCoverage": null,
+      "correct": 0,
+      "accuracyWhenPredicted": null,
+      "strictAccuracy": null
+    },
+    "selection": {
+      "goldCount": 0,
+      "predictionCount": 0,
+      "missingPrediction": 0,
+      "truePositive": 0,
+      "falsePositive": 0,
+      "falseNegative": 0,
+      "trueNegative": 0,
+      "precision": null,
+      "recall": null,
+      "f1": null,
+      "accuracy": null
+    }
+  },
+  "note": "No composite score is produced. Null metrics mean the required gold review or prediction is unavailable.",
+  "predictionPath": "observed/CF1-F08.observed-prediction.json"
+}

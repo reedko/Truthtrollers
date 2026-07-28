@@ -1,0 +1,1258 @@
+{
+  "schemaVersion": "cf2.discourseTupleReview.v1",
+  "fixtureId": "CF1-F08",
+  "freezeId": "cf2-v7-ab-f01-f03-f08-20260724",
+  "frozenInventorySha256": "0e7fbba1da3498da96b7812977f6ba18e93ed415ca9dc0dc86dec466a97a42bc",
+  "instructions": "Review the observed tuple field by field. Correct the tuple only from the frozen article units. Do not use outside evidence or the sealed evaluation key as assertion text.",
+  "items": [
+    {
+      "candidateId": "C01",
+      "observed": {
+        "surfaceStatement": "A magnitude 6.2 earthquake shook part of northern Japan.",
+        "surfaceUnitIds": [
+          "U0001"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "A magnitude 6.2 earthquake shook part of northern Japan.",
+        "substantiveGroundingUnitIds": [
+          "U0001"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0001"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C02",
+      "observed": {
+        "surfaceStatement": "There was no damage or casualties from the earthquake in northern Japan.",
+        "surfaceUnitIds": [
+          "U0001"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "There was no damage or casualties from the earthquake in northern Japan.",
+        "substantiveGroundingUnitIds": [
+          "U0001"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0001"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C03",
+      "observed": {
+        "surfaceStatement": "No tsunami advisory was issued by the Japan Meteorological Agency.",
+        "surfaceUnitIds": [
+          "U0002"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "No tsunami advisory was issued by the Japan Meteorological Agency.",
+        "substantiveGroundingUnitIds": [
+          "U0002"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0002"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C04",
+      "observed": {
+        "surfaceStatement": "The earthquake struck 18 kilometers west of the small town of Sarabetsu.",
+        "surfaceUnitIds": [
+          "U0003"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The earthquake struck 18 kilometers west of the small town of Sarabetsu.",
+        "substantiveGroundingUnitIds": [
+          "U0003"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0003"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C05",
+      "observed": {
+        "surfaceStatement": "The earthquake occurred at a depth of 81 kilometers.",
+        "surfaceUnitIds": [
+          "U0003"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The earthquake occurred at a depth of 81 kilometers.",
+        "substantiveGroundingUnitIds": [
+          "U0003"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0003"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C06",
+      "observed": {
+        "surfaceStatement": "The earthquake occurred 11 miles west of Sarabetsu.",
+        "surfaceUnitIds": [
+          "U0003"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The earthquake occurred 11 miles west of Sarabetsu.",
+        "substantiveGroundingUnitIds": [
+          "U0003"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0003"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C07",
+      "observed": {
+        "surfaceStatement": "The U.S. Geological Survey measured the quake’s strength at 6.1 magnitude.",
+        "surfaceUnitIds": [
+          "U0005"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The U.S. Geological Survey measured the quake’s strength at 6.1 magnitude.",
+        "substantiveGroundingUnitIds": [
+          "U0005"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0005"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C08",
+      "observed": {
+        "surfaceStatement": "A week ago, a 7.7 magnitude offshore earthquake prompted Japan to issue an advisory.",
+        "surfaceUnitIds": [
+          "U0006"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "A week ago, a 7.7 magnitude offshore earthquake prompted Japan to issue an advisory.",
+        "substantiveGroundingUnitIds": [
+          "U0006"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0006"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C09",
+      "observed": {
+        "surfaceStatement": "Japan issued an advisory of a slightly higher risk of a possible megaquake for the nation’s northeastern coastal areas.",
+        "surfaceUnitIds": [
+          "U0006"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "Japan issued an advisory of a slightly higher risk of a possible megaquake for the nation’s northeastern coastal areas.",
+        "substantiveGroundingUnitIds": [
+          "U0006"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0006"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C10",
+      "observed": {
+        "surfaceStatement": "The Japan Meteorological Agency stated that Monday’s quake was outside of the area subject to a megaquake advisory.",
+        "surfaceUnitIds": [
+          "U0007"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [
+          {
+            "supplierName": "The Japan Meteorological Agency",
+            "supplierKind": "institution",
+            "operator": "said",
+            "assertedContent": "Monday’s quake was outside of the area subject to a megaquake advisory and that the special awareness week is set to end as planned.",
+            "sourceUnitIds": [
+              "U0007"
+            ]
+          }
+        ],
+        "substantiveAssertion": "Monday’s quake was outside of the area subject to a megaquake advisory and that the special awareness week is set to end as planned.",
+        "substantiveGroundingUnitIds": [
+          "U0007"
+        ],
+        "contentSupplier": null,
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C11",
+      "observed": {
+        "surfaceStatement": "The special awareness week regarding megaquakes is set to end as planned.",
+        "surfaceUnitIds": [
+          "U0007"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The special awareness week regarding megaquakes is set to end as planned.",
+        "substantiveGroundingUnitIds": [
+          "U0007"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0007"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C12",
+      "observed": {
+        "surfaceStatement": "The earthquake occurred early Monday.",
+        "surfaceUnitIds": [
+          "U0001"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The earthquake occurred early Monday.",
+        "substantiveGroundingUnitIds": [
+          "U0001"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0001"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C13",
+      "observed": {
+        "surfaceStatement": "The earthquake was felt in northern Japan.",
+        "surfaceUnitIds": [
+          "U0001"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The earthquake was felt in northern Japan.",
+        "substantiveGroundingUnitIds": [
+          "U0001"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0001"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C14",
+      "observed": {
+        "surfaceStatement": "The earthquake occurred on Japan’s northernmost main island of Hokkaido.",
+        "surfaceUnitIds": [
+          "U0003"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The earthquake occurred on Japan’s northernmost main island of Hokkaido.",
+        "substantiveGroundingUnitIds": [
+          "U0003"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0003"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C15",
+      "observed": {
+        "surfaceStatement": "The earthquake did not cause a tsunami.",
+        "surfaceUnitIds": [
+          "U0002"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The earthquake did not cause a tsunami.",
+        "substantiveGroundingUnitIds": [
+          "U0002"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0002"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C16",
+      "observed": {
+        "surfaceStatement": "The depth of the earthquake was 50 miles.",
+        "surfaceUnitIds": [
+          "U0003"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The depth of the earthquake was 50 miles.",
+        "substantiveGroundingUnitIds": [
+          "U0003"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0003"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C17",
+      "observed": {
+        "surfaceStatement": "The Japan Meteorological Agency is responsible for issuing tsunami advisories.",
+        "surfaceUnitIds": [
+          "U0002"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The Japan Meteorological Agency is responsible for issuing tsunami advisories.",
+        "substantiveGroundingUnitIds": [
+          "U0002"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0002"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C18",
+      "observed": {
+        "surfaceStatement": "The U.S. Geological Survey is an authoritative source for measuring earthquake magnitudes.",
+        "surfaceUnitIds": [
+          "U0004"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The U.S. Geological Survey is an authoritative source for measuring earthquake magnitudes.",
+        "substantiveGroundingUnitIds": [
+          "U0004"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0004"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C19",
+      "observed": {
+        "surfaceStatement": "The earthquake was recorded on April 26, 2026.",
+        "surfaceUnitIds": [
+          "U0001"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The earthquake was recorded on April 26, 2026.",
+        "substantiveGroundingUnitIds": [
+          "U0001"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0001"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C20",
+      "observed": {
+        "surfaceStatement": "The earthquake's magnitude was reported as 6.2 by the Associated Press.",
+        "surfaceUnitIds": [
+          "U0001"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The earthquake's magnitude was reported as 6.2 by the Associated Press.",
+        "substantiveGroundingUnitIds": [
+          "U0001"
+        ],
+        "contentSupplier": null,
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C21",
+      "observed": {
+        "surfaceStatement": "The earthquake occurred in the early morning hours.",
+        "surfaceUnitIds": [
+          "U0001"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The earthquake occurred in the early morning hours.",
+        "substantiveGroundingUnitIds": [
+          "U0001"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0001"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C22",
+      "observed": {
+        "surfaceStatement": "The earthquake was classified as an inland quake.",
+        "surfaceUnitIds": [
+          "U0003"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The earthquake was classified as an inland quake.",
+        "substantiveGroundingUnitIds": [
+          "U0003"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0003"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C23",
+      "observed": {
+        "surfaceStatement": "The Japan Meteorological Agency did not issue a tsunami advisory following the earthquake.",
+        "surfaceUnitIds": [
+          "U0002"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The Japan Meteorological Agency did not issue a tsunami advisory following the earthquake.",
+        "substantiveGroundingUnitIds": [
+          "U0002"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0002"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C24",
+      "observed": {
+        "surfaceStatement": "The earthquake was not associated with the recent 7.7 magnitude earthquake.",
+        "surfaceUnitIds": [
+          "U0006"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The earthquake was not associated with the recent 7.7 magnitude earthquake.",
+        "substantiveGroundingUnitIds": [
+          "U0006"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0006"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C25",
+      "observed": {
+        "surfaceStatement": "The 7.7 magnitude earthquake occurred offshore.",
+        "surfaceUnitIds": [
+          "U0006"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The 7.7 magnitude earthquake occurred offshore.",
+        "substantiveGroundingUnitIds": [
+          "U0006"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0006"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C26",
+      "observed": {
+        "surfaceStatement": "The earthquake's epicenter was located west of Sarabetsu.",
+        "surfaceUnitIds": [
+          "U0003"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The earthquake's epicenter was located west of Sarabetsu.",
+        "substantiveGroundingUnitIds": [
+          "U0003"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0003"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C27",
+      "observed": {
+        "surfaceStatement": "The earthquake was part of a series of seismic events in the region.",
+        "surfaceUnitIds": [
+          "U0006"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The earthquake was part of a series of seismic events in the region.",
+        "substantiveGroundingUnitIds": [
+          "U0006"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0006"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C28",
+      "observed": {
+        "surfaceStatement": "The Japan Meteorological Agency monitors seismic activity in Japan.",
+        "surfaceUnitIds": [
+          "U0002"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The Japan Meteorological Agency monitors seismic activity in Japan.",
+        "substantiveGroundingUnitIds": [
+          "U0002"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0002"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C29",
+      "observed": {
+        "surfaceStatement": "The earthquake did not result in any reported injuries.",
+        "surfaceUnitIds": [
+          "U0001"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The earthquake did not result in any reported injuries.",
+        "substantiveGroundingUnitIds": [
+          "U0001"
+        ],
+        "contentSupplier": null,
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    },
+    {
+      "candidateId": "C30",
+      "observed": {
+        "surfaceStatement": "The earthquake's depth was significant at 81 kilometers.",
+        "surfaceUnitIds": [
+          "U0003"
+        ],
+        "reportingVoice": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": []
+        },
+        "attributionLayers": [],
+        "substantiveAssertion": "The earthquake's depth was significant at 81 kilometers.",
+        "substantiveGroundingUnitIds": [
+          "U0003"
+        ],
+        "contentSupplier": {
+          "name": "The Associated Press",
+          "kind": "article_voice",
+          "unitIds": [
+            "U0003"
+          ],
+          "origin": "host_article_voice_no_explicit_layer"
+        },
+        "primaryVerificationTarget": "substantive_content"
+      },
+      "review": {
+        "status": "unreviewed",
+        "tupleVerdict": "not_reviewed",
+        "fieldVerdicts": {
+          "surface": "not_reviewed",
+          "layerStructure": "not_reviewed",
+          "substantiveAssertion": "not_reviewed",
+          "grounding": "not_reviewed",
+          "contentSupplier": "not_reviewed",
+          "verificationTarget": "not_reviewed"
+        },
+        "correctedTuple": null,
+        "notes": ""
+      }
+    }
+  ]
+}

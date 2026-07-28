@@ -439,6 +439,7 @@ export async function runCf2V6({
   callARunner,
   callBRunner,
   callCRunner = callBRunner,
+  callAPromptBuilder = buildCf2V6DiscoveryPrompt,
   callAModel = "gpt-4o-mini",
   callBModel = "gpt-4.1-mini",
   callCModel = "gpt-4.1-mini",
@@ -453,7 +454,7 @@ export async function runCf2V6({
 }) {
   const startedAt = clock();
   const { article, sourceUnits } = prepareCf2Article(rawArticle);
-  const callAPrompt = buildCf2V6DiscoveryPrompt({
+  const callAPrompt = callAPromptBuilder({
     article,
     sourceUnits,
     candidateMaximum,

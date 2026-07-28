@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://veristrata.local/schemas/cf2.discourseTupleReview.v1.json",
+  "title": "CF2 discourse-tuple review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "fixtureId",
+    "freezeId",
+    "frozenInventorySha256",
+    "instructions",
+    "items"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "cf2.discourseTupleReview.v1"
+    },
+    "fixtureId": {
+      "type": "string",
+      "pattern": "^CF1-F[0-9]{2}$"
+    },
+    "freezeId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "frozenInventorySha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "instructions": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidateId",
+          "observed",
+          "review"
+        ],
+        "properties": {
+          "candidateId": {
+            "type": "string",
+            "pattern": "^C[0-9]{2,}$"
+          },
+          "observed": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": [
+              "surfaceStatement",
+              "surfaceUnitIds",
+              "substantiveAssertion",
+              "substantiveGroundingUnitIds",
+              "attributionLayers",
+              "contentSupplier",
+              "primaryVerificationTarget"
+            ],
+            "properties": {
+              "surfaceStatement": {
+                "type": "string"
+              },
+              "surfaceUnitIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^U[0-9]{4,}$"
+                }
+              },
+              "reportingVoice": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "attributionLayers": {
+                "type": "array"
+              },
+              "substantiveAssertion": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "substantiveGroundingUnitIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^U[0-9]{4,}$"
+                }
+              },
+              "contentSupplier": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "primaryVerificationTarget": {
+                "enum": [
+                  "substantive_content",
+                  "attribution_event",
+                  "both",
+                  "not_a_valid_assertion",
+                  "unresolved"
+                ]
+              }
+            }
+          },
+          "review": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "status",
+              "tupleVerdict",
+              "fieldVerdicts",
+              "correctedTuple",
+              "notes"
+            ],
+            "properties": {
+              "status": {
+                "enum": [
+                  "unreviewed",
+                  "reviewed"
+                ]
+              },
+              "tupleVerdict": {
+                "enum": [
+                  "not_reviewed",
+                  "correct",
+                  "partially_correct",
+                  "incorrect"
+                ]
+              },
+              "fieldVerdicts": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "surface",
+                  "layerStructure",
+                  "substantiveAssertion",
+                  "grounding",
+                  "contentSupplier",
+                  "verificationTarget"
+                ],
+                "properties": {
+                  "surface": {
+                    "enum": [
+                      "not_reviewed",
+                      "correct",
+                      "incorrect"
+                    ]
+                  },
+                  "layerStructure": {
+                    "enum": [
+                      "not_reviewed",
+                      "correct",
+                      "incorrect"
+                    ]
+                  },
+                  "substantiveAssertion": {
+                    "enum": [
+                      "not_reviewed",
+                      "correct",
+                      "incorrect"
+                    ]
+                  },
+                  "grounding": {
+                    "enum": [
+                      "not_reviewed",
+                      "correct",
+                      "incorrect"
+                    ]
+                  },
+                  "contentSupplier": {
+                    "enum": [
+                      "not_reviewed",
+                      "correct",
+                      "incorrect"
+                    ]
+                  },
+                  "verificationTarget": {
+                    "enum": [
+                      "not_reviewed",
+                      "correct",
+                      "incorrect"
+                    ]
+                  }
+                }
+              },
+              "correctedTuple": {
+                "type": [
+                  "object",
+                  "null"
+                ]
+              },
+              "notes": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

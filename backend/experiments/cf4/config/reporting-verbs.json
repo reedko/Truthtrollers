@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "cf4.reportingVerbs.v1",
+  "source": "Build-plan seed pending PARC 3.0 inventory reconciliation",
+  "verbs": [
+    "admit",
+    "allege",
+    "announce",
+    "argue",
+    "claim",
+    "conclude",
+    "describe",
+    "deny",
+    "find",
+    "insist",
+    "maintain",
+    "note",
+    "report",
+    "reveal",
+    "say",
+    "show",
+    "state",
+    "tell",
+    "testify",
+    "warn",
+    "write"
+  ]
+}

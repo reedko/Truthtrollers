@@ -1,0 +1,190 @@
+{
+  "schemaVersion": "cf4.sealedGold.v2",
+  "fixtureId": "CF1-F03",
+  "construction": "Blind article-only fact-checking judgment; no CF3 or CF4 run output consulted. Existing judgments reformatted to separate attribution.",
+  "assertions": [
+    {
+      "goldId": "G01",
+      "testableAssertion": "Half of American schoolchildren are not fully vaccinated and at least 1 in 88 toddlers are completely unvaccinated.",
+      "expectedSource": {
+        "name": "CDC",
+        "kind": "institution"
+      },
+      "groundingUnitIds": [
+        "U0002"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G02",
+      "testableAssertion": "CDC data linking MMR vaccination to autism were manipulated.",
+      "expectedSource": {
+        "name": "William Thompson",
+        "kind": "person"
+      },
+      "groundingUnitIds": [
+        "U0037"
+      ],
+      "crux": true,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G03",
+      "testableAssertion": "CDC officials ordered researchers to destroy evidence after a 2004 study showed increased autism after MMR vaccination.",
+      "expectedSource": {
+        "name": "Ana Wolpin",
+        "kind": "article_voice"
+      },
+      "groundingUnitIds": [
+        "U0038"
+      ],
+      "crux": true,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G04",
+      "testableAssertion": "The National Childhood Vaccine Injury Act removed manufacturers' liability for childhood vaccines in 1986.",
+      "expectedSource": {
+        "name": "Ana Wolpin",
+        "kind": "article_voice"
+      },
+      "groundingUnitIds": [
+        "U0068",
+        "U0069",
+        "U0070",
+        "U0071"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G05",
+      "testableAssertion": "The childhood vaccine schedule expanded from 25 doses in 1986 to 73 doses.",
+      "expectedSource": {
+        "name": "Ana Wolpin",
+        "kind": "article_voice"
+      },
+      "groundingUnitIds": [
+        "U0079",
+        "U0080"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G06",
+      "testableAssertion": "Of 2,605 reported post-vaccination deaths, 78.3 percent occurred within seven days.",
+      "expectedSource": {
+        "name": "Neil Z. Miller",
+        "kind": "person"
+      },
+      "groundingUnitIds": [
+        "U0188",
+        "U0190",
+        "U0208",
+        "U0209",
+        "U0210",
+        "U0211"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G07",
+      "testableAssertion": "The ATSDR oral aluminum limit assumes only 0.1 percent absorption while injected aluminum may eventually be fully absorbed.",
+      "expectedSource": {
+        "name": "cited aluminum study",
+        "kind": "study"
+      },
+      "groundingUnitIds": [
+        "U0252"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G08",
+      "testableAssertion": "The cumulative aluminum administered at two-, four- and six-month vaccine visits can exceed 1,000 micrograms.",
+      "expectedSource": {
+        "name": "Ana Wolpin",
+        "kind": "article_voice"
+      },
+      "groundingUnitIds": [
+        "U0278"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G09",
+      "testableAssertion": "The CDC has never safety-tested the cumulative aluminum load from multiple childhood shots.",
+      "expectedSource": {
+        "name": "Ana Wolpin",
+        "kind": "article_voice"
+      },
+      "groundingUnitIds": [
+        "U0279"
+      ],
+      "crux": true,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G10",
+      "testableAssertion": "High first-month thimerosal exposure was associated with a 7.6-fold autism risk in a 1999 CDC-commissioned study.",
+      "expectedSource": {
+        "name": "Thomas Verstraeten study",
+        "kind": "study"
+      },
+      "groundingUnitIds": [
+        "U0326",
+        "U0327",
+        "U0328",
+        "U0329"
+      ],
+      "crux": true,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G11",
+      "testableAssertion": "Thimerosal did not cause autism or other neurodevelopmental problems.",
+      "expectedSource": {
+        "name": "CDC",
+        "kind": "institution"
+      },
+      "groundingUnitIds": [
+        "U0344"
+      ],
+      "crux": false,
+      "mustAppearOpponent": true
+    },
+    {
+      "goldId": "G12",
+      "testableAssertion": "Thimerosal-containing vaccines exceed the TCLP mercury threshold and are classified as D009 hazardous waste.",
+      "expectedSource": {
+        "name": "ACIP thimerosal summary",
+        "kind": "document"
+      },
+      "groundingUnitIds": [
+        "U0370"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    }
+  ],
+  "justifiedOmissions": [
+    {
+      "unitIds": [
+        "U0010",
+        "U0011"
+      ],
+      "reason": "Author biography is not part of the factual vaccine case."
+    },
+    {
+      "unitIds": [
+        "U0403"
+      ],
+      "reason": "Forward-looking section transition is not itself a factual assertion."
+    }
+  ]
+}

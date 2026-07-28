@@ -1,0 +1,186 @@
+{
+  "schemaVersion": "cf4.sealedGold.v2",
+  "fixtureId": "CF1-F06",
+  "construction": "Blind article-only fact-checking judgment; no CF3 or CF4 run output consulted. Existing judgments reformatted to separate attribution.",
+  "assertions": [
+    {
+      "goldId": "G01",
+      "testableAssertion": "The Great Barrier Reef was 25 million years old.",
+      "expectedSource": {
+        "name": "Rowan Jacobsen",
+        "kind": "article_voice"
+      },
+      "groundingUnitIds": [
+        "U0002"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G02",
+      "testableAssertion": "The reef was 1,400 miles long and comprised 2,900 reefs and 1,050 islands.",
+      "expectedSource": {
+        "name": "Rowan Jacobsen",
+        "kind": "article_voice"
+      },
+      "groundingUnitIds": [
+        "U0004"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G03",
+      "testableAssertion": "The reef harbored 1,625 fish species, 3,000 mollusk species, 450 coral species, 220 bird species and 30 whale and dolphin species.",
+      "expectedSource": {
+        "name": "Rowan Jacobsen",
+        "kind": "article_voice"
+      },
+      "groundingUnitIds": [
+        "U0006"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G04",
+      "testableAssertion": "The Great Barrier Reef Marine Park was created in 1975 after a conservation campaign and restricted fishing, shipping and development.",
+      "expectedSource": {
+        "name": "Rowan Jacobsen",
+        "kind": "article_voice"
+      },
+      "groundingUnitIds": [
+        "U0027"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G05",
+      "testableAssertion": "The reef experienced its first mass-bleaching incident in 1981.",
+      "expectedSource": {
+        "name": "Rowan Jacobsen",
+        "kind": "article_voice"
+      },
+      "groundingUnitIds": [
+        "U0030"
+      ],
+      "crux": true,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G06",
+      "testableAssertion": "High water temperatures cause corals to eject symbiotic algae, turn white and starve.",
+      "expectedSource": {
+        "name": "Rowan Jacobsen",
+        "kind": "article_voice"
+      },
+      "groundingUnitIds": [
+        "U0031",
+        "U0032",
+        "U0033",
+        "U0034"
+      ],
+      "crux": true,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G07",
+      "testableAssertion": "Two-thirds of the inner reef's coral bleached during high water temperatures in 1981.",
+      "expectedSource": {
+        "name": "Rowan Jacobsen",
+        "kind": "article_voice"
+      },
+      "groundingUnitIds": [
+        "U0036"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G08",
+      "testableAssertion": "Ocean absorption of atmospheric carbon made the water more acidic and began dissolving the reef.",
+      "expectedSource": {
+        "name": "Rowan Jacobsen",
+        "kind": "article_voice"
+      },
+      "groundingUnitIds": [
+        "U0039",
+        "U0040"
+      ],
+      "crux": true,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G09",
+      "testableAssertion": "Atmospheric carbon dioxide at 450 ppm would bring about the reef's demise.",
+      "expectedSource": {
+        "name": "Charlie Veron",
+        "kind": "person"
+      },
+      "groundingUnitIds": [
+        "U0042"
+      ],
+      "crux": true,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G10",
+      "testableAssertion": "Australia pressured the United Nations to remove a reef chapter from a climate-impact report after approving a major coal mine.",
+      "expectedSource": {
+        "name": "Rowan Jacobsen",
+        "kind": "article_voice"
+      },
+      "groundingUnitIds": [
+        "U0044"
+      ],
+      "crux": false,
+      "mustAppearOpponent": false
+    },
+    {
+      "goldId": "G11",
+      "testableAssertion": "Negative World Heritage comments harmed tourism.",
+      "expectedSource": {
+        "name": "Australia's Department of the Environment",
+        "kind": "institution"
+      },
+      "groundingUnitIds": [
+        "U0045"
+      ],
+      "crux": false,
+      "mustAppearOpponent": true
+    },
+    {
+      "goldId": "G12",
+      "testableAssertion": "As much as half of the coral in the warmer northern reef died during its most catastrophic bleaching event.",
+      "expectedSource": {
+        "name": "Rowan Jacobsen",
+        "kind": "article_voice"
+      },
+      "groundingUnitIds": [
+        "U0047",
+        "U0048"
+      ],
+      "crux": true,
+      "mustAppearOpponent": false
+    }
+  ],
+  "justifiedOmissions": [
+    {
+      "unitIds": [
+        "U0021",
+        "U0023",
+        "U0024"
+      ],
+      "reason": "Cook anecdote is historical color rather than the climate case."
+    },
+    {
+      "unitIds": [
+        "U0055",
+        "U0056",
+        "U0057"
+      ],
+      "reason": "Obituary conceit and donation close are rhetorical framing."
+    }
+  ]
+}

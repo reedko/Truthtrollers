@@ -1,0 +1,1259 @@
+{
+  "schemaVersion": "cf2.frozenCandidateInventory.v1",
+  "freezeId": "cf2-v7-ab-f01-f03-f08-20260724",
+  "fixtureId": "CF1-F08",
+  "frozenAt": "2026-07-24",
+  "source": {
+    "architecture": "CF2_V7_EXPLICIT_ATTRIBUTION_ONLY_C30_P12",
+    "resultPath": "artifacts/claim-foundry/cf2/v7-ab-f01-f08-r1-20260724/CF1-F08/result.json",
+    "resultSha256": "4c8fdf791b620780049283c6879782cf5f4450e5c09a5232b512c1f59b4e158d",
+    "generatedAt": "2026-07-24T06:36:32.907Z",
+    "callA": {
+      "requestedModel": "gpt-4o-mini",
+      "returnedModel": "gpt-4o-mini-2024-07-18",
+      "responseId": "chatcmpl-E53nng3sVXPZWzEoS4lSlG9ouRGNl",
+      "systemFingerprint": "fp_8516364442",
+      "promptSha256": "b3afb2fc5bbfdbe93180d1bc152867277431a86d280c9fb774f56b92af3a7ce5",
+      "schemaSha256": "2e5036993ebf81f098911ab77cc71e3a093743f8e93c7c7d56866fc6fcb4147d",
+      "rawOutputSha256": "5300332b86dded5aa6e855d5d3e56d39d80bbb927d647a9ad42ff14d17bcef44"
+    },
+    "fixtureMetadataPath": "backend/test/claim-foundry/fixtures/CF1-F08/fixture-metadata.json",
+    "fixtureMetadataSha256": "e34334f6088164f5848a093b8d10fee41c6654047c6dea3627772ba47e47a40e",
+    "evaluationKeyPath": "backend/test/claim-foundry/prompt-evaluation-keys/CF1-F08.json",
+    "evaluationKeySha256": "c6962d464d394a05e7f7f65348f3086b958e27573fcecc91f9e1232459acfefe"
+  },
+  "article": {
+    "title": "Magnitude 6.2 earthquake shakes part of northern Japan",
+    "authors": [
+      "The Associated Press"
+    ],
+    "publisher": "Associated Press",
+    "publishedAt": "2026-04-26T21:32:46Z",
+    "contentHash": "6313f3ddf83e15b32964adcd2b1f3d16c8b1e0d8e46524480168ba4c1fa872ec",
+    "sourceUnitCount": 7
+  },
+  "observedOrientation": {
+    "legacyThesisAssertion": "A magnitude 6.2 earthquake shook part of northern Japan early Monday, but there was no damage or casualties."
+  },
+  "sourceUnits": [
+    {
+      "unitId": "U0001",
+      "order": 0,
+      "type": "sentence",
+      "text": "TOKYO (AP) — A magnitude 6.2 earthquake shook part of northern Japan early Monday, but there was no damage or casualties."
+    },
+    {
+      "unitId": "U0002",
+      "order": 1,
+      "type": "sentence",
+      "text": "No tsunami advisory was issued by the Japan Meteorological Agency."
+    },
+    {
+      "unitId": "U0003",
+      "order": 2,
+      "type": "sentence",
+      "text": "The inland quake struck 18 kilometers (11 miles) west of the small town of Sarabetsu on Japan’s northernmost main island of Hokkaido at a depth of 81 kilometers (50 miles), according to the U.S."
+    },
+    {
+      "unitId": "U0004",
+      "order": 3,
+      "type": "sentence",
+      "text": "Geological Survey."
+    },
+    {
+      "unitId": "U0005",
+      "order": 4,
+      "type": "sentence",
+      "text": "It measured the quake’s strength at 6.1 magnitude."
+    },
+    {
+      "unitId": "U0006",
+      "order": 5,
+      "type": "sentence",
+      "text": "A week ago, a 7.7 magnitude offshore earthquake prompted Japan to issue an advisory of a slightly higher risk of a possible megaquake for the nation’s northeastern coastal areas."
+    },
+    {
+      "unitId": "U0007",
+      "order": 6,
+      "type": "sentence",
+      "text": "The JMA said Monday’s quake was outside of the area subject to a megaquake advisory and that the special awareness week is set to end as planned."
+    }
+  ],
+  "rawCallAOutput": {
+    "thesisAssertion": "A magnitude 6.2 earthquake shook part of northern Japan early Monday, but there was no damage or casualties.",
+    "candidates": [
+      {
+        "rawAssertion": "A magnitude 6.2 earthquake shook part of northern Japan.",
+        "groundingUnitIds": [
+          "U0001"
+        ]
+      },
+      {
+        "rawAssertion": "There was no damage or casualties from the earthquake in northern Japan.",
+        "groundingUnitIds": [
+          "U0001"
+        ]
+      },
+      {
+        "rawAssertion": "No tsunami advisory was issued by the Japan Meteorological Agency.",
+        "groundingUnitIds": [
+          "U0002"
+        ]
+      },
+      {
+        "rawAssertion": "The earthquake struck 18 kilometers west of the small town of Sarabetsu.",
+        "groundingUnitIds": [
+          "U0003"
+        ]
+      },
+      {
+        "rawAssertion": "The earthquake occurred at a depth of 81 kilometers.",
+        "groundingUnitIds": [
+          "U0003"
+        ]
+      },
+      {
+        "rawAssertion": "The earthquake occurred 11 miles west of Sarabetsu.",
+        "groundingUnitIds": [
+          "U0003"
+        ]
+      },
+      {
+        "rawAssertion": "The U.S. Geological Survey measured the quake’s strength at 6.1 magnitude.",
+        "groundingUnitIds": [
+          "U0005"
+        ]
+      },
+      {
+        "rawAssertion": "A week ago, a 7.7 magnitude offshore earthquake prompted Japan to issue an advisory.",
+        "groundingUnitIds": [
+          "U0006"
+        ]
+      },
+      {
+        "rawAssertion": "Japan issued an advisory of a slightly higher risk of a possible megaquake for the nation’s northeastern coastal areas.",
+        "groundingUnitIds": [
+          "U0006"
+        ]
+      },
+      {
+        "rawAssertion": "The Japan Meteorological Agency stated that Monday’s quake was outside of the area subject to a megaquake advisory.",
+        "groundingUnitIds": [
+          "U0007"
+        ]
+      },
+      {
+        "rawAssertion": "The special awareness week regarding megaquakes is set to end as planned.",
+        "groundingUnitIds": [
+          "U0007"
+        ]
+      },
+      {
+        "rawAssertion": "The earthquake occurred early Monday.",
+        "groundingUnitIds": [
+          "U0001"
+        ]
+      },
+      {
+        "rawAssertion": "The earthquake was felt in northern Japan.",
+        "groundingUnitIds": [
+          "U0001"
+        ]
+      },
+      {
+        "rawAssertion": "The earthquake occurred on Japan’s northernmost main island of Hokkaido.",
+        "groundingUnitIds": [
+          "U0003"
+        ]
+      },
+      {
+        "rawAssertion": "The earthquake did not cause a tsunami.",
+        "groundingUnitIds": [
+          "U0002"
+        ]
+      },
+      {
+        "rawAssertion": "The depth of the earthquake was 50 miles.",
+        "groundingUnitIds": [
+          "U0003"
+        ]
+      },
+      {
+        "rawAssertion": "The Japan Meteorological Agency is responsible for issuing tsunami advisories.",
+        "groundingUnitIds": [
+          "U0002"
+        ]
+      },
+      {
+        "rawAssertion": "The U.S. Geological Survey is an authoritative source for measuring earthquake magnitudes.",
+        "groundingUnitIds": [
+          "U0004"
+        ]
+      },
+      {
+        "rawAssertion": "The earthquake was recorded on April 26, 2026.",
+        "groundingUnitIds": [
+          "U0001"
+        ]
+      },
+      {
+        "rawAssertion": "The earthquake's magnitude was reported as 6.2 by the Associated Press.",
+        "groundingUnitIds": [
+          "U0001"
+        ]
+      },
+      {
+        "rawAssertion": "The earthquake occurred in the early morning hours.",
+        "groundingUnitIds": [
+          "U0001"
+        ]
+      },
+      {
+        "rawAssertion": "The earthquake was classified as an inland quake.",
+        "groundingUnitIds": [
+          "U0003"
+        ]
+      },
+      {
+        "rawAssertion": "The Japan Meteorological Agency did not issue a tsunami advisory following the earthquake.",
+        "groundingUnitIds": [
+          "U0002"
+        ]
+      },
+      {
+        "rawAssertion": "The earthquake was not associated with the recent 7.7 magnitude earthquake.",
+        "groundingUnitIds": [
+          "U0006"
+        ]
+      },
+      {
+        "rawAssertion": "The 7.7 magnitude earthquake occurred offshore.",
+        "groundingUnitIds": [
+          "U0006"
+        ]
+      },
+      {
+        "rawAssertion": "The earthquake's epicenter was located west of Sarabetsu.",
+        "groundingUnitIds": [
+          "U0003"
+        ]
+      },
+      {
+        "rawAssertion": "The earthquake was part of a series of seismic events in the region.",
+        "groundingUnitIds": [
+          "U0006"
+        ]
+      },
+      {
+        "rawAssertion": "The Japan Meteorological Agency monitors seismic activity in Japan.",
+        "groundingUnitIds": [
+          "U0002"
+        ]
+      },
+      {
+        "rawAssertion": "The earthquake did not result in any reported injuries.",
+        "groundingUnitIds": [
+          "U0001"
+        ]
+      },
+      {
+        "rawAssertion": "The earthquake's depth was significant at 81 kilometers.",
+        "groundingUnitIds": [
+          "U0003"
+        ]
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "candidateId": "C01",
+      "rawCallA": {
+        "rawAssertion": "A magnitude 6.2 earthquake shook part of northern Japan.",
+        "groundingUnitIds": [
+          "U0001"
+        ]
+      },
+      "surfaceAssertion": "A magnitude 6.2 earthquake shook part of northern Japan.",
+      "hostPreparedAssertion": "A magnitude 6.2 earthquake shook part of northern Japan.",
+      "groundingUnitIds": [
+        "U0001"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0001"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0001"
+        ],
+        "originalBestOverlap": 1,
+        "replacementBestOverlap": 1
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C02",
+      "rawCallA": {
+        "rawAssertion": "There was no damage or casualties from the earthquake in northern Japan.",
+        "groundingUnitIds": [
+          "U0001"
+        ]
+      },
+      "surfaceAssertion": "There was no damage or casualties from the earthquake in northern Japan.",
+      "hostPreparedAssertion": "There was no damage or casualties from the earthquake in northern Japan.",
+      "groundingUnitIds": [
+        "U0001"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0001"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0001"
+        ],
+        "originalBestOverlap": 1,
+        "replacementBestOverlap": 1
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C03",
+      "rawCallA": {
+        "rawAssertion": "No tsunami advisory was issued by the Japan Meteorological Agency.",
+        "groundingUnitIds": [
+          "U0002"
+        ]
+      },
+      "surfaceAssertion": "No tsunami advisory was issued by the Japan Meteorological Agency.",
+      "hostPreparedAssertion": "No tsunami advisory was issued by the Japan Meteorological Agency.",
+      "groundingUnitIds": [
+        "U0002"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0002"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0002"
+        ],
+        "originalBestOverlap": 1,
+        "replacementBestOverlap": 1
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003",
+        "U0004"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C04",
+      "rawCallA": {
+        "rawAssertion": "The earthquake struck 18 kilometers west of the small town of Sarabetsu.",
+        "groundingUnitIds": [
+          "U0003"
+        ]
+      },
+      "surfaceAssertion": "The earthquake struck 18 kilometers west of the small town of Sarabetsu.",
+      "hostPreparedAssertion": "The earthquake struck 18 kilometers west of the small town of Sarabetsu.",
+      "groundingUnitIds": [
+        "U0003"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0003"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0003"
+        ],
+        "originalBestOverlap": 0.875,
+        "replacementBestOverlap": 0.875
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003",
+        "U0004",
+        "U0005"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C05",
+      "rawCallA": {
+        "rawAssertion": "The earthquake occurred at a depth of 81 kilometers.",
+        "groundingUnitIds": [
+          "U0003"
+        ]
+      },
+      "surfaceAssertion": "The earthquake occurred at a depth of 81 kilometers.",
+      "hostPreparedAssertion": "The earthquake occurred at a depth of 81 kilometers.",
+      "groundingUnitIds": [
+        "U0003"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0003"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0003"
+        ],
+        "originalBestOverlap": 0.6,
+        "replacementBestOverlap": 0.6
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003",
+        "U0004",
+        "U0005"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C06",
+      "rawCallA": {
+        "rawAssertion": "The earthquake occurred 11 miles west of Sarabetsu.",
+        "groundingUnitIds": [
+          "U0003"
+        ]
+      },
+      "surfaceAssertion": "The earthquake occurred 11 miles west of Sarabetsu.",
+      "hostPreparedAssertion": "The earthquake occurred 11 miles west of Sarabetsu.",
+      "groundingUnitIds": [
+        "U0003"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0003"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0003"
+        ],
+        "originalBestOverlap": 0.6666666666666666,
+        "replacementBestOverlap": 0.6666666666666666
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003",
+        "U0004",
+        "U0005"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C07",
+      "rawCallA": {
+        "rawAssertion": "The U.S. Geological Survey measured the quake’s strength at 6.1 magnitude.",
+        "groundingUnitIds": [
+          "U0005"
+        ]
+      },
+      "surfaceAssertion": "The U.S. Geological Survey measured the quake’s strength at 6.1 magnitude.",
+      "hostPreparedAssertion": "The U.S. Geological Survey measured the quake’s strength at 6.1 magnitude.",
+      "groundingUnitIds": [
+        "U0005"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0005"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0005"
+        ],
+        "originalBestOverlap": 0.6666666666666666,
+        "replacementBestOverlap": 0.6666666666666666
+      },
+      "contextUnitIds": [
+        "U0003",
+        "U0004",
+        "U0005",
+        "U0006",
+        "U0007"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C08",
+      "rawCallA": {
+        "rawAssertion": "A week ago, a 7.7 magnitude offshore earthquake prompted Japan to issue an advisory.",
+        "groundingUnitIds": [
+          "U0006"
+        ]
+      },
+      "surfaceAssertion": "A week ago, a 7.7 magnitude offshore earthquake prompted Japan to issue an advisory.",
+      "hostPreparedAssertion": "A week ago, a 7.7 magnitude offshore earthquake prompted Japan to issue an advisory.",
+      "groundingUnitIds": [
+        "U0006"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0006"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0006"
+        ],
+        "originalBestOverlap": 1,
+        "replacementBestOverlap": 1
+      },
+      "contextUnitIds": [
+        "U0004",
+        "U0005",
+        "U0006",
+        "U0007"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C09",
+      "rawCallA": {
+        "rawAssertion": "Japan issued an advisory of a slightly higher risk of a possible megaquake for the nation’s northeastern coastal areas.",
+        "groundingUnitIds": [
+          "U0006"
+        ]
+      },
+      "surfaceAssertion": "Japan issued an advisory of a slightly higher risk of a possible megaquake for the nation’s northeastern coastal areas.",
+      "hostPreparedAssertion": "Japan issued an advisory of a slightly higher risk of a possible megaquake for the nation’s northeastern coastal areas.",
+      "groundingUnitIds": [
+        "U0006"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0006"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0006"
+        ],
+        "originalBestOverlap": 0.9166666666666666,
+        "replacementBestOverlap": 0.9166666666666666
+      },
+      "contextUnitIds": [
+        "U0004",
+        "U0005",
+        "U0006",
+        "U0007"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C10",
+      "rawCallA": {
+        "rawAssertion": "The Japan Meteorological Agency stated that Monday’s quake was outside of the area subject to a megaquake advisory.",
+        "groundingUnitIds": [
+          "U0007"
+        ]
+      },
+      "surfaceAssertion": "The Japan Meteorological Agency stated that Monday’s quake was outside of the area subject to a megaquake advisory.",
+      "hostPreparedAssertion": "The Japan Meteorological Agency stated that Monday’s quake was outside of the area subject to a megaquake advisory.",
+      "groundingUnitIds": [
+        "U0007"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0007"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0007"
+        ],
+        "originalBestOverlap": 0.6363636363636364,
+        "replacementBestOverlap": 0.6363636363636364
+      },
+      "contextUnitIds": [
+        "U0005",
+        "U0006",
+        "U0007"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C11",
+      "rawCallA": {
+        "rawAssertion": "The special awareness week regarding megaquakes is set to end as planned.",
+        "groundingUnitIds": [
+          "U0007"
+        ]
+      },
+      "surfaceAssertion": "The special awareness week regarding megaquakes is set to end as planned.",
+      "hostPreparedAssertion": "The special awareness week regarding megaquakes is set to end as planned.",
+      "groundingUnitIds": [
+        "U0007"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0007"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0007"
+        ],
+        "originalBestOverlap": 0.75,
+        "replacementBestOverlap": 0.75
+      },
+      "contextUnitIds": [
+        "U0005",
+        "U0006",
+        "U0007"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C12",
+      "rawCallA": {
+        "rawAssertion": "The earthquake occurred early Monday.",
+        "groundingUnitIds": [
+          "U0001"
+        ]
+      },
+      "surfaceAssertion": "The earthquake occurred early Monday.",
+      "hostPreparedAssertion": "The earthquake occurred early Monday.",
+      "groundingUnitIds": [
+        "U0001"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0001"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0001"
+        ],
+        "originalBestOverlap": 0.75,
+        "replacementBestOverlap": 0.75
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C13",
+      "rawCallA": {
+        "rawAssertion": "The earthquake was felt in northern Japan.",
+        "groundingUnitIds": [
+          "U0001"
+        ]
+      },
+      "surfaceAssertion": "The earthquake was felt in northern Japan.",
+      "hostPreparedAssertion": "The earthquake was felt in northern Japan.",
+      "groundingUnitIds": [
+        "U0001"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0001"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0001"
+        ],
+        "originalBestOverlap": 0.75,
+        "replacementBestOverlap": 0.75
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C14",
+      "rawCallA": {
+        "rawAssertion": "The earthquake occurred on Japan’s northernmost main island of Hokkaido.",
+        "groundingUnitIds": [
+          "U0003"
+        ]
+      },
+      "surfaceAssertion": "The earthquake occurred on Japan’s northernmost main island of Hokkaido.",
+      "hostPreparedAssertion": "The earthquake occurred on Japan’s northernmost main island of Hokkaido.",
+      "groundingUnitIds": [
+        "U0003"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0003"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0003"
+        ],
+        "originalBestOverlap": 0.7142857142857143,
+        "replacementBestOverlap": 0.7142857142857143
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003",
+        "U0004",
+        "U0005"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C15",
+      "rawCallA": {
+        "rawAssertion": "The earthquake did not cause a tsunami.",
+        "groundingUnitIds": [
+          "U0002"
+        ]
+      },
+      "surfaceAssertion": "The earthquake did not cause a tsunami.",
+      "hostPreparedAssertion": "The earthquake did not cause a tsunami.",
+      "groundingUnitIds": [
+        "U0002"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0002"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0002"
+        ],
+        "originalBestOverlap": 0.2,
+        "replacementBestOverlap": 0.2
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003",
+        "U0004"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C16",
+      "rawCallA": {
+        "rawAssertion": "The depth of the earthquake was 50 miles.",
+        "groundingUnitIds": [
+          "U0003"
+        ]
+      },
+      "surfaceAssertion": "The depth of the earthquake was 50 miles.",
+      "hostPreparedAssertion": "The depth of the earthquake was 50 miles.",
+      "groundingUnitIds": [
+        "U0003"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0003"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0003"
+        ],
+        "originalBestOverlap": 0.75,
+        "replacementBestOverlap": 0.75
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003",
+        "U0004",
+        "U0005"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C17",
+      "rawCallA": {
+        "rawAssertion": "The Japan Meteorological Agency is responsible for issuing tsunami advisories.",
+        "groundingUnitIds": [
+          "U0002"
+        ]
+      },
+      "surfaceAssertion": "The Japan Meteorological Agency is responsible for issuing tsunami advisories.",
+      "hostPreparedAssertion": "The Japan Meteorological Agency is responsible for issuing tsunami advisories.",
+      "groundingUnitIds": [
+        "U0002"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0002"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0002"
+        ],
+        "originalBestOverlap": 0.5714285714285714,
+        "replacementBestOverlap": 0.5714285714285714
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003",
+        "U0004"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C18",
+      "rawCallA": {
+        "rawAssertion": "The U.S. Geological Survey is an authoritative source for measuring earthquake magnitudes.",
+        "groundingUnitIds": [
+          "U0004"
+        ]
+      },
+      "surfaceAssertion": "The U.S. Geological Survey is an authoritative source for measuring earthquake magnitudes.",
+      "hostPreparedAssertion": "The U.S. Geological Survey is an authoritative source for measuring earthquake magnitudes.",
+      "groundingUnitIds": [
+        "U0004"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0004"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0004"
+        ],
+        "originalBestOverlap": 0.2857142857142857,
+        "replacementBestOverlap": 0.2857142857142857
+      },
+      "contextUnitIds": [
+        "U0002",
+        "U0003",
+        "U0004",
+        "U0005",
+        "U0006"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C19",
+      "rawCallA": {
+        "rawAssertion": "The earthquake was recorded on April 26, 2026.",
+        "groundingUnitIds": [
+          "U0001"
+        ]
+      },
+      "surfaceAssertion": "The earthquake was recorded on April 26, 2026.",
+      "hostPreparedAssertion": "The earthquake was recorded on April 26, 2026.",
+      "groundingUnitIds": [
+        "U0001"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0001"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0001"
+        ],
+        "originalBestOverlap": 0.2,
+        "replacementBestOverlap": 0.2
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C20",
+      "rawCallA": {
+        "rawAssertion": "The earthquake's magnitude was reported as 6.2 by the Associated Press.",
+        "groundingUnitIds": [
+          "U0001"
+        ]
+      },
+      "surfaceAssertion": "The earthquake's magnitude was reported as 6.2 by the Associated Press.",
+      "hostPreparedAssertion": "The earthquake's magnitude was reported as 6.2 by the Associated Press.",
+      "groundingUnitIds": [
+        "U0001"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0001"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0001"
+        ],
+        "originalBestOverlap": 0.4,
+        "replacementBestOverlap": 0.4
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C21",
+      "rawCallA": {
+        "rawAssertion": "The earthquake occurred in the early morning hours.",
+        "groundingUnitIds": [
+          "U0001"
+        ]
+      },
+      "surfaceAssertion": "The earthquake occurred in the early morning hours.",
+      "hostPreparedAssertion": "The earthquake occurred in the early morning hours.",
+      "groundingUnitIds": [
+        "U0001"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0001"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0001"
+        ],
+        "originalBestOverlap": 0.4,
+        "replacementBestOverlap": 0.4
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C22",
+      "rawCallA": {
+        "rawAssertion": "The earthquake was classified as an inland quake.",
+        "groundingUnitIds": [
+          "U0003"
+        ]
+      },
+      "surfaceAssertion": "The earthquake was classified as an inland quake.",
+      "hostPreparedAssertion": "The earthquake was classified as an inland quake.",
+      "groundingUnitIds": [
+        "U0003"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0003"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0003"
+        ],
+        "originalBestOverlap": 0.5,
+        "replacementBestOverlap": 0.5
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003",
+        "U0004",
+        "U0005"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C23",
+      "rawCallA": {
+        "rawAssertion": "The Japan Meteorological Agency did not issue a tsunami advisory following the earthquake.",
+        "groundingUnitIds": [
+          "U0002"
+        ]
+      },
+      "surfaceAssertion": "The Japan Meteorological Agency did not issue a tsunami advisory following the earthquake.",
+      "hostPreparedAssertion": "The Japan Meteorological Agency did not issue a tsunami advisory following the earthquake.",
+      "groundingUnitIds": [
+        "U0002"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0002"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0002"
+        ],
+        "originalBestOverlap": 0.5,
+        "replacementBestOverlap": 0.5
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003",
+        "U0004"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C24",
+      "rawCallA": {
+        "rawAssertion": "The earthquake was not associated with the recent 7.7 magnitude earthquake.",
+        "groundingUnitIds": [
+          "U0006"
+        ]
+      },
+      "surfaceAssertion": "The earthquake was not associated with the recent 7.7 magnitude earthquake.",
+      "hostPreparedAssertion": "The earthquake was not associated with the recent 7.7 magnitude earthquake.",
+      "groundingUnitIds": [
+        "U0006"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0006"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0006"
+        ],
+        "originalBestOverlap": 0.4,
+        "replacementBestOverlap": 0.4
+      },
+      "contextUnitIds": [
+        "U0004",
+        "U0005",
+        "U0006",
+        "U0007"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C25",
+      "rawCallA": {
+        "rawAssertion": "The 7.7 magnitude earthquake occurred offshore.",
+        "groundingUnitIds": [
+          "U0006"
+        ]
+      },
+      "surfaceAssertion": "The 7.7 magnitude earthquake occurred offshore.",
+      "hostPreparedAssertion": "The 7.7 magnitude earthquake occurred offshore.",
+      "groundingUnitIds": [
+        "U0006"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0006"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0006"
+        ],
+        "originalBestOverlap": 0.75,
+        "replacementBestOverlap": 0.75
+      },
+      "contextUnitIds": [
+        "U0004",
+        "U0005",
+        "U0006",
+        "U0007"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C26",
+      "rawCallA": {
+        "rawAssertion": "The earthquake's epicenter was located west of Sarabetsu.",
+        "groundingUnitIds": [
+          "U0003"
+        ]
+      },
+      "surfaceAssertion": "The earthquake's epicenter was located west of Sarabetsu.",
+      "hostPreparedAssertion": "The earthquake's epicenter was located west of Sarabetsu.",
+      "groundingUnitIds": [
+        "U0003"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0003"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0003"
+        ],
+        "originalBestOverlap": 0.4,
+        "replacementBestOverlap": 0.4
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003",
+        "U0004",
+        "U0005"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C27",
+      "rawCallA": {
+        "rawAssertion": "The earthquake was part of a series of seismic events in the region.",
+        "groundingUnitIds": [
+          "U0006"
+        ]
+      },
+      "surfaceAssertion": "The earthquake was part of a series of seismic events in the region.",
+      "hostPreparedAssertion": "The earthquake was part of a series of seismic events in the region.",
+      "groundingUnitIds": [
+        "U0006"
+      ],
+      "groundingAudit": {
+        "status": "unresolved_low_overlap",
+        "originalGroundingUnitIds": [
+          "U0006"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0006"
+        ],
+        "originalBestOverlap": 0.16666666666666666,
+        "replacementBestOverlap": 0.3333333333333333
+      },
+      "contextUnitIds": [
+        "U0004",
+        "U0005",
+        "U0006",
+        "U0007"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C28",
+      "rawCallA": {
+        "rawAssertion": "The Japan Meteorological Agency monitors seismic activity in Japan.",
+        "groundingUnitIds": [
+          "U0002"
+        ]
+      },
+      "surfaceAssertion": "The Japan Meteorological Agency monitors seismic activity in Japan.",
+      "hostPreparedAssertion": "The Japan Meteorological Agency monitors seismic activity in Japan.",
+      "groundingUnitIds": [
+        "U0002"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0002"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0002"
+        ],
+        "originalBestOverlap": 0.5,
+        "replacementBestOverlap": 0.5
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003",
+        "U0004"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C29",
+      "rawCallA": {
+        "rawAssertion": "The earthquake did not result in any reported injuries.",
+        "groundingUnitIds": [
+          "U0001"
+        ]
+      },
+      "surfaceAssertion": "The earthquake did not result in any reported injuries.",
+      "hostPreparedAssertion": "The earthquake did not result in any reported injuries.",
+      "groundingUnitIds": [
+        "U0001"
+      ],
+      "groundingAudit": {
+        "status": "unresolved_low_overlap",
+        "originalGroundingUnitIds": [
+          "U0001"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0001"
+        ],
+        "originalBestOverlap": 0.14285714285714285,
+        "replacementBestOverlap": 0.14285714285714285
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    },
+    {
+      "candidateId": "C30",
+      "rawCallA": {
+        "rawAssertion": "The earthquake's depth was significant at 81 kilometers.",
+        "groundingUnitIds": [
+          "U0003"
+        ]
+      },
+      "surfaceAssertion": "The earthquake's depth was significant at 81 kilometers.",
+      "hostPreparedAssertion": "The earthquake's depth was significant at 81 kilometers.",
+      "groundingUnitIds": [
+        "U0003"
+      ],
+      "groundingAudit": {
+        "status": "original_supported",
+        "originalGroundingUnitIds": [
+          "U0003"
+        ],
+        "repairedGroundingUnitIds": [
+          "U0003"
+        ],
+        "originalBestOverlap": 0.6,
+        "replacementBestOverlap": 0.6
+      },
+      "contextUnitIds": [
+        "U0001",
+        "U0002",
+        "U0003",
+        "U0004",
+        "U0005"
+      ],
+      "currentWorkFrameAudit": null,
+      "attributionCues": []
+    }
+  ]
+}

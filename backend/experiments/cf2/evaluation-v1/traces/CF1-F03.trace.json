@@ -1,0 +1,3578 @@
+{
+  "schemaVersion": "cf2.candidateLineageTrace.v1",
+  "freezeId": "cf2-v7-ab-f01-f03-f08-20260724",
+  "fixtureId": "CF1-F03",
+  "frozenInventorySha256": "5b410b647378ee7e0e439b8febc65d5107caa51981eda88e57bd408bd2524435",
+  "sourceResultSha256": "42eb92d89a6f61080852dbba21d6666946354124d4e3f89b56d5033c0a50da3c",
+  "candidates": [
+    {
+      "candidateId": "C01",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "According to the CDC data, half of American school children are not fully vaccinated.",
+          "groundingUnitIds": [
+            "U0002"
+          ]
+        },
+        "assignedCandidateId": "C01"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "According to the CDC data, half of American school children are not fully vaccinated.",
+        "hostPreparedAssertion": "According to the CDC data, half of American school children are not fully vaccinated.",
+        "groundingUnitIds": [
+          "U0002"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0002"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0002"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0001",
+          "U0002",
+          "U0003",
+          "U0004"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": [
+          {
+            "supplierText": "the CDC data",
+            "operator": "according_to",
+            "embeddedContent": "half of American school children are not fully vaccinated",
+            "sourceUnitIds": [
+              "U0002"
+            ],
+            "basis": "explicit according-to attribution frame"
+          }
+        ]
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C01",
+          "attributionLayers": [
+            {
+              "supplierName": "CDC data",
+              "supplierKind": "institution",
+              "operator": "according_to",
+              "assertedContent": "half of American school children are not fully vaccinated",
+              "sourceUnitIds": [
+                "U0002"
+              ]
+            }
+          ],
+          "substantiveAssertion": "Half of American school children are not fully vaccinated.",
+          "groundingUnitIds": [
+            "U0002"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C01",
+          "surfaceAssertion": "According to the CDC data, half of American school children are not fully vaccinated.",
+          "attributionLayers": [
+            {
+              "supplierName": "CDC data",
+              "supplierKind": "institution",
+              "operator": "according_to",
+              "assertedContent": "half of American school children are not fully vaccinated",
+              "sourceUnitIds": [
+                "U0002"
+              ]
+            }
+          ],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Half of American school children are not fully vaccinated.",
+          "groundingUnitIds": [
+            "U0002"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "CDC data",
+          "sourceKind": "institution",
+          "sourceUnitIds": [
+            "U0002"
+          ],
+          "sourceNameOrigin": "call_b_attribution_layer",
+          "attributionBasis": "direct_attribution",
+          "evidenceAnchors": [],
+          "rawAssertion": "According to the CDC data, half of American school children are not fully vaccinated.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0002"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0002"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C02",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "At least 1 in 88 toddlers are completely unvaccinated.",
+          "groundingUnitIds": [
+            "U0002"
+          ]
+        },
+        "assignedCandidateId": "C02"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "At least 1 in 88 toddlers are completely unvaccinated.",
+        "hostPreparedAssertion": "At least 1 in 88 toddlers are completely unvaccinated.",
+        "groundingUnitIds": [
+          "U0002"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0002"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0002"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0001",
+          "U0002",
+          "U0003",
+          "U0004"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C02",
+          "attributionLayers": [],
+          "substantiveAssertion": "At least 1 in 88 toddlers are completely unvaccinated.",
+          "groundingUnitIds": [
+            "U0002"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C02",
+          "surfaceAssertion": "At least 1 in 88 toddlers are completely unvaccinated.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "At least 1 in 88 toddlers are completely unvaccinated.",
+          "groundingUnitIds": [
+            "U0002"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0002"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "At least 1 in 88 toddlers are completely unvaccinated.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0002"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0002"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C03",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+          "groundingUnitIds": [
+            "U0297"
+          ]
+        },
+        "assignedCandidateId": "C03"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+        "hostPreparedAssertion": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+        "groundingUnitIds": [
+          "U0297"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0297"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0297"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0295",
+          "U0296",
+          "U0297",
+          "U0298",
+          "U0299"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C03",
+          "attributionLayers": [],
+          "substantiveAssertion": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+          "groundingUnitIds": [
+            "U0297"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "weakens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C03",
+          "surfaceAssertion": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+          "groundingUnitIds": [
+            "U0297"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "weakens",
+          "scoreTransform": "invert",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0297"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0297"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0297"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "finalAssertion": {
+          "candidateId": "C03",
+          "surfaceAssertion": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+          "groundingUnitIds": [
+            "U0297"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "weakens",
+          "scoreTransform": "invert",
+          "sourceName": "Jefferson County Public Health",
+          "sourceKind": "institution",
+          "sourceUnitIds": [
+            "U0005"
+          ],
+          "sourceNameOrigin": "host_structural_list_owner",
+          "attributionBasis": "direct_attribution",
+          "evidenceAnchors": [],
+          "rawAssertion": "The type of mercury in vaccines – ethylmercury – is NOT harmful to us.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0297"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0297"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          },
+          "selectionBasis": "thesis_effect",
+          "callBSourceName": "Ana Wolpin",
+          "callBSourceKind": "article_voice",
+          "callBSourceUnitIds": [
+            "U0297"
+          ],
+          "callBSourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "evidenceAnchorAudit": {
+            "returned": 0,
+            "accepted": 0,
+            "discarded": []
+          }
+        }
+      },
+      "disposition": {
+        "terminalStatus": "selected",
+        "terminalReason": "thesis_effect",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C04",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "There have been no credible studies that link vaccination to chronic disease.",
+          "groundingUnitIds": [
+            "U0011"
+          ]
+        },
+        "assignedCandidateId": "C04"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "There have been no credible studies that link vaccination to chronic disease.",
+        "hostPreparedAssertion": "There have been no credible studies that link vaccination to chronic disease.",
+        "groundingUnitIds": [
+          "U0011"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0011"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0011"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0009",
+          "U0010",
+          "U0011",
+          "U0012",
+          "U0013"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C04",
+          "attributionLayers": [],
+          "substantiveAssertion": "There have been no credible studies that link vaccination to chronic disease.",
+          "groundingUnitIds": [
+            "U0011"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "weakens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C04",
+          "surfaceAssertion": "There have been no credible studies that link vaccination to chronic disease.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "There have been no credible studies that link vaccination to chronic disease.",
+          "groundingUnitIds": [
+            "U0011"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "weakens",
+          "scoreTransform": "invert",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0011"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "There have been no credible studies that link vaccination to chronic disease.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0011"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0011"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "finalAssertion": {
+          "candidateId": "C04",
+          "surfaceAssertion": "There have been no credible studies that link vaccination to chronic disease.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "There have been no credible studies that link vaccination to chronic disease.",
+          "groundingUnitIds": [
+            "U0011"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "weakens",
+          "scoreTransform": "invert",
+          "sourceName": "Jefferson County Public Health",
+          "sourceKind": "institution",
+          "sourceUnitIds": [
+            "U0005"
+          ],
+          "sourceNameOrigin": "host_structural_list_owner",
+          "attributionBasis": "direct_attribution",
+          "evidenceAnchors": [],
+          "rawAssertion": "There have been no credible studies that link vaccination to chronic disease.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0011"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0011"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          },
+          "selectionBasis": "thesis_effect",
+          "callBSourceName": "Ana Wolpin",
+          "callBSourceKind": "article_voice",
+          "callBSourceUnitIds": [
+            "U0011"
+          ],
+          "callBSourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "evidenceAnchorAudit": {
+            "returned": 0,
+            "accepted": 0,
+            "discarded": []
+          }
+        }
+      },
+      "disposition": {
+        "terminalStatus": "selected",
+        "terminalReason": "thesis_effect",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C05",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "Vaccines are tested more than any other medicine you could give your kid.",
+          "groundingUnitIds": [
+            "U0012"
+          ]
+        },
+        "assignedCandidateId": "C05"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "Vaccines are tested more than any other medicine you could give your kid.",
+        "hostPreparedAssertion": "Vaccines are tested more than any other medicine you could give your kid.",
+        "groundingUnitIds": [
+          "U0012"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0012"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0012"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0010",
+          "U0011",
+          "U0012",
+          "U0013",
+          "U0014"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C05",
+          "attributionLayers": [],
+          "substantiveAssertion": "Vaccines are tested more than any other medicine you could give your kid.",
+          "groundingUnitIds": [
+            "U0012"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "weakens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C05",
+          "surfaceAssertion": "Vaccines are tested more than any other medicine you could give your kid.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Vaccines are tested more than any other medicine you could give your kid.",
+          "groundingUnitIds": [
+            "U0012"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "weakens",
+          "scoreTransform": "invert",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0012"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "Vaccines are tested more than any other medicine you could give your kid.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0012"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0012"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "finalAssertion": {
+          "candidateId": "C05",
+          "surfaceAssertion": "Vaccines are tested more than any other medicine you could give your kid.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Vaccines are tested more than any other medicine you could give your kid.",
+          "groundingUnitIds": [
+            "U0012"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "weakens",
+          "scoreTransform": "invert",
+          "sourceName": "Jefferson County Public Health",
+          "sourceKind": "institution",
+          "sourceUnitIds": [
+            "U0005"
+          ],
+          "sourceNameOrigin": "host_structural_list_owner",
+          "attributionBasis": "direct_attribution",
+          "evidenceAnchors": [],
+          "rawAssertion": "Vaccines are tested more than any other medicine you could give your kid.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0012"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0012"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          },
+          "selectionBasis": "thesis_effect",
+          "callBSourceName": "Ana Wolpin",
+          "callBSourceKind": "article_voice",
+          "callBSourceUnitIds": [
+            "U0012"
+          ],
+          "callBSourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "evidenceAnchorAudit": {
+            "returned": 0,
+            "accepted": 0,
+            "discarded": []
+          }
+        }
+      },
+      "disposition": {
+        "terminalStatus": "selected",
+        "terminalReason": "thesis_effect",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C06",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "In 2016, a documentary film disclosing a decade-long CDC cover-up created an uproar in the news.",
+          "groundingUnitIds": [
+            "U0036"
+          ]
+        },
+        "assignedCandidateId": "C06"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "In 2016, a documentary film disclosing a decade-long CDC cover-up created an uproar in the news.",
+        "hostPreparedAssertion": "In 2016, a documentary film disclosing a decade-long CDC cover-up created an uproar in the news.",
+        "groundingUnitIds": [
+          "U0036"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0036"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0036"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0034",
+          "U0035",
+          "U0036",
+          "U0037",
+          "U0038"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C06",
+          "attributionLayers": [],
+          "substantiveAssertion": "In 2016, a documentary film disclosing a decade-long CDC cover-up created an uproar in the news.",
+          "groundingUnitIds": [
+            "U0036"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C06",
+          "surfaceAssertion": "In 2016, a documentary film disclosing a decade-long CDC cover-up created an uproar in the news.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "In 2016, a documentary film disclosing a decade-long CDC cover-up created an uproar in the news.",
+          "groundingUnitIds": [
+            "U0036"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0036"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "In 2016, a documentary film disclosing a decade-long CDC cover-up created an uproar in the news.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0036"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0036"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "finalAssertion": {
+          "candidateId": "C06",
+          "surfaceAssertion": "In 2016, a documentary film disclosing a decade-long CDC cover-up created an uproar in the news.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "In 2016, a documentary film disclosing a decade-long CDC cover-up created an uproar in the news.",
+          "groundingUnitIds": [
+            "U0036"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0036"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "In 2016, a documentary film disclosing a decade-long CDC cover-up created an uproar in the news.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0036"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0036"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          },
+          "selectionBasis": "thesis_effect",
+          "callBSourceName": "Ana Wolpin",
+          "callBSourceKind": "article_voice",
+          "callBSourceUnitIds": [
+            "U0036"
+          ],
+          "callBSourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "evidenceAnchorAudit": {
+            "returned": 0,
+            "accepted": 0,
+            "discarded": []
+          }
+        }
+      },
+      "disposition": {
+        "terminalStatus": "selected",
+        "terminalReason": "thesis_effect",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C07",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "William Thompson revealed privately in 2014 that data linking the MMR vaccine to autism had been manipulated by the CDC.",
+          "groundingUnitIds": [
+            "U0037"
+          ]
+        },
+        "assignedCandidateId": "C07"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "William Thompson revealed privately in 2014 that data linking the MMR vaccine to autism had been manipulated by the CDC.",
+        "hostPreparedAssertion": "William Thompson revealed privately in 2014 that data linking the MMR vaccine to autism had been manipulated by the CDC.",
+        "groundingUnitIds": [
+          "U0037"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0037"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0037"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0035",
+          "U0036",
+          "U0037",
+          "U0038",
+          "U0039"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": [
+          {
+            "supplierText": "William Thompson",
+            "operator": "revealed",
+            "embeddedContent": "data linking the MMR vaccine to autism had been manipulated by the CDC",
+            "sourceUnitIds": [
+              "U0037"
+            ],
+            "basis": "explicit supplier + reporting operator + that-clause"
+          }
+        ]
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C07",
+          "attributionLayers": [
+            {
+              "supplierName": "William Thompson",
+              "supplierKind": "person",
+              "operator": "revealed",
+              "assertedContent": "data linking the MMR vaccine to autism had been manipulated by the CDC",
+              "sourceUnitIds": [
+                "U0037"
+              ]
+            }
+          ],
+          "substantiveAssertion": "Data linking the MMR vaccine to autism had been manipulated by the CDC.",
+          "groundingUnitIds": [
+            "U0037"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C07",
+          "surfaceAssertion": "William Thompson revealed privately in 2014 that data linking the MMR vaccine to autism had been manipulated by the CDC.",
+          "attributionLayers": [
+            {
+              "supplierName": "William Thompson",
+              "supplierKind": "person",
+              "operator": "revealed",
+              "assertedContent": "data linking the MMR vaccine to autism had been manipulated by the CDC",
+              "sourceUnitIds": [
+                "U0037"
+              ]
+            }
+          ],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Data linking the MMR vaccine to autism had been manipulated by the CDC.",
+          "groundingUnitIds": [
+            "U0037"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "William Thompson",
+          "sourceKind": "person",
+          "sourceUnitIds": [
+            "U0037"
+          ],
+          "sourceNameOrigin": "call_b_attribution_layer",
+          "attributionBasis": "direct_attribution",
+          "evidenceAnchors": [],
+          "rawAssertion": "William Thompson revealed privately in 2014 that data linking the MMR vaccine to autism had been manipulated by the CDC.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0037"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0037"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "finalAssertion": {
+          "candidateId": "C07",
+          "surfaceAssertion": "William Thompson revealed privately in 2014 that data linking the MMR vaccine to autism had been manipulated by the CDC.",
+          "attributionLayers": [
+            {
+              "supplierName": "William Thompson",
+              "supplierKind": "person",
+              "operator": "revealed",
+              "assertedContent": "data linking the MMR vaccine to autism had been manipulated by the CDC",
+              "sourceUnitIds": [
+                "U0037"
+              ]
+            }
+          ],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Data linking the MMR vaccine to autism had been manipulated by the CDC.",
+          "groundingUnitIds": [
+            "U0037"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "William Thompson",
+          "sourceKind": "person",
+          "sourceUnitIds": [
+            "U0037"
+          ],
+          "sourceNameOrigin": "call_b_attribution_layer",
+          "attributionBasis": "direct_attribution",
+          "evidenceAnchors": [],
+          "rawAssertion": "William Thompson revealed privately in 2014 that data linking the MMR vaccine to autism had been manipulated by the CDC.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0037"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0037"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          },
+          "selectionBasis": "thesis_effect",
+          "callBSourceName": "William Thompson",
+          "callBSourceKind": "person",
+          "callBSourceUnitIds": [
+            "U0037"
+          ],
+          "callBSourceNameOrigin": "call_b_attribution_layer",
+          "evidenceAnchorAudit": {
+            "returned": 0,
+            "accepted": 0,
+            "discarded": []
+          }
+        }
+      },
+      "disposition": {
+        "terminalStatus": "selected",
+        "terminalReason": "thesis_effect",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C08",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The CDC ordered Thompson and other scientists to destroy all evidence of a link between MMR vaccinations and autism.",
+          "groundingUnitIds": [
+            "U0038"
+          ]
+        },
+        "assignedCandidateId": "C08"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The CDC ordered Thompson and other scientists to destroy all evidence of a link between MMR vaccinations and autism.",
+        "hostPreparedAssertion": "The CDC ordered Thompson and other scientists to destroy all evidence of a link between MMR vaccinations and autism.",
+        "groundingUnitIds": [
+          "U0038"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0038"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0038"
+          ],
+          "originalBestOverlap": 0.8461538461538461,
+          "replacementBestOverlap": 0.8461538461538461
+        },
+        "contextUnitIds": [
+          "U0036",
+          "U0037",
+          "U0038",
+          "U0039",
+          "U0040"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C08",
+          "attributionLayers": [],
+          "substantiveAssertion": "The CDC ordered Thompson and other scientists to destroy all evidence of a link between MMR vaccinations and autism.",
+          "groundingUnitIds": [
+            "U0038"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C08",
+          "surfaceAssertion": "The CDC ordered Thompson and other scientists to destroy all evidence of a link between MMR vaccinations and autism.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The CDC ordered Thompson and other scientists to destroy all evidence of a link between MMR vaccinations and autism.",
+          "groundingUnitIds": [
+            "U0038"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0038"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The CDC ordered Thompson and other scientists to destroy all evidence of a link between MMR vaccinations and autism.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0038"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0038"
+            ],
+            "originalBestOverlap": 0.8461538461538461,
+            "replacementBestOverlap": 0.8461538461538461
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "finalAssertion": {
+          "candidateId": "C08",
+          "surfaceAssertion": "The CDC ordered Thompson and other scientists to destroy all evidence of a link between MMR vaccinations and autism.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The CDC ordered Thompson and other scientists to destroy all evidence of a link between MMR vaccinations and autism.",
+          "groundingUnitIds": [
+            "U0038"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0038"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The CDC ordered Thompson and other scientists to destroy all evidence of a link between MMR vaccinations and autism.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0038"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0038"
+            ],
+            "originalBestOverlap": 0.8461538461538461,
+            "replacementBestOverlap": 0.8461538461538461
+          },
+          "selectionBasis": "thesis_effect",
+          "callBSourceName": "Ana Wolpin",
+          "callBSourceKind": "article_voice",
+          "callBSourceUnitIds": [
+            "U0038"
+          ],
+          "callBSourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "evidenceAnchorAudit": {
+            "returned": 0,
+            "accepted": 0,
+            "discarded": []
+          }
+        }
+      },
+      "disposition": {
+        "terminalStatus": "selected",
+        "terminalReason": "thesis_effect",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C09",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The fraudulent study released by the CDC declared that it had proven MMR vaccines did not cause autism.",
+          "groundingUnitIds": [
+            "U0041"
+          ]
+        },
+        "assignedCandidateId": "C09"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The fraudulent study released by the CDC declared that it had proven MMR vaccines did not cause autism.",
+        "hostPreparedAssertion": "The fraudulent study released by the CDC declared that it had proven MMR vaccines did not cause autism.",
+        "groundingUnitIds": [
+          "U0041"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0041"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0041"
+          ],
+          "originalBestOverlap": 0.8333333333333334,
+          "replacementBestOverlap": 0.8333333333333334
+        },
+        "contextUnitIds": [
+          "U0039",
+          "U0040",
+          "U0041",
+          "U0042",
+          "U0043"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": [
+          {
+            "supplierText": "The fraudulent study released by the CDC",
+            "operator": "declared",
+            "embeddedContent": "it had proven MMR vaccines did not cause autism",
+            "sourceUnitIds": [
+              "U0041"
+            ],
+            "basis": "explicit supplier + reporting operator + that-clause"
+          }
+        ]
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C09",
+          "attributionLayers": [
+            {
+              "supplierName": "The fraudulent study released by the CDC",
+              "supplierKind": "document",
+              "operator": "declared",
+              "assertedContent": "it had proven MMR vaccines did not cause autism",
+              "sourceUnitIds": [
+                "U0041"
+              ]
+            }
+          ],
+          "substantiveAssertion": "The fraudulent study released by the CDC had proven MMR vaccines did not cause autism.",
+          "groundingUnitIds": [
+            "U0041"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "weakens"
+        },
+        "validatedJudgment": null,
+        "rejection": {
+          "candidateId": "C09",
+          "code": "CF2_V6_LAYER_TARGET_MISMATCH",
+          "message": "C09 substantive assertion differs from final layer",
+          "rawAssertion": "The fraudulent study released by the CDC declared that it had proven MMR vaccines did not cause autism.",
+          "rawOutput": {
+            "candidateId": "C09",
+            "attributionLayers": [
+              {
+                "supplierName": "The fraudulent study released by the CDC",
+                "supplierKind": "document",
+                "operator": "declared",
+                "assertedContent": "it had proven MMR vaccines did not cause autism",
+                "sourceUnitIds": [
+                  "U0041"
+                ]
+              }
+            ],
+            "substantiveAssertion": "The fraudulent study released by the CDC had proven MMR vaccines did not cause autism.",
+            "groundingUnitIds": [
+              "U0041"
+            ],
+            "articleTreatment": "reported",
+            "effectIfTrue": "weakens"
+          }
+        }
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "quarantined",
+        "terminalReason": "CF2_V6_LAYER_TARGET_MISMATCH",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C10",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+          "groundingUnitIds": [
+            "U0068"
+          ]
+        },
+        "assignedCandidateId": "C10"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+        "hostPreparedAssertion": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+        "groundingUnitIds": [
+          "U0068"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0068"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0068"
+          ],
+          "originalBestOverlap": 0.42857142857142855,
+          "replacementBestOverlap": 0.42857142857142855
+        },
+        "contextUnitIds": [
+          "U0066",
+          "U0067",
+          "U0068",
+          "U0069",
+          "U0070"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C10",
+          "attributionLayers": [],
+          "substantiveAssertion": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+          "groundingUnitIds": [
+            "U0068"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C10",
+          "surfaceAssertion": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+          "groundingUnitIds": [
+            "U0068"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0068"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The 1986 National Childhood Vaccine Injury Act removed all liability from drug companies for childhood vaccines they produced.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0068"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0068"
+            ],
+            "originalBestOverlap": 0.42857142857142855,
+            "replacementBestOverlap": 0.42857142857142855
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "eligible_not_selected",
+        "terminalReason": "portfolio_capacity_or_balancing",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C11",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "By 1986, children were receiving 25 doses of vaccines in 12 shots.",
+          "groundingUnitIds": [
+            "U0080"
+          ]
+        },
+        "assignedCandidateId": "C11"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "By 1986, children were receiving 25 doses of vaccines in 12 shots.",
+        "hostPreparedAssertion": "By 1986, children were receiving 25 doses of vaccines in 12 shots.",
+        "groundingUnitIds": [
+          "U0080"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0080"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0080"
+          ],
+          "originalBestOverlap": 0.375,
+          "replacementBestOverlap": 0.375
+        },
+        "contextUnitIds": [
+          "U0078",
+          "U0079",
+          "U0080",
+          "U0081",
+          "U0082"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C11",
+          "attributionLayers": [],
+          "substantiveAssertion": "By 1986, children were receiving 25 doses of vaccines in 12 shots.",
+          "groundingUnitIds": [
+            "U0080"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C11",
+          "surfaceAssertion": "By 1986, children were receiving 25 doses of vaccines in 12 shots.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "By 1986, children were receiving 25 doses of vaccines in 12 shots.",
+          "groundingUnitIds": [
+            "U0080"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0080"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "By 1986, children were receiving 25 doses of vaccines in 12 shots.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0080"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0080"
+            ],
+            "originalBestOverlap": 0.375,
+            "replacementBestOverlap": 0.375
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "eligible_not_selected",
+        "terminalReason": "portfolio_capacity_or_balancing",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C12",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The childhood vaccination schedule exploded to 73 doses in 54 shots after 1986.",
+          "groundingUnitIds": [
+            "U0081"
+          ]
+        },
+        "assignedCandidateId": "C12"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The childhood vaccination schedule exploded to 73 doses in 54 shots after 1986.",
+        "hostPreparedAssertion": "The childhood vaccination schedule exploded to 73 doses in 54 shots after 1986.",
+        "groundingUnitIds": [
+          "U0080"
+        ],
+        "groundingAudit": {
+          "status": "repaired_high_confidence_overlap",
+          "originalGroundingUnitIds": [
+            "U0081"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0080"
+          ],
+          "originalBestOverlap": 0,
+          "replacementBestOverlap": 0.8
+        },
+        "contextUnitIds": [
+          "U0078",
+          "U0079",
+          "U0080",
+          "U0081",
+          "U0082"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C12",
+          "attributionLayers": [],
+          "substantiveAssertion": "The childhood vaccination schedule exploded to 73 doses in 54 shots after 1986.",
+          "groundingUnitIds": [
+            "U0080"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C12",
+          "surfaceAssertion": "The childhood vaccination schedule exploded to 73 doses in 54 shots after 1986.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The childhood vaccination schedule exploded to 73 doses in 54 shots after 1986.",
+          "groundingUnitIds": [
+            "U0080"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0080"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The childhood vaccination schedule exploded to 73 doses in 54 shots after 1986.",
+          "groundingAudit": {
+            "status": "repaired_high_confidence_overlap",
+            "originalGroundingUnitIds": [
+              "U0081"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0080"
+            ],
+            "originalBestOverlap": 0,
+            "replacementBestOverlap": 0.8
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "eligible_not_selected",
+        "terminalReason": "portfolio_capacity_or_balancing",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C13",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The chronic illness rate in U.S. children jumped to 54% by 2011.",
+          "groundingUnitIds": [
+            "U0086"
+          ]
+        },
+        "assignedCandidateId": "C13"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The chronic illness rate in U.S. children jumped to 54% by 2011.",
+        "hostPreparedAssertion": "The chronic illness rate in U.S. children jumped to 54% by 2011.",
+        "groundingUnitIds": [
+          "U0086"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0086"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0086"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0084",
+          "U0085",
+          "U0086",
+          "U0087",
+          "U0088"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C13",
+          "attributionLayers": [],
+          "substantiveAssertion": "The chronic illness rate in U.S. children jumped to 54% by 2011.",
+          "groundingUnitIds": [
+            "U0086"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C13",
+          "surfaceAssertion": "The chronic illness rate in U.S. children jumped to 54% by 2011.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The chronic illness rate in U.S. children jumped to 54% by 2011.",
+          "groundingUnitIds": [
+            "U0086"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0086"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The chronic illness rate in U.S. children jumped to 54% by 2011.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0086"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0086"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "eligible_not_selected",
+        "terminalReason": "portfolio_capacity_or_balancing",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C14",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after embarking on an aggressive vaccination program.",
+          "groundingUnitIds": [
+            "U0090"
+          ]
+        },
+        "assignedCandidateId": "C14"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after embarking on an aggressive vaccination program.",
+        "hostPreparedAssertion": "The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after embarking on an aggressive vaccination program.",
+        "groundingUnitIds": [
+          "U0090"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0090"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0090"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0088",
+          "U0089",
+          "U0090",
+          "U0091",
+          "U0092"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C14",
+          "attributionLayers": [],
+          "substantiveAssertion": "The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after embarking on an aggressive vaccination program.",
+          "groundingUnitIds": [
+            "U0090"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C14",
+          "surfaceAssertion": "The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after embarking on an aggressive vaccination program.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after embarking on an aggressive vaccination program.",
+          "groundingUnitIds": [
+            "U0090"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0090"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The U.S. had twice as many first-day infant deaths as all 27 EU nations combined after embarking on an aggressive vaccination program.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0090"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0090"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "eligible_not_selected",
+        "terminalReason": "portfolio_capacity_or_balancing",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C15",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "An analysis of U.S. data from 1990-2010 showed that infants who received the most vaccines had the worst hospitalization and death rates.",
+          "groundingUnitIds": [
+            "U0091"
+          ]
+        },
+        "assignedCandidateId": "C15"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "An analysis of U.S. data from 1990-2010 showed that infants who received the most vaccines had the worst hospitalization and death rates.",
+        "hostPreparedAssertion": "An analysis of U.S. data from 1990-2010 showed that infants who received the most vaccines had the worst hospitalization and death rates.",
+        "groundingUnitIds": [
+          "U0091"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0091"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0091"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0089",
+          "U0090",
+          "U0091",
+          "U0092",
+          "U0093"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": [
+          {
+            "supplierText": "An analysis of U.S. data from 1990-2010",
+            "operator": "showed",
+            "embeddedContent": "infants who received the most vaccines had the worst hospitalization and death rates",
+            "sourceUnitIds": [
+              "U0091"
+            ],
+            "basis": "explicit supplier + reporting operator + that-clause"
+          }
+        ]
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C15",
+          "attributionLayers": [
+            {
+              "supplierName": "An analysis of U.S. data from 1990-2010",
+              "supplierKind": "study",
+              "operator": "showed",
+              "assertedContent": "infants who received the most vaccines had the worst hospitalization and death rates",
+              "sourceUnitIds": [
+                "U0091"
+              ]
+            }
+          ],
+          "substantiveAssertion": "Infants who received the most vaccines had the worst hospitalization and death rates.",
+          "groundingUnitIds": [
+            "U0091"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C15",
+          "surfaceAssertion": "An analysis of U.S. data from 1990-2010 showed that infants who received the most vaccines had the worst hospitalization and death rates.",
+          "attributionLayers": [
+            {
+              "supplierName": "An analysis of U.S. data from 1990-2010",
+              "supplierKind": "study",
+              "operator": "showed",
+              "assertedContent": "infants who received the most vaccines had the worst hospitalization and death rates",
+              "sourceUnitIds": [
+                "U0091"
+              ]
+            }
+          ],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Infants who received the most vaccines had the worst hospitalization and death rates.",
+          "groundingUnitIds": [
+            "U0091"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "An analysis of U.S. data from 1990-2010",
+          "sourceKind": "study",
+          "sourceUnitIds": [
+            "U0091"
+          ],
+          "sourceNameOrigin": "call_b_attribution_layer",
+          "attributionBasis": "direct_attribution",
+          "evidenceAnchors": [],
+          "rawAssertion": "An analysis of U.S. data from 1990-2010 showed that infants who received the most vaccines had the worst hospitalization and death rates.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0091"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0091"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "eligible_not_selected",
+        "terminalReason": "portfolio_capacity_or_balancing",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C16",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "A 2011 study of 34 developed nations found that countries giving the least vaccines had the lowest infant mortality.",
+          "groundingUnitIds": [
+            "U0092"
+          ]
+        },
+        "assignedCandidateId": "C16"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "A 2011 study of 34 developed nations found that countries giving the least vaccines had the lowest infant mortality.",
+        "hostPreparedAssertion": "A 2011 study of 34 developed nations found that countries giving the least vaccines had the lowest infant mortality.",
+        "groundingUnitIds": [
+          "U0092"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0092"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0092"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0090",
+          "U0091",
+          "U0092",
+          "U0093",
+          "U0094"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": [
+          {
+            "supplierText": "A 2011 study of 34 developed nations",
+            "operator": "found",
+            "embeddedContent": "countries giving the least vaccines had the lowest infant mortality",
+            "sourceUnitIds": [
+              "U0092"
+            ],
+            "basis": "explicit supplier + reporting operator + that-clause"
+          }
+        ]
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C16",
+          "attributionLayers": [
+            {
+              "supplierName": "A 2011 study of 34 developed nations",
+              "supplierKind": "study",
+              "operator": "found",
+              "assertedContent": "countries giving the least vaccines had the lowest infant mortality",
+              "sourceUnitIds": [
+                "U0092"
+              ]
+            }
+          ],
+          "substantiveAssertion": "Countries giving the least vaccines had the lowest infant mortality.",
+          "groundingUnitIds": [
+            "U0092"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C16",
+          "surfaceAssertion": "A 2011 study of 34 developed nations found that countries giving the least vaccines had the lowest infant mortality.",
+          "attributionLayers": [
+            {
+              "supplierName": "A 2011 study of 34 developed nations",
+              "supplierKind": "study",
+              "operator": "found",
+              "assertedContent": "countries giving the least vaccines had the lowest infant mortality",
+              "sourceUnitIds": [
+                "U0092"
+              ]
+            }
+          ],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Countries giving the least vaccines had the lowest infant mortality.",
+          "groundingUnitIds": [
+            "U0092"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "A 2011 study of 34 developed nations",
+          "sourceKind": "study",
+          "sourceUnitIds": [
+            "U0092"
+          ],
+          "sourceNameOrigin": "call_b_attribution_layer",
+          "attributionBasis": "direct_attribution",
+          "evidenceAnchors": [],
+          "rawAssertion": "A 2011 study of 34 developed nations found that countries giving the least vaccines had the lowest infant mortality.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0092"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0092"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "eligible_not_selected",
+        "terminalReason": "portfolio_capacity_or_balancing",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C17",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The percentage of children carrying epipens, needing inhalers, and/or taking Ritalin, amphetamines, and antidepressants is staggering today.",
+          "groundingUnitIds": [
+            "U0094"
+          ]
+        },
+        "assignedCandidateId": "C17"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The percentage of children carrying epipens, needing inhalers, and/or taking Ritalin, amphetamines, and antidepressants is staggering today.",
+        "hostPreparedAssertion": "The percentage of children carrying epipens, needing inhalers, and/or taking Ritalin, amphetamines, and antidepressants is staggering today.",
+        "groundingUnitIds": [
+          "U0094"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0094"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0094"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0092",
+          "U0093",
+          "U0094",
+          "U0095",
+          "U0096"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C17",
+          "attributionLayers": [],
+          "substantiveAssertion": "The percentage of children carrying epipens, needing inhalers, and/or taking Ritalin, amphetamines, and antidepressants is staggering today.",
+          "groundingUnitIds": [
+            "U0094"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C17",
+          "surfaceAssertion": "The percentage of children carrying epipens, needing inhalers, and/or taking Ritalin, amphetamines, and antidepressants is staggering today.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The percentage of children carrying epipens, needing inhalers, and/or taking Ritalin, amphetamines, and antidepressants is staggering today.",
+          "groundingUnitIds": [
+            "U0094"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0094"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The percentage of children carrying epipens, needing inhalers, and/or taking Ritalin, amphetamines, and antidepressants is staggering today.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0094"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0094"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "eligible_not_selected",
+        "terminalReason": "portfolio_capacity_or_balancing",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C18",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+          "groundingUnitIds": [
+            "U0280"
+          ]
+        },
+        "assignedCandidateId": "C18"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+        "hostPreparedAssertion": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+        "groundingUnitIds": [
+          "U0279"
+        ],
+        "groundingAudit": {
+          "status": "repaired_high_confidence_overlap",
+          "originalGroundingUnitIds": [
+            "U0280"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0279"
+          ],
+          "originalBestOverlap": 0.09090909090909091,
+          "replacementBestOverlap": 0.8181818181818182
+        },
+        "contextUnitIds": [
+          "U0277",
+          "U0278",
+          "U0279",
+          "U0280",
+          "U0281"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C18",
+          "attributionLayers": [],
+          "substantiveAssertion": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+          "groundingUnitIds": [
+            "U0279"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C18",
+          "surfaceAssertion": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+          "groundingUnitIds": [
+            "U0279"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0279"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+          "groundingAudit": {
+            "status": "repaired_high_confidence_overlap",
+            "originalGroundingUnitIds": [
+              "U0280"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0279"
+            ],
+            "originalBestOverlap": 0.09090909090909091,
+            "replacementBestOverlap": 0.8181818181818182
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "finalAssertion": {
+          "candidateId": "C18",
+          "surfaceAssertion": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+          "groundingUnitIds": [
+            "U0279"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0279"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The CDC has never safety tested the cumulative aluminum load received in multiple vaccine shots.",
+          "groundingAudit": {
+            "status": "repaired_high_confidence_overlap",
+            "originalGroundingUnitIds": [
+              "U0280"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0279"
+            ],
+            "originalBestOverlap": 0.09090909090909091,
+            "replacementBestOverlap": 0.8181818181818182
+          },
+          "selectionBasis": "thesis_effect",
+          "callBSourceName": "Ana Wolpin",
+          "callBSourceKind": "article_voice",
+          "callBSourceUnitIds": [
+            "U0279"
+          ],
+          "callBSourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "evidenceAnchorAudit": {
+            "returned": 0,
+            "accepted": 0,
+            "discarded": []
+          }
+        }
+      },
+      "disposition": {
+        "terminalStatus": "selected",
+        "terminalReason": "thesis_effect",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C19",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The aluminum content in childhood vaccines can exceed 1000 mcg for parents following the CDC schedule.",
+          "groundingUnitIds": [
+            "U0278"
+          ]
+        },
+        "assignedCandidateId": "C19"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The aluminum content in childhood vaccines can exceed 1000 mcg for parents following the CDC schedule.",
+        "hostPreparedAssertion": "The aluminum content in childhood vaccines can exceed 1000 mcg for parents following the CDC schedule.",
+        "groundingUnitIds": [
+          "U0278"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0278"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0278"
+          ],
+          "originalBestOverlap": 0.75,
+          "replacementBestOverlap": 0.75
+        },
+        "contextUnitIds": [
+          "U0276",
+          "U0277",
+          "U0278",
+          "U0279",
+          "U0280"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C19",
+          "attributionLayers": [],
+          "substantiveAssertion": "The aluminum content in childhood vaccines can exceed 1000 mcg for parents following the CDC schedule.",
+          "groundingUnitIds": [
+            "U0278"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C19",
+          "surfaceAssertion": "The aluminum content in childhood vaccines can exceed 1000 mcg for parents following the CDC schedule.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The aluminum content in childhood vaccines can exceed 1000 mcg for parents following the CDC schedule.",
+          "groundingUnitIds": [
+            "U0278"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0278"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The aluminum content in childhood vaccines can exceed 1000 mcg for parents following the CDC schedule.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0278"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0278"
+            ],
+            "originalBestOverlap": 0.75,
+            "replacementBestOverlap": 0.75
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "finalAssertion": {
+          "candidateId": "C19",
+          "surfaceAssertion": "The aluminum content in childhood vaccines can exceed 1000 mcg for parents following the CDC schedule.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The aluminum content in childhood vaccines can exceed 1000 mcg for parents following the CDC schedule.",
+          "groundingUnitIds": [
+            "U0278"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0278"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The aluminum content in childhood vaccines can exceed 1000 mcg for parents following the CDC schedule.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0278"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0278"
+            ],
+            "originalBestOverlap": 0.75,
+            "replacementBestOverlap": 0.75
+          },
+          "selectionBasis": "thesis_effect",
+          "callBSourceName": "Ana Wolpin",
+          "callBSourceKind": "article_voice",
+          "callBSourceUnitIds": [
+            "U0278"
+          ],
+          "callBSourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "evidenceAnchorAudit": {
+            "returned": 0,
+            "accepted": 0,
+            "discarded": []
+          }
+        }
+      },
+      "disposition": {
+        "terminalStatus": "selected",
+        "terminalReason": "thesis_effect",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C20",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "Thimerosal is toxic and may cause decreased offspring survival and nervous system effects.",
+          "groundingUnitIds": [
+            "U0301"
+          ]
+        },
+        "assignedCandidateId": "C20"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "Thimerosal is toxic and may cause decreased offspring survival and nervous system effects.",
+        "hostPreparedAssertion": "Thimerosal is toxic and may cause decreased offspring survival and nervous system effects.",
+        "groundingUnitIds": [
+          "U0301"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0301"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0301"
+          ],
+          "originalBestOverlap": 0.2,
+          "replacementBestOverlap": 0.2
+        },
+        "contextUnitIds": [
+          "U0299",
+          "U0300",
+          "U0301",
+          "U0302",
+          "U0303"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C20",
+          "attributionLayers": [],
+          "substantiveAssertion": "Thimerosal is toxic and may cause decreased offspring survival and nervous system effects.",
+          "groundingUnitIds": [
+            "U0301"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C20",
+          "surfaceAssertion": "Thimerosal is toxic and may cause decreased offspring survival and nervous system effects.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Thimerosal is toxic and may cause decreased offspring survival and nervous system effects.",
+          "groundingUnitIds": [
+            "U0301"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0301"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "Thimerosal is toxic and may cause decreased offspring survival and nervous system effects.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0301"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0301"
+            ],
+            "originalBestOverlap": 0.2,
+            "replacementBestOverlap": 0.2
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "finalAssertion": {
+          "candidateId": "C20",
+          "surfaceAssertion": "Thimerosal is toxic and may cause decreased offspring survival and nervous system effects.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Thimerosal is toxic and may cause decreased offspring survival and nervous system effects.",
+          "groundingUnitIds": [
+            "U0301"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0301"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "Thimerosal is toxic and may cause decreased offspring survival and nervous system effects.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0301"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0301"
+            ],
+            "originalBestOverlap": 0.2,
+            "replacementBestOverlap": 0.2
+          },
+          "selectionBasis": "thesis_effect",
+          "callBSourceName": "Ana Wolpin",
+          "callBSourceKind": "article_voice",
+          "callBSourceUnitIds": [
+            "U0301"
+          ],
+          "callBSourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "evidenceAnchorAudit": {
+            "returned": 0,
+            "accepted": 0,
+            "discarded": []
+          }
+        }
+      },
+      "disposition": {
+        "terminalStatus": "selected",
+        "terminalReason": "thesis_effect",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C21",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "Thimerosal has been shown to deposit in the brain and other organs more readily than methylmercury.",
+          "groundingUnitIds": [
+            "U0320"
+          ]
+        },
+        "assignedCandidateId": "C21"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "Thimerosal has been shown to deposit in the brain and other organs more readily than methylmercury.",
+        "hostPreparedAssertion": "Thimerosal has been shown to deposit in the brain and other organs more readily than methylmercury.",
+        "groundingUnitIds": [
+          "U0320"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0320"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0320"
+          ],
+          "originalBestOverlap": 0.3,
+          "replacementBestOverlap": 0.3
+        },
+        "contextUnitIds": [
+          "U0318",
+          "U0319",
+          "U0320",
+          "U0321",
+          "U0322"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C21",
+          "attributionLayers": [],
+          "substantiveAssertion": "Thimerosal has been shown to deposit in the brain and other organs more readily than methylmercury.",
+          "groundingUnitIds": [
+            "U0320"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C21",
+          "surfaceAssertion": "Thimerosal has been shown to deposit in the brain and other organs more readily than methylmercury.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Thimerosal has been shown to deposit in the brain and other organs more readily than methylmercury.",
+          "groundingUnitIds": [
+            "U0320"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0320"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "Thimerosal has been shown to deposit in the brain and other organs more readily than methylmercury.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0320"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0320"
+            ],
+            "originalBestOverlap": 0.3,
+            "replacementBestOverlap": 0.3
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "finalAssertion": {
+          "candidateId": "C21",
+          "surfaceAssertion": "Thimerosal has been shown to deposit in the brain and other organs more readily than methylmercury.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Thimerosal has been shown to deposit in the brain and other organs more readily than methylmercury.",
+          "groundingUnitIds": [
+            "U0320"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0320"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "Thimerosal has been shown to deposit in the brain and other organs more readily than methylmercury.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0320"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0320"
+            ],
+            "originalBestOverlap": 0.3,
+            "replacementBestOverlap": 0.3
+          },
+          "selectionBasis": "thesis_effect",
+          "callBSourceName": "Ana Wolpin",
+          "callBSourceKind": "article_voice",
+          "callBSourceUnitIds": [
+            "U0320"
+          ],
+          "callBSourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "evidenceAnchorAudit": {
+            "returned": 0,
+            "accepted": 0,
+            "discarded": []
+          }
+        }
+      },
+      "disposition": {
+        "terminalStatus": "selected",
+        "terminalReason": "thesis_effect",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C22",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The CDC's 2000 meeting to discuss thimerosal's link to autism was held at the Simpsonwood Retreat Center to avoid public scrutiny.",
+          "groundingUnitIds": [
+            "U0330"
+          ]
+        },
+        "assignedCandidateId": "C22"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The CDC's 2000 meeting to discuss thimerosal's link to autism was held at the Simpsonwood Retreat Center to avoid public scrutiny.",
+        "hostPreparedAssertion": "The CDC's 2000 meeting to discuss thimerosal's link to autism was held at the Simpsonwood Retreat Center to avoid public scrutiny.",
+        "groundingUnitIds": [
+          "U0330"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0330"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0330"
+          ],
+          "originalBestOverlap": 0.6923076923076923,
+          "replacementBestOverlap": 0.6923076923076923
+        },
+        "contextUnitIds": [
+          "U0328",
+          "U0329",
+          "U0330",
+          "U0331",
+          "U0332"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C22",
+          "attributionLayers": [],
+          "substantiveAssertion": "The CDC's 2000 meeting to discuss thimerosal's link to autism was held at the Simpsonwood Retreat Center to avoid public scrutiny.",
+          "groundingUnitIds": [
+            "U0330"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C22",
+          "surfaceAssertion": "The CDC's 2000 meeting to discuss thimerosal's link to autism was held at the Simpsonwood Retreat Center to avoid public scrutiny.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The CDC's 2000 meeting to discuss thimerosal's link to autism was held at the Simpsonwood Retreat Center to avoid public scrutiny.",
+          "groundingUnitIds": [
+            "U0330"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0330"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The CDC's 2000 meeting to discuss thimerosal's link to autism was held at the Simpsonwood Retreat Center to avoid public scrutiny.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0330"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0330"
+            ],
+            "originalBestOverlap": 0.6923076923076923,
+            "replacementBestOverlap": 0.6923076923076923
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "finalAssertion": {
+          "candidateId": "C22",
+          "surfaceAssertion": "The CDC's 2000 meeting to discuss thimerosal's link to autism was held at the Simpsonwood Retreat Center to avoid public scrutiny.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The CDC's 2000 meeting to discuss thimerosal's link to autism was held at the Simpsonwood Retreat Center to avoid public scrutiny.",
+          "groundingUnitIds": [
+            "U0330"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0330"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The CDC's 2000 meeting to discuss thimerosal's link to autism was held at the Simpsonwood Retreat Center to avoid public scrutiny.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0330"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0330"
+            ],
+            "originalBestOverlap": 0.6923076923076923,
+            "replacementBestOverlap": 0.6923076923076923
+          },
+          "selectionBasis": "thesis_effect",
+          "callBSourceName": "Ana Wolpin",
+          "callBSourceKind": "article_voice",
+          "callBSourceUnitIds": [
+            "U0330"
+          ],
+          "callBSourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "evidenceAnchorAudit": {
+            "returned": 0,
+            "accepted": 0,
+            "discarded": []
+          }
+        }
+      },
+      "disposition": {
+        "terminalStatus": "selected",
+        "terminalReason": "thesis_effect",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C23",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The CDC massaged the data from the Verstraeten Study to falsely claim that thimerosal did not cause autism.",
+          "groundingUnitIds": [
+            "U0344"
+          ]
+        },
+        "assignedCandidateId": "C23"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The CDC massaged the data from the Verstraeten Study to falsely claim that thimerosal did not cause autism.",
+        "hostPreparedAssertion": "The CDC massaged the data from the Verstraeten Study to falsely claim that thimerosal did not cause autism.",
+        "groundingUnitIds": [
+          "U0344"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0344"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0344"
+          ],
+          "originalBestOverlap": 0.8181818181818182,
+          "replacementBestOverlap": 0.8181818181818182
+        },
+        "contextUnitIds": [
+          "U0342",
+          "U0343",
+          "U0344",
+          "U0345",
+          "U0346"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C23",
+          "attributionLayers": [],
+          "substantiveAssertion": "The CDC massaged the data from the Verstraeten Study to falsely claim that thimerosal did not cause autism.",
+          "groundingUnitIds": [
+            "U0344"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C23",
+          "surfaceAssertion": "The CDC massaged the data from the Verstraeten Study to falsely claim that thimerosal did not cause autism.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The CDC massaged the data from the Verstraeten Study to falsely claim that thimerosal did not cause autism.",
+          "groundingUnitIds": [
+            "U0344"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0344"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The CDC massaged the data from the Verstraeten Study to falsely claim that thimerosal did not cause autism.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0344"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0344"
+            ],
+            "originalBestOverlap": 0.8181818181818182,
+            "replacementBestOverlap": 0.8181818181818182
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "finalAssertion": {
+          "candidateId": "C23",
+          "surfaceAssertion": "The CDC massaged the data from the Verstraeten Study to falsely claim that thimerosal did not cause autism.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The CDC massaged the data from the Verstraeten Study to falsely claim that thimerosal did not cause autism.",
+          "groundingUnitIds": [
+            "U0344"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0344"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The CDC massaged the data from the Verstraeten Study to falsely claim that thimerosal did not cause autism.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0344"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0344"
+            ],
+            "originalBestOverlap": 0.8181818181818182,
+            "replacementBestOverlap": 0.8181818181818182
+          },
+          "selectionBasis": "thesis_effect",
+          "callBSourceName": "Ana Wolpin",
+          "callBSourceKind": "article_voice",
+          "callBSourceUnitIds": [
+            "U0344"
+          ],
+          "callBSourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "evidenceAnchorAudit": {
+            "returned": 0,
+            "accepted": 0,
+            "discarded": []
+          }
+        }
+      },
+      "disposition": {
+        "terminalStatus": "selected",
+        "terminalReason": "thesis_effect",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C24",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "Thimerosal is still used in some flu shots and other vaccines today.",
+          "groundingUnitIds": [
+            "U0360"
+          ]
+        },
+        "assignedCandidateId": "C24"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "Thimerosal is still used in some flu shots and other vaccines today.",
+        "hostPreparedAssertion": "Thimerosal is still used in some flu shots and other vaccines today.",
+        "groundingUnitIds": [
+          "U0360"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0360"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0360"
+          ],
+          "originalBestOverlap": 0.7777777777777778,
+          "replacementBestOverlap": 0.7777777777777778
+        },
+        "contextUnitIds": [
+          "U0358",
+          "U0359",
+          "U0360",
+          "U0361",
+          "U0362"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C24",
+          "attributionLayers": [],
+          "substantiveAssertion": "Thimerosal is still used in some flu shots and other vaccines today.",
+          "groundingUnitIds": [
+            "U0360"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C24",
+          "surfaceAssertion": "Thimerosal is still used in some flu shots and other vaccines today.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Thimerosal is still used in some flu shots and other vaccines today.",
+          "groundingUnitIds": [
+            "U0360"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0360"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "Thimerosal is still used in some flu shots and other vaccines today.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0360"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0360"
+            ],
+            "originalBestOverlap": 0.7777777777777778,
+            "replacementBestOverlap": 0.7777777777777778
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "eligible_not_selected",
+        "terminalReason": "portfolio_capacity_or_balancing",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C25",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The mercury in multi-dose flu shots preserved with thimerosal is 250 times higher than the limit for mercury in drinking water set by the EPA.",
+          "groundingUnitIds": [
+            "U0370"
+          ]
+        },
+        "assignedCandidateId": "C25"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The mercury in multi-dose flu shots preserved with thimerosal is 250 times higher than the limit for mercury in drinking water set by the EPA.",
+        "hostPreparedAssertion": "The mercury in multi-dose flu shots preserved with thimerosal is 250 times higher than the limit for mercury in drinking water set by the EPA.",
+        "groundingUnitIds": [
+          "U0369"
+        ],
+        "groundingAudit": {
+          "status": "repaired_high_confidence_overlap",
+          "originalGroundingUnitIds": [
+            "U0370"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0369"
+          ],
+          "originalBestOverlap": 0.0625,
+          "replacementBestOverlap": 0.625
+        },
+        "contextUnitIds": [
+          "U0367",
+          "U0368",
+          "U0369",
+          "U0370",
+          "U0371"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C25",
+          "attributionLayers": [],
+          "substantiveAssertion": "The mercury in multi-dose flu shots preserved with thimerosal is 250 times higher than the limit for mercury in drinking water set by the EPA.",
+          "groundingUnitIds": [
+            "U0369"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C25",
+          "surfaceAssertion": "The mercury in multi-dose flu shots preserved with thimerosal is 250 times higher than the limit for mercury in drinking water set by the EPA.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The mercury in multi-dose flu shots preserved with thimerosal is 250 times higher than the limit for mercury in drinking water set by the EPA.",
+          "groundingUnitIds": [
+            "U0369"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0369"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The mercury in multi-dose flu shots preserved with thimerosal is 250 times higher than the limit for mercury in drinking water set by the EPA.",
+          "groundingAudit": {
+            "status": "repaired_high_confidence_overlap",
+            "originalGroundingUnitIds": [
+              "U0370"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0369"
+            ],
+            "originalBestOverlap": 0.0625,
+            "replacementBestOverlap": 0.625
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "eligible_not_selected",
+        "terminalReason": "portfolio_capacity_or_balancing",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C26",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The CDC classifies thimerosal-containing vaccines as toxic hazardous waste.",
+          "groundingUnitIds": [
+            "U0371"
+          ]
+        },
+        "assignedCandidateId": "C26"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The CDC classifies thimerosal-containing vaccines as toxic hazardous waste.",
+        "hostPreparedAssertion": "The CDC classifies thimerosal-containing vaccines as toxic hazardous waste.",
+        "groundingUnitIds": [
+          "U0367",
+          "U0370"
+        ],
+        "groundingAudit": {
+          "status": "repaired_high_confidence_overlap",
+          "originalGroundingUnitIds": [
+            "U0371"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0367",
+            "U0370"
+          ],
+          "originalBestOverlap": 0,
+          "replacementBestOverlap": 0.75
+        },
+        "contextUnitIds": [
+          "U0365",
+          "U0366",
+          "U0367",
+          "U0368",
+          "U0369",
+          "U0370",
+          "U0371",
+          "U0372"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C26",
+          "attributionLayers": [],
+          "substantiveAssertion": "The CDC classifies thimerosal-containing vaccines as toxic hazardous waste.",
+          "groundingUnitIds": [
+            "U0367",
+            "U0370"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C26",
+          "surfaceAssertion": "The CDC classifies thimerosal-containing vaccines as toxic hazardous waste.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The CDC classifies thimerosal-containing vaccines as toxic hazardous waste.",
+          "groundingUnitIds": [
+            "U0367",
+            "U0370"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0367",
+            "U0370"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The CDC classifies thimerosal-containing vaccines as toxic hazardous waste.",
+          "groundingAudit": {
+            "status": "repaired_high_confidence_overlap",
+            "originalGroundingUnitIds": [
+              "U0371"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0367",
+              "U0370"
+            ],
+            "originalBestOverlap": 0,
+            "replacementBestOverlap": 0.75
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "eligible_not_selected",
+        "terminalReason": "portfolio_capacity_or_balancing",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C27",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "Polysorbate 80 is linked to infertility and is banned from injectables in most of Europe.",
+          "groundingUnitIds": [
+            "U0382"
+          ]
+        },
+        "assignedCandidateId": "C27"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "Polysorbate 80 is linked to infertility and is banned from injectables in most of Europe.",
+        "hostPreparedAssertion": "Polysorbate 80 is linked to infertility and is banned from injectables in most of Europe.",
+        "groundingUnitIds": [
+          "U0382"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0382"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0382"
+          ],
+          "originalBestOverlap": 0.75,
+          "replacementBestOverlap": 0.75
+        },
+        "contextUnitIds": [
+          "U0380",
+          "U0381",
+          "U0382",
+          "U0383",
+          "U0384"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C27",
+          "attributionLayers": [],
+          "substantiveAssertion": "Polysorbate 80 is linked to infertility and is banned from injectables in most of Europe.",
+          "groundingUnitIds": [
+            "U0382"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C27",
+          "surfaceAssertion": "Polysorbate 80 is linked to infertility and is banned from injectables in most of Europe.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Polysorbate 80 is linked to infertility and is banned from injectables in most of Europe.",
+          "groundingUnitIds": [
+            "U0382"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0382"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "Polysorbate 80 is linked to infertility and is banned from injectables in most of Europe.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0382"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0382"
+            ],
+            "originalBestOverlap": 0.75,
+            "replacementBestOverlap": 0.75
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "eligible_not_selected",
+        "terminalReason": "portfolio_capacity_or_balancing",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C28",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "Formaldehyde is classified as a known human carcinogen by the National Toxicology Program.",
+          "groundingUnitIds": [
+            "U0388"
+          ]
+        },
+        "assignedCandidateId": "C28"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "Formaldehyde is classified as a known human carcinogen by the National Toxicology Program.",
+        "hostPreparedAssertion": "Formaldehyde is classified as a known human carcinogen by the National Toxicology Program.",
+        "groundingUnitIds": [
+          "U0388"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0388"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0388"
+          ],
+          "originalBestOverlap": 0.875,
+          "replacementBestOverlap": 0.875
+        },
+        "contextUnitIds": [
+          "U0386",
+          "U0387",
+          "U0388",
+          "U0389",
+          "U0390"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C28",
+          "attributionLayers": [],
+          "substantiveAssertion": "Formaldehyde is classified as a known human carcinogen by the National Toxicology Program.",
+          "groundingUnitIds": [
+            "U0388"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C28",
+          "surfaceAssertion": "Formaldehyde is classified as a known human carcinogen by the National Toxicology Program.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Formaldehyde is classified as a known human carcinogen by the National Toxicology Program.",
+          "groundingUnitIds": [
+            "U0388"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0388"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "Formaldehyde is classified as a known human carcinogen by the National Toxicology Program.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0388"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0388"
+            ],
+            "originalBestOverlap": 0.875,
+            "replacementBestOverlap": 0.875
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "eligible_not_selected",
+        "terminalReason": "portfolio_capacity_or_balancing",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C29",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80 among other chemicals.",
+          "groundingUnitIds": [
+            "U0392"
+          ]
+        },
+        "assignedCandidateId": "C29"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80 among other chemicals.",
+        "hostPreparedAssertion": "The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80 among other chemicals.",
+        "groundingUnitIds": [
+          "U0392"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0392"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0392"
+          ],
+          "originalBestOverlap": 0.2,
+          "replacementBestOverlap": 0.2
+        },
+        "contextUnitIds": [
+          "U0390",
+          "U0391",
+          "U0392",
+          "U0393",
+          "U0394"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C29",
+          "attributionLayers": [],
+          "substantiveAssertion": "The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80 among other chemicals.",
+          "groundingUnitIds": [
+            "U0392"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C29",
+          "surfaceAssertion": "The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80 among other chemicals.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80 among other chemicals.",
+          "groundingUnitIds": [
+            "U0392"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0392"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The DTaP vaccine contains aluminum, formaldehyde, and polysorbate 80 among other chemicals.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0392"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0392"
+            ],
+            "originalBestOverlap": 0.2,
+            "replacementBestOverlap": 0.2
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "eligible_not_selected",
+        "terminalReason": "portfolio_capacity_or_balancing",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C30",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "Injecting toxic metals and chemicals into children would be considered criminal in any product except vaccines.",
+          "groundingUnitIds": [
+            "U0396"
+          ]
+        },
+        "assignedCandidateId": "C30"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "Injecting toxic metals and chemicals into children would be considered criminal in any product except vaccines.",
+        "hostPreparedAssertion": "Injecting toxic metals and chemicals into children would be considered criminal in any product except vaccines.",
+        "groundingUnitIds": [
+          "U0397"
+        ],
+        "groundingAudit": {
+          "status": "repaired_high_confidence_overlap",
+          "originalGroundingUnitIds": [
+            "U0396"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0397"
+          ],
+          "originalBestOverlap": 0,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0395",
+          "U0396",
+          "U0397",
+          "U0398",
+          "U0399"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C30",
+          "attributionLayers": [],
+          "substantiveAssertion": "Injecting toxic metals and chemicals into children would be considered criminal in any product except vaccines.",
+          "groundingUnitIds": [
+            "U0397"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C30",
+          "surfaceAssertion": "Injecting toxic metals and chemicals into children would be considered criminal in any product except vaccines.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Injecting toxic metals and chemicals into children would be considered criminal in any product except vaccines.",
+          "groundingUnitIds": [
+            "U0397"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Ana Wolpin",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0397"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "Injecting toxic metals and chemicals into children would be considered criminal in any product except vaccines.",
+          "groundingAudit": {
+            "status": "repaired_high_confidence_overlap",
+            "originalGroundingUnitIds": [
+              "U0396"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0397"
+            ],
+            "originalBestOverlap": 0,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "eligible_not_selected",
+        "terminalReason": "portfolio_capacity_or_balancing",
+        "eligibleUnderTreatmentFallback": true
+      }
+    }
+  ]
+}

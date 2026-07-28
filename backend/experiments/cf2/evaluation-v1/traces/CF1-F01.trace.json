@@ -1,0 +1,3074 @@
+{
+  "schemaVersion": "cf2.candidateLineageTrace.v1",
+  "freezeId": "cf2-v7-ab-f01-f03-f08-20260724",
+  "fixtureId": "CF1-F01",
+  "frozenInventorySha256": "7d23ad3f81b2e0f8a8e30aa9feb7c150d2dc9c9fbbefebcdcbee77c7cdec4acc",
+  "sourceResultSha256": "5939302b66935917273dbeffefab93645f8ba0e9e8fdb4bae8e11be784413a75",
+  "candidates": [
+    {
+      "candidateId": "C01",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The overall distribution of ages at MMR vaccination among children with autism was similar to that of matched control children.",
+          "groundingUnitIds": [
+            "U0011",
+            "U0121"
+          ]
+        },
+        "assignedCandidateId": "C01"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The overall distribution of ages at MMR vaccination among children with autism was similar to that of matched control children.",
+        "hostPreparedAssertion": "The overall distribution of ages at MMR vaccination among children with autism was similar to that of matched control children.",
+        "groundingUnitIds": [
+          "U0011",
+          "U0121"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0011",
+            "U0121"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0011",
+            "U0121"
+          ],
+          "originalBestOverlap": 0.6363636363636364,
+          "replacementBestOverlap": 0.6363636363636364
+        },
+        "contextUnitIds": [
+          "U0009",
+          "U0010",
+          "U0011",
+          "U0012",
+          "U0013",
+          "U0119",
+          "U0120",
+          "U0121",
+          "U0122",
+          "U0123"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C01",
+          "attributionLayers": [],
+          "substantiveAssertion": "The overall distribution of ages at MMR vaccination among children with autism was similar to that of matched control children.",
+          "groundingUnitIds": [
+            "U0011",
+            "U0121"
+          ],
+          "articleTreatment": "adopted",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C01",
+          "surfaceAssertion": "The overall distribution of ages at MMR vaccination among children with autism was similar to that of matched control children.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The overall distribution of ages at MMR vaccination among children with autism was similar to that of matched control children.",
+          "groundingUnitIds": [
+            "U0011",
+            "U0121"
+          ],
+          "articleTreatment": "adopted",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0011",
+            "U0121"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The overall distribution of ages at MMR vaccination among children with autism was similar to that of matched control children.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0011",
+              "U0121"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0011",
+              "U0121"
+            ],
+            "originalBestOverlap": 0.6363636363636364,
+            "replacementBestOverlap": 0.6363636363636364
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "finalAssertion": {
+          "candidateId": "C01",
+          "surfaceAssertion": "The overall distribution of ages at MMR vaccination among children with autism was similar to that of matched control children.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The overall distribution of ages at MMR vaccination among children with autism was similar to that of matched control children.",
+          "groundingUnitIds": [
+            "U0011",
+            "U0121"
+          ],
+          "articleTreatment": "adopted",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0011",
+            "U0121"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The overall distribution of ages at MMR vaccination among children with autism was similar to that of matched control children.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0011",
+              "U0121"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0011",
+              "U0121"
+            ],
+            "originalBestOverlap": 0.6363636363636364,
+            "replacementBestOverlap": 0.6363636363636364
+          },
+          "selectionBasis": "thesis_effect",
+          "callBSourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "callBSourceKind": "article_voice",
+          "callBSourceUnitIds": [
+            "U0011",
+            "U0121"
+          ],
+          "callBSourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "evidenceAnchorAudit": {
+            "returned": 0,
+            "accepted": 0,
+            "discarded": []
+          }
+        }
+      },
+      "disposition": {
+        "terminalStatus": "selected",
+        "terminalReason": "thesis_effect",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C02",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "Most case (70.5%) and control children (67.5%) were vaccinated between 12 and 17 months of age.",
+          "groundingUnitIds": [
+            "U0012"
+          ]
+        },
+        "assignedCandidateId": "C02"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "Most case (70.5%) and control children (67.5%) were vaccinated between 12 and 17 months of age.",
+        "hostPreparedAssertion": "Most case (70.5%) and control children (67.5%) were vaccinated between 12 and 17 months of age.",
+        "groundingUnitIds": [
+          "U0012"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0012"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0012"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0010",
+          "U0011",
+          "U0012",
+          "U0013",
+          "U0014"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C02",
+          "attributionLayers": [],
+          "substantiveAssertion": "Most case (70.5%) and control children (67.5%) were vaccinated between 12 and 17 months of age.",
+          "groundingUnitIds": [
+            "U0012"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C02",
+          "surfaceAssertion": "Most case (70.5%) and control children (67.5%) were vaccinated between 12 and 17 months of age.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Most case (70.5%) and control children (67.5%) were vaccinated between 12 and 17 months of age.",
+          "groundingUnitIds": [
+            "U0012"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0012"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "Most case (70.5%) and control children (67.5%) were vaccinated between 12 and 17 months of age.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0012"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0012"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C03",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "No significant associations for vaccination before 18 or before 24 months were found for specific case subgroups, including those with evidence of developmental regression.",
+          "groundingUnitIds": [
+            "U0014"
+          ]
+        },
+        "assignedCandidateId": "C03"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "No significant associations for vaccination before 18 or before 24 months were found for specific case subgroups, including those with evidence of developmental regression.",
+        "hostPreparedAssertion": "No significant associations for vaccination before 18 or before 24 months were found for specific case subgroups, including those with evidence of developmental regression.",
+        "groundingUnitIds": [
+          "U0014"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0014"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0014"
+          ],
+          "originalBestOverlap": 0.7058823529411765,
+          "replacementBestOverlap": 0.7058823529411765
+        },
+        "contextUnitIds": [
+          "U0012",
+          "U0013",
+          "U0014",
+          "U0015",
+          "U0016"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C03",
+          "attributionLayers": [],
+          "substantiveAssertion": "No significant associations for vaccination before 18 or before 24 months were found for specific case subgroups, including those with evidence of developmental regression.",
+          "groundingUnitIds": [
+            "U0014"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C03",
+          "surfaceAssertion": "No significant associations for vaccination before 18 or before 24 months were found for specific case subgroups, including those with evidence of developmental regression.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "No significant associations for vaccination before 18 or before 24 months were found for specific case subgroups, including those with evidence of developmental regression.",
+          "groundingUnitIds": [
+            "U0014"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0014"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "No significant associations for vaccination before 18 or before 24 months were found for specific case subgroups, including those with evidence of developmental regression.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0014"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0014"
+            ],
+            "originalBestOverlap": 0.7058823529411765,
+            "replacementBestOverlap": 0.7058823529411765
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C04",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "More case (93.4%) than control children (90.6%) were vaccinated before 36 months.",
+          "groundingUnitIds": [
+            "U0015"
+          ]
+        },
+        "assignedCandidateId": "C04"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "More case (93.4%) than control children (90.6%) were vaccinated before 36 months.",
+        "hostPreparedAssertion": "More case (93.4%) than control children (90.6%) were vaccinated before 36 months.",
+        "groundingUnitIds": [
+          "U0015"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0015"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0015"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0013",
+          "U0014",
+          "U0015",
+          "U0016",
+          "U0017"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C04",
+          "attributionLayers": [],
+          "substantiveAssertion": "More case (93.4%) than control children (90.6%) were vaccinated before 36 months.",
+          "groundingUnitIds": [
+            "U0015"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C04",
+          "surfaceAssertion": "More case (93.4%) than control children (90.6%) were vaccinated before 36 months.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "More case (93.4%) than control children (90.6%) were vaccinated before 36 months.",
+          "groundingUnitIds": [
+            "U0015"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0015"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "More case (93.4%) than control children (90.6%) were vaccinated before 36 months.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0015"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0015"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C05",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The association of vaccination before 36 months was strongest in the 3- to 5-year age group.",
+          "groundingUnitIds": [
+            "U0016"
+          ]
+        },
+        "assignedCandidateId": "C05"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The association of vaccination before 36 months was strongest in the 3- to 5-year age group.",
+        "hostPreparedAssertion": "The association of vaccination before 36 months was strongest in the 3- to 5-year age group.",
+        "groundingUnitIds": [
+          "U0016"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0016"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0016"
+          ],
+          "originalBestOverlap": 0.5555555555555556,
+          "replacementBestOverlap": 0.5555555555555556
+        },
+        "contextUnitIds": [
+          "U0014",
+          "U0015",
+          "U0016",
+          "U0017",
+          "U0018"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C05",
+          "attributionLayers": [],
+          "substantiveAssertion": "The association of vaccination before 36 months was strongest in the 3- to 5-year age group.",
+          "groundingUnitIds": [
+            "U0016"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C05",
+          "surfaceAssertion": "The association of vaccination before 36 months was strongest in the 3- to 5-year age group.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The association of vaccination before 36 months was strongest in the 3- to 5-year age group.",
+          "groundingUnitIds": [
+            "U0016"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0016"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The association of vaccination before 36 months was strongest in the 3- to 5-year age group.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0016"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0016"
+            ],
+            "originalBestOverlap": 0.5555555555555556,
+            "replacementBestOverlap": 0.5555555555555556
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C06",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The study included 624 case children and 1824 control children.",
+          "groundingUnitIds": [
+            "U0057"
+          ]
+        },
+        "assignedCandidateId": "C06"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The study included 624 case children and 1824 control children.",
+        "hostPreparedAssertion": "The study included 624 case children and 1824 control children.",
+        "groundingUnitIds": [
+          "U0057"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0057"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0057"
+          ],
+          "originalBestOverlap": 0.8571428571428571,
+          "replacementBestOverlap": 0.8571428571428571
+        },
+        "contextUnitIds": [
+          "U0055",
+          "U0056",
+          "U0057",
+          "U0058",
+          "U0059"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C06",
+          "attributionLayers": [],
+          "substantiveAssertion": "The study included 624 case children and 1824 control children.",
+          "groundingUnitIds": [
+            "U0057"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C06",
+          "surfaceAssertion": "The study included 624 case children and 1824 control children.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The study included 624 case children and 1824 control children.",
+          "groundingUnitIds": [
+            "U0057"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0057"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The study included 624 case children and 1824 control children.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0057"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0057"
+            ],
+            "originalBestOverlap": 0.8571428571428571,
+            "replacementBestOverlap": 0.8571428571428571
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C07",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "Children with autism were identified from the Metropolitan Atlanta Developmental Disabilities Surveillance Program (MADDSP).",
+          "groundingUnitIds": [
+            "U0039"
+          ]
+        },
+        "assignedCandidateId": "C07"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "Children with autism were identified from the Metropolitan Atlanta Developmental Disabilities Surveillance Program (MADDSP).",
+        "hostPreparedAssertion": "Children with autism were identified from the Metropolitan Atlanta Developmental Disabilities Surveillance Program (MADDSP).",
+        "groundingUnitIds": [
+          "U0039"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0039"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0039"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0037",
+          "U0038",
+          "U0039",
+          "U0040",
+          "U0041"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C07",
+          "attributionLayers": [],
+          "substantiveAssertion": "Children with autism were identified from the Metropolitan Atlanta Developmental Disabilities Surveillance Program (MADDSP).",
+          "groundingUnitIds": [
+            "U0039"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C07",
+          "surfaceAssertion": "Children with autism were identified from the Metropolitan Atlanta Developmental Disabilities Surveillance Program (MADDSP).",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Children with autism were identified from the Metropolitan Atlanta Developmental Disabilities Surveillance Program (MADDSP).",
+          "groundingUnitIds": [
+            "U0039"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0039"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "Children with autism were identified from the Metropolitan Atlanta Developmental Disabilities Surveillance Program (MADDSP).",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0039"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0039"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C08",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "In 1996, MADDSP identified 987 children 3 to 10 years of age with autism, for a prevalence of 3.4 per 1000 children.",
+          "groundingUnitIds": [
+            "U0040"
+          ]
+        },
+        "assignedCandidateId": "C08"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "In 1996, MADDSP identified 987 children 3 to 10 years of age with autism, for a prevalence of 3.4 per 1000 children.",
+        "hostPreparedAssertion": "In 1996, MADDSP identified 987 children 3 to 10 years of age with autism, for a prevalence of 3.4 per 1000 children.",
+        "groundingUnitIds": [
+          "U0039"
+        ],
+        "groundingAudit": {
+          "status": "repaired_high_confidence_overlap",
+          "originalGroundingUnitIds": [
+            "U0040"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0039"
+          ],
+          "originalBestOverlap": 0.08333333333333333,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0037",
+          "U0038",
+          "U0039",
+          "U0040",
+          "U0041"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C08",
+          "attributionLayers": [],
+          "substantiveAssertion": "In 1996, MADDSP identified 987 children 3 to 10 years of age with autism, for a prevalence of 3.4 per 1000 children.",
+          "groundingUnitIds": [
+            "U0039"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C08",
+          "surfaceAssertion": "In 1996, MADDSP identified 987 children 3 to 10 years of age with autism, for a prevalence of 3.4 per 1000 children.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "In 1996, MADDSP identified 987 children 3 to 10 years of age with autism, for a prevalence of 3.4 per 1000 children.",
+          "groundingUnitIds": [
+            "U0039"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0039"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "In 1996, MADDSP identified 987 children 3 to 10 years of age with autism, for a prevalence of 3.4 per 1000 children.",
+          "groundingAudit": {
+            "status": "repaired_high_confidence_overlap",
+            "originalGroundingUnitIds": [
+              "U0040"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0039"
+            ],
+            "originalBestOverlap": 0.08333333333333333,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C09",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The study was approved by the Centers for Disease Control and Prevention’s institutional review board.",
+          "groundingUnitIds": [
+            "U0041"
+          ]
+        },
+        "assignedCandidateId": "C09"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The study was approved by the Centers for Disease Control and Prevention’s institutional review board.",
+        "hostPreparedAssertion": "The study was approved by the Centers for Disease Control and Prevention’s institutional review board.",
+        "groundingUnitIds": [
+          "U0041"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0041"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0041"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0039",
+          "U0040",
+          "U0041",
+          "U0042",
+          "U0043"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C09",
+          "attributionLayers": [],
+          "substantiveAssertion": "The study was approved by the Centers for Disease Control and Prevention’s institutional review board.",
+          "groundingUnitIds": [
+            "U0041"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C09",
+          "surfaceAssertion": "The study was approved by the Centers for Disease Control and Prevention’s institutional review board.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The study was approved by the Centers for Disease Control and Prevention’s institutional review board.",
+          "groundingUnitIds": [
+            "U0041"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0041"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The study was approved by the Centers for Disease Control and Prevention’s institutional review board.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0041"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0041"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C10",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "Vaccination data were abstracted from immunization forms required for school entry.",
+          "groundingUnitIds": [
+            "U0088"
+          ]
+        },
+        "assignedCandidateId": "C10"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "Vaccination data were abstracted from immunization forms required for school entry.",
+        "hostPreparedAssertion": "Vaccination data were abstracted from immunization forms required for school entry.",
+        "groundingUnitIds": [
+          "U0008"
+        ],
+        "groundingAudit": {
+          "status": "repaired_high_confidence_overlap",
+          "originalGroundingUnitIds": [
+            "U0088"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0008"
+          ],
+          "originalBestOverlap": 0,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0006",
+          "U0007",
+          "U0008",
+          "U0009",
+          "U0010"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C10",
+          "attributionLayers": [],
+          "substantiveAssertion": "Vaccination data were abstracted from immunization forms required for school entry.",
+          "groundingUnitIds": [
+            "U0008"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C10",
+          "surfaceAssertion": "Vaccination data were abstracted from immunization forms required for school entry.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Vaccination data were abstracted from immunization forms required for school entry.",
+          "groundingUnitIds": [
+            "U0008"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0008"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "Vaccination data were abstracted from immunization forms required for school entry.",
+          "groundingAudit": {
+            "status": "repaired_high_confidence_overlap",
+            "originalGroundingUnitIds": [
+              "U0088"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0008"
+            ],
+            "originalBestOverlap": 0,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C11",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "Georgia law required at least 1 dose of measles, mumps, and rubella vaccines for school enrollment.",
+          "groundingUnitIds": [
+            "U0068"
+          ]
+        },
+        "assignedCandidateId": "C11"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "Georgia law required at least 1 dose of measles, mumps, and rubella vaccines for school enrollment.",
+        "hostPreparedAssertion": "Georgia law required at least 1 dose of measles, mumps, and rubella vaccines for school enrollment.",
+        "groundingUnitIds": [
+          "U0068"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0068"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0068"
+          ],
+          "originalBestOverlap": 0.9090909090909091,
+          "replacementBestOverlap": 0.9090909090909091
+        },
+        "contextUnitIds": [
+          "U0066",
+          "U0067",
+          "U0068",
+          "U0069",
+          "U0070"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C11",
+          "attributionLayers": [],
+          "substantiveAssertion": "Georgia law required at least 1 dose of measles, mumps, and rubella vaccines for school enrollment.",
+          "groundingUnitIds": [
+            "U0068"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C11",
+          "surfaceAssertion": "Georgia law required at least 1 dose of measles, mumps, and rubella vaccines for school enrollment.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "Georgia law required at least 1 dose of measles, mumps, and rubella vaccines for school enrollment.",
+          "groundingUnitIds": [
+            "U0068"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0068"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "Georgia law required at least 1 dose of measles, mumps, and rubella vaccines for school enrollment.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0068"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0068"
+            ],
+            "originalBestOverlap": 0.9090909090909091,
+            "replacementBestOverlap": 0.9090909090909091
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C12",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The first dose of MMR vaccine is usually administered at 15 months of age.",
+          "groundingUnitIds": [
+            "U0068"
+          ]
+        },
+        "assignedCandidateId": "C12"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The first dose of MMR vaccine is usually administered at 15 months of age.",
+        "hostPreparedAssertion": "The first dose of MMR vaccine is usually administered at 15 months of age.",
+        "groundingUnitIds": [
+          "U0068"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0068"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0068"
+          ],
+          "originalBestOverlap": 0.8888888888888888,
+          "replacementBestOverlap": 0.8888888888888888
+        },
+        "contextUnitIds": [
+          "U0066",
+          "U0067",
+          "U0068",
+          "U0069",
+          "U0070"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C12",
+          "attributionLayers": [],
+          "substantiveAssertion": "The first dose of MMR vaccine is usually administered at 15 months of age.",
+          "groundingUnitIds": [
+            "U0068"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C12",
+          "surfaceAssertion": "The first dose of MMR vaccine is usually administered at 15 months of age.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The first dose of MMR vaccine is usually administered at 15 months of age.",
+          "groundingUnitIds": [
+            "U0068"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0068"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The first dose of MMR vaccine is usually administered at 15 months of age.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0068"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0068"
+            ],
+            "originalBestOverlap": 0.8888888888888888,
+            "replacementBestOverlap": 0.8888888888888888
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C13",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The Individuals with Disabilities Education Act mandated the provision of special education programs for children with autism beginning at approximately 36 months of age.",
+          "groundingUnitIds": [
+            "U0263"
+          ]
+        },
+        "assignedCandidateId": "C13"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The Individuals with Disabilities Education Act mandated the provision of special education programs for children with autism beginning at approximately 36 months of age.",
+        "hostPreparedAssertion": "The Individuals with Disabilities Education Act mandated the provision of special education programs for children with autism beginning at approximately 36 months of age.",
+        "groundingUnitIds": [
+          "U0263"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0263"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0263"
+          ],
+          "originalBestOverlap": 0.9333333333333333,
+          "replacementBestOverlap": 0.9333333333333333
+        },
+        "contextUnitIds": [
+          "U0261",
+          "U0262",
+          "U0263",
+          "U0264",
+          "U0265"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C13",
+          "attributionLayers": [],
+          "substantiveAssertion": "The Individuals with Disabilities Education Act mandated the provision of special education programs for children with autism beginning at approximately 36 months of age.",
+          "groundingUnitIds": [
+            "U0263"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C13",
+          "surfaceAssertion": "The Individuals with Disabilities Education Act mandated the provision of special education programs for children with autism beginning at approximately 36 months of age.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The Individuals with Disabilities Education Act mandated the provision of special education programs for children with autism beginning at approximately 36 months of age.",
+          "groundingUnitIds": [
+            "U0263"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0263"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The Individuals with Disabilities Education Act mandated the provision of special education programs for children with autism beginning at approximately 36 months of age.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0263"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0263"
+            ],
+            "originalBestOverlap": 0.9333333333333333,
+            "replacementBestOverlap": 0.9333333333333333
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C14",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The Institute of Medicine reviewed the MMR-autism hypothesis and rejected a causal association at the population level.",
+          "groundingUnitIds": [
+            "U0036"
+          ]
+        },
+        "assignedCandidateId": "C14"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The Institute of Medicine reviewed the MMR-autism hypothesis and rejected a causal association at the population level.",
+        "hostPreparedAssertion": "The Institute of Medicine reviewed the MMR-autism hypothesis and rejected a causal association at the population level.",
+        "groundingUnitIds": [
+          "U0036"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0036"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0036"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0034",
+          "U0035",
+          "U0036",
+          "U0037",
+          "U0038"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C14",
+          "attributionLayers": [],
+          "substantiveAssertion": "The Institute of Medicine reviewed the MMR-autism hypothesis and rejected a causal association at the population level.",
+          "groundingUnitIds": [
+            "U0036"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C14",
+          "surfaceAssertion": "The Institute of Medicine reviewed the MMR-autism hypothesis and rejected a causal association at the population level.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The Institute of Medicine reviewed the MMR-autism hypothesis and rejected a causal association at the population level.",
+          "groundingUnitIds": [
+            "U0036"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0036"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The Institute of Medicine reviewed the MMR-autism hypothesis and rejected a causal association at the population level.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0036"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0036"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "finalAssertion": {
+          "candidateId": "C14",
+          "surfaceAssertion": "The Institute of Medicine reviewed the MMR-autism hypothesis and rejected a causal association at the population level.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The Institute of Medicine reviewed the MMR-autism hypothesis and rejected a causal association at the population level.",
+          "groundingUnitIds": [
+            "U0036"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0036"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The Institute of Medicine reviewed the MMR-autism hypothesis and rejected a causal association at the population level.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0036"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0036"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          },
+          "selectionBasis": "thesis_effect",
+          "callBSourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "callBSourceKind": "article_voice",
+          "callBSourceUnitIds": [
+            "U0036"
+          ],
+          "callBSourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "evidenceAnchorAudit": {
+            "returned": 0,
+            "accepted": 0,
+            "discarded": []
+          }
+        }
+      },
+      "disposition": {
+        "terminalStatus": "selected",
+        "terminalReason": "thesis_effect",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C15",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "A recent retrospective cohort study from Denmark found the relative risk associated with MMR was 0.92 for autistic disorder and 0.83 for other ASDs.",
+          "groundingUnitIds": [
+            "U0281"
+          ]
+        },
+        "assignedCandidateId": "C15"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "A recent retrospective cohort study from Denmark found the relative risk associated with MMR was 0.92 for autistic disorder and 0.83 for other ASDs.",
+        "hostPreparedAssertion": "A recent retrospective cohort study from Denmark found the relative risk associated with MMR was 0.92 for autistic disorder and 0.83 for other ASDs.",
+        "groundingUnitIds": [
+          "U0281"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0281"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0281"
+          ],
+          "originalBestOverlap": 0.4375,
+          "replacementBestOverlap": 0.4375
+        },
+        "contextUnitIds": [
+          "U0279",
+          "U0280",
+          "U0281",
+          "U0282",
+          "U0283"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C15",
+          "attributionLayers": [],
+          "substantiveAssertion": "A recent retrospective cohort study from Denmark found the relative risk associated with MMR was 0.92 for autistic disorder and 0.83 for other ASDs.",
+          "groundingUnitIds": [
+            "U0281"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": null,
+        "rejection": {
+          "candidateId": "C15",
+          "code": "CF2_V6_ATTRIBUTION_LAYER_MISSING",
+          "message": "C15 contains a reporting frame but returned no layer",
+          "rawAssertion": "A recent retrospective cohort study from Denmark found the relative risk associated with MMR was 0.92 for autistic disorder and 0.83 for other ASDs.",
+          "rawOutput": {
+            "candidateId": "C15",
+            "attributionLayers": [],
+            "substantiveAssertion": "A recent retrospective cohort study from Denmark found the relative risk associated with MMR was 0.92 for autistic disorder and 0.83 for other ASDs.",
+            "groundingUnitIds": [
+              "U0281"
+            ],
+            "articleTreatment": "reported",
+            "effectIfTrue": "strengthens"
+          }
+        }
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "quarantined",
+        "terminalReason": "CF2_V6_ATTRIBUTION_LAYER_MISSING",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C16",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The IOM committee recommended additional studies to evaluate potential high-risk subgroups of children.",
+          "groundingUnitIds": [
+            "U0284"
+          ]
+        },
+        "assignedCandidateId": "C16"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The IOM committee recommended additional studies to evaluate potential high-risk subgroups of children.",
+        "hostPreparedAssertion": "The IOM committee recommended additional studies to evaluate potential high-risk subgroups of children.",
+        "groundingUnitIds": [
+          "U0284"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0284"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0284"
+          ],
+          "originalBestOverlap": 0.9090909090909091,
+          "replacementBestOverlap": 0.9090909090909091
+        },
+        "contextUnitIds": [
+          "U0282",
+          "U0283",
+          "U0284",
+          "U0285",
+          "U0286"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C16",
+          "attributionLayers": [],
+          "substantiveAssertion": "The IOM committee recommended additional studies to evaluate potential high-risk subgroups of children.",
+          "groundingUnitIds": [
+            "U0284"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C16",
+          "surfaceAssertion": "The IOM committee recommended additional studies to evaluate potential high-risk subgroups of children.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The IOM committee recommended additional studies to evaluate potential high-risk subgroups of children.",
+          "groundingUnitIds": [
+            "U0284"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0284"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The IOM committee recommended additional studies to evaluate potential high-risk subgroups of children.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0284"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0284"
+            ],
+            "originalBestOverlap": 0.9090909090909091,
+            "replacementBestOverlap": 0.9090909090909091
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C17",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The study found that case children without MR were more likely to have been vaccinated before 36 months of age than their matched control children.",
+          "groundingUnitIds": [
+            "U0293"
+          ]
+        },
+        "assignedCandidateId": "C17"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The study found that case children without MR were more likely to have been vaccinated before 36 months of age than their matched control children.",
+        "hostPreparedAssertion": "case children without MR were more likely to have been vaccinated before 36 months of age than their matched control children.",
+        "groundingUnitIds": [
+          "U0293"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0293"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0293"
+          ],
+          "originalBestOverlap": 0.875,
+          "replacementBestOverlap": 0.875
+        },
+        "contextUnitIds": [
+          "U0291",
+          "U0292",
+          "U0293",
+          "U0294",
+          "U0295"
+        ],
+        "currentWorkFrameAudit": {
+          "status": "host_removed_ungrounded_current_work_frame",
+          "removedFrame": "The study found that",
+          "groundingOverlap": 1,
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice"
+        },
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C17",
+          "attributionLayers": [],
+          "substantiveAssertion": "Case children without MR were more likely to have been vaccinated before 36 months of age than their matched control children.",
+          "groundingUnitIds": [
+            "U0293"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C17",
+          "surfaceAssertion": "The study found that case children without MR were more likely to have been vaccinated before 36 months of age than their matched control children.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": {
+            "status": "host_removed_ungrounded_current_work_frame",
+            "removedFrame": "The study found that",
+            "groundingOverlap": 1,
+            "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+            "sourceKind": "article_voice"
+          },
+          "assertionText": "Case children without MR were more likely to have been vaccinated before 36 months of age than their matched control children.",
+          "groundingUnitIds": [
+            "U0293"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0293"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "case children without MR were more likely to have been vaccinated before 36 months of age than their matched control children.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0293"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0293"
+            ],
+            "originalBestOverlap": 0.875,
+            "replacementBestOverlap": 0.875
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C18",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "MMR vaccine has never contained thimerosal.",
+          "groundingUnitIds": [
+            "U0297"
+          ]
+        },
+        "assignedCandidateId": "C18"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "MMR vaccine has never contained thimerosal.",
+        "hostPreparedAssertion": "MMR vaccine has never contained thimerosal.",
+        "groundingUnitIds": [
+          "U0297"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0297"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0297"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0295",
+          "U0296",
+          "U0297",
+          "U0298",
+          "U0299"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C18",
+          "attributionLayers": [],
+          "substantiveAssertion": "MMR vaccine has never contained thimerosal.",
+          "groundingUnitIds": [
+            "U0297"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C18",
+          "surfaceAssertion": "MMR vaccine has never contained thimerosal.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "MMR vaccine has never contained thimerosal.",
+          "groundingUnitIds": [
+            "U0297"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0297"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "MMR vaccine has never contained thimerosal.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0297"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0297"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C19",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The routinely recommended infant vaccines that used to contain thimerosal were diphtheria-tetanus-pertussis, hepatitis B, and Haemophilus influenzae type b.",
+          "groundingUnitIds": [
+            "U0295"
+          ]
+        },
+        "assignedCandidateId": "C19"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The routinely recommended infant vaccines that used to contain thimerosal were diphtheria-tetanus-pertussis, hepatitis B, and Haemophilus influenzae type b.",
+        "hostPreparedAssertion": "The routinely recommended infant vaccines that used to contain thimerosal were diphtheria-tetanus-pertussis, hepatitis B, and Haemophilus influenzae type b.",
+        "groundingUnitIds": [
+          "U0295"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0295"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0295"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0293",
+          "U0294",
+          "U0295",
+          "U0296",
+          "U0297"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C19",
+          "attributionLayers": [],
+          "substantiveAssertion": "The routinely recommended infant vaccines that used to contain thimerosal were diphtheria-tetanus-pertussis, hepatitis B, and Haemophilus influenzae type b.",
+          "groundingUnitIds": [
+            "U0295"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C19",
+          "surfaceAssertion": "The routinely recommended infant vaccines that used to contain thimerosal were diphtheria-tetanus-pertussis, hepatitis B, and Haemophilus influenzae type b.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The routinely recommended infant vaccines that used to contain thimerosal were diphtheria-tetanus-pertussis, hepatitis B, and Haemophilus influenzae type b.",
+          "groundingUnitIds": [
+            "U0295"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0295"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The routinely recommended infant vaccines that used to contain thimerosal were diphtheria-tetanus-pertussis, hepatitis B, and Haemophilus influenzae type b.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0295"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0295"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C20",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The study found a lower proportion of cases with regression than has been reported in other studies.",
+          "groundingUnitIds": [
+            "U0290"
+          ]
+        },
+        "assignedCandidateId": "C20"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The study found a lower proportion of cases with regression than has been reported in other studies.",
+        "hostPreparedAssertion": "a lower proportion of cases with regression than has been reported in other studies.",
+        "groundingUnitIds": [
+          "U0290"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0290"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0290"
+          ],
+          "originalBestOverlap": 0.9,
+          "replacementBestOverlap": 0.9
+        },
+        "contextUnitIds": [
+          "U0288",
+          "U0289",
+          "U0290",
+          "U0291",
+          "U0292"
+        ],
+        "currentWorkFrameAudit": {
+          "status": "host_removed_ungrounded_current_work_frame",
+          "removedFrame": "The study found",
+          "groundingOverlap": 1,
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice"
+        },
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C20",
+          "attributionLayers": [],
+          "substantiveAssertion": "The study found a lower proportion of cases with regression than has been reported in other studies.",
+          "groundingUnitIds": [
+            "U0290"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C20",
+          "surfaceAssertion": "The study found a lower proportion of cases with regression than has been reported in other studies.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": {
+            "status": "host_removed_ungrounded_current_work_frame",
+            "removedFrame": "The study found",
+            "groundingOverlap": 1,
+            "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+            "sourceKind": "article_voice"
+          },
+          "assertionText": "The study found a lower proportion of cases with regression than has been reported in other studies.",
+          "groundingUnitIds": [
+            "U0290"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0290"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "a lower proportion of cases with regression than has been reported in other studies.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0290"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0290"
+            ],
+            "originalBestOverlap": 0.9,
+            "replacementBestOverlap": 0.9
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C21",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The study relied on abstracted information rather than interviews with parents, which may have led to underestimation of regression cases.",
+          "groundingUnitIds": [
+            "U0290"
+          ]
+        },
+        "assignedCandidateId": "C21"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The study relied on abstracted information rather than interviews with parents, which may have led to underestimation of regression cases.",
+        "hostPreparedAssertion": "The study relied on abstracted information rather than interviews with parents, which may have led to underestimation of regression cases.",
+        "groundingUnitIds": [
+          "U0290"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0290"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0290"
+          ],
+          "originalBestOverlap": 0.6428571428571429,
+          "replacementBestOverlap": 0.6428571428571429
+        },
+        "contextUnitIds": [
+          "U0288",
+          "U0289",
+          "U0290",
+          "U0291",
+          "U0292"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C21",
+          "attributionLayers": [],
+          "substantiveAssertion": "The study relied on abstracted information rather than interviews with parents, which may have led to underestimation of regression cases.",
+          "groundingUnitIds": [
+            "U0290"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C21",
+          "surfaceAssertion": "The study relied on abstracted information rather than interviews with parents, which may have led to underestimation of regression cases.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The study relied on abstracted information rather than interviews with parents, which may have led to underestimation of regression cases.",
+          "groundingUnitIds": [
+            "U0290"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0290"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The study relied on abstracted information rather than interviews with parents, which may have led to underestimation of regression cases.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0290"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0290"
+            ],
+            "originalBestOverlap": 0.6428571428571429,
+            "replacementBestOverlap": 0.6428571428571429
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C22",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The study did not evaluate associations with the second dose of MMR vaccine because it is usually administered between 4 and 6 years of age.",
+          "groundingUnitIds": [
+            "U0300"
+          ]
+        },
+        "assignedCandidateId": "C22"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The study did not evaluate associations with the second dose of MMR vaccine because it is usually administered between 4 and 6 years of age.",
+        "hostPreparedAssertion": "The study did not evaluate associations with the second dose of MMR vaccine because it is usually administered between 4 and 6 years of age.",
+        "groundingUnitIds": [
+          "U0300"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0300"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0300"
+          ],
+          "originalBestOverlap": 0.9333333333333333,
+          "replacementBestOverlap": 0.9333333333333333
+        },
+        "contextUnitIds": [
+          "U0298",
+          "U0299",
+          "U0300",
+          "U0301",
+          "U0302"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C22",
+          "attributionLayers": [],
+          "substantiveAssertion": "The study did not evaluate associations with the second dose of MMR vaccine because it is usually administered between 4 and 6 years of age.",
+          "groundingUnitIds": [
+            "U0300"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C22",
+          "surfaceAssertion": "The study did not evaluate associations with the second dose of MMR vaccine because it is usually administered between 4 and 6 years of age.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The study did not evaluate associations with the second dose of MMR vaccine because it is usually administered between 4 and 6 years of age.",
+          "groundingUnitIds": [
+            "U0300"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0300"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The study did not evaluate associations with the second dose of MMR vaccine because it is usually administered between 4 and 6 years of age.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0300"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0300"
+            ],
+            "originalBestOverlap": 0.9333333333333333,
+            "replacementBestOverlap": 0.9333333333333333
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C23",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The study included a detailed review of case records by a panel of autism experts to confirm the case definition for autism according to DSM IV criteria.",
+          "groundingUnitIds": [
+            "U0266"
+          ]
+        },
+        "assignedCandidateId": "C23"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The study included a detailed review of case records by a panel of autism experts to confirm the case definition for autism according to DSM IV criteria.",
+        "hostPreparedAssertion": "The study included a detailed review of case records by a panel of autism experts to confirm the case definition for autism according to DSM IV criteria.",
+        "groundingUnitIds": [
+          "U0266"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0266"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0266"
+          ],
+          "originalBestOverlap": 0.9285714285714286,
+          "replacementBestOverlap": 0.9285714285714286
+        },
+        "contextUnitIds": [
+          "U0264",
+          "U0265",
+          "U0266",
+          "U0267",
+          "U0268"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C23",
+          "attributionLayers": [],
+          "substantiveAssertion": "The study included a detailed review of case records by a panel of autism experts to confirm the case definition for autism according to DSM IV criteria.",
+          "groundingUnitIds": [
+            "U0266"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C23",
+          "surfaceAssertion": "The study included a detailed review of case records by a panel of autism experts to confirm the case definition for autism according to DSM IV criteria.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The study included a detailed review of case records by a panel of autism experts to confirm the case definition for autism according to DSM IV criteria.",
+          "groundingUnitIds": [
+            "U0266"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0266"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The study included a detailed review of case records by a panel of autism experts to confirm the case definition for autism according to DSM IV criteria.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0266"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0266"
+            ],
+            "originalBestOverlap": 0.9285714285714286,
+            "replacementBestOverlap": 0.9285714285714286
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C24",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The study found that the differences between the total sample and the birth certificate sample could represent random fluctuation or a possible bias related to being born outside Georgia.",
+          "groundingUnitIds": [
+            "U0279"
+          ]
+        },
+        "assignedCandidateId": "C24"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The study found that the differences between the total sample and the birth certificate sample could represent random fluctuation or a possible bias related to being born outside Georgia.",
+        "hostPreparedAssertion": "The study found that the differences between the total sample and the birth certificate sample could represent random fluctuation or a possible bias related to being born outside Georgia.",
+        "groundingUnitIds": [
+          "U0279"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0279"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0279"
+          ],
+          "originalBestOverlap": 0.3157894736842105,
+          "replacementBestOverlap": 0.3157894736842105
+        },
+        "contextUnitIds": [
+          "U0277",
+          "U0278",
+          "U0279",
+          "U0280",
+          "U0281"
+        ],
+        "currentWorkFrameAudit": {
+          "status": "ungrounded_study_frame_not_repaired",
+          "frame": "The study found that",
+          "groundingOverlap": 0.375
+        },
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C24",
+          "attributionLayers": [],
+          "substantiveAssertion": "The study found that the differences between the total sample and the birth certificate sample could represent random fluctuation or a possible bias related to being born outside Georgia.",
+          "groundingUnitIds": [
+            "U0279"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": null,
+        "rejection": {
+          "candidateId": "C24",
+          "code": "CF2_V6_ATTRIBUTION_LAYER_MISSING",
+          "message": "C24 contains a reporting frame but returned no layer",
+          "rawAssertion": "The study found that the differences between the total sample and the birth certificate sample could represent random fluctuation or a possible bias related to being born outside Georgia.",
+          "rawOutput": {
+            "candidateId": "C24",
+            "attributionLayers": [],
+            "substantiveAssertion": "The study found that the differences between the total sample and the birth certificate sample could represent random fluctuation or a possible bias related to being born outside Georgia.",
+            "groundingUnitIds": [
+              "U0279"
+            ],
+            "articleTreatment": "reported",
+            "effectIfTrue": "no_effect"
+          }
+        }
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "quarantined",
+        "terminalReason": "CF2_V6_ATTRIBUTION_LAYER_MISSING",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C25",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The study was conducted in metropolitan Atlanta from 1999 through 2001.",
+          "groundingUnitIds": [
+            "U0055"
+          ]
+        },
+        "assignedCandidateId": "C25"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The study was conducted in metropolitan Atlanta from 1999 through 2001.",
+        "hostPreparedAssertion": "The study was conducted in metropolitan Atlanta from 1999 through 2001.",
+        "groundingUnitIds": [
+          "U0272"
+        ],
+        "groundingAudit": {
+          "status": "repaired_high_confidence_overlap",
+          "originalGroundingUnitIds": [
+            "U0055"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0272"
+          ],
+          "originalBestOverlap": 0,
+          "replacementBestOverlap": 0.7142857142857143
+        },
+        "contextUnitIds": [
+          "U0270",
+          "U0271",
+          "U0272",
+          "U0273",
+          "U0274"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C25",
+          "attributionLayers": [],
+          "substantiveAssertion": "The study was conducted in metropolitan Atlanta from 1999 through 2001.",
+          "groundingUnitIds": [
+            "U0272"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C25",
+          "surfaceAssertion": "The study was conducted in metropolitan Atlanta from 1999 through 2001.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The study was conducted in metropolitan Atlanta from 1999 through 2001.",
+          "groundingUnitIds": [
+            "U0272"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0272"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The study was conducted in metropolitan Atlanta from 1999 through 2001.",
+          "groundingAudit": {
+            "status": "repaired_high_confidence_overlap",
+            "originalGroundingUnitIds": [
+              "U0055"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0272"
+            ],
+            "originalBestOverlap": 0,
+            "replacementBestOverlap": 0.7142857142857143
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C26",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The study found that the overall age at time of first MMR administration was similar among case and control children.",
+          "groundingUnitIds": [
+            "U0302"
+          ]
+        },
+        "assignedCandidateId": "C26"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The study found that the overall age at time of first MMR administration was similar among case and control children.",
+        "hostPreparedAssertion": "the overall age at time of first MMR administration was similar among case and control children.",
+        "groundingUnitIds": [
+          "U0302"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0302"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0302"
+          ],
+          "originalBestOverlap": 0.9230769230769231,
+          "replacementBestOverlap": 0.9230769230769231
+        },
+        "contextUnitIds": [
+          "U0300",
+          "U0301",
+          "U0302",
+          "U0303",
+          "U0304"
+        ],
+        "currentWorkFrameAudit": {
+          "status": "host_removed_ungrounded_current_work_frame",
+          "removedFrame": "The study found that",
+          "groundingOverlap": 1,
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice"
+        },
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C26",
+          "attributionLayers": [],
+          "substantiveAssertion": "The overall age at time of first MMR administration was similar among case and control children.",
+          "groundingUnitIds": [
+            "U0302"
+          ],
+          "articleTreatment": "adopted",
+          "effectIfTrue": "strengthens"
+        },
+        "validatedJudgment": {
+          "candidateId": "C26",
+          "surfaceAssertion": "The study found that the overall age at time of first MMR administration was similar among case and control children.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": {
+            "status": "host_removed_ungrounded_current_work_frame",
+            "removedFrame": "The study found that",
+            "groundingOverlap": 1,
+            "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+            "sourceKind": "article_voice"
+          },
+          "assertionText": "The overall age at time of first MMR administration was similar among case and control children.",
+          "groundingUnitIds": [
+            "U0302"
+          ],
+          "articleTreatment": "adopted",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0302"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "the overall age at time of first MMR administration was similar among case and control children.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0302"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0302"
+            ],
+            "originalBestOverlap": 0.9230769230769231,
+            "replacementBestOverlap": 0.9230769230769231
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": true,
+        "selectionBasis": "thesis_effect",
+        "finalAssertion": {
+          "candidateId": "C26",
+          "surfaceAssertion": "The study found that the overall age at time of first MMR administration was similar among case and control children.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": {
+            "status": "host_removed_ungrounded_current_work_frame",
+            "removedFrame": "The study found that",
+            "groundingOverlap": 1,
+            "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+            "sourceKind": "article_voice"
+          },
+          "assertionText": "The overall age at time of first MMR administration was similar among case and control children.",
+          "groundingUnitIds": [
+            "U0302"
+          ],
+          "articleTreatment": "adopted",
+          "effectIfTrue": "strengthens",
+          "scoreTransform": "normal",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0302"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "the overall age at time of first MMR administration was similar among case and control children.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0302"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0302"
+            ],
+            "originalBestOverlap": 0.9230769230769231,
+            "replacementBestOverlap": 0.9230769230769231
+          },
+          "selectionBasis": "thesis_effect",
+          "callBSourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "callBSourceKind": "article_voice",
+          "callBSourceUnitIds": [
+            "U0302"
+          ],
+          "callBSourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "evidenceAnchorAudit": {
+            "returned": 0,
+            "accepted": 0,
+            "discarded": []
+          }
+        }
+      },
+      "disposition": {
+        "terminalStatus": "selected",
+        "terminalReason": "thesis_effect",
+        "eligibleUnderTreatmentFallback": true
+      }
+    },
+    {
+      "candidateId": "C27",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The difference in vaccination coverage by 36 months of age between case and control children is likely to be an artifact of immunization requirements for preschool special education attendance in case children.",
+          "groundingUnitIds": [
+            "U0305"
+          ]
+        },
+        "assignedCandidateId": "C27"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The difference in vaccination coverage by 36 months of age between case and control children is likely to be an artifact of immunization requirements for preschool special education attendance in case children.",
+        "hostPreparedAssertion": "The difference in vaccination coverage by 36 months of age between case and control children is likely to be an artifact of immunization requirements for preschool special education attendance in case children.",
+        "groundingUnitIds": [
+          "U0305"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0305"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0305"
+          ],
+          "originalBestOverlap": 1,
+          "replacementBestOverlap": 1
+        },
+        "contextUnitIds": [
+          "U0303",
+          "U0304",
+          "U0305"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C27",
+          "attributionLayers": [],
+          "substantiveAssertion": "The difference in vaccination coverage by 36 months of age between case and control children is likely to be an artifact of immunization requirements for preschool special education attendance in case children.",
+          "groundingUnitIds": [
+            "U0305"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C27",
+          "surfaceAssertion": "The difference in vaccination coverage by 36 months of age between case and control children is likely to be an artifact of immunization requirements for preschool special education attendance in case children.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The difference in vaccination coverage by 36 months of age between case and control children is likely to be an artifact of immunization requirements for preschool special education attendance in case children.",
+          "groundingUnitIds": [
+            "U0305"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0305"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The difference in vaccination coverage by 36 months of age between case and control children is likely to be an artifact of immunization requirements for preschool special education attendance in case children.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0305"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0305"
+            ],
+            "originalBestOverlap": 1,
+            "replacementBestOverlap": 1
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C28",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The study found that children who were vaccinated after 36 months of age had documented delays in development before 36 months of age.",
+          "groundingUnitIds": [
+            "U0304"
+          ]
+        },
+        "assignedCandidateId": "C28"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The study found that children who were vaccinated after 36 months of age had documented delays in development before 36 months of age.",
+        "hostPreparedAssertion": "children who were vaccinated after 36 months of age had documented delays in development before 36 months of age.",
+        "groundingUnitIds": [
+          "U0304"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0304"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0304"
+          ],
+          "originalBestOverlap": 0.6153846153846154,
+          "replacementBestOverlap": 0.6153846153846154
+        },
+        "contextUnitIds": [
+          "U0302",
+          "U0303",
+          "U0304",
+          "U0305"
+        ],
+        "currentWorkFrameAudit": {
+          "status": "host_removed_ungrounded_current_work_frame",
+          "removedFrame": "The study found that",
+          "groundingOverlap": 0.7,
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice"
+        },
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C28",
+          "attributionLayers": [],
+          "substantiveAssertion": "Children who were vaccinated after 36 months of age had documented delays in development before 36 months of age.",
+          "groundingUnitIds": [
+            "U0304"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C28",
+          "surfaceAssertion": "The study found that children who were vaccinated after 36 months of age had documented delays in development before 36 months of age.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": {
+            "status": "host_removed_ungrounded_current_work_frame",
+            "removedFrame": "The study found that",
+            "groundingOverlap": 0.7,
+            "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+            "sourceKind": "article_voice"
+          },
+          "assertionText": "Children who were vaccinated after 36 months of age had documented delays in development before 36 months of age.",
+          "groundingUnitIds": [
+            "U0304"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0304"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "children who were vaccinated after 36 months of age had documented delays in development before 36 months of age.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0304"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0304"
+            ],
+            "originalBestOverlap": 0.6153846153846154,
+            "replacementBestOverlap": 0.6153846153846154
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C29",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The study found that similar proportions of case and control children had been vaccinated before 18 months or before 24 months of age.",
+          "groundingUnitIds": [
+            "U0250"
+          ]
+        },
+        "assignedCandidateId": "C29"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The study found that similar proportions of case and control children had been vaccinated before 18 months or before 24 months of age.",
+        "hostPreparedAssertion": "similar proportions of case and control children had been vaccinated before 18 months or before 24 months of age.",
+        "groundingUnitIds": [
+          "U0250"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0250"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0250"
+          ],
+          "originalBestOverlap": 0.9230769230769231,
+          "replacementBestOverlap": 0.9230769230769231
+        },
+        "contextUnitIds": [
+          "U0248",
+          "U0249",
+          "U0250",
+          "U0251",
+          "U0252"
+        ],
+        "currentWorkFrameAudit": {
+          "status": "host_removed_ungrounded_current_work_frame",
+          "removedFrame": "The study found that",
+          "groundingOverlap": 1,
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice"
+        },
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C29",
+          "attributionLayers": [],
+          "substantiveAssertion": "Similar proportions of case and control children had been vaccinated before 18 months or before 24 months of age.",
+          "groundingUnitIds": [
+            "U0250"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C29",
+          "surfaceAssertion": "The study found that similar proportions of case and control children had been vaccinated before 18 months or before 24 months of age.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": {
+            "status": "host_removed_ungrounded_current_work_frame",
+            "removedFrame": "The study found that",
+            "groundingOverlap": 1,
+            "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+            "sourceKind": "article_voice"
+          },
+          "assertionText": "Similar proportions of case and control children had been vaccinated before 18 months or before 24 months of age.",
+          "groundingUnitIds": [
+            "U0250"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0250"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "similar proportions of case and control children had been vaccinated before 18 months or before 24 months of age.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0250"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0250"
+            ],
+            "originalBestOverlap": 0.9230769230769231,
+            "replacementBestOverlap": 0.9230769230769231
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    },
+    {
+      "candidateId": "C30",
+      "discovery": {
+        "rawCallA": {
+          "rawAssertion": "The study lacked an unvaccinated comparison group and had incomplete information for determining date of onset of autism.",
+          "groundingUnitIds": [
+            "U0253"
+          ]
+        },
+        "assignedCandidateId": "C30"
+      },
+      "hostPreparation": {
+        "surfaceAssertion": "The study lacked an unvaccinated comparison group and had incomplete information for determining date of onset of autism.",
+        "hostPreparedAssertion": "The study lacked an unvaccinated comparison group and had incomplete information for determining date of onset of autism.",
+        "groundingUnitIds": [
+          "U0253"
+        ],
+        "groundingAudit": {
+          "status": "original_supported",
+          "originalGroundingUnitIds": [
+            "U0253"
+          ],
+          "repairedGroundingUnitIds": [
+            "U0253"
+          ],
+          "originalBestOverlap": 0.9090909090909091,
+          "replacementBestOverlap": 0.9090909090909091
+        },
+        "contextUnitIds": [
+          "U0251",
+          "U0252",
+          "U0253",
+          "U0254",
+          "U0255"
+        ],
+        "currentWorkFrameAudit": null,
+        "attributionCues": []
+      },
+      "callB": {
+        "rawOutput": {
+          "candidateId": "C30",
+          "attributionLayers": [],
+          "substantiveAssertion": "The study lacked an unvaccinated comparison group and had incomplete information for determining date of onset of autism.",
+          "groundingUnitIds": [
+            "U0253"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect"
+        },
+        "validatedJudgment": {
+          "candidateId": "C30",
+          "surfaceAssertion": "The study lacked an unvaccinated comparison group and had incomplete information for determining date of onset of autism.",
+          "attributionLayers": [],
+          "layerTargetAudit": null,
+          "currentWorkFrameAudit": null,
+          "assertionText": "The study lacked an unvaccinated comparison group and had incomplete information for determining date of onset of autism.",
+          "groundingUnitIds": [
+            "U0253"
+          ],
+          "articleTreatment": "reported",
+          "effectIfTrue": "no_effect",
+          "scoreTransform": "none",
+          "sourceName": "Frank DeStefano, Tanya Karapurkar Bhasin, William W. Thompson, Marshalyn Yeargin-Allsopp, Coleen Boyle",
+          "sourceKind": "article_voice",
+          "sourceUnitIds": [
+            "U0253"
+          ],
+          "sourceNameOrigin": "host_article_voice_no_explicit_layer",
+          "attributionBasis": "article_voice",
+          "evidenceAnchors": [],
+          "rawAssertion": "The study lacked an unvaccinated comparison group and had incomplete information for determining date of onset of autism.",
+          "groundingAudit": {
+            "status": "original_supported",
+            "originalGroundingUnitIds": [
+              "U0253"
+            ],
+            "repairedGroundingUnitIds": [
+              "U0253"
+            ],
+            "originalBestOverlap": 0.9090909090909091,
+            "replacementBestOverlap": 0.9090909090909091
+          }
+        },
+        "rejection": null
+      },
+      "selection": {
+        "selected": false,
+        "selectionBasis": null,
+        "finalAssertion": null
+      },
+      "disposition": {
+        "terminalStatus": "ineligible_not_selected",
+        "terminalReason": "reported_plus_no_effect",
+        "eligibleUnderTreatmentFallback": false
+      }
+    }
+  ]
+}

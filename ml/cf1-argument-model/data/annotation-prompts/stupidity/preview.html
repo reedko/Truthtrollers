@@ -1,0 +1,749 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CF6 Acceptance & Output Contract Decision Form</title>
+<style>
+  :root {
+    --bg: #f5f7fb;
+    --panel: #ffffff;
+    --ink: #172033;
+    --muted: #5e6b82;
+    --line: #d8deea;
+    --accent: #304ffe;
+    --accent-soft: #eef1ff;
+    --warn: #8a4b00;
+    --warn-bg: #fff5e6;
+    --ok: #146c43;
+    --shadow: 0 8px 30px rgba(27, 39, 74, .08);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.45;
+  }
+  header {
+    background: linear-gradient(135deg, #18213a, #304ffe);
+    color: white;
+    padding: 34px 24px 28px;
+  }
+  header .wrap, main, footer { max-width: 1080px; margin: 0 auto; }
+  h1 { margin: 0 0 8px; font-size: clamp(1.8rem, 4vw, 2.8rem); }
+  header p { margin: 0; max-width: 850px; color: rgba(255,255,255,.88); }
+  .toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(255,255,255,.94);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .toolbar-inner {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 10px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+  button {
+    appearance: none;
+    border: 1px solid var(--line);
+    background: white;
+    color: var(--ink);
+    border-radius: 9px;
+    padding: 9px 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  button:hover { transform: translateY(-1px); }
+  .save-state { margin-left: auto; color: var(--muted); font-size: .9rem; }
+  main { padding: 24px 16px 50px; }
+  .intro, section {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+  }
+  .intro { padding: 20px; margin-bottom: 18px; }
+  .intro strong { color: var(--accent); }
+  section { margin: 16px 0; overflow: hidden; }
+  section > h2 {
+    margin: 0;
+    padding: 18px 20px;
+    background: #fbfcff;
+    border-bottom: 1px solid var(--line);
+    font-size: 1.22rem;
+  }
+  .section-body { padding: 20px; }
+  .question {
+    padding: 17px 0;
+    border-bottom: 1px solid #edf0f6;
+  }
+  .question:last-child { border-bottom: 0; padding-bottom: 0; }
+  .question:first-child { padding-top: 0; }
+  label.prompt {
+    display: block;
+    font-weight: 800;
+    margin-bottom: 7px;
+  }
+  .help {
+    color: var(--muted);
+    font-size: .92rem;
+    margin: 0 0 10px;
+  }
+  .suggestion {
+    padding: 10px 12px;
+    margin: 8px 0 12px;
+    border-left: 4px solid var(--accent);
+    background: var(--accent-soft);
+    font-size: .92rem;
+  }
+  .warning {
+    padding: 10px 12px;
+    margin: 8px 0 12px;
+    border-left: 4px solid #d97706;
+    background: var(--warn-bg);
+    color: var(--warn);
+    font-size: .92rem;
+  }
+  input[type="text"], input[type="number"], textarea, select {
+    width: 100%;
+    border: 1px solid #bdc6d8;
+    border-radius: 9px;
+    padding: 10px 11px;
+    color: var(--ink);
+    background: white;
+    font: inherit;
+  }
+  textarea { min-height: 110px; resize: vertical; }
+  textarea.small { min-height: 72px; }
+  input:focus, textarea:focus, select:focus {
+    outline: 3px solid rgba(48,79,254,.14);
+    border-color: var(--accent);
+  }
+  .choice-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 10px;
+  }
+  .choice {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 11px;
+    background: #fff;
+  }
+  .choice label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+  .choice input { margin-top: 4px; }
+  .two-col, .three-col {
+    display: grid;
+    gap: 12px;
+  }
+  .two-col { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .three-col { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .field-label { display: block; font-size: .86rem; color: var(--muted); margin-bottom: 5px; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+  th, td { border: 1px solid var(--line); padding: 9px; text-align: left; vertical-align: top; }
+  th { background: #f7f8fc; }
+  td input, td select { min-width: 100px; }
+  .rubric-table { overflow-x: auto; }
+  .case {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    margin: 10px 0;
+    background: #fcfdff;
+  }
+  .case-head { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  .case-title { font-weight: 800; }
+  .remove-case { color: #9b1c1c; border-color: #f1b8b8; }
+  .required::after { content: " *"; color: #b42318; }
+  .mini { font-size: .82rem; color: var(--muted); }
+  footer { padding: 0 16px 40px; color: var(--muted); font-size: .9rem; }
+  @media print {
+    .toolbar { display: none; }
+    body { background: white; }
+    section, .intro { box-shadow: none; break-inside: avoid; }
+    header { background: white; color: black; border-bottom: 2px solid black; }
+    header p { color: #333; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>CF6 Acceptance & Output Contract Decision Form</h1>
+    <p>Fill this out in ordinary language. The form converts the open design questions into explicit decisions that can later become the CF6 package contract, grader protocol, and acceptance plan.</p>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <button class="primary" type="button" onclick="exportJSON()">Export answers as JSON</button>
+    <button type="button" onclick="downloadFilledHTML()">Download filled HTML</button>
+    <button type="button" onclick="window.print()">Print / Save PDF</button>
+    <button type="button" onclick="clearForm()">Clear saved answers</button>
+    <span class="save-state" id="saveState">Autosave ready</span>
+  </div>
+</div>
+
+<main>
+<form id="cf6Form">
+  <div class="intro">
+    <strong>How to use this:</strong> accept the suggested answer, change it, or write something entirely different. The goal is not legal drafting. It is to capture your actual judgment before Codex turns it into schemas and tests.
+  </div>
+
+  <section>
+    <h2>1. Canonical CF6 Output Contract</h2>
+    <div class="section-body">
+      <div class="question">
+        <label class="prompt required">1.1 What should be the canonical semantic output of CF6?</label>
+        <p class="help">Choose whether CF6 extends the existing rich package, replaces it, or produces a new semantic core wrapped for compatibility.</p>
+        <div class="choice-grid">
+          <div class="choice"><label><input type="radio" name="contract_strategy" value="extend_cf1"> Extend <code>cf1.claimPackage.v1</code> directly</label></div>
+          <div class="choice"><label><input type="radio" name="contract_strategy" value="new_cf6"> Create a new <code>cf6.claimPackage.v1</code></label></div>
+          <div class="choice"><label><input type="radio" name="contract_strategy" value="semantic_core_wrapper" checked> Create a new CF6 semantic core and wrap/project it into the existing EvidenceRun envelope</label></div>
+          <div class="choice"><label><input type="radio" name="contract_strategy" value="undecided"> Undecided</label></div>
+        </div>
+        <div class="suggestion"><b>Suggested:</b> new CF6 semantic core plus a tested compatibility projection. This avoids inheriting old semantic compromises while preserving EvidenceRun integration.</div>
+        <textarea name="contract_strategy_notes" placeholder="Why? What must remain compatible?"></textarea>
+      </div>
+
+      <div class="question">
+        <label class="prompt required">1.2 What is the actual product ClaimFoundry delivers?</label>
+        <div class="suggestion"><b>Suggested:</b> the smallest complete set of grounded, independently investigable substantive representations needed to evaluate the content.</div>
+        <textarea name="product_definition">The smallest complete set of grounded, independently investigable substantive representations needed to evaluate the content.</textarea>
+      </div>
+
+      <div class="question">
+        <label class="prompt">1.3 Which output layers must be persisted?</label>
+        <div class="choice-grid">
+          <div class="choice"><label><input type="checkbox" name="persist_layers" value="normalized_source" checked> Normalized source and citation sidecars</label></div>
+          <div class="choice"><label><input type="checkbox" name="persist_layers" value="semantic_inventory" checked> Semantic inventory</label></div>
+          <div class="choice"><label><input type="checkbox" name="persist_layers" value="theme_map" checked> Theme/thesis map</label></div>
+          <div class="choice"><label><input type="checkbox" name="persist_layers" value="candidates" checked> Candidate assertions</label></div>
+          <div class="choice"><label><input type="checkbox" name="persist_layers" value="canonicalization" checked> Canonicalization/deduplication map</label></div>
+          <div class="choice"><label><input type="checkbox" name="persist_layers" value="critic" checked> Atomicity/quality critic findings</label></div>
+          <div class="choice"><label><input type="checkbox" name="persist_layers" value="selection" checked> Portfolio selection report</label></div>
+          <div class="choice"><label><input type="checkbox" name="persist_layers" value="repairs" checked> Validation and repair history</label></div>
+          <div class="choice"><label><input type="checkbox" name="persist_layers" value="final_package" checked> Final canonical package</label></div>
+          <div class="choice"><label><input type="checkbox" name="persist_layers" value="tool_trace" checked> Tool trajectory and run audit</label></div>
+        </div>
+        <textarea class="small" name="persist_layers_notes" placeholder="Anything that should not be persisted, or should be retained only temporarily?"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>2. Selected Claim / Evidence Target Shape</h2>
+    <div class="section-body">
+      <div class="question">
+        <label class="prompt required">2.1 Which fields belong on every selected claim?</label>
+        <p class="help">Check required semantic fields. Add or remove freely.</p>
+        <div class="choice-grid">
+          <div class="choice"><label><input type="checkbox" name="claim_fields" value="surfaceStatement" checked> surfaceStatement</label></div>
+          <div class="choice"><label><input type="checkbox" name="claim_fields" value="substantiveAssertion" checked> substantiveAssertion</label></div>
+          <div class="choice"><label><input type="checkbox" name="claim_fields" value="attributionLayers" checked> attributionLayers[]</label></div>
+          <div class="choice"><label><input type="checkbox" name="claim_fields" value="contentSupplier" checked> contentSupplier</label></div>
+          <div class="choice"><label><input type="checkbox" name="claim_fields" value="contentSupplierKind" checked> contentSupplierKind</label></div>
+          <div class="choice"><label><input type="checkbox" name="claim_fields" value="reportingVoice" checked> reportingVoice</label></div>
+          <div class="choice"><label><input type="checkbox" name="claim_fields" value="articleTreatment" checked> articleTreatment</label></div>
+          <div class="choice"><label><input type="checkbox" name="claim_fields" value="polarity" checked> polarity</label></div>
+          <div class="choice"><label><input type="checkbox" name="claim_fields" value="scope" checked> scope / qualifiers</label></div>
+          <div class="choice"><label><input type="checkbox" name="claim_fields" value="attributionUnitIds" checked> attributionUnitIds[]</label></div>
+          <div class="choice"><label><input type="checkbox" name="claim_fields" value="substantiveGroundingUnitIds" checked> substantiveGroundingUnitIds[]</label></div>
+          <div class="choice"><label><input type="checkbox" name="claim_fields" value="verificationTarget" checked> verificationTarget</label></div>
+          <div class="choice"><label><input type="checkbox" name="claim_fields" value="themeIds" checked> theme/pillar IDs</label></div>
+          <div class="choice"><label><input type="checkbox" name="claim_fields" value="materiality" checked> materiality</label></div>
+          <div class="choice"><label><input type="checkbox" name="claim_fields" value="selectionRationale" checked> selectionRationale</label></div>
+          <div class="choice"><label><input type="checkbox" name="claim_fields" value="identityHints" checked> identity/retrieval hints</label></div>
+        </div>
+        <textarea class="small" name="claim_fields_extra" placeholder="Other required fields, or fields above you would remove"></textarea>
+      </div>
+
+      <div class="question">
+        <label class="prompt required">2.2 What should EvidenceRun receive?</label>
+        <div class="suggestion"><b>Suggested:</b> a compact target projection, not the entire ClaimFoundry archaeology.</div>
+        <textarea name="evidence_run_projection">targetId
+canonicalTargetText
+verificationTarget
+scopeAndQualifiers
+contentSupplier
+identityHints
+mustMatch
+usefulSourceRoles
+rejectionBoundaries
+groundingReferences</textarea>
+      </div>
+
+      <div class="question">
+        <label class="prompt">2.3 Should EvidenceRun ever mutate ClaimFoundry’s canonical target text?</label>
+        <div class="choice-grid">
+          <div class="choice"><label><input type="radio" name="er_mutation" value="never" checked> Never</label></div>
+          <div class="choice"><label><input type="radio" name="er_mutation" value="review_only"> Only through a human-reviewed revision</label></div>
+          <div class="choice"><label><input type="radio" name="er_mutation" value="bounded"> Through a bounded machine patch</label></div>
+        </div>
+        <textarea class="small" name="er_mutation_notes" placeholder="Explain any exception"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>3. Attribution and Discourse Provenance</h2>
+    <div class="section-body">
+      <div class="question">
+        <label class="prompt required">3.1 How deep may attribution recursion go?</label>
+        <div class="three-col">
+          <div>
+            <label class="field-label">Maximum exposed layers</label>
+            <input type="number" name="max_attribution_layers" value="3" min="1" max="10">
+          </div>
+          <div>
+            <label class="field-label">What happens beyond the cap?</label>
+            <select name="attribution_overflow">
+              <option value="summarize">Preserve a summarized overflow note</option>
+              <option value="abstain">Abstain / needs review</option>
+              <option value="deepest">Keep only deepest supplier</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label">Verification target defaults to</label>
+            <select name="verification_target_depth">
+              <option value="deepest_verifiable" selected>Deepest independently verifiable content</option>
+              <option value="surface">Surface attribution event</option>
+              <option value="both">Both, as separate targets</option>
+            </select>
+          </div>
+        </div>
+        <textarea class="small" name="attribution_recursion_notes" placeholder="Rules for quoted speech, documents, studies, institutions, anonymous sources, etc."></textarea>
+      </div>
+
+      <div class="question">
+        <label class="prompt required">3.2 When should the surface attribution event become its own evidence target?</label>
+        <div class="suggestion"><b>Suggested:</b> when the article materially relies on whether the attribution occurred, whether the quoted source exists, or whether the source actually made the statement.</div>
+        <textarea name="surface_target_rule">Create a separate attribution/provenance target when the content materially relies on whether the attribution occurred, whether the identified source exists, or whether the source actually made the statement.</textarea>
+      </div>
+
+      <div class="question">
+        <label class="prompt">3.3 What should the agent do when the content supplier is unresolved?</label>
+        <div class="choice-grid">
+          <div class="choice"><label><input type="radio" name="unknown_supplier" value="unknown_correct" checked> Record unknown explicitly and continue</label></div>
+          <div class="choice"><label><input type="radio" name="unknown_supplier" value="needs_review"> Mark the claim needs review</label></div>
+          <div class="choice"><label><input type="radio" name="unknown_supplier" value="abstain"> Abstain from selecting the claim</label></div>
+          <div class="choice"><label><input type="radio" name="unknown_supplier" value="infer"> Infer the most likely supplier</label></div>
+        </div>
+        <div class="warning"><b>Warning:</b> inferring an unsupported supplier conflicts with the acceptance rubric’s attribution guardrail.</div>
+        <textarea class="small" name="unknown_supplier_notes" placeholder="Any exceptions?"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>4. Grounding</h2>
+    <div class="section-body">
+      <div class="question">
+        <label class="prompt required">4.1 Should grounding be split into structural integrity and semantic adequacy?</label>
+        <div class="choice-grid">
+          <div class="choice"><label><input type="radio" name="split_grounding" value="yes" checked> Yes, score them separately</label></div>
+          <div class="choice"><label><input type="radio" name="split_grounding" value="no"> No, retain one combined D6</label></div>
+        </div>
+      </div>
+
+      <div class="question">
+        <label class="prompt">4.2 Define structural grounding integrity</label>
+        <textarea name="structural_grounding_definition">All source-unit IDs exist in the authorized content; offsets and quoted spans are exact; lineage is complete; no foreign or fabricated grounding appears.</textarea>
+        <div class="two-col" style="margin-top:10px">
+          <div>
+            <label class="field-label">Pass threshold</label>
+            <input type="text" name="structural_grounding_threshold" value="100%">
+          </div>
+          <div>
+            <label class="field-label">Owner</label>
+            <input type="text" name="structural_grounding_owner" value="Deterministic host validator">
+          </div>
+        </div>
+      </div>
+
+      <div class="question">
+        <label class="prompt">4.3 Define semantic grounding adequacy</label>
+        <textarea name="semantic_grounding_definition">The cited units substantively support the selected assertion without unsupported synthesis, polarity reversal, attribution substitution, or material loss of scope.</textarea>
+        <div class="two-col" style="margin-top:10px">
+          <div>
+            <label class="field-label">Proposed threshold</label>
+            <input type="text" name="semantic_grounding_threshold" value="Set after calibrated grader study">
+          </div>
+          <div>
+            <label class="field-label">Grader</label>
+            <input type="text" name="semantic_grounding_grader" value="Calibrated semantic grader plus blind Codex review">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>5. Blind Evaluation Protocol</h2>
+    <div class="section-body">
+      <div class="question">
+        <label class="prompt required">5.1 Who or what is “Codex” for blind adjudication?</label>
+        <div class="two-col">
+          <div><label class="field-label">Model/version</label><input type="text" name="grader_model" placeholder="e.g. exact model snapshot"></div>
+          <div><label class="field-label">Prompt/version</label><input type="text" name="grader_prompt_version" placeholder="e.g. CF6-GRADER-v001"></div>
+        </div>
+        <textarea class="small" name="grader_identity_notes" placeholder="Any fallback model, human reviewer, or version-freeze rule"></textarea>
+      </div>
+
+      <div class="question">
+        <label class="prompt required">5.2 What does the grader see?</label>
+        <div class="choice-grid">
+          <div class="choice"><label><input type="checkbox" name="grader_inputs" value="article" checked> Full normalized article</label></div>
+          <div class="choice"><label><input type="checkbox" name="grader_inputs" value="source_units" checked> Source units and IDs</label></div>
+          <div class="choice"><label><input type="checkbox" name="grader_inputs" value="sealed_gold" checked> Sealed gold key</label></div>
+          <div class="choice"><label><input type="checkbox" name="grader_inputs" value="candidate_package" checked> Candidate package</label></div>
+          <div class="choice"><label><input type="checkbox" name="grader_inputs" value="pipeline_name"> Pipeline identity</label></div>
+          <div class="choice"><label><input type="checkbox" name="grader_inputs" value="other_arm"> Other arm’s output</label></div>
+          <div class="choice"><label><input type="checkbox" name="grader_inputs" value="tool_trace"> Tool trajectory</label></div>
+          <div class="choice"><label><input type="checkbox" name="grader_inputs" value="prior_scores"> Prior scores</label></div>
+        </div>
+        <textarea class="small" name="grader_blinding_rules" placeholder="What must be hidden to keep adjudication blind?"></textarea>
+      </div>
+
+      <div class="question">
+        <label class="prompt">5.3 Repeats, disagreements, and calibration</label>
+        <div class="three-col">
+          <div><label class="field-label">Grader repeats per item</label><input type="number" name="grader_repeats" value="1" min="1" max="10"></div>
+          <div><label class="field-label">Tie-breaker</label><input type="text" name="grader_tiebreaker" value="Blind human adjudication"></div>
+          <div><label class="field-label">Calibration set size</label><input type="text" name="grader_calibration_size" placeholder="e.g. 100 labeled pairs"></div>
+        </div>
+        <textarea name="grader_calibration_protocol" placeholder="How will grader precision/recall be validated before it is allowed to grade CF6?"></textarea>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>6. Portfolio and Abstention Policy</h2>
+    <div class="section-body">
+      <div class="question">
+        <label class="prompt">6.1 Portfolio size policy</label>
+        <div class="three-col">
+          <div><label class="field-label">Hard ceiling</label><input type="number" name="portfolio_ceiling" value="15" min="1"></div>
+          <div><label class="field-label">Flag if fewer than</label><input type="number" name="portfolio_thin_flag" value="5" min="0"></div>
+          <div><label class="field-label">Hard floor</label><input type="number" name="portfolio_floor" value="0" min="0"></div>
+        </div>
+        <textarea class="small" name="portfolio_policy_notes">No padding to hit a count. Emit fewer and flag when the article genuinely supports a thin portfolio.</textarea>
+      </div>
+
+      <div class="question">
+        <label class="prompt required">6.2 What must be logged when a claim is removed, declined, or not selected?</label>
+        <textarea name="drop_log_requirements">candidateId
+decision: removed | declined | not_selected | merged | deferred
+reason
+validator finding or selection rationale
+sourceUnitIds
+whether the omission is material
+whether human review is required</textarea>
+      </div>
+
+      <div class="question">
+        <label class="prompt">6.3 When is abstention warranted?</label>
+        <textarea name="abstention_rules">Unresolvable referent; insufficient source support; attribution cannot be assigned without guessing; content cannot be made independently verdictable without changing meaning; budget exhaustion after required source inspection; or a genuinely thin article with no additional material target.</textarea>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>7. Repair Policy</h2>
+    <div class="section-body">
+      <div class="question">
+        <label class="prompt">7.1 Which bounded repair operations are allowed?</label>
+        <div class="choice-grid">
+          <div class="choice"><label><input type="checkbox" name="repair_ops" value="add" checked> add</label></div>
+          <div class="choice"><label><input type="checkbox" name="repair_ops" value="remove" checked> remove</label></div>
+          <div class="choice"><label><input type="checkbox" name="repair_ops" value="replace" checked> replace</label></div>
+          <div class="choice"><label><input type="checkbox" name="repair_ops" value="split" checked> split</label></div>
+          <div class="choice"><label><input type="checkbox" name="repair_ops" value="merge" checked> merge</label></div>
+          <div class="choice"><label><input type="checkbox" name="repair_ops" value="change_treatment" checked> change treatment</label></div>
+          <div class="choice"><label><input type="checkbox" name="repair_ops" value="change_provenance" checked> change provenance</label></div>
+          <div class="choice"><label><input type="checkbox" name="repair_ops" value="resolve_reference" checked> resolve reference</label></div>
+          <div class="choice"><label><input type="checkbox" name="repair_ops" value="change_scope" checked> restore/change scope</label></div>
+          <div class="choice"><label><input type="checkbox" name="repair_ops" value="change_polarity" checked> change polarity</label></div>
+        </div>
+        <textarea class="small" name="repair_ops_notes" placeholder="Any operation that should be prohibited or require human approval?"></textarea>
+      </div>
+
+      <div class="question">
+        <label class="prompt required">7.2 What happens when a repair improves readability but may have changed meaning?</label>
+        <div class="choice-grid">
+          <div class="choice"><label><input type="radio" name="repair_corruption" value="reject" checked> Reject repair and retain the prior version</label></div>
+          <div class="choice"><label><input type="radio" name="repair_corruption" value="review"> Pause for human review</label></div>
+          <div class="choice"><label><input type="radio" name="repair_corruption" value="allow_warning"> Allow with warning</label></div>
+        </div>
+        <textarea class="small" name="repair_corruption_notes" placeholder="Define what evidence is required to prove content preservation"></textarea>
+      </div>
+
+      <div class="question">
+        <label class="prompt">7.3 Maximum repair rounds</label>
+        <div class="two-col">
+          <div><label class="field-label">Per defect/stage</label><input type="number" name="repair_rounds_per_defect" value="1" min="0" max="10"></div>
+          <div><label class="field-label">Per complete run</label><input type="number" name="repair_rounds_per_run" value="2" min="0" max="10"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>8. Acceptance Gates</h2>
+    <div class="section-body">
+      <p class="help">Edit any threshold. The “blocking?” column means CF6 cannot be promoted if the dimension fails.</p>
+      <div class="rubric-table">
+        <table>
+          <thead><tr><th>Dimension</th><th>Proposed pass bar</th><th>Blocking?</th><th>Your decision / notes</th></tr></thead>
+          <tbody>
+            <tr><td>D1 Crux recovery</td><td>Every crux selected in ≥4/5 repeats per fixture</td><td><input type="checkbox" name="blocking_D1" checked></td><td><input type="text" name="decision_D1"></td></tr>
+            <tr><td>D2 Material omission</td><td>≤ CF5 and strictly better overall</td><td><input type="checkbox" name="blocking_D2"></td><td><input type="text" name="decision_D2"></td></tr>
+            <tr><td>D3 Verdictability</td><td>≥90% and strictly better than CF5</td><td><input type="checkbox" name="blocking_D3" checked></td><td><input type="text" name="decision_D3"></td></tr>
+            <tr><td>D4 Attribution</td><td>Name/correct abstention ≥70%; kind ≥90%; both ≥CF5</td><td><input type="checkbox" name="blocking_D4"></td><td><input type="text" name="decision_D4"></td></tr>
+            <tr><td>D5 Treatment</td><td>Challenged precision and recall ≥0.80; no class at 0</td><td><input type="checkbox" name="blocking_D5" checked></td><td><input type="text" name="decision_D5"></td></tr>
+            <tr><td>D6a Structural grounding</td><td>100%</td><td><input type="checkbox" name="blocking_D6a" checked></td><td><input type="text" name="decision_D6a"></td></tr>
+            <tr><td>D6b Semantic grounding</td><td>Calibrated threshold, to be set</td><td><input type="checkbox" name="blocking_D6b"></td><td><input type="text" name="decision_D6b"></td></tr>
+            <tr><td>D7 Portfolio economy</td><td>No filler; ceiling 15; no count padding</td><td><input type="checkbox" name="blocking_D7"></td><td><input type="text" name="decision_D7"></td></tr>
+            <tr><td>D8 Duplicate rate</td><td>Zero mutual-entailment pairs</td><td><input type="checkbox" name="blocking_D8"></td><td><input type="text" name="decision_D8"></td></tr>
+            <tr><td>D9 Stability</td><td>Crux ≥4/5; core Jaccard ≥0.6; size variance ±3</td><td><input type="checkbox" name="blocking_D9"></td><td><input type="text" name="decision_D9"></td></tr>
+            <tr><td>D10 Repair effectiveness</td><td>Improves verdictability; zero introduced corruption</td><td><input type="checkbox" name="blocking_D10" checked></td><td><input type="text" name="decision_D10"></td></tr>
+            <tr><td>D11 Cost/latency</td><td>Target ≤120 sec and ≤40K tokens; quality gates dominate</td><td><input type="checkbox" name="blocking_D11"></td><td><input type="text" name="decision_D11"></td></tr>
+            <tr><td>D12 Abstention</td><td>100% logged; zero silent drops</td><td><input type="checkbox" name="blocking_D12"></td><td><input type="text" name="decision_D12"></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="question">
+        <label class="prompt">8.1 Overall promotion rule</label>
+        <textarea name="overall_promotion_rule">CF6 must pass every blocking gate, meet or exceed CF5 on every remaining dimension, and strictly outperform CF5 on crux recovery, material omission, and independent verdictability.</textarea>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>9. Failed-Test Corpus</h2>
+    <div class="section-body">
+      <div class="question">
+        <label class="prompt">9.1 Where is the failed test data?</label>
+        <textarea class="small" name="failure_data_locations" placeholder="Directories, artifact roots, filenames, reports, old branches, notebooks, etc."></textarea>
+      </div>
+
+      <div class="question">
+        <label class="prompt">9.2 What should be considered an active failure case?</label>
+        <textarea name="active_failure_definition">A prior run or reviewed output that demonstrates a defect the final package, validator, repair action, runtime, or evaluator must detect or avoid, and that can be tied to a stable source fixture and an explicit expected behavior.</textarea>
+      </div>
+
+      <div class="question">
+        <label class="prompt">9.3 Add representative failure cases</label>
+        <div id="cases"></div>
+        <button type="button" onclick="addCase()">Add failure case</button>
+        <p class="mini">These rows are saved and exported with the rest of the form.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>10. Final Decisions and Open Questions</h2>
+    <div class="section-body">
+      <div class="question">
+        <label class="prompt required">10.1 Decisions Codex may treat as settled</label>
+        <textarea name="settled_decisions" placeholder="List the decisions that should become governing requirements"></textarea>
+      </div>
+      <div class="question">
+        <label class="prompt">10.2 Questions Codex should investigate in the repository</label>
+        <textarea name="repo_questions" placeholder="Questions requiring code inspection rather than product judgment"></textarea>
+      </div>
+      <div class="question">
+        <label class="prompt">10.3 Questions requiring a human product decision</label>
+        <textarea name="human_questions" placeholder="Anything you have not decided yet"></textarea>
+      </div>
+      <div class="question">
+        <label class="prompt">10.4 Anything else</label>
+        <textarea name="final_notes"></textarea>
+      </div>
+    </div>
+  </section>
+</form>
+</main>
+
+<footer>
+  This file stores answers in this browser’s local storage. Use “Export answers as JSON” for a clean handoff to Codex.
+</footer>
+
+<script>
+const STORAGE_KEY = "cf6_acceptance_output_contract_form_v1";
+const form = document.getElementById("cf6Form");
+const cases = document.getElementById("cases");
+let caseCounter = 0;
+
+function setSaveState(text) {
+  const el = document.getElementById("saveState");
+  el.textContent = text;
+  window.clearTimeout(setSaveState.timer);
+  setSaveState.timer = window.setTimeout(() => el.textContent = "Autosaved", 900);
+}
+
+function formToObject() {
+  const data = {};
+  const fd = new FormData(form);
+  for (const [key, value] of fd.entries()) {
+    if (Object.prototype.hasOwnProperty.call(data, key)) {
+      if (!Array.isArray(data[key])) data[key] = [data[key]];
+      data[key].push(value);
+    } else {
+      data[key] = value;
+    }
+  }
+  form.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    if (!cb.name) return;
+    if (!fd.has(cb.name) && !Object.prototype.hasOwnProperty.call(data, cb.name)) {
+      data[cb.name] = false;
+    } else if (!cb.checked && !Array.isArray(data[cb.name]) && data[cb.name] === cb.value) {
+      // handled by checked value
+    }
+  });
+
+  data.failure_cases = [...document.querySelectorAll(".case")].map(card => ({
+    caseId: card.querySelector('[data-field="caseId"]').value,
+    fixtureId: card.querySelector('[data-field="fixtureId"]').value,
+    failureClass: card.querySelector('[data-field="failureClass"]').value,
+    summary: card.querySelector('[data-field="summary"]').value,
+    sourceUnitIds: card.querySelector('[data-field="sourceUnitIds"]').value,
+    expectedBehavior: card.querySelector('[data-field="expectedBehavior"]').value,
+    disposition: card.querySelector('[data-field="disposition"]').value
+  }));
+  return data;
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(formToObject()));
+  setSaveState("Saving…");
+}
+
+function restore() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) {
+    addCase(false);
+    return;
+  }
+  const data = JSON.parse(raw);
+  Object.entries(data).forEach(([name, value]) => {
+    if (name === "failure_cases") return;
+    const nodes = [...form.querySelectorAll(`[name="${CSS.escape(name)}"]`)];
+    if (!nodes.length) return;
+    if (nodes[0].type === "radio") {
+      nodes.forEach(n => n.checked = (n.value === value));
+    } else if (nodes[0].type === "checkbox") {
+      const values = Array.isArray(value) ? value : [value];
+      nodes.forEach(n => n.checked = values.includes(n.value) || value === true);
+    } else {
+      nodes[0].value = Array.isArray(value) ? value.join("\n") : value;
+    }
+  });
+  (data.failure_cases || []).forEach(item => addCase(false, item));
+  if (!(data.failure_cases || []).length) addCase(false);
+  setSaveState("Restored saved answers");
+}
+
+function addCase(doSave = true, item = {}) {
+  caseCounter += 1;
+  const card = document.createElement("div");
+  card.className = "case";
+  card.innerHTML = `
+    <div class="case-head">
+      <span class="case-title">Failure case ${caseCounter}</span>
+      <button type="button" class="remove-case" onclick="this.closest('.case').remove(); save();">Remove</button>
+    </div>
+    <div class="three-col">
+      <div><label class="field-label">Case ID</label><input data-field="caseId" type="text" value="${escapeHtml(item.caseId || "")}" placeholder="e.g. F03-ATTR-004"></div>
+      <div><label class="field-label">Fixture / source</label><input data-field="fixtureId" type="text" value="${escapeHtml(item.fixtureId || "")}" placeholder="e.g. CF1-F03"></div>
+      <div><label class="field-label">Failure class</label>
+        <select data-field="failureClass">
+          ${["semantic","validator","repair","selection","architecture","infrastructure","grader","obsolete_or_unknown"].map(v => `<option value="${v}" ${item.failureClass===v?"selected":""}>${v}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:10px"><label class="field-label">What failed?</label><textarea data-field="summary" class="small">${escapeHtml(item.summary || "")}</textarea></div>
+    <div class="two-col" style="margin-top:10px">
+      <div><label class="field-label">Affected source units / claim IDs</label><textarea data-field="sourceUnitIds" class="small">${escapeHtml(item.sourceUnitIds || "")}</textarea></div>
+      <div><label class="field-label">Expected behavior</label><textarea data-field="expectedBehavior" class="small">${escapeHtml(item.expectedBehavior || "")}</textarea></div>
+    </div>
+    <div style="margin-top:10px"><label class="field-label">Disposition</label>
+      <select data-field="disposition">
+        ${["active_regression","validator_fixture","repair_fixture","runtime_test","grader_calibration","archive_only","needs_review"].map(v => `<option value="${v}" ${item.disposition===v?"selected":""}>${v}</option>`).join("")}
+      </select>
+    </div>`;
+  card.querySelectorAll("input, textarea, select").forEach(el => el.addEventListener("input", save));
+  cases.appendChild(card);
+  if (doSave) save();
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, ch => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[ch]));
+}
+
+function exportJSON() {
+  const payload = {
+    documentType: "CF6_ACCEPTANCE_AND_OUTPUT_CONTRACT_DECISIONS",
+    exportedAt: new Date().toISOString(),
+    answers: formToObject()
+  };
+  downloadBlob(JSON.stringify(payload, null, 2), "CF6_ACCEPTANCE_AND_OUTPUT_CONTRACT_ANSWERS.json", "application/json");
+}
+
+function downloadFilledHTML() {
+  save();
+  const clone = document.documentElement.cloneNode(true);
+  const sourceControls = document.querySelectorAll("input, textarea, select");
+  const cloneControls = clone.querySelectorAll("input, textarea, select");
+  sourceControls.forEach((src, i) => {
+    const dst = cloneControls[i];
+    if (!dst) return;
+    if (src.tagName === "TEXTAREA") dst.textContent = src.value;
+    else if (src.tagName === "SELECT") {
+      [...dst.options].forEach((o, idx) => o.selected = src.options[idx].selected);
+    } else if (src.type === "checkbox" || src.type === "radio") {
+      if (src.checked) dst.setAttribute("checked", "checked");
+      else dst.removeAttribute("checked");
+    } else {
+      dst.setAttribute("value", src.value);
+    }
+  });
+  const serialized = "<!doctype html>\n" + clone.outerHTML;
+  downloadBlob(serialized, "CF6_ACCEPTANCE_AND_OUTPUT_CONTRACT_FILLED.html", "text/html");
+}
+
+function downloadBlob(content, filename, type) {
+  const blob = new Blob([content], {type});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function clearForm() {
+  if (!confirm("Clear all saved answers and restore the original form defaults?")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+}
+
+form.addEventListener("input", save);
+form.addEventListener("change", save);
+restore();
+</script>
+</body>
+</html>
