@@ -1900,6 +1900,21 @@ export async function enrichPublisherIfNeeded({
               rawPayload: orgStatus,
             });
           }
+          // Unlike the Wikipedia/Wikidata/SCImago cleanup in
+          // clearAutomaticSocialEnrichment, own_site_org_status rows were
+          // never cleared before a fresh discovery run -- they just
+          // accumulated. assemblePublisherStatusFromSignals merges by
+          // "first non-null wins" per field, so a stale bad classification
+          // (e.g. a past false-positive "industry_trade_association" from
+          // before a discovery-scope fix) permanently outranks a corrected
+          // null result from every subsequent refresh. Clear before insert.
+          await query(
+            `DELETE FROM publisher_external_signals
+              WHERE publisher_id = ? AND provider = 'own_site_org_status'`,
+            [resolvedId],
+          ).catch((err) => {
+            if (err?.code !== "ER_NO_SUCH_TABLE") throw err;
+          });
           await persistAndSummarizeSignals(query, {
             publisherId: resolvedId,
             domain,

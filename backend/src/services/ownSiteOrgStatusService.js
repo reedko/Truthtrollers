@@ -37,6 +37,15 @@ function normalizeDomain(url) {
   }
 }
 
+// .gov and .mil are gatekept exclusively for real US government/military
+// entities (registration is verified by GSA/DoD) -- unlike about-page prose,
+// which varies too much in phrasing to match reliably, the TLD itself is a
+// deterministic, unspoofable government signal.
+function isGovernmentTld(url) {
+  const host = normalizeDomain(url);
+  return Boolean(host) && /\.(gov|mil)$/iu.test(host);
+}
+
 function isSafeUrl(rawUrl) {
   try {
     const u = new URL(rawUrl);
@@ -120,7 +129,12 @@ function sentenceFor(text, pattern) {
 export function discoverOrgStatusLinksFromHtml(html, baseUrl, rootDomain = normalizeDomain(baseUrl)) {
   const $ = cheerio.load(html || "");
   const links = [];
-  $("header a, nav a, footer a, a").each((_, el) => {
+  // Scoped to chrome (header/nav/footer) only. A trailing bare "a" here
+  // previously matched every link on the page, including ordinary article
+  // teasers -- on a news homepage that pulls in unrelated article bodies
+  // whose incidental vocabulary ("manufacturers", "members", "board") gets
+  // misread as the outlet's own organizational self-description.
+  $("header a, nav a, footer a").each((_, el) => {
     const href = $(el).attr("href");
     const label = $(el).text().replace(/\s+/g, " ").trim();
     if (!href) return;
@@ -178,10 +192,23 @@ export function classifyOrganizationStatusFromPages({
   const memberSignal = MEMBER_RE.test(allText);
   const boardSignal = BOARD_RE.test(allText);
   const advocacySignal = ADVOCACY_RE.test(allText);
-  const governmentSignal = GOVERNMENT_RE.test(allText);
+  const governmentTldSignal = isGovernmentTld(sourceUrl);
+  const governmentSignal = GOVERNMENT_RE.test(allText) || governmentTldSignal;
   const governmentOperator = /\bFederal Office of Public Health(?:\s*\(FOPH\)|\s+FOPH)?\b/i.test(allText)
     ? "Federal Office of Public Health (FOPH)"
-    : null;
+    : governmentTldSignal
+      ? publisherName || null
+      : null;
+  if (governmentTldSignal) {
+    evidence.push({
+      field: "publisher_type",
+      value: "government_organization",
+      source_url: sourceUrl || null,
+      source_page_type: "domain_tld",
+      snippet: `${normalizeDomain(sourceUrl)} uses a gatekept US government TLD.`,
+      confidence: 0.97,
+    });
+  }
   const telecomSignal = TELECOM_RE.test(`${publisherName || ""} ${sourceUrl || ""} ${allText}`);
   const healthTopic = HEALTH_TOPIC_RE.test(String(sourceUrl || "")) || HEALTH_TOPIC_RE.test(allText.slice(0, 3000));
 
@@ -405,6 +432,12 @@ export async function discoverOwnSiteOrgStatus({
   }
 
   if (!pages.length) {
+    // No about/membership/etc. page was discoverable, but a .gov/.mil TLD is
+    // sufficient evidence on its own -- don't report no_match for a domain
+    // that's definitionally government-operated.
+    if (isGovernmentTld(sourceUrl || baseUrl)) {
+      return classifyOrganizationStatusFromPages({ publisherName, sourceUrl: sourceUrl || baseUrl, pages: [] });
+    }
     return {
       providerName: "own_site_org_status",
       ok: true,

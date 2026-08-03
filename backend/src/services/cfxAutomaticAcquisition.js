@@ -203,17 +203,22 @@ export async function acquireCfxDocumentAutomatically({
           contentType: context.contentType,
           bodyBuffer: context.bodyBuffer,
         });
+        // Publishing-identity extraction (domain fallback, JSON-LD publisher,
+        // etc.) must be anchored to the document's own URL, not the transport
+        // URL that bytes happened to arrive from -- context.url is correct
+        // for document-type sniffing above, but using it here misattributes
+        // identity to whatever host actually served the response.
         const document = type === "pdf"
           ? await extractProductionPdfDocument({
               buffer: context.bodyBuffer,
-              url: context.url,
+              url: stage.url,
               providedTitle: candidate.title,
               providedAuthors: candidate.authors,
               maximumCharacters: MAX_ACQUIRED_CHARS,
             })
           : await extractProductionHtmlDocument({
               rawHtml: raw,
-              url: context.url,
+              url: stage.url,
               providedTitle: candidate.title,
               maximumCharacters: MAX_ACQUIRED_CHARS,
             });
@@ -252,9 +257,13 @@ export async function acquireCfxDocumentAutomatically({
         ordinal += normalized.length;
         if (!result.buffer) continue;
 
+        // Identity extraction must use the document's own URL (see the
+        // matching comment in the direct-fetch stage above) -- for the
+        // wayback/headless fallback tiers, result.resolvedUrl/snapshotUrl is
+        // the transport URL (e.g. web.archive.org), not the document's URL.
         const document = await extractPdf({
           buffer: result.buffer,
-          url: result.resolvedUrl || result.snapshotUrl || url,
+          url,
           providedTitle: candidate.title,
           providedAuthors: candidate.authors,
           maximumCharacters: MAX_ACQUIRED_CHARS,
@@ -295,7 +304,7 @@ export async function acquireCfxDocumentAutomatically({
         async acceptResponse(raw, context) {
           const document = await extractProductionHtmlDocument({
             rawHtml: raw,
-            url: context.url,
+            url,
             providedTitle: candidate.title,
             maximumCharacters: MAX_ACQUIRED_CHARS,
           });
