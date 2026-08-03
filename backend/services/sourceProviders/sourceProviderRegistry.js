@@ -153,6 +153,34 @@ export async function lookupPublisherAllProviders(args = {}, { providers } = {})
 }
 
 /**
+ * Remove publisher lookup entries for one identity from the process cache.
+ * Force-refresh callers use this after publishing identity changes so an old
+ * outlet lookup cannot be reused for the newly rated content supplier.
+ */
+export function invalidatePublisherProviderCache(args = {}, { providers } = {}) {
+  const list = providers
+    ? ALL_PROVIDERS.filter((provider) => providers.includes(provider.providerName))
+    : ALL_PROVIDERS;
+  if (!Object.keys(args).length) {
+    const deleted = _publisherCache.size;
+    _publisherCache.clear();
+    return deleted;
+  }
+  const providerArgs = {
+    ...args,
+    domain: args.domain,
+    publisherName: args.publisherName,
+    sourceUrl: args.sourceUrl,
+  };
+  let deleted = 0;
+  for (const provider of list) {
+    const key = publisherCacheKey(provider, providerArgs);
+    if (_publisherCache.delete(key)) deleted += 1;
+  }
+  return deleted;
+}
+
+/**
  * Run claim lookup across all providers that support it.
  * Returns array of individual provider results.
  */

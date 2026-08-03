@@ -151,7 +151,26 @@ export async function extractProductionHtmlDocument({
     : readable.botChallenge
       ? { identity: null, legacyPublisher: null, authors: [] }
       : await processPublishingIdentity({ $, sourceUrl: url });
-  const authors = mergeAuthors(identityResult.authors, mergeAuthors(providedAuthors, htmlAuthors));
+  const nonAuthorEntityNames = new Set([
+    identityResult.identity?.entities?.original_publisher?.name,
+    identityResult.identity?.entities?.parent_organization?.name,
+  ].filter(Boolean).map((name) => String(name).trim().toLowerCase()));
+  const filteredAuthors = mergeAuthors(identityResult.authors, mergeAuthors(providedAuthors, htmlAuthors))
+    .filter((author) => {
+      const name = String(author?.name || author?.displayName || author || "").trim();
+      if (!name || /^(?:full profile|profile|the conversation)$/iu.test(name)) return false;
+      return !nonAuthorEntityNames.has(name.toLowerCase());
+    });
+  const authors = [];
+  for (const author of filteredAuthors) {
+    const name = String(author?.name || author?.displayName || author || "").trim();
+    if (/^(?:MD|DO|PhD|DPhil|MPH|MSc|MA|JD)$/u.test(name) && authors.length) {
+      const previous = authors.at(-1);
+      previous.name = `${previous.name}, ${name}`;
+      continue;
+    }
+    authors.push(typeof author === "string" ? { name } : { ...author, name });
+  }
   const inlineRefs = readable.text.length >= 100 ? extractInlineRefs(readable.text) : [];
   const domReferenceCount = $("a[href]").length;
   return {

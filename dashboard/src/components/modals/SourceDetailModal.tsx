@@ -55,7 +55,12 @@ interface PublisherRating {
   last_checked?: string;
   notes?: string;
   evidence_quote?: string;
-  ratedEntity?: { publisherId: number; publisherName: string; entityType?: string | null };
+  ratedEntity?: { publisherId: number; publisherName: string; entityType?: string | null; entityRole?: string | null };
+  executionProvenance?: {
+    cacheState?: "provider_result" | "provider_cache" | string;
+    attemptedAt?: string | null;
+    datasetVersion?: string | null;
+  };
 }
 
 interface PublisherProfile {
@@ -88,7 +93,12 @@ interface ExternalSignal {
   explanation?: string | null;
   retrieved_at?: string | null;
   error_status?: string | null;
-  ratedEntity?: { publisherId: number; publisherName: string; entityType?: string | null };
+  ratedEntity?: { publisherId: number; publisherName: string; entityType?: string | null; entityRole?: string | null };
+  executionProvenance?: {
+    cacheState?: "provider_result" | "provider_cache" | string;
+    attemptedAt?: string | null;
+    datasetVersion?: string | null;
+  };
 }
 
 interface EnrichmentRun {
@@ -136,6 +146,14 @@ interface EnrichmentData {
   publishingOrganization?: NormalizedSourceEntity | null;
   publicationVenue?: NormalizedSourceEntity | null;
   distribution?: NormalizedSourceEntity | null;
+  parentOrganization?: NormalizedSourceEntity | null;
+  originalPublisher?: NormalizedSourceEntity | null;
+  publicationRelationship?: {
+    type?: string | null;
+    license?: string | null;
+    evidenceText?: string | null;
+    originalUrl?: string | null;
+  } | null;
   publishingContext?: {
     context_type?: string;
     platform?: string | null;
@@ -1159,8 +1177,8 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
     }
   };
 
-  // Refresh ratings and the crest for the publisher already linked here.
-  // Identity discovery and extension scraping are intentionally separate.
+  // Re-scrape the source first, persist its full publishing-role graph, then
+  // refresh ratings for the resulting rated content supplier.
   const forceRefreshPublisher = async () => {
     const targetId = resolvedId ?? sourceIdentity?.publisherId ?? domainCheckResult?.publisherId ?? undefined;
     if (!targetId || enrichRunning) return;
@@ -1176,8 +1194,9 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
           force: true,
           contentId: contentId ?? null,
           sourceUrl: sourceUrl ?? null,
-          skipExternalSignals: true,
-          skipOwnSiteOrgStatus: true,
+          refreshPublishingIdentity: true,
+          skipExternalSignals: false,
+          skipOwnSiteOrgStatus: false,
           maxProviderConcurrency: 1,
         }),
       });
@@ -1185,12 +1204,15 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
       const data = await res.json();
       const result = data.result ?? data;
       setEnrichResult(result);
+      const refreshedPublisherId = Number(result?.publisherId || targetId);
+      const refreshedPublisherName = result?.publisherName ?? enrichment?.publisher.publisher_name ?? publisherName;
+      if (Number.isFinite(refreshedPublisherId)) setResolvedId(refreshedPublisherId);
       const newCode = result?.admiraltyUpdates?.[contentId ?? ""] ?? result?.admiraltyCode;
       if (newCode) {
         applyAdmiraltyCode(newCode);
-        onPublisherLinked?.(targetId, enrichment?.publisher.publisher_name ?? publisherName, newCode);
+        onPublisherLinked?.(refreshedPublisherId, refreshedPublisherName, newCode);
       }
-      loadEnrichment(targetId, true);
+      loadEnrichment(refreshedPublisherId, true);
     } catch (err: any) {
       setEnrichError(err?.message ?? "Force refresh failed");
     } finally {
@@ -1436,13 +1458,15 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
             ) : (
               <VStack spacing={3} align="stretch">
 
-                {(enrichment?.publishingOrganization || enrichment?.publicationVenue || enrichment?.distribution || enrichment?.identifiers?.length || enrichment?.authors?.length) && (
+                {(enrichment?.publishingOrganization || enrichment?.publicationVenue || enrichment?.parentOrganization || enrichment?.originalPublisher || enrichment?.publicationRelationship || enrichment?.distribution || enrichment?.identifiers?.length || enrichment?.authors?.length) && (
                   <Box px={3} py={3} borderRadius="xl"
                     style={{ background: "rgba(72,187,120,0.035)", border: "1px solid rgba(72,187,120,0.18)" }}>
                     <VStack align="stretch" spacing={1.5}>
                       {[
                         ["Venue", enrichment.publicationVenue],
                         ["Publisher", enrichment.publishingOrganization],
+                        ["Parent organization", enrichment.parentOrganization],
+                        ["Original publisher", enrichment.originalPublisher],
                         ["Distributed via", enrichment.distribution],
                       ].map(([label, entity]) => entity && (
                         <HStack key={String(label)} justify="space-between" align="start" spacing={3}>
@@ -1471,6 +1495,22 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                           <Text fontSize="xs" color="var(--mr-text-primary)" fontWeight="700" textAlign="right">
                             {enrichment.authors.map((author) => author.display_name || [author.first_name, author.middle_name, author.last_name].filter(Boolean).join(" ")).join(" · ")}
                           </Text>
+                        </HStack>
+                      )}
+                      {enrichment.publicationRelationship && (
+                        <HStack justify="space-between" align="start" spacing={3}>
+                          <Text fontSize="2xs" color="var(--mr-text-muted)" textTransform="uppercase" letterSpacing="0.08em" minW="78px">Relationship</Text>
+                          <VStack align="end" spacing={0} flex={1}>
+                            <Text fontSize="xs" color="var(--mr-text-primary)" fontWeight="700">
+                              {enrichment.publicationRelationship.type || "republished"}
+                              {enrichment.publicationRelationship.license ? ` · ${enrichment.publicationRelationship.license}` : ""}
+                            </Text>
+                            {enrichment.publicationRelationship.originalUrl && (
+                              <Link href={enrichment.publicationRelationship.originalUrl} isExternal fontSize="2xs" color="var(--mr-blue)">
+                                Original article <ExternalLinkIcon mx="2px" />
+                              </Link>
+                            )}
+                          </VStack>
                         </HStack>
                       )}
                       {enrichment.publishingContext?.article_type && (
@@ -2087,8 +2127,8 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                               )}
                             </HStack>
                             <Text fontSize="2xs" color="var(--mr-text-muted)" noOfLines={2}>
-                              {signal ? `${signalSummary(signal)}${signal.ratedEntity?.publisherName ? ` · rated entity: ${signal.ratedEntity.publisherName}` : ""}` : rating
-                                ? `${rating.rating_type || "rating"}${rating.veracity_score != null ? ` · ${Math.round(Number(rating.veracity_score))}%` : ""}${rating.rating_label ? ` · ${rating.rating_label}` : ""}${rating.ratedEntity?.publisherName ? ` · rated entity: ${rating.ratedEntity.publisherName}` : ""}`
+                              {signal ? `${signalSummary(signal)}${signal.ratedEntity?.publisherName ? ` · rated entity: ${signal.ratedEntity.publisherName}${signal.ratedEntity.entityRole ? ` (${signal.ratedEntity.entityRole.replace(/_/g, " ")})` : ""}` : ""}` : rating
+                                ? `${rating.rating_type || "rating"}${rating.veracity_score != null ? ` · ${Math.round(Number(rating.veracity_score))}%` : ""}${rating.rating_label ? ` · ${rating.rating_label}` : ""}${rating.ratedEntity?.publisherName ? ` · rated entity: ${rating.ratedEntity.publisherName}${rating.ratedEntity.entityRole ? ` (${rating.ratedEntity.entityRole.replace(/_/g, " ")})` : ""}` : ""}`
                                 : persistedRun
                                   ? `${persistedRun.status.replace(/_/g, " ")}${persistedRun.error_message ? ` · ${persistedRun.error_message}` : ""}`
                                   : p.desc}
@@ -2101,7 +2141,8 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
                               )}
                               {signal?.retrieved_at && (
                                 <Text fontSize="2xs" color="var(--mr-text-muted)">
-                                  {new Date(signal.retrieved_at).toLocaleTimeString()}
+                                  {signal.executionProvenance?.cacheState === "provider_cache" ? "cached" : "provider result"}
+                                  {` · ${new Date(signal.retrieved_at).toLocaleTimeString()}`}
                                 </Text>
                               )}
                               {rating?.last_checked && !signal?.retrieved_at && (

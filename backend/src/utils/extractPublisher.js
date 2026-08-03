@@ -117,6 +117,9 @@ function selectedEntity(candidate, fallbackType) {
     name: candidate.name,
     entity_type: candidate.entity_type || fallbackType,
     ...(candidate.venue_type ? { venue_type: candidate.venue_type } : {}),
+    ...(candidate.domain ? { domain: candidate.domain } : {}),
+    ...(candidate.relationship_type ? { relationship_type: candidate.relationship_type } : {}),
+    ...(candidate.aliases ? { aliases: candidate.aliases } : {}),
     method: candidate.method,
     confidence: candidate.confidence,
     evidence: candidate.evidence,
@@ -163,11 +166,114 @@ function labeledValue($, labels) {
   return null;
 }
 
+function absoluteHref(value, sourceUrl) {
+  try { return new URL(String(value || ""), sourceUrl).toString(); } catch { return null; }
+}
+
+function visibleBodyText($) {
+  const root = $("body").clone();
+  root.find("script, style, noscript, template, textarea, input, select, option").remove();
+  return root.text().replace(/\s+/gu, " ").trim();
+}
+
+function relationEntity(name, role, method, confidence, evidenceText, extra = {}) {
+  const normalized = validName(name);
+  if (!normalized) return null;
+  return {
+    name: normalized,
+    role,
+    entity_type: "organization",
+    method,
+    confidence,
+    evidence: evidence(evidenceText || name),
+    ...extra,
+  };
+}
+
+/** Deterministic, page-local publishing-provenance extraction. */
+export function extractHtmlPublishingProvenance($, sourceUrl = "") {
+  const text = visibleBodyText($);
+  const sentences = text.match(/[^.!?]{1,360}[.!?]/gu) || [];
+  const republishedSentence = sentences.find((sentence) =>
+    /\b(?:republished|reprinted|syndicated)\s+from\b/iu.test(sentence)) || null;
+  const republishedMatch = republishedSentence?.match(
+    /\b(?:republished|reprinted|syndicated)\s+from\s+(.+?)(?:\s+under\s+(?:an?\s+)?(.+?)\s+licen[cs]e|[.;]|$)/iu,
+  );
+  const republishedEvidence = clean(republishedMatch?.[0]);
+  const originalPublisherName = clean(republishedMatch?.[1]);
+  let originalUrl = null;
+  $("a[href]").each((_, node) => {
+    if (originalUrl) return;
+    const label = clean($(node).text());
+    if (/\boriginal article\b|\bread original\b/iu.test(label || "")) {
+      originalUrl = absoluteHref($(node).attr("href"), sourceUrl);
+    }
+  });
+
+  let parentSubject = null;
+  let parentName = null;
+  let parentEvidence = null;
+  let parentRelationshipType = null;
+  for (const sentence of sentences) {
+    const program = sentence.match(
+      /\b([A-Z][A-Za-z0-9&'’ .-]{2,120}?)\s+is\s+(?:an?\s+)?(program|project|publication|subsidiary)\s+of\s+(?:the\s+)?([A-Z][A-Za-z0-9&'’ .-]{2,120}?)(?=[.;]|$)/u,
+    );
+    if (program) {
+      parentSubject = clean(program[1]);
+      parentRelationshipType = `${program[2].toLowerCase()}_of`;
+      parentName = clean(program[3]);
+      parentEvidence = clean(program[0]);
+      break;
+    }
+  }
+  if (!parentName) {
+    const part = text.match(/\b(?:now\s+)?part\s+of\s+(?:the\s+)?([A-Z][A-Za-z0-9&'’ .-]{2,100}?)(?=[:.;]|$)/u);
+    if (part) {
+      parentRelationshipType = "part_of";
+      parentName = clean(part[1]);
+      parentEvidence = clean(part[0]);
+    }
+  }
+
+  const hostLabel = sourceHost(sourceUrl)?.split(".")[0] || null;
+  const aliases = hostLabel && /^[a-z]{2,8}$/u.test(hostLabel)
+    ? [hostLabel.toUpperCase()]
+    : [];
+  return {
+    currentOrganizationName: parentSubject,
+    aliases,
+    parentOrganization: relationEntity(
+      parentName,
+      "parent_organization",
+      "visible_provenance_statement",
+      0.92,
+      parentEvidence,
+      { relationship_type: parentRelationshipType },
+    ),
+    originalPublisher: relationEntity(
+      originalPublisherName,
+      "original_publisher",
+      "visible_republication_statement",
+      0.96,
+      republishedEvidence,
+      { domain: sourceHost(originalUrl) },
+    ),
+    publicationRelationship: originalPublisherName ? {
+      type: /syndicated/iu.test(republishedSentence || "") ? "syndicated" : "republished",
+      license: clean(republishedMatch?.[2]),
+      evidenceText: republishedEvidence,
+      originalUrl,
+      detectionMethod: "visible_republication_statement",
+    } : null,
+  };
+}
+
 export async function extractHtmlPublishingIdentity($, sourceUrl = "") {
   const candidates = [];
   const docs = jsonLdDocuments($);
   const host = sourceHost(sourceUrl || meta($, ["og:url"]));
   const siteName = meta($, ["og:site_name", "application-name"]) || titleSiteName($);
+  const provenance = extractHtmlPublishingProvenance($, sourceUrl);
 
   for (const doc of docs) {
     for (const name of nestedNames(doc.publisher)) {
@@ -199,6 +305,15 @@ export async function extractHtmlPublishingIdentity($, sourceUrl = "") {
   const footer = $("footer, .footer, [class*='copyright']").text() || $("body").text().slice(-3000);
   const copyright = footer.match(/(?:©|copyright)\s*(?:\d{4}(?:\s*[-–]\s*\d{4})?\s*)?([^\n|,.]{3,160})/i);
   addCandidate(candidates, copyright?.[1], { role: "publishing_organization", entity_type: "organization", method: "copyright", confidence: 0.62, evidence: copyright?.[0] });
+  if (provenance.currentOrganizationName) {
+    addCandidate(candidates, provenance.currentOrganizationName, {
+      role: "publishing_organization",
+      entity_type: "organization",
+      method: "visible_provenance_statement",
+      confidence: 0.92,
+      evidence: provenance.parentOrganization?.evidence,
+    });
+  }
 
   const venueFields = [
     ["citation_journal_title", "citation_journal_title", 0.98, "journal", "journal"],
@@ -233,7 +348,9 @@ export async function extractHtmlPublishingIdentity($, sourceUrl = "") {
     addCandidate(candidates, siteName || host, { role: "platform", entity_type: "repository", method: "repository_host", confidence: 0.65, evidence: host });
   }
 
-  const publishingOrganization = candidates.find((candidate) => candidate.role === "publishing_organization") || null;
+  const publishingOrganization = provenance.currentOrganizationName
+    ? candidates.find((candidate) => candidate.role === "publishing_organization" && candidate.method === "visible_provenance_statement")
+    : candidates.find((candidate) => candidate.role === "publishing_organization") || null;
   const publicationVenue = candidates.find((candidate) => candidate.role === "publication_venue") || null;
   const doiValues = [meta($, ["citation_doi"]), meta($, ["prism.doi"]), meta($, ["dc.identifier", "DC.identifier"])];
   for (const doc of docs) doiValues.push(...nestedNames(doc.identifier), ...nestedNames(doc.sameAs).filter((value) => /doi\.org/i.test(value)));
@@ -268,6 +385,12 @@ export async function extractHtmlPublishingIdentity($, sourceUrl = "") {
     entities: {
       publishing_organization: selectedEntity(publishingOrganization, "organization"),
       publication_venue: selectedEntity(publicationVenue, "journal"),
+      ...(provenance.parentOrganization
+        ? { parent_organization: selectedEntity(provenance.parentOrganization, "organization") }
+        : {}),
+      ...(provenance.originalPublisher
+        ? { original_publisher: selectedEntity(provenance.originalPublisher, "organization") }
+        : {}),
     },
     context: {
       context_type: contextType,
@@ -285,10 +408,15 @@ export async function extractHtmlPublishingIdentity($, sourceUrl = "") {
       extraction_method: publishingOrganization?.method || publicationVenue?.method || "domain_fallback",
       extraction_confidence: Math.max(publishingOrganization?.confidence || 0, publicationVenue?.confidence || 0),
       extractor_version: SOURCE_IDENTITY_VERSION,
+      linked_url: provenance.publicationRelationship?.originalUrl || null,
+      linked_publisher_observed: provenance.originalPublisher?.name || null,
+      publication_relationship: provenance.publicationRelationship,
       raw_metadata: {
         site_name: siteName || null,
         section: meta($, ["article:section", "section"]) || publicationName || null,
         publication_name: publicationName || null,
+        aliases: provenance.aliases,
+        publication_relationship: provenance.publicationRelationship,
       },
     },
     candidates,

@@ -149,6 +149,88 @@ export async function persistEvidenceAcquisitionAttempt(query, input) {
   return Object.freeze({ acquisitionAttemptId: Number(result?.insertId) || null, rawResponseSha256: hash(raw) });
 }
 
+const REUSABLE_ACCESS_LEVELS = new Set(["full_text", "substantial_excerpt", "abstract"]);
+
+/**
+ * Resolve the latest validated text for a canonical document across run- and
+ * assertion-specific acquisition bindings. The immutable versions stay bound
+ * to their original acquisitions; this is only a document-scoped read seam.
+ */
+export async function findReusableEvidenceTextVersion(query, {
+  canonicalDocumentId = null,
+  referenceContentId = null,
+  pmid = null,
+  doi = null,
+  canonicalUrl = null,
+  normalizedResolvedUrl: resolvedIdentityUrl = null,
+  maximumAgeMs = 30 * 24 * 60 * 60 * 1000,
+  now = new Date(),
+  minimumCharacterCount = 100,
+} = {}) {
+  const canonicalId = positiveInteger(canonicalDocumentId, "canonicalDocumentId", true);
+  const contentId = positiveInteger(referenceContentId, "referenceContentId", true);
+  const pmidValue = String(pmid || "").trim() || null;
+  const doiValue = String(doi || "").trim().toLowerCase() || null;
+  const canonicalUrlValue = canonicalUrl ? normalizedResolvedUrl(canonicalUrl) : null;
+  const resolvedUrlValue = resolvedIdentityUrl ? normalizedResolvedUrl(resolvedIdentityUrl) : null;
+  if (!canonicalId && !contentId && !pmidValue && !doiValue && !canonicalUrlValue && !resolvedUrlValue) return null;
+  if (!Number.isFinite(maximumAgeMs) || maximumAgeMs < 0) {
+    throw new TypeError("maximumAgeMs must be a non-negative finite number");
+  }
+  const rows = await query(
+    `SELECT t.acquired_text_version_id,t.binding_id,t.reference_content_id,
+            t.access_level,t.extraction_method,t.source_url,t.resolved_url,
+            t.cleaned_text,t.cleaned_text_sha256,t.character_count,t.word_count,
+            t.created_at,b.canonical_document_id,b.run_id
+       FROM cfx_evidence_text_versions t
+       JOIN cfx_evidence_acquisition_bindings b ON b.binding_id=t.binding_id
+       JOIN cfx_canonical_documents d ON d.canonical_document_id=b.canonical_document_id
+      WHERE t.selected_for_bearing=1
+        AND t.access_level IN ('full_text','substantial_excerpt','abstract')
+        AND t.character_count>=?
+        AND ((? IS NOT NULL AND b.canonical_document_id=?)
+          OR (? IS NOT NULL AND t.reference_content_id=?)
+          OR (? IS NOT NULL AND d.pmid=?)
+          OR (? IS NOT NULL AND LOWER(d.doi)=?)
+          OR (? IS NOT NULL AND d.canonical_url=?)
+          OR (? IS NOT NULL AND d.normalized_resolved_url=?))
+      ORDER BY (b.canonical_document_id=?) DESC,t.created_at DESC,
+               t.acquired_text_version_id DESC
+      LIMIT 1`,
+    [minimumCharacterCount,
+      canonicalId, canonicalId, contentId, contentId,
+      pmidValue, pmidValue, doiValue, doiValue,
+      canonicalUrlValue, canonicalUrlValue, resolvedUrlValue, resolvedUrlValue,
+      canonicalId],
+  );
+  const row = rows?.[0];
+  if (!row || !REUSABLE_ACCESS_LEVELS.has(String(row.access_level))) return null;
+  const createdAt = new Date(row.created_at);
+  const ageMs = new Date(now).getTime() - createdAt.getTime();
+  if (!Number.isFinite(ageMs) || ageMs < 0 || ageMs > maximumAgeMs) return null;
+  const cleanedText = String(row.cleaned_text || "");
+  if (cleanedText.trim().length < minimumCharacterCount) return null;
+  if (hash(cleanedText) !== String(row.cleaned_text_sha256 || "")) return null;
+  return Object.freeze({
+    acquiredTextVersionId: Number(row.acquired_text_version_id),
+    bindingId: Number(row.binding_id),
+    canonicalDocumentId: row.canonical_document_id == null ? null : Number(row.canonical_document_id),
+    referenceContentId: Number(row.reference_content_id),
+    sourceRunId: row.run_id,
+    accessLevel: row.access_level,
+    extractionMethod: row.extraction_method,
+    sourceUrl: row.source_url,
+    resolvedUrl: row.resolved_url,
+    cleanedText,
+    cleanedTextSha256: row.cleaned_text_sha256,
+    characterCount: Number(row.character_count),
+    wordCount: Number(row.word_count),
+    createdAt: createdAt.toISOString(),
+    ageMs,
+    cacheState: "persisted_text_reuse",
+  });
+}
+
 export async function persistEvidenceTextVersion(query, input) {
   const clean = String(input.cleanedText || "");
   if (!clean.trim()) throw new TypeError("cleanedText is required");

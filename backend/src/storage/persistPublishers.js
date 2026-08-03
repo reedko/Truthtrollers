@@ -327,9 +327,21 @@ export async function persistSourceIdentity(query, contentId, identity, options 
     const socialPrimary = contextType === "social"
       ? extraEntities.find((entity) => ["distribution_channel", "social_container", "platform"].includes(entity.role))
       : null;
-    const primary = socialPrimary || (contextType === "scholarly" && venue && confidenceNumber(venue.confidence) >= 0.6
-      ? venue
-      : organization || venue || extraEntities[0] || null);
+    const publicationRelationship = context.publication_relationship
+      || context.raw_metadata?.publication_relationship
+      || null;
+    const originalPublisher = extraEntities.find((entity) => entity.role === "original_publisher") || null;
+    const isRepublished = ["republished", "syndicated"].includes(
+      String(publicationRelationship?.type || "").toLowerCase(),
+    );
+    // For an explicitly republished article, the outlet remains the venue and
+    // the outlet owner remains the publishing organization, while the original
+    // content supplier is the entity whose reliability SourceCrest should rate.
+    const primary = socialPrimary || (isRepublished && originalPublisher
+      ? originalPublisher
+      : contextType === "scholarly" && venue && confidenceNumber(venue.confidence) >= 0.6
+        ? venue
+        : organization || venue || extraEntities[0] || null);
 
     for (const link of links) {
       await linkPublisherRole(tx, contentId, {
@@ -363,6 +375,53 @@ export async function persistSourceIdentity(query, contentId, identity, options 
         );
       }
     }
+
+    const currentOutlet = venue || organization || null;
+    const parentOrganization = extraEntities.find((entity) => entity.role === "parent_organization") || null;
+    const persistRelationship = async ({ related, relationshipType, evidenceUrl, rawValue }) => {
+      if (!currentOutlet || !related || currentOutlet.publisherId === related.publisherId) return;
+      const existing = await tx(
+        `SELECT id FROM publisher_relationships
+          WHERE publisher_id=? AND related_publisher_id=? AND relationship_type=?
+          LIMIT 1`,
+        [currentOutlet.publisherId, related.publisherId, relationshipType],
+      );
+      if (existing.length) return;
+      await tx(
+        `INSERT INTO publisher_relationships
+          (publisher_id,related_publisher_id,related_entity_name,relationship_type,
+           provider,evidence_url,confidence,raw_value)
+         VALUES (?,?,?,?,?,?,?,?)`,
+        [currentOutlet.publisherId, related.publisherId, related.name, relationshipType,
+          "source_identity_extractor", evidenceUrl || identity.source_url || null,
+          Math.min(confidenceNumber(currentOutlet.confidence), confidenceNumber(related.confidence)),
+          json(rawValue)],
+      );
+    };
+    await persistRelationship({
+      related: parentOrganization,
+      relationshipType: parentOrganization?.relationship_type || "parent_organization",
+      evidenceUrl: identity.source_url,
+      rawValue: {
+        source_url: identity.source_url || null,
+        context_id: contextId,
+        evidence_text: parentOrganization?.evidence || null,
+      },
+    });
+    await persistRelationship({
+      related: originalPublisher,
+      relationshipType: publicationRelationship?.type === "syndicated"
+        ? "syndicated_from"
+        : "republished_from",
+      evidenceUrl: publicationRelationship?.originalUrl || identity.source_url,
+      rawValue: {
+        source_url: identity.source_url || null,
+        context_id: contextId,
+        evidence_text: publicationRelationship?.evidenceText || originalPublisher?.evidence || null,
+        license: publicationRelationship?.license || null,
+        original_url: publicationRelationship?.originalUrl || null,
+      },
+    });
 
     const domain = hostname(identity.source_url);
     if (domain && organization && contextType === "web") {

@@ -9,6 +9,7 @@ import {
 } from "../../services/sourceProviders/providers/wikipediaPerennialSourcesProvider.js";
 import { wikipediaProvider } from "../../services/sourceProviders/providers/wikipediaProvider.js";
 import {
+  invalidatePublisherProviderCache,
   listProviders,
   lookupPublisherAllProviders,
 } from "../../services/sourceProviders/sourceProviderRegistry.js";
@@ -17,6 +18,7 @@ import {
   summarizeProviderSignals,
 } from "../../services/providerSignalMapper.js";
 import { persistProviderSignals } from "../../src/services/providerSignalPersistenceService.js";
+import { evaluateAdmiraltyCode } from "../../services/admiraltyEvaluator.js";
 import { parsePerennialSourcesHtml } from "../../scripts/refreshWikipediaPerennialSources.js";
 
 const backendRoot = path.resolve(".");
@@ -145,6 +147,12 @@ test("uses registry caching and versioned provider cache keys", async () => {
   );
   assert.equal(first.cached, false);
   assert.equal(second.cached, true);
+  invalidatePublisherProviderCache();
+  const [third] = await lookupPublisherAllProviders(
+    { publisherName: uniqueName },
+    { providers: ["wikipedia_perennial_sources"] },
+  );
+  assert.equal(third.cached, false, "an identity refresh invalidates the process-level provider cache");
 
   const source = [entry("fixture", "Fixture Outlet", "no consensus", { domains: ["fixture.test"] })];
   const v1 = createWikipediaPerennialSourcesProvider(dataset(source, "v1"));
@@ -156,7 +164,7 @@ test("uses registry caching and versioned provider cache keys", async () => {
   );
 });
 
-test("persists through the existing provider-signal contract without changing SourceCrest aggregates", async () => {
+test("persists as a direct SourceCrest signal and takes precedence over ordinary Wikipedia scoring", async () => {
   const result = await wikipediaPerennialSourcesProvider.lookupPublisher({ publisherName: "Reuters" });
   const calls = [];
   const signals = await persistProviderSignals(async (sql, values) => {
@@ -173,9 +181,9 @@ test("persists through the existing provider-signal contract without changing So
   assert.match(calls[0].sql, /INSERT INTO publisher_external_signals/u);
   assert.equal(calls[0].values[3], "wikipedia_perennial_sources");
   assert.equal(calls[0].values[4], "perennial_sources_classification");
-  assert.equal(calls[0].values[5], "contextual");
-  assert.equal(calls[0].values[6], null);
-  assert.equal(signals[0].reliability_bucket, "generally reliable");
+  assert.equal(calls[0].values[5], "direct");
+  assert.equal(calls[0].values[6], 85);
+  assert.equal(signals[0].reliability_bucket, "high");
 
   const directSignal = {
     provider: "baseline_direct",
@@ -189,17 +197,27 @@ test("persists through the existing provider-signal contract without changing So
     cap_reason: null,
     flags: [],
   };
-  const before = summarizeProviderSignals([directSignal]);
   const after = summarizeProviderSignals([
     directSignal,
     mapProviderSignalToAdmiralty("wikipedia_perennial_sources", result),
   ]);
-  for (const key of [
-    "directReliabilityScore", "reliabilitySignalPresent", "provenanceScore",
-    "publicationLegitimacyScore", "identityConfidence", "independentFootprintScore",
-    "contextualCredibilityScore", "conflictOfInterestScore", "strongestCap",
-  ]) assert.deepEqual(after[key], before[key], `${key} changed`);
-  assert.deepEqual(after.reliabilitySignalSources, before.reliabilitySignalSources);
+  assert.equal(after.directReliabilityScore, 83.5);
+  assert(after.reliabilitySignalSources.includes("wikipedia_perennial_sources"));
+  assert.equal(after.strongestCap.cap, "B");
+
+  const evaluation = await evaluateAdmiraltyCode({
+    publisherName: "Reuters",
+    sourceIdentity: { sourceType: "journalism", resolutionLevel: 3 },
+    existingSourceRatings: [{
+      source: "Wikipedia",
+      rating_type: "veracity",
+      veracity_score: 20,
+    }],
+    providerSignals: [mapProviderSignalToAdmiralty("wikipedia_perennial_sources", result)],
+  }, { runClaimLookup: false });
+  assert.equal(evaluation.sourceReliabilityLetter, "B");
+  assert.equal(evaluation.sourceSignals.veracityScore, null, "ordinary Wikipedia score is ignored when Perennial Sources matched");
+  assert.equal(evaluation.sourceSignals.perennialClassification, "generally reliable");
 });
 
 test("parses a pinned MediaWiki row deterministically", () => {

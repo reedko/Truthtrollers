@@ -79,6 +79,15 @@ function publisherStatusFromSignals(providerSignals = []) {
   return Object.keys(merged).length ? merged : null;
 }
 
+function perennialClassificationFromSignals(providerSignals = []) {
+  const signal = providerSignals.find((item) =>
+    item.provider === "wikipedia_perennial_sources" &&
+    item.signal_type === "perennial_sources_classification" &&
+    !item.error_status
+  );
+  return signal?.raw?.normalized?.classification || signal?.raw?.classification || null;
+}
+
 function isHealthOrSafetyTopic({ sourceUrl, claimText, articleTitle, articleText } = {}) {
   return /\b(health|safety|radiation|rf|radiofrequency|electromagnetic|emf|exposure|cancer|public health)\b/i
     .test(`${sourceUrl || ""} ${claimText || ""} ${articleTitle || ""} ${String(articleText || "").slice(0, 2000)}`);
@@ -128,6 +137,7 @@ function deriveSourceLetter(signals = {}) {
     wikidataFound,
     wikipediaFound,
     publisherStatus,
+    perennialClassification,
     riskFlags = [],
     isHealthSafetyTopic = false,
   } = signals;
@@ -138,7 +148,16 @@ function deriveSourceLetter(signals = {}) {
     if (resolutionLevel <= 2 && !wikidataFound && !wikipediaFound) return "Ø";
   }
 
+  const perennialLetter = {
+    "generally reliable": "B",
+    "no consensus": "C",
+    "generally unreliable": "D",
+    deprecated: "E",
+    blacklisted: "E",
+  }[String(perennialClassification || "").toLowerCase()] || null;
+
   const hasReliabilityEvidence =
+    perennialLetter != null ||
     veracityScore != null ||
     mbfcReliability != null ||
     adfontesReliability != null ||
@@ -162,7 +181,7 @@ function deriveSourceLetter(signals = {}) {
   }
 
   // ── Start from source-type base ──────────────────────────────────────────
-  let letter = SOURCE_TYPE_BASE[canonicalType || "unknown"] ?? "Ø";
+  let letter = perennialLetter || (SOURCE_TYPE_BASE[canonicalType || "unknown"] ?? "Ø");
   if (letter === "Ø" && hasReliabilityEvidence) {
     // A real reliability/factuality score should not be trapped at Ø merely
     // because source_type is missing. Start neutral/mixed, then let the score
@@ -230,6 +249,15 @@ function deriveSourceLetter(signals = {}) {
     else if (letter === "B") letter = "C";
   }
   if (publicationContext === "press_release" && letter === "A") letter = "B";
+
+  // Perennial Sources is the Wikipedia community's explicit reliability
+  // classification. It therefore wins over ordinary Wikipedia-derived scores.
+  // Other independent provider evidence may still make the result more
+  // conservative, but cannot improve it past this classification.
+  if (perennialLetter) {
+    const order = ["A", "B", "C", "D", "E", "Ø"];
+    if (order.indexOf(letter) < order.indexOf(perennialLetter)) letter = perennialLetter;
+  }
 
   return letter;
 }
@@ -424,7 +452,11 @@ export async function evaluateAdmiraltyCode(input = {}, options = {}) {
   const lineage  = sourceLineage  ?? {};
 
   // Extract veracity score from existing ratings
-  const veracityRating = existingSourceRatings.find(r => r.rating_type === "veracity");
+  const perennialClassification = perennialClassificationFromSignals(providerSignals);
+  const veracityRating = existingSourceRatings.find((rating) =>
+    rating.rating_type === "veracity" &&
+    !(perennialClassification && /^wikipedia$/i.test(String(rating.source || "")))
+  );
   const veracityScore  = veracityRating?.veracity_score ?? null;
 
   // Extract provider signals
@@ -460,6 +492,7 @@ export async function evaluateAdmiraltyCode(input = {}, options = {}) {
     wikidataFound:        wikidata?.matchFound ?? false,
     wikipediaFound:       wikipedia?.matchFound ?? false,
     publisherStatus,
+    perennialClassification,
     riskFlags,
     isHealthSafetyTopic,
 

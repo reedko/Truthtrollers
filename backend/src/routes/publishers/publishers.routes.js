@@ -86,6 +86,11 @@ async function loadNormalizedSourceContext(query, contentId) {
       publishingContext: null,
       identifiers: [],
       authors: [],
+      sourceEntities: [],
+      parentOrganization: null,
+      originalPublisher: null,
+      publicationRelationship: null,
+      publisherRelationships: [],
       extractionEvidence: {},
     };
   }
@@ -109,7 +114,10 @@ async function loadNormalizedSourceContext(query, contentId) {
         [contentId],
       ),
       query(
-        `SELECT a.author_id, a.display_name, a.first_name, a.middle_name, a.last_name
+        `SELECT a.author_id, a.author_display_name AS display_name,
+                a.author_first_name AS first_name,
+                a.author_middle_name AS middle_name,
+                a.author_last_name AS last_name
            FROM content_authors ca
            JOIN authors a ON a.author_id = ca.author_id
           WHERE ca.content_id = ?
@@ -128,11 +136,34 @@ async function loadNormalizedSourceContext(query, contentId) {
         )
       : [];
     const byRole = (role) => entities.find((entity) => entity.publisher_role === role) || null;
+    const relationships = entities.length
+      ? await query(
+          `SELECT pr.id,pr.publisher_id,source.publisher_name,
+                  pr.related_publisher_id,related.publisher_name AS related_publisher_name,
+                  pr.relationship_type,pr.provider,pr.evidence_url,pr.confidence,
+                  pr.raw_value,pr.created_at
+             FROM publisher_relationships pr
+             JOIN publishers source ON source.publisher_id=pr.publisher_id
+             LEFT JOIN publishers related ON related.publisher_id=pr.related_publisher_id
+            WHERE pr.publisher_id IN (?)
+            ORDER BY pr.id`,
+          [entities.map((entity) => entity.publisher_id)],
+        )
+      : [];
+    let rawMetadata = context?.raw_metadata || null;
+    if (typeof rawMetadata === "string") {
+      try { rawMetadata = JSON.parse(rawMetadata); } catch { rawMetadata = null; }
+    }
     return {
       primarySource: entities.find((entity) => entity.is_primary) || null,
       publishingOrganization: byRole("publishing_organization"),
       publicationVenue: byRole("publication_venue"),
       distribution: byRole("distribution_channel") || byRole("platform"),
+      parentOrganization: byRole("parent_organization"),
+      originalPublisher: byRole("original_publisher"),
+      sourceEntities: entities,
+      publisherRelationships: relationships,
+      publicationRelationship: rawMetadata?.publication_relationship || null,
       publishingContext: context,
       identifiers,
       authors,
@@ -1007,16 +1038,36 @@ export default function createPublishersRoutes({ query, pool }) {
         }
       }
 
+      const ratedSourceEntity = normalizedSource.sourceEntities?.find(
+        (entity) => Number(entity.publisher_id) === Number(publisher.publisher_id),
+      );
       const ratedEntity = {
         publisherId: publisher.publisher_id,
         publisherName: publisher.publisher_name,
         entityType: publisher.entity_type || null,
+        entityRole: ratedSourceEntity?.publisher_role || null,
+      };
+      const projectSignal = (row) => {
+        const raw = typeof row.raw_value === "string"
+          ? (() => { try { return JSON.parse(row.raw_value); } catch { return null; } })()
+          : row.raw_value;
+        return {
+          ...row,
+          ratedEntity,
+          executionProvenance: {
+            // A persisted non-cache row is a provider result, but is not
+            // necessarily fresh relative to the request reading it now.
+            cacheState: raw?.cached === true ? "provider_cache" : "provider_result",
+            attemptedAt: raw?.attemptedAt || row.retrieved_at || null,
+            datasetVersion: raw?.datasetVersion || null,
+          },
+        };
       };
       res.json({
         publisher,
         ratings: ratings.map((row) => ({ ...row, ratedEntity })),
         profiles: profiles.map((row) => ({ ...row, ratedEntity })),
-        externalSignals: externalSignals.map((row) => ({ ...row, ratedEntity })),
+        externalSignals: externalSignals.map(projectSignal),
         enrichmentRuns,
         publisherStatus,
         sourceAlignment,
@@ -1043,6 +1094,7 @@ export default function createPublishersRoutes({ query, pool }) {
       skipExternalSignals = true,
       skipOwnSiteOrgStatus = false,
       maxProviderConcurrency = 1,
+      refreshPublishingIdentity = false,
     } = req.body;
 
     try {
@@ -1053,6 +1105,19 @@ export default function createPublishersRoutes({ query, pool }) {
 
       if (!publisher) {
         return res.status(404).json({ error: "Publisher not found" });
+      }
+
+      if (force && contentId && refreshPublishingIdentity) {
+        const { refreshContentPublisherSourceCrest } = await import(
+          "../../services/refreshContentPublisherSourceCrest.js"
+        );
+        const refreshed = await refreshContentPublisherSourceCrest({
+          query,
+          contentId,
+          requestedPublisherId: publisher.publisher_id,
+          sourceUrl: sanitizeSourceUrl(reqSourceUrl),
+        });
+        return res.json({ success: true, result: refreshed });
       }
 
       const { enrichPublisherIfNeeded } = await import(

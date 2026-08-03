@@ -1494,13 +1494,25 @@ WHERE cc_task.content_id = ?
             WHEN ref.topic = 'AI Evidence (Abstract Only)' THEN 'abstract_only'
             ELSE rcl.scrape_status
           END) AS scrape_status,
+          'acquisition_limited' AS acquisition_status,
           COUNT(rcl.ref_claim_link_id) AS linked_claims_count
         FROM content ref
         INNER JOIN reference_claim_links rcl ON ref.content_id = rcl.reference_content_id
         INNER JOIN content_relations cr ON ref.content_id = cr.reference_content_id
+        LEFT JOIN (
+          SELECT t.reference_content_id, MAX(t.created_at) AS acquired_at
+            FROM cfx_evidence_text_versions t
+           WHERE t.selected_for_bearing = 1
+             AND t.access_level IN ('full_text', 'substantial_excerpt', 'abstract')
+             AND t.character_count >= 100
+             AND CHAR_LENGTH(TRIM(t.cleaned_text)) >= 100
+           GROUP BY t.reference_content_id
+        ) acquired ON acquired.reference_content_id = ref.content_id
         WHERE cr.content_id = ?
           AND (rcl.scrape_status IN ('snippet_only', 'abstract_only', 'identity_only', 'failed')
                OR ref.topic IN ('AI Evidence (Abstract Only)', 'AI Evidence (Study Identity)'))
+          AND acquired.reference_content_id IS NULL
+          AND CHAR_LENGTH(TRIM(COALESCE(ref.content_text, ''))) < 100
         GROUP BY ref.content_id, ref.content_name, ref.url
         ORDER BY ref.content_id DESC
       `;

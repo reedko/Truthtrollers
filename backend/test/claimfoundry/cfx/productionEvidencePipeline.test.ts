@@ -68,6 +68,7 @@ test("structured academic acquisition reuses production identity and source-qual
       crestInput = input;
       return {status:"production_enriched_and_evaluated",completed:true};
     },
+    async persistedTextResolver() { return null; },
   } as any);
   assert.equal(result.accessLevel, "abstract");
   assert.equal(identityInput.contentId, 20);
@@ -295,6 +296,7 @@ test("production CFX plans, retrieves, automatically acquires, and runs bounded 
     retrievalTransport: {},
     async runtimeLoader() { return runtime; },
     async academicResolver() { return null; },
+    async persistedTextResolver() { return null; },
     async automaticAcquirer() {
       return {
         acquired:true,
@@ -355,6 +357,40 @@ test("production CFX plans, retrieves, automatically acquires, and runs bounded 
   assert.equal(artifacts.has("query-planning/request.json"), true);
   assert.equal(artifacts.has("query-planning/raw_response.json"), true);
   assert.equal(artifacts.has("retrieval/responses/REQ-P11-Q1.json"), true);
+});
+
+test("fresh canonical persisted text skips automatic network acquisition", async () => {
+  let automaticCalls = 0;
+  const writes:string[] = [];
+  const result = await persistCfxAcquiredText({
+    query: async (sql:string) => {
+      writes.push(sql);
+      if (sql.startsWith("UPDATE content SET content_text=")) return {affectedRows:1};
+      throw new Error(`unexpected SQL ${sql}`);
+    },
+    bindingRecord: {
+      binding:{bindingId:51,canonicalDocumentId:80,requestedUrl:"https://example.test/article"},
+      referenceContentId:20,
+      sourceUrl:"https://example.test/article",
+    },
+    candidate:{canonicalUrl:"https://example.test/article",url:"https://example.test/article"},
+    academic:null,
+    async persistedTextResolver() {
+      return {
+        acquiredTextVersionId:70,bindingId:49,sourceRunId:"old-run",
+        accessLevel:"full_text",cleanedText:"Reusable validated text ".repeat(20),
+        cleanedTextSha256:"a".repeat(64),characterCount:480,ageMs:1000,
+      };
+    },
+    async automaticAcquirer() { automaticCalls += 1; return null; },
+    async publishingIdentityProcessor() { throw new Error("identity must not rerun in the text-reuse seam"); },
+    async sourceQualityEnricher() { throw new Error("quality is coordinated after text reuse"); },
+    async sourceCrestProcessor() { throw new Error("SourceCrest is coordinated after text reuse"); },
+  } as any);
+  assert.equal(result.source, "persisted_text_reuse");
+  assert.equal(result.reused, true);
+  assert.equal(automaticCalls, 0);
+  assert.equal(writes.length, 1);
 });
 
 test("production document selection has a deterministic hard ceiling", () => {

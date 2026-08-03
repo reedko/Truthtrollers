@@ -12,6 +12,7 @@ import {
   processCfxDocumentEvidenceBinding,
 } from "./cfxEvidenceCoordinator.js";
 import {
+  findReusableEvidenceTextVersion,
   insertEvidenceScrapeBinding,
   persistEvidenceAcquisitionAttempt,
   persistEvidenceTextVersion,
@@ -566,8 +567,38 @@ export async function persistCfxAcquiredText({
   sourceCrestProcessor,
   automaticAcquirer = acquireCfxDocumentAutomatically,
   queueRetry = retryCfxCanonicalAcquisition,
+  persistedTextResolver = findReusableEvidenceTextVersion,
+  persistedTextMaximumAgeMs = 30 * 24 * 60 * 60 * 1000,
+  preResolvedReusableText = null,
 }) {
   const binding = bindingRecord.binding;
+  const reusable = preResolvedReusableText || await persistedTextResolver(query, {
+      canonicalDocumentId: binding.canonicalDocumentId,
+      referenceContentId: bindingRecord.referenceContentId,
+      maximumAgeMs: persistedTextMaximumAgeMs,
+    });
+  if (reusable) {
+    // Keep the established Workspace content seam synchronized. Do not create
+    // a duplicate immutable version or make another network acquisition.
+    await query(
+      "UPDATE content SET content_text=? WHERE content_id=? AND (content_text IS NULL OR content_text<>?)",
+      [reusable.cleanedText, bindingRecord.referenceContentId, reusable.cleanedText],
+    );
+    return {
+      accessLevel: reusable.accessLevel,
+      source: "persisted_text_reuse",
+      reused: true,
+      acquiredTextVersionId: reusable.acquiredTextVersionId,
+      sourceBindingId: reusable.bindingId,
+      sourceRunId: reusable.sourceRunId,
+      cleanedTextSha256: reusable.cleanedTextSha256,
+      characterCount: reusable.characterCount,
+      freshnessAgeMs: reusable.ageMs,
+      sourceQualityProcessed: false,
+      sourceCrestAttempted: false,
+      sourceCrestProcessed: false,
+    };
+  }
   let attemptOrdinal = 0;
   if (academic) {
     attemptOrdinal += 1;
@@ -868,6 +899,8 @@ export async function runCfxProductionEvidencePipeline({
   sourceCrestProcessor = ensureCfxSourceCrest,
   artifactStoreFactory = defaultArtifactStore,
   queueRetry = retryCfxCanonicalAcquisition,
+  persistedTextResolver = findReusableEvidenceTextVersion,
+  persistedTextMaximumAgeMs = 30 * 24 * 60 * 60 * 1000,
   // No longer defaults to 12: that was a guardrail scoped to the single
   // CF1-F03 fixture this pipeline was first proven against, not a structural
   // requirement -- proposition IDs are already derived from real claim_id /
@@ -982,14 +1015,23 @@ export async function runCfxProductionEvidencePipeline({
         .map((document) => document.documentKey),
     });
     const academicByDocumentKey = new Map();
+    const reusableTextByDocumentKey = new Map();
     for (const document of selectedCanonicalDocuments) {
       const candidate = document.representative;
-      const academic = await academicResolver({
-        url: candidate.canonicalUrl || candidate.resolvedUrl || candidate.url,
-        title: candidate.title,
-        snippet: candidate.abstractOrSnippet,
-        academicMetadata: { pmid: candidate.pmid, doi: candidate.doi },
+      const reusableText = await persistedTextResolver(query, {
+        pmid: candidate.pmid,
+        doi: candidate.doi,
+        canonicalUrl: candidate.canonicalUrl || candidate.url,
+        normalizedResolvedUrl: candidate.resolvedUrl || candidate.canonicalUrl || candidate.url,
+        maximumAgeMs: persistedTextMaximumAgeMs,
       });
+      reusableTextByDocumentKey.set(document.documentKey, reusableText);
+      const academic = reusableText ? null : await academicResolver({
+          url: candidate.canonicalUrl || candidate.resolvedUrl || candidate.url,
+          title: candidate.title,
+          snippet: candidate.abstractOrSnippet,
+          academicMetadata: { pmid: candidate.pmid, doi: candidate.doi },
+        });
       academicByDocumentKey.set(document.documentKey, academic);
     }
     const phase2 = await materializeCfxPhase2Documents({
@@ -1004,6 +1046,7 @@ export async function runCfxProductionEvidencePipeline({
       sourceArtifactPath,
       sourceArtifactSha256,
       queueScrapeForDocument(document) {
+        if (reusableTextByDocumentKey.get(document.documentKey)) return false;
         const academic = academicByDocumentKey.get(document.documentKey);
         return !academic || academic.retrievalMode !== "full_text";
       },
@@ -1040,7 +1083,10 @@ export async function runCfxProductionEvidencePipeline({
         publishingIdentityProcessor,
         sourceCrestProcessor,
         automaticAcquirer,
-            queueRetry,
+        queueRetry,
+        persistedTextResolver,
+        persistedTextMaximumAgeMs,
+        preResolvedReusableText: reusableTextByDocumentKey.get(document.documentKey),
       });
       console.log(`[CFX] run ${runId}: document ${documentOrdinal}/${selectedDocumentRecords.length} acquired=${acquired ? acquired.source || "yes" : "no"}; starting bearing`);
       const semanticallyEligible = acquired && [

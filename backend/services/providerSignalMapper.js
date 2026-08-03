@@ -283,21 +283,31 @@ function mapWikipedia(rawResult) {
 
 function mapWikipediaPerennialSources(rawResult) {
   const n = rawResult?.normalized || {};
+  const classification = String(n.classification || "").toLowerCase();
+  const mapped = {
+    "generally reliable": { score: 85, bucket: "high", cap: "B" },
+    "no consensus": { score: 50, bucket: "mixed", cap: "C" },
+    "generally unreliable": { score: 25, bucket: "low", cap: "D" },
+    deprecated: { score: 10, bucket: "low", cap: "E" },
+    blacklisted: { score: 0, bucket: "low", cap: "E" },
+  }[classification] || null;
   return makeSignal({
     provider: "wikipedia_perennial_sources",
     signalType: "perennial_sources_classification",
-    effectType: "contextual",
-    score: null,
-    bucket: n.classification || null,
-    confidenceDelta: 0,
-    reliabilityDelta: 0,
-    cap: null,
-    capReason: null,
-    flags: ["informational_perennial_sources_classification"],
+    effectType: mapped ? "direct" : "contextual",
+    score: mapped?.score ?? null,
+    bucket: mapped?.bucket || n.classification || null,
+    confidenceDelta: mapped ? 0.12 : 0,
+    reliabilityDelta: mapped ? mapped.score - 50 : 0,
+    cap: mapped?.cap || null,
+    capReason: mapped
+      ? `Wikipedia Perennial Sources classifies this outlet as ${classification}.`
+      : null,
+    flags: mapped ? ["wikipedia_perennial_sources_rating"] : ["perennial_sources_unmapped_classification"],
     evidenceUrl: n.externalUrl || null,
     explanation: n.classification
-      ? `Wikipedia Perennial Sources records this outlet as ${n.classification}; preserved as informational context only.`
-      : "Wikipedia Perennial Sources result preserved as informational context only.",
+      ? `Wikipedia Perennial Sources classifies this outlet as ${n.classification}; this classification takes precedence over ordinary Wikipedia scoring.`
+      : "Wikipedia Perennial Sources returned no mapped reliability classification.",
     raw: rawResult,
     matchedName: n.publisherName || rawResult?.matchedEntity || null,
     matchedDomain: n.domain || null,

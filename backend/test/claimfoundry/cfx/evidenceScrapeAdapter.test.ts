@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import test from "node:test";
 import {
   getEvidenceScrapeBinding,
+  findReusableEvidenceTextVersion,
   insertEvidenceScrapeBinding,
   normalizeEvidenceScrapeContext,
   persistEvidenceScrapeCapture,
@@ -211,4 +213,53 @@ test("binding reader returns null for an unbound legacy job", async () => {
     await getEvidenceScrapeBinding(async () => [], 77),
     null,
   );
+});
+
+test("document-scoped reuse returns a fresh hash-verified selected text version", async () => {
+  const cleanedText = "A".repeat(200);
+  const cleanedTextSha256 = createHash("sha256").update(cleanedText).digest("hex");
+  const now = new Date("2026-08-03T00:00:00.000Z");
+  const value = await findReusableEvidenceTextVersion(
+    async (sql:string, values:unknown[]) => {
+      assert.match(sql, /JOIN cfx_canonical_documents/u);
+      assert.equal(values[5], "12345");
+      return [{
+        acquired_text_version_id: 77,
+        binding_id: 66,
+        reference_content_id: 55,
+        canonical_document_id: 44,
+        run_id: "earlier-run",
+        access_level: "full_text",
+        extraction_method: "publisher_html",
+        source_url: "https://example.test/article",
+        resolved_url: "https://example.test/article",
+        cleaned_text: cleanedText,
+        cleaned_text_sha256: cleanedTextSha256,
+        character_count: cleanedText.length,
+        word_count: 1,
+        created_at: "2026-08-02T00:00:00.000Z",
+      }];
+    },
+    { pmid:"12345", maximumAgeMs:2 * 24 * 60 * 60 * 1000, now },
+  );
+  assert.equal(value?.acquiredTextVersionId, 77);
+  assert.equal(value?.sourceRunId, "earlier-run");
+  assert.equal(value?.cacheState, "persisted_text_reuse");
+});
+
+test("persisted text reuse rejects stale or hash-corrupted rows", async () => {
+  const row = {
+    acquired_text_version_id: 77,binding_id:66,reference_content_id:55,
+    canonical_document_id:44,run_id:"earlier-run",access_level:"full_text",
+    extraction_method:"publisher_html",source_url:"https://example.test/article",
+    resolved_url:"https://example.test/article",cleaned_text:"B".repeat(200),
+    cleaned_text_sha256:"0".repeat(64),character_count:200,word_count:1,
+    created_at:"2026-07-01T00:00:00.000Z",
+  };
+  assert.equal(await findReusableEvidenceTextVersion(async () => [row], {
+    canonicalDocumentId:44,maximumAgeMs:1_000,now:new Date("2026-08-03T00:00:00Z"),
+  }), null);
+  assert.equal(await findReusableEvidenceTextVersion(async () => [{...row,created_at:"2026-08-03T00:00:00Z"}], {
+    canonicalDocumentId:44,maximumAgeMs:1_000,now:new Date("2026-08-03T00:00:00Z"),
+  }), null);
 });

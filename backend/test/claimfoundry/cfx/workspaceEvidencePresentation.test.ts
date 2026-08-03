@@ -98,6 +98,35 @@ test("existing Workspace APIs expose assertion and document metric columns", asy
   assert.match(claimRoutes, /rctl\.support_level AS support_level/u);
 });
 
+test("failed-reference projection lets authoritative persisted text override stale snippet labels", async () => {
+  const claimRoutes = await readFile(new URL(
+    "../../../src/routes/claims/claims.routes.js",
+    import.meta.url,
+  ), "utf8");
+  const endpoint = claimRoutes.slice(
+    claimRoutes.indexOf('router.get("/api/failed-references/:taskContentId"'),
+    claimRoutes.indexOf("// Hide claim for current user"),
+  );
+  assert.match(endpoint, /cfx_evidence_text_versions/u);
+  assert.match(endpoint, /selected_for_bearing\s*=\s*1/u);
+  assert.match(endpoint, /access_level IN \('full_text', 'substantial_excerpt', 'abstract'\)/u);
+  assert.match(endpoint, /acquired\.reference_content_id IS NULL/u);
+  assert.match(endpoint, /CHAR_LENGTH\(TRIM\(COALESCE\(ref\.content_text, ''\)\)\) < 100/u);
+  assert.doesNotMatch(endpoint, /no bearing/u);
+});
+
+test("source enrichment API projects provenance roles and rated-entity execution provenance", async () => {
+  const publisherRoutes = await readFile(new URL(
+    "../../../src/routes/publishers/publishers.routes.js",
+    import.meta.url,
+  ), "utf8");
+  assert.match(publisherRoutes, /parentOrganization: byRole\("parent_organization"\)/u);
+  assert.match(publisherRoutes, /originalPublisher: byRole\("original_publisher"\)/u);
+  assert.match(publisherRoutes, /publicationRelationship:/u);
+  assert.match(publisherRoutes, /entityRole: ratedSourceEntity\?\.publisher_role/u);
+  assert.match(publisherRoutes, /cacheState: raw\?\.cached === true/u);
+});
+
 test("multiple assertion-level links beneath one document remain independent", () => {
   const rows = [
     { id: "bearing-1", left_claim_id: 101, source_claim_id: 701, relationship: "support" },
