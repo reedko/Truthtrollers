@@ -462,11 +462,7 @@ const UserDashboard: React.FC = () => {
                                       sourceType={profile.sourceType}
                                       reliability={profile.reliability}
                                       admiraltyCode={pub?.admiralty_code ?? undefined}
-                                      alignment={pub?.alignment_marker ? {
-                                        marker: pub.alignment_marker,
-                                        label: pub.alignment_marker === "GOV" ? "Government source" : "Institutionally aligned",
-                                        riskScore: pub.alignment_risk_score,
-                                      } : null}
+                                      alignment={pub?.alignment ?? null}
                                       size="sm"
                                       onClick={(e) => { e?.stopPropagation(); if (pub) setSourceDetailPublisher(pub); }}
                                     />

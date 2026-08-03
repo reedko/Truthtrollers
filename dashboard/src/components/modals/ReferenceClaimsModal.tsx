@@ -146,11 +146,7 @@ const ReferenceClaimsModal: React.FC<Props> = ({
                   source_type: reference.source_type ?? undefined,
                   admiralty_code: reference.admiralty_code ?? undefined,
                 })}
-                alignment={reference.alignment_marker ? {
-                  marker: reference.alignment_marker,
-                  label: reference.alignment_marker === "GOV" ? "Government source" : reference.alignment_marker === "IND" ? "Industry aligned" : "Institutionally aligned",
-                  riskScore: reference.alignment_risk_score,
-                } : null}
+                alignment={reference.alignment ?? null}
                 size="xs"
               />
             )}

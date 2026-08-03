@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { requirePermission, userHasPermission, userHasRole } from "../../middleware/permissions.js";
 import { authenticateToken } from "../../middleware/auth.js";
+import { attachSourceAlignments } from "../../services/ownSiteOrgStatusService.js";
 
 export default function createReferencesRoutes({ query, pool }) {
   const router = Router();
@@ -115,40 +116,6 @@ export default function createReferencesRoutes({ query, pool }) {
                ORDER BY cp5.is_primary DESC, cp5.content_publisher_id DESC LIMIT 1
             ) AND pp.source_type IS NOT NULL
             ORDER BY pp.last_checked DESC LIMIT 1) AS source_type,
-          CASE WHEN EXISTS (
-            SELECT 1 FROM publisher_external_signals pes
-             WHERE pes.publisher_id = (
-               SELECT cp4.publisher_id FROM content_publishers cp4
-                WHERE cp4.content_id = c.content_id
-                ORDER BY cp4.is_primary DESC, cp4.content_publisher_id DESC LIMIT 1
-             )
-               AND pes.provider = 'own_site_org_status'
-               AND (pes.expires_at IS NULL OR pes.expires_at > NOW())
-               AND JSON_SEARCH(pes.flags, 'one', 'material_industry_interest') IS NOT NULL
-          ) THEN 'IND'
-          WHEN EXISTS (
-            SELECT 1 FROM publisher_external_signals pes
-             WHERE pes.publisher_id = (
-               SELECT cp5.publisher_id FROM content_publishers cp5
-                WHERE cp5.content_id = c.content_id
-                ORDER BY cp5.is_primary DESC, cp5.content_publisher_id DESC LIMIT 1
-             )
-               AND pes.provider = 'own_site_org_status'
-               AND (pes.expires_at IS NULL OR pes.expires_at > NOW())
-               AND JSON_UNQUOTE(JSON_EXTRACT(pes.raw_value, '$.normalized.publisher_type')) = 'government_organization'
-          ) THEN 'GOV'
-          ELSE NULL END AS alignment_marker,
-          CASE WHEN EXISTS (
-            SELECT 1 FROM publisher_external_signals pes
-             WHERE pes.publisher_id = (
-               SELECT cp5.publisher_id FROM content_publishers cp5
-                WHERE cp5.content_id = c.content_id
-                ORDER BY cp5.is_primary DESC, cp5.content_publisher_id DESC LIMIT 1
-             )
-               AND pes.provider = 'own_site_org_status'
-               AND (pes.expires_at IS NULL OR pes.expires_at > NOW())
-               AND JSON_UNQUOTE(JSON_EXTRACT(pes.raw_value, '$.normalized.publisher_type')) = 'government_organization'
-          ) THEN 0 ELSE MAX(pub.conflict_of_interest_score) END AS alignment_risk_score,
           MIN(a.author_id)        AS author_id,
           MIN(CONCAT(a.author_first_name, ' ', COALESCE(a.author_last_name, ''))) AS author_name,
           (
@@ -293,7 +260,8 @@ export default function createReferencesRoutes({ query, pool }) {
           return { ...ref, claims, authors };
         });
 
-        res.json(filteredReferences);
+        const referencesWithAlignment = await attachSourceAlignments(query, filteredReferences);
+        res.json(referencesWithAlignment);
       } catch (err) {
         console.error("Error fetching references with claims:", err);
         res.status(500).json({ error: "Database error" });

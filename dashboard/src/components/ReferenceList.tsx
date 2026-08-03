@@ -523,19 +523,15 @@ const ReferenceList: React.FC<ReferenceListProps> = ({
                       admiralty_code: ref.admiralty_code ?? undefined,
                     })}
                     size="xs"
-                    alignment={ref.alignment_marker ? {
-                      marker: ref.alignment_marker,
-                      label: ref.alignment_marker === "IND"
-                        ? "Industry aligned"
-                        : ref.alignment_marker === "GOV"
-                          ? "Government source"
-                          : "Institutionally aligned",
-                      riskScore: ref.alignment_risk_score,
-                    } : /facebook\.com|twitter\.com|x\.com|instagram\.com|tiktok\.com/i.test(ref.url ?? "") ? {
+                    // The sash must come from one place: whatever the backend's
+                    // deriveSourceAlignment computed (same function
+                    // SourceDetailModal uses via /api/publishers/:id/enrichment).
+                    // Do not re-derive IND/GOV/ADV labels here.
+                    alignment={ref.alignment ?? (/facebook\.com|twitter\.com|x\.com|instagram\.com|tiktok\.com/i.test(ref.url ?? "") ? {
                       marker: "SOC",
                       label: "Social media source — admiralty reflects entity, not platform",
                       riskScore: null,
-                    } : null}
+                    } : null)}
                     cacheStatus={ref.admiralty_source === "publisher_cached" ? "cached" : "fresh"}
                     active={!!ref.publisher_id && ref.publisher_id === glowPublisherId}
                     onClick={(e) => { e?.stopPropagation(); setSourceDetailRef(ref); }}

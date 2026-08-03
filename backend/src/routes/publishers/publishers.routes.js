@@ -2,7 +2,7 @@
 import { Router } from "express";
 import { resolveSourceIdentity } from "../../../services/sourceIdentityResolver.js";
 import { resolveSourceLineage } from "../../../services/sourceLineageResolver.js";
-import { assemblePublisherStatusFromSignals, deriveSourceAlignment } from "../../services/ownSiteOrgStatusService.js";
+import { assemblePublisherStatusFromSignals, deriveSourceAlignment, attachSourceAlignments } from "../../services/ownSiteOrgStatusService.js";
 import { linkPublisherRole, unlinkPublisherRole } from "../../storage/persistPublishers.js";
 
 // Reject localhost, loopback, and RFC-1918 URLs — these are dev-server or API
@@ -569,31 +569,7 @@ export default function createPublishersRoutes({ query, pool }) {
           ) AS admiralty_code,
           (SELECT pp.source_type FROM publisher_profiles pp
             WHERE pp.publisher_id = a.publisher_id AND pp.source_type IS NOT NULL
-            ORDER BY pp.last_checked DESC LIMIT 1) AS source_type,
-          CASE
-            WHEN EXISTS (
-              SELECT 1 FROM publisher_external_signals pes
-               WHERE pes.publisher_id = a.publisher_id
-                 AND pes.provider = 'own_site_org_status'
-                 AND (pes.expires_at IS NULL OR pes.expires_at > NOW())
-                 AND JSON_SEARCH(pes.flags, 'one', 'material_industry_interest') IS NOT NULL
-            ) THEN 'IND'
-            WHEN EXISTS (
-              SELECT 1 FROM publisher_external_signals pes
-               WHERE pes.publisher_id = a.publisher_id
-                 AND pes.provider = 'own_site_org_status'
-                 AND (pes.expires_at IS NULL OR pes.expires_at > NOW())
-                 AND JSON_UNQUOTE(JSON_EXTRACT(pes.raw_value, '$.normalized.publisher_type')) = 'government_organization'
-            ) THEN 'GOV'
-            ELSE NULL
-          END AS alignment_marker,
-          CASE WHEN EXISTS (
-            SELECT 1 FROM publisher_external_signals pes
-             WHERE pes.publisher_id = a.publisher_id
-               AND pes.provider = 'own_site_org_status'
-               AND (pes.expires_at IS NULL OR pes.expires_at > NOW())
-               AND JSON_UNQUOTE(JSON_EXTRACT(pes.raw_value, '$.normalized.publisher_type')) = 'government_organization'
-          ) THEN 0 ELSE a.conflict_of_interest_score END AS alignment_risk_score
+            ORDER BY pp.last_checked DESC LIMIT 1) AS source_type
         FROM publishers a
         JOIN content_publishers ta ON a.publisher_id = ta.publisher_id
         WHERE ta.content_id = ?`,
@@ -644,7 +620,8 @@ export default function createPublishersRoutes({ query, pool }) {
         }
       }
 
-      res.json(rows);
+      const rowsWithAlignment = await attachSourceAlignments(query, rows);
+      res.json(rowsWithAlignment);
     } catch (err) {
       console.error(err);
       res.status(500).send("Error fetching publishers");

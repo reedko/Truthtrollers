@@ -742,11 +742,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
                   sourceType={normalizeSourceProfile({ publisher_name: publishers[0].publisher_name, source_type: publishers[0].source_type ?? undefined }).sourceType}
                   reliability={normalizeSourceProfile({ publisher_name: publishers[0].publisher_name, source_type: publishers[0].source_type ?? undefined }).reliability}
                   admiraltyCode={publishers[0].admiralty_code ?? undefined}
-                  alignment={publishers[0].alignment_marker ? {
-                    marker: publishers[0].alignment_marker,
-                    label: publishers[0].alignment_marker === "GOV" ? "Government source" : "Institutionally aligned",
-                    riskScore: publishers[0].alignment_risk_score,
-                  } : null}
+                  alignment={publishers[0].alignment ?? null}
                   size="sm"
                   onClick={e => { e?.stopPropagation(); setSourceDetailOpen(true); }}
                 />

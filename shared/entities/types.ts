@@ -57,6 +57,24 @@ export interface AuthorRating {
   topic_name?: string;
 }
 
+// SourceCrest sash. Deliberately duplicated (not imported) from
+// dashboard/src/components/SourceCrest.tsx's SourceAlignment -- shared/ has
+// no dependency on dashboard React components. The shape is a plain data
+// contract; keep both in sync if either changes. This is the one backend
+// computation (ownSiteOrgStatusService.js's deriveSourceAlignment) that
+// every consumer of Publisher/ReferenceWithClaims.alignment should trust,
+// rather than re-deriving a marker/label pair from other fields.
+export interface SourceAlignment {
+  marker: "IND" | "ADV" | "GOV" | "CORP" | "PART" | "SPON" | "STATE" | string;
+  type?: string;
+  label: string;
+  riskScore?: number | null;
+  degree?: "low" | "moderate" | "high" | "unknown" | string;
+  explanation?: string | null;
+  confidence?: number | null;
+  provenance?: string;
+}
+
 // Publisher Interface
 export interface Publisher {
   publisher_id: number;
@@ -66,8 +84,7 @@ export interface Publisher {
   description: string;
   admiralty_code?: string | null;
   source_type?: string | null;
-  alignment_marker?: string | null;
-  alignment_risk_score?: number | null;
+  alignment?: SourceAlignment | null;
 }
 
 //Publisher Rating interface
@@ -130,8 +147,7 @@ export interface ReferenceWithClaims {
   source_type?: string | null;
   admiralty_code?: string | null; // from admiralty_evaluations join
   admiralty_source?: "content" | "publisher_cached" | null;
-  alignment_marker?: string | null;
-  alignment_risk_score?: number | null;
+  alignment?: SourceAlignment | null;
   author_id?: number;
 }
 export type UnifiedReference = ReferenceWithClaims;

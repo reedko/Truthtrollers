@@ -369,6 +369,12 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
         publisher_id: firstPub?.publisher_id ?? null,
         admiralty_code:
           firstPub?.admiralty_code ?? (parent as any)?.admiralty_code ?? null,
+        // Sourced from the same deriveSourceAlignment computation as
+        // SourceDetailModal, via firstPub.alignment (attachSourceAlignments
+        // on the backend) -- do not re-derive from a marker/riskScore pair
+        // fetched independently.
+        alignment_marker: firstPub?.alignment?.marker ?? null,
+        alignment_risk_score: firstPub?.alignment?.riskScore ?? null,
         rating: firstPub?.rating ?? null,
         url: firstPub?.url ?? (parent as any)?.url ?? null,
         content_id: firstPub?.content_id ?? (parent as any)?.content_id ?? null,
@@ -439,6 +445,8 @@ const CytoscapeKnowGraph: React.FC<CytoscapeKnowGraphProps> = ({
           // publisher identity (undefined for authorGroup nodes)
           publisher_id: node.publisher_id ?? null,
           admiralty_code: node.admiralty_code ?? null,
+          alignment_marker: node.alignment_marker ?? null,
+          alignment_risk_score: node.alignment_risk_score ?? null,
           rating: node.rating ?? null,
           badgeLabel:
             node.badgeLabel ?? (node.type === "authorGroup" ? "Au" : "Pub"),

@@ -412,6 +412,46 @@ export function assemblePublisherStatusFromSignals(signals = []) {
   return merged;
 }
 
+/**
+ * The SourceCrest sash must come from one place: this function, wrapping
+ * assemblePublisherStatusFromSignals + deriveSourceAlignment -- the same
+ * pair SourceDetailModal's /api/publishers/:id/enrichment route calls.
+ * Every list/graph endpoint that renders a SourceCrest sash should batch
+ * through this rather than re-deriving IND/GOV/ADV/etc. in SQL or in the
+ * frontend, which is how the sash silently went out of sync (ADV existed
+ * here but not in three separate hand-written SQL CASE WHEN blocks and two
+ * frontend label maps).
+ */
+export async function attachSourceAlignments(query, rows, { publisherIdField = "publisher_id", attach = "alignment" } = {}) {
+  const publisherIds = [...new Set(
+    rows.map((row) => row[publisherIdField]).filter((id) => id != null),
+  )];
+  if (!publisherIds.length) return rows;
+  const signalRows = await query(
+    `SELECT publisher_id, raw_value
+       FROM publisher_external_signals
+      WHERE publisher_id IN (?)
+        AND provider = 'own_site_org_status'
+        AND (expires_at IS NULL OR expires_at > NOW())`,
+    [publisherIds],
+  );
+  const signalsByPublisher = new Map();
+  for (const signalRow of signalRows) {
+    const list = signalsByPublisher.get(signalRow.publisher_id) || [];
+    list.push({ provider: "own_site_org_status", raw_value: signalRow.raw_value });
+    signalsByPublisher.set(signalRow.publisher_id, list);
+  }
+  const alignmentByPublisher = new Map();
+  for (const publisherId of publisherIds) {
+    const status = assemblePublisherStatusFromSignals(signalsByPublisher.get(publisherId) || []);
+    alignmentByPublisher.set(publisherId, deriveSourceAlignment(status));
+  }
+  return rows.map((row) => ({
+    ...row,
+    [attach]: row[publisherIdField] != null ? alignmentByPublisher.get(row[publisherIdField]) || null : null,
+  }));
+}
+
 export async function discoverOwnSiteOrgStatus({
   publisherName,
   sourceUrl,
