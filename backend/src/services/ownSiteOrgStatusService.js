@@ -230,11 +230,20 @@ export function classifyOrganizationStatusFromPages({
 
   const isIndustryGroup = tradeSignal && (memberSignal || boardSignal);
   const isGovernmentSource = governmentSignal && !isIndustryGroup;
+  // Advocacy is a real, pertinent fact about a source -- not a red flag by
+  // itself, but a reader should be able to see it at a glance the same way
+  // they see GOV/IND. This only adds the sash; it does not feed into
+  // default_reliability_letter/default_admiralty_code below, so it can't
+  // silently shift a rating the way the government/industry classifications
+  // deliberately do.
+  const isAdvocacyOrg = advocacySignal && !isIndustryGroup && !isGovernmentSource;
   const publisherType = isIndustryGroup
     ? "industry_trade_association"
     : isGovernmentSource
       ? "government_organization"
-      : null;
+      : isAdvocacyOrg
+        ? "advocacy_organization"
+        : null;
   const sector = telecomSignal ? "telecommunications / wireless" : null;
   const riskFlags = [];
   if (isIndustryGroup) riskFlags.push("material_industry_interest");
@@ -258,11 +267,13 @@ export function classifyOrganizationStatusFromPages({
       ? "telecom / wireless industry advocacy"
       : isIndustryGroup
         ? "industry aligned"
-        : null,
+        : isAdvocacyOrg
+          ? "advocacy / stated position"
+          : null,
     advocacy_role: advocacySignal,
     membership_disclosed: memberSignal,
     board_members_disclosed: boardSignal,
-    identity_confidence: isGovernmentSource ? 0.95 : isIndustryGroup ? 0.9 : evidence.length ? 0.65 : 0.2,
+    identity_confidence: isGovernmentSource ? 0.95 : isIndustryGroup ? 0.9 : isAdvocacyOrg ? 0.75 : evidence.length ? 0.65 : 0.2,
     domain_expertise_score: telecomSignal ? 0.85 : null,
     conflict_of_interest_score: isIndustryGroup ? 0.8 : 0,
     independence_score: isGovernmentSource ? 0.8 : isIndustryGroup ? 0.45 : null,
@@ -275,7 +286,9 @@ export function classifyOrganizationStatusFromPages({
       ? "Good for telecom industry position and technical context; not sufficient alone for public-health conclusions. Compare health claims against independent public-health agencies, regulators, and peer-reviewed reviews."
       : isIndustryGroup
         ? "Industry-aligned source; compare claims affecting member interests against independent sources."
-        : null,
+        : isAdvocacyOrg
+          ? "Advocacy source with a stated position on this topic; useful for that position, but claims should be corroborated against independent sources."
+          : null,
     evidence,
   };
 
