@@ -58,7 +58,7 @@ function buildProviderResultsFromDb(ratings, profiles) {
 }
 
 function isAutomaticScholarlyOrWikiRow(row) {
-  return /^(wikipedia|wikidata|scimago)$/i.test(String(row?.source || row?.provider || ""));
+  return /^(wikipedia|wikipedia_perennial_sources|wikidata|scimago)$/i.test(String(row?.source || row?.provider || ""));
 }
 
 function hasDirectRatingSignal(ratings) {
@@ -949,7 +949,7 @@ export default function createPublishersRoutes({ query, pool }) {
         ? rawProfiles.filter((row) => !isAutomaticScholarlyOrWikiRow(row))
         : rawProfiles;
       const externalSignals = isSocialDistributionPublisher
-        ? rawExternalSignals.filter((row) => !/^(wikipedia|wikidata|scimago|crossref|openalex)$/i.test(String(row.provider || "")))
+        ? rawExternalSignals.filter((row) => !/^(wikipedia|wikipedia_perennial_sources|wikidata|scimago|crossref|openalex)$/i.test(String(row.provider || "")))
         : rawExternalSignals;
       const publisherStatus = assemblePublisherStatusFromSignals(externalSignals);
       const sourceAlignment = deriveSourceAlignment(publisherStatus);

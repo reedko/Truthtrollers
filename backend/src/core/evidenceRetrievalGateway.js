@@ -207,7 +207,19 @@ export function createEvidenceRetrievalGateway({ config = {}, env = process.env,
     try {
       const raw = await adapters[provider](options);
       providerHealth.set(provider, { lastSuccessfulCall: new Date().toISOString(), lastError: null });
-      return { provider, results: raw.map((item, index) => normalizeResult(provider, item, index, options.query, normalized.captureProviderMetadata)), rawCount: raw.length, elapsedMs: Date.now() - startedAt };
+      return {
+        provider,
+        rawResponse: raw,
+        results: raw.map((item, index) => normalizeResult(
+          provider,
+          item,
+          index,
+          options.query,
+          normalized.captureProviderMetadata,
+        )),
+        rawCount: raw.length,
+        elapsedMs: Date.now() - startedAt,
+      };
     } catch (error) {
       providerHealth.set(provider, { ...(providerHealth.get(provider) || {}), lastError: bounded(error.message, 240), lastErrorAt: new Date().toISOString() });
       return { provider, results: [], error: bounded(error.message, 240), elapsedMs: Date.now() - startedAt };
@@ -272,6 +284,12 @@ export function createEvidenceRetrievalGateway({ config = {}, env = process.env,
             elapsedMs: call.elapsedMs || 0,
             rawResultCount: call.rawCount || 0,
             normalizedResultCount: call.results.length,
+            skipped: call.skipped || null,
+            error: call.error || null,
+          })),
+          rawProviderResponses: calls.map((call) => ({
+            provider: call.provider,
+            response: call.rawResponse ?? null,
             skipped: call.skipped || null,
             error: call.error || null,
           })),

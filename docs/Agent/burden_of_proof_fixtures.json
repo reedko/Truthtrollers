@@ -1,0 +1,284 @@
+{
+  "F03": {
+    "title": "Public Health’s “Truth” About Vaccines PART 1",
+    "author": "Ana Wolpin",
+    "propositions": [
+      {
+        "id": "F03-P01",
+        "assertion": "Jefferson County Public Health’s vaccine-safety claims repeat unsupported medical dogma and amount to dangerous misinformation.",
+        "assertionSource": "Ana Wolpin",
+        "whyCritical": "This is the article’s controlling thesis; if JCPH’s claims are well supported, the article’s overall indictment largely fails.",
+        "grounding": {
+          "previousSentence": "At their most extreme, “for those who refuse to adopt their beliefs, they demand that the refusers be censored, have their rights taken away, and be mandated to be injected.”",
+          "claimSentence": "As this article will show, the claims made in our health department’s ad repeat medical dogma that has persisted for decades with no basis in reality.",
+          "nextSentence": "At best the narrative is a wishful fairy tale."
+        }
+      },
+      {
+        "id": "F03-P02",
+        "assertion": "The CDC manipulated data from its 2004 MMR-autism study and suppressed evidence showing increased autism risk after MMR vaccination.",
+        "assertionSource": "Ana Wolpin, attributing the underlying disclosure to CDC scientist William Thompson",
+        "whyCritical": "This alleged institutional fraud is a major pillar of the article’s claim that official vaccine assurances cannot be trusted.",
+        "grounding": {
+          "previousSentence": "In 2016, a documentary film disclosing a decade-long CDC cover-up created an uproar in the news, sparking a long-overdue national conversation.",
+          "claimSentence": "Senior CDC scientist turned whistleblower William Thompson revealed privately in 2014 that data linking the MMR vaccine (measles/mumps/rubella) to autism had been manipulated by the agency ten years earlier.",
+          "nextSentence": "When top CDC officials learned that their 2004 study results showed a dramatic increase in autism after MMR vaccinations, they’d ordered Thompson and other scientists to destroy all evidence."
+        }
+      },
+      {
+        "id": "F03-P03",
+        "assertion": "The 1986 National Childhood Vaccine Injury Act removed vaccine manufacturers’ liability under industry pressure.",
+        "assertionSource": "Ana Wolpin",
+        "whyCritical": "The article treats liability protection as the institutional turning point that distorted safety incentives and enabled industry capture.",
+        "grounding": {
+          "previousSentence": "In the 1980s, pharmaceutical companies were losing so much money settling lawsuits for vaccine injury (predominantly from the DPT shot – diphtheria/pertussis/tetanus) that the industry threatened to stop making vaccines unless the government shielded them from damages.",
+          "claimSentence": "Bowing to the pressure, in 1986 Congress removed all liability from drug companies for childhood vaccines they produced.",
+          "nextSentence": "This get-out-of-jail-free card, eliminating industry responsibility for safety, was unprecedented."
+        }
+      },
+      {
+        "id": "F03-P04",
+        "assertion": "After the 1986 liability law, the childhood vaccine schedule expanded from 25 doses in 12 shots to 73 doses in 54 shots.",
+        "assertionSource": "Ana Wolpin",
+        "whyCritical": "The claimed expansion connects the article’s institutional-incentive argument to the increased exposure it says threatens children’s health.",
+        "grounding": {
+          "previousSentence": "While children had received just five vaccine doses in three shots in the 1950s and ’60s when I was growing up (none during pregnancy or in the first 12 months of life), by 1986 children were receiving 25 doses/12 shots.",
+          "claimSentence": "In the decades following the 1986 act the childhood schedule exploded to 73 doses/54 shots.",
+          "nextSentence": "New vaccines were developed for illnesses like hepatitis B and rotavirus, for which there was little risk and which effectively had 100% survival rates for healthy American children."
+        }
+      },
+      {
+        "id": "F03-P05",
+        "assertion": "The timing of reported infant deaths after vaccination provides evidence that vaccines contribute to sudden infant death.",
+        "assertionSource": "Ana Wolpin, citing Neil Z. Miller’s analysis of VAERS reports",
+        "whyCritical": "This is the article’s principal rebuttal to JCPH’s claim that vaccine immune challenges are less serious than ordinary environmental exposure.",
+        "grounding": {
+          "previousSentence": "Of these, 17% of deaths occurred on the day of vaccination and 48 percent within two days.",
+          "claimSentence": "A full 78.3 percent occurred within seven days post-vaccination.",
+          "nextSentence": "All coincidences?"
+        }
+      },
+      {
+        "id": "F03-P06",
+        "assertion": "Infants following the CDC schedule can receive more than 1,000 micrograms of aluminum in a visit, and the CDC has never safety-tested that cumulative exposure.",
+        "assertionSource": "Ana Wolpin",
+        "whyCritical": "This directly supports the article’s contention that public-health comparisons between injected aluminum and dietary aluminum are misleading.",
+        "grounding": {
+          "previousSentence": "For parents following the CDC schedule, aluminum injected at the 2-, 4-, and 6-month “Well Baby Visits” can exceed 1000 mcg.",
+          "claimSentence": "The CDC has NEVER safety tested this cumulative load received in multiple shots.",
+          "nextSentence": "Physicians for Informed Consent show aluminum content for the childhood vaccines:"
+        }
+      },
+      {
+        "id": "F03-P07",
+        "assertion": "Thimerosal is a potent neurotoxin that can cause neurological damage, including autism-related effects.",
+        "assertionSource": "Ana Wolpin, citing Robert F. Kennedy Jr. and Gavin de Becker",
+        "whyCritical": "This assertion directly contradicts JCPH’s statement that ethylmercury in vaccines is not harmful.",
+        "grounding": {
+          "previousSentence": "So in addition to fetal exposure in utero from flu and other shots given to pregnant mothers, children following the CDC’s vaccination schedule play the mercury lottery twenty times, getting their flu shots at 6 months, 7 months, one year, then annually every year until they’re 18.",
+          "claimSentence": "RFK Jr’s 2015 compilation of hundreds of peer-reviewed studies erases any doubt that thimerosal is a potent neurotoxin that causes neurological damage, from tics to autism.",
+          "nextSentence": "In de Becker’s more recent research of the scientific literature, newer studies continue to show that exposure to ethylmercury can cause neurological injury, developmental problems, impaired language skills, and autism."
+        }
+      },
+      {
+        "id": "F03-P08",
+        "assertion": "Local institutions systematically censored attempts to present vaccine-critical information to the public.",
+        "assertionSource": "Ana Wolpin, based partly on her participation in the local vaccine study group",
+        "whyCritical": "The censorship narrative explains why the article believes contrary evidence remains excluded from mainstream discussion and reinforces its institutional-distrust theme.",
+        "grounding": {
+          "previousSentence": "Given the sacred cow nature of the vaccine narrative, and the Rose Theatre experience, we knew there would be resistance.",
+          "claimSentence": "What we got was full-blown censorship.",
+          "nextSentence": "The Uptown Theater was going through renovations and closed during this time period, so there was no possibility of Vaxxed showing there."
+        }
+      }
+    ]
+  },
+  "F02": {
+    "title": "‘Deceptively Toxic’: How Regulators, Chemical Companies Get Away With Calling Glyphosate ‘Safe’",
+    "author": "Jill Erzen",
+    "propositions": [
+      {
+        "id": "F02-P01",
+        "assertion": "Industry influence shapes the studies, products, and exposure limits used by regulators to assess glyphosate.",
+        "assertionSource": "Michael Antoniou, reported by Jill Erzen",
+        "whyCritical": "This is the article’s central causal explanation for why glyphosate remains approved despite the health risks it alleges.",
+        "grounding": {
+          "previousSentence": "Antoniou, professor emeritus at King’s College London, spent more than a decade leading pesticides research and building a group he described as “a world leader in glyphosate herbicide toxicology.”",
+          "claimSentence": "He said industry’s influence extends from the studies regulators rely on and the products they test to the exposure limits they consider safe.",
+          "nextSentence": "“That is not science,” he said."
+        }
+      },
+      {
+        "id": "F02-P02",
+        "assertion": "Commercial glyphosate formulations can be up to one thousand times more toxic than glyphosate alone.",
+        "assertionSource": "Michael Antoniou, citing research by Robin Mesnage",
+        "whyCritical": "The article’s safety critique depends heavily on the claim that regulators test a materially less toxic substance than the products people actually encounter.",
+        "grounding": {
+          "previousSentence": "Those additional ingredients make the products “far more toxic” than glyphosate on its own, Antoniou said.",
+          "claimSentence": "Citing research by French scientist Robin Mesnage, Ph.D. , Antoniou said commercial formulations can be “up to a thousand times more toxic than glyphosate alone.”",
+          "nextSentence": "Yet regulators don’t require long-term toxicity testing of those complete formulations."
+        }
+      },
+      {
+        "id": "F02-P03",
+        "assertion": "Regulators approve glyphosate products using tests of glyphosate alone rather than long-term tests of complete commercial formulations.",
+        "assertionSource": "Michael Antoniou",
+        "whyCritical": "This is the specific regulatory failure the article says leaves real-world product toxicity unexamined.",
+        "grounding": {
+          "previousSentence": "Citing research by French scientist Robin Mesnage, Ph.D. , Antoniou said commercial formulations can be “up to a thousand times more toxic than glyphosate alone.”",
+          "claimSentence": "Yet regulators don’t require long-term toxicity testing of those complete formulations.",
+          "nextSentence": "Instead, “they pass regulations based on tests on glyphosate alone,” Antoniou said."
+        }
+      },
+      {
+        "id": "F02-P04",
+        "assertion": "Manufacturers conceal potentially toxic co-formulants by classifying them as inert and invoking confidentiality.",
+        "assertionSource": "Michael Antoniou",
+        "whyCritical": "If the supposedly hidden ingredients are disclosed and adequately assessed, the article’s deception argument weakens substantially.",
+        "grounding": {
+          "previousSentence": "The problem is compounded because manufacturers don’t disclose co-formulants on the labels of products such as Roundup , Antoniou said.",
+          "claimSentence": "Instead, the additional ingredients are simply listed as “inert” because they aren’t considered the active herbicide, even though evidence suggests some are highly toxic in their own right.",
+          "nextSentence": "“An industry hides behind confidentiality clauses,” and regulators don’t require full public disclosure, he said."
+        }
+      },
+      {
+        "id": "F02-P05",
+        "assertion": "Regulatory agencies rely heavily on industry-sponsored glyphosate studies, causing them to reproduce industry-shaped safety conclusions.",
+        "assertionSource": "Michael Antoniou",
+        "whyCritical": "This proposition generalizes the article’s criticism from flawed product testing to systemic corruption of the evidence base.",
+        "grounding": {
+          "previousSentence": "Testing only glyphosate is just one example of how industry has shaped regulation, according to Antoniou.",
+          "claimSentence": "He said regulatory agencies around the world rely heavily on industry-sponsored research when deciding whether glyphosate is safe.",
+          "nextSentence": "Because regulators often use the same industry data, they reach similar conclusions and cite one another as supporting evidence."
+        }
+      },
+      {
+        "id": "F02-P06",
+        "assertion": "Regulatory safety assessments are unrealistic because people are exposed to mixtures of many pesticides rather than one pesticide at a time.",
+        "assertionSource": "Michael Antoniou",
+        "whyCritical": "This assertion expands the claimed regulatory failure beyond glyphosate formulations to the cumulative and interactive exposures people actually experience.",
+        "grounding": {
+          "previousSentence": "Safety assessments typically examine one pesticide at a time.",
+          "claimSentence": "“But you and I, we’re all exposed to cocktails of pesticides on a daily basis,” he said.",
+          "nextSentence": "“Tens of different pesticides we can be exposed to on a daily basis through our food supply. Does the regulator take that into account? Not at all.”"
+        }
+      },
+      {
+        "id": "F02-P07",
+        "assertion": "Long-term exposure to commercial glyphosate formulations caused liver disease in animals at concentrations far below current regulatory safety limits.",
+        "assertionSource": "Michael Antoniou, describing research from his laboratory",
+        "whyCritical": "This is a central empirical basis for the claim that existing exposure limits are not protective.",
+        "grounding": {
+          "previousSentence": "His laboratory has reported DNA damage and nonalcoholic fatty liver disease in animals exposed to extremely low concentrations of commercial glyphosate formulations.",
+          "claimSentence": "In one study, animals developed liver disease after long-term exposure to glyphosate concentrations “125,000 times below the European Union safety limit and 250,000 times below the U.S. safety limit.”",
+          "nextSentence": "“Even minuscule doses of glyphosate herbicides, given enough time, can result in serious disease,” Antoniou said."
+        }
+      },
+      {
+        "id": "F02-P08",
+        "assertion": "Glyphosate and glyphosate herbicides are carcinogenic, and the currently accepted daily intake is wrong.",
+        "assertionSource": "Michael Antoniou, interpreting a June 2025 rat study",
+        "whyCritical": "This is the article’s strongest bottom-line health claim and directly determines whether its description of glyphosate as deceptively toxic is justified.",
+        "grounding": {
+          "previousSentence": "He also pointed to a June 2025 study in which rats exposed from fetal development through adulthood developed cancers, particularly leukemia, even at the currently accepted daily intake.",
+          "claimSentence": "“What this study tells us is clearly … first of all, glyphosate and glyphosate herbicides are definitely carcinogenic,” Antoniou said.",
+          "nextSentence": "“And also, clearly, the current acceptable daily intake … is clearly inaccurate or wrong.”"
+        }
+      }
+    ]
+  },
+  "F06": {
+    "title": "Obituary: Great Barrier Reef (25 Million BC-...)",
+    "author": "Rowan Jacobsen",
+    "propositions": [
+      {
+        "id": "F06-P01",
+        "assertion": "The Great Barrier Reef has effectively died after a prolonged decline.",
+        "assertionSource": "Rowan Jacobsen",
+        "whyCritical": "This is the article’s governing assertion and obituary frame; whether the reef was literally or functionally dead determines the trustworthiness of the piece as a whole.",
+        "grounding": {
+          "previousSentence": null,
+          "claimSentence": "The Great Barrier Reef of Australia passed away in … after a long illness.",
+          "nextSentence": "It was 25 million years old."
+        }
+      },
+      {
+        "id": "F06-P02",
+        "assertion": "The reef’s 1981 bleaching event was caused by elevated water temperatures and affected two-thirds of coral in its inner portions.",
+        "assertionSource": "Rowan Jacobsen",
+        "whyCritical": "This provides the historical onset and climate mechanism underlying the article’s account of terminal decline.",
+        "grounding": {
+          "previousSentence": "If water temperatures soon return to normal, the corals can recruit new algae and recover, but if not, they will die in months.",
+          "claimSentence": "In 1981, water temperatures soared, two-thirds of the coral in the inner portions of the reef bleached, and scientists began to suspect that climate change threatened coral reefs in ways that no marine park could prevent.",
+          "nextSentence": "By the turn of the millennium, mass bleachings were common."
+        }
+      },
+      {
+        "id": "F06-P03",
+        "assertion": "Mass coral-bleaching events became common by the turn of the millennium and repeatedly struck the reef.",
+        "assertionSource": "Rowan Jacobsen",
+        "whyCritical": "The article needs a sustained worsening pattern, not a single temporary event, to justify its obituary framing.",
+        "grounding": {
+          "previousSentence": "In 1981, water temperatures soared, two-thirds of the coral in the inner portions of the reef bleached, and scientists began to suspect that climate change threatened coral reefs in ways that no marine park could prevent.",
+          "claimSentence": "By the turn of the millennium, mass bleachings were common.",
+          "nextSentence": "The winter of 1997–98 brought the next big one, followed by an even more severe one in 2001–02, and another whopper in 2005–06."
+        }
+      },
+      {
+        "id": "F06-P04",
+        "assertion": "Ocean acidification caused by absorbed atmospheric carbon was beginning to dissolve the living reef.",
+        "assertionSource": "Rowan Jacobsen",
+        "whyCritical": "This supplies the second major climate mechanism, beyond thermal bleaching, that the article says made long-term recovery impossible.",
+        "grounding": {
+          "previousSentence": "By then, it was apparent that warming water was not the only threat brought by climate change.",
+          "claimSentence": "As the oceans absorbed more carbon from the atmosphere, they became more acidic, and that acid was beginning to dissolve the living reef itself.",
+          "nextSentence": "Concerned for the reef’s health, a number of friends attempted interventions—none more poignant than Veron’s famed 2009 speech to London’s 350-year-old Royal Society titled “Is the Great Barrier Reef on Death Row?”"
+        }
+      },
+      {
+        "id": "F06-P05",
+        "assertion": "Atmospheric carbon dioxide at 450 parts per million would bring about the reef’s demise.",
+        "assertionSource": "Charlie Veron, reported by Rowan Jacobsen",
+        "whyCritical": "The article uses this prediction to support the claim that the reef had crossed or was approaching an irreversible climatic threshold.",
+        "grounding": {
+          "previousSentence": "As the oceans absorbed more carbon from the atmosphere, they became more acidic, and that acid was beginning to dissolve the living reef itself.",
+          "claimSentence": "Veron quickly answered his own question in the affirmative: “This is not a fun talk to give, but I’ve never given a more important talk in my life,” he told the premier gathering of scientists, accurately predicting that atmospheric carbon dioxide concentrations of 450 parts per million (which the world reached in 2025) would bring about the demise of the reef.",
+          "nextSentence": "No one knows if a serious effort could have saved the reef, but it is clear that no such effort was made."
+        }
+      },
+      {
+        "id": "F06-P06",
+        "assertion": "Australia failed to mount a serious rescue effort and suppressed warnings about the reef to protect tourism and fossil-fuel development.",
+        "assertionSource": "Rowan Jacobsen",
+        "whyCritical": "This is the article’s central attribution of political responsibility for allowing the ecological decline to continue.",
+        "grounding": {
+          "previousSentence": "No one knows if a serious effort could have saved the reef, but it is clear that no such effort was made.",
+          "claimSentence": "On the contrary, attempts to call attention to the reef’s plight were thwarted by the government of Australia itself, which in 2016, shortly after approving the largest coal mine in its history, successfully pressured the United Nations to remove a chapter about the reef from a report on the impact of climate change on World Heritage sites.",
+          "nextSentence": "Australia’s Department of the Environment explained the move by saying, “experience had shown that negative comments about the status of World Heritage-listed properties impacted on tourism.”"
+        }
+      },
+      {
+        "id": "F06-P07",
+        "assertion": "The reef’s catastrophic bleaching event killed as much as half of the coral in its warmer northern region.",
+        "assertionSource": "Rowan Jacobsen",
+        "whyCritical": "This quantified loss is the article’s most concrete evidence that the reef had suffered damage severe enough to justify the obituary.",
+        "grounding": {
+          "previousSentence": "By then, the reef was in the midst of the most catastrophic bleaching event in its history, from which it would never recover.",
+          "claimSentence": "As much as 50 percent of the coral in the warmer, northern part of the reef died.",
+          "nextSentence": "“The whole northern section is trashed,” Veron told Australia’s Saturday Paper ."
+        }
+      },
+      {
+        "id": "F06-P08",
+        "assertion": "Continued ocean warming and acidification made recovery of the reef impossible for centuries.",
+        "assertionSource": "Rowan Jacobsen, conveying Charlie Veron’s assessment",
+        "whyCritical": "The obituary framing requires not merely severe injury but an effectively irreversible prognosis.",
+        "grounding": {
+          "previousSentence": "“The whole northern section is trashed,” Veron told Australia’s Saturday Paper .",
+          "claimSentence": "“It looks like a war zone. It’s heartbreaking.” With no force on earth capable of preventing the oceans from continuing to warm and acidify for centuries to come, Veron had no illusions about the future.",
+          "nextSentence": "“I used to have the best job in the world. Now it’s turned sour… I’m 71 years old now, and I think I may outlive the reef.”"
+        }
+      }
+    ]
+  }
+}

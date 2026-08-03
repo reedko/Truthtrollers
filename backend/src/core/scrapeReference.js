@@ -20,19 +20,15 @@ import {
   normalizeFacebookProvenance,
 } from "../utils/facebookProvenance.js";
 import { isUsableSourceEntityName } from "../utils/publisherNameValidation.js";
+import {
+  extractProductionReadableHtml,
+  isProductionBotChallengeHtml,
+} from "./productionDocumentExtraction.js";
 
 const SOURCE_ATTR_RE = /\b(source|via|originally published|originally at|reprinted from|cross[- ]?posted from|from the)\b/i;
 const MAX_CHAIN_DEPTH = 3;
 // Generic/garbage publisher names — includes old media_source platform values and generic web terms
 const JUNK_PUBLISHER_RE = /^(unknown( publisher)?|web|website|home|index|default|page|site|blog|news|online|internet|portal|network|media|publications?|facebook|youtube|twitter|instagram|tiktok|reddit|linkedin|pinterest|snapchat|telegram|x\.com|recaptcha|just a moment|cloudflare|attention required|one more step|checking your browser|access denied|bot protected)$/i;
-
-// Bot/CAPTCHA challenge pages — detect before parsing so we use domain as fallback publisher
-const BOT_PAGE_RE = /class="g-recaptcha"|id="challenge-(?:form|stage|running)"|cf-challenge|checking your browser|just a moment\.\.\.|enable javascript and cookies to continue|are you a robot\?|ddos-guard|please complete the security check|access to this page has been denied/i;
-
-function isBotProtectedHtml(html) {
-  if (!html || html.length < 50) return false;
-  return BOT_PAGE_RE.test(html);
-}
 
 // Extract a human-readable domain label from a URL (e.g. "pubmed.ncbi.nlm.nih.gov" → "pubmed.ncbi.nlm.nih.gov")
 function domainFromUrl(url) {
@@ -398,6 +394,10 @@ export async function scrapeReference(query, {
   // Distribution-layer provenance (optional — from social posts)
   platform, distribution_channel, linked_url, linked_publisher,
   socialProvenance,
+  // Bound EvidenceRun scrape jobs persist the acquired document without
+  // secondary profile fetches, publisher-chain fetches, thumbnails, or
+  // enrichment. Legacy callers retain their existing behavior.
+  acquisitionOnly = false,
 }) {
   try {
     logger.log(`🟦 [scrapeReference] Processing reference: ${url}`);
@@ -415,7 +415,7 @@ export async function scrapeReference(query, {
     // ─────────────────────────────────────────────
 
     // Detect bot/CAPTCHA challenge pages before any parsing
-    const botBlocked = raw_html ? isBotProtectedHtml(raw_html) : false;
+    const botBlocked = raw_html ? isProductionBotChallengeHtml(raw_html) : false;
     if (botBlocked) {
       logger.warn(`🤖 [scrapeReference] Bot-protection challenge detected for ${url} — will use domain as publisher`);
     }
@@ -460,7 +460,7 @@ export async function scrapeReference(query, {
     let authors = hasProvidedAuthors
       ? providedAuthors
       : ($ && !botBlocked ? await extractAuthors($) : []);
-    if (!authors.length && $ && !botBlocked && url) {
+    if (!acquisitionOnly && !authors.length && $ && !botBlocked && url) {
       const profileAuthors = await followProfileLinks($, url);
       if (profileAuthors.length) authors = profileAuthors;
     }
@@ -592,7 +592,7 @@ export async function scrapeReference(query, {
         // Recursively resolve the publisher by following the article chain.
         // Use the full article URL when available; otherwise follow the domain root.
         const chainUrl = extractedUrl || linked_url || (extractedDomain ? `https://${extractedDomain}` : null);
-        if (chainUrl) {
+        if (chainUrl && !acquisitionOnly) {
           logger.log(`[FB-TRACE] calling resolvePublisherChain on: ${chainUrl.slice(0,100)}`);
           const resolved = await resolvePublisherChain(chainUrl, 0, query);
           logger.log(`[FB-TRACE] resolvePublisherChain returned: "${resolved?.name || "null"}"`);
@@ -668,7 +668,7 @@ export async function scrapeReference(query, {
       // TODO: For PDFs scraped from extension, we need to pass the blob to thumbnail generator
       // For now, skip thumbnail generation (would need to refetch PDF which might be blocked)
       logger.log(`🖼️  [scrapeReference] Skipping PDF thumbnail (would require re-fetching blocked PDF)`);
-    } else if ($) {
+    } else if ($ && !acquisitionOnly) {
       // For HTML pages, extract image from page
       thumbnail = getBestImage($, url) || "";
       if (thumbnail) {
@@ -689,13 +689,15 @@ export async function scrapeReference(query, {
 
     let text;
     if (raw_html) {
-      // Extract clean text from HTML
-      $("script, style, link").remove();
-      let cleanText = $.text().trim();
-      if (cleanText.length > 60000) {
-        cleanText = cleanText.slice(0, 60000);
-      }
-      text = cleanText;
+      // Use the same Readability + production-selector extraction seam as
+      // case scraping and automatic CFX acquisition. Metadata continues to
+      // use the unmodified full HTML above.
+      const extracted = extractProductionReadableHtml(raw_html, { url });
+      text = extracted.text;
+      logger.log(
+        `📝 [scrapeReference] Shared production extraction=${extracted.method}` +
+        `${extracted.selector ? ` selector=${extracted.selector}` : ""} chars=${text.length}`,
+      );
     } else {
       // Use raw_text directly (for PDFs)
       text = raw_text.slice(0, 60000);
@@ -802,7 +804,7 @@ export async function scrapeReference(query, {
     // Uses the same code path as SourceDetailModal's "Enrich & Link":
     //   InsertOrGetPublisher → enrichPublisherIfNeeded → evaluateAdmiraltyCode
     // Runs async — never delays or blocks the scrape return.
-    (async () => {
+    if (!acquisitionOnly) (async () => {
       try {
         const { evaluateAdmiraltyCode, storeEvaluation } = await import("../../services/admiraltyEvaluator.js");
         const { enrichPublisherIfNeeded } = await import("../services/publisherEnrichmentService.js");

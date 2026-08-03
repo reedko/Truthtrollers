@@ -29,6 +29,7 @@ import fs from "fs/promises";
 import { JSDOM } from "jsdom";
 import { Readability } from "@mozilla/readability";
 import { publisherProviderFlags } from "../../services/sourceProviders/providerFeatureFlags.js";
+import { WIKIPEDIA_PERENNIAL_DATASET_VERSION } from "../../services/sourceProviders/providers/wikipediaPerennialSourcesProvider.js";
 import { isUsableSourceEntityName } from "../utils/publisherNameValidation.js";
 
 // ────────────────────────────────────────────────────────────
@@ -192,6 +193,28 @@ async function isStaleProfile(query, publisherId, source) {
   return (Date.now() - new Date(last).getTime()) / 86400000 > FRESHNESS_DAYS;
 }
 
+async function isWikipediaPerennialSourcesStale(query, publisherId) {
+  try {
+    const rows = await query(
+      `SELECT raw_value, error_status, retrieved_at
+         FROM publisher_external_signals
+        WHERE publisher_id = ? AND provider = 'wikipedia_perennial_sources'
+        ORDER BY retrieved_at DESC, id DESC
+        LIMIT 1`,
+      [publisherId]
+    );
+    const row = rows[0];
+    if (!row) return true;
+    const raw = typeof row.raw_value === "string" ? JSON.parse(row.raw_value || "{}") : (row.raw_value || {});
+    const storedVersion = raw.datasetVersion || raw.normalized?.datasetVersion || null;
+    if (storedVersion !== WIKIPEDIA_PERENNIAL_DATASET_VERSION) return true;
+    if (["error", "timeout"].includes(String(row.error_status || "").toLowerCase())) return true;
+    return (Date.now() - new Date(row.retrieved_at).getTime()) / 86400000 > FRESHNESS_DAYS;
+  } catch {
+    return true;
+  }
+}
+
 async function isOwnSiteOrgStatusStale(query, publisherId) {
   try {
     const rows = await query(
@@ -225,6 +248,33 @@ async function persistAndSummarizeSignals(query, {
   const allSignals = await loadProviderSignals(query, publisherId);
   await updatePublisherSignalSummary(query, publisherId, allSignals);
   return signals;
+}
+
+async function runWikipediaPerennialSources(query, {
+  publisherId,
+  publisherName,
+  domain,
+  sourceUrl,
+}) {
+  const [providerResult] = await lookupPublisherAllProviders(
+    { publisherName, domain, sourceUrl },
+    { providers: ["wikipedia_perennial_sources"] }
+  );
+  await persistAndSummarizeSignals(query, {
+    publisherId,
+    domain,
+    entityName: publisherName,
+    providerResults: [providerResult],
+    matchContext: { sourceUrl },
+  });
+  return {
+    status: providerResult.status,
+    matchedEntity: providerResult.matchedEntity || null,
+    classification: providerResult.normalized?.classification || null,
+    matchMethod: providerResult.matchMethod || null,
+    cached: Boolean(providerResult.cached),
+    datasetVersion: providerResult.datasetVersion || WIKIPEDIA_PERENNIAL_DATASET_VERSION,
+  };
 }
 
 // ────────────────────────────────────────────────────────────
@@ -310,7 +360,7 @@ async function clearAutomaticSocialEnrichment(query, publisherId) {
       query(
         `DELETE FROM publisher_external_signals
           WHERE publisher_id = ?
-            AND provider IN ('wikipedia', 'wikidata', 'scimago', 'crossref', 'openalex')`,
+            AND provider IN ('wikipedia', 'wikipedia_perennial_sources', 'wikidata', 'scimago', 'crossref', 'openalex')`,
         [publisherId]
       ).catch((err) => {
         if (err?.code !== "ER_NO_SUCH_TABLE") throw err;
@@ -1519,7 +1569,7 @@ export async function backfillMissingScores(query) {
  * Called automatically at the end of enrichPublisherIfNeeded so ratings always
  * drive the Admiralty code. Never throws.
  */
-async function reEvaluateAdmiraltyForPublisher(query, resolvedId, label) {
+export async function reEvaluateAdmiraltyForPublisher(query, resolvedId, label) {
   try {
     const { evaluateAdmiraltyCode, storeEvaluation } = await import("../../services/admiraltyEvaluator.js");
 
@@ -1749,16 +1799,17 @@ export async function enrichPublisherIfNeeded({
 
     // 3. Per-provider freshness checks (parallelized). Disabled providers are
     // not stale: forcing enrichment must not bypass an explicit provider gate.
-    const [allSidesStale, adFontesStale, wikiStale, wikidataStale, scimagoStale] = await Promise.all([
+    const [allSidesStale, adFontesStale, wikiStale, perennialSourcesStale, wikidataStale, scimagoStale] = await Promise.all([
       providerFlags.allSides && providerFlags.searchLlmFallback ? (force ? true : isStaleRating(query, resolvedId, "AllSides")) : false,
       providerFlags.adFontes && providerFlags.searchLlmFallback ? (force ? true : isStaleRating(query, resolvedId, "Ad Fontes")) : false,
       force ? true : isStaleProfile(query, resolvedId, "Wikipedia"),
+      providerFlags.wikipediaPerennialSources ? (force ? true : isWikipediaPerennialSourcesStale(query, resolvedId)) : false,
       force ? true : isStaleProfile(query, resolvedId, "Wikidata"),
       force ? true : isStaleRating(query, resolvedId, "SCImago"),
     ]);
 
     logger.log(
-      `[enrichment] Stale providers — AllSides:${allSidesStale} AdFontes:${adFontesStale} Wikipedia:${wikiStale} Wikidata:${wikidataStale} SCImago:${scimagoStale}`
+      `[enrichment] Stale providers — AllSides:${allSidesStale} AdFontes:${adFontesStale} Wikipedia:${wikiStale} WikipediaPerennialSources:${perennialSourcesStale} Wikidata:${wikidataStale} SCImago:${scimagoStale}`
     );
 
     // 4. Collect stale tasks
@@ -1769,6 +1820,7 @@ export async function enrichPublisherIfNeeded({
     if (tavilySearch && providerFlags.adFontes && providerFlags.searchLlmFallback && adFontesStale) tasks.push({ name: "Ad Fontes", fn: () => runAdFontes(query, ctx) });
     if (tavilySearch && wikiStale) tasks.push({ name: "Wikipedia", fn: () => runWikipedia(query, ctx) });
     else if (wikiStale) tasks.push({ name: "Wikipedia", fn: async () => ({ status: "skipped", reason: "tavily_not_configured" }) });
+    if (perennialSourcesStale) tasks.push({ name: "Wikipedia Perennial Sources", fn: () => runWikipediaPerennialSources(query, ctx) });
     if (wikidataStale)  tasks.push({ name: "Wikidata",  fn: () => runWikidata(query, ctx) });
     if (scimagoStale && looksLikeScholarlySourceName(label, sourceUrl)) {
       tasks.push({ name: "SCImago", fn: () => runSCImago(query, ctx) });
@@ -1783,6 +1835,7 @@ export async function enrichPublisherIfNeeded({
     const results = {
       ...(!providerFlags.allSides ? { AllSides: { status: "disabled", reason: "data_access_pending" } } : {}),
       ...(!providerFlags.adFontes ? { "Ad Fontes": { status: "disabled" } } : {}),
+      ...(!providerFlags.wikipediaPerennialSources ? { "Wikipedia Perennial Sources": { status: "disabled" } } : {}),
       ...((providerFlags.allSides || providerFlags.adFontes) && !providerFlags.searchLlmFallback
         ? { SearchLlmRatingFallback: { status: "disabled" } }
         : {}),

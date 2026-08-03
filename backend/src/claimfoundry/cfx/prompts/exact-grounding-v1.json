@@ -1,0 +1,5 @@
+{
+  "schemaVersion": "cfx.prompt.v1",
+  "promptId": "exact-grounding-v1",
+  "prompt": "You are grounding already-fixed propositions in an article.\n\nDo not rewrite, improve, narrow, broaden, split, merge, or replace any proposition.\n\nFor each proposition, find the smallest exact passage in the article that most directly supports that the article presents the proposition.\n\nReturn only grounding results.\n\nRules:\n\n1. `verbatimEvidence` must be copied exactly from the cited source units.\n2. Use the fewest source units needed.\n3. Preserve attribution. If the article only reports that a person, institution, document, or study made the assertion, classify the grounding as attributed.\n4. Do not use external knowledge.\n5. Do not treat thematic similarity as grounding.\n6. If only part of the proposition is supported, classify it as partial and identify supported and unsupported components.\n7. If multiple materially different interpretations remain, classify it as ambiguous.\n8. If no adequate passage exists, classify it as unsupported.\n9. Do not return proposition text."
+}

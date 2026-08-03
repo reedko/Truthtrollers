@@ -429,7 +429,7 @@ Return JSON:
       scores.evidence_density,
       scores.claim_specificity,
       scores.correction_behavior,
-      scores.domain_reputation || 5.0, // Default to 5.0 (not scored by LLM anymore)
+      scores.domain_reputation ?? 5.0, // Preserve a measured zero; default only when unscored.
       scores.original_reporting,
       scores.sensationalism_score,
       scores.monetization_pressure,

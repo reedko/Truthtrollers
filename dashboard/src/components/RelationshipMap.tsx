@@ -7,18 +7,12 @@ import React, {
 } from "react";
 import { Box } from "@chakra-ui/react";
 import { Claim, ReferenceWithClaims } from "../../../shared/entities/types";
+import {
+  relationPresentation,
+  WorkspaceClaimLink,
+} from "./evidenceLinkPresentation";
 
-export interface ClaimLink {
-  id?: string;
-  claim_link_id?: number; // for future use
-  claimId: number; // target/task claim
-  referenceId: number; // reference content id
-  sourceClaimId: number; // 👈 new
-  relation: "support" | "refute" | "nuance";
-  confidence: number;
-  notes?: string;
-  verimeter_score?: number;
-}
+export type ClaimLink = WorkspaceClaimLink;
 
 interface RelationshipMapProps {
   contentId: number;
@@ -176,25 +170,11 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
           const y2 =
             rightCenters[Number(link.referenceId)] ?? getRightY(rightIndex);
 
-          // Check if this is an AI-suggested link (not human-verified)
-          const isAISuggested = link.id?.toString().startsWith("ai-");
-
-          // Determine color based on relation field
-          // Normalize relation field for comparison
-          const relationLower = link.relation.toLowerCase();
-          const isSupport = relationLower === "support" || relationLower === "supports";
-          const isRefute = relationLower === "refute" || relationLower === "refutes";
-          const isNuance = !isSupport && !isRefute; // nuance/context/related
-
-          // Base colors: green for support, red for refute, yellow/blue for nuance
-          const baseColor = isRefute ? "red" : isSupport ? "green" : "blue";
-
-          // For AI links: lighter/more transparent colors
+          const isAISuggested = link.linkKind !== "human";
+          const presentation = relationPresentation(link.relation, link.linkKind);
           const strokeColor = isAISuggested
-            ? (isRefute ? "rgba(255, 100, 100, 0.5)" :
-               isSupport ? "rgba(100, 255, 100, 0.5)" :
-               "rgba(100, 150, 255, 0.5)") // light blue for nuance
-            : baseColor;
+            ? presentation.aiStrokeColor
+            : presentation.baseColor;
 
           // Create unique key using ALL identifying properties to ensure uniqueness
           const linkId = `${link.claimId}-${link.referenceId}-${link.sourceClaimId || 'none'}-${link.relation}-${i}`;
@@ -277,11 +257,9 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
               )}
 
               <title>
-                {`${isAISuggested ? "🤖 AI " : "✓ "}${
-                  link.relation === "support" ? "Supports" :
-                  link.relation === "refute" ? "Refutes" :
-                  "Nuances"
-                } • ${Math.abs(link.confidence * 100).toFixed(0)}%`}
+                {link.linkKind === "document-discovery"
+                  ? `${presentation.label} • ${link.discoveryStatus || "unassessed"}`
+                  : `${isAISuggested ? "🤖 AI " : "✓ "}${presentation.label} • ${Math.abs(link.confidence * 100).toFixed(0)}%`}
               </title>
 
               {/* Visible line */}
@@ -292,7 +270,7 @@ const RelationshipMap: React.FC<RelationshipMapProps> = ({
                 y2={y2}
                 stroke={strokeColor}
                 strokeWidth={lightweightMode ? (isAISuggested ? 3 : 2.5) : hoveredLinkId === linkId ? 6 : 4}
-                strokeDasharray={isAISuggested ? "8,4" : undefined}
+                strokeDasharray={presentation.dotted ? "8,4" : undefined}
                 markerStart={lightweightMode ? undefined : "url(#arrowhead)"}
                 opacity={visibleOpacity}
                 style={{

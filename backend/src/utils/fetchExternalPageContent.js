@@ -5,66 +5,12 @@
 // ─────────────────────────────────────────────
 
 import * as cheerio from "cheerio";
-import pdfParse from "pdf-parse/lib/pdf-parse.js";
 import { fetchTextWithFallbacks } from "./fetchWithFallbacks.js";
 import logger from "./logger.js";
 import axios from "axios";
 import https from "https";
 import { DEFAULT_HEADERS } from "./helpers.js";
-import { processPublishingIdentity } from "../services/publishingIdentityPipeline.js";
-
-/**
- * chooseTitle - Extract title from PDF metadata or first lines
- */
-function chooseTitle(infoTitle, lines, url) {
-  if (infoTitle && infoTitle.length > 3) {
-    return infoTitle;
-  }
-
-  // Look for title-like line in first 10 lines
-  for (const line of lines.slice(0, 10)) {
-    if (line.length > 10 && line.length < 200) {
-      return line;
-    }
-  }
-
-  // Fallback: use URL
-  try {
-    const { pathname } = new URL(url);
-    return pathname.split("/").filter(Boolean).pop() || "PDF Document";
-  } catch {
-    return "PDF Document";
-  }
-}
-
-/**
- * choosePdfAuthors - Extract authors from PDF metadata or first lines
- */
-function choosePdfAuthors(infoAuthor, lines) {
-  const authors = [];
-
-  if (infoAuthor) {
-    // Split by common separators
-    const names = infoAuthor.split(/[,;]|\sand\s/).map((s) => s.trim());
-    authors.push(...names);
-  }
-
-  // Look for "by Author Name" or "Author:" patterns in first lines
-  const authorPatterns = [/^by\s+(.+)/i, /^author[s]?:\s*(.+)/i];
-
-  for (const line of lines.slice(0, 15)) {
-    for (const pattern of authorPatterns) {
-      const match = line.match(pattern);
-      if (match && match[1]) {
-        const names = match[1].split(/[,;]|\sand\s/).map((s) => s.trim());
-        authors.push(...names);
-      }
-    }
-  }
-
-  // Deduplicate
-  return [...new Set(authors)].filter(Boolean);
-}
+import { extractProductionPdfDocument } from "../core/productionDocumentExtraction.js";
 
 /**
  * fetchExternalPageContent(url)
@@ -98,37 +44,16 @@ export async function fetchExternalPageContent(url) {
       });
 
       const buffer = Buffer.from(response.data);
-      const parsed = await pdfParse(buffer);
-
-      const fullText = (parsed.text || "").replace(/\r/g, "");
-      const infoTitle = (
-        parsed.info && parsed.info.Title ? parsed.info.Title : ""
-      ).trim();
-      const infoAuthor = (
-        parsed.info && parsed.info.Author ? parsed.info.Author : ""
-      ).trim();
-
-      // Extract title/authors from first chunk of text
-      const head = fullText.slice(0, 4000);
-      const lines = head
-        .split(/\n+/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-
-      const title = chooseTitle(infoTitle, lines, url);
-      const fallbackAuthors = choosePdfAuthors(infoAuthor, lines);
-      const identityResult = await processPublishingIdentity({
-        documentType: "pdf",
-        pdfInfo: parsed.info || {},
-        pdfMetadata: parsed.metadata || null,
-        pdfText: fullText,
-        sourceUrl: url,
+      const extracted = await extractProductionPdfDocument({
+        buffer,
+        url,
+        maximumCharacters: 2_000_000,
       });
-      const identity = identityResult.identity;
-      const authors = identityResult.authors.length
-        ? identityResult.authors.map((author) => author.name)
-        : fallbackAuthors;
-      const publisher = identityResult.legacyPublisher?.name || null;
+      const fullText = extracted.text;
+      const title = extracted.title;
+      const authors = extracted.authors.map((author) => author?.name || author).filter(Boolean);
+      const publisher = extracted.publisher?.name || null;
+      const identity = extracted.publishingIdentity;
 
       logger.log(`✅ [fetchExternalPageContent] PDF parsed: ${title}${publisher ? ` | publisher: ${publisher}` : ""}`);
 

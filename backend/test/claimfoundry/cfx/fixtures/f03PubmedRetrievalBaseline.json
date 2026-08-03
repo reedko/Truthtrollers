@@ -1,0 +1,190 @@
+{
+  "schemaVersion": "cfx.f03PubmedRetrievalBaseline.v1",
+  "reviewMethod": "manual title-and-provider-snippet review; no outside information and no model call",
+  "sourceRunId": "cfx-initial-retrieval-cf1-f03-20260731062143",
+  "sourceArtifactAggregateSha256": "0b48e1d9db76eaa3ec7b6dd393b4335e0c8b1bc2a2812975317c72f533c6b03d",
+  "protectedSuccessfulQueries": [
+    {
+      "propositionId": "P03",
+      "queryId": "Q4",
+      "query": "High-quality evidence on the relationship between vaccination and chronic diseases",
+      "goodPmidIds": ["41736221"]
+    },
+    {
+      "propositionId": "P09",
+      "queryId": "Q4",
+      "query": "Research on the effects of thimerosal in childhood vaccines",
+      "goodPmidIds": ["39973418", "36673825", "29573974", "29481853"]
+    }
+  ],
+  "protectedWebCandidates": [
+    {
+      "propositionId": "P05",
+      "queryId": "Q1",
+      "query": "The CDC manipulated data linking the MMR vaccine to autism",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC6768751",
+      "title": "The MMR Vaccine and Autism",
+      "classification": "user_confirmed_good",
+      "reason": "Directly addresses the MMR-vaccine/autism relationship and was retrieved by the unchanged canonical web lane."
+    }
+  ],
+  "zeroResultQueries": [
+    {
+      "propositionId": "P03",
+      "queryId": "Q2",
+      "query": "No credible studies link vaccination to chronic disease"
+    },
+    {
+      "propositionId": "P05",
+      "queryId": "Q2",
+      "query": "CDC manipulated data linking MMR vaccine to autism"
+    },
+    {
+      "propositionId": "P05",
+      "queryId": "Q4",
+      "query": "Research on the integrity of data linking MMR vaccine to autism"
+    },
+    {
+      "propositionId": "P07",
+      "queryId": "Q2",
+      "query": "Rise in chronic illnesses among children correlates with increased vaccination schedule"
+    },
+    {
+      "propositionId": "P08",
+      "queryId": "Q4",
+      "query": "Evidence on the safety of aluminum in vaccines compared to dietary exposure"
+    },
+    {
+      "propositionId": "P10",
+      "queryId": "Q2",
+      "query": "CDC has never safety tested cumulative aluminum load in vaccines"
+    },
+    {
+      "propositionId": "P10",
+      "queryId": "Q4",
+      "query": "Research on the safety testing of aluminum in multiple vaccine shots"
+    }
+  ],
+  "reviewedCandidates": [
+    {
+      "propositionId": "P03",
+      "queryId": "Q4",
+      "pmid": "42065735",
+      "title": "Psychosocial implications, acceptability and ethics of screening for paediatric type 1 diabetes: a systematic review and mixed methods evidence synthesis.",
+      "classification": "not_good",
+      "reason": "No vaccination relationship appears in the title or provider snippet."
+    },
+    {
+      "propositionId": "P03",
+      "queryId": "Q4",
+      "pmid": "41736221",
+      "title": "Factors influencing the relationship between influenza vaccination and the risk of developing dementia: A systematic review.",
+      "classification": "good",
+      "reason": "Directly examines a vaccination and chronic-disease relationship."
+    },
+    {
+      "propositionId": "P03",
+      "queryId": "Q4",
+      "pmid": "41092928",
+      "title": "Global burden of 292 causes of death in 204 countries and territories and 660 subnational locations, 1990-2023: a systematic analysis for the Global Burden of Disease Study 2023.",
+      "classification": "not_good",
+      "reason": "General disease-burden analysis with no vaccination relationship in the title or provider snippet."
+    },
+    {
+      "propositionId": "P03",
+      "queryId": "Q4",
+      "pmid": "40716691",
+      "title": "Primordial and primary prevention in rheumatological diseases: The time has come.",
+      "classification": "not_good",
+      "reason": "Rheumatological prevention topic without a vaccination relationship."
+    },
+    {
+      "propositionId": "P03",
+      "queryId": "Q4",
+      "pmid": "38735187",
+      "title": "Per- and polyfluoroalkyl substances and human health outcomes: An umbrella review of systematic reviews with meta-analyses of observational studies.",
+      "classification": "not_good",
+      "reason": "Environmental PFAS exposure, not vaccination."
+    },
+    {
+      "propositionId": "P07",
+      "queryId": "Q4",
+      "pmid": "42445859",
+      "title": "Perianal Crohn Disease in a Patient With Congenital Afibrinogenemia: A Multidisciplinary Therapeutic Management Challenge.",
+      "classification": "not_good",
+      "reason": "No childhood vaccination schedule relationship."
+    },
+    {
+      "propositionId": "P07",
+      "queryId": "Q4",
+      "pmid": "42314312",
+      "title": "Longitudinal evidence of differential pertussis antibody durability following natural infection among vaccinated children living in contrasting malaria transmission settings in coastal Kenya.",
+      "classification": "not_good",
+      "reason": "Vaccinated children appear, but the paper concerns antibody durability rather than chronic illness or schedule load."
+    },
+    {
+      "propositionId": "P07",
+      "queryId": "Q4",
+      "pmid": "42074753",
+      "title": "Hepatitis B in Hemodialysis: Serologic Dynamics and Implications for Care.",
+      "classification": "not_good",
+      "reason": "No childhood vaccination schedule relationship."
+    },
+    {
+      "propositionId": "P07",
+      "queryId": "Q4",
+      "pmid": "41459544",
+      "title": "Incidence, risk factors and outcomes of BCGosis following BCG vaccination in infants: a systematic review and meta-analyses.",
+      "classification": "not_good",
+      "reason": "A vaccine adverse outcome, but not the asserted cumulative childhood schedule and chronic-illness relationship."
+    },
+    {
+      "propositionId": "P07",
+      "queryId": "Q4",
+      "pmid": "41092928",
+      "title": "Global burden of 292 causes of death in 204 countries and territories and 660 subnational locations, 1990-2023: a systematic analysis for the Global Burden of Disease Study 2023.",
+      "classification": "not_good",
+      "reason": "General disease-burden analysis without the asserted vaccination relationship."
+    },
+    {
+      "propositionId": "P09",
+      "queryId": "Q4",
+      "pmid": "39973418",
+      "title": "Adverse outcome detection of childhood administered thimerosal-free HibTITER(®).",
+      "classification": "good",
+      "reason": "Possibly bears on childhood vaccine outcomes and thimerosal status."
+    },
+    {
+      "propositionId": "P09",
+      "queryId": "Q4",
+      "pmid": "36673825",
+      "title": "Evidence on Neurotoxicity after Intrauterine and Childhood Exposure to Organomercurials.",
+      "classification": "good",
+      "reason": "Possibly bears on the claimed harmfulness of a mercury-containing vaccine preservative."
+    },
+    {
+      "propositionId": "P09",
+      "queryId": "Q4",
+      "pmid": "33065268",
+      "title": "The role of epidemiology in informing United States childhood immunization policy and practice.",
+      "classification": "not_good",
+      "reason": "General immunization-policy context without thimerosal in the title or provider snippet."
+    },
+    {
+      "propositionId": "P09",
+      "queryId": "Q4",
+      "pmid": "29573974",
+      "title": "The risk of neurodevelopmental disorders following Thimerosal-containing Hib vaccine in comparison to Thimerosal-free Hib vaccine administered from 1995 to 1999 in the United States.",
+      "classification": "good",
+      "reason": "Direct thimerosal-containing versus thimerosal-free vaccine outcome comparison."
+    },
+    {
+      "propositionId": "P09",
+      "queryId": "Q4",
+      "pmid": "29481853",
+      "title": "Protective role of alpha-lipoic acid in impairments of social and stereotyped behaviors induced by early postnatal administration of thimerosal in male rat.",
+      "classification": "good",
+      "reason": "Animal evidence directly concerning thimerosal exposure and behavioral outcomes; material qualification, not human proof."
+    }
+  ]
+}

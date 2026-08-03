@@ -35,6 +35,10 @@ import ClaimEvaluationModal from "./modals/ClaimEvaluationModal";
 import RelevanceScanModal from "./modals/RelevanceScanModal";
 import RelationshipMap, { ClaimLink } from "./RelationshipMap";
 import {
+  mapAssertionLinkForWorkspace,
+  mapDocumentDiscoveryLinkForWorkspace,
+} from "./evidenceLinkPresentation";
+import {
   fetchClaimById,
   fetchClaimsAndLinkedReferencesForTask,
   deleteClaim,
@@ -221,34 +225,7 @@ const Workspace: React.FC<WorkspaceProps> = ({
     fetchClaimsAndLinkedReferencesForTask(contentId, viewerId, scope)
       .then((data) => {
         // Map the API results to the ClaimLink shape expected by the component.
-        const formattedLinks: ClaimLink[] = data.map((row) => {
-          // Normalize relationship values
-          let normalizedRelation: "support" | "refute" | "nuance";
-          const rel = String(row.relationship); // Cast to string for comparison
-
-          if (rel === "supports" || rel === "support") {
-            normalizedRelation = "support";
-          } else if (rel === "refutes" || rel === "refute") {
-            normalizedRelation = "refute";
-          } else if (rel === "nuance") {
-            normalizedRelation = "nuance";
-          } else {
-            console.warn(
-              `⚠️ Unknown relationship: "${row.relationship}", defaulting to "nuance"`,
-            );
-            normalizedRelation = "nuance";
-          }
-
-          return {
-            id: row.id.toString(),
-            claimId: row.left_claim_id, // from content_claims.target_claim_id
-            referenceId: row.right_reference_id, // from claims_references.reference_content_id
-            sourceClaimId: row.source_claim_id,
-            relation: normalizedRelation,
-            confidence: row.confidence || 0,
-            notes: row.notes || "",
-          };
-        });
+        const formattedLinks: ClaimLink[] = data.map(mapAssertionLinkForWorkspace);
         setClaimLinks(formattedLinks);
       })
       .catch((error) => {
@@ -417,11 +394,11 @@ const Workspace: React.FC<WorkspaceProps> = ({
       try {
         // Check if this is an AI evidence link (from reference_claim_links)
         // AI links have id like "ai-123" and don't have actual source claim IDs
-        const isAILink = link.id?.startsWith("ai-") ?? false;
+        const isDocumentDiscovery = link.linkKind === "document-discovery";
 
         let source, target;
 
-        if (isAILink) {
+        if (isDocumentDiscovery) {
           // For AI links, find the original AI evidence link data
           const aiLink = aiEvidenceLinks.find(
             (ai) => `ai-${ai.link_id}` === link.id,
@@ -756,32 +733,17 @@ const Workspace: React.FC<WorkspaceProps> = ({
               const allLinks = [
                 ...claimLinks, // User-created claim links
                 // Convert AI evidence links to ClaimLink format
-                ...aiEvidenceLinks.map((ai) => ({
-                  id: `ai-${ai.link_id}`,
-                  claimId: ai.task_claim_id,
-                  referenceId: ai.reference_content_id,
-                  sourceClaimId: ai.task_claim_id, // For AI links, source = task claim
-                  relation:
-                    ai.stance === "support"
-                      ? ("support" as const)
-                      : ai.stance === "refute"
-                        ? ("refute" as const)
-                        : ai.stance === "nuance"
-                          ? ("nuance" as const)
-                          : ("nuance" as const), // fallback/context/insufficient
-                  confidence: ai.support_level, // Use support_level for line thickness/opacity
-                  notes: ai.rationale || "",
-                })),
+                ...aiEvidenceLinks.map(mapDocumentDiscoveryLinkForWorkspace),
               ];
 
               // Apply filter based on linkFilter state
               if (linkFilter === "user") {
                 return allLinks.filter(
-                  (link) => !link.id?.toString().startsWith("ai-"),
+                  (link) => link.linkKind === "human",
                 );
               } else if (linkFilter === "ai") {
                 return allLinks.filter((link) =>
-                  link.id?.toString().startsWith("ai-"),
+                  link.linkKind !== "human",
                 );
               }
               return allLinks; // 'all' - no filtering

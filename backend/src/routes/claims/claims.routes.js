@@ -941,6 +941,9 @@ WHERE cc_task.content_id = ?
           params.push(viewerId);
         }
       }
+      // Assertion-level AI bearing links are not user-owned and are always
+      // returned as governed suggestions alongside the scoped human links.
+      params.push(contentId);
 
       const sql = `
     SELECT
@@ -952,8 +955,14 @@ WHERE cc_task.content_id = ?
       cr.reference_content_id AS right_reference_id,
       cl.relationship,
       cl.support_level AS confidence,
+      NULL AS score,
+      cl.confidence AS pair_confidence,
+      cl.support_level AS support_level,
       cl.notes AS notes,
       cl.created_by_ai,
+      NULL AS source_assertion_id,
+      NULL AS suggested_score,
+      NULL AS suggestion_status,
       ${scope === "admin" ? "cl.user_id AS created_by_user_id," : ""}
       ${scope === "admin" ? "cl.disabled AS is_disabled," : ""}
       cl.created_at
@@ -965,6 +974,42 @@ WHERE cc_task.content_id = ?
       AND cc_task.content_id = ?
       ${scope !== "admin" ? "AND cl.disabled = false" : ""}
       ${userFilter}
+
+    UNION ALL
+
+    SELECT
+      CONCAT('bearing-', rctl.reference_claim_task_links_id) AS id,
+      rctl.reference_claim_task_links_id AS claim_link_id,
+      cr.content_id AS task_content_id,
+      rctl.task_claim_id AS left_claim_id,
+      rctl.reference_claim_id AS source_claim_id,
+      cr.reference_content_id AS right_reference_id,
+      rctl.stance AS relationship,
+      COALESCE(rctl.support_level, 0) AS confidence,
+      rctl.score AS score,
+      rctl.confidence AS pair_confidence,
+      rctl.support_level AS support_level,
+      rctl.rationale AS notes,
+      1 AS created_by_ai,
+      sap.source_assertion_id,
+      sap.suggested_score,
+      sap.suggestion_status,
+      ${scope === "admin" ? "NULL AS created_by_user_id," : ""}
+      ${scope === "admin" ? "0 AS is_disabled," : ""}
+      rctl.created_at
+    FROM reference_claim_task_links rctl
+    JOIN content_relations cr
+      ON cr.content_relation_id = rctl.content_relation_id
+    JOIN content_claims task_cc
+      ON task_cc.content_id = cr.content_id
+     AND task_cc.claim_id = rctl.task_claim_id
+    JOIN content_claims reference_cc
+      ON reference_cc.content_id = cr.reference_content_id
+     AND reference_cc.claim_id = rctl.reference_claim_id
+    LEFT JOIN cfx_source_assertion_provenance sap
+      ON sap.reference_claim_task_links_id = rctl.reference_claim_task_links_id
+    WHERE cr.content_id = ?
+      AND rctl.created_by_ai = 1
   `;
 
       try {
@@ -1155,7 +1200,7 @@ WHERE cc_task.content_id = ?
     const claimId = req.params.claimId;
     const sql = `
     DELETE FROM claim_sources
-    WHERE claim_sources_id = ?
+    WHERE claim_source_id = ?
   `;
     pool.query(sql, [claimId], (err, results) => {
       if (err) return res.status(500).json({ error: err.message });
@@ -1164,16 +1209,16 @@ WHERE cc_task.content_id = ?
   });
 
   // ✅ Update claim sources for a given claim
-  router.put("/api/claim-sources/:claim_sources_id", (req, res) => {
-    const claim_sources_id = req.params.claim_sources_id;
-    const { new_reference_id, notes } = req.body;
+  router.put("/api/claim-sources/:claimSourceId", (req, res) => {
+    const claimSourceId = req.params.claimSourceId;
+    const { new_reference_id } = req.body;
     const sql = `
-    UPDATE claim_sources SET reference_id = ?, notes = ?
+    UPDATE claim_sources SET reference_content_id = ?
     WHERE claim_source_id = ?
   `;
     pool.query(
       sql,
-      [new_reference_id, notes || null, claim_sources_id],
+      [new_reference_id, claimSourceId],
       (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(results);
@@ -1203,6 +1248,7 @@ WHERE cc_task.content_id = ?
           rcl.evidence_text AS quote,
           rcl.evidence_offsets,
           rcl.created_by_ai,
+          rcl.scrape_status,
           c.claim_text AS task_claim_text,
           c.claim_type AS task_claim_type,
           ref.content_name AS reference_title,

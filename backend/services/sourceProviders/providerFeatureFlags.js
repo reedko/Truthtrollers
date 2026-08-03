@@ -18,6 +18,7 @@ export function disabledProviderResult(providerName, message = "Provider disable
 
 export function publisherProviderFlags() {
   return {
+    wikipediaPerennialSources: envFlag("WIKIPEDIA_PERENNIAL_SOURCES_ENABLED", true),
     openAlex: envFlag("OPENALEX_ENABLED", true),
     googleFactCheck: envFlag("GOOGLE_FACT_CHECK_ENABLED", true),
     openCorporates: envFlag("OPENCORPORATES_ENABLED", false),

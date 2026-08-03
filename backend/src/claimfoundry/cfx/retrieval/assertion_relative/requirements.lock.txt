@@ -1,0 +1,13 @@
+# Runtime libraries for deterministic assertion-relative retrieval.
+# The spaCy English model and MiniLM weights are pinned separately below.
+numpy==1.26.4
+rapidfuzz==3.9.7
+rank-bm25==0.2.2
+scikit-learn==1.5.2
+sentence-transformers==3.0.1
+spacy==3.8.7
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl#sha256=1932429db727d4bff3deed6b34cfc05df17794f4a52eeb26cf8928f7c1a0fb85
+
+# Local-only embedding model (downloaded at build/setup time, never runtime):
+# sentence-transformers/all-MiniLM-L6-v2
+# revision: 1110a243fdf4706b3f48f1d95db1a4f5529b4d41

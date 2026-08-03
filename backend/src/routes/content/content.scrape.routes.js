@@ -29,6 +29,7 @@ import {
   updateScrapeEvaluationProgress,
 } from "../../core/scrapeEvaluationRegistry.js";
 import { runEvidenceEngine } from "../../core/runEvidenceEngine.js";
+import { runCfxProductionEvidencePipeline } from "../../services/cfxProductionEvidencePipeline.js";
 import { mapArgumentFunctions } from "../../core/argumentMappingEngine.js";
 import { matchClaimsToTaskClaims } from "../../core/matchClaims.js";
 import { enrichTaskClaimsForMatching, dualWriteTargetEvidenceLinks } from "../../core/evaluationTargetStore.js";
@@ -49,6 +50,19 @@ import { attachEvidenceComparisonTokenUsage } from "../../core/evidenceCompariso
 import PromptManager from "../../core/promptManager.js";
 import { resolveSourceIdentity } from "../../../services/sourceIdentityResolver.js";
 import { resolveSourceLineage } from "../../../services/sourceLineageResolver.js";
+import { withTransaction } from "../../storage/dbTransaction.js";
+import {
+  getEvidenceScrapeBinding,
+  insertEvidenceScrapeBinding,
+  normalizeEvidenceScrapeContext,
+  persistEvidenceScrapeCapture,
+  persistRawEvidenceScrapeReceipt,
+  publishEvidenceScrapeTerminal,
+} from "../../services/cfxEvidenceScrapeAdapter.js";
+import {
+  kickCfxEvidenceOutboxConsumer,
+  startCfxEvidenceOutboxRecovery,
+} from "../../services/cfxEvidenceCoordinator.js";
 
 // Retired: the target-aware bearing pass now extracts and persists source
 // assertions directly. Running a second broad claim-extraction/matching pass
@@ -56,8 +70,12 @@ import { resolveSourceLineage } from "../../../services/sourceLineageResolver.js
 // every source prompt.
 const LEGACY_REFERENCE_CLAIM_EXTRACTION_RETIRED = true;
 
-export default function createContentScrapeRoutes({ query }) {
+export default function createContentScrapeRoutes({ query, pool }) {
   const router = Router();
+  const cfxProductionEnabled = process.env.CFX_PRODUCTION_EVIDENCE_ENABLED !== "false";
+  if (cfxProductionEnabled && pool) {
+    startCfxEvidenceOutboxRecovery({ query, pool });
+  }
   const ensureContentRelation = async (taskContentId, referenceContentId) => {
     const taskId = Number(taskContentId);
     const refId = Number(referenceContentId);
@@ -82,7 +100,7 @@ export default function createContentScrapeRoutes({ query }) {
    */
   router.post("/api/scrape-request", async (req, res) => {
     const userId = req.user?.user_id;
-    const { mode, url, taskContentId } = req.body;
+    const { mode, url, taskContentId, evidenceContext } = req.body;
 
     if (!mode) {
       return res.status(400).json({ error: "Missing scrape mode" });
@@ -100,22 +118,51 @@ export default function createContentScrapeRoutes({ query }) {
       return res.status(400).json({ error: "Missing target URL" });
     }
 
-    const result = await query(
-      `
-    INSERT INTO scrape_jobs (
-      requested_by_user_id,
-      requested_by_source,
-      scrape_mode,
-      target_url,
-      task_content_id
-    ) VALUES (?, 'dashboard', ?, ?, ?)
-    `,
-      [userId, mode, url || null, taskContentId || null]
+    const insertJob = async (executeQuery) => executeQuery(
+      `INSERT INTO scrape_jobs (
+         requested_by_user_id,
+         requested_by_source,
+         scrape_mode,
+         target_url,
+         task_content_id
+       ) VALUES (?, 'dashboard', ?, ?, ?)`,
+      [userId, mode, url || null, taskContentId || null],
     );
+
+    let result;
+    let evidenceBound = false;
+    if (evidenceContext !== null && evidenceContext !== undefined) {
+      if (!pool) {
+        return res.status(503).json({
+          error: "Evidence scrape binding requires transactional database access",
+        });
+      }
+      let normalizedContext;
+      try {
+        normalizedContext = normalizeEvidenceScrapeContext(evidenceContext, {
+          taskContentId,
+          requestedUrl: url,
+        });
+      } catch (error) {
+        return res.status(400).json({ error: error.message });
+      }
+      result = await withTransaction(async ({ query: transactionQuery }) => {
+        const inserted = await insertJob(transactionQuery);
+        await insertEvidenceScrapeBinding(transactionQuery, {
+          scrapeJobId: inserted.insertId,
+          context: normalizedContext,
+        });
+        return inserted;
+      }, { pool });
+      evidenceBound = true;
+    } else {
+      result = await insertJob(query);
+    }
 
     res.json({
       ok: true,
       scrape_job_id: result.insertId,
+      ...(evidenceBound ? { evidence_bound: true } : {}),
     });
   });
 
@@ -164,15 +211,19 @@ export default function createContentScrapeRoutes({ query }) {
       // Now fetch pending jobs
       const sql = `
         SELECT
-          scrape_job_id,
-          requested_by_user_id,
-          scrape_mode,
-          target_url,
-          task_content_id,
-          requested_at
-        FROM scrape_jobs
-        WHERE status = 'pending'
-        ORDER BY requested_at ASC
+          sj.scrape_job_id,
+          sj.requested_by_user_id,
+          sj.scrape_mode,
+          sj.target_url,
+          sj.task_content_id,
+          sj.requested_at,
+          ceb.opened_tab_id,
+          ceb.extension_instance_id
+        FROM scrape_jobs sj
+        LEFT JOIN cfx_evidence_acquisition_bindings ceb
+          ON ceb.scrape_job_id = sj.scrape_job_id
+        WHERE sj.status = 'pending'
+        ORDER BY sj.requested_at ASC
         LIMIT 10
       `;
 
@@ -243,7 +294,7 @@ export default function createContentScrapeRoutes({ query }) {
    */
   router.post("/api/scrape-jobs/:id/claim", async (req, res) => {
     const { id } = req.params;
-    const { instance_id } = req.body;
+    const { instance_id, browser_tab_id } = req.body;
 
     try {
       // First check the current state of the job
@@ -258,6 +309,24 @@ export default function createContentScrapeRoutes({ query }) {
       if (currentJob.status !== 'pending') {
         logger.log(`⚠️ [SCRAPE CLAIM] Job ${id} cannot be claimed - status is '${currentJob.status}' (already claimed by: ${currentJob.claimed_by_instance_id || 'unknown'})`);
         return res.status(409).json({ error: "Job already claimed or not found" });
+      }
+
+      const evidenceBinding = await getEvidenceScrapeBinding(query, id);
+      if (
+        evidenceBinding?.extensionInstanceId &&
+        evidenceBinding.extensionInstanceId !== instance_id
+      ) {
+        return res.status(409).json({
+          error: "Job is bound to a different extension instance",
+        });
+      }
+      if (
+        evidenceBinding?.openedTabId &&
+        Number(browser_tab_id) !== evidenceBinding.openedTabId
+      ) {
+        return res.status(409).json({
+          error: "Job is bound to a different browser tab",
+        });
       }
 
       const sql = `
@@ -322,9 +391,24 @@ export default function createContentScrapeRoutes({ query }) {
           AND status = 'claimed'
       `;
 
-      const result = await query(sql, [content_id, id, instance_id]);
+      const transition = async (executeQuery) => {
+        const result = await executeQuery(sql, [content_id, id, instance_id]);
+        if (result.affectedRows === 0) return false;
+        await publishEvidenceScrapeTerminal(executeQuery, {
+          scrapeJobId: id,
+          terminalStatus: "completed",
+          resultContentId: content_id,
+        });
+        return true;
+      };
+      const transitioned = pool
+        ? await withTransaction(
+          ({ query: transactionQuery }) => transition(transactionQuery),
+          { pool },
+        )
+        : await transition(query);
 
-      if (result.affectedRows === 0) {
+      if (!transitioned) {
         logger.log(`⚠️ [SCRAPE COMPLETE] Job ${id} could not be updated to completed (race condition?)`);
         return res.status(409).json({
           error: "Job not found, not claimed by this instance, or already completed"
@@ -332,6 +416,9 @@ export default function createContentScrapeRoutes({ query }) {
       }
 
       logger.log(`✅ [SCRAPE COMPLETE] Job ${id} completed successfully by ${instance_id}, content_id=${content_id}, mode=${currentJob.scrape_mode}, url=${currentJob.target_url || 'N/A'}`);
+      if (cfxProductionEnabled && pool) {
+        kickCfxEvidenceOutboxConsumer({ query, pool });
+      }
       res.json({ ok: true, content_id });
     } catch (err) {
       logger.error(`❌ [SCRAPE COMPLETE] Error completing scrape job ${id}:`, err);
@@ -377,9 +464,27 @@ export default function createContentScrapeRoutes({ query }) {
           AND status = 'claimed'
       `;
 
-      const result = await query(sql, [error_message, id, instance_id]);
+      const transition = async (executeQuery) => {
+        const result = await executeQuery(
+          sql,
+          [error_message, id, instance_id],
+        );
+        if (result.affectedRows === 0) return false;
+        await publishEvidenceScrapeTerminal(executeQuery, {
+          scrapeJobId: id,
+          terminalStatus: "failed",
+          errorMessage: error_message,
+        });
+        return true;
+      };
+      const transitioned = pool
+        ? await withTransaction(
+          ({ query: transactionQuery }) => transition(transactionQuery),
+          { pool },
+        )
+        : await transition(query);
 
-      if (result.affectedRows === 0) {
+      if (!transitioned) {
         logger.log(`⚠️ [SCRAPE FAIL] Job ${id} could not be updated to failed (race condition?)`);
         return res.status(409).json({
           error: "Job not found, not claimed by this instance, or already processed"
@@ -759,39 +864,72 @@ export default function createContentScrapeRoutes({ query }) {
 
       // -----------------------------------------------------------------
       // 4. Run Evidence Engine (AI evidence references)
-      //    → References are FULLY PROCESSED during fetch (inline)
-      //    → Returns: { aiReferences, failedCandidates, claimConfidenceMap }
+      //    CFX is the production default; legacy runs only as an explicit
+      //    emergency rollback, matching /api/run-evidence's existing branch
+      //    (evidence.routes.js). CFX self-persists into content/claims/
+      //    content_claims/claim_sources/reference_claim_links/
+      //    reference_claim_task_links directly -- it does not return a
+      //    legacy-shaped aiReferences array, so persistAIResults and
+      //    persistDirectEvidenceAssertions (which assume that shape) only
+      //    run on the legacy branch.
       // -----------------------------------------------------------------
-      const { aiReferences, failedCandidates, claimConfidenceMap, repairAudit, claimProgress } =
-        await runEvidenceEngine({
+      const legacyEvidenceEnabled = process.env.CFX_LEGACY_EVIDENCE_ENABLED === "true";
+      let aiReferences = [];
+      let failedCandidates = [];
+      let claimConfidenceMap = new Map();
+      let repairAudit = null;
+      let claimProgress = [];
+      let cfxEvidenceSummary = null;
+
+      if (legacyEvidenceEnabled) {
+        ({ aiReferences, failedCandidates, claimConfidenceMap, repairAudit, claimProgress } =
+          await runEvidenceEngine({
+            query,
+            taskContentId,
+            claimIds,
+            claims: mappedTaskClaims,
+            readableText: text,
+            onProgress: (progress) => {
+              if (evaluationContentId) {
+                updateScrapeEvaluationProgress(evaluationContentId, progress);
+              }
+            },
+          }));
+      } else {
+        cfxEvidenceSummary = await runCfxProductionEvidencePipeline({
           query,
+          pool,
           taskContentId,
           claimIds,
-          claims: mappedTaskClaims,
-          readableText: text,
-          onProgress: (progress) => {
-            if (evaluationContentId) {
-              updateScrapeEvaluationProgress(evaluationContentId, progress);
-            }
-          },
+          userId: req.user?.user_id || null,
         });
+      }
       usageAfterEvidence = getOpenAiUsageCapture();
 
       // -----------------------------------------------------------------
       // 5. Create reference_claim_links (task claims → references)
+      //    Legacy only -- CFX already created/updated these rows itself
+      //    inside runCfxProductionEvidencePipeline.
       // -----------------------------------------------------------------
-      const aiRefs = await persistAIResults(query, {
-        contentId: taskContentId,
-        evidenceRefs: aiReferences,
-        claimIds,
-        claimConfidenceMap, // Pass confidence map for storing per-claim confidence
-      });
-      const directAssertionPersistence = await persistDirectEvidenceAssertions({
-        query,
-        taskContentId,
-        aiReferences,
-        repairAudit,
-      });
+      const aiRefs = legacyEvidenceEnabled
+        ? await persistAIResults(query, {
+            contentId: taskContentId,
+            evidenceRefs: aiReferences,
+            claimIds,
+            claimConfidenceMap, // Pass confidence map for storing per-claim confidence
+          })
+        : (cfxEvidenceSummary?.results || []).map((cfxResult) => ({
+            referenceContentId: cfxResult.referenceContentId,
+            contentId: cfxResult.referenceContentId,
+          }));
+      const directAssertionPersistence = legacyEvidenceEnabled
+        ? await persistDirectEvidenceAssertions({
+            query,
+            taskContentId,
+            aiReferences,
+            repairAudit,
+          })
+        : { persistedByClaim: new Map(), assertionsByReferenceContentId: new Map() };
 
       const enableReferenceClaimExtraction = !LEGACY_REFERENCE_CLAIM_EXTRACTION_RETIRED;
       const maxReferenceClaimExtraction = 0;
@@ -1132,6 +1270,11 @@ export default function createContentScrapeRoutes({ query }) {
         quote,
         location,
         force,
+        scrapeJobId,
+        requestedUrl,
+        resolvedUrl,
+        browserTabId,
+        extensionInstanceId,
       } = req.body;
 
       if (!url) {
@@ -1144,6 +1287,42 @@ export default function createContentScrapeRoutes({ query }) {
       logger.log(
         `🟦 [/api/scrape-reference] START Processing reference${taskContentId ? ` for task ${taskContentId}` : ''}: ${url}`
       );
+
+      let evidenceBinding = null;
+      let evidenceAcquisitionAttemptId = null;
+      if (scrapeJobId !== null && scrapeJobId !== undefined) {
+        evidenceBinding = await getEvidenceScrapeBinding(query, scrapeJobId);
+      }
+      if (evidenceBinding) {
+        if (
+          evidenceBinding.openedTabId &&
+          Number(browserTabId) !== evidenceBinding.openedTabId
+        ) {
+          return res.status(409).json({
+            success: false,
+            error: "Evidence scrape browser tab does not match its binding",
+          });
+        }
+        if (
+          evidenceBinding.extensionInstanceId &&
+          extensionInstanceId !== evidenceBinding.extensionInstanceId
+        ) {
+          return res.status(409).json({
+            success: false,
+            error: "Evidence scrape extension instance does not match its binding",
+          });
+        }
+        const acquisitionAttempt = await persistRawEvidenceScrapeReceipt(query, {
+          binding: evidenceBinding,
+          requestedUrl: requestedUrl || evidenceBinding.requestedUrl,
+          resolvedUrl: resolvedUrl || url,
+          browserTabId,
+          extensionInstanceId,
+          rawHtml: raw_html,
+          rawText: raw_text,
+        });
+        evidenceAcquisitionAttemptId = acquisitionAttempt.acquisitionAttemptId;
+      }
 
       // -----------------------------------------------------------------
       // 0. CHECK FOR DUPLICATE URL
@@ -1284,6 +1463,7 @@ export default function createContentScrapeRoutes({ query }) {
         linked_url,
         linked_publisher,
         socialProvenance,
+        acquisitionOnly: Boolean(evidenceBinding),
       });
       logger.log(`  ✅ [1/5] Scrape complete (${Date.now() - startTime}ms)`);
 
@@ -1297,6 +1477,45 @@ export default function createContentScrapeRoutes({ query }) {
       const { referenceContentId, text } = scrapeResult;
       if (!contentRelationId && taskContentId && taskContentId !== referenceContentId) {
         contentRelationId = await ensureContentRelation(taskContentId, referenceContentId);
+      }
+
+      if (evidenceBinding) {
+        const actualResolvedUrl = resolvedUrl || url;
+        let canonicalUrl = null;
+        if (raw_html) {
+          try {
+            const parsed = cheerio.load(raw_html);
+            const canonical = parsed("link[rel='canonical']").first().attr("href");
+            if (canonical) canonicalUrl = new URL(canonical, actualResolvedUrl).toString();
+          } catch {
+            canonicalUrl = null;
+          }
+        }
+        await query(
+          `UPDATE content SET content_text = ? WHERE content_id = ?`,
+          [text, referenceContentId],
+        );
+        const capture = await persistEvidenceScrapeCapture(query, {
+          binding: evidenceBinding,
+          acquisitionAttemptId: evidenceAcquisitionAttemptId,
+          referenceContentId,
+          requestedUrl: requestedUrl || evidenceBinding.requestedUrl,
+          resolvedUrl: actualResolvedUrl,
+          canonicalUrl,
+          browserTabId,
+          extensionInstanceId,
+          rawHtml: raw_html,
+          rawText: raw_text,
+          cleanedText: text,
+        });
+        return res.json({
+          success: true,
+          contentId: referenceContentId,
+          acquisitionOnly: true,
+          acquisitionArtifactId: capture.acquisitionArtifactId,
+          cleanedTextSha256: capture.cleanedTextSha256,
+          characterCount: capture.characterCount,
+        });
       }
 
       // scrapeReference persists and links its publisher before starting

@@ -125,8 +125,20 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
           rctl.created_by_ai,
           rctl.verified_by_user_id,
           rctl.created_at,
+          sap.source_assertion_id,
+          sap.exact_excerpt,
+          sap.excerpt_start,
+          sap.excerpt_end,
+          sap.source_block_ids_json,
+          sap.source_packet_ids_json,
+          sap.suggestion_run_id,
+          sap.suggestion_model_call_id,
+          sap.suggestion_model,
+          sap.suggested_score,
+          sap.suggestion_status,
           'reference_claim_task_links' AS source_table,
           c.claim_text AS reference_claim_text,
+          content.content_name AS source_title,
           content.media_source AS source_name,
           content.url AS source_url,
           content.content_id AS reference_content_id
@@ -135,6 +147,8 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
          LEFT JOIN content_claims cc ON c.claim_id = cc.claim_id
          LEFT JOIN content ON cc.content_id = content.content_id
          LEFT JOIN content_relations cr_scope ON cr_scope.content_relation_id = rctl.content_relation_id
+         LEFT JOIN cfx_source_assertion_provenance sap
+           ON sap.reference_claim_task_links_id = rctl.reference_claim_task_links_id
          WHERE rctl.task_claim_id = ?
            AND (? IS NULL OR cr_scope.content_id = ?)
 
@@ -159,8 +173,20 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
           cl.created_by_ai,
           cl.user_id AS verified_by_user_id,
           cl.created_at,
+          NULL AS source_assertion_id,
+          NULL AS exact_excerpt,
+          NULL AS excerpt_start,
+          NULL AS excerpt_end,
+          NULL AS source_block_ids_json,
+          NULL AS source_packet_ids_json,
+          NULL AS suggestion_run_id,
+          NULL AS suggestion_model_call_id,
+          NULL AS suggestion_model,
+          NULL AS suggested_score,
+          NULL AS suggestion_status,
           'claim_links:target' AS source_table,
           c.claim_text AS reference_claim_text,
+          content.content_name AS source_title,
           content.media_source AS source_name,
           content.url AS source_url,
           content.content_id AS reference_content_id
@@ -195,8 +221,20 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
           cl.created_by_ai,
           cl.user_id AS verified_by_user_id,
           cl.created_at,
+          NULL AS source_assertion_id,
+          NULL AS exact_excerpt,
+          NULL AS excerpt_start,
+          NULL AS excerpt_end,
+          NULL AS source_block_ids_json,
+          NULL AS source_packet_ids_json,
+          NULL AS suggestion_run_id,
+          NULL AS suggestion_model_call_id,
+          NULL AS suggestion_model,
+          NULL AS suggested_score,
+          NULL AS suggestion_status,
           'claim_links:source' AS source_table,
           c.claim_text AS reference_claim_text,
+          content.content_name AS source_title,
           content.media_source AS source_name,
           content.url AS source_url,
           content.content_id AS reference_content_id
@@ -374,8 +412,7 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
              stance = COALESCE(?, stance),
              support_level = COALESCE(?, support_level),
              content_relation_id = COALESCE(?, content_relation_id),
-             task_claim_id = COALESCE(task_claim_id, claim_id),
-             verified_at = NOW()
+             task_claim_id = COALESCE(task_claim_id, claim_id)
          WHERE claim_id = ? AND reference_content_id = ?
            AND (content_relation_id <=> ? OR ? IS NULL)`,
         [user_id, stance, support_level, contentRelationId, claim_id, reference_content_id, contentRelationId, contentRelationId]
@@ -392,9 +429,8 @@ export default function createReferenceClaimTaskRoutes({ query, pool }) {
             stance,
             support_level,
             verified_by_user_id,
-            created_by_ai,
-            verified_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, false, NOW())`,
+            created_by_ai
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, false)`,
           [claim_id, claim_id, contentRelationId, reference_content_id, stance || 'support', support_level || 1.0, user_id]
         );
         console.log(`[Approve Link] Created new link`);

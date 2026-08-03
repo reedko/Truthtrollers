@@ -281,6 +281,30 @@ function mapWikipedia(rawResult) {
   });
 }
 
+function mapWikipediaPerennialSources(rawResult) {
+  const n = rawResult?.normalized || {};
+  return makeSignal({
+    provider: "wikipedia_perennial_sources",
+    signalType: "perennial_sources_classification",
+    effectType: "contextual",
+    score: null,
+    bucket: n.classification || null,
+    confidenceDelta: 0,
+    reliabilityDelta: 0,
+    cap: null,
+    capReason: null,
+    flags: ["informational_perennial_sources_classification"],
+    evidenceUrl: n.externalUrl || null,
+    explanation: n.classification
+      ? `Wikipedia Perennial Sources records this outlet as ${n.classification}; preserved as informational context only.`
+      : "Wikipedia Perennial Sources result preserved as informational context only.",
+    raw: rawResult,
+    matchedName: n.publisherName || rawResult?.matchedEntity || null,
+    matchedDomain: n.domain || null,
+    matchConfidence: rawResult?.matchConfidence ?? confidenceToNumber(rawResult?.confidence),
+  });
+}
+
 function mapWikidata(rawResult) {
   const n = rawResult?.normalized || {};
   const flags = [];
@@ -550,6 +574,7 @@ export function mapProviderSignalToAdmiralty(providerName, rawResult, matchConte
   if (provider === "scimago") return mapScimago(rawResult);
   if (provider === "allsides") return mapAllSides(rawResult);
   if (provider === "opensources") return mapOpenSources(rawResult);
+  if (provider === "wikipedia_perennial_sources") return mapWikipediaPerennialSources(rawResult);
   if (provider === "wikipedia") return mapWikipedia(rawResult);
   if (provider === "wikidata") return mapWikidata(rawResult);
   if (provider === "wayback") return mapWayback(rawResult);

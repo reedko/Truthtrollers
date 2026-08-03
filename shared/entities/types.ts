@@ -176,9 +176,9 @@ export interface AIEvidenceLink {
   task_claim_id: number;
   reference_content_id: number;
   stance: "support" | "refute" | "nuance" | "insufficient";
-  score: number; // 0-100 quality score
-  confidence: number; // 0.15-0.98 confidence
-  support_level: number; // -1.2 to +1.2 (stance * confidence * quality)
+  score: number | null; // null until document bearing is assessed
+  confidence: number | null; // null until legacy-compatible adjudication
+  support_level: number | null; // null until stance * confidence * quality exists
   rationale: string | null;
   quote: string | null; // Evidence snippet
   evidence_offsets: string | null;
@@ -188,6 +188,7 @@ export interface AIEvidenceLink {
   reference_title: string;
   reference_url: string;
   reference_topic: string;
+  scrape_status?: string | null;
 }
 
 // Failed Reference - needs manual scraping
@@ -236,14 +237,16 @@ export interface ContentLink {
 }
 
 export interface ClaimLinks {
-  id: number;
+  id: number | string;
   claim_link_id?: number; // for future use
   task_content_id: number;
   left_claim_id: number;
   right_reference_id: number;
   source_claim_id: number;
-  relationship: "supports" | "refutes" | "related";
+  relationship: string;
   confidence: number;
+  score?: number | null;
+  pair_confidence?: number | null;
   notes?: string;
   support_level?: number;
   verimeter_score?: number | null; // 👈 Add this if missing

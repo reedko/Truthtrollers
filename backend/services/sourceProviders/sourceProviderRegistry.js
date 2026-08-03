@@ -10,6 +10,7 @@
 //   normalizeResponse(raw)
 
 import { wikipediaProvider }      from "./providers/wikipediaProvider.js";
+import { wikipediaPerennialSourcesProvider } from "./providers/wikipediaPerennialSourcesProvider.js";
 import { wikidataProvider }       from "./providers/wikidataProvider.js";
 import { googleFactCheckProvider }from "./providers/googleFactCheckProvider.js";
 import { allsidesProvider }       from "./providers/allsidesProvider.js";
@@ -33,6 +34,7 @@ import {
 
 const ALL_PROVIDERS = [
   wikipediaProvider,
+  wikipediaPerennialSourcesProvider,
   wikidataProvider,
   googleFactCheckProvider,
   allsidesProvider,
@@ -63,6 +65,13 @@ const _healthCache    = new Map();
 
 function cacheKey(providerName, args) {
   return `${providerName}:${JSON.stringify(args)}`;
+}
+
+function publisherCacheKey(provider, args) {
+  if (typeof provider.cacheKey === "function") {
+    return `${provider.providerName}:${provider.cacheKey(args)}`;
+  }
+  return cacheKey(provider.providerName, args);
 }
 
 function getCached(cache, key) {
@@ -132,7 +141,7 @@ export async function lookupPublisherAllProviders(args = {}, { providers } = {})
   const results = await Promise.all(
     list.map(async (p) => {
       if (typeof p.lookupPublisher !== "function") return notImplemented(p.providerName, "publisher");
-      const key = cacheKey(p.providerName, providerArgs);
+      const key = publisherCacheKey(p, providerArgs);
       const cached = getCached(_publisherCache, key);
       if (cached) return { ...cached, cached: true };
       const result = await dispatchSafe(p, "lookupPublisher", providerArgs);

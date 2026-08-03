@@ -151,7 +151,8 @@ let nextPublisherId = 40;
 const calls = [];
 const fakeQuery = async (sql, values = []) => {
   calls.push({ sql: sql.replace(/\s+/g, " ").trim(), values });
-  if (sql.includes("CALL InsertOrGetPublisher")) return [[{ publisherId: nextPublisherId++ }]];
+  if (sql.includes("SELECT publisher_id") && sql.includes("FROM publishers")) return [];
+  if (sql.includes("INSERT INTO publishers")) return { insertId: nextPublisherId++ };
   if (sql.includes("INSERT INTO content_publishing_context")) return { insertId: 300 };
   if (sql.includes("SELECT id FROM publisher_relationships")) return [];
   return [];
@@ -160,19 +161,47 @@ const persisted = await persistSourceIdentity(fakeQuery, 12, htmlIdentity, { tra
 assert.equal(persisted.publishingOrganizationId, 40);
 assert.equal(persisted.publicationVenueId, 41);
 assert.equal(persisted.primaryEntityId, 41, "scholarly content should rate the venue as primary");
+assert.equal(calls.filter((call) => call.sql.includes("SELECT publisher_id") && call.sql.includes("FROM publishers")).length, 2);
+assert.equal(calls.filter((call) => call.sql.includes("INSERT INTO publishers")).length, 2);
+assert.equal(calls.some((call) => call.sql.includes("CALL InsertOrGetPublisher")), false, "obsolete stored-procedure contract must not be used");
 assert(calls.some((call) => call.sql.includes("INSERT INTO content_publishers") && call.values.includes("publication_venue")));
 assert(!calls.some((call) => /^DELETE FROM content_publishers WHERE content_id = \?$/.test(call.sql)), "role updates must not delete every source link");
+
+const existingPublisherIds = new Map([
+  ["Precise Publishing Society", 140],
+  ["Journal of Careful Tests", 141],
+]);
+const existingCalls = [];
+const existingQuery = async (sql, values = []) => {
+  existingCalls.push({ sql: sql.replace(/\s+/g, " ").trim(), values });
+  if (sql.includes("SELECT publisher_id") && sql.includes("FROM publishers")) {
+    const publisherId = existingPublisherIds.get(values[0]);
+    return publisherId ? [{ publisher_id: publisherId }] : [];
+  }
+  if (sql.includes("INSERT INTO publishers")) throw new Error("existing publisher must not be inserted");
+  if (sql.includes("INSERT INTO content_publishing_context")) return { insertId: 301 };
+  if (sql.includes("SELECT id FROM publisher_relationships")) return [];
+  return [];
+};
+const reused = await persistSourceIdentity(existingQuery, 13, htmlIdentity, { transaction: false });
+assert.equal(reused.publishingOrganizationId, 140);
+assert.equal(reused.publicationVenueId, 141);
+assert.equal(reused.primaryEntityId, 141);
+assert.equal(existingCalls.filter((call) => call.sql.includes("SELECT publisher_id") && call.sql.includes("FROM publishers")).length, 2);
+assert.equal(existingCalls.some((call) => call.sql.includes("INSERT INTO publishers")), false);
 
 const authorCalls = [];
 let authorId = 70;
 const authorQuery = async (sql, values = []) => {
   authorCalls.push({ sql: sql.replace(/\s+/g, " ").trim(), values });
-  if (sql.includes("CALL InsertOrGetAuthor")) return [[{ authorId: authorId++ }]];
+  if (sql.includes("SELECT author_id") && sql.includes("FROM authors")) return [];
+  if (sql.includes("INSERT INTO authors")) return { insertId: authorId++ };
   return [];
 };
 await persistAuthors(authorQuery, 12, normalizedMedtext.document.authors, { replaceExisting: true });
 assert.equal(authorCalls[0].sql, "DELETE FROM content_authors WHERE content_id = ?");
 assert.equal(authorCalls.filter((call) => call.sql.includes("INSERT IGNORE INTO content_authors")).length, 2);
+assert.equal(authorCalls.some((call) => call.sql.includes("CALL InsertOrGetAuthor")), false);
 
 authorCalls.length = 0;
 await persistAuthors(authorQuery, 12, [], { replaceExisting: true });

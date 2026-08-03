@@ -26,9 +26,15 @@ export interface AIReference {
 }
 
 export interface EvidenceEngineResponse {
-  aiReferences: AIReference[];
-  failedCandidates: any[];
-  claimConfidenceMap: Record<number, number>;
+  // Legacy engine shape. Absent when the backend ran the CFX pipeline
+  // (CFX_LEGACY_EVIDENCE_ENABLED unset/false, the production default) --
+  // that path returns candidateCount/results instead. See
+  // backend/src/routes/evidence/evidence.routes.js's /api/run-evidence.
+  aiReferences?: AIReference[];
+  failedCandidates?: any[];
+  claimConfidenceMap?: Record<number, number>;
+  candidateCount?: number;
+  results?: unknown[];
 }
 
 /**
@@ -181,7 +187,8 @@ export async function runEvidenceForSingleClaim(
       readableText: claimText, // Pass claim text directly
     });
 
-    console.log(`[Evidence Engine] Complete - found ${response?.aiReferences.length || 0} new references`);
+    const referenceCount = response?.aiReferences?.length ?? response?.candidateCount ?? 0;
+    console.log(`[Evidence Engine] Complete - found ${referenceCount} new references`);
 
     // Fetch updated links
     const updatedLinks = await fetchLinksForClaim(taskContentId, claimId);

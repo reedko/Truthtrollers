@@ -38,6 +38,44 @@ test("gateway preserves the established Tavily candidate contract and adds metad
   assert.equal(result.providerMetadata.provider, "tavily");
 });
 
+test("diagnostic mode preserves raw provider records before normalization", async () => {
+  const raw = {
+    id: "raw-1",
+    url: "https://example.org/raw",
+    title: "Raw title",
+    content: "Raw provider content",
+    provider_only_field: { untouched: true },
+  };
+  const gateway = createEvidenceRetrievalGateway({
+    config: {
+      mode: "single",
+      provider: "tavily",
+      retrievalStrategy: "cost_saver",
+      providerEnabled: { tavily: true },
+    },
+    providers: {
+      tavily: async () => [raw],
+    },
+    log: silentLog,
+  });
+  const response = await gateway.web({
+    query: "raw evidence",
+    topK: 5,
+    returnDiagnostics: true,
+  });
+  assert.deepEqual(
+    response.diagnostics.rawProviderResponses,
+    [{
+      provider: "tavily",
+      response: [raw],
+      skipped: null,
+      error: null,
+    }],
+  );
+  assert.equal(response.results[0].provider, "tavily");
+  assert.equal(response.results[0].provider_only_field, undefined);
+});
+
 test("best-bearing-pool searches enabled providers before returning a deduped pool", async () => {
   const calls = [];
   const gateway = createEvidenceRetrievalGateway({

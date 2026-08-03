@@ -1,0 +1,5 @@
+{
+  "schemaVersion": "cfx.prompt.v1",
+  "promptId": "burden-of-proof-with-units-v1",
+  "prompt": "Read the article.\n\nReturn the 12 propositions that carry the burden of proof for the article.\n\nThese are the assertions that, if shown false, would most undermine the article's overall argument.\n\nFor each provide:\n\n- Assertion\n- Assertion source\n- Why it matters to the article's thesis\n- The source unit ID or IDs containing the article passage most directly associated with the assertion"
+}

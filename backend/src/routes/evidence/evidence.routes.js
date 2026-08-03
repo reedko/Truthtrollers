@@ -3,6 +3,7 @@ import { Router } from "express";
 
 import { runEvidenceEngine } from "../../core/runEvidenceEngine.js";
 import { persistAIResults } from "../../storage/persistAIResults.js";
+import { runCfxProductionEvidencePipeline } from "../../services/cfxProductionEvidencePipeline.js";
 import { logUserActivity } from "../../utils/logUserActivity.js";
 import { getEvidenceComparisonRun } from "../../core/evidenceComparisonRegistry.js";
 import {
@@ -188,21 +189,32 @@ export default function createEvidenceRoutes({ query, pool }) {
         });
       }
 
-      // Step 1 — AI evidence
-      const engineOut = await runEvidenceEngine({
-        query,
-        taskContentId,
-        claimIds,
-        readableText,
-      });
-
-      // Step 2 — Persist AI refs + evidence
-      await persistAIResults(query, {
-        contentId: taskContentId,
-        evidenceRefs: engineOut.aiReferences || [],
-        claimIds: claimIds || [],
-        claimConfidenceMap: engineOut.claimConfidenceMap || new Map(),
-      });
+      const legacyEnabled = process.env.CFX_LEGACY_EVIDENCE_ENABLED === "true";
+      let engineOut;
+      if (legacyEnabled) {
+        // Explicit emergency rollback only. CFX is the production default and
+        // never writes the legacy document-level result as semantic truth.
+        engineOut = await runEvidenceEngine({
+          query,
+          taskContentId,
+          claimIds,
+          readableText,
+        });
+        await persistAIResults(query, {
+          contentId: taskContentId,
+          evidenceRefs: engineOut.aiReferences || [],
+          claimIds: claimIds || [],
+          claimConfidenceMap: engineOut.claimConfidenceMap || new Map(),
+        });
+      } else {
+        engineOut = await runCfxProductionEvidencePipeline({
+          query,
+          pool,
+          taskContentId,
+          claimIds,
+          userId: req.user?.user_id || null,
+        });
+      }
 
       // Step 3 — Log user activity for engagement tracking
       await logUserActivity(query, {
@@ -213,7 +225,10 @@ export default function createEvidenceRoutes({ query, pool }) {
         metadata: {
           claimCount: claimIds.length,
           textLength: readableText?.length || 0,
-          referencesFound: (engineOut.aiReferences || []).length
+          referencesFound: legacyEnabled
+            ? (engineOut.aiReferences || []).length
+            : engineOut.candidateCount || 0,
+          pipeline: legacyEnabled ? "legacy" : "cfx",
         }
       });
 

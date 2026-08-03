@@ -14,6 +14,10 @@ import { Claim, ReferenceWithClaims } from "../../../../shared/entities/types";
 import SourceCrest from "../SourceCrest";
 import ReferenceAuthors from "../ReferenceAuthors";
 import { normalizeSourceProfile } from "../../utils/normalizeSourceProfile";
+import type {
+  WorkspaceClaimLink,
+  WorkspaceEvidenceRelation,
+} from "../evidenceLinkPresentation";
 
 interface Props {
   anchorSelector?: string;
@@ -27,14 +31,7 @@ interface Props {
   onVerifyClaim?: (claim: Claim) => void;
   onEditClaim?: (claim: Claim) => void;
   onDeleteClaim?: (claimId: number) => void;
-  claimLinks?: Array<{
-    id?: string;
-    claimId: number;
-    referenceId: number;
-    sourceClaimId: number;
-    relation: "support" | "refute" | "nuance";
-    confidence: number;
-  }>;
+  claimLinks?: WorkspaceClaimLink[];
   taskClaims?: Claim[];
   onClaimClick?: (claim: Claim) => void;
   onRescrape?: () => void;
@@ -94,7 +91,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
       y1: number;
       x2: number;
       y2: number;
-      relation: "support" | "refute" | "nuance";
+      relation: WorkspaceEvidenceRelation;
       isAI: boolean;
     }>
   >([]);
@@ -250,7 +247,7 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
             x2,
             y2,
             relation: link.relation,
-            isAI: link.id?.toString().startsWith("ai-") ?? false,
+            isAI: link.linkKind !== "human",
           });
         }
       }
@@ -313,14 +310,18 @@ const DraggableReferenceClaimsModal: React.FC<Props> = ({
                   ? "#00ff00"
                   : line.relation === "refute"
                     ? "#ff0000"
-                    : "#00aaff";
+                    : line.relation === "nuance"
+                      ? "#00aaff"
+                      : "#718096";
 
               const strokeColor = line.isAI
                 ? line.relation === "support"
                   ? "rgba(0, 255, 0, 0.7)"
                   : line.relation === "refute"
                     ? "rgba(255, 0, 0, 0.7)"
-                    : "rgba(0, 170, 255, 0.7)"
+                    : line.relation === "nuance"
+                      ? "rgba(0, 170, 255, 0.7)"
+                      : "rgba(113, 128, 150, 0.7)"
                 : color;
 
               return (

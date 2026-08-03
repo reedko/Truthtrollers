@@ -46,11 +46,54 @@ for (const relative of [
   "src/core/scrapeReference.js",
   "src/core/runEvidenceEngine.js",
   "src/routes/content/content.scrape.routes.js",
-  "src/utils/fetchExternalPageContent.js",
 ]) {
   const source = fs.readFileSync(path.join(backendRoot, relative), "utf8");
   assert(source.includes("processPublishingIdentity"), `${relative} does not use the canonical identity pipeline`);
 }
+
+const externalFetchFile = path.join(backendRoot, "src/utils/fetchExternalPageContent.js");
+const productionExtractionFile = path.join(backendRoot, "src/core/productionDocumentExtraction.js");
+const externalFetchSource = fs.readFileSync(externalFetchFile, "utf8");
+const productionExtractionSource = fs.readFileSync(productionExtractionFile, "utf8");
+
+assert.match(
+  externalFetchSource,
+  /import\s*\{\s*extractProductionPdfDocument\s*\}\s*from\s*["'][^"']*productionDocumentExtraction[.]js["']/,
+  "fetchExternalPageContent must import the shared production PDF extraction seam",
+);
+assert.match(
+  externalFetchSource,
+  /await\s+extractProductionPdfDocument\s*\(/,
+  "fetchExternalPageContent must execute the shared production PDF extraction seam",
+);
+assert.doesNotMatch(
+  externalFetchSource,
+  /from\s+["'][^"']*(?:pdf-parse|extractPdfPublishingIdentity|pdfIdentityExtractor)[^"']*["']/,
+  "fetchExternalPageContent must not bypass the shared production PDF extraction seam",
+);
+
+assert.match(
+  productionExtractionSource,
+  /import\s*\{\s*processPublishingIdentity\s*\}\s*from\s*["'][^"']*publishingIdentityPipeline[.]js["']/,
+  "the shared production-document extraction seam must own publishing-identity processing",
+);
+const pdfExtractionStart = productionExtractionSource.indexOf("export async function extractProductionPdfDocument");
+assert.notEqual(pdfExtractionStart, -1, "the shared production PDF extraction function is missing");
+const pdfExtractionSource = productionExtractionSource.slice(pdfExtractionStart);
+assert.match(
+  pdfExtractionSource,
+  /await\s+processPublishingIdentity\s*\(/,
+  "extractProductionPdfDocument must invoke processPublishingIdentity",
+);
+
+const productionExtractionDefinitions = files.filter((file) =>
+  /export\s+async\s+function\s+extractProductionPdfDocument\s*\(/.test(fs.readFileSync(file, "utf8")),
+);
+assert.deepEqual(
+  productionExtractionDefinitions,
+  [productionExtractionFile],
+  `alternate production PDF extraction seams detected: ${productionExtractionDefinitions.join(", ")}`,
+);
 
 assert(!fs.existsSync(path.join(backendRoot, "src/core/runEvidenceEngine 2.js")), "obsolete evidence engine duplicate still exists");
 

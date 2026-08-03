@@ -183,6 +183,7 @@ const PROVIDER_KEY: Record<string, string> = {
   Wayback: "wayback",
   Wikidata: "wikidata",
   Wikipedia: "wikipedia",
+  "Wikipedia Perennial Sources": "wikipedia_perennial_sources",
 };
 
 function isGenericSocialPublisherName(value?: string | null) {
@@ -386,6 +387,7 @@ const ENRICHMENT_PROVIDERS: Array<{
   { key: "AllSides",  label: "AllSides",    desc: "Historical ratings remain visible", enabled: false, disabledReason: "data access pending" },
   { key: "Ad Fontes", label: "Ad Fontes",   desc: "Historical ratings remain visible", enabled: false, disabledReason: "disabled" },
   { key: "Wikipedia", label: "Wikipedia",   desc: "Publisher profile" },
+  { key: "Wikipedia Perennial Sources", label: "Wikipedia Perennial Sources", desc: "Community-maintained source classification" },
   { key: "Wikidata",  label: "Wikidata",    desc: "Entity identity and relationships" },
   { key: "SCImago",   label: "SCImago",     desc: "Journal impact ranking (academic)" },
   { key: "MBFC",      label: "MBFC",        desc: "Factuality / credibility where seeded", requiresConfig: false },
@@ -402,7 +404,7 @@ const ENRICHMENT_PROVIDERS: Array<{
 
 // The top-level Force refresh intentionally runs only the lightweight first
 // pass. External-signal providers and own-site re-scraping are separate jobs.
-const QUICK_REFRESH_PROVIDER_KEYS = new Set(["Wikipedia", "Wikidata", "SCImago"]);
+const QUICK_REFRESH_PROVIDER_KEYS = new Set(["Wikipedia", "Wikipedia Perennial Sources", "Wikidata", "SCImago"]);
 
 const CREDIBILITY_PROVIDERS = [
   { label: "OpenSanctions", desc: "Sanctions & PEP lists" },
@@ -1307,6 +1309,9 @@ const SourceDetailModal: React.FC<SourceDetailModalProps> = ({
     if (signal.error_status === "no_match") return { label: "no match", color: "#F6AD55", enabled: true };
     if (signal.error_status || parseFlags(signal.flags).some((flag) => String(flag).startsWith("provider_"))) {
       return { label: signal.error_status || "attempted", color: "#F6AD55", enabled: true };
+    }
+    if (signal.provider === "wikipedia_perennial_sources" && signal.reliability_bucket) {
+      return { label: signal.reliability_bucket, color: "#48BB78", enabled: true };
     }
     if (signal.normalized_score != null) return { label: `${signal.admiralty_effect_type} ${Math.round(Number(signal.normalized_score))}`, color: "#48BB78", enabled: true };
     return { label: signal.admiralty_effect_type || "stored", color: "#48BB78", enabled: true };

@@ -21,8 +21,8 @@ import {
  */
 export async function calculateAIClaimScore(query, claimId) {
   try {
-    // Include AI ratings from claim_links, reference_claim_task_links, AND
-    // reference_claim_links (document-level dotted-line AI evidence links)
+    // Include only assertion-to-assertion AI bearing. reference_claim_links
+    // are gray document-discovery provenance and are intentionally score-neutral.
     // Use stance-based normalized scores (+1 support, -1 refute, +0.5 nuance)
     // rather than raw support_level values which are dampened by confidence*quality
     const [result] = await query(
@@ -48,19 +48,8 @@ export async function calculateAIClaimScore(query, claimId) {
          WHERE task_claim_id = ?
            AND created_by_ai = 1
            AND support_level != 0
-         UNION ALL
-         SELECT CASE stance
-           WHEN 'support' THEN 1.0
-           WHEN 'refute' THEN -1.0
-           WHEN 'nuance' THEN 0.5
-           ELSE 0.0
-         END as normalized_score
-         FROM reference_claim_links
-         WHERE claim_id = ?
-           AND created_by_ai = 1
-           AND stance IN ('support', 'refute', 'nuance')
        ) as combined_ratings`,
-      [claimId, claimId, claimId]
+      [claimId, claimId]
     );
 
     let score = result?.ai_score || 0;
@@ -124,30 +113,40 @@ export async function calculateCombinedClaimScore(query, claimId, userId = null,
  */
 export async function calculateAIContentScore(query, contentId) {
   try {
-    // Single batch query — globally average all document-level AI stance assessments
-    // for claims belonging to this content. Each reference-claim link is weighted
-    // equally regardless of how many claims a given reference appears against.
-    // This prevents the two-level averaging distortion that occurs when averaging
-    // per-claim scores first (a claim with 7 refute links at -1.0 would only count
-    // once in the outer average, same weight as a claim with 1 nuance link at +0.5).
+    // Globally average accepted assertion-to-assertion AI bearing. Discovery-only
+    // reference_claim_links are excluded regardless of their legacy stance fields.
     const [result] = await query(
       `SELECT
-         COALESCE(AVG(CASE rcl.stance
-           WHEN 'support' THEN 1.0
-           WHEN 'refute'  THEN -1.0
-           WHEN 'nuance'  THEN 0.5
-           ELSE 0.0
-         END), 0) AS avg_score,
-         SUM(CASE WHEN rcl.stance = 'support' THEN 1.0 ELSE 0 END) /
+         COALESCE(AVG(normalized_score), 0) AS avg_score,
+         SUM(CASE WHEN normalized_score > 0 THEN 1.0 ELSE 0 END) /
            NULLIF(COUNT(*), 0) AS pro_ratio,
-         SUM(CASE WHEN rcl.stance = 'refute' THEN 1.0 ELSE 0 END) /
+         SUM(CASE WHEN normalized_score < 0 THEN 1.0 ELSE 0 END) /
            NULLIF(COUNT(*), 0) AS con_ratio
-       FROM reference_claim_links rcl
-       INNER JOIN content_claims cc ON rcl.claim_id = cc.claim_id
-       WHERE cc.content_id = ?
-         AND rcl.created_by_ai = 1
-         AND rcl.stance IN ('support', 'refute', 'nuance')`,
-      [contentId]
+       FROM (
+         SELECT CASE
+           WHEN cl.support_level > 0.3 THEN 1.0
+           WHEN cl.support_level < -0.3 THEN -1.0
+           ELSE 0.0
+         END AS normalized_score
+         FROM claim_links cl
+         INNER JOIN content_claims cc ON cl.target_claim_id = cc.claim_id
+         WHERE cc.content_id = ?
+           AND cl.disabled = 0
+           AND cl.created_by_ai = 1
+           AND cl.support_level != 0
+         UNION ALL
+         SELECT CASE
+           WHEN rctl.support_level > 0.3 THEN 1.0
+           WHEN rctl.support_level < -0.3 THEN -1.0
+           ELSE 0.0
+         END AS normalized_score
+         FROM reference_claim_task_links rctl
+         INNER JOIN content_claims cc ON rctl.task_claim_id = cc.claim_id
+         WHERE cc.content_id = ?
+           AND rctl.created_by_ai = 1
+           AND rctl.support_level != 0
+       ) accepted_assertion_bearing`,
+      [contentId, contentId]
     );
 
     if (!result || result.avg_score === null) {

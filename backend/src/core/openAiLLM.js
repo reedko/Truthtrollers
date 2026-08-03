@@ -99,6 +99,7 @@ export const openAiLLM = {
    *  - timeout: optional in ms (default 30000)
    *  - model: optional (default preserves existing gpt-4o-mini behavior)
    *  - maxOutputTokens: optional provider output ceiling
+   *  - store: whether the provider may retain the completion for later retrieval
    *  - returnMetadata: optional transport envelope for callers needing usage/model
    */
   async generate({
@@ -111,6 +112,7 @@ export const openAiLLM = {
     timeout = 30000,
     model = "gpt-4o-mini",
     maxOutputTokens = null,
+    store = undefined,
     returnMetadata = false,
     jsonSchema = null,
   }) {
@@ -131,6 +133,7 @@ export const openAiLLM = {
           body: JSON.stringify({
             model,
             temperature,
+            ...(typeof store === "boolean" ? { store } : {}),
             ...(Number.isInteger(seed) ? { seed } : {}),
             response_format: jsonSchema
               ? { type: "json_schema", json_schema: jsonSchema }

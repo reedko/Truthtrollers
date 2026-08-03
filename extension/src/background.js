@@ -5,6 +5,7 @@ import { extractImageFromHtml } from "../src/services/extractMetaData";
 import browser from "webextension-polyfill";
 import { generateDeviceFingerprint } from "../../dashboard/src/utils/generateDeviceFingerprint";
 import { extractVideoIdFromUrl } from "./services/parseYoutubeUrl";
+import { selectScrapeJobTab } from "./services/selectScrapeJobTab.mjs";
 
 const BASE_URL =
   process.env.REACT_APP_EXTENSION_BASE_URL || "https://localhost:5001";
@@ -2235,11 +2236,19 @@ browser.runtime.onMessageExternal.addListener((message, sender) => {
           await browser.tabs.update(existing.id, { active: true });
           try { await browser.windows.update(existing.windowId, { focused: true }); } catch {}
           console.log(`[EXT] checkAndOpenTab: reused tab ${existing.id} for ${url}`);
-          return { reused: true, tabId: existing.id };
+          return {
+            reused: true,
+            tabId: existing.id,
+            instanceId: INSTANCE_ID,
+          };
         } else {
           const newTab = await browser.tabs.create({ url, active: true });
           console.log(`[EXT] checkAndOpenTab: opened new tab ${newTab.id} for ${url}`);
-          return { opened: true, tabId: newTab.id };
+          return {
+            opened: true,
+            tabId: newTab.id,
+            instanceId: INSTANCE_ID,
+          };
         }
       } catch (e) {
         console.error("[EXT] checkAndOpenTab error:", e);
@@ -2356,8 +2365,14 @@ async function pollForScrapeJob() {
     const jobs = await res.json();
     if (!jobs || jobs.length === 0) return;
 
-    // Process first job (FIFO)
-    const job = jobs[0];
+    // Preserve FIFO among jobs this extension can legally claim. A job bound
+    // to another extension instance must not block unrelated pending work.
+    const job = jobs.find(
+      (candidate) =>
+        !candidate.extension_instance_id ||
+        candidate.extension_instance_id === INSTANCE_ID,
+    );
+    if (!job) return;
     console.log(`[EXT] 📋 Processing scrape job ${job.scrape_job_id}: mode=${job.scrape_mode}, url=${job.target_url || 'N/A'}, task=${job.task_content_id || 'N/A'}`);
 
     await handleScrapeJob(job);
@@ -2374,11 +2389,25 @@ async function pollForScrapeJob() {
 }
 
 async function handleScrapeJob(job) {
-  const { scrape_job_id, scrape_mode, target_url, task_content_id } = job;
+  const {
+    scrape_job_id,
+    scrape_mode,
+    target_url,
+    task_content_id,
+    opened_tab_id,
+    extension_instance_id,
+  } = job;
   let jobClaimed = false;
 
   try {
     let targetTab, url;
+
+    if (extension_instance_id && extension_instance_id !== INSTANCE_ID) {
+      console.log(
+        `[EXT] ⏭️ Job ${scrape_job_id} is bound to extension ${extension_instance_id}`,
+      );
+      return;
+    }
 
     // Step 1: Find the appropriate tab before claiming the job. A transient
     // extension-context/tab-query failure must not turn a valid queued job into
@@ -2402,9 +2431,20 @@ async function handleScrapeJob(job) {
     } else if (scrape_mode === "scrape_specific_url") {
       // Find tab matching target_url. PDF tabs may already be swapped to
       // extension viewer.html?src=<original-pdf-url>, so compare against both.
-      targetTab = findTabForScrapeTarget(tabs, target_url);
+      targetTab = selectScrapeJobTab({
+        tabs,
+        targetUrl: target_url,
+        openedTabId: opened_tab_id,
+        extensionInstanceId: extension_instance_id,
+        currentInstanceId: INSTANCE_ID,
+        matchesUrl: urlsMatchForScrape,
+      });
       if (!targetTab) {
-        console.warn(`[EXT] ⏳ Job ${scrape_job_id} remains pending; target tab is not currently visible: ${target_url}`);
+        console.warn(
+          `[EXT] ⏳ Job ${scrape_job_id} remains pending; ${
+            opened_tab_id ? `bound tab ${opened_tab_id}` : `target URL ${target_url}`
+          } is not currently visible`,
+        );
         console.log(`[EXT] 📋 Available tabs (${tabs.length}):`, tabs.map(t => ({ id: t.id, url: t.url })));
         return;
       }
@@ -2421,7 +2461,10 @@ async function handleScrapeJob(job) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({ instance_id: INSTANCE_ID }),
+      body: JSON.stringify({
+        instance_id: INSTANCE_ID,
+        browser_tab_id: targetTab.id,
+      }),
       signal: AbortSignal.timeout(10000)
     });
 
@@ -2772,6 +2815,19 @@ async function handleScrapeJob(job) {
         taskContentId: task_content_id,
       };
     }
+
+    // Carry the production job and browser identity through the existing
+    // scrape-reference route. Legacy jobs ignore these fields; EvidenceRun
+    // bindings use them to preserve requested and redirect-resolved URLs and
+    // to resume exactly one candidate.
+    scrapeBody = {
+      ...scrapeBody,
+      scrapeJobId: scrape_job_id,
+      requestedUrl: target_url || actualUrl,
+      resolvedUrl: actualUrl,
+      browserTabId: targetTab.id,
+      extensionInstanceId: INSTANCE_ID,
+    };
 
     // Step 4: Send to scrape-reference endpoint
     console.log(`[EXT] 📤 Sending scrape data to backend: url=${actualUrl}, html_length=${raw_html?.length || 0}`);
