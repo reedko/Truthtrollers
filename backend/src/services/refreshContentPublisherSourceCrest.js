@@ -115,8 +115,11 @@ export async function refreshContentPublisherSourceCrest({
     ratedPublisher.domain = ratingDomain;
   }
   await query(
+    // reliability is a NOT NULL enum ('unchecked' is its own "not yet
+    // assessed" default) -- SQL NULL is rejected by the column, not merely
+    // ignored, so a force refresh must reset to 'unchecked' explicitly.
     `UPDATE source_identity_cache
-        SET publisher_id = ?, publisher_name = ?, reliability = NULL,
+        SET publisher_id = ?, publisher_name = ?, reliability = 'unchecked',
             resolution_level = GREATEST(COALESCE(resolution_level, 0), 3),
             resolution_status = 'matched_metadata', last_checked_at = NOW()
       WHERE source_url = ? OR normalized_url = ?`,
