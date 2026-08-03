@@ -374,42 +374,32 @@ function parseMaybeJson(value) {
   }
 }
 
+// Each own_site_org_status row is already one complete, internally
+// consistent classification from a single discoverOwnSiteOrgStatus call --
+// it is not a partial fact to be combined with other rows. Merging fields
+// across separate rows (as this used to do) mixes classifications from
+// different runs, different dates, and (across a code change) different
+// heuristics into one incoherent object: a stale run's
+// conflict_of_interest_score=0 silently "won" over a newer run's =0.8
+// merely because it was processed first, while publisher_type was picked
+// up from yet another run entirely. Only ever trust the single most recent
+// row. Sorted internally (by retrieved_at, when the caller provides it) so
+// this can't regress just because some caller's SQL forgets ORDER BY.
 export function assemblePublisherStatusFromSignals(signals = []) {
   const statuses = signals
     .filter((signal) => String(signal.provider || "").toLowerCase() === "own_site_org_status")
     .map((signal) => {
       const raw = parseMaybeJson(signal.raw_value) || parseMaybeJson(signal.raw) || {};
-      return raw.normalized || raw.extraction || null;
+      return { status: raw.normalized || raw.extraction || null, retrievedAt: signal.retrieved_at || null };
     })
-    .filter(Boolean);
-
-  if (!statuses.length) return null;
-
-  const merged = statuses.reduce((acc, status) => {
-    for (const [key, value] of Object.entries(status)) {
-      if (value == null) continue;
-      if (key === "evidence") {
-        acc.evidence = [...(acc.evidence || []), ...(Array.isArray(value) ? value : [])];
-      } else if (key === "risk_flags") {
-        acc.risk_flags = [...new Set([...(acc.risk_flags || []), ...(Array.isArray(value) ? value : [])])];
-      } else if (acc[key] == null || acc[key] === false) {
-        acc[key] = value;
-      }
-    }
-    return acc;
-  }, {});
-
-  if (merged.evidence?.length) {
-    const seen = new Set();
-    merged.evidence = merged.evidence.filter((item) => {
-      const key = `${item.field}|${item.value}|${item.source_url}|${item.snippet}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
+    .filter((entry) => entry.status)
+    .sort((a, b) => {
+      const bTime = b.retrievedAt ? new Date(b.retrievedAt).getTime() : 0;
+      const aTime = a.retrievedAt ? new Date(a.retrievedAt).getTime() : 0;
+      return bTime - aTime;
     });
-  }
 
-  return merged;
+  return statuses[0]?.status ?? null;
 }
 
 /**
@@ -428,17 +418,18 @@ export async function attachSourceAlignments(query, rows, { publisherIdField = "
   )];
   if (!publisherIds.length) return rows;
   const signalRows = await query(
-    `SELECT publisher_id, raw_value
+    `SELECT publisher_id, raw_value, retrieved_at
        FROM publisher_external_signals
       WHERE publisher_id IN (?)
         AND provider = 'own_site_org_status'
-        AND (expires_at IS NULL OR expires_at > NOW())`,
+        AND (expires_at IS NULL OR expires_at > NOW())
+      ORDER BY retrieved_at DESC, id DESC`,
     [publisherIds],
   );
   const signalsByPublisher = new Map();
   for (const signalRow of signalRows) {
     const list = signalsByPublisher.get(signalRow.publisher_id) || [];
-    list.push({ provider: "own_site_org_status", raw_value: signalRow.raw_value });
+    list.push({ provider: "own_site_org_status", raw_value: signalRow.raw_value, retrieved_at: signalRow.retrieved_at });
     signalsByPublisher.set(signalRow.publisher_id, list);
   }
   const alignmentByPublisher = new Map();
