@@ -37,7 +37,7 @@ function sourceHost(sourceUrl) {
   }
 }
 
-function domainLabel(sourceUrl) {
+export function domainLabel(sourceUrl) {
   const host = sourceHost(sourceUrl);
   if (!host) return null;
   const parts = host.split(".").filter(Boolean);

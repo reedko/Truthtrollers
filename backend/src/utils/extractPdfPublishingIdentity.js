@@ -1,5 +1,6 @@
 import { SOURCE_IDENTITY_VERSION } from "./publishingIdentityContract.js";
 import { choosePdfIdentity } from "./pdfIdentityExtractor.js";
+import { domainLabel } from "./extractPublisher.js";
 
 
 function clean(value) {
@@ -67,18 +68,28 @@ export function extractPdfPublishingIdentity({ info = {}, metadata = null, text 
   const xmpVenue = clean(xmp["prism:publicationName"] || xmp.publicationName || info.Journal);
   const hasExplicitFirstPagePublisher = firstPageIdentity.publisher_name
     && firstPageIdentity.methods.publisher_name !== "choose_pdf_publisher_fallback";
+  // A PDF's own metadata/first-page text frequently carries no publisher
+  // signal at all (e.g. a plain WordPress-hosted fact sheet). HTML documents
+  // already fall back to a domain-derived label in this situation
+  // (extractPublisher.js's domainLabel) -- PDFs previously had only a single
+  // hardcoded host mapping and otherwise persisted nothing, which broke
+  // downstream code that requires a rated publisher to exist.
+  const domainFallbackLabel = domainLabel(sourceUrl);
 
   const organization = hasExplicitFirstPagePublisher
     ? firstPageIdentity.publisher_name
-    : xmpPublisher || hostIdentity?.organization || firstPageIdentity.publisher_name || null;
+    : xmpPublisher || hostIdentity?.organization || firstPageIdentity.publisher_name || domainFallbackLabel || null;
   const organizationMethod = hasExplicitFirstPagePublisher
     ? firstPageIdentity.methods.publisher_name
-    : xmpPublisher ? "pdf_xmp" : hostIdentity?.method || firstPageIdentity.methods.publisher_name || null;
+    : xmpPublisher ? "pdf_xmp" : hostIdentity?.method || firstPageIdentity.methods.publisher_name
+      || (domainFallbackLabel ? "domain_fallback" : null);
   const organizationConfidence = hasExplicitFirstPagePublisher
     ? firstPageIdentity.confidence.publisher_name
-    : xmpPublisher ? 0.94 : hostIdentity?.confidence || firstPageIdentity.confidence.publisher_name || 0;
+    : xmpPublisher ? 0.94 : hostIdentity?.confidence || firstPageIdentity.confidence.publisher_name
+      || (domainFallbackLabel ? 0.25 : 0);
   const organizationEvidence = hasExplicitFirstPagePublisher || !xmpPublisher
     ? hostIdentity?.evidence || firstPageIdentity.evidence.publisher_name
+      || (domainFallbackLabel ? sourceUrl : null)
     : xmpPublisher;
 
   const venue = firstPageIdentity.publication_venue || xmpVenue || hostIdentity?.venue || null;

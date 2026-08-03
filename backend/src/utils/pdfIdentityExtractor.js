@@ -367,7 +367,15 @@ function isCredibleVenueCandidate(value, articleType = null) {
   if (articleType && value.toLowerCase() === articleType.toLowerCase()) return false;
   if (value.length > 140) return false;
   if (/\b(title|author|authors|publisher|published date|copyright|issn|volume|article|citation|doi|abstract|keywords)\b/i.test(value)) return false;
-  return /(?:journal|annals|proceedings|transactions|bulletin|review|studies|reports|medicine|medical|clinical|science|scientific|research|case studies|case reports)/i.test(value);
+  // A real venue name is a title -- a single capitalized phrase, not a
+  // sentence of body prose. Reject anything with a mid-string sentence break
+  // (". " followed by another capitalized word) or that doesn't start
+  // capitalized; without this, a line like "researcher at the U.S. Centers
+  // for Disease Control and Prevention (CDC). The person on the recording"
+  // passes purely because "researcher" contains the substring "research".
+  if (!/^[A-Z0-9]/.test(value)) return false;
+  if (/[a-z0-9]\.\s+[A-Z]/.test(value)) return false;
+  return /\b(?:journal|annals|proceedings|transactions|bulletin|review|studies|reports|medicine|medical|clinical|science|scientific|research|case studies|case reports)\b/i.test(value);
 }
 
 function normalizeArticleType(value) {

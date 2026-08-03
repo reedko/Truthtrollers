@@ -209,6 +209,26 @@ function hostname(sourceUrl) {
   try { return new URL(sourceUrl).hostname.replace(/^www\./, "").toLowerCase(); } catch { return null; }
 }
 
+// A low-confidence extraction (e.g. a PDF with no publisher metadata,
+// falling back to a raw domain label) should not blindly create a new,
+// worse-named publisher when publisher_domains already has a known,
+// previously-curated entity for this exact domain. Prefer what's already
+// there over reinventing it.
+async function findPublisherByDomain(query, domain) {
+  if (!domain) return null;
+  const rows = await query(
+    `SELECT p.publisher_id, p.publisher_name
+       FROM publisher_domains pd
+       JOIN publishers p ON p.publisher_id = pd.publisher_id
+      WHERE pd.domain = ?
+      ORDER BY pd.publisher_domain_id
+      LIMIT 1`,
+    [domain],
+  );
+  const row = rows?.[0];
+  return row ? { publisherId: row.publisher_id, name: row.publisher_name } : null;
+}
+
 function rootDomain(domain) {
   if (!domain) return null;
   return domain.split(".").slice(-2).join(".");
@@ -249,7 +269,14 @@ export async function persistSourceIdentity(query, contentId, identity, options 
   if (!contentId || identity?.version !== SOURCE_IDENTITY_VERSION) return null;
 
   const run = () => inTransaction(query, options, async (tx) => {
-    const organization = await upsertEntity(tx, identity.entities?.publishing_organization);
+    let organizationEntity = identity.entities?.publishing_organization;
+    if (organizationEntity?.method === "domain_fallback") {
+      const knownDomainPublisher = await findPublisherByDomain(tx, hostname(identity.source_url));
+      if (knownDomainPublisher) {
+        organizationEntity = { ...organizationEntity, name: knownDomainPublisher.name };
+      }
+    }
+    const organization = await upsertEntity(tx, organizationEntity);
     const venue = await upsertEntity(tx, identity.entities?.publication_venue);
     const extraEntities = [];
     for (const [role, entity] of Object.entries(identity.entities || {})) {
