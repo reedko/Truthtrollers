@@ -225,10 +225,13 @@ export async function extractProductionPdfDocument({
     pdfText: text,
     sourceUrl: url,
   });
-  const metadataAuthors = parsed?.info?.Author
-    ? String(parsed.info.Author).split(/[,;]|\sand\s/iu).map((name) => ({ name: name.trim() }))
-    : [];
-  const authors = mergeAuthors(identityResult.authors, mergeAuthors(providedAuthors, metadataAuthors));
+  // identityResult.authors already parses info.Author (via
+  // pdfIdentityExtractor.js's findAuthors/splitAuthorNames), including the
+  // "Last, First" single-person convention correctly. A second, separate,
+  // unvalidated split of the same info.Author field here previously broke
+  // that ("Sobel, Emily" -> two authors, "Sobel" and "Emily") -- don't
+  // duplicate the parsing, just use the one correct result.
+  const authors = mergeAuthors(identityResult.authors, providedAuthors);
   return {
     documentType: "pdf",
     title: providedTitle || pdfTitle(parsed?.info?.Title, text, url),

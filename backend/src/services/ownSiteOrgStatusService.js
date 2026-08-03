@@ -8,8 +8,14 @@ const BROWSER_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/
 
 const PRIVATE_IP_RE = /^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.|0\.)/;
 const STATUS_LINK_RE = /\b(about|mission|who-we-are|who we are|membership|members|board|board-of-governors|leadership|governance|coalition|partners|sponsors|funding|supporters|advisory|policy|advocacy|contact|impressum|imprint|legal notice)\b/i;
-const TRADE_RE = /\b(trade association|industry association|industry trade organization|industry trade association|consortium|coalition|alliance|membership organization|member companies|board of governors|board members|wireless carriers|telecommunications service providers|manufacturers|device manufacturers|network equipment providers|ecosystem companies|stakeholder mix)\b/i;
-const MEMBER_RE = /\b(member companies|members|membership|member organizations|stakeholder mix|providers|carriers|manufacturers)\b/i;
+// Bare single words like "alliance", "providers", "manufacturers",
+// "members" are too generic to mean anything on their own -- a nonprofit's
+// corporate-donor "Alliance Program", or ordinary references to "healthcare
+// providers" in health content, will match every time. Require the actual
+// multi-word trade/membership phrase, not a word that merely occurs inside
+// one somewhere else.
+const TRADE_RE = /\b(trade association|industry association|industry trade organization|industry trade association|industry consortium|industry coalition|industry alliance|trade alliance|membership organization|member companies|board of governors|wireless carriers|telecommunications service providers|device manufacturers|network equipment providers|ecosystem companies|stakeholder mix)\b/i;
+const MEMBER_RE = /\b(member companies|member organizations|membership organization|stakeholder mix|dues-paying members?)\b/i;
 const BOARD_RE = /\b(board of governors|board members|board of directors|leadership|governance)\b/i;
 const ADVOCACY_RE = /\b(advocacy|advocate|policy recommendations|regulatory policy|government affairs|public policy|policymakers|regulators|advance the industry|promote adoption|shape policy)\b/i;
 const TELECOM_RE = /\b(5g|6g|wireless|mobile broadband|telecommunications|telecom|network equipment|device manufacturers|wireless carriers|spectrum|cellular)\b/i;

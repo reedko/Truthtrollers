@@ -270,7 +270,16 @@ export async function persistSourceIdentity(query, contentId, identity, options 
 
   const run = () => inTransaction(query, options, async (tx) => {
     let organizationEntity = identity.entities?.publishing_organization;
-    if (organizationEntity?.method === "domain_fallback") {
+    // Any signal anchored to the document's own domain (a raw label guess,
+    // or the document naming itself next to its own URL) should still defer
+    // to an already-curated publisher_domains entry when one exists --
+    // otherwise the same real-world domain fragments across multiple
+    // publisher rows every time extraction quality changes.
+    const DOMAIN_ANCHORED_METHODS = new Set([
+      "domain_fallback",
+      "first_page_self_referenced_domain_name",
+    ]);
+    if (DOMAIN_ANCHORED_METHODS.has(organizationEntity?.method)) {
       const knownDomainPublisher = await findPublisherByDomain(tx, hostname(identity.source_url));
       if (knownDomainPublisher) {
         organizationEntity = { ...organizationEntity, name: knownDomainPublisher.name };
@@ -381,6 +390,19 @@ export async function persistSourceIdentity(query, contentId, identity, options 
         evidence: { evidence: link.evidence || null },
         replaceRole: true,
       });
+    }
+    // linkPublisherRole only clears a stale role when a fresh value for that
+    // *same* role is being inserted this round -- a role that a previous,
+    // now-superseded extraction found but this one correctly did not (e.g.
+    // a bogus venue that a validation fix now rejects) is otherwise left
+    // orphaned in content_publishers forever. Explicitly clear any managed
+    // role this run has no value for.
+    const MANAGED_ROLES = ["publishing_organization", "publication_venue", "parent_organization", "original_publisher"];
+    const freshRoles = new Set(links.map((link) => link.role));
+    for (const role of MANAGED_ROLES) {
+      if (!freshRoles.has(role)) {
+        await unlinkPublisherRole(tx, contentId, { role });
+      }
     }
 
     if (organization && venue && organization.publisherId !== venue.publisherId) {

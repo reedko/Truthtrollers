@@ -27,7 +27,7 @@ const ARTICLE_TYPE_RE = new RegExp(
   "i",
 );
 
-export function choosePdfIdentity(info = {}, lines = []) {
+export function choosePdfIdentity(info = {}, lines = [], sourceUrl = "") {
   const cleanLines = normalizeLines(lines);
   const identity = {
     publisher_name: null,
@@ -41,12 +41,13 @@ export function choosePdfIdentity(info = {}, lines = []) {
     confidence: {},
   };
 
-  const explicitPublisher = findExplicitPublisher(cleanLines);
+  const explicitPublisher = findExplicitPublisher(cleanLines)
+    || findSelfReferencedDomainName(cleanLines, sourceUrl);
   if (explicitPublisher) {
     identity.publisher_name = explicitPublisher.value;
     identity.evidence.publisher_name = explicitPublisher.evidence;
     identity.methods.publisher_name = explicitPublisher.method;
-    identity.confidence.publisher_name = 0.95;
+    identity.confidence.publisher_name = explicitPublisher.confidence ?? 0.95;
   }
 
   const articleType = findArticleType(cleanLines);
@@ -150,6 +151,42 @@ function findExplicitPublisher(lines) {
         value: normalizePublisherName(candidate),
         evidence: line,
         method: "first_page_copyright_publisher_line",
+      };
+    }
+  }
+  return null;
+}
+
+// A domain hostname is always lowercase and unspaced (URLs carry no casing
+// information), so a plain domain-label fallback can never reconstruct a
+// properly formatted name ("vaccinateyourfamily" vs "Vaccinate Your
+// Family"). But a document frequently names itself in its own body text
+// right next to its own domain (a footer, a "for more information" link,
+// etc.) -- when that happens, it's a strong, properly-cased, self-reported
+// signal, not a guess.
+function findSelfReferencedDomainName(lines, sourceUrl) {
+  let host;
+  try {
+    host = new URL(sourceUrl).hostname.replace(/^www\./i, "").toLowerCase();
+  } catch {
+    return null;
+  }
+  if (!host) return null;
+  const escapedHost = host.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(
+    `\\b([A-Z][A-Za-z&'’]*(?:\\s+[A-Z][A-Za-z&'’]*){0,4})\\s*[-–,]\\s*(?:www\\.)?${escapedHost}\\b`,
+    "i",
+  );
+  for (const line of lines) {
+    const match = line.match(pattern);
+    if (!match) continue;
+    const candidate = cleanIdentityCandidate(match[1]);
+    if (isCredibleIdentityCandidate(candidate)) {
+      return {
+        value: candidate,
+        evidence: line,
+        method: "first_page_self_referenced_domain_name",
+        confidence: 0.9,
       };
     }
   }
@@ -311,6 +348,21 @@ function splitAuthorNames(value) {
     .replace(/\b(?:MD|M\.D\.|PhD|Ph\.D\.|MSc|BSc|MPH)\b/gi, "")
     .replace(/\s+/g, " ")
     .trim();
+
+  // A single embedded comma with a bare surname on one side and a short
+  // given-name on the other is the standard "Last, First" convention that
+  // document editors (Word, Adobe, etc.) populate Author metadata with --
+  // that's one person, not a list. Only treat a comma as a list separator
+  // when there's more than one, or an explicit "and"/"&"/";" is present.
+  const commaCount = (cleaned.match(/,/g) || []).length;
+  if (commaCount === 1 && !/\s(?:and|&)\s|;/i.test(cleaned)) {
+    const [last, first] = cleaned.split(",").map((part) => part.trim());
+    if (last && first && !/\s/.test(last) && first.split(/\s+/).length <= 2) {
+      const rejoined = `${first} ${last}`;
+      return isCrediblePersonName(rejoined) ? [rejoined] : [];
+    }
+  }
+
   return cleaned
     .split(/\s+(?:and|&)\s+|\s*;\s*|\s*,\s*/i)
     .map((name) => name.replace(/^[\s.]+|[\s.]+$/g, "").trim())

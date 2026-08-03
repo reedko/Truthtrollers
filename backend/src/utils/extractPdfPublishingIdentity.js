@@ -62,7 +62,7 @@ function hostedPdfIdentity(sourceUrl) {
 export function extractPdfPublishingIdentity({ info = {}, metadata = null, text = "", sourceUrl = "" } = {}) {
   const xmp = flattenMetadata(metadata);
   const lines = text.replace(/\r/g, "").split(/\n+/).map(clean).filter(Boolean);
-  const firstPageIdentity = choosePdfIdentity(info, lines);
+  const firstPageIdentity = choosePdfIdentity(info, lines, sourceUrl);
   const hostIdentity = hostedPdfIdentity(sourceUrl);
   const xmpPublisher = clean(xmp["dc:publisher"] || xmp.publisher || info.Publisher);
   const xmpVenue = clean(xmp["prism:publicationName"] || xmp.publicationName || info.Journal);
